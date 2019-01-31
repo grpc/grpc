@@ -131,8 +131,7 @@ ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
 ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
     Args args, TraceFlag* tracer, UniquePtr<char> target_uri,
     ProcessResolverResultCallback process_resolver_result,
-    void* process_resolver_result_user_data,
-    grpc_error** error)
+    void* process_resolver_result_user_data, grpc_error** error)
     : LoadBalancingPolicy(std::move(args)),
       tracer_(tracer),
       target_uri_(std::move(target_uri)),
@@ -238,7 +237,7 @@ void ResolvingLoadBalancingPolicy::OnResolverShutdownLocked(grpc_error* error) {
               resolver_.get());
     }
     resolver_.reset();
-    grpc_error *error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+    grpc_error* error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
         "Resolver spontaneous shutdown", &error, 1);
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(error),

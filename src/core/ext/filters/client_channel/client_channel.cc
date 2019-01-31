@@ -189,10 +189,8 @@ namespace {
 class ClientChannelControlHelper
     : public LoadBalancingPolicy::ChannelControlHelper {
  public:
-  explicit ClientChannelControlHelper(channel_data* chand)
-      : chand_(chand) {
-    GRPC_CHANNEL_STACK_REF(chand_->owning_stack,
-                           "ClientChannelControlHelper");
+  explicit ClientChannelControlHelper(channel_data* chand) : chand_(chand) {
+    GRPC_CHANNEL_STACK_REF(chand_->owning_stack, "ClientChannelControlHelper");
   }
 
   ~ClientChannelControlHelper() override {
@@ -205,8 +203,8 @@ class ClientChannelControlHelper
       RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
     if (grpc_client_channel_trace.enabled()) {
       const char* extra = chand_->disconnect_error == GRPC_ERROR_NONE
-                          ? ""
-                          : " (ignoring -- channel shutting down)";
+                              ? ""
+                              : " (ignoring -- channel shutting down)";
       gpr_log(GPR_INFO, "chand=%p: update: state=%s error=%s picker=%p%s",
               chand_, grpc_connectivity_state_name(state),
               grpc_error_string(state_error), picker.get(), extra);
@@ -473,8 +471,8 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
         chand->resolving_lb_policy->interested_parties(),
         chand->interested_parties);
     if (grpc_client_channel_trace.enabled()) {
-      gpr_log(GPR_INFO, "chand=%p: created resolving_lb_policy=%p",
-              chand, chand->resolving_lb_policy.get());
+      gpr_log(GPR_INFO, "chand=%p: created resolving_lb_policy=%p", chand,
+              chand->resolving_lb_policy.get());
     }
   }
   return error;
@@ -1046,16 +1044,16 @@ static void fail_pending_batch_in_call_combiner(void* arg, grpc_error* error) {
 typedef bool (*YieldCallCombinerPredicate)(
     const grpc_core::CallCombinerClosureList& closures);
 static bool yield_call_combiner(
-   const grpc_core::CallCombinerClosureList& closures) {
- return true;
+    const grpc_core::CallCombinerClosureList& closures) {
+  return true;
 }
 static bool no_yield_call_combiner(
-   const grpc_core::CallCombinerClosureList& closures) {
- return false;
+    const grpc_core::CallCombinerClosureList& closures) {
+  return false;
 }
 static bool yield_call_combiner_if_pending_batches_found(
-   const grpc_core::CallCombinerClosureList& closures) {
- return closures.size() > 0;
+    const grpc_core::CallCombinerClosureList& closures) {
+  return closures.size() > 0;
 }
 static void pending_batches_fail(
     grpc_call_element* elem, grpc_error* error,
@@ -1077,8 +1075,8 @@ static void pending_batches_fail(
     grpc_transport_stream_op_batch* batch = pending->batch;
     if (batch != nullptr) {
       if (batch->recv_trailing_metadata) {
-        maybe_inject_recv_trailing_metadata_ready_for_lb(
-            calld->pick.pick, batch);
+        maybe_inject_recv_trailing_metadata_ready_for_lb(calld->pick.pick,
+                                                         batch);
       }
       batch->handler_private.extra_arg = calld;
       GRPC_CLOSURE_INIT(&batch->handler_private.closure,
@@ -1133,8 +1131,8 @@ static void pending_batches_resume(grpc_call_element* elem) {
     grpc_transport_stream_op_batch* batch = pending->batch;
     if (batch != nullptr) {
       if (batch->recv_trailing_metadata) {
-        maybe_inject_recv_trailing_metadata_ready_for_lb(
-            calld->pick.pick, batch);
+        maybe_inject_recv_trailing_metadata_ready_for_lb(calld->pick.pick,
+                                                         batch);
       }
       batch->handler_private.extra_arg = calld->subchannel_call.get();
       GRPC_CLOSURE_INIT(&batch->handler_private.closure,
@@ -2421,14 +2419,14 @@ static void create_subchannel_call(grpc_call_element* elem) {
   const size_t parent_data_size =
       calld->enable_retries ? sizeof(subchannel_call_retry_state) : 0;
   const grpc_core::ConnectedSubchannel::CallArgs call_args = {
-      calld->pollent,                                   // pollent
-      calld->path,                                      // path
-      calld->call_start_time,                           // start_time
-      calld->deadline,                                  // deadline
-      calld->arena,                                     // arena
-      calld->pick.pick.subchannel_call_context,         // context
-      calld->call_combiner,                             // call_combiner
-      parent_data_size                                  // parent_data_size
+      calld->pollent,                            // pollent
+      calld->path,                               // path
+      calld->call_start_time,                    // start_time
+      calld->deadline,                           // deadline
+      calld->arena,                              // arena
+      calld->pick.pick.subchannel_call_context,  // context
+      calld->call_combiner,                      // call_combiner
+      parent_data_size                           // parent_data_size
   };
   grpc_error* error = GRPC_ERROR_NONE;
   calld->subchannel_call =
@@ -2442,8 +2440,8 @@ static void create_subchannel_call(grpc_call_element* elem) {
     pending_batches_fail(elem, error, yield_call_combiner);
   } else {
     if (parent_data_size > 0) {
-      new (calld->subchannel_call->GetParentData()) subchannel_call_retry_state(
-          calld->pick.pick.subchannel_call_context);
+      new (calld->subchannel_call->GetParentData())
+          subchannel_call_retry_state(calld->pick.pick.subchannel_call_context);
     }
     pending_batches_resume(elem);
   }
@@ -2457,8 +2455,8 @@ static void pick_done(void* arg, grpc_error* error) {
   if (error != GRPC_ERROR_NONE) {
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_INFO,
-              "chand=%p calld=%p: failed to create subchannel: error=%s",
-              chand, calld, grpc_error_string(error));
+              "chand=%p calld=%p: failed to create subchannel: error=%s", chand,
+              calld, grpc_error_string(error));
     }
     pending_batches_fail(elem, GRPC_ERROR_REF(error), yield_call_combiner);
     return;
@@ -2473,8 +2471,7 @@ namespace {
 // queued pick.
 class QueuedPickCanceller {
  public:
-  explicit QueuedPickCanceller(grpc_call_element* elem)
-      : elem_(elem) {
+  explicit QueuedPickCanceller(grpc_call_element* elem) : elem_(elem) {
     auto* calld = static_cast<call_data*>(elem->call_data);
     auto* chand = static_cast<channel_data*>(elem->channel_data);
     GRPC_CALL_STACK_REF(calld->owning_call, "QueuedPickCanceller");
@@ -2541,8 +2538,8 @@ static void add_call_to_queued_picks_locked(grpc_call_element* elem) {
   auto* chand = static_cast<channel_data*>(elem->channel_data);
   auto* calld = static_cast<call_data*>(elem->call_data);
   if (grpc_client_channel_trace.enabled()) {
-    gpr_log(GPR_INFO, "chand=%p calld=%p: adding to queued picks list",
-            chand, calld);
+    gpr_log(GPR_INFO, "chand=%p calld=%p: adding to queued picks list", chand,
+            calld);
   }
   calld->pick_queued = true;
   // Add call to queued picks list.
@@ -2684,48 +2681,49 @@ static void start_pick_locked(void* arg, grpc_error* error) {
             grpc_error_string(error));
   }
   switch (pick_result) {
-  case LoadBalancingPolicy::SubchannelPicker::PICK_TRANSIENT_FAILURE:
-    // If we're shutting down, fail all RPCs.
-    if (chand->disconnect_error != GRPC_ERROR_NONE) {
-      GRPC_ERROR_UNREF(error);
-      GRPC_CLOSURE_SCHED(&calld->pick_closure,
-                         GRPC_ERROR_REF(chand->disconnect_error));
-      break;
-    }
-    // If wait_for_ready is false, then the error indicates the RPC
-    // attempt's final status.
-    if ((*send_initial_metadata_flags &
-         GRPC_INITIAL_METADATA_WAIT_FOR_READY) == 0) {
-      // Retry if appropriate; otherwise, fail.
-      grpc_status_code status = GRPC_STATUS_OK;
-      grpc_error_get_status(error, calld->deadline, &status, nullptr, nullptr,
-                            nullptr);
-      if (!calld->enable_retries ||
-          !maybe_retry(elem, nullptr /* batch_data */, status,
-                       nullptr /* server_pushback_md */)) {
-        grpc_error* new_error =
-            GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                "Failed to create subchannel", &error, 1);
+    case LoadBalancingPolicy::SubchannelPicker::PICK_TRANSIENT_FAILURE:
+      // If we're shutting down, fail all RPCs.
+      if (chand->disconnect_error != GRPC_ERROR_NONE) {
         GRPC_ERROR_UNREF(error);
-        GRPC_CLOSURE_SCHED(&calld->pick_closure, new_error);
+        GRPC_CLOSURE_SCHED(&calld->pick_closure,
+                           GRPC_ERROR_REF(chand->disconnect_error));
+        break;
       }
-      if (calld->pick_queued) remove_call_from_queued_picks_locked(elem);
+      // If wait_for_ready is false, then the error indicates the RPC
+      // attempt's final status.
+      if ((*send_initial_metadata_flags &
+           GRPC_INITIAL_METADATA_WAIT_FOR_READY) == 0) {
+        // Retry if appropriate; otherwise, fail.
+        grpc_status_code status = GRPC_STATUS_OK;
+        grpc_error_get_status(error, calld->deadline, &status, nullptr, nullptr,
+                              nullptr);
+        if (!calld->enable_retries ||
+            !maybe_retry(elem, nullptr /* batch_data */, status,
+                         nullptr /* server_pushback_md */)) {
+          grpc_error* new_error =
+              GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                  "Failed to create subchannel", &error, 1);
+          GRPC_ERROR_UNREF(error);
+          GRPC_CLOSURE_SCHED(&calld->pick_closure, new_error);
+        }
+        if (calld->pick_queued) remove_call_from_queued_picks_locked(elem);
+        break;
+      }
+      // If wait_for_ready is true, then queue to retry when we get a new
+      // picker.
+      GRPC_ERROR_UNREF(error);
+      // Fallthrough
+    case LoadBalancingPolicy::SubchannelPicker::PICK_QUEUE:
+      if (!calld->pick_queued) add_call_to_queued_picks_locked(elem);
       break;
-    }
-    // If wait_for_ready is true, then queue to retry when we get a new picker.
-    GRPC_ERROR_UNREF(error);
-    // Fallthrough
-  case LoadBalancingPolicy::SubchannelPicker::PICK_QUEUE:
-    if (!calld->pick_queued) add_call_to_queued_picks_locked(elem);
-    break;
-  default:  // PICK_COMPLETE
-    // Handle drops.
-    if (GPR_UNLIKELY(calld->pick.pick.connected_subchannel == nullptr)) {
-      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Call dropped by load balancing policy");
-    }
-    GRPC_CLOSURE_SCHED(&calld->pick_closure, error);
-    if (calld->pick_queued) remove_call_from_queued_picks_locked(elem);
+    default:  // PICK_COMPLETE
+      // Handle drops.
+      if (GPR_UNLIKELY(calld->pick.pick.connected_subchannel == nullptr)) {
+        error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Call dropped by load balancing policy");
+      }
+      GRPC_CLOSURE_SCHED(&calld->pick_closure, error);
+      if (calld->pick_queued) remove_call_from_queued_picks_locked(elem);
   }
 }
 
@@ -2880,8 +2878,8 @@ void grpc_client_channel_populate_child_refs(
     grpc_core::channelz::ChildRefsList* child_channels) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   if (chand->resolving_lb_policy != nullptr) {
-    chand->resolving_lb_policy->FillChildRefsForChannelz(
-        child_subchannels, child_channels);
+    chand->resolving_lb_policy->FillChildRefsForChannelz(child_subchannels,
+                                                         child_channels);
   }
 }
 

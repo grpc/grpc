@@ -49,8 +49,8 @@ namespace {
 class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
  public:
   ForwardingLoadBalancingPolicy(
-      RefCountedPtr<ChannelControlHelper> delegating_helper,
-      Args args, const std::string& delegate_policy_name)
+      RefCountedPtr<ChannelControlHelper> delegating_helper, Args args,
+      const std::string& delegate_policy_name)
       : LoadBalancingPolicy(std::move(args)) {
     Args delegate_args;
     delegate_args.combiner = combiner();
@@ -83,9 +83,7 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
   }
 
  private:
-  void ShutdownLocked() override {
-    delegate_.reset();
-  }
+  void ShutdownLocked() override { delegate_.reset(); }
 
   OrphanablePtr<LoadBalancingPolicy> delegate_;
 };
@@ -101,8 +99,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     : public ForwardingLoadBalancingPolicy {
  public:
   InterceptRecvTrailingMetadataLoadBalancingPolicy(
-      Args args, InterceptRecvTrailingMetadataCallback cb,
-      void* user_data)
+      Args args, InterceptRecvTrailingMetadataCallback cb, void* user_data)
       : ForwardingLoadBalancingPolicy(
             MakeRefCounted<Helper>(args.channel_control_helper->Ref(), cb,
                                    user_data),
@@ -141,9 +138,8 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
 
   class Helper : public ChannelControlHelper {
    public:
-    Helper(
-        RefCountedPtr<ChannelControlHelper> parent_helper,
-        InterceptRecvTrailingMetadataCallback cb, void* user_data)
+    Helper(RefCountedPtr<ChannelControlHelper> parent_helper,
+           InterceptRecvTrailingMetadataCallback cb, void* user_data)
         : parent_helper_(std::move(parent_helper)),
           cb_(cb),
           user_data_(user_data) {}

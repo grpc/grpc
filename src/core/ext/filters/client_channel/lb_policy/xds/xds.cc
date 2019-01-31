@@ -222,8 +222,7 @@ class XdsLb : public LoadBalancingPolicy {
 
   class Helper : public ChannelControlHelper {
    public:
-    explicit Helper(RefCountedPtr<XdsLb> parent)
-        : parent_(std::move(parent)) {}
+    explicit Helper(RefCountedPtr<XdsLb> parent) : parent_(std::move(parent)) {}
 
     void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
                      RefCountedPtr<SubchannelPicker> picker) override;
@@ -335,8 +334,7 @@ XdsLb::Picker::PickResult XdsLb::Picker::Pick(PickState* pick,
   PickResult result = child_picker_->Pick(pick, error);
   // If pick succeeded, add client stats.
   if (result == PickResult::PICK_COMPLETE &&
-      pick->connected_subchannel != nullptr &&
-      client_stats_ != nullptr) {
+      pick->connected_subchannel != nullptr && client_stats_ != nullptr) {
     pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].value =
         client_stats_->Ref().release();
     pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].destroy =
@@ -368,11 +366,10 @@ void XdsLb::Helper::UpdateState(grpc_connectivity_state state,
 void XdsLb::Helper::RequestReresolution() {
   if (parent_->shutting_down_) return;
   if (grpc_lb_xds_trace.enabled()) {
-    gpr_log(
-        GPR_INFO,
-        "[xdslb %p] Re-resolution requested from the internal RR policy "
-        "(%p).",
-        parent_.get(), parent_->child_policy_.get());
+    gpr_log(GPR_INFO,
+            "[xdslb %p] Re-resolution requested from the internal RR policy "
+            "(%p).",
+            parent_.get(), parent_->child_policy_.get());
   }
   // If we are talking to a balancer, we expect to get updated addresses
   // from the balancer, so we can ignore the re-resolution request from

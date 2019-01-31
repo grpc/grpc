@@ -170,8 +170,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   // A picker that returns PICK_TRANSIENT_FAILURE for all picks.
   class TransientFailurePicker : public SubchannelPicker {
    public:
-    explicit TransientFailurePicker(grpc_error* error)
-        : error_(error) {}
+    explicit TransientFailurePicker(grpc_error* error) : error_(error) {}
     ~TransientFailurePicker() { GRPC_ERROR_UNREF(error_); }
 
     PickResult Pick(PickState* pick, grpc_error** error) override {

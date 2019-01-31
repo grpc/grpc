@@ -223,9 +223,7 @@ class GrpcLb : public LoadBalancingPolicy {
           child_picker_(std::move(child_picker)),
           client_stats_(std::move(client_stats)) {}
 
-    ~Picker() {
-      grpc_grpclb_destroy_serverlist(serverlist_);
-    }
+    ~Picker() { grpc_grpclb_destroy_serverlist(serverlist_); }
 
     PickResult Pick(PickState* pick, grpc_error** error) override;
 
@@ -380,9 +378,8 @@ GrpcLb::Picker::PickResult GrpcLb::Picker::Pick(PickState* pick,
   // If pick succeeded, add LB token to initial metadata.
   if (result == PickResult::PICK_COMPLETE &&
       pick->connected_subchannel != nullptr) {
-    const grpc_arg* arg =
-        grpc_channel_args_find(pick->connected_subchannel->args(),
-                               GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN);
+    const grpc_arg* arg = grpc_channel_args_find(
+        pick->connected_subchannel->args(), GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN);
     if (arg == nullptr) {
       gpr_log(GPR_ERROR,
               "[grpclb %p picker %p] No LB token for connected subchannel "
@@ -390,8 +387,7 @@ GrpcLb::Picker::PickResult GrpcLb::Picker::Pick(PickState* pick,
               parent_, this, pick);
       abort();
     }
-    grpc_mdelem lb_token = {
-        reinterpret_cast<uintptr_t>(arg->value.pointer.p)};
+    grpc_mdelem lb_token = {reinterpret_cast<uintptr_t>(arg->value.pointer.p)};
     AddLbTokenToInitialMetadata(GRPC_MDELEM_REF(lb_token),
                                 &pick->lb_token_mdelem_storage,
                                 pick->initial_metadata);
@@ -421,9 +417,9 @@ bool ServerlistContainsAllDropEntries(
   return true;
 }
 
-void GrpcLb::Helper::UpdateState(
-    grpc_connectivity_state state, grpc_error* state_error,
-    RefCountedPtr<SubchannelPicker> picker) {
+void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
+                                 grpc_error* state_error,
+                                 RefCountedPtr<SubchannelPicker> picker) {
   if (parent_->shutting_down_) return;
   // There are three cases to consider here:
   // 1. We're in fallback mode.  In this case, we're always going to use
@@ -467,9 +463,9 @@ void GrpcLb::Helper::UpdateState(
   }
   parent_->channel_control_helper()->UpdateState(
       state, state_error,
-      MakeRefCounted<Picker>(
-          parent_.get(), grpc_grpclb_serverlist_copy(parent_->serverlist_),
-          std::move(picker), std::move(client_stats)));
+      MakeRefCounted<Picker>(parent_.get(),
+                             grpc_grpclb_serverlist_copy(parent_->serverlist_),
+                             std::move(picker), std::move(client_stats)));
 }
 
 void GrpcLb::Helper::RequestReresolution() {

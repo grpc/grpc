@@ -26,8 +26,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <grpc/support/alloc.h>
 
@@ -535,8 +535,7 @@ void RoundRobin::UpdateLocked(const grpc_channel_args& args,
   if (!started_picking_ ||
       latest_pending_subchannel_list_->num_subchannels() == 0) {
     if (latest_pending_subchannel_list_->num_subchannels() == 0) {
-      grpc_error* error =
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update");
+      grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update");
       channel_control_helper()->UpdateState(
           GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(error),
           MakeRefCounted<TransientFailurePicker>(error));

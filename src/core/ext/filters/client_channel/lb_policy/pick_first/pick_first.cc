@@ -279,8 +279,7 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args,
     // subchannels and put the channel in TRANSIENT_FAILURE.
     subchannel_list_ = std::move(subchannel_list);  // Empty list.
     selected_ = nullptr;
-    grpc_error* error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update");
+    grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update");
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(error),
         MakeRefCounted<TransientFailurePicker>(error));
@@ -361,8 +360,8 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
   if (p->selected_ == this) {
     if (grpc_lb_pick_first_trace.enabled()) {
       gpr_log(GPR_INFO,
-              "Pick First %p selected subchannel connectivity changed to %s",
-              p, grpc_connectivity_state_name(connectivity_state));
+              "Pick First %p selected subchannel connectivity changed to %s", p,
+              grpc_connectivity_state_name(connectivity_state));
     }
     // If the new state is anything other than READY and there is a
     // pending update, switch to the pending update.

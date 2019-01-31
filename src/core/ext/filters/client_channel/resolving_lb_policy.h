@@ -53,10 +53,10 @@ namespace grpc_core {
 // child LB policy and config to use.
 class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
  public:
-  ResolvingLoadBalancingPolicy(
-      Args args, TraceFlag* tracer, UniquePtr<char> target_uri,
-      UniquePtr<char> child_policy_name, grpc_json* child_lb_config,
-      grpc_error** error);
+  ResolvingLoadBalancingPolicy(Args args, TraceFlag* tracer,
+                               UniquePtr<char> target_uri,
+                               UniquePtr<char> child_policy_name,
+                               grpc_json* child_lb_config, grpc_error** error);
 
   // Private ctor, to be used by client_channel only!
   //
