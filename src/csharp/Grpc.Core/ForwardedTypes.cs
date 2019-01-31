@@ -25,7 +25,6 @@ using Grpc.Core.Utils;
 // https://docs.microsoft.com/en-us/dotnet/framework/app-domains/type-forwarding-in-the-common-language-runtime
 
 // TODO(jtattermusch): move types needed for implementing a client
-// TODO(jtattermusch): ServerServiceDefinition depends on IServerCallHandler (which depends on other stuff)
 
 [assembly:TypeForwardedToAttribute(typeof(ILogger))]
 [assembly:TypeForwardedToAttribute(typeof(LogLevel))]
@@ -50,6 +49,8 @@ using Grpc.Core.Utils;
 [assembly:TypeForwardedToAttribute(typeof(ClientStreamingServerMethod<,>))]
 [assembly:TypeForwardedToAttribute(typeof(ServerStreamingServerMethod<,>))]
 [assembly:TypeForwardedToAttribute(typeof(DuplexStreamingServerMethod<,>))]
+[assembly:TypeForwardedToAttribute(typeof(ServerServiceDefinition))]
+[assembly:TypeForwardedToAttribute(typeof(ServiceBinderBase))]
 [assembly:TypeForwardedToAttribute(typeof(Status))]
 [assembly:TypeForwardedToAttribute(typeof(StatusCode))]
 [assembly:TypeForwardedToAttribute(typeof(WriteOptions))]

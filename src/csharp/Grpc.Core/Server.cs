@@ -257,7 +257,7 @@ namespace Grpc.Core
             lock (myLock)
             {
                 GrpcPreconditions.CheckState(!startRequested);
-                foreach (var entry in serviceDefinition.CallHandlers)
+                foreach (var entry in serviceDefinition.GetCallHandlers())
                 {
                     callHandlers.Add(entry.Key, entry.Value);
                 }

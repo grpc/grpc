@@ -44,7 +44,7 @@ namespace Grpc.Core.Interceptors
         {
             GrpcPreconditions.CheckNotNull(serverServiceDefinition, nameof(serverServiceDefinition));
             GrpcPreconditions.CheckNotNull(interceptor, nameof(interceptor));
-            return new ServerServiceDefinition(serverServiceDefinition.CallHandlers.ToDictionary(x => x.Key, x => x.Value.Intercept(interceptor)));
+            return new ServerServiceDefinition(serverServiceDefinition.GetCallHandlers().ToDictionary(x => x.Key, x => x.Value.Intercept(interceptor)));
         }
 
         /// <summary>
