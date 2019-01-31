@@ -100,6 +100,74 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     PickState* next = nullptr;
   };
 
+  /// Handles the LB policy transition, so that the old LB policy, if any, is
+  /// not replaced until the new one is ready.
+  class Swapper : public Orphanable {
+   public:
+    using PostSwapCallback = void (*)(void* arg);
+
+    struct Args {
+      /// The old policy to be replaced.
+      OrphanablePtr<LoadBalancingPolicy>* old_policy = nullptr;
+      /// The policy name to create the new policy.
+      const char* new_name = nullptr;
+      /// The args to create the new policy.
+      LoadBalancingPolicy::Args new_args;
+      /// To output the new policy.
+      LoadBalancingPolicy** new_policy = nullptr;
+      /// The pollset_set to be added to the new policy and removed from the old
+      /// policy.
+      grpc_pollset_set* interested_parties = nullptr;
+      /// Should the new policy exit idle state?
+      bool exit_idle;
+      /// The callback to be called after the new policy is swapped in.
+      PostSwapCallback post_swap_callback = nullptr;
+      /// The arg for the post swap callback.
+      void* post_swap_arg = nullptr;
+      /// Tracer for logging.
+      TraceFlag* tracer = nullptr;
+    };
+
+    /// Creates a swapper. If failed to create a new policy, or the new policy
+    /// is already swapped in, returns null.
+    static OrphanablePtr<Swapper> CreateLocked(
+        LoadBalancingPolicy::Swapper::Args args);
+
+    /// Not intended to be called directly.
+    Swapper(LoadBalancingPolicy::Swapper::Args args);
+
+    LoadBalancingPolicy* new_policy() const { return new_policy_.get(); }
+
+    void Orphan() override;
+
+   private:
+    static void OnLbPolicyStateChangedLocked(void* arg, grpc_error* error);
+
+    void DoSwapLocked();
+
+    /// The old policy to be replaced.
+    OrphanablePtr<LoadBalancingPolicy>* old_policy_ = nullptr;
+    /// To new policy to replace the old one.
+    OrphanablePtr<LoadBalancingPolicy> new_policy_;
+
+    /// The pollset_set to be added to the new policy and removed from the old
+    /// policy.
+    grpc_pollset_set* interested_parties_ = nullptr;
+
+    /// To watch the new policy's state.
+    grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
+    grpc_closure on_changed_;
+
+    /// The callback and arg after the new policy is swapped in.
+    PostSwapCallback post_swap_callback = nullptr;
+    void* post_swap_arg_ = nullptr;
+
+    TraceFlag* tracer_;
+
+    bool shutdown = false;
+    bool swapped_ = false;
+  };
+
   // Not copyable nor movable.
   LoadBalancingPolicy(const LoadBalancingPolicy&) = delete;
   LoadBalancingPolicy& operator=(const LoadBalancingPolicy&) = delete;

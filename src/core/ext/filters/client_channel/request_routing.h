@@ -134,10 +134,7 @@ class RequestRouter {
 
   void StartResolvingLocked();
   void OnResolverShutdownLocked(grpc_error* error);
-  void CreateNewLbPolicyLocked(const char* lb_policy_name, grpc_json* lb_config,
-                               grpc_connectivity_state* connectivity_state,
-                               grpc_error** connectivity_error,
-                               TraceStringVector* trace_strings);
+  static void AfterLbSwapLocked(void* arg);
   void MaybeAddTraceMessagesForAddressChangesLocked(
       TraceStringVector* trace_strings);
   void ConcatenateAndAddChannelTraceLocked(
@@ -168,6 +165,7 @@ class RequestRouter {
 
   // LB policy and associated state.
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
+  OrphanablePtr<LoadBalancingPolicy::Swapper> lb_swapper_;
   bool exit_idle_when_lb_policy_arrives_ = false;
 
   // Subchannel pool to pass to LB policy.

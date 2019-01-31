@@ -477,8 +477,12 @@ class RequestRouter::ReresolutionRequestHandler {
     RequestRouter* request_router = self->request_router_;
     // If this invocation is for a stale LB policy, treat it as an LB shutdown
     // signal.
-    if (self->lb_policy_ != request_router->lb_policy_.get() ||
-        error != GRPC_ERROR_NONE || request_router->resolver_ == nullptr) {
+    bool for_alive_policy =
+        self->lb_policy_ == request_router->lb_policy_.get() ||
+        (request_router->lb_swapper_ != nullptr &&
+         self->lb_policy_ == request_router->lb_swapper_->new_policy());
+    if (!for_alive_policy || error != GRPC_ERROR_NONE ||
+        request_router->resolver_ == nullptr) {
       GRPC_CHANNEL_STACK_UNREF(request_router->owning_stack_,
                                "ReresolutionRequestHandler");
       Delete(self);
@@ -665,70 +669,18 @@ void RequestRouter::OnResolverShutdownLocked(grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
-// Creates a new LB policy, replacing any previous one.
-// If the new policy is created successfully, sets *connectivity_state and
-// *connectivity_error to its initial connectivity state; otherwise,
-// leaves them unchanged.
-void RequestRouter::CreateNewLbPolicyLocked(
-    const char* lb_policy_name, grpc_json* lb_config,
-    grpc_connectivity_state* connectivity_state,
-    grpc_error** connectivity_error, TraceStringVector* trace_strings) {
-  LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.combiner = combiner_;
-  lb_policy_args.client_channel_factory = client_channel_factory_;
-  lb_policy_args.subchannel_pool = subchannel_pool_;
-  lb_policy_args.args = resolver_result_;
-  lb_policy_args.lb_config = lb_config;
-  OrphanablePtr<LoadBalancingPolicy> new_lb_policy =
-      LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(lb_policy_name,
-                                                             lb_policy_args);
-  if (GPR_UNLIKELY(new_lb_policy == nullptr)) {
-    gpr_log(GPR_ERROR, "could not create LB policy \"%s\"", lb_policy_name);
-    if (channelz_node_ != nullptr) {
-      char* str;
-      gpr_asprintf(&str, "Could not create LB policy \'%s\'", lb_policy_name);
-      trace_strings->push_back(str);
-    }
-  } else {
-    if (tracer_->enabled()) {
-      gpr_log(GPR_INFO, "request_router=%p: created new LB policy \"%s\" (%p)",
-              this, lb_policy_name, new_lb_policy.get());
-    }
-    if (channelz_node_ != nullptr) {
-      char* str;
-      gpr_asprintf(&str, "Created new LB policy \'%s\'", lb_policy_name);
-      trace_strings->push_back(str);
-    }
-    // Swap out the LB policy and update the fds in interested_parties_.
-    if (lb_policy_ != nullptr) {
-      if (tracer_->enabled()) {
-        gpr_log(GPR_INFO, "request_router=%p: shutting down lb_policy=%p", this,
-                lb_policy_.get());
-      }
-      grpc_pollset_set_del_pollset_set(lb_policy_->interested_parties(),
-                                       interested_parties_);
-      lb_policy_->HandOffPendingPicksLocked(new_lb_policy.get());
-    }
-    lb_policy_ = std::move(new_lb_policy);
-    grpc_pollset_set_add_pollset_set(lb_policy_->interested_parties(),
-                                     interested_parties_);
-    // Create re-resolution request handler for the new LB policy.  It
-    // will delete itself when no longer needed.
-    New<ReresolutionRequestHandler>(this, lb_policy_.get(), owning_stack_,
-                                    combiner_);
-    // Get the new LB policy's initial connectivity state and start a
-    // connectivity watch.
-    GRPC_ERROR_UNREF(*connectivity_error);
-    *connectivity_state =
-        lb_policy_->CheckConnectivityLocked(connectivity_error);
-    if (exit_idle_when_lb_policy_arrives_) {
-      lb_policy_->ExitIdleLocked();
-      exit_idle_when_lb_policy_arrives_ = false;
-    }
-    // Create new watcher.  It will delete itself when done.
-    New<LbConnectivityWatcher>(this, *connectivity_state, lb_policy_.get(),
-                               owning_stack_, combiner_);
-  }
+void RequestRouter::AfterLbSwapLocked(void* arg) {
+  RequestRouter* self = static_cast<RequestRouter*>(arg);
+  // Set connectivity state according to the new LB policy.
+  grpc_error* connectivity_error = GRPC_ERROR_NONE;
+  grpc_connectivity_state connectivity_state =
+      self->lb_policy_->CheckConnectivityLocked(&connectivity_error);
+  self->SetConnectivityStateLocked(connectivity_state, connectivity_error,
+                                   "new lb policy swapped in");
+  // Create new watcher.  It will delete itself when done.
+  New<LbConnectivityWatcher>(self, connectivity_state, self->lb_policy_.get(),
+                             self->owning_stack_, self->combiner_);
+  self->lb_swapper_.reset();
 }
 
 void RequestRouter::MaybeAddTraceMessagesForAddressChangesLocked(
@@ -837,10 +789,49 @@ void RequestRouter::OnResolverResultChangedLocked(void* arg,
       // watch on the LB policy will take care of that.
       set_connectivity_state = false;
     } else {
-      // Instantiate new LB policy.
-      self->CreateNewLbPolicyLocked(lb_policy_name, lb_policy_config,
-                                    &connectivity_state, &connectivity_error,
-                                    &trace_strings);
+      // Create a new LB policy. If there is an existing LB policy, replace it
+      // when the new one becomes ready.
+      LoadBalancingPolicy::Args lb_policy_args;
+      lb_policy_args.combiner = self->combiner_;
+      lb_policy_args.client_channel_factory = self->client_channel_factory_;
+      lb_policy_args.subchannel_pool = self->subchannel_pool_;
+      lb_policy_args.args = self->resolver_result_;
+      lb_policy_args.lb_config = lb_policy_config;
+      LoadBalancingPolicy* new_lb_policy = nullptr;
+      LoadBalancingPolicy::Swapper::Args lb_swapper_args;
+      lb_swapper_args.old_policy = &self->lb_policy_;
+      lb_swapper_args.new_name = lb_policy_name;
+      lb_swapper_args.new_args = std::move(lb_policy_args);
+      lb_swapper_args.new_policy = &new_lb_policy;
+      lb_swapper_args.interested_parties = self->interested_parties_;
+      lb_swapper_args.exit_idle = self->exit_idle_when_lb_policy_arrives_;
+      lb_swapper_args.post_swap_callback = AfterLbSwapLocked;
+      lb_swapper_args.post_swap_arg = self;
+      lb_swapper_args.tracer = self->tracer_;
+      self->lb_swapper_ = LoadBalancingPolicy::Swapper::CreateLocked(
+          std::move(lb_swapper_args));
+      if (new_lb_policy == nullptr) {
+        if (self->channelz_node_ != nullptr) {
+          char* str;
+          gpr_asprintf(&str, "Could not create LB policy \'%s\'",
+                       lb_policy_name);
+          trace_strings.push_back(str);
+        }
+      } else {
+        if (self->channelz_node_ != nullptr) {
+          char* str;
+          gpr_asprintf(&str, "Created new LB policy \'%s\'", lb_policy_name);
+          trace_strings.push_back(str);
+        }
+        // Create re-resolution request handler for the new LB policy.  It
+        // will delete itself when no longer needed.
+        New<ReresolutionRequestHandler>(self, new_lb_policy,
+                                        self->owning_stack_, self->combiner_);
+        self->exit_idle_when_lb_policy_arrives_ = false;
+        // It's LB swapper's responsibility to set the connectivity state when
+        // the new LB policy is swapped in.
+        set_connectivity_state = false;
+      }
     }
     // Add channel trace event.
     if (self->channelz_node_ != nullptr) {
@@ -923,6 +914,7 @@ void RequestRouter::NotifyOnConnectivityStateChange(
 }
 
 void RequestRouter::ExitIdleLocked() {
+  // TODO: Should the pending LB policy also exit idle?
   if (lb_policy_ != nullptr) {
     lb_policy_->ExitIdleLocked();
   } else {
