@@ -44,6 +44,13 @@ namespace grpc_core {
 
 class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
  public:
+  ResolvingLoadBalancingPolicy(
+      Args args, TraceFlag* tracer, UniquePtr<char> target_uri,
+      UniquePtr<char> child_policy_name, grpc_json* child_lb_config,
+      grpc_error** error);
+
+  // Private ctor, to be used by client_channel only!
+  //
   // Synchronous callback that takes the service config JSON string and
   // LB policy name.
   // Returns true if the service config has changed since the last result.
@@ -51,15 +58,10 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
                                                 const grpc_channel_args& args,
                                                 const char** lb_policy_name,
                                                 grpc_json** lb_policy_config);
-
-// FIXME: split this into 2 ctors and make the one for client_channel
-// private, with access via friendship
   ResolvingLoadBalancingPolicy(
-      Args args, TraceFlag* tracer,
+      Args args, TraceFlag* tracer, UniquePtr<char> target_uri,
       ProcessResolverResultCallback process_resolver_result,
-      void* process_resolver_result_user_data, UniquePtr<char> target_uri,
-      UniquePtr<char> child_policy_name, grpc_json* child_lb_config,
-      grpc_error** error);
+      void* process_resolver_result_user_data, grpc_error** error);
 
   virtual const char* name() const override { return "resolving_lb"; }
 
@@ -82,6 +84,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   ~ResolvingLoadBalancingPolicy();
 
+  grpc_error* Init(const grpc_channel_args& args);
   void ShutdownLocked() override;
 
   void StartResolvingLocked();
@@ -96,9 +99,9 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   // Passed in from caller at construction time.
   TraceFlag* tracer_;
-  ProcessResolverResultCallback process_resolver_result_;
-  void* process_resolver_result_user_data_;
   UniquePtr<char> target_uri_;
+  ProcessResolverResultCallback process_resolver_result_ = nullptr;
+  void* process_resolver_result_user_data_ = nullptr;
   UniquePtr<char> child_policy_name_;
   UniquePtr<char> child_lb_config_str_;
   grpc_json* child_lb_config_ = nullptr;

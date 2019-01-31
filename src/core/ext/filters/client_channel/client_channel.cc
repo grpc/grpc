@@ -448,10 +448,8 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   grpc_error* error = GRPC_ERROR_NONE;
   chand->resolving_lb_policy.reset(
       grpc_core::New<grpc_core::ResolvingLoadBalancingPolicy>(
-          std::move(lb_args), &grpc_client_channel_trace,
-          process_resolver_result_locked, chand, std::move(target_uri),
-          nullptr /* child_policy_name */, nullptr /* child_lb_config */,
-          &error));
+          std::move(lb_args), &grpc_client_channel_trace, std::move(target_uri),
+          process_resolver_result_locked, chand, &error));
   grpc_channel_args_destroy(new_args);
   if (error != GRPC_ERROR_NONE) {
     // Orphan the resolving LB policy and flush the exec_ctx to ensure
