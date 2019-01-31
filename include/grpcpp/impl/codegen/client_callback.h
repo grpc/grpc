@@ -19,6 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CLIENT_CALLBACK_H
 #define GRPCPP_IMPL_CODEGEN_CLIENT_CALLBACK_H
 
+#include <atomic>
 #include <functional>
 
 #include <grpcpp/impl/codegen/call.h>
@@ -89,6 +90,24 @@ class CallbackUnaryCallImpl {
     call.PerformOps(ops);
   }
 };
+
+// Atomically increment a counter only if the counter value is not zero
+// Returns true if increment took place; false if counter is zero
+template <class T>
+bool AtomicIncrementIfNonzero(std::atomic<T>* counter) {
+  T count = counter->load(std::memory_order_acquire);
+  do {
+    // If zero, we are done (without an increment). If not, we must do a CAS to
+    // maintain the contract: do not increment the counter if it is already zero
+    if (count == 0) {
+      return false;
+    }
+    if (counter->compare_exchange_weak(count, count + 1,
+                                       std::memory_order_seq_cst)) {
+      return true;
+    }
+  } while (true);
+}
 }  // namespace internal
 
 namespace experimental {
@@ -114,6 +133,15 @@ class ClientCallbackReaderWriter {
   virtual void Read(Response* resp) = 0;
 
  protected:
+  void InitializeCallbacksOutstanding(
+      ClientBidiReactor<Request, Response>* reactor, int outstanding) {
+    reactor->InitializeCallbacksOutstanding(outstanding);
+  }
+  bool DecrementCallbacksOutstanding(
+      ClientBidiReactor<Request, Response>* reactor,
+      std::memory_order order = std::memory_order_acq_rel) {
+    return reactor->DecrementCallbacksOutstanding(order);
+  }
   void BindReactor(ClientBidiReactor<Request, Response>* reactor) {
     reactor->BindStream(this);
   }
@@ -127,6 +155,15 @@ class ClientCallbackReader {
   virtual void Read(Response* resp) = 0;
 
  protected:
+  void InitializeCallbacksOutstanding(ClientReadReactor<Response>* reactor,
+                                      int outstanding) {
+    reactor->InitializeCallbacksOutstanding(outstanding);
+  }
+  bool DecrementCallbacksOutstanding(
+      ClientReadReactor<Response>* reactor,
+      std::memory_order order = std::memory_order_acq_rel) {
+    return reactor->DecrementCallbacksOutstanding(order);
+  }
   void BindReactor(ClientReadReactor<Response>* reactor) {
     reactor->BindReader(this);
   }
@@ -137,14 +174,19 @@ class ClientCallbackWriter {
  public:
   virtual ~ClientCallbackWriter() {}
   virtual void StartCall() = 0;
-  void Write(const Request* req) { Write(req, WriteOptions()); }
   virtual void Write(const Request* req, WriteOptions options) = 0;
-  void WriteLast(const Request* req, WriteOptions options) {
-    Write(req, options.set_last_message());
-  }
   virtual void WritesDone() = 0;
 
  protected:
+  void InitializeCallbacksOutstanding(ClientWriteReactor<Request>* reactor,
+                                      int outstanding) {
+    reactor->InitializeCallbacksOutstanding(outstanding);
+  }
+  bool DecrementCallbacksOutstanding(
+      ClientWriteReactor<Request>* reactor,
+      std::memory_order order = std::memory_order_acq_rel) {
+    return reactor->DecrementCallbacksOutstanding(order);
+  }
   void BindReactor(ClientWriteReactor<Request>* reactor) {
     reactor->BindWriter(this);
   }
@@ -164,22 +206,48 @@ class ClientBidiReactor {
   virtual void OnWritesDoneDone(bool ok) {}
 
   void StartCall() { stream_->StartCall(); }
-  void StartRead(Response* resp) { stream_->Read(resp); }
-  void StartWrite(const Request* req) { StartWrite(req, WriteOptions()); }
-  void StartWrite(const Request* req, WriteOptions options) {
-    stream_->Write(req, std::move(options));
+  bool StartRead(Response* resp) {
+    if (internal::AtomicIncrementIfNonzero(&callbacks_outstanding_)) {
+      stream_->Read(resp);
+      return true;
+    }
+    return false;
   }
-  void StartWriteLast(const Request* req, WriteOptions options) {
-    StartWrite(req, std::move(options.set_last_message()));
+  bool StartWrite(const Request* req) {
+    return StartWrite(req, WriteOptions());
   }
-  void StartWritesDone() { stream_->WritesDone(); }
+  bool StartWrite(const Request* req, WriteOptions options) {
+    if (internal::AtomicIncrementIfNonzero(&callbacks_outstanding_)) {
+      stream_->Write(req, std::move(options));
+      return true;
+    }
+    return false;
+  }
+  bool StartWriteLast(const Request* req, WriteOptions options) {
+    return StartWrite(req, std::move(options.set_last_message()));
+  }
+  bool StartWritesDone() {
+    if (internal::AtomicIncrementIfNonzero(&callbacks_outstanding_)) {
+      stream_->WritesDone();
+      return true;
+    }
+    return false;
+  }
 
  private:
   friend class ClientCallbackReaderWriter<Request, Response>;
   void BindStream(ClientCallbackReaderWriter<Request, Response>* stream) {
     stream_ = stream;
   }
+  void InitializeCallbacksOutstanding(int outstanding) {
+    callbacks_outstanding_.store(outstanding, std::memory_order_relaxed);
+  }
+  bool DecrementCallbacksOutstanding(
+      std::memory_order order = std::memory_order_acq_rel) {
+    return callbacks_outstanding_.fetch_add(-1, order) == 1;
+  }
   ClientCallbackReaderWriter<Request, Response>* stream_;
+  std::atomic<int> callbacks_outstanding_;
 };
 
 template <class Response>
@@ -191,12 +259,26 @@ class ClientReadReactor {
   virtual void OnReadDone(bool ok) {}
 
   void StartCall() { reader_->StartCall(); }
-  void StartRead(Response* resp) { reader_->Read(resp); }
+  bool StartRead(Response* resp) {
+    if (internal::AtomicIncrementIfNonzero(&callbacks_outstanding_)) {
+      reader_->Read(resp);
+      return true;
+    }
+    return false;
+  }
 
  private:
   friend class ClientCallbackReader<Response>;
   void BindReader(ClientCallbackReader<Response>* reader) { reader_ = reader; }
+  void InitializeCallbacksOutstanding(int outstanding) {
+    callbacks_outstanding_.store(outstanding, std::memory_order_relaxed);
+  }
+  bool DecrementCallbacksOutstanding(
+      std::memory_order order = std::memory_order_acq_rel) {
+    return callbacks_outstanding_.fetch_add(-1, order) == 1;
+  }
   ClientCallbackReader<Response>* reader_;
+  std::atomic<int> callbacks_outstanding_;
 };
 
 template <class Request>
@@ -209,19 +291,39 @@ class ClientWriteReactor {
   virtual void OnWritesDoneDone(bool ok) {}
 
   void StartCall() { writer_->StartCall(); }
-  void StartWrite(const Request* req) { StartWrite(req, WriteOptions()); }
-  void StartWrite(const Request* req, WriteOptions options) {
-    writer_->Write(req, std::move(options));
+  bool StartWrite(const Request* req) {
+    return StartWrite(req, WriteOptions());
   }
-  void StartWriteLast(const Request* req, WriteOptions options) {
-    StartWrite(req, std::move(options.set_last_message()));
+  bool StartWrite(const Request* req, WriteOptions options) {
+    if (internal::AtomicIncrementIfNonzero(&callbacks_outstanding_)) {
+      writer_->Write(req, std::move(options));
+      return true;
+    }
+    return false;
   }
-  void StartWritesDone() { writer_->WritesDone(); }
+  bool StartWriteLast(const Request* req, WriteOptions options) {
+    return StartWrite(req, std::move(options.set_last_message()));
+  }
+  bool StartWritesDone() {
+    if (internal::AtomicIncrementIfNonzero(&callbacks_outstanding_)) {
+      writer_->WritesDone();
+      return true;
+    }
+    return false;
+  }
 
  private:
   friend class ClientCallbackWriter<Request>;
   void BindWriter(ClientCallbackWriter<Request>* writer) { writer_ = writer; }
+  void InitializeCallbacksOutstanding(int outstanding) {
+    callbacks_outstanding_.store(outstanding, std::memory_order_relaxed);
+  }
+  bool DecrementCallbacksOutstanding(
+      std::memory_order order = std::memory_order_acq_rel) {
+    return callbacks_outstanding_.fetch_add(-1, order) == 1;
+  }
   ClientCallbackWriter<Request>* writer_;
+  std::atomic<int> callbacks_outstanding_;
 };
 
 }  // namespace experimental
@@ -252,17 +354,6 @@ class ClientCallbackReaderWriterImpl
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
   static void operator delete(void*, void*) { assert(0); }
-
-  void MaybeFinish() {
-    if (--callbacks_outstanding_ == 0) {
-      Status s = std::move(finish_status_);
-      auto* reactor = reactor_;
-      auto* call = call_.call();
-      this->~ClientCallbackReaderWriterImpl();
-      g_core_codegen_interface->grpc_call_unref(call);
-      reactor->OnDone(s);
-    }
-  }
 
   void StartCall() override {
     // This call initiates two batches, plus any backlog, each with a callback
@@ -324,7 +415,6 @@ class ClientCallbackReaderWriterImpl
 
   void Read(Response* msg) override {
     read_ops_.RecvMessage(msg);
-    callbacks_outstanding_++;
     if (started_) {
       call_.PerformOps(&read_ops_);
     } else {
@@ -345,7 +435,6 @@ class ClientCallbackReaderWriterImpl
     }
     // TODO(vjpai): don't assert
     GPR_CODEGEN_ASSERT(write_ops_.SendMessagePtr(msg, options).ok());
-    callbacks_outstanding_++;
     if (started_) {
       call_.PerformOps(&write_ops_);
     } else {
@@ -366,7 +455,6 @@ class ClientCallbackReaderWriterImpl
                          },
                          &writes_done_ops_);
     writes_done_ops_.set_core_cq_tag(&writes_done_tag_);
-    callbacks_outstanding_++;
     if (started_) {
       call_.PerformOps(&writes_done_ops_);
     } else {
@@ -384,7 +472,18 @@ class ClientCallbackReaderWriterImpl
         call_(call),
         reactor_(reactor),
         start_corked_(context_->initial_metadata_corked_) {
+    // Minimum of 2 callbacks to pre-register for start and finish
+    this->InitializeCallbacksOutstanding(reactor, 2);
     this->BindReactor(reactor);
+  }
+
+  void MaybeFinish() {
+    if (this->DecrementCallbacksOutstanding(reactor_)) {
+      reactor_->OnDone(std::move(finish_status_));
+      auto* call = call_.call();
+      this->~ClientCallbackReaderWriterImpl();
+      g_core_codegen_interface->grpc_call_unref(call);
+    }
   }
 
   ClientContext* context_;
@@ -412,8 +511,6 @@ class ClientCallbackReaderWriterImpl
   CallbackWithSuccessTag read_tag_;
   bool read_ops_at_start_{false};
 
-  // Minimum of 2 callbacks to pre-register for start and finish
-  std::atomic_int callbacks_outstanding_{2};
   bool started_{false};
 };
 
@@ -449,17 +546,6 @@ class ClientCallbackReaderImpl
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
   static void operator delete(void*, void*) { assert(0); }
-
-  void MaybeFinish() {
-    if (--callbacks_outstanding_ == 0) {
-      Status s = std::move(finish_status_);
-      auto* reactor = reactor_;
-      auto* call = call_.call();
-      this->~ClientCallbackReaderImpl();
-      g_core_codegen_interface->grpc_call_unref(call);
-      reactor->OnDone(s);
-    }
-  }
 
   void StartCall() override {
     // This call initiates two batches, plus any backlog, each with a callback
@@ -501,7 +587,6 @@ class ClientCallbackReaderImpl
 
   void Read(Response* msg) override {
     read_ops_.RecvMessage(msg);
-    callbacks_outstanding_++;
     if (started_) {
       call_.PerformOps(&read_ops_);
     } else {
@@ -517,10 +602,21 @@ class ClientCallbackReaderImpl
       Call call, ClientContext* context, Request* request,
       ::grpc::experimental::ClientReadReactor<Response>* reactor)
       : context_(context), call_(call), reactor_(reactor) {
+    // Minimum of 2 callbacks to pre-register for start and finish
+    this->InitializeCallbacksOutstanding(reactor, 2);
     this->BindReactor(reactor);
     // TODO(vjpai): don't assert
     GPR_CODEGEN_ASSERT(start_ops_.SendMessagePtr(request).ok());
     start_ops_.ClientSendClose();
+  }
+
+  void MaybeFinish() {
+    if (this->DecrementCallbacksOutstanding(reactor_)) {
+      reactor_->OnDone(std::move(finish_status_));
+      auto* call = call_.call();
+      this->~ClientCallbackReaderImpl();
+      g_core_codegen_interface->grpc_call_unref(call);
+    }
   }
 
   ClientContext* context_;
@@ -540,8 +636,6 @@ class ClientCallbackReaderImpl
   CallbackWithSuccessTag read_tag_;
   bool read_ops_at_start_{false};
 
-  // Minimum of 2 callbacks to pre-register for start and finish
-  std::atomic_int callbacks_outstanding_{2};
   bool started_{false};
 };
 
@@ -577,17 +671,6 @@ class ClientCallbackWriterImpl
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
   static void operator delete(void*, void*) { assert(0); }
-
-  void MaybeFinish() {
-    if (--callbacks_outstanding_ == 0) {
-      Status s = std::move(finish_status_);
-      auto* reactor = reactor_;
-      auto* call = call_.call();
-      this->~ClientCallbackWriterImpl();
-      g_core_codegen_interface->grpc_call_unref(call);
-      reactor->OnDone(s);
-    }
-  }
 
   void StartCall() override {
     // This call initiates two batches, plus any backlog, each with a callback
@@ -648,7 +731,6 @@ class ClientCallbackWriterImpl
     }
     // TODO(vjpai): don't assert
     GPR_CODEGEN_ASSERT(write_ops_.SendMessagePtr(msg, options).ok());
-    callbacks_outstanding_++;
     if (started_) {
       call_.PerformOps(&write_ops_);
     } else {
@@ -669,7 +751,6 @@ class ClientCallbackWriterImpl
                          },
                          &writes_done_ops_);
     writes_done_ops_.set_core_cq_tag(&writes_done_tag_);
-    callbacks_outstanding_++;
     if (started_) {
       call_.PerformOps(&writes_done_ops_);
     } else {
@@ -688,9 +769,21 @@ class ClientCallbackWriterImpl
         call_(call),
         reactor_(reactor),
         start_corked_(context_->initial_metadata_corked_) {
+    // Minimum of 2 callbacks to pre-register for start and finish
+    this->InitializeCallbacksOutstanding(reactor, 2);
+
     this->BindReactor(reactor);
     finish_ops_.RecvMessage(response);
     finish_ops_.AllowNoMessage();
+  }
+
+  void MaybeFinish() {
+    if (this->DecrementCallbacksOutstanding(reactor_)) {
+      reactor_->OnDone(std::move(finish_status_));
+      auto* call = call_.call();
+      this->~ClientCallbackWriterImpl();
+      g_core_codegen_interface->grpc_call_unref(call);
+    }
   }
 
   ClientContext* context_;
@@ -714,8 +807,6 @@ class ClientCallbackWriterImpl
   CallbackWithSuccessTag writes_done_tag_;
   bool writes_done_ops_at_start_{false};
 
-  // Minimum of 2 callbacks to pre-register for start and finish
-  std::atomic_int callbacks_outstanding_{2};
   bool started_{false};
 };
 
