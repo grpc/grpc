@@ -899,6 +899,12 @@ void RequestRouter::ShutdownLocked(grpc_error* error) {
                                        interested_parties_);
       lb_policy_.reset();
     }
+    if (lb_swapper_ != nullptr) {
+      GPR_ASSERT(lb_swapper_->new_policy() != nullptr);
+      grpc_pollset_set_del_pollset_set(
+          lb_swapper_->new_policy()->interested_parties(), interested_parties_);
+      lb_swapper_.reset();
+    }
   }
   GRPC_ERROR_UNREF(error);
 }
