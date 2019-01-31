@@ -215,6 +215,8 @@ class ClientChannelControlHelper
     if (chand_->disconnect_error == GRPC_ERROR_NONE) {
       set_connectivity_state_and_picker_locked(chand_, state, state_error,
                                                "helper", std::move(picker));
+    } else {
+      GRPC_ERROR_UNREF(state_error);
     }
   }
 
