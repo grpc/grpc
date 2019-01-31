@@ -286,7 +286,10 @@ void ResolvingLoadBalancingPolicy::CreateNewLbPolicyLocked(
       trace_strings->push_back(str);
     }
     // Propagate channelz node.
-    new_lb_policy->set_channelz_node(channelz_node()->Ref());
+    auto* channelz = channelz_node();
+    if (channelz != nullptr) {
+      new_lb_policy->set_channelz_node(channelz->Ref());
+    }
     // Swap out the LB policy and update the fds in interested_parties_.
     if (lb_policy_ != nullptr) {
       if (tracer_->enabled()) {
