@@ -27,6 +27,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <string.h>
+#include <stdlib.h>
 
 #include <grpc/support/alloc.h>
 
@@ -155,7 +156,8 @@ class RoundRobin : public LoadBalancingPolicy {
 
   class Picker : public SubchannelPicker {
    public:
-    Picker(RoundRobin* parent, RoundRobinSubchannelList* subchannel_list);
+    Picker(RoundRobin* parent, RoundRobinSubchannelList* subchannel_list,
+           size_t last_ready_index);
 
     PickResult Pick(PickState* pick, grpc_error** error) override;
 
@@ -208,10 +210,9 @@ class RoundRobin : public LoadBalancingPolicy {
 //
 
 RoundRobin::Picker::Picker(RoundRobin* parent,
-                           RoundRobinSubchannelList* subchannel_list)
-    : parent_(parent),
-// FIXME: randomize
-      last_ready_index_(0) {
+                           RoundRobinSubchannelList* subchannel_list,
+                           size_t last_ready_index)
+    : parent_(parent), last_ready_index_(last_ready_index) {
   for (size_t i = 0; i < subchannel_list->num_subchannels(); ++i) {
     auto* connected_subchannel =
         subchannel_list->subchannel(i)->connected_subchannel();
@@ -403,7 +404,12 @@ void RoundRobin::RoundRobinSubchannelList::
     /* 1) READY */
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_READY, GRPC_ERROR_NONE,
-        MakeRefCounted<Picker>(p, this));
+        // For discussion on why we generate a random starting index for
+        // the picker, see https://github.com/grpc/grpc-go/issues/2580.
+        // TODO(roth): rand(3) is not thread-safe.  This should be
+        // replaced with something better as part of
+        // https://github.com/grpc/grpc/issues/17891.
+        MakeRefCounted<Picker>(p, this, rand()));
   } else if (num_connecting_ > 0) {
     /* 2) CONNECTING */
     p->channel_control_helper()->UpdateState(
