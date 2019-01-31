@@ -2683,6 +2683,7 @@ static void start_pick_locked(void* arg, grpc_error* error) {
   case LoadBalancingPolicy::SubchannelPicker::PICK_TRANSIENT_FAILURE:
     // If we're shutting down, fail all RPCs.
     if (chand->disconnect_error != GRPC_ERROR_NONE) {
+      GRPC_ERROR_UNREF(error);
       GRPC_CLOSURE_SCHED(&calld->pick_closure,
                          GRPC_ERROR_REF(chand->disconnect_error));
       break;
