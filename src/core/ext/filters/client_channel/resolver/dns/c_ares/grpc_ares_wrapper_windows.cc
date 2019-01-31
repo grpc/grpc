@@ -262,6 +262,21 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     return bytes_read;
   }
 
+  grpc_slice FlattenIovec(const struct iovec* iov, int iov_count) {
+    int total = 0;
+    for (int i = 0; i < iov_count; i++) {
+      total += iov[i].iov_len;
+    }
+    grpc_slice out = GRPC_SLICE_MALLOC(total);
+    size_t cur = 0;
+    for (int i = 0; i < iov_count; i++) {
+      for (int k = 0; k < iov[i].iov_len; k++) {
+        GRPC_SLICE_START_PTR(out)[cur++] = ((char*)iov[i].iov_base)[k];
+      }
+    }
+    return out;
+  }
+
   int SendWriteBuf(LPDWORD bytes_sent_ptr, LPWSAOVERLAPPED overlapped) {
     WSABUF buf;
     buf.len = GRPC_SLICE_LENGTH(write_buf_);
