@@ -275,8 +275,10 @@ static grpc_error* do_ping_locked(channel_data* chand, grpc_transport_op* op) {
   grpc_connectivity_state state =
       grpc_connectivity_state_get(&chand->state_tracker, &error);
   if (state != GRPC_CHANNEL_READY) {
-    return GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+    grpc_error* new_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
         "channel not connected", &error, 1);
+    GRPC_ERROR_UNREF(error);
+    return new_error;
   }
   LoadBalancingPolicy::PickState pick;
   chand->picker->Pick(&pick, &error);
