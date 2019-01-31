@@ -352,6 +352,9 @@ XdsLb::Picker::PickResult XdsLb::Picker::Pick(PickState* pick,
 void XdsLb::Helper::UpdateState(grpc_connectivity_state state,
                                 grpc_error* state_error,
                                 RefCountedPtr<SubchannelPicker> picker) {
+  // TODO(juanlishen): When in fallback mode, pass the child picker
+  // through without wrapping it.  (Or maybe use a different helper for
+  // the fallback policy?)
   RefCountedPtr<XdsLbClientStats> client_stats;
   if (parent_->lb_calld_ != nullptr &&
       parent_->lb_calld_->client_stats() != nullptr) {
@@ -825,13 +828,13 @@ void XdsLb::BalancerCallState::OnBalancerStatusReceivedLocked(
             lb_calld->lb_call_, grpc_error_string(error));
     gpr_free(status_details);
   }
-  xdslb_policy->channel_control_helper()->RequestReresolution();
   // If this lb_calld is still in use, this call ended because of a failure so
   // we want to retry connecting. Otherwise, we have deliberately ended this
   // call and no further action is required.
   if (lb_calld == xdslb_policy->lb_calld_.get()) {
     xdslb_policy->lb_calld_.reset();
     GPR_ASSERT(!xdslb_policy->shutting_down_);
+    xdslb_policy->channel_control_helper()->RequestReresolution();
     if (lb_calld->seen_initial_response_) {
       // If we lose connection to the LB server, reset the backoff and restart
       // the LB call immediately.
