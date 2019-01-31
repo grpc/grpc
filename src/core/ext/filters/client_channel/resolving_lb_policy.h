@@ -16,10 +16,8 @@
  *
  */
 
-// FIXME: rename this module to resolving_lb_policy.{h,cc}
-
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_REQUEST_ROUTING_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_REQUEST_ROUTING_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVING_LB_POLICY_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVING_LB_POLICY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -42,6 +40,17 @@
 
 namespace grpc_core {
 
+// An LB policy that wraps a resolver and a child LB policy to make use
+// of the addresses returned by the resolver.
+//
+// When used in the client_channel code, the resolver will attempt to
+// fetch the service config, and the child LB policy name and config
+// will be determined based on the service config.
+//
+// When used in an LB policy implementation that needs to do another
+// round of resolution before creating a child policy, the resolver does
+// not fetch the service config, and the caller must pre-determine the
+// child LB policy and config to use.
 class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
  public:
   ResolvingLoadBalancingPolicy(
@@ -51,8 +60,8 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   // Private ctor, to be used by client_channel only!
   //
-  // Synchronous callback that takes the service config JSON string and
-  // LB policy name.
+  // Synchronous callback that takes the resolver result and sets
+  // lb_policy_name and lb_policy_config to point to the right data.
   // Returns true if the service config has changed since the last result.
   typedef bool (*ProcessResolverResultCallback)(void* user_data,
                                                 const grpc_channel_args& args,
@@ -119,4 +128,4 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_REQUEST_ROUTING_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVING_LB_POLICY_H */

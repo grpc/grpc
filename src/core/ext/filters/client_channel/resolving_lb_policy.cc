@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/request_routing.h"
+#include "src/core/ext/filters/client_channel/resolving_lb_policy.h"
 
 #include <inttypes.h>
 #include <limits.h>
