@@ -43,36 +43,59 @@ namespace grpc_core {
 ///
 /// Any I/O done by the LB policy should be done under the pollset_set
 /// returned by \a interested_parties().
+// TODO(roth): Once we move to EventManager-based polling, remove the
+// interested_parties() hooks from the API.
 class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
  public:
   /// State used for an LB pick.
   struct PickState {
     /// Initial metadata associated with the picking call.
+    /// This is both an input and output parameter; the LB policy may
+    /// use metadata here to influence its routing decision, and it may
+    /// add new metadata here to be sent with the call to the chosen backend.
     grpc_metadata_batch* initial_metadata = nullptr;
     /// Storage for LB token in \a initial_metadata, or nullptr if not used.
+    // TODO(roth): Remove this from the API.  Maybe have the LB policy
+    // allocate this on the arena instead?
     grpc_linked_mdelem lb_token_mdelem_storage;
-    // Callback set by lb policy to be notified of trailing metadata.
-    // The callback must be scheduled on grpc_schedule_on_exec_ctx.
+    /// Callback set by lb policy to be notified of trailing metadata.
+    /// The callback must be scheduled on grpc_schedule_on_exec_ctx.
     grpc_closure* recv_trailing_metadata_ready = nullptr;
-    // The address that will be set to point to the original
-    // recv_trailing_metadata_ready callback, to be invoked by the LB
-    // policy's recv_trailing_metadata_ready callback when complete.
-    // Must be non-null if recv_trailing_metadata_ready is non-null.
+    /// The address that will be set to point to the original
+    /// recv_trailing_metadata_ready callback, to be invoked by the LB
+    /// policy's recv_trailing_metadata_ready callback when complete.
+    /// Must be non-null if recv_trailing_metadata_ready is non-null.
     grpc_closure** original_recv_trailing_metadata_ready = nullptr;
-    // If this is not nullptr, then the client channel will point it to the
-    // call's trailing metadata before invoking recv_trailing_metadata_ready.
-    // If this is nullptr, then the callback will still be called.
-    // The lb does not have ownership of the metadata.
+    /// If this is not nullptr, then the client channel will point it to the
+    /// call's trailing metadata before invoking recv_trailing_metadata_ready.
+    /// If this is nullptr, then the callback will still be called.
+    /// The lb does not have ownership of the metadata.
     grpc_metadata_batch** recv_trailing_metadata = nullptr;
     /// Will be set to the selected subchannel, or nullptr on failure or when
     /// the LB policy decides to drop the call.
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     /// Will be populated with context to pass to the subchannel call, if
     /// needed.
+    // TODO(roth): Remove this from the API, especially since it's not
+    // working properly anyway (see https://github.com/grpc/grpc/issues/15927).
     grpc_call_context_element subchannel_call_context[GRPC_CONTEXT_COUNT] = {};
   };
 
-// FIXME: document
+  /// A picker is the object used to actual perform picks.
+  ///
+  /// Pickers are intended to encapsulate all of the state and logic
+  /// needed on the data plane (i.e., to actually process picks for
+  /// individual RPCs sent on the channel) while excluding all of the
+  /// state and logic needed on the control plane (i.e., resolver
+  /// updates, connectivity state notifications, etc); the latter should
+  /// live in the LB policy object itself.
+  ///
+  /// Currently, pickers are always accessed from within the
+  /// client_channel combiner, so they do not have to be thread-safe.
+  // TODO(roth): In a subsequent PR, split the data plane work (i.e.,
+  // the interaction with the picker) and the control plane work (i.e.,
+  // the interaction with the LB policy) into two different
+  // synchronization mechanisms, to avoid lock contention between the two.
   class SubchannelPicker : public RefCounted<SubchannelPicker> {
    public:
     enum PickResult {
@@ -101,7 +124,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   };
 
   // A picker that returns PICK_QUEUE for all picks.
-  // Also calls the parent LB policy's ExitIdleLocked() method.
+  // Also calls the parent LB policy's ExitIdleLocked() method when the
+  // first pick is seen.
   class QueuePicker : public SubchannelPicker {
    public:
     explicit QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent)
@@ -159,21 +183,26 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     grpc_error* error_;
   };
 
-// FIXME: document
+  /// A proxy object used by the LB policy to communicate with the client
+  /// channel.
   class ChannelControlHelper : public RefCounted<ChannelControlHelper> {
    public:
     ChannelControlHelper() = default;
     virtual ~ChannelControlHelper() = default;
 
+    /// Sets the connectivity state and returns a new picker to be used
+    /// by the client channel.
     virtual void UpdateState(
         grpc_connectivity_state state, grpc_error* state_error,
         RefCountedPtr<SubchannelPicker> picker) GRPC_ABSTRACT;
 
+    /// Requests that the resolver re-resolve.
     virtual void RequestReresolution() GRPC_ABSTRACT;
 
     GRPC_ABSTRACT_BASE_CLASS
   };
 
+  /// Args used to instantiate an LB policy.
   struct Args {
     /// The combiner under which all LB policy calls will be run.
     /// Policy does NOT take ownership of the reference to the combiner.
