@@ -84,7 +84,7 @@ struct grpc_ares_request {
   /** combiner to synchronize c-ares and I/O callbacks on */
   grpc_combiner* combiner = nullptr;
   /** a list of grpc_fd that this request is currently using. */
-  grpc_core::UniquePtr<FdNodeList> fds = nullptr;
+  grpc_core::UniquePtr<FdNodeList> fds = grpc_core::MakeUnique<FdNodeList>();
   /** is this request currently working? */
   bool working = false;
   /** is this request being shut down */
@@ -754,7 +754,6 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
       goto error_cleanup;
     }
   }
-  r->pending_queries = 1;
   if (grpc_ares_query_ipv6()) {
     hr = create_hostbyname_request_locked(r, host, grpc_strhtons(port),
                                           false /* is_balancer */);
@@ -869,23 +868,18 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     bool check_grpclb, char** service_config_json, int query_timeout_ms,
     grpc_combiner* combiner) {
   grpc_ares_request* r = grpc_core::New<grpc_ares_request>();
-  gpr_ref_init(&r->refs, 0);
-  grpc_ares_request_queries_ref_locked(r, "initialize lookup");
   r->on_done = on_done;
   r->addresses_out = addrs;
   r->service_config_json_out = service_config_json;
-  r->success = false;
-  r->error = GRPC_ERROR_NONE;
-  r->pending_queries = 0;
   r->fds = grpc_core::MakeUnique<FdNodeList>();
   r->combiner = GRPC_COMBINER_REF(combiner, "ares request");
   r->pollset_set = interested_parties;
-  r->working = false;
-  r->shutting_down = false;
   r->polled_fd_factory = grpc_core::NewGrpcPolledFdFactory(r->combiner);
   GRPC_CLOSURE_INIT(&r->on_timeout_locked, on_timeout_locked, r,
                     grpc_combiner_scheduler(combiner));
   r->query_timeout_ms = query_timeout_ms;
+  gpr_ref_init(&r->refs, 0);
+  grpc_ares_request_queries_ref_locked(r, "initialize lookup");
   ares_options opts;
   memset(&opts, 0, sizeof(opts));
   opts.flags |= ARES_FLAG_STAYOPEN;
