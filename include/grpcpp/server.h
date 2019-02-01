@@ -26,6 +26,7 @@
 #include <vector>
 
 #include <grpc/compression.h>
+#include <grpc/support/atm.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
@@ -248,22 +249,15 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// the \a sync_server_cqs)
   std::vector<std::unique_ptr<SyncRequestThreadManager>> sync_req_mgrs_;
 
-  // Outstanding callback requests. The vector is indexed by method with a list
-  // per method. Each element should store its own iterator in the list and
-  // should erase it when the request is actually bound to an RPC. Synchronize
-  // this list with its own mu_ (not the server mu_) since these must be active
-  // at Shutdown when the server mu_ is locked.
-  // TODO(vjpai): Merge with the core request matcher to avoid duplicate work
-  struct MethodReqList {
-    std::mutex reqs_mu;
-    // Maintain our own list size count since list::size is still linear
-    // for some libraries (supposed to be constant since C++11)
-    // TODO(vjpai): Remove reqs_list_sz and use list::size when possible
-    size_t reqs_list_sz{0};
-    std::list<CallbackRequest*> reqs_list;
-    using iterator = decltype(reqs_list)::iterator;
-  };
-  std::vector<MethodReqList*> callback_reqs_;
+  // Outstanding unmatched callback requests, indexed by method.
+  // NOTE: Using a gpr_atm rather than atomic_int because atomic_int isn't
+  //       copyable or movable and thus will cause compilation errors. We
+  //       actually only want to extend the vector before the threaded use
+  //       starts, but this is still a limitation.
+  std::vector<gpr_atm> callback_unmatched_reqs_count_;
+
+  // List of callback requests to start when server actually starts
+  std::list<CallbackRequest*> callback_reqs_to_start_;
 
   // Server status
   std::mutex mu_;
