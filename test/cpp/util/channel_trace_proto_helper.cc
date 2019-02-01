@@ -29,6 +29,8 @@
 #include "src/proto/grpc/channelz/channelz.pb.h"
 
 namespace grpc {
+  
+namespace {
 
 // Generic helper that takes in a json string, converts it to a proto, and
 // then back to json. This ensures that the json string was correctly formatted
@@ -45,6 +47,8 @@ void VaidateProtoJsonTranslation(char* json_c_str) {
   EXPECT_TRUE(s.ok());
   EXPECT_EQ(json_str, proto_json_str);
 }
+
+} // namespace
 
 namespace testing {
 
