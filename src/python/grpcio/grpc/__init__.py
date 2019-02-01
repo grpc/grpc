@@ -1121,6 +1121,15 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def trailing_metadata(self):
+      """Gets the trailing metadata for the RPC.
+
+      Returns:
+        The trailing :term:`metadata`.
+      """
+      raise NotImplementedError()
+
+    @abc.abstractmethod
     def abort(self, code, details):
         """Raises an exception to terminate the RPC with a non-OK status.
 

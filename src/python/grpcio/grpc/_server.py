@@ -94,7 +94,7 @@ class _RPCState(object):
         self.client = _OPEN
         self.initial_metadata_allowed = True
         self.disable_next_compression = False
-        self.trailing_metadata = None
+        self.trailing_metadata = []
         self.code = None
         self.details = None
         self.statused = False
@@ -276,6 +276,10 @@ class _Context(grpc.ServicerContext):
     def set_trailing_metadata(self, trailing_metadata):
         with self._state.condition:
             self._state.trailing_metadata = trailing_metadata
+
+    def trailing_metadata(self):
+      with self._state.condition:
+        return self._state.trailing_metadata
 
     def abort(self, code, details):
         # treat OK like other invalid arguments: fail the RPC

@@ -67,6 +67,9 @@ class ServicerContext(grpc.ServicerContext):
         self._rpc.set_trailing_metadata(
             _common.fuss_with_metadata(trailing_metadata))
 
+    def trailing_metadata(self):
+        raise NotImplementedError()
+
     def abort(self, code, details):
         raise NotImplementedError()
 
