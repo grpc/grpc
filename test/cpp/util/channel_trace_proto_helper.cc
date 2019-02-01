@@ -61,7 +61,7 @@ void VaidateProtoJsonTranslation(char* json_c_str) {
   EXPECT_EQ(json_str, proto_json_str);
 }
 
-} // namespace
+}  // namespace
 
 namespace testing {
 
