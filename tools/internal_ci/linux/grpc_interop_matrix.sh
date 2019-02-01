@@ -30,6 +30,9 @@ tools/interop_matrix/run_interop_matrix_tests.py $RUN_TESTS_FLAGS || FAILED="tru
 # TODO(jtattermusch): Diagnose out of disk space problems. Remove once not needed.
 df -h
 
+# TODO(jtattermusch): Diagnose problems with gcloud auth. Remove once not needed.
+gcloud info --show-log
+
 if [ "$FAILED" != "" ]
 then
   exit 1
