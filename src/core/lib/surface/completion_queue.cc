@@ -854,15 +854,11 @@ static void cq_end_op_for_callback(
   // for reserved storage. Invoke the done callback right away to release it.
   done(done_arg, storage);
 
-  gpr_mu_lock(cq->mu);
-  cq_check_tag(cq, tag, false); /* Used in debug builds only */
+  cq_check_tag(cq, tag, true); /* Used in debug builds only */
 
   gpr_atm_no_barrier_fetch_add(&cqd->things_queued_ever, 1);
   if (gpr_atm_full_fetch_add(&cqd->pending_events, -1) == 1) {
-    gpr_mu_unlock(cq->mu);
     cq_finish_shutdown_callback(cq);
-  } else {
-    gpr_mu_unlock(cq->mu);
   }
 
   GRPC_ERROR_UNREF(error);
