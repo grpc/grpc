@@ -15,6 +15,7 @@
 
 import unittest
 import collections
+import gc
 import logging
 import weakref
 
@@ -124,6 +125,8 @@ class AbortTest(unittest.TestCase):
         rpc_error = exception_context.exception
 
         do_not_leak_me = None
+        # Force garbage collection
+        gc.collect()
         self.assertIsNone(weak_ref())
 
     def test_abort_with_status(self):
