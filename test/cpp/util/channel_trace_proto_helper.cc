@@ -29,7 +29,7 @@
 #include "src/proto/grpc/channelz/channelz.pb.h"
 
 namespace grpc {
-  
+
 namespace {
 
 // Generic helper that takes in a json string, converts it to a proto, and
@@ -39,12 +39,25 @@ template <typename Message>
 void VaidateProtoJsonTranslation(char* json_c_str) {
   grpc::string json_str(json_c_str);
   Message msg;
+  grpc::protobuf::json::JsonParseOptions parse_options;
+  // If the following line is failing, then uncomment the last line of the
+  // comment, and uncomment the lines that print the two strings. You can
+  // then compare the output, and determine what fields are missing.
+  //
+  // parse_options.ignore_unknown_fields = true;
   grpc::protobuf::util::Status s =
-      grpc::protobuf::json::JsonStringToMessage(json_str, &msg);
+      grpc::protobuf::json::JsonStringToMessage(json_str, &msg, parse_options);
   EXPECT_TRUE(s.ok());
   grpc::string proto_json_str;
+  grpc::protobuf::json::JsonPrintOptions print_options;
+  // We usually do not want this to be true, however it can be helpful to
+  // uncomment and see the output produced then all fields are printed.
+  // print_options.always_print_primitive_fields = true;
   s = grpc::protobuf::json::MessageToJsonString(msg, &proto_json_str);
   EXPECT_TRUE(s.ok());
+  // uncomment these to compare the the json strings.
+  // gpr_log(GPR_ERROR, "tracer json: %s", json_str.c_str());
+  // gpr_log(GPR_ERROR, "proto  json: %s", proto_json_str.c_str());
   EXPECT_EQ(json_str, proto_json_str);
 }
 
