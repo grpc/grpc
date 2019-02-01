@@ -428,11 +428,11 @@ class Server::CallbackRequest final : public internal::CompletionQueueTag {
       GPR_ASSERT(!req_->FinalizeResult(&ignored, &new_ok));
       GPR_ASSERT(ignored == req_);
 
-      auto count =
+      int count =
           static_cast<int>(gpr_atm_no_barrier_fetch_add(
               &req_->server_
                    ->callback_unmatched_reqs_count_[req_->method_index_],
-              static_cast<gpr_atm>(-1))) -
+              -1)) -
           1;
       if (!ok) {
         // The call has been shutdown.
@@ -452,7 +452,7 @@ class Server::CallbackRequest final : public internal::CompletionQueueTag {
           gpr_atm_no_barrier_fetch_add(
               &new_req->server_
                    ->callback_unmatched_reqs_count_[new_req->method_index_],
-              static_cast<gpr_atm>(-1));
+              -1);
           delete new_req;
         }
       }
@@ -543,8 +543,7 @@ class Server::CallbackRequest final : public internal::CompletionQueueTag {
 
   void Setup() {
     gpr_atm_no_barrier_fetch_add(
-        &server_->callback_unmatched_reqs_count_[method_index_],
-        static_cast<gpr_atm>(1));
+        &server_->callback_unmatched_reqs_count_[method_index_], 1);
     grpc_metadata_array_init(&request_metadata_);
     ctx_.Setup(gpr_inf_future(GPR_CLOCK_REALTIME));
     request_payload_ = nullptr;
@@ -774,11 +773,12 @@ Server::~Server() {
   }
 
   grpc_server_destroy(server_);
-  for (auto per_method_count : callback_unmatched_reqs_count_) {
+  for (auto& per_method_count : callback_unmatched_reqs_count_) {
     // There should be no more unmatched callbacks for any method
     // as each request is failed by Shutdown. Check that this actually
     // happened
-    GPR_ASSERT(static_cast<int>(per_method_count) == 0);
+    GPR_ASSERT(static_cast<int>(gpr_atm_no_barrier_load(&per_method_count)) ==
+               0);
   }
 }
 
@@ -860,7 +860,7 @@ bool Server::RegisterService(const grpc::string* host, Service* service) {
       }
     } else {
       // a callback method. Register at least some callback requests
-      callback_unmatched_reqs_count_.push_back(static_cast<gpr_atm>(0));
+      callback_unmatched_reqs_count_.push_back(0);
       auto method_index = callback_unmatched_reqs_count_.size() - 1;
       // TODO(vjpai): Register these dynamically based on need
       for (int i = 0; i < DEFAULT_CALLBACK_REQS_PER_METHOD; i++) {

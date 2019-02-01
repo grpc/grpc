@@ -256,7 +256,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   //       starts, but this is still a limitation.
   std::vector<gpr_atm> callback_unmatched_reqs_count_;
 
-  // List of callback requests to start when server actually starts
+  // List of callback requests to start when server actually starts.
   std::list<CallbackRequest*> callback_reqs_to_start_;
 
   // Server status
