@@ -20,7 +20,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Grpc.Core.Internal;
 
-namespace Grpc.Core
+namespace Grpc.Core.Internal
 {
     internal static class ServerServiceDefinitionExtensions
     {
