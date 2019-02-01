@@ -177,13 +177,13 @@ static void run_poller(void* bp, grpc_error* error_ignored) {
     if (grpc_tcp_trace.enabled()) {
       gpr_log(GPR_INFO, "BACKUP_POLLER:%p done cas_ok=%d", p, cas_ok);
     }
-    gpr_mu_unlock(p->pollset_mu);
     if (grpc_tcp_trace.enabled()) {
       gpr_log(GPR_INFO, "BACKUP_POLLER:%p shutdown", p);
     }
     grpc_pollset_shutdown(BACKUP_POLLER_POLLSET(p),
                           GRPC_CLOSURE_INIT(&p->run_poller, done_poller, p,
                                             grpc_schedule_on_exec_ctx));
+    gpr_mu_unlock(p->pollset_mu);
   } else {
     if (grpc_tcp_trace.enabled()) {
       gpr_log(GPR_INFO, "BACKUP_POLLER:%p reschedule", p);
