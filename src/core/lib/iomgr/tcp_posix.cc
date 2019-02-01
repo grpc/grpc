@@ -195,7 +195,7 @@ static void run_poller(void* bp, grpc_error* error_ignored) {
 static void drop_uncovered(grpc_tcp* tcp) {
   backup_poller* p = (backup_poller*)gpr_atm_acq_load(&g_backup_poller);
   gpr_atm old_count =
-      gpr_atm_no_barrier_fetch_add(&g_uncovered_notifications_pending, -1);
+      gpr_atm_full_fetch_add(&g_uncovered_notifications_pending, -1);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_INFO, "BACKUP_POLLER:%p uncover cnt %d->%d", p,
             static_cast<int>(old_count), static_cast<int>(old_count) - 1);
