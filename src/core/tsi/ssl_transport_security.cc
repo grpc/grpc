@@ -621,7 +621,7 @@ static tsi_result x509_store_load_certs(X509_STORE* cert_store,
     }
     ERR_clear_error();
     if (!X509_STORE_add_cert(cert_store, root)) {
-      size_t error = ERR_get_error();
+      unsigned long error = ERR_get_error();
       if (ERR_GET_LIB(error) != ERR_LIB_X509 ||
           ERR_GET_REASON(error) != X509_R_CERT_ALREADY_IN_HASH_TABLE) {
         gpr_log(GPR_ERROR, "Could not add root certificate to ssl context.");
@@ -632,7 +632,6 @@ static tsi_result x509_store_load_certs(X509_STORE* cert_store,
     X509_free(root);
     num_roots++;
   }
-
   if (num_roots == 0) {
     gpr_log(GPR_ERROR, "Could not load any root certificate.");
     result = TSI_INVALID_ARGUMENT;

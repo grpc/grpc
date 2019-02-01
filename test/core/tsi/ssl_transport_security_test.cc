@@ -777,7 +777,7 @@ void ssl_tsi_test_handshaker_factory_internals() {
 }
 
 void ssl_tsi_test_duplicate_root_certificates() {
-  const char* root_cert = load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "ca.pem");
+  char* root_cert = load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "ca.pem");
   char* dup_root_cert = static_cast<char*>(
       gpr_zalloc(sizeof(char) * (strlen(root_cert) * 2 + 1)));
   memcpy(dup_root_cert, root_cert, strlen(root_cert));
@@ -787,8 +787,8 @@ void ssl_tsi_test_duplicate_root_certificates() {
   GPR_ASSERT(root_store != nullptr);
   // Free memory.
   tsi_ssl_root_certs_store_destroy(root_store);
-  gpr_free((void*)root_cert);
-  gpr_free((void*)dup_root_cert);
+  gpr_free(root_cert);
+  gpr_free(dup_root_cert);
 }
 
 int main(int argc, char** argv) {
