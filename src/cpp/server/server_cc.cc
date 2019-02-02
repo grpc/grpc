@@ -444,7 +444,8 @@ class Server::CallbackRequest final : public internal::CompletionQueueTag {
       // If this was the last request in the list or it is below the soft
       // minimum and there are spare requests available, set up a new one.
       if (count == 0 || (count < SOFT_MINIMUM_SPARE_CALLBACK_REQS_PER_METHOD &&
-                         count < SOFT_MAXIMUM_CALLBACK_REQS_OUTSTANDING)) {
+                         req_->server_->callback_reqs_outstanding_ <
+                             SOFT_MAXIMUM_CALLBACK_REQS_OUTSTANDING)) {
         auto* new_req = new CallbackRequest(req_->server_, req_->method_index_,
                                             req_->method_, req_->method_tag_);
         if (!new_req->Request()) {
