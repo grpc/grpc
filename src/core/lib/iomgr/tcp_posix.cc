@@ -343,13 +343,6 @@ static void tcp_free(grpc_tcp* tcp) {
   grpc_slice_buffer_destroy_internal(&tcp->last_read_buffer);
   grpc_resource_user_unref(tcp->resource_user);
   gpr_free(tcp->peer_string);
-  /* The lock is not really necessary here, since all refs have been released */
-  gpr_mu_lock(&tcp->tb_mu);
-  grpc_core::TracedBuffer::Shutdown(
-      &tcp->tb_head, tcp->outgoing_buffer_arg,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("endpoint destroyed"));
-  gpr_mu_unlock(&tcp->tb_mu);
-  tcp->outgoing_buffer_arg = nullptr;
   gpr_mu_destroy(&tcp->tb_mu);
   gpr_free(tcp);
 }
@@ -396,6 +389,12 @@ static void tcp_destroy(grpc_endpoint* ep) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   grpc_slice_buffer_reset_and_unref_internal(&tcp->last_read_buffer);
   if (grpc_event_engine_can_track_errors()) {
+    gpr_mu_lock(&tcp->tb_mu);
+    grpc_core::TracedBuffer::Shutdown(
+        &tcp->tb_head, tcp->outgoing_buffer_arg,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("endpoint destroyed"));
+    gpr_mu_unlock(&tcp->tb_mu);
+    tcp->outgoing_buffer_arg = nullptr;
     gpr_atm_no_barrier_store(&tcp->stop_error_notification, true);
     grpc_fd_set_error(tcp->em_fd);
   }
@@ -1185,6 +1184,12 @@ void grpc_tcp_destroy_and_release_fd(grpc_endpoint* ep, int* fd,
   grpc_slice_buffer_reset_and_unref_internal(&tcp->last_read_buffer);
   if (grpc_event_engine_can_track_errors()) {
     /* Stop errors notification. */
+    gpr_mu_lock(&tcp->tb_mu);
+    grpc_core::TracedBuffer::Shutdown(
+        &tcp->tb_head, tcp->outgoing_buffer_arg,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("endpoint destroyed"));
+    gpr_mu_unlock(&tcp->tb_mu);
+    tcp->outgoing_buffer_arg = nullptr;
     gpr_atm_no_barrier_store(&tcp->stop_error_notification, true);
     grpc_fd_set_error(tcp->em_fd);
   }
