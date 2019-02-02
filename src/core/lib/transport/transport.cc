@@ -125,10 +125,10 @@ void grpc_transport_destroy(grpc_transport* transport) {
 
 int grpc_transport_init_stream(grpc_transport* transport, grpc_stream* stream,
                                grpc_stream_refcount* refcount,
-                               const void* server_data,
-                               grpc_core::Arena* arena) {
+                               const void* server_data, grpc_core::Arena* arena,
+                               grpc_call* call) {
   return transport->vtable->init_stream(transport, stream, refcount,
-                                        server_data, arena);
+                                        server_data, arena, call);
 }
 
 void grpc_transport_perform_stream_op(grpc_transport* transport,

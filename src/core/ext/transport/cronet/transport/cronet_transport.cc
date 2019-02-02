@@ -1425,7 +1425,7 @@ inline stream_obj::~stream_obj() {
 
 static int init_stream(grpc_transport* gt, grpc_stream* gs,
                        grpc_stream_refcount* refcount, const void* server_data,
-                       grpc_core::Arena* arena) {
+                       grpc_core::Arena* arena, grpc_call* /*call*/) {
   new (gs) stream_obj(gt, gs, refcount, arena);
   return 0;
 }

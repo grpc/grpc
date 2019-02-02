@@ -47,6 +47,7 @@ typedef struct {
 
 typedef struct connected_channel_call_data {
   grpc_core::CallCombiner* call_combiner;
+  grpc_call* call;
   // Closures used for returning results on the call combiner.
   callback_state on_complete[6];  // Max number of pending batches.
   callback_state recv_initial_metadata_ready;
@@ -149,9 +150,11 @@ static grpc_error* connected_channel_init_call_elem(
   call_data* calld = static_cast<call_data*>(elem->call_data);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   calld->call_combiner = args->call_combiner;
+  calld->call = args->call;
   int r = grpc_transport_init_stream(
       chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld),
-      &args->call_stack->refcount, args->server_transport_data, args->arena);
+      &args->call_stack->refcount, args->server_transport_data, args->arena,
+      args->call);
   return r == 0 ? GRPC_ERROR_NONE
                 : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                       "transport stream initialization failed");

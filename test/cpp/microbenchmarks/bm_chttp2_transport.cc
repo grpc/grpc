@@ -212,7 +212,7 @@ class Stream {
     }
     grpc_transport_init_stream(f_->transport(),
                                static_cast<grpc_stream*>(stream_), &refcount_,
-                               nullptr, arena_);
+                               nullptr, arena_, nullptr);
   }
 
   void DestroyThen(grpc_closure* closure) {

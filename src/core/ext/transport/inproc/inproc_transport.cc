@@ -122,8 +122,9 @@ struct inproc_transport {
 
 struct inproc_stream {
   inproc_stream(inproc_transport* t, grpc_stream_refcount* refcount,
-                const void* server_data, grpc_core::Arena* arena)
-      : t(t), refs(refcount), arena(arena) {
+                const void* server_data, grpc_core::Arena* arena,
+                grpc_call* call)
+      : t(t), refs(refcount), arena(arena), call(call) {
     // Ref this stream right now for ctor and list.
     ref("inproc_init_stream:init");
     ref("inproc_init_stream:list");
@@ -135,8 +136,10 @@ struct inproc_stream {
     grpc_metadata_batch_init(&write_buffer_initial_md);
     grpc_metadata_batch_init(&write_buffer_trailing_md);
 
+    INPROC_LOG(GPR_INFO, "inproc_stream %p", this);
     stream_list_prev = nullptr;
     gpr_mu_lock(&t->mu->mu);
+    INPROC_LOG(GPR_INFO, "inproc_stream %p", this);
     stream_list_next = t->stream_list;
     if (t->stream_list) {
       t->stream_list->stream_list_prev = this;
@@ -144,20 +147,19 @@ struct inproc_stream {
     t->stream_list = this;
     gpr_mu_unlock(&t->mu->mu);
 
+    INPROC_LOG(GPR_INFO, "inproc_stream %p", this);
     if (!server_data) {
       t->ref();
-      inproc_transport* st = t->other_side;
-      st->ref();
-      other_side = nullptr;  // will get filled in soon
-      // Pass the client-side stream address to the server-side for a ref
-      ref("inproc_init_stream:clt");  // ref it now on behalf of server
-                                      // side to avoid destruction
-      INPROC_LOG(GPR_INFO, "calling accept stream cb %p %p",
-                 st->accept_stream_cb, st->accept_stream_data);
-      (*st->accept_stream_cb)(st->accept_stream_data, &st->base, (void*)this);
+      other_side = nullptr;  // will get filled in at send-initial-metadata
     } else {
       // This is the server-side and is being called through accept_stream_cb
       inproc_stream* cs = (inproc_stream*)server_data;
+
+      INPROC_LOG(GPR_INFO, "inproc_stream %p", this);
+      // Ref the server call and client call
+      grpc_call_ref(call);
+      grpc_call_ref(cs->call);
+
       other_side = cs;
       // Ref the server-side stream on behalf of the client now
       ref("inproc_init_stream:srv");
@@ -237,6 +239,7 @@ struct inproc_stream {
   bool ops_needed = false;
   bool op_closure_scheduled = false;
   grpc_closure op_closure;
+  grpc_closure accept_stream_closure;
   // Write buffer used only during gap at init time when client-side
   // stream is set up but server side stream is not yet set up
   grpc_metadata_batch write_buffer_initial_md;
@@ -248,12 +251,12 @@ struct inproc_stream {
   grpc_error* write_buffer_cancel_error = GRPC_ERROR_NONE;
 
   struct inproc_stream* other_side;
-  bool other_side_closed = false;               // won't talk anymore
-  bool write_buffer_other_side_closed = false;  // on hold
+  bool other_side_closed = false;  // won't talk anymore
   grpc_stream_refcount* refs;
   grpc_closure* closure_at_destroy = nullptr;
 
   grpc_core::Arena* arena;
+  grpc_call* call;
 
   grpc_transport_stream_op_batch* send_message_op = nullptr;
   grpc_transport_stream_op_batch* send_trailing_md_op = nullptr;
@@ -325,10 +328,10 @@ grpc_error* fill_in_metadata(inproc_stream* s,
 
 int init_stream(grpc_transport* gt, grpc_stream* gs,
                 grpc_stream_refcount* refcount, const void* server_data,
-                grpc_core::Arena* arena) {
+                grpc_core::Arena* arena, grpc_call* call) {
   INPROC_LOG(GPR_INFO, "init_stream %p %p %p", gt, gs, server_data);
   inproc_transport* t = reinterpret_cast<inproc_transport*>(gt);
-  new (gs) inproc_stream(t, refcount, server_data, arena);
+  new (gs) inproc_stream(t, refcount, server_data, arena, call);
   return 0;  // return value is not important
 }
 
@@ -364,11 +367,21 @@ void close_other_side_locked(inproc_stream* s, const char* reason) {
     grpc_metadata_batch_destroy(&s->to_read_initial_md);
     grpc_metadata_batch_destroy(&s->to_read_trailing_md);
 
+    grpc_call* other_call = s->other_side->call;
     s->other_side->unref(reason);
+    // Call to grpc_call_unref is through ExecCtx so as to not be under lock
+    // since the unref may trigger an invocation of perform_stream_op that takes
+    // a lock.
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION,
+                            GRPC_CLOSURE_CREATE(
+                                [](void* arg, grpc_error* /*error*/) {
+                                  grpc_call_unref(static_cast<grpc_call*>(arg));
+                                },
+                                other_call, grpc_schedule_on_exec_ctx),
+                            GRPC_ERROR_NONE);
+
     s->other_side_closed = true;
     s->other_side = nullptr;
-  } else if (!s->other_side_closed) {
-    s->write_buffer_other_side_closed = true;
   }
 }
 
@@ -971,44 +984,92 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
 
   bool needs_close = false;
 
-  inproc_stream* other = s->other_side;
   if (error == GRPC_ERROR_NONE &&
       (op->send_initial_metadata || op->send_trailing_metadata)) {
     if (s->t->is_closed) {
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Endpoint already shutdown");
     }
     if (error == GRPC_ERROR_NONE && op->send_initial_metadata) {
-      grpc_metadata_batch* dest = (other == nullptr)
-                                      ? &s->write_buffer_initial_md
-                                      : &other->to_read_initial_md;
-      uint32_t* destflags = (other == nullptr)
-                                ? &s->write_buffer_initial_md_flags
-                                : &other->to_read_initial_md_flags;
-      bool* destfilled = (other == nullptr) ? &s->write_buffer_initial_md_filled
-                                            : &other->to_read_initial_md_filled;
-      if (*destfilled || s->initial_md_sent) {
-        // The buffer is already in use; that's an error!
-        INPROC_LOG(GPR_INFO, "Extra initial metadata %p", s);
-        error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Extra initial metadata");
-      } else {
-        if (!other || !other->closed) {
-          fill_in_metadata(
-              s, op->payload->send_initial_metadata.send_initial_metadata,
-              op->payload->send_initial_metadata.send_initial_metadata_flags,
-              dest, destflags, destfilled);
-        }
-        if (s->t->is_client) {
-          grpc_millis* dl =
-              (other == nullptr) ? &s->write_buffer_deadline : &other->deadline;
-          *dl = GPR_MIN(*dl, op->payload->send_initial_metadata
-                                 .send_initial_metadata->deadline);
-          s->initial_md_sent = true;
+      if (s->t->is_client) {
+        if (s->other_side != nullptr) {
+          INPROC_LOG(GPR_INFO, "Extra initial metadata %p", s);
+          error =
+              GRPC_ERROR_CREATE_FROM_STATIC_STRING("Extra initial metadata");
+        } else {
+          // Bind this to a server call
+          inproc_transport* st = s->t->other_side;
+          st->ref();
+          // Pass the client-side stream address to the server-side for a ref
+          s->ref("inproc_init_stream:clt");  // ref it now on behalf of server
+                                             // side to avoid destruction
+          // Keep accept stream info structure of everything needed to call
+          // accept stream without taking a lock first (since that function
+          // will take a lock)
+          // TODO(vjpai): Do this without a dynamically-allocated struct
+          struct accept_stream_info {
+            void (*accept_stream_cb)(void* user_data, grpc_transport* transport,
+                                     const void* server_data);
+            void* accept_stream_data;
+            grpc_transport* base;
+            inproc_stream* s;
+          };
+          accept_stream_info* info = new accept_stream_info{
+              st->accept_stream_cb, st->accept_stream_data, &st->base, s};
+          INPROC_LOG(GPR_INFO, "Scheduling accept stream cb %p %p",
+                     st->accept_stream_cb, st->accept_stream_data);
+          GRPC_CLOSURE_INIT(
+              &s->accept_stream_closure,
+              [](void* arg, grpc_error* /*error*/) {
+                accept_stream_info* info =
+                    static_cast<accept_stream_info*>(arg);
+                INPROC_LOG(GPR_INFO, "Calling accept stream cb %p %p",
+                           info->accept_stream_cb, info->accept_stream_data);
+                (*info->accept_stream_cb)(info->accept_stream_data, info->base,
+                                          static_cast<void*>(info->s));
+                delete info;
+              },
+              info, grpc_schedule_on_exec_ctx);
+          grpc_core::ExecCtx::Run(DEBUG_LOCATION, &s->accept_stream_closure,
+                                  GRPC_ERROR_NONE);
         }
       }
-      maybe_schedule_op_closure_locked(other, error);
+      if (error == GRPC_ERROR_NONE) {
+        inproc_stream* other = s->other_side;
+        grpc_metadata_batch* dest = (other == nullptr)
+                                        ? &s->write_buffer_initial_md
+                                        : &other->to_read_initial_md;
+        uint32_t* destflags = (other == nullptr)
+                                  ? &s->write_buffer_initial_md_flags
+                                  : &other->to_read_initial_md_flags;
+        bool* destfilled = (other == nullptr)
+                               ? &s->write_buffer_initial_md_filled
+                               : &other->to_read_initial_md_filled;
+        if (*destfilled || s->initial_md_sent) {
+          // The buffer is already in use; that's an error!
+          INPROC_LOG(GPR_INFO, "Extra initial metadata %p", s);
+          error =
+              GRPC_ERROR_CREATE_FROM_STATIC_STRING("Extra initial metadata");
+        } else {
+          if (!other || !other->closed) {
+            fill_in_metadata(
+                s, op->payload->send_initial_metadata.send_initial_metadata,
+                op->payload->send_initial_metadata.send_initial_metadata_flags,
+                dest, destflags, destfilled);
+          }
+          if (s->t->is_client) {
+            grpc_millis* dl = (other == nullptr) ? &s->write_buffer_deadline
+                                                 : &other->deadline;
+            *dl = GPR_MIN(*dl, op->payload->send_initial_metadata
+                                   .send_initial_metadata->deadline);
+            s->initial_md_sent = true;
+          }
+        }
+      }
+      maybe_schedule_op_closure_locked(s->other_side, error);
     }
   }
 
+  inproc_stream* other = s->other_side;
   if (error == GRPC_ERROR_NONE &&
       (op->send_message || op->send_trailing_metadata ||
        op->recv_initial_metadata || op->recv_message ||

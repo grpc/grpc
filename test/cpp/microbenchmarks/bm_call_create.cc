@@ -399,7 +399,7 @@ const char* name;
 /* implementation of grpc_transport_init_stream */
 int InitStream(grpc_transport* /*self*/, grpc_stream* /*stream*/,
                grpc_stream_refcount* /*refcount*/, const void* /*server_data*/,
-               grpc_core::Arena* /*arena*/) {
+               grpc_core::Arena* /*arena*/, grpc_call* /*call*/) {
   return 0;
 }
 
