@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -113,6 +114,12 @@ namespace Grpc.Core
         /// </summary>
         public AuthContext AuthContext => AuthContextCore;
 
+        /// <summary>
+        /// Gets a dictionary that can be used by the various interceptors and handlers of this
+        /// call to store arbitrary state.
+        /// </summary>
+        public IDictionary<object, object> UserSate => UserStateCore;
+
         /// <summary>Provides implementation of a non-virtual public member.</summary>
         protected abstract Task WriteResponseHeadersAsyncCore(Metadata responseHeaders);
         /// <summary>Provides implementation of a non-virtual public member.</summary>
@@ -135,7 +142,9 @@ namespace Grpc.Core
         protected abstract Status StatusCore { get; set; }
         /// <summary>Provides implementation of a non-virtual public member.</summary>
         protected abstract WriteOptions WriteOptionsCore { get; set; }
-          /// <summary>Provides implementation of a non-virtual public member.</summary>
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
         protected abstract AuthContext AuthContextCore { get; }
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract IDictionary<object, object> UserStateCore { get; }
     }
 }

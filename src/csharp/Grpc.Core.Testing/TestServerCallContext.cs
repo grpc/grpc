@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -50,6 +51,7 @@ namespace Grpc.Core.Testing
             private Status status;
             private readonly string peer;
             private readonly AuthContext authContext;
+            private Dictionary<object, object> userState;
             private readonly ContextPropagationToken contextPropagationToken;
             private readonly Func<Metadata, Task> writeHeadersFunc;
             private readonly Func<WriteOptions> writeOptionsGetter;
@@ -92,6 +94,19 @@ namespace Grpc.Core.Testing
             protected override WriteOptions WriteOptionsCore { get => writeOptionsGetter(); set => writeOptionsSetter(value); }
 
             protected override AuthContext AuthContextCore => authContext;
+
+            protected override IDictionary<object, object> UserStateCore
+            {
+                get
+                {
+                    if (userState == null)
+                    {
+                        userState = new Dictionary<object, object>();
+                    }
+
+                    return userState;
+                }
+            }
 
             protected override ContextPropagationToken CreatePropagationTokenCore(ContextPropagationOptions options)
             {
