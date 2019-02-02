@@ -31,6 +31,7 @@ tools/interop_matrix/run_interop_matrix_tests.py $RUN_TESTS_FLAGS || FAILED="tru
 df -h
 
 # TODO(jtattermusch): Diagnose problems with gcloud auth. Remove once not needed.
+gcloud info
 gcloud info --show-log
 
 if [ "$FAILED" != "" ]
