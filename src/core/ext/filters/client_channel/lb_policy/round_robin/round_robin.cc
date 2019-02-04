@@ -108,10 +108,10 @@ class RoundRobin : public LoadBalancingPolicy {
       : public SubchannelList<RoundRobinSubchannelList,
                               RoundRobinSubchannelData> {
    public:
-    RoundRobinSubchannelList(
-        RoundRobin* policy, TraceFlag* tracer,
-        const ServerAddressList& addresses, grpc_combiner* combiner,
-        const grpc_channel_args& args)
+    RoundRobinSubchannelList(RoundRobin* policy, TraceFlag* tracer,
+                             const ServerAddressList& addresses,
+                             grpc_combiner* combiner,
+                             const grpc_channel_args& args)
         : SubchannelList(policy, tracer, addresses, combiner,
                          policy->channel_control_helper(), args) {
       // Need to maintain a ref to the LB policy as long as we maintain

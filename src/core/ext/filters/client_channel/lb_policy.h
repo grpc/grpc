@@ -201,9 +201,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Sets the connectivity state and returns a new picker to be used
     /// by the client channel.
-    virtual void UpdateState(
-        grpc_connectivity_state state, grpc_error* state_error,
-        RefCountedPtr<SubchannelPicker> picker) {
+    virtual void UpdateState(grpc_connectivity_state state,
+                             grpc_error* state_error,
+                             RefCountedPtr<SubchannelPicker> picker) {
       std::move(picker);  // Suppress clang-tidy complaint.
       // The rest of this is copied from the GRPC_ABSTRACT macro.
       gpr_log(GPR_ERROR, "Function marked GRPC_ABSTRACT was not implemented");
