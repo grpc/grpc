@@ -74,7 +74,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h"
@@ -249,6 +248,10 @@ class GrpcLb : public LoadBalancingPolicy {
     explicit Helper(RefCountedPtr<GrpcLb> parent)
         : parent_(std::move(parent)) {}
 
+    Subchannel* CreateSubchannel(const grpc_channel_args& args) override;
+    grpc_channel* CreateChannel(const char* target,
+                                grpc_client_channel_type type,
+                                const grpc_channel_args& args) override;
     void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
                      RefCountedPtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
@@ -405,6 +408,18 @@ GrpcLb::Picker::PickResult GrpcLb::Picker::Pick(PickState* pick,
 //
 // GrpcLb::Helper
 //
+
+Subchannel* GrpcLb::Helper::CreateSubchannel(const grpc_channel_args& args) {
+  if (parent_->shutting_down_) return nullptr;
+  return parent_->channel_control_helper()->CreateSubchannel(args);
+}
+
+grpc_channel* GrpcLb::Helper::CreateChannel(const char* target,
+                                            grpc_client_channel_type type,
+                                            const grpc_channel_args& args) {
+  if (parent_->shutting_down_) return nullptr;
+  return parent_->channel_control_helper()->CreateChannel(target, type, args);
+}
 
 // Returns true if the serverlist contains at least one drop entry and
 // no backend address entries.
@@ -1263,9 +1278,8 @@ void GrpcLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
   if (lb_channel_ == nullptr) {
     char* uri_str;
     gpr_asprintf(&uri_str, "fake:///%s", server_name_);
-    lb_channel_ = grpc_client_channel_factory_create_channel(
-        client_channel_factory(), uri_str,
-        GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, lb_channel_args);
+    lb_channel_ = channel_control_helper()->CreateChannel(
+        uri_str, GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, *lb_channel_args);
     GPR_ASSERT(lb_channel_ != nullptr);
     grpc_core::channelz::ChannelNode* channel_node =
         grpc_channel_get_channelz_node(lb_channel_);
@@ -1525,9 +1539,7 @@ void GrpcLb::CreateOrUpdateRoundRobinPolicyLocked() {
   } else {
     LoadBalancingPolicy::Args lb_policy_args;
     lb_policy_args.combiner = combiner();
-    lb_policy_args.client_channel_factory = client_channel_factory();
     lb_policy_args.args = args;
-    lb_policy_args.subchannel_pool = subchannel_pool()->Ref();
     lb_policy_args.channel_control_helper = MakeRefCounted<Helper>(Ref());
     CreateRoundRobinPolicyLocked(std::move(lb_policy_args));
   }

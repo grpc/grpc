@@ -111,10 +111,9 @@ class RoundRobin : public LoadBalancingPolicy {
     RoundRobinSubchannelList(
         RoundRobin* policy, TraceFlag* tracer,
         const ServerAddressList& addresses, grpc_combiner* combiner,
-        grpc_client_channel_factory* client_channel_factory,
         const grpc_channel_args& args)
         : SubchannelList(policy, tracer, addresses, combiner,
-                         client_channel_factory, args) {
+                         policy->channel_control_helper(), args) {
       // Need to maintain a ref to the LB policy as long as we maintain
       // any references to subchannels, since the subchannels'
       // pollset_sets will include the LB policy's pollset_set.
@@ -248,7 +247,6 @@ RoundRobin::Picker::PickResult RoundRobin::Picker::Pick(PickState* pick,
 //
 
 RoundRobin::RoundRobin(Args args) : LoadBalancingPolicy(std::move(args)) {
-  GPR_ASSERT(args.client_channel_factory != nullptr);
   gpr_mu_init(&child_refs_mu_);
   if (grpc_lb_round_robin_trace.enabled()) {
     gpr_log(GPR_INFO, "[RR %p] Created", this);
@@ -528,8 +526,7 @@ void RoundRobin::UpdateLocked(const grpc_channel_args& args,
     }
   }
   latest_pending_subchannel_list_ = MakeOrphanable<RoundRobinSubchannelList>(
-      this, &grpc_lb_round_robin_trace, *addresses, combiner(),
-      client_channel_factory(), args);
+      this, &grpc_lb_round_robin_trace, *addresses, combiner(), args);
   // If we haven't started picking yet or the new list is empty,
   // immediately promote the new list to the current list.
   if (!started_picking_ ||

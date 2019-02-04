@@ -70,7 +70,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h"
@@ -224,6 +223,10 @@ class XdsLb : public LoadBalancingPolicy {
    public:
     explicit Helper(RefCountedPtr<XdsLb> parent) : parent_(std::move(parent)) {}
 
+    Subchannel* CreateSubchannel(const grpc_channel_args& args) override;
+    grpc_channel* CreateChannel(const char* target,
+                                grpc_client_channel_type type,
+                                const grpc_channel_args& args) override;
     void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
                      RefCountedPtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
@@ -346,6 +349,18 @@ XdsLb::Picker::PickResult XdsLb::Picker::Pick(PickState* pick,
 //
 // XdsLb::Helper
 //
+
+Subchannel* XdsLb::Helper::CreateSubchannel(const grpc_channel_args& args) {
+  if (parent_->shutting_down_) return nullptr;
+  return parent_->channel_control_helper()->CreateSubchannel(args);
+}
+
+grpc_channel* XdsLb::Helper::CreateChannel(const char* target,
+                                           grpc_client_channel_type type,
+                                           const grpc_channel_args& args) {
+  if (parent_->shutting_down_) return nullptr;
+  return parent_->channel_control_helper()->CreateChannel(target, type, args);
+}
 
 void XdsLb::Helper::UpdateState(grpc_connectivity_state state,
                                 grpc_error* state_error,
@@ -1072,9 +1087,8 @@ void XdsLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
     char* uri_str;
     gpr_asprintf(&uri_str, "fake:///%s", server_name_);
     gpr_mu_lock(&lb_channel_mu_);
-    lb_channel_ = grpc_client_channel_factory_create_channel(
-        client_channel_factory(), uri_str,
-        GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, lb_channel_args);
+    lb_channel_ = channel_control_helper()->CreateChannel(
+        uri_str, GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, *lb_channel_args);
     gpr_mu_unlock(&lb_channel_mu_);
     GPR_ASSERT(lb_channel_ != nullptr);
     gpr_free(uri_str);
@@ -1364,8 +1378,6 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
   } else {
     LoadBalancingPolicy::Args lb_policy_args;
     lb_policy_args.combiner = combiner();
-    lb_policy_args.client_channel_factory = client_channel_factory();
-    lb_policy_args.subchannel_pool = subchannel_pool()->Ref();
     lb_policy_args.args = args;
     lb_policy_args.channel_control_helper = MakeRefCounted<Helper>(Ref());
     lb_policy_args.lb_config = child_policy_config;

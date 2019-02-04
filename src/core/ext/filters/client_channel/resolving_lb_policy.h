@@ -22,10 +22,8 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
-#include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
-#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
@@ -75,6 +73,10 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   virtual const char* name() const override { return "resolving_lb"; }
 
   // No-op -- should never get updates from the channel.
+  // TODO(roth): Need to support updating child LB policy's config.
+  // For xds policy, will also need to support updating config
+  // indepdently of args from resolver, since they will be coming from
+  // different places.  Maybe change LB policy API to support that?
   void UpdateLocked(const grpc_channel_args& args,
                     grpc_json* lb_config) override {}
 

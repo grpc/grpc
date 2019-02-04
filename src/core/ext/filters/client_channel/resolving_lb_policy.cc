@@ -32,10 +32,8 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/local_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
@@ -77,6 +75,17 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
       RefCountedPtr<ResolvingLoadBalancingPolicy> parent)
       : parent_(std::move(parent)),
         helper_(parent_->channel_control_helper()->Ref()) {}
+
+  Subchannel* CreateSubchannel(const grpc_channel_args& args) override {
+    if (parent_->resolver_ == nullptr) return nullptr;  // Shutting down.
+    return helper_->CreateSubchannel(args);
+  }
+
+  grpc_channel* CreateChannel(const char* target, grpc_client_channel_type type,
+                              const grpc_channel_args& args) override {
+    if (parent_->resolver_ == nullptr) return nullptr;  // Shutting down.
+    return helper_->CreateChannel(target, type, args);
+  }
 
   void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
                    RefCountedPtr<SubchannelPicker> picker) override {
@@ -258,10 +267,8 @@ void ResolvingLoadBalancingPolicy::CreateNewLbPolicyLocked(
     TraceStringVector* trace_strings) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = combiner();
-  lb_policy_args.client_channel_factory = client_channel_factory();
   lb_policy_args.channel_control_helper =
       MakeRefCounted<ResolvingControlHelper>(Ref());
-  lb_policy_args.subchannel_pool = subchannel_pool()->Ref();
   lb_policy_args.args = resolver_result_;
   lb_policy_args.lb_config = lb_config;
   OrphanablePtr<LoadBalancingPolicy> new_lb_policy =

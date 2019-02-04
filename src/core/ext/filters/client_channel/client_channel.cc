@@ -107,6 +107,8 @@ typedef struct client_channel_channel_data {
   grpc_channel_stack* owning_stack;
   /** interested parties (owned) */
   grpc_pollset_set* interested_parties;
+  // Client channel factory.  Holds a ref.
+  grpc_client_channel_factory* client_channel_factory;
   // Subchannel pool.
   grpc_core::RefCountedPtr<grpc_core::SubchannelPoolInterface> subchannel_pool;
 
@@ -196,6 +198,23 @@ class ClientChannelControlHelper
   ~ClientChannelControlHelper() override {
     GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack,
                              "ClientChannelControlHelper");
+  }
+
+  Subchannel* CreateSubchannel(const grpc_channel_args& args) override {
+    grpc_arg arg = SubchannelPoolInterface::CreateChannelArg(
+        chand_->subchannel_pool.get());
+    grpc_channel_args* new_args =
+        grpc_channel_args_copy_and_add(&args, &arg, 1);
+    Subchannel* subchannel = grpc_client_channel_factory_create_subchannel(
+        chand_->client_channel_factory, new_args);
+    grpc_channel_args_destroy(new_args);
+    return subchannel;
+  }
+
+  grpc_channel* CreateChannel(const char* target, grpc_client_channel_type type,
+                              const grpc_channel_args& args) override {
+    return grpc_client_channel_factory_create_channel(
+        chand_->client_channel_factory, target, type, &args);
   }
 
   void UpdateState(
@@ -411,8 +430,9 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "client channel factory arg must be a pointer");
   }
-  grpc_client_channel_factory* client_channel_factory =
+  chand->client_channel_factory =
       static_cast<grpc_client_channel_factory*>(arg->value.pointer.p);
+  grpc_client_channel_factory_ref(chand->client_channel_factory);
   // Get server name to resolve, using proxy mapper if needed.
   arg = grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVER_URI);
   if (arg == nullptr) {
@@ -441,9 +461,6 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   // Instantiate resolving LB policy.
   LoadBalancingPolicy::Args lb_args;
   lb_args.combiner = chand->combiner;
-  grpc_client_channel_factory_ref(client_channel_factory);
-  lb_args.client_channel_factory = client_channel_factory;
-  lb_args.subchannel_pool = chand->subchannel_pool;
   lb_args.channel_control_helper =
       grpc_core::MakeRefCounted<grpc_core::ClientChannelControlHelper>(chand);
   lb_args.args = new_args != nullptr ? new_args : args->channel_args;
@@ -491,6 +508,7 @@ static void cc_destroy_channel_elem(grpc_channel_element* elem) {
   // longer be any need to explicitly reset these smart pointer data members.
   chand->picker.reset();
   chand->subchannel_pool.reset();
+  grpc_client_channel_factory_unref(chand->client_channel_factory);
   chand->info_lb_policy_name.reset();
   chand->info_service_config_json.reset();
   chand->retry_throttle_data.reset();

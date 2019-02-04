@@ -54,8 +54,6 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
       : LoadBalancingPolicy(std::move(args)) {
     Args delegate_args;
     delegate_args.combiner = combiner();
-    delegate_args.client_channel_factory = client_channel_factory();
-    delegate_args.subchannel_pool = subchannel_pool()->Ref();
     delegate_args.channel_control_helper = std::move(delegating_helper);
     delegate_args.args = args.args;
     delegate_args.lb_config = args.lb_config;
@@ -143,6 +141,16 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
         : parent_helper_(std::move(parent_helper)),
           cb_(cb),
           user_data_(user_data) {}
+
+    Subchannel* CreateSubchannel(const grpc_channel_args& args) override {
+      return parent_helper_->CreateSubchannel(args);
+    }
+
+    grpc_channel* CreateChannel(const char* target,
+                                grpc_client_channel_type type,
+                                const grpc_channel_args& args) override {
+      return parent_helper_->CreateChannel(target, type, args);
+    }
 
     void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
                      RefCountedPtr<SubchannelPicker> picker) override {

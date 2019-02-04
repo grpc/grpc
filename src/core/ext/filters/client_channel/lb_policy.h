@@ -24,7 +24,6 @@
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
-#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -184,10 +183,21 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   /// A proxy object used by the LB policy to communicate with the client
   /// channel.
+  // TODO(roth): Does this need to be ref-counted, or could it be orphanable?
+  // Or maybe just use UniquePtr?
   class ChannelControlHelper : public RefCounted<ChannelControlHelper> {
    public:
     ChannelControlHelper() = default;
     virtual ~ChannelControlHelper() = default;
+
+    /// Creates a new subchannel with the specified channel args.
+    virtual Subchannel* CreateSubchannel(const grpc_channel_args& args)
+        GRPC_ABSTRACT;
+
+    /// Creates a channel with the specified target, type, and channel args.
+    virtual grpc_channel* CreateChannel(
+        const char* target, grpc_client_channel_type type,
+        const grpc_channel_args& args) GRPC_ABSTRACT;
 
     /// Sets the connectivity state and returns a new picker to be used
     /// by the client channel.
@@ -214,10 +224,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     // API should change to take a smart pointer that does pass ownership
     // of a reference.
     grpc_combiner* combiner = nullptr;
-    /// Used to create channels and subchannels.
-    grpc_client_channel_factory* client_channel_factory = nullptr;
-    /// Subchannel pool.
-    RefCountedPtr<SubchannelPoolInterface> subchannel_pool;
     /// Channel control helper.
     RefCountedPtr<ChannelControlHelper> channel_control_helper;
     /// Channel args from the resolver.
@@ -276,10 +282,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     channelz_node_ = std::move(channelz_node);
   }
 
-  SubchannelPoolInterface* subchannel_pool() const {
-    return subchannel_pool_.get();
-  }
-
   GRPC_ABSTRACT_BASE_CLASS
 
  protected:
@@ -289,9 +291,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   virtual ~LoadBalancingPolicy();
 
   grpc_combiner* combiner() const { return combiner_; }
-  grpc_client_channel_factory* client_channel_factory() const {
-    return client_channel_factory_;
-  }
 
   // Note: This will return null after ShutdownLocked() has been called.
   ChannelControlHelper* channel_control_helper() const {
@@ -317,10 +316,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   /// Combiner under which LB policy actions take place.
   grpc_combiner* combiner_;
-  /// Client channel factory, used to create channels and subchannels.
-  grpc_client_channel_factory* client_channel_factory_;
-  /// Subchannel pool.
-  RefCountedPtr<SubchannelPoolInterface> subchannel_pool_;
   /// Owned pointer to interested parties in load balancing decisions.
   grpc_pollset_set* interested_parties_;
   /// Channel control helper.
