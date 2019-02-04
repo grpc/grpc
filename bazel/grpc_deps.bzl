@@ -124,8 +124,8 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            strip_prefix = "protobuf-66dc42d891a4fc8e9190c524fd67961688a37bbe",
-            url = "https://github.com/google/protobuf/archive/66dc42d891a4fc8e9190c524fd67961688a37bbe.tar.gz",
+            strip_prefix = "protobuf-776b3a8b11fd243d709ef726ac963aa7d42e532e",
+            url = "https://github.com/google/protobuf/archive/776b3a8b11fd243d709ef726ac963aa7d42e532e.tar.gz",
         )
 
     if "com_github_nanopb_nanopb" not in native.existing_rules():
