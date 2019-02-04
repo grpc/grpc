@@ -164,7 +164,9 @@ namespace Grpc.Health.V1 {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 10: {
             Service = input.ReadString();
@@ -293,10 +295,12 @@ namespace Grpc.Health.V1 {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 8: {
-            status_ = (global::Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus) input.ReadEnum();
+            Status = (global::Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus) input.ReadEnum();
             break;
           }
         }

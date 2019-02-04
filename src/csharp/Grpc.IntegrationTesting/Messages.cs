@@ -214,7 +214,9 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 8: {
             Value = input.ReadBool();
@@ -376,10 +378,12 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 8: {
-            type_ = (global::Grpc.Testing.PayloadType) input.ReadEnum();
+            Type = (global::Grpc.Testing.PayloadType) input.ReadEnum();
             break;
           }
           case 18: {
@@ -537,7 +541,9 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 8: {
             Code = input.ReadInt32();
@@ -844,7 +850,7 @@ namespace Grpc.Testing {
       }
       if (other.payload_ != null) {
         if (payload_ == null) {
-          payload_ = new global::Grpc.Testing.Payload();
+          Payload = new global::Grpc.Testing.Payload();
         }
         Payload.MergeFrom(other.Payload);
       }
@@ -856,19 +862,19 @@ namespace Grpc.Testing {
       }
       if (other.responseCompressed_ != null) {
         if (responseCompressed_ == null) {
-          responseCompressed_ = new global::Grpc.Testing.BoolValue();
+          ResponseCompressed = new global::Grpc.Testing.BoolValue();
         }
         ResponseCompressed.MergeFrom(other.ResponseCompressed);
       }
       if (other.responseStatus_ != null) {
         if (responseStatus_ == null) {
-          responseStatus_ = new global::Grpc.Testing.EchoStatus();
+          ResponseStatus = new global::Grpc.Testing.EchoStatus();
         }
         ResponseStatus.MergeFrom(other.ResponseStatus);
       }
       if (other.expectCompressed_ != null) {
         if (expectCompressed_ == null) {
-          expectCompressed_ = new global::Grpc.Testing.BoolValue();
+          ExpectCompressed = new global::Grpc.Testing.BoolValue();
         }
         ExpectCompressed.MergeFrom(other.ExpectCompressed);
       }
@@ -881,10 +887,12 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 8: {
-            responseType_ = (global::Grpc.Testing.PayloadType) input.ReadEnum();
+            ResponseType = (global::Grpc.Testing.PayloadType) input.ReadEnum();
             break;
           }
           case 16: {
@@ -893,9 +901,9 @@ namespace Grpc.Testing {
           }
           case 26: {
             if (payload_ == null) {
-              payload_ = new global::Grpc.Testing.Payload();
+              Payload = new global::Grpc.Testing.Payload();
             }
-            input.ReadMessage(payload_);
+            input.ReadMessage(Payload);
             break;
           }
           case 32: {
@@ -908,23 +916,23 @@ namespace Grpc.Testing {
           }
           case 50: {
             if (responseCompressed_ == null) {
-              responseCompressed_ = new global::Grpc.Testing.BoolValue();
+              ResponseCompressed = new global::Grpc.Testing.BoolValue();
             }
-            input.ReadMessage(responseCompressed_);
+            input.ReadMessage(ResponseCompressed);
             break;
           }
           case 58: {
             if (responseStatus_ == null) {
-              responseStatus_ = new global::Grpc.Testing.EchoStatus();
+              ResponseStatus = new global::Grpc.Testing.EchoStatus();
             }
-            input.ReadMessage(responseStatus_);
+            input.ReadMessage(ResponseStatus);
             break;
           }
           case 66: {
             if (expectCompressed_ == null) {
-              expectCompressed_ = new global::Grpc.Testing.BoolValue();
+              ExpectCompressed = new global::Grpc.Testing.BoolValue();
             }
-            input.ReadMessage(expectCompressed_);
+            input.ReadMessage(ExpectCompressed);
             break;
           }
         }
@@ -1095,7 +1103,7 @@ namespace Grpc.Testing {
       }
       if (other.payload_ != null) {
         if (payload_ == null) {
-          payload_ = new global::Grpc.Testing.Payload();
+          Payload = new global::Grpc.Testing.Payload();
         }
         Payload.MergeFrom(other.Payload);
       }
@@ -1114,13 +1122,15 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 10: {
             if (payload_ == null) {
-              payload_ = new global::Grpc.Testing.Payload();
+              Payload = new global::Grpc.Testing.Payload();
             }
-            input.ReadMessage(payload_);
+            input.ReadMessage(Payload);
             break;
           }
           case 18: {
@@ -1277,13 +1287,13 @@ namespace Grpc.Testing {
       }
       if (other.payload_ != null) {
         if (payload_ == null) {
-          payload_ = new global::Grpc.Testing.Payload();
+          Payload = new global::Grpc.Testing.Payload();
         }
         Payload.MergeFrom(other.Payload);
       }
       if (other.expectCompressed_ != null) {
         if (expectCompressed_ == null) {
-          expectCompressed_ = new global::Grpc.Testing.BoolValue();
+          ExpectCompressed = new global::Grpc.Testing.BoolValue();
         }
         ExpectCompressed.MergeFrom(other.ExpectCompressed);
       }
@@ -1296,20 +1306,22 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 10: {
             if (payload_ == null) {
-              payload_ = new global::Grpc.Testing.Payload();
+              Payload = new global::Grpc.Testing.Payload();
             }
-            input.ReadMessage(payload_);
+            input.ReadMessage(Payload);
             break;
           }
           case 18: {
             if (expectCompressed_ == null) {
-              expectCompressed_ = new global::Grpc.Testing.BoolValue();
+              ExpectCompressed = new global::Grpc.Testing.BoolValue();
             }
-            input.ReadMessage(expectCompressed_);
+            input.ReadMessage(ExpectCompressed);
             break;
           }
         }
@@ -1441,7 +1453,9 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 8: {
             AggregatedPayloadSize = input.ReadInt32();
@@ -1624,7 +1638,7 @@ namespace Grpc.Testing {
       }
       if (other.compressed_ != null) {
         if (compressed_ == null) {
-          compressed_ = new global::Grpc.Testing.BoolValue();
+          Compressed = new global::Grpc.Testing.BoolValue();
         }
         Compressed.MergeFrom(other.Compressed);
       }
@@ -1637,7 +1651,9 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 8: {
             Size = input.ReadInt32();
@@ -1649,9 +1665,9 @@ namespace Grpc.Testing {
           }
           case 26: {
             if (compressed_ == null) {
-              compressed_ = new global::Grpc.Testing.BoolValue();
+              Compressed = new global::Grpc.Testing.BoolValue();
             }
-            input.ReadMessage(compressed_);
+            input.ReadMessage(Compressed);
             break;
           }
         }
@@ -1846,13 +1862,13 @@ namespace Grpc.Testing {
       responseParameters_.Add(other.responseParameters_);
       if (other.payload_ != null) {
         if (payload_ == null) {
-          payload_ = new global::Grpc.Testing.Payload();
+          Payload = new global::Grpc.Testing.Payload();
         }
         Payload.MergeFrom(other.Payload);
       }
       if (other.responseStatus_ != null) {
         if (responseStatus_ == null) {
-          responseStatus_ = new global::Grpc.Testing.EchoStatus();
+          ResponseStatus = new global::Grpc.Testing.EchoStatus();
         }
         ResponseStatus.MergeFrom(other.ResponseStatus);
       }
@@ -1865,10 +1881,12 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 8: {
-            responseType_ = (global::Grpc.Testing.PayloadType) input.ReadEnum();
+            ResponseType = (global::Grpc.Testing.PayloadType) input.ReadEnum();
             break;
           }
           case 18: {
@@ -1877,16 +1895,16 @@ namespace Grpc.Testing {
           }
           case 26: {
             if (payload_ == null) {
-              payload_ = new global::Grpc.Testing.Payload();
+              Payload = new global::Grpc.Testing.Payload();
             }
-            input.ReadMessage(payload_);
+            input.ReadMessage(Payload);
             break;
           }
           case 58: {
             if (responseStatus_ == null) {
-              responseStatus_ = new global::Grpc.Testing.EchoStatus();
+              ResponseStatus = new global::Grpc.Testing.EchoStatus();
             }
-            input.ReadMessage(responseStatus_);
+            input.ReadMessage(ResponseStatus);
             break;
           }
         }
@@ -2008,7 +2026,7 @@ namespace Grpc.Testing {
       }
       if (other.payload_ != null) {
         if (payload_ == null) {
-          payload_ = new global::Grpc.Testing.Payload();
+          Payload = new global::Grpc.Testing.Payload();
         }
         Payload.MergeFrom(other.Payload);
       }
@@ -2021,13 +2039,15 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 10: {
             if (payload_ == null) {
-              payload_ = new global::Grpc.Testing.Payload();
+              Payload = new global::Grpc.Testing.Payload();
             }
-            input.ReadMessage(payload_);
+            input.ReadMessage(Payload);
             break;
           }
         }
@@ -2157,7 +2177,9 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 8: {
             MaxReconnectBackoffMs = input.ReadInt32();
@@ -2307,7 +2329,9 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 8: {
             Passed = input.ReadBool();

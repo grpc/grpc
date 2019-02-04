@@ -184,7 +184,9 @@ namespace Grpc.Core {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 9: {
             Start = input.ReadDouble();
@@ -309,7 +311,9 @@ namespace Grpc.Core {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 10: {
             buckets_.AddEntriesFrom(input, _repeated_buckets_codec);
@@ -520,7 +524,9 @@ namespace Grpc.Core {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 10: {
             Name = input.ReadString();
@@ -654,7 +660,9 @@ namespace Grpc.Core {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 10: {
             metrics_.AddEntriesFrom(input, _repeated_metrics_codec);

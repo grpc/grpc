@@ -291,7 +291,9 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 9: {
             OfferedLoad = input.ReadDouble();
@@ -400,7 +402,9 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
         }
       }
@@ -586,7 +590,9 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 10: {
             global::Grpc.Testing.ClosedLoopParams subBuilder = new global::Grpc.Testing.ClosedLoopParams();
@@ -780,7 +786,9 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 8: {
             UseTestCa = input.ReadBool();
@@ -996,7 +1004,9 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 10: {
             Name = input.ReadString();
@@ -1502,7 +1512,7 @@ namespace Grpc.Testing {
       }
       if (other.securityParams_ != null) {
         if (securityParams_ == null) {
-          securityParams_ = new global::Grpc.Testing.SecurityParams();
+          SecurityParams = new global::Grpc.Testing.SecurityParams();
         }
         SecurityParams.MergeFrom(other.SecurityParams);
       }
@@ -1520,19 +1530,19 @@ namespace Grpc.Testing {
       }
       if (other.loadParams_ != null) {
         if (loadParams_ == null) {
-          loadParams_ = new global::Grpc.Testing.LoadParams();
+          LoadParams = new global::Grpc.Testing.LoadParams();
         }
         LoadParams.MergeFrom(other.LoadParams);
       }
       if (other.payloadConfig_ != null) {
         if (payloadConfig_ == null) {
-          payloadConfig_ = new global::Grpc.Testing.PayloadConfig();
+          PayloadConfig = new global::Grpc.Testing.PayloadConfig();
         }
         PayloadConfig.MergeFrom(other.PayloadConfig);
       }
       if (other.histogramParams_ != null) {
         if (histogramParams_ == null) {
-          histogramParams_ = new global::Grpc.Testing.HistogramParams();
+          HistogramParams = new global::Grpc.Testing.HistogramParams();
         }
         HistogramParams.MergeFrom(other.HistogramParams);
       }
@@ -1565,21 +1575,23 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 10: {
             serverTargets_.AddEntriesFrom(input, _repeated_serverTargets_codec);
             break;
           }
           case 16: {
-            clientType_ = (global::Grpc.Testing.ClientType) input.ReadEnum();
+            ClientType = (global::Grpc.Testing.ClientType) input.ReadEnum();
             break;
           }
           case 26: {
             if (securityParams_ == null) {
-              securityParams_ = new global::Grpc.Testing.SecurityParams();
+              SecurityParams = new global::Grpc.Testing.SecurityParams();
             }
-            input.ReadMessage(securityParams_);
+            input.ReadMessage(SecurityParams);
             break;
           }
           case 32: {
@@ -1595,28 +1607,28 @@ namespace Grpc.Testing {
             break;
           }
           case 64: {
-            rpcType_ = (global::Grpc.Testing.RpcType) input.ReadEnum();
+            RpcType = (global::Grpc.Testing.RpcType) input.ReadEnum();
             break;
           }
           case 82: {
             if (loadParams_ == null) {
-              loadParams_ = new global::Grpc.Testing.LoadParams();
+              LoadParams = new global::Grpc.Testing.LoadParams();
             }
-            input.ReadMessage(loadParams_);
+            input.ReadMessage(LoadParams);
             break;
           }
           case 90: {
             if (payloadConfig_ == null) {
-              payloadConfig_ = new global::Grpc.Testing.PayloadConfig();
+              PayloadConfig = new global::Grpc.Testing.PayloadConfig();
             }
-            input.ReadMessage(payloadConfig_);
+            input.ReadMessage(PayloadConfig);
             break;
           }
           case 98: {
             if (histogramParams_ == null) {
-              histogramParams_ = new global::Grpc.Testing.HistogramParams();
+              HistogramParams = new global::Grpc.Testing.HistogramParams();
             }
-            input.ReadMessage(histogramParams_);
+            input.ReadMessage(HistogramParams);
             break;
           }
           case 106:
@@ -1765,7 +1777,7 @@ namespace Grpc.Testing {
       }
       if (other.stats_ != null) {
         if (stats_ == null) {
-          stats_ = new global::Grpc.Testing.ClientStats();
+          Stats = new global::Grpc.Testing.ClientStats();
         }
         Stats.MergeFrom(other.Stats);
       }
@@ -1778,13 +1790,15 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 10: {
             if (stats_ == null) {
-              stats_ = new global::Grpc.Testing.ClientStats();
+              Stats = new global::Grpc.Testing.ClientStats();
             }
-            input.ReadMessage(stats_);
+            input.ReadMessage(Stats);
             break;
           }
         }
@@ -1916,7 +1930,9 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 8: {
             Reset = input.ReadBool();
@@ -2106,7 +2122,9 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 10: {
             global::Grpc.Testing.ClientConfig subBuilder = new global::Grpc.Testing.ClientConfig();
@@ -2467,7 +2485,7 @@ namespace Grpc.Testing {
       }
       if (other.securityParams_ != null) {
         if (securityParams_ == null) {
-          securityParams_ = new global::Grpc.Testing.SecurityParams();
+          SecurityParams = new global::Grpc.Testing.SecurityParams();
         }
         SecurityParams.MergeFrom(other.SecurityParams);
       }
@@ -2482,7 +2500,7 @@ namespace Grpc.Testing {
       }
       if (other.payloadConfig_ != null) {
         if (payloadConfig_ == null) {
-          payloadConfig_ = new global::Grpc.Testing.PayloadConfig();
+          PayloadConfig = new global::Grpc.Testing.PayloadConfig();
         }
         PayloadConfig.MergeFrom(other.PayloadConfig);
       }
@@ -2506,17 +2524,19 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 8: {
-            serverType_ = (global::Grpc.Testing.ServerType) input.ReadEnum();
+            ServerType = (global::Grpc.Testing.ServerType) input.ReadEnum();
             break;
           }
           case 18: {
             if (securityParams_ == null) {
-              securityParams_ = new global::Grpc.Testing.SecurityParams();
+              SecurityParams = new global::Grpc.Testing.SecurityParams();
             }
-            input.ReadMessage(securityParams_);
+            input.ReadMessage(SecurityParams);
             break;
           }
           case 32: {
@@ -2533,9 +2553,9 @@ namespace Grpc.Testing {
           }
           case 74: {
             if (payloadConfig_ == null) {
-              payloadConfig_ = new global::Grpc.Testing.PayloadConfig();
+              PayloadConfig = new global::Grpc.Testing.PayloadConfig();
             }
-            input.ReadMessage(payloadConfig_);
+            input.ReadMessage(PayloadConfig);
             break;
           }
           case 82:
@@ -2743,7 +2763,9 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 10: {
             global::Grpc.Testing.ServerConfig subBuilder = new global::Grpc.Testing.ServerConfig();
@@ -2924,7 +2946,7 @@ namespace Grpc.Testing {
       }
       if (other.stats_ != null) {
         if (stats_ == null) {
-          stats_ = new global::Grpc.Testing.ServerStats();
+          Stats = new global::Grpc.Testing.ServerStats();
         }
         Stats.MergeFrom(other.Stats);
       }
@@ -2943,13 +2965,15 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 10: {
             if (stats_ == null) {
-              stats_ = new global::Grpc.Testing.ServerStats();
+              Stats = new global::Grpc.Testing.ServerStats();
             }
-            input.ReadMessage(stats_);
+            input.ReadMessage(Stats);
             break;
           }
           case 16: {
@@ -3059,7 +3083,9 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
         }
       }
@@ -3187,7 +3213,9 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 8: {
             Cores = input.ReadInt32();
@@ -3292,7 +3320,9 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
         }
       }
@@ -3584,7 +3614,7 @@ namespace Grpc.Testing {
       }
       if (other.clientConfig_ != null) {
         if (clientConfig_ == null) {
-          clientConfig_ = new global::Grpc.Testing.ClientConfig();
+          ClientConfig = new global::Grpc.Testing.ClientConfig();
         }
         ClientConfig.MergeFrom(other.ClientConfig);
       }
@@ -3593,7 +3623,7 @@ namespace Grpc.Testing {
       }
       if (other.serverConfig_ != null) {
         if (serverConfig_ == null) {
-          serverConfig_ = new global::Grpc.Testing.ServerConfig();
+          ServerConfig = new global::Grpc.Testing.ServerConfig();
         }
         ServerConfig.MergeFrom(other.ServerConfig);
       }
@@ -3618,7 +3648,9 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 10: {
             Name = input.ReadString();
@@ -3626,9 +3658,9 @@ namespace Grpc.Testing {
           }
           case 18: {
             if (clientConfig_ == null) {
-              clientConfig_ = new global::Grpc.Testing.ClientConfig();
+              ClientConfig = new global::Grpc.Testing.ClientConfig();
             }
-            input.ReadMessage(clientConfig_);
+            input.ReadMessage(ClientConfig);
             break;
           }
           case 24: {
@@ -3637,9 +3669,9 @@ namespace Grpc.Testing {
           }
           case 34: {
             if (serverConfig_ == null) {
-              serverConfig_ = new global::Grpc.Testing.ServerConfig();
+              ServerConfig = new global::Grpc.Testing.ServerConfig();
             }
-            input.ReadMessage(serverConfig_);
+            input.ReadMessage(ServerConfig);
             break;
           }
           case 40: {
@@ -3776,7 +3808,9 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 10: {
             scenarios_.AddEntriesFrom(input, _repeated_scenarios_codec);
@@ -4350,7 +4384,9 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 9: {
             Qps = input.ReadDouble();
@@ -4696,13 +4732,13 @@ namespace Grpc.Testing {
       }
       if (other.scenario_ != null) {
         if (scenario_ == null) {
-          scenario_ = new global::Grpc.Testing.Scenario();
+          Scenario = new global::Grpc.Testing.Scenario();
         }
         Scenario.MergeFrom(other.Scenario);
       }
       if (other.latencies_ != null) {
         if (latencies_ == null) {
-          latencies_ = new global::Grpc.Testing.HistogramData();
+          Latencies = new global::Grpc.Testing.HistogramData();
         }
         Latencies.MergeFrom(other.Latencies);
       }
@@ -4711,7 +4747,7 @@ namespace Grpc.Testing {
       serverCores_.Add(other.serverCores_);
       if (other.summary_ != null) {
         if (summary_ == null) {
-          summary_ = new global::Grpc.Testing.ScenarioResultSummary();
+          Summary = new global::Grpc.Testing.ScenarioResultSummary();
         }
         Summary.MergeFrom(other.Summary);
       }
@@ -4727,20 +4763,22 @@ namespace Grpc.Testing {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
+              return;
+            }
             break;
           case 10: {
             if (scenario_ == null) {
-              scenario_ = new global::Grpc.Testing.Scenario();
+              Scenario = new global::Grpc.Testing.Scenario();
             }
-            input.ReadMessage(scenario_);
+            input.ReadMessage(Scenario);
             break;
           }
           case 18: {
             if (latencies_ == null) {
-              latencies_ = new global::Grpc.Testing.HistogramData();
+              Latencies = new global::Grpc.Testing.HistogramData();
             }
-            input.ReadMessage(latencies_);
+            input.ReadMessage(Latencies);
             break;
           }
           case 26: {
@@ -4758,9 +4796,9 @@ namespace Grpc.Testing {
           }
           case 50: {
             if (summary_ == null) {
-              summary_ = new global::Grpc.Testing.ScenarioResultSummary();
+              Summary = new global::Grpc.Testing.ScenarioResultSummary();
             }
-            input.ReadMessage(summary_);
+            input.ReadMessage(Summary);
             break;
           }
           case 58:
