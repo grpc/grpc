@@ -534,6 +534,14 @@ typedef unsigned __int64 uint64_t;
 #endif
 #endif /* GPR_HAS_ATTRIBUTE */
 
+#ifndef GPR_HAS_FEATURE
+#ifdef __has_feature
+#define GPR_HAS_FEATURE(a) __has_feature(a)
+#else
+#define GPR_HAS_FEATURE(a) 0
+#endif
+#endif /* GPR_HAS_FEATURE */
+
 #ifndef GPR_ATTRIBUTE_NOINLINE
 #if GPR_HAS_ATTRIBUTE(noinline) || (defined(__GNUC__) && !defined(__clang__))
 #define GPR_ATTRIBUTE_NOINLINE __attribute__((noinline))
@@ -569,10 +577,15 @@ typedef unsigned __int64 uint64_t;
 /* GRPC_TSAN_ENABLED will be defined, when compiled with thread sanitizer. */
 #if defined(__SANITIZE_THREAD__)
 #define GRPC_TSAN_ENABLED
-#elif defined(__has_feature)
-#if __has_feature(thread_sanitizer)
+#elif GPR_HAS_FEATURE(thread_sanitizer)
 #define GRPC_TSAN_ENABLED
 #endif
+
+/* GRPC_ASAN_ENABLED will be defined, when compiled with address sanitizer. */
+#if defined(__SANITIZE_ADDRESS__)
+#define GRPC_ASAN_ENABLED
+#elif GPR_HAS_FEATURE(address_sanitizer)
+#define GRPC_ASAN_ENABLED
 #endif
 
 /* GRPC_ALLOW_EXCEPTIONS should be 0 or 1 if exceptions are allowed or not */
