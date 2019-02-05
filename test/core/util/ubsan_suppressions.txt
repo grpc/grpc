@@ -1,11 +1,4 @@
-# boringssl stuff
-nonnull-attribute:bn_wexpand
-nonnull-attribute:CBB_add_bytes
-nonnull-attribute:rsa_blinding_get
-nonnull-attribute:ssl_copy_key_material
-alignment:CRYPTO_cbc128_encrypt
-alignment:CRYPTO_gcm128_encrypt
-alignment:poly1305_block_copy
+# Protobuf stuff
 nonnull-attribute:google::protobuf::*
 alignment:google::protobuf::*
 nonnull-attribute:_tr_stored_block
@@ -16,11 +9,6 @@ enum:transport_security_test
 enum:algorithm_test
 alignment:transport_security_test
 # TODO(jtattermusch): address issues and remove the supressions
-nonnull-attribute:gsec_aes_gcm_aead_crypter_decrypt_iovec
-nonnull-attribute:gsec_test_random_encrypt_decrypt
-nonnull-attribute:gsec_test_multiple_random_encrypt_decrypt
-nonnull-attribute:gsec_test_copy
-nonnull-attribute:gsec_test_encrypt_decrypt_test_vector
 alignment:absl::little_endian::Store64
 alignment:absl::little_endian::Load64
 float-divide-by-zero:grpc::testing::postprocess_scenario_result
