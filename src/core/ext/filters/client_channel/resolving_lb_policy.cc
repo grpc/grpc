@@ -89,9 +89,12 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
 
   void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
                    RefCountedPtr<SubchannelPicker> picker) override {
-    if (parent_->resolver_ != nullptr) {  // Not shutting down.
-      helper_->UpdateState(state, state_error, std::move(picker));
+    if (parent_->resolver_ == nullptr) {
+      // shutting down.
+      GRPC_ERROR_UNREF(state_error);
+      return;
     }
+    helper_->UpdateState(state, state_error, std::move(picker));
   }
 
   void RequestReresolution() override {
