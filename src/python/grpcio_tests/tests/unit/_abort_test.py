@@ -120,13 +120,13 @@ class AbortTest(unittest.TestCase):
         weak_ref = weakref.ref(do_not_leak_me)
 
         # Servicer will abort() after creating a local ref to do_not_leak_me.
-        with self.assertRaises(grpc.RpcError) as exception_context:
+        with self.assertRaises(grpc.RpcError):
             self._channel.unary_unary(_ABORT)(_REQUEST)
-        rpc_error = exception_context.exception
 
+        # Server may still have a stack frame reference to the exception even
+        # after client sees error, so ensure server has shutdown.
+        self._server.stop(None)
         do_not_leak_me = None
-        # Force garbage collection
-        gc.collect()
         self.assertIsNone(weak_ref())
 
     def test_abort_with_status(self):
