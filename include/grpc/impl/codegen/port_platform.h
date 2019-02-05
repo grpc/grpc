@@ -189,6 +189,8 @@
 #define GPR_PLATFORM_STRING "ios"
 #define GPR_CPU_IPHONE 1
 #define GPR_PTHREAD_TLS 1
+/* the c-ares resolver isnt safe to enable on iOS */
+#define GRPC_ARES 0
 #else /* TARGET_OS_IPHONE */
 #define GPR_PLATFORM_STRING "osx"
 #ifdef __MAC_OS_X_VERSION_MIN_REQUIRED
