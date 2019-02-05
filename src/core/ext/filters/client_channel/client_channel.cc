@@ -508,7 +508,9 @@ static void cc_destroy_channel_elem(grpc_channel_element* elem) {
   // longer be any need to explicitly reset these smart pointer data members.
   chand->picker.reset();
   chand->subchannel_pool.reset();
-  grpc_client_channel_factory_unref(chand->client_channel_factory);
+  if (chand->client_channel_factory != nullptr) {
+    grpc_client_channel_factory_unref(chand->client_channel_factory);
+  }
   chand->info_lb_policy_name.reset();
   chand->info_service_config_json.reset();
   chand->retry_throttle_data.reset();
