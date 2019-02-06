@@ -758,6 +758,18 @@ TEST_P(End2endTest, MultipleRpcs) {
   }
 }
 
+TEST_P(End2endTest, EmptyBinaryMetadata) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello hello hello hello");
+  ClientContext context;
+  context.AddMetadata("custom-bin", "");
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.ok());
+}
+
 TEST_P(End2endTest, ReconnectChannel) {
   if (GetParam().inproc) {
     return;
