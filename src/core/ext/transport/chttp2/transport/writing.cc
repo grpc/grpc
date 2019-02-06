@@ -363,7 +363,6 @@ class DataSendContext {
     grpc_chttp2_encode_data(s_->id, &s_->compressed_data_buffer, send_bytes,
                             is_last_frame_, &s_->stats.outgoing, &t_->outbuf);
     s_->flow_control->SentData(send_bytes);
-    s_->byte_counter += send_bytes;
     if (s_->compressed_data_buffer.length == 0) {
       s_->sending_bytes += s_->uncompressed_data_size;
     }
@@ -498,9 +497,6 @@ class StreamWriteContext {
         data_send_context.CompressMoreBytes();
       }
     }
-    if (s_->traced && grpc_endpoint_can_track_err(t_->ep)) {
-      grpc_core::ContextList::Append(&t_->cl, s_);
-    }
     write_context_->ResetPingClock();
     if (data_send_context.is_last_frame()) {
       SentLastFrame();
@@ -610,11 +606,18 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
      (according to available window sizes) and add to the output buffer */
   while (grpc_chttp2_stream* s = ctx.NextStream()) {
     StreamWriteContext stream_ctx(&ctx, s);
+    size_t orig_len = t->outbuf.length;
     stream_ctx.FlushInitialMetadata();
     stream_ctx.FlushWindowUpdates();
     stream_ctx.FlushData();
     stream_ctx.FlushTrailingMetadata();
-
+    if (t->outbuf.length > orig_len) {
+      /* Add this stream to the list of the contexts to be traced at TCP */
+      s->byte_counter += t->outbuf.length - orig_len;
+      if (s->traced && grpc_endpoint_can_track_err(t->ep)) {
+        grpc_core::ContextList::Append(&t->cl, s);
+      }
+    }
     if (stream_ctx.stream_became_writable()) {
       if (!grpc_chttp2_list_add_writing_stream(t, s)) {
         /* already in writing list: drop ref */

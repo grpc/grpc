@@ -125,7 +125,7 @@ constexpr char kGrpclb[] = "grpclb";
 
 class GrpcLb : public LoadBalancingPolicy {
  public:
-  explicit GrpcLb(const Args& args);
+  explicit GrpcLb(Args args);
 
   const char* name() const override { return kGrpclb; }
 
@@ -273,7 +273,7 @@ class GrpcLb : public LoadBalancingPolicy {
   // Methods for dealing with the RR policy.
   void CreateOrUpdateRoundRobinPolicyLocked();
   grpc_channel_args* CreateRoundRobinPolicyArgsLocked();
-  void CreateRoundRobinPolicyLocked(const Args& args);
+  void CreateRoundRobinPolicyLocked(Args args);
   bool PickFromRoundRobinPolicyLocked(bool force_async, PendingPick* pp,
                                       grpc_error** error);
   void UpdateConnectivityStateFromRoundRobinPolicyLocked(
@@ -973,8 +973,8 @@ grpc_channel_args* BuildBalancerChannelArgs(
 // ctor and dtor
 //
 
-GrpcLb::GrpcLb(const LoadBalancingPolicy::Args& args)
-    : LoadBalancingPolicy(args),
+GrpcLb::GrpcLb(LoadBalancingPolicy::Args args)
+    : LoadBalancingPolicy(std::move(args)),
       response_generator_(MakeRefCounted<FakeResolverResponseGenerator>()),
       lb_call_backoff_(
           BackOff::Options()
@@ -1588,10 +1588,10 @@ bool GrpcLb::PickFromRoundRobinPolicyLocked(bool force_async, PendingPick* pp,
   return pick_done;
 }
 
-void GrpcLb::CreateRoundRobinPolicyLocked(const Args& args) {
+void GrpcLb::CreateRoundRobinPolicyLocked(Args args) {
   GPR_ASSERT(rr_policy_ == nullptr);
   rr_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-      "round_robin", args);
+      "round_robin", std::move(args));
   if (GPR_UNLIKELY(rr_policy_ == nullptr)) {
     gpr_log(GPR_ERROR, "[grpclb %p] Failure creating a RoundRobin policy",
             this);
@@ -1693,8 +1693,8 @@ void GrpcLb::CreateOrUpdateRoundRobinPolicyLocked() {
     lb_policy_args.combiner = combiner();
     lb_policy_args.client_channel_factory = client_channel_factory();
     lb_policy_args.args = args;
-    lb_policy_args.subchannel_pool = subchannel_pool();
-    CreateRoundRobinPolicyLocked(lb_policy_args);
+    lb_policy_args.subchannel_pool = subchannel_pool()->Ref();
+    CreateRoundRobinPolicyLocked(std::move(lb_policy_args));
   }
   grpc_channel_args_destroy(args);
 }
@@ -1802,7 +1802,7 @@ void GrpcLb::OnRoundRobinConnectivityChangedLocked(void* arg,
 class GrpcLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-      const LoadBalancingPolicy::Args& args) const override {
+      LoadBalancingPolicy::Args args) const override {
     /* Count the number of gRPC-LB addresses. There must be at least one. */
     const ServerAddressList* addresses =
         FindServerAddressListChannelArg(args.args);
@@ -1815,7 +1815,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
       }
     }
     if (!found_balancer) return nullptr;
-    return OrphanablePtr<LoadBalancingPolicy>(New<GrpcLb>(args));
+    return OrphanablePtr<LoadBalancingPolicy>(New<GrpcLb>(std::move(args)));
   }
 
   const char* name() const override { return kGrpclb; }

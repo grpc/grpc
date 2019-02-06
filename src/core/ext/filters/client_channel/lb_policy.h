@@ -55,7 +55,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Used to create channels and subchannels.
     grpc_client_channel_factory* client_channel_factory = nullptr;
     /// Subchannel pool.
-    RefCountedPtr<SubchannelPoolInterface>* subchannel_pool;
+    RefCountedPtr<SubchannelPoolInterface> subchannel_pool;
     /// Channel args from the resolver.
     /// Note that the LB policy gets the set of addresses from the
     /// GRPC_ARG_SERVER_ADDRESS_LIST channel arg.
@@ -179,6 +179,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
         GRPC_ERROR_NONE);
   }
 
+  /// Returns the JSON node of policy (with both policy name and config content)
+  /// given the JSON node of a LoadBalancingConfig array.
+  static grpc_json* ParseLoadBalancingConfig(const grpc_json* lb_config_array);
+
   /// Sets the re-resolution closure to \a request_reresolution.
   void SetReresolutionClosureLocked(grpc_closure* request_reresolution) {
     GPR_ASSERT(request_reresolution_ == nullptr);
@@ -187,10 +191,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
-  /// Returns a pointer to the subchannel pool of type
-  /// RefCountedPtr<SubchannelPoolInterface>.
-  RefCountedPtr<SubchannelPoolInterface>* subchannel_pool() {
-    return &subchannel_pool_;
+  // Callers that need their own reference can call the returned
+  // object's Ref() method.
+  SubchannelPoolInterface* subchannel_pool() const {
+    return subchannel_pool_.get();
   }
 
   GRPC_ABSTRACT_BASE_CLASS
@@ -198,7 +202,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
  protected:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
-  explicit LoadBalancingPolicy(const Args& args);
+  explicit LoadBalancingPolicy(Args args);
   virtual ~LoadBalancingPolicy();
 
   grpc_combiner* combiner() const { return combiner_; }

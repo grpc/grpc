@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015 gRPC authors.
+// Copyright 2019 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,20 +19,18 @@
 using System;
 using System.Threading;
 
-using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 
-namespace Grpc.Core
+namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// Token for propagating context of server side handlers to child calls.
-    /// In situations when a backend is making calls to another backend,
-    /// it makes sense to propagate properties like deadline and cancellation 
-    /// token of the server call to the child call.
-    /// The gRPC native layer provides some other contexts (like tracing context) that
-    /// are not accessible to explicitly C# layer, but this token still allows propagating them.
+    /// Implementation of <c>ContextPropagationToken</c> that carries
+    /// all fields needed for context propagation by C-core based implementation of gRPC.
+    /// Instances of <c>ContextPropagationToken</c> that are not of this
+    /// type will be recognized as "foreign" and will be silently ignored
+    /// (treated as if null).
     /// </summary>
-    public class ContextPropagationToken
+    internal class ContextPropagationTokenImpl : ContextPropagationToken
     {
         /// <summary>
         /// Default propagation mask used by C core.
@@ -41,7 +39,8 @@ namespace Grpc.Core
 
         /// <summary>
         /// Default propagation mask used by C# - we want to propagate deadline 
-        /// and cancellation token by our own means.
+        /// and cancellation token by our own means, everything else will be propagated
+        /// by C core automatically (according to <c>DefaultCoreMask</c>).
         /// </summary>
         internal const ContextPropagationFlags DefaultMask = DefaultCoreMask
             & ~ContextPropagationFlags.Deadline & ~ContextPropagationFlags.Cancellation;
@@ -51,7 +50,7 @@ namespace Grpc.Core
         readonly CancellationToken cancellationToken;
         readonly ContextPropagationOptions options;
 
-        internal ContextPropagationToken(CallSafeHandle parentCall, DateTime deadline, CancellationToken cancellationToken, ContextPropagationOptions options)
+        internal ContextPropagationTokenImpl(CallSafeHandle parentCall, DateTime deadline, CancellationToken cancellationToken, ContextPropagationOptions options)
         {
             this.parentCall = GrpcPreconditions.CheckNotNull(parentCall);
             this.deadline = deadline;
@@ -104,52 +103,17 @@ namespace Grpc.Core
         }
     }
 
-    /// <summary>
-    /// Options for <see cref="ContextPropagationToken"/>.
-    /// </summary>
-    public class ContextPropagationOptions
+    internal static class ContextPropagationTokenExtensions
     {
         /// <summary>
-        /// The context propagation options that will be used by default.
+        /// Converts given <c>ContextPropagationToken</c> to <c>ContextPropagationTokenImpl</c>
+        /// if possible or returns null.
+        /// Being able to convert means that the context propagation token is recognized as
+        /// "ours" (was created by this implementation).
         /// </summary>
-        public static readonly ContextPropagationOptions Default = new ContextPropagationOptions();
-
-        bool propagateDeadline;
-        bool propagateCancellation;
-
-        /// <summary>
-        /// Creates new context propagation options.
-        /// </summary>
-        /// <param name="propagateDeadline">If set to <c>true</c> parent call's deadline will be propagated to the child call.</param>
-        /// <param name="propagateCancellation">If set to <c>true</c> parent call's cancellation token will be propagated to the child call.</param>
-        public ContextPropagationOptions(bool propagateDeadline = true, bool propagateCancellation = true)
+        public static ContextPropagationTokenImpl AsImplOrNull(this ContextPropagationToken instanceOrNull)
         {
-            this.propagateDeadline = propagateDeadline;
-            this.propagateCancellation = propagateCancellation;
+            return instanceOrNull as ContextPropagationTokenImpl;
         }
-            
-        /// <summary><c>true</c> if parent call's deadline should be propagated to the child call.</summary>
-        public bool IsPropagateDeadline
-        {
-            get { return this.propagateDeadline; }
-        }
-
-        /// <summary><c>true</c> if parent call's cancellation token should be propagated to the child call.</summary>
-        public bool IsPropagateCancellation
-        {
-            get { return this.propagateCancellation; }
-        }
-    }
-
-    /// <summary>
-    /// Context propagation flags from grpc/grpc.h.
-    /// </summary>
-    [Flags]
-    internal enum ContextPropagationFlags
-    {
-        Deadline = 1,
-        CensusStatsContext = 2,
-        CensusTracingContext = 4,
-        Cancellation = 8
     }
 }

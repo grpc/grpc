@@ -32,6 +32,7 @@
   RUN python3 -m pip install simplejson mako virtualenv lxml
 
   <%include file="../../clang5.include"/>
+  <%include file="../../bazel.include"/>
 
   # Define the default command.
   CMD ["bash"]

@@ -19,7 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Grpc.Core.Internal;
+using System.Text;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core
@@ -30,6 +30,7 @@ namespace Grpc.Core
     /// </summary>
     public class AuthProperty
     {
+        static readonly Encoding EncodingUTF8 = System.Text.Encoding.UTF8;
         string name;
         byte[] valueBytes;
         Lazy<string> value;
@@ -38,7 +39,7 @@ namespace Grpc.Core
         {
             this.name = GrpcPreconditions.CheckNotNull(name);
             this.valueBytes = GrpcPreconditions.CheckNotNull(valueBytes);
-            this.value = new Lazy<string>(() => MarshalUtils.GetStringUTF8(this.valueBytes));
+            this.value = new Lazy<string>(() => EncodingUTF8.GetString(this.valueBytes));
         }
 
         /// <summary>

@@ -498,7 +498,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         self._method = method
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
-        self._context = cygrpc.build_context()
+        self._context = cygrpc.build_census_context()
 
     def _prepare(self, request, timeout, metadata, wait_for_ready):
         deadline, serialized_request, rendezvous = _start_unary_request(
@@ -589,7 +589,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         self._method = method
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
-        self._context = cygrpc.build_context()
+        self._context = cygrpc.build_census_context()
 
     def __call__(self,
                  request,
@@ -636,7 +636,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         self._method = method
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
-        self._context = cygrpc.build_context()
+        self._context = cygrpc.build_census_context()
 
     def _blocking(self, request_iterator, timeout, metadata, credentials,
                   wait_for_ready):
@@ -713,7 +713,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
         self._method = method
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
-        self._context = cygrpc.build_context()
+        self._context = cygrpc.build_census_context()
 
     def __call__(self,
                  request_iterator,

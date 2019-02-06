@@ -257,6 +257,9 @@ add_dependencies(buildtests_c channel_create_test)
 add_dependencies(buildtests_c chttp2_hpack_encoder_test)
 add_dependencies(buildtests_c chttp2_stream_map_test)
 add_dependencies(buildtests_c chttp2_varint_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c close_fd_test)
+endif()
 add_dependencies(buildtests_c cmdline_test)
 add_dependencies(buildtests_c combiner_test)
 add_dependencies(buildtests_c compression_test)
@@ -1151,6 +1154,7 @@ add_library(grpc
   src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
+  src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
   src/core/lib/security/security_connector/alts/alts_security_connector.cc
   src/core/lib/security/security_connector/fake/fake_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
@@ -1609,6 +1613,7 @@ add_library(grpc_cronet
   src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
+  src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
   src/core/lib/security/security_connector/alts/alts_security_connector.cc
   src/core/lib/security/security_connector/fake/fake_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
@@ -6298,6 +6303,42 @@ target_link_libraries(chttp2_varint_test
     target_compile_options(chttp2_varint_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
   endif()
 
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+add_executable(close_fd_test
+  test/core/bad_connection/close_fd_test.cc
+)
+
+
+target_include_directories(close_fd_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+)
+
+target_link_libraries(close_fd_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr
+)
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(close_fd_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(close_fd_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 

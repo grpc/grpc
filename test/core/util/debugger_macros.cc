@@ -36,13 +36,14 @@ grpc_stream* grpc_transport_stream_from_call(grpc_call* call) {
   for (;;) {
     grpc_call_element* el = grpc_call_stack_element(cs, cs->count - 1);
     if (el->filter == &grpc_client_channel_filter) {
-      grpc_subchannel_call* scc = grpc_client_channel_get_subchannel_call(el);
+      grpc_core::RefCountedPtr<grpc_core::SubchannelCall> scc =
+          grpc_client_channel_get_subchannel_call(el);
       if (scc == nullptr) {
         fprintf(stderr, "No subchannel-call");
         fflush(stderr);
         return nullptr;
       }
-      cs = grpc_subchannel_call_get_call_stack(scc);
+      cs = scc->GetCallStack();
     } else if (el->filter == &grpc_connected_filter) {
       return grpc_connected_channel_get_stream(el);
     } else {

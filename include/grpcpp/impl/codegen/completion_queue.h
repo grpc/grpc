@@ -84,6 +84,8 @@ template <StatusCode code>
 class ErrorMethodHandler;
 template <class InputMessage, class OutputMessage>
 class BlockingUnaryCallImpl;
+template <class Op1, class Op2, class Op3, class Op4, class Op5, class Op6>
+class CallOpSet;
 }  // namespace internal
 
 extern CoreCodegenInterface* g_core_codegen_interface;
@@ -278,6 +280,10 @@ class CompletionQueue : private GrpcLibraryCodegen {
   // Friends that need access to constructor for callback CQ
   friend class ::grpc::Channel;
 
+  // For access to Register/CompleteAvalanching
+  template <class Op1, class Op2, class Op3, class Op4, class Op5, class Op6>
+  friend class ::grpc::internal::CallOpSet;
+
   /// EXPERIMENTAL
   /// Creates a Thread Local cache to store the first event
   /// On this completion queue queued from this thread.  Once
@@ -361,7 +367,12 @@ class CompletionQueue : private GrpcLibraryCodegen {
     gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_,
                                  static_cast<gpr_atm>(1));
   }
-  void CompleteAvalanching();
+  void CompleteAvalanching() {
+    if (gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_,
+                                     static_cast<gpr_atm>(-1)) == 1) {
+      g_core_codegen_interface->grpc_completion_queue_shutdown(cq_);
+    }
+  }
 
   grpc_completion_queue* cq_;  // owned
 
