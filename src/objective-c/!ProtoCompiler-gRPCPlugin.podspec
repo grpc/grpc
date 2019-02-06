@@ -121,7 +121,7 @@ Pod::Spec.new do |s|
       # TODO(jcanizales): I reckon make will try to use locally-installed libprotoc (headers and
       # library binary) if found, which _we do not want_. Find a way for this to always use the
       # sources in the repo.
-      make #{plugin}
+      make #{plugin} -j
       cd -
     fi
   CMD
