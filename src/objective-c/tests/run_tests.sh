@@ -82,7 +82,7 @@ fi
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
-    -scheme CoreCronetEnd2EndTests \
+    -scheme UnitTests \
     -destination name="iPhone 8" \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
@@ -92,27 +92,7 @@ xcodebuild \
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
-    -scheme CoreCronetEnd2EndTests_Asan \
-    -destination name="iPhone 6" \
-    test \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' \
-    | egrep -v "(GPBDictionary|GPBArray)" -
-
-echo "TIME:  $(date)"
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme CoreCronetEnd2EndTests_Tsan \
-    -destination name="iPhone 6" \
-    test \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' \
-    | egrep -v "(GPBDictionary|GPBArray)" -
-
-echo "TIME:  $(date)"
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme CronetUnitTests \
+    -scheme ChannelTests \
     -destination name="iPhone 8" \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
@@ -122,8 +102,9 @@ xcodebuild \
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
-    -scheme InteropTestsRemoteWithCronet \
+    -scheme APIv2Tests \
     -destination name="iPhone 8" \
+    HOST_PORT_LOCAL=localhost:5050 \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
@@ -166,7 +147,7 @@ xcodebuild \
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
-    -scheme UnitTests \
+    -scheme CronetUnitTests \
     -destination name="iPhone 8" \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
@@ -176,7 +157,7 @@ xcodebuild \
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
-    -scheme ChannelTests \
+    -scheme CoreCronetEnd2EndTests \
     -destination name="iPhone 8" \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
@@ -186,10 +167,29 @@ xcodebuild \
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
-    -scheme APIv2Tests \
+    -scheme InteropTestsRemoteWithCronet \
     -destination name="iPhone 8" \
-    HOST_PORT_LOCAL=localhost:5050 \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
+    test \
+    | egrep -v "$XCODEBUILD_FILTER" \
+    | egrep -v '^$' \
+    | egrep -v "(GPBDictionary|GPBArray)" -
+
+echo "TIME:  $(date)"
+xcodebuild \
+    -workspace Tests.xcworkspace \
+    -scheme CoreCronetEnd2EndTests_Asan \
+    -destination name="iPhone 8" \
+    test \
+    | egrep -v "$XCODEBUILD_FILTER" \
+    | egrep -v '^$' \
+    | egrep -v "(GPBDictionary|GPBArray)" -
+
+echo "TIME:  $(date)"
+xcodebuild \
+    -workspace Tests.xcworkspace \
+    -scheme CoreCronetEnd2EndTests_Tsan \
+    -destination name="iPhone 8" \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
