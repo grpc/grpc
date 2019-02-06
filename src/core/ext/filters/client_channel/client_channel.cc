@@ -2912,10 +2912,8 @@ static void try_to_connect_locked(void* arg, grpc_error* error_ignored) {
 grpc_connectivity_state grpc_client_channel_check_connectivity_state(
     grpc_channel_element* elem, int try_to_connect) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  grpc_error* error = GRPC_ERROR_NONE;
   grpc_connectivity_state out =
-      grpc_connectivity_state_get(&chand->state_tracker, &error);
-  GRPC_ERROR_UNREF(error);
+      grpc_connectivity_state_check(&chand->state_tracker);
   if (out == GRPC_CHANNEL_IDLE && try_to_connect) {
     GRPC_CHANNEL_STACK_REF(chand->owning_stack, "try_to_connect");
     GRPC_CLOSURE_SCHED(
