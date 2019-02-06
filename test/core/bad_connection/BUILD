@@ -1,4 +1,4 @@
-# Copyright 2018 gRPC authors.
+# Copyright 2016 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,22 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/macos/grpc_ios_binary_size.sh"
-timeout_mins: 90
-before_action {
-  fetch_keystore {
-    keystore_resource {
-      keystore_config_id: 73836
-      keyname: "grpc_checks_private_key"
-    }
-  }
-}
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-  }
-}
+licenses(["notice"])  # Apache v2
+
+grpc_package(name = "test/core/bad_connection")
+
+grpc_cc_binary(
+    name = "close_fd_test",
+    srcs = [
+        "close_fd_test.cc",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)

@@ -229,7 +229,7 @@ class JavaLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_GOOGLE_DEFAULT_CREDS
+        return []
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -254,7 +254,7 @@ class JavaOkHttpClient:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE + _SKIP_GOOGLE_DEFAULT_CREDS
+        return _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def __str__(self):
         return 'javaokhttp'
@@ -285,7 +285,7 @@ class GoLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION + _SKIP_GOOGLE_DEFAULT_CREDS
+        return _SKIP_COMPRESSION
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION

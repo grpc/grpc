@@ -23,13 +23,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 # If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
 if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ] && [ -n "$RUN_TESTS_FLAGS" ]; then
   sudo apt-get update
-  retry=0
-  until [ $retry -ge 3 ]
-  do
-    sudo apt-get install -y jq && break
-    retry=$[$retry+1]
-    sleep 5
-  done
+  sudo apt-get install -y jq
   ghprbTargetBranch=$(curl -s https://api.github.com/repos/grpc/grpc/pulls/$KOKORO_GITHUB_PULL_REQUEST_NUMBER | jq -r .base.ref)
   export RUN_TESTS_FLAGS="$RUN_TESTS_FLAGS --filter_pr_tests --base_branch origin/$ghprbTargetBranch"
 fi
