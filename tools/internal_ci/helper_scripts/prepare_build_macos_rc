@@ -48,6 +48,10 @@ set -ex
 
 # cocoapods
 export LANG=en_US.UTF-8
+# pre-fetch cocoapods master repo with HEAD only
+mkdir -p ~/.cocoapods/repos
+git clone --depth 1 https://github.com/CocoaPods/Specs.git ~/.cocoapods/repos/master
+
 time pod repo update  # needed by python
 
 # python
