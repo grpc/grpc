@@ -217,7 +217,7 @@ def _pull_images_for_lang(lang, images):
         # First time we use an image with "docker run", it takes time to unpack
         # the image and later this delay would fail our test cases.
         cmdline = [
-            'time gcloud docker --verbosity=debug -- pull %s && time docker run --rm=true %s /bin/true'
+            'time gcloud docker --log-http --verbosity=debug -- pull %s && time docker run --rm=true %s /bin/true'
             % (image, image)
         ]
         spec = jobset.JobSpec(
