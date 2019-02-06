@@ -23,7 +23,6 @@
 #include <grpcpp/impl/codegen/slice.h>
 #include <grpcpp/security/auth_metadata_processor.h>
 
-#include "include/grpc/impl/codegen/log.h"  // for GPR_ASSERT
 #include "src/cpp/common/secure_auth_context.h"
 #include "src/cpp/server/secure_server_credentials.h"
 
@@ -44,7 +43,6 @@ void AuthMetadataProcessorAyncWrapper::Process(
     return;
   }
   if (w->processor_->IsBlocking()) {
-    GPR_ASSERT(w->thread_pool_);
     w->thread_pool_->Add([w, context, md, num_md, cb, user_data] {
       w->AuthMetadataProcessorAyncWrapper::InvokeProcessor(context, md, num_md,
                                                            cb, user_data);
