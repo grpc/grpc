@@ -407,7 +407,8 @@ class Subchannel::ConnectedSubchannelStateWatcher
     Subchannel* c = self->subchannel_;
     {
       MutexLock lock(&c->mu_);
-      if (self->health_state_ != GRPC_CHANNEL_SHUTDOWN) {
+      if (self->health_state_ != GRPC_CHANNEL_SHUTDOWN &&
+          self->health_check_client_ != nullptr) {
         if (self->last_connectivity_state_ == GRPC_CHANNEL_READY) {
           grpc_connectivity_state_set(&c->state_and_health_tracker_,
                                       self->health_state_,
