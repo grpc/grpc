@@ -44,10 +44,10 @@ static grpc_error* recursively_find_error_with_field(grpc_error* error,
   return nullptr;
 }
 
-void grpc_error_get_status(grpc_error* error, grpc_millis deadline,
-                           grpc_status_code* code, grpc_slice* slice,
-                           grpc_http2_error_code* http_error,
-                           const char** error_string) {
+__attribute__((no_sanitize("enum"))) void grpc_error_get_status(
+    grpc_error* error, grpc_millis deadline, grpc_status_code* code,
+    grpc_slice* slice, grpc_http2_error_code* http_error,
+    const char** error_string) {
   // Start with the parent error and recurse through the tree of children
   // until we find the first one that has a status code.
   grpc_error* found_error =
