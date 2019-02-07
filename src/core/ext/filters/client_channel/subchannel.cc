@@ -116,21 +116,6 @@ void ConnectedSubchannel::Ping(grpc_closure* on_initiate,
   elem->filter->start_transport_op(elem, op);
 }
 
-namespace {
-
-void SubchannelCallDestroy(void* arg, grpc_error* error) {
-  GPR_TIMER_SCOPE("subchannel_call_destroy", 0);
-  SubchannelCall* call = static_cast<SubchannelCall*>(arg);
-  grpc_closure* after_call_stack_destroy = call->after_call_stack_destroy();
-  call->~SubchannelCall();
-  // This should be the last step to destroy the subchannel call, because
-  // call->after_call_stack_destroy(), if not null, will free the call arena.
-  grpc_call_stack_destroy(SUBCHANNEL_CALL_TO_CALL_STACK(call), nullptr,
-                          after_call_stack_destroy);
-}
-
-}  // namespace
-
 RefCountedPtr<SubchannelCall> ConnectedSubchannel::CreateCall(
     const CallArgs& args, grpc_error** error) {
   const size_t allocation_size =
@@ -149,7 +134,7 @@ RefCountedPtr<SubchannelCall> ConnectedSubchannel::CreateCall(
       args.arena,        /* arena */
       args.call_combiner /* call_combiner */
   };
-  *error = grpc_call_stack_init(channel_stack_, 1, SubchannelCallDestroy,
+  *error = grpc_call_stack_init(channel_stack_, 1, SubchannelCall::Destroy,
                                 call.get(), &call_args);
   if (GPR_UNLIKELY(*error != GRPC_ERROR_NONE)) {
     const char* error_string = grpc_error_string(*error);
@@ -224,6 +209,25 @@ void SubchannelCall::Unref() {
 
 void SubchannelCall::Unref(const DebugLocation& location, const char* reason) {
   GRPC_CALL_STACK_UNREF(SUBCHANNEL_CALL_TO_CALL_STACK(this), reason);
+}
+
+void SubchannelCall::Destroy(void* arg, grpc_error* error) {
+  GPR_TIMER_SCOPE("subchannel_call_destroy", 0);
+  SubchannelCall* self = static_cast<SubchannelCall*>(arg);
+  // Keep some members before destroying the subchannel call.
+  grpc_closure* after_call_stack_destroy = self->after_call_stack_destroy_;
+  RefCountedPtr<ConnectedSubchannel> connected_subchannel =
+      std::move(self->connected_subchannel_);
+  // Destroy the subchannel call.
+  self->~SubchannelCall();
+  // Destroy the call stack. This should be after destroying the subchannel
+  // call, because call->after_call_stack_destroy(), if not null, will free the
+  // call arena.
+  grpc_call_stack_destroy(SUBCHANNEL_CALL_TO_CALL_STACK(self), nullptr,
+                          after_call_stack_destroy);
+  // Automatically reset connected_subchannel. This should be after destroying
+  // the call stack, because destroying call stack needs access to the channel
+  // stack.
 }
 
 void SubchannelCall::MaybeInterceptRecvTrailingMetadata(
