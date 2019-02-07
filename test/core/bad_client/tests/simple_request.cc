@@ -147,11 +147,12 @@ int main(int argc, char** argv) {
   /* push a window update with bad flags */
   GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, nullptr,
                            PFX_STR "\x00\x00\x00\x08\x10\x00\x00\x00\x01", 0);
-  /* push a window update with bad data */
+  /* push a window update with bad data (0 is not legal window size increment)
+   */
   GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, nullptr,
                            PFX_STR
                            "\x00\x00\x04\x08\x00\x00\x00\x00\x01"
-                           "\xff\xff\xff\xff",
+                           "\x00\x00\x00\x00",
                            0);
   /* push a short goaway */
   GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, nullptr,
