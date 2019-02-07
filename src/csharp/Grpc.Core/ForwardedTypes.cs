@@ -26,8 +26,6 @@ using Grpc.Core.Utils;
 
 // TODO(jtattermusch): move types needed for implementing a client
 
-[assembly:TypeForwardedToAttribute(typeof(ILogger))]
-[assembly:TypeForwardedToAttribute(typeof(LogLevel))]
 [assembly:TypeForwardedToAttribute(typeof(GrpcPreconditions))]
 [assembly:TypeForwardedToAttribute(typeof(AuthContext))]
 [assembly:TypeForwardedToAttribute(typeof(ContextPropagationOptions))]
