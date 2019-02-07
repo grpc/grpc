@@ -24,6 +24,9 @@ powershell -Command "cp -r ..\..\input_artifacts\csharp_ext_* nativelibs"
 mkdir protoc_plugins
 powershell -Command "cp -r ..\..\input_artifacts\protoc_* protoc_plugins"
 
+@rem Add current timestamp to dev nugets
+expand_dev_version.sh
+
 %DOTNET% restore Grpc.sln || goto :error
 
 @rem To be able to build, we also need to put grpc_csharp_ext to its normal location
