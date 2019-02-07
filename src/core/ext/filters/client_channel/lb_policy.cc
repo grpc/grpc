@@ -54,8 +54,7 @@ grpc_json* LoadBalancingPolicy::ParseLoadBalancingConfig(
   return nullptr;
 }
 
-LoadBalancingPolicy::LoadBalancingPolicy(Args args, intptr_t
-                                         initial_refcount)
+LoadBalancingPolicy::LoadBalancingPolicy(Args args, intptr_t initial_refcount)
     : InternallyRefCounted(&grpc_trace_lb_policy_refcount, initial_refcount),
       combiner_(GRPC_COMBINER_REF(args.combiner, "lb_policy")),
       interested_parties_(grpc_pollset_set_create()),

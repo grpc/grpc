@@ -137,12 +137,10 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
 
   class Helper : public ChannelControlHelper {
    public:
-    Helper(RefCountedPtr<InterceptRecvTrailingMetadataLoadBalancingPolicy>
-               parent,
-           InterceptRecvTrailingMetadataCallback cb, void* user_data)
-        : parent_(std::move(parent)),
-          cb_(cb),
-          user_data_(user_data) {}
+    Helper(
+        RefCountedPtr<InterceptRecvTrailingMetadataLoadBalancingPolicy> parent,
+        InterceptRecvTrailingMetadataCallback cb, void* user_data)
+        : parent_(std::move(parent)), cb_(cb), user_data_(user_data) {}
 
     Subchannel* CreateSubchannel(const grpc_channel_args& args) override {
       return parent_->channel_control_helper()->CreateSubchannel(args);

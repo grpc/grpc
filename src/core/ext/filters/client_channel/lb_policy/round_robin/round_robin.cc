@@ -255,9 +255,9 @@ RoundRobin::RoundRobin(Args args) : LoadBalancingPolicy(std::move(args)) {
     gpr_log(GPR_INFO, "[RR %p] Created", this);
   }
   // Initialize channel with a picker that will start us connecting.
-  channel_control_helper()->UpdateState(GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
-                                        UniquePtr<SubchannelPicker>(
-                                            New<QueuePicker>(Ref())));
+  channel_control_helper()->UpdateState(
+      GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
+      UniquePtr<SubchannelPicker>(New<QueuePicker>(Ref())));
   UpdateLocked(*args.args, args.lb_config);
 }
 

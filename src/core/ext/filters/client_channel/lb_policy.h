@@ -129,8 +129,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   class QueuePicker : public SubchannelPicker {
    public:
     explicit QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent)
-        : parent_(std::move(parent)) {
-    }
+        : parent_(std::move(parent)) {}
 
     PickResult Pick(PickState* pick, grpc_error** error) override {
       // We invoke the parent's ExitIdleLocked() via a closure instead

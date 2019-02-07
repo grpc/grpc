@@ -161,9 +161,9 @@ grpc_error* ResolvingLoadBalancingPolicy::Init(const grpc_channel_args& args) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("resolver creation failed");
   }
   // Return our picker to the channel.
-  channel_control_helper()->UpdateState(GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
-                                        UniquePtr<SubchannelPicker>(
-                                            New<QueuePicker>(Ref())));
+  channel_control_helper()->UpdateState(
+      GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
+      UniquePtr<SubchannelPicker>(New<QueuePicker>(Ref())));
   return GRPC_ERROR_NONE;
 }
 

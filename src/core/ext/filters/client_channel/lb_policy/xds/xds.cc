@@ -993,9 +993,9 @@ XdsLb::XdsLb(LoadBalancingPolicy::Args args)
   // Process channel args.
   ProcessChannelArgsLocked(*args.args);
   // Initialize channel with a picker that will start us connecting.
-  channel_control_helper()->UpdateState(GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
-                                        UniquePtr<SubchannelPicker>(
-                                            New<QueuePicker>(Ref())));
+  channel_control_helper()->UpdateState(
+      GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
+      UniquePtr<SubchannelPicker>(New<QueuePicker>(Ref())));
 }
 
 XdsLb::~XdsLb() {

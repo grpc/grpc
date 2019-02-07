@@ -160,9 +160,9 @@ PickFirst::PickFirst(Args args) : LoadBalancingPolicy(std::move(args)) {
   }
   // Initialize channel with a picker that will start us connecting upon
   // the first pick.
-  channel_control_helper()->UpdateState(GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
-                                        UniquePtr<SubchannelPicker>(
-                                            New<QueuePicker>(Ref())));
+  channel_control_helper()->UpdateState(
+      GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
+      UniquePtr<SubchannelPicker>(New<QueuePicker>(Ref())));
   UpdateLocked(*args.args, args.lb_config);
 }
 

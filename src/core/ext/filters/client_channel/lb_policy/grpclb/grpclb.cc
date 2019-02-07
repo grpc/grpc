@@ -476,10 +476,9 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
   }
   parent_->channel_control_helper()->UpdateState(
       state, state_error,
-      UniquePtr<SubchannelPicker>(
-          New<Picker>(parent_.get(),
-                      grpc_grpclb_serverlist_copy(parent_->serverlist_),
-                      std::move(picker), std::move(client_stats))));
+      UniquePtr<SubchannelPicker>(New<Picker>(
+          parent_.get(), grpc_grpclb_serverlist_copy(parent_->serverlist_),
+          std::move(picker), std::move(client_stats))));
 }
 
 void GrpcLb::Helper::RequestReresolution() {
@@ -1167,9 +1166,9 @@ GrpcLb::GrpcLb(LoadBalancingPolicy::Args args)
   // Process channel args.
   ProcessChannelArgsLocked(*args.args);
   // Initialize channel with a picker that will start us connecting.
-  channel_control_helper()->UpdateState(GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
-                                        UniquePtr<SubchannelPicker>(
-                                            New<QueuePicker>(Ref())));
+  channel_control_helper()->UpdateState(
+      GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
+      UniquePtr<SubchannelPicker>(New<QueuePicker>(Ref())));
 }
 
 GrpcLb::~GrpcLb() {
