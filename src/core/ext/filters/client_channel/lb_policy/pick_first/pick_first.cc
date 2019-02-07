@@ -158,7 +158,8 @@ PickFirst::PickFirst(Args args) : LoadBalancingPolicy(std::move(args)) {
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO, "Pick First %p created.", this);
   }
-  // Initialize channel with a picker that will start us connecting.
+  // Initialize channel with a picker that will start us connecting upon
+  // the first pick.
   channel_control_helper()->UpdateState(GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
                                         UniquePtr<SubchannelPicker>(
                                             New<QueuePicker>(Ref())));
@@ -413,6 +414,8 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
               connectivity_state, GRPC_ERROR_REF(error),
               UniquePtr<SubchannelPicker>(New<QueuePicker>(p->Ref())));
         }
+        // Renew notification.
+        RenewConnectivityWatchLocked();
       }
     }
     GRPC_ERROR_UNREF(error);
@@ -443,11 +446,14 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       // Case 1: Only set state to TRANSIENT_FAILURE if we've tried
       // all subchannels.
       if (sd->Index() == 0 && subchannel_list() == p->subchannel_list_.get()) {
+        grpc_error* new_error =
+            GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                "failed to connect to all addresses", &error, 1);
         p->channel_control_helper()->RequestReresolution();
         p->channel_control_helper()->UpdateState(
-            GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(error),
+            GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(new_error),
             UniquePtr<SubchannelPicker>(
-                New<TransientFailurePicker>(GRPC_ERROR_REF(error))));
+                New<TransientFailurePicker>(new_error)));
       }
       sd->CheckConnectivityStateAndStartWatchingLocked();
       break;

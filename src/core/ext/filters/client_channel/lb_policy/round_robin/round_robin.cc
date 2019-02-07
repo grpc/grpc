@@ -155,8 +155,7 @@ class RoundRobin : public LoadBalancingPolicy {
 
   class Picker : public SubchannelPicker {
    public:
-    Picker(RoundRobin* parent, RoundRobinSubchannelList* subchannel_list,
-           size_t last_ready_index);
+    Picker(RoundRobin* parent, RoundRobinSubchannelList* subchannel_list);
 
     PickResult Pick(PickState* pick, grpc_error** error) override;
 
@@ -164,7 +163,7 @@ class RoundRobin : public LoadBalancingPolicy {
     // Using pointer value only, no ref held -- do not dereference!
     RoundRobin* parent_;
 
-    size_t last_ready_index_;
+    size_t last_picked_index_;
     InlinedVector<RefCountedPtr<ConnectedSubchannel>, 10> subchannels_;
   };
 
@@ -209,9 +208,8 @@ class RoundRobin : public LoadBalancingPolicy {
 //
 
 RoundRobin::Picker::Picker(RoundRobin* parent,
-                           RoundRobinSubchannelList* subchannel_list,
-                           size_t last_ready_index)
-    : parent_(parent), last_ready_index_(last_ready_index) {
+                           RoundRobinSubchannelList* subchannel_list)
+    : parent_(parent) {
   for (size_t i = 0; i < subchannel_list->num_subchannels(); ++i) {
     auto* connected_subchannel =
         subchannel_list->subchannel(i)->connected_subchannel();
@@ -219,26 +217,31 @@ RoundRobin::Picker::Picker(RoundRobin* parent,
       subchannels_.push_back(connected_subchannel->Ref());
     }
   }
+  // For discussion on why we generate a random starting index for
+  // the picker, see https://github.com/grpc/grpc-go/issues/2580.
+  // TODO(roth): rand(3) is not thread-safe.  This should be replaced with
+  // something better as part of https://github.com/grpc/grpc/issues/17891.
+  last_picked_index_ = rand() % subchannels_.size();
   if (grpc_lb_round_robin_trace.enabled()) {
     gpr_log(GPR_INFO,
             "[RR %p picker %p] created picker from subchannel_list=%p "
-            "with %" PRIuPTR " READY subchannels; last_ready_index_=%" PRIuPTR,
+            "with %" PRIuPTR " READY subchannels; last_picked_index_=%" PRIuPTR,
             parent_, this, subchannel_list, subchannels_.size(),
-            last_ready_index_);
+            last_picked_index_);
   }
 }
 
 RoundRobin::Picker::PickResult RoundRobin::Picker::Pick(PickState* pick,
                                                         grpc_error** error) {
-  last_ready_index_ = (last_ready_index_ + 1) % subchannels_.size();
+  last_picked_index_ = (last_picked_index_ + 1) % subchannels_.size();
   if (grpc_lb_round_robin_trace.enabled()) {
     gpr_log(GPR_INFO,
             "[RR %p picker %p] returning index %" PRIuPTR
             ", connected_subchannel=%p",
-            parent_, this, last_ready_index_,
-            subchannels_[last_ready_index_].get());
+            parent_, this, last_picked_index_,
+            subchannels_[last_picked_index_].get());
   }
-  pick->connected_subchannel = subchannels_[last_ready_index_];
+  pick->connected_subchannel = subchannels_[last_picked_index_];
   return PICK_COMPLETE;
 }
 
@@ -378,8 +381,8 @@ void RoundRobin::RoundRobinSubchannelList::UpdateStateCountersLocked(
   last_transient_failure_error_ = transient_failure_error;
 }
 
-// Sets the RR policy's connectivity state based on the current
-// subchannel list.
+// Sets the RR policy's connectivity state and generates a new picker based
+// on the current subchannel list.
 void RoundRobin::RoundRobinSubchannelList::
     MaybeUpdateRoundRobinConnectivityStateLocked() {
   RoundRobin* p = static_cast<RoundRobin*>(policy());
@@ -403,12 +406,7 @@ void RoundRobin::RoundRobinSubchannelList::
     /* 1) READY */
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_READY, GRPC_ERROR_NONE,
-        // For discussion on why we generate a random starting index for
-        // the picker, see https://github.com/grpc/grpc-go/issues/2580.
-        // TODO(roth): rand(3) is not thread-safe.  This should be
-        // replaced with something better as part of
-        // https://github.com/grpc/grpc/issues/17891.
-        UniquePtr<SubchannelPicker>(New<Picker>(p, this, rand())));
+        UniquePtr<SubchannelPicker>(New<Picker>(p, this)));
   } else if (num_connecting_ > 0) {
     /* 2) CONNECTING */
     p->channel_control_helper()->UpdateState(

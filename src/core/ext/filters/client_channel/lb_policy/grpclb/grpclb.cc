@@ -360,10 +360,8 @@ GrpcLb::Picker::PickResult GrpcLb::Picker::Pick(PickState* pick,
   if (serverlist_->num_servers > 0) {
     // Look at the index into the serverlist to see if we should drop
     // this call.
-    grpc_grpclb_server* server = serverlist_->servers[serverlist_index_++];
-    if (serverlist_index_ == serverlist_->num_servers) {
-      serverlist_index_ = 0;  // Wrap-around.
-    }
+    grpc_grpclb_server* server = serverlist_->servers[serverlist_index_];
+    serverlist_index_ = (serverlist_index_ + 1) % serverlist_->num_servers;
     if (server->drop) {
       // Update client load reporting stats to indicate the number of
       // dropped calls.  Note that we have to do this here instead of in

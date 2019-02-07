@@ -144,7 +144,7 @@ typedef struct client_channel_channel_data {
 
 // Forward declarations.
 static void start_pick_locked(void* arg, grpc_error* ignored);
-static bool maybe_apply_service_config_to_call_locked(grpc_call_element* elem);
+static void maybe_apply_service_config_to_call_locked(grpc_call_element* elem);
 
 static const char* get_channel_connectivity_state_change_string(
     grpc_connectivity_state state) {
@@ -2477,7 +2477,7 @@ static void pick_done(void* arg, grpc_error* error) {
   if (error != GRPC_ERROR_NONE) {
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_INFO,
-              "chand=%p calld=%p: failed to create subchannel: error=%s", chand,
+              "chand=%p calld=%p: failed to pick subchannel: error=%s", chand,
               calld, grpc_error_string(error));
     }
     pending_batches_fail(elem, GRPC_ERROR_REF(error), yield_call_combiner);
@@ -2633,7 +2633,7 @@ static void apply_service_config_to_call_locked(grpc_call_element* elem) {
 }
 
 // Invoked once resolver results are available.
-static bool maybe_apply_service_config_to_call_locked(grpc_call_element* elem) {
+static void maybe_apply_service_config_to_call_locked(grpc_call_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   // Apply service config data to the call only once, and only if the
@@ -2643,7 +2643,6 @@ static bool maybe_apply_service_config_to_call_locked(grpc_call_element* elem) {
     calld->service_config_applied = true;
     apply_service_config_to_call_locked(elem);
   }
-  return true;
 }
 
 static const char* pick_result_name(

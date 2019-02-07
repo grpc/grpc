@@ -133,8 +133,6 @@ ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
       const_cast<char*>(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION), 0);
   grpc_channel_args* new_args =
       grpc_channel_args_copy_and_add(args.args, &arg, 1);
-  resolver_ = ResolverRegistry::CreateResolver(
-      target_uri_.get(), new_args, interested_parties(), combiner());
   *error = Init(*new_args);
   grpc_channel_args_destroy(new_args);
 }
@@ -262,9 +260,7 @@ void ResolvingLoadBalancingPolicy::OnResolverShutdownLocked(grpc_error* error) {
 }
 
 // Creates a new LB policy, replacing any previous one.
-// If the new policy is created successfully, sets *connectivity_state and
-// *connectivity_error to its initial connectivity state; otherwise,
-// leaves them unchanged.
+// Updates trace_strings to indicate what was done.
 void ResolvingLoadBalancingPolicy::CreateNewLbPolicyLocked(
     const char* lb_policy_name, grpc_json* lb_config,
     TraceStringVector* trace_strings) {

@@ -108,7 +108,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
       PICK_QUEUE,
       // LB policy is in transient failure.  If the pick is wait_for_ready,
       // client channel will wait for the next picker and try again;
-      // otherwise, the call will be failed immediately.
+      // otherwise, the call will be failed immediately (although it may
+      // be retried if the client channel is configured to do so).
       // The Pick() method will set its error parameter if this value is
       // returned.
       PICK_TRANSIENT_FAILURE,

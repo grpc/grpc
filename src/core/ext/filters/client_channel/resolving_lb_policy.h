@@ -51,6 +51,8 @@ namespace grpc_core {
 // child LB policy and config to use.
 class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
  public:
+  // If error is set when this returns, then construction failed, and
+  // the caller may not use the new object.
   ResolvingLoadBalancingPolicy(Args args, TraceFlag* tracer,
                                UniquePtr<char> target_uri,
                                UniquePtr<char> child_policy_name,
@@ -65,6 +67,8 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
                                                 const grpc_channel_args& args,
                                                 const char** lb_policy_name,
                                                 grpc_json** lb_policy_config);
+  // If error is set when this returns, then construction failed, and
+  // the caller may not use the new object.
   ResolvingLoadBalancingPolicy(
       Args args, TraceFlag* tracer, UniquePtr<char> target_uri,
       ProcessResolverResultCallback process_resolver_result,
