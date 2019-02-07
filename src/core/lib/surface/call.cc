@@ -1494,9 +1494,9 @@ static void free_no_op_completion(void* p, grpc_cq_completion* completion) {
   gpr_free(completion);
 }
 
-__attribute__((no_sanitize("enum"))) static grpc_call_error call_start_batch(
-    grpc_call* call, const grpc_op* ops, size_t nops, void* notify_tag,
-    int is_notify_tag_closure) {
+static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
+                                        size_t nops, void* notify_tag,
+                                        int is_notify_tag_closure) {
   GPR_TIMER_SCOPE("call_start_batch", 0);
 
   size_t i;
