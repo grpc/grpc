@@ -49,6 +49,10 @@ typedef struct grpc_combiner grpc_combiner;
    be counted by fork handlers */
 #define GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD 4
 
+/* This application callback exec ctx was initialized by an internal thread, and
+   should not be counted by fork handlers */
+#define GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD 1
+
 extern grpc_closure_scheduler* grpc_schedule_on_exec_ctx;
 
 gpr_timespec grpc_millis_to_timespec(grpc_millis millis, gpr_clock_type clock);
@@ -229,13 +233,12 @@ class ExecCtx {
 
 class ApplicationCallbackExecCtx {
  public:
-  ApplicationCallbackExecCtx() {
-    if (reinterpret_cast<ApplicationCallbackExecCtx*>(
-            gpr_tls_get(&callback_exec_ctx_)) == nullptr) {
-      grpc_core::Fork::IncExecCtxCount();
-      gpr_tls_set(&callback_exec_ctx_, reinterpret_cast<intptr_t>(this));
-    }
-  }
+  /** Default Constructor */
+  ApplicationCallbackExecCtx() { Set(this, flags_); }
+
+  /** Parameterised Constructor */
+  ApplicationCallbackExecCtx(uintptr_t fl) : flags_(fl) { Set(this, flags_); }
+
   ~ApplicationCallbackExecCtx() {
     if (reinterpret_cast<ApplicationCallbackExecCtx*>(
             gpr_tls_get(&callback_exec_ctx_)) == this) {
@@ -248,12 +251,25 @@ class ApplicationCallbackExecCtx {
         (*f->functor_run)(f, f->internal_success);
       }
       gpr_tls_set(&callback_exec_ctx_, reinterpret_cast<intptr_t>(nullptr));
-      grpc_core::Fork::DecExecCtxCount();
+      if (!(GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags_)) {
+        grpc_core::Fork::DecExecCtxCount();
+      }
     } else {
       GPR_DEBUG_ASSERT(head_ == nullptr);
       GPR_DEBUG_ASSERT(tail_ == nullptr);
     }
   }
+
+  static void Set(ApplicationCallbackExecCtx* exec_ctx, uintptr_t flags) {
+    if (reinterpret_cast<ApplicationCallbackExecCtx*>(
+            gpr_tls_get(&callback_exec_ctx_)) == nullptr) {
+      if (!(GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags)) {
+        grpc_core::Fork::IncExecCtxCount();
+      }
+      gpr_tls_set(&callback_exec_ctx_, reinterpret_cast<intptr_t>(exec_ctx));
+    }
+  }
+
   static void Enqueue(grpc_experimental_completion_queue_functor* functor,
                       int is_success) {
     functor->internal_success = is_success;
@@ -278,6 +294,7 @@ class ApplicationCallbackExecCtx {
   static void GlobalShutdown(void) { gpr_tls_destroy(&callback_exec_ctx_); }
 
  private:
+  uintptr_t flags_;
   grpc_experimental_completion_queue_functor* head_{nullptr};
   grpc_experimental_completion_queue_functor* tail_{nullptr};
   GPR_TLS_CLASS_DECL(callback_exec_ctx_);
