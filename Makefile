@@ -1137,6 +1137,7 @@ async_end2end_test: $(BINDIR)/$(CONFIG)/async_end2end_test
 auth_property_iterator_test: $(BINDIR)/$(CONFIG)/auth_property_iterator_test
 backoff_test: $(BINDIR)/$(CONFIG)/backoff_test
 bdp_estimator_test: $(BINDIR)/$(CONFIG)/bdp_estimator_test
+bm_alarm: $(BINDIR)/$(CONFIG)/bm_alarm
 bm_arena: $(BINDIR)/$(CONFIG)/bm_arena
 bm_byte_buffer: $(BINDIR)/$(CONFIG)/bm_byte_buffer
 bm_call_create: $(BINDIR)/$(CONFIG)/bm_call_create
@@ -1654,6 +1655,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
   $(BINDIR)/$(CONFIG)/backoff_test \
   $(BINDIR)/$(CONFIG)/bdp_estimator_test \
+  $(BINDIR)/$(CONFIG)/bm_alarm \
   $(BINDIR)/$(CONFIG)/bm_arena \
   $(BINDIR)/$(CONFIG)/bm_byte_buffer \
   $(BINDIR)/$(CONFIG)/bm_call_create \
@@ -1842,6 +1844,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
   $(BINDIR)/$(CONFIG)/backoff_test \
   $(BINDIR)/$(CONFIG)/bdp_estimator_test \
+  $(BINDIR)/$(CONFIG)/bm_alarm \
   $(BINDIR)/$(CONFIG)/bm_arena \
   $(BINDIR)/$(CONFIG)/bm_byte_buffer \
   $(BINDIR)/$(CONFIG)/bm_call_create \
@@ -2285,6 +2288,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/backoff_test || ( echo test backoff_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bdp_estimator_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bdp_estimator_test || ( echo test bdp_estimator_test failed ; exit 1 )
+	$(E) "[RUN]     Testing bm_alarm"
+	$(Q) $(BINDIR)/$(CONFIG)/bm_alarm || ( echo test bm_alarm failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_arena"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_arena || ( echo test bm_arena failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_byte_buffer"
@@ -16182,6 +16187,50 @@ deps_bdp_estimator_test: $(BDP_ESTIMATOR_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(BDP_ESTIMATOR_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+BM_ALARM_SRC = \
+    test/cpp/microbenchmarks/bm_alarm.cc \
+
+BM_ALARM_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BM_ALARM_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bm_alarm: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/bm_alarm: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bm_alarm: $(PROTOBUF_DEP) $(BM_ALARM_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BM_ALARM_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bm_alarm
+
+endif
+
+endif
+
+$(BM_ALARM_OBJS): CPPFLAGS += -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
+$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_alarm.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+
+deps_bm_alarm: $(BM_ALARM_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BM_ALARM_OBJS:.o=.dep)
 endif
 endif
 
