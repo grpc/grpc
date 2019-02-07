@@ -51,7 +51,7 @@ package named :code:`python-dev`).
   $ git submodule update --init
 
   # For the next two commands do `sudo pip install` if you get permission-denied errors
-  $ pip install -rrequirements.txt
+  $ pip install -r requirements.txt
   $ GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
 
 You cannot currently install Python from source on Windows. Things might work
