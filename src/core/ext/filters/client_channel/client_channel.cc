@@ -117,7 +117,7 @@ typedef struct client_channel_channel_data {
   // Resolving LB policy.
   grpc_core::OrphanablePtr<LoadBalancingPolicy> resolving_lb_policy;
   // Subchannel picker from LB policy.
-  grpc_core::RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
+  grpc_core::UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker;
   // Linked list of queued picks.
   QueuedPick* queued_picks;
 
@@ -166,7 +166,7 @@ static const char* get_channel_connectivity_state_change_string(
 static void set_connectivity_state_and_picker_locked(
     channel_data* chand, grpc_connectivity_state state, grpc_error* state_error,
     const char* reason,
-    grpc_core::RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {
+    grpc_core::UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker) {
   // Update connectivity state.
   grpc_connectivity_state_set(&chand->state_tracker, state, state_error,
                               reason);
@@ -219,7 +219,7 @@ class ClientChannelControlHelper
 
   void UpdateState(
       grpc_connectivity_state state, grpc_error* state_error,
-      RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
+      UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
     if (grpc_client_channel_trace.enabled()) {
       const char* extra = chand_->disconnect_error == GRPC_ERROR_NONE
                               ? ""
@@ -349,8 +349,9 @@ static void start_transport_op_locked(void* arg, grpc_error* error_ignored) {
     set_connectivity_state_and_picker_locked(
         chand, GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(op->disconnect_with_error),
         "shutdown from API",
-        grpc_core::MakeRefCounted<LoadBalancingPolicy::TransientFailurePicker>(
-            GRPC_ERROR_REF(op->disconnect_with_error)));
+        grpc_core::UniquePtr<LoadBalancingPolicy::SubchannelPicker>(
+            grpc_core::New<LoadBalancingPolicy::TransientFailurePicker>(
+                GRPC_ERROR_REF(op->disconnect_with_error))));
   }
 
   GRPC_CHANNEL_STACK_UNREF(chand->owning_stack, "start_transport_op");
@@ -462,7 +463,8 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   LoadBalancingPolicy::Args lb_args;
   lb_args.combiner = chand->combiner;
   lb_args.channel_control_helper =
-      grpc_core::MakeRefCounted<grpc_core::ClientChannelControlHelper>(chand);
+      grpc_core::UniquePtr<LoadBalancingPolicy::ChannelControlHelper>(
+          grpc_core::New<grpc_core::ClientChannelControlHelper>(chand));
   lb_args.args = new_args != nullptr ? new_args : args->channel_args;
   grpc_error* error = GRPC_ERROR_NONE;
   chand->resolving_lb_policy.reset(

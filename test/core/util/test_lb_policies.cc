@@ -49,9 +49,9 @@ namespace {
 class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
  public:
   ForwardingLoadBalancingPolicy(
-      RefCountedPtr<ChannelControlHelper> delegating_helper, Args args,
-      const std::string& delegate_policy_name)
-      : LoadBalancingPolicy(std::move(args)) {
+      UniquePtr<ChannelControlHelper> delegating_helper, Args args,
+      const std::string& delegate_policy_name, intptr_t initial_refcount = 1)
+      : LoadBalancingPolicy(std::move(args), initial_refcount) {
     Args delegate_args;
     delegate_args.combiner = combiner();
     delegate_args.channel_control_helper = std::move(delegating_helper);
@@ -99,11 +99,12 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
   InterceptRecvTrailingMetadataLoadBalancingPolicy(
       Args args, InterceptRecvTrailingMetadataCallback cb, void* user_data)
       : ForwardingLoadBalancingPolicy(
-            MakeRefCounted<Helper>(args.channel_control_helper->Ref(), cb,
-                                   user_data),
-            // Note: can't use std::move() here, since that will prevent
-            // us from taking a ref to the helper immediately above.
-            args, /*delegate_lb_policy_name=*/"pick_first") {}
+            UniquePtr<ChannelControlHelper>(New<Helper>(
+                RefCountedPtr<InterceptRecvTrailingMetadataLoadBalancingPolicy>(
+                    this),
+                cb, user_data)),
+            std::move(args), /*delegate_lb_policy_name=*/"pick_first",
+            /*initial_refcount=*/2) {}
 
   ~InterceptRecvTrailingMetadataLoadBalancingPolicy() override = default;
 
@@ -114,7 +115,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
  private:
   class Picker : public SubchannelPicker {
    public:
-    explicit Picker(RefCountedPtr<SubchannelPicker> delegate_picker,
+    explicit Picker(UniquePtr<SubchannelPicker> delegate_picker,
                     InterceptRecvTrailingMetadataCallback cb, void* user_data)
         : delegate_picker_(std::move(delegate_picker)),
           cb_(cb),
@@ -129,42 +130,45 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     }
 
    private:
-    RefCountedPtr<SubchannelPicker> delegate_picker_;
+    UniquePtr<SubchannelPicker> delegate_picker_;
     InterceptRecvTrailingMetadataCallback cb_;
     void* user_data_;
   };
 
   class Helper : public ChannelControlHelper {
    public:
-    Helper(RefCountedPtr<ChannelControlHelper> parent_helper,
+    Helper(RefCountedPtr<InterceptRecvTrailingMetadataLoadBalancingPolicy>
+               parent,
            InterceptRecvTrailingMetadataCallback cb, void* user_data)
-        : parent_helper_(std::move(parent_helper)),
+        : parent_(std::move(parent)),
           cb_(cb),
           user_data_(user_data) {}
 
     Subchannel* CreateSubchannel(const grpc_channel_args& args) override {
-      return parent_helper_->CreateSubchannel(args);
+      return parent_->channel_control_helper()->CreateSubchannel(args);
     }
 
     grpc_channel* CreateChannel(const char* target,
                                 grpc_client_channel_type type,
                                 const grpc_channel_args& args) override {
-      return parent_helper_->CreateChannel(target, type, args);
+      return parent_->channel_control_helper()->CreateChannel(target, type,
+                                                              args);
     }
 
     void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
-                     RefCountedPtr<SubchannelPicker> picker) override {
-      parent_helper_->UpdateState(
+                     UniquePtr<SubchannelPicker> picker) override {
+      parent_->channel_control_helper()->UpdateState(
           state, state_error,
-          MakeRefCounted<Picker>(std::move(picker), cb_, user_data_));
+          UniquePtr<SubchannelPicker>(
+              New<Picker>(std::move(picker), cb_, user_data_)));
     }
 
     void RequestReresolution() override {
-      parent_helper_->RequestReresolution();
+      parent_->channel_control_helper()->RequestReresolution();
     }
 
    private:
-    RefCountedPtr<ChannelControlHelper> parent_helper_;
+    RefCountedPtr<InterceptRecvTrailingMetadataLoadBalancingPolicy> parent_;
     InterceptRecvTrailingMetadataCallback cb_;
     void* user_data_;
   };

@@ -207,7 +207,7 @@ class XdsLb : public LoadBalancingPolicy {
 
   class Picker : public SubchannelPicker {
    public:
-    Picker(RefCountedPtr<SubchannelPicker> child_picker,
+    Picker(UniquePtr<SubchannelPicker> child_picker,
            RefCountedPtr<XdsLbClientStats> client_stats)
         : child_picker_(std::move(child_picker)),
           client_stats_(std::move(client_stats)) {}
@@ -215,7 +215,7 @@ class XdsLb : public LoadBalancingPolicy {
     PickResult Pick(PickState* pick, grpc_error** error) override;
 
    private:
-    RefCountedPtr<SubchannelPicker> child_picker_;
+    UniquePtr<SubchannelPicker> child_picker_;
     RefCountedPtr<XdsLbClientStats> client_stats_;
   };
 
@@ -228,7 +228,7 @@ class XdsLb : public LoadBalancingPolicy {
                                 grpc_client_channel_type type,
                                 const grpc_channel_args& args) override;
     void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
-                     RefCountedPtr<SubchannelPicker> picker) override;
+                     UniquePtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
 
    private:
@@ -364,7 +364,7 @@ grpc_channel* XdsLb::Helper::CreateChannel(const char* target,
 
 void XdsLb::Helper::UpdateState(grpc_connectivity_state state,
                                 grpc_error* state_error,
-                                RefCountedPtr<SubchannelPicker> picker) {
+                                UniquePtr<SubchannelPicker> picker) {
   // TODO(juanlishen): When in fallback mode, pass the child picker
   // through without wrapping it.  (Or maybe use a different helper for
   // the fallback policy?)
@@ -375,7 +375,8 @@ void XdsLb::Helper::UpdateState(grpc_connectivity_state state,
   }
   parent_->channel_control_helper()->UpdateState(
       state, state_error,
-      MakeRefCounted<Picker>(std::move(picker), std::move(client_stats)));
+      UniquePtr<SubchannelPicker>(
+          New<Picker>(std::move(picker), std::move(client_stats))));
 }
 
 void XdsLb::Helper::RequestReresolution() {
@@ -993,7 +994,8 @@ XdsLb::XdsLb(LoadBalancingPolicy::Args args)
   ProcessChannelArgsLocked(*args.args);
   // Initialize channel with a picker that will start us connecting.
   channel_control_helper()->UpdateState(GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
-                                        MakeRefCounted<QueuePicker>(Ref()));
+                                        UniquePtr<SubchannelPicker>(
+                                            New<QueuePicker>(Ref())));
 }
 
 XdsLb::~XdsLb() {
@@ -1379,7 +1381,8 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
     LoadBalancingPolicy::Args lb_policy_args;
     lb_policy_args.combiner = combiner();
     lb_policy_args.args = args;
-    lb_policy_args.channel_control_helper = MakeRefCounted<Helper>(Ref());
+    lb_policy_args.channel_control_helper =
+        UniquePtr<ChannelControlHelper>(New<Helper>(Ref()));
     lb_policy_args.lb_config = child_policy_config;
     CreateChildPolicyLocked(child_policy_name, std::move(lb_policy_args));
     if (grpc_lb_xds_trace.enabled()) {

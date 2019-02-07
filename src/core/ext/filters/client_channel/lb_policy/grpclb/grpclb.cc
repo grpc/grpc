@@ -215,7 +215,7 @@ class GrpcLb : public LoadBalancingPolicy {
   class Picker : public SubchannelPicker {
    public:
     Picker(GrpcLb* parent, grpc_grpclb_serverlist* serverlist,
-           RefCountedPtr<SubchannelPicker> child_picker,
+           UniquePtr<SubchannelPicker> child_picker,
            RefCountedPtr<GrpcLbClientStats> client_stats)
         : parent_(parent),
           serverlist_(serverlist),
@@ -239,7 +239,7 @@ class GrpcLb : public LoadBalancingPolicy {
     // Otherwise, we delegate to the RR policy.
     size_t serverlist_index_ = 0;
 
-    RefCountedPtr<SubchannelPicker> child_picker_;
+    UniquePtr<SubchannelPicker> child_picker_;
     RefCountedPtr<GrpcLbClientStats> client_stats_;
   };
 
@@ -253,7 +253,7 @@ class GrpcLb : public LoadBalancingPolicy {
                                 grpc_client_channel_type type,
                                 const grpc_channel_args& args) override;
     void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
-                     RefCountedPtr<SubchannelPicker> picker) override;
+                     UniquePtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
 
    private:
@@ -434,7 +434,7 @@ bool ServerlistContainsAllDropEntries(
 
 void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
                                  grpc_error* state_error,
-                                 RefCountedPtr<SubchannelPicker> picker) {
+                                 UniquePtr<SubchannelPicker> picker) {
   if (parent_->shutting_down_) return;
   // There are three cases to consider here:
   // 1. We're in fallback mode.  In this case, we're always going to use
@@ -478,9 +478,10 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
   }
   parent_->channel_control_helper()->UpdateState(
       state, state_error,
-      MakeRefCounted<Picker>(parent_.get(),
-                             grpc_grpclb_serverlist_copy(parent_->serverlist_),
-                             std::move(picker), std::move(client_stats)));
+      UniquePtr<SubchannelPicker>(
+          New<Picker>(parent_.get(),
+                      grpc_grpclb_serverlist_copy(parent_->serverlist_),
+                      std::move(picker), std::move(client_stats))));
 }
 
 void GrpcLb::Helper::RequestReresolution() {
@@ -1169,7 +1170,8 @@ GrpcLb::GrpcLb(LoadBalancingPolicy::Args args)
   ProcessChannelArgsLocked(*args.args);
   // Initialize channel with a picker that will start us connecting.
   channel_control_helper()->UpdateState(GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
-                                        MakeRefCounted<QueuePicker>(Ref()));
+                                        UniquePtr<SubchannelPicker>(
+                                            New<QueuePicker>(Ref())));
 }
 
 GrpcLb::~GrpcLb() {
@@ -1540,7 +1542,8 @@ void GrpcLb::CreateOrUpdateRoundRobinPolicyLocked() {
     LoadBalancingPolicy::Args lb_policy_args;
     lb_policy_args.combiner = combiner();
     lb_policy_args.args = args;
-    lb_policy_args.channel_control_helper = MakeRefCounted<Helper>(Ref());
+    lb_policy_args.channel_control_helper =
+        UniquePtr<ChannelControlHelper>(New<Helper>(Ref()));
     CreateRoundRobinPolicyLocked(std::move(lb_policy_args));
   }
   grpc_channel_args_destroy(args);

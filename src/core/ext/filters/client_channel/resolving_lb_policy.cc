@@ -73,28 +73,28 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
  public:
   explicit ResolvingControlHelper(
       RefCountedPtr<ResolvingLoadBalancingPolicy> parent)
-      : parent_(std::move(parent)),
-        helper_(parent_->channel_control_helper()->Ref()) {}
+      : parent_(std::move(parent)) {}
 
   Subchannel* CreateSubchannel(const grpc_channel_args& args) override {
     if (parent_->resolver_ == nullptr) return nullptr;  // Shutting down.
-    return helper_->CreateSubchannel(args);
+    return parent_->channel_control_helper()->CreateSubchannel(args);
   }
 
   grpc_channel* CreateChannel(const char* target, grpc_client_channel_type type,
                               const grpc_channel_args& args) override {
     if (parent_->resolver_ == nullptr) return nullptr;  // Shutting down.
-    return helper_->CreateChannel(target, type, args);
+    return parent_->channel_control_helper()->CreateChannel(target, type, args);
   }
 
   void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
-                   RefCountedPtr<SubchannelPicker> picker) override {
+                   UniquePtr<SubchannelPicker> picker) override {
     if (parent_->resolver_ == nullptr) {
       // shutting down.
       GRPC_ERROR_UNREF(state_error);
       return;
     }
-    helper_->UpdateState(state, state_error, std::move(picker));
+    parent_->channel_control_helper()->UpdateState(state, state_error,
+                                                   std::move(picker));
   }
 
   void RequestReresolution() override {
@@ -109,7 +109,6 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
 
  private:
   RefCountedPtr<ResolvingLoadBalancingPolicy> parent_;
-  RefCountedPtr<ChannelControlHelper> helper_;
 };
 
 //
@@ -165,7 +164,8 @@ grpc_error* ResolvingLoadBalancingPolicy::Init(const grpc_channel_args& args) {
   }
   // Return our picker to the channel.
   channel_control_helper()->UpdateState(GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
-                                        MakeRefCounted<QueuePicker>(Ref()));
+                                        UniquePtr<SubchannelPicker>(
+                                            New<QueuePicker>(Ref())));
   return GRPC_ERROR_NONE;
 }
 
@@ -253,7 +253,7 @@ void ResolvingLoadBalancingPolicy::OnResolverShutdownLocked(grpc_error* error) {
         "Resolver spontaneous shutdown", &error, 1);
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(error),
-        MakeRefCounted<TransientFailurePicker>(error));
+        UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(error)));
   }
   grpc_channel_args_destroy(resolver_result_);
   resolver_result_ = nullptr;
@@ -271,7 +271,7 @@ void ResolvingLoadBalancingPolicy::CreateNewLbPolicyLocked(
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = combiner();
   lb_policy_args.channel_control_helper =
-      MakeRefCounted<ResolvingControlHelper>(Ref());
+      UniquePtr<ChannelControlHelper>(New<ResolvingControlHelper>(Ref()));
   lb_policy_args.args = resolver_result_;
   lb_policy_args.lb_config = lb_config;
   OrphanablePtr<LoadBalancingPolicy> new_lb_policy =
@@ -404,7 +404,8 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
       self->channel_control_helper()->UpdateState(
           GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(state_error),
-          MakeRefCounted<TransientFailurePicker>(state_error));
+          UniquePtr<SubchannelPicker>(
+              New<TransientFailurePicker>(state_error)));
     }
   } else {
     // Parse the resolver result.

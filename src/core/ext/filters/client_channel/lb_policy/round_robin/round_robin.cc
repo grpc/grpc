@@ -253,7 +253,8 @@ RoundRobin::RoundRobin(Args args) : LoadBalancingPolicy(std::move(args)) {
   }
   // Initialize channel with a picker that will start us connecting.
   channel_control_helper()->UpdateState(GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
-                                        MakeRefCounted<QueuePicker>(Ref()));
+                                        UniquePtr<SubchannelPicker>(
+                                            New<QueuePicker>(Ref())));
   UpdateLocked(*args.args, args.lb_config);
 }
 
@@ -407,19 +408,19 @@ void RoundRobin::RoundRobinSubchannelList::
         // TODO(roth): rand(3) is not thread-safe.  This should be
         // replaced with something better as part of
         // https://github.com/grpc/grpc/issues/17891.
-        MakeRefCounted<Picker>(p, this, rand()));
+        UniquePtr<SubchannelPicker>(New<Picker>(p, this, rand())));
   } else if (num_connecting_ > 0) {
     /* 2) CONNECTING */
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, GRPC_ERROR_NONE,
-        MakeRefCounted<QueuePicker>(p->Ref()));
+        UniquePtr<SubchannelPicker>(New<QueuePicker>(p->Ref())));
   } else if (num_transient_failure_ == num_subchannels()) {
     /* 3) TRANSIENT_FAILURE */
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
         GRPC_ERROR_REF(last_transient_failure_error_),
-        MakeRefCounted<TransientFailurePicker>(
-            GRPC_ERROR_REF(last_transient_failure_error_)));
+        UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(
+            GRPC_ERROR_REF(last_transient_failure_error_))));
   }
 }
 
@@ -509,7 +510,7 @@ void RoundRobin::UpdateLocked(const grpc_channel_args& args,
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing update in args");
       channel_control_helper()->UpdateState(
           GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(error),
-          MakeRefCounted<TransientFailurePicker>(error));
+          UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(error)));
     }
     return;
   }
@@ -535,7 +536,7 @@ void RoundRobin::UpdateLocked(const grpc_channel_args& args,
       grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update");
       channel_control_helper()->UpdateState(
           GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(error),
-          MakeRefCounted<TransientFailurePicker>(error));
+          UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(error)));
     }
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
   } else {

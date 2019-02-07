@@ -95,7 +95,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   // the interaction with the picker) and the control plane work (i.e.,
   // the interaction with the LB policy) into two different
   // synchronization mechanisms, to avoid lock contention between the two.
-  class SubchannelPicker : public RefCounted<SubchannelPicker> {
+  class SubchannelPicker {
    public:
     enum PickResult {
       // Pick complete.  If connected_subchannel is non-null, client channel
@@ -129,8 +129,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
    public:
     explicit QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent)
         : parent_(std::move(parent)) {
-      GRPC_CLOSURE_INIT(&exit_idle_closure_, &CallExitIdle, this,
-                        grpc_combiner_scheduler(parent_->combiner()));
     }
 
     PickResult Pick(PickState* pick, grpc_error** error) override {
@@ -148,22 +146,24 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
       //    the control plane combiner.
       if (!exit_idle_called_) {
         exit_idle_called_ = true;
-        Ref().release();  // ref held by closure.
-        GRPC_CLOSURE_SCHED(&exit_idle_closure_, GRPC_ERROR_NONE);
+        parent_->Ref().release();  // ref held by closure.
+        GRPC_CLOSURE_SCHED(
+            GRPC_CLOSURE_CREATE(&CallExitIdle, parent_.get(),
+                                grpc_combiner_scheduler(parent_->combiner())),
+            GRPC_ERROR_NONE);
       }
       return PICK_QUEUE;
     }
 
    private:
     static void CallExitIdle(void* arg, grpc_error* error) {
-      QueuePicker* self = static_cast<QueuePicker*>(arg);
-      self->parent_->ExitIdleLocked();
-      self->Unref();
+      LoadBalancingPolicy* parent = static_cast<LoadBalancingPolicy*>(arg);
+      parent->ExitIdleLocked();
+      parent->Unref();
     }
 
     RefCountedPtr<LoadBalancingPolicy> parent_;
     bool exit_idle_called_ = false;
-    grpc_closure exit_idle_closure_;
   };
 
   // A picker that returns PICK_TRANSIENT_FAILURE for all picks.
@@ -183,9 +183,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   /// A proxy object used by the LB policy to communicate with the client
   /// channel.
-  // TODO(roth): Does this need to be ref-counted, or could it be orphanable?
-  // Or maybe just use UniquePtr?
-  class ChannelControlHelper : public RefCounted<ChannelControlHelper> {
+  class ChannelControlHelper {
    public:
     ChannelControlHelper() = default;
     virtual ~ChannelControlHelper() = default;
@@ -203,7 +201,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// by the client channel.
     virtual void UpdateState(grpc_connectivity_state state,
                              grpc_error* state_error,
-                             RefCountedPtr<SubchannelPicker> picker) {
+                             UniquePtr<SubchannelPicker> picker) {
       std::move(picker);  // Suppress clang-tidy complaint.
       // The rest of this is copied from the GRPC_ABSTRACT macro.
       gpr_log(GPR_ERROR, "Function marked GRPC_ABSTRACT was not implemented");
@@ -225,7 +223,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     // of a reference.
     grpc_combiner* combiner = nullptr;
     /// Channel control helper.
-    RefCountedPtr<ChannelControlHelper> channel_control_helper;
+    UniquePtr<ChannelControlHelper> channel_control_helper;
     /// Channel args from the resolver.
     /// Note that the LB policy gets the set of addresses from the
     /// GRPC_ARG_SERVER_ADDRESS_LIST channel arg.
@@ -287,7 +285,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
  protected:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
-  explicit LoadBalancingPolicy(Args args);
+  explicit LoadBalancingPolicy(Args args, intptr_t initial_refcount = 1);
   virtual ~LoadBalancingPolicy();
 
   grpc_combiner* combiner() const { return combiner_; }
@@ -319,7 +317,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Owned pointer to interested parties in load balancing decisions.
   grpc_pollset_set* interested_parties_;
   /// Channel control helper.
-  RefCountedPtr<ChannelControlHelper> channel_control_helper_;
+  UniquePtr<ChannelControlHelper> channel_control_helper_;
   /// Channelz node.
   RefCountedPtr<channelz::ClientChannelNode> channelz_node_;
 };
