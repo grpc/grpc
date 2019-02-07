@@ -1129,7 +1129,8 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
           GRPC_ERROR_INT_HTTP2_ERROR, static_cast<intptr_t>(goaway_error)),
       GRPC_ERROR_STR_RAW_BYTES, goaway_text);
 
-  gpr_log(GPR_ERROR, "%s: Got goaway [%d] err=%s", t->peer_string, goaway_error,
+  /* We want to log this irrespective of whether http tracing is enabled */
+  gpr_log(GPR_INFO, "%s: Got goaway [%d] err=%s", t->peer_string, goaway_error,
           grpc_error_string(t->goaway_error));
 
   /* When a client receives a GOAWAY with error code ENHANCE_YOUR_CALM and debug
@@ -1774,7 +1775,8 @@ void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id) {
 }
 
 static void send_goaway(grpc_chttp2_transport* t, grpc_error* error) {
-  gpr_log(GPR_ERROR, "%s: Sending goaway err=%s", t->peer_string,
+  /* We want to log this irrespective of whether http tracing is enabled */
+  gpr_log(GPR_INFO, "%s: Sending goaway err=%s", t->peer_string,
           grpc_error_string(error));
   t->sent_goaway_state = GRPC_CHTTP2_GOAWAY_SEND_SCHEDULED;
   grpc_http2_error_code http_error;
