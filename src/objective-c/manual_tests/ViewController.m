@@ -18,15 +18,15 @@
 
 #import <UIKit/UIKit.h>
 
-#import <RemoteTest/Messages.pbobjc.h>
-#import <RemoteTest/Test.pbrpc.h>
 #import <GRPCClient/GRPCCall.h>
 #import <GRPCClient/GRPCCallOptions.h>
+#import <RemoteTest/Messages.pbobjc.h>
+#import <RemoteTest/Test.pbrpc.h>
 
 NSString *const kRemoteHost = @"grpc-test.sandbox.googleapis.com";
 const int32_t kMessageSize = 100;
 
-@interface ViewController : UIViewController <GRPCProtoResponseHandler>
+@interface ViewController : UIViewController<GRPCProtoResponseHandler>
 
 @end
 
@@ -52,9 +52,8 @@ const int32_t kMessageSize = 100;
   request.responseSize = kMessageSize;
   request.payload.body = [NSMutableData dataWithLength:kMessageSize];
 
-  GRPCUnaryProtoCall *call = [_service unaryCallWithMessage:request
-                                            responseHandler:self
-                                                callOptions:nil];
+  GRPCUnaryProtoCall *call =
+      [_service unaryCallWithMessage:request responseHandler:self callOptions:nil];
   [call start];
 }
 
