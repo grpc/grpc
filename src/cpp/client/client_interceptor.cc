@@ -35,5 +35,10 @@ void RegisterGlobalClientInterceptorFactory(
   }
   internal::g_global_client_interceptor_factory = factory;
 }
+
+// For testing purposes only.
+void TestOnlyResetGlobalClientInterceptorFactory() {
+  internal::g_global_client_interceptor_factory = nullptr;
+}
 }  // namespace experimental
 }  // namespace grpc
