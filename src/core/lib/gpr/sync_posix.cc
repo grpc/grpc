@@ -16,8 +16,8 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 
 #ifdef GPR_POSIX_SYNC
 
@@ -77,11 +77,6 @@ void gpr_mu_init(gpr_mu* mu) {
   GPR_ASSERT(pthread_mutex_init(&mu->mutex, nullptr) == 0);
   mu->leak_checker = (int*)gpr_malloc(sizeof(*mu->leak_checker));
   GPR_ASSERT(mu->leak_checker != nullptr);
-  /* Initial it with a magic number, make no sense, just use the memory.
-  * This only take effect when ASAN enabled, so,
-  * if memory allocation failed, let it crash.
-  */
-  *mu->leak_checker = 0x12F34D0;
 #else
   GPR_ASSERT(pthread_mutex_init(mu, nullptr) == 0);
 #endif
@@ -142,11 +137,6 @@ void gpr_cv_init(gpr_cv* cv) {
   GPR_ASSERT(pthread_cond_init(&cv->cond_var, &attr) == 0);
   cv->leak_checker = (int*)gpr_malloc(sizeof(*cv->leak_checker));
   GPR_ASSERT(cv->leak_checker != nullptr);
-  /* Initial it with a magic number, make no sense, just use the memory.
-  * This only take effect when ASAN enabled, so,
-  * if memory allocation failed, let it crash.
-  */
-  *cv->leak_checker = 0x12F34D0;
 #else
   GPR_ASSERT(pthread_cond_init(cv, &attr) == 0);
 #endif
