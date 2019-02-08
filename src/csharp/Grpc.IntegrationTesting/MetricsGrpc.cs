@@ -4,13 +4,13 @@
 // </auto-generated>
 // Original file comments:
 // Copyright 2015-2016 gRPC authors.
-//
+// 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-//
+// 
 //     http://www.apache.org/licenses/LICENSE-2.0
-//
+// 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,7 +19,7 @@
 //
 // Contains the definitions for a metrics service and the type of metrics
 // exposed by the service.
-//
+// 
 // Currently, 'Gauge' (i.e a metric that represents the measured value of
 // something at an instant of time) is the only metric type supported by the
 // service.
@@ -193,14 +193,14 @@ namespace Grpc.Testing {
           .AddMethod(__Method_GetGauge, serviceImpl.GetGauge).Build();
     }
 
-    /// <summary>Register service method implementations with a service binder. Useful when customizing the service binding logic.
+    /// <summary>Register service method with a service binder with or without implementation. Useful when customizing the  service binding logic.
     /// Note: this method is part of an experimental API that can change or be removed without any prior notice.</summary>
     /// <param name="serviceBinder">Service methods will be bound by calling <c>AddMethod</c> on this object.</param>
     /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
     public static void BindService(grpc::ServiceBinderBase serviceBinder, MetricsServiceBase serviceImpl)
     {
-      serviceBinder.AddMethod(__Method_GetAllGauges, serviceImpl.GetAllGauges);
-      serviceBinder.AddMethod(__Method_GetGauge, serviceImpl.GetGauge);
+      serviceBinder.AddMethod(__Method_GetAllGauges, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::Grpc.Testing.EmptyMessage, global::Grpc.Testing.GaugeResponse>(serviceImpl.GetAllGauges));
+      serviceBinder.AddMethod(__Method_GetGauge, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Grpc.Testing.GaugeRequest, global::Grpc.Testing.GaugeResponse>(serviceImpl.GetGauge));
     }
 
   }

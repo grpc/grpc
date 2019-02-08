@@ -81,8 +81,8 @@ struct grpc_slice {
   struct grpc_slice_refcount* refcount;
   union grpc_slice_data {
     struct grpc_slice_refcounted {
-      uint8_t* bytes;
       size_t length;
+      uint8_t* bytes;
     } refcounted;
     struct grpc_slice_inlined {
       uint8_t length;

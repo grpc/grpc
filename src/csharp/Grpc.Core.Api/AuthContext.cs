@@ -19,7 +19,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core

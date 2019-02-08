@@ -619,15 +619,19 @@ static tsi_result x509_store_load_certs(X509_STORE* cert_store,
       sk_X509_NAME_push(*root_names, root_name);
       root_name = nullptr;
     }
+    ERR_clear_error();
     if (!X509_STORE_add_cert(cert_store, root)) {
-      gpr_log(GPR_ERROR, "Could not add root certificate to ssl context.");
-      result = TSI_INTERNAL_ERROR;
-      break;
+      unsigned long error = ERR_get_error();
+      if (ERR_GET_LIB(error) != ERR_LIB_X509 ||
+          ERR_GET_REASON(error) != X509_R_CERT_ALREADY_IN_HASH_TABLE) {
+        gpr_log(GPR_ERROR, "Could not add root certificate to ssl context.");
+        result = TSI_INTERNAL_ERROR;
+        break;
+      }
     }
     X509_free(root);
     num_roots++;
   }
-
   if (num_roots == 0) {
     gpr_log(GPR_ERROR, "Could not load any root certificate.");
     result = TSI_INVALID_ARGUMENT;
@@ -651,6 +655,8 @@ static tsi_result ssl_ctx_load_verification_certs(SSL_CTX* context,
                                                   STACK_OF(X509_NAME) *
                                                       *root_name) {
   X509_STORE* cert_store = SSL_CTX_get_cert_store(context);
+  X509_STORE_set_flags(cert_store,
+                       X509_V_FLAG_PARTIAL_CHAIN | X509_V_FLAG_TRUSTED_FIRST);
   return x509_store_load_certs(cert_store, pem_roots, pem_roots_size,
                                root_name);
 }

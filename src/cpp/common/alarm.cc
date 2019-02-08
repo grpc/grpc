@@ -40,12 +40,7 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
     gpr_ref_init(&refs_, 1);
     grpc_timer_init_unset(&timer_);
   }
-  ~AlarmImpl() {
-    grpc_core::ExecCtx exec_ctx;
-    if (cq_ != nullptr) {
-      GRPC_CQ_INTERNAL_UNREF(cq_, "alarm");
-    }
-  }
+  ~AlarmImpl() {}
   bool FinalizeResult(void** tag, bool* status) override {
     *tag = tag_;
     Unref();
@@ -63,10 +58,15 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
                         // queue the op on the completion queue
                         AlarmImpl* alarm = static_cast<AlarmImpl*>(arg);
                         alarm->Ref();
+                        // Preserve the cq and reset the cq_ so that the alarm
+                        // can be reset when the alarm tag is delivered.
+                        grpc_completion_queue* cq = alarm->cq_;
+                        alarm->cq_ = nullptr;
                         grpc_cq_end_op(
-                            alarm->cq_, alarm, error,
+                            cq, alarm, error,
                             [](void* arg, grpc_cq_completion* completion) {},
                             arg, &alarm->completion_);
+                        GRPC_CQ_INTERNAL_UNREF(cq, "alarm");
                       },
                       this, grpc_schedule_on_exec_ctx);
     grpc_timer_init(&timer_, grpc_timespec_to_millis_round_up(deadline),

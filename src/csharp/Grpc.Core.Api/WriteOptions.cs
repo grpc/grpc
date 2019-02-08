@@ -48,7 +48,7 @@ namespace Grpc.Core
         /// Default write options.
         /// </summary>
         public static readonly WriteOptions Default = new WriteOptions();
-            
+
         private readonly WriteFlags flags;
 
         /// <summary>

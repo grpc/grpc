@@ -106,7 +106,7 @@ struct channel_data {
      +--------------------------------+----------------+---------+
 
      MAX_IDLE_STATE_INIT: The initial and final state of 'idle_state'. The
-     channel has 1 or 1+ active calls, and the the timer is not set. Note that
+     channel has 1 or 1+ active calls, and the timer is not set. Note that
      we may put a virtual call to hold this state at channel initialization or
      shutdown, so that the channel won't enter other states.
 

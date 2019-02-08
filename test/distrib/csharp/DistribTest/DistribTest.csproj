@@ -62,6 +62,9 @@
     <Reference Include="Grpc.Core">
       <HintPath>..\packages\Grpc.Core.__GRPC_NUGET_VERSION__\lib\net45\Grpc.Core.dll</HintPath>
     </Reference>
+    <Reference Include="Grpc.Core.Api">
+      <HintPath>..\packages\Grpc.Core.Api.__GRPC_NUGET_VERSION__\lib\net45\Grpc.Core.Api.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Interactive.Async">

@@ -229,7 +229,7 @@ class JavaLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_GOOGLE_DEFAULT_CREDS
+        return []
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -254,7 +254,7 @@ class JavaOkHttpClient:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE + _SKIP_GOOGLE_DEFAULT_CREDS
+        return _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def __str__(self):
         return 'javaokhttp'
@@ -285,7 +285,7 @@ class GoLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION + _SKIP_GOOGLE_DEFAULT_CREDS
+        return _SKIP_COMPRESSION
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -723,7 +723,10 @@ def compute_engine_creds_required(language, test_case):
     return False
 
 
-def auth_options(language, test_case, on_gce, service_account_key_file=None):
+def auth_options(language,
+                 test_case,
+                 google_default_creds_use_key_file,
+                 service_account_key_file=None):
     """Returns (cmdline, env) tuple with cloud_to_prod_auth test options."""
 
     language = str(language)
@@ -757,7 +760,7 @@ def auth_options(language, test_case, on_gce, service_account_key_file=None):
         cmdargs += [oauth_scope_arg, default_account_arg]
 
     if test_case == _GOOGLE_DEFAULT_CREDS_TEST_CASE:
-        if not on_gce:
+        if google_default_creds_use_key_file:
             env['GOOGLE_APPLICATION_CREDENTIALS'] = service_account_key_file
         cmdargs += [default_account_arg]
 
@@ -778,7 +781,7 @@ def cloud_to_prod_jobspec(language,
                           test_case,
                           server_host_nickname,
                           server_host,
-                          on_gce,
+                          google_default_creds_use_key_file,
                           docker_image=None,
                           auth=False,
                           manual_cmd_log=None,
@@ -804,7 +807,8 @@ def cloud_to_prod_jobspec(language,
     cmdargs = cmdargs + transport_security_options
     environ = dict(language.cloud_to_prod_env(), **language.global_env())
     if auth:
-        auth_cmdargs, auth_env = auth_options(language, test_case, on_gce,
+        auth_cmdargs, auth_env = auth_options(language, test_case,
+                                              google_default_creds_use_key_file,
                                               service_account_key_file)
         cmdargs += auth_cmdargs
         environ.update(auth_env)
@@ -1083,11 +1087,13 @@ argp.add_argument(
     const=True,
     help='Run cloud_to_prod_auth tests.')
 argp.add_argument(
-    '--on_gce',
-    default=True,
+    '--google_default_creds_use_key_file',
+    default=False,
     action='store_const',
     const=True,
-    help='Whether or not this test script is running on GCE.')
+    help=('Whether or not we should use a key file for the '
+          'google_default_credentials test case, e.g. by '
+          'setting env var GOOGLE_APPLICATION_CREDENTIALS.'))
 argp.add_argument(
     '--prod_servers',
     choices=prod_servers.keys(),
@@ -1343,7 +1349,8 @@ try:
                                 test_case,
                                 server_host_nickname,
                                 prod_servers[server_host_nickname],
-                                on_gce=args.on_gce,
+                                google_default_creds_use_key_file=args.
+                                google_default_creds_use_key_file,
                                 docker_image=docker_images.get(str(language)),
                                 manual_cmd_log=client_manual_cmd_log,
                                 service_account_key_file=args.
@@ -1358,7 +1365,8 @@ try:
                                     test_case,
                                     server_host_nickname,
                                     prod_servers[server_host_nickname],
-                                    on_gce=args.on_gce,
+                                    google_default_creds_use_key_file=args.
+                                    google_default_creds_use_key_file,
                                     docker_image=docker_images.get(
                                         str(language)),
                                     manual_cmd_log=client_manual_cmd_log,
@@ -1375,7 +1383,8 @@ try:
                         test_case,
                         server_host_nickname,
                         prod_servers[server_host_nickname],
-                        on_gce=args.on_gce,
+                        google_default_creds_use_key_file=args.
+                        google_default_creds_use_key_file,
                         docker_image=docker_images.get(str(http2Interop)),
                         manual_cmd_log=client_manual_cmd_log,
                         service_account_key_file=args.service_account_key_file,
@@ -1402,7 +1411,8 @@ try:
                                 test_case,
                                 server_host_nickname,
                                 prod_servers[server_host_nickname],
-                                on_gce=args.on_gce,
+                                google_default_creds_use_key_file=args.
+                                google_default_creds_use_key_file,
                                 docker_image=docker_images.get(str(language)),
                                 auth=True,
                                 manual_cmd_log=client_manual_cmd_log,

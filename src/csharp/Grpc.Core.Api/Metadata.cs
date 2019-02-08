@@ -20,7 +20,6 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
-using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core
@@ -52,6 +51,7 @@ namespace Grpc.Core
         /// feature and is not part of public API.
         /// </summary>
         internal const string CompressionRequestAlgorithmMetadataKey = "grpc-internal-encoding-request";
+        static readonly Encoding EncodingASCII = System.Text.Encoding.ASCII;
 
         readonly List<Entry> entries;
         bool readOnly;
@@ -286,7 +286,7 @@ namespace Grpc.Core
                 {
                     if (valueBytes == null)
                     {
-                        return MarshalUtils.GetBytesASCII(value);
+                        return EncodingASCII.GetBytes(value);
                     }
 
                     // defensive copy to guarantee immutability
@@ -304,7 +304,7 @@ namespace Grpc.Core
                 get
                 {
                     GrpcPreconditions.CheckState(!IsBinary, "Cannot access string value of a binary metadata entry");
-                    return value ?? MarshalUtils.GetStringASCII(valueBytes);
+                    return value ?? EncodingASCII.GetString(valueBytes);
                 }
             }
 
@@ -328,7 +328,7 @@ namespace Grpc.Core
                 {
                     return string.Format("[Entry: key={0}, valueBytes={1}]", key, valueBytes);
                 }
-                
+
                 return string.Format("[Entry: key={0}, value={1}]", key, value);
             }
 
@@ -338,7 +338,7 @@ namespace Grpc.Core
             /// </summary>
             internal byte[] GetSerializedValueUnsafe()
             {
-                return valueBytes ?? MarshalUtils.GetBytesASCII(value);
+                return valueBytes ?? EncodingASCII.GetBytes(value);
             }
 
             /// <summary>
@@ -351,21 +351,21 @@ namespace Grpc.Core
                 {
                     return new Entry(key, null, valueBytes);
                 }
-                return new Entry(key, MarshalUtils.GetStringASCII(valueBytes), null);
+                return new Entry(key, EncodingASCII.GetString(valueBytes), null);
             }
 
             private static string NormalizeKey(string key)
             {
                 GrpcPreconditions.CheckNotNull(key, "key");
 
-                GrpcPreconditions.CheckArgument(IsValidKey(key, out bool isLowercase), 
+                GrpcPreconditions.CheckArgument(IsValidKey(key, out bool isLowercase),
                     "Metadata entry key not valid. Keys can only contain lowercase alphanumeric characters, underscores, hyphens and dots.");
                 if (isLowercase)
                 {
                     // save allocation of a new string if already lowercase
                     return key;
                 }
-                
+
                 return key.ToLowerInvariant();
             }
 
@@ -378,7 +378,7 @@ namespace Grpc.Core
                     if ('a' <= c && c <= 'z' ||
                         '0' <= c && c <= '9' ||
                         c == '.' ||
-                        c == '_' || 
+                        c == '_' ||
                         c == '-' )
                         continue;
 

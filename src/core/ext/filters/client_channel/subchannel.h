@@ -213,7 +213,7 @@ class Subchannel {
   // invokes \a notify and updates \a *state with the new state.
   void NotifyOnStateChange(grpc_pollset_set* interested_parties,
                            grpc_connectivity_state* state, grpc_closure* notify,
-                           bool inhibit_health_checks);
+                           bool inhibit_health_checking);
 
   // Resets the connection backoff of the subchannel.
   // TODO(roth): Move connection backoff out of subchannels and up into LB

@@ -46,7 +46,7 @@
 
 /* -- Constants. -- */
 
-#define GRPC_COMPUTE_ENGINE_DETECTION_HOST "metadata.google.internal"
+#define GRPC_COMPUTE_ENGINE_DETECTION_HOST "metadata.google.internal."
 
 /* -- Default credentials. -- */
 
@@ -272,7 +272,7 @@ end:
   GPR_ASSERT((result == nullptr) + (error == GRPC_ERROR_NONE) == 1);
   if (creds_path != nullptr) gpr_free(creds_path);
   grpc_slice_unref_internal(creds_data);
-  if (json != nullptr) grpc_json_destroy(json);
+  grpc_json_destroy(json);
   *creds = result;
   return error;
 }

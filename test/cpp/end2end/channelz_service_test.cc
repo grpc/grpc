@@ -708,7 +708,7 @@ TEST_F(ChannelzServerTest, GetServerSocketsPaginationTest) {
                                          get_server_sockets_request,
                                          &get_server_sockets_response);
     EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
-    // We add one to account the the channelz stub that will end up creating
+    // We add one to account the channelz stub that will end up creating
     // a serversocket.
     EXPECT_EQ(get_server_sockets_response.socket_ref_size(),
               kNumServerSocketsCreated + 1);

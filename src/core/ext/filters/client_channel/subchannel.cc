@@ -405,18 +405,23 @@ class Subchannel::ConnectedSubchannelStateWatcher
   static void OnHealthChanged(void* arg, grpc_error* error) {
     auto* self = static_cast<ConnectedSubchannelStateWatcher*>(arg);
     Subchannel* c = self->subchannel_;
-    MutexLock lock(&c->mu_);
-    if (self->health_state_ == GRPC_CHANNEL_SHUTDOWN) {
-      self->Unref();
-      return;
+    {
+      MutexLock lock(&c->mu_);
+      if (self->health_state_ != GRPC_CHANNEL_SHUTDOWN &&
+          self->health_check_client_ != nullptr) {
+        if (self->last_connectivity_state_ == GRPC_CHANNEL_READY) {
+          grpc_connectivity_state_set(&c->state_and_health_tracker_,
+                                      self->health_state_,
+                                      GRPC_ERROR_REF(error), "health_changed");
+        }
+        self->health_check_client_->NotifyOnHealthChange(
+            &self->health_state_, &self->on_health_changed_);
+        self = nullptr;  // So we don't unref below.
+      }
     }
-    if (self->last_connectivity_state_ == GRPC_CHANNEL_READY) {
-      grpc_connectivity_state_set(&c->state_and_health_tracker_,
-                                  self->health_state_, GRPC_ERROR_REF(error),
-                                  "health_changed");
-    }
-    self->health_check_client_->NotifyOnHealthChange(&self->health_state_,
-                                                     &self->on_health_changed_);
+    // Don't unref until we've released the lock, because this might
+    // cause the subchannel (which contains the lock) to be destroyed.
+    if (self != nullptr) self->Unref();
   }
 
   Subchannel* subchannel_;
@@ -731,10 +736,10 @@ channelz::SubchannelNode* Subchannel::channelz_node() {
 }
 
 grpc_connectivity_state Subchannel::CheckConnectivity(
-    grpc_error** error, bool inhibit_health_checks) {
+    grpc_error** error, bool inhibit_health_checking) {
   MutexLock lock(&mu_);
   grpc_connectivity_state_tracker* tracker =
-      inhibit_health_checks ? &state_tracker_ : &state_and_health_tracker_;
+      inhibit_health_checking ? &state_tracker_ : &state_and_health_tracker_;
   grpc_connectivity_state state = grpc_connectivity_state_get(tracker, error);
   return state;
 }
@@ -742,9 +747,9 @@ grpc_connectivity_state Subchannel::CheckConnectivity(
 void Subchannel::NotifyOnStateChange(grpc_pollset_set* interested_parties,
                                      grpc_connectivity_state* state,
                                      grpc_closure* notify,
-                                     bool inhibit_health_checks) {
+                                     bool inhibit_health_checking) {
   grpc_connectivity_state_tracker* tracker =
-      inhibit_health_checks ? &state_tracker_ : &state_and_health_tracker_;
+      inhibit_health_checking ? &state_tracker_ : &state_and_health_tracker_;
   ExternalStateWatcher* w;
   if (state == nullptr) {
     MutexLock lock(&mu_);

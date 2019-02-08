@@ -111,7 +111,7 @@ void FlowControlTrace::Finish() {
     saw_str = gpr_leftpad("", ' ', kTracePadding);
   }
   gpr_log(GPR_DEBUG,
-          "%p[%u][%s] | %s | trw:%s, ttw:%s, taw:%s, srw:%s, slw:%s, saw:%s",
+          "%p[%u][%s] | %s | trw:%s, tlw:%s, taw:%s, srw:%s, slw:%s, saw:%s",
           tfc_, sfc_ != nullptr ? sfc_->stream()->id : 0,
           tfc_->transport()->is_client ? "cli" : "svr", reason_, trw_str,
           tlw_str, taw_str, srw_str, slw_str, saw_str);

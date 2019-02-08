@@ -16,8 +16,8 @@
  *
  */
 
-/// An Alarm posts the user provided tag to its associated completion queue upon
-/// expiry or cancellation.
+/// An Alarm posts the user-provided tag to its associated completion queue or
+/// invokes the user-provided function on expiry or cancellation.
 #ifndef GRPCPP_ALARM_IMPL_H
 #define GRPCPP_ALARM_IMPL_H
 
@@ -32,7 +32,6 @@
 
 namespace grpc_impl {
 
-/// A thin wrapper around \a grpc_alarm (see / \a / src/core/surface/alarm.h).
 class Alarm : private ::grpc::GrpcLibraryCodegen {
  public:
   /// Create an unset completion queue alarm
