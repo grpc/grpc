@@ -58,8 +58,8 @@ while [ $retries -lt 3 ]; do
         HOST_PORT_LOCAL=localhost:5050 \
         HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
         test 2>&1 \
-        | egrep -v "$XCODEBUILD_FILTER" \
         | egrep -v '^$' \
+        | ./ts.sh \
         | egrep -v "(GPBDictionary|GPBArray)" - ) || return_code=$?
   if [ $return_code == 65 ] && [[ $out == *"DTXProxyChannel error 1"* ]]; then
     echo "$out"
@@ -85,8 +85,8 @@ xcodebuild \
     -scheme CoreCronetEnd2EndTests \
     -destination name="iPhone 8" \
     test \
-    | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
+    | ./ts.sh \
     | egrep -v "(GPBDictionary|GPBArray)" -
 
 echo "TIME:  $(date)"
@@ -95,8 +95,8 @@ xcodebuild \
     -scheme CoreCronetEnd2EndTests_Asan \
     -destination name="iPhone 6" \
     test \
-    | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
+    | ./ts.sh \
     | egrep -v "(GPBDictionary|GPBArray)" -
 
 echo "TIME:  $(date)"
@@ -105,8 +105,8 @@ xcodebuild \
     -scheme CoreCronetEnd2EndTests_Tsan \
     -destination name="iPhone 6" \
     test \
-    | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
+    | ./ts.sh \
     | egrep -v "(GPBDictionary|GPBArray)" -
 
 echo "TIME:  $(date)"
@@ -115,8 +115,8 @@ xcodebuild \
     -scheme CronetUnitTests \
     -destination name="iPhone 8" \
     test \
-    | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
+    | ./ts.sh \
     | egrep -v "(GPBDictionary|GPBArray)" -
 
 echo "TIME:  $(date)"
@@ -126,8 +126,8 @@ xcodebuild \
     -destination name="iPhone 8" \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
     test \
-    | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
+    | ./ts.sh \
     | egrep -v "(GPBDictionary|GPBArray)" -
 
 echo "TIME:  $(date)"
@@ -137,8 +137,8 @@ xcodebuild \
     -destination name="iPhone 8" \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
     test \
-    | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
+    | ./ts.sh \
     | egrep -v "(GPBDictionary|GPBArray)" -
 
 echo "TIME:  $(date)"
@@ -148,8 +148,8 @@ xcodebuild \
     -destination name="iPhone 8" \
     HOST_PORT_LOCAL=localhost:5050 \
     test \
-    | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
+    | ./ts.sh \
     | egrep -v "(GPBDictionary|GPBArray)" -
 
 echo "TIME:  $(date)"
@@ -159,8 +159,8 @@ xcodebuild \
     -destination name="iPhone 8" \
     HOST_PORT_LOCALSSL=localhost:5051 \
     test \
-    | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
+    | ./ts.sh \
     | egrep -v "(GPBDictionary|GPBArray)" -
 
 echo "TIME:  $(date)"
@@ -169,8 +169,8 @@ xcodebuild \
     -scheme UnitTests \
     -destination name="iPhone 8" \
     test \
-    | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
+    | ./ts.sh \
     | egrep -v "(GPBDictionary|GPBArray)" -
 
 echo "TIME:  $(date)"
@@ -179,8 +179,8 @@ xcodebuild \
     -scheme ChannelTests \
     -destination name="iPhone 8" \
     test \
-    | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
+    | ./ts.sh \
     | egrep -v "(GPBDictionary|GPBArray)" -
 
 echo "TIME:  $(date)"
@@ -191,8 +191,8 @@ xcodebuild \
     HOST_PORT_LOCAL=localhost:5050 \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
     test \
-    | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
+    | ./ts.sh \
     | egrep -v "(GPBDictionary|GPBArray)" -
 
 exit 0
