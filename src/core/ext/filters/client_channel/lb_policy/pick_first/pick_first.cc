@@ -377,8 +377,8 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       StopConnectivityWatchLocked();
       p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
       grpc_error* new_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "selected subchannel not ready; switching to pending update",
-          &error, 1);
+          "selected subchannel not ready; switching to pending update", &error,
+          1);
       p->channel_control_helper()->UpdateState(
           GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(new_error),
           UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(new_error)));
