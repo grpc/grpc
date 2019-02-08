@@ -376,15 +376,12 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       p->selected_ = nullptr;
       StopConnectivityWatchLocked();
       p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
-      if (error != GRPC_ERROR_NONE) {
-        GRPC_ERROR_REF(error);
-      } else {
-        error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "selected subchannel not ready; switching to pending update");
-      }
+      grpc_error* new_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+          "selected subchannel not ready; switching to pending update",
+          &error, 1);
       p->channel_control_helper()->UpdateState(
-          GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(error),
-          UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(error)));
+          GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(new_error),
+          UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(new_error)));
     } else {
       if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         // If the selected subchannel goes bad, request a re-resolution. We also
@@ -446,10 +443,10 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       // Case 1: Only set state to TRANSIENT_FAILURE if we've tried
       // all subchannels.
       if (sd->Index() == 0 && subchannel_list() == p->subchannel_list_.get()) {
+        p->channel_control_helper()->RequestReresolution();
         grpc_error* new_error =
             GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                 "failed to connect to all addresses", &error, 1);
-        p->channel_control_helper()->RequestReresolution();
         p->channel_control_helper()->UpdateState(
             GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(new_error),
             UniquePtr<SubchannelPicker>(
