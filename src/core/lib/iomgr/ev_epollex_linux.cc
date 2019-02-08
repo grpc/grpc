@@ -180,7 +180,7 @@ struct grpc_fd {
     grpc_iomgr_unregister_object(&iomgr_object);
 
     POLLABLE_UNREF(pollable_obj, "fd_pollable");
-    pollsets.clear();
+    pollset_fds.clear();
     gpr_mu_destroy(&pollable_mu);
     gpr_mu_destroy(&orphan_mu);
 
@@ -220,10 +220,10 @@ struct grpc_fd {
 
   gpr_mu orphan_mu;
 
-  // Protects pollable_obj and pollsets.
+  // Protects pollable_obj and pollset_fds.
   gpr_mu pollable_mu;
-  grpc_core::InlinedVector<grpc_pollset*, 1> pollsets;  // Used in PO_MULTI.
-  pollable* pollable_obj = nullptr;                     // Used in PO_FD.
+  grpc_core::InlinedVector<int, 1> pollset_fds;  // Used in PO_MULTI.
+  pollable* pollable_obj = nullptr;              // Used in PO_FD.
 
   grpc_core::LockfreeEvent read_closure;
   grpc_core::LockfreeEvent write_closure;
@@ -422,7 +422,6 @@ static int fd_wrapped_fd(grpc_fd* fd) {
   return (gpr_atm_acq_load(&fd->refst) & 1) ? ret_fd : -1;
 }
 
-static int pollset_epoll_fd_locked(grpc_pollset* pollset);
 static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
                       const char* reason) {
   bool is_fd_closed = false;
@@ -452,9 +451,8 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
       if (pollable_obj != nullptr) {  // For PO_FD.
         epoll_ctl(pollable_obj->epfd, EPOLL_CTL_DEL, fd->fd, &ev_fd);
       }
-      for (size_t i = 0; i < fd->pollsets.size(); ++i) {  // For PO_MULTI.
-        grpc_pollset* pollset = fd->pollsets[i];
-        const int epfd = pollset_epoll_fd_locked(pollset);
+      for (size_t i = 0; i < fd->pollset_fds.size(); ++i) {  // For PO_MULTI.
+        const int epfd = fd->pollset_fds[i];
         epoll_ctl(epfd, EPOLL_CTL_DEL, fd->fd, &ev_fd);
       }
     }
@@ -517,9 +515,10 @@ static void fd_notify_on_error(grpc_fd* fd, grpc_closure* closure) {
 }
 
 static bool fd_has_pollset(grpc_fd* fd, grpc_pollset* pollset) {
+  const int epfd = pollset->active_pollable->epfd;
   grpc_core::MutexLock lock(&fd->pollable_mu);
-  for (size_t i = 0; i < fd->pollsets.size(); ++i) {
-    if (fd->pollsets[i] == pollset) {
+  for (size_t i = 0; i < fd->pollset_fds.size(); ++i) {
+    if (fd->pollset_fds[i] == epfd) {
       return true;
     }
   }
@@ -527,8 +526,9 @@ static bool fd_has_pollset(grpc_fd* fd, grpc_pollset* pollset) {
 }
 
 static void fd_add_pollset(grpc_fd* fd, grpc_pollset* pollset) {
+  const int epfd = pollset->active_pollable->epfd;
   grpc_core::MutexLock lock(&fd->pollable_mu);
-  fd->pollsets.push_back(pollset);
+  fd->pollset_fds.push_back(epfd);
 }
 
 /*******************************************************************************
@@ -1290,11 +1290,6 @@ static grpc_error* pollset_as_multipollable_locked(grpc_pollset* pollset,
     POLLABLE_UNREF(po_at_start, "pollset_as_multipollable");
   }
   return error;
-}
-
-// Caller must hold the lock for `pollset->mu`.
-static int pollset_epoll_fd_locked(grpc_pollset* pollset) {
-  return pollset->active_pollable->epfd;
 }
 
 static void pollset_add_fd(grpc_pollset* pollset, grpc_fd* fd) {

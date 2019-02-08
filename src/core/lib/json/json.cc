@@ -35,24 +35,21 @@ grpc_json* grpc_json_create(grpc_json_type type) {
 }
 
 void grpc_json_destroy(grpc_json* json) {
+  if (json == nullptr) return;
   while (json->child) {
     grpc_json_destroy(json->child);
   }
-
   if (json->next) {
     json->next->prev = json->prev;
   }
-
   if (json->prev) {
     json->prev->next = json->next;
   } else if (json->parent) {
     json->parent->child = json->next;
   }
-
   if (json->owns_value) {
     gpr_free((void*)json->value);
   }
-
   gpr_free(json);
 }
 
