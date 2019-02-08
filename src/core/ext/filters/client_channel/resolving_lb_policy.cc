@@ -170,7 +170,7 @@ grpc_error* ResolvingLoadBalancingPolicy::Init(const grpc_channel_args& args) {
 ResolvingLoadBalancingPolicy::~ResolvingLoadBalancingPolicy() {
   GPR_ASSERT(resolver_ == nullptr);
   GPR_ASSERT(lb_policy_ == nullptr);
-  if (child_lb_config_ != nullptr) grpc_json_destroy(child_lb_config_);
+  grpc_json_destroy(child_lb_config_);
 }
 
 void ResolvingLoadBalancingPolicy::ShutdownLocked() {
