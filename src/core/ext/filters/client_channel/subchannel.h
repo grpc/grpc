@@ -131,10 +131,6 @@ class SubchannelCall {
   // Returns the call stack of the subchannel call.
   grpc_call_stack* GetCallStack();
 
-  grpc_closure* after_call_stack_destroy() const {
-    return after_call_stack_destroy_;
-  }
-
   // Sets the 'then_schedule_closure' argument for call stack destruction.
   // Must be called once per call.
   void SetAfterCallStackDestroy(grpc_closure* closure);
@@ -147,6 +143,8 @@ class SubchannelCall {
   // but does NOT free the memory because it's in the call arena.
   void Unref();
   void Unref(const DebugLocation& location, const char* reason);
+
+  static void Destroy(void* arg, grpc_error* error);
 
  private:
   // Allow RefCountedPtr<> to access IncrementRefCount().
