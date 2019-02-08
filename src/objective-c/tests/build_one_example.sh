@@ -46,5 +46,5 @@ xcodebuild \
     -derivedDataPath Build/Build \
     CODE_SIGN_IDENTITY="" \
     CODE_SIGNING_REQUIRED=NO \
-    | egrep -v "^$" 
+    | egrep -v "^$" \
     | ./ts.sh
