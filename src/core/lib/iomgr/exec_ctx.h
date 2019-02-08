@@ -294,7 +294,7 @@ class ApplicationCallbackExecCtx {
   static void GlobalShutdown(void) { gpr_tls_destroy(&callback_exec_ctx_); }
 
  private:
-  uintptr_t flags_;
+  uintptr_t flags_{0u};
   grpc_experimental_completion_queue_functor* head_{nullptr};
   grpc_experimental_completion_queue_functor* tail_{nullptr};
   GPR_TLS_CLASS_DECL(callback_exec_ctx_);
