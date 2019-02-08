@@ -212,17 +212,46 @@ class GrpcLb : public LoadBalancingPolicy {
     grpc_closure client_load_report_closure_;
   };
 
+  class Serverlist : public RefCounted<Serverlist> {
+   public:
+    // Takes ownership of serverlist.
+    explicit Serverlist(grpc_grpclb_serverlist* serverlist)
+        : serverlist_(serverlist) {}
+
+    ~Serverlist() { grpc_grpclb_destroy_serverlist(serverlist_); }
+
+    const grpc_grpclb_serverlist* serverlist() const { return serverlist_; }
+
+    // Returns a text representation suitable for logging.
+    UniquePtr<char> AsText() const;
+
+    // Extracts all non-drop entries into a ServerAddressList.
+    ServerAddressList GetServerAddressList() const;
+
+    // Returns true if the serverlist contains at least one drop entry and
+    // no backend address entries.
+    bool ContainsAllDropEntries() const;
+
+    // Returns the LB token to use for a drop, or null if the call
+    // should not be dropped.
+    // Intended to be called from picker, so calls will be externally
+    // synchronized.
+    const char* ShouldDrop();
+
+   private:
+    grpc_grpclb_serverlist* serverlist_;
+    size_t drop_index_ = 0;
+  };
+
   class Picker : public SubchannelPicker {
    public:
-    Picker(GrpcLb* parent, grpc_grpclb_serverlist* serverlist,
+    Picker(GrpcLb* parent, RefCountedPtr<Serverlist> serverlist,
            UniquePtr<SubchannelPicker> child_picker,
            RefCountedPtr<GrpcLbClientStats> client_stats)
         : parent_(parent),
-          serverlist_(serverlist),
+          serverlist_(std::move(serverlist)),
           child_picker_(std::move(child_picker)),
           client_stats_(std::move(client_stats)) {}
-
-    ~Picker() { grpc_grpclb_destroy_serverlist(serverlist_); }
 
     PickResult Pick(PickState* pick, grpc_error** error) override;
 
@@ -231,13 +260,8 @@ class GrpcLb : public LoadBalancingPolicy {
     // DO NOT DEFERENCE!
     GrpcLb* parent_;
 
-    // The deserialized response from the balancer. May be nullptr until one
-    // such response has arrived.
-    grpc_grpclb_serverlist* serverlist_;
-    // Index into serverlist for next pick.
-    // If the server at this index is a drop, we return a drop.
-    // Otherwise, we delegate to the RR policy.
-    size_t serverlist_index_ = 0;
+    // Serverlist to be used for determining drops.
+    RefCountedPtr<Serverlist> serverlist_;
 
     UniquePtr<SubchannelPicker> child_picker_;
     RefCountedPtr<GrpcLbClientStats> client_stats_;
@@ -318,7 +342,7 @@ class GrpcLb : public LoadBalancingPolicy {
 
   // The deserialized response from the balancer. May be nullptr until one
   // such response has arrived.
-  grpc_grpclb_serverlist* serverlist_ = nullptr;
+  RefCountedPtr<Serverlist> serverlist_;
 
   // Timeout in milliseconds for before using fallback backend addresses.
   // 0 means not using fallback.
@@ -333,6 +357,154 @@ class GrpcLb : public LoadBalancingPolicy {
   // The RR policy to use for the backends.
   OrphanablePtr<LoadBalancingPolicy> rr_policy_;
 };
+
+//
+// GrpcLb::Serverlist
+//
+
+void ParseServer(const grpc_grpclb_server* server,
+                 grpc_resolved_address* addr) {
+  memset(addr, 0, sizeof(*addr));
+  if (server->drop) return;
+  const uint16_t netorder_port = grpc_htons((uint16_t)server->port);
+  /* the addresses are given in binary format (a in(6)_addr struct) in
+   * server->ip_address.bytes. */
+  const grpc_grpclb_ip_address* ip = &server->ip_address;
+  if (ip->size == 4) {
+    addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
+    grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(&addr->addr);
+    addr4->sin_family = GRPC_AF_INET;
+    memcpy(&addr4->sin_addr, ip->bytes, ip->size);
+    addr4->sin_port = netorder_port;
+  } else if (ip->size == 16) {
+    addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
+    grpc_sockaddr_in6* addr6 = (grpc_sockaddr_in6*)&addr->addr;
+    addr6->sin6_family = GRPC_AF_INET6;
+    memcpy(&addr6->sin6_addr, ip->bytes, ip->size);
+    addr6->sin6_port = netorder_port;
+  }
+}
+
+UniquePtr<char> GrpcLb::Serverlist::AsText() const {
+  gpr_strvec entries;
+  gpr_strvec_init(&entries);
+  for (size_t i = 0; i < serverlist_->num_servers; ++i) {
+    const auto* server = serverlist_->servers[i];
+    char* ipport;
+    if (server->drop) {
+      ipport = gpr_strdup("(drop)");
+    } else {
+      grpc_resolved_address addr;
+      ParseServer(server, &addr);
+      grpc_sockaddr_to_string(&ipport, &addr, false);
+    }
+    char* entry;
+    gpr_asprintf(&entry, "  %" PRIuPTR ": %s token=%s\n", i, ipport,
+                 server->load_balance_token);
+    gpr_free(ipport);
+    gpr_strvec_add(&entries, entry);
+  }
+  UniquePtr<char> result(gpr_strvec_flatten(&entries, nullptr));
+  gpr_strvec_destroy(&entries);
+  return result;
+}
+
+// vtable for LB token channel arg.
+void* lb_token_copy(void* token) {
+  return token == nullptr
+             ? nullptr
+             : (void*)GRPC_MDELEM_REF(grpc_mdelem{(uintptr_t)token}).payload;
+}
+void lb_token_destroy(void* token) {
+  if (token != nullptr) {
+    GRPC_MDELEM_UNREF(grpc_mdelem{(uintptr_t)token});
+  }
+}
+int lb_token_cmp(void* token1, void* token2) {
+  // Always indicate a match, since we don't want this channel arg to
+  // affect the subchannel's key in the index.
+  return 0;
+}
+const grpc_arg_pointer_vtable lb_token_arg_vtable = {
+    lb_token_copy, lb_token_destroy, lb_token_cmp};
+
+bool IsServerValid(const grpc_grpclb_server* server, size_t idx, bool log) {
+  if (server->drop) return false;
+  const grpc_grpclb_ip_address* ip = &server->ip_address;
+  if (GPR_UNLIKELY(server->port >> 16 != 0)) {
+    if (log) {
+      gpr_log(GPR_ERROR,
+              "Invalid port '%d' at index %lu of serverlist. Ignoring.",
+              server->port, (unsigned long)idx);
+    }
+    return false;
+  }
+  if (GPR_UNLIKELY(ip->size != 4 && ip->size != 16)) {
+    if (log) {
+      gpr_log(GPR_ERROR,
+              "Expected IP to be 4 or 16 bytes, got %d at index %lu of "
+              "serverlist. Ignoring",
+              ip->size, (unsigned long)idx);
+    }
+    return false;
+  }
+  return true;
+}
+
+// Returns addresses extracted from the serverlist.
+ServerAddressList GrpcLb::Serverlist::GetServerAddressList() const {
+  ServerAddressList addresses;
+  for (size_t i = 0; i < serverlist_->num_servers; ++i) {
+    const grpc_grpclb_server* server = serverlist_->servers[i];
+    if (!IsServerValid(serverlist_->servers[i], i, false)) continue;
+    // Address processing.
+    grpc_resolved_address addr;
+    ParseServer(server, &addr);
+    // LB token processing.
+    grpc_mdelem lb_token;
+    if (server->has_load_balance_token) {
+      const size_t lb_token_max_length =
+          GPR_ARRAY_SIZE(server->load_balance_token);
+      const size_t lb_token_length =
+          strnlen(server->load_balance_token, lb_token_max_length);
+      grpc_slice lb_token_mdstr = grpc_slice_from_copied_buffer(
+          server->load_balance_token, lb_token_length);
+      lb_token = grpc_mdelem_from_slices(GRPC_MDSTR_LB_TOKEN, lb_token_mdstr);
+    } else {
+      char* uri = grpc_sockaddr_to_uri(&addr);
+      gpr_log(GPR_INFO,
+              "Missing LB token for backend address '%s'. The empty token will "
+              "be used instead",
+              uri);
+      gpr_free(uri);
+      lb_token = GRPC_MDELEM_LB_TOKEN_EMPTY;
+    }
+    // Add address.
+    grpc_arg arg = grpc_channel_arg_pointer_create(
+        const_cast<char*>(GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN),
+        (void*)lb_token.payload, &lb_token_arg_vtable);
+    grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
+    addresses.emplace_back(addr, args);
+    // Clean up.
+    GRPC_MDELEM_UNREF(lb_token);
+  }
+  return addresses;
+}
+
+bool GrpcLb::Serverlist::ContainsAllDropEntries() const {
+  if (serverlist_->num_servers == 0) return false;
+  for (size_t i = 0; i < serverlist_->num_servers; ++i) {
+    if (!serverlist_->servers[i]->drop) return false;
+  }
+  return true;
+}
+
+const char* GrpcLb::Serverlist::ShouldDrop() {
+  if (serverlist_->num_servers == 0) return nullptr;
+  grpc_grpclb_server* server = serverlist_->servers[drop_index_];
+  drop_index_ = (drop_index_ + 1) % serverlist_->num_servers;
+  return server->drop ? server->load_balance_token : nullptr;
+}
 
 //
 // GrpcLb::Picker
@@ -356,23 +528,18 @@ void DestroyClientStats(void* arg) {
 
 GrpcLb::Picker::PickResult GrpcLb::Picker::Pick(PickState* pick,
                                                 grpc_error** error) {
-  // Check for drops if we are not using fallback backend addresses.
-  if (serverlist_->num_servers > 0) {
-    // Look at the index into the serverlist to see if we should drop
-    // this call.
-    grpc_grpclb_server* server = serverlist_->servers[serverlist_index_];
-    serverlist_index_ = (serverlist_index_ + 1) % serverlist_->num_servers;
-    if (server->drop) {
-      // Update client load reporting stats to indicate the number of
-      // dropped calls.  Note that we have to do this here instead of in
-      // the client_load_reporting filter, because we do not create a
-      // subchannel call (and therefore no client_load_reporting filter)
-      // for dropped calls.
-      if (client_stats_ != nullptr) {
-        client_stats_->AddCallDroppedLocked(server->load_balance_token);
-      }
-      return PICK_COMPLETE;
+  // Check if we should drop the call.
+  const char* drop_token = serverlist_->ShouldDrop();
+  if (drop_token != nullptr) {
+    // Update client load reporting stats to indicate the number of
+    // dropped calls.  Note that we have to do this here instead of in
+    // the client_load_reporting filter, because we do not create a
+    // subchannel call (and therefore no client_load_reporting filter)
+    // for dropped calls.
+    if (client_stats_ != nullptr) {
+      client_stats_->AddCallDroppedLocked(drop_token);
     }
+    return PICK_COMPLETE;
   }
   // Forward pick to child policy.
   PickResult result = child_picker_->Pick(pick, error);
@@ -419,17 +586,6 @@ grpc_channel* GrpcLb::Helper::CreateChannel(const char* target,
   return parent_->channel_control_helper()->CreateChannel(target, type, args);
 }
 
-// Returns true if the serverlist contains at least one drop entry and
-// no backend address entries.
-bool ServerlistContainsAllDropEntries(
-    const grpc_grpclb_serverlist& serverlist) {
-  if (serverlist.num_servers == 0) return false;
-  for (size_t i = 0; i < serverlist.num_servers; ++i) {
-    if (!serverlist.servers[i]->drop) return false;
-  }
-  return true;
-}
-
 void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
                                  grpc_error* state_error,
                                  UniquePtr<SubchannelPicker> picker) {
@@ -454,7 +610,7 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
   //
   // Cases 1 and 3b: return picker from RR as-is.
   if (parent_->serverlist_ == nullptr ||
-      (!ServerlistContainsAllDropEntries(*parent_->serverlist_) &&
+      (!parent_->serverlist_->ContainsAllDropEntries() &&
        state != GRPC_CHANNEL_READY)) {
     if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_INFO, "[grpclb %p helper %p] passing RR picker %p as-is",
@@ -476,9 +632,9 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
   }
   parent_->channel_control_helper()->UpdateState(
       state, state_error,
-      UniquePtr<SubchannelPicker>(New<Picker>(
-          parent_.get(), grpc_grpclb_serverlist_copy(parent_->serverlist_),
-          std::move(picker), std::move(client_stats))));
+      UniquePtr<SubchannelPicker>(
+          New<Picker>(parent_.get(), parent_->serverlist_, std::move(picker),
+                      std::move(client_stats))));
 }
 
 void GrpcLb::Helper::RequestReresolution() {
@@ -497,115 +653,6 @@ void GrpcLb::Helper::RequestReresolution() {
       !parent_->lb_calld_->seen_initial_response()) {
     parent_->channel_control_helper()->RequestReresolution();
   }
-}
-
-//
-// serverlist parsing code
-//
-
-// vtable for LB token channel arg.
-void* lb_token_copy(void* token) {
-  return token == nullptr
-             ? nullptr
-             : (void*)GRPC_MDELEM_REF(grpc_mdelem{(uintptr_t)token}).payload;
-}
-void lb_token_destroy(void* token) {
-  if (token != nullptr) {
-    GRPC_MDELEM_UNREF(grpc_mdelem{(uintptr_t)token});
-  }
-}
-int lb_token_cmp(void* token1, void* token2) {
-  // Always indicate a match, since we don't want this channel arg to
-  // affect the subchannel's key in the index.
-  return 0;
-}
-const grpc_arg_pointer_vtable lb_token_arg_vtable = {
-    lb_token_copy, lb_token_destroy, lb_token_cmp};
-
-bool IsServerValid(const grpc_grpclb_server* server, size_t idx, bool log) {
-  if (server->drop) return false;
-  const grpc_grpclb_ip_address* ip = &server->ip_address;
-  if (GPR_UNLIKELY(server->port >> 16 != 0)) {
-    if (log) {
-      gpr_log(GPR_ERROR,
-              "Invalid port '%d' at index %lu of serverlist. Ignoring.",
-              server->port, (unsigned long)idx);
-    }
-    return false;
-  }
-  if (GPR_UNLIKELY(ip->size != 4 && ip->size != 16)) {
-    if (log) {
-      gpr_log(GPR_ERROR,
-              "Expected IP to be 4 or 16 bytes, got %d at index %lu of "
-              "serverlist. Ignoring",
-              ip->size, (unsigned long)idx);
-    }
-    return false;
-  }
-  return true;
-}
-
-void ParseServer(const grpc_grpclb_server* server,
-                 grpc_resolved_address* addr) {
-  memset(addr, 0, sizeof(*addr));
-  if (server->drop) return;
-  const uint16_t netorder_port = grpc_htons((uint16_t)server->port);
-  /* the addresses are given in binary format (a in(6)_addr struct) in
-   * server->ip_address.bytes. */
-  const grpc_grpclb_ip_address* ip = &server->ip_address;
-  if (ip->size == 4) {
-    addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
-    grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(&addr->addr);
-    addr4->sin_family = GRPC_AF_INET;
-    memcpy(&addr4->sin_addr, ip->bytes, ip->size);
-    addr4->sin_port = netorder_port;
-  } else if (ip->size == 16) {
-    addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
-    grpc_sockaddr_in6* addr6 = (grpc_sockaddr_in6*)&addr->addr;
-    addr6->sin6_family = GRPC_AF_INET6;
-    memcpy(&addr6->sin6_addr, ip->bytes, ip->size);
-    addr6->sin6_port = netorder_port;
-  }
-}
-
-// Returns addresses extracted from \a serverlist.
-ServerAddressList ProcessServerlist(const grpc_grpclb_serverlist* serverlist) {
-  ServerAddressList addresses;
-  for (size_t i = 0; i < serverlist->num_servers; ++i) {
-    const grpc_grpclb_server* server = serverlist->servers[i];
-    if (!IsServerValid(serverlist->servers[i], i, false)) continue;
-    // Address processing.
-    grpc_resolved_address addr;
-    ParseServer(server, &addr);
-    // LB token processing.
-    grpc_mdelem lb_token;
-    if (server->has_load_balance_token) {
-      const size_t lb_token_max_length =
-          GPR_ARRAY_SIZE(server->load_balance_token);
-      const size_t lb_token_length =
-          strnlen(server->load_balance_token, lb_token_max_length);
-      grpc_slice lb_token_mdstr = grpc_slice_from_copied_buffer(
-          server->load_balance_token, lb_token_length);
-      lb_token = grpc_mdelem_from_slices(GRPC_MDSTR_LB_TOKEN, lb_token_mdstr);
-    } else {
-      char* uri = grpc_sockaddr_to_uri(&addr);
-      gpr_log(GPR_INFO,
-              "Missing LB token for backend address '%s'. The empty token will "
-              "be used instead",
-              uri);
-      gpr_free(uri);
-      lb_token = GRPC_MDELEM_LB_TOKEN_EMPTY;
-    }
-    // Add address.
-    grpc_arg arg = grpc_channel_arg_pointer_create(
-        const_cast<char*>(GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN),
-        (void*)lb_token.payload, &lb_token_arg_vtable);
-    grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
-    addresses.emplace_back(addr, args);
-    // Clean up.
-    GRPC_MDELEM_UNREF(lb_token);
-  }
-  return addresses;
 }
 
 //
@@ -906,25 +953,14 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
                   response_slice)) != nullptr) {
     // Have seen initial response, look for serverlist.
     GPR_ASSERT(lb_calld->lb_call_ != nullptr);
+    auto serverlist_wrapper = MakeRefCounted<Serverlist>(serverlist);
     if (grpc_lb_glb_trace.enabled()) {
+      UniquePtr<char> serverlist_text = serverlist_wrapper->AsText();
       gpr_log(GPR_INFO,
               "[grpclb %p] lb_calld=%p: Serverlist with %" PRIuPTR
-              " servers received",
-              grpclb_policy, lb_calld, serverlist->num_servers);
-      for (size_t i = 0; i < serverlist->num_servers; ++i) {
-        char* ipport;
-        if (serverlist->servers[i]->drop) {
-          ipport = gpr_strdup("(drop)");
-        } else {
-          grpc_resolved_address addr;
-          ParseServer(serverlist->servers[i], &addr);
-          grpc_sockaddr_to_string(&ipport, &addr, false);
-        }
-        gpr_log(GPR_INFO,
-                "[grpclb %p] lb_calld=%p: Serverlist[%" PRIuPTR "]: %s",
-                grpclb_policy, lb_calld, i, ipport);
-        gpr_free(ipport);
-      }
+              " servers received:\n%s",
+              grpclb_policy, lb_calld, serverlist->num_servers,
+              serverlist_text.get());
     }
     // Start sending client load report only after we start using the
     // serverlist returned from the current LB call.
@@ -939,19 +975,17 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
       lb_calld->ScheduleNextClientLoadReportLocked();
     }
     // Check if the serverlist differs from the previous one.
-    if (grpc_grpclb_serverlist_equals(grpclb_policy->serverlist_, serverlist)) {
+    if (grpclb_policy->serverlist_ != nullptr &&
+        grpc_grpclb_serverlist_equals(grpclb_policy->serverlist_->serverlist(),
+                                      serverlist)) {
       if (grpc_lb_glb_trace.enabled()) {
         gpr_log(GPR_INFO,
                 "[grpclb %p] lb_calld=%p: Incoming server list identical to "
                 "current, ignoring.",
                 grpclb_policy, lb_calld);
       }
-      grpc_grpclb_destroy_serverlist(serverlist);
     } else {  // New serverlist.
-      if (grpclb_policy->serverlist_ != nullptr) {
-        // Dispose of the old serverlist.
-        grpc_grpclb_destroy_serverlist(grpclb_policy->serverlist_);
-      } else {
+      if (grpclb_policy->serverlist_ == nullptr) {
         // Dispose of the fallback.
         grpclb_policy->fallback_backend_addresses_.reset();
         if (grpclb_policy->fallback_timer_callback_pending_) {
@@ -961,7 +995,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
       // Update the serverlist in the GrpcLb instance. This serverlist
       // instance will be destroyed either upon the next update or when the
       // GrpcLb instance is destroyed.
-      grpclb_policy->serverlist_ = serverlist;
+      grpclb_policy->serverlist_ = std::move(serverlist_wrapper);
       grpclb_policy->CreateOrUpdateRoundRobinPolicyLocked();
     }
   } else {
@@ -1174,9 +1208,6 @@ GrpcLb::GrpcLb(LoadBalancingPolicy::Args args)
 GrpcLb::~GrpcLb() {
   gpr_free((void*)server_name_);
   grpc_channel_args_destroy(args_);
-  if (serverlist_ != nullptr) {
-    grpc_grpclb_destroy_serverlist(serverlist_);
-  }
 }
 
 void GrpcLb::ShutdownLocked() {
@@ -1489,7 +1520,7 @@ grpc_channel_args* GrpcLb::CreateRoundRobinPolicyArgsLocked() {
   ServerAddressList* addresses = &tmp_addresses;
   bool is_backend_from_grpclb_load_balancer = false;
   if (serverlist_ != nullptr) {
-    tmp_addresses = ProcessServerlist(serverlist_);
+    tmp_addresses = serverlist_->GetServerAddressList();
     is_backend_from_grpclb_load_balancer = true;
   } else {
     // If CreateOrUpdateRoundRobinPolicyLocked() is invoked when we haven't
