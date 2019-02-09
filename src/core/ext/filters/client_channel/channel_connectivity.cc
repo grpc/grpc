@@ -35,6 +35,7 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
   /* forward through to the underlying client channel */
   grpc_channel_element* client_channel_elem =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_connectivity_state state;
   GRPC_API_TRACE(
@@ -202,6 +203,7 @@ void grpc_channel_watch_connectivity_state(
     gpr_timespec deadline, grpc_completion_queue* cq, void* tag) {
   grpc_channel_element* client_channel_elem =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   state_watcher* w = static_cast<state_watcher*>(gpr_malloc(sizeof(*w)));
 
