@@ -35,8 +35,6 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
-#include <google/protobuf/text_format.h>
-
 #include <gtest/gtest.h>
 
 using grpc::channelz::v1::GetChannelRequest;
@@ -53,14 +51,6 @@ using grpc::channelz::v1::GetSubchannelRequest;
 using grpc::channelz::v1::GetSubchannelResponse;
 using grpc::channelz::v1::GetTopChannelsRequest;
 using grpc::channelz::v1::GetTopChannelsResponse;
-
-// This code snippet can be used to print out any responses for
-// visual debugging.
-//
-//
-// string out_str;
-// google::protobuf::TextFormat::PrintToString(resp, &out_str);
-// std::cout << "resp: " << out_str << "\n";
 
 namespace grpc {
 namespace testing {
