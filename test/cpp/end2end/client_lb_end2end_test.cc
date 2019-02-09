@@ -799,7 +799,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstRestartedUnusedSubchannel) {
     auto stub = BuildStub(channel);
     SetNextResolution(ports);
     gpr_log(GPR_INFO, "****** INITIAL CONNECTION *******");
-    WaitForServer(stub, 0, DEBUG_LOCATION);
+    CheckRpcSendOk(stub, DEBUG_LOCATION);
   }
   // The subchannel is now unused. But its I/O should be polled by the backup
   // poller.
@@ -816,7 +816,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstRestartedUnusedSubchannel) {
   auto stub = BuildStub(channel);
   SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** SECOND CONNECTION *******");
-  WaitForServer(stub, 0, DEBUG_LOCATION);
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
   grpc_core::GlobalSubchannelPool::TestOnlyStartSweep();
 }
 
