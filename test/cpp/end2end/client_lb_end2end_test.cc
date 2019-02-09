@@ -137,11 +137,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       : server_host_("localhost"),
         kRequestMessage_("Live long and prosper."),
         creds_(new SecureChannelCredentials(
-            grpc_fake_transport_security_credentials_create())) {
-    // Make the backup poller poll very frequently in order to pick up
-    // updates from all the subchannels's FDs.
-    gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "1");
-  }
+            grpc_fake_transport_security_credentials_create())) {}
 
   void SetUp() override {
     grpc_init();
@@ -792,6 +788,38 @@ TEST_F(ClientLbEnd2endTest, PickFirstReconnectWithoutNewResolverResult) {
   WaitForServer(stub, 0, DEBUG_LOCATION);
 }
 
+TEST_F(ClientLbEnd2endTest, PickFirstRestartedUnusedSubchannel) {
+  // Stops subchannel sweeping so that the unused subchannel can remain in the
+  // subchannel pool.
+  grpc_core::GlobalSubchannelPool::TestOnlyStopSweep();
+  std::vector<int> ports = {grpc_pick_unused_port_or_die()};
+  StartServers(1, ports);
+  {
+    auto channel = BuildChannel("pick_first");
+    auto stub = BuildStub(channel);
+    SetNextResolution(ports);
+    gpr_log(GPR_INFO, "****** INITIAL CONNECTION *******");
+    WaitForServer(stub, 0, DEBUG_LOCATION);
+  }
+  // The subchannel is now unused. But its I/O should be polled by the backup
+  // poller.
+  gpr_log(GPR_INFO, "****** STOPPING SERVER ******");
+  servers_[0]->Shutdown();
+  // Wait longer than backup polling interval.
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1000));
+  // The subchannel should be IDLE now.
+  gpr_log(GPR_INFO, "****** RESTARTING SERVER ******");
+  StartServers(1, ports);
+  // Wait longer than backup polling interval.
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1000));
+  auto channel = BuildChannel("pick_first");
+  auto stub = BuildStub(channel);
+  SetNextResolution(ports);
+  gpr_log(GPR_INFO, "****** SECOND CONNECTION *******");
+  WaitForServer(stub, 0, DEBUG_LOCATION);
+  grpc_core::GlobalSubchannelPool::TestOnlyStartSweep();
+}
+
 TEST_F(ClientLbEnd2endTest,
        PickFirstReconnectWithoutNewResolverResultStartsFromTopOfList) {
   std::vector<int> ports = {grpc_pick_unused_port_or_die(),
@@ -1349,6 +1377,9 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesEnabled) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
+  // Make the backup poller poll very frequently in order to pick up
+  // updates from all the subchannels's FDs.
+  gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "1");
   const auto result = RUN_ALL_TESTS();
   return result;
 }

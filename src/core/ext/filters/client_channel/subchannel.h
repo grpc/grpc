@@ -199,6 +199,12 @@ class Subchannel {
   // Caller doesn't take ownership.
   const char* GetTargetAddress();
 
+  bool IsUnused() const ;
+
+  SubchannelKey* key() const {return key_;}
+
+  grpc_pollset_set* pollset_set() const {return pollset_set_;}
+
   // Gets the connected subchannel - or nullptr if not connected (which may
   // happen before it initially connects or during transient failures).
   RefCountedPtr<ConnectedSubchannel> connected_subchannel();

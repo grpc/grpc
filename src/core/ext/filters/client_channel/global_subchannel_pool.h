@@ -20,8 +20,13 @@
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_GLOBAL_SUBCHANNEL_POOL_H
 
 #include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/pollset_set.h"
 
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
+#include "src/core/lib/gprpp/inlined_vector.h"
+#include "src/core/lib/gprpp/orphanable.h"
+
+constexpr size_t kUnusedSubchannelsInlinedSize = 4;
 
 namespace grpc_core {
 
@@ -44,13 +49,25 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   // Gets the singleton instance.
   static RefCountedPtr<GlobalSubchannelPool> instance();
 
+  grpc_pollset_set* pollset_set() const { return pollset_set_; }
+
+  void UnregisterUnusedSubchannels(
+      const grpc_core::InlinedVector<
+          Subchannel*, kUnusedSubchannelsInlinedSize>& unused_subchannels);
+
   // Implements interface methods.
-  Subchannel* RegisterSubchannel(SubchannelKey* key,
-                                 Subchannel* constructed) override;
+  Subchannel* RegisterSubchannel(
+      SubchannelKey* key, Subchannel* constructed) override;
   void UnregisterSubchannel(SubchannelKey* key) override;
   Subchannel* FindSubchannel(SubchannelKey* key) override;
 
+  static void TestOnlyStopSweep();
+
+  static void TestOnlyStartSweep();
+
  private:
+  class Sweeper;
+
   // The singleton instance. (It's a pointer to RefCountedPtr so that this
   // non-local static object can be trivially destructible.)
   static RefCountedPtr<GlobalSubchannelPool>* instance_;
@@ -61,6 +78,10 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   grpc_avl subchannel_map_;
   // To protect subchannel_map_.
   gpr_mu mu_;
+
+  OrphanablePtr<Sweeper> sweeper_;
+  // For backup polling.
+  static grpc_pollset_set* pollset_set_;
 };
 
 }  // namespace grpc_core

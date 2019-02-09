@@ -53,6 +53,7 @@
 #include "src/core/lib/transport/service_config.h"
 #include "src/core/lib/transport/status_metadata.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 
 // Strong and weak refs.
 #define INTERNAL_REF_BITS 16
@@ -645,7 +646,7 @@ Subchannel* Subchannel::Create(grpc_connector* connector,
   // RegisterSubchannel() will cause c to be tried to be unregistered, while
   // its key maps to a different subchannel.
   Subchannel* registered = subchannel_pool->RegisterSubchannel(key, c);
-  if (registered == c) c->subchannel_pool_ = subchannel_pool->Ref();
+  if (registered == c && subchannel_pool != GlobalSubchannelPool::instance().get()) c->subchannel_pool_ = subchannel_pool->Ref();
   return registered;
 }
 
@@ -708,6 +709,13 @@ Subchannel* Subchannel::RefFromWeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
       return nullptr;
     }
   }
+}
+
+bool Subchannel::IsUnused() const {
+  // From an external viewpoint, a subchannel is unused if the subchannel index
+  // is holding its last ref.
+  gpr_atm refs = gpr_atm_acq_load(&ref_pair_);
+  return ((refs & STRONG_REF_MASK) >> INTERNAL_REF_BITS) == 1;
 }
 
 intptr_t Subchannel::GetChildSocketUuid() {
