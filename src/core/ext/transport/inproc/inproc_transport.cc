@@ -64,6 +64,10 @@ struct shared_mu {
     gpr_ref_init(&refs, 2);
   }
 
+  ~shared_mu() {
+    gpr_mu_destroy(&mu);
+  }
+
   gpr_mu mu;
   gpr_refcount refs;
 };
