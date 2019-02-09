@@ -60,7 +60,8 @@ class ClientChannelNode : public ChannelNode {
 // Handles channelz bookkeeping for sockets
 class SubchannelNode : public BaseNode {
  public:
-  SubchannelNode(Subchannel* subchannel, size_t channel_tracer_max_nodes);
+  SubchannelNode(Subchannel* subchannel, const char* target_address,
+                 size_t channel_tracer_max_nodes);
   ~SubchannelNode() override;
 
   void MarkSubchannelDestroyed() {

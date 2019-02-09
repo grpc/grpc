@@ -94,9 +94,10 @@ class RoundRobin : public LoadBalancingPolicy {
     RoundRobinSubchannelData(
         SubchannelList<RoundRobinSubchannelList, RoundRobinSubchannelData>*
             subchannel_list,
-        const ServerAddress& address, Subchannel* subchannel,
+        const ServerAddress& address, RefCountedPtr<Subchannel> subchannel,
         grpc_combiner* combiner)
-        : SubchannelData(subchannel_list, address, subchannel, combiner) {}
+        : SubchannelData(subchannel_list, address, std::move(subchannel),
+                         combiner) {}
 
     grpc_connectivity_state connectivity_state() const {
       return last_connectivity_state_;

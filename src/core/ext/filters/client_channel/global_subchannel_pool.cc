@@ -78,7 +78,7 @@ class GlobalSubchannelPool::Sweeper : public InternallyRefCounted<Sweeper> {
           unused_subchannels) {
     if (avl_node == nullptr) return;
     Subchannel* c = static_cast<Subchannel*>(avl_node->value);
-    if (c->LastStrongRef()) unused_subchannels->emplace_back(c);
+    if (c->HasLastRef()) unused_subchannels->emplace_back(c);
     FindUnusedSubchannelsLocked(avl_node->left, unused_subchannels);
     FindUnusedSubchannelsLocked(avl_node->right, unused_subchannels);
   }
@@ -173,48 +173,49 @@ GlobalSubchannelPool* GlobalSubchannelPool::instance_raw() {
   return (*instance_).get();
 }
 
-Subchannel* GlobalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
-                                                     Subchannel* constructed) {
-  Subchannel* c = nullptr;
+RefCountedPtr<Subchannel> GlobalSubchannelPool::RegisterSubchannel(
+    SubchannelKey* key, RefCountedPtr<Subchannel> constructed) {
+  RefCountedPtr<Subchannel> result;
   UserData user_data = {false, nullptr};
   // Compare and swap (CAS) loop:
-  while (c == nullptr) {
+  while (result == nullptr) {
     // Ref the shared map to have a local copy.
     gpr_mu_lock(&mu_);
     grpc_avl old_map = grpc_avl_ref(subchannel_map_, &user_data);
     gpr_mu_unlock(&mu_);
     // Check to see if a subchannel already exists.
-    c = static_cast<Subchannel*>(grpc_avl_get(old_map, key, &user_data));
+    Subchannel* c =
+        static_cast<Subchannel*>(grpc_avl_get(old_map, key, &user_data));
     if (c != nullptr) {
       // The subchannel already exists. Reuse it.
-      GRPC_SUBCHANNEL_REF(c, "index_register_reuse");
-      GRPC_SUBCHANNEL_UNREF(constructed, "index_register_found_existing");
+      result = c->Ref();
       // Exit the CAS loop without modifying the shared map.
     } else {
       // There hasn't been such subchannel. Add one.
       // Note that we should ref the old map first because grpc_avl_add() will
       // unref it while we still need to access it later.
-      grpc_avl new_map = grpc_avl_add(
-          grpc_avl_ref(old_map, &user_data), New<SubchannelKey>(*key),
-          GRPC_SUBCHANNEL_REF(constructed, "index_register_new"), &user_data);
+      grpc_avl new_map = grpc_avl_add(grpc_avl_ref(old_map, &user_data),
+                                      New<SubchannelKey>(*key),
+                                      constructed->Ref().release(), &user_data);
       // Try to publish the change to the shared map. It may happen (but
       // unlikely) that some other thread has changed the shared map, so compare
       // to make sure it's unchanged before swapping. Retry if it's changed.
       gpr_mu_lock(&mu_);
       if (old_map.root == subchannel_map_.root) {
         GPR_SWAP(grpc_avl, new_map, subchannel_map_);
-        c = constructed;
-        grpc_pollset_set_add_pollset_set(c->pollset_set(), pollset_set_);
+        result = constructed;
+        grpc_pollset_set_add_pollset_set(result->pollset_set(), pollset_set_);
       }
       gpr_mu_unlock(&mu_);
       grpc_avl_unref(new_map, &user_data);
     }
     grpc_avl_unref(old_map, &user_data);
   }
-  return c;
+  return result;
 }
 
-Subchannel* GlobalSubchannelPool::FindSubchannel(SubchannelKey* key) {
+RefCountedPtr<Subchannel> GlobalSubchannelPool::FindSubchannel(
+    SubchannelKey* key) {
   UserData user_data = {false, nullptr};
   // Lock, and take a reference to the subchannel map.
   // We don't need to do the search under a lock as AVL's are immutable.
@@ -223,9 +224,9 @@ Subchannel* GlobalSubchannelPool::FindSubchannel(SubchannelKey* key) {
   gpr_mu_unlock(&mu_);
   Subchannel* c =
       static_cast<Subchannel*>(grpc_avl_get(index, key, &user_data));
-  if (c != nullptr) GRPC_SUBCHANNEL_REF(c, "index_find");
+  // FIXME
   grpc_avl_unref(index, &user_data);
-  return c;
+  return c == nullptr ? nullptr : c->Ref();
 }
 
 void GlobalSubchannelPool::TestOnlyStopSweep() {
@@ -256,7 +257,7 @@ void GlobalSubchannelPool::UnregisterUnusedSubchannels(
         old_map = grpc_avl_ref(subchannel_map_, &user_data);
       }
       // Double check this subchannel is unused.
-      if (c->LastStrongRef()) {
+      if (c->HasLastRef()) {
         // Remove the subchannel.
         // Note that we should ref the old map first because grpc_avl_remove()
         // will unref it while we still need to access it later.
@@ -306,7 +307,7 @@ long sck_avl_compare(void* a, void* b, void* unused) {
 
 void scv_avl_destroy(void* p, void* user_data) {
   Subchannel* c = static_cast<Subchannel*>(p);
-  GRPC_SUBCHANNEL_UNREF(c, "subchannel_index_scv_avl_destroy");
+  c->Unref();
   UserData* ud = static_cast<UserData*>(user_data);
   if (ud->shutdown) {
     grpc_pollset_set_del_pollset_set(c->pollset_set(), ud->pollset_set);
@@ -315,7 +316,7 @@ void scv_avl_destroy(void* p, void* user_data) {
 
 void* scv_avl_copy(void* p, void* unused) {
   Subchannel* c = static_cast<Subchannel*>(p);
-  GRPC_SUBCHANNEL_REF(c, "subchannel_index_scv_avl_copy");
+  c->Ref().release();
   return p;
 }
 

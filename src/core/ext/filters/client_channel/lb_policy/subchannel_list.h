@@ -88,7 +88,7 @@ class SubchannelData {
   }
 
   // Returns a pointer to the subchannel.
-  Subchannel* subchannel() const { return subchannel_; }
+  Subchannel* subchannel() const { return subchannel_.get(); }
 
   // Returns the connected subchannel.  Will be null if the subchannel
   // is not connected.
@@ -142,7 +142,7 @@ class SubchannelData {
  protected:
   SubchannelData(
       SubchannelList<SubchannelListType, SubchannelDataType>* subchannel_list,
-      const ServerAddress& address, Subchannel* subchannel,
+      const ServerAddress& address, RefCountedPtr<Subchannel> subchannel,
       grpc_combiner* combiner);
 
   virtual ~SubchannelData();
@@ -170,7 +170,7 @@ class SubchannelData {
   SubchannelList<SubchannelListType, SubchannelDataType>* subchannel_list_;
 
   // The subchannel and connected subchannel.
-  Subchannel* subchannel_;
+  RefCountedPtr<Subchannel> subchannel_;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
 
   // Notification that connectivity has changed on subchannel.
@@ -276,10 +276,10 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
 template <typename SubchannelListType, typename SubchannelDataType>
 SubchannelData<SubchannelListType, SubchannelDataType>::SubchannelData(
     SubchannelList<SubchannelListType, SubchannelDataType>* subchannel_list,
-    const ServerAddress& address, Subchannel* subchannel,
+    const ServerAddress& address, RefCountedPtr<Subchannel> subchannel,
     grpc_combiner* combiner)
     : subchannel_list_(subchannel_list),
-      subchannel_(subchannel),
+      subchannel_(std::move(subchannel)),
       // We assume that the current state is IDLE.  If not, we'll get a
       // callback telling us that.
       pending_connectivity_state_unsafe_(GRPC_CHANNEL_IDLE) {
@@ -305,10 +305,9 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
               " (subchannel %p): unreffing subchannel",
               subchannel_list_->tracer()->name(), subchannel_list_->policy(),
               subchannel_list_, Index(), subchannel_list_->num_subchannels(),
-              subchannel_);
+              subchannel_.get());
     }
-    GRPC_SUBCHANNEL_UNREF(subchannel_, reason);
-    subchannel_ = nullptr;
+    subchannel_.reset();
     connected_subchannel_.reset();
   }
 }
@@ -331,7 +330,7 @@ void SubchannelData<SubchannelListType,
             "notification (from %s)",
             subchannel_list_->tracer()->name(), subchannel_list_->policy(),
             subchannel_list_, Index(), subchannel_list_->num_subchannels(),
-            subchannel_,
+            subchannel_.get(),
             grpc_connectivity_state_name(pending_connectivity_state_unsafe_));
   }
   GPR_ASSERT(!connectivity_notification_pending_);
@@ -353,7 +352,7 @@ void SubchannelData<SubchannelListType,
             "notification (from %s)",
             subchannel_list_->tracer()->name(), subchannel_list_->policy(),
             subchannel_list_, Index(), subchannel_list_->num_subchannels(),
-            subchannel_,
+            subchannel_.get(),
             grpc_connectivity_state_name(pending_connectivity_state_unsafe_));
   }
   GPR_ASSERT(connectivity_notification_pending_);
@@ -372,7 +371,7 @@ void SubchannelData<SubchannelListType,
             " (subchannel %p): stopping connectivity watch",
             subchannel_list_->tracer()->name(), subchannel_list_->policy(),
             subchannel_list_, Index(), subchannel_list_->num_subchannels(),
-            subchannel_);
+            subchannel_.get());
   }
   GPR_ASSERT(connectivity_notification_pending_);
   connectivity_notification_pending_ = false;
@@ -388,7 +387,7 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
             " (subchannel %p): canceling connectivity watch (%s)",
             subchannel_list_->tracer()->name(), subchannel_list_->policy(),
             subchannel_list_, Index(), subchannel_list_->num_subchannels(),
-            subchannel_, reason);
+            subchannel_.get(), reason);
   }
   GPR_ASSERT(connectivity_notification_pending_);
   subchannel_->NotifyOnStateChange(nullptr, nullptr,
@@ -421,7 +420,7 @@ bool SubchannelData<SubchannelListType,
                 "null; moving to state IDLE",
                 subchannel_list_->tracer()->name(), subchannel_list_->policy(),
                 subchannel_list_, Index(), subchannel_list_->num_subchannels(),
-                subchannel_);
+                subchannel_.get());
       }
       pending_connectivity_state_unsafe_ = GRPC_CHANNEL_IDLE;
       return false;
@@ -445,7 +444,7 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
         "shutting_down=%d",
         sd->subchannel_list_->tracer()->name(), sd->subchannel_list_->policy(),
         sd->subchannel_list_, sd->Index(),
-        sd->subchannel_list_->num_subchannels(), sd->subchannel_,
+        sd->subchannel_list_->num_subchannels(), sd->subchannel_.get(),
         grpc_connectivity_state_name(sd->pending_connectivity_state_unsafe_),
         grpc_error_string(error), sd->subchannel_list_->shutting_down());
   }
@@ -527,8 +526,9 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
         &args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove),
         args_to_add.data(), args_to_add.size());
     gpr_free(args_to_add[subchannel_address_arg_index].value.string);
-    Subchannel* subchannel = grpc_client_channel_factory_create_subchannel(
-        client_channel_factory, new_args);
+    RefCountedPtr<Subchannel> subchannel =
+        grpc_client_channel_factory_create_subchannel(client_channel_factory,
+                                                      new_args);
     grpc_channel_args_destroy(new_args);
     if (subchannel == nullptr) {
       // Subchannel could not be created.
@@ -547,8 +547,8 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
       gpr_log(GPR_INFO,
               "[%s %p] subchannel list %p index %" PRIuPTR
               ": Created subchannel %p for address uri %s",
-              tracer_->name(), policy_, this, subchannels_.size(), subchannel,
-              address_uri);
+              tracer_->name(), policy_, this, subchannels_.size(),
+              subchannel.get(), address_uri);
       gpr_free(address_uri);
     }
     subchannels_.emplace_back(this, addresses[i], subchannel, combiner);

@@ -144,6 +144,8 @@ class RefCount {
     return Unref();
   }
 
+  bool IsUnique() const { return get() == 1; }
+
  private:
   Value get() const { return value_.load(std::memory_order_relaxed); }
 
@@ -226,6 +228,8 @@ class RefCounted : public Impl {
 
   // Note: Depending on the Impl used, this dtor can be implicitly virtual.
   ~RefCounted() = default;
+
+  bool HasLastRef() const { return refs_.IsUnique(); }
 
  private:
   // Allow RefCountedPtr<> to access IncrementRefCount().

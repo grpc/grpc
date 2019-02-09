@@ -114,10 +114,11 @@ RefCountedPtr<ChannelNode> ClientChannelNode::MakeClientChannelNode(
 }
 
 SubchannelNode::SubchannelNode(Subchannel* subchannel,
+                               const char* target_address,
                                size_t channel_tracer_max_nodes)
     : BaseNode(EntityType::kSubchannel),
       subchannel_(subchannel),
-      target_(UniquePtr<char>(gpr_strdup(subchannel_->GetTargetAddress()))),
+      target_(UniquePtr<char>(gpr_strdup(target_address))),
       trace_(channel_tracer_max_nodes) {}
 
 SubchannelNode::~SubchannelNode() {}

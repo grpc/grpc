@@ -139,7 +139,8 @@ static grpc_channel_args* get_secure_naming_channel_args(
   return new_args;
 }
 
-static grpc_core::Subchannel* client_channel_factory_create_subchannel(
+static grpc_core::RefCountedPtr<grpc_core::Subchannel>
+client_channel_factory_create_subchannel(
     grpc_client_channel_factory* cc_factory, const grpc_channel_args* args) {
   grpc_channel_args* new_args = get_secure_naming_channel_args(args);
   if (new_args == nullptr) {
@@ -148,7 +149,8 @@ static grpc_core::Subchannel* client_channel_factory_create_subchannel(
     return nullptr;
   }
   grpc_connector* connector = grpc_chttp2_connector_create();
-  grpc_core::Subchannel* s = grpc_core::Subchannel::Create(connector, new_args);
+  grpc_core::RefCountedPtr<grpc_core::Subchannel> s =
+      grpc_core::Subchannel::Create(connector, new_args);
   grpc_connector_unref(connector);
   grpc_channel_args_destroy(new_args);
   return s;

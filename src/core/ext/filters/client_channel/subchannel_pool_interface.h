@@ -69,15 +69,16 @@ class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
   // Registers a subchannel against a key. Returns the subchannel registered
   // with \a key, which may be different from \a constructed because we reuse
   // (instead of update) any existing subchannel already registered with \a key.
-  virtual Subchannel* RegisterSubchannel(SubchannelKey* key,
-                                         Subchannel* constructed) GRPC_ABSTRACT;
+  virtual RefCountedPtr<Subchannel> RegisterSubchannel(
+      SubchannelKey* key, RefCountedPtr<Subchannel> constructed) GRPC_ABSTRACT;
 
   // Removes the registered subchannel found by \a key.
   virtual void UnregisterSubchannel(SubchannelKey* key) GRPC_ABSTRACT;
 
   // Finds the subchannel registered for the given subchannel key. Returns NULL
   // if no such channel exists. Thread-safe.
-  virtual Subchannel* FindSubchannel(SubchannelKey* key) GRPC_ABSTRACT;
+  virtual RefCountedPtr<Subchannel> FindSubchannel(SubchannelKey* key)
+      GRPC_ABSTRACT;
 
   // Creates a channel arg from \a subchannel pool.
   static grpc_arg CreateChannelArg(SubchannelPoolInterface* subchannel_pool);

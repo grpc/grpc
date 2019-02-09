@@ -61,10 +61,10 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   static GlobalSubchannelPool* instance_raw();
 
   // Implements interface methods.
-  Subchannel* RegisterSubchannel(SubchannelKey* key,
-                                 Subchannel* constructed) override;
+  RefCountedPtr<Subchannel> RegisterSubchannel(
+      SubchannelKey* key, RefCountedPtr<Subchannel> constructed) override;
   void UnregisterSubchannel(SubchannelKey* key) override{};  // Never use.
-  Subchannel* FindSubchannel(SubchannelKey* key) override;
+  RefCountedPtr<Subchannel> FindSubchannel(SubchannelKey* key) override;
 
   // For testing only.
   static void TestOnlyStopSweep();
