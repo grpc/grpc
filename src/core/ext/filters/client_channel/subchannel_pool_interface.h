@@ -86,6 +86,8 @@ class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
   static SubchannelPoolInterface* GetSubchannelPoolFromChannelArgs(
       const grpc_channel_args* args);
 
+  static grpc_channel_args* RemoveSubchannelPoolArg(grpc_channel_args* args);
+
   GRPC_ABSTRACT_BASE_CLASS
 };
 

@@ -30,6 +30,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/health/health_check_client.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
@@ -53,7 +54,6 @@
 #include "src/core/lib/transport/service_config.h"
 #include "src/core/lib/transport/status_metadata.h"
 #include "src/core/lib/uri/uri_parser.h"
-#include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 
 // Strong and weak refs.
 #define INTERNAL_REF_BITS 16
@@ -631,22 +631,31 @@ Subchannel::~Subchannel() {
 
 Subchannel* Subchannel::Create(grpc_connector* connector,
                                const grpc_channel_args* args) {
-  SubchannelKey* key = New<SubchannelKey>(args);
   SubchannelPoolInterface* subchannel_pool =
       SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(args);
+  grpc_channel_args* new_args =
+      SubchannelPoolInterface::RemoveSubchannelPoolArg(
+          const_cast<grpc_channel_args*>(args));
+  SubchannelKey* key = New<SubchannelKey>(new_args);
   GPR_ASSERT(subchannel_pool != nullptr);
   Subchannel* c = subchannel_pool->FindSubchannel(key);
   if (c != nullptr) {
     Delete(key);
+    grpc_channel_args_destroy(new_args);
     return c;
   }
-  c = New<Subchannel>(key, connector, args);
+  c = New<Subchannel>(key, connector, new_args);
+  grpc_channel_args_destroy(new_args);
   // Try to register the subchannel before setting the subchannel pool.
   // Otherwise, in case of a registration race, unreffing c in
   // RegisterSubchannel() will cause c to be tried to be unregistered, while
   // its key maps to a different subchannel.
   Subchannel* registered = subchannel_pool->RegisterSubchannel(key, c);
-  if (registered == c && subchannel_pool != GlobalSubchannelPool::instance().get()) c->subchannel_pool_ = subchannel_pool->Ref();
+  // If the global subchannel pool is used, don't record it so that we don't
+  // proactively unregister from it.
+  if (registered == c &&
+      subchannel_pool != GlobalSubchannelPool::instance_raw())
+    c->subchannel_pool_ = subchannel_pool->Ref();
   return registered;
 }
 
@@ -711,9 +720,7 @@ Subchannel* Subchannel::RefFromWeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   }
 }
 
-bool Subchannel::IsUnused() const {
-  // From an external viewpoint, a subchannel is unused if the subchannel index
-  // is holding its last ref.
+bool Subchannel::LastStrongRef() const {
   gpr_atm refs = gpr_atm_acq_load(&ref_pair_);
   return ((refs & STRONG_REF_MASK) >> INTERNAL_REF_BITS) == 1;
 }
