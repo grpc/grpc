@@ -160,21 +160,26 @@ class Subchannel : public RefCounted<Subchannel> {
   static RefCountedPtr<Subchannel> Create(grpc_connector* connector,
                                           const grpc_channel_args* args);
 
+  // Returns true if the value of the ref is 1.
   bool HasLastRef() const;
 
-  intptr_t GetChildSocketUuid();
+  intptr_t GetChildSocketUuid() const;
+
+  // Gets the string representing the subchannel address.
+  // Caller doesn't take ownership.
+  const char* GetTargetAddress() const;
+
+  // Gets the connected subchannel - or nullptr if not connected (which may
+  // happen before it initially connects or during transient failures).
+  RefCountedPtr<ConnectedSubchannel> connected_subchannel() const;
+
+  channelz::SubchannelNode* channelz_node() const {
+    return body_->channelz_node_.get();
+  }
 
   SubchannelKey* key() const { return body_->key_; }
 
   grpc_pollset_set* pollset_set() const { return body_->pollset_set_; }
-
-  // Gets the connected subchannel - or nullptr if not connected (which may
-  // happen before it initially connects or during transient failures).
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel();
-
-  channelz::SubchannelNode* channelz_node() {
-    return body_->channelz_node_.get();
-  }
 
   // Polls the current connectivity state of the subchannel.
   grpc_connectivity_state CheckConnectivity(grpc_error** error,
@@ -219,6 +224,7 @@ class Subchannel : public RefCounted<Subchannel> {
     friend Subchannel;
 
     // From parent
+    const char* GetTargetAddress() const;
     grpc_connectivity_state CheckConnectivity(grpc_error** error,
                                               bool inhibit_health_checking);
     void NotifyOnStateChange(grpc_pollset_set* interested_parties,
@@ -226,11 +232,6 @@ class Subchannel : public RefCounted<Subchannel> {
                              grpc_closure* notify,
                              bool inhibit_health_checking);
     void ResetBackoff();
-
-    // Channelz.
-    // Gets the string representing the subchannel address.
-    // Caller doesn't take ownership.
-    const char* GetTargetAddress();
 
     // Sets the subchannel's connectivity state to \a state.
     void SetConnectivityStateLocked(grpc_connectivity_state state,

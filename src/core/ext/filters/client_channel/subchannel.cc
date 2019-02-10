@@ -621,7 +621,7 @@ Subchannel::Body::~Body() {
   gpr_mu_destroy(&mu_);
 }
 
-const char* Subchannel::Body::GetTargetAddress() {
+const char* Subchannel::Body::GetTargetAddress() const {
   const grpc_arg* addr_arg =
       grpc_channel_args_find(args_, GRPC_ARG_SUBCHANNEL_ADDRESS);
   const char* addr_str = grpc_channel_arg_get_string(addr_arg);
@@ -938,7 +938,7 @@ RefCountedPtr<Subchannel> Subchannel::Create(grpc_connector* connector,
 
 bool Subchannel::HasLastRef() const { return RefCounted::HasLastRef(); }
 
-intptr_t Subchannel::GetChildSocketUuid() {
+intptr_t Subchannel::GetChildSocketUuid() const {
   if (body_->connected_subchannel_ != nullptr) {
     return body_->connected_subchannel_->socket_uuid();
   } else {
@@ -946,7 +946,7 @@ intptr_t Subchannel::GetChildSocketUuid() {
   }
 }
 
-RefCountedPtr<ConnectedSubchannel> Subchannel::connected_subchannel() {
+RefCountedPtr<ConnectedSubchannel> Subchannel::connected_subchannel() const {
   MutexLock lock(&body_->mu_);
   return body_->connected_subchannel_;
 }

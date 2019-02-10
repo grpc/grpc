@@ -95,7 +95,7 @@ SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(
 }
 
 grpc_channel_args* SubchannelPoolInterface::RemoveSubchannelPoolArg(
-    grpc_channel_args* args) {
+    const grpc_channel_args* args) {
   grpc_channel_args* new_args = nullptr;
   static const char* args_to_remove[] = {GRPC_ARG_SUBCHANNEL_POOL};
   new_args = grpc_channel_args_copy_and_remove(args, args_to_remove, 1);
