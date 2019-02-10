@@ -325,7 +325,7 @@ class FakeClientChannelFactory : public grpc_client_channel_factory {
  private:
   static void NoRef(grpc_client_channel_factory* factory) {}
   static void NoUnref(grpc_client_channel_factory* factory) {}
-  static grpc_core::Subchannel* CreateSubchannel(
+  static grpc_core::RefCountedPtr<grpc_core::Subchannel> CreateSubchannel(
       grpc_client_channel_factory* factory, const grpc_channel_args* args) {
     return nullptr;
   }
