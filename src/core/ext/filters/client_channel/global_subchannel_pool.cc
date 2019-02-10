@@ -312,11 +312,11 @@ long sck_avl_compare(void* a, void* b, void* unused) {
 
 void scv_avl_destroy(void* p, void* user_data) {
   Subchannel* c = static_cast<Subchannel*>(p);
-  c->Unref();
   UserData* ud = static_cast<UserData*>(user_data);
   if (ud->shutdown) {
     grpc_pollset_set_del_pollset_set(c->pollset_set(), ud->pollset_set);
   }
+  c->Unref();
 }
 
 void* scv_avl_copy(void* p, void* unused) {
