@@ -634,8 +634,7 @@ Subchannel* Subchannel::Create(grpc_connector* connector,
   SubchannelPoolInterface* subchannel_pool =
       SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(args);
   grpc_channel_args* new_args =
-      SubchannelPoolInterface::RemoveSubchannelPoolArg(
-          const_cast<grpc_channel_args*>(args));
+      SubchannelPoolInterface::RemoveSubchannelPoolArg(args);
   SubchannelKey* key = New<SubchannelKey>(new_args);
   GPR_ASSERT(subchannel_pool != nullptr);
   Subchannel* c = subchannel_pool->FindSubchannel(key);
@@ -725,7 +724,7 @@ bool Subchannel::LastStrongRef() const {
   return ((refs & STRONG_REF_MASK) >> INTERNAL_REF_BITS) == 1;
 }
 
-intptr_t Subchannel::GetChildSocketUuid() {
+intptr_t Subchannel::GetChildSocketUuid() const {
   if (connected_subchannel_ != nullptr) {
     return connected_subchannel_->socket_uuid();
   } else {
@@ -733,7 +732,7 @@ intptr_t Subchannel::GetChildSocketUuid() {
   }
 }
 
-const char* Subchannel::GetTargetAddress() {
+const char* Subchannel::GetTargetAddress() const {
   const grpc_arg* addr_arg =
       grpc_channel_args_find(args_, GRPC_ARG_SUBCHANNEL_ADDRESS);
   const char* addr_str = grpc_channel_arg_get_string(addr_arg);
@@ -746,7 +745,7 @@ RefCountedPtr<ConnectedSubchannel> Subchannel::connected_subchannel() {
   return connected_subchannel_;
 }
 
-channelz::SubchannelNode* Subchannel::channelz_node() {
+channelz::SubchannelNode* Subchannel::channelz_node() const {
   return channelz_node_.get();
 }
 

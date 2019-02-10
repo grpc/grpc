@@ -63,7 +63,7 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   // Implements interface methods.
   Subchannel* RegisterSubchannel(SubchannelKey* key,
                                  Subchannel* constructed) override;
-  void UnregisterSubchannel(SubchannelKey* key) override{};  // Never use.
+  void UnregisterSubchannel(SubchannelKey* key) override {}  // Never use.
   Subchannel* FindSubchannel(SubchannelKey* key) override;
 
   // For testing only.
@@ -74,8 +74,8 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   class Sweeper;
 
   void UnregisterUnusedSubchannels(
-      const grpc_core::InlinedVector<
-          Subchannel*, kUnusedSubchannelsInlinedSize>& unused_subchannels);
+      const InlinedVector<Subchannel*, kUnusedSubchannelsInlinedSize>&
+          unused_subchannels);
 
   // The singleton instance. (It's a pointer to RefCountedPtr so that this
   // non-local static object can be trivially destructible.)
