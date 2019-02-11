@@ -25,7 +25,8 @@ from tests.fork import methods
     sys.platform.startswith("win"), "fork is not supported on windows")
 class ForkInteropTest(unittest.TestCase):
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         start_server_script = """if True:
             import sys
             import time
@@ -101,7 +102,9 @@ class ForkInteropTest(unittest.TestCase):
         methods.TestCase.IN_PROGRESS_BIDI_NEW_CHANNEL_BLOCKING_CALL.run_test(
             self._channel_args)
 
-    def tearDown(self):
+
+    @classmethod
+    def tearDownClass(self):
         cygrpc._GRPC_ENABLE_FORK_SUPPORT = False
         if self._prev_poller is None:
             del os.environ['GRPC_POLL_STRATEGY']
