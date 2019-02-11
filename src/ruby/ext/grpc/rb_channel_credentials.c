@@ -48,8 +48,7 @@ typedef struct grpc_rb_channel_credentials {
   grpc_channel_credentials* wrapped;
 } grpc_rb_channel_credentials;
 
-/* Destroys the credentials instances. */
-static void grpc_rb_channel_credentials_free(void* p) {
+static void grpc_rb_channel_credentials_free_internal(void* p) {
   grpc_rb_channel_credentials* wrapper = NULL;
   if (p == NULL) {
     return;
@@ -59,6 +58,12 @@ static void grpc_rb_channel_credentials_free(void* p) {
   wrapper->wrapped = NULL;
 
   xfree(p);
+}
+
+/* Destroys the credentials instances. */
+static void grpc_rb_channel_credentials_free(void* p) {
+  grpc_rb_channel_credentials_free_internal(p);
+  grpc_ruby_shutdown();
 }
 
 /* Protects the mark object from GC */
@@ -90,6 +95,7 @@ static rb_data_type_t grpc_rb_channel_credentials_data_type = {
 /* Allocates ChannelCredential instances.
    Provides safe initial defaults for the instance fields. */
 static VALUE grpc_rb_channel_credentials_alloc(VALUE cls) {
+  grpc_ruby_init();
   grpc_rb_channel_credentials* wrapper = ALLOC(grpc_rb_channel_credentials);
   wrapper->wrapped = NULL;
   wrapper->mark = Qnil;
@@ -146,8 +152,6 @@ static VALUE grpc_rb_channel_credentials_init(int argc, VALUE* argv,
   grpc_ssl_pem_key_cert_pair key_cert_pair;
   const char* pem_root_certs_cstr = NULL;
   MEMZERO(&key_cert_pair, grpc_ssl_pem_key_cert_pair, 1);
-
-  grpc_ruby_once_init();
 
   /* "03" == no mandatory arg, 3 optional */
   rb_scan_args(argc, argv, "03", &pem_root_certs, &pem_private_key,
