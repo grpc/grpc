@@ -10,21 +10,20 @@ py_proto_library(
     ],
     with_grpc = True,
     deps = [
-        requirement('protobuf'),
+        requirement("protobuf"),
     ],
 )
 
 py_proto_library(
     name = "empty2_extensions_proto",
-    protos = [
-        "empty2_extensions.proto",
-    ],
     proto_deps = [
         ":empty2_proto",
     ],
+    protos = [
+        "empty2_extensions.proto",
+    ],
     with_grpc = True,
     deps = [
-        requirement('protobuf'),
+        requirement("protobuf"),
     ],
 )
-

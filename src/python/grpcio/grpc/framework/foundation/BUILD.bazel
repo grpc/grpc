@@ -1,16 +1,17 @@
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+
 package(default_visibility = ["//visibility:public"])
 
 py_library(
     name = "foundation",
-    srcs = ["__init__.py",],
+    srcs = ["__init__.py"],
     deps = [
         ":abandonment",
         ":callable_util",
         ":future",
         ":logging_pool",
-        ":stream_util",
         ":stream",
+        ":stream_util",
     ],
 )
 

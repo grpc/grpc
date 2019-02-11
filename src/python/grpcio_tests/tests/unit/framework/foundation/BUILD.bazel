@@ -7,11 +7,10 @@ py_library(
 
 py_test(
     name = "logging_pool_test",
+    size = "small",
     srcs = ["_logging_pool_test.py"],
     main = "_logging_pool_test.py",
-    size = "small",
     deps = [
         "//src/python/grpcio/grpc:grpcio",
     ],
 )
-

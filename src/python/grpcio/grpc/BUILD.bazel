@@ -5,23 +5,23 @@ package(default_visibility = ["//visibility:public"])
 py_library(
     name = "grpcio",
     srcs = ["__init__.py"],
-    deps = [
-        ":utilities",
-        ":auth",
-        ":plugin_wrapping",
-        ":channel",
-        ":interceptor",
-        ":server",
-        "//src/python/grpcio/grpc/_cython:cygrpc",
-        "//src/python/grpcio/grpc/experimental",
-        "//src/python/grpcio/grpc/framework",
-        requirement('enum34'),
-        requirement('six'),
-    ],
     data = [
         "//:grpc",
     ],
-    imports = ["../",],
+    imports = ["../"],
+    deps = [
+        ":auth",
+        ":channel",
+        ":interceptor",
+        ":plugin_wrapping",
+        ":server",
+        ":utilities",
+        "//src/python/grpcio/grpc/_cython:cygrpc",
+        "//src/python/grpcio/grpc/experimental",
+        "//src/python/grpcio/grpc/framework",
+        requirement("enum34"),
+        requirement("six"),
+    ],
 )
 
 py_library(
@@ -58,7 +58,7 @@ py_library(
     srcs = ["_plugin_wrapping.py"],
     deps = [
         ":common",
-    ]
+    ],
 )
 
 py_library(
@@ -77,4 +77,3 @@ py_library(
         ":common",
     ],
 )
-

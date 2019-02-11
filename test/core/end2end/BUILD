@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])  # Apache v2
 
 grpc_package(name = "test/core/end2end")
 
-load(":generate_tests.bzl", "grpc_end2end_tests", "grpc_end2end_nosec_tests")
+load(":generate_tests.bzl", "grpc_end2end_nosec_tests", "grpc_end2end_tests")
 
 grpc_cc_library(
     name = "cq_verifier",
@@ -73,14 +73,16 @@ grpc_cc_library(
 grpc_cc_library(
     name = "local_util",
     srcs = ["fixtures/local_util.cc"],
-    hdrs = ["fixtures/local_util.h",
-            "end2end_tests.h"],
+    hdrs = [
+        "end2end_tests.h",
+        "fixtures/local_util.h",
+    ],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
-  ],
+    ],
 )
 
 grpc_cc_test(

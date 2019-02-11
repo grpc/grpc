@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 grpc_package(name = "test/core/end2end/fuzzers")
 
@@ -22,11 +22,11 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
     name = "api_fuzzer",
-    srcs = ["api_fuzzer.cc"],
-    language = "C++",
-    corpus = "api_fuzzer_corpus",
     size = "enormous",
     timeout = "eternal",
+    srcs = ["api_fuzzer.cc"],
+    corpus = "api_fuzzer_corpus",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -38,8 +38,8 @@ grpc_fuzzer(
 grpc_fuzzer(
     name = "client_fuzzer",
     srcs = ["client_fuzzer.cc"],
-    language = "C++",
     corpus = "client_fuzzer_corpus",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -50,8 +50,8 @@ grpc_fuzzer(
 grpc_fuzzer(
     name = "server_fuzzer",
     srcs = ["server_fuzzer.cc"],
-    language = "C++",
     corpus = "server_fuzzer_corpus",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",

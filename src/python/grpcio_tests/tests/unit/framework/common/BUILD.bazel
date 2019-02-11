@@ -8,4 +8,3 @@ py_library(
         "test_coverage.py",
     ],
 )
-

@@ -1,9 +1,10 @@
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+
 package(default_visibility = ["//visibility:public"])
 
 py_library(
     name = "experimental",
-    srcs = ["__init__.py",],
+    srcs = ["__init__.py"],
     deps = [
         ":gevent",
         ":session_cache",

@@ -47,6 +47,6 @@ pyx_library(
         "cygrpc.pyx",
     ],
     deps = [
-       "//:grpc",
+        "//:grpc",
     ],
 )

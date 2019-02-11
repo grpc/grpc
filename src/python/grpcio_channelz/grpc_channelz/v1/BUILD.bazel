@@ -8,31 +8,31 @@ genrule(
     srcs = [
         "//src/proto/grpc/channelz:channelz_proto_file",
     ],
-    outs = ["channelz.proto",],
+    outs = ["channelz.proto"],
     cmd = "cp $< $@",
 )
 
 py_proto_library(
     name = "py_channelz_proto",
-    protos = ["mv_channelz_proto",],
     imports = [
         "external/com_google_protobuf/src/",
     ],
     inputs = [
         "@com_google_protobuf//:well_known_protos",
     ],
+    protos = ["mv_channelz_proto"],
     with_grpc = True,
     deps = [
-        requirement('protobuf'),
+        requirement("protobuf"),
     ],
 )
 
 py_library(
     name = "grpc_channelz",
-    srcs = ["channelz.py",],
+    srcs = ["channelz.py"],
+    imports = ["../../"],
     deps = [
         ":py_channelz_proto",
         "//src/python/grpcio/grpc:grpcio",
     ],
-    imports=["../../",],
 )
