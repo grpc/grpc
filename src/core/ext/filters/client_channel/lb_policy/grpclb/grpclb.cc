@@ -220,6 +220,8 @@ class GrpcLb : public LoadBalancingPolicy {
 
     ~Serverlist() { grpc_grpclb_destroy_serverlist(serverlist_); }
 
+    bool operator==(const Serverlist& other) const;
+
     const grpc_grpclb_serverlist* serverlist() const { return serverlist_; }
 
     // Returns a text representation suitable for logging.
@@ -361,6 +363,10 @@ class GrpcLb : public LoadBalancingPolicy {
 //
 // GrpcLb::Serverlist
 //
+
+bool GrpcLb::Serverlist::operator==(const Serverlist& other) const {
+  return grpc_grpclb_serverlist_equals(serverlist_, other.serverlist_);
+}
 
 void ParseServer(const grpc_grpclb_server* server,
                  grpc_resolved_address* addr) {
@@ -976,8 +982,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
     }
     // Check if the serverlist differs from the previous one.
     if (grpclb_policy->serverlist_ != nullptr &&
-        grpc_grpclb_serverlist_equals(grpclb_policy->serverlist_->serverlist(),
-                                      serverlist)) {
+        *grpclb_policy->serverlist_ == *serverlist_wrapper) {
       if (grpc_lb_glb_trace.enabled()) {
         gpr_log(GPR_INFO,
                 "[grpclb %p] lb_calld=%p: Incoming server list identical to "
