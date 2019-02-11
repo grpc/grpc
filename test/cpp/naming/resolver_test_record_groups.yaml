@@ -6,6 +6,7 @@ resolver_component_tests:
   expected_chosen_service_config: null
   expected_lb_policy: null
   enable_srv_queries: true
+  enable_txt_queries: true
   record_to_resolve: no-srv-ipv4-single-target
   records:
     no-srv-ipv4-single-target:
@@ -15,6 +16,7 @@ resolver_component_tests:
   expected_chosen_service_config: null
   expected_lb_policy: null
   enable_srv_queries: true
+  enable_txt_queries: true
   record_to_resolve: srv-ipv4-single-target
   records:
     _grpclb._tcp.srv-ipv4-single-target:
@@ -28,6 +30,7 @@ resolver_component_tests:
   expected_chosen_service_config: null
   expected_lb_policy: null
   enable_srv_queries: true
+  enable_txt_queries: true
   record_to_resolve: srv-ipv4-multi-target
   records:
     _grpclb._tcp.srv-ipv4-multi-target:
@@ -41,6 +44,7 @@ resolver_component_tests:
   expected_chosen_service_config: null
   expected_lb_policy: null
   enable_srv_queries: true
+  enable_txt_queries: true
   record_to_resolve: srv-ipv6-single-target
   records:
     _grpclb._tcp.srv-ipv6-single-target:
@@ -54,6 +58,7 @@ resolver_component_tests:
   expected_chosen_service_config: null
   expected_lb_policy: null
   enable_srv_queries: true
+  enable_txt_queries: true
   record_to_resolve: srv-ipv6-multi-target
   records:
     _grpclb._tcp.srv-ipv6-multi-target:
@@ -67,6 +72,7 @@ resolver_component_tests:
   expected_chosen_service_config: '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]}]}'
   expected_lb_policy: round_robin
   enable_srv_queries: true
+  enable_txt_queries: true
   record_to_resolve: srv-ipv4-simple-service-config
   records:
     _grpclb._tcp.srv-ipv4-simple-service-config:
@@ -81,6 +87,7 @@ resolver_component_tests:
   expected_chosen_service_config: '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"NoSrvSimpleService","waitForReady":true}]}]}'
   expected_lb_policy: round_robin
   enable_srv_queries: true
+  enable_txt_queries: true
   record_to_resolve: ipv4-no-srv-simple-service-config
   records:
     ipv4-no-srv-simple-service-config:
@@ -93,6 +100,7 @@ resolver_component_tests:
   expected_chosen_service_config: null
   expected_lb_policy: null
   enable_srv_queries: true
+  enable_txt_queries: true
   record_to_resolve: ipv4-no-config-for-cpp
   records:
     ipv4-no-config-for-cpp:
@@ -105,6 +113,7 @@ resolver_component_tests:
   expected_chosen_service_config: null
   expected_lb_policy: null
   enable_srv_queries: true
+  enable_txt_queries: true
   record_to_resolve: ipv4-cpp-config-has-zero-percentage
   records:
     ipv4-cpp-config-has-zero-percentage:
@@ -117,6 +126,7 @@ resolver_component_tests:
   expected_chosen_service_config: '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"CppService","waitForReady":true}]}]}'
   expected_lb_policy: round_robin
   enable_srv_queries: true
+  enable_txt_queries: true
   record_to_resolve: ipv4-second-language-is-cpp
   records:
     ipv4-second-language-is-cpp:
@@ -129,6 +139,7 @@ resolver_component_tests:
   expected_chosen_service_config: '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"AlwaysPickedService","waitForReady":true}]}]}'
   expected_lb_policy: round_robin
   enable_srv_queries: true
+  enable_txt_queries: true
   record_to_resolve: ipv4-config-with-percentages
   records:
     ipv4-config-with-percentages:
@@ -142,6 +153,7 @@ resolver_component_tests:
   expected_chosen_service_config: null
   expected_lb_policy: null
   enable_srv_queries: true
+  enable_txt_queries: true
   record_to_resolve: srv-ipv4-target-has-backend-and-balancer
   records:
     _grpclb._tcp.srv-ipv4-target-has-backend-and-balancer:
@@ -156,6 +168,7 @@ resolver_component_tests:
   expected_chosen_service_config: null
   expected_lb_policy: null
   enable_srv_queries: true
+  enable_txt_queries: true
   record_to_resolve: srv-ipv6-target-has-backend-and-balancer
   records:
     _grpclb._tcp.srv-ipv6-target-has-backend-and-balancer:
@@ -169,6 +182,7 @@ resolver_component_tests:
   expected_chosen_service_config: '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooThree","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFour","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFive","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSix","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSeven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEight","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooNine","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTen","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEleven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]}]}'
   expected_lb_policy: null
   enable_srv_queries: true
+  enable_txt_queries: true
   record_to_resolve: ipv4-config-causing-fallback-to-tcp
   records:
     ipv4-config-causing-fallback-to-tcp:
@@ -182,6 +196,7 @@ resolver_component_tests:
   expected_chosen_service_config: null
   expected_lb_policy: null
   enable_srv_queries: false
+  enable_txt_queries: true
   record_to_resolve: srv-ipv4-single-target-srv-disabled
   records:
     _grpclb._tcp.srv-ipv4-single-target-srv-disabled:
@@ -197,6 +212,7 @@ resolver_component_tests:
   expected_chosen_service_config: null
   expected_lb_policy: null
   enable_srv_queries: false
+  enable_txt_queries: true
   record_to_resolve: srv-ipv4-multi-target-srv-disabled
   records:
     _grpclb._tcp.srv-ipv4-multi-target-srv-disabled:
@@ -214,6 +230,7 @@ resolver_component_tests:
   expected_chosen_service_config: null
   expected_lb_policy: null
   enable_srv_queries: false
+  enable_txt_queries: true
   record_to_resolve: srv-ipv6-single-target-srv-disabled
   records:
     _grpclb._tcp.srv-ipv6-single-target-srv-disabled:
@@ -229,6 +246,7 @@ resolver_component_tests:
   expected_chosen_service_config: null
   expected_lb_policy: null
   enable_srv_queries: false
+  enable_txt_queries: true
   record_to_resolve: srv-ipv6-multi-target-srv-disabled
   records:
     _grpclb._tcp.srv-ipv6-multi-target-srv-disabled:
@@ -246,6 +264,7 @@ resolver_component_tests:
   expected_chosen_service_config: '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]}]}'
   expected_lb_policy: round_robin
   enable_srv_queries: false
+  enable_txt_queries: true
   record_to_resolve: srv-ipv4-simple-service-config-srv-disabled
   records:
     _grpclb._tcp.srv-ipv4-simple-service-config-srv-disabled:
@@ -256,4 +275,45 @@ resolver_component_tests:
     - {TTL: '2100', data: 5.5.3.4, type: A}
     _grpc_config.srv-ipv4-simple-service-config-srv-disabled:
     - {TTL: '2100', data: 'grpc_config=[{"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]}]}}]',
+      type: TXT}
+- expected_addrs:
+  - {address: '1.2.3.4:1234', is_balancer: true}
+  expected_chosen_service_config: null
+  expected_lb_policy: null
+  enable_srv_queries: true
+  enable_txt_queries: false
+  record_to_resolve: srv-ipv4-simple-service-config-txt-disabled
+  records:
+    _grpclb._tcp.srv-ipv4-simple-service-config-txt-disabled:
+    - {TTL: '2100', data: 0 0 1234 ipv4-simple-service-config-txt-disabled, type: SRV}
+    ipv4-simple-service-config-txt-disabled:
+    - {TTL: '2100', data: 1.2.3.4, type: A}
+    _grpc_config.srv-ipv4-simple-service-config-txt-disabled:
+    - {TTL: '2100', data: 'grpc_config=[{"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]}]}}]',
+      type: TXT}
+- expected_addrs:
+  - {address: '1.2.3.4:443', is_balancer: false}
+  expected_chosen_service_config: null
+  expected_lb_policy: null
+  enable_srv_queries: true
+  enable_txt_queries: false
+  record_to_resolve: ipv4-cpp-config-has-zero-percentage-txt-disabled
+  records:
+    ipv4-cpp-config-has-zero-percentage-txt-disabled:
+    - {TTL: '2100', data: 1.2.3.4, type: A}
+    _grpc_config.ipv4-cpp-config-has-zero-percentage-txt-disabled:
+    - {TTL: '2100', data: 'grpc_config=[{"percentage":0,"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"CppService","waitForReady":true}]}]}}]',
+      type: TXT}
+- expected_addrs:
+  - {address: '1.2.3.4:443', is_balancer: false}
+  expected_chosen_service_config: null
+  expected_lb_policy: null
+  enable_srv_queries: true
+  enable_txt_queries: false
+  record_to_resolve: ipv4-second-language-is-cpp-txt-disabled
+  records:
+    ipv4-second-language-is-cpp-txt-disabled:
+    - {TTL: '2100', data: 1.2.3.4, type: A}
+    _grpc_config.ipv4-second-language-is-cpp-txt-disabled:
+    - {TTL: '2100', data: 'grpc_config=[{"clientLanguage":["go"],"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"GoService","waitForReady":true}]}]}},{"clientLanguage":["c++"],"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"CppService","waitForReady":true}]}]}}]',
       type: TXT}
