@@ -62,8 +62,8 @@ grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec timespec);
 namespace grpc_core {
 /** Execution context.
  *  A bag of data that collects information along a callstack.
- *  It is created on the stack at public API entry points, and stored internally
- *  as a thread-local variable.
+ *  It is created on the stack at core entry points (public API or iomgr), and
+ *  stored internally as a thread-local variable.
  *
  *  Generally, to create an exec_ctx instance, add the following line at the top
  *  of the public API entry point or at the start of a thread's work function :
@@ -74,7 +74,7 @@ namespace grpc_core {
  *  grpc_core::ExecCtx::Get()
  *
  *  Specific responsibilities (this may grow in the future):
- *  - track a list of work that needs to be delayed until the top of the
+ *  - track a list of core work that needs to be delayed until the base of the
  *    call stack (this provides a convenient mechanism to run callbacks
  *    without worrying about locking issues)
  *  - provide a decision maker (via IsReadyToFinish) that provides a
@@ -84,10 +84,19 @@ namespace grpc_core {
  *  CONVENTIONS:
  *  - Instance of this must ALWAYS be constructed on the stack, never
  *    heap allocated.
- *  - Exactly one instance of ExecCtx must be created per thread. Instances must
- *    always be called exec_ctx.
  *  - Do not pass exec_ctx as a parameter to a function. Always access it using
  *    grpc_core::ExecCtx::Get().
+ *  - NOTE: In the future, the convention is likely to change to allow only one
+ *          ExecCtx on a thread's stack at the same time. The TODO below
+ *          discusses this plan in more detail.
+ *
+ * TODO(yashykt): Only allow one "active" ExecCtx on a thread at the same time.
+ *                Stage 1: If a new one is created on the stack, it should just
+ *                pass-through to the underlying ExecCtx deeper in the thread's
+ *                stack.
+ *                Stage 2: Assert if a 2nd one is ever created on the stack
+ *                since that implies a core re-entry outside of application
+ *                callbacks.
  */
 class ExecCtx {
  public:
@@ -230,6 +239,53 @@ class ExecCtx {
   GPR_TLS_CLASS_DECL(exec_ctx_);
   ExecCtx* last_exec_ctx_ = Get();
 };
+
+/** Application-callback execution context.
+ *  A bag of data that collects information along a callstack.
+ *  It is created on the stack at core entry points, and stored internally
+ *  as a thread-local variable.
+ *
+ *  There are three key differences between this structure and ExecCtx:
+ *    1. ApplicationCallbackExecCtx builds a list of application-level
+ *       callbacks, but ExecCtx builds a list of internal callbacks to invoke.
+ *    2. ApplicationCallbackExecCtx invokes its callbacks only at destruction;
+ *       there is no explicit Flush method.
+ *    3. If more than one ApplicationCallbackExecCtx is created on the thread's
+ *       stack, only the one closest to the base of the stack is actually
+ *       active and this is the only one that enqueues application callbacks.
+ *       (Unlike ExecCtx, it is not feasible to prevent multiple of these on the
+ *       stack since the executing application callback may itself enter core.
+ *       However, the new one created will just pass callbacks through to the
+ *       base one and those will not be executed until the return to the
+ *       destructor of the base one, preventing unlimited stack growth.)
+ *
+ *  This structure exists because application callbacks may themselves cause a
+ *  core re-entry (e.g., through a public API call) and if that call in turn
+ *  causes another application-callback, there could be arbitrarily growing
+ *  stacks of core re-entries. Instead, any application callbacks instead should
+ *  not be invoked until other core work is done and other application callbacks
+ *  have completed. To accomplish this, any application callback should be
+ *  enqueued using grpc_core::ApplicationCallbackExecCtx::Enqueue .
+ *
+ *  CONVENTIONS:
+ *  - Instances of this must ALWAYS be constructed on the stack, never
+ *    heap allocated.
+ *  - Instances of this are generally constructed before ExecCtx when needed.
+ *    The only exception is for ExecCtx's that are explicitly flushed and
+ *    that survive beyond the scope of the function that can cause application
+ *    callbacks to be invoked (e.g., in the timer thread).
+ *
+ *  Generally, core entry points that may trigger application-level callbacks
+ *  will have the following declarations:
+ *
+ *  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+ *  grpc_core::ExecCtx exec_ctx;
+ *
+ *  This ordering is important to make sure that the ApplicationCallbackExecCtx
+ *  is destroyed after the ExecCtx (to prevent the re-entry problem described
+ *  above, as well as making sure that ExecCtx core callbacks are invoked first)
+ *
+ */
 
 class ApplicationCallbackExecCtx {
  public:
