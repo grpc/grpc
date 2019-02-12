@@ -31,11 +31,23 @@ class ClientStreamingCall extends AbstractCall
      * @param array $metadata Metadata to send with the call, if applicable
      *                        (optional)
      */
-    public function start(array $metadata = [])
+    public function start(array $metadata = [], $wait_for_ready = true)
     {
-        $this->call->startBatch([
-            OP_SEND_INITIAL_METADATA => $metadata,
-        ]);
+        if (!is_null($wait_for_ready)) {
+            $message_array = ['message' => ""];
+            $this->setWaitForReady($wait_for_ready);
+            echo "ClientStreamingCall flag: ".sprintf('%x',$this->initial_metadata_flags)."\n";
+            $message_array['wait_for_ready'] = $this->initial_metadata_flags;
+            $this->call->startBatch([
+                OP_SEND_INITIAL_METADATA => $metadata,
+                OP_SEND_MESSAGE => $message_array
+            ]);
+        }
+        else{
+            $this->call->startBatch([
+                OP_SEND_INITIAL_METADATA => $metadata,
+            ]);
+        }
     }
 
     /**

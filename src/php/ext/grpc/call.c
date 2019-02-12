@@ -259,6 +259,7 @@ PHP_METHOD(Call, startBatch) {
   zval *inner_value;
   zval *message_value;
   zval *message_flags;
+  zval *initial_metadata_flags;
   wrapped_grpc_call *call = PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_call,
                                                         getThis());
   if (call->channel) {
@@ -355,6 +356,15 @@ PHP_METHOD(Call, startBatch) {
                              "Expected a string for send message",
                              1 TSRMLS_CC);
         goto cleanup;
+      }
+      if (php_grpc_zend_hash_find(message_hash, "wait_for_ready", sizeof("wait_for_ready"),
+                         (void **)&initial_metadata_flags) == SUCCESS) {
+        if (Z_TYPE_P(initial_metadata_flags) != IS_LONG) {
+          zend_throw_exception(spl_ce_InvalidArgumentException,
+                               "Expected an int for message initial metadata flags",
+                               1 TSRMLS_CC);
+        }
+        ops[0].flags = Z_LVAL_P(initial_metadata_flags) & GRPC_WRITE_USED_MASK;
       }
       ops[op_num].data.send_message.send_message =
           string_to_byte_buffer(Z_STRVAL_P(message_value),

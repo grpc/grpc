@@ -34,11 +34,16 @@ class ServerStreamingCall extends AbstractCall
      * @param array $options  An array of options, possible keys:
      *                        'flags' => a number (optional)
      */
-    public function start($data, array $metadata = [], array $options = [])
+    public function start($data, array $metadata = [], array $options = [], $wait_for_ready = true)
     {
         $message_array = ['message' => $this->_serializeMessage($data)];
         if (array_key_exists('flags', $options)) {
             $message_array['flags'] = $options['flags'];
+        }
+        if (!is_null($wait_for_ready)) {
+            $this->setWaitForReady($wait_for_ready);
+            echo "ServerStreamingCall flag: ".sprintf('%x',$this->initial_metadata_flags)."\n";
+            $message_array['wait_for_ready'] = $this->initial_metadata_flags;
         }
         $this->call->startBatch([
             OP_SEND_INITIAL_METADATA => $metadata,

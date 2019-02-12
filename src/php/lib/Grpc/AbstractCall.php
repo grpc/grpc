@@ -18,7 +18,9 @@
  */
 
 namespace Grpc;
-
+define("INITIAL_METADATA_WAIT_FOR_READY", 0x20);
+define("INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET", 0x40);
+define("INITIAL_METADATA_USED_MASK", 0x80);
 /**
  * Class AbstractCall.
  * @package Grpc
@@ -32,6 +34,8 @@ abstract class AbstractCall
     protected $deserialize;
     protected $metadata;
     protected $trailing_metadata;
+
+    protected $initial_metadata_flags;
 
     /**
      * Create a new Call wrapper object.
@@ -162,5 +166,34 @@ abstract class AbstractCall
     public function setCallCredentials($call_credentials)
     {
         $this->call->setCredentials($call_credentials);
+    }
+    //***********************************************************
+
+    public function setWaitForReady($wait_for_ready)
+    {
+        if (!is_null($wait_for_ready)){
+            if ($wait_for_ready){
+                $this->initial_metadata_flags = INITIAL_METADATA_WAIT_FOR_READY & INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET; 
+            }
+            else{
+                $this->initial_metadata_flags = ~INITIAL_METADATA_WAIT_FOR_READY & INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public function isWaitForReady()
+    {
+        if (is_null($this->initial_metadata_flags)){
+            return true;
+        }
+
+        return $this->initial_metadata_flags == (INITIAL_METADATA_WAIT_FOR_READY & INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET);
+    }
+
+    public function getWaitForReady()
+    {
+        return $this->initial_metadata_flags;
     }
 }
