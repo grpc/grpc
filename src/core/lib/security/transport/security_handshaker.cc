@@ -496,11 +496,6 @@ RefCountedPtr<Handshaker> SecurityHandshakerCreate(
   }
 }
 
-grpc_handshaker* grpc_security_handshaker_create(
-    tsi_handshaker* handshaker, grpc_security_connector* connector) {
-  return SecurityHandshakerCreate(handshaker, connector).release();
-}
-
 void SecurityRegisterHandshakerFactories() {
   HandshakerRegistry::RegisterHandshakerFactory(
       false /* at_start */, HANDSHAKER_CLIENT,
@@ -511,3 +506,8 @@ void SecurityRegisterHandshakerFactories() {
 }
 
 }  // namespace grpc_core
+
+grpc_handshaker* grpc_security_handshaker_create(
+    tsi_handshaker* handshaker, grpc_security_connector* connector) {
+  return SecurityHandshakerCreate(handshaker, connector).release();
+}
