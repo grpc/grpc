@@ -477,6 +477,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/channel/channelz_registry.cc )
   s.files += %w( src/core/lib/channel/connected_channel.cc )
   s.files += %w( src/core/lib/channel/handshaker.cc )
+  s.files += %w( src/core/lib/channel/handshaker_factory.cc )
   s.files += %w( src/core/lib/channel/handshaker_registry.cc )
   s.files += %w( src/core/lib/channel/status_util.cc )
   s.files += %w( src/core/lib/compression/compression.cc )
