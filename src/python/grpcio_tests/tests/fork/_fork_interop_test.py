@@ -17,8 +17,14 @@ import unittest
 import os
 import subprocess
 import sys
+import threading
 from grpc._cython import cygrpc
 from tests.fork import methods
+
+from six.moves import queue
+
+
+_MAX_WAIT_FOR_SERVER_S = 10
 
 
 @unittest.skipIf(
@@ -49,7 +55,13 @@ class ForkInteropTest(unittest.TestCase):
             [sys.executable, '-c', start_server_script],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
-        port = int(self._process.stdout.readline())
+        port_queue = queue.Queue()
+        def get_port_from_subprocess():
+            port = int(self._process.stdout.readline())
+            port_queue.put(port)
+        get_port_thread = threading.Thread(target=get_port_from_subprocess)
+        get_port_thread.start()
+        port = port_queue.get(block=True, timeout=_MAX_WAIT_FOR_SERVER_S)
         self._channel_args = {
             'server_host': 'localhost',
             'server_port': port,
