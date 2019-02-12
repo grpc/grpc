@@ -19,6 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -91,6 +92,20 @@ DEFINE_string(expected_chosen_service_config, "",
 DEFINE_string(
     local_dns_server_address, "",
     "Optional. This address is placed as the uri authority if present.");
+DEFINE_string(
+    enable_srv_queries, "",
+    "Whether or not to enable SRV queries for the ares resolver instance."
+    "It would be better if this arg could be bool, but the way that we "
+    "generate "
+    "the python script runner doesn't allow us to pass a gflags bool to this "
+    "binary.");
+DEFINE_string(
+    enable_txt_queries, "",
+    "Whether or not to enable TXT queries for the ares resolver instance."
+    "It would be better if this arg could be bool, but the way that we "
+    "generate "
+    "the python script runner doesn't allow us to pass a gflags bool to this "
+    "binary.");
 DEFINE_string(expected_lb_policy, "",
               "Expected lb policy name that appears in resolver result channel "
               "arg. Empty for none.");
@@ -438,10 +453,46 @@ void RunResolvesRelevantRecordsTest(void (*OnDoneLocked)(void* arg,
   GPR_ASSERT(gpr_asprintf(&whole_uri, "dns://%s/%s",
                           FLAGS_local_dns_server_address.c_str(),
                           FLAGS_target_name.c_str()));
+  gpr_log(GPR_DEBUG, "resolver_component_test: --enable_srv_queries: %s",
+          FLAGS_enable_srv_queries.c_str());
+  grpc_channel_args* resolver_args = nullptr;
+  // By default, SRV queries are disabled, so tests that expect no SRV query
+  // should avoid setting any channel arg. Test cases that do rely on the SRV
+  // query must explicitly enable SRV though.
+  if (FLAGS_enable_srv_queries == "True") {
+    grpc_arg srv_queries_arg = grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_DNS_ENABLE_SRV_QUERIES), true);
+    resolver_args =
+        grpc_channel_args_copy_and_add(nullptr, &srv_queries_arg, 1);
+  } else if (FLAGS_enable_srv_queries != "False") {
+    gpr_log(GPR_DEBUG, "Invalid value for --enable_srv_queries.");
+    abort();
+  }
+  gpr_log(GPR_DEBUG, "resolver_component_test: --enable_txt_queries: %s",
+          FLAGS_enable_txt_queries.c_str());
+  // By default, TXT queries are disabled, so tests that expect no TXT query
+  // should avoid setting any channel arg. Test cases that do rely on the TXT
+  // query must explicitly enable TXT though.
+  if (FLAGS_enable_txt_queries == "True") {
+    // Unlike SRV queries, there isn't a channel arg specific to TXT records.
+    // Rather, we use the resolver-agnostic "service config" resolution option,
+    // for which c-ares has its own specific default value, which isn't
+    // necessarily shared by other resolvers.
+    grpc_arg txt_queries_arg = grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION), false);
+    grpc_channel_args* tmp_args =
+        grpc_channel_args_copy_and_add(resolver_args, &txt_queries_arg, 1);
+    grpc_channel_args_destroy(resolver_args);
+    resolver_args = tmp_args;
+  } else if (FLAGS_enable_txt_queries != "False") {
+    gpr_log(GPR_DEBUG, "Invalid value for --enable_txt_queries.");
+    abort();
+  }
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
-      grpc_core::ResolverRegistry::CreateResolver(whole_uri, nullptr,
+      grpc_core::ResolverRegistry::CreateResolver(whole_uri, resolver_args,
                                                   args.pollset_set, args.lock);
+  grpc_channel_args_destroy(resolver_args);
   gpr_free(whole_uri);
   grpc_closure on_resolver_result_changed;
   GRPC_CLOSURE_INIT(&on_resolver_result_changed, OnDoneLocked, (void*)&args,

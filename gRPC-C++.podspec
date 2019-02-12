@@ -24,7 +24,7 @@ Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
   # version = '1.19.0-dev'
-  version = '0.0.6-dev'
+  version = '0.0.8-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -40,6 +40,8 @@ Pod::Spec.new do |s|
 
   s.ios.deployment_target = '7.0'
   s.osx.deployment_target = '10.9'
+  s.tvos.deployment_target = '10.0'
+
   s.requires_arc = false
 
   name = 'grpcpp'
@@ -298,6 +300,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/oauth2/oauth2_credentials.h',
                       'src/core/lib/security/credentials/plugin/plugin_credentials.h',
                       'src/core/lib/security/credentials/ssl/ssl_credentials.h',
+                      'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h',
                       'src/core/lib/security/security_connector/alts/alts_security_connector.h',
                       'src/core/lib/security/security_connector/fake/fake_security_connector.h',
                       'src/core/lib/security/security_connector/load_system_roots.h',
@@ -402,6 +405,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/debug/stats_data.h',
                       'src/core/lib/gprpp/debug_location.h',
                       'src/core/lib/gprpp/inlined_vector.h',
+                      'src/core/lib/gprpp/optional.h',
                       'src/core/lib/gprpp/orphanable.h',
                       'src/core/lib/gprpp/ref_counted.h',
                       'src/core/lib/gprpp/ref_counted_ptr.h',
@@ -595,6 +599,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/debug/stats_data.h',
                               'src/core/lib/gprpp/debug_location.h',
                               'src/core/lib/gprpp/inlined_vector.h',
+                              'src/core/lib/gprpp/optional.h',
                               'src/core/lib/gprpp/orphanable.h',
                               'src/core/lib/gprpp/ref_counted.h',
                               'src/core/lib/gprpp/ref_counted_ptr.h',

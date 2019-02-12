@@ -113,12 +113,11 @@ RefCountedPtr<ChannelNode> ClientChannelNode::MakeClientChannelNode(
                                            is_top_level_channel);
 }
 
-SubchannelNode::SubchannelNode(grpc_subchannel* subchannel,
+SubchannelNode::SubchannelNode(Subchannel* subchannel,
                                size_t channel_tracer_max_nodes)
     : BaseNode(EntityType::kSubchannel),
       subchannel_(subchannel),
-      target_(
-          UniquePtr<char>(gpr_strdup(grpc_subchannel_get_target(subchannel_)))),
+      target_(UniquePtr<char>(gpr_strdup(subchannel_->GetTargetAddress()))),
       trace_(channel_tracer_max_nodes) {}
 
 SubchannelNode::~SubchannelNode() {}
@@ -128,8 +127,8 @@ void SubchannelNode::PopulateConnectivityState(grpc_json* json) {
   if (subchannel_ == nullptr) {
     state = GRPC_CHANNEL_SHUTDOWN;
   } else {
-    state = grpc_subchannel_check_connectivity(
-        subchannel_, nullptr, true /* inhibit_health_checking */);
+    state = subchannel_->CheckConnectivity(nullptr,
+                                           true /* inhibit_health_checking */);
   }
   json = grpc_json_create_child(nullptr, json, "state", nullptr,
                                 GRPC_JSON_OBJECT, false);
@@ -170,7 +169,7 @@ grpc_json* SubchannelNode::RenderJson() {
   call_counter_.PopulateCallCounts(json);
   json = top_level_json;
   // populate the child socket.
-  intptr_t socket_uuid = grpc_subchannel_get_child_socket_uuid(subchannel_);
+  intptr_t socket_uuid = subchannel_->GetChildSocketUuid();
   if (socket_uuid != 0) {
     grpc_json* array_parent = grpc_json_create_child(
         nullptr, json, "socketRef", nullptr, GRPC_JSON_ARRAY, false);

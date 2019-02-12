@@ -46,7 +46,7 @@ constexpr char kPickFirst[] = "pick_first";
 
 class PickFirst : public LoadBalancingPolicy {
  public:
-  explicit PickFirst(const Args& args);
+  explicit PickFirst(Args args);
 
   const char* name() const override { return kPickFirst; }
 
@@ -79,7 +79,7 @@ class PickFirst : public LoadBalancingPolicy {
     PickFirstSubchannelData(
         SubchannelList<PickFirstSubchannelList, PickFirstSubchannelData>*
             subchannel_list,
-        const ServerAddress& address, grpc_subchannel* subchannel,
+        const ServerAddress& address, Subchannel* subchannel,
         grpc_combiner* combiner)
         : SubchannelData(subchannel_list, address, subchannel, combiner) {}
 
@@ -154,7 +154,7 @@ class PickFirst : public LoadBalancingPolicy {
   channelz::ChildRefsList child_channels_;
 };
 
-PickFirst::PickFirst(const Args& args) : LoadBalancingPolicy(args) {
+PickFirst::PickFirst(Args args) : LoadBalancingPolicy(std::move(args)) {
   GPR_ASSERT(args.client_channel_factory != nullptr);
   gpr_mu_init(&child_refs_mu_);
   grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE,
@@ -619,8 +619,8 @@ void PickFirst::PickFirstSubchannelData::
 class PickFirstFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-      const LoadBalancingPolicy::Args& args) const override {
-    return OrphanablePtr<LoadBalancingPolicy>(New<PickFirst>(args));
+      LoadBalancingPolicy::Args args) const override {
+    return OrphanablePtr<LoadBalancingPolicy>(New<PickFirst>(std::move(args)));
   }
 
   const char* name() const override { return kPickFirst; }

@@ -125,6 +125,8 @@ class AresDnsResolver : public Resolver {
   bool shutdown_initiated_ = false;
   // timeout in milliseconds for active DNS queries
   int query_timeout_ms_;
+  // whether or not to enable SRV DNS queries
+  bool enable_srv_queries_;
 };
 
 AresDnsResolver::AresDnsResolver(const ResolverArgs& args)
@@ -146,14 +148,18 @@ AresDnsResolver::AresDnsResolver(const ResolverArgs& args)
     dns_server_ = gpr_strdup(args.uri->authority);
   }
   channel_args_ = grpc_channel_args_copy(args.args);
+  // Disable service config option
   const grpc_arg* arg = grpc_channel_args_find(
       channel_args_, GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION);
-  grpc_integer_options integer_options = {false, false, true};
-  request_service_config_ = !grpc_channel_arg_get_integer(arg, integer_options);
+  request_service_config_ = !grpc_channel_arg_get_bool(arg, true);
+  // Min time b/t resolutions option
   arg = grpc_channel_args_find(channel_args_,
                                GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS);
   min_time_between_resolutions_ =
       grpc_channel_arg_get_integer(arg, {1000, 0, INT_MAX});
+  // Enable SRV queries option
+  arg = grpc_channel_args_find(channel_args_, GRPC_ARG_DNS_ENABLE_SRV_QUERIES);
+  enable_srv_queries_ = grpc_channel_arg_get_bool(arg, false);
   interested_parties_ = grpc_pollset_set_create();
   if (args.pollset_set != nullptr) {
     grpc_pollset_set_add_pollset_set(interested_parties_, args.pollset_set);
@@ -419,7 +425,7 @@ void AresDnsResolver::StartResolvingLocked() {
   service_config_json_ = nullptr;
   pending_request_ = grpc_dns_lookup_ares_locked(
       dns_server_, name_to_resolve_, kDefaultPort, interested_parties_,
-      &on_resolved_, &addresses_, true /* check_grpclb */,
+      &on_resolved_, &addresses_, enable_srv_queries_ /* check_grpclb */,
       request_service_config_ ? &service_config_json_ : nullptr,
       query_timeout_ms_, combiner());
   last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
@@ -472,13 +478,12 @@ static grpc_address_resolver_vtable ares_resolver = {
     grpc_resolve_address_ares, blocking_resolve_address_ares};
 
 static bool should_use_ares(const char* resolver_env) {
-  return resolver_env != nullptr && gpr_stricmp(resolver_env, "ares") == 0;
+  return resolver_env == nullptr || strlen(resolver_env) == 0 ||
+         gpr_stricmp(resolver_env, "ares") == 0;
 }
 
 void grpc_resolver_dns_ares_init() {
   char* resolver_env = gpr_getenv("GRPC_DNS_RESOLVER");
-  /* TODO(zyc): Turn on c-ares based resolver by default after the address
-     sorter and the CNAME support are added. */
   if (should_use_ares(resolver_env)) {
     gpr_log(GPR_DEBUG, "Using ares dns resolver");
     address_sorting_init();

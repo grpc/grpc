@@ -41,8 +41,8 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rake-compiler-dock', '~> 0.5.1'
   s.add_development_dependency 'rspec',              '~> 3.6'
   s.add_development_dependency 'rubocop',            '~> 0.49.1'
-  s.add_development_dependency 'signet',             '~> 0.7.0'
-  s.add_development_dependency 'googleauth',         '>= 0.5.1', '< 0.7'
+  s.add_development_dependency 'signet',             '~> 0.7'
+  s.add_development_dependency 'googleauth',         '>= 0.5.1', '< 0.10'
 
   s.extensions = %w(src/ruby/ext/grpc/extconf.rb)
 
@@ -224,6 +224,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/credentials/oauth2/oauth2_credentials.h )
   s.files += %w( src/core/lib/security/credentials/plugin/plugin_credentials.h )
   s.files += %w( src/core/lib/security/credentials/ssl/ssl_credentials.h )
+  s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h )
   s.files += %w( src/core/lib/security/security_connector/alts/alts_security_connector.h )
   s.files += %w( src/core/lib/security/security_connector/fake/fake_security_connector.h )
   s.files += %w( src/core/lib/security/security_connector/load_system_roots.h )
@@ -332,6 +333,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/debug/stats_data.h )
   s.files += %w( src/core/lib/gprpp/debug_location.h )
   s.files += %w( src/core/lib/gprpp/inlined_vector.h )
+  s.files += %w( src/core/lib/gprpp/optional.h )
   s.files += %w( src/core/lib/gprpp/orphanable.h )
   s.files += %w( src/core/lib/gprpp/ref_counted.h )
   s.files += %w( src/core/lib/gprpp/ref_counted_ptr.h )
@@ -475,7 +477,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/channel/channelz_registry.cc )
   s.files += %w( src/core/lib/channel/connected_channel.cc )
   s.files += %w( src/core/lib/channel/handshaker.cc )
-  s.files += %w( src/core/lib/channel/handshaker_factory.cc )
   s.files += %w( src/core/lib/channel/handshaker_registry.cc )
   s.files += %w( src/core/lib/channel/status_util.cc )
   s.files += %w( src/core/lib/compression/compression.cc )
@@ -664,6 +665,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/credentials/oauth2/oauth2_credentials.cc )
   s.files += %w( src/core/lib/security/credentials/plugin/plugin_credentials.cc )
   s.files += %w( src/core/lib/security/credentials/ssl/ssl_credentials.cc )
+  s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc )
   s.files += %w( src/core/lib/security/security_connector/alts/alts_security_connector.cc )
   s.files += %w( src/core/lib/security/security_connector/fake/fake_security_connector.cc )
   s.files += %w( src/core/lib/security/security_connector/load_system_roots_fallback.cc )

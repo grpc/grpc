@@ -76,7 +76,8 @@ static grpc_channel_args* get_secure_naming_channel_args(
   grpc_core::UniquePtr<char> authority;
   if (target_authority_table != nullptr) {
     // Find the authority for the target.
-    const char* target_uri_str = grpc_get_subchannel_address_uri_arg(args);
+    const char* target_uri_str =
+        grpc_core::Subchannel::GetUriFromSubchannelAddressArg(args);
     grpc_uri* target_uri =
         grpc_uri_parse(target_uri_str, false /* suppress errors */);
     GPR_ASSERT(target_uri != nullptr);
@@ -138,7 +139,7 @@ static grpc_channel_args* get_secure_naming_channel_args(
   return new_args;
 }
 
-static grpc_subchannel* client_channel_factory_create_subchannel(
+static grpc_core::Subchannel* client_channel_factory_create_subchannel(
     grpc_client_channel_factory* cc_factory, const grpc_channel_args* args) {
   grpc_channel_args* new_args = get_secure_naming_channel_args(args);
   if (new_args == nullptr) {
@@ -147,7 +148,7 @@ static grpc_subchannel* client_channel_factory_create_subchannel(
     return nullptr;
   }
   grpc_connector* connector = grpc_chttp2_connector_create();
-  grpc_subchannel* s = grpc_subchannel_create(connector, new_args);
+  grpc_core::Subchannel* s = grpc_core::Subchannel::Create(connector, new_args);
   grpc_connector_unref(connector);
   grpc_channel_args_destroy(new_args);
   return s;
@@ -205,6 +206,7 @@ grpc_channel* grpc_secure_channel_create(grpc_channel_credentials* creds,
         grpc_channel_credentials_to_arg(creds)};
     grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
         args, args_to_add, GPR_ARRAY_SIZE(args_to_add));
+    new_args = creds->update_arguments(new_args);
     // Create channel.
     channel = client_channel_factory_create_channel(
         &client_channel_factory, target, GRPC_CLIENT_CHANNEL_TYPE_REGULAR,

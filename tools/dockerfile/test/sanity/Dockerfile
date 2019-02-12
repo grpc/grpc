@@ -94,6 +94,14 @@ ENV CLANG_FORMAT=clang-format
 RUN ln -s /clang+llvm-5.0.0-linux-x86_64-ubuntu14.04/bin/clang-tidy /usr/local/bin/clang-tidy
 ENV CLANG_TIDY=clang-tidy
 
+#========================
+# Bazel installation
+
+RUN apt-get update && apt-get install -y wget && apt-get clean
+RUN wget https://github.com/bazelbuild/bazel/releases/download/0.20.0/bazel-0.20.0-installer-linux-x86_64.sh && \
+  bash ./bazel-0.20.0-installer-linux-x86_64.sh && \
+  rm bazel-0.20.0-installer-linux-x86_64.sh
+
 
 # Define the default command.
 CMD ["bash"]

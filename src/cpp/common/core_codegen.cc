@@ -59,6 +59,10 @@ grpc_completion_queue* CoreCodegen::grpc_completion_queue_create_for_pluck(
   return ::grpc_completion_queue_create_for_pluck(reserved);
 }
 
+void CoreCodegen::grpc_completion_queue_shutdown(grpc_completion_queue* cq) {
+  ::grpc_completion_queue_shutdown(cq);
+}
+
 void CoreCodegen::grpc_completion_queue_destroy(grpc_completion_queue* cq) {
   ::grpc_completion_queue_destroy(cq);
 }

@@ -31,7 +31,7 @@
 #include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 
 #define GRPC_CREDENTIALS_TYPE_ALTS "Alts"
-#define GRPC_ALTS_HANDSHAKER_SERVICE_URL "metadata.google.internal:8080"
+#define GRPC_ALTS_HANDSHAKER_SERVICE_URL "metadata.google.internal.:8080"
 
 grpc_alts_credentials::grpc_alts_credentials(
     const grpc_alts_credentials_options* options,

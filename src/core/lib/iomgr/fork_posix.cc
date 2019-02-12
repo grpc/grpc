@@ -48,12 +48,14 @@ bool registered_handlers = false;
 }  // namespace
 
 void grpc_prefork() {
+  skipped_handler = true;
   grpc_maybe_wait_for_async_shutdown();
+  // This  may be called after core shuts down, so verify initialized before
+  // instantiating an ExecCtx.
   if (!grpc_is_initialized()) {
     return;
   }
   grpc_core::ExecCtx exec_ctx;
-  skipped_handler = true;
   if (!grpc_core::Fork::Enabled()) {
     gpr_log(GPR_ERROR,
             "Fork support not enabled; try running with the "

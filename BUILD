@@ -644,6 +644,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "optional",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/gprpp/optional.h",
+    ],
+    deps = [
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
     name = "orphanable",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
@@ -690,7 +701,6 @@ grpc_cc_library(
         "src/core/lib/channel/channelz_registry.cc",
         "src/core/lib/channel/connected_channel.cc",
         "src/core/lib/channel/handshaker.cc",
-        "src/core/lib/channel/handshaker_factory.cc",
         "src/core/lib/channel/handshaker_registry.cc",
         "src/core/lib/channel/status_util.cc",
         "src/core/lib/compression/compression.cc",
@@ -976,6 +986,7 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_trace",
         "inlined_vector",
+        "optional",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
@@ -1597,6 +1608,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/oauth2/oauth2_credentials.cc",
         "src/core/lib/security/credentials/plugin/plugin_credentials.cc",
         "src/core/lib/security/credentials/ssl/ssl_credentials.cc",
+        "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc",
         "src/core/lib/security/security_connector/alts/alts_security_connector.cc",
         "src/core/lib/security/security_connector/fake/fake_security_connector.cc",
         "src/core/lib/security/security_connector/load_system_roots_fallback.cc",
@@ -1631,6 +1643,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/oauth2/oauth2_credentials.h",
         "src/core/lib/security/credentials/plugin/plugin_credentials.h",
         "src/core/lib/security/credentials/ssl/ssl_credentials.h",
+        "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h",
         "src/core/lib/security/security_connector/alts/alts_security_connector.h",
         "src/core/lib/security/security_connector/fake/fake_security_connector.h",
         "src/core/lib/security/security_connector/load_system_roots.h",

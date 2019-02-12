@@ -2,5 +2,6 @@
 # Bazel installation
 
 RUN apt-get update && apt-get install -y wget && apt-get clean
-RUN wget -q https://github.com/bazelbuild/bazel/releases/download/0.17.1/bazel-0.17.1-linux-x86_64 -O /usr/local/bin/bazel
-RUN chmod 755 /usr/local/bin/bazel
+RUN wget https://github.com/bazelbuild/bazel/releases/download/0.20.0/bazel-0.20.0-installer-linux-x86_64.sh && ${'\\'}
+  bash ./bazel-0.20.0-installer-linux-x86_64.sh && ${'\\'}
+  rm bazel-0.20.0-installer-linux-x86_64.sh

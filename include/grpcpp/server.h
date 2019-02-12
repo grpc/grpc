@@ -26,6 +26,7 @@
 #include <vector>
 
 #include <grpc/compression.h>
+#include <grpc/support/atm.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
@@ -248,8 +249,15 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// the \a sync_server_cqs)
   std::vector<std::unique_ptr<SyncRequestThreadManager>> sync_req_mgrs_;
 
-  /// Outstanding callback requests
-  std::vector<std::unique_ptr<CallbackRequest>> callback_reqs_;
+  // Outstanding unmatched callback requests, indexed by method.
+  // NOTE: Using a gpr_atm rather than atomic_int because atomic_int isn't
+  //       copyable or movable and thus will cause compilation errors. We
+  //       actually only want to extend the vector before the threaded use
+  //       starts, but this is still a limitation.
+  std::vector<gpr_atm> callback_unmatched_reqs_count_;
+
+  // List of callback requests to start when server actually starts.
+  std::list<CallbackRequest*> callback_reqs_to_start_;
 
   // Server status
   std::mutex mu_;
@@ -258,6 +266,17 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   bool shutdown_notified_;  // Was notify called on the shutdown_cv_
 
   std::condition_variable shutdown_cv_;
+
+  // It is ok (but not required) to nest callback_reqs_mu_ under mu_ .
+  // Incrementing callback_reqs_outstanding_ is ok without a lock but it must be
+  // decremented under the lock in case it is the last request and enables the
+  // server shutdown. The increment is performance-critical since it happens
+  // during periods of increasing load; the decrement happens only when memory
+  // is maxed out, during server shutdown, or (possibly in a future version)
+  // during decreasing load, so it is less performance-critical.
+  std::mutex callback_reqs_mu_;
+  std::condition_variable callback_reqs_done_cv_;
+  std::atomic_int callback_reqs_outstanding_{0};
 
   std::shared_ptr<GlobalCallbacks> global_callbacks_;
 

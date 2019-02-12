@@ -141,42 +141,14 @@ void ProcessedResolverResult::ParseServiceConfig(
 void ProcessedResolverResult::ParseLbConfigFromServiceConfig(
     const grpc_json* field) {
   if (lb_policy_config_ != nullptr) return;  // Already found.
-  // Find the LB config global parameter.
-  if (field->key == nullptr || strcmp(field->key, "loadBalancingConfig") != 0 ||
-      field->type != GRPC_JSON_ARRAY) {
-    return;  // Not valid lb config array.
+  if (field->key == nullptr || strcmp(field->key, "loadBalancingConfig") != 0) {
+    return;  // Not the LB config global parameter.
   }
-  // Find the first LB policy that this client supports.
-  for (grpc_json* lb_config = field->child; lb_config != nullptr;
-       lb_config = lb_config->next) {
-    if (lb_config->type != GRPC_JSON_OBJECT) return;
-    // Find the policy object.
-    grpc_json* policy = nullptr;
-    for (grpc_json* field = lb_config->child; field != nullptr;
-         field = field->next) {
-      if (field->key == nullptr || strcmp(field->key, "policy") != 0 ||
-          field->type != GRPC_JSON_OBJECT) {
-        return;
-      }
-      if (policy != nullptr) return;  // Duplicate.
-      policy = field;
-    }
-    // Find the specific policy content since the policy object is of type
-    // "oneof".
-    grpc_json* policy_content = nullptr;
-    for (grpc_json* field = policy->child; field != nullptr;
-         field = field->next) {
-      if (field->key == nullptr || field->type != GRPC_JSON_OBJECT) return;
-      if (policy_content != nullptr) return;  // Violate "oneof" type.
-      policy_content = field;
-    }
-    // If we support this policy, then select it.
-    if (grpc_core::LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
-            policy_content->key)) {
-      lb_policy_name_.reset(gpr_strdup(policy_content->key));
-      lb_policy_config_ = policy_content->child;
-      return;
-    }
+  const grpc_json* policy =
+      LoadBalancingPolicy::ParseLoadBalancingConfig(field);
+  if (policy != nullptr) {
+    lb_policy_name_.reset(gpr_strdup(policy->key));
+    lb_policy_config_ = policy->child;
   }
 }
 

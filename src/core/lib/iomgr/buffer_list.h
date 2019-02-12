@@ -26,19 +26,78 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/optional.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
 
 namespace grpc_core {
+
+struct ConnectionMetrics {
+  /* Delivery rate in Bytes/s. */
+  Optional<uint64_t> delivery_rate;
+  /* If the delivery rate is limited by the application, this is set to true. */
+  Optional<bool> is_delivery_rate_app_limited;
+  /* Total packets retransmitted. */
+  Optional<uint32_t> packet_retx;
+  /* Total packets retransmitted spuriously. This metric is smaller than or
+  equal to packet_retx. */
+  Optional<uint32_t> packet_spurious_retx;
+  /* Total packets sent. */
+  Optional<uint32_t> packet_sent;
+  /* Total packets delivered. */
+  Optional<uint32_t> packet_delivered;
+  /* Total packets delivered with ECE marked. This metric is smaller than or
+  equal to packet_delivered. */
+  Optional<uint32_t> packet_delivered_ce;
+  /* Total bytes lost so far. */
+  Optional<uint64_t> data_retx;
+  /* Total bytes sent so far. */
+  Optional<uint64_t> data_sent;
+  /* Total bytes in write queue but not sent. */
+  Optional<uint64_t> data_notsent;
+  /* Pacing rate of the connection in Bps */
+  Optional<uint64_t> pacing_rate;
+  /* Minimum RTT observed in usec. */
+  Optional<uint32_t> min_rtt;
+  /* Smoothed RTT in usec */
+  Optional<uint32_t> srtt;
+  /* Send congestion window. */
+  Optional<uint32_t> congestion_window;
+  /* Slow start threshold in packets. */
+  Optional<uint32_t> snd_ssthresh;
+  /* Maximum degree of reordering (i.e., maximum number of packets reodered)
+   on the connection. */
+  Optional<uint32_t> reordering;
+  /* Represents the number of recurring retransmissions of the first sequence
+  that is not acknowledged yet. */
+  Optional<uint8_t> recurring_retrans;
+  /* The cumulative time (in usec) that the transport protocol was busy
+   sending data. */
+  Optional<uint64_t> busy_usec;
+  /* The cumulative time (in usec) that the transport protocol was limited by
+   the receive window size. */
+  Optional<uint64_t> rwnd_limited_usec;
+  /* The cumulative time (in usec) that the transport protocol was limited by
+   the send buffer size. */
+  Optional<uint64_t> sndbuf_limited_usec;
+};
+
+struct Timestamp {
+  gpr_timespec time;
+  ConnectionMetrics metrics; /* Metrics collected with this timestamp */
+};
+
 struct Timestamps {
-  /* TODO(yashykt): This would also need to store OPTSTAT once support is added
-   */
-  gpr_timespec sendmsg_time;
-  gpr_timespec scheduled_time;
-  gpr_timespec sent_time;
-  gpr_timespec acked_time;
+  Timestamp sendmsg_time;
+  Timestamp scheduled_time;
+  Timestamp sent_time;
+  Timestamp acked_time;
 
   uint32_t byte_offset; /* byte offset relative to the start of the RPC */
+
+#ifdef GRPC_LINUX_ERRQUEUE
+  grpc_core::tcp_info info; /* tcp_info collected on sendmsg */
+#endif                      /* GRPC_LINUX_ERRQUEUE */
 };
 
 /** TracedBuffer is a class to keep track of timestamps for a specific buffer in
@@ -58,13 +117,14 @@ class TracedBuffer {
   /** Add a new entry in the TracedBuffer list pointed to by head. Also saves
    * sendmsg_time with the current timestamp. */
   static void AddNewEntry(grpc_core::TracedBuffer** head, uint32_t seq_no,
-                          void* arg);
+                          int fd, void* arg);
 
   /** Processes a received timestamp based on sock_extended_err and
    * scm_timestamping structures. It will invoke the timestamps callback if the
    * timestamp type is SCM_TSTAMP_ACK. */
   static void ProcessTimestamp(grpc_core::TracedBuffer** head,
                                struct sock_extended_err* serr,
+                               struct cmsghdr* opt_stats,
                                struct scm_timestamping* tss);
 
   /** Cleans the list by calling the callback for each traced buffer in the list
@@ -88,7 +148,9 @@ class TracedBuffer {
  public:
   /* Dummy shutdown function */
   static void Shutdown(grpc_core::TracedBuffer** head, void* remaining,
-                       grpc_error* shutdown_err) {}
+                       grpc_error* shutdown_err) {
+    GRPC_ERROR_UNREF(shutdown_err);
+  }
 };
 #endif /* GRPC_LINUX_ERRQUEUE */
 

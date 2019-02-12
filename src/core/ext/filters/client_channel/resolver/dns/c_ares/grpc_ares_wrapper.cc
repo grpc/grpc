@@ -548,13 +548,13 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
       r, name, default_port);
   // Early out if the target is an ipv4 or ipv6 literal.
   if (resolve_as_ip_literal_locked(name, default_port, addrs)) {
-    GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+    grpc_ares_complete_request_locked(r);
     return r;
   }
   // Early out if the target is localhost and we're on Windows.
   if (grpc_ares_maybe_resolve_localhost_manually_locked(name, default_port,
                                                         addrs)) {
-    GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+    grpc_ares_complete_request_locked(r);
     return r;
   }
   // Don't query for SRV and TXT records if the target is "localhost", so

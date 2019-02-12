@@ -42,14 +42,6 @@ void CompletionQueue::Shutdown() {
   CompleteAvalanching();
 }
 
-void CompletionQueue::CompleteAvalanching() {
-  // Check if this was the last avalanching operation
-  if (gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_,
-                                   static_cast<gpr_atm>(-1)) == 1) {
-    grpc_completion_queue_shutdown(cq_);
-  }
-}
-
 CompletionQueue::NextStatus CompletionQueue::AsyncNextInternal(
     void** tag, bool* ok, gpr_timespec deadline) {
   for (;;) {
