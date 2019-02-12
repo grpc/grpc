@@ -30,6 +30,7 @@ from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
 
 _LOGGER = logging.getLogger(__name__)
+_RPC_TIMEOUT_S = 10
 
 
 def _channel(args):
@@ -57,7 +58,7 @@ def _async_unary(stub):
         response_type=messages_pb2.COMPRESSABLE,
         response_size=size,
         payload=messages_pb2.Payload(body=b'\x00' * 271828))
-    response_future = stub.UnaryCall.future(request)
+    response_future = stub.UnaryCall.future(request, timeout=_RPC_TIMEOUT_S)
     response = response_future.result()
     _validate_payload_type_and_length(response, messages_pb2.COMPRESSABLE, size)
 
@@ -68,7 +69,7 @@ def _blocking_unary(stub):
         response_type=messages_pb2.COMPRESSABLE,
         response_size=size,
         payload=messages_pb2.Payload(body=b'\x00' * 271828))
-    response = stub.UnaryCall(request)
+    response = stub.UnaryCall(request, timeout=_RPC_TIMEOUT_S)
     _validate_payload_type_and_length(response, messages_pb2.COMPRESSABLE, size)
 
 
