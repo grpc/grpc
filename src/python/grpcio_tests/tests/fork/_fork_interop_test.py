@@ -51,16 +51,19 @@ class ForkInteropTest(unittest.TestCase):
             while True:
                 time.sleep(1)
         """
-        self._process = subprocess.Popen(
-            [sys.executable, '-c', start_server_script],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+        process_queue = queue.Queue()
         port_queue = queue.Queue()
         def get_port_from_subprocess():
-            port = int(self._process.stdout.readline())
+            process = subprocess.Popen(
+                [sys.executable, '-c', start_server_script],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE)
+            process_queue.put(process)
+            port = int(process.stdout.readline())
             port_queue.put(port)
         get_port_thread = threading.Thread(target=get_port_from_subprocess)
         get_port_thread.start()
+        self._process = process_queue.get(block=True, timeout=_MAX_WAIT_FOR_SERVER_S)
         port = port_queue.get(block=True, timeout=_MAX_WAIT_FOR_SERVER_S)
         self._channel_args = {
             'server_host': 'localhost',
