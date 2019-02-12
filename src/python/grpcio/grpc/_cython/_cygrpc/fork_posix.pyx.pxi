@@ -72,6 +72,8 @@ cdef void __postfork_child() nogil:
         # A thread in return_from_user_request_generator() may hold this lock
         # when fork occurs.
         _fork_state.active_thread_count = _ActiveThreadCount()
+        _LOGGER.error('Exiting child before reset_postfork_child')
+        os._exit(os.EX_USAGE)
         for state_to_reset in _fork_state.postfork_states_to_reset:
             state_to_reset.reset_postfork_child()
         _fork_state.fork_epoch += 1
