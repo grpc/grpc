@@ -30,8 +30,8 @@ _test_count = 0
 _SERVER_LOCK = threading.RLock()
 
 
-@unittest.skipIf(
-    sys.platform.startswith("win"), "fork is not supported on windows")
+@unittest.skipUnless(
+    sys.platform.startswith("linux"), "fork is not supported on windows, and incoming connections to the fork+exec'd server is blocked on mac")
 class ForkInteropTest(unittest.TestCase):
 
     def setUp(self):
@@ -85,7 +85,6 @@ class ForkInteropTest(unittest.TestCase):
                     os.environ['GRPC_POLL_STRATEGY'] = 'epoll1'
                 else:
                     os.environ['GRPC_POLL_STRATEGY'] = 'poll'
-
 
     def testConnectivityWatch(self):
         methods.TestCase.CONNECTIVITY_WATCH.run_test(ForkInteropTest._channel_args)

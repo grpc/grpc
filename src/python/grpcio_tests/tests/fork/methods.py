@@ -233,18 +233,20 @@ def _close_channel_before_fork(channel, args):
 
 def _connectivity_watch(channel, args):
 
-    # TODO: handle exceptions here
     def child_target():
 
+        child_channel_ready_event = threading.Event()
+
         def child_connectivity_callback(state):
-            child_states.append(state)
+            if state is grpc.ChannelConnectivity.READY:
+                child_channel_ready_event.set()
 
         child_states = []
         with _channel(args) as child_channel:
             child_stub = test_pb2_grpc.TestServiceStub(child_channel)
             child_channel.subscribe(child_connectivity_callback)
             _async_unary(child_stub)
-            if not child_states or child_states[-1] != grpc.ChannelConnectivity.READY:
+            if not child_channel_ready_event.wait(timeout=_RPC_TIMEOUT_S):
                 raise ValueError('Channel did not move to READY')
             if len(parent_states) > 1:
                 raise ValueError(
@@ -252,17 +254,20 @@ def _connectivity_watch(channel, args):
                     parent_states)
             child_channel.unsubscribe(child_connectivity_callback)
 
+    parent_states = []
+    parent_channel_ready_event = threading.Event()
+
     def parent_connectivity_callback(state):
         parent_states.append(state)
+        if state is grpc.ChannelConnectivity.READY:
+            parent_channel_ready_event.set()
 
-    parent_states = []
     channel.subscribe(parent_connectivity_callback)
     stub = test_pb2_grpc.TestServiceStub(channel)
     child_process = _ChildProcess(child_target)
     child_process.start()
     _async_unary(stub)
-    if len(parent_states
-          ) < 2 or parent_states[-1] != grpc.ChannelConnectivity.READY:
+    if not parent_channel_ready_event.wait(timeout=_RPC_TIMEOUT_S):
         raise ValueError('Channel did not move to READY')
     channel.unsubscribe(parent_connectivity_callback)
     child_process.finish()
