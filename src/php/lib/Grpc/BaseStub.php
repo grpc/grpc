@@ -499,12 +499,6 @@ class BaseStub
         return $this->_GrpcStreamStream($channel, $wait_for_ready);
     }
 
-    private function _SetDefaultWaitForReady()
-    {
-        $this->initial_metadata_flags = ~INITIAL_METADATA_WAIT_FOR_READY & ~INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
-        echo "_SetDefaultWaitForReady flag: ".sprintf('%x',$this->initial_metadata_flags)."\n";
-    }
-
     /* This class is intended to be subclassed by generated code, so
      * all functions begin with "_" to avoid name collisions. */
     /**
