@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from libc.stdio cimport printf
+from libc.stdlib cimport abort
 
 import logging
 import os
@@ -61,30 +63,39 @@ cdef void __postfork_parent() nogil:
 
 
 cdef void __postfork_child() nogil:
+    # printf('Exiting child to begin __postfork_child, without gil')
+    # abort()
     with gil:
-        if _fork_handler_failed:
-            _LOGGER.error('Shutting child down due to _fork_handler_failed')
+        try:
+            _LOGGER.error('Exiting child to begin __postfork_child')
             os._exit(os.EX_USAGE)
-            return
-        # Thread could be holding the fork_in_progress_condition inside of
-        # block_if_fork_in_progress() when fork occurs. Reset the lock here.
-        _fork_state.fork_in_progress_condition = threading.Condition()
-        # A thread in return_from_user_request_generator() may hold this lock
-        # when fork occurs.
-        _fork_state.active_thread_count = _ActiveThreadCount()
-        _LOGGER.error('Exiting child before reset_postfork_child')
-        os._exit(os.EX_USAGE)
-        for state_to_reset in _fork_state.postfork_states_to_reset:
-            state_to_reset.reset_postfork_child()
-        _fork_state.fork_epoch += 1
-        _LOGGER.error('Exiting child before _close_on_fork')
-        os._exit(os.EX_USAGE)
-        for channel in _fork_state.channels:
-            channel._close_on_fork()
-        with _fork_state.fork_in_progress_condition:
-            _fork_state.fork_in_progress = False
-        # _LOGGER.error('Exiting child after __postfork_child')
-        # os._exit(os.EX_USAGE)
+            if _fork_handler_failed:
+                _LOGGER.error('Shutting child down due to _fork_handler_failed')
+                os._exit(os.EX_USAGE)
+                return
+            # Thread could be holding the fork_in_progress_condition inside of
+            # block_if_fork_in_progress() when fork occurs. Reset the lock here.
+            _fork_state.fork_in_progress_condition = threading.Condition()
+            # A thread in return_from_user_request_generator() may hold this lock
+            # when fork occurs.
+            _fork_state.active_thread_count = _ActiveThreadCount()
+            for state_to_reset in _fork_state.postfork_states_to_reset:
+                state_to_reset.reset_postfork_child()
+            _fork_state.postfork_states_to_reset = []
+            _fork_state.fork_epoch += 1
+            # _LOGGER.error('Exiting child before _close_on_fork')
+            # os._exit(os.EX_USAGE)
+            for channel in _fork_state.channels:
+                channel._close_on_fork()
+            with _fork_state.fork_in_progress_condition:
+                _fork_state.fork_in_progress = False
+            _LOGGER.error('Exiting child after __postfork_child')
+            os._exit(os.EX_USAGE)
+        except:
+            _LOGGER.error('Exiting child due to raised exception')
+            _LOGGER.error(sys.exc_info()[0])
+            os._exit(os.EX_USAGE)
+
     if grpc_is_initialized() > 0:
         with gil:
             _LOGGER.error('Failed to shutdown gRPC Core after fork()')

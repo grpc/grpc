@@ -31,6 +31,7 @@ from src.proto.grpc.testing import test_pb2_grpc
 
 _LOGGER = logging.getLogger(__name__)
 _RPC_TIMEOUT_S = 10
+_CHILD_FINISH_TIMEOUT_S = 60
 
 
 def _channel(args):
@@ -128,19 +129,21 @@ class _ChildProcess(object):
                 self._exceptions.put(e)
 
         self._process = multiprocessing.Process(target=record_exceptions)
+        time.sleep(1)
 
     def start(self):
-        start_event = threading.Event()
-        def start_process_in_thread():
-            self._process.start()
-            start_event.set()
-        t = threading.Thread(target=start_process_in_thread)
-        t.start()
-        if not start_event.wait(timeout=_RPC_TIMEOUT_S):
-            raise ValueError('Child process failed to start')
+        self._process.start()
+        # start_event = threading.Event()
+        # def start_process_in_thread():
+        #     self._process.start()
+        #     start_event.set()
+        # t = threading.Thread(target=start_process_in_thread)
+        # t.start()
+        # if not start_event.wait(timeout=_CHILD_FINISH_TIMEOUT_S):
+        #     raise ValueError('Child process failed to start')
 
     def finish(self):
-        self._process.join(timeout=_RPC_TIMEOUT_S)
+        self._process.join(timeout=_CHILD_FINISH_TIMEOUT_S)
         if self._process.is_alive():
             raise ValueError('Child process did not terminate')
         if self._process.exitcode != 0:

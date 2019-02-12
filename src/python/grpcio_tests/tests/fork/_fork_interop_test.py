@@ -68,8 +68,9 @@ class ForkInteropTest(unittest.TestCase):
                     process_queue.put(process)
                     port = int(process.stdout.readline())
                     port_queue.put(port)
-                get_port_thread = threading.Thread(target=get_port_from_subprocess)
-                get_port_thread.start()
+                get_port_from_subprocess()
+                # get_port_thread = threading.Thread(target=get_port_from_subprocess)
+                # get_port_thread.start()
                 ForkInteropTest._process = process_queue.get(block=True, timeout=_MAX_WAIT_FOR_SERVER_S)
                 port = port_queue.get(block=True, timeout=_MAX_WAIT_FOR_SERVER_S)
                 ForkInteropTest._channel_args = {
@@ -84,6 +85,7 @@ class ForkInteropTest(unittest.TestCase):
                     os.environ['GRPC_POLL_STRATEGY'] = 'epoll1'
                 else:
                     os.environ['GRPC_POLL_STRATEGY'] = 'poll'
+                os.environ['GRPC_VERBOSITY'] = 'debug'
 
     def testConnectivityWatch(self):
         methods.TestCase.CONNECTIVITY_WATCH.run_test(ForkInteropTest._channel_args)
