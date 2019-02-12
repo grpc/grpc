@@ -325,6 +325,8 @@ class ClientWriter : public ClientWriterInterface<W> {
     if (options.is_last_message()) {
       options.set_buffer_hint();
       ops.ClientSendClose();
+    } else {
+      options.clear_buffer_hint();  // not supported for sync API
     }
     if (context_->initial_metadata_corked_) {
       ops.SendInitialMetadata(&context_->send_initial_metadata_,
@@ -496,6 +498,8 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
     if (options.is_last_message()) {
       options.set_buffer_hint();
       ops.ClientSendClose();
+    } else {
+      options.clear_buffer_hint();  // not supported for sync API
     }
     if (context_->initial_metadata_corked_) {
       ops.SendInitialMetadata(&context_->send_initial_metadata_,
@@ -654,8 +658,9 @@ class ServerWriter final : public ServerWriterInterface<W> {
   bool Write(const W& msg, WriteOptions options) override {
     if (options.is_last_message()) {
       options.set_buffer_hint();
+    } else {
+      options.clear_buffer_hint();  // not supported for sync API
     }
-
     if (!ctx_->pending_ops_.SendMessagePtr(&msg, options).ok()) {
       return false;
     }
@@ -733,6 +738,8 @@ class ServerReaderWriterBody final {
   bool Write(const W& msg, WriteOptions options) {
     if (options.is_last_message()) {
       options.set_buffer_hint();
+    } else {
+      options.clear_buffer_hint();  // not supported for sync API
     }
     if (!ctx_->pending_ops_.SendMessagePtr(&msg, options).ok()) {
       return false;

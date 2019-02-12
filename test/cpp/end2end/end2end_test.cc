@@ -875,6 +875,25 @@ TEST_P(End2endTest, RequestStreamTwoRequests) {
   EXPECT_TRUE(s.ok());
 }
 
+// This was added to prevent regression from issue:
+// https://github.com/grpc/grpc/issues/12975
+TEST_P(End2endTest, RequestStreamTwoRequestsWithFirstWriteBufferHint) {
+  MAYBE_SKIP_TEST;
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+
+  auto stream = stub_->RequestStream(&context, &response);
+  request.set_message("hello");
+  EXPECT_TRUE(stream->Write(request, WriteOptions().set_buffer_hint()));
+  EXPECT_TRUE(stream->Write(request));
+  stream->WritesDone();
+  Status s = stream->Finish();
+  EXPECT_EQ(response.message(), "hellohello");
+  EXPECT_TRUE(s.ok());
+}
+
 TEST_P(End2endTest, RequestStreamTwoRequestsWithWriteThrough) {
   MAYBE_SKIP_TEST;
   ResetStub();

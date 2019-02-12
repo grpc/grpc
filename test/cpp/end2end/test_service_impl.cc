@@ -470,6 +470,10 @@ Status TestServiceImpl::ResponseStream(ServerContext* context,
     response.set_message(request->message() + grpc::to_string(i));
     if (i == server_responses_to_send - 1 && server_coalescing_api != 0) {
       writer->WriteLast(response, WriteOptions());
+    } else if (i == 0 && server_coalescing_api != 0) {
+      // This code path added to prevent regression from issue:
+      // https://github.com/grpc/grpc/issues/12975
+      writer->Write(response, WriteOptions().set_buffer_hint());
     } else {
       writer->Write(response);
     }
