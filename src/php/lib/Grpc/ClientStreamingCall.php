@@ -31,7 +31,7 @@ class ClientStreamingCall extends AbstractCall
      * @param array $metadata Metadata to send with the call, if applicable
      *                        (optional)
      */
-    public function start(array $metadata = [], $wait_for_ready = true)
+    public function start(array $metadata = [], $wait_for_ready = null)
     {
         if (!is_null($wait_for_ready)) {
             $message_array = ['message' => ""];

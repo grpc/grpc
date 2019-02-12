@@ -31,7 +31,7 @@ class BidiStreamingCall extends AbstractCall
      * @param array $metadata Metadata to send with the call, if applicable
      *                        (optional)
      */
-    public function start(array $metadata = [])
+    public function start(array $metadata = [], $wait_for_ready = null)
     {
         $this->call->startBatch([
             OP_SEND_INITIAL_METADATA => $metadata,

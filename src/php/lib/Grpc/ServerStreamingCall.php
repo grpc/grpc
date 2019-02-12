@@ -34,7 +34,7 @@ class ServerStreamingCall extends AbstractCall
      * @param array $options  An array of options, possible keys:
      *                        'flags' => a number (optional)
      */
-    public function start($data, array $metadata = [], array $options = [], $wait_for_ready = true)
+    public function start($data, array $metadata = [], array $options = [], $wait_for_ready = null)
     {
         $message_array = ['message' => $this->_serializeMessage($data)];
         if (array_key_exists('flags', $options)) {

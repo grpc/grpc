@@ -167,11 +167,17 @@ abstract class AbstractCall
     {
         $this->call->setCredentials($call_credentials);
     }
-    //***********************************************************
-
+    
+    /**
+     * Set the initial_metadata_flags.
+     *
+     * @param boolean $wait_for_ready The bool value set by user
+     *
+     * @return boolean The bool value of the state of set.
+     */
     public function setWaitForReady($wait_for_ready)
     {
-        if (!is_null($wait_for_ready)){
+        if (!is_null($wait_for_ready)) {
             if ($wait_for_ready){
                 $this->initial_metadata_flags = INITIAL_METADATA_WAIT_FOR_READY & INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET; 
             }
@@ -183,15 +189,25 @@ abstract class AbstractCall
         return false;
     }
 
+    /**
+     * Check whether initial_metadata_flags is wait_for_ready flag.
+     *
+     * @return boolean The bool value of is wait_for_ready flag.
+     */
     public function isWaitForReady()
     {
-        if (is_null($this->initial_metadata_flags)){
+        if (is_null($this->initial_metadata_flags)) {
             return true;
         }
 
         return $this->initial_metadata_flags == (INITIAL_METADATA_WAIT_FOR_READY & INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET);
     }
 
+    /**
+     * Get initial_metadata_flags.
+     *
+     * @return Integer The integer value of flag.
+     */
     public function getWaitForReady()
     {
         return $this->initial_metadata_flags;
