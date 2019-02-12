@@ -37,8 +37,12 @@ _GRPC_ENABLE_FORK_SUPPORT = (
     os.environ.get('GRPC_ENABLE_FORK_SUPPORT', '0')
         .lower() in _TRUE_VALUES)
 
+_fork_handler_failed = False
+
 cdef void __prefork() nogil:
     with gil:
+        global _fork_handler_failed
+        _fork_handler_failed = False
         with _fork_state.fork_in_progress_condition:
             _fork_state.fork_in_progress = True
         if not _fork_state.active_thread_count.await_zero_threads(
@@ -46,6 +50,7 @@ cdef void __prefork() nogil:
             _LOGGER.error(
                 'Failed to shutdown gRPC Python threads prior to fork. '
                 'Behavior after fork will be undefined.')
+            _fork_handler_failed = True
 
 
 cdef void __postfork_parent() nogil:
@@ -57,6 +62,8 @@ cdef void __postfork_parent() nogil:
 
 cdef void __postfork_child() nogil:
     with gil:
+        if _fork_handler_failed:
+            return
         # Thread could be holding the fork_in_progress_condition inside of
         # block_if_fork_in_progress() when fork occurs. Reset the lock here.
         _fork_state.fork_in_progress_condition = threading.Condition()
@@ -68,7 +75,6 @@ cdef void __postfork_child() nogil:
         _fork_state.fork_epoch += 1
         for channel in _fork_state.channels:
             channel._close_on_fork()
-        # TODO(ericgribkoff) Check and abort if core is not shutdown
         with _fork_state.fork_in_progress_condition:
             _fork_state.fork_in_progress = False
     if grpc_is_initialized() > 0:

@@ -25,8 +25,7 @@ from tests.fork import methods
     sys.platform.startswith("win"), "fork is not supported on windows")
 class ForkInteropTest(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(self):
+    def setUp(self):
         start_server_script = """if True:
             import sys
             import time
@@ -56,6 +55,7 @@ class ForkInteropTest(unittest.TestCase):
             'server_port': port,
             'use_tls': False
         }
+        self._prev_fork_flag = cygrpc._GRPC_ENABLE_FORK_SUPPORT
         cygrpc._GRPC_ENABLE_FORK_SUPPORT = True
         self._prev_poller = os.environ.get('GRPC_POLL_STRATEGY', None)
         if sys.platform.startswith("linux"):
@@ -102,10 +102,8 @@ class ForkInteropTest(unittest.TestCase):
         methods.TestCase.IN_PROGRESS_BIDI_NEW_CHANNEL_BLOCKING_CALL.run_test(
             self._channel_args)
 
-
-    @classmethod
-    def tearDownClass(self):
-        cygrpc._GRPC_ENABLE_FORK_SUPPORT = False
+    def tearDown(self):
+        cygrpc._GRPC_ENABLE_FORK_SUPPORT = self._prev_fork_flag
         if self._prev_poller is None:
             del os.environ['GRPC_POLL_STRATEGY']
         else:

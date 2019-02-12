@@ -232,6 +232,7 @@ def _close_channel_before_fork(channel, args):
 
 def _connectivity_watch(channel, args):
 
+    # TODO: handle exceptions here
     def child_target():
 
         def child_connectivity_callback(state):
