@@ -17,8 +17,8 @@
   <api>1.19.0dev</api>
  </version>
  <stability>
-  <release>beta</release>
-  <api>beta</api>
+  <release>stable</release>
+  <api>stable</api>
  </stability>
  <license>Apache 2.0</license>
  <notes>
