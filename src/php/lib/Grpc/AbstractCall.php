@@ -178,11 +178,13 @@ abstract class AbstractCall
     public function setWaitForReady($wait_for_ready)
     {
         if (!is_null($wait_for_ready)) {
-            if ($wait_for_ready){
-                $this->initial_metadata_flags = INITIAL_METADATA_WAIT_FOR_READY & INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET; 
+            if ($wait_for_ready) {
+                $this->initial_metadata_flags = INITIAL_METADATA_WAIT_FOR_READY
+                 & INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET; 
             }
-            else{
-                $this->initial_metadata_flags = ~INITIAL_METADATA_WAIT_FOR_READY & INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
+            else {
+                $this->initial_metadata_flags = ~INITIAL_METADATA_WAIT_FOR_READY
+                 & INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
             }
             return true;
         }
@@ -200,7 +202,8 @@ abstract class AbstractCall
             return true;
         }
 
-        return $this->initial_metadata_flags == (INITIAL_METADATA_WAIT_FOR_READY & INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET);
+        return $this->initial_metadata_flags == (INITIAL_METADATA_WAIT_FOR_READY
+         & INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET);
     }
 
     /**

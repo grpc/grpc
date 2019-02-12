@@ -26,10 +26,11 @@ class CallClient extends Grpc\BaseStub
   }
 
   /**
-   * A simple RPC.
+   * UnaryUnary Call.
    * @param SimpleRequest $argument input argument
    * @param array $metadata metadata
    * @param array $options call options
+   * @param boll $wait_for_ready fail fast mode flag
    */
   public function UnaryUnaryCall(
     CallInvokerSimpleRequest $argument,
@@ -47,6 +48,13 @@ class CallClient extends Grpc\BaseStub
     );
   }
 
+  /**
+   * UnaryStream Call.
+   * @param SimpleRequest $argument input argument
+   * @param array $metadata metadata
+   * @param array $options call options
+   * @param boll $wait_for_ready fail fast mode flag
+   */
   public function UnaryStreamCall(
   	CallInvokerSimpleRequest $argument,
   	$metadata = [],
@@ -63,6 +71,12 @@ class CallClient extends Grpc\BaseStub
   	);
   }
 
+  /**
+   * StreamUnary Call.
+   * @param array $metadata metadata
+   * @param array $options call options
+   * @param boll $wait_for_ready fail fast mode flag
+   */
   public function StreamUnaryCall(
   	$metadata = [],
   	$options = [],
@@ -103,13 +117,13 @@ class WaitForReadyTest extends PHPUnit_Framework_TestCase
         $req = new CallInvokerSimpleRequest($req_text);
         $call = $client->UnaryUnaryCall($req);
 
-        $call->SetWaitForReady(true);
-        $flag = $call->GetWaitForReady();
+        $call->setWaitForReady(true);
+        $flag = $call->getWaitForReady();
         $flag_true = INITIAL_METADATA_WAIT_FOR_READY & INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
         $this->assertEquals($flag, $flag_true);
 
-        $call->SetWaitForReady(false);
-        $flag = $call->GetWaitForReady();
+        $call->setWaitForReady(false);
+        $flag = $call->getWaitForReady();
         $flag_false = ~INITIAL_METADATA_WAIT_FOR_READY & INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
         $this->assertEquals($flag, $flag_false);
 
@@ -128,11 +142,11 @@ class WaitForReadyTest extends PHPUnit_Framework_TestCase
         $req = new CallInvokerSimpleRequest($req_text);
         $call = $client->UnaryUnaryCall($req);
 
-        $call->SetWaitForReady(true);
-        $this->assertTrue($call->IsWaitForReady());
+        $call->setWaitForReady(true);
+        $this->assertTrue($call->isWaitForReady());
 
-        $call->SetWaitForReady(false);
-        $this->assertFalse($call->IsWaitForReady());
+        $call->setWaitForReady(false);
+        $this->assertFalse($call->isWaitForReady());
 
         unset($call);
         $client->close();
@@ -149,11 +163,11 @@ class WaitForReadyTest extends PHPUnit_Framework_TestCase
         $req = new CallInvokerSimpleRequest($req_text);
         $call = $client->UnaryUnaryCall($req,[],[],true);
 
-        $this->assertTrue($call->IsWaitForReady());
+        $this->assertTrue($call->isWaitForReady());
 
         $call = $client->UnaryUnaryCall($req,[],[],false);
 
-        $this->assertFalse($call->IsWaitForReady());
+        $this->assertFalse($call->isWaitForReady());
 
         unset($call);
         $client->close();
@@ -170,11 +184,11 @@ class WaitForReadyTest extends PHPUnit_Framework_TestCase
         $req = new CallInvokerSimpleRequest($req_text);
         $call = $client->UnaryStreamCall($req,[],[],true);
 
-        $this->assertTrue($call->IsWaitForReady());
+        $this->assertTrue($call->isWaitForReady());
 
         $call = $client->UnaryStreamCall($req,[],[],false);
 
-        $this->assertFalse($call->IsWaitForReady());
+        $this->assertFalse($call->isWaitForReady());
 
         unset($call);
         $client->close();
@@ -189,11 +203,11 @@ class WaitForReadyTest extends PHPUnit_Framework_TestCase
 
         $call = $client->StreamUnaryCall([],[],true);
 
-        $this->assertTrue($call->IsWaitForReady());
+        $this->assertTrue($call->isWaitForReady());
 
         $call = $client->StreamUnaryCall([],[],false);
 
-        $this->assertFalse($call->IsWaitForReady());
+        $this->assertFalse($call->isWaitForReady());
 
         unset($call);
         $client->close();
@@ -212,9 +226,9 @@ class WaitForReadyTest extends PHPUnit_Framework_TestCase
         $unarystream_call = $client->UnaryStreamCall($req,[],[],true);
         $streamunary_call = $client->StreamUnaryCall([],[],false);
 
-        $this->assertFalse($unaryunary_call->IsWaitForReady());
-        $this->assertTrue($unarystream_call->IsWaitForReady());
-        $this->assertFalse($streamunary_call->IsWaitForReady());
+        $this->assertFalse($unaryunary_call->isWaitForReady());
+        $this->assertTrue($unarystream_call->isWaitForReady());
+        $this->assertFalse($streamunary_call->isWaitForReady());
 
         unset($unaryunary_call);
         unset($unarystream_call);
@@ -235,13 +249,13 @@ class WaitForReadyTest extends PHPUnit_Framework_TestCase
         $unarystream_call = $client->UnaryStreamCall($req);
         $streamunary_call = $client->StreamUnaryCall();
 
-        $unaryunary_call->SetWaitForReady(true);
-        $unarystream_call->SetWaitForReady(false);
-        $streamunary_call->SetWaitForReady(true);
+        $unaryunary_call->setWaitForReady(true);
+        $unarystream_call->setWaitForReady(false);
+        $streamunary_call->setWaitForReady(true);
 
-        $this->assertTrue($unaryunary_call->IsWaitForReady());
-        $this->assertFalse($unarystream_call->IsWaitForReady());
-        $this->assertTrue($streamunary_call->IsWaitForReady());
+        $this->assertTrue($unaryunary_call->isWaitForReady());
+        $this->assertFalse($unarystream_call->isWaitForReady());
+        $this->assertTrue($streamunary_call->isWaitForReady());
 
         unset($unaryunary_call);
         unset($unarystream_call);

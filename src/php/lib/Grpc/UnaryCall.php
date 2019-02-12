@@ -42,7 +42,6 @@ class UnaryCall extends AbstractCall
         }
         if (!is_null($wait_for_ready)) {
             $this->setWaitForReady($wait_for_ready);
-            echo "UnaryCall flag: ".sprintf('%x',$this->initial_metadata_flags)."\n";
             $message_array['wait_for_ready'] = $this->initial_metadata_flags;
         }
         $this->call->startBatch([
@@ -53,7 +52,7 @@ class UnaryCall extends AbstractCall
     }
 
     /**
-     * Wait for the server to respond with data and a status. 
+     * Wait for the server to respond with data and a status.
      *
      * @return array [response data, status]
      */

@@ -42,7 +42,6 @@ class ServerStreamingCall extends AbstractCall
         }
         if (!is_null($wait_for_ready)) {
             $this->setWaitForReady($wait_for_ready);
-            echo "ServerStreamingCall flag: ".sprintf('%x',$this->initial_metadata_flags)."\n";
             $message_array['wait_for_ready'] = $this->initial_metadata_flags;
         }
         $this->call->startBatch([
