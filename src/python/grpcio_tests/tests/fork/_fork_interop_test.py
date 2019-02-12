@@ -94,8 +94,8 @@ class ForkInteropTest(unittest.TestCase):
     def testAsyncUnarySameChannel(self):
         methods.TestCase.ASYNC_UNARY_SAME_CHANNEL.run_test(ForkInteropTest._channel_args)
 
-    # def testAsyncUnaryNewChannel(self):
-    #     methods.TestCase.ASYNC_UNARY_NEW_CHANNEL.run_test(ForkInteropTest._channel_args)
+    def testAsyncUnaryNewChannel(self):
+        methods.TestCase.ASYNC_UNARY_NEW_CHANNEL.run_test(ForkInteropTest._channel_args)
 
     def testBlockingUnarySameChannel(self):
         methods.TestCase.BLOCKING_UNARY_SAME_CHANNEL.run_test(
