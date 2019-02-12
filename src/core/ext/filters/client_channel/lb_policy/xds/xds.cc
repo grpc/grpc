@@ -816,14 +816,9 @@ void XdsLb::BalancerCallState::OnBalancerStatusReceivedLocked(
 // helper code for creating balancer channel
 //
 
-/* Returns the channel args for the LB channel, used to create a bidirectional
- * stream for the reception of load balancing updates.
- *
- * Inputs:
- *   - \a addresses: corresponding to the balancers.
- *   - \a args: other args inherited from the xds policy. */
-grpc_channel_args* BuildBalancerChannelArgs(const ServerAddressList& addresses,
-                                            const grpc_channel_args* args) {
+// Returns the channel args for the LB channel, used to create a bidirectional
+// stream for the reception of load balancing updates.
+grpc_channel_args* BuildBalancerChannelArgs(const grpc_channel_args* args) {
   // Channel args to remove.
   static const char* args_to_remove[] = {
       // LB policy name, since we want to use the default (pick_first) in
@@ -1144,8 +1139,7 @@ void XdsLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
   args_ = grpc_channel_args_copy_and_add_and_remove(
       &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &new_arg, 1);
   // Construct args for balancer channel.
-  grpc_channel_args* lb_channel_args =
-      BuildBalancerChannelArgs(*addresses, &args);
+  grpc_channel_args* lb_channel_args = BuildBalancerChannelArgs(&args);
   // Create or update balancer channel if needed.
   if (balancer_name_changed_) {
     grpc_channel* old_lb_channel = nullptr;
