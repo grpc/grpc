@@ -64,9 +64,7 @@ struct shared_mu {
     gpr_ref_init(&refs, 2);
   }
 
-  ~shared_mu() {
-    gpr_mu_destroy(&mu);
-  }
+  ~shared_mu() { gpr_mu_destroy(&mu); }
 
   gpr_mu mu;
   gpr_refcount refs;
@@ -87,6 +85,7 @@ struct inproc_transport {
   ~inproc_transport() {
     grpc_connectivity_state_destroy(&connectivity);
     if (gpr_unref(&mu->refs)) {
+      mu->~shared_mu();
       gpr_free(mu);
     }
   }
