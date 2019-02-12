@@ -130,10 +130,19 @@ class _ChildProcess(object):
         self._process = multiprocessing.Process(target=record_exceptions)
 
     def start(self):
-        self._process.start()
+        start_event = threading.Event()
+        def start_process_in_thread():
+            self._process.start()
+            start_event.set()
+        t = threading.Thread(target=start_process_in_thread)
+        t.start()
+        if not start_event.wait(timeout=_RPC_TIMEOUT_S):
+            raise ValueError('Child process failed to start')
 
     def finish(self):
-        self._process.join()
+        self._process.join(timeout=_RPC_TIMEOUT_S)
+        if self._process.is_alive():
+            raise ValueError('Child process did not terminate')
         if self._process.exitcode != 0:
             raise ValueError('Child process failed with exitcode %d' %
                              self._process.exitcode)

@@ -154,7 +154,7 @@ def fork_register_channel(channel):
 
 def fork_unregister_channel(channel):
     if _GRPC_ENABLE_FORK_SUPPORT:
-        _fork_state.channels.remove(channel)
+        _fork_state.channels.discard(channel)
 
 
 class _ActiveThreadCount(object):
