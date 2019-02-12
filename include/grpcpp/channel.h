@@ -21,8 +21,6 @@
 
 #include <grpcpp/channel_impl.h>
 
-struct grpc_channel;
-
 namespace grpc {
 
 typedef ::grpc_impl::Channel Channel;
