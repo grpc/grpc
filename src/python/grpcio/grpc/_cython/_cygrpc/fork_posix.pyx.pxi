@@ -62,6 +62,8 @@ cdef void __postfork_parent() nogil:
 
 cdef void __postfork_child() nogil:
     with gil:
+        _LOGGER.error('Exiting child after fork()')
+        os._exit(os.EX_USAGE)
         if _fork_handler_failed:
             return
         # Thread could be holding the fork_in_progress_condition inside of
