@@ -917,6 +917,9 @@ grpc_channel_args* BuildBalancerChannelArgs(
       // LB policy name, since we want to use the default (pick_first) in
       // the LB channel.
       GRPC_ARG_LB_POLICY_NAME,
+      // Strip out the service config, since we don't want the LB policy
+      // config specified for the parent channel to affect the LB channel.
+      GRPC_ARG_SERVICE_CONFIG,
       // The channel arg for the server URI, since that will be different for
       // the LB channel than for the parent channel.  The client channel
       // factory will re-add this arg with the right value.
@@ -928,7 +931,7 @@ grpc_channel_args* BuildBalancerChannelArgs(
       // resolver will have is_balancer=false, whereas our own addresses have
       // is_balancer=true.  We need the LB channel to return addresses with
       // is_balancer=false so that it does not wind up recursively using the
-      // grpclb LB policy, as per the special case logic in client_channel.c.
+      // grpclb LB policy.
       GRPC_ARG_SERVER_ADDRESS_LIST,
       // The fake resolver response generator, because we are replacing it
       // with the one from the grpclb policy, used to propagate updates to
