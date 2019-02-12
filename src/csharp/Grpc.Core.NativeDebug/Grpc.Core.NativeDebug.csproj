@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\Grpc.Core\Version.csproj.include" />
+  <Import Project="..\Grpc.Core\Common.csproj.include" />
+
+  <PropertyGroup>
+    <Copyright>Copyright 2015, Google Inc.</Copyright>
+    <Title>Grpc.Core: Native Debug Symbols</Title>
+    <Description>Debug symbols for the native library contained in Grpc.Core</Description>
+    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
+    <Authors>Google Inc.</Authors>
+    <TargetFrameworks>net45;netstandard1.5</TargetFrameworks>
+    <PackageId>Grpc.Core.NativeDebug</PackageId>
+    <PackageTags>gRPC RPC Protocol HTTP/2</PackageTags>
+    <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
+    <!-- This package only carries native debug symbols -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\nativelibs\csharp_ext_windows_x86\grpc_csharp_ext.dll">
+      <PackagePath>runtimes/win/native/grpc_csharp_ext.x86.dll</PackagePath>
+      <Pack>true</Pack>
+    </None>
+    <None Include="..\nativelibs\csharp_ext_windows_x86\grpc_csharp_ext.pdb">
+      <PackagePath>runtimes/win/native/grpc_csharp_ext.x86.pdb</PackagePath>
+      <Pack>true</Pack>
+    </None>
+    <None Include="..\nativelibs\csharp_ext_windows_x64\grpc_csharp_ext.dll">
+      <PackagePath>runtimes/win/native/grpc_csharp_ext.x64.dll</PackagePath>
+      <Pack>true</Pack>
+    </None>
+    <None Include="..\nativelibs\csharp_ext_windows_x64\grpc_csharp_ext.pdb">
+      <PackagePath>runtimes/win/native/grpc_csharp_ext.x64.pdb</PackagePath>
+      <Pack>true</Pack>
+    </None>
+  </ItemGroup>
+</Project>

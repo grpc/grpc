@@ -32,6 +32,7 @@
 #include <grpcpp/impl/codegen/call_hook.h>
 #include <grpcpp/impl/codegen/call_op_set_interface.h>
 #include <grpcpp/impl/codegen/client_context.h>
+#include <grpcpp/impl/codegen/completion_queue.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
@@ -877,6 +878,8 @@ class CallOpSet : public CallOpSetInterface,
 
   bool FinalizeResult(void** tag, bool* status) override {
     if (done_intercepting_) {
+      // Complete the avalanching since we are done with this batch of ops
+      call_.cq()->CompleteAvalanching();
       // We have already finished intercepting and filling in the results. This
       // round trip from the core needed to be made because interceptors were
       // run
@@ -961,6 +964,12 @@ class CallOpSet : public CallOpSetInterface,
     this->Op4::SetInterceptionHookPoint(&interceptor_methods_);
     this->Op5::SetInterceptionHookPoint(&interceptor_methods_);
     this->Op6::SetInterceptionHookPoint(&interceptor_methods_);
+    if (interceptor_methods_.InterceptorsListEmpty()) {
+      return true;
+    }
+    // This call will go through interceptors and would need to
+    // schedule new batches, so delay completion queue shutdown
+    call_.cq()->RegisterAvalanching();
     return interceptor_methods_.RunInterceptors();
   }
   // Returns true if no interceptors need to be run

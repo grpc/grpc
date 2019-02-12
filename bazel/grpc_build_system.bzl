@@ -132,7 +132,7 @@ def grpc_proto_library(
         generate_mocks = generate_mocks,
     )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = "moderate", tags = [], exec_compatible_with = []):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = []):
     copts = []
     if language.upper() == "C":
         copts = if_not_windows(["-std=c99"])

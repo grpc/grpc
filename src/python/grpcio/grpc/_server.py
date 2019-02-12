@@ -100,7 +100,7 @@ class _RPCState(object):
         self.statused = False
         self.rpc_errors = []
         self.callbacks = []
-        self.abortion = None
+        self.aborted = False
 
 
 def _raise_rpc_error(state):
@@ -287,8 +287,8 @@ class _Context(grpc.ServicerContext):
         with self._state.condition:
             self._state.code = code
             self._state.details = _common.encode(details)
-            self._state.abortion = Exception()
-            raise self._state.abortion
+            self._state.aborted = True
+            raise Exception()
 
     def abort_with_status(self, status):
         self._state.trailing_metadata = status.trailing_metadata
@@ -392,7 +392,7 @@ def _call_behavior(rpc_event, state, behavior, argument, request_deserializer):
         return behavior(argument, context), True
     except Exception as exception:  # pylint: disable=broad-except
         with state.condition:
-            if exception is state.abortion:
+            if state.aborted:
                 _abort(state, rpc_event.call, cygrpc.StatusCode.unknown,
                        b'RPC Aborted')
             elif exception not in state.rpc_errors:
@@ -410,7 +410,7 @@ def _take_response_from_response_iterator(rpc_event, state, response_iterator):
         return None, True
     except Exception as exception:  # pylint: disable=broad-except
         with state.condition:
-            if exception is state.abortion:
+            if state.aborted:
                 _abort(state, rpc_event.call, cygrpc.StatusCode.unknown,
                        b'RPC Aborted')
             elif exception not in state.rpc_errors:
@@ -483,7 +483,7 @@ def _status(rpc_event, state, serialized_response):
 
 def _unary_response_in_pool(rpc_event, state, behavior, argument_thunk,
                             request_deserializer, response_serializer):
-    cygrpc.install_census_context_from_call(rpc_event.call)
+    cygrpc.install_context_from_call(rpc_event.call)
     try:
         argument = argument_thunk()
         if argument is not None:
@@ -500,7 +500,7 @@ def _unary_response_in_pool(rpc_event, state, behavior, argument_thunk,
 
 def _stream_response_in_pool(rpc_event, state, behavior, argument_thunk,
                              request_deserializer, response_serializer):
-    cygrpc.install_census_context_from_call(rpc_event.call)
+    cygrpc.install_context_from_call(rpc_event.call)
     try:
         argument = argument_thunk()
         if argument is not None:

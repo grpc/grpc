@@ -242,7 +242,6 @@ filegroups:
   - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/handshaker.cc
-  - src/core/lib/channel/handshaker_factory.cc
   - src/core/lib/channel/handshaker_registry.cc
   - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
@@ -837,6 +836,7 @@ filegroups:
   - src/core/lib/security/credentials/oauth2/oauth2_credentials.h
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
   - src/core/lib/security/credentials/ssl/ssl_credentials.h
+  - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
   - src/core/lib/security/security_connector/alts/alts_security_connector.h
   - src/core/lib/security/security_connector/fake/fake_security_connector.h
   - src/core/lib/security/security_connector/load_system_roots.h
@@ -869,6 +869,7 @@ filegroups:
   - src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   - src/core/lib/security/credentials/plugin/plugin_credentials.cc
   - src/core/lib/security/credentials/ssl/ssl_credentials.cc
+  - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
   - src/core/lib/security/security_connector/alts/alts_security_connector.cc
   - src/core/lib/security/security_connector/fake/fake_security_connector.cc
   - src/core/lib/security/security_connector/load_system_roots_fallback.cc
@@ -2245,6 +2246,21 @@ targets:
   - test/core/end2end/fuzzers/client_fuzzer_corpus
   dict: test/core/end2end/fuzzers/hpack.dictionary
   maxlen: 2048
+- name: close_fd_test
+  build: test
+  language: c
+  src:
+  - test/core/bad_connection/close_fd_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  exclude_configs:
+  - tsan
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: cmdline_test
   build: test
   language: c
@@ -3920,6 +3936,26 @@ targets:
   - grpc
   - gpr
   uses_polling: false
+- name: bm_alarm
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_alarm.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
+  - gpr
+  - grpc++_test_config
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: bm_arena
   build: test
   language: c++
@@ -5557,6 +5593,22 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - gpr
+- name: time_change_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/time_change_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: transport_pid_controller_test
   build: test
   language: c++

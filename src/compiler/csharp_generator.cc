@@ -199,6 +199,21 @@ std::string GetCSharpMethodType(MethodType method_type) {
   return "";
 }
 
+std::string GetCSharpServerMethodType(MethodType method_type) {
+  switch (method_type) {
+    case METHODTYPE_NO_STREAMING:
+      return "grpc::UnaryServerMethod";
+    case METHODTYPE_CLIENT_STREAMING:
+      return "grpc::ClientStreamingServerMethod";
+    case METHODTYPE_SERVER_STREAMING:
+      return "grpc::ServerStreamingServerMethod";
+    case METHODTYPE_BIDI_STREAMING:
+      return "grpc::DuplexStreamingServerMethod";
+  }
+  GOOGLE_LOG(FATAL) << "Can't get here.";
+  return "";
+}
+
 std::string GetServiceNameFieldName() { return "__ServiceName"; }
 
 std::string GetMarshallerFieldName(const Descriptor* message) {
@@ -612,8 +627,9 @@ void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor* service) {
 void GenerateBindServiceWithBinderMethod(Printer* out,
                                          const ServiceDescriptor* service) {
   out->Print(
-      "/// <summary>Register service method implementations with a service "
-      "binder. Useful when customizing the service binding logic.\n"
+      "/// <summary>Register service method with a service "
+      "binder with or without implementation. Useful when customizing the  "
+      "service binding logic.\n"
       "/// Note: this method is part of an experimental API that can change or "
       "be "
       "removed without any prior notice.</summary>\n");
@@ -635,9 +651,13 @@ void GenerateBindServiceWithBinderMethod(Printer* out,
   for (int i = 0; i < service->method_count(); i++) {
     const MethodDescriptor* method = service->method(i);
     out->Print(
-        "serviceBinder.AddMethod($methodfield$, serviceImpl.$methodname$);\n",
-        "methodfield", GetMethodFieldName(method), "methodname",
-        method->name());
+        "serviceBinder.AddMethod($methodfield$, serviceImpl == null ? null : "
+        "new $servermethodtype$<$inputtype$, $outputtype$>("
+        "serviceImpl.$methodname$));\n",
+        "methodfield", GetMethodFieldName(method), "servermethodtype",
+        GetCSharpServerMethodType(GetMethodType(method)), "inputtype",
+        GetClassName(method->input_type()), "outputtype",
+        GetClassName(method->output_type()), "methodname", method->name());
   }
 
   out->Outdent();

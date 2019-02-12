@@ -1080,7 +1080,6 @@ src/core/lib/channel/connected_channel.h \
 src/core/lib/channel/context.h \
 src/core/lib/channel/handshaker.cc \
 src/core/lib/channel/handshaker.h \
-src/core/lib/channel/handshaker_factory.cc \
 src/core/lib/channel/handshaker_factory.h \
 src/core/lib/channel/handshaker_registry.cc \
 src/core/lib/channel/handshaker_registry.h \
@@ -1384,6 +1383,8 @@ src/core/lib/security/credentials/plugin/plugin_credentials.cc \
 src/core/lib/security/credentials/plugin/plugin_credentials.h \
 src/core/lib/security/credentials/ssl/ssl_credentials.cc \
 src/core/lib/security/credentials/ssl/ssl_credentials.h \
+src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
+src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h \
 src/core/lib/security/security_connector/alts/alts_security_connector.cc \
 src/core/lib/security/security_connector/alts/alts_security_connector.h \
 src/core/lib/security/security_connector/fake/fake_security_connector.cc \

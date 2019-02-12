@@ -389,46 +389,49 @@ static void test_callback(void) {
   attr.cq_shutdown_cb = &shutdown_cb;
 
   for (size_t pidx = 0; pidx < GPR_ARRAY_SIZE(polling_types); pidx++) {
-    grpc_core::ExecCtx exec_ctx;  // reset exec_ctx
-    attr.cq_polling_type = polling_types[pidx];
-    cc = grpc_completion_queue_create(
-        grpc_completion_queue_factory_lookup(&attr), &attr, nullptr);
-
+    int sumtags = 0;
     int counter = 0;
-    class TagCallback : public grpc_experimental_completion_queue_functor {
-     public:
-      TagCallback(int* counter, int tag) : counter_(counter), tag_(tag) {
-        functor_run = &TagCallback::Run;
-      }
-      ~TagCallback() {}
-      static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
-        GPR_ASSERT(static_cast<bool>(ok));
-        auto* callback = static_cast<TagCallback*>(cb);
-        *callback->counter_ += callback->tag_;
-        grpc_core::Delete(callback);
+    {
+      // reset exec_ctx types
+      grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+      grpc_core::ExecCtx exec_ctx;
+      attr.cq_polling_type = polling_types[pidx];
+      cc = grpc_completion_queue_create(
+          grpc_completion_queue_factory_lookup(&attr), &attr, nullptr);
+
+      class TagCallback : public grpc_experimental_completion_queue_functor {
+       public:
+        TagCallback(int* counter, int tag) : counter_(counter), tag_(tag) {
+          functor_run = &TagCallback::Run;
+        }
+        ~TagCallback() {}
+        static void Run(grpc_experimental_completion_queue_functor* cb,
+                        int ok) {
+          GPR_ASSERT(static_cast<bool>(ok));
+          auto* callback = static_cast<TagCallback*>(cb);
+          *callback->counter_ += callback->tag_;
+          grpc_core::Delete(callback);
+        };
+
+       private:
+        int* counter_;
+        int tag_;
       };
 
-     private:
-      int* counter_;
-      int tag_;
-    };
+      for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
+        tags[i] = static_cast<void*>(grpc_core::New<TagCallback>(&counter, i));
+        sumtags += i;
+      }
 
-    int sumtags = 0;
-    for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
-      tags[i] = static_cast<void*>(grpc_core::New<TagCallback>(&counter, i));
-      sumtags += i;
+      for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
+        GPR_ASSERT(grpc_cq_begin_op(cc, tags[i]));
+        grpc_cq_end_op(cc, tags[i], GRPC_ERROR_NONE, do_nothing_end_completion,
+                       nullptr, &completions[i]);
+      }
+
+      shutdown_and_destroy(cc);
     }
-
-    for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
-      GPR_ASSERT(grpc_cq_begin_op(cc, tags[i]));
-      grpc_cq_end_op(cc, tags[i], GRPC_ERROR_NONE, do_nothing_end_completion,
-                     nullptr, &completions[i]);
-    }
-
     GPR_ASSERT(sumtags == counter);
-
-    shutdown_and_destroy(cc);
-
     GPR_ASSERT(got_shutdown);
     got_shutdown = false;
   }

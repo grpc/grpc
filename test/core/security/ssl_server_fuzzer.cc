@@ -41,7 +41,8 @@ struct handshake_state {
 };
 
 static void on_handshake_done(void* arg, grpc_error* error) {
-  grpc_handshaker_args* args = static_cast<grpc_handshaker_args*>(arg);
+  grpc_core::HandshakerArgs* args =
+      static_cast<grpc_core::HandshakerArgs*>(arg);
   struct handshake_state* state =
       static_cast<struct handshake_state*>(args->user_data);
   GPR_ASSERT(state->done_callback_called == false);
@@ -89,11 +90,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
     struct handshake_state state;
     state.done_callback_called = false;
-    grpc_handshake_manager* handshake_mgr = grpc_handshake_manager_create();
-    sc->add_handshakers(nullptr, handshake_mgr);
-    grpc_handshake_manager_do_handshake(
-        handshake_mgr, mock_endpoint, nullptr /* channel_args */, deadline,
-        nullptr /* acceptor */, on_handshake_done, &state);
+    auto handshake_mgr =
+        grpc_core::MakeRefCounted<grpc_core::HandshakeManager>();
+    sc->add_handshakers(nullptr, handshake_mgr.get());
+    handshake_mgr->DoHandshake(mock_endpoint, nullptr /* channel_args */,
+                               deadline, nullptr /* acceptor */,
+                               on_handshake_done, &state);
     grpc_core::ExecCtx::Get()->Flush();
 
     // If the given string happens to be part of the correct client hello, the
@@ -108,7 +110,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
     GPR_ASSERT(state.done_callback_called);
 
-    grpc_handshake_manager_destroy(handshake_mgr);
     sc.reset(DEBUG_LOCATION, "test");
     grpc_server_credentials_release(creds);
     grpc_slice_unref(cert_slice);

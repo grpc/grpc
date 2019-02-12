@@ -40,6 +40,8 @@ Pod::Spec.new do |s|
 
   s.ios.deployment_target = '7.0'
   s.osx.deployment_target = '10.9'
+  s.tvos.deployment_target = '10.0'
+  
   s.requires_arc = false
 
   name = 'grpc'
@@ -181,7 +183,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.2'
+    ss.dependency 'BoringSSL-GRPC', '0.0.3'
     ss.dependency 'nanopb', '~> 0.3'
     ss.compiler_flags = '-DGRPC_SHADOW_BORINGSSL_SYMBOLS'
 
@@ -292,6 +294,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/oauth2/oauth2_credentials.h',
                       'src/core/lib/security/credentials/plugin/plugin_credentials.h',
                       'src/core/lib/security/credentials/ssl/ssl_credentials.h',
+                      'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h',
                       'src/core/lib/security/security_connector/alts/alts_security_connector.h',
                       'src/core/lib/security/security_connector/fake/fake_security_connector.h',
                       'src/core/lib/security/security_connector/load_system_roots.h',
@@ -540,7 +543,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/channelz_registry.cc',
                       'src/core/lib/channel/connected_channel.cc',
                       'src/core/lib/channel/handshaker.cc',
-                      'src/core/lib/channel/handshaker_factory.cc',
                       'src/core/lib/channel/handshaker_registry.cc',
                       'src/core/lib/channel/status_util.cc',
                       'src/core/lib/compression/compression.cc',
@@ -729,6 +731,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/oauth2/oauth2_credentials.cc',
                       'src/core/lib/security/credentials/plugin/plugin_credentials.cc',
                       'src/core/lib/security/credentials/ssl/ssl_credentials.cc',
+                      'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc',
                       'src/core/lib/security/security_connector/alts/alts_security_connector.cc',
                       'src/core/lib/security/security_connector/fake/fake_security_connector.cc',
                       'src/core/lib/security/security_connector/load_system_roots_fallback.cc',
@@ -921,6 +924,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/credentials/oauth2/oauth2_credentials.h',
                               'src/core/lib/security/credentials/plugin/plugin_credentials.h',
                               'src/core/lib/security/credentials/ssl/ssl_credentials.h',
+                              'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h',
                               'src/core/lib/security/security_connector/alts/alts_security_connector.h',
                               'src/core/lib/security/security_connector/fake/fake_security_connector.h',
                               'src/core/lib/security/security_connector/load_system_roots.h',

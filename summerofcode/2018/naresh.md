@@ -128,7 +128,7 @@ bazel test --spawn_strategy=standalone --genrule_strategy=standalone //src/pytho
 
 - Use `bazel build` with a `-s` flag to see the logs being printed out to
     standard output while building. 
-- Similarly, use `bazel test` with a `--test_output=streamed` to see the the
+- Similarly, use `bazel test` with a `--test_output=streamed` to see the
     test logs while testing. Something to know while using this flag is that all
     tests will be run locally, without sharding, one at a time.
 

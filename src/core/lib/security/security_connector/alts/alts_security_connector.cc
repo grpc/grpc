@@ -80,8 +80,9 @@ class grpc_alts_channel_security_connector final
 
   ~grpc_alts_channel_security_connector() override { gpr_free(target_name_); }
 
-  void add_handshakers(grpc_pollset_set* interested_parties,
-                       grpc_handshake_manager* handshake_manager) override {
+  void add_handshakers(
+      grpc_pollset_set* interested_parties,
+      grpc_core::HandshakeManager* handshake_manager) override {
     tsi_handshaker* handshaker = nullptr;
     const grpc_alts_credentials* creds =
         static_cast<const grpc_alts_credentials*>(channel_creds());
@@ -89,8 +90,8 @@ class grpc_alts_channel_security_connector final
                                           creds->handshaker_service_url(), true,
                                           interested_parties,
                                           &handshaker) == TSI_OK);
-    grpc_handshake_manager_add(
-        handshake_manager, grpc_security_handshaker_create(handshaker, this));
+    handshake_manager->Add(
+        grpc_core::SecurityHandshakerCreate(handshaker, this));
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
@@ -139,16 +140,17 @@ class grpc_alts_server_security_connector final
   }
   ~grpc_alts_server_security_connector() override = default;
 
-  void add_handshakers(grpc_pollset_set* interested_parties,
-                       grpc_handshake_manager* handshake_manager) override {
+  void add_handshakers(
+      grpc_pollset_set* interested_parties,
+      grpc_core::HandshakeManager* handshake_manager) override {
     tsi_handshaker* handshaker = nullptr;
     const grpc_alts_server_credentials* creds =
         static_cast<const grpc_alts_server_credentials*>(server_creds());
     GPR_ASSERT(alts_tsi_handshaker_create(
                    creds->options(), nullptr, creds->handshaker_service_url(),
                    false, interested_parties, &handshaker) == TSI_OK);
-    grpc_handshake_manager_add(
-        handshake_manager, grpc_security_handshaker_create(handshaker, this));
+    handshake_manager->Add(
+        grpc_core::SecurityHandshakerCreate(handshaker, this));
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,

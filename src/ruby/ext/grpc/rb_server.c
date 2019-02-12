@@ -86,8 +86,7 @@ static void grpc_rb_server_maybe_destroy(grpc_rb_server* server) {
   }
 }
 
-/* Destroys server instances. */
-static void grpc_rb_server_free(void* p) {
+static void grpc_rb_server_free_internal(void* p) {
   grpc_rb_server* svr = NULL;
   gpr_timespec deadline;
   if (p == NULL) {
@@ -102,6 +101,12 @@ static void grpc_rb_server_free(void* p) {
   grpc_rb_server_maybe_destroy(svr);
 
   xfree(p);
+}
+
+/* Destroys server instances. */
+static void grpc_rb_server_free(void* p) {
+  grpc_rb_server_free_internal(p);
+  grpc_ruby_shutdown();
 }
 
 static const rb_data_type_t grpc_rb_server_data_type = {
@@ -123,6 +128,7 @@ static const rb_data_type_t grpc_rb_server_data_type = {
 
 /* Allocates grpc_rb_server instances. */
 static VALUE grpc_rb_server_alloc(VALUE cls) {
+  grpc_ruby_init();
   grpc_rb_server* wrapper = ALLOC(grpc_rb_server);
   wrapper->wrapped = NULL;
   wrapper->destroy_done = 0;
@@ -141,8 +147,6 @@ static VALUE grpc_rb_server_init(VALUE self, VALUE channel_args) {
   grpc_server* srv = NULL;
   grpc_channel_args args;
   MEMZERO(&args, grpc_channel_args, 1);
-
-  grpc_ruby_once_init();
 
   cq = grpc_completion_queue_create_for_pluck(NULL);
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type,
