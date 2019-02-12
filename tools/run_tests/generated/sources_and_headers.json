@@ -7468,6 +7468,7 @@
       "third_party/cares/cares/ares_setup.h", 
       "third_party/cares/cares/ares_strcasecmp.h", 
       "third_party/cares/cares/ares_strdup.h", 
+      "third_party/cares/cares/ares_strsplit.h", 
       "third_party/cares/cares/ares_version.h", 
       "third_party/cares/cares/bitncmp.h", 
       "third_party/cares/cares/config-win32.h", 
