@@ -324,8 +324,8 @@ class FakeClientChannelFactory : public grpc_core::ClientChannelFactory {
       override {
     return nullptr;
   }
-  static grpc_channel* CreateChannel(const char* target,
-                                     const grpc_channel_args* args) override {
+  grpc_channel* CreateChannel(const char* target,
+                              const grpc_channel_args* args) override {
     return nullptr;
   }
 };
@@ -496,9 +496,10 @@ static void BM_IsolatedFilter(benchmark::State& state) {
   std::ostringstream label;
 
   std::vector<grpc_arg> args;
-  FakeClientChannelFactory fake_client_channel_factory;
-  args.push_back(grpc_client_channel_factory_create_channel_arg(
-      &fake_client_channel_factory));
+  grpc_core::RefCountedPtr<grpc_core::ClientChannelFactory>
+      fake_client_channel_factory(grpc_core::New<FakeClientChannelFactory>());
+  args.push_back(grpc_core::ClientChannelFactory::CreateChannelArg(
+      fake_client_channel_factory.get()));
   args.push_back(StringArg(GRPC_ARG_SERVER_URI, "localhost"));
 
   grpc_channel_args channel_args = {args.size(), &args[0]};
