@@ -86,6 +86,9 @@ GRPCAPI void grpc_shutdown(void);
     part of stabilizing the fork support API, as tracked in
     https://github.com/grpc/grpc/issues/15334 */
 GRPCAPI int grpc_is_initialized(void);
+/** EXPERIMENTAL. Wait for grpc_shutdown to finish if it is in process.
+    This is only for wrapped language to use now. */
+GRPCAPI void grpc_maybe_wait_for_async_shutdown(void);
 
 /** Return a string representing the current version of grpc */
 GRPCAPI const char* grpc_version_string(void);

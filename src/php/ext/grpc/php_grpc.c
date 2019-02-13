@@ -362,6 +362,7 @@ PHP_MSHUTDOWN_FUNCTION(grpc) {
     grpc_shutdown_timeval(TSRMLS_C);
     grpc_php_shutdown_completion_queue(TSRMLS_C);
     grpc_shutdown();
+    grpc_maybe_wait_for_async_shutdown();
     GRPC_G(initialized) = 0;
   }
   return SUCCESS;
