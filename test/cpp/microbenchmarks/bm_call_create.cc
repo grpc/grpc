@@ -318,29 +318,17 @@ static void FilterDestroy(void* arg, grpc_error* error) { gpr_free(arg); }
 
 static void DoNothing(void* arg, grpc_error* error) {}
 
-class FakeClientChannelFactory : public grpc_client_channel_factory {
+class FakeClientChannelFactory : public grpc_core::ClientChannelFactory {
  public:
-  FakeClientChannelFactory() { vtable = &vtable_; }
-
- private:
-  static void NoRef(grpc_client_channel_factory* factory) {}
-  static void NoUnref(grpc_client_channel_factory* factory) {}
-  static grpc_core::Subchannel* CreateSubchannel(
-      grpc_client_channel_factory* factory, const grpc_channel_args* args) {
+  grpc_core::Subchannel* CreateSubchannel(const grpc_channel_args* args)
+      override {
     return nullptr;
   }
-  static grpc_channel* CreateClientChannel(grpc_client_channel_factory* factory,
-                                           const char* target,
-                                           grpc_client_channel_type type,
-                                           const grpc_channel_args* args) {
+  static grpc_channel* CreateChannel(const char* target,
+                                     const grpc_channel_args* args) override {
     return nullptr;
   }
-
-  static const grpc_client_channel_factory_vtable vtable_;
 };
-
-const grpc_client_channel_factory_vtable FakeClientChannelFactory::vtable_ = {
-    NoRef, NoUnref, CreateSubchannel, CreateClientChannel};
 
 static grpc_arg StringArg(const char* key, const char* value) {
   grpc_arg a;
