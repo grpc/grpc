@@ -73,10 +73,11 @@ def grpc_cc_library(
         testonly = False,
         visibility = None,
         alwayslink = 0,
-        data = []):
-    copts = []
+        data = [],
+        copts = [],
+        linkopts = []):
     if language.upper() == "C":
-        copts = if_not_windows(["-std=c99"])
+        copts = copts + if_not_windows(["-std=c99"])
     native.cc_library(
         name = name,
         srcs = srcs,
@@ -98,7 +99,7 @@ def grpc_cc_library(
         copts = copts,
         visibility = visibility,
         testonly = testonly,
-        linkopts = if_not_windows(["-pthread"]),
+        linkopts = linkopts + if_not_windows(["-pthread"]),
         includes = [
             "include",
         ],
@@ -132,10 +133,9 @@ def grpc_proto_library(
         generate_mocks = generate_mocks,
     )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = []):
-    copts = []
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], copts = [], linkopts = []):
     if language.upper() == "C":
-        copts = if_not_windows(["-std=c99"])
+        copts = copts + if_not_windows(["-std=c99"])
     args = {
         "name": name,
         "srcs": srcs,
@@ -143,7 +143,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "data": data,
         "deps": deps + _get_external_deps(external_deps),
         "copts": copts,
-        "linkopts": if_not_windows(["-pthread"]),
+        "linkopts": linkopts + if_not_windows(["-pthread"]),
         "size": size,
         "timeout": timeout,
         "exec_compatible_with": exec_compatible_with,

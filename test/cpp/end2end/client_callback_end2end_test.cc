@@ -18,6 +18,7 @@
 
 #include <functional>
 #include <mutex>
+#include <sstream>
 #include <thread>
 
 #include <grpcpp/channel.h>
@@ -30,7 +31,9 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/client_callback.h>
 
+#include "src/core/lib/iomgr/iomgr.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
@@ -38,15 +41,30 @@
 
 #include <gtest/gtest.h>
 
+// MAYBE_SKIP_TEST is a macro to determine if this particular test configuration
+// should be skipped based on a decision made at SetUp time. In particular, any
+// callback tests can only be run if the iomgr can run in the background or if
+// the transport is in-process.
+#define MAYBE_SKIP_TEST \
+  do {                  \
+    if (do_not_test_) { \
+      return;           \
+    }                   \
+  } while (0)
+
 namespace grpc {
 namespace testing {
 namespace {
 
+enum class Protocol { INPROC, TCP };
+
 class TestScenario {
  public:
-  TestScenario(bool serve_callback) : callback_server(serve_callback) {}
+  TestScenario(bool serve_callback, Protocol protocol)
+      : callback_server(serve_callback), protocol(protocol) {}
   void Log() const;
   bool callback_server;
+  Protocol protocol;
 };
 
 static std::ostream& operator<<(std::ostream& out,
@@ -69,6 +87,16 @@ class ClientCallbackEnd2endTest
   void SetUp() override {
     ServerBuilder builder;
 
+    if (GetParam().protocol == Protocol::TCP) {
+      if (!grpc_iomgr_run_in_background()) {
+        do_not_test_ = true;
+        return;
+      }
+      int port = grpc_pick_unused_port_or_die();
+      server_address_ << "localhost:" << port;
+      builder.AddListeningPort(server_address_.str(),
+                               InsecureServerCredentials());
+    }
     if (!GetParam().callback_server) {
       builder.RegisterService(&service_);
     } else {
@@ -81,7 +109,17 @@ class ClientCallbackEnd2endTest
 
   void ResetStub() {
     ChannelArguments args;
-    channel_ = server_->InProcessChannel(args);
+    switch (GetParam().protocol) {
+      case Protocol::TCP:
+        channel_ =
+            CreateChannel(server_address_.str(), InsecureChannelCredentials());
+        break;
+      case Protocol::INPROC:
+        channel_ = server_->InProcessChannel(args);
+        break;
+      default:
+        assert(false);
+    }
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
     generic_stub_.reset(new GenericStub(channel_));
   }
@@ -243,26 +281,31 @@ class ClientCallbackEnd2endTest
       rpc.Await();
     }
   }
-  bool is_server_started_;
+  bool do_not_test_{false};
+  bool is_server_started_{false};
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<grpc::GenericStub> generic_stub_;
   TestServiceImpl service_;
   CallbackTestServiceImpl callback_service_;
   std::unique_ptr<Server> server_;
+  std::ostringstream server_address_;
 };
 
 TEST_P(ClientCallbackEnd2endTest, SimpleRpc) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   SendRpcs(1, false);
 }
 
 TEST_P(ClientCallbackEnd2endTest, SequentialRpcs) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   SendRpcs(10, false);
 }
 
 TEST_P(ClientCallbackEnd2endTest, SendClientInitialMetadata) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   SimpleRequest request;
   SimpleResponse response;
@@ -289,38 +332,45 @@ TEST_P(ClientCallbackEnd2endTest, SendClientInitialMetadata) {
 }
 
 TEST_P(ClientCallbackEnd2endTest, SimpleRpcWithBinaryMetadata) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   SendRpcs(1, true);
 }
 
 TEST_P(ClientCallbackEnd2endTest, SequentialRpcsWithVariedBinaryMetadataValue) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   SendRpcs(10, true);
 }
 
 TEST_P(ClientCallbackEnd2endTest, SequentialGenericRpcs) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   SendRpcsGeneric(10, false);
 }
 
 TEST_P(ClientCallbackEnd2endTest, SequentialGenericRpcsAsBidi) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   SendGenericEchoAsBidi(10, 1);
 }
 
 TEST_P(ClientCallbackEnd2endTest, SequentialGenericRpcsAsBidiWithReactorReuse) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   SendGenericEchoAsBidi(10, 10);
 }
 
 #if GRPC_ALLOW_EXCEPTIONS
 TEST_P(ClientCallbackEnd2endTest, ExceptingRpc) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   SendRpcsGeneric(10, true);
 }
 #endif
 
 TEST_P(ClientCallbackEnd2endTest, MultipleRpcsWithVariedBinaryMetadataValue) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   std::vector<std::thread> threads;
   threads.reserve(10);
@@ -333,6 +383,7 @@ TEST_P(ClientCallbackEnd2endTest, MultipleRpcsWithVariedBinaryMetadataValue) {
 }
 
 TEST_P(ClientCallbackEnd2endTest, MultipleRpcs) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   std::vector<std::thread> threads;
   threads.reserve(10);
@@ -345,6 +396,7 @@ TEST_P(ClientCallbackEnd2endTest, MultipleRpcs) {
 }
 
 TEST_P(ClientCallbackEnd2endTest, CancelRpcBeforeStart) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -370,6 +422,7 @@ TEST_P(ClientCallbackEnd2endTest, CancelRpcBeforeStart) {
 }
 
 TEST_P(ClientCallbackEnd2endTest, RequestStream) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   class Client : public grpc::experimental::ClientWriteReactor<EchoRequest> {
    public:
@@ -416,6 +469,7 @@ TEST_P(ClientCallbackEnd2endTest, RequestStream) {
 }
 
 TEST_P(ClientCallbackEnd2endTest, ResponseStream) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   class Client : public grpc::experimental::ClientReadReactor<EchoResponse> {
    public:
@@ -463,6 +517,7 @@ TEST_P(ClientCallbackEnd2endTest, ResponseStream) {
 }
 
 TEST_P(ClientCallbackEnd2endTest, BidiStream) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   class Client : public grpc::experimental::ClientBidiReactor<EchoRequest,
                                                               EchoResponse> {
@@ -519,7 +574,10 @@ TEST_P(ClientCallbackEnd2endTest, BidiStream) {
   test.Await();
 }
 
-TestScenario scenarios[] = {TestScenario{false}, TestScenario{true}};
+TestScenario scenarios[]{{false, Protocol::INPROC},
+                         {false, Protocol::TCP},
+                         {true, Protocol::INPROC},
+                         {true, Protocol::TCP}};
 
 INSTANTIATE_TEST_CASE_P(ClientCallbackEnd2endTest, ClientCallbackEnd2endTest,
                         ::testing::ValuesIn(scenarios));

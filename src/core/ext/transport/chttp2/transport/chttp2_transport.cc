@@ -2558,6 +2558,10 @@ static void read_action_locked(void* tp, grpc_error* error) {
   } else if (t->closed_with_error == GRPC_ERROR_NONE) {
     keep_reading = true;
     GRPC_CHTTP2_REF_TRANSPORT(t, "keep_reading");
+    /* Since we have read a byte, reset the keepalive timer */
+    if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_WAITING) {
+      grpc_timer_cancel(&t->keepalive_ping_timer);
+    }
   }
   grpc_slice_buffer_reset_and_unref_internal(&t->read_buffer);
 

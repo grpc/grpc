@@ -12,9 +12,9 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 7.0.0-dev
-  g_stands_for: gold
-  version: 1.19.0-dev
+  core_version: 7.0.0
+  g_stands_for: godric
+  version: 1.20.0-dev
 filegroups:
 - name: alts_proto
   headers:
@@ -242,7 +242,6 @@ filegroups:
   - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/handshaker.cc
-  - src/core/lib/channel/handshaker_factory.cc
   - src/core/lib/channel/handshaker_registry.cc
   - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
@@ -588,11 +587,11 @@ filegroups:
   - src/core/ext/filters/client_channel/parse_address.h
   - src/core/ext/filters/client_channel/proxy_mapper.h
   - src/core/ext/filters/client_channel/proxy_mapper_registry.h
-  - src/core/ext/filters/client_channel/request_routing.h
   - src/core/ext/filters/client_channel/resolver.h
   - src/core/ext/filters/client_channel/resolver_factory.h
   - src/core/ext/filters/client_channel/resolver_registry.h
   - src/core/ext/filters/client_channel/resolver_result_parsing.h
+  - src/core/ext/filters/client_channel/resolving_lb_policy.h
   - src/core/ext/filters/client_channel/retry_throttle.h
   - src/core/ext/filters/client_channel/server_address.h
   - src/core/ext/filters/client_channel/subchannel.h
@@ -615,10 +614,10 @@ filegroups:
   - src/core/ext/filters/client_channel/parse_address.cc
   - src/core/ext/filters/client_channel/proxy_mapper.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
-  - src/core/ext/filters/client_channel/request_routing.cc
   - src/core/ext/filters/client_channel/resolver.cc
   - src/core/ext/filters/client_channel/resolver_registry.cc
   - src/core/ext/filters/client_channel/resolver_result_parsing.cc
+  - src/core/ext/filters/client_channel/resolving_lb_policy.cc
   - src/core/ext/filters/client_channel/retry_throttle.cc
   - src/core/ext/filters/client_channel/server_address.cc
   - src/core/ext/filters/client_channel/subchannel.cc
@@ -3936,6 +3935,26 @@ targets:
   - grpc
   - gpr
   uses_polling: false
+- name: bm_alarm
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_alarm.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
+  - gpr
+  - grpc++_test_config
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: bm_arena
   build: test
   language: c++

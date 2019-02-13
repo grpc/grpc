@@ -21,7 +21,7 @@
   <Import Project="..\Grpc.Core\SourceLink.csproj.include" />
 
   <ItemGroup>
-    <PackageReference Include="System.Interactive.Async" Version="3.1.1" />
+    <PackageReference Include="System.Interactive.Async" Version="3.2.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
