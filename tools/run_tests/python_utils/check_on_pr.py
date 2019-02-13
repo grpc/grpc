@@ -18,6 +18,7 @@ import sys
 import json
 import time
 import datetime
+import traceback
 
 import requests
 import jwt
@@ -57,24 +58,26 @@ def _access_token():
                     'Authorization': 'Bearer %s' % _jwt_token().decode('ASCII'),
                     'Accept': 'application/vnd.github.machine-man-preview+json',
                 })
-            if resp.status_code == 200:
+
+            try:
+                _ACCESS_TOKEN_CACHE = {
+                    'token': resp.json()['token'],
+                    'exp': time.time() + 60
+                }
                 break
-            else:
+            except (KeyError, ValueError) as e:
+                traceback.print_exc(e)
+                print('HTTP Status %d %s' % (resp.status_code, resp.reason))
                 print("Fetch access token from Github API failed:")
-                print(resp.json())
+                print(resp.text)
                 if i != _ACCESS_TOKEN_FETCH_RETRIES - 1:
                     print('Retrying after %.2f second.' %
                           _ACCESS_TOKEN_FETCH_RETRIES_INTERVAL_S)
                     time.sleep(_ACCESS_TOKEN_FETCH_RETRIES_INTERVAL_S)
-
-        if resp.status_code != 200:
+        else:
             print("error: Unable to fetch access token, exiting...")
             sys.exit(1)
 
-        _ACCESS_TOKEN_CACHE = {
-            'token': resp.json()['token'],
-            'exp': time.time() + 60
-        }
     return _ACCESS_TOKEN_CACHE['token']
 
 
