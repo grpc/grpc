@@ -125,7 +125,7 @@ def _get_resultstore_data(api_key, invocation_id):
         print(page_token)
         req = urllib2.Request(
             url=
-            'https://resultstore.googleapis.com/v2/invocations/%s/targets/-/configuredTargets/-/actions?key=%s&pageToken=%s&fields=id,status_attributes,timing,test_action'
+            'https://resultstore.googleapis.com/v2/invocations/%s/targets/-/configuredTargets/-/actions?key=%s&pageToken=%s&fields=next_page_token,actions.id,actions.status_attributes'
             % (invocation_id, api_key, page_token),
             headers={
                 'Content-Type': 'application/json'
