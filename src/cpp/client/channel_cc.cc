@@ -51,7 +51,7 @@
 
 void grpc::experimental::ChannelResetConnectionBackoff(
     ::grpc::Channel* channel) {
-  ChannelResetConnectionBackoff(channel);
+  grpc_impl::experimental::ChannelResetConnectionBackoff(channel);
 }
 
 namespace grpc_impl {
