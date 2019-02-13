@@ -19,6 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/memory.h"
 
@@ -74,8 +75,11 @@ void HandshakerFactoryList::AddHandshakers(const grpc_channel_args* args,
 
 void HandshakerRegistry::Init() {
   GPR_ASSERT(g_handshaker_factory_lists == nullptr);
-  g_handshaker_factory_lists = static_cast<HandshakerFactoryList*>(
-      gpr_malloc(sizeof(*g_handshaker_factory_lists) * NUM_HANDSHAKER_TYPES));
+  g_handshaker_factory_lists =
+      static_cast<HandshakerFactoryList*>(gpr_malloc_aligned(
+          sizeof(*g_handshaker_factory_lists) * NUM_HANDSHAKER_TYPES,
+          GPR_MAX_ALIGNMENT));
+
   GPR_ASSERT(g_handshaker_factory_lists != nullptr);
   for (auto idx = 0; idx < NUM_HANDSHAKER_TYPES; ++idx) {
     auto factory_list = g_handshaker_factory_lists + idx;
@@ -89,7 +93,7 @@ void HandshakerRegistry::Shutdown() {
     auto factory_list = g_handshaker_factory_lists + idx;
     factory_list->~HandshakerFactoryList();
   }
-  gpr_free(g_handshaker_factory_lists);
+  gpr_free_aligned(g_handshaker_factory_lists);
   g_handshaker_factory_lists = nullptr;
 }
 
