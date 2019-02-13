@@ -1,4 +1,5 @@
-# Copyright 2019 The gRPC Authors
+#!/usr/bin/env bash
+# Copyright 2019 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,12 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+set -ex
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_bazel_privileged_docker.sh"
-timeout_mins: 240
-env_vars {
-  key: "BAZEL_SCRIPT"
-  value: "tools/internal_ci/linux/grpc_flaky_network_in_docker.sh"
-}
+# change to grpc repo root
+cd $(dirname $0)/../../..
+
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+
+export DOCKERFILE_DIR=tools/dockerfile/test/bazel
+export DOCKER_RUN_SCRIPT=$BAZEL_SCRIPT
+# NET_ADMIN capability allows tests to manipulate network interfaces
+exec tools/run_tests/dockerize/build_and_run_docker.sh --cap-add NET_ADMIN
