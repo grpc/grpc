@@ -3,7 +3,7 @@
 We definitely welcome your patches and contributions to gRPC!
 
 If you are new to github, please start by reading [Pull Request
-howto](https://help.github.com/articles/about-pull-requests/)
+how to](https://help.github.com/articles/about-pull-requests/)
 
 ## Legal requirements
 

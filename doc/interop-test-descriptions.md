@@ -1135,7 +1135,7 @@ responses, it closes with OK.
 ### Echo Status
 [Echo Status]: #echo-status
 When the client sends a response_status in the request payload, the server closes
-the stream with the status code and messsage contained within said response_status.
+the stream with the status code and message contained within said response_status.
 The server will not process any further messages on the stream sent by the client.
 This can be used by clients to verify correct handling of different status codes and
 associated status messages end-to-end.
