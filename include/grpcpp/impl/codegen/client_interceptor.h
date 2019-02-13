@@ -179,6 +179,9 @@ class ClientRpcInfo {
 void RegisterGlobalClientInterceptorFactory(
     ClientInterceptorFactoryInterface* factory);
 
+// For testing purposes only
+void TestOnlyResetGlobalClientInterceptorFactory();
+
 }  // namespace experimental
 }  // namespace grpc
 

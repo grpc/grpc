@@ -40,10 +40,6 @@
 #include <gtest/gtest.h>
 
 namespace grpc {
-
-namespace experimental {
-void TestOnlyResetGlobalClientInterceptorFactory();
-}
 namespace testing {
 namespace {
 
