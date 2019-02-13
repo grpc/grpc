@@ -437,8 +437,13 @@ int main(int argc, char** argv) {
   // Zalloc dst_addrs to avoid oversized frames.
   test_addrs* dst_addrs =
       static_cast<test_addrs*>(gpr_zalloc(sizeof(*dst_addrs)));
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
+  // wait a few seconds to make sure IPv6 link-local addresses can be bound
+  // if we are running under docker container that has just started.
+  // See https://github.com/moby/moby/issues/38491
+  // See https://github.com/grpc/grpc/issues/15610
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(4));
   {
     grpc_core::ExecCtx exec_ctx;
     g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));

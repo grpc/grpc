@@ -199,6 +199,21 @@ std::string GetCSharpMethodType(MethodType method_type) {
   return "";
 }
 
+std::string GetCSharpServerMethodType(MethodType method_type) {
+  switch (method_type) {
+    case METHODTYPE_NO_STREAMING:
+      return "grpc::UnaryServerMethod";
+    case METHODTYPE_CLIENT_STREAMING:
+      return "grpc::ClientStreamingServerMethod";
+    case METHODTYPE_SERVER_STREAMING:
+      return "grpc::ServerStreamingServerMethod";
+    case METHODTYPE_BIDI_STREAMING:
+      return "grpc::DuplexStreamingServerMethod";
+  }
+  GOOGLE_LOG(FATAL) << "Can't get here.";
+  return "";
+}
+
 std::string GetServiceNameFieldName() { return "__ServiceName"; }
 
 std::string GetMarshallerFieldName(const Descriptor* message) {
@@ -609,6 +624,47 @@ void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor* service) {
   out->Print("\n");
 }
 
+void GenerateBindServiceWithBinderMethod(Printer* out,
+                                         const ServiceDescriptor* service) {
+  out->Print(
+      "/// <summary>Register service method with a service "
+      "binder with or without implementation. Useful when customizing the  "
+      "service binding logic.\n"
+      "/// Note: this method is part of an experimental API that can change or "
+      "be "
+      "removed without any prior notice.</summary>\n");
+  out->Print(
+      "/// <param name=\"serviceBinder\">Service methods will be bound by "
+      "calling <c>AddMethod</c> on this object."
+      "</param>\n");
+  out->Print(
+      "/// <param name=\"serviceImpl\">An object implementing the server-side"
+      " handling logic.</param>\n");
+  out->Print(
+      "public static void BindService(grpc::ServiceBinderBase serviceBinder, "
+      "$implclass$ "
+      "serviceImpl)\n",
+      "implclass", GetServerClassName(service));
+  out->Print("{\n");
+  out->Indent();
+
+  for (int i = 0; i < service->method_count(); i++) {
+    const MethodDescriptor* method = service->method(i);
+    out->Print(
+        "serviceBinder.AddMethod($methodfield$, serviceImpl == null ? null : "
+        "new $servermethodtype$<$inputtype$, $outputtype$>("
+        "serviceImpl.$methodname$));\n",
+        "methodfield", GetMethodFieldName(method), "servermethodtype",
+        GetCSharpServerMethodType(GetMethodType(method)), "inputtype",
+        GetClassName(method->input_type()), "outputtype",
+        GetClassName(method->output_type()), "methodname", method->name());
+  }
+
+  out->Outdent();
+  out->Print("}\n");
+  out->Print("\n");
+}
+
 void GenerateService(Printer* out, const ServiceDescriptor* service,
                      bool generate_client, bool generate_server,
                      bool internal_access) {
@@ -637,6 +693,7 @@ void GenerateService(Printer* out, const ServiceDescriptor* service,
   }
   if (generate_server) {
     GenerateBindServiceMethod(out, service);
+    GenerateBindServiceWithBinderMethod(out, service);
   }
 
   out->Outdent();

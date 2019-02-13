@@ -164,13 +164,13 @@ static void test2(void) {
   size_t num_inserted = 0;
 
   grpc_timer_heap_init(&pq);
-  memset(elems, 0, elems_size);
+  memset(elems, 0, elems_size * sizeof(elems[0]));
 
   for (size_t round = 0; round < 10000; round++) {
     int r = rand() % 1000;
     if (r <= 550) {
       /* 55% of the time we try to add something */
-      elem_struct* el = search_elems(elems, GPR_ARRAY_SIZE(elems), false);
+      elem_struct* el = search_elems(elems, elems_size, false);
       if (el != nullptr) {
         el->elem.deadline = random_deadline();
         grpc_timer_heap_add(&pq, &el->elem);
@@ -180,7 +180,7 @@ static void test2(void) {
       }
     } else if (r <= 650) {
       /* 10% of the time we try to remove something */
-      elem_struct* el = search_elems(elems, GPR_ARRAY_SIZE(elems), true);
+      elem_struct* el = search_elems(elems, elems_size, true);
       if (el != nullptr) {
         grpc_timer_heap_remove(&pq, &el->elem);
         el->inserted = false;
@@ -286,7 +286,7 @@ static void shrink_test(void) {
 int main(int argc, char** argv) {
   int i;
 
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
 
   for (i = 0; i < 5; i++) {
     test1();

@@ -38,7 +38,7 @@ DEFINE_string(custom_credentials_type, "", "User provided credentials type.");
 DEFINE_bool(use_test_ca, false, "False to use SSL roots for google");
 DEFINE_int32(server_port, 0, "Server port.");
 DEFINE_string(server_host, "localhost", "Server host to connect to");
-DEFINE_string(server_host_override, "foo.test.google.fr",
+DEFINE_string(server_host_override, "",
               "Override the server host which is sent in HTTP header");
 DEFINE_string(
     test_case, "large_unary",
@@ -54,6 +54,7 @@ DEFINE_string(
     "custom_metadata: server will echo custom metadata;\n"
     "empty_stream : bi-di stream with no request/response;\n"
     "empty_unary : empty (zero bytes) request and response;\n"
+    "google_default_credentials: large unary using GDC;\n"
     "half_duplex : half-duplex streaming;\n"
     "jwt_token_creds: large_unary with JWT token auth;\n"
     "large_unary : single request and (large) response;\n"
@@ -150,6 +151,11 @@ int main(int argc, char** argv) {
     actions["per_rpc_creds"] =
         std::bind(&grpc::testing::InteropClient::DoPerRpcCreds, &client,
                   GetServiceAccountJsonKey());
+  }
+  if (FLAGS_custom_credentials_type == "google_default_credentials") {
+    actions["google_default_credentials"] =
+        std::bind(&grpc::testing::InteropClient::DoGoogleDefaultCredentials,
+                  &client, FLAGS_default_service_account);
   }
   actions["status_code_and_message"] =
       std::bind(&grpc::testing::InteropClient::DoStatusWithMessage, &client);

@@ -79,6 +79,8 @@ static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
       return CreateAsyncServer(config);
     case ServerType::ASYNC_GENERIC_SERVER:
       return CreateAsyncGenericServer(config);
+    case ServerType::CALLBACK_SERVER:
+      return CreateCallbackServer(config);
     default:
       abort();
   }

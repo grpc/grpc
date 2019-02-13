@@ -384,9 +384,9 @@ void timestamps_verifier(void* arg, grpc_core::Timestamps* ts,
                          grpc_error* error) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(arg != nullptr);
-  GPR_ASSERT(ts->sendmsg_time.clock_type == GPR_CLOCK_REALTIME);
-  GPR_ASSERT(ts->scheduled_time.clock_type == GPR_CLOCK_REALTIME);
-  GPR_ASSERT(ts->acked_time.clock_type == GPR_CLOCK_REALTIME);
+  GPR_ASSERT(ts->sendmsg_time.time.clock_type == GPR_CLOCK_REALTIME);
+  GPR_ASSERT(ts->scheduled_time.time.clock_type == GPR_CLOCK_REALTIME);
+  GPR_ASSERT(ts->acked_time.time.clock_type == GPR_CLOCK_REALTIME);
   gpr_atm* done_timestamps = (gpr_atm*)arg;
   gpr_atm_rel_store(done_timestamps, static_cast<gpr_atm>(1));
 }
@@ -623,7 +623,7 @@ static void destroy_pollset(void* p, grpc_error* error) {
 
 int main(int argc, char** argv) {
   grpc_closure destroyed;
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   grpc_core::grpc_tcp_set_write_timestamps_callback(timestamps_verifier);
   {

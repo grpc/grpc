@@ -250,10 +250,10 @@ class ClientReader final : public ClientReaderInterface<R> {
                                 ::grpc::internal::CallOpSendMessage,
                                 ::grpc::internal::CallOpClientSendClose>
         ops;
-    ops.SendInitialMetadata(context->send_initial_metadata_,
+    ops.SendInitialMetadata(&context->send_initial_metadata_,
                             context->initial_metadata_flags());
     // TODO(ctiller): don't assert
-    GPR_CODEGEN_ASSERT(ops.SendMessage(request).ok());
+    GPR_CODEGEN_ASSERT(ops.SendMessagePtr(&request).ok());
     ops.ClientSendClose();
     call_.PerformOps(&ops);
     cq_.Pluck(&ops);
@@ -327,11 +327,11 @@ class ClientWriter : public ClientWriterInterface<W> {
       ops.ClientSendClose();
     }
     if (context_->initial_metadata_corked_) {
-      ops.SendInitialMetadata(context_->send_initial_metadata_,
+      ops.SendInitialMetadata(&context_->send_initial_metadata_,
                               context_->initial_metadata_flags());
       context_->set_initial_metadata_corked(false);
     }
-    if (!ops.SendMessage(msg, options).ok()) {
+    if (!ops.SendMessagePtr(&msg, options).ok()) {
       return false;
     }
 
@@ -386,7 +386,7 @@ class ClientWriter : public ClientWriterInterface<W> {
     if (!context_->initial_metadata_corked_) {
       ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
           ops;
-      ops.SendInitialMetadata(context->send_initial_metadata_,
+      ops.SendInitialMetadata(&context->send_initial_metadata_,
                               context->initial_metadata_flags());
       call_.PerformOps(&ops);
       cq_.Pluck(&ops);
@@ -498,11 +498,11 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
       ops.ClientSendClose();
     }
     if (context_->initial_metadata_corked_) {
-      ops.SendInitialMetadata(context_->send_initial_metadata_,
+      ops.SendInitialMetadata(&context_->send_initial_metadata_,
                               context_->initial_metadata_flags());
       context_->set_initial_metadata_corked(false);
     }
-    if (!ops.SendMessage(msg, options).ok()) {
+    if (!ops.SendMessagePtr(&msg, options).ok()) {
       return false;
     }
 
@@ -557,7 +557,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
     if (!context_->initial_metadata_corked_) {
       ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
           ops;
-      ops.SendInitialMetadata(context->send_initial_metadata_,
+      ops.SendInitialMetadata(&context->send_initial_metadata_,
                               context->initial_metadata_flags());
       call_.PerformOps(&ops);
       cq_.Pluck(&ops);
@@ -583,7 +583,7 @@ class ServerReader final : public ServerReaderInterface<R> {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     internal::CallOpSet<internal::CallOpSendInitialMetadata> ops;
-    ops.SendInitialMetadata(ctx_->initial_metadata_,
+    ops.SendInitialMetadata(&ctx_->initial_metadata_,
                             ctx_->initial_metadata_flags());
     if (ctx_->compression_level_set()) {
       ops.set_compression_level(ctx_->compression_level());
@@ -635,7 +635,7 @@ class ServerWriter final : public ServerWriterInterface<W> {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     internal::CallOpSet<internal::CallOpSendInitialMetadata> ops;
-    ops.SendInitialMetadata(ctx_->initial_metadata_,
+    ops.SendInitialMetadata(&ctx_->initial_metadata_,
                             ctx_->initial_metadata_flags());
     if (ctx_->compression_level_set()) {
       ops.set_compression_level(ctx_->compression_level());
@@ -656,11 +656,11 @@ class ServerWriter final : public ServerWriterInterface<W> {
       options.set_buffer_hint();
     }
 
-    if (!ctx_->pending_ops_.SendMessage(msg, options).ok()) {
+    if (!ctx_->pending_ops_.SendMessagePtr(&msg, options).ok()) {
       return false;
     }
     if (!ctx_->sent_initial_metadata_) {
-      ctx_->pending_ops_.SendInitialMetadata(ctx_->initial_metadata_,
+      ctx_->pending_ops_.SendInitialMetadata(&ctx_->initial_metadata_,
                                              ctx_->initial_metadata_flags());
       if (ctx_->compression_level_set()) {
         ctx_->pending_ops_.set_compression_level(ctx_->compression_level());
@@ -708,7 +708,7 @@ class ServerReaderWriterBody final {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     CallOpSet<CallOpSendInitialMetadata> ops;
-    ops.SendInitialMetadata(ctx_->initial_metadata_,
+    ops.SendInitialMetadata(&ctx_->initial_metadata_,
                             ctx_->initial_metadata_flags());
     if (ctx_->compression_level_set()) {
       ops.set_compression_level(ctx_->compression_level());
@@ -734,11 +734,11 @@ class ServerReaderWriterBody final {
     if (options.is_last_message()) {
       options.set_buffer_hint();
     }
-    if (!ctx_->pending_ops_.SendMessage(msg, options).ok()) {
+    if (!ctx_->pending_ops_.SendMessagePtr(&msg, options).ok()) {
       return false;
     }
     if (!ctx_->sent_initial_metadata_) {
-      ctx_->pending_ops_.SendInitialMetadata(ctx_->initial_metadata_,
+      ctx_->pending_ops_.SendInitialMetadata(&ctx_->initial_metadata_,
                                              ctx_->initial_metadata_flags());
       if (ctx_->compression_level_set()) {
         ctx_->pending_ops_.set_compression_level(ctx_->compression_level());

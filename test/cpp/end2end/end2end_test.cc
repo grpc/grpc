@@ -35,11 +35,13 @@
 #include <grpcpp/server_context.h>
 
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/end2end/interceptors_util.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
@@ -50,6 +52,17 @@ using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 using grpc::testing::kTlsCredentialsType;
 using std::chrono::system_clock;
+
+// MAYBE_SKIP_TEST is a macro to determine if this particular test configuration
+// should be skipped based on a decision made at SetUp time. In particular,
+// tests that use the callback server can only be run if the iomgr can run in
+// the background or if the transport is in-process.
+#define MAYBE_SKIP_TEST \
+  do {                  \
+    if (do_not_test_) { \
+      return;           \
+    }                   \
+  } while (0)
 
 namespace grpc {
 namespace testing {
@@ -179,7 +192,7 @@ class Proxy : public ::grpc::testing::EchoTestService::Service {
   }
 
  private:
-  std::unique_ptr< ::grpc::testing::EchoTestService::Stub> stub_;
+  std::unique_ptr<::grpc::testing::EchoTestService::Stub> stub_;
 };
 
 class TestServiceImplDupPkg
@@ -194,19 +207,29 @@ class TestServiceImplDupPkg
 
 class TestScenario {
  public:
-  TestScenario(bool proxy, bool inproc_stub, const grpc::string& creds_type)
-      : use_proxy(proxy), inproc(inproc_stub), credentials_type(creds_type) {}
+  TestScenario(bool interceptors, bool proxy, bool inproc_stub,
+               const grpc::string& creds_type, bool use_callback_server)
+      : use_interceptors(interceptors),
+        use_proxy(proxy),
+        inproc(inproc_stub),
+        credentials_type(creds_type),
+        callback_server(use_callback_server) {}
   void Log() const;
+  bool use_interceptors;
   bool use_proxy;
   bool inproc;
   const grpc::string credentials_type;
+  bool callback_server;
 };
 
 static std::ostream& operator<<(std::ostream& out,
                                 const TestScenario& scenario) {
-  return out << "TestScenario{use_proxy="
-             << (scenario.use_proxy ? "true" : "false")
+  return out << "TestScenario{use_interceptors="
+             << (scenario.use_interceptors ? "true" : "false")
+             << ", use_proxy=" << (scenario.use_proxy ? "true" : "false")
              << ", inproc=" << (scenario.inproc ? "true" : "false")
+             << ", server_type="
+             << (scenario.callback_server ? "callback" : "sync")
              << ", credentials='" << scenario.credentials_type << "'}";
 }
 
@@ -224,6 +247,14 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
         special_service_("special"),
         first_picked_port_(0) {
     GetParam().Log();
+  }
+
+  void SetUp() override {
+    if (GetParam().callback_server && !GetParam().inproc &&
+        !grpc_iomgr_run_in_background()) {
+      do_not_test_ = true;
+      return;
+    }
   }
 
   void TearDown() override {
@@ -260,8 +291,24 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     if (GetParam().credentials_type != kInsecureCredentialsType) {
       server_creds->SetAuthMetadataProcessor(processor);
     }
+    if (GetParam().use_interceptors) {
+      std::vector<
+          std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
+          creators;
+      // Add 20 dummy server interceptors
+      creators.reserve(20);
+      for (auto i = 0; i < 20; i++) {
+        creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
+            new DummyInterceptorFactory()));
+      }
+      builder.experimental().SetInterceptorCreators(std::move(creators));
+    }
     builder.AddListeningPort(server_address_.str(), server_creds);
-    builder.RegisterService(&service_);
+    if (!GetParam().callback_server) {
+      builder.RegisterService(&service_);
+    } else {
+      builder.RegisterService(&callback_service_);
+    }
     builder.RegisterService("foo.test.youtube.com", &special_service_);
     builder.RegisterService(&dup_pkg_service_);
 
@@ -292,10 +339,21 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
 
     if (!GetParam().inproc) {
-      channel_ =
-          CreateCustomChannel(server_address_.str(), channel_creds, args);
+      if (!GetParam().use_interceptors) {
+        channel_ =
+            CreateCustomChannel(server_address_.str(), channel_creds, args);
+      } else {
+        channel_ = CreateCustomChannelWithInterceptors(
+            server_address_.str(), channel_creds, args,
+            CreateDummyClientInterceptors());
+      }
     } else {
-      channel_ = server_->InProcessChannel(args);
+      if (!GetParam().use_interceptors) {
+        channel_ = server_->InProcessChannel(args);
+      } else {
+        channel_ = server_->experimental().InProcessChannelWithInterceptors(
+            args, CreateDummyClientInterceptors());
+      }
     }
   }
 
@@ -320,8 +378,10 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     }
 
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
+    DummyInterceptor::Reset();
   }
 
+  bool do_not_test_{false};
   bool is_server_started_;
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
@@ -331,6 +391,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   std::ostringstream server_address_;
   const int kMaxMessageSize_;
   TestServiceImpl service_;
+  CallbackTestServiceImpl callback_service_;
   TestServiceImpl special_service_;
   TestServiceImplDupPkg dup_pkg_service_;
   grpc::string user_agent_prefix_;
@@ -376,6 +437,8 @@ class End2endServerTryCancelTest : public End2endTest {
   // NOTE: Do not call this function with server_try_cancel == DO_NOT_CANCEL.
   void TestRequestStreamServerCancel(
       ServerTryCancelRequestPhase server_try_cancel, int num_msgs_to_send) {
+    MAYBE_SKIP_TEST;
+    RestartServer(std::shared_ptr<AuthMetadataProcessor>());
     ResetStub();
     EchoRequest request;
     EchoResponse response;
@@ -432,6 +495,10 @@ class End2endServerTryCancelTest : public End2endTest {
 
     EXPECT_FALSE(s.ok());
     EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
+    // Make sure that the server interceptors were notified
+    if (GetParam().use_interceptors) {
+      EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+    }
   }
 
   // Helper for testing server-streaming RPCs which are cancelled on the server.
@@ -449,6 +516,8 @@ class End2endServerTryCancelTest : public End2endTest {
   // NOTE: Do not call this function with server_try_cancel == DO_NOT_CANCEL.
   void TestResponseStreamServerCancel(
       ServerTryCancelRequestPhase server_try_cancel) {
+    MAYBE_SKIP_TEST;
+    RestartServer(std::shared_ptr<AuthMetadataProcessor>());
     ResetStub();
     EchoRequest request;
     EchoResponse response;
@@ -508,7 +577,10 @@ class End2endServerTryCancelTest : public End2endTest {
     }
 
     EXPECT_FALSE(s.ok());
-    EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
+    // Make sure that the server interceptors were notified
+    if (GetParam().use_interceptors) {
+      EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+    }
   }
 
   // Helper for testing bidirectional-streaming RPCs which are cancelled on the
@@ -526,6 +598,8 @@ class End2endServerTryCancelTest : public End2endTest {
   // NOTE: Do not call this function with server_try_cancel == DO_NOT_CANCEL.
   void TestBidiStreamServerCancel(ServerTryCancelRequestPhase server_try_cancel,
                                   int num_messages) {
+    MAYBE_SKIP_TEST;
+    RestartServer(std::shared_ptr<AuthMetadataProcessor>());
     ResetStub();
     EchoRequest request;
     EchoResponse response;
@@ -592,10 +666,15 @@ class End2endServerTryCancelTest : public End2endTest {
 
     EXPECT_FALSE(s.ok());
     EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
+    // Make sure that the server interceptors were notified
+    if (GetParam().use_interceptors) {
+      EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+    }
   }
 };
 
 TEST_P(End2endServerTryCancelTest, RequestEchoServerCancel) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -658,6 +737,7 @@ TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelAfter) {
 }
 
 TEST_P(End2endTest, SimpleRpcWithCustomUserAgentPrefix) {
+  MAYBE_SKIP_TEST;
   // User-Agent is an HTTP header for HTTP transports only
   if (GetParam().inproc) {
     return;
@@ -681,6 +761,7 @@ TEST_P(End2endTest, SimpleRpcWithCustomUserAgentPrefix) {
 }
 
 TEST_P(End2endTest, MultipleRpcsWithVariedBinaryMetadataValue) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   std::vector<std::thread> threads;
   threads.reserve(10);
@@ -693,6 +774,7 @@ TEST_P(End2endTest, MultipleRpcsWithVariedBinaryMetadataValue) {
 }
 
 TEST_P(End2endTest, MultipleRpcs) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   std::vector<std::thread> threads;
   threads.reserve(10);
@@ -704,7 +786,21 @@ TEST_P(End2endTest, MultipleRpcs) {
   }
 }
 
+TEST_P(End2endTest, EmptyBinaryMetadata) {
+  MAYBE_SKIP_TEST;
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello hello hello hello");
+  ClientContext context;
+  context.AddMetadata("custom-bin", "");
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.ok());
+}
+
 TEST_P(End2endTest, ReconnectChannel) {
+  MAYBE_SKIP_TEST;
   if (GetParam().inproc) {
     return;
   }
@@ -730,6 +826,7 @@ TEST_P(End2endTest, ReconnectChannel) {
 }
 
 TEST_P(End2endTest, RequestStreamOneRequest) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -746,6 +843,7 @@ TEST_P(End2endTest, RequestStreamOneRequest) {
 }
 
 TEST_P(End2endTest, RequestStreamOneRequestWithCoalescingApi) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -761,6 +859,7 @@ TEST_P(End2endTest, RequestStreamOneRequestWithCoalescingApi) {
 }
 
 TEST_P(End2endTest, RequestStreamTwoRequests) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -777,6 +876,7 @@ TEST_P(End2endTest, RequestStreamTwoRequests) {
 }
 
 TEST_P(End2endTest, RequestStreamTwoRequestsWithWriteThrough) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -793,6 +893,7 @@ TEST_P(End2endTest, RequestStreamTwoRequestsWithWriteThrough) {
 }
 
 TEST_P(End2endTest, RequestStreamTwoRequestsWithCoalescingApi) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -809,6 +910,7 @@ TEST_P(End2endTest, RequestStreamTwoRequestsWithCoalescingApi) {
 }
 
 TEST_P(End2endTest, ResponseStream) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -827,6 +929,7 @@ TEST_P(End2endTest, ResponseStream) {
 }
 
 TEST_P(End2endTest, ResponseStreamWithCoalescingApi) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -848,6 +951,7 @@ TEST_P(End2endTest, ResponseStreamWithCoalescingApi) {
 // This was added to prevent regression from issue:
 // https://github.com/grpc/grpc/issues/11546
 TEST_P(End2endTest, ResponseStreamWithEverythingCoalesced) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -869,6 +973,7 @@ TEST_P(End2endTest, ResponseStreamWithEverythingCoalesced) {
 }
 
 TEST_P(End2endTest, BidiStream) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -893,6 +998,7 @@ TEST_P(End2endTest, BidiStream) {
 }
 
 TEST_P(End2endTest, BidiStreamWithCoalescingApi) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -928,6 +1034,7 @@ TEST_P(End2endTest, BidiStreamWithCoalescingApi) {
 // This was added to prevent regression from issue:
 // https://github.com/grpc/grpc/issues/11546
 TEST_P(End2endTest, BidiStreamWithEverythingCoalesced) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -953,6 +1060,7 @@ TEST_P(End2endTest, BidiStreamWithEverythingCoalesced) {
 // Talk to the two services with the same name but different package names.
 // The two stubs are created on the same channel.
 TEST_P(End2endTest, DiffPackageServices) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -971,7 +1079,8 @@ TEST_P(End2endTest, DiffPackageServices) {
   EXPECT_TRUE(s.ok());
 }
 
-void CancelRpc(ClientContext* context, int delay_us, TestServiceImpl* service) {
+template <class ServiceType>
+void CancelRpc(ClientContext* context, int delay_us, ServiceType* service) {
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_micros(delay_us, GPR_TIMESPAN)));
   while (!service->signal_client()) {
@@ -980,6 +1089,7 @@ void CancelRpc(ClientContext* context, int delay_us, TestServiceImpl* service) {
 }
 
 TEST_P(End2endTest, CancelRpcBeforeStart) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -989,10 +1099,14 @@ TEST_P(End2endTest, CancelRpcBeforeStart) {
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ("", response.message());
   EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
+  if (GetParam().use_interceptors) {
+    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+  }
 }
 
 // Client cancels request stream after sending two messages
 TEST_P(End2endTest, ClientCancelsRequestStream) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1009,10 +1123,14 @@ TEST_P(End2endTest, ClientCancelsRequestStream) {
   EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
 
   EXPECT_EQ(response.message(), "");
+  if (GetParam().use_interceptors) {
+    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+  }
 }
 
 // Client cancels server stream after sending some messages
 TEST_P(End2endTest, ClientCancelsResponseStream) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1041,10 +1159,14 @@ TEST_P(End2endTest, ClientCancelsResponseStream) {
   // The final status could be either of CANCELLED or OK depending on
   // who won the race.
   EXPECT_GE(grpc::StatusCode::CANCELLED, s.error_code());
+  if (GetParam().use_interceptors) {
+    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+  }
 }
 
 // Client cancels bidi stream after sending some messages
 TEST_P(End2endTest, ClientCancelsBidi) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1074,9 +1196,13 @@ TEST_P(End2endTest, ClientCancelsBidi) {
 
   Status s = stream->Finish();
   EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
+  if (GetParam().use_interceptors) {
+    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+  }
 }
 
 TEST_P(End2endTest, RpcMaxMessageSize) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1099,6 +1225,7 @@ void ReaderThreadFunc(ClientReaderWriter<EchoRequest, EchoResponse>* stream,
 
 // Run a Read and a WritesDone simultaneously.
 TEST_P(End2endTest, SimultaneousReadWritesDone) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   ClientContext context;
   gpr_event ev;
@@ -1113,6 +1240,7 @@ TEST_P(End2endTest, SimultaneousReadWritesDone) {
 }
 
 TEST_P(End2endTest, ChannelState) {
+  MAYBE_SKIP_TEST;
   if (GetParam().inproc) {
     return;
   }
@@ -1163,6 +1291,7 @@ TEST_P(End2endTest, ChannelStateTimeout) {
 
 // Talking to a non-existing service.
 TEST_P(End2endTest, NonExistingService) {
+  MAYBE_SKIP_TEST;
   ResetChannel();
   std::unique_ptr<grpc::testing::UnimplementedEchoService::Stub> stub;
   stub = grpc::testing::UnimplementedEchoService::NewStub(channel_);
@@ -1180,6 +1309,7 @@ TEST_P(End2endTest, NonExistingService) {
 // Ask the server to send back a serialized proto in trailer.
 // This is an example of setting error details.
 TEST_P(End2endTest, BinaryTrailerTest) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1206,6 +1336,7 @@ TEST_P(End2endTest, BinaryTrailerTest) {
 }
 
 TEST_P(End2endTest, ExpectErrorTest) {
+  MAYBE_SKIP_TEST;
   ResetStub();
 
   std::vector<ErrorStatus> expected_status;
@@ -1257,11 +1388,13 @@ class ProxyEnd2endTest : public End2endTest {
 };
 
 TEST_P(ProxyEnd2endTest, SimpleRpc) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   SendRpc(stub_.get(), 1, false);
 }
 
 TEST_P(ProxyEnd2endTest, SimpleRpcWithEmptyMessages) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1272,6 +1405,7 @@ TEST_P(ProxyEnd2endTest, SimpleRpcWithEmptyMessages) {
 }
 
 TEST_P(ProxyEnd2endTest, MultipleRpcs) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   std::vector<std::thread> threads;
   threads.reserve(10);
@@ -1285,6 +1419,7 @@ TEST_P(ProxyEnd2endTest, MultipleRpcs) {
 
 // Set a 10us deadline and make sure proper error is returned.
 TEST_P(ProxyEnd2endTest, RpcDeadlineExpires) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1310,6 +1445,7 @@ TEST_P(ProxyEnd2endTest, RpcDeadlineExpires) {
 
 // Set a long but finite deadline.
 TEST_P(ProxyEnd2endTest, RpcLongDeadline) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1326,6 +1462,7 @@ TEST_P(ProxyEnd2endTest, RpcLongDeadline) {
 
 // Ask server to echo back the deadline it sees.
 TEST_P(ProxyEnd2endTest, EchoDeadline) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1351,6 +1488,7 @@ TEST_P(ProxyEnd2endTest, EchoDeadline) {
 
 // Ask server to echo back the deadline it sees. The rpc has no deadline.
 TEST_P(ProxyEnd2endTest, EchoDeadlineForNoDeadlineRpc) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1366,6 +1504,7 @@ TEST_P(ProxyEnd2endTest, EchoDeadlineForNoDeadlineRpc) {
 }
 
 TEST_P(ProxyEnd2endTest, UnimplementedRpc) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1381,6 +1520,7 @@ TEST_P(ProxyEnd2endTest, UnimplementedRpc) {
 
 // Client cancels rpc after 10ms
 TEST_P(ProxyEnd2endTest, ClientCancelsRpc) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1389,7 +1529,24 @@ TEST_P(ProxyEnd2endTest, ClientCancelsRpc) {
   request.mutable_param()->set_client_cancel_after_us(kCancelDelayUs);
 
   ClientContext context;
-  std::thread cancel_thread(CancelRpc, &context, kCancelDelayUs, &service_);
+  std::thread cancel_thread;
+  if (!GetParam().callback_server) {
+    cancel_thread = std::thread(
+        [&context, this](int delay) { CancelRpc(&context, delay, &service_); },
+        kCancelDelayUs);
+    // Note: the unusual pattern above (and below) is caused by a conflict
+    // between two sets of compiler expectations. clang allows const to be
+    // captured without mention, so there is no need to capture kCancelDelayUs
+    // (and indeed clang-tidy complains if you do so). OTOH, a Windows compiler
+    // in our tests requires an explicit capture even for const. We square this
+    // circle by passing the const value in as an argument to the lambda.
+  } else {
+    cancel_thread = std::thread(
+        [&context, this](int delay) {
+          CancelRpc(&context, delay, &callback_service_);
+        },
+        kCancelDelayUs);
+  }
   Status s = stub_->Echo(&context, request, &response);
   cancel_thread.join();
   EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
@@ -1398,6 +1555,7 @@ TEST_P(ProxyEnd2endTest, ClientCancelsRpc) {
 
 // Server cancels rpc after 1ms
 TEST_P(ProxyEnd2endTest, ServerCancelsRpc) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1412,6 +1570,7 @@ TEST_P(ProxyEnd2endTest, ServerCancelsRpc) {
 
 // Make the response larger than the flow control window.
 TEST_P(ProxyEnd2endTest, HugeResponse) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1429,6 +1588,7 @@ TEST_P(ProxyEnd2endTest, HugeResponse) {
 }
 
 TEST_P(ProxyEnd2endTest, Peer) {
+  MAYBE_SKIP_TEST;
   // Peer is not meaningful for inproc
   if (GetParam().inproc) {
     return;
@@ -1457,6 +1617,7 @@ class SecureEnd2endTest : public End2endTest {
 };
 
 TEST_P(SecureEnd2endTest, SimpleRpcWithHost) {
+  MAYBE_SKIP_TEST;
   ResetStub();
 
   EchoRequest request;
@@ -1488,6 +1649,7 @@ bool MetadataContains(
 }
 
 TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginAndProcessorSuccess) {
+  MAYBE_SKIP_TEST;
   auto* processor = new TestAuthMetadataProcessor(true);
   StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
   ResetStub();
@@ -1513,6 +1675,7 @@ TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginAndProcessorSuccess) {
 }
 
 TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginAndProcessorFailure) {
+  MAYBE_SKIP_TEST;
   auto* processor = new TestAuthMetadataProcessor(true);
   StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
   ResetStub();
@@ -1528,6 +1691,7 @@ TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginAndProcessorFailure) {
 }
 
 TEST_P(SecureEnd2endTest, SetPerCallCredentials) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1550,6 +1714,7 @@ TEST_P(SecureEnd2endTest, SetPerCallCredentials) {
 }
 
 TEST_P(SecureEnd2endTest, OverridePerCallCredentials) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1581,6 +1746,7 @@ TEST_P(SecureEnd2endTest, OverridePerCallCredentials) {
 }
 
 TEST_P(SecureEnd2endTest, AuthMetadataPluginKeyFailure) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1598,6 +1764,7 @@ TEST_P(SecureEnd2endTest, AuthMetadataPluginKeyFailure) {
 }
 
 TEST_P(SecureEnd2endTest, AuthMetadataPluginValueFailure) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1615,6 +1782,7 @@ TEST_P(SecureEnd2endTest, AuthMetadataPluginValueFailure) {
 }
 
 TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginFailure) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1636,6 +1804,7 @@ TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginFailure) {
 }
 
 TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginAndProcessorSuccess) {
+  MAYBE_SKIP_TEST;
   auto* processor = new TestAuthMetadataProcessor(false);
   StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
   ResetStub();
@@ -1661,6 +1830,7 @@ TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginAndProcessorSuccess) {
 }
 
 TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginAndProcessorFailure) {
+  MAYBE_SKIP_TEST;
   auto* processor = new TestAuthMetadataProcessor(false);
   StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
   ResetStub();
@@ -1676,6 +1846,7 @@ TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginAndProcessorFailure) {
 }
 
 TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginFailure) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1697,6 +1868,7 @@ TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginFailure) {
 }
 
 TEST_P(SecureEnd2endTest, CompositeCallCreds) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1725,6 +1897,7 @@ TEST_P(SecureEnd2endTest, CompositeCallCreds) {
 }
 
 TEST_P(SecureEnd2endTest, ClientAuthContext) {
+  MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1769,6 +1942,7 @@ class ResourceQuotaEnd2endTest : public End2endTest {
 };
 
 TEST_P(ResourceQuotaEnd2endTest, SimpleRequest) {
+  MAYBE_SKIP_TEST;
   ResetStub();
 
   EchoRequest request;
@@ -1781,10 +1955,12 @@ TEST_P(ResourceQuotaEnd2endTest, SimpleRequest) {
   EXPECT_TRUE(s.ok());
 }
 
+// TODO(vjpai): refactor arguments into a struct if it makes sense
 std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
                                               bool test_insecure,
                                               bool test_secure,
-                                              bool test_inproc) {
+                                              bool test_inproc,
+                                              bool test_callback_server) {
   std::vector<TestScenario> scenarios;
   std::vector<grpc::string> credentials_types;
   if (test_secure) {
@@ -1800,38 +1976,54 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   if (test_insecure && insec_ok()) {
     credentials_types.push_back(kInsecureCredentialsType);
   }
+
+  // Test callback with inproc or if the event-engine allows it
   GPR_ASSERT(!credentials_types.empty());
   for (const auto& cred : credentials_types) {
-    scenarios.emplace_back(false, false, cred);
+    scenarios.emplace_back(false, false, false, cred, false);
+    scenarios.emplace_back(true, false, false, cred, false);
+    if (test_callback_server) {
+      // Note that these scenarios will be dynamically disabled if the event
+      // engine doesn't run in the background
+      scenarios.emplace_back(false, false, false, cred, true);
+      scenarios.emplace_back(true, false, false, cred, true);
+    }
     if (use_proxy) {
-      scenarios.emplace_back(true, false, cred);
+      scenarios.emplace_back(false, true, false, cred, false);
+      scenarios.emplace_back(true, true, false, cred, false);
     }
   }
   if (test_inproc && insec_ok()) {
-    scenarios.emplace_back(false, true, kInsecureCredentialsType);
+    scenarios.emplace_back(false, false, true, kInsecureCredentialsType, false);
+    scenarios.emplace_back(true, false, true, kInsecureCredentialsType, false);
+    if (test_callback_server) {
+      scenarios.emplace_back(false, false, true, kInsecureCredentialsType,
+                             true);
+      scenarios.emplace_back(true, false, true, kInsecureCredentialsType, true);
+    }
   }
   return scenarios;
 }
 
-INSTANTIATE_TEST_CASE_P(End2end, End2endTest,
-                        ::testing::ValuesIn(CreateTestScenarios(false, true,
-                                                                true, true)));
+INSTANTIATE_TEST_CASE_P(
+    End2end, End2endTest,
+    ::testing::ValuesIn(CreateTestScenarios(false, true, true, true, true)));
 
-INSTANTIATE_TEST_CASE_P(End2endServerTryCancel, End2endServerTryCancelTest,
-                        ::testing::ValuesIn(CreateTestScenarios(false, true,
-                                                                true, true)));
+INSTANTIATE_TEST_CASE_P(
+    End2endServerTryCancel, End2endServerTryCancelTest,
+    ::testing::ValuesIn(CreateTestScenarios(false, true, true, true, true)));
 
-INSTANTIATE_TEST_CASE_P(ProxyEnd2end, ProxyEnd2endTest,
-                        ::testing::ValuesIn(CreateTestScenarios(true, true,
-                                                                true, true)));
+INSTANTIATE_TEST_CASE_P(
+    ProxyEnd2end, ProxyEnd2endTest,
+    ::testing::ValuesIn(CreateTestScenarios(true, true, true, true, false)));
 
-INSTANTIATE_TEST_CASE_P(SecureEnd2end, SecureEnd2endTest,
-                        ::testing::ValuesIn(CreateTestScenarios(false, false,
-                                                                true, false)));
+INSTANTIATE_TEST_CASE_P(
+    SecureEnd2end, SecureEnd2endTest,
+    ::testing::ValuesIn(CreateTestScenarios(false, false, true, false, true)));
 
-INSTANTIATE_TEST_CASE_P(ResourceQuotaEnd2end, ResourceQuotaEnd2endTest,
-                        ::testing::ValuesIn(CreateTestScenarios(false, true,
-                                                                true, true)));
+INSTANTIATE_TEST_CASE_P(
+    ResourceQuotaEnd2end, ResourceQuotaEnd2endTest,
+    ::testing::ValuesIn(CreateTestScenarios(false, true, true, true, false)));
 
 }  // namespace
 }  // namespace testing
@@ -1839,7 +2031,7 @@ INSTANTIATE_TEST_CASE_P(ResourceQuotaEnd2end, ResourceQuotaEnd2endTest,
 
 int main(int argc, char** argv) {
   gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "200");
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

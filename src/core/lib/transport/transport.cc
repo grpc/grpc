@@ -27,8 +27,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/transport_impl.h"
@@ -62,8 +64,9 @@ void grpc_stream_unref(grpc_stream_refcount* refcount, const char* reason) {
 void grpc_stream_unref(grpc_stream_refcount* refcount) {
 #endif
   if (gpr_unref(&refcount->refs)) {
-    if (grpc_core::ExecCtx::Get()->flags() &
-        GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP) {
+    if (!grpc_iomgr_is_any_background_poller_thread() &&
+        (grpc_core::ExecCtx::Get()->flags() &
+         GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP)) {
       /* Ick.
          The thread we're running on MAY be owned (indirectly) by a call-stack.
          If that's the case, destroying the call-stack MAY try to destroy the
@@ -72,7 +75,7 @@ void grpc_stream_unref(grpc_stream_refcount* refcount) {
          Throw this over to the executor (on a core-owned thread) and process it
          there. */
       refcount->destroy.scheduler =
-          grpc_executor_scheduler(GRPC_EXECUTOR_SHORT);
+          grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT);
     }
     GRPC_CLOSURE_SCHED(&refcount->destroy, GRPC_ERROR_NONE);
   }
@@ -149,7 +152,7 @@ void grpc_transport_move_stats(grpc_transport_stream_stats* from,
 }
 
 size_t grpc_transport_stream_size(grpc_transport* transport) {
-  return transport->vtable->sizeof_stream;
+  return GPR_ROUND_UP_TO_ALIGNMENT_SIZE(transport->vtable->sizeof_stream);
 }
 
 void grpc_transport_destroy(grpc_transport* transport) {

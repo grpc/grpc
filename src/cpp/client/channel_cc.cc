@@ -33,6 +33,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/call.h>
+#include <grpcpp/impl/codegen/call_op_set.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/impl/rpc_method.h>
@@ -53,14 +54,11 @@ namespace grpc {
 static internal::GrpcLibraryInitializer g_gli_initializer;
 Channel::Channel(
     const grpc::string& host, grpc_channel* channel,
-    std::unique_ptr<std::vector<
-        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
+    std::vector<
+        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators)
     : host_(host), c_channel_(channel) {
-  auto* vector = interceptor_creators.release();
-  if (vector != nullptr) {
-    interceptor_creators_ = std::move(*vector);
-  }
+  interceptor_creators_ = std::move(interceptor_creators);
   g_gli_initializer.summon();
 }
 
@@ -112,9 +110,10 @@ void ChannelResetConnectionBackoff(Channel* channel) {
 
 }  // namespace experimental
 
-internal::Call Channel::CreateCall(const internal::RpcMethod& method,
-                                   ClientContext* context,
-                                   CompletionQueue* cq) {
+internal::Call Channel::CreateCallInternal(const internal::RpcMethod& method,
+                                           ClientContext* context,
+                                           CompletionQueue* cq,
+                                           size_t interceptor_pos) {
   const bool kRegistered = method.channel_tag() && context->authority().empty();
   grpc_call* c_call = nullptr;
   if (kRegistered) {
@@ -146,18 +145,28 @@ internal::Call Channel::CreateCall(const internal::RpcMethod& method,
     }
   }
   grpc_census_call_set_context(c_call, context->census_context());
+
+  // ClientRpcInfo should be set before call because set_call also checks
+  // whether the call has been cancelled, and if the call was cancelled, we
+  // should notify the interceptors too/
+  auto* info =
+      context->set_client_rpc_info(method.name(), method.method_type(), this,
+                                   interceptor_creators_, interceptor_pos);
   context->set_call(c_call, shared_from_this());
-  return internal::Call(c_call, this, cq);
+
+  return internal::Call(c_call, this, cq, info);
+}
+
+internal::Call Channel::CreateCall(const internal::RpcMethod& method,
+                                   ClientContext* context,
+                                   CompletionQueue* cq) {
+  return CreateCallInternal(method, context, cq, 0);
 }
 
 void Channel::PerformOpsOnCall(internal::CallOpSetInterface* ops,
                                internal::Call* call) {
-  static const size_t MAX_OPS = 8;
-  size_t nops = 0;
-  grpc_op cops[MAX_OPS];
-  ops->FillOps(call->call(), cops, &nops);
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call->call(), cops, nops,
-                                                   ops->cq_tag(), nullptr));
+  ops->FillOps(
+      call);  // Make a copy of call. It's fine since Call just has pointers
 }
 
 void* Channel::RegisterMethod(const char* method) {
@@ -219,7 +228,7 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
   static void Run(grpc_experimental_completion_queue_functor* cb, int) {
     auto* callback = static_cast<ShutdownCallback*>(cb);
     delete callback->cq_;
-    grpc_core::Delete(callback);
+    delete callback;
   }
 
  private:
@@ -232,7 +241,7 @@ CompletionQueue* Channel::CallbackCQ() {
   // if there is no explicit per-channel CQ registered
   std::lock_guard<std::mutex> l(mu_);
   if (callback_cq_ == nullptr) {
-    auto* shutdown_callback = grpc_core::New<ShutdownCallback>();
+    auto* shutdown_callback = new ShutdownCallback;
     callback_cq_ = new CompletionQueue(grpc_completion_queue_attributes{
         GRPC_CQ_CURRENT_VERSION, GRPC_CQ_CALLBACK, GRPC_CQ_DEFAULT_POLLING,
         shutdown_callback});

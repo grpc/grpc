@@ -42,6 +42,7 @@ typedef struct grpc_fd grpc_fd;
 typedef struct grpc_event_engine_vtable {
   size_t pollset_size;
   bool can_track_err;
+  bool run_in_background;
 
   grpc_fd* (*fd_create)(int fd, const char* name, bool track_err);
   int (*fd_wrapped_fd)(grpc_fd* fd);
@@ -79,6 +80,8 @@ typedef struct grpc_event_engine_vtable {
   void (*pollset_set_add_fd)(grpc_pollset_set* pollset_set, grpc_fd* fd);
   void (*pollset_set_del_fd)(grpc_pollset_set* pollset_set, grpc_fd* fd);
 
+  bool (*is_any_background_poller_thread)(void);
+  void (*shutdown_background_closure)(void);
   void (*shutdown_engine)(void);
 } grpc_event_engine_vtable;
 
@@ -100,6 +103,11 @@ const char* grpc_get_poll_strategy_name();
  * fd_notify_on_write.
  */
 bool grpc_event_engine_can_track_errors();
+
+/* Returns true if polling engine runs in the background, false otherwise.
+ * Currently only 'epollbg' runs in the background.
+ */
+bool grpc_event_engine_run_in_background();
 
 /* Create a wrapped file descriptor.
    Requires fd is a non-blocking file descriptor.
@@ -173,6 +181,12 @@ void grpc_pollset_add_fd(grpc_pollset* pollset, struct grpc_fd* fd);
 
 void grpc_pollset_set_add_fd(grpc_pollset_set* pollset_set, grpc_fd* fd);
 void grpc_pollset_set_del_fd(grpc_pollset_set* pollset_set, grpc_fd* fd);
+
+/* Returns true if the caller is a worker thread for any background poller. */
+bool grpc_is_any_background_poller_thread();
+
+/* Shut down all the closures registered in the background poller. */
+void grpc_shutdown_background_closure();
 
 /* override to allow tests to hook poll() usage */
 typedef int (*grpc_poll_function_type)(struct pollfd*, nfds_t, int);

@@ -303,11 +303,15 @@ static void internal_add_error(grpc_error** err, grpc_error* new_err) {
 // It is very common to include and extra int and string in an error
 #define SURPLUS_CAPACITY (2 * SLOTS_PER_INT + SLOTS_PER_TIME)
 
-static bool g_error_creation_allowed = true;
+static gpr_atm g_error_creation_allowed = true;
 
-void grpc_disable_error_creation() { g_error_creation_allowed = false; }
+void grpc_disable_error_creation() {
+  gpr_atm_no_barrier_store(&g_error_creation_allowed, false);
+}
 
-void grpc_enable_error_creation() { g_error_creation_allowed = true; }
+void grpc_enable_error_creation() {
+  gpr_atm_no_barrier_store(&g_error_creation_allowed, true);
+}
 
 grpc_error* grpc_error_create(const char* file, int line, grpc_slice desc,
                               grpc_error** referencing,
@@ -323,7 +327,7 @@ grpc_error* grpc_error_create(const char* file, int line, grpc_slice desc,
     return GRPC_ERROR_OOM;
   }
 #ifndef NDEBUG
-  if (!g_error_creation_allowed) {
+  if (!gpr_atm_no_barrier_load(&g_error_creation_allowed)) {
     gpr_log(GPR_ERROR,
             "Error creation occurred when error creation was disabled [%s:%d]",
             file, line);
@@ -765,7 +769,7 @@ grpc_error* grpc_os_error(const char* file, int line, int err,
       grpc_error_set_str(
           grpc_error_set_int(
               grpc_error_create(file, line,
-                                grpc_slice_from_static_string("OS Error"),
+                                grpc_slice_from_static_string(strerror(err)),
                                 nullptr, 0),
               GRPC_ERROR_INT_ERRNO, err),
           GRPC_ERROR_STR_OS_ERROR,

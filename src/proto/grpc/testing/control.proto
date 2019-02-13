@@ -33,6 +33,7 @@ enum ServerType {
   ASYNC_SERVER = 1;
   ASYNC_GENERIC_SERVER = 2;
   OTHER_SERVER = 3; // used for some language-specific variants
+  CALLBACK_SERVER = 4;
 }
 
 enum RpcType {

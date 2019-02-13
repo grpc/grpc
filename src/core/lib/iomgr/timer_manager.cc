@@ -67,6 +67,7 @@ static void timer_thread(void* completed_thread_ptr);
 extern int64_t g_timer_manager_init_count;
 extern int64_t g_timer_manager_shutdown_count;
 extern int64_t g_fork_count;
+extern int64_t g_next_value;
 #endif  // GRPC_DEBUG_TIMER_MANAGER
 
 static void gc_completed_threads(void) {
@@ -104,6 +105,14 @@ void grpc_timer_manager_tick() {
 }
 
 static void run_some_timers() {
+  // In the case of timers, the ExecCtx for the thread is declared
+  // in the timer thread itself, but this is the point where we
+  // could start seeing application-level callbacks. No need to
+  // create a new ExecCtx, though, since there already is one and it is
+  // flushed (but not destructed) in this function itself
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx(
+      GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
+
   // if there's something to execute...
   gpr_mu_lock(&g_mu);
   // remove a waiter from the pool, and start another thread if necessary
@@ -193,6 +202,11 @@ static bool wait_until(grpc_millis next) {
       gpr_log(GPR_INFO, "sleep until kicked");
     }
 
+      // For debug of the timer manager crash only.
+      // TODO (mxyan): remove after bug is fixed.
+#ifdef GRPC_DEBUG_TIMER_MANAGER
+    g_next_value = next;
+#endif
     gpr_cv_wait(&g_cv_wait, &g_mu,
                 grpc_millis_to_timespec(next, GPR_CLOCK_MONOTONIC));
 

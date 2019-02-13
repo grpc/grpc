@@ -163,7 +163,7 @@ typedef struct {
 /** Maximum time that a channel may exist. Int valued, milliseconds.
  * INT_MAX means unlimited. */
 #define GRPC_ARG_MAX_CONNECTION_AGE_MS "grpc.max_connection_age_ms"
-/** Grace period after the chennel reaches its max age. Int valued,
+/** Grace period after the channel reaches its max age. Int valued,
    milliseconds. INT_MAX means unlimited. */
 #define GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS "grpc.max_connection_age_grace_ms"
 /** Enable/disable support for per-message compression. Defaults to 1, unless
@@ -293,7 +293,7 @@ typedef struct {
   "grpc.max_channel_trace_event_memory_per_node"
 /** If non-zero, gRPC library will track stats and information at at per channel
  * level. Disabling channelz naturally disables channel tracing. The default
- * is for channelz to be disabled. */
+ * is for channelz to be enabled. */
 #define GRPC_ARG_ENABLE_CHANNELZ "grpc.enable_channelz"
 /** If non-zero, Cronet transport will coalesce packets to fewer frames
  * when possible. */
@@ -347,6 +347,26 @@ typedef struct {
 /** If set to non zero, surfaces the user agent string to the server. User
     agent is surfaced by default. */
 #define GRPC_ARG_SURFACE_USER_AGENT "grpc.surface_user_agent"
+/** If set, inhibits health checking (which may be enabled via the
+ *  service config.) */
+#define GRPC_ARG_INHIBIT_HEALTH_CHECKING "grpc.inhibit_health_checking"
+/** If set, the channel's resolver is allowed to query for SRV records.
+ * For example, this is useful as a way to enable the "grpclb"
+ * load balancing policy. Note that this only works with the "ares"
+ * DNS resolver, and isn't supported by the "native" DNS resolver. */
+#define GRPC_ARG_DNS_ENABLE_SRV_QUERIES "grpc.dns_enable_srv_queries"
+/** If set, determines the number of milliseconds that the c-ares based
+ * DNS resolver will wait on queries before cancelling them. The default value
+ * is 10000. Setting this to "0" will disable c-ares query timeouts
+ * entirely. */
+#define GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS "grpc.dns_ares_query_timeout"
+/** If set, uses a local subchannel pool within the channel. Otherwise, uses the
+ * global subchannel pool. */
+#define GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL "grpc.use_local_subchannel_pool"
+/** gRPC Objective-C channel pooling domain string. */
+#define GRPC_ARG_CHANNEL_POOL_DOMAIN "grpc.channel_pooling_domain"
+/** gRPC Objective-C channel pooling id. */
+#define GRPC_ARG_CHANNEL_ID "grpc.channel_id"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
@@ -673,6 +693,10 @@ typedef struct grpc_experimental_completion_queue_functor {
       pointer to this functor and a boolean that indicates whether the
       operation succeeded (non-zero) or failed (zero) */
   void (*functor_run)(struct grpc_experimental_completion_queue_functor*, int);
+
+  /** The following fields are not API. They are meant for internal use. */
+  int internal_success;
+  struct grpc_experimental_completion_queue_functor* internal_next;
 } grpc_experimental_completion_queue_functor;
 
 /* The upgrade to version 2 is currently experimental. */

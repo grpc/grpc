@@ -135,7 +135,8 @@ static void BM_LameChannelCallCreateCpp(benchmark::State& state) {
           "",
           grpc_lame_client_channel_create("localhost:1234",
                                           GRPC_STATUS_UNAUTHENTICATED, "blah"),
-          nullptr));
+          std::vector<std::unique_ptr<
+              grpc::experimental::ClientInterceptorFactoryInterface>>()));
   grpc::CompletionQueue cq;
   grpc::testing::EchoRequest send_request;
   grpc::testing::EchoResponse recv_response;
@@ -324,8 +325,8 @@ class FakeClientChannelFactory : public grpc_client_channel_factory {
  private:
   static void NoRef(grpc_client_channel_factory* factory) {}
   static void NoUnref(grpc_client_channel_factory* factory) {}
-  static grpc_subchannel* CreateSubchannel(grpc_client_channel_factory* factory,
-                                           const grpc_subchannel_args* args) {
+  static grpc_core::Subchannel* CreateSubchannel(
+      grpc_client_channel_factory* factory, const grpc_channel_args* args) {
     return nullptr;
   }
   static grpc_channel* CreateClientChannel(grpc_client_channel_factory* factory,
@@ -468,7 +469,7 @@ class NoOp {
 
 class SendEmptyMetadata {
  public:
-  SendEmptyMetadata() {
+  SendEmptyMetadata() : op_payload_(nullptr) {
     memset(&op_, 0, sizeof(op_));
     op_.on_complete = GRPC_CLOSURE_INIT(&closure_, DoNothing, nullptr,
                                         grpc_schedule_on_exec_ctx);

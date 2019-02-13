@@ -15,6 +15,7 @@
 
 import threading
 import unittest
+import logging
 
 import grpc
 from grpc import _channel
@@ -147,6 +148,7 @@ class ResourceExhaustedTest(unittest.TestCase):
 
     def tearDown(self):
         self._server.stop(0)
+        self._channel.close()
 
     def testUnaryUnary(self):
         multi_callable = self._channel.unary_unary(_UNARY_UNARY)
@@ -253,4 +255,5 @@ class ResourceExhaustedTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)

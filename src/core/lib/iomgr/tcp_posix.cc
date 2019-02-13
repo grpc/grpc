@@ -22,7 +22,6 @@
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
-#include "src/core/lib/iomgr/network_status_tracker.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 
 #include <errno.h>
@@ -126,9 +125,9 @@ struct grpc_tcp {
   int bytes_counter;
   bool socket_ts_enabled; /* True if timestamping options are set on the socket
                            */
-  gpr_atm
-      stop_error_notification; /* Set to 1 if we do not want to be notified on
-                                  errors anymore */
+  bool ts_capable;        /* Cache whether we can set timestamping options */
+  gpr_atm stop_error_notification; /* Set to 1 if we do not want to be notified
+                                      on errors anymore */
 };
 
 struct backup_poller {
@@ -196,7 +195,7 @@ static void run_poller(void* bp, grpc_error* error_ignored) {
 static void drop_uncovered(grpc_tcp* tcp) {
   backup_poller* p = (backup_poller*)gpr_atm_acq_load(&g_backup_poller);
   gpr_atm old_count =
-      gpr_atm_no_barrier_fetch_add(&g_uncovered_notifications_pending, -1);
+      gpr_atm_full_fetch_add(&g_uncovered_notifications_pending, -1);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_INFO, "BACKUP_POLLER:%p uncover cnt %d->%d", p,
             static_cast<int>(old_count), static_cast<int>(old_count) - 1);
@@ -228,10 +227,10 @@ static void cover_self(grpc_tcp* tcp) {
     }
     grpc_pollset_init(BACKUP_POLLER_POLLSET(p), &p->pollset_mu);
     gpr_atm_rel_store(&g_backup_poller, (gpr_atm)p);
-    GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_INIT(&p->run_poller, run_poller, p,
-                          grpc_executor_scheduler(GRPC_EXECUTOR_LONG)),
-        GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(GRPC_CLOSURE_INIT(&p->run_poller, run_poller, p,
+                                         grpc_core::Executor::Scheduler(
+                                             grpc_core::ExecutorJobType::LONG)),
+                       GRPC_ERROR_NONE);
   } else {
     while ((p = (backup_poller*)gpr_atm_acq_load(&g_backup_poller)) ==
            nullptr) {
@@ -260,10 +259,17 @@ static void notify_on_write(grpc_tcp* tcp) {
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_INFO, "TCP:%p notify_on_write", tcp);
   }
-  cover_self(tcp);
-  GRPC_CLOSURE_INIT(&tcp->write_done_closure,
-                    tcp_drop_uncovered_then_handle_write, tcp,
-                    grpc_schedule_on_exec_ctx);
+  if (grpc_event_engine_run_in_background()) {
+    // If there is a polling engine always running in the background, there is
+    // no need to run the backup poller.
+    GRPC_CLOSURE_INIT(&tcp->write_done_closure, tcp_handle_write, tcp,
+                      grpc_schedule_on_exec_ctx);
+  } else {
+    cover_self(tcp);
+    GRPC_CLOSURE_INIT(&tcp->write_done_closure,
+                      tcp_drop_uncovered_then_handle_write, tcp,
+                      grpc_schedule_on_exec_ctx);
+  }
   grpc_fd_notify_on_write(tcp->em_fd, &tcp->write_done_closure);
 }
 
@@ -337,6 +343,13 @@ static void tcp_free(grpc_tcp* tcp) {
   grpc_slice_buffer_destroy_internal(&tcp->last_read_buffer);
   grpc_resource_user_unref(tcp->resource_user);
   gpr_free(tcp->peer_string);
+  /* The lock is not really necessary here, since all refs have been released */
+  gpr_mu_lock(&tcp->tb_mu);
+  grpc_core::TracedBuffer::Shutdown(
+      &tcp->tb_head, tcp->outgoing_buffer_arg,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("endpoint destroyed"));
+  gpr_mu_unlock(&tcp->tb_mu);
+  tcp->outgoing_buffer_arg = nullptr;
   gpr_mu_destroy(&tcp->tb_mu);
   gpr_free(tcp);
 }
@@ -380,7 +393,6 @@ static void tcp_ref(grpc_tcp* tcp) { gpr_ref(&tcp->refcount); }
 #endif
 
 static void tcp_destroy(grpc_endpoint* ep) {
-  grpc_network_status_unregister_endpoint(ep);
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   grpc_slice_buffer_reset_and_unref_internal(&tcp->last_read_buffer);
   if (grpc_event_engine_can_track_errors()) {
@@ -397,13 +409,15 @@ static void call_read_cb(grpc_tcp* tcp, grpc_error* error) {
     gpr_log(GPR_INFO, "TCP:%p call_cb %p %p:%p", tcp, cb, cb->cb, cb->cb_arg);
     size_t i;
     const char* str = grpc_error_string(error);
-    gpr_log(GPR_INFO, "read: error=%s", str);
+    gpr_log(GPR_INFO, "READ %p (peer=%s) error=%s", tcp, tcp->peer_string, str);
 
-    for (i = 0; i < tcp->incoming_buffer->count; i++) {
-      char* dump = grpc_dump_slice(tcp->incoming_buffer->slices[i],
-                                   GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      gpr_log(GPR_INFO, "READ %p (peer=%s): %s", tcp, tcp->peer_string, dump);
-      gpr_free(dump);
+    if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+      for (i = 0; i < tcp->incoming_buffer->count; i++) {
+        char* dump = grpc_dump_slice(tcp->incoming_buffer->slices[i],
+                                     GPR_DUMP_HEX | GPR_DUMP_ASCII);
+        gpr_log(GPR_DEBUG, "DATA: %s", dump);
+        gpr_free(dump);
+      }
     }
   }
 
@@ -576,21 +590,20 @@ ssize_t tcp_send(int fd, const struct msghdr* msg) {
  */
 static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
                                       size_t sending_length,
-                                      ssize_t* sent_length, grpc_error** error);
+                                      ssize_t* sent_length);
 
 /** The callback function to be invoked when we get an error on the socket. */
 static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error);
 
 #ifdef GRPC_LINUX_ERRQUEUE
+
 static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
                                       size_t sending_length,
-                                      ssize_t* sent_length,
-                                      grpc_error** error) {
+                                      ssize_t* sent_length) {
   if (!tcp->socket_ts_enabled) {
     uint32_t opt = grpc_core::kTimestampingSocketOptions;
     if (setsockopt(tcp->fd, SOL_SOCKET, SO_TIMESTAMPING,
                    static_cast<void*>(&opt), sizeof(opt)) != 0) {
-      *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "setsockopt"), tcp);
       grpc_slice_buffer_reset_and_unref_internal(tcp->outgoing_buffer);
       if (grpc_tcp_trace.enabled()) {
         gpr_log(GPR_ERROR, "Failed to set timestamping options on the socket.");
@@ -621,8 +634,8 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
   if (sending_length == static_cast<size_t>(length)) {
     gpr_mu_lock(&tcp->tb_mu);
     grpc_core::TracedBuffer::AddNewEntry(
-        &tcp->tb_head, static_cast<int>(tcp->bytes_counter + length),
-        tcp->outgoing_buffer_arg);
+        &tcp->tb_head, static_cast<uint32_t>(tcp->bytes_counter + length),
+        tcp->fd, tcp->outgoing_buffer_arg);
     gpr_mu_unlock(&tcp->tb_mu);
     tcp->outgoing_buffer_arg = nullptr;
   }
@@ -639,11 +652,25 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
 struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
                                   struct cmsghdr* cmsg) {
   auto next_cmsg = CMSG_NXTHDR(msg, cmsg);
+  cmsghdr* opt_stats = nullptr;
   if (next_cmsg == nullptr) {
     if (grpc_tcp_trace.enabled()) {
       gpr_log(GPR_ERROR, "Received timestamp without extended error");
     }
     return cmsg;
+  }
+
+  /* Check if next_cmsg is an OPT_STATS msg */
+  if (next_cmsg->cmsg_level == SOL_SOCKET &&
+      next_cmsg->cmsg_type == SCM_TIMESTAMPING_OPT_STATS) {
+    opt_stats = next_cmsg;
+    next_cmsg = CMSG_NXTHDR(msg, opt_stats);
+    if (next_cmsg == nullptr) {
+      if (grpc_tcp_trace.enabled()) {
+        gpr_log(GPR_ERROR, "Received timestamp without extended error");
+      }
+      return opt_stats;
+    }
   }
 
   if (!(next_cmsg->cmsg_level == SOL_IP || next_cmsg->cmsg_level == SOL_IPV6) ||
@@ -667,17 +694,16 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
    * to protect the traced buffer list. A lock free list might be better. Using
    * a simple mutex for now. */
   gpr_mu_lock(&tcp->tb_mu);
-  grpc_core::TracedBuffer::ProcessTimestamp(&tcp->tb_head, serr, tss);
+  grpc_core::TracedBuffer::ProcessTimestamp(&tcp->tb_head, serr, opt_stats,
+                                            tss);
   gpr_mu_unlock(&tcp->tb_mu);
   return next_cmsg;
 }
 
 /** For linux platforms, reads the socket's error queue and processes error
- * messages from the queue. Returns true if all the errors processed were
- * timestamps. Returns false if any of the errors were not timestamps. For
- * non-linux platforms, error processing is not used/enabled currently.
+ * messages from the queue.
  */
-static bool process_errors(grpc_tcp* tcp) {
+static void process_errors(grpc_tcp* tcp) {
   while (true) {
     struct iovec iov;
     iov.iov_base = nullptr;
@@ -689,9 +715,15 @@ static bool process_errors(grpc_tcp* tcp) {
     msg.msg_iovlen = 0;
     msg.msg_flags = 0;
 
+    /* Allocate enough space so we don't need to keep increasing this as size
+     * of OPT_STATS increase */
+    constexpr size_t cmsg_alloc_space =
+        CMSG_SPACE(sizeof(grpc_core::scm_timestamping)) +
+        CMSG_SPACE(sizeof(sock_extended_err) + sizeof(sockaddr_in)) +
+        CMSG_SPACE(32 * NLA_ALIGN(NLA_HDRLEN + sizeof(uint64_t)));
+    /* Allocate aligned space for cmsgs received along with timestamps */
     union {
-      char rbuf[1024 /*CMSG_SPACE(sizeof(scm_timestamping)) +
-                CMSG_SPACE(sizeof(sock_extended_err) + sizeof(sockaddr_in))*/];
+      char rbuf[cmsg_alloc_space];
       struct cmsghdr align;
     } aligned_buf;
     memset(&aligned_buf, 0, sizeof(aligned_buf));
@@ -706,21 +738,20 @@ static bool process_errors(grpc_tcp* tcp) {
     } while (r < 0 && saved_errno == EINTR);
 
     if (r == -1 && saved_errno == EAGAIN) {
-      return true; /* No more errors to process */
+      return; /* No more errors to process */
     }
     if (r == -1) {
-      return false;
+      return;
     }
-    if (grpc_tcp_trace.enabled()) {
-      if ((msg.msg_flags & MSG_CTRUNC) == 1) {
-        gpr_log(GPR_INFO, "Error message was truncated.");
-      }
+    if ((msg.msg_flags & MSG_CTRUNC) == 1) {
+      gpr_log(GPR_ERROR, "Error message was truncated.");
     }
 
     if (msg.msg_controllen == 0) {
       /* There was no control message found. It was probably spurious. */
-      return true;
+      return;
     }
+    bool seen = false;
     for (auto cmsg = CMSG_FIRSTHDR(&msg); cmsg && cmsg->cmsg_len;
          cmsg = CMSG_NXTHDR(&msg, cmsg)) {
       if (cmsg->cmsg_level != SOL_SOCKET ||
@@ -732,9 +763,13 @@ static bool process_errors(grpc_tcp* tcp) {
                   "unknown control message cmsg_level:%d cmsg_type:%d",
                   cmsg->cmsg_level, cmsg->cmsg_type);
         }
-        return false;
+        return;
       }
-      process_timestamp(tcp, &msg, cmsg);
+      cmsg = process_timestamp(tcp, &msg, cmsg);
+      seen = true;
+    }
+    if (!seen) {
+      return;
     }
   }
 }
@@ -749,20 +784,17 @@ static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error) {
       static_cast<bool>(gpr_atm_acq_load(&tcp->stop_error_notification))) {
     /* We aren't going to register to hear on error anymore, so it is safe to
      * unref. */
-    grpc_core::TracedBuffer::Shutdown(&tcp->tb_head, GRPC_ERROR_REF(error));
     TCP_UNREF(tcp, "error-tracking");
     return;
   }
 
   /* We are still interested in collecting timestamps, so let's try reading
    * them. */
-  if (!process_errors(tcp)) {
-    /* This was not a timestamps error. This was an actual error. Set the
-     * read and write closures to be ready.
-     */
-    grpc_fd_set_readable(tcp->em_fd);
-    grpc_fd_set_writable(tcp->em_fd);
-  }
+  process_errors(tcp);
+  /* This might not a timestamps error. Set the read and write closures to be
+   * ready. */
+  grpc_fd_set_readable(tcp->em_fd);
+  grpc_fd_set_writable(tcp->em_fd);
   GRPC_CLOSURE_INIT(&tcp->error_closure, tcp_handle_error, tcp,
                     grpc_schedule_on_exec_ctx);
   grpc_fd_notify_on_error(tcp->em_fd, &tcp->error_closure);
@@ -771,8 +803,7 @@ static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error) {
 #else  /* GRPC_LINUX_ERRQUEUE */
 static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
                                       size_t sending_length,
-                                      ssize_t* sent_length,
-                                      grpc_error** error) {
+                                      ssize_t* sent_length) {
   gpr_log(GPR_ERROR, "Write with timestamps not supported for this platform");
   GPR_ASSERT(0);
   return false;
@@ -784,6 +815,19 @@ static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error) {
 }
 #endif /* GRPC_LINUX_ERRQUEUE */
 
+/* If outgoing_buffer_arg is filled, shuts down the list early, so that any
+ * release operations needed can be performed on the arg */
+void tcp_shutdown_buffer_list(grpc_tcp* tcp) {
+  if (tcp->outgoing_buffer_arg) {
+    gpr_mu_lock(&tcp->tb_mu);
+    grpc_core::TracedBuffer::Shutdown(
+        &tcp->tb_head, tcp->outgoing_buffer_arg,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("TracedBuffer list shutdown"));
+    gpr_mu_unlock(&tcp->tb_mu);
+    tcp->outgoing_buffer_arg = nullptr;
+  }
+}
+
 /* returns true if done, false if pending; if returning true, *error is set */
 #if defined(IOV_MAX) && IOV_MAX < 1000
 #define MAX_WRITE_IOVEC IOV_MAX
@@ -794,7 +838,7 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
   struct msghdr msg;
   struct iovec iov[MAX_WRITE_IOVEC];
   msg_iovlen_type iov_size;
-  ssize_t sent_length;
+  ssize_t sent_length = 0;
   size_t sending_length;
   size_t trailing;
   size_t unwind_slice_idx;
@@ -829,11 +873,19 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
     msg.msg_iov = iov;
     msg.msg_iovlen = iov_size;
     msg.msg_flags = 0;
+    bool tried_sending_message = false;
     if (tcp->outgoing_buffer_arg != nullptr) {
-      if (!tcp_write_with_timestamps(tcp, &msg, sending_length, &sent_length,
-                                     error))
-        return true; /* something went wrong with timestamps */
-    } else {
+      if (!tcp->ts_capable ||
+          !tcp_write_with_timestamps(tcp, &msg, sending_length, &sent_length)) {
+        /* We could not set socket options to collect Fathom timestamps.
+         * Fallback on writing without timestamps. */
+        tcp->ts_capable = false;
+        tcp_shutdown_buffer_list(tcp);
+      } else {
+        tried_sending_message = true;
+      }
+    }
+    if (!tried_sending_message) {
       msg.msg_control = nullptr;
       msg.msg_controllen = 0;
 
@@ -856,10 +908,12 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
       } else if (errno == EPIPE) {
         *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "sendmsg"), tcp);
         grpc_slice_buffer_reset_and_unref_internal(tcp->outgoing_buffer);
+        tcp_shutdown_buffer_list(tcp);
         return true;
       } else {
         *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "sendmsg"), tcp);
         grpc_slice_buffer_reset_and_unref_internal(tcp->outgoing_buffer);
+        tcp_shutdown_buffer_list(tcp);
         return true;
       }
     }
@@ -927,26 +981,30 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     size_t i;
 
     for (i = 0; i < buf->count; i++) {
-      char* data =
-          grpc_dump_slice(buf->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      gpr_log(GPR_INFO, "WRITE %p (peer=%s): %s", tcp, tcp->peer_string, data);
-      gpr_free(data);
+      gpr_log(GPR_INFO, "WRITE %p (peer=%s)", tcp, tcp->peer_string);
+      if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+        char* data =
+            grpc_dump_slice(buf->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
+        gpr_log(GPR_DEBUG, "DATA: %s", data);
+        gpr_free(data);
+      }
     }
   }
 
   GPR_ASSERT(tcp->write_cb == nullptr);
 
+  tcp->outgoing_buffer_arg = arg;
   if (buf->length == 0) {
     GRPC_CLOSURE_SCHED(
         cb, grpc_fd_is_shutdown(tcp->em_fd)
                 ? tcp_annotate_error(
                       GRPC_ERROR_CREATE_FROM_STATIC_STRING("EOF"), tcp)
                 : GRPC_ERROR_NONE);
+    tcp_shutdown_buffer_list(tcp);
     return;
   }
   tcp->outgoing_buffer = buf;
   tcp->outgoing_byte_idx = 0;
-  tcp->outgoing_buffer_arg = arg;
   if (arg) {
     GPR_ASSERT(grpc_event_engine_can_track_errors());
   }
@@ -999,6 +1057,22 @@ static grpc_resource_user* tcp_get_resource_user(grpc_endpoint* ep) {
   return tcp->resource_user;
 }
 
+static bool tcp_can_track_err(grpc_endpoint* ep) {
+  grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
+  if (!grpc_event_engine_can_track_errors()) {
+    return false;
+  }
+  struct sockaddr addr;
+  socklen_t len = sizeof(addr);
+  if (getsockname(tcp->fd, &addr, &len) < 0) {
+    return false;
+  }
+  if (addr.sa_family == AF_INET || addr.sa_family == AF_INET6) {
+    return true;
+  }
+  return false;
+}
+
 static const grpc_endpoint_vtable vtable = {tcp_read,
                                             tcp_write,
                                             tcp_add_to_pollset,
@@ -1008,7 +1082,8 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
                                             tcp_destroy,
                                             tcp_get_resource_user,
                                             tcp_get_peer,
-                                            tcp_get_fd};
+                                            tcp_get_fd,
+                                            tcp_can_track_err};
 
 #define MAX_CHUNK_SIZE 32 * 1024 * 1024
 
@@ -1069,6 +1144,8 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->is_first_read = true;
   tcp->bytes_counter = -1;
   tcp->socket_ts_enabled = false;
+  tcp->ts_capable = true;
+  tcp->outgoing_buffer_arg = nullptr;
   /* paired with unref in grpc_tcp_destroy */
   gpr_ref_init(&tcp->refcount, 1);
   gpr_atm_no_barrier_store(&tcp->shutdown_count, 0);
@@ -1077,8 +1154,6 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->resource_user = grpc_resource_user_create(resource_quota, peer_string);
   grpc_resource_user_slice_allocator_init(
       &tcp->slice_allocator, tcp->resource_user, tcp_read_allocation_done, tcp);
-  /* Tell network status tracker about new endpoint */
-  grpc_network_status_register_endpoint(&tcp->base);
   grpc_resource_quota_unref_internal(resource_quota);
   gpr_mu_init(&tcp->tb_mu);
   tcp->tb_head = nullptr;
@@ -1105,7 +1180,6 @@ int grpc_tcp_fd(grpc_endpoint* ep) {
 
 void grpc_tcp_destroy_and_release_fd(grpc_endpoint* ep, int* fd,
                                      grpc_closure* done) {
-  grpc_network_status_unregister_endpoint(ep);
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   GPR_ASSERT(ep->vtable == &vtable);
   tcp->release_fd = fd;

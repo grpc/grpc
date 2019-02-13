@@ -40,8 +40,8 @@ namespace Grpc.Core.Internal
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<AsyncCallBase<TWrite, TRead>>();
         protected static readonly Status DeserializeResponseFailureStatus = new Status(StatusCode.Internal, "Failed to deserialize response message.");
 
-        readonly Func<TWrite, byte[]> serializer;
-        readonly Func<byte[], TRead> deserializer;
+        readonly Action<TWrite, SerializationContext> serializer;
+        readonly Func<DeserializationContext, TRead> deserializer;
 
         protected readonly object myLock = new object();
 
@@ -63,7 +63,7 @@ namespace Grpc.Core.Internal
         protected bool initialMetadataSent;
         protected long streamingWritesCounter;  // Number of streaming send operations started so far.
 
-        public AsyncCallBase(Func<TWrite, byte[]> serializer, Func<byte[], TRead> deserializer)
+        public AsyncCallBase(Action<TWrite, SerializationContext> serializer, Func<DeserializationContext, TRead> deserializer)
         {
             this.serializer = GrpcPreconditions.CheckNotNull(serializer);
             this.deserializer = GrpcPreconditions.CheckNotNull(deserializer);
@@ -215,20 +215,37 @@ namespace Grpc.Core.Internal
 
         protected byte[] UnsafeSerialize(TWrite msg)
         {
-            return serializer(msg);
+            DefaultSerializationContext context = null;
+            try
+            {
+                context = DefaultSerializationContext.GetInitializedThreadLocal();
+                serializer(msg, context);
+                return context.GetPayload();
+            }
+            finally
+            {
+                context?.Reset();
+            }
         }
 
         protected Exception TryDeserialize(byte[] payload, out TRead msg)
         {
+            DefaultDeserializationContext context = null;
             try
             {
-                msg = deserializer(payload);
+                context = DefaultDeserializationContext.GetInitializedThreadLocal(payload);
+                msg = deserializer(context);
                 return null;
             }
             catch (Exception e)
             {
                 msg = default(TRead);
                 return e;
+            }
+            finally
+            {
+                context?.Reset();
+
             }
         }
 

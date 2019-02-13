@@ -36,6 +36,7 @@
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_epollex_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
+#include "src/core/lib/iomgr/internal_errqueue.h"
 
 grpc_core::TraceFlag grpc_polling_trace(false,
                                         "polling"); /* Disabled by default */
@@ -236,19 +237,22 @@ void grpc_event_engine_shutdown(void) {
 }
 
 bool grpc_event_engine_can_track_errors(void) {
-/* Only track errors if platform supports errqueue. */
-#ifdef GRPC_LINUX_ERRQUEUE
-  return g_event_engine->can_track_err;
-#else
+  /* Only track errors if platform supports errqueue. */
+  if (grpc_core::kernel_supports_errqueue()) {
+    return g_event_engine->can_track_err;
+  }
   return false;
-#endif /* GRPC_LINUX_ERRQUEUE */
+}
+
+bool grpc_event_engine_run_in_background(void) {
+  return g_event_engine->run_in_background;
 }
 
 grpc_fd* grpc_fd_create(int fd, const char* name, bool track_err) {
   GRPC_POLLING_API_TRACE("fd_create(%d, %s, %d)", fd, name, track_err);
   GRPC_FD_TRACE("fd_create(%d, %s, %d)", fd, name, track_err);
-  return g_event_engine->fd_create(fd, name,
-                                   track_err && g_event_engine->can_track_err);
+  return g_event_engine->fd_create(
+      fd, name, track_err && grpc_event_engine_can_track_errors());
 }
 
 int grpc_fd_wrapped_fd(grpc_fd* fd) {
@@ -393,6 +397,14 @@ void grpc_pollset_set_del_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
   GRPC_POLLING_API_TRACE("pollset_set_del_fd(%p, %d)", pollset_set,
                          grpc_fd_wrapped_fd(fd));
   g_event_engine->pollset_set_del_fd(pollset_set, fd);
+}
+
+bool grpc_is_any_background_poller_thread(void) {
+  return g_event_engine->is_any_background_poller_thread();
+}
+
+void grpc_shutdown_background_closure(void) {
+  g_event_engine->shutdown_background_closure();
 }
 
 #endif  // GRPC_POSIX_SOCKET_EV

@@ -15,6 +15,7 @@
 
 import unittest
 
+import logging
 import grpc
 from grpc import _grpcio_metadata
 
@@ -76,6 +77,9 @@ class CompressionTest(unittest.TestCase):
         self._port = self._server.add_insecure_port('[::]:0')
         self._server.start()
 
+    def tearDown(self):
+        self._server.stop(None)
+
     def testUnary(self):
         request = b'\x00' * 100
 
@@ -101,6 +105,7 @@ class CompressionTest(unittest.TestCase):
         response = multi_callable(
             request, metadata=[('grpc-internal-encoding-request', 'gzip')])
         self.assertEqual(request, response)
+        compressed_channel.close()
 
     def testStreaming(self):
         request = b'\x00' * 100
@@ -114,7 +119,9 @@ class CompressionTest(unittest.TestCase):
         call = multi_callable(iter([request] * test_constants.STREAM_LENGTH))
         for response in call:
             self.assertEqual(request, response)
+        compressed_channel.close()
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)

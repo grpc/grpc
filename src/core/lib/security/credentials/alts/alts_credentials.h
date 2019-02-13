@@ -27,18 +27,45 @@
 #include "src/core/lib/security/credentials/credentials.h"
 
 /* Main struct for grpc ALTS channel credential. */
-typedef struct grpc_alts_credentials {
-  grpc_channel_credentials base;
-  grpc_alts_credentials_options* options;
-  char* handshaker_service_url;
-} grpc_alts_credentials;
+class grpc_alts_credentials final : public grpc_channel_credentials {
+ public:
+  grpc_alts_credentials(const grpc_alts_credentials_options* options,
+                        const char* handshaker_service_url);
+  ~grpc_alts_credentials() override;
+
+  grpc_core::RefCountedPtr<grpc_channel_security_connector>
+  create_security_connector(
+      grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
+      const char* target_name, const grpc_channel_args* args,
+      grpc_channel_args** new_args) override;
+
+  const grpc_alts_credentials_options* options() const { return options_; }
+  grpc_alts_credentials_options* mutable_options() { return options_; }
+  const char* handshaker_service_url() const { return handshaker_service_url_; }
+
+ private:
+  grpc_alts_credentials_options* options_;
+  char* handshaker_service_url_;
+};
 
 /* Main struct for grpc ALTS server credential. */
-typedef struct grpc_alts_server_credentials {
-  grpc_server_credentials base;
-  grpc_alts_credentials_options* options;
-  char* handshaker_service_url;
-} grpc_alts_server_credentials;
+class grpc_alts_server_credentials final : public grpc_server_credentials {
+ public:
+  grpc_alts_server_credentials(const grpc_alts_credentials_options* options,
+                               const char* handshaker_service_url);
+  ~grpc_alts_server_credentials() override;
+
+  grpc_core::RefCountedPtr<grpc_server_security_connector>
+  create_security_connector() override;
+
+  const grpc_alts_credentials_options* options() const { return options_; }
+  grpc_alts_credentials_options* mutable_options() { return options_; }
+  const char* handshaker_service_url() const { return handshaker_service_url_; }
+
+ private:
+  grpc_alts_credentials_options* options_;
+  char* handshaker_service_url_;
+};
 
 /**
  * This method creates an ALTS channel credential object with customized

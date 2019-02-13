@@ -27,8 +27,7 @@
     shared amongst channels */
 
 /** Create a key that can be used to uniquely identify a subchannel */
-grpc_subchannel_key* grpc_subchannel_key_create(
-    const grpc_subchannel_args* args);
+grpc_subchannel_key* grpc_subchannel_key_create(const grpc_channel_args* args);
 
 /** Destroy a subchannel key */
 void grpc_subchannel_key_destroy(grpc_subchannel_key* key);
@@ -63,14 +62,5 @@ void grpc_subchannel_index_ref(void);
 /** Decrement the refcount of subchannel index (global). If the refcount drops
     to zero, unref the subchannel index and destroy its mutex. */
 void grpc_subchannel_index_unref(void);
-
-/** \em TEST ONLY.
- * If \a force_creation is true, all keys are regarded different, resulting in
- * new subchannels always being created. Otherwise, the keys will be compared as
- * usual.
- *
- * Tests using this function \em MUST run tests with and without \a
- * force_creation set. */
-void grpc_subchannel_index_test_only_set_force_creation(bool force_creation);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INDEX_H */

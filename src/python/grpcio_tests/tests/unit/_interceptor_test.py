@@ -17,6 +17,7 @@ import collections
 import itertools
 import threading
 import unittest
+import logging
 from concurrent import futures
 
 import grpc
@@ -336,6 +337,7 @@ class InterceptorTest(unittest.TestCase):
     def tearDown(self):
         self._server.stop(None)
         self._server_pool.shutdown(wait=True)
+        self._channel.close()
 
     def testTripleRequestMessagesClientInterceptor(self):
 
@@ -598,4 +600,5 @@ class InterceptorTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)

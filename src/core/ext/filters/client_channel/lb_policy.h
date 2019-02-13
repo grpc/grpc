@@ -24,6 +24,7 @@
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -42,8 +43,7 @@ namespace grpc_core {
 ///
 /// Any I/O done by the LB policy should be done under the pollset_set
 /// returned by \a interested_parties().
-class LoadBalancingPolicy
-    : public InternallyRefCountedWithTracing<LoadBalancingPolicy> {
+class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
  public:
   struct Args {
     /// The combiner under which all LB policy calls will be run.
@@ -54,48 +54,64 @@ class LoadBalancingPolicy
     grpc_combiner* combiner = nullptr;
     /// Used to create channels and subchannels.
     grpc_client_channel_factory* client_channel_factory = nullptr;
+    /// Subchannel pool.
+    RefCountedPtr<SubchannelPoolInterface> subchannel_pool;
     /// Channel args from the resolver.
     /// Note that the LB policy gets the set of addresses from the
-    /// GRPC_ARG_LB_ADDRESSES channel arg.
+    /// GRPC_ARG_SERVER_ADDRESS_LIST channel arg.
     grpc_channel_args* args = nullptr;
+    /// Load balancing config from the resolver.
+    grpc_json* lb_config = nullptr;
   };
 
   /// State used for an LB pick.
   struct PickState {
     /// Initial metadata associated with the picking call.
-    grpc_metadata_batch* initial_metadata;
-    /// Bitmask used for selective cancelling. See
+    grpc_metadata_batch* initial_metadata = nullptr;
+    /// Pointer to bitmask used for selective cancelling. See
     /// \a CancelMatchingPicksLocked() and \a GRPC_INITIAL_METADATA_* in
     /// grpc_types.h.
-    uint32_t initial_metadata_flags;
+    uint32_t* initial_metadata_flags = nullptr;
     /// Storage for LB token in \a initial_metadata, or nullptr if not used.
     grpc_linked_mdelem lb_token_mdelem_storage;
     /// Closure to run when pick is complete, if not completed synchronously.
     /// If null, pick will fail if a result is not available synchronously.
-    grpc_closure* on_complete;
+    grpc_closure* on_complete = nullptr;
+    // Callback set by lb policy to be notified of trailing metadata.
+    // The callback must be scheduled on grpc_schedule_on_exec_ctx.
+    grpc_closure* recv_trailing_metadata_ready = nullptr;
+    // The address that will be set to point to the original
+    // recv_trailing_metadata_ready callback, to be invoked by the LB
+    // policy's recv_trailing_metadata_ready callback when complete.
+    // Must be non-null if recv_trailing_metadata_ready is non-null.
+    grpc_closure** original_recv_trailing_metadata_ready = nullptr;
+    // If this is not nullptr, then the client channel will point it to the
+    // call's trailing metadata before invoking recv_trailing_metadata_ready.
+    // If this is nullptr, then the callback will still be called.
+    // The lb does not have ownership of the metadata.
+    grpc_metadata_batch** recv_trailing_metadata = nullptr;
     /// Will be set to the selected subchannel, or nullptr on failure or when
     /// the LB policy decides to drop the call.
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     /// Will be populated with context to pass to the subchannel call, if
     /// needed.
-    grpc_call_context_element subchannel_call_context[GRPC_CONTEXT_COUNT];
-    /// Upon success, \a *user_data will be set to whatever opaque information
-    /// may need to be propagated from the LB policy, or nullptr if not needed.
-    // TODO(roth): As part of revamping our metadata APIs, try to find a
-    // way to clean this up and C++-ify it.
-    void** user_data;
+    grpc_call_context_element subchannel_call_context[GRPC_CONTEXT_COUNT] = {};
     /// Next pointer.  For internal use by LB policy.
-    PickState* next;
+    PickState* next = nullptr;
   };
 
   // Not copyable nor movable.
   LoadBalancingPolicy(const LoadBalancingPolicy&) = delete;
   LoadBalancingPolicy& operator=(const LoadBalancingPolicy&) = delete;
 
-  /// Updates the policy with a new set of \a args from the resolver.
-  /// Note that the LB policy gets the set of addresses from the
-  /// GRPC_ARG_LB_ADDRESSES channel arg.
-  virtual void UpdateLocked(const grpc_channel_args& args) GRPC_ABSTRACT;
+  /// Returns the name of the LB policy.
+  virtual const char* name() const GRPC_ABSTRACT;
+
+  /// Updates the policy with a new set of \a args and a new \a lb_config from
+  /// the resolver. Note that the LB policy gets the set of addresses from the
+  /// GRPC_ARG_SERVER_ADDRESS_LIST channel arg.
+  virtual void UpdateLocked(const grpc_channel_args& args,
+                            grpc_json* lb_config) GRPC_ABSTRACT;
 
   /// Finds an appropriate subchannel for a call, based on data in \a pick.
   /// \a pick must remain alive until the pick is complete.
@@ -163,6 +179,10 @@ class LoadBalancingPolicy
         GRPC_ERROR_NONE);
   }
 
+  /// Returns the JSON node of policy (with both policy name and config content)
+  /// given the JSON node of a LoadBalancingConfig array.
+  static grpc_json* ParseLoadBalancingConfig(const grpc_json* lb_config_array);
+
   /// Sets the re-resolution closure to \a request_reresolution.
   void SetReresolutionClosureLocked(grpc_closure* request_reresolution) {
     GPR_ASSERT(request_reresolution_ == nullptr);
@@ -171,12 +191,18 @@ class LoadBalancingPolicy
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
+  // Callers that need their own reference can call the returned
+  // object's Ref() method.
+  SubchannelPoolInterface* subchannel_pool() const {
+    return subchannel_pool_.get();
+  }
+
   GRPC_ABSTRACT_BASE_CLASS
 
  protected:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
-  explicit LoadBalancingPolicy(const Args& args);
+  explicit LoadBalancingPolicy(Args args);
   virtual ~LoadBalancingPolicy();
 
   grpc_combiner* combiner() const { return combiner_; }
@@ -204,16 +230,12 @@ class LoadBalancingPolicy
   grpc_combiner* combiner_;
   /// Client channel factory, used to create channels and subchannels.
   grpc_client_channel_factory* client_channel_factory_;
+  /// Subchannel pool.
+  RefCountedPtr<SubchannelPoolInterface> subchannel_pool_;
   /// Owned pointer to interested parties in load balancing decisions.
   grpc_pollset_set* interested_parties_;
   /// Callback to force a re-resolution.
   grpc_closure* request_reresolution_;
-
-  // Dummy classes needed for alignment issues.
-  // See https://github.com/grpc/grpc/issues/16032 for context.
-  // TODO(ncteisen): remove this as soon as the issue is resolved.
-  channelz::ChildRefsList dummy_list_foo;
-  channelz::ChildRefsList dummy_list_bar;
 };
 
 }  // namespace grpc_core

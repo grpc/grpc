@@ -54,7 +54,7 @@ namespace Grpc.Core.Internal
         ClientSideStatus? finishedStatus;
 
         public AsyncCall(CallInvocationDetails<TRequest, TResponse> callDetails)
-            : base(callDetails.RequestMarshaller.Serializer, callDetails.ResponseMarshaller.Deserializer)
+            : base(callDetails.RequestMarshaller.ContextualSerializer, callDetails.ResponseMarshaller.ContextualDeserializer)
         {
             this.details = callDetails.WithOptions(callDetails.Options.Normalize());
             this.initialMetadataSent = true;  // we always send metadata at the very beginning of the call.
@@ -494,13 +494,13 @@ namespace Grpc.Core.Internal
                 return injectedNativeCall;  // allows injecting a mock INativeCall in tests.
             }
 
-            var parentCall = details.Options.PropagationToken != null ? details.Options.PropagationToken.ParentCall : CallSafeHandle.NullInstance;
+            var parentCall = details.Options.PropagationToken.AsImplOrNull()?.ParentCall ?? CallSafeHandle.NullInstance;
 
             var credentials = details.Options.Credentials;
             using (var nativeCredentials = credentials != null ? credentials.ToNativeCredentials() : null)
             {
                 var result = details.Channel.Handle.CreateCall(
-                             parentCall, ContextPropagationToken.DefaultMask, cq,
+                             parentCall, ContextPropagationTokenImpl.DefaultMask, cq,
                              details.Method, details.Host, Timespec.FromDateTime(details.Options.Deadline.Value), nativeCredentials);
                 return result;
             }

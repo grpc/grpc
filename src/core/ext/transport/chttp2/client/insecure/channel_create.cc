@@ -39,15 +39,13 @@ static void client_channel_factory_ref(
 static void client_channel_factory_unref(
     grpc_client_channel_factory* cc_factory) {}
 
-static grpc_subchannel* client_channel_factory_create_subchannel(
-    grpc_client_channel_factory* cc_factory, const grpc_subchannel_args* args) {
-  grpc_subchannel_args final_sc_args;
-  memcpy(&final_sc_args, args, sizeof(*args));
-  final_sc_args.args = grpc_default_authority_add_if_not_present(args->args);
+static grpc_core::Subchannel* client_channel_factory_create_subchannel(
+    grpc_client_channel_factory* cc_factory, const grpc_channel_args* args) {
+  grpc_channel_args* new_args = grpc_default_authority_add_if_not_present(args);
   grpc_connector* connector = grpc_chttp2_connector_create();
-  grpc_subchannel* s = grpc_subchannel_create(connector, &final_sc_args);
+  grpc_core::Subchannel* s = grpc_core::Subchannel::Create(connector, new_args);
   grpc_connector_unref(connector);
-  grpc_channel_args_destroy(const_cast<grpc_channel_args*>(final_sc_args.args));
+  grpc_channel_args_destroy(new_args);
   return s;
 }
 

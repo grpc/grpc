@@ -133,12 +133,18 @@ gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type) = now_impl;
 #ifdef GPR_LOW_LEVEL_COUNTERS
 gpr_atm gpr_now_call_count;
 #endif
-
 gpr_timespec gpr_now(gpr_clock_type clock_type) {
 #ifdef GPR_LOW_LEVEL_COUNTERS
   __atomic_fetch_add(&gpr_now_call_count, 1, __ATOMIC_RELAXED);
 #endif
-  return gpr_now_impl(clock_type);
+  // validate clock type
+  GPR_ASSERT(clock_type == GPR_CLOCK_MONOTONIC ||
+             clock_type == GPR_CLOCK_REALTIME ||
+             clock_type == GPR_CLOCK_PRECISE);
+  gpr_timespec ts = gpr_now_impl(clock_type);
+  // tv_nsecs must be in the range [0, 1e9).
+  GPR_ASSERT(ts.tv_nsec >= 0 && ts.tv_nsec < 1e9);
+  return ts;
 }
 
 void gpr_sleep_until(gpr_timespec until) {

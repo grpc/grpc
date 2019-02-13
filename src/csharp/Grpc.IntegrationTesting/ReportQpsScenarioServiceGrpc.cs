@@ -4,13 +4,13 @@
 // </auto-generated>
 // Original file comments:
 // Copyright 2015 gRPC authors.
-//
+// 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-//
+// 
 //     http://www.apache.org/licenses/LICENSE-2.0
-//
+// 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -141,6 +141,15 @@ namespace Grpc.Testing {
     {
       return grpc::ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_ReportScenario, serviceImpl.ReportScenario).Build();
+    }
+
+    /// <summary>Register service method with a service binder with or without implementation. Useful when customizing the  service binding logic.
+    /// Note: this method is part of an experimental API that can change or be removed without any prior notice.</summary>
+    /// <param name="serviceBinder">Service methods will be bound by calling <c>AddMethod</c> on this object.</param>
+    /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
+    public static void BindService(grpc::ServiceBinderBase serviceBinder, ReportQpsScenarioServiceBase serviceImpl)
+    {
+      serviceBinder.AddMethod(__Method_ReportScenario, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Grpc.Testing.ScenarioResult, global::Grpc.Testing.Void>(serviceImpl.ReportScenario));
     }
 
   }

@@ -44,7 +44,7 @@
 #define NUM_OUTER_LOOPS 10
 #define NUM_INNER_LOOPS 10
 #define DELAY_MILLIS 10
-#define POLL_MILLIS 3000
+#define POLL_MILLIS 15000
 
 #define NUM_OUTER_LOOPS_SHORT_TIMEOUTS 10
 #define NUM_INNER_LOOPS_SHORT_TIMEOUTS 100
@@ -300,7 +300,7 @@ int run_concurrent_watches_with_short_timeouts_test() {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
 
   run_concurrent_connectivity_test();
   run_concurrent_watches_with_short_timeouts_test();

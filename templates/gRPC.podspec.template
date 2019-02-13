@@ -36,6 +36,7 @@
 
     s.ios.deployment_target = '7.0'
     s.osx.deployment_target = '10.9'
+    s.tvos.deployment_target = '10.0'
 
     name = 'GRPCClient'
     s.module_name = name
@@ -60,7 +61,7 @@
 
       ss.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
       ss.exclude_files = "#{src_dir}/GRPCCall+GID.{h,m}"
-      ss.private_header_files = "#{src_dir}/private/*.h"
+      ss.private_header_files = "#{src_dir}/private/*.h", "#{src_dir}/internal/*.h"
 
       ss.dependency 'gRPC-Core', version
     end

@@ -32,18 +32,12 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/transport.h"
 
-grpc_error* grpc_chttp2_data_parser_init(grpc_chttp2_data_parser* parser) {
-  parser->state = GRPC_CHTTP2_DATA_FH_0;
-  parser->parsing_frame = nullptr;
-  return GRPC_ERROR_NONE;
-}
-
-void grpc_chttp2_data_parser_destroy(grpc_chttp2_data_parser* parser) {
-  if (parser->parsing_frame != nullptr) {
-    GRPC_ERROR_UNREF(parser->parsing_frame->Finished(
+grpc_chttp2_data_parser::~grpc_chttp2_data_parser() {
+  if (parsing_frame != nullptr) {
+    GRPC_ERROR_UNREF(parsing_frame->Finished(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Parser destroyed"), false));
   }
-  GRPC_ERROR_UNREF(parser->error);
+  GRPC_ERROR_UNREF(error);
 }
 
 grpc_error* grpc_chttp2_data_parser_begin_frame(grpc_chttp2_data_parser* parser,

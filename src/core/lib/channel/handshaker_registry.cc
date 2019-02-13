@@ -19,8 +19,11 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/gprpp/inlined_vector.h"
+#include "src/core/lib/gprpp/memory.h"
 
 #include <string.h>
+#include <algorithm>
 
 #include <grpc/support/alloc.h>
 
@@ -28,74 +31,83 @@
 // grpc_handshaker_factory_list
 //
 
-typedef struct {
-  grpc_handshaker_factory** list;
-  size_t num_factories;
-} grpc_handshaker_factory_list;
+namespace grpc_core {
 
-static void grpc_handshaker_factory_list_register(
-    grpc_handshaker_factory_list* list, bool at_start,
-    grpc_handshaker_factory* factory) {
-  list->list = static_cast<grpc_handshaker_factory**>(gpr_realloc(
-      list->list,
-      (list->num_factories + 1) * sizeof(grpc_handshaker_factory*)));
+namespace {
+
+class HandshakerFactoryList {
+ public:
+  void Register(bool at_start, UniquePtr<HandshakerFactory> factory);
+  void AddHandshakers(const grpc_channel_args* args,
+                      grpc_pollset_set* interested_parties,
+                      HandshakeManager* handshake_mgr);
+
+ private:
+  InlinedVector<UniquePtr<HandshakerFactory>, 2> factories_;
+};
+
+HandshakerFactoryList* g_handshaker_factory_lists = nullptr;
+
+}  // namespace
+
+void HandshakerFactoryList::Register(bool at_start,
+                                     UniquePtr<HandshakerFactory> factory) {
+  factories_.push_back(std::move(factory));
   if (at_start) {
-    memmove(list->list + 1, list->list,
-            sizeof(grpc_handshaker_factory*) * list->num_factories);
-    list->list[0] = factory;
-  } else {
-    list->list[list->num_factories] = factory;
-  }
-  ++list->num_factories;
-}
-
-static void grpc_handshaker_factory_list_add_handshakers(
-    grpc_handshaker_factory_list* list, const grpc_channel_args* args,
-    grpc_pollset_set* interested_parties,
-    grpc_handshake_manager* handshake_mgr) {
-  for (size_t i = 0; i < list->num_factories; ++i) {
-    grpc_handshaker_factory_add_handshakers(list->list[i], args,
-                                            interested_parties, handshake_mgr);
+    auto* end = &factories_[factories_.size() - 1];
+    std::rotate(&factories_[0], end, end + 1);
   }
 }
 
-static void grpc_handshaker_factory_list_destroy(
-    grpc_handshaker_factory_list* list) {
-  for (size_t i = 0; i < list->num_factories; ++i) {
-    grpc_handshaker_factory_destroy(list->list[i]);
+void HandshakerFactoryList::AddHandshakers(const grpc_channel_args* args,
+                                           grpc_pollset_set* interested_parties,
+                                           HandshakeManager* handshake_mgr) {
+  for (size_t idx = 0; idx < factories_.size(); ++idx) {
+    auto& handshaker_factory = factories_[idx];
+    handshaker_factory->AddHandshakers(args, interested_parties, handshake_mgr);
   }
-  gpr_free(list->list);
 }
 
 //
 // plugin
 //
 
-static grpc_handshaker_factory_list
-    g_handshaker_factory_lists[NUM_HANDSHAKER_TYPES];
-
-void grpc_handshaker_factory_registry_init() {
-  memset(g_handshaker_factory_lists, 0, sizeof(g_handshaker_factory_lists));
-}
-
-void grpc_handshaker_factory_registry_shutdown() {
-  for (size_t i = 0; i < NUM_HANDSHAKER_TYPES; ++i) {
-    grpc_handshaker_factory_list_destroy(&g_handshaker_factory_lists[i]);
+void HandshakerRegistry::Init() {
+  GPR_ASSERT(g_handshaker_factory_lists == nullptr);
+  g_handshaker_factory_lists = static_cast<HandshakerFactoryList*>(
+      gpr_malloc(sizeof(*g_handshaker_factory_lists) * NUM_HANDSHAKER_TYPES));
+  GPR_ASSERT(g_handshaker_factory_lists != nullptr);
+  for (auto idx = 0; idx < NUM_HANDSHAKER_TYPES; ++idx) {
+    auto factory_list = g_handshaker_factory_lists + idx;
+    new (factory_list) HandshakerFactoryList();
   }
 }
 
-void grpc_handshaker_factory_register(bool at_start,
-                                      grpc_handshaker_type handshaker_type,
-                                      grpc_handshaker_factory* factory) {
-  grpc_handshaker_factory_list_register(
-      &g_handshaker_factory_lists[handshaker_type], at_start, factory);
+void HandshakerRegistry::Shutdown() {
+  GPR_ASSERT(g_handshaker_factory_lists != nullptr);
+  for (auto idx = 0; idx < NUM_HANDSHAKER_TYPES; ++idx) {
+    auto factory_list = g_handshaker_factory_lists + idx;
+    factory_list->~HandshakerFactoryList();
+  }
+  gpr_free(g_handshaker_factory_lists);
+  g_handshaker_factory_lists = nullptr;
 }
 
-void grpc_handshakers_add(grpc_handshaker_type handshaker_type,
-                          const grpc_channel_args* args,
-                          grpc_pollset_set* interested_parties,
-                          grpc_handshake_manager* handshake_mgr) {
-  grpc_handshaker_factory_list_add_handshakers(
-      &g_handshaker_factory_lists[handshaker_type], args, interested_parties,
-      handshake_mgr);
+void HandshakerRegistry::RegisterHandshakerFactory(
+    bool at_start, HandshakerType handshaker_type,
+    UniquePtr<HandshakerFactory> factory) {
+  GPR_ASSERT(g_handshaker_factory_lists != nullptr);
+  auto& factory_list = g_handshaker_factory_lists[handshaker_type];
+  factory_list.Register(at_start, std::move(factory));
 }
+
+void HandshakerRegistry::AddHandshakers(HandshakerType handshaker_type,
+                                        const grpc_channel_args* args,
+                                        grpc_pollset_set* interested_parties,
+                                        HandshakeManager* handshake_mgr) {
+  GPR_ASSERT(g_handshaker_factory_lists != nullptr);
+  auto& factory_list = g_handshaker_factory_lists[handshaker_type];
+  factory_list.AddHandshakers(args, interested_parties, handshake_mgr);
+}
+
+}  // namespace grpc_core

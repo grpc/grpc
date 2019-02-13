@@ -16,6 +16,7 @@
 import itertools
 import threading
 import unittest
+import logging
 from concurrent import futures
 
 import grpc
@@ -192,6 +193,7 @@ class RPCTest(unittest.TestCase):
 
     def tearDown(self):
         self._server.stop(None)
+        self._channel.close()
 
     def testUnrecognizedMethod(self):
         request = b'abc'
@@ -846,4 +848,5 @@ class RPCTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)

@@ -13,6 +13,7 @@
 # limitations under the License.
 """Tests of grpc._channel.Channel connectivity."""
 
+import logging
 import threading
 import time
 import unittest
@@ -74,6 +75,8 @@ class ChannelConnectivityTest(unittest.TestCase):
         channel.unsubscribe(callback.update)
         fifth_connectivities = callback.connectivities()
 
+        channel.close()
+
         self.assertSequenceEqual((grpc.ChannelConnectivity.IDLE,),
                                  first_connectivities)
         self.assertNotIn(grpc.ChannelConnectivity.READY, second_connectivities)
@@ -107,7 +110,8 @@ class ChannelConnectivityTest(unittest.TestCase):
             _ready_in_connectivities)
         second_callback.block_until_connectivities_satisfy(
             _ready_in_connectivities)
-        del channel
+        channel.close()
+        server.stop(None)
 
         self.assertSequenceEqual((grpc.ChannelConnectivity.IDLE,),
                                  first_connectivities)
@@ -138,8 +142,10 @@ class ChannelConnectivityTest(unittest.TestCase):
         callback.block_until_connectivities_satisfy(
             _last_connectivity_is_not_ready)
         channel.unsubscribe(callback.update)
+        channel.close()
         self.assertFalse(thread_pool.was_used())
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)

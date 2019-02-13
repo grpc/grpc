@@ -22,6 +22,8 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "test/core/util/test_config.h"
 
@@ -60,7 +62,7 @@ static void test_fails(grpc_core::ResolverFactory* factory,
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 
   g_combiner = grpc_combiner_create();
@@ -72,12 +74,13 @@ int main(int argc, char** argv) {
   test_succeeds(dns, "dns:10.2.1.1:1234");
   test_succeeds(dns, "dns:www.google.com");
   test_succeeds(dns, "dns:///www.google.com");
-  if (grpc_resolve_address == grpc_resolve_address_ares) {
-    test_succeeds(dns, "dns://8.8.8.8/8.8.8.8:8888");
-  } else {
+  char* resolver_env = gpr_getenv("GRPC_DNS_RESOLVER");
+  if (resolver_env != nullptr && gpr_stricmp(resolver_env, "native") == 0) {
     test_fails(dns, "dns://8.8.8.8/8.8.8.8:8888");
+  } else {
+    test_succeeds(dns, "dns://8.8.8.8/8.8.8.8:8888");
   }
-
+  gpr_free(resolver_env);
   {
     grpc_core::ExecCtx exec_ctx;
     GRPC_COMBINER_UNREF(g_combiner, "test");

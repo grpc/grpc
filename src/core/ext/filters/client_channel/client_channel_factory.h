@@ -48,8 +48,8 @@ struct grpc_client_channel_factory {
 struct grpc_client_channel_factory_vtable {
   void (*ref)(grpc_client_channel_factory* factory);
   void (*unref)(grpc_client_channel_factory* factory);
-  grpc_subchannel* (*create_subchannel)(grpc_client_channel_factory* factory,
-                                        const grpc_subchannel_args* args);
+  grpc_core::Subchannel* (*create_subchannel)(
+      grpc_client_channel_factory* factory, const grpc_channel_args* args);
   grpc_channel* (*create_client_channel)(grpc_client_channel_factory* factory,
                                          const char* target,
                                          grpc_client_channel_type type,
@@ -60,8 +60,8 @@ void grpc_client_channel_factory_ref(grpc_client_channel_factory* factory);
 void grpc_client_channel_factory_unref(grpc_client_channel_factory* factory);
 
 /** Create a new grpc_subchannel */
-grpc_subchannel* grpc_client_channel_factory_create_subchannel(
-    grpc_client_channel_factory* factory, const grpc_subchannel_args* args);
+grpc_core::Subchannel* grpc_client_channel_factory_create_subchannel(
+    grpc_client_channel_factory* factory, const grpc_channel_args* args);
 
 /** Create a new grpc_channel */
 grpc_channel* grpc_client_channel_factory_create_channel(

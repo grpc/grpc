@@ -73,7 +73,7 @@ StressTestInteropClient::StressTestInteropClient(
     long sleep_duration_ms, bool do_not_abort_on_transient_failures)
     : test_id_(test_id),
       server_address_(server_address),
-      channel_creation_func_(channel_creation_func),
+      channel_creation_func_(std::move(channel_creation_func)),
       interop_client_(new InteropClient(channel_creation_func_, false,
                                         do_not_abort_on_transient_failures)),
       test_selector_(test_selector),

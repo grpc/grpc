@@ -137,6 +137,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_resource_quota_arg_vtable);
   printf("%lx", (unsigned long) grpc_channelz_get_top_channels);
   printf("%lx", (unsigned long) grpc_channelz_get_servers);
+  printf("%lx", (unsigned long) grpc_channelz_get_server);
   printf("%lx", (unsigned long) grpc_channelz_get_server_sockets);
   printf("%lx", (unsigned long) grpc_channelz_get_channel);
   printf("%lx", (unsigned long) grpc_channelz_get_subchannel);
@@ -190,6 +191,15 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_alts_server_credentials_create);
   printf("%lx", (unsigned long) grpc_local_credentials_create);
   printf("%lx", (unsigned long) grpc_local_server_credentials_create);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_create);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_cert_request_type);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_key_materials_config);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_credential_reload_config);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_server_authorization_check_config);
+  printf("%lx", (unsigned long) grpc_tls_key_materials_config_create);
+  printf("%lx", (unsigned long) grpc_tls_key_materials_config_set_key_materials);
+  printf("%lx", (unsigned long) grpc_tls_credential_reload_config_create);
+  printf("%lx", (unsigned long) grpc_tls_server_authorization_check_config_create);
   printf("%lx", (unsigned long) grpc_raw_byte_buffer_create);
   printf("%lx", (unsigned long) grpc_raw_compressed_byte_buffer_create);
   printf("%lx", (unsigned long) grpc_byte_buffer_copy);

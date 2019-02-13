@@ -187,6 +187,7 @@ static void gc_mdtab(mdtab_shard* shard) {
           ((destroy_user_data_func)gpr_atm_no_barrier_load(
               &md->destroy_user_data))(user_data);
         }
+        gpr_mu_destroy(&md->mu_user_data);
         gpr_free(md);
         *prev_next = next;
         num_freed++;

@@ -71,8 +71,16 @@ static void iomgr_platform_shutdown(void) {
   winsock_shutdown();
 }
 
+static void iomgr_platform_shutdown_background_closure(void) {}
+
+static bool iomgr_platform_is_any_background_poller_thread(void) {
+  return false;
+}
+
 static grpc_iomgr_platform_vtable vtable = {
-    iomgr_platform_init, iomgr_platform_flush, iomgr_platform_shutdown};
+    iomgr_platform_init, iomgr_platform_flush, iomgr_platform_shutdown,
+    iomgr_platform_shutdown_background_closure,
+    iomgr_platform_is_any_background_poller_thread};
 
 void grpc_set_default_iomgr_platform() {
   grpc_set_tcp_client_impl(&grpc_windows_tcp_client_vtable);
@@ -83,5 +91,7 @@ void grpc_set_default_iomgr_platform() {
   grpc_set_resolver_impl(&grpc_windows_resolver_vtable);
   grpc_set_iomgr_platform_vtable(&vtable);
 }
+
+bool grpc_iomgr_run_in_background() { return false; }
 
 #endif /* GRPC_WINSOCK_SOCKET */

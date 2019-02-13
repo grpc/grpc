@@ -26,11 +26,14 @@
 #include <grpc/impl/codegen/compression_types.h>
 
 #include <grpcpp/impl/codegen/call.h>
+#include <grpcpp/impl/codegen/call_op_set.h>
+#include <grpcpp/impl/codegen/callback_common.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/create_auth_context.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
 #include <grpcpp/impl/codegen/security/auth_context.h>
+#include <grpcpp/impl/codegen/server_interceptor.h>
 #include <grpcpp/impl/codegen/string_ref.h>
 #include <grpcpp/impl/codegen/time.h>
 
@@ -63,11 +66,20 @@ template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class BidiStreamingHandler;
+template <class RequestType, class ResponseType>
+class CallbackUnaryHandler;
+template <class RequestType, class ResponseType>
+class CallbackClientStreamingHandler;
+template <class RequestType, class ResponseType>
+class CallbackServerStreamingHandler;
+template <class RequestType, class ResponseType>
+class CallbackBidiHandler;
 template <class Streamer, bool WriteNeeded>
 class TemplatedBidiStreamingHandler;
 template <StatusCode code>
 class ErrorMethodHandler;
 class Call;
+class ServerReactor;
 }  // namespace internal
 
 class CompletionQueue;
@@ -107,7 +119,7 @@ class ServerContext {
   /// Return a \a gpr_timespec representation of the server call's deadline.
   gpr_timespec raw_deadline() const { return deadline_; }
 
-  /// Add the (\a meta_key, \a meta_value) pair to the initial metadata
+  /// Add the (\a key, \a value) pair to the initial metadata
   /// associated with a server call. These are made available at the client side
   /// by the \a grpc::ClientContext::GetServerInitialMetadata() method.
   ///
@@ -115,13 +127,20 @@ class ServerContext {
   /// to the client (which can happen explicitly, or implicitly when sending a
   /// a response message or status to the client).
   ///
-  /// \param meta_key The metadata key. If \a meta_value is binary data, it must
+  /// \param key The metadata key. If \a value is binary data, it must
   /// end in "-bin".
-  /// \param meta_value The metadata value. If its value is binary, the key name
+  /// \param value The metadata value. If its value is binary, the key name
   /// must end in "-bin".
+  ///
+  /// Metadata must conform to the following format:
+  /// Custom-Metadata -> Binary-Header / ASCII-Header
+  /// Binary-Header -> {Header-Name "-bin" } {binary value}
+  /// ASCII-Header -> Header-Name ASCII-Value
+  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
   void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
 
-  /// Add the (\a meta_key, \a meta_value) pair to the initial metadata
+  /// Add the (\a key, \a value) pair to the initial metadata
   /// associated with a server call. These are made available at the client
   /// side by the \a grpc::ClientContext::GetServerTrailingMetadata() method.
   ///
@@ -129,13 +148,20 @@ class ServerContext {
   /// metadata to the client (which happens when the call is finished and a
   /// status is sent to the client).
   ///
-  /// \param meta_key The metadata key. If \a meta_value is binary data,
+  /// \param key The metadata key. If \a value is binary data,
   /// it must end in "-bin".
-  /// \param meta_value The metadata value. If its value is binary, the key name
+  /// \param value The metadata value. If its value is binary, the key name
   /// must end in "-bin".
+  ///
+  /// Metadata must conform to the following format:
+  /// Custom-Metadata -> Binary-Header / ASCII-Header
+  /// Binary-Header -> {Header-Name "-bin" } {binary value}
+  /// ASCII-Header -> Header-Name ASCII-Value
+  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
 
-  /// IsCancelled is always safe to call when using sync API.
+  /// IsCancelled is always safe to call when using sync or callback API.
   /// When using async API, it is only safe to call IsCancelled after
   /// the AsyncNotifyWhenDone tag has been delivered.
   bool IsCancelled() const;
@@ -177,9 +203,9 @@ class ServerContext {
     return compression_level_;
   }
 
-  /// Set \a algorithm to be the compression algorithm used for the server call.
+  /// Set \a level to be the compression level used for the server call.
   ///
-  /// \param algorithm The compression algorithm used for the server call.
+  /// \param level The compression level used for the server call.
   void set_compression_level(grpc_compression_level level) {
     compression_level_set_ = true;
     compression_level_ = level;
@@ -265,6 +291,14 @@ class ServerContext {
   friend class ::grpc::internal::ServerStreamingHandler;
   template <class Streamer, bool WriteNeeded>
   friend class ::grpc::internal::TemplatedBidiStreamingHandler;
+  template <class RequestType, class ResponseType>
+  friend class ::grpc::internal::CallbackUnaryHandler;
+  template <class RequestType, class ResponseType>
+  friend class ::grpc::internal::CallbackClientStreamingHandler;
+  template <class RequestType, class ResponseType>
+  friend class ::grpc::internal::CallbackServerStreamingHandler;
+  template <class RequestType, class ResponseType>
+  friend class ::grpc::internal::CallbackBidiHandler;
   template <StatusCode code>
   friend class internal::ErrorMethodHandler;
   friend class ::grpc::ClientContext;
@@ -275,7 +309,9 @@ class ServerContext {
 
   class CompletionOp;
 
-  void BeginCompletionOp(internal::Call* call);
+  void BeginCompletionOp(internal::Call* call,
+                         std::function<void(bool)> callback,
+                         internal::ServerReactor* reactor);
   /// Return the tag queued by BeginCompletionOp()
   internal::CompletionQueueTag* GetCompletionOpTag();
 
@@ -283,11 +319,30 @@ class ServerContext {
 
   void set_call(grpc_call* call) { call_ = call; }
 
+  void BindDeadlineAndMetadata(gpr_timespec deadline, grpc_metadata_array* arr);
+
+  void Clear();
+
+  void Setup(gpr_timespec deadline);
+
   uint32_t initial_metadata_flags() const { return 0; }
+
+  experimental::ServerRpcInfo* set_server_rpc_info(
+      const char* method, internal::RpcMethod::RpcType type,
+      const std::vector<
+          std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>&
+          creators) {
+    if (creators.size() != 0) {
+      rpc_info_ = new experimental::ServerRpcInfo(this, method, type);
+      rpc_info_->RegisterInterceptors(creators);
+    }
+    return rpc_info_;
+  }
 
   CompletionOp* completion_op_;
   bool has_notify_when_done_tag_;
   void* async_notify_when_done_tag_;
+  internal::CallbackWithSuccessTag completion_tag_;
 
   gpr_timespec deadline_;
   grpc_call* call_;
@@ -306,6 +361,8 @@ class ServerContext {
                       internal::CallOpSendMessage>
       pending_ops_;
   bool has_pending_ops_;
+
+  experimental::ServerRpcInfo* rpc_info_;
 };
 
 }  // namespace grpc

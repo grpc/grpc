@@ -76,7 +76,7 @@ void UnaryCompressionChecks(const InteropClientContextInspector& inspector,
 
 InteropClient::ServiceStub::ServiceStub(
     ChannelCreationFunc channel_creation_func, bool new_stub_every_call)
-    : channel_creation_func_(channel_creation_func),
+    : channel_creation_func_(std::move(channel_creation_func)),
       channel_(channel_creation_func_()),
       new_stub_every_call_(new_stub_every_call) {
   // If new_stub_every_call is false, then this is our chance to initialize
@@ -112,7 +112,7 @@ void InteropClient::ServiceStub::ResetChannel() {
 InteropClient::InteropClient(ChannelCreationFunc channel_creation_func,
                              bool new_stub_every_test_case,
                              bool do_not_abort_on_transient_failures)
-    : serviceStub_(channel_creation_func, new_stub_every_test_case),
+    : serviceStub_(std::move(channel_creation_func), new_stub_every_test_case),
       do_not_abort_on_transient_failures_(do_not_abort_on_transient_failures) {}
 
 bool InteropClient::AssertStatusOk(const Status& s,
@@ -291,6 +291,25 @@ bool InteropClient::DoJwtTokenCreds(const grpc::string& username) {
   GPR_ASSERT(!response.username().empty());
   GPR_ASSERT(username.find(response.username()) != grpc::string::npos);
   gpr_log(GPR_DEBUG, "Large unary with JWT token creds done.");
+  return true;
+}
+
+bool InteropClient::DoGoogleDefaultCredentials(
+    const grpc::string& default_service_account) {
+  gpr_log(GPR_DEBUG,
+          "Sending a large unary rpc with GoogleDefaultCredentials...");
+  SimpleRequest request;
+  SimpleResponse response;
+  request.set_fill_username(true);
+
+  if (!PerformLargeUnary(&request, &response)) {
+    return false;
+  }
+
+  gpr_log(GPR_DEBUG, "Got username %s", response.username().c_str());
+  GPR_ASSERT(!response.username().empty());
+  GPR_ASSERT(response.username().c_str() == default_service_account);
+  gpr_log(GPR_DEBUG, "Large unary rpc with GoogleDefaultCredentials done.");
   return true;
 }
 

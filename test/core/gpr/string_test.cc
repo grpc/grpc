@@ -295,7 +295,7 @@ static void test_is_true(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   test_strdup();
   test_dump();
   test_parse_uint32();

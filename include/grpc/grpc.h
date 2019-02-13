@@ -506,9 +506,13 @@ GRPCAPI char* grpc_channelz_get_top_channels(intptr_t start_channel_id);
 /* Gets all servers that exist in the process. */
 GRPCAPI char* grpc_channelz_get_servers(intptr_t start_server_id);
 
+/* Returns a single Server, or else a NOT_FOUND code. */
+GRPCAPI char* grpc_channelz_get_server(intptr_t server_id);
+
 /* Gets all server sockets that exist in the server. */
 GRPCAPI char* grpc_channelz_get_server_sockets(intptr_t server_id,
-                                               intptr_t start_socket_id);
+                                               intptr_t start_socket_id,
+                                               intptr_t max_results);
 
 /* Returns a single Channel, or else a NOT_FOUND code. The returned string
    is allocated and must be freed by the application. */

@@ -26,7 +26,7 @@ import subprocess
 import sys
 import uuid
 
-# Langauage Runtime Matrix
+# Language Runtime Matrix
 import client_matrix
 
 python_util_dir = os.path.abspath(
@@ -37,15 +37,16 @@ import jobset
 import report_utils
 import upload_test_results
 
+_TEST_TIMEOUT_SECONDS = 60
+_PULL_IMAGE_TIMEOUT_SECONDS = 15 * 60
+_MAX_PARALLEL_DOWNLOADS = 6
 _LANGUAGES = client_matrix.LANG_RUNTIME_MATRIX.keys()
 # All gRPC release tags, flattened, deduped and sorted.
 _RELEASES = sorted(
     list(
-        set(
-            client_matrix.get_release_tag_name(info)
-            for lang in client_matrix.LANG_RELEASE_MATRIX.values()
-            for info in lang)))
-_TEST_TIMEOUT = 60
+        set(release
+            for release_dict in client_matrix.LANG_RELEASE_MATRIX.values()
+            for release in release_dict.keys())))
 
 argp = argparse.ArgumentParser(description='Run interop tests.')
 argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
@@ -56,7 +57,7 @@ argp.add_argument(
 argp.add_argument(
     '--release',
     default='all',
-    choices=['all', 'master'] + _RELEASES,
+    choices=['all'] + _RELEASES,
     help='Release tags to test.  When testing all '
     'releases defined in client_matrix.py, use "all".')
 argp.add_argument(
@@ -92,178 +93,216 @@ argp.add_argument(
     nargs='?',
     help='The gateway to backend services.')
 
-args = argp.parse_args()
 
-print(str(args))
-
-
-def find_all_images_for_lang(lang):
+def _get_test_images_for_lang(lang, release_arg, image_path_prefix):
     """Find docker images for a language across releases and runtimes.
 
   Returns dictionary of list of (<tag>, <image-full-path>) keyed by runtime.
   """
-    # Find all defined releases.
-    if args.release == 'all':
-        releases = ['master'] + client_matrix.get_release_tags(lang)
+    if release_arg == 'all':
+        # Use all defined releases for given language
+        releases = client_matrix.get_release_tags(lang)
     else:
         # Look for a particular release.
-        if args.release not in ['master'
-                               ] + client_matrix.get_release_tags(lang):
+        if release_arg not in client_matrix.get_release_tags(lang):
             jobset.message(
                 'SKIPPED',
-                '%s for %s is not defined' % (args.release, lang),
+                'release %s for %s is not defined' % (release_arg, lang),
                 do_newline=True)
             return {}
-        releases = [args.release]
+        releases = [release_arg]
 
-    # TODO(jtattermusch): why do we need to query the existing images/tags?
-    # From LANG_RUNTIME_MATRIX and LANG_RELEASE_MATRIX it should be obvious
-    # which tags we want to test - and it should be an error if they are
-    # missing.
-    # Images tuples keyed by runtime.
+    # Image tuples keyed by runtime.
     images = {}
-    for runtime in client_matrix.LANG_RUNTIME_MATRIX[lang]:
-        image_path = '%s/grpc_interop_%s' % (args.gcr_path, runtime)
-        output = subprocess.check_output([
-            'gcloud', 'beta', 'container', 'images', 'list-tags',
-            '--format=json', image_path
-        ])
-        docker_image_list = json.loads(output)
-        # All images should have a single tag or no tag.
-        # TODO(adelez): Remove tagless images.
-        tags = [i['tags'][0] for i in docker_image_list if i['tags']]
-        jobset.message(
-            'START',
-            'Found images for %s: %s' % (image_path, tags),
-            do_newline=True)
-        skipped = len(docker_image_list) - len(tags)
-        jobset.message(
-            'SKIPPED',
-            'Skipped images (no-tag/unknown-tag): %d' % skipped,
-            do_newline=True)
-        # Filter tags based on the releases.
-        images[runtime] = [(tag, '%s:%s' % (image_path, tag))
-                           for tag in tags
-                           if tag in releases]
+    for tag in releases:
+        for runtime in client_matrix.get_runtimes_for_lang_release(lang, tag):
+            image_name = '%s/grpc_interop_%s:%s' % (image_path_prefix, runtime,
+                                                    tag)
+            image_tuple = (tag, image_name)
+
+            if not images.has_key(runtime):
+                images[runtime] = []
+            images[runtime].append(image_tuple)
     return images
 
 
-# caches test cases (list of JobSpec) loaded from file.  Keyed by lang and runtime.
-def find_test_cases(lang, runtime, release, suite_name):
-    """Returns the list of test cases from testcase files per lang/release."""
-    testcase_dir = os.path.join(os.path.dirname(__file__), 'testcases')
-    filename_prefix = lang
-    if lang == 'csharp':
-        filename_prefix = runtime
+def _read_test_cases_file(lang, runtime, release):
+    """Read test cases from a bash-like file and return a list of commands"""
     # Check to see if we need to use a particular version of test cases.
-    lang_version = '%s_%s' % (filename_prefix, release)
-    if lang_version in client_matrix.TESTCASES_VERSION_MATRIX:
-        testcases = os.path.join(
-            testcase_dir, client_matrix.TESTCASES_VERSION_MATRIX[lang_version])
-    else:
-        testcases = os.path.join(testcase_dir, '%s__master' % filename_prefix)
+    release_info = client_matrix.LANG_RELEASE_MATRIX[lang].get(release)
+    if release_info:
+        testcases_file = release_info.testcases_file
+    if not testcases_file:
+        # TODO(jtattermusch): remove the double-underscore, it is pointless
+        testcases_file = '%s__master' % lang
+
+    # For csharp, the testcases file used depends on the runtime
+    # TODO(jtattermusch): remove this odd specialcase
+    if lang == 'csharp' and runtime == 'csharpcoreclr':
+        testcases_file = testcases_file.replace('csharp_', 'csharpcoreclr_')
+
+    testcases_filepath = os.path.join(
+        os.path.dirname(__file__), 'testcases', testcases_file)
+    lines = []
+    with open(testcases_filepath) as f:
+        for line in f.readlines():
+            line = re.sub('\\#.*$', '', line)  # remove hash comments
+            line = line.strip()
+            if line and not line.startswith('echo'):
+                # Each non-empty line is a treated as a test case command
+                lines.append(line)
+    return lines
+
+
+def _cleanup_docker_image(image):
+    jobset.message('START', 'Cleanup docker image %s' % image, do_newline=True)
+    dockerjob.remove_image(image, skip_nonexistent=True)
+
+
+args = argp.parse_args()
+
+
+# caches test cases (list of JobSpec) loaded from file.  Keyed by lang and runtime.
+def _generate_test_case_jobspecs(lang, runtime, release, suite_name):
+    """Returns the list of test cases from testcase files per lang/release."""
+    testcase_lines = _read_test_cases_file(lang, runtime, release)
 
     job_spec_list = []
-    try:
-        with open(testcases) as f:
-            # Only line start with 'docker run' are test cases.
-            for line in f.readlines():
-                if line.startswith('docker run'):
-                    m = re.search('--test_case=(.*)"', line)
-                    shortname = m.group(1) if m else 'unknown_test'
-                    m = re.search(
-                        '--server_host_override=(.*).sandbox.googleapis.com',
-                        line)
-                    server = m.group(1) if m else 'unknown_server'
+    for line in testcase_lines:
+        # TODO(jtattermusch): revisit the logic for updating test case commands
+        # what it currently being done seems fragile.
 
-                    # If server_host arg is not None, replace the original
-                    # server_host with the one provided or append to the end of
-                    # the command if server_host does not appear originally.
-                    if args.server_host:
-                        if line.find('--server_host=') > -1:
-                            line = re.sub('--server_host=[^ ]*',
-                                          '--server_host=%s' % args.server_host,
-                                          line)
-                        else:
-                            line = '%s --server_host=%s"' % (line[:-1],
-                                                             args.server_host)
-                        print(line)
+        # Extract test case name from the command line
+        m = re.search(r'--test_case=(\w+)', line)
+        testcase_name = m.group(1) if m else 'unknown_test'
 
-                    spec = jobset.JobSpec(
-                        cmdline=line,
-                        shortname='%s:%s:%s:%s' % (suite_name, lang, server,
-                                                   shortname),
-                        timeout_seconds=_TEST_TIMEOUT,
-                        shell=True,
-                        flake_retries=5 if args.allow_flakes else 0)
-                    job_spec_list.append(spec)
-            jobset.message(
-                'START',
-                'Loaded %s tests from %s' % (len(job_spec_list), testcases),
-                do_newline=True)
-    except IOError as err:
-        jobset.message('FAILED', err, do_newline=True)
+        # Extract the server name from the command line
+        if '--server_host_override=' in line:
+            m = re.search(
+                r'--server_host_override=((.*).sandbox.googleapis.com)', line)
+        else:
+            m = re.search(r'--server_host=((.*).sandbox.googleapis.com)', line)
+        server = m.group(1) if m else 'unknown_server'
+        server_short = m.group(2) if m else 'unknown_server'
+
+        # replace original server_host argument
+        assert '--server_host=' in line
+        line = re.sub(r'--server_host=[^ ]*',
+                      r'--server_host=%s' % args.server_host, line)
+
+        # some interop tests don't set server_host_override (see #17407),
+        # but we need to use it if different host is set via cmdline args.
+        if args.server_host != server and not '--server_host_override=' in line:
+            line = re.sub(r'(--server_host=[^ ]*)',
+                          r'\1 --server_host_override=%s' % server, line)
+
+        spec = jobset.JobSpec(
+            cmdline=line,
+            shortname='%s:%s:%s:%s' % (suite_name, lang, server_short,
+                                       testcase_name),
+            timeout_seconds=_TEST_TIMEOUT_SECONDS,
+            shell=True,
+            flake_retries=5 if args.allow_flakes else 0)
+        job_spec_list.append(spec)
     return job_spec_list
 
 
-_xml_report_tree = report_utils.new_junit_xml_tree()
+def _pull_images_for_lang(lang, images):
+    """Pull all images for given lang from container registry."""
+    jobset.message(
+        'START', 'Downloading images for language "%s"' % lang, do_newline=True)
+    download_specs = []
+    for release, image in images:
+        # Pull the image and warm it up.
+        # First time we use an image with "docker run", it takes time to unpack
+        # the image and later this delay would fail our test cases.
+        cmdline = [
+            'time gcloud docker -- pull %s && time docker run --rm=true %s /bin/true'
+            % (image, image)
+        ]
+        spec = jobset.JobSpec(
+            cmdline=cmdline,
+            shortname='pull_image_%s' % (image),
+            timeout_seconds=_PULL_IMAGE_TIMEOUT_SECONDS,
+            shell=True)
+        download_specs.append(spec)
+    # too many image downloads at once tend to get stuck
+    max_pull_jobs = min(args.jobs, _MAX_PARALLEL_DOWNLOADS)
+    num_failures, resultset = jobset.run(
+        download_specs, newline_on_success=True, maxjobs=max_pull_jobs)
+    if num_failures:
+        jobset.message(
+            'FAILED', 'Failed to download some images', do_newline=True)
+        return False
+    else:
+        jobset.message(
+            'SUCCESS', 'All images downloaded successfully.', do_newline=True)
+        return True
 
 
-def run_tests_for_lang(lang, runtime, images):
+def _run_tests_for_lang(lang, runtime, images, xml_report_tree):
     """Find and run all test cases for a language.
 
   images is a list of (<release-tag>, <image-full-path>) tuple.
   """
+    skip_tests = False
+    if not _pull_images_for_lang(lang, images):
+        jobset.message(
+            'FAILED',
+            'Image download failed. Skipping tests for language "%s"' % lang,
+            do_newline=True)
+        skip_tests = True
+
     total_num_failures = 0
-    for image_tuple in images:
-        release, image = image_tuple
-        jobset.message('START', 'Testing %s' % image, do_newline=True)
-        # Download the docker image before running each test case.
-        subprocess.check_call(['gcloud', 'docker', '--', 'pull', image])
+    for release, image in images:
         suite_name = '%s__%s_%s' % (lang, runtime, release)
-        job_spec_list = find_test_cases(lang, runtime, release, suite_name)
+        job_spec_list = _generate_test_case_jobspecs(lang, runtime, release,
+                                                     suite_name)
 
         if not job_spec_list:
             jobset.message(
                 'FAILED', 'No test cases were found.', do_newline=True)
-            return 1
+            total_num_failures += 1
+            continue
 
         num_failures, resultset = jobset.run(
             job_spec_list,
             newline_on_success=True,
             add_env={'docker_image': image},
-            maxjobs=args.jobs)
+            maxjobs=args.jobs,
+            skip_jobs=skip_tests)
         if args.bq_result_table and resultset:
             upload_test_results.upload_interop_results_to_bq(
                 resultset, args.bq_result_table)
-        if num_failures:
+        if skip_tests:
+            jobset.message('FAILED', 'Tests were skipped', do_newline=True)
+            total_num_failures += 1
+        elif num_failures:
             jobset.message('FAILED', 'Some tests failed', do_newline=True)
             total_num_failures += num_failures
         else:
             jobset.message('SUCCESS', 'All tests passed', do_newline=True)
 
-        report_utils.append_junit_xml_results(_xml_report_tree, resultset,
+        report_utils.append_junit_xml_results(xml_report_tree, resultset,
                                               'grpc_interop_matrix', suite_name,
                                               str(uuid.uuid4()))
 
+    # cleanup all downloaded docker images
+    for _, image in images:
         if not args.keep:
-            cleanup(image)
+            _cleanup_docker_image(image)
 
     return total_num_failures
 
 
-def cleanup(image):
-    jobset.message('START', 'Cleanup docker image %s' % image, do_newline=True)
-    dockerjob.remove_image(image, skip_nonexistent=True)
-
-
 languages = args.language if args.language != ['all'] else _LANGUAGES
 total_num_failures = 0
+_xml_report_tree = report_utils.new_junit_xml_tree()
 for lang in languages:
-    docker_images = find_all_images_for_lang(lang)
+    docker_images = _get_test_images_for_lang(lang, args.release, args.gcr_path)
     for runtime in sorted(docker_images.keys()):
-        total_num_failures += run_tests_for_lang(lang, runtime,
-                                                 docker_images[runtime])
+        total_num_failures += _run_tests_for_lang(
+            lang, runtime, docker_images[runtime], _xml_report_tree)
 
 report_utils.create_xml_report_file(_xml_report_tree, args.report_file)
 

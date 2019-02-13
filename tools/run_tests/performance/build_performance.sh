@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# shellcheck disable=SC1090
 source ~/.rvm/scripts/rvm
 set -ex
 
@@ -25,10 +26,16 @@ CONFIG=${CONFIG:-opt}
 # TODO(jtattermusch): C++ worker and driver are not buildable on Windows yet
 if [ "$OSTYPE" != "msys" ]
 then
-  # TODO(jtattermusch): not embedding OpenSSL breaks the C# build because
-  # grpc_csharp_ext needs OpenSSL embedded and some intermediate files from
-  # this build will be reused.
-  make CONFIG="${CONFIG}" EMBED_OPENSSL=true EMBED_ZLIB=true qps_worker qps_json_driver -j8
+  # build C++ with cmake as building with "make" disables boringssl assembly
+  # optimizations that can have huge impact on secure channel throughput.
+  mkdir -p cmake/build
+  cd cmake/build
+  cmake -DgRPC_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release ../..
+  make qps_worker qps_json_driver -j8
+  cd ../..
+  # unbreak subsequent make builds by restoring zconf.h (previously renamed by cmake build)
+  # See https://github.com/grpc/grpc/issues/11581
+  (cd third_party/zlib; git checkout zconf.h)
 fi
 
 PHP_ALREADY_BUILT=""

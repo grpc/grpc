@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_METADATA_MAP_H
 #define GRPCPP_IMPL_CODEGEN_METADATA_MAP_H
 
+#include <map>
+
 #include <grpc/impl/codegen/log.h>
 #include <grpcpp/impl/codegen/slice.h>
 
@@ -30,11 +32,9 @@ const char kBinaryErrorDetailsKey[] = "grpc-status-details-bin";
 
 class MetadataMap {
  public:
-  MetadataMap() { memset(&arr_, 0, sizeof(arr_)); }
+  MetadataMap() { Setup(); }
 
-  ~MetadataMap() {
-    g_core_codegen_interface->grpc_metadata_array_destroy(&arr_);
-  }
+  ~MetadataMap() { Destroy(); }
 
   grpc::string GetBinaryErrorDetails() {
     // if filled_, extract from the multimap for O(log(n))
@@ -69,10 +69,23 @@ class MetadataMap {
   }
   grpc_metadata_array* arr() { return &arr_; }
 
+  void Reset() {
+    filled_ = false;
+    map_.clear();
+    Destroy();
+    Setup();
+  }
+
  private:
   bool filled_ = false;
   grpc_metadata_array arr_;
   std::multimap<grpc::string_ref, grpc::string_ref> map_;
+
+  void Destroy() {
+    g_core_codegen_interface->grpc_metadata_array_destroy(&arr_);
+  }
+
+  void Setup() { memset(&arr_, 0, sizeof(arr_)); }
 
   void FillMap() {
     if (filled_) return;

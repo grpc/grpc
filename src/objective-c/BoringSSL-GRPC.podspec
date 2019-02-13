@@ -1,4 +1,5 @@
 
+
 # This file has been automatically generated from a template file.
 # Please make modifications to
 # `templates/src/objective-c/BoringSSL-GRPC.podspec.template` instead. This
@@ -38,7 +39,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'BoringSSL-GRPC'
-  version = '0.0.2'
+  version = '0.0.3'
   s.version  = version
   s.summary  = 'BoringSSL is a fork of OpenSSL that is designed to meet Google\'s needs.'
   # Adapted from the homepage:
@@ -80,6 +81,7 @@ Pod::Spec.new do |s|
 
   s.ios.deployment_target = '5.0'
   s.osx.deployment_target = '10.7'
+  s.tvos.deployment_target = '10.0'
 
   name = 'openssl_grpc'
 

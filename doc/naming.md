@@ -51,7 +51,9 @@ but may not be supported in other languages:
 
 - `ipv6:address[:port][,address[:port],...]` -- IPv6 addresses
   - Can specify multiple comma-delimited addresses of the form `address[:port]`:
-    - `address` is the IPv6 address to use.
+    - `address` is the IPv6 address to use. To use with a `port` the `address`
+      must enclosed in literal square brakets (`[` and `]`).  Example: 
+      `ipv6:[2607:f8b0:400e:c00::ef]:443` or `ipv6:[::]:1234`
     - `port` is the port to use.  If not specified, 443 is used.
 
 In the future, additional schemes such as `etcd` could be added.

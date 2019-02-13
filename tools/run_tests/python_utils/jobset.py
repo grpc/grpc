@@ -13,8 +13,6 @@
 # limitations under the License.
 """Run a group of subprocesses and then finish."""
 
-from __future__ import print_function
-
 import logging
 import multiprocessing
 import os
@@ -118,7 +116,7 @@ def eintr_be_gone(fn):
     while True:
         try:
             return fn()
-        except IOError, e:
+        except IOError as e:
             if e.errno != errno.EINTR:
                 raise
 
@@ -144,7 +142,7 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
                      if do_newline or explanatory_text is not None else ''))
             sys.stdout.flush()
             return
-        except IOError, e:
+        except IOError as e:
             if e.errno != errno.EINTR:
                 raise
 

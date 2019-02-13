@@ -23,6 +23,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
 
@@ -107,7 +108,7 @@ void run_test(bool wait_for_ready) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   run_test(true /* wait_for_ready */);
   run_test(false /* wait_for_ready */);
   return 0;

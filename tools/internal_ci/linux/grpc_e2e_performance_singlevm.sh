@@ -21,7 +21,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_perf_multilang_rc
 
 # "smoketest" scenarios on a single VM (=no remote VM for running qps_workers)
 tools/run_tests/run_performance_tests.py \
-    -l c++ csharp ruby java python go php7 php7_protobuf_c node node_purejs \
+    -l c++ csharp ruby java python go php7 php7_protobuf_c node \
     --netperf \
     --category smoketest \
     -u kbuilder \

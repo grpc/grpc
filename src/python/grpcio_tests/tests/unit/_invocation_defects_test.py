@@ -15,6 +15,7 @@
 import itertools
 import threading
 import unittest
+import logging
 
 import grpc
 
@@ -214,6 +215,7 @@ class InvocationDefectsTest(unittest.TestCase):
 
     def tearDown(self):
         self._server.stop(0)
+        self._channel.close()
 
     def testIterableStreamRequestBlockingUnaryResponse(self):
         requests = [b'\x07\x08' for _ in range(test_constants.STREAM_LENGTH)]
@@ -271,4 +273,5 @@ class InvocationDefectsTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)
