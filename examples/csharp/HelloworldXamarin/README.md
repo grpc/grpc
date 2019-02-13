@@ -4,11 +4,6 @@ gRPC C# on Xamarin
 EXPERIMENTAL ONLY
 -------------
 Support of the Xamarin platform is currently experimental.
-The example depends on experimental Grpc.Core nuget package that hasn't
-been officially released and is only available via the [daily builds](https://packages.grpc.io/)
-source.
-
-HINT: To download the package, please manually download the latest `.nupkg` packages from "Daily Builds" in [packages.grpc.io](https://packages.grpc.io/) into a local directory. Then add a nuget source that points to that directory (That can be [done in Visual Studio](https://docs.microsoft.com/en-us/nuget/tools/package-manager-ui#package-sources) or Visual Studio for Mac via "Configure nuget sources"). After that, nuget will also explore that directory when looking for packages.
 
 BACKGROUND
 -------------

@@ -63,12 +63,27 @@ config_setting(
     values = {"cpu": "x64_windows_msvc"},
 )
 
+config_setting(
+    name = "mac_x86_64",
+    values = {"cpu": "darwin"},
+)
+
+COPTS = select({
+    ":mac_x86_64": ["-DGRPC_CFSTREAM"],
+    "//conditions:default": [],
+})
+
+LINK_OPTS = select({
+    ":mac_x86_64": ["-framework CoreFoundation"],
+    "//conditions:default": [],
+})
+
 # This should be updated along with build.yaml
-g_stands_for = "gold"
+g_stands_for = "godric"
 
-core_version = "7.0.0-dev"
+core_version = "7.0.0"
 
-version = "1.19.0-dev"
+version = "1.20.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -701,7 +716,6 @@ grpc_cc_library(
         "src/core/lib/channel/channelz_registry.cc",
         "src/core/lib/channel/connected_channel.cc",
         "src/core/lib/channel/handshaker.cc",
-        "src/core/lib/channel/handshaker_factory.cc",
         "src/core/lib/channel/handshaker_registry.cc",
         "src/core/lib/channel/status_util.cc",
         "src/core/lib/compression/compression.cc",
@@ -981,6 +995,7 @@ grpc_cc_library(
         "zlib",
     ],
     language = "c++",
+    copts = COPTS,
     public_hdrs = GRPC_PUBLIC_HDRS,
     deps = [
         "gpr_base",
@@ -1040,6 +1055,8 @@ grpc_cc_library(
         "src/core/lib/iomgr/iomgr_posix_cfstream.cc",
         "src/core/lib/iomgr/tcp_client_cfstream.cc",
     ],
+    copts = COPTS,
+    linkopts = LINK_OPTS,
     hdrs = [
         "src/core/lib/iomgr/cfstream_handle.h",
         "src/core/lib/iomgr/endpoint_cfstream.h",
@@ -1071,10 +1088,10 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/parse_address.cc",
         "src/core/ext/filters/client_channel/proxy_mapper.cc",
         "src/core/ext/filters/client_channel/proxy_mapper_registry.cc",
-        "src/core/ext/filters/client_channel/request_routing.cc",
         "src/core/ext/filters/client_channel/resolver.cc",
         "src/core/ext/filters/client_channel/resolver_registry.cc",
         "src/core/ext/filters/client_channel/resolver_result_parsing.cc",
+        "src/core/ext/filters/client_channel/resolving_lb_policy.cc",
         "src/core/ext/filters/client_channel/retry_throttle.cc",
         "src/core/ext/filters/client_channel/server_address.cc",
         "src/core/ext/filters/client_channel/subchannel.cc",
@@ -1097,11 +1114,11 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/parse_address.h",
         "src/core/ext/filters/client_channel/proxy_mapper.h",
         "src/core/ext/filters/client_channel/proxy_mapper_registry.h",
-        "src/core/ext/filters/client_channel/request_routing.h",
         "src/core/ext/filters/client_channel/resolver.h",
         "src/core/ext/filters/client_channel/resolver_factory.h",
         "src/core/ext/filters/client_channel/resolver_registry.h",
         "src/core/ext/filters/client_channel/resolver_result_parsing.h",
+        "src/core/ext/filters/client_channel/resolving_lb_policy.h",
         "src/core/ext/filters/client_channel/retry_throttle.h",
         "src/core/ext/filters/client_channel/server_address.h",
         "src/core/ext/filters/client_channel/subchannel.h",

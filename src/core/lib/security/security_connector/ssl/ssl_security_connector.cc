@@ -128,7 +128,7 @@ class grpc_ssl_channel_security_connector final
   }
 
   void add_handshakers(grpc_pollset_set* interested_parties,
-                       grpc_handshake_manager* handshake_mgr) override {
+                       grpc_core::HandshakeManager* handshake_mgr) override {
     // Instantiate TSI handshaker.
     tsi_handshaker* tsi_hs = nullptr;
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
@@ -142,8 +142,7 @@ class grpc_ssl_channel_security_connector final
       return;
     }
     // Create handshakers.
-    grpc_handshake_manager_add(handshake_mgr,
-                               grpc_security_handshaker_create(tsi_hs, this));
+    handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(tsi_hs, this));
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
@@ -283,7 +282,7 @@ class grpc_ssl_server_security_connector
   }
 
   void add_handshakers(grpc_pollset_set* interested_parties,
-                       grpc_handshake_manager* handshake_mgr) override {
+                       grpc_core::HandshakeManager* handshake_mgr) override {
     // Instantiate TSI handshaker.
     try_fetch_ssl_server_credentials();
     tsi_handshaker* tsi_hs = nullptr;
@@ -295,8 +294,7 @@ class grpc_ssl_server_security_connector
       return;
     }
     // Create handshakers.
-    grpc_handshake_manager_add(handshake_mgr,
-                               grpc_security_handshaker_create(tsi_hs, this));
+    handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(tsi_hs, this));
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,

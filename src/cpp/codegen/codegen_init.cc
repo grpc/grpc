@@ -20,7 +20,7 @@
 #include <grpcpp/impl/codegen/grpc_library.h>
 
 /// Null-initializes the global gRPC variables for the codegen library. These
-/// stay null in the absence of of grpc++ library. In this case, no gRPC
+/// stay null in the absence of grpc++ library. In this case, no gRPC
 /// features such as the ability to perform calls will be available. Trying to
 /// perform them would result in a segmentation fault when trying to deference
 /// the following nulled globals. These should be associated with actual

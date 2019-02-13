@@ -174,6 +174,7 @@ grpc_call_credentials* grpc_service_account_jwt_access_credentials_create(
     gpr_free(clean_json);
   }
   GPR_ASSERT(reserved == nullptr);
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   return grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
              grpc_auth_json_key_create_from_string(json_key), token_lifetime)
