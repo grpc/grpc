@@ -115,6 +115,7 @@ static void grpc_rb_event_unblocking_func(void* arg) {
 static VALUE grpc_rb_event_thread(VALUE arg) {
   grpc_rb_event* event;
   (void)arg;
+  grpc_ruby_init();
   while (true) {
     event = (grpc_rb_event*)rb_thread_call_without_gvl(
         grpc_rb_wait_for_event_no_gil, NULL, grpc_rb_event_unblocking_func,
@@ -128,6 +129,7 @@ static VALUE grpc_rb_event_thread(VALUE arg) {
     }
   }
   grpc_rb_event_queue_destroy();
+  grpc_ruby_shutdown();
   return Qnil;
 }
 

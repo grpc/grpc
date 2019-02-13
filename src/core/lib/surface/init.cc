@@ -134,7 +134,7 @@ void grpc_init(void) {
     grpc_core::ExecCtx::GlobalInit();
     grpc_iomgr_init();
     gpr_timers_global_init();
-    grpc_handshaker_factory_registry_init();
+    grpc_core::HandshakerRegistry::Init();
     grpc_security_init();
     for (i = 0; i < g_number_of_plugins; i++) {
       if (g_all_of_the_plugins[i].init != nullptr) {
@@ -177,7 +177,7 @@ void grpc_shutdown(void) {
       gpr_timers_global_destroy();
       grpc_tracer_shutdown();
       grpc_mdctx_global_shutdown();
-      grpc_handshaker_factory_registry_shutdown();
+      grpc_core::HandshakerRegistry::Shutdown();
       grpc_slice_intern_shutdown();
       grpc_core::channelz::ChannelzRegistry::Shutdown();
       grpc_stats_shutdown();

@@ -48,7 +48,9 @@ set -ex
 
 # cocoapods
 export LANG=en_US.UTF-8
-time pod repo update  # needed by python
+# pre-fetch cocoapods master repo's most recent commit only
+mkdir -p ~/.cocoapods/repos
+time git clone --depth 1 https://github.com/CocoaPods/Specs.git ~/.cocoapods/repos/master
 
 # python
 time pip install virtualenv --user python

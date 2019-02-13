@@ -78,7 +78,7 @@ struct grpc_end2end_http_proxy {
 //
 
 // proxy_connection structure is only accessed in the closures which are all
-// scheduled under the same combiner lock. So there is is no need for a mutex to
+// scheduled under the same combiner lock. So there is no need for a mutex to
 // protect this structure.
 typedef struct proxy_connection {
   grpc_end2end_http_proxy* proxy;

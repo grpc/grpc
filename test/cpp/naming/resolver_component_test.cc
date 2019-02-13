@@ -99,6 +99,13 @@ DEFINE_string(
     "generate "
     "the python script runner doesn't allow us to pass a gflags bool to this "
     "binary.");
+DEFINE_string(
+    enable_txt_queries, "",
+    "Whether or not to enable TXT queries for the ares resolver instance."
+    "It would be better if this arg could be bool, but the way that we "
+    "generate "
+    "the python script runner doesn't allow us to pass a gflags bool to this "
+    "binary.");
 DEFINE_string(expected_lb_policy, "",
               "Expected lb policy name that appears in resolver result channel "
               "arg. Empty for none.");
@@ -459,6 +466,26 @@ void RunResolvesRelevantRecordsTest(void (*OnDoneLocked)(void* arg,
         grpc_channel_args_copy_and_add(nullptr, &srv_queries_arg, 1);
   } else if (FLAGS_enable_srv_queries != "False") {
     gpr_log(GPR_DEBUG, "Invalid value for --enable_srv_queries.");
+    abort();
+  }
+  gpr_log(GPR_DEBUG, "resolver_component_test: --enable_txt_queries: %s",
+          FLAGS_enable_txt_queries.c_str());
+  // By default, TXT queries are disabled, so tests that expect no TXT query
+  // should avoid setting any channel arg. Test cases that do rely on the TXT
+  // query must explicitly enable TXT though.
+  if (FLAGS_enable_txt_queries == "True") {
+    // Unlike SRV queries, there isn't a channel arg specific to TXT records.
+    // Rather, we use the resolver-agnostic "service config" resolution option,
+    // for which c-ares has its own specific default value, which isn't
+    // necessarily shared by other resolvers.
+    grpc_arg txt_queries_arg = grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION), false);
+    grpc_channel_args* tmp_args =
+        grpc_channel_args_copy_and_add(resolver_args, &txt_queries_arg, 1);
+    grpc_channel_args_destroy(resolver_args);
+    resolver_args = tmp_args;
+  } else if (FLAGS_enable_txt_queries != "False") {
+    gpr_log(GPR_DEBUG, "Invalid value for --enable_txt_queries.");
     abort();
   }
   // create resolver and resolve

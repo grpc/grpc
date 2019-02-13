@@ -116,7 +116,8 @@ size_t Executor::RunClosures(const char* executor_name,
   // application-level callbacks. No need to create a new ExecCtx, though,
   // since there already is one and it is flushed (but not destructed) in this
   // function itself.
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx(
+      GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
 
   grpc_closure* c = list.head;
   while (c != nullptr) {

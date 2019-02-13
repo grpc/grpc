@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\Grpc.Core\Version.csproj.include" />
+  <Import Project="..\Grpc.Core\Common.csproj.include" />
+
+  <PropertyGroup>
+    <Copyright>Copyright 2015, Google Inc.</Copyright>
+    <Title>gRPC C#</Title>
+    <Description>C# implementation of gRPC - an RPC library and framework.</Description>
+    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
+    <Authors>Google Inc.</Authors>
+    <TargetFrameworks>net45;netstandard1.5</TargetFrameworks>
+    <PackageId>Grpc</PackageId>
+    <PackageTags>gRPC RPC Protocol HTTP/2</PackageTags>
+    <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
+    <!-- This is only a metapackage -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Grpc.Core/Grpc.Core.csproj" />
+  </ItemGroup>
+</Project>

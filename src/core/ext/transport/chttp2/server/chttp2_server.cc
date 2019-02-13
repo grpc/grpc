@@ -54,7 +54,7 @@ typedef struct {
   bool shutdown;
   grpc_closure tcp_server_shutdown_complete;
   grpc_closure* server_destroy_listener_done;
-  grpc_handshake_manager* pending_handshake_mgrs;
+  grpc_core::HandshakeManager* pending_handshake_mgrs;
   grpc_core::RefCountedPtr<grpc_core::channelz::ListenSocketNode>
       channelz_listen_socket;
 } server_state;
@@ -64,7 +64,7 @@ typedef struct {
   server_state* svr_state;
   grpc_pollset* accepting_pollset;
   grpc_tcp_server_acceptor* acceptor;
-  grpc_handshake_manager* handshake_mgr;
+  grpc_core::RefCountedPtr<grpc_core::HandshakeManager> handshake_mgr;
   // State for enforcing handshake timeout on receiving HTTP/2 settings.
   grpc_chttp2_transport* transport;
   grpc_millis deadline;
@@ -112,7 +112,7 @@ static void on_receive_settings(void* arg, grpc_error* error) {
 }
 
 static void on_handshake_done(void* arg, grpc_error* error) {
-  grpc_handshaker_args* args = static_cast<grpc_handshaker_args*>(arg);
+  auto* args = static_cast<grpc_core::HandshakerArgs*>(arg);
   server_connection_state* connection_state =
       static_cast<server_connection_state*>(args->user_data);
   gpr_mu_lock(&connection_state->svr_state->mu);
@@ -175,11 +175,10 @@ static void on_handshake_done(void* arg, grpc_error* error) {
       }
     }
   }
-  grpc_handshake_manager_pending_list_remove(
-      &connection_state->svr_state->pending_handshake_mgrs,
-      connection_state->handshake_mgr);
+  connection_state->handshake_mgr->RemoveFromPendingMgrList(
+      &connection_state->svr_state->pending_handshake_mgrs);
   gpr_mu_unlock(&connection_state->svr_state->mu);
-  grpc_handshake_manager_destroy(connection_state->handshake_mgr);
+  connection_state->handshake_mgr.reset();
   gpr_free(connection_state->acceptor);
   grpc_tcp_server_unref(connection_state->svr_state->tcp_server);
   server_connection_state_unref(connection_state);
@@ -211,9 +210,8 @@ static void on_accept(void* arg, grpc_endpoint* tcp,
     gpr_free(acceptor);
     return;
   }
-  grpc_handshake_manager* handshake_mgr = grpc_handshake_manager_create();
-  grpc_handshake_manager_pending_list_add(&state->pending_handshake_mgrs,
-                                          handshake_mgr);
+  auto handshake_mgr = grpc_core::MakeRefCounted<grpc_core::HandshakeManager>();
+  handshake_mgr->AddToPendingMgrList(&state->pending_handshake_mgrs);
   grpc_tcp_server_ref(state->tcp_server);
   gpr_mu_unlock(&state->mu);
   server_connection_state* connection_state =
@@ -227,19 +225,19 @@ static void on_accept(void* arg, grpc_endpoint* tcp,
   connection_state->interested_parties = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(connection_state->interested_parties,
                                connection_state->accepting_pollset);
-  grpc_handshakers_add(HANDSHAKER_SERVER, state->args,
-                       connection_state->interested_parties,
-                       connection_state->handshake_mgr);
+  grpc_core::HandshakerRegistry::AddHandshakers(
+      grpc_core::HANDSHAKER_SERVER, state->args,
+      connection_state->interested_parties,
+      connection_state->handshake_mgr.get());
   const grpc_arg* timeout_arg =
       grpc_channel_args_find(state->args, GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS);
   connection_state->deadline =
       grpc_core::ExecCtx::Get()->Now() +
       grpc_channel_arg_get_integer(timeout_arg,
                                    {120 * GPR_MS_PER_SEC, 1, INT_MAX});
-  grpc_handshake_manager_do_handshake(connection_state->handshake_mgr, tcp,
-                                      state->args, connection_state->deadline,
-                                      acceptor, on_handshake_done,
-                                      connection_state);
+  connection_state->handshake_mgr->DoHandshake(
+      tcp, state->args, connection_state->deadline, acceptor, on_handshake_done,
+      connection_state);
 }
 
 /* Server callback: start listening on our ports */
@@ -260,8 +258,9 @@ static void tcp_server_shutdown_complete(void* arg, grpc_error* error) {
   gpr_mu_lock(&state->mu);
   grpc_closure* destroy_done = state->server_destroy_listener_done;
   GPR_ASSERT(state->shutdown);
-  grpc_handshake_manager_pending_list_shutdown_all(
-      state->pending_handshake_mgrs, GRPC_ERROR_REF(error));
+  if (state->pending_handshake_mgrs != nullptr) {
+    state->pending_handshake_mgrs->ShutdownAllPending(GRPC_ERROR_REF(error));
+  }
   state->channelz_listen_socket.reset();
   gpr_mu_unlock(&state->mu);
   // Flush queued work before destroying handshaker factory, since that

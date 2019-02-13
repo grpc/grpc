@@ -670,6 +670,8 @@ CallbackTestServiceImpl::ResponseStream() {
     void OnWriteDone(bool ok) override {
       if (num_msgs_sent_ < server_responses_to_send_) {
         NextWrite();
+      } else if (server_coalescing_api_ != 0) {
+        // We would have already done Finish just after the WriteLast
       } else if (server_try_cancel_ == CANCEL_DURING_PROCESSING) {
         // Let OnCancel recover this
       } else if (server_try_cancel_ == CANCEL_AFTER_PROCESSING) {
@@ -695,6 +697,8 @@ CallbackTestServiceImpl::ResponseStream() {
           server_coalescing_api_ != 0) {
         num_msgs_sent_++;
         StartWriteLast(&response_, WriteOptions());
+        // If we use WriteLast, we shouldn't wait before attempting Finish
+        FinishOnce(Status::OK);
       } else {
         num_msgs_sent_++;
         StartWrite(&response_);
@@ -753,10 +757,14 @@ CallbackTestServiceImpl::BidiStream() {
         response_.set_message(request_.message());
         if (num_msgs_read_ == server_write_last_) {
           StartWriteLast(&response_, WriteOptions());
+          // If we use WriteLast, we shouldn't wait before attempting Finish
         } else {
           StartWrite(&response_);
+          return;
         }
-      } else if (server_try_cancel_ == CANCEL_DURING_PROCESSING) {
+      }
+
+      if (server_try_cancel_ == CANCEL_DURING_PROCESSING) {
         // Let OnCancel handle this
       } else if (server_try_cancel_ == CANCEL_AFTER_PROCESSING) {
         ServerTryCancelNonblocking(ctx_);
@@ -764,7 +772,12 @@ CallbackTestServiceImpl::BidiStream() {
         FinishOnce(Status::OK);
       }
     }
-    void OnWriteDone(bool ok) override { StartRead(&request_); }
+    void OnWriteDone(bool ok) override {
+      std::lock_guard<std::mutex> l(finish_mu_);
+      if (!finished_) {
+        StartRead(&request_);
+      }
+    }
 
    private:
     void FinishOnce(const Status& s) {
