@@ -177,11 +177,10 @@ def _async_unary_same_channel(channel):
 def _async_unary_new_channel(channel, args):
 
     def child_target():
-        pass
-        # with _channel(args) as child_channel:
-        #     child_stub = test_pb2_grpc.TestServiceStub(child_channel)
-        #     _async_unary(child_stub)
-        #     child_channel.close()
+        with _channel(args) as child_channel:
+            child_stub = test_pb2_grpc.TestServiceStub(child_channel)
+            _async_unary(child_stub)
+            child_channel.close()
 
     stub = test_pb2_grpc.TestServiceStub(channel)
     _async_unary(stub)

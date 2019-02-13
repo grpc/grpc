@@ -67,11 +67,7 @@ cdef void __postfork_child() nogil:
     # abort()
     with gil:
         try:
-            # _LOGGER.error('Exiting child to begin __postfork_child')
-            # os._exit(os.EX_USAGE)
             if _fork_handler_failed:
-                # _LOGGER.error('Shutting child down due to _fork_handler_failed')
-                # os._exit(os.EX_USAGE)
                 return
             # Thread could be holding the fork_in_progress_condition inside of
             # block_if_fork_in_progress() when fork occurs. Reset the lock here.
@@ -83,14 +79,10 @@ cdef void __postfork_child() nogil:
                 state_to_reset.reset_postfork_child()
             _fork_state.postfork_states_to_reset = []
             _fork_state.fork_epoch += 1
-            # _LOGGER.error('Exiting child before _close_on_fork')
-            # os._exit(os.EX_USAGE)
             for channel in _fork_state.channels:
                 channel._close_on_fork()
             with _fork_state.fork_in_progress_condition:
                 _fork_state.fork_in_progress = False
-            # _LOGGER.error('Exiting child after __postfork_child')
-            # os._exit(os.EX_USAGE)
         except:
             _LOGGER.error('Exiting child due to raised exception')
             _LOGGER.error(sys.exc_info()[0])
