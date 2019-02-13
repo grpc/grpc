@@ -120,9 +120,6 @@ def _get_resultstore_data(api_key, invocation_id):
     # that limit, the 'nextPageToken' field is included in the request to get
     # subsequent data, so keep requesting until 'nextPageToken' field is omitted.
     while True:
-        print(invocation_id)
-        print(api_key)
-        print(page_token)
         req = urllib2.Request(
             url=
             'https://resultstore.googleapis.com/v2/invocations/%s/targets/-/configuredTargets/-/actions?key=%s&pageToken=%s&fields=next_page_token,actions.id,actions.status_attributes'
