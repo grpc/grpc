@@ -564,11 +564,9 @@ typedef unsigned __int64 uint64_t;
 #endif /* GPR_ATTRIBUTE_WEAK */
 
 #ifndef GPR_ATTRIBUTE_NO_TSAN /* (1) */
-#if defined(__has_feature)
-#if __has_feature(thread_sanitizer)
+#if GPR_HAS_FEATURE(thread_sanitizer)
 #define GPR_ATTRIBUTE_NO_TSAN __attribute__((no_sanitize("thread")))
-#endif                        /* __has_feature(thread_sanitizer) */
-#endif                        /* defined(__has_feature) */
+#endif                        /* GPR_HAS_FEATURE */
 #ifndef GPR_ATTRIBUTE_NO_TSAN /* (2) */
 #define GPR_ATTRIBUTE_NO_TSAN
 #endif /* GPR_ATTRIBUTE_NO_TSAN (2) */
