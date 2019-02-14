@@ -40,7 +40,7 @@ Procedure of client:
 1. Calls Start on server control port with a large deadline or no deadline,
 waits for its finish and checks it succeeded.
 2. Initiates a channel connection to server retry port, which should perform
-reconnections with proper backoffs. A convienent way to achieve this is to
+reconnections with proper backoffs. A convenient way to achieve this is to
 call Start with a deadline of 540s. The rpc should fail with deadline exceeded.
 3. Calls Stop on server control port and checks it succeeded.
 4. Checks the response to see whether the server thinks the backoffs passed the
