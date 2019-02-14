@@ -15,6 +15,7 @@
 
 import unittest
 import subprocess
+import sys
 from grpc._cython import cygrpc
 from tests.fork import methods
 
@@ -68,7 +69,7 @@ class ForkInteropTest(unittest.TestCase):
             [sys.executable, '-c', start_server_script],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
-        self._port = int(self._process.stdout.readline())
+        self._port = int(self._server_process.stdout.readline())
 
     def testConnectivityWatch(self):
         self._verifyTestCase(methods.TestCase.CONNECTIVITY_WATCH)
