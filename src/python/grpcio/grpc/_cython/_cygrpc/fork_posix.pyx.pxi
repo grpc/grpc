@@ -66,6 +66,7 @@ cdef void __postfork_child() nogil:
     printf("__postfork_child without gil\n")
     with gil:
         print("__postfork_child with gil\n")
+        os._exit(os.EX_USAGE)
         try:
             if _fork_handler_failed:
                 print("_fork_handler_failed\n")
