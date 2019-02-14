@@ -125,6 +125,10 @@
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_PLATFORM_STRING "android"
 #define GPR_ANDROID 1
+// TODO(apolcyn): re-evaluate support for c-ares
+// on android after upgrading our c-ares dependency.
+// See https://github.com/grpc/grpc/issues/18038.
+#define GRPC_ARES 0
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
