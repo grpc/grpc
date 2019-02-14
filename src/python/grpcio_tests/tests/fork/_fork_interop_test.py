@@ -1,4 +1,4 @@
-# Copyright 2018 gRPC authors.
+# Copyright 2019 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,9 +14,7 @@
 """Client-side fork interop tests as a unit test."""
 
 import unittest
-import os
 import subprocess
-import sys
 from grpc._cython import cygrpc
 from tests.fork import methods
 
@@ -66,7 +64,7 @@ class ForkInteropTest(unittest.TestCase):
             while True:
                 time.sleep(1)
         """
-        self._process = subprocess.Popen(
+        self._server_process = subprocess.Popen(
             [sys.executable, '-c', start_server_script],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
@@ -110,7 +108,7 @@ class ForkInteropTest(unittest.TestCase):
             methods.TestCase.IN_PROGRESS_BIDI_NEW_CHANNEL_BLOCKING_CALL)
 
     def tearDown(self):
-        self._process.kill()
+        self._server_process.kill()
 
     def _verifyTestCase(self, test_case):
         script = _CLIENT_FORK_SCRIPT_TEMPLATE % (test_case.name, self._port)
