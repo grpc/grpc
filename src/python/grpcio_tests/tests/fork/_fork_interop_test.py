@@ -131,7 +131,14 @@ class ForkInteropTest(unittest.TestCase):
         timer = threading.Timer(_SUBPROCESS_TIMEOUT_S, process.kill)
         try:
             timer.start()
-            out, err = process.communicate()
+            try:
+                out, err = process.communicate(timeout=_SUBPROCESS_TIMEOUT_S)
+            except TypeError:
+                # The timeout parameter was added in Python 3.3.
+                out, err = process.communicate()
+        except subprocess.TimeoutExpired:
+            process.kill()
+            raise ValueError('Process failed to terminate')
         finally:
             timer.cancel()
         self.assertEqual(
