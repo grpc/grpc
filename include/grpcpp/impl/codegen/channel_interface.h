@@ -134,7 +134,8 @@ class ChannelInterface {
   virtual void* RegisterMethod(const char* method) = 0;
   virtual void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
                                        gpr_timespec deadline,
-                                       ::grpc_impl::CompletionQueue* cq, void* tag) = 0;
+                                       ::grpc_impl::CompletionQueue* cq,
+                                       void* tag) = 0;
   virtual bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
                                       gpr_timespec deadline) = 0;
 

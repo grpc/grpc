@@ -39,6 +39,6 @@ namespace grpc {
 typedef ::grpc_impl::CompletionQueue CompletionQueue;
 typedef ::grpc_impl::ServerCompletionQueue ServerCompletionQueue;
 
-}
+}  // namespace grpc
 
 #endif  // GRPCPP_IMPL_CODEGEN_COMPLETION_QUEUE_H

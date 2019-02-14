@@ -330,7 +330,8 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   /// timeout. i.e:
   ///      TryPluck(tag, gpr_time_0(GPR_CLOCK_REALTIME))
   void TryPluck(::grpc::internal::CompletionQueueTag* tag) {
-    auto deadline = ::grpc::g_core_codegen_interface->gpr_time_0(GPR_CLOCK_REALTIME);
+    auto deadline =
+        ::grpc::g_core_codegen_interface->gpr_time_0(GPR_CLOCK_REALTIME);
     auto ev = ::grpc::g_core_codegen_interface->grpc_completion_queue_pluck(
         cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT) return;
@@ -345,7 +346,8 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   ///
   /// This exects tag->FinalizeResult (if called) to return 'false' i.e expects
   /// that the tag is internal not something that is returned to the user.
-  void TryPluck(::grpc::internal::CompletionQueueTag* tag, gpr_timespec deadline) {
+  void TryPluck(::grpc::internal::CompletionQueueTag* tag,
+                gpr_timespec deadline) {
     auto ev = ::grpc::g_core_codegen_interface->grpc_completion_queue_pluck(
         cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT || ev.type == GRPC_QUEUE_SHUTDOWN) {
@@ -412,6 +414,6 @@ class ServerCompletionQueue : public CompletionQueue {
   friend class ::grpc::Server;
 };
 
-}  // namespace grpc
+}  // namespace grpc_impl
 
 #endif  // GRPCPP_IMPL_CODEGEN_COMPLETION_QUEUE_H

@@ -32,7 +32,7 @@ namespace grpc_impl {
 class Channel;
 class CompletionQueue;
 class ServerCompletionQueue;
-}
+}  // namespace grpc_impl
 
 namespace grpc {
 
@@ -139,7 +139,8 @@ class ServerInterface : public internal::CallHook {
   /// caller is required to keep all completion queues live until the server is
   /// destroyed.
   /// \param num_cqs How many completion queues does \a cqs hold.
-  virtual void Start(::grpc_impl::ServerCompletionQueue** cqs, size_t num_cqs) = 0;
+  virtual void Start(::grpc_impl::ServerCompletionQueue** cqs,
+                     size_t num_cqs) = 0;
 
   virtual void ShutdownInternal(gpr_timespec deadline) = 0;
 
@@ -155,8 +156,8 @@ class ServerInterface : public internal::CallHook {
     BaseAsyncRequest(ServerInterface* server, ServerContext* context,
                      internal::ServerAsyncStreamingInterface* stream,
                      ::grpc_impl::CompletionQueue* call_cq,
-                     ::grpc_impl::ServerCompletionQueue* notification_cq, void* tag,
-                     bool delete_on_finalize);
+                     ::grpc_impl::ServerCompletionQueue* notification_cq,
+                     void* tag, bool delete_on_finalize);
     virtual ~BaseAsyncRequest();
 
     bool FinalizeResult(void** tag, bool* status) override;
@@ -184,8 +185,9 @@ class ServerInterface : public internal::CallHook {
     RegisteredAsyncRequest(ServerInterface* server, ServerContext* context,
                            internal::ServerAsyncStreamingInterface* stream,
                            ::grpc_impl::CompletionQueue* call_cq,
-                           ::grpc_impl::ServerCompletionQueue* notification_cq, void* tag,
-                           const char* name, internal::RpcMethod::RpcType type);
+                           ::grpc_impl::ServerCompletionQueue* notification_cq,
+                           void* tag, const char* name,
+                           internal::RpcMethod::RpcType type);
 
     virtual bool FinalizeResult(void** tag, bool* status) override {
       /* If we are done intercepting, then there is nothing more for us to do */
@@ -212,7 +214,8 @@ class ServerInterface : public internal::CallHook {
                           ServerInterface* server, ServerContext* context,
                           internal::ServerAsyncStreamingInterface* stream,
                           ::grpc_impl::CompletionQueue* call_cq,
-                          ::grpc_impl::ServerCompletionQueue* notification_cq, void* tag)
+                          ::grpc_impl::ServerCompletionQueue* notification_cq,
+                          void* tag)
         : RegisteredAsyncRequest(
               server, context, stream, call_cq, notification_cq, tag,
               registered_method->name(), registered_method->method_type()) {
@@ -229,8 +232,8 @@ class ServerInterface : public internal::CallHook {
                         ServerInterface* server, ServerContext* context,
                         internal::ServerAsyncStreamingInterface* stream,
                         ::grpc_impl::CompletionQueue* call_cq,
-                        ::grpc_impl::ServerCompletionQueue* notification_cq, void* tag,
-                        Message* request)
+                        ::grpc_impl::ServerCompletionQueue* notification_cq,
+                        void* tag, Message* request)
         : RegisteredAsyncRequest(
               server, context, stream, call_cq, notification_cq, tag,
               registered_method->name(), registered_method->method_type()),
@@ -298,8 +301,8 @@ class ServerInterface : public internal::CallHook {
     GenericAsyncRequest(ServerInterface* server, GenericServerContext* context,
                         internal::ServerAsyncStreamingInterface* stream,
                         ::grpc_impl::CompletionQueue* call_cq,
-                        ::grpc_impl::ServerCompletionQueue* notification_cq, void* tag,
-                        bool delete_on_finalize);
+                        ::grpc_impl::ServerCompletionQueue* notification_cq,
+                        void* tag, bool delete_on_finalize);
 
     bool FinalizeResult(void** tag, bool* status) override;
 
@@ -312,8 +315,8 @@ class ServerInterface : public internal::CallHook {
                         ServerContext* context,
                         internal::ServerAsyncStreamingInterface* stream,
                         ::grpc_impl::CompletionQueue* call_cq,
-                        ::grpc_impl::ServerCompletionQueue* notification_cq, void* tag,
-                        Message* message) {
+                        ::grpc_impl::ServerCompletionQueue* notification_cq,
+                        void* tag, Message* message) {
     GPR_CODEGEN_ASSERT(method);
     new PayloadAsyncRequest<Message>(method, this, context, stream, call_cq,
                                      notification_cq, tag, message);
@@ -323,17 +326,18 @@ class ServerInterface : public internal::CallHook {
                         ServerContext* context,
                         internal::ServerAsyncStreamingInterface* stream,
                         ::grpc_impl::CompletionQueue* call_cq,
-                        ::grpc_impl::ServerCompletionQueue* notification_cq, void* tag) {
+                        ::grpc_impl::ServerCompletionQueue* notification_cq,
+                        void* tag) {
     GPR_CODEGEN_ASSERT(method);
     new NoPayloadAsyncRequest(method, this, context, stream, call_cq,
                               notification_cq, tag);
   }
 
-  void RequestAsyncGenericCall(GenericServerContext* context,
-                               internal::ServerAsyncStreamingInterface* stream,
-                               ::grpc_impl::CompletionQueue* call_cq,
-                               ::grpc_impl::ServerCompletionQueue* notification_cq,
-                               void* tag) {
+  void RequestAsyncGenericCall(
+      GenericServerContext* context,
+      internal::ServerAsyncStreamingInterface* stream,
+      ::grpc_impl::CompletionQueue* call_cq,
+      ::grpc_impl::ServerCompletionQueue* notification_cq, void* tag) {
     new GenericAsyncRequest(this, context, stream, call_cq, notification_cq,
                             tag, true);
   }

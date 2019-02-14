@@ -62,7 +62,8 @@ class InterceptedChannel : public ChannelInterface {
   }
 
   void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
-                               gpr_timespec deadline, ::grpc_impl::CompletionQueue* cq,
+                               gpr_timespec deadline,
+                               ::grpc_impl::CompletionQueue* cq,
                                void* tag) override {
     return channel_->NotifyOnStateChangeImpl(last_observed, deadline, cq, tag);
   }
@@ -71,7 +72,9 @@ class InterceptedChannel : public ChannelInterface {
     return channel_->WaitForStateChangeImpl(last_observed, deadline);
   }
 
-  ::grpc_impl::CompletionQueue* CallbackCQ() override { return channel_->CallbackCQ(); }
+  ::grpc_impl::CompletionQueue* CallbackCQ() override {
+    return channel_->CallbackCQ();
+  }
 
   ChannelInterface* channel_;
   size_t interceptor_pos_;

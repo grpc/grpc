@@ -84,8 +84,8 @@ class Channel final : public ::grpc::ChannelInterface,
   void* RegisterMethod(const char* method) override;
 
   void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
-                               gpr_timespec deadline,
-                               CompletionQueue* cq, void* tag) override;
+                               gpr_timespec deadline, CompletionQueue* cq,
+                               void* tag) override;
   bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
                               gpr_timespec deadline) override;
 
