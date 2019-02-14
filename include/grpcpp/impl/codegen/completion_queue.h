@@ -41,6 +41,11 @@
 
 struct grpc_completion_queue;
 
+namespace grpc_impl {
+
+class Channel;
+}
+
 namespace grpc {
 
 template <class R>
@@ -58,7 +63,6 @@ template <class W, class R>
 class ServerReaderWriterBody;
 }  // namespace internal
 
-class Channel;
 class ChannelInterface;
 class ClientContext;
 class CompletionQueue;
@@ -278,7 +282,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   friend class ::grpc::internal::BlockingUnaryCallImpl;
 
   // Friends that need access to constructor for callback CQ
-  friend class ::grpc::Channel;
+  friend class ::grpc_impl::Channel;
 
   // For access to Register/CompleteAvalanching
   template <class Op1, class Op2, class Op3, class Op4, class Op5, class Op6>
