@@ -92,6 +92,9 @@ DEFINE_int32(soak_iterations, 1000,
 DEFINE_int32(iteration_interval, 10,
              "The interval in seconds between rpcs. This is used by "
              "long_connection test");
+DEFINE_string(additional_metadata, "",
+              "Additional metadata to send in each request, as a "
+              "semicolon-separated list of key:value pairs.");
 
 using grpc::testing::CreateChannelForTestCase;
 using grpc::testing::GetServiceAccountJsonKey;
@@ -101,8 +104,28 @@ int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   gpr_log(GPR_INFO, "Testing these cases: %s", FLAGS_test_case.c_str());
   int ret = 0;
-  grpc::testing::ChannelCreationFunc channel_creation_func =
-      std::bind(&CreateChannelForTestCase, FLAGS_test_case);
+
+  grpc::testing::ChannelCreationFunc channel_creation_func;
+  grpc::string test_case = FLAGS_test_case;
+  if (FLAGS_additional_metadata == "") {
+    channel_creation_func = [test_case]() {
+      return CreateChannelForTestCase(test_case);
+    };
+  } else {
+    std::multimap<grpc::string, grpc::string> additional_metadata =
+        grpc::testing::ParseAdditionalMetadataFlag(FLAGS_additional_metadata);
+
+    channel_creation_func = [test_case, additional_metadata]() {
+      std::vector<std::unique_ptr<
+          grpc::experimental::ClientInterceptorFactoryInterface>>
+          factories;
+      factories.emplace_back(
+          new grpc::testing::AdditionalMetadataInterceptorFactory(
+              additional_metadata));
+      return CreateChannelForTestCase(test_case, std::move(factories));
+    };
+  }
+
   grpc::testing::InteropClient client(channel_creation_func, true,
                                       FLAGS_do_not_abort_on_transient_failures);
 

@@ -39,7 +39,16 @@ void UpdateActions(
     std::unordered_map<grpc::string, std::function<bool()>>* actions);
 
 std::shared_ptr<Channel> CreateChannelForTestCase(
-    const grpc::string& test_case);
+    const grpc::string& test_case,
+    std::vector<
+        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+        interceptor_creators = {});
+
+// Parse the contents of FLAGS_additional_metadata into a map. Allow
+// alphanumeric characters and dashes in keys, and any character but semicolons
+// in values.
+std::multimap<grpc::string, grpc::string> ParseAdditionalMetadataFlag(
+    const grpc::string& flag);
 
 class InteropClientContextInspector {
  public:
@@ -57,6 +66,33 @@ class InteropClientContextInspector {
 
  private:
   const ::grpc::ClientContext& context_;
+};
+
+class AdditionalMetadataInterceptor : public experimental::Interceptor {
+ public:
+  AdditionalMetadataInterceptor(
+      std::multimap<grpc::string, grpc::string> additional_metadata)
+      : additional_metadata_(std::move(additional_metadata)) {}
+
+  void Intercept(experimental::InterceptorBatchMethods* methods) override;
+
+ private:
+  const std::multimap<grpc::string, grpc::string> additional_metadata_;
+};
+
+class AdditionalMetadataInterceptorFactory
+    : public experimental::ClientInterceptorFactoryInterface {
+ public:
+  AdditionalMetadataInterceptorFactory(
+      std::multimap<grpc::string, grpc::string> additional_metadata)
+      : additional_metadata_(std::move(additional_metadata)) {}
+
+  experimental::Interceptor* CreateClientInterceptor(
+      experimental::ClientRpcInfo* info) override {
+    return new AdditionalMetadataInterceptor(additional_metadata_);
+  }
+
+  const std::multimap<grpc::string, grpc::string> additional_metadata_;
 };
 
 }  // namespace testing

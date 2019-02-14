@@ -20,6 +20,7 @@
 
 #include <fstream>
 #include <memory>
+#include <regex>
 #include <sstream>
 
 #include <gflags/gflags.h>
@@ -79,7 +80,10 @@ void UpdateActions(
     std::unordered_map<grpc::string, std::function<bool()>>* actions) {}
 
 std::shared_ptr<Channel> CreateChannelForTestCase(
-    const grpc::string& test_case) {
+    const grpc::string& test_case,
+    std::vector<
+        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+        interceptor_creators) {
   GPR_ASSERT(FLAGS_server_port);
   const int host_port_buf_size = 1024;
   char host_port[host_port_buf_size];
@@ -107,10 +111,50 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
     transport_security security_type =
         FLAGS_use_alts ? ALTS : (FLAGS_use_tls ? TLS : INSECURE);
     return CreateTestChannel(host_port, FLAGS_server_host_override,
-                             security_type, !FLAGS_use_test_ca, creds);
+                             security_type, !FLAGS_use_test_ca, creds,
+                             std::move(interceptor_creators));
   } else {
-    return CreateTestChannel(host_port, FLAGS_custom_credentials_type, creds);
+    if (interceptor_creators.empty()) {
+      return CreateTestChannel(host_port, FLAGS_custom_credentials_type, creds);
+    } else {
+      return CreateTestChannel(host_port, FLAGS_custom_credentials_type, creds,
+                               std::move(interceptor_creators));
+    }
   }
+}
+
+std::multimap<grpc::string, grpc::string> ParseAdditionalMetadataFlag(
+    const grpc::string& flag) {
+  std::multimap<grpc::string, grpc::string> additional_metadata;
+
+  // Key in group 1; value in group 2.
+  std::regex re("([-a-zA-Z0-9]+):([^;]*);?");
+  auto metadata_entries_begin = std::sregex_iterator(
+      flag.begin(), flag.end(), re, std::regex_constants::match_continuous);
+  auto metadata_entries_end = std::sregex_iterator();
+
+  for (std::sregex_iterator i = metadata_entries_begin;
+       i != metadata_entries_end; ++i) {
+    std::smatch match = *i;
+    gpr_log(GPR_INFO, "Adding additional metadata with key %s and value %s",
+            match[1].str().c_str(), match[2].str().c_str());
+    additional_metadata.insert({match[1].str(), match[2].str()});
+  }
+
+  return additional_metadata;
+}
+
+void AdditionalMetadataInterceptor::Intercept(
+    experimental::InterceptorBatchMethods* methods) {
+  if (methods->QueryInterceptionHookPoint(
+          experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
+    std::multimap<grpc::string, grpc::string>* metadata =
+        methods->GetSendInitialMetadata();
+    for (const auto& entry : additional_metadata_) {
+      metadata->insert(entry);
+    }
+  }
+  methods->Proceed();
 }
 
 }  // namespace testing
