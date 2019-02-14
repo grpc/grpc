@@ -725,7 +725,7 @@ class PythonLanguage(object):
         return [
             self.config.job_spec(
                 config.run,
-                timeout_seconds=5 * 60,
+                timeout_seconds=15 * 60,
                 environ=dict(
                     list(environment.items()) + [(
                         'GRPC_PYTHON_TESTRUNNER_FILTER', str(suite_name))]),
