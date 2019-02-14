@@ -416,4 +416,4 @@ class ServerCompletionQueue : public CompletionQueue {
 
 }  // namespace grpc_impl
 
-#endif  // GRPCPP_IMPL_CODEGEN_COMPLETION_QUEUE_H
+#endif  // GRPCPP_IMPL_CODEGEN_COMPLETION_QUEUE_IMPL_H
