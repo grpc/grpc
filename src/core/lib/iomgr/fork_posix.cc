@@ -89,23 +89,17 @@ void grpc_postfork_parent() {
 }
 
 void grpc_postfork_child() {
-  gpr_log(GPR_ERROR, "Starting postfork child");
   if (!skipped_handler) {
-    gpr_log(GPR_ERROR, "Allowing exec context");
     grpc_core::Fork::AllowExecCtx();
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Fork::child_postfork_func reset_polling_engine =
         grpc_core::Fork::GetResetChildPollingEngineFunc();
     if (reset_polling_engine != nullptr) {
-      gpr_log(GPR_ERROR, "Resetting polling engine");
       reset_polling_engine();
     }
-    gpr_log(GPR_ERROR, "Finished resetting polling engine");
     grpc_timer_manager_set_threading(true);
-    gpr_log(GPR_ERROR, "Setting executor threading");
     grpc_core::Executor::SetThreadingAll(true);
   }
-  gpr_log(GPR_ERROR, "Finished postfork child");
 }
 
 void grpc_fork_handlers_auto_register() {

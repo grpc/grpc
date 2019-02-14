@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from libc.stdio cimport printf
-from libc.stdlib cimport abort
-
 import logging
 import os
 import threading
@@ -63,8 +60,6 @@ cdef void __postfork_parent() nogil:
 
 
 cdef void __postfork_child() nogil:
-    # printf('Exiting child to begin __postfork_child, without gil')
-    # abort()
     with gil:
         try:
             if _fork_handler_failed:

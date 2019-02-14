@@ -17,128 +17,114 @@ import unittest
 import os
 import subprocess
 import sys
-import threading
 from grpc._cython import cygrpc
 from tests.fork import methods
 
-from six.moves import queue
 
+_CLIENT_FORK_SCRIPT_TEMPLATE = """if True:
+    import os
+    import sys
+    from grpc._cython import cygrpc
+    from tests.fork import methods
 
-_MAX_WAIT_FOR_SERVER_S = 10
-
-_test_count = 0
-_SERVER_LOCK = threading.RLock()
-
+    cygrpc._GRPC_ENABLE_FORK_SUPPORT = True
+    os.environ['GRPC_POLL_STRATEGY'] = 'epoll1'
+    methods.TestCase.%s.run_test({
+      'server_host': 'localhost',
+      'server_port': %d,
+      'use_tls': False
+    })
+"""
 
 @unittest.skipUnless(
-    sys.platform.startswith("linux"), "fork is not supported on windows, and incoming connections to the fork+exec'd server is blocked on mac")
+    sys.platform.startswith("linux"), "fork is not supported on windows, and connections to the fork+exec server process is blocked on mac")
 class ForkInteropTest(unittest.TestCase):
 
     def setUp(self):
-        with _SERVER_LOCK:
-            global _test_count
-            _test_count += 1
-            if _test_count == 1:
-                start_server_script = """if True:
-                    import sys
-                    import time
+        start_server_script = """if True:
+            import sys
+            import time
 
-                    import grpc
-                    from src.proto.grpc.testing import test_pb2_grpc
-                    from tests.interop import methods as interop_methods
-                    from tests.unit import test_common
+            import grpc
+            from src.proto.grpc.testing import test_pb2_grpc
+            from tests.interop import methods as interop_methods
+            from tests.unit import test_common
 
-                    server = test_common.test_server()
-                    test_pb2_grpc.add_TestServiceServicer_to_server(
-                        interop_methods.TestService(), server)
-                    port = server.add_insecure_port('[::]:0')
-                    server.start()
-                    print(port)
-                    sys.stdout.flush()
-                    while True:
-                        time.sleep(1)
-                """
-                process_queue = queue.Queue()
-                port_queue = queue.Queue()
-                def get_port_from_subprocess():
-                    process = subprocess.Popen(
-                        [sys.executable, '-c', start_server_script],
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE)
-                    process_queue.put(process)
-                    port = int(process.stdout.readline())
-                    port_queue.put(port)
-                get_port_from_subprocess()
-                # get_port_thread = threading.Thread(target=get_port_from_subprocess)
-                # get_port_thread.start()
-                ForkInteropTest._process = process_queue.get(block=True, timeout=_MAX_WAIT_FOR_SERVER_S)
-                port = port_queue.get(block=True, timeout=_MAX_WAIT_FOR_SERVER_S)
-                ForkInteropTest._channel_args = {
-                    'server_host': 'localhost',
-                    'server_port': port,
-                    'use_tls': False
-                }
-                ForkInteropTest._prev_fork_flag = cygrpc._GRPC_ENABLE_FORK_SUPPORT
-                cygrpc._GRPC_ENABLE_FORK_SUPPORT = True
-                ForkInteropTest._prev_poller = os.environ.get('GRPC_POLL_STRATEGY', None)
-                if sys.platform.startswith("linux"):
-                    os.environ['GRPC_POLL_STRATEGY'] = 'epoll1'
-                else:
-                    os.environ['GRPC_POLL_STRATEGY'] = 'poll'
-                os.environ['GRPC_VERBOSITY'] = 'debug'
+            server = test_common.test_server()
+            test_pb2_grpc.add_TestServiceServicer_to_server(
+                interop_methods.TestService(), server)
+            port = server.add_insecure_port('[::]:0')
+            server.start()
+            print(port)
+            sys.stdout.flush()
+            while True:
+                time.sleep(1)
+        """
+        self._process = subprocess.Popen(
+            [sys.executable, '-c', start_server_script],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+        self._port = int(self._process.stdout.readline())
 
     def testConnectivityWatch(self):
-        methods.TestCase.CONNECTIVITY_WATCH.run_test(ForkInteropTest._channel_args)
+        test_case = "CONNECTIVITY_WATCH"
+        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case, self._port))
 
     def testCloseChannelBeforeFork(self):
-        methods.TestCase.CLOSE_CHANNEL_BEFORE_FORK.run_test(ForkInteropTest._channel_args)
+        test_case = "CLOSE_CHANNEL_BEFORE_FORK"
+        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case, self._port))
 
     def testAsyncUnarySameChannel(self):
-        methods.TestCase.ASYNC_UNARY_SAME_CHANNEL.run_test(ForkInteropTest._channel_args)
+        test_case = "ASYNC_UNARY_SAME_CHANNEL"
+        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case, self._port))
 
     def testAsyncUnaryNewChannel(self):
-        methods.TestCase.ASYNC_UNARY_NEW_CHANNEL.run_test(ForkInteropTest._channel_args)
+        test_case = "ASYNC_UNARY_NEW_CHANNEL"
+        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case, self._port))
 
     def testBlockingUnarySameChannel(self):
-        methods.TestCase.BLOCKING_UNARY_SAME_CHANNEL.run_test(
-            ForkInteropTest._channel_args)
+        test_case = "BLOCKING_UNARY_SAME_CHANNEL"
+        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case, self._port))
 
     def testBlockingUnaryNewChannel(self):
-        methods.TestCase.BLOCKING_UNARY_NEW_CHANNEL.run_test(ForkInteropTest._channel_args)
+        test_case = "BLOCKING_UNARY_NEW_CHANNEL"
+        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case, self._port))
 
     def testInProgressBidiContinueCall(self):
-        methods.TestCase.IN_PROGRESS_BIDI_CONTINUE_CALL.run_test(
-            ForkInteropTest._channel_args)
+        test_case = "IN_PROGRESS_BIDI_CONTINUE_CALL"
+        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case, self._port))
 
     def testInProgressBidiSameChannelAsyncCall(self):
-        methods.TestCase.IN_PROGRESS_BIDI_SAME_CHANNEL_ASYNC_CALL.run_test(
-            ForkInteropTest._channel_args)
+        test_case = "IN_PROGRESS_BIDI_SAME_CHANNEL_ASYNC_CALL"
+        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case, self._port))
 
     def testInProgressBidiSameChannelBlockingCall(self):
-        methods.TestCase.IN_PROGRESS_BIDI_SAME_CHANNEL_BLOCKING_CALL.run_test(
-            ForkInteropTest._channel_args)
+        test_case = "IN_PROGRESS_BIDI_SAME_CHANNEL_BLOCKING_CALL"
+        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case, self._port))
 
     def testInProgressBidiNewChannelAsyncCall(self):
-        methods.TestCase.IN_PROGRESS_BIDI_NEW_CHANNEL_ASYNC_CALL.run_test(
-            self._channel_args)
+        test_case = "IN_PROGRESS_BIDI_NEW_CHANNEL_ASYNC_CALL"
+        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case, self._port))
 
     def testInProgressBidiNewChannelBlockingCall(self):
-        methods.TestCase.IN_PROGRESS_BIDI_NEW_CHANNEL_BLOCKING_CALL.run_test(
-            ForkInteropTest._channel_args)
+        test_case = "IN_PROGRESS_BIDI_NEW_CHANNEL_BLOCKING_CALL"
+        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case, self._port))
 
-    # def tearDown(self):
-    #     with _SERVER_LOCK:
-    #         global _test_count
-    #         _test_count -= 1
-    #         if _test_count == 0:
-    #             print("stopping server")
-    #             cygrpc._GRPC_ENABLE_FORK_SUPPORT = ForkInteropTest._prev_fork_flag
-    #             if ForkInteropTest._prev_poller is None:
-    #                 del os.environ['GRPC_POLL_STRATEGY']
-    #             else:
-    #                 os.environ['GRPC_POLL_STRATEGY'] = ForkInteropTest._prev_poller
-    #             ForkInteropTest._process.kill()
+    def tearDown(self):
+        self._process.kill()
 
+
+    def _verifyScriptSucceeds(self, script):
+        process = subprocess.Popen(
+            [sys.executable, '-c', script],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+        out, err = process.communicate()
+        self.assertEqual(
+            0, process.returncode,
+            'process failed with exit code %d (stdout: %s, stderr: %s)' %
+            (process.returncode, out, err))
+        return out, err
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
