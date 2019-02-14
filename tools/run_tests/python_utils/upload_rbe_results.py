@@ -145,6 +145,7 @@ if __name__ == "__main__":
     api_key = args.api_key or _get_api_key()
     invocation_id = args.invocation_id or _get_invocation_id()
     resultstore_actions = _get_resultstore_data(api_key, invocation_id)
+    print(resultstore_actions)
 
     bq_rows = []
     for index, action in enumerate(resultstore_actions):
