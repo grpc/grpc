@@ -32,14 +32,14 @@ _CLIENT_FORK_SCRIPT_TEMPLATE = """if True:
     from tests.fork import methods
 
     cygrpc._GRPC_ENABLE_FORK_SUPPORT = True
-    os.environ['GRPC_POLL_STRATEGY'] = 'epoll1'
+    os.environ['GRPC_POLL_STRATEGY'] = '%s'
     methods.TestCase.%s.run_test({
       'server_host': 'localhost',
       'server_port': %d,
       'use_tls': False
     })
 """
-
+_POLLERS = ('epoll1', 'poll')
 
 @unittest.skipUnless(
     sys.platform.startswith("linux"),
@@ -73,74 +73,53 @@ class ForkInteropTest(unittest.TestCase):
         self._port = int(self._process.stdout.readline())
 
     def testConnectivityWatch(self):
-        test_case = "CONNECTIVITY_WATCH"
-        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case,
-                                                                   self._port))
+        self._verifyTestCase(methods.TestCase.CONNECTIVITY_WATCH)
 
     def testCloseChannelBeforeFork(self):
-        test_case = "CLOSE_CHANNEL_BEFORE_FORK"
-        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case,
-                                                                   self._port))
+        self._verifyTestCase(methods.TestCase.CLOSE_CHANNEL_BEFORE_FORK)
 
     def testAsyncUnarySameChannel(self):
-        test_case = "ASYNC_UNARY_SAME_CHANNEL"
-        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case,
-                                                                   self._port))
+        self._verifyTestCase(methods.TestCase.ASYNC_UNARY_SAME_CHANNEL)
 
     def testAsyncUnaryNewChannel(self):
-        test_case = "ASYNC_UNARY_NEW_CHANNEL"
-        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case,
-                                                                   self._port))
+        self._verifyTestCase(methods.TestCase.ASYNC_UNARY_NEW_CHANNEL)
 
     def testBlockingUnarySameChannel(self):
-        test_case = "BLOCKING_UNARY_SAME_CHANNEL"
-        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case,
-                                                                   self._port))
+        self._verifyTestCase(methods.TestCase.BLOCKING_UNARY_SAME_CHANNEL)
 
     def testBlockingUnaryNewChannel(self):
-        test_case = "BLOCKING_UNARY_NEW_CHANNEL"
-        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case,
-                                                                   self._port))
+        self._verifyTestCase(methods.TestCase.BLOCKING_UNARY_NEW_CHANNEL)
 
     def testInProgressBidiContinueCall(self):
-        test_case = "IN_PROGRESS_BIDI_CONTINUE_CALL"
-        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case,
-                                                                   self._port))
+        self._verifyTestCase(methods.TestCase.IN_PROGRESS_BIDI_CONTINUE_CALL)
 
     def testInProgressBidiSameChannelAsyncCall(self):
-        test_case = "IN_PROGRESS_BIDI_SAME_CHANNEL_ASYNC_CALL"
-        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case,
-                                                                   self._port))
+        self._verifyTestCase(methods.TestCase.IN_PROGRESS_BIDI_SAME_CHANNEL_ASYNC_CALL)
 
     def testInProgressBidiSameChannelBlockingCall(self):
-        test_case = "IN_PROGRESS_BIDI_SAME_CHANNEL_BLOCKING_CALL"
-        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case,
-                                                                   self._port))
+        self._verifyTestCase(methods.TestCase.IN_PROGRESS_BIDI_SAME_CHANNEL_BLOCKING_CALL)
 
     def testInProgressBidiNewChannelAsyncCall(self):
-        test_case = "IN_PROGRESS_BIDI_NEW_CHANNEL_ASYNC_CALL"
-        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case,
-                                                                   self._port))
+        self._verifyTestCase(methods.TestCase.IN_PROGRESS_BIDI_NEW_CHANNEL_ASYNC_CALL)
 
     def testInProgressBidiNewChannelBlockingCall(self):
-        test_case = "IN_PROGRESS_BIDI_NEW_CHANNEL_BLOCKING_CALL"
-        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case,
-                                                                   self._port))
+        self._verifyTestCase(methods.TestCase.IN_PROGRESS_BIDI_NEW_CHANNEL_BLOCKING_CALL)
 
     def tearDown(self):
         self._process.kill()
 
-    def _verifyScriptSucceeds(self, script):
-        process = subprocess.Popen(
-            [sys.executable, '-c', script],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
-        out, err = process.communicate()
-        self.assertEqual(
-            0, process.returncode,
-            'process failed with exit code %d (stdout: %s, stderr: %s)' %
-            (process.returncode, out, err))
-        return out, err
+    def _verifyTestCase(self, test_case):
+        for poller in _POLLERS:
+            script = _CLIENT_FORK_SCRIPT_TEMPLATE % (poller, test_case.name, self._port)
+            process = subprocess.Popen(
+                [sys.executable, '-c', script],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE)
+            out, err = process.communicate()
+            self.assertEqual(
+                0, process.returncode,
+                'process failed with exit code %d (stdout: %s, stderr: %s)' %
+                (process.returncode, out, err))
 
 
 if __name__ == '__main__':

@@ -199,9 +199,9 @@ class Runner(object):
                 try:
                     with stdout_pipe, stderr_pipe:
                         case_thread.start()
-                        while case_thread.is_alive():
+                        while not case_thread.is_alive():
                             check_kill_self()
-                            time.sleep(0)
+                            case_thread.join(1)
                         case_thread.join()
                 except:  # pylint: disable=try-except-raise
                     # re-raise the exception after forcing the with-block to end
