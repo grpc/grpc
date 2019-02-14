@@ -96,8 +96,10 @@ def _upload_results_to_bq(rows):
 
     max_retries = 3
     for attempt in range(max_retries):
-        if big_query_utils.insert_rows(bq, _PROJECT_ID, _DATASET_ID, _TABLE_ID,
-                                       rows):
+        k = big_query_utils.insert_rows(bq, _PROJECT_ID, _DATASET_ID, _TABLE_ID,
+                                        rows)
+        print(k)
+        if k:
             break
         else:
             if attempt < max_retries - 1:
@@ -145,7 +147,6 @@ if __name__ == "__main__":
     api_key = args.api_key or _get_api_key()
     invocation_id = args.invocation_id or _get_invocation_id()
     resultstore_actions = _get_resultstore_data(api_key, invocation_id)
-    print(resultstore_actions)
 
     bq_rows = []
     for index, action in enumerate(resultstore_actions):
