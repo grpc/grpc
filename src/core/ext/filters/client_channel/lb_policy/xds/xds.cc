@@ -1426,36 +1426,31 @@ void XdsLb::CreateOrUpdateLocalityMapLocked(char* locality_name,
     }
     locality_policy_name = "round_robin";
   }
+  LoadBalancingPolicy::Args lb_policy_args;
+  lb_policy_args.combiner = combiner();
+  lb_policy_args.args = channel_args;
+  lb_policy_args.channel_control_helper =
+      UniquePtr<ChannelControlHelper>(New<Helper>(Ref()));
+  lb_policy_args.lb_config = locality_policy_config;
   grpc_core::OrphanablePtr<LoadBalancingPolicy> locality_lb_policy =
-      locality_map_.RetrieveChildPolicy(locality_name);
-  if (locality_lb_policy) {
-    if (grpc_lb_xds_trace.enabled()) {
-      gpr_log(GPR_INFO, "[xdslb %p] Updating the locality lb policy %p", this,
-              locality_lb_policy.get());
-    }
-    locality_lb_policy->UpdateLocked(*channel_args, locality_policy_config);
-  } else {
-    LoadBalancingPolicy::Args lb_policy_args;
-    lb_policy_args.combiner = combiner();
-    lb_policy_args.args = channel_args;
-    lb_policy_args.channel_control_helper =
-        UniquePtr<ChannelControlHelper>(New<Helper>(Ref()));
-    lb_policy_args.lb_config = locality_policy_config;
-    locality_lb_policy = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-        locality_policy_name, std::move(lb_policy_args));
-    if (GPR_UNLIKELY(locality_lb_policy == nullptr)) {
-      gpr_log(GPR_ERROR, "[xdslb %p] Failure creating a locality child policy",
-              this);
-      return;
-    }
-    locality_lb_policy->ExitIdleLocked();
-    if (grpc_lb_xds_trace.enabled()) {
-      gpr_log(GPR_INFO, "[xdslb %p] Created a new child policy %p", this,
-              locality_lb_policy.get());
-    }
+      LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
+          locality_policy_name, std::move(lb_policy_args));
+  if (GPR_UNLIKELY(locality_lb_policy == nullptr)) {
+    gpr_log(GPR_ERROR, "[xdslb %p] Failure creating a locality child policy",
+            this);
+    return;
   }
-  locality_map_.CreateOrUpdateLocality(locality_name, channel_args,
-                                       std::move(locality_lb_policy));
+  locality_lb_policy->ExitIdleLocked();
+  if (grpc_lb_xds_trace.enabled()) {
+    gpr_log(GPR_INFO, "[xdslb %p] Created a new child policy %p", this,
+            locality_lb_policy.get());
+  }
+  if (locality_map_.CreateOrUpdateLocality(locality_name, channel_args,
+                                           std::move(locality_lb_policy)) ==
+      nullptr) {
+    gpr_log(GPR_ERROR, "[xdslb %p] Failure adding child policy to locality map",
+            this);
+  }
 }
 
 //
@@ -1513,15 +1508,15 @@ LocalityMap::~LocalityMap() {
   grpc_avl_unref(map_, nullptr);
 }
 
-void LocalityMap::CreateOrUpdateLocality(
+LocalityMap::LocalityEntry* LocalityMap::CreateOrUpdateLocality(
     char* locality_name, grpc_channel_args* channel_args,
     grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy> child_policy) {
   gpr_mu_lock(&mu_);
   grpc_avl old_map = grpc_avl_ref(map_, nullptr);
   gpr_mu_unlock(&mu_);
   LocalityEntry* locality_entry = grpc_core::New<LocalityEntry>();
-  locality_entry->channel_args_ = grpc_channel_args_copy(channel_args);
-  locality_entry->child_policy_ = std::move(child_policy);
+  locality_entry->channel_args = grpc_channel_args_copy(channel_args);
+  locality_entry->child_policy = std::move(child_policy);
   grpc_avl new_map = grpc_avl_add(grpc_avl_ref(old_map, nullptr), locality_name,
                                   locality_entry, nullptr);
   gpr_mu_lock(&mu_);
@@ -1531,6 +1526,17 @@ void LocalityMap::CreateOrUpdateLocality(
   gpr_mu_unlock(&mu_);
   grpc_avl_unref(new_map, nullptr);
   grpc_avl_unref(old_map, nullptr);
+  return locality_entry;
+}
+
+LocalityMap::LocalityEntry* LocalityMap::GetLocalityEntry(char* locality_name) {
+  gpr_mu_lock(&mu_);
+  grpc_avl index = grpc_avl_ref(map_, nullptr);
+  gpr_mu_unlock(&mu_);
+  LocalityEntry* locality_entry =
+      static_cast<LocalityEntry*>(grpc_avl_get(index, locality_name, nullptr));
+  grpc_avl_unref(index, nullptr);
+  return locality_entry;
 }
 
 grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy>
@@ -1541,7 +1547,7 @@ LocalityMap::RetrieveChildPolicy(char* locality_name) {
   LocalityEntry* locality_entry =
       static_cast<LocalityEntry*>(grpc_avl_get(index, locality_name, nullptr));
   grpc_avl_unref(index, nullptr);
-  return std::move(locality_entry->child_policy_);
+  return std::move(locality_entry->child_policy);
 }
 
 bool LocalityMap::SetChildPolicy(
@@ -1554,10 +1560,10 @@ bool LocalityMap::SetChildPolicy(
   LocalityEntry* locality_entry =
       static_cast<LocalityEntry*>(grpc_avl_get(index, locality_name, nullptr));
   if (locality_entry == nullptr) {
-    gpr_log(GPR_ERROR, "No entry for %s", locality_name);
+    gpr_log(GPR_ERROR, "[localitymap %p]No entry for %s", this, locality_name);
     ret = false;
   } else {
-    locality_entry->child_policy_ = std::move(child_policy);
+    locality_entry->child_policy = std::move(child_policy);
   }
   grpc_avl_unref(index, nullptr);
   return ret;
@@ -1570,7 +1576,7 @@ bool LocalityMap::SetChildPolicy(
   LocalityEntry* locality_entry =
       static_cast<LocalityEntry*>(grpc_avl_get(index, locality_name, nullptr));
   grpc_avl_unref(index, nullptr);
-  return std::move(locality_entry->channel_args_);
+  return locality_entry->channel_args;
 }
 
 void LocalityMap::destroy_locality_name(void* p, void* unused) { gpr_free(p); }
@@ -1584,14 +1590,14 @@ long LocalityMap::compare_locality_name(void* key1, void* key2, void* unused) {
 
 void LocalityMap::destroy_locality_entry(void* p, void* unused) {
   LocalityEntry* e = static_cast<LocalityEntry*>(p);
-  grpc_channel_args_destroy(e->channel_args_);
+  grpc_channel_args_destroy(e->channel_args);
   grpc_core::Delete<LocalityEntry>(e);
 }
 
 void* LocalityMap::copy_locality_entry(void* entry, void* unused) {
   LocalityEntry* src = static_cast<LocalityEntry*>(entry);
   LocalityEntry* dst = grpc_core::New<LocalityEntry>();
-  dst->channel_args_ = grpc_channel_args_copy(src->channel_args_);
-  dst->child_policy_ = std::move(src->child_policy_);
+  dst->channel_args = grpc_channel_args_copy(src->channel_args);
+  dst->child_policy = std::move(src->child_policy);
   return static_cast<void*>(dst);
 }

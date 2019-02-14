@@ -36,13 +36,21 @@
 
 class LocalityMap {
  public:
+  struct LocalityEntry {
+    grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy> child_policy;
+    ::grpc_channel_args* channel_args;
+  };
   LocalityMap();
   ~LocalityMap();
 
-  // Adds or updates a locality for the given locality name
-  void CreateOrUpdateLocality(
+  // Adds or updates a locality for the given locality name and returns the new
+  // entry
+  LocalityEntry* CreateOrUpdateLocality(
       char* locality_name, grpc_channel_args* channel_args,
       grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy> child_policy);
+
+  // Get the whole entry for the particular locality name from the map
+  LocalityEntry* GetLocalityEntry(char* locality_name);
   // Retreives the child policy from the locality map. NOTE : Being an
   // Orphanable pointer the lb policy is dereffed from the LocalityEntry
   // and would either require calling SetChildPolicy to ref it back
@@ -65,12 +73,6 @@ class LocalityMap {
   const grpc_avl_vtable locality_avl_vtable = {
       destroy_locality_name, copy_locality_name, compare_locality_name,
       destroy_locality_entry, copy_locality_entry};
-  class LocalityEntry {
-   public:
-    LocalityEntry() {}
-    grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy> child_policy_;
-    ::grpc_channel_args* channel_args_;
-  };
 };
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_H \

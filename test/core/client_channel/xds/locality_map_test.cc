@@ -10,7 +10,8 @@
 // Creation of empty entry in locality map
 static void test_locality_create(char* l) {
   LocalityMap test_map;
-  test_map.CreateOrUpdateLocality(l, nullptr, nullptr);
+  GPR_ASSERT(nullptr != test_map.CreateOrUpdateLocality(l, nullptr, nullptr));
+  GPR_ASSERT(nullptr != test_map.GetLocalityEntry(l));
   GPR_ASSERT(nullptr == test_map.RetrieveChildPolicy(l));
 }
 
