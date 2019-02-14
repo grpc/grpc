@@ -20,7 +20,11 @@ import sys
 from grpc._cython import cygrpc
 from tests.fork import methods
 
-
+# New instance of multiprocessing.Process using fork without exec can and will
+# hang if the Python process has any other threads running. This includes the
+# additional thread spawned by our _runner.py class. So in order to test our
+# compatibility with multiprocessing, we first fork+exec a new process to ensure
+# we don't have any conflicting background threads.
 _CLIENT_FORK_SCRIPT_TEMPLATE = """if True:
     import os
     import sys
@@ -36,8 +40,10 @@ _CLIENT_FORK_SCRIPT_TEMPLATE = """if True:
     })
 """
 
+
 @unittest.skipUnless(
-    sys.platform.startswith("linux"), "fork is not supported on windows, and connections to the fork+exec server process is blocked on mac")
+    sys.platform.startswith("linux"),
+    "not supported on windows, and fork+exec networking blocked on mac")
 class ForkInteropTest(unittest.TestCase):
 
     def setUp(self):
@@ -68,51 +74,61 @@ class ForkInteropTest(unittest.TestCase):
 
     def testConnectivityWatch(self):
         test_case = "CONNECTIVITY_WATCH"
-        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case, self._port))
+        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case,
+                                                                   self._port))
 
     def testCloseChannelBeforeFork(self):
         test_case = "CLOSE_CHANNEL_BEFORE_FORK"
-        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case, self._port))
+        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case,
+                                                                   self._port))
 
     def testAsyncUnarySameChannel(self):
         test_case = "ASYNC_UNARY_SAME_CHANNEL"
-        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case, self._port))
+        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case,
+                                                                   self._port))
 
     def testAsyncUnaryNewChannel(self):
         test_case = "ASYNC_UNARY_NEW_CHANNEL"
-        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case, self._port))
+        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case,
+                                                                   self._port))
 
     def testBlockingUnarySameChannel(self):
         test_case = "BLOCKING_UNARY_SAME_CHANNEL"
-        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case, self._port))
+        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case,
+                                                                   self._port))
 
     def testBlockingUnaryNewChannel(self):
         test_case = "BLOCKING_UNARY_NEW_CHANNEL"
-        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case, self._port))
+        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case,
+                                                                   self._port))
 
     def testInProgressBidiContinueCall(self):
         test_case = "IN_PROGRESS_BIDI_CONTINUE_CALL"
-        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case, self._port))
+        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case,
+                                                                   self._port))
 
     def testInProgressBidiSameChannelAsyncCall(self):
         test_case = "IN_PROGRESS_BIDI_SAME_CHANNEL_ASYNC_CALL"
-        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case, self._port))
+        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case,
+                                                                   self._port))
 
     def testInProgressBidiSameChannelBlockingCall(self):
         test_case = "IN_PROGRESS_BIDI_SAME_CHANNEL_BLOCKING_CALL"
-        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case, self._port))
+        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case,
+                                                                   self._port))
 
     def testInProgressBidiNewChannelAsyncCall(self):
         test_case = "IN_PROGRESS_BIDI_NEW_CHANNEL_ASYNC_CALL"
-        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case, self._port))
+        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case,
+                                                                   self._port))
 
     def testInProgressBidiNewChannelBlockingCall(self):
         test_case = "IN_PROGRESS_BIDI_NEW_CHANNEL_BLOCKING_CALL"
-        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case, self._port))
+        self._verifyScriptSucceeds(_CLIENT_FORK_SCRIPT_TEMPLATE % (test_case,
+                                                                   self._port))
 
     def tearDown(self):
         self._process.kill()
-
 
     def _verifyScriptSucceeds(self, script):
         process = subprocess.Popen(
@@ -125,6 +141,7 @@ class ForkInteropTest(unittest.TestCase):
             'process failed with exit code %d (stdout: %s, stderr: %s)' %
             (process.returncode, out, err))
         return out, err
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
