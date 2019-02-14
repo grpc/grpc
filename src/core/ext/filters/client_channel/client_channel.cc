@@ -108,8 +108,7 @@ typedef struct client_channel_channel_data {
   /** interested parties (owned) */
   grpc_pollset_set* interested_parties;
   // Client channel factory.
-  grpc_core::RefCountedPtr<grpc_core::ClientChannelFactory>
-      client_channel_factory;
+  grpc_core::ClientChannelFactory* client_channel_factory;
   // Subchannel pool.
   grpc_core::RefCountedPtr<grpc_core::SubchannelPoolInterface> subchannel_pool;
 
@@ -503,7 +502,6 @@ static void cc_destroy_channel_elem(grpc_channel_element* elem) {
   // longer be any need to explicitly reset these smart pointer data members.
   chand->picker.reset();
   chand->subchannel_pool.reset();
-  chand->client_channel_factory.reset();
   chand->info_lb_policy_name.reset();
   chand->info_service_config_json.reset();
   chand->retry_throttle_data.reset();

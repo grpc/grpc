@@ -83,10 +83,9 @@ grpc_channel* grpc_insecure_channel_create(const char* target,
       (target, args, reserved));
   GPR_ASSERT(reserved == nullptr);
   // Add channel arg containing the client channel factory.
-  grpc_core::RefCountedPtr<grpc_core::ClientChannelFactory> factory(
-      grpc_core::New<grpc_core::Chttp2InsecureClientChannelFactory>());
-  grpc_arg arg =
-      grpc_core::ClientChannelFactory::CreateChannelArg(factory.get());
+  static grpc_core::Chttp2InsecureClientChannelFactory* factory =
+      grpc_core::New<grpc_core::Chttp2InsecureClientChannelFactory>();
+  grpc_arg arg = grpc_core::ClientChannelFactory::CreateChannelArg(factory);
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
   // Create channel.
   grpc_channel* channel = factory->CreateChannel(target, new_args);

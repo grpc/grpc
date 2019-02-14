@@ -28,21 +28,11 @@ namespace grpc_core {
 
 namespace {
 
-void* factory_arg_copy(void* f) {
-  ClientChannelFactory* factory = static_cast<ClientChannelFactory*>(f);
-  factory->Ref().release();
-  return f;
-}
-
-void factory_arg_destroy(void* f) {
-  ClientChannelFactory* factory = static_cast<ClientChannelFactory*>(f);
-  factory->Unref();
-}
-
+void* factory_arg_copy(void* f) { return f; }
+void factory_arg_destroy(void* f) {}
 int factory_arg_cmp(void* factory1, void* factory2) {
   return GPR_ICMP(factory1, factory2);
 }
-
 const grpc_arg_pointer_vtable factory_arg_vtable = {
     factory_arg_copy, factory_arg_destroy, factory_arg_cmp};
 
@@ -54,14 +44,12 @@ grpc_arg ClientChannelFactory::CreateChannelArg(ClientChannelFactory* factory) {
       &factory_arg_vtable);
 }
 
-RefCountedPtr<ClientChannelFactory> ClientChannelFactory::GetFromChannelArgs(
+ClientChannelFactory* ClientChannelFactory::GetFromChannelArgs(
     const grpc_channel_args* args) {
   const grpc_arg* arg =
       grpc_channel_args_find(args, GRPC_ARG_CLIENT_CHANNEL_FACTORY);
   if (arg == nullptr || arg->type != GRPC_ARG_POINTER) return nullptr;
-  ClientChannelFactory* factory =
-      static_cast<ClientChannelFactory*>(arg->value.pointer.p);
-  return factory->Ref();
+  return static_cast<ClientChannelFactory*>(arg->value.pointer.p);
 }
 
 }  // namespace grpc_core

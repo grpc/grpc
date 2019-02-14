@@ -190,10 +190,10 @@ grpc_channel* grpc_secure_channel_create(grpc_channel_credentials* creds,
   if (creds != nullptr) {
     // Add channel args containing the client channel factory and channel
     // credentials.
-    grpc_core::RefCountedPtr<grpc_core::ClientChannelFactory> factory(
-        grpc_core::New<grpc_core::Chttp2SecureClientChannelFactory>());
+    static grpc_core::Chttp2SecureClientChannelFactory* factory =
+        grpc_core::New<grpc_core::Chttp2SecureClientChannelFactory>();
     grpc_arg args_to_add[] = {
-        grpc_core::ClientChannelFactory::CreateChannelArg(factory.get()),
+        grpc_core::ClientChannelFactory::CreateChannelArg(factory),
         grpc_channel_credentials_to_arg(creds)};
     grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
         args, args_to_add, GPR_ARRAY_SIZE(args_to_add));

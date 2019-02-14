@@ -24,13 +24,11 @@
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/ext/filters/client_channel/subchannel.h"
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gprpp/abstract.h"
-#include "src/core/lib/gprpp/ref_counted.h"
 
 namespace grpc_core {
 
-class ClientChannelFactory : public RefCounted<ClientChannelFactory> {
+class ClientChannelFactory {
  public:
   virtual ~ClientChannelFactory() = default;
 
@@ -42,9 +40,11 @@ class ClientChannelFactory : public RefCounted<ClientChannelFactory> {
   virtual grpc_channel* CreateChannel(
       const char* target, const grpc_channel_args* args) GRPC_ABSTRACT;
 
+  // Returns a channel arg containing the specified factory.
   static grpc_arg CreateChannelArg(ClientChannelFactory* factory);
 
-  static RefCountedPtr<ClientChannelFactory> GetFromChannelArgs(
+  // Returns the factory from args, or null if not found.
+  static ClientChannelFactory* GetFromChannelArgs(
       const grpc_channel_args* args);
 
   GRPC_ABSTRACT_BASE_CLASS
