@@ -113,8 +113,7 @@ class ForkInteropTest(unittest.TestCase):
         self._process.kill()
 
     def _verifyTestCase(self, test_case):
-        script = _CLIENT_FORK_SCRIPT_TEMPLATE % (test_case.name,
-                                                 self._port)
+        script = _CLIENT_FORK_SCRIPT_TEMPLATE % (test_case.name, self._port)
         process = subprocess.Popen(
             [sys.executable, '-c', script],
             stdout=subprocess.PIPE,
