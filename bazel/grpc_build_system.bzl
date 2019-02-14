@@ -73,9 +73,9 @@ def grpc_cc_library(
         testonly = False,
         visibility = None,
         alwayslink = 0,
-        data = [],
-        copts = [],
-        linkopts = []):
+        data = []):
+    copts = []
+    linkopts = []
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
     native.cc_library(
