@@ -32,14 +32,14 @@ _CLIENT_FORK_SCRIPT_TEMPLATE = """if True:
     from tests.fork import methods
 
     cygrpc._GRPC_ENABLE_FORK_SUPPORT = True
-    os.environ['GRPC_POLL_STRATEGY'] = '%s'
+    os.environ['GRPC_POLL_STRATEGY'] = 'epoll1'
     methods.TestCase.%s.run_test({
       'server_host': 'localhost',
       'server_port': %d,
       'use_tls': False
     })
 """
-_POLLERS = ('epoll1', 'poll')
+
 
 @unittest.skipUnless(
     sys.platform.startswith("linux"),
@@ -94,32 +94,36 @@ class ForkInteropTest(unittest.TestCase):
         self._verifyTestCase(methods.TestCase.IN_PROGRESS_BIDI_CONTINUE_CALL)
 
     def testInProgressBidiSameChannelAsyncCall(self):
-        self._verifyTestCase(methods.TestCase.IN_PROGRESS_BIDI_SAME_CHANNEL_ASYNC_CALL)
+        self._verifyTestCase(
+            methods.TestCase.IN_PROGRESS_BIDI_SAME_CHANNEL_ASYNC_CALL)
 
     def testInProgressBidiSameChannelBlockingCall(self):
-        self._verifyTestCase(methods.TestCase.IN_PROGRESS_BIDI_SAME_CHANNEL_BLOCKING_CALL)
+        self._verifyTestCase(
+            methods.TestCase.IN_PROGRESS_BIDI_SAME_CHANNEL_BLOCKING_CALL)
 
     def testInProgressBidiNewChannelAsyncCall(self):
-        self._verifyTestCase(methods.TestCase.IN_PROGRESS_BIDI_NEW_CHANNEL_ASYNC_CALL)
+        self._verifyTestCase(
+            methods.TestCase.IN_PROGRESS_BIDI_NEW_CHANNEL_ASYNC_CALL)
 
     def testInProgressBidiNewChannelBlockingCall(self):
-        self._verifyTestCase(methods.TestCase.IN_PROGRESS_BIDI_NEW_CHANNEL_BLOCKING_CALL)
+        self._verifyTestCase(
+            methods.TestCase.IN_PROGRESS_BIDI_NEW_CHANNEL_BLOCKING_CALL)
 
     def tearDown(self):
         self._process.kill()
 
     def _verifyTestCase(self, test_case):
-        for poller in _POLLERS:
-            script = _CLIENT_FORK_SCRIPT_TEMPLATE % (poller, test_case.name, self._port)
-            process = subprocess.Popen(
-                [sys.executable, '-c', script],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE)
-            out, err = process.communicate()
-            self.assertEqual(
-                0, process.returncode,
-                'process failed with exit code %d (stdout: %s, stderr: %s)' %
-                (process.returncode, out, err))
+        script = _CLIENT_FORK_SCRIPT_TEMPLATE % (test_case.name,
+                                                 self._port)
+        process = subprocess.Popen(
+            [sys.executable, '-c', script],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+        out, err = process.communicate()
+        self.assertEqual(
+            0, process.returncode,
+            'process failed with exit code %d (stdout: %s, stderr: %s)' %
+            (process.returncode, out, err))
 
 
 if __name__ == '__main__':
