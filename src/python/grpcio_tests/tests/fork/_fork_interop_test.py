@@ -13,9 +13,10 @@
 # limitations under the License.
 """Client-side fork interop tests as a unit test."""
 
-import unittest
 import subprocess
 import sys
+import threading
+import unittest
 from grpc._cython import cygrpc
 from tests.fork import methods
 
@@ -32,12 +33,14 @@ _CLIENT_FORK_SCRIPT_TEMPLATE = """if True:
 
     cygrpc._GRPC_ENABLE_FORK_SUPPORT = True
     os.environ['GRPC_POLL_STRATEGY'] = 'epoll1'
+    os.environ['GRPC_VERBOSITY'] = 'debug'
     methods.TestCase.%s.run_test({
       'server_host': 'localhost',
       'server_port': %d,
       'use_tls': False
     })
 """
+_SUBPROCESS_TIMEOUT_S = 30
 
 
 @unittest.skipUnless(
@@ -69,7 +72,15 @@ class ForkInteropTest(unittest.TestCase):
             [sys.executable, '-c', start_server_script],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
-        self._port = int(self._server_process.stdout.readline())
+        timer = threading.Timer(_SUBPROCESS_TIMEOUT_S,
+                                self._server_process.kill)
+        try:
+            timer.start()
+            self._port = int(self._server_process.stdout.readline())
+        except ValueError:
+            raise Exception('Failed to get port from server')
+        finally:
+            timer.cancel()
 
     def testConnectivityWatch(self):
         self._verifyTestCase(methods.TestCase.CONNECTIVITY_WATCH)
@@ -117,7 +128,12 @@ class ForkInteropTest(unittest.TestCase):
             [sys.executable, '-c', script],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
-        out, err = process.communicate()
+        timer = threading.Timer(_SUBPROCESS_TIMEOUT_S, process.kill)
+        try:
+            timer.start()
+            out, err = process.communicate()
+        finally:
+            timer.cancel()
         self.assertEqual(
             0, process.returncode,
             'process failed with exit code %d (stdout: %s, stderr: %s)' %

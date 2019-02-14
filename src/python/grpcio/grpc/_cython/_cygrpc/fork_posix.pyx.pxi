@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from libc.stdio cimport printf
+
 import logging
 import os
 import threading
@@ -50,6 +52,7 @@ cdef void __prefork() nogil:
                 'Failed to shutdown gRPC Python threads prior to fork. '
                 'Behavior after fork will be undefined.')
             _fork_handler_failed = True
+        print("__prefork complete")
 
 
 cdef void __postfork_parent() nogil:
@@ -60,9 +63,12 @@ cdef void __postfork_parent() nogil:
 
 
 cdef void __postfork_child() nogil:
+    printf("__postfork_child without gil\n")
     with gil:
+        print("__postfork_child with gil\n")
         try:
             if _fork_handler_failed:
+                print("_fork_handler_failed\n")
                 return
             # Thread could be holding the fork_in_progress_condition inside of
             # block_if_fork_in_progress() when fork occurs. Reset the lock here.
@@ -82,6 +88,7 @@ cdef void __postfork_child() nogil:
             _LOGGER.error('Exiting child due to raised exception')
             _LOGGER.error(sys.exc_info()[0])
             os._exit(os.EX_USAGE)
+        print("releasing gil\n")
 
     if grpc_is_initialized() > 0:
         with gil:

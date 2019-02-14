@@ -47,10 +47,12 @@ bool registered_handlers = false;
 }  // namespace
 
 void grpc_prefork() {
+  gpr_log(GPR_ERROR, "grpc_prefork");
   skipped_handler = true;
   // This  may be called after core shuts down, so verify initialized before
   // instantiating an ExecCtx.
   if (!grpc_is_initialized()) {
+    gpr_log(GPR_ERROR, "!grpc_is_initialized()");
     return;
   }
   grpc_core::ExecCtx exec_ctx;
@@ -77,6 +79,7 @@ void grpc_prefork() {
   grpc_core::ExecCtx::Get()->Flush();
   grpc_core::Fork::AwaitThreads();
   skipped_handler = false;
+  gpr_log(GPR_ERROR, "grpc_prefork complete");
 }
 
 void grpc_postfork_parent() {
@@ -89,7 +92,9 @@ void grpc_postfork_parent() {
 }
 
 void grpc_postfork_child() {
+  gpr_log(GPR_ERROR, "entering grpc_postfork_child");
   if (!skipped_handler) {
+    gpr_log(GPR_ERROR, "handler not skipped");
     grpc_core::Fork::AllowExecCtx();
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Fork::child_postfork_func reset_polling_engine =
@@ -100,6 +105,7 @@ void grpc_postfork_child() {
     grpc_timer_manager_set_threading(true);
     grpc_core::Executor::SetThreadingAll(true);
   }
+  gpr_log(GPR_ERROR, "exiting grpc_postfork_child");
 }
 
 void grpc_fork_handlers_auto_register() {
