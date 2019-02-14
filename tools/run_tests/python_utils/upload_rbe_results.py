@@ -150,6 +150,7 @@ if __name__ == "__main__":
 
     bq_rows = []
     for index, action in enumerate(resultstore_actions):
+        print(action);
         # Filter out non-test related data, such as build results.
         if 'testAction' not in action:
             continue
