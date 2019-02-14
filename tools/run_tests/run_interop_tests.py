@@ -58,9 +58,10 @@ _SKIP_SERVER_COMPRESSION = [
 
 _SKIP_COMPRESSION = _SKIP_CLIENT_COMPRESSION + _SKIP_SERVER_COMPRESSION
 
-_SKIP_ADVANCED = [
-    'status_code_and_message', 'custom_metadata', 'unimplemented_method',
-    'unimplemented_service'
+_SKIP_UNIMPLEMENTED_HANDLERS = ['unimplemented_method', 'unimplemented_service']
+
+_SKIP_ADVANCED = _SKIP_UNIMPLEMENTED_HANDLERS + [
+    'status_code_and_message', 'custom_metadata'
 ]
 
 _SKIP_SPECIAL_STATUS_MESSAGE = ['special_status_message']
@@ -171,6 +172,37 @@ class CSharpCoreCLRLanguage:
 
     def __str__(self):
         return 'csharpcoreclr'
+
+
+class AspNetCoreLanguage:
+
+    def __init__(self):
+        self.client_cwd = '../grpc-dotnet'
+        self.server_cwd = '../grpc-dotnet/testassets/InteropTestsWebsite/bin/Debug/netcoreapp3.0'
+        self.safename = str(self)
+
+    def cloud_to_prod_env(self):
+        return {}
+
+    def client_cmd(self, args):
+        # attempt to run client should fail
+        return ['dotnet' 'exec', 'CLIENT_NOT_SUPPORTED'] + args
+
+    def server_cmd(self, args):
+        return ['dotnet', 'exec', 'InteropTestsWebsite.dll'] + args
+
+    def global_env(self):
+        return {}
+
+    def unimplemented_test_cases(self):
+        # aspnetcore doesn't have a client so ignore all test cases.
+        return _TEST_CASES + _AUTH_TEST_CASES
+
+    def unimplemented_test_cases_server(self):
+        return _SKIP_COMPRESSION + _SKIP_UNIMPLEMENTED_HANDLERS + _SKIP_SPECIAL_STATUS_MESSAGE
+
+    def __str__(self):
+        return 'aspnetcore'
 
 
 class DartLanguage:
@@ -590,6 +622,7 @@ _LANGUAGES = {
     'c++': CXXLanguage(),
     'csharp': CSharpLanguage(),
     'csharpcoreclr': CSharpCoreCLRLanguage(),
+    'aspnetcore': AspNetCoreLanguage(),
     'dart': DartLanguage(),
     'go': GoLanguage(),
     'java': JavaLanguage(),
@@ -605,8 +638,8 @@ _LANGUAGES = {
 
 # languages supported as cloud_to_cloud servers
 _SERVERS = [
-    'c++', 'node', 'csharp', 'csharpcoreclr', 'java', 'go', 'ruby', 'python',
-    'dart'
+    'c++', 'node', 'csharp', 'csharpcoreclr', 'aspnetcore', 'java', 'go',
+    'ruby', 'python', 'dart'
 ]
 
 _TEST_CASES = [
