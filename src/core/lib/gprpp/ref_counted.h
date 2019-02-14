@@ -31,6 +31,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/abstract.h"
+#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -89,7 +90,7 @@ class RefCount {
 
   // Increases the ref-count by `n`.
   void Ref(Value n = 1) {
-    GPR_ATM_INC_ADD_THEN(value_.fetch_add(n, std::memory_order_relaxed));
+    AtomicFetchAdd(&value_, n, std::memory_order_relaxed);
   }
   void Ref(const DebugLocation& location, const char* reason, Value n = 1) {
 #ifndef NDEBUG
@@ -106,8 +107,7 @@ class RefCount {
   // Similar to Ref() with an assert on the ref-count being non-zero.
   void RefNonZero() {
 #ifndef NDEBUG
-    const Value prior =
-        GPR_ATM_INC_ADD_THEN(value_.fetch_add(1, std::memory_order_relaxed));
+    const Value prior = AtomicFetchAdd(&value_, 1, std::memory_order_relaxed);
     assert(prior > 0);
 #else
     Ref();
@@ -127,8 +127,7 @@ class RefCount {
 
   // Decrements the ref-count and returns true if the ref-count reaches 0.
   bool Unref() {
-    const Value prior =
-        GPR_ATM_INC_ADD_THEN(value_.fetch_sub(1, std::memory_order_acq_rel));
+    const Value prior = AtomicFetchSub(&value_, 1, std::memory_order_acq_rel);
     GPR_DEBUG_ASSERT(prior > 0);
     return prior == 1;
   }

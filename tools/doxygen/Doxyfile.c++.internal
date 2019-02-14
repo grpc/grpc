@@ -1068,8 +1068,6 @@ src/core/lib/gpr/tmpfile.h \
 src/core/lib/gpr/useful.h \
 src/core/lib/gprpp/abstract.h \
 src/core/lib/gprpp/atomic.h \
-src/core/lib/gprpp/atomic_with_atm.h \
-src/core/lib/gprpp/atomic_with_std.h \
 src/core/lib/gprpp/debug_location.h \
 src/core/lib/gprpp/fork.h \
 src/core/lib/gprpp/inlined_vector.h \
