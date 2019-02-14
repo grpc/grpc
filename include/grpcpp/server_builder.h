@@ -35,13 +35,17 @@
 
 struct grpc_resource_quota;
 
+namespace grpc_impl {
+
+class ServerCompletionQueue;
+
+}
+
 namespace grpc {
 
 class AsyncGenericService;
 class ResourceQuota;
-class CompletionQueue;
 class Server;
-class ServerCompletionQueue;
 class ServerCredentials;
 class Service;
 
@@ -123,7 +127,7 @@ class ServerBuilder {
   /// not polling the completion queue frequently) will have a significantly
   /// negative performance impact and hence should not be used in production
   /// use cases.
-  std::unique_ptr<ServerCompletionQueue> AddCompletionQueue(
+  std::unique_ptr<::grpc_impl::ServerCompletionQueue> AddCompletionQueue(
       bool is_frequently_polled = true);
 
   //////////////////////////////////////////////////////////////////////////////
@@ -306,7 +310,7 @@ class ServerBuilder {
   SyncServerSettings sync_server_settings_;
 
   /// List of completion queues added via \a AddCompletionQueue method.
-  std::vector<ServerCompletionQueue*> cqs_;
+  std::vector<::grpc_impl::ServerCompletionQueue*> cqs_;
 
   std::shared_ptr<ServerCredentials> creds_;
   std::vector<std::unique_ptr<ServerBuilderPlugin>> plugins_;

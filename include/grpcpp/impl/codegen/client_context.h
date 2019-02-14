@@ -59,12 +59,12 @@ struct grpc_call;
 namespace grpc_impl {
 
 class Channel;
+
 }
 
 namespace grpc {
 
 class ChannelInterface;
-class CompletionQueue;
 class CallCredentials;
 class ClientContext;
 

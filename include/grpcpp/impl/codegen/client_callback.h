@@ -36,7 +36,6 @@ class Channel;
 namespace grpc {
 
 class ClientContext;
-class CompletionQueue;
 
 namespace internal {
 class RpcMethod;
