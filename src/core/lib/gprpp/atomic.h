@@ -49,8 +49,9 @@ class Atomic {
 
   bool CompareExchangeWeak(T* expected, T desired, MemoryOrder success,
                            MemoryOrder failure) {
-    return GPR_ATM_INC_CAS_THEN(
-        storage_.compare_exchange_weak(*expected, desired, success, failure));
+    return GPR_ATM_INC_CAS_THEN(storage_.compare_exchange_weak(
+        *expected, desired, static_cast<std::memory_order>(success),
+        static_cast<std::memory_order>(failure)));
   }
 
   bool CompareExchangeStrong(T* expected, T desired, MemoryOrder success,
@@ -74,7 +75,7 @@ class Atomic {
 
   // Atomically increment a counter only if the counter value is not zero.
   // Returns true if increment took place; false if counter is zero.
-  bool IncrementIfNonzero(MemoryOrder load_order = MemoryOrder::ACQ_REL) {
+  bool IncrementIfNonzero(MemoryOrder load_order = MemoryOrder::ACQUIRE) {
     T count = storage_.load(static_cast<std::memory_order>(load_order));
     do {
       // If zero, we are done (without an increment). If not, we must do a CAS
@@ -83,9 +84,8 @@ class Atomic {
       if (count == 0) {
         return false;
       }
-    } while (!storage_.AtomicCompareExchangeWeak(
-        &count, count + 1, static_cast<std::memory_order>(MemoryOrder::ACQ_REL),
-        static_cast<std::memory_order>(load_order)));
+    } while (!CompareExchangeWeak(&count, count + 1, MemoryOrder::ACQ_REL,
+                                  load_order));
     return true;
   }
 
