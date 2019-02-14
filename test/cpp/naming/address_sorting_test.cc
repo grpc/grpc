@@ -47,7 +47,6 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
-#include "src/core/lib/surface/init.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -198,10 +197,7 @@ void VerifyLbAddrOutputs(const grpc_core::ServerAddressList addresses,
 class AddressSortingTest : public ::testing::Test {
  protected:
   void SetUp() override { grpc_init(); }
-  void TearDown() override {
-    grpc_shutdown();
-    grpc_maybe_wait_for_async_shutdown();
-  }
+  void TearDown() override { grpc_shutdown_blocking(); }
 };
 
 /* Tests for rule 1 */

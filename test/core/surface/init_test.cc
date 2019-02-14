@@ -36,6 +36,16 @@ static void test(int rounds) {
   grpc_maybe_wait_for_async_shutdown();
 }
 
+static void test_blocking(int rounds) {
+  int i;
+  for (i = 0; i < rounds; i++) {
+    grpc_init();
+  }
+  for (i = 0; i < rounds; i++) {
+    grpc_shutdown_blocking();
+  }
+}
+
 static void test_mixed(void) {
   grpc_init();
   grpc_init();
@@ -53,8 +63,7 @@ static void test_plugin() {
   grpc_register_plugin(plugin_init, plugin_destroy);
   grpc_init();
   GPR_ASSERT(g_flag == 1);
-  grpc_shutdown();
-  grpc_maybe_wait_for_async_shutdown();
+  grpc_shutdown_blocking();
   GPR_ASSERT(g_flag == 2);
 }
 
@@ -71,6 +80,9 @@ int main(int argc, char** argv) {
   test(1);
   test(2);
   test(3);
+  test_blocking(1);
+  test_blocking(2);
+  test_blocking(3);
   test_mixed();
   test_plugin();
   test_repeatedly();

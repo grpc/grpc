@@ -164,16 +164,8 @@ void grpc_init(void) {
   GRPC_API_TRACE("grpc_init(void)", 0, ());
 }
 
-void grpc_shutdown_internal(void* ignored) {
+void grpc_shutdown_internal_locked(void) {
   int i;
-  GRPC_API_TRACE("grpc_shutdown_internal", 0, ());
-  gpr_mu_lock(&g_init_mu);
-  // We have released lock from the shutdown thread and it is possible that
-  // another grpc_init has been called, and do nothing if that is the case.
-  if (--g_initializations != 0) {
-    gpr_mu_unlock(&g_init_mu);
-    return;
-  }
   {
     grpc_core::ExecCtx exec_ctx(0);
     grpc_iomgr_shutdown_background_closure();
@@ -200,6 +192,18 @@ void grpc_shutdown_internal(void* ignored) {
   grpc_core::ApplicationCallbackExecCtx::GlobalShutdown();
   g_shutting_down = false;
   gpr_cv_broadcast(g_shutting_down_cv);
+}
+
+void grpc_shutdown_internal(void* ignored) {
+  GRPC_API_TRACE("grpc_shutdown_internal", 0, ());
+  gpr_mu_lock(&g_init_mu);
+  // We have released lock from the shutdown thread and it is possible that
+  // another grpc_init has been called, and do nothing if that is the case.
+  if (--g_initializations != 0) {
+    gpr_mu_unlock(&g_init_mu);
+    return;
+  }
+  grpc_shutdown_internal_locked();
   gpr_mu_unlock(&g_init_mu);
 }
 
@@ -215,6 +219,16 @@ void grpc_shutdown(void) {
         "grpc_shutdown", grpc_shutdown_internal, nullptr, nullptr,
         grpc_core::Thread::Options().set_joinable(false).set_tracked(false));
     cleanup_thread.Start();
+  }
+  gpr_mu_unlock(&g_init_mu);
+}
+
+void grpc_shutdown_blocking(void) {
+  GRPC_API_TRACE("grpc_shutdown_blocking(void)", 0, ());
+  gpr_mu_lock(&g_init_mu);
+  if (--g_initializations == 0) {
+    g_shutting_down = true;
+    grpc_shutdown_internal_locked();
   }
   gpr_mu_unlock(&g_init_mu);
 }
