@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from libc.stdio cimport printf
+from libc.stdlib cimport abort
 
 import logging
 import os
@@ -66,10 +67,10 @@ cdef void __postfork_child() nogil:
     printf("__postfork_child without gil\n")
     with gil:
         print("__postfork_child with gil\n")
-        os._exit(os.EX_USAGE)
         try:
             if _fork_handler_failed:
                 print("_fork_handler_failed\n")
+                os._exit(os.EX_IOERR)
                 return
             # Thread could be holding the fork_in_progress_condition inside of
             # block_if_fork_in_progress() when fork occurs. Reset the lock here.
@@ -81,6 +82,7 @@ cdef void __postfork_child() nogil:
                 state_to_reset.reset_postfork_child()
             _fork_state.postfork_states_to_reset = []
             _fork_state.fork_epoch += 1
+            os._exit(os.EX_USAGE)
             for channel in _fork_state.channels:
                 channel._close_on_fork()
             with _fork_state.fork_in_progress_condition:
@@ -90,6 +92,7 @@ cdef void __postfork_child() nogil:
             _LOGGER.error(sys.exc_info()[0])
             os._exit(os.EX_USAGE)
         print("releasing gil\n")
+        os._exit(os.EX_USAGE)
 
     if grpc_is_initialized() > 0:
         with gil:
