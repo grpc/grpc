@@ -23,7 +23,7 @@
 
 namespace grpc {
 
-typedef ::grpc_impl::Channel Channel;
+class Channel : public ::grpc_impl::Channel {};
 
 namespace experimental {
 void ChannelResetConnectionBackoff(Channel* channel);
