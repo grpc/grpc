@@ -192,9 +192,9 @@ function(protobuf_generate_grpc_cpp)
 
     #if cross-compiling, find host plugin
     if(CMAKE_CROSSCOMPILING)
-        find_program(gRPC_CPP_PLUGIN grpc_cpp_plugin)
+        find_program(_gRPC_CPP_PLUGIN grpc_cpp_plugin)
     else()
-        set(gRPC_CPP_PLUGIN $<TARGET_FILE:grpc_cpp_plugin>)
+        set(_gRPC_CPP_PLUGIN $<TARGET_FILE:grpc_cpp_plugin>)
     endif()
 
     add_custom_command(
@@ -206,7 +206,7 @@ function(protobuf_generate_grpc_cpp)
       COMMAND ${_gRPC_PROTOBUF_PROTOC_EXECUTABLE}
       ARGS --grpc_out=generate_mock_code=true:${_gRPC_PROTO_GENS_DIR}
            --cpp_out=${_gRPC_PROTO_GENS_DIR}
-           --plugin=protoc-gen-grpc=${gRPC_CPP_PLUGIN}
+           --plugin=protoc-gen-grpc=${_gRPC_CPP_PLUGIN}
            ${_protobuf_include_path}
            ${REL_FIL}
       DEPENDS ${ABS_FIL} ${_gRPC_PROTOBUF_PROTOC} grpc_cpp_plugin
