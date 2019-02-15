@@ -723,6 +723,40 @@ TEST_F(SingleBalancerTest, SelectGrpclbWithMigrationServiceConfig) {
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
 
+TEST_F(SingleBalancerTest, UsePickFirstChildPolicy) {
+  SetNextResolutionAllBalancers(
+      "{\n"
+      "  \"loadBalancingConfig\":[\n"
+      "    { \"grpclb\":{\n"
+      "      \"childPolicy\":[\n"
+      "        { \"pick_first\":{} }\n"
+      "      ]\n"
+      "    } }\n"
+      "  ]\n"
+      "}");
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
+      0);
+  const size_t kNumRpcs = num_backends_ * 2;
+  CheckRpcSendOk(kNumRpcs, 1000 /* timeout_ms */, true /* wait_for_ready */);
+  balancers_[0]->NotifyDoneWithServerlists();
+  // Check that all requests went to a single backend.  This verifies
+  // that we used pick_first instead of round_robin as the child policy.
+  size_t total_count = 0;
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    EXPECT_THAT(backend_servers_[i].service_->request_count(),
+                ::testing::AnyOf(0UL, kNumRpcs));
+    total_count += backend_servers_[i].service_->request_count();
+  }
+  EXPECT_EQ(total_count, kNumRpcs);
+  // The balancer got a single request.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
+  // and sent a single response.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
+  // Check LB policy name for the channel.
+  EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
+}
+
 TEST_F(SingleBalancerTest, SameBackendListedMultipleTimes) {
   SetNextResolutionAllBalancers();
   // Same backend listed twice.
