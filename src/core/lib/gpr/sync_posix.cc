@@ -76,7 +76,7 @@ gpr_atm gpr_counter_atm_add = 0;
 void gpr_mu_init(gpr_mu* mu) {
 #ifdef GRPC_ASAN_ENABLED
   GPR_ASSERT(pthread_mutex_init(&mu->mutex, nullptr) == 0);
-  mu->leak_checker = (int*)gpr_malloc(sizeof(*mu->leak_checker));
+  mu->leak_checker = static_cast<int*>(gpr_malloc(sizeof(*mu->leak_checker)));
   GPR_ASSERT(mu->leak_checker != nullptr);
 #else
   GPR_ASSERT(pthread_mutex_init(mu, nullptr) == 0);
@@ -136,7 +136,7 @@ void gpr_cv_init(gpr_cv* cv) {
 
 #ifdef GRPC_ASAN_ENABLED
   GPR_ASSERT(pthread_cond_init(&cv->cond_var, &attr) == 0);
-  cv->leak_checker = (int*)gpr_malloc(sizeof(*cv->leak_checker));
+  cv->leak_checker = static_cast<int*>(gpr_malloc(sizeof(*cv->leak_checker)));
   GPR_ASSERT(cv->leak_checker != nullptr);
 #else
   GPR_ASSERT(pthread_cond_init(cv, &attr) == 0);
@@ -227,7 +227,6 @@ int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
 #endif  // GPR_LINUX
     abs_deadline_ts.tv_sec = static_cast<time_t>(abs_deadline.tv_sec);
     abs_deadline_ts.tv_nsec = abs_deadline.tv_nsec;
-
 #ifdef GRPC_ASAN_ENABLED
     err = pthread_cond_timedwait(&cv->cond_var, &mu->mutex, &abs_deadline_ts);
 #else
