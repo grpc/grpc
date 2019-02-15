@@ -46,12 +46,12 @@ constexpr char kPickFirst[] = "pick_first";
 
 class PickFirst : public LoadBalancingPolicy {
  public:
-  explicit PickFirst(Args args);
+  PickFirst(RefCountedPtr<Config> config, Args args);
 
   const char* name() const override { return kPickFirst; }
 
   void UpdateLocked(const grpc_channel_args& args,
-                    grpc_json* lb_config) override;
+                    RefCountedPtr<Config> lb_config) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
   void FillChildRefsForChannelz(channelz::ChildRefsList* child_subchannels,
@@ -153,7 +153,8 @@ class PickFirst : public LoadBalancingPolicy {
   channelz::ChildRefsList child_channels_;
 };
 
-PickFirst::PickFirst(Args args) : LoadBalancingPolicy(std::move(args)) {
+PickFirst::PickFirst(RefCountedPtr<Config> config, Args args)
+    : LoadBalancingPolicy(std::move(args)) {
   gpr_mu_init(&child_refs_mu_);
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO, "Pick First %p created.", this);
@@ -163,7 +164,7 @@ PickFirst::PickFirst(Args args) : LoadBalancingPolicy(std::move(args)) {
   channel_control_helper()->UpdateState(
       GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
       UniquePtr<SubchannelPicker>(New<QueuePicker>(Ref())));
-  UpdateLocked(*args.args, args.lb_config);
+  UpdateLocked(*args.args, std::move(config));
 }
 
 PickFirst::~PickFirst() {
@@ -241,7 +242,7 @@ void PickFirst::UpdateChildRefsLocked() {
 }
 
 void PickFirst::UpdateLocked(const grpc_channel_args& args,
-                             grpc_json* lb_config) {
+                             RefCountedPtr<Config> lb_config) {
   AutoChildRefsUpdater guard(this);
   const ServerAddressList* addresses = FindServerAddressListChannelArg(&args);
   if (addresses == nullptr) {
@@ -529,8 +530,10 @@ void PickFirst::PickFirstSubchannelData::
 class PickFirstFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
+      RefCountedPtr<LoadBalancingPolicy::Config> config,
       LoadBalancingPolicy::Args args) const override {
-    return OrphanablePtr<LoadBalancingPolicy>(New<PickFirst>(std::move(args)));
+    return OrphanablePtr<LoadBalancingPolicy>(
+        New<PickFirst>(std::move(config), std::move(args)));
   }
 
   const char* name() const override { return kPickFirst; }
