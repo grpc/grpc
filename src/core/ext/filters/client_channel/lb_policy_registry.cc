@@ -84,14 +84,15 @@ void LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
 
 OrphanablePtr<LoadBalancingPolicy>
 LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-    const char* name, LoadBalancingPolicy::Args args) {
+    const char* name, RefCountedPtr<LoadBalancingPolicy::Config> config,
+    LoadBalancingPolicy::Args args) {
   GPR_ASSERT(g_state != nullptr);
   // Find factory.
   LoadBalancingPolicyFactory* factory =
       g_state->GetLoadBalancingPolicyFactory(name);
   if (factory == nullptr) return nullptr;  // Specified name not found.
   // Create policy via factory.
-  return factory->CreateLoadBalancingPolicy(std::move(args));
+  return factory->CreateLoadBalancingPolicy(std::move(config), std::move(args));
 }
 
 bool LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(const char* name) {

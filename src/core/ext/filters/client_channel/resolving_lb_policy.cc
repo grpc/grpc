@@ -117,14 +117,13 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
 
 ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
     Args args, TraceFlag* tracer, UniquePtr<char> target_uri,
-    UniquePtr<char> child_policy_name, grpc_json* child_lb_config,
+    UniquePtr<char> child_policy_name, RefCountedPtr<Config> child_lb_config,
     grpc_error** error)
     : LoadBalancingPolicy(std::move(args)),
       tracer_(tracer),
       target_uri_(std::move(target_uri)),
       child_policy_name_(std::move(child_policy_name)),
-      child_lb_config_str_(grpc_json_dump_to_string(child_lb_config, 0)),
-      child_lb_config_(grpc_json_parse_string(child_lb_config_str_.get())) {
+      child_lb_config_(std::move(child_lb_config)) {
   GPR_ASSERT(child_policy_name_ != nullptr);
   // Don't fetch service config, since this ctor is for use in nested LB
   // policies, not at the top level, and we only fetch the service
@@ -170,7 +169,6 @@ grpc_error* ResolvingLoadBalancingPolicy::Init(const grpc_channel_args& args) {
 ResolvingLoadBalancingPolicy::~ResolvingLoadBalancingPolicy() {
   GPR_ASSERT(resolver_ == nullptr);
   GPR_ASSERT(lb_policy_ == nullptr);
-  grpc_json_destroy(child_lb_config_);
 }
 
 void ResolvingLoadBalancingPolicy::ShutdownLocked() {
@@ -262,17 +260,16 @@ void ResolvingLoadBalancingPolicy::OnResolverShutdownLocked(grpc_error* error) {
 // Creates a new LB policy, replacing any previous one.
 // Updates trace_strings to indicate what was done.
 void ResolvingLoadBalancingPolicy::CreateNewLbPolicyLocked(
-    const char* lb_policy_name, grpc_json* lb_config,
+    const char* lb_policy_name, RefCountedPtr<Config> lb_config,
     TraceStringVector* trace_strings) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = combiner();
   lb_policy_args.channel_control_helper =
       UniquePtr<ChannelControlHelper>(New<ResolvingControlHelper>(Ref()));
   lb_policy_args.args = resolver_result_;
-  lb_policy_args.lb_config = lb_config;
   OrphanablePtr<LoadBalancingPolicy> new_lb_policy =
       LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-          lb_policy_name, std::move(lb_policy_args));
+          lb_policy_name, std::move(lb_config), std::move(lb_policy_args));
   if (GPR_UNLIKELY(new_lb_policy == nullptr)) {
     gpr_log(GPR_ERROR, "could not create LB policy \"%s\"", lb_policy_name);
     if (channelz_node() != nullptr) {
@@ -406,7 +403,7 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   } else {
     // Parse the resolver result.
     const char* lb_policy_name = nullptr;
-    grpc_json* lb_policy_config = nullptr;
+    RefCountedPtr<Config> lb_policy_config;
     bool service_config_changed = false;
     if (self->process_resolver_result_ != nullptr) {
       service_config_changed = self->process_resolver_result_(
@@ -428,14 +425,15 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
                 "resolving_lb=%p: updating existing LB policy \"%s\" (%p)",
                 self, lb_policy_name, self->lb_policy_.get());
       }
-      self->lb_policy_->UpdateLocked(*self->resolver_result_, lb_policy_config);
+      self->lb_policy_->UpdateLocked(*self->resolver_result_,
+                                     std::move(lb_policy_config));
     } else {
       // Instantiate new LB policy.
       if (self->tracer_->enabled()) {
         gpr_log(GPR_INFO, "resolving_lb=%p: creating new LB policy \"%s\"",
                 self, lb_policy_name);
       }
-      self->CreateNewLbPolicyLocked(lb_policy_name, lb_policy_config,
+      self->CreateNewLbPolicyLocked(lb_policy_name, std::move(lb_policy_config),
                                     &trace_strings);
     }
     // Add channel trace event.
