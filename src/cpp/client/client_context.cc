@@ -30,6 +30,11 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/time.h>
 
+namespace grpc_impl {
+
+class Channel;
+}
+
 namespace grpc {
 
 class DefaultGlobalClientCallbacks final
@@ -82,8 +87,8 @@ void ClientContext::AddMetadata(const grpc::string& meta_key,
   send_initial_metadata_.insert(std::make_pair(meta_key, meta_value));
 }
 
-void ClientContext::set_call(grpc_call* call,
-                             const std::shared_ptr<Channel>& channel) {
+void ClientContext::set_call(
+    grpc_call* call, const std::shared_ptr<::grpc_impl::Channel>& channel) {
   std::unique_lock<std::mutex> lock(mu_);
   GPR_ASSERT(call_ == nullptr);
   call_ = call;
