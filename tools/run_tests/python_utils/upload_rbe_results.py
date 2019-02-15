@@ -96,10 +96,8 @@ def _upload_results_to_bq(rows):
 
     max_retries = 3
     for attempt in range(max_retries):
-        k = big_query_utils.insert_rows(bq, _PROJECT_ID, _DATASET_ID, _TABLE_ID,
-                                        rows)
-        print(k)
-        if k:
+        if big_query_utils.insert_rows(bq, _PROJECT_ID, _DATASET_ID, _TABLE_ID,
+                                       rows):
             break
         else:
             if attempt < max_retries - 1:
@@ -150,7 +148,6 @@ if __name__ == "__main__":
 
     bq_rows = []
     for index, action in enumerate(resultstore_actions):
-        print(action);
         # Filter out non-test related data, such as build results.
         if 'testAction' not in action:
             continue
