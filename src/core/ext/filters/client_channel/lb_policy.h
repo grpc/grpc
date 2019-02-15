@@ -181,6 +181,12 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     grpc_error* error_;
   };
 
+  enum UsageStatus {
+    TO_BE_CURRENT,
+    TO_BE_PENDING,
+    DETERMINED,
+  };
+
   /// A proxy object used by the LB policy to communicate with the client
   /// channel.
   class ChannelControlHelper {
@@ -211,7 +217,16 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Requests that the resolver re-resolve.
     virtual void RequestReresolution() GRPC_ABSTRACT;
 
+    void set_lb_policy(LoadBalancingPolicy* lb_policy) {
+      lb_policy_ = lb_policy;
+    }
+
+    LoadBalancingPolicy* lb_policy() const { return lb_policy_; }
+
     GRPC_ABSTRACT_BASE_CLASS
+
+   private:
+    LoadBalancingPolicy* lb_policy_;
   };
 
   /// Args used to instantiate an LB policy.
@@ -230,6 +245,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     const grpc_channel_args* args = nullptr;
     /// Load balancing config from the resolver.
     grpc_json* lb_config = nullptr;
+    UsageStatus status = TO_BE_CURRENT;
   };
 
   // Not copyable nor movable.
@@ -280,6 +296,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     channelz_node_ = std::move(channelz_node);
   }
 
+  void set_usage_status(UsageStatus usage_status) {
+    usage_status_ = usage_status;
+  }
+  UsageStatus usage_status() const { return usage_status_; }
+
   GRPC_ABSTRACT_BASE_CLASS
 
  protected:
@@ -320,6 +341,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   UniquePtr<ChannelControlHelper> channel_control_helper_;
   /// Channelz node.
   RefCountedPtr<channelz::ClientChannelNode> channelz_node_;
+
+  UsageStatus usage_status_;
 };
 
 }  // namespace grpc_core

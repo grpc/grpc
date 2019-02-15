@@ -58,7 +58,10 @@ LoadBalancingPolicy::LoadBalancingPolicy(Args args, intptr_t initial_refcount)
     : InternallyRefCounted(&grpc_trace_lb_policy_refcount, initial_refcount),
       combiner_(GRPC_COMBINER_REF(args.combiner, "lb_policy")),
       interested_parties_(grpc_pollset_set_create()),
-      channel_control_helper_(std::move(args.channel_control_helper)) {}
+      channel_control_helper_(std::move(args.channel_control_helper)),
+      usage_status_(args.status) {
+  channel_control_helper_->set_lb_policy(this);
+}
 
 LoadBalancingPolicy::~LoadBalancingPolicy() {
   grpc_pollset_set_destroy(interested_parties_);

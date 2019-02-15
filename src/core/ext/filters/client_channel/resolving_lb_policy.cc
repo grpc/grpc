@@ -93,8 +93,35 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
       GRPC_ERROR_UNREF(state_error);
       return;
     }
-    parent_->channel_control_helper()->UpdateState(state, state_error,
-                                                   std::move(picker));
+    if (lb_policy() != parent_->lb_policy_.get() &&
+        lb_policy() != parent_->pending_lb_policy_.get() &&
+        lb_policy()->usage_status() != TO_BE_CURRENT &&
+        lb_policy()->usage_status() != TO_BE_PENDING) {
+      return;
+    }
+    if ((lb_policy() == parent_->pending_lb_policy_.get() ||
+         lb_policy()->usage_status() == TO_BE_PENDING) &&
+        state == GRPC_CHANNEL_READY) {
+      // Pending (or to be pending) LB policy is ready, swap in (or to swap in).
+      GPR_ASSERT(parent_->lb_policy_ != nullptr);
+      if (lb_policy() == parent_->pending_lb_policy_.get()) {
+        if (parent_->tracer_->enabled()) {
+          gpr_log(GPR_INFO, "resolving_lb=%p: shutting down lb_policy=%p", this,
+                  parent_->lb_policy_.get());
+        }
+        grpc_pollset_set_del_pollset_set(
+            parent_->lb_policy_->interested_parties(),
+            parent_->interested_parties());
+        parent_->lb_policy_ = std::move(parent_->pending_lb_policy_);
+      } else {
+        lb_policy()->set_usage_status(TO_BE_CURRENT);
+      }
+    }
+    if (lb_policy() == parent_->lb_policy_.get() ||
+        lb_policy()->usage_status() == TO_BE_CURRENT) {
+      parent_->channel_control_helper()->UpdateState(state, state_error,
+                                                     std::move(picker));
+    }
   }
 
   void RequestReresolution() override {
@@ -270,6 +297,7 @@ void ResolvingLoadBalancingPolicy::CreateNewLbPolicyLocked(
       UniquePtr<ChannelControlHelper>(New<ResolvingControlHelper>(Ref()));
   lb_policy_args.args = resolver_result_;
   lb_policy_args.lb_config = lb_config;
+  lb_policy_args.status = lb_policy_ == nullptr ? TO_BE_CURRENT : TO_BE_PENDING;
   OrphanablePtr<LoadBalancingPolicy> new_lb_policy =
       LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
           lb_policy_name, std::move(lb_policy_args));
@@ -295,19 +323,35 @@ void ResolvingLoadBalancingPolicy::CreateNewLbPolicyLocked(
     if (channelz != nullptr) {
       new_lb_policy->set_channelz_node(channelz->Ref());
     }
-    // Swap out the LB policy and update the fds in interested_parties_.
-    if (lb_policy_ != nullptr) {
+    // The pending LB policy should always be reset.
+    if (pending_lb_policy_ != nullptr) {
       if (tracer_->enabled()) {
-        gpr_log(GPR_INFO, "resolving_lb=%p: shutting down lb_policy=%p", this,
-                lb_policy_.get());
+        gpr_log(GPR_INFO, "resolving_lb=%p: shutting down pending_lb_policy=%p",
+                this, pending_lb_policy_.get());
       }
-      grpc_pollset_set_del_pollset_set(lb_policy_->interested_parties(),
+      grpc_pollset_set_del_pollset_set(pending_lb_policy_->interested_parties(),
                                        interested_parties());
+      pending_lb_policy_.reset();
     }
-    lb_policy_ = std::move(new_lb_policy);
-    grpc_pollset_set_add_pollset_set(lb_policy_->interested_parties(),
+    // Set up new LB policy.
+    grpc_pollset_set_add_pollset_set(new_lb_policy->interested_parties(),
                                      interested_parties());
-    lb_policy_->ExitIdleLocked();
+    new_lb_policy->ExitIdleLocked();
+    if (new_lb_policy->usage_status() == TO_BE_CURRENT) {
+      if (lb_policy_ != nullptr) {
+        if (tracer_->enabled()) {
+          gpr_log(GPR_INFO, "resolving_lb=%p: shutting down lb_policy=%p", this,
+                  lb_policy_.get());
+        }
+        grpc_pollset_set_del_pollset_set(lb_policy_->interested_parties(),
+                                         interested_parties());
+      }
+      lb_policy_ = std::move(new_lb_policy);
+      lb_policy_->set_usage_status(DETERMINED);
+    } else {
+      pending_lb_policy_ = std::move(new_lb_policy);
+      lb_policy_->set_usage_status(DETERMINED);
+    }
   }
 }
 
