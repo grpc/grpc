@@ -22,13 +22,13 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
+#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"  // for grpc_millis
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_hash_table.h"
-#include "src/core/lib/transport/service_config.h"
 
 namespace grpc_core {
 namespace internal {

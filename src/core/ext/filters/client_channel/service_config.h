@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_LIB_TRANSPORT_SERVICE_CONFIG_H
-#define GRPC_CORE_LIB_TRANSPORT_SERVICE_CONFIG_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVICE_CONFIG_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVICE_CONFIG_H
 
 #include <grpc/support/port_platform.h>
 
@@ -41,8 +41,7 @@
 //         }
 //       ],
 //       // remaining fields are optional.
-//       // see
-//       https://developers.google.com/protocol-buffers/docs/proto3#json
+//       // see https://developers.google.com/protocol-buffers/docs/proto3#json
 //       // for format details.
 //       "waitForReady": bool,
 //       "timeout": "duration_string",
@@ -247,4 +246,4 @@ RefCountedPtr<T> ServiceConfig::MethodConfigTableLookup(
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_TRANSPORT_SERVICE_CONFIG_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVICE_CONFIG_H */
