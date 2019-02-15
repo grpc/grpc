@@ -49,7 +49,6 @@ bool registered_handlers = false;
 
 void grpc_prefork() {
   skipped_handler = true;
-  grpc_maybe_wait_for_async_shutdown();
   // This  may be called after core shuts down, so verify initialized before
   // instantiating an ExecCtx.
   if (!grpc_is_initialized()) {
