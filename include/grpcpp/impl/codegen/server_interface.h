@@ -28,13 +28,10 @@
 #include <grpcpp/impl/codegen/rpc_service_method.h>
 #include <grpcpp/impl/codegen/server_context.h>
 
-namespace grpc_impl {
-class Channel;
-}
-
 namespace grpc {
 
 class AsyncGenericService;
+class Channel;
 class GenericServerContext;
 class ServerCompletionQueue;
 class ServerContext;
