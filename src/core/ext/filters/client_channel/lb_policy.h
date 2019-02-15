@@ -181,11 +181,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     grpc_error* error_;
   };
 
-  enum UsageStatus {
-    TO_BE_CURRENT,
-    TO_BE_PENDING,
-    DETERMINED,
-  };
+  class Swapper;
 
   /// A proxy object used by the LB policy to communicate with the client
   /// channel.
@@ -220,12 +216,17 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     void set_lb_policy(LoadBalancingPolicy* lb_policy) {
       lb_policy_ = lb_policy;
     }
+    void set_lb_swapper(Swapper* lb_swapper) { lb_swapper_ = lb_swapper; }
 
     LoadBalancingPolicy* lb_policy() const { return lb_policy_; }
+    Swapper* lb_swapper() const { return lb_swapper_; }
 
     GRPC_ABSTRACT_BASE_CLASS
 
    private:
+    friend class Swapper;
+    // If non-null, the owning LB policy is waiting to be swapped in.
+    Swapper* lb_swapper_ = nullptr;
     LoadBalancingPolicy* lb_policy_;
   };
 
@@ -245,7 +246,61 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     const grpc_channel_args* args = nullptr;
     /// Load balancing config from the resolver.
     grpc_json* lb_config = nullptr;
-    UsageStatus status = TO_BE_CURRENT;
+  };
+
+  class Swapper {
+   public:
+    ~Swapper();
+
+    /// Swaps in the new LB policy. If the LB policy is still under
+    /// construction, changes the LB policy's usage status to delay the swapping
+    /// until it's constrcucted.
+    void MaybeSwap();
+
+    struct Args {
+      /// The old policy to be replaced.
+      OrphanablePtr<LoadBalancingPolicy>* old_policy = nullptr;
+      /// The policy name to create the new policy.
+      const char* new_name = nullptr;
+      /// The args to create the new policy.
+      LoadBalancingPolicy::Args new_args;
+      /// To output the new policy.
+      LoadBalancingPolicy** new_policy = nullptr;
+      /// The pollset_set to be added to the new policy and removed from the old
+      /// policy.
+      grpc_pollset_set* interested_parties = nullptr;
+      /// Tracer for logging.
+      TraceFlag* tracer = nullptr;
+    };
+
+    enum NewLbPolicyStatus {
+      TO_BE_CURRENT,
+      TO_BE_PENDING,
+      DETERMINED,
+    };
+
+    /// Creates a swapper. If failed to create a new policy, or the new policy
+    /// is already swapped in, returns null.
+    static UniquePtr<Swapper> CreateLocked(
+        LoadBalancingPolicy::Swapper::Args args);
+
+    /// Not intended to be called directly.
+    Swapper(LoadBalancingPolicy::Swapper::Args args);
+
+    LoadBalancingPolicy* new_policy() const { return new_policy_.get(); }
+
+   private:
+    void DoSwapLocked();
+
+    /// The old policy to be replaced.
+    OrphanablePtr<LoadBalancingPolicy>* old_policy_ = nullptr;
+    /// To new policy to replace the old one.
+    OrphanablePtr<LoadBalancingPolicy> new_policy_;
+    /// The pollset_set to be added to the new policy and removed from the old
+    /// policy.
+    grpc_pollset_set* interested_parties_ = nullptr;
+    TraceFlag* tracer_;
+    NewLbPolicyStatus status_ = TO_BE_PENDING;
   };
 
   // Not copyable nor movable.
@@ -296,11 +351,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     channelz_node_ = std::move(channelz_node);
   }
 
-  void set_usage_status(UsageStatus usage_status) {
-    usage_status_ = usage_status;
-  }
-  UsageStatus usage_status() const { return usage_status_; }
-
   GRPC_ABSTRACT_BASE_CLASS
 
  protected:
@@ -341,8 +391,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   UniquePtr<ChannelControlHelper> channel_control_helper_;
   /// Channelz node.
   RefCountedPtr<channelz::ClientChannelNode> channelz_node_;
-
-  UsageStatus usage_status_;
 };
 
 }  // namespace grpc_core

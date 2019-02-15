@@ -318,6 +318,7 @@ class XdsLb : public LoadBalancingPolicy {
 
   // The policy to use for the backends.
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
+  UniquePtr<LoadBalancingPolicy::Swapper> child_policy_swapper_;
   UniquePtr<char> child_policy_json_string_;
 };
 
@@ -377,10 +378,14 @@ void XdsLb::Helper::UpdateState(grpc_connectivity_state state,
       parent_->lb_calld_->client_stats() != nullptr) {
     client_stats = parent_->lb_calld_->client_stats()->Ref();
   }
-  parent_->channel_control_helper()->UpdateState(
-      state, state_error,
-      UniquePtr<SubchannelPicker>(
-          New<Picker>(std::move(picker), std::move(client_stats))));
+  bool need_swap = lb_swapper() != nullptr && state == GRPC_CHANNEL_READY;
+  if (need_swap) lb_swapper()->MaybeSwap();
+  if (lb_policy() == parent_->child_policy_.get() || need_swap) {
+    parent_->channel_control_helper()->UpdateState(
+        state, state_error,
+        UniquePtr<SubchannelPicker>(
+            New<Picker>(std::move(picker), std::move(client_stats))));
+  }
 }
 
 void XdsLb::Helper::RequestReresolution() {
@@ -1374,25 +1379,35 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
     }
     child_policy_name = "round_robin";
   }
-  // TODO(juanlishen): Switch policy according to child_policy_config->key.
-  if (child_policy_ != nullptr) {
+  // Check to see if we're already using the right child policy.
+  const bool child_policy_name_changed =
+      child_policy_ == nullptr ||
+      strcmp(child_policy_->name(), child_policy_name) != 0;
+  if (child_policy_ != nullptr && !child_policy_name_changed) {
+    // Continue using the same child policy.  Update with new addresses.
     if (grpc_lb_xds_trace.enabled()) {
       gpr_log(GPR_INFO, "[xdslb %p] Updating the child policy %p", this,
               child_policy_.get());
     }
     child_policy_->UpdateLocked(*args, child_policy_config);
   } else {
+    // Create a new child policy. If there is an existing child policy, replace
+    // it when the new one becomes ready.
     LoadBalancingPolicy::Args lb_policy_args;
     lb_policy_args.combiner = combiner();
     lb_policy_args.args = args;
     lb_policy_args.channel_control_helper =
         UniquePtr<ChannelControlHelper>(New<Helper>(Ref()));
     lb_policy_args.lb_config = child_policy_config;
-    CreateChildPolicyLocked(child_policy_name, std::move(lb_policy_args));
-    if (grpc_lb_xds_trace.enabled()) {
-      gpr_log(GPR_INFO, "[xdslb %p] Created a new child policy %p", this,
-              child_policy_.get());
-    }
+    LoadBalancingPolicy* new_child_policy = nullptr;
+    LoadBalancingPolicy::Swapper::Args lb_swapper_args;
+    lb_swapper_args.old_policy = &child_policy_;
+    lb_swapper_args.new_args = std::move(lb_policy_args);
+    lb_swapper_args.new_policy = &new_child_policy;
+    lb_swapper_args.interested_parties = interested_parties();
+    lb_swapper_args.tracer = &grpc_lb_xds_trace;
+    child_policy_swapper_ =
+        LoadBalancingPolicy::Swapper::CreateLocked(std::move(lb_swapper_args));
   }
   grpc_channel_args_destroy(args);
   grpc_json_destroy(child_policy_json);

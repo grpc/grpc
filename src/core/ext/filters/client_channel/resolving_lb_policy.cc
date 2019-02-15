@@ -93,32 +93,9 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
       GRPC_ERROR_UNREF(state_error);
       return;
     }
-    if (lb_policy() != parent_->lb_policy_.get() &&
-        lb_policy() != parent_->pending_lb_policy_.get() &&
-        lb_policy()->usage_status() != TO_BE_CURRENT &&
-        lb_policy()->usage_status() != TO_BE_PENDING) {
-      return;
-    }
-    if ((lb_policy() == parent_->pending_lb_policy_.get() ||
-         lb_policy()->usage_status() == TO_BE_PENDING) &&
-        state == GRPC_CHANNEL_READY) {
-      // Pending (or to be pending) LB policy is ready, swap in (or to swap in).
-      GPR_ASSERT(parent_->lb_policy_ != nullptr);
-      if (lb_policy() == parent_->pending_lb_policy_.get()) {
-        if (parent_->tracer_->enabled()) {
-          gpr_log(GPR_INFO, "resolving_lb=%p: shutting down lb_policy=%p", this,
-                  parent_->lb_policy_.get());
-        }
-        grpc_pollset_set_del_pollset_set(
-            parent_->lb_policy_->interested_parties(),
-            parent_->interested_parties());
-        parent_->lb_policy_ = std::move(parent_->pending_lb_policy_);
-      } else {
-        lb_policy()->set_usage_status(TO_BE_CURRENT);
-      }
-    }
-    if (lb_policy() == parent_->lb_policy_.get() ||
-        lb_policy()->usage_status() == TO_BE_CURRENT) {
+    bool need_swap = lb_swapper() != nullptr && state == GRPC_CHANNEL_READY;
+    if (need_swap) lb_swapper()->MaybeSwap();
+    if (lb_policy() == parent_->lb_policy_.get() || need_swap) {
       parent_->channel_control_helper()->UpdateState(state, state_error,
                                                      std::move(picker));
     }
@@ -209,6 +186,7 @@ void ResolvingLoadBalancingPolicy::ShutdownLocked() {
       lb_policy_.reset();
     }
   }
+  lb_swapper_.reset();
 }
 
 void ResolvingLoadBalancingPolicy::ExitIdleLocked() {
@@ -297,10 +275,16 @@ void ResolvingLoadBalancingPolicy::CreateNewLbPolicyLocked(
       UniquePtr<ChannelControlHelper>(New<ResolvingControlHelper>(Ref()));
   lb_policy_args.args = resolver_result_;
   lb_policy_args.lb_config = lb_config;
-  lb_policy_args.status = lb_policy_ == nullptr ? TO_BE_CURRENT : TO_BE_PENDING;
-  OrphanablePtr<LoadBalancingPolicy> new_lb_policy =
-      LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-          lb_policy_name, std::move(lb_policy_args));
+  LoadBalancingPolicy* new_lb_policy = nullptr;
+  LoadBalancingPolicy::Swapper::Args lb_swapper_args;
+  lb_swapper_args.old_policy = &lb_policy_;
+  lb_swapper_args.new_name = lb_policy_name;
+  lb_swapper_args.new_args = std::move(lb_policy_args);
+  lb_swapper_args.new_policy = &new_lb_policy;
+  lb_swapper_args.interested_parties = interested_parties();
+  lb_swapper_args.tracer = tracer_;
+  lb_swapper_ =
+      LoadBalancingPolicy::Swapper::CreateLocked(std::move(lb_swapper_args));
   if (GPR_UNLIKELY(new_lb_policy == nullptr)) {
     gpr_log(GPR_ERROR, "could not create LB policy \"%s\"", lb_policy_name);
     if (channelz_node() != nullptr) {
@@ -311,7 +295,7 @@ void ResolvingLoadBalancingPolicy::CreateNewLbPolicyLocked(
   } else {
     if (tracer_->enabled()) {
       gpr_log(GPR_INFO, "resolving_lb=%p: created new LB policy \"%s\" (%p)",
-              this, lb_policy_name, new_lb_policy.get());
+              this, lb_policy_name, new_lb_policy);
     }
     if (channelz_node() != nullptr) {
       char* str;
@@ -322,35 +306,6 @@ void ResolvingLoadBalancingPolicy::CreateNewLbPolicyLocked(
     auto* channelz = channelz_node();
     if (channelz != nullptr) {
       new_lb_policy->set_channelz_node(channelz->Ref());
-    }
-    // The pending LB policy should always be reset.
-    if (pending_lb_policy_ != nullptr) {
-      if (tracer_->enabled()) {
-        gpr_log(GPR_INFO, "resolving_lb=%p: shutting down pending_lb_policy=%p",
-                this, pending_lb_policy_.get());
-      }
-      grpc_pollset_set_del_pollset_set(pending_lb_policy_->interested_parties(),
-                                       interested_parties());
-      pending_lb_policy_.reset();
-    }
-    // Set up new LB policy.
-    grpc_pollset_set_add_pollset_set(new_lb_policy->interested_parties(),
-                                     interested_parties());
-    new_lb_policy->ExitIdleLocked();
-    if (new_lb_policy->usage_status() == TO_BE_CURRENT) {
-      if (lb_policy_ != nullptr) {
-        if (tracer_->enabled()) {
-          gpr_log(GPR_INFO, "resolving_lb=%p: shutting down lb_policy=%p", this,
-                  lb_policy_.get());
-        }
-        grpc_pollset_set_del_pollset_set(lb_policy_->interested_parties(),
-                                         interested_parties());
-      }
-      lb_policy_ = std::move(new_lb_policy);
-      lb_policy_->set_usage_status(DETERMINED);
-    } else {
-      pending_lb_policy_ = std::move(new_lb_policy);
-      lb_policy_->set_usage_status(DETERMINED);
     }
   }
 }
