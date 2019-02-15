@@ -63,21 +63,6 @@ config_setting(
     values = {"cpu": "x64_windows_msvc"},
 )
 
-config_setting(
-    name = "mac_x86_64",
-    values = {"cpu": "darwin"},
-)
-
-COPTS = select({
-    ":mac_x86_64": ["-DGRPC_CFSTREAM"],
-    "//conditions:default": [],
-})
-
-LINK_OPTS = select({
-    ":mac_x86_64": ["-framework CoreFoundation"],
-    "//conditions:default": [],
-})
-
 # This should be updated along with build.yaml
 g_stands_for = "godric"
 
@@ -996,7 +981,6 @@ grpc_cc_library(
         "zlib",
     ],
     language = "c++",
-    copts = COPTS,
     public_hdrs = GRPC_PUBLIC_HDRS,
     deps = [
         "gpr_base",
@@ -1056,8 +1040,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/iomgr_posix_cfstream.cc",
         "src/core/lib/iomgr/tcp_client_cfstream.cc",
     ],
-    copts = COPTS,
-    linkopts = LINK_OPTS,
     hdrs = [
         "src/core/lib/iomgr/cfstream_handle.h",
         "src/core/lib/iomgr/endpoint_cfstream.h",
