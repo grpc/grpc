@@ -21,6 +21,12 @@
   // make il2cpp happy.
   // See https://github.com/grpc/grpc/issues/16012
   
+  #include <stdio.h>
+  #include <stdlib.h>
+
   % for method in get_native_methods():
-  void ${method['name']}() {}
+  void ${method['name']}() {
+    fprintf(stderr, "Should never reach here");
+    abort();
+  }
   % endfor

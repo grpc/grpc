@@ -19,98 +19,386 @@
 // make il2cpp happy.
 // See https://github.com/grpc/grpc/issues/16012
 
-void grpcsharp_init() {}
-void grpcsharp_shutdown() {}
-void grpcsharp_version_string() {}
-void grpcsharp_batch_context_create() {}
-void grpcsharp_batch_context_recv_initial_metadata() {}
-void grpcsharp_batch_context_recv_message_length() {}
-void grpcsharp_batch_context_recv_message_to_buffer() {}
-void grpcsharp_batch_context_recv_status_on_client_status() {}
-void grpcsharp_batch_context_recv_status_on_client_details() {}
-void grpcsharp_batch_context_recv_status_on_client_trailing_metadata() {}
-void grpcsharp_batch_context_recv_close_on_server_cancelled() {}
-void grpcsharp_batch_context_reset() {}
-void grpcsharp_batch_context_destroy() {}
-void grpcsharp_request_call_context_create() {}
-void grpcsharp_request_call_context_call() {}
-void grpcsharp_request_call_context_method() {}
-void grpcsharp_request_call_context_host() {}
-void grpcsharp_request_call_context_deadline() {}
-void grpcsharp_request_call_context_request_metadata() {}
-void grpcsharp_request_call_context_reset() {}
-void grpcsharp_request_call_context_destroy() {}
-void grpcsharp_composite_call_credentials_create() {}
-void grpcsharp_call_credentials_release() {}
-void grpcsharp_call_cancel() {}
-void grpcsharp_call_cancel_with_status() {}
-void grpcsharp_call_start_unary() {}
-void grpcsharp_call_start_client_streaming() {}
-void grpcsharp_call_start_server_streaming() {}
-void grpcsharp_call_start_duplex_streaming() {}
-void grpcsharp_call_send_message() {}
-void grpcsharp_call_send_close_from_client() {}
-void grpcsharp_call_send_status_from_server() {}
-void grpcsharp_call_recv_message() {}
-void grpcsharp_call_recv_initial_metadata() {}
-void grpcsharp_call_start_serverside() {}
-void grpcsharp_call_send_initial_metadata() {}
-void grpcsharp_call_set_credentials() {}
-void grpcsharp_call_get_peer() {}
-void grpcsharp_call_destroy() {}
-void grpcsharp_channel_args_create() {}
-void grpcsharp_channel_args_set_string() {}
-void grpcsharp_channel_args_set_integer() {}
-void grpcsharp_channel_args_destroy() {}
-void grpcsharp_override_default_ssl_roots() {}
-void grpcsharp_ssl_credentials_create() {}
-void grpcsharp_composite_channel_credentials_create() {}
-void grpcsharp_channel_credentials_release() {}
-void grpcsharp_insecure_channel_create() {}
-void grpcsharp_secure_channel_create() {}
-void grpcsharp_channel_create_call() {}
-void grpcsharp_channel_check_connectivity_state() {}
-void grpcsharp_channel_watch_connectivity_state() {}
-void grpcsharp_channel_get_target() {}
-void grpcsharp_channel_destroy() {}
-void grpcsharp_sizeof_grpc_event() {}
-void grpcsharp_completion_queue_create_async() {}
-void grpcsharp_completion_queue_create_sync() {}
-void grpcsharp_completion_queue_shutdown() {}
-void grpcsharp_completion_queue_next() {}
-void grpcsharp_completion_queue_pluck() {}
-void grpcsharp_completion_queue_destroy() {}
-void gprsharp_free() {}
-void grpcsharp_metadata_array_create() {}
-void grpcsharp_metadata_array_add() {}
-void grpcsharp_metadata_array_count() {}
-void grpcsharp_metadata_array_get_key() {}
-void grpcsharp_metadata_array_get_value() {}
-void grpcsharp_metadata_array_destroy_full() {}
-void grpcsharp_redirect_log() {}
-void grpcsharp_metadata_credentials_create_from_plugin() {}
-void grpcsharp_metadata_credentials_notify_from_plugin() {}
-void grpcsharp_ssl_server_credentials_create() {}
-void grpcsharp_server_credentials_release() {}
-void grpcsharp_server_create() {}
-void grpcsharp_server_register_completion_queue() {}
-void grpcsharp_server_add_insecure_http2_port() {}
-void grpcsharp_server_add_secure_http2_port() {}
-void grpcsharp_server_start() {}
-void grpcsharp_server_request_call() {}
-void grpcsharp_server_cancel_all_calls() {}
-void grpcsharp_server_shutdown_and_notify_callback() {}
-void grpcsharp_server_destroy() {}
-void grpcsharp_call_auth_context() {}
-void grpcsharp_auth_context_peer_identity_property_name() {}
-void grpcsharp_auth_context_property_iterator() {}
-void grpcsharp_auth_property_iterator_next() {}
-void grpcsharp_auth_context_release() {}
-void gprsharp_now() {}
-void gprsharp_inf_future() {}
-void gprsharp_inf_past() {}
-void gprsharp_convert_clock_type() {}
-void gprsharp_sizeof_timespec() {}
-void grpcsharp_test_callback() {}
-void grpcsharp_test_nop() {}
-void grpcsharp_test_override_method() {}
+#include <stdio.h>
+#include <stdlib.h>
+
+void grpcsharp_init() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_shutdown() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_version_string() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_batch_context_create() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_batch_context_recv_initial_metadata() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_batch_context_recv_message_length() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_batch_context_recv_message_to_buffer() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_batch_context_recv_status_on_client_status() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_batch_context_recv_status_on_client_details() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_batch_context_recv_status_on_client_trailing_metadata() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_batch_context_recv_close_on_server_cancelled() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_batch_context_reset() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_batch_context_destroy() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_request_call_context_create() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_request_call_context_call() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_request_call_context_method() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_request_call_context_host() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_request_call_context_deadline() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_request_call_context_request_metadata() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_request_call_context_reset() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_request_call_context_destroy() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_composite_call_credentials_create() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_call_credentials_release() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_call_cancel() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_call_cancel_with_status() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_call_start_unary() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_call_start_client_streaming() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_call_start_server_streaming() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_call_start_duplex_streaming() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_call_send_message() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_call_send_close_from_client() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_call_send_status_from_server() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_call_recv_message() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_call_recv_initial_metadata() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_call_start_serverside() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_call_send_initial_metadata() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_call_set_credentials() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_call_get_peer() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_call_destroy() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_channel_args_create() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_channel_args_set_string() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_channel_args_set_integer() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_channel_args_destroy() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_override_default_ssl_roots() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_ssl_credentials_create() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_composite_channel_credentials_create() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_channel_credentials_release() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_insecure_channel_create() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_secure_channel_create() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_channel_create_call() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_channel_check_connectivity_state() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_channel_watch_connectivity_state() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_channel_get_target() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_channel_destroy() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_sizeof_grpc_event() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_completion_queue_create_async() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_completion_queue_create_sync() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_completion_queue_shutdown() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_completion_queue_next() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_completion_queue_pluck() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_completion_queue_destroy() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void gprsharp_free() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_metadata_array_create() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_metadata_array_add() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_metadata_array_count() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_metadata_array_get_key() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_metadata_array_get_value() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_metadata_array_destroy_full() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_redirect_log() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_metadata_credentials_create_from_plugin() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_metadata_credentials_notify_from_plugin() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_ssl_server_credentials_create() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_server_credentials_release() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_server_create() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_server_register_completion_queue() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_server_add_insecure_http2_port() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_server_add_secure_http2_port() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_server_start() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_server_request_call() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_server_cancel_all_calls() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_server_shutdown_and_notify_callback() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_server_destroy() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_call_auth_context() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_auth_context_peer_identity_property_name() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_auth_context_property_iterator() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_auth_property_iterator_next() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_auth_context_release() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void gprsharp_now() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void gprsharp_inf_future() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void gprsharp_inf_past() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void gprsharp_convert_clock_type() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void gprsharp_sizeof_timespec() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_test_callback() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_test_nop() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_test_override_method() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
