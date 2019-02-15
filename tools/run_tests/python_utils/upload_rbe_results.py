@@ -188,6 +188,8 @@ if __name__ == "__main__":
                 'startTime':
                 resultstore_actions[index - 1]['timing']['startTime']
             }
+        elif 'testSuite' not in action['testAction']:
+            continue
         else:
             test_cases = action['testAction']['testSuite']['tests'][0][
                 'testSuite']['tests']
