@@ -33,6 +33,7 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/fork.h"
+#include "src/core/lib/gprpp/mutex_lock.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -123,7 +124,7 @@ void grpc_init(void) {
   int i;
   gpr_once_init(&g_basic_init, do_basic_init);
 
-  gpr_mu_lock(&g_init_mu);
+  grpc_core::MutexLock lock(&g_init_mu);
   if (++g_initializations == 1) {
     if (g_shutting_down) {
       g_shutting_down = false;
@@ -159,7 +160,6 @@ void grpc_init(void) {
     grpc_channel_init_finalize();
     grpc_iomgr_start();
   }
-  gpr_mu_unlock(&g_init_mu);
 
   GRPC_API_TRACE("grpc_init(void)", 0, ());
 }
@@ -196,20 +196,18 @@ void grpc_shutdown_internal_locked(void) {
 
 void grpc_shutdown_internal(void* ignored) {
   GRPC_API_TRACE("grpc_shutdown_internal", 0, ());
-  gpr_mu_lock(&g_init_mu);
+  grpc_core::MutexLock lock(&g_init_mu);
   // We have released lock from the shutdown thread and it is possible that
   // another grpc_init has been called, and do nothing if that is the case.
   if (--g_initializations != 0) {
-    gpr_mu_unlock(&g_init_mu);
     return;
   }
   grpc_shutdown_internal_locked();
-  gpr_mu_unlock(&g_init_mu);
 }
 
 void grpc_shutdown(void) {
   GRPC_API_TRACE("grpc_shutdown(void)", 0, ());
-  gpr_mu_lock(&g_init_mu);
+  grpc_core::MutexLock lock(&g_init_mu);
   if (--g_initializations == 0) {
     g_initializations++;
     g_shutting_down = true;
@@ -217,37 +215,33 @@ void grpc_shutdown(void) {
     // currently in an executor thread.
     grpc_core::Thread cleanup_thread(
         "grpc_shutdown", grpc_shutdown_internal, nullptr, nullptr,
-        grpc_core::Thread::Options().set_joinable(false).set_tracked(false));
+        grpc_core::Thread::Options().set_joinable(false));
     cleanup_thread.Start();
   }
-  gpr_mu_unlock(&g_init_mu);
 }
 
 void grpc_shutdown_blocking(void) {
   GRPC_API_TRACE("grpc_shutdown_blocking(void)", 0, ());
-  gpr_mu_lock(&g_init_mu);
+  grpc_core::MutexLock lock(&g_init_mu);
   if (--g_initializations == 0) {
     g_shutting_down = true;
     grpc_shutdown_internal_locked();
   }
-  gpr_mu_unlock(&g_init_mu);
 }
 
 int grpc_is_initialized(void) {
   int r;
   gpr_once_init(&g_basic_init, do_basic_init);
-  gpr_mu_lock(&g_init_mu);
+  grpc_core::MutexLock lock(&g_init_mu);
   r = g_initializations > 0;
-  gpr_mu_unlock(&g_init_mu);
   return r;
 }
 
 void grpc_maybe_wait_for_async_shutdown(void) {
   gpr_once_init(&g_basic_init, do_basic_init);
-  gpr_mu_lock(&g_init_mu);
+  grpc_core::MutexLock lock(&g_init_mu);
   while (g_shutting_down) {
     gpr_cv_wait(g_shutting_down_cv, &g_init_mu,
                 gpr_inf_future(GPR_CLOCK_REALTIME));
   }
-  gpr_mu_unlock(&g_init_mu);
 }

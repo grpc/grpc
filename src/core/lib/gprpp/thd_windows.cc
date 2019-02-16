@@ -41,6 +41,7 @@
 #error "Unknown compiler - please file a bug report"
 #endif
 
+namespace grpc_core {
 namespace {
 class ThreadInternalsWindows;
 struct thd_info {
@@ -53,11 +54,10 @@ struct thd_info {
 
 thread_local struct thd_info* g_thd_info;
 
-class ThreadInternalsWindows
-    : public grpc_core::internal::ThreadInternalsInterface {
+class ThreadInternalsWindows : public internal::ThreadInternalsInterface {
  public:
   ThreadInternalsWindows(void (*thd_body)(void* arg), void* arg, bool* success,
-                         const grpc_core::Thread::Options& options)
+                         const Thread::Options& options)
       : started_(false) {
     gpr_mu_init(&mu_);
     gpr_cv_init(&ready_);
@@ -88,7 +88,7 @@ class ThreadInternalsWindows
                             }
                             gpr_mu_unlock(&g_thd_info->thread->mu_);
                             if (!g_thd_info->joinable) {
-                              grpc_core::Delete(g_thd_info->thread);
+                              Delete(g_thd_info->thread);
                               g_thd_info->thread = nullptr;
                             }
                             g_thd_info->body(g_thd_info->arg);
@@ -144,19 +144,16 @@ class ThreadInternalsWindows
 
 }  // namespace
 
-namespace grpc_core {
-
 Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
                bool* success, const Options& options)
     : options_(options) {
   bool outcome = false;
-  impl_ =
-      grpc_core::New<ThreadInternalsWindows>(thd_body, arg, &outcome, options);
+  impl_ = New<ThreadInternalsWindows>(thd_body, arg, &outcome, options);
   if (outcome) {
     state_ = ALIVE;
   } else {
     state_ = FAILED;
-    grpc_core::Delete(impl_);
+    Delete(impl_);
     impl_ = nullptr;
   }
 

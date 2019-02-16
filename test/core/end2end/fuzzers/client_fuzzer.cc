@@ -158,6 +158,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       grpc_byte_buffer_destroy(response_payload_recv);
     }
   }
-  grpc_shutdown();
+  grpc_shutdown_blocking();
   return 0;
 }

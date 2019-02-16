@@ -45,11 +45,9 @@ struct thd_arg {
   void* arg;               /* argument to a thread */
   const char* name;        /* name of thread. Can be nullptr. */
   bool joinable;
-  bool tracked;
 };
 
-class ThreadInternalsPosix
-    : public grpc_core::internal::ThreadInternalsInterface {
+class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
  public:
   ThreadInternalsPosix(const char* thd_name, void (*thd_body)(void* arg),
                        void* arg, bool* success, const Thread::Options& options)
@@ -66,10 +64,7 @@ class ThreadInternalsPosix
     info->arg = arg;
     info->name = thd_name;
     info->joinable = options.joinable();
-    info->tracked = options.tracked();
-    if (options.tracked()) {
-      grpc_core::Fork::IncThreadCount();
-    }
+    Fork::IncThreadCount();
 
     GPR_ASSERT(pthread_attr_init(&attr) == 0);
     if (options.joinable()) {
@@ -109,13 +104,11 @@ class ThreadInternalsPosix
                           gpr_mu_unlock(&arg.thread->mu_);
 
                           if (!arg.joinable) {
-                            grpc_core::Delete(arg.thread);
+                            Delete(arg.thread);
                           }
 
                           (*arg.body)(arg.arg);
-                          if (arg.tracked) {
-                            grpc_core::Fork::DecThreadCount();
-                          }
+                          Fork::DecThreadCount();
                           return nullptr;
                         },
                         info) == 0);
@@ -125,9 +118,7 @@ class ThreadInternalsPosix
     if (!(*success)) {
       /* don't use gpr_free, as this was allocated using malloc (see above) */
       free(info);
-      if (options.tracked()) {
-        grpc_core::Fork::DecThreadCount();
-      }
+      Fork::DecThreadCount();
     }
   }
 
@@ -158,13 +149,12 @@ Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
                bool* success, const Options& options)
     : options_(options) {
   bool outcome = false;
-  impl_ = grpc_core::New<ThreadInternalsPosix>(thd_name, thd_body, arg,
-                                               &outcome, options);
+  impl_ = New<ThreadInternalsPosix>(thd_name, thd_body, arg, &outcome, options);
   if (outcome) {
     state_ = ALIVE;
   } else {
     state_ = FAILED;
-    grpc_core::Delete(impl_);
+    Delete(impl_);
     impl_ = nullptr;
   }
 

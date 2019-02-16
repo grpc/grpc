@@ -37,7 +37,6 @@
 #include "src/core/lib/channel/handshaker_factory.h"
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
-#include "src/core/lib/surface/init.h"
 
 #include "test/core/handshake/server_ssl_common.h"
 
@@ -84,7 +83,6 @@ int main(int argc, char* argv[]) {
       UniquePtr<HandshakerFactory>(New<ReadAheadHandshakerFactory>()));
   const char* full_alpn_list[] = {"grpc-exp", "h2"};
   GPR_ASSERT(server_ssl_test(full_alpn_list, 2, "grpc-exp"));
-  grpc_shutdown();
-  grpc_maybe_wait_for_async_shutdown();
+  grpc_shutdown_blocking();
   return 0;
 }

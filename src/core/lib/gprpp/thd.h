@@ -49,23 +49,16 @@ class Thread {
  public:
   class Options {
    public:
-    Options() : joinable_(true), tracked_(true) {}
+    Options() : joinable_(true) {}
+    /// Set whether the thread is joinable or detached.
     Options& set_joinable(bool joinable) {
       joinable_ = joinable;
       return *this;
     }
-    Options& set_tracked(bool tracked) {
-      tracked_ = tracked;
-      return *this;
-    }
     bool joinable() const { return joinable_; }
-    bool tracked() const { return tracked_; }
 
    private:
     bool joinable_;
-    // Whether this thread is tracked by grpc internals. Should be true for most
-    // of threads.
-    bool tracked_;
   };
   /// Default constructor only to allow use in structs that lack constructors
   /// Does not produce a validly-constructed thread; must later
