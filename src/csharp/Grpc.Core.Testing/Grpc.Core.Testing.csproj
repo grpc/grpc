@@ -5,7 +5,7 @@
 
   <PropertyGroup>
     <Authors>Google Inc.</Authors>
-    <Description>gRPC C#: Utility code for testing Grpc.Core</Description>
+    <Description>Miscellaneous code for testing Grpc.Core</Description>
     <Copyright>Copyright 2017, Google Inc.</Copyright>
     <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>

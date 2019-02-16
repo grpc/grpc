@@ -6,7 +6,7 @@
   <PropertyGroup>
     <Authors>Google Inc.</Authors>
     <Copyright>Copyright 2016, Google Inc.</Copyright>
-    <Description>gRPC C# Reflection</Description>
+    <Description>gRPC C# Server Reflection (for Grpc.Core)</Description>
     <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
     <PackageTags>gRPC reflection</PackageTags>

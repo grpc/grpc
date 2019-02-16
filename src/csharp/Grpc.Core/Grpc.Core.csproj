@@ -6,7 +6,7 @@
   <PropertyGroup>
     <Authors>Google Inc.</Authors>
     <Copyright>Copyright 2015, Google Inc.</Copyright>
-    <Description>C# implementation of gRPC - an RPC library and framework.</Description>
+    <Description>C# implementation of gRPC based on native gRPC C-core library.</Description>
     <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
     <PackageTags>gRPC RPC Protocol HTTP/2</PackageTags>

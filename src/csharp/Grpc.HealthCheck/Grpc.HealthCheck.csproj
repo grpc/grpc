@@ -6,7 +6,7 @@
   <PropertyGroup>
     <Authors>Google Inc.</Authors>
     <Copyright>Copyright 2015, Google Inc.</Copyright>
-    <Description>gRPC C# Health Checking Implementation</Description>
+    <Description>gRPC C# Health Checking (for Grpc.Core)</Description>
     <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
     <PackageTags>gRPC health check</PackageTags>
