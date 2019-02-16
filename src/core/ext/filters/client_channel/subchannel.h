@@ -189,6 +189,9 @@ class Subchannel {
   void Unref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
   Subchannel* WeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
   void WeakUnref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+  // Attempts to return a strong ref when only the weak refcount is guaranteed
+  // non-zero. If the strong refcount is zero, does not alter the refcount and
+  // returns null.
   Subchannel* RefFromWeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 
   intptr_t GetChildSocketUuid();

@@ -773,7 +773,7 @@ def _job_kill_handler(job):
         # When the job times out and we decide to kill it,
         # we need to wait a before restarting the job
         # to prevent "container name already in use" error.
-        # TODO(jtattermusch): figure out a cleaner way to to this.
+        # TODO(jtattermusch): figure out a cleaner way to this.
         time.sleep(2)
 
 

@@ -64,11 +64,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gold"
+g_stands_for = "godric"
 
-core_version = "7.0.0-dev"
+core_version = "7.0.0"
 
-version = "1.19.0-dev"
+version = "1.20.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1070,10 +1070,10 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/parse_address.cc",
         "src/core/ext/filters/client_channel/proxy_mapper.cc",
         "src/core/ext/filters/client_channel/proxy_mapper_registry.cc",
-        "src/core/ext/filters/client_channel/request_routing.cc",
         "src/core/ext/filters/client_channel/resolver.cc",
         "src/core/ext/filters/client_channel/resolver_registry.cc",
         "src/core/ext/filters/client_channel/resolver_result_parsing.cc",
+        "src/core/ext/filters/client_channel/resolving_lb_policy.cc",
         "src/core/ext/filters/client_channel/retry_throttle.cc",
         "src/core/ext/filters/client_channel/server_address.cc",
         "src/core/ext/filters/client_channel/subchannel.cc",
@@ -1096,11 +1096,11 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/parse_address.h",
         "src/core/ext/filters/client_channel/proxy_mapper.h",
         "src/core/ext/filters/client_channel/proxy_mapper_registry.h",
-        "src/core/ext/filters/client_channel/request_routing.h",
         "src/core/ext/filters/client_channel/resolver.h",
         "src/core/ext/filters/client_channel/resolver_factory.h",
         "src/core/ext/filters/client_channel/resolver_registry.h",
         "src/core/ext/filters/client_channel/resolver_result_parsing.h",
+        "src/core/ext/filters/client_channel/resolving_lb_policy.h",
         "src/core/ext/filters/client_channel/retry_throttle.h",
         "src/core/ext/filters/client_channel/server_address.h",
         "src/core/ext/filters/client_channel/subchannel.h",
