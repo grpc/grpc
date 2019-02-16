@@ -53,15 +53,11 @@ struct thd_info {
 
 thread_local struct thd_info* g_thd_info;
 
-}  // namespace
-
-namespace grpc_core {
-namespace {
-
-class ThreadInternalsWindows : public internal::ThreadInternalsInterface {
+class ThreadInternalsWindows
+    : public grpc_core::internal::ThreadInternalsInterface {
  public:
   ThreadInternalsWindows(void (*thd_body)(void* arg), void* arg, bool* success,
-                         const Thread::Options& options)
+                         const grpc_core::Thread::Options& options)
       : started_(false) {
     gpr_mu_init(&mu_);
     gpr_cv_init(&ready_);
@@ -92,7 +88,7 @@ class ThreadInternalsWindows : public internal::ThreadInternalsInterface {
                             }
                             gpr_mu_unlock(&g_thd_info->thread->mu_);
                             if (!g_thd_info->joinable) {
-                              Delete(g_thd_info->thread);
+                              grpc_core::Delete(g_thd_info->thread);
                               g_thd_info->thread = nullptr;
                             }
                             g_thd_info->body(g_thd_info->arg);
@@ -147,6 +143,8 @@ class ThreadInternalsWindows : public internal::ThreadInternalsInterface {
 };
 
 }  // namespace
+
+namespace grpc_core {
 
 Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
                bool* success, const Options& options)
