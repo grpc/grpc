@@ -4,9 +4,9 @@
   <Import Project="..\Grpc.Core\Common.csproj.include" />
 
   <PropertyGroup>
-    <Authors>Google Inc.</Authors>
+    <Authors>The gRPC Authors</Authors>
     <Description>Miscellaneous code for testing Grpc.Core</Description>
-    <Copyright>Copyright 2017, Google Inc.</Copyright>
+    <Copyright>Copyright 2017 The gRPC Authors</Copyright>
     <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
     <PackageTags>gRPC test testing</PackageTags>
