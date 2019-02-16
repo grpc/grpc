@@ -4,17 +4,17 @@
   <Import Project="..\Grpc.Core\Common.csproj.include" />
 
   <PropertyGroup>
-    <Copyright>Copyright 2017, Google Inc.</Copyright>
-    <AssemblyTitle>gRPC C# Core Testing</AssemblyTitle>
-    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
     <Authors>Google Inc.</Authors>
-    <TargetFrameworks>net45;netstandard1.5</TargetFrameworks>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <AssemblyName>Grpc.Core.Testing</AssemblyName>
-    <PackageId>Grpc.Core.Testing</PackageId>
-    <PackageTags>gRPC test testing</PackageTags>
-    <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
+    <Description>gRPC C#: Utility code for testing Grpc.Core</Description>
+    <Copyright>Copyright 2017, Google Inc.</Copyright>
     <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
+    <PackageTags>gRPC test testing</PackageTags>
+    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;netstandard1.5</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>

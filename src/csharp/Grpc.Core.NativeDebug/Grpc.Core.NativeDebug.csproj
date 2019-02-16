@@ -4,16 +4,17 @@
   <Import Project="..\Grpc.Core\Common.csproj.include" />
 
   <PropertyGroup>
-    <Copyright>Copyright 2015, Google Inc.</Copyright>
-    <Title>Grpc.Core: Native Debug Symbols</Title>
-    <Description>Debug symbols for the native library contained in Grpc.Core</Description>
-    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
     <Authors>Google Inc.</Authors>
-    <TargetFrameworks>net45;netstandard1.5</TargetFrameworks>
-    <PackageId>Grpc.Core.NativeDebug</PackageId>
-    <PackageTags>gRPC RPC Protocol HTTP/2</PackageTags>
-    <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
+    <Copyright>Copyright 2015, Google Inc.</Copyright>
+    <Description>Debug symbols for the native library contained in Grpc.Core</Description>
     <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
+    <PackageTags>gRPC RPC Protocol HTTP/2</PackageTags>
+    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;netstandard1.5</TargetFrameworks>
     <!-- This package only carries native debug symbols -->
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>

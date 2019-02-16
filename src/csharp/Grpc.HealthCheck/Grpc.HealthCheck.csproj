@@ -4,16 +4,17 @@
   <Import Project="..\Grpc.Core\Common.csproj.include" />
 
   <PropertyGroup>
-    <Copyright>Copyright 2015, Google Inc.</Copyright>
-    <AssemblyTitle>gRPC C# Healthchecking</AssemblyTitle>
-    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
     <Authors>Google Inc.</Authors>
-    <TargetFrameworks>net45;netstandard1.5</TargetFrameworks>
-    <AssemblyName>Grpc.HealthCheck</AssemblyName>
-    <PackageId>Grpc.HealthCheck</PackageId>
-    <PackageTags>gRPC health check</PackageTags>
-    <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
+    <Copyright>Copyright 2015, Google Inc.</Copyright>
+    <Description>gRPC C# Health Checking Implementation</Description>
     <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
+    <PackageTags>gRPC health check</PackageTags>
+    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix> 
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;netstandard1.5</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>

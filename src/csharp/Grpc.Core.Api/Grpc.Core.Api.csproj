@@ -4,16 +4,17 @@
   <Import Project="..\Grpc.Core\Common.csproj.include" />
 
   <PropertyGroup>
-    <Copyright>Copyright 2019, Google Inc.</Copyright>
-    <AssemblyTitle>gRPC C# Surface API</AssemblyTitle>
-    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
     <Authors>Google Inc.</Authors>
-    <TargetFrameworks>net45;netstandard1.5</TargetFrameworks>
-    <AssemblyName>Grpc.Core.Api</AssemblyName>
-    <PackageId>Grpc.Core.Api</PackageId>
-    <PackageTags>gRPC RPC Protocol HTTP/2</PackageTags>
-    <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
+    <Copyright>Copyright 2019, Google Inc.</Copyright>
+    <Description>gRPC C# Surface API</Description>
     <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
+    <PackageTags>gRPC RPC Protocol HTTP/2</PackageTags>
+    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;netstandard1.5</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>

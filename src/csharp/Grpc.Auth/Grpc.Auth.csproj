@@ -4,17 +4,18 @@
   <Import Project="..\Grpc.Core\Common.csproj.include" />
 
   <PropertyGroup>
-    <Copyright>Copyright 2015, Google Inc.</Copyright>
-    <AssemblyTitle>gRPC C# Auth</AssemblyTitle>
-    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
     <Authors>Google Inc.</Authors>
+    <Copyright>Copyright 2015, Google Inc.</Copyright>
+    <Description>gRPC C# Authentication Library</Description>
+    <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
+    <PackageTags>gRPC RPC Protocol HTTP/2 Auth OAuth2</PackageTags>
+    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <TargetFrameworks>net45;netstandard1.5</TargetFrameworks>
     <DefineConstants>$(DefineConstants);SIGNED</DefineConstants>
-    <AssemblyName>Grpc.Auth</AssemblyName>
-    <PackageId>Grpc.Auth</PackageId>
-    <PackageTags>gRPC RPC Protocol HTTP/2 Auth OAuth2</PackageTags>
-    <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
