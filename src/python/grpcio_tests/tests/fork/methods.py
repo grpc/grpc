@@ -136,7 +136,7 @@ class _ChildProcess(object):
     def finish(self):
         self._process.join(timeout=_CHILD_FINISH_TIMEOUT_S)
         if self._process.is_alive():
-            raise ValueError('Child process did not terminate')
+            raise RuntimeError('Child process did not terminate')
         if self._process.exitcode != 0:
             raise ValueError('Child process failed with exitcode %d' %
                              self._process.exitcode)
@@ -236,6 +236,9 @@ def _close_channel_before_fork(channel, args):
 
 def _connectivity_watch(channel, args):
 
+    parent_states = []
+    parent_channel_ready_event = threading.Event()
+
     def child_target():
 
         child_channel_ready_event = threading.Event()
@@ -244,7 +247,6 @@ def _connectivity_watch(channel, args):
             if state is grpc.ChannelConnectivity.READY:
                 child_channel_ready_event.set()
 
-        child_states = []
         with _channel(args) as child_channel:
             child_stub = test_pb2_grpc.TestServiceStub(child_channel)
             child_channel.subscribe(child_connectivity_callback)
@@ -256,9 +258,6 @@ def _connectivity_watch(channel, args):
                     'Received connectivity updates on parent callback',
                     parent_states)
             child_channel.unsubscribe(child_connectivity_callback)
-
-    parent_states = []
-    parent_channel_ready_event = threading.Event()
 
     def parent_connectivity_callback(state):
         parent_states.append(state)
@@ -274,11 +273,6 @@ def _connectivity_watch(channel, args):
         raise ValueError('Channel did not move to READY')
     channel.unsubscribe(parent_connectivity_callback)
     child_process.finish()
-
-    # Need to unsubscribe or _channel.py in _poll_connectivity triggers a
-    # "Cannot invoke RPC on closed channel!" error.
-    # TODO(ericgribkoff) Fix issue with channel.close() and connectivity polling
-    channel.unsubscribe(parent_connectivity_callback)
 
 
 def _ping_pong_with_child_processes_after_first_response(

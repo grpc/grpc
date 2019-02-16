@@ -139,7 +139,7 @@ class ForkInteropTest(unittest.TestCase):
                 out, err = process.communicate()
         except subprocess.TimeoutExpired:
             process.kill()
-            raise ValueError('Process failed to terminate')
+            raise RuntimeError('Process failed to terminate')
         finally:
             timer.cancel()
         self.assertEqual(
