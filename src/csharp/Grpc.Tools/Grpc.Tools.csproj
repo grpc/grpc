@@ -53,7 +53,8 @@ Add this package to a project that contains .proto files to be compiled to code.
 It contains the compilers, include files and project system integration for gRPC
 and Protocol buffer service description files necessary to build them on Windows,
 Linux and MacOS. Managed runtime is supplied separately in the Grpc.Core package.</Description>
-    <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageIconUrl>https://github.com/grpc/grpc.github.io/raw/master/img/grpc_square_reverse_4x.png</PackageIconUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
     <PackageTags>gRPC RPC protocol HTTP/2</PackageTags>
   </PropertyGroup>
