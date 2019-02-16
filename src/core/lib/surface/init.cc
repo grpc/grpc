@@ -215,7 +215,7 @@ void grpc_shutdown(void) {
     // currently in an executor thread.
     grpc_core::Thread cleanup_thread(
         "grpc_shutdown", grpc_shutdown_internal, nullptr, nullptr,
-        grpc_core::Thread::Options().set_joinable(false));
+        grpc_core::Thread::Options().set_joinable(false).set_tracked(false));
     cleanup_thread.Start();
   }
 }

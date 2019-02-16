@@ -45,6 +45,7 @@ struct thd_arg {
   void* arg;               /* argument to a thread */
   const char* name;        /* name of thread. Can be nullptr. */
   bool joinable;
+  bool tracked;
 };
 
 class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
@@ -64,7 +65,10 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
     info->arg = arg;
     info->name = thd_name;
     info->joinable = options.joinable();
-    Fork::IncThreadCount();
+    info->tracked = options.tracked();
+    if (options.tracked()) {
+      Fork::IncThreadCount();
+    }
 
     GPR_ASSERT(pthread_attr_init(&attr) == 0);
     if (options.joinable()) {
@@ -108,7 +112,9 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
                           }
 
                           (*arg.body)(arg.arg);
-                          Fork::DecThreadCount();
+                          if (arg.tracked) {
+                            Fork::DecThreadCount();
+                          }
                           return nullptr;
                         },
                         info) == 0);
@@ -118,7 +124,9 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
     if (!(*success)) {
       /* don't use gpr_free, as this was allocated using malloc (see above) */
       free(info);
-      Fork::DecThreadCount();
+      if (options.tracked()) {
+        Fork::DecThreadCount();
+      }
     }
   }
 

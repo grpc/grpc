@@ -49,7 +49,7 @@ class Thread {
  public:
   class Options {
    public:
-    Options() : joinable_(true) {}
+    Options() : joinable_(true), tracked_(true) {}
     /// Set whether the thread is joinable or detached.
     Options& set_joinable(bool joinable) {
       joinable_ = joinable;
@@ -57,8 +57,16 @@ class Thread {
     }
     bool joinable() const { return joinable_; }
 
+    /// Set whether the thread is tracked for fork support.
+    Options& set_tracked(bool tracked) {
+      tracked_ = tracked;
+      return *this;
+    }
+    bool tracked() const { return tracked_; }
+
    private:
     bool joinable_;
+    bool tracked_;
   };
   /// Default constructor only to allow use in structs that lack constructors
   /// Does not produce a validly-constructed thread; must later

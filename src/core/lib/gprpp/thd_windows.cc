@@ -41,7 +41,6 @@
 #error "Unknown compiler - please file a bug report"
 #endif
 
-namespace grpc_core {
 namespace {
 class ThreadInternalsWindows;
 struct thd_info {
@@ -53,6 +52,11 @@ struct thd_info {
 };
 
 thread_local struct thd_info* g_thd_info;
+
+}  // namespace
+
+namespace grpc_core {
+namespace {
 
 class ThreadInternalsWindows : public internal::ThreadInternalsInterface {
  public:
