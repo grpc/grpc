@@ -120,7 +120,7 @@ namespace Grpc.Core
         /// Gets a dictionary that can be used by the various interceptors and handlers of this
         /// call to store arbitrary state.
         /// </summary>
-        public virtual IDictionary<object, object> UserSate
+        public virtual IDictionary<object, object> UserState
         {
             get
             {

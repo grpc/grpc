@@ -87,28 +87,28 @@ namespace Grpc.Core.Interceptors.Tests
 
             var interceptor1 = new ServerCallContextInterceptor(ctx => {
                 // state starts off empty
-                Assert.AreEqual(0, ctx.UserSate.Count);
+                Assert.AreEqual(0, ctx.UserState.Count);
 
-                ctx.UserSate.Add(key1, value1);
+                ctx.UserState.Add(key1, value1);
             });
 
             var interceptor2 = new ServerCallContextInterceptor(ctx => {
                 // second interceptor can see state set by the first
-                bool found = ctx.UserSate.TryGetValue(key1, out object storedValue1);
+                bool found = ctx.UserState.TryGetValue(key1, out object storedValue1);
                 Assert.IsTrue(found);
                 Assert.AreEqual(value1, storedValue1);
 
-                ctx.UserSate.Add(key2, value2);
+                ctx.UserState.Add(key2, value2);
             });
 
             var helper = new MockServiceHelper(Host);
             helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) => {
                 // call handler can see all the state
-                bool found = context.UserSate.TryGetValue(key1, out object storedValue1);
+                bool found = context.UserState.TryGetValue(key1, out object storedValue1);
                 Assert.IsTrue(found);
                 Assert.AreEqual(value1, storedValue1);
 
-                found = context.UserSate.TryGetValue(key2, out object storedValue2);
+                found = context.UserState.TryGetValue(key2, out object storedValue2);
                 Assert.IsTrue(found);
                 Assert.AreEqual(value2, storedValue2);
 
