@@ -17,7 +17,6 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -40,7 +39,6 @@ namespace Grpc.Core
         private Status status;
         private readonly IServerResponseStream serverResponseStream;
         private readonly Lazy<AuthContext> authContext;
-        private Dictionary<object, object> userState;
 
         /// <summary>
         /// Creates a new instance of <c>ServerCallContext</c>.
@@ -100,19 +98,6 @@ namespace Grpc.Core
         }
 
         protected override AuthContext AuthContextCore => authContext.Value;
-
-        protected override IDictionary<object, object> UserStateCore
-        {
-            get
-            {
-                if (userState == null)
-                {
-                    userState = new Dictionary<object, object>();
-                }
-
-                return userState;
-            }
-        }
 
         private AuthContext GetAuthContextEager()
         {

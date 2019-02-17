@@ -28,6 +28,8 @@ namespace Grpc.Core
     /// </summary>
     public abstract class ServerCallContext
     {
+        private Dictionary<object, object> userState;
+
         /// <summary>
         /// Creates a new instance of <c>ServerCallContext</c>.
         /// </summary>
@@ -118,7 +120,18 @@ namespace Grpc.Core
         /// Gets a dictionary that can be used by the various interceptors and handlers of this
         /// call to store arbitrary state.
         /// </summary>
-        public IDictionary<object, object> UserSate => UserStateCore;
+        public virtual IDictionary<object, object> UserSate
+        {
+            get
+            {
+                if (userState == null)
+                {
+                    userState = new Dictionary<object, object>();
+                }
+
+                return userState;
+            }
+        }
 
         /// <summary>Provides implementation of a non-virtual public member.</summary>
         protected abstract Task WriteResponseHeadersAsyncCore(Metadata responseHeaders);
@@ -144,7 +157,5 @@ namespace Grpc.Core
         protected abstract WriteOptions WriteOptionsCore { get; set; }
         /// <summary>Provides implementation of a non-virtual public member.</summary>
         protected abstract AuthContext AuthContextCore { get; }
-        /// <summary>Provides implementation of a non-virtual public member.</summary>
-        protected abstract IDictionary<object, object> UserStateCore { get; }
     }
 }
