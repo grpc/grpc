@@ -56,7 +56,7 @@ Linux and MacOS. Managed runtime is supplied separately in the Grpc.Core package
     <PackageIconUrl>https://github.com/grpc/grpc.github.io/raw/master/img/grpc_square_reverse_4x.png</PackageIconUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
-    <PackageTags>gRPC RPC protocol HTTP/2</PackageTags>
+    <PackageTags>gRPC RPC HTTP/2</PackageTags>
   </PropertyGroup>
 
   <ItemGroup Label="NuGet package assets">

@@ -10,7 +10,7 @@
     <PackageIconUrl>https://github.com/grpc/grpc.github.io/raw/master/img/grpc_square_reverse_4x.png</PackageIconUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
-    <PackageTags>gRPC RPC Protocol HTTP/2 Auth OAuth2</PackageTags>
+    <PackageTags>gRPC RPC HTTP/2 Auth OAuth2</PackageTags>
     <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
   </PropertyGroup>
 
