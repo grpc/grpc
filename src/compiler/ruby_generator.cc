@@ -48,7 +48,7 @@ grpc::string GetCanonicalMessageType(const Descriptor* msg) {
   const FileDescriptor* file_containing_msg = top_level_msg->file();
 
   // no ruby package, full name fully defines the msg
-  if (!file_containing_msg->options().has_ruby_package()) {
+  if (!file_containing_msg->options().has_ruby_package() != nullptr) {
     return msg->full_name();
   }
 

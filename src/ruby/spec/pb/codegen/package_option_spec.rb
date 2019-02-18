@@ -49,7 +49,7 @@ describe 'Code Generation Options' do
       end
     end
   end
-  it 'should be able to refer to message in the correct namespace' do
+  it 'should refer to message in the correct namespace' do
     fail 'CONFIG env variable unexpectedly unset' unless ENV['CONFIG']
     bins_sub_dir = ENV['CONFIG']
 
@@ -80,6 +80,70 @@ describe 'Code Generation Options' do
         expect(require('service_services_pb')).to be_truthy
         expect { MyService::Request }.to_not raise_error
         expect { MyService::Service }.to_not raise_error
+      ensure
+        $LOAD_PATH.delete(tmp_dir)
+      end
+    end
+  end
+  it 'should resolve to ruby_package given no proto package' do
+    fail 'CONFIG env variable unexpectedly unset' unless ENV['CONFIG']
+    bins_sub_dir = ENV['CONFIG']
+
+    pb_dir = File.dirname(__FILE__)
+    bins_dir = File.join('..', '..', '..', '..', '..', 'bins', bins_sub_dir)
+
+    plugin = File.join(bins_dir, 'grpc_ruby_plugin')
+    protoc = File.join(bins_dir, 'protobuf', 'protoc')
+
+    # Generate the service from the proto
+    Dir.mktmpdir(nil, File.dirname(__FILE__)) do |tmp_dir|
+      gen_file = system(protoc,
+                        '-I.',
+                        'grpc/testing/no_proto_pkg.proto',
+                        "--grpc_out=#{tmp_dir}", # generate the service
+                        "--ruby_out=#{tmp_dir}", # generate the definitions
+                        "--plugin=protoc-gen-grpc=#{plugin}",
+                        chdir: pb_dir,
+                        out: File::NULL)
+
+      expect(gen_file).to be_truthy
+      begin
+        $LOAD_PATH.push(tmp_dir)
+        expect { I::Have::No::Proto::Package::TestService::Service }.to raise_error(NameError)
+        expect(require('grpc/testing/no_proto_pkg_services_pb.rb')).to be_truthy
+        expect { I::Have::No::Proto::Package::TestService::Service }.to_not raise_error
+      ensure
+        $LOAD_PATH.delete(tmp_dir)
+      end
+    end
+  end
+  it 'should resolve to proto package given no ruby_package' do
+    fail 'CONFIG env variable unexpectedly unset' unless ENV['CONFIG']
+    bins_sub_dir = ENV['CONFIG']
+
+    pb_dir = File.dirname(__FILE__)
+    bins_dir = File.join('..', '..', '..', '..', '..', 'bins', bins_sub_dir)
+
+    plugin = File.join(bins_dir, 'grpc_ruby_plugin')
+    protoc = File.join(bins_dir, 'protobuf', 'protoc')
+
+    # Generate the service from the proto
+    Dir.mktmpdir(nil, File.dirname(__FILE__)) do |tmp_dir|
+      gen_file = system(protoc,
+                        '-I.',
+                        'grpc/testing/no_ruby_pkg.proto',
+                        "--grpc_out=#{tmp_dir}", # generate the service
+                        "--ruby_out=#{tmp_dir}", # generate the definitions
+                        "--plugin=protoc-gen-grpc=#{plugin}",
+                        chdir: pb_dir,
+                        out: File::NULL)
+
+      expect(gen_file).to be_truthy
+      begin
+        $LOAD_PATH.push(tmp_dir)
+        expect { I::Have::No::Ruby::Package::TestService::Service }.to raise_error(NameError)
+        expect(require('grpc/testing/no_ruby_pkg_services_pb.rb')).to be_truthy
+        expect { I::Have::No::Ruby::Package::TestService::Service }.to_not raise_error
       ensure
         $LOAD_PATH.delete(tmp_dir)
       end
