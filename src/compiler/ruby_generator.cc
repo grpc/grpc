@@ -42,13 +42,13 @@ namespace {
 grpc::string GetCanonicalMessageType(const Descriptor* msg) {
   // If msg is nested, find the topmost message
   const Descriptor* top_level_msg = msg;
-  while (top_level_msg->containing_type()) {
+  while (top_level_msg->containing_type() != nullptr) {
     top_level_msg = top_level_msg->containing_type();
   }
   const FileDescriptor* file_containing_msg = top_level_msg->file();
 
   // no ruby package, full name fully defines the msg
-  if (!file_containing_msg->options().has_ruby_package() != nullptr) {
+  if (!file_containing_msg->options().has_ruby_package()) {
     return msg->full_name();
   }
 

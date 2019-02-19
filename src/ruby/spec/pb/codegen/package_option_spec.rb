@@ -49,6 +49,7 @@ describe 'Code Generation Options' do
       end
     end
   end
+
   it 'should refer to message in the correct namespace' do
     fail 'CONFIG env variable unexpectedly unset' unless ENV['CONFIG']
     bins_sub_dir = ENV['CONFIG']
@@ -85,6 +86,7 @@ describe 'Code Generation Options' do
       end
     end
   end
+
   it 'should resolve to ruby_package given no proto package' do
     fail 'CONFIG env variable unexpectedly unset' unless ENV['CONFIG']
     bins_sub_dir = ENV['CONFIG']
@@ -110,13 +112,18 @@ describe 'Code Generation Options' do
       begin
         $LOAD_PATH.push(tmp_dir)
         expect { I::Have::No::Proto::Package::TestService::Service }.to raise_error(NameError)
+        expect { I::Have::No::Proto::Package::TestRequest }.to raise_error(NameError)
+        expect { I::Have::No::Proto::Package::TestResponse }.to raise_error(NameError)
         expect(require('grpc/testing/no_proto_pkg_services_pb.rb')).to be_truthy
         expect { I::Have::No::Proto::Package::TestService::Service }.to_not raise_error
+        expect { I::Have::No::Proto::Package::TestRequest }.to_not raise_error
+        expect { I::Have::No::Proto::Package::TestResponse }.to_not raise_error
       ensure
         $LOAD_PATH.delete(tmp_dir)
       end
     end
   end
+
   it 'should resolve to proto package given no ruby_package' do
     fail 'CONFIG env variable unexpectedly unset' unless ENV['CONFIG']
     bins_sub_dir = ENV['CONFIG']
@@ -142,8 +149,12 @@ describe 'Code Generation Options' do
       begin
         $LOAD_PATH.push(tmp_dir)
         expect { I::Have::No::Ruby::Package::TestService::Service }.to raise_error(NameError)
+        expect { I::Have::No::Ruby::Package::TestRequest }.to raise_error(NameError)
+        expect { I::Have::No::Ruby::Package::TestResponse }.to raise_error(NameError)
         expect(require('grpc/testing/no_ruby_pkg_services_pb.rb')).to be_truthy
         expect { I::Have::No::Ruby::Package::TestService::Service }.to_not raise_error
+        expect { I::Have::No::Ruby::Package::TestRequest }.to_not raise_error
+        expect { I::Have::No::Ruby::Package::TestResponse }.to_not raise_error
       ensure
         $LOAD_PATH.delete(tmp_dir)
       end
