@@ -23,6 +23,7 @@ from grpc_health.v1 import health_pb2
 from grpc_health.v1 import health_pb2_grpc
 
 from tests.unit import test_common
+from tests.unit import _thread_pool
 from tests.unit.framework.common import test_constants
 
 from six.moves import queue
@@ -42,8 +43,11 @@ class BaseWatchTests(object):
 
     class WatchTests(unittest.TestCase):
 
-        def start_server(self, servicer):
-            self._servicer = servicer
+        def start_server(self, non_blocking=False, thread_pool=None):
+            self._thread_pool = thread_pool
+            self._servicer = health.HealthServicer(
+                experimental_non_blocking=non_blocking,
+                experimental_thread_pool=thread_pool)
             self._servicer.set('', health_pb2.HealthCheckResponse.SERVING)
             self._servicer.set(_SERVING_SERVICE,
                                health_pb2.HealthCheckResponse.SERVING)
@@ -79,6 +83,9 @@ class BaseWatchTests(object):
             rendezvous.cancel()
             thread.join()
             self.assertTrue(response_queue.empty())
+
+            if self._thread_pool is not None:
+                self.assertTrue(self._thread_pool.was_used())
 
         def test_watch_new_service(self):
             request = health_pb2.HealthCheckRequest(service=_WATCH_SERVICE)
@@ -199,9 +206,9 @@ class BaseWatchTests(object):
 class HealthServicerTest(BaseWatchTests.WatchTests):
 
     def setUp(self):
+        self._thread_pool = _thread_pool.RecordingThreadPool(max_workers=None)
         super(HealthServicerTest, self).start_server(
-            health.HealthServicer(
-                experimental_non_blocking=False, experimental_thread_pool=None))
+            non_blocking=True, thread_pool=self._thread_pool)
 
     def test_check_empty_service(self):
         request = health_pb2.HealthCheckRequest()
@@ -239,8 +246,7 @@ class HealthServicerBackwardsCompatibleWatchTest(BaseWatchTests.WatchTests):
 
     def setUp(self):
         super(HealthServicerBackwardsCompatibleWatchTest, self).start_server(
-            health.HealthServicer(
-                experimental_non_blocking=False, experimental_thread_pool=None))
+            non_blocking=False, thread_pool=None)
 
 
 if __name__ == '__main__':
