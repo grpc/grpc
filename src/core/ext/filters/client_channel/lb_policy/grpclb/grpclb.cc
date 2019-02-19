@@ -228,7 +228,8 @@ class GrpcLb : public LoadBalancingPolicy {
     UniquePtr<char> AsText() const;
 
     // Extracts all non-drop entries into a ServerAddressList.
-    ServerAddressList GetServerAddressList() const;
+    ServerAddressList GetServerAddressList(GrpcLbClientStats* client_stats)
+        const;
 
     // Returns true if the serverlist contains at least one drop entry and
     // no backend address entries.
@@ -458,7 +459,8 @@ bool IsServerValid(const grpc_grpclb_server* server, size_t idx, bool log) {
 }
 
 // Returns addresses extracted from the serverlist.
-ServerAddressList GrpcLb::Serverlist::GetServerAddressList() const {
+ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
+    GrpcLbClientStats* client_stats) const {
   ServerAddressList addresses;
   for (size_t i = 0; i < serverlist_->num_servers; ++i) {
     const grpc_grpclb_server* server = serverlist_->servers[i];
@@ -476,6 +478,12 @@ ServerAddressList GrpcLb::Serverlist::GetServerAddressList() const {
       grpc_slice lb_token_mdstr = grpc_slice_from_copied_buffer(
           server->load_balance_token, lb_token_length);
       lb_token = grpc_mdelem_from_slices(GRPC_MDSTR_LB_TOKEN, lb_token_mdstr);
+      if (client_stats != nullptr) {
+        GPR_ASSERT(grpc_mdelem_set_user_data(lb_token,
+                                             GrpcLbClientStats::Destroy,
+                                             client_stats->Ref().release())
+                       == client_stats);
+      }
     } else {
       char* uri = grpc_sockaddr_to_uri(&addr);
       gpr_log(GPR_INFO,
@@ -516,22 +524,6 @@ const char* GrpcLb::Serverlist::ShouldDrop() {
 // GrpcLb::Picker
 //
 
-// Adds lb_token of selected subchannel (address) to the call's initial
-// metadata.
-grpc_error* AddLbTokenToInitialMetadata(
-    grpc_mdelem lb_token, grpc_linked_mdelem* lb_token_mdelem_storage,
-    grpc_metadata_batch* initial_metadata) {
-  GPR_ASSERT(lb_token_mdelem_storage != nullptr);
-  GPR_ASSERT(!GRPC_MDISNULL(lb_token));
-  return grpc_metadata_batch_add_tail(initial_metadata, lb_token_mdelem_storage,
-                                      lb_token);
-}
-
-// Destroy function used when embedding client stats in call context.
-void DestroyClientStats(void* arg) {
-  static_cast<GrpcLbClientStats*>(arg)->Unref();
-}
-
 GrpcLb::Picker::PickResult GrpcLb::Picker::Pick(PickState* pick,
                                                 grpc_error** error) {
   // Check if we should drop the call.
@@ -562,15 +554,15 @@ GrpcLb::Picker::PickResult GrpcLb::Picker::Pick(PickState* pick,
       abort();
     }
     grpc_mdelem lb_token = {reinterpret_cast<uintptr_t>(arg->value.pointer.p)};
-    AddLbTokenToInitialMetadata(GRPC_MDELEM_REF(lb_token),
-                                &pick->lb_token_mdelem_storage,
-                                pick->initial_metadata);
-    // Pass on client stats via context. Passes ownership of the reference.
-    if (client_stats_ != nullptr) {
-      pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].value =
-          client_stats_->Ref().release();
-      pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].destroy =
-          DestroyClientStats;
+    GPR_ASSERT(!GRPC_MDISNULL(lb_token));
+    GPR_ASSERT(grpc_metadata_batch_add_tail(pick->initial_metadata,
+                                            &pick->lb_token_mdelem_storage,
+                                            GRPC_MDELEM_REF(lb_token))
+                    == GRPC_ERROR_NONE);
+    GrpcLbClientStats* client_stats = static_cast<GrpcLbClientStats*>(
+        grpc_mdelem_get_user_data(lb_token, GrpcLbClientStats::Destroy));
+    if (client_stats != nullptr) {
+      client_stats->AddCallStarted();
     }
   }
   return result;
@@ -1534,7 +1526,8 @@ grpc_channel_args* GrpcLb::CreateRoundRobinPolicyArgsLocked() {
   ServerAddressList* addresses = &tmp_addresses;
   bool is_backend_from_grpclb_load_balancer = false;
   if (serverlist_ != nullptr) {
-    tmp_addresses = serverlist_->GetServerAddressList();
+    tmp_addresses = serverlist_->GetServerAddressList(
+        lb_calld_ == nullptr ? nullptr : lb_calld_->client_stats());
     is_backend_from_grpclb_load_balancer = true;
   } else {
     // If CreateOrUpdateRoundRobinPolicyLocked() is invoked when we haven't
