@@ -43,7 +43,7 @@ void GrpcLbClientStats::AddCallFinished(
   }
 }
 
-void GrpcLbClientStats::AddCallDroppedLocked(const char* token) {
+void GrpcLbClientStats::AddCallDroppedLocked(char* token) {
   // Increment num_calls_started and num_calls_finished.
   gpr_atm_full_fetch_add(&num_calls_started_, (gpr_atm)1);
   gpr_atm_full_fetch_add(&num_calls_finished_, (gpr_atm)1);
