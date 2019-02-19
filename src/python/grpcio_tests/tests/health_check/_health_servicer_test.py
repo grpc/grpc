@@ -206,7 +206,7 @@ class BaseWatchTests(object):
 class HealthServicerTest(BaseWatchTests.WatchTests):
 
     def setUp(self):
-        self._thread_pool = _thread_pool.RecordingThreadPool(max_workers=None)
+        self._thread_pool = thread_pool.RecordingThreadPool(max_workers=None)
         super(HealthServicerTest, self).start_server(
             non_blocking=True, thread_pool=self._thread_pool)
 
