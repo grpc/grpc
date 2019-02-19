@@ -5,7 +5,6 @@
 
 build --client_env=CC=clang
 build --copt=-DGRPC_BAZEL_BUILD
-build --action_env=GRPC_BAZEL_BUILD=1
 
 build:opt --compilation_mode=opt
 build:opt --copt=-Wframe-larger-than=16384
