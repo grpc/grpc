@@ -53,6 +53,8 @@
   ],
   "Grpc.IntegrationTesting": [
     "Grpc.IntegrationTesting.CustomErrorDetailsTest",
+    "Grpc.IntegrationTesting.ExternalDnsClientServerTest",
+    "Grpc.IntegrationTesting.ExternalDnsWithTracingClientServerTest",
     "Grpc.IntegrationTesting.GeneratedClientTest",
     "Grpc.IntegrationTesting.GeneratedServiceBaseTest",
     "Grpc.IntegrationTesting.HistogramTest",
