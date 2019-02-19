@@ -23,7 +23,7 @@ import grpc
 from grpc.framework.foundation import logging_pool
 
 from tests.unit import test_common
-from tests.unit import _thread_pool
+from tests.unit import thread_pool
 from tests.unit.framework.common import test_constants
 from tests.unit.framework.common import test_control
 
@@ -238,7 +238,7 @@ class RPCTest(unittest.TestCase):
 
     def setUp(self):
         self._control = test_control.PauseFailControl()
-        self._thread_pool = _thread_pool.RecordingThreadPool(max_workers=None)
+        self._thread_pool = thread_pool.RecordingThreadPool(max_workers=None)
         self._handler = _Handler(self._control, self._thread_pool)
 
         self._server = test_common.test_server()
