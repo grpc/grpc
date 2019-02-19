@@ -13,6 +13,7 @@
 # limitations under the License.
 """Reference implementation for health checking in gRPC Python."""
 
+import collections
 import threading
 
 import grpc
@@ -27,7 +28,7 @@ class _Watcher():
 
     def __init__(self):
         self._condition = threading.Condition()
-        self._responses = list()
+        self._responses = collections.deque()
         self._open = True
 
     def __iter__(self):
@@ -38,7 +39,7 @@ class _Watcher():
             while not self._responses and self._open:
                 self._condition.wait()
             if self._responses:
-                return self._responses.pop(0)
+                return self._responses.popleft()
             else:
                 raise StopIteration()
 
@@ -59,20 +60,35 @@ class _Watcher():
             self._condition.notify()
 
 
+def _watcher_to_on_next_adapter(watcher):
+
+    def on_next(response):
+        if response is None:
+            watcher.close()
+        else:
+            watcher.add(response)
+
+    return on_next
+
+
 class HealthServicer(_health_pb2_grpc.HealthServicer):
     """Servicer handling RPCs for service statuses."""
 
-    def __init__(self):
+    def __init__(self,
+                 experimental_non_blocking=True,
+                 experimental_thread_pool=None):
         self._lock = threading.RLock()
         self._server_status = {}
-        self._watchers = {}
+        self._on_next_callbacks = {}
+        self.Watch.__func__.experimental_non_blocking = experimental_non_blocking
+        self.Watch.__func__.experimental_thread_pool = experimental_thread_pool
 
-    def _on_close_callback(self, watcher, service):
+    def _on_close_callback(self, on_next, service):
 
         def callback():
             with self._lock:
-                self._watchers[service].remove(watcher)
-            watcher.close()
+                self._on_next_callbacks[service].remove(on_next)
+            on_next(None)
 
         return callback
 
@@ -85,19 +101,26 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
             else:
                 return _health_pb2.HealthCheckResponse(status=status)
 
-    def Watch(self, request, context):
+    # pylint: disable=arguments-differ
+    def Watch(self, request, context, on_next=None):
+        blocking_watcher = None
+        if on_next is None:
+            # The server does not support the experimental_non_blocking
+            # parameter. For backwards compatibility, return a blocking response
+            # generator.
+            blocking_watcher = _Watcher()
+            on_next = _watcher_to_on_next_adapter(blocking_watcher)
         service = request.service
         with self._lock:
             status = self._server_status.get(service)
             if status is None:
                 status = _health_pb2.HealthCheckResponse.SERVICE_UNKNOWN  # pylint: disable=no-member
-            watcher = _Watcher()
-            watcher.add(_health_pb2.HealthCheckResponse(status=status))
-            if service not in self._watchers:
-                self._watchers[service] = set()
-            self._watchers[service].add(watcher)
-            context.add_callback(self._on_close_callback(watcher, service))
-        return watcher
+            on_next(_health_pb2.HealthCheckResponse(status=status))
+            if service not in self._on_next_callbacks:
+                self._on_next_callbacks[service] = set()
+            self._on_next_callbacks[service].add(on_next)
+            context.add_callback(self._on_close_callback(on_next, service))
+        return blocking_watcher
 
     def set(self, service, status):
         """Sets the status of a service.
@@ -109,6 +132,6 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         """
         with self._lock:
             self._server_status[service] = status
-            if service in self._watchers:
-                for watcher in self._watchers[service]:
-                    watcher.add(_health_pb2.HealthCheckResponse(status=status))
+            if service in self._on_next_callbacks:
+                for on_next in self._on_next_callbacks[service]:
+                    on_next(_health_pb2.HealthCheckResponse(status=status))
