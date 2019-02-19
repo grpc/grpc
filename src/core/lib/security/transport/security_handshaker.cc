@@ -200,8 +200,10 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error* error) {
   }
   // Create zero-copy frame protector, if implemented.
   tsi_zero_copy_grpc_protector* zero_copy_protector = nullptr;
+  // Allow the handshaker to choose the maximum frame size it prefers.
+  size_t max_frame_size = 128 * 1024;
   tsi_result result = tsi_handshaker_result_create_zero_copy_grpc_protector(
-      handshaker_result_, nullptr, &zero_copy_protector);
+      handshaker_result_, &max_frame_size, &zero_copy_protector);
   if (result != TSI_OK && result != TSI_UNIMPLEMENTED) {
     error = grpc_set_tsi_error_result(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING(
