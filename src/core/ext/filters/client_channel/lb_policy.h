@@ -259,7 +259,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// the resolver. Note that the LB policy gets the set of addresses from the
   /// GRPC_ARG_SERVER_ADDRESS_LIST channel arg.
   virtual void UpdateLocked(const grpc_channel_args& args,
-                            RefCountedPtr<Config> lb_config) GRPC_ABSTRACT;
+                            RefCountedPtr<Config> lb_config) {
+    std::move(lb_config);  // Suppress clang-tidy complaint.
+    GRPC_ABSTRACT;
+  }
 
   /// Tries to enter a READY connectivity state.
   /// TODO(roth): As part of restructuring how we handle IDLE state,

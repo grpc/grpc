@@ -124,7 +124,7 @@ constexpr char kGrpclb[] = "grpclb";
 
 class GrpcLb : public LoadBalancingPolicy {
  public:
-  GrpcLb(RefCountedPtr<Config> config, Args args);
+  explicit GrpcLb(Args args);
 
   const char* name() const override { return kGrpclb; }
 
@@ -1176,7 +1176,7 @@ grpc_channel_args* BuildBalancerChannelArgs(
 // ctor and dtor
 //
 
-GrpcLb::GrpcLb(RefCountedPtr<Config> config, Args args)
+GrpcLb::GrpcLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
       response_generator_(MakeRefCounted<FakeResolverResponseGenerator>()),
       lb_call_backoff_(
@@ -1613,8 +1613,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
       }
     }
     if (!found_balancer) return nullptr;
-    return OrphanablePtr<LoadBalancingPolicy>(
-        New<GrpcLb>(std::move(config), std::move(args)));
+    return OrphanablePtr<LoadBalancingPolicy>(New<GrpcLb>(std::move(args)));
   }
 
   const char* name() const override { return kGrpclb; }
