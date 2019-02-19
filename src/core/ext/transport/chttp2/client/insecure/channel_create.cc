@@ -70,6 +70,10 @@ class Chttp2InsecureClientChannelFactory : public ClientChannelFactory {
 
 }  // namespace grpc_core
 
+namespace {
+grpc_core::Chttp2InsecureClientChannelFactory g_factory;
+}  // namespace
+
 /* Create a client channel:
    Asynchronously: - resolve target
                    - connect to it (trying alternatives as presented)
@@ -83,12 +87,10 @@ grpc_channel* grpc_insecure_channel_create(const char* target,
       (target, args, reserved));
   GPR_ASSERT(reserved == nullptr);
   // Add channel arg containing the client channel factory.
-  static grpc_core::Chttp2InsecureClientChannelFactory* factory =
-      grpc_core::New<grpc_core::Chttp2InsecureClientChannelFactory>();
-  grpc_arg arg = grpc_core::ClientChannelFactory::CreateChannelArg(factory);
+  grpc_arg arg = grpc_core::ClientChannelFactory::CreateChannelArg(&g_factory);
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
   // Create channel.
-  grpc_channel* channel = factory->CreateChannel(target, new_args);
+  grpc_channel* channel = g_factory.CreateChannel(target, new_args);
   // Clean up.
   grpc_channel_args_destroy(new_args);
   return channel != nullptr ? channel

@@ -172,6 +172,10 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
 
 }  // namespace grpc_core
 
+namespace {
+grpc_core::Chttp2SecureClientChannelFactory g_factory;
+}  // namespace
+
 // Create a secure client channel:
 //   Asynchronously: - resolve target
 //                   - connect to it (trying alternatives as presented)
@@ -190,16 +194,14 @@ grpc_channel* grpc_secure_channel_create(grpc_channel_credentials* creds,
   if (creds != nullptr) {
     // Add channel args containing the client channel factory and channel
     // credentials.
-    static grpc_core::Chttp2SecureClientChannelFactory* factory =
-        grpc_core::New<grpc_core::Chttp2SecureClientChannelFactory>();
     grpc_arg args_to_add[] = {
-        grpc_core::ClientChannelFactory::CreateChannelArg(factory),
+        grpc_core::ClientChannelFactory::CreateChannelArg(&g_factory),
         grpc_channel_credentials_to_arg(creds)};
     grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
         args, args_to_add, GPR_ARRAY_SIZE(args_to_add));
     new_args = creds->update_arguments(new_args);
     // Create channel.
-    channel = factory->CreateChannel(target, new_args);
+    channel = g_factory.CreateChannel(target, new_args);
     // Clean up.
     grpc_channel_args_destroy(new_args);
   }
