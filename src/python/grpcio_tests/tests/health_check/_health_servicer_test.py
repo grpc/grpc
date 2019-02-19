@@ -23,7 +23,7 @@ from grpc_health.v1 import health_pb2
 from grpc_health.v1 import health_pb2_grpc
 
 from tests.unit import test_common
-from tests.unit import _thread_pool
+from tests.unit import thread_pool
 from tests.unit.framework.common import test_constants
 
 from six.moves import queue

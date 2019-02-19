@@ -19,7 +19,7 @@ import logging
 
 import grpc
 from tests.unit.framework.common import test_constants
-from tests.unit import _thread_pool
+from tests.unit import thread_pool
 
 
 class _Callback(object):
