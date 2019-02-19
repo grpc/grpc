@@ -94,8 +94,9 @@ class InternallyRefCounted : public Orphanable {
   // Note: RefCount tracing is only enabled on debug builds, even when a
   //       TraceFlag is used.
   template <typename TraceFlagT = TraceFlag>
-  explicit InternallyRefCounted(TraceFlagT* trace_flag = nullptr)
-      : refs_(1, trace_flag) {}
+  explicit InternallyRefCounted(TraceFlagT* trace_flag = nullptr,
+                                intptr_t initial_refcount = 1)
+      : refs_(initial_refcount, trace_flag) {}
   virtual ~InternallyRefCounted() = default;
 
   RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {

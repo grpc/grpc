@@ -221,8 +221,9 @@ class RefCounted : public Impl {
   // Note: RefCount tracing is only enabled on debug builds, even when a
   //       TraceFlag is used.
   template <typename TraceFlagT = TraceFlag>
-  explicit RefCounted(TraceFlagT* trace_flag = nullptr)
-      : refs_(1, trace_flag) {}
+  explicit RefCounted(TraceFlagT* trace_flag = nullptr,
+                      intptr_t initial_refcount = 1)
+      : refs_(initial_refcount, trace_flag) {}
 
   // Note: Depending on the Impl used, this dtor can be implicitly virtual.
   ~RefCounted() = default;
