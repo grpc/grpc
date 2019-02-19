@@ -33,10 +33,9 @@ class LoadBalancingPolicyFactory {
   virtual OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       RefCountedPtr<LoadBalancingPolicy::Config> config,
       LoadBalancingPolicy::Args args) const {
+    std::move(config);  // Suppress clang-tidy complaints.
     std::move(args);  // Suppress clang-tidy complaint.
-    // The rest of this is copied from the GRPC_ABSTRACT macro.
-    gpr_log(GPR_ERROR, "Function marked GRPC_ABSTRACT was not implemented");
-    GPR_ASSERT(false);
+    GRPC_ABSTRACT;
   }
 
   /// Returns the LB policy name that this factory provides.

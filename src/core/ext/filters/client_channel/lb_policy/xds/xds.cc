@@ -118,7 +118,7 @@ constexpr char kXds[] = "xds_experimental";
 
 class XdsLb : public LoadBalancingPolicy {
  public:
-  XdsLb(RefCountedPtr<Config> config, Args args);
+  XdsLb(Config* config, Args args);
 
   const char* name() const override { return kXds; }
 
@@ -246,7 +246,7 @@ class XdsLb : public LoadBalancingPolicy {
   // If parsing succeeds, updates \a balancer_name, and updates \a
   // child_policy_config_ and \a fallback_policy_config_ if they are also
   // found. Does nothing upon failure.
-  void ParseLbConfig(RefCountedPtr<Config> xds_config);
+  void ParseLbConfig(Config* xds_config);
 
   // Methods for dealing with the balancer channel and call.
   void StartPickingLocked();
@@ -958,7 +958,7 @@ grpc_channel_args* BuildBalancerChannelArgs(
 // ctor and dtor
 //
 
-XdsLb::XdsLb(RefCountedPtr<Config> config, Args args)
+XdsLb::XdsLb(Config* config, Args args)
     : LoadBalancingPolicy(std::move(args)),
       response_generator_(MakeRefCounted<FakeResolverResponseGenerator>()),
       lb_call_backoff_(
@@ -994,7 +994,7 @@ XdsLb::XdsLb(RefCountedPtr<Config> config, Args args)
   lb_fallback_timeout_ms_ = grpc_channel_arg_get_integer(
       arg, {GRPC_XDS_DEFAULT_FALLBACK_TIMEOUT_MS, 0, INT_MAX});
   // Parse the LB config.
-  ParseLbConfig(std::move(config));
+  ParseLbConfig(config);
   // Process channel args.
   ProcessChannelArgsLocked(*args.args);
   // Initialize channel with a picker that will start us connecting.
@@ -1106,7 +1106,7 @@ void XdsLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
   grpc_channel_args_destroy(lb_channel_args);
 }
 
-void XdsLb::ParseLbConfig(RefCountedPtr<Config> xds_config) {
+void XdsLb::ParseLbConfig(Config* xds_config) {
   const grpc_json* xds_config_json = xds_config->json();
   const char* balancer_name = nullptr;
   grpc_json* child_policy = nullptr;
@@ -1142,7 +1142,7 @@ void XdsLb::ParseLbConfig(RefCountedPtr<Config> xds_config) {
 
 void XdsLb::UpdateLocked(const grpc_channel_args& args,
                          RefCountedPtr<Config> lb_config) {
-  ParseLbConfig(std::move(lb_config));
+  ParseLbConfig(lb_config.get());
   // TODO(juanlishen): Pass fallback policy config update after fallback policy
   // is added.
   if (balancer_name_ == nullptr) {
@@ -1413,7 +1413,7 @@ class XdsFactory : public LoadBalancingPolicyFactory {
     }
     if (!found_balancer_address) return nullptr;
     return OrphanablePtr<LoadBalancingPolicy>(
-        New<XdsLb>(std::move(config), std::move(args)));
+        New<XdsLb>(config.get(), std::move(args)));
   }
 
   const char* name() const override { return kXds; }

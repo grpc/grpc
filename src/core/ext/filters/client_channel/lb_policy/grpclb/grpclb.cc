@@ -123,7 +123,7 @@ constexpr char kGrpclb[] = "grpclb";
 
 class GrpcLb : public LoadBalancingPolicy {
  public:
-  GrpcLb(RefCountedPtr<Config> config, Args args);
+  GrpcLb(Config* config, Args args);
 
   const char* name() const override { return kGrpclb; }
 
@@ -297,7 +297,7 @@ class GrpcLb : public LoadBalancingPolicy {
 
   // Helper functions used in ctor and UpdateLocked().
   void ProcessChannelArgsLocked(const grpc_channel_args& args);
-  void ParseLbConfig(RefCountedPtr<Config> grpclb_config);
+  void ParseLbConfig(Config* grpclb_config);
 
   // Methods for dealing with the balancer channel and call.
   void StartPickingLocked();
@@ -1231,7 +1231,7 @@ grpc_channel_args* BuildBalancerChannelArgs(
 // ctor and dtor
 //
 
-GrpcLb::GrpcLb(RefCountedPtr<Config> config, Args args)
+GrpcLb::GrpcLb(Config* config, Args args)
     : LoadBalancingPolicy(std::move(args)),
       response_generator_(MakeRefCounted<FakeResolverResponseGenerator>()),
       lb_call_backoff_(
@@ -1267,7 +1267,7 @@ GrpcLb::GrpcLb(RefCountedPtr<Config> config, Args args)
   lb_fallback_timeout_ms_ = grpc_channel_arg_get_integer(
       arg, {GRPC_GRPCLB_DEFAULT_FALLBACK_TIMEOUT_MS, 0, INT_MAX});
   // Parse LB config.
-  ParseLbConfig(std::move(config));
+  ParseLbConfig(config);
   // Process channel args.
   ProcessChannelArgsLocked(*args.args);
   // Initialize channel with a picker that will start us connecting.
@@ -1336,7 +1336,7 @@ void GrpcLb::FillChildRefsForChannelz(
 
 void GrpcLb::UpdateLocked(const grpc_channel_args& args,
                           RefCountedPtr<Config> lb_config) {
-  ParseLbConfig(std::move(lb_config));
+  ParseLbConfig(lb_config.get());
   ProcessChannelArgsLocked(args);
   // Update the existing child policy.
   if (child_policy_ != nullptr) CreateOrUpdateChildPolicyLocked();
@@ -1427,7 +1427,7 @@ void GrpcLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
   grpc_channel_args_destroy(lb_channel_args);
 }
 
-void GrpcLb::ParseLbConfig(RefCountedPtr<Config> grpclb_config) {
+void GrpcLb::ParseLbConfig(Config* grpclb_config) {
   const grpc_json* child_policy = nullptr;
   if (grpclb_config != nullptr) {
     const grpc_json* grpclb_config_json = grpclb_config->json();
@@ -1744,7 +1744,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
     }
     if (!found_balancer) return nullptr;
     return OrphanablePtr<LoadBalancingPolicy>(
-        New<GrpcLb>(std::move(config), std::move(args)));
+        New<GrpcLb>(config.get(), std::move(args)));
   }
 
   const char* name() const override { return kGrpclb; }
