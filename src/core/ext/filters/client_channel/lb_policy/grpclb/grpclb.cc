@@ -1428,21 +1428,25 @@ void GrpcLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
 }
 
 void GrpcLb::ParseLbConfig(RefCountedPtr<Config> grpclb_config) {
-  if (grpclb_config == nullptr) return;
-  const grpc_json* grpclb_config_json = grpclb_config->json();
   const grpc_json* child_policy = nullptr;
-  for (const grpc_json* field = grpclb_config_json; field != nullptr;
-       field = field->next) {
-    if (field->key == nullptr) return;
-    if (strcmp(field->key, "childPolicy") == 0) {
-      if (child_policy != nullptr) return;  // Duplicate.
-      child_policy = ParseLoadBalancingConfig(field);
+  if (grpclb_config != nullptr) {
+    const grpc_json* grpclb_config_json = grpclb_config->json();
+    for (const grpc_json* field = grpclb_config_json; field != nullptr;
+         field = field->next) {
+      if (field->key == nullptr) return;
+      if (strcmp(field->key, "childPolicy") == 0) {
+        if (child_policy != nullptr) return;  // Duplicate.
+        child_policy = ParseLoadBalancingConfig(field);
+      }
     }
   }
   if (child_policy != nullptr) {
     child_policy_name_ = UniquePtr<char>(gpr_strdup(child_policy->key));
     child_policy_config_ = MakeRefCounted<Config>(
         child_policy->child, grpclb_config->service_config());
+  } else {
+    child_policy_name_.reset();
+    child_policy_config_.reset();
   }
 }
 
