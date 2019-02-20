@@ -42,4 +42,6 @@ set DOTNET_CLI_TELEMETRY_OPTOUT=true
 @rem Show available dotnet SDK versions
 dotnet --list-sdks
 
+dotnet --version
+
 git submodule update --init
