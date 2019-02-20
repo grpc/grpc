@@ -69,6 +69,9 @@ export NUGET_XMLDOC_MODE=skip
 export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
 export DOTNET_CLI_TELEMETRY_OPTOUT=true
 
+# Show available dotnet SDK versions
+dotnet --list-sdks
+
 # TODO(jtattermusch): better debugging of clock skew, remove once not needed
 date
 

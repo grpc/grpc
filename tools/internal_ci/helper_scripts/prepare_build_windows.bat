@@ -39,4 +39,7 @@ set NUGET_XMLDOC_MODE=skip
 set DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
 set DOTNET_CLI_TELEMETRY_OPTOUT=true
 
+@rem Show available dotnet SDK versions
+dotnet --list-sdks
+
 git submodule update --init
