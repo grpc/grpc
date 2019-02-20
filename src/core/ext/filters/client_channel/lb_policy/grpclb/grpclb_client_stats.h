@@ -48,7 +48,7 @@ class GrpcLbClientStats : public RefCounted<GrpcLbClientStats> {
                        bool finished_known_received);
 
   // This method is not thread-safe; caller must synchronize.
-  void AddCallDroppedLocked(const char* token);
+  void AddCallDroppedLocked(char* token);
 
   // This method is not thread-safe; caller must synchronize.
   void GetLocked(int64_t* num_calls_started, int64_t* num_calls_finished,
