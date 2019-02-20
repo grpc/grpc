@@ -5,9 +5,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net45;netcoreapp1.1</TargetFrameworks>
-    <AssemblyName>Grpc.Examples.Tests</AssemblyName>
     <OutputType>Exe</OutputType>
-    <PackageId>Grpc.Examples.Tests</PackageId>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
