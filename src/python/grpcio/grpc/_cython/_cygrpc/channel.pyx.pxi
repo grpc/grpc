@@ -399,7 +399,7 @@ cdef _close(Channel channel, grpc_status_code code, object details,
       _destroy_c_completion_queue(state.c_connectivity_completion_queue)
       grpc_channel_destroy(state.c_channel)
       state.c_channel = NULL
-      grpc_shutdown()
+      grpc_shutdown_blocking()
       state.condition.notify_all()
     else:
       # Another call to close already completed in the past or is currently

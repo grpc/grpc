@@ -47,6 +47,27 @@ class ThreadInternalsInterface {
 
 class Thread {
  public:
+  class Options {
+   public:
+    Options() : joinable_(true), tracked_(true) {}
+    /// Set whether the thread is joinable or detached.
+    Options& set_joinable(bool joinable) {
+      joinable_ = joinable;
+      return *this;
+    }
+    bool joinable() const { return joinable_; }
+
+    /// Set whether the thread is tracked for fork support.
+    Options& set_tracked(bool tracked) {
+      tracked_ = tracked;
+      return *this;
+    }
+    bool tracked() const { return tracked_; }
+
+   private:
+    bool joinable_;
+    bool tracked_;
+  };
   /// Default constructor only to allow use in structs that lack constructors
   /// Does not produce a validly-constructed thread; must later
   /// use placement new to construct a real thread. Does not init mu_ and cv_
@@ -57,14 +78,17 @@ class Thread {
   /// with argument \a arg once it is started.
   /// The optional \a success argument indicates whether the thread
   /// is successfully created.
+  /// The optional \a options can be used to set the thread detachable.
   Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
-         bool* success = nullptr);
+         bool* success = nullptr, const Options& options = Options());
 
   /// Move constructor for thread. After this is called, the other thread
   /// no longer represents a living thread object
-  Thread(Thread&& other) : state_(other.state_), impl_(other.impl_) {
+  Thread(Thread&& other)
+      : state_(other.state_), impl_(other.impl_), options_(other.options_) {
     other.state_ = MOVED;
     other.impl_ = nullptr;
+    other.options_ = Options();
   }
 
   /// Move assignment operator for thread. After this is called, the other
@@ -79,8 +103,10 @@ class Thread {
       // assert it for the time being.
       state_ = other.state_;
       impl_ = other.impl_;
+      options_ = other.options_;
       other.state_ = MOVED;
       other.impl_ = nullptr;
+      other.options_ = Options();
     }
     return *this;
   }
@@ -95,11 +121,16 @@ class Thread {
       GPR_ASSERT(state_ == ALIVE);
       state_ = STARTED;
       impl_->Start();
+      if (!options_.joinable()) {
+        state_ = DONE;
+        impl_ = nullptr;
+      }
     } else {
       GPR_ASSERT(state_ == FAILED);
     }
-  };
+  }
 
+  // It is only legal to call Join if the Thread is created as joinable.
   void Join() {
     if (impl_ != nullptr) {
       impl_->Join();
@@ -119,12 +150,13 @@ class Thread {
   /// FAKE -- just a dummy placeholder Thread created by the default constructor
   /// ALIVE -- an actual thread of control exists associated with this thread
   /// STARTED -- the thread of control has been started
-  /// DONE -- the thread of control has completed and been joined
+  /// DONE -- the thread of control has completed and been joined/detached
   /// FAILED -- the thread of control never came alive
   /// MOVED -- contents were moved out and we're no longer tracking them
   enum ThreadState { FAKE, ALIVE, STARTED, DONE, FAILED, MOVED };
   ThreadState state_;
   internal::ThreadInternalsInterface* impl_;
+  Options options_;
 };
 
 }  // namespace grpc_core

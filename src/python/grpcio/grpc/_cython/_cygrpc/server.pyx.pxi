@@ -151,4 +151,4 @@ cdef class Server:
 
   def __dealloc__(self):
     if self.c_server == NULL:
-      grpc_shutdown()
+      grpc_shutdown_blocking()

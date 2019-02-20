@@ -1200,6 +1200,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
   grpc_resource_quota_unref(g_resource_quota);
 
-  grpc_shutdown();
+  grpc_shutdown_blocking();
   return 0;
 }
