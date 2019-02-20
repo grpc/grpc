@@ -22,6 +22,13 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
+#include "src/core/lib/gprpp/inlined_vector.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/iomgr/pollset_set.h"
+
+// This number was picked pseudo-randomly and could probably be tuned for
+// performance reasons.
+constexpr size_t kUnusedSubchannelsInlinedSize = 4;
 
 namespace grpc_core {
 
@@ -29,7 +36,15 @@ namespace grpc_core {
 // should be only one instance of this class. Init() should be called once at
 // the filter initialization time; Shutdown() should be called once at the
 // filter shutdown time.
-// TODO(juanlishen): Enable subchannel retention.
+//
+// It supports subchannel retention. If a subchannel only has one strong ref
+// left, which is held by the global subchannel pool, it is not used by any
+// other external user (typically, LB policy). Instead of unregistering a
+// subchannel once it's unused, the global subchannel pool will periodically
+// sweep these unused subchannels, like a garbage collector. This mechanism can
+// alleviate subchannel registration/unregistration churn. The subchannel can
+// keep unchanged if it's re-used shortly after it's unused, which is desirable
+// in the gRPC LB use case.
 class GlobalSubchannelPool final : public SubchannelPoolInterface {
  public:
   // The ctor and dtor are not intended to use directly.
@@ -43,14 +58,25 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
 
   // Gets the singleton instance.
   static RefCountedPtr<GlobalSubchannelPool> instance();
+  static GlobalSubchannelPool* instance_raw();
 
   // Implements interface methods.
   Subchannel* RegisterSubchannel(SubchannelKey* key,
                                  Subchannel* constructed) override;
-  void UnregisterSubchannel(SubchannelKey* key) override;
+  void UnregisterSubchannel(SubchannelKey* key) override {}  // Never use.
   Subchannel* FindSubchannel(SubchannelKey* key) override;
 
+  // For testing only.
+  static void TestOnlyStopSweep();
+  static void TestOnlyStartSweep();
+
  private:
+  class Sweeper;
+
+  void UnregisterUnusedSubchannels(
+      const InlinedVector<Subchannel*, kUnusedSubchannelsInlinedSize>&
+          unused_subchannels);
+
   // The singleton instance. (It's a pointer to RefCountedPtr so that this
   // non-local static object can be trivially destructible.)
   static RefCountedPtr<GlobalSubchannelPool>* instance_;
@@ -61,6 +87,11 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   grpc_avl subchannel_map_;
   // To protect subchannel_map_.
   gpr_mu mu_;
+
+  // To periodically sweep unused subchannels.
+  OrphanablePtr<Sweeper> sweeper_;
+  // For backup polling.
+  grpc_pollset_set* pollset_set_ = nullptr;
 };
 
 }  // namespace grpc_core

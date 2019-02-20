@@ -30,6 +30,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/health/health_check_client.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
@@ -365,13 +366,22 @@ class Subchannel::ConnectedSubchannelStateWatcher
             }
             c->connected_subchannel_.reset();
             c->connected_subchannel_watcher_.reset();
-            self->last_connectivity_state_ = GRPC_CHANNEL_TRANSIENT_FAILURE;
-            c->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                          GRPC_ERROR_REF(error),
-                                          "reflect_child");
-            grpc_connectivity_state_set(&c->state_and_health_tracker_,
-                                        GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                        GRPC_ERROR_REF(error), "reflect_child");
+            if (c->LastStrongRef() && c->subchannel_pool_ == nullptr) {
+              self->last_connectivity_state_ = GRPC_CHANNEL_IDLE;
+              c->SetConnectivityStateLocked(GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
+                                            "reset");
+              grpc_connectivity_state_set(&c->state_and_health_tracker_,
+                                          GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
+                                          "reset");
+            } else {
+              self->last_connectivity_state_ = GRPC_CHANNEL_TRANSIENT_FAILURE;
+              c->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                            GRPC_ERROR_REF(error),
+                                            "reflect_child");
+              grpc_connectivity_state_set(
+                  &c->state_and_health_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
+                  GRPC_ERROR_REF(error), "reflect_child");
+            }
             c->backoff_begun_ = false;
             c->backoff_.Reset();
             c->MaybeStartConnectingLocked();
@@ -634,22 +644,30 @@ Subchannel::~Subchannel() {
 
 Subchannel* Subchannel::Create(grpc_connector* connector,
                                const grpc_channel_args* args) {
-  SubchannelKey* key = New<SubchannelKey>(args);
   SubchannelPoolInterface* subchannel_pool =
       SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(args);
+  grpc_channel_args* new_args =
+      SubchannelPoolInterface::RemoveSubchannelPoolArg(args);
+  SubchannelKey* key = New<SubchannelKey>(new_args);
   GPR_ASSERT(subchannel_pool != nullptr);
   Subchannel* c = subchannel_pool->FindSubchannel(key);
   if (c != nullptr) {
     Delete(key);
+    grpc_channel_args_destroy(new_args);
     return c;
   }
-  c = New<Subchannel>(key, connector, args);
+  c = New<Subchannel>(key, connector, new_args);
+  grpc_channel_args_destroy(new_args);
   // Try to register the subchannel before setting the subchannel pool.
   // Otherwise, in case of a registration race, unreffing c in
   // RegisterSubchannel() will cause c to be tried to be unregistered, while
   // its key maps to a different subchannel.
   Subchannel* registered = subchannel_pool->RegisterSubchannel(key, c);
-  if (registered == c) c->subchannel_pool_ = subchannel_pool->Ref();
+  // If the global subchannel pool is used, don't record it so that we don't
+  // proactively unregister from it.
+  if (registered == c &&
+      subchannel_pool != GlobalSubchannelPool::instance_raw())
+    c->subchannel_pool_ = subchannel_pool->Ref();
   return registered;
 }
 
@@ -669,6 +687,15 @@ void Subchannel::Unref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
       1 GRPC_SUBCHANNEL_REF_MUTATE_PURPOSE("STRONG_UNREF"));
   if ((old_refs & STRONG_REF_MASK) == (1 << INTERNAL_REF_BITS)) {
     Disconnect();
+  }
+  {
+    MutexLock lock(&mu_);
+    if ((old_refs & STRONG_REF_MASK) == (2 << INTERNAL_REF_BITS) &&
+        connected_subchannel_ == nullptr && subchannel_pool_ == nullptr) {
+      SetConnectivityStateLocked(GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE, "reset");
+      grpc_connectivity_state_set(&state_and_health_tracker_, GRPC_CHANNEL_IDLE,
+                                  GRPC_ERROR_NONE, "reset");
+    }
   }
   GRPC_SUBCHANNEL_WEAK_UNREF(this, "strong-unref");
 }
@@ -714,7 +741,12 @@ Subchannel* Subchannel::RefFromWeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   }
 }
 
-intptr_t Subchannel::GetChildSocketUuid() {
+bool Subchannel::LastStrongRef() const {
+  gpr_atm refs = gpr_atm_acq_load(&ref_pair_);
+  return ((refs & STRONG_REF_MASK) >> INTERNAL_REF_BITS) == 1;
+}
+
+intptr_t Subchannel::GetChildSocketUuid() const {
   if (connected_subchannel_ != nullptr) {
     return connected_subchannel_->socket_uuid();
   } else {
@@ -722,7 +754,7 @@ intptr_t Subchannel::GetChildSocketUuid() {
   }
 }
 
-const char* Subchannel::GetTargetAddress() {
+const char* Subchannel::GetTargetAddress() const {
   const grpc_arg* addr_arg =
       grpc_channel_args_find(args_, GRPC_ARG_SUBCHANNEL_ADDRESS);
   const char* addr_str = grpc_channel_arg_get_string(addr_arg);
@@ -735,7 +767,7 @@ RefCountedPtr<ConnectedSubchannel> Subchannel::connected_subchannel() {
   return connected_subchannel_;
 }
 
-channelz::SubchannelNode* Subchannel::channelz_node() {
+channelz::SubchannelNode* Subchannel::channelz_node() const {
   return channelz_node_.get();
 }
 

@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/error.h"
@@ -301,6 +302,9 @@ int external_dns_works(const char* host) {
 }
 
 int main(int argc, char** argv) {
+  // Make the backup poller poll very frequently in order to pick up
+  // updates from all the subchannels's FDs.
+  gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "1");
   int do_ipv6 = 1;
 
   grpc::testing::TestEnvironment env(argc, argv);
