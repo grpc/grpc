@@ -56,8 +56,8 @@ class ReflectionServicerTest(unittest.TestCase):
     # returned by stub and manually crafted protobuf will always fail.
     def _assert_sequence_of_proto_equal(self, x, y):
         self.assertSequenceEqual(
-            list(map(lambda x: x.SerializeToString(), x)),
-            list(map(lambda x: x.SerializeToString(), y)),
+            tuple(proto.SerializeToString() for proto in x),
+            tuple(proto.SerializeToString() for proto in y),
         )
 
     def setUp(self):
