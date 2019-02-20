@@ -55,6 +55,8 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
     Args delegate_args;
     delegate_args.combiner = combiner();
     delegate_args.channel_control_helper = std::move(delegating_helper);
+    delegate_args.channel_control_helper->SetParentsChildren(&delegate_,
+                                                             nullptr);
     delegate_args.args = args.args;
     delegate_args.lb_config = args.lb_config;
     delegate_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(

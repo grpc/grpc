@@ -185,7 +185,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// channel.
   class ChannelControlHelper {
    public:
-    ChannelControlHelper() = default;
+    ChannelControlHelper(
+        OrphanablePtr<LoadBalancingPolicy>* current_lb_policy = nullptr,
+        OrphanablePtr<LoadBalancingPolicy>* pending_lb_policy = nullptr)
+        : current_lb_policy_(current_lb_policy),
+          pending_lb_policy_(pending_lb_policy) {}
     virtual ~ChannelControlHelper() = default;
 
     /// Creates a new subchannel with the specified channel args.
@@ -211,7 +215,28 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Requests that the resolver re-resolve.
     virtual void RequestReresolution() GRPC_ABSTRACT;
 
+    void set_child(LoadBalancingPolicy* child) { child_ = child; }
+    void SetParentsChildren(OrphanablePtr<LoadBalancingPolicy>* current,
+                            OrphanablePtr<LoadBalancingPolicy>* pending) {
+      current_lb_policy_ = current;
+      pending_lb_policy_ = pending;
+    }
+    LoadBalancingPolicy* child() const { return child_; }
+    RefCountedPtr<LoadBalancingPolicy> parent() { return parent_; }
+
     GRPC_ABSTRACT_BASE_CLASS
+
+   protected:
+    bool CalledByPendingChild() const;
+    bool CalledByCurrentChild() const;
+    bool HasPendingChild() const;
+    void Swap();
+
+   private:
+    RefCountedPtr<LoadBalancingPolicy> parent_;
+    OrphanablePtr<LoadBalancingPolicy>* current_lb_policy_ = nullptr;
+    OrphanablePtr<LoadBalancingPolicy>* pending_lb_policy_ = nullptr;
+    LoadBalancingPolicy* child_ = nullptr;
   };
 
   /// Args used to instantiate an LB policy.

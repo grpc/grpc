@@ -163,7 +163,6 @@ PickFirst::PickFirst(Args args) : LoadBalancingPolicy(std::move(args)) {
   channel_control_helper()->UpdateState(
       GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
       UniquePtr<SubchannelPicker>(New<QueuePicker>(Ref())));
-  UpdateLocked(*args.args, args.lb_config);
 }
 
 PickFirst::~PickFirst() {

@@ -72,17 +72,22 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
     : public LoadBalancingPolicy::ChannelControlHelper {
  public:
   explicit ResolvingControlHelper(
+      OrphanablePtr<LoadBalancingPolicy>* current_lb_policy,
+      OrphanablePtr<LoadBalancingPolicy>* pending_lb_policy,
       RefCountedPtr<ResolvingLoadBalancingPolicy> parent)
-      : parent_(std::move(parent)) {}
+      : ChannelControlHelper(current_lb_policy, pending_lb_policy),
+        parent_(std::move(parent)) {}
 
   Subchannel* CreateSubchannel(const grpc_channel_args& args) override {
     if (parent_->resolver_ == nullptr) return nullptr;  // Shutting down.
+    if (!CalledByCurrentChild() && !CalledByPendingChild()) return nullptr;
     return parent_->channel_control_helper()->CreateSubchannel(args);
   }
 
   grpc_channel* CreateChannel(const char* target, grpc_client_channel_type type,
                               const grpc_channel_args& args) override {
     if (parent_->resolver_ == nullptr) return nullptr;  // Shutting down.
+    if (!CalledByCurrentChild() && !CalledByPendingChild()) return nullptr;
     return parent_->channel_control_helper()->CreateChannel(target, type, args);
   }
 
@@ -93,11 +98,32 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
       GRPC_ERROR_UNREF(state_error);
       return;
     }
+    // If this request is from the pending child policy, ignore it until
+    // it reports READY, at which point we swap it into place.
+    if (CalledByPendingChild()) {
+      if (parent_->tracer_->enabled()) {
+        gpr_log(GPR_INFO,
+                "resolving_lb=%p helper=%p: pending child policy %p reports "
+                "state=%s",
+                parent_.get(), this, child(),
+                grpc_connectivity_state_name(state));
+      }
+      if (state != GRPC_CHANNEL_READY) return;
+      Swap();
+    } else if (!CalledByCurrentChild()) {
+      // This request is from an outdating pending child, so ignore it.
+      return;
+    }
     parent_->channel_control_helper()->UpdateState(state, state_error,
                                                    std::move(picker));
   }
 
   void RequestReresolution() override {
+    // If there is a pending child policy, ignore re-resolution requests
+    // from the current child policy.
+    if (HasPendingChild() && !CalledByPendingChild()) {
+      return;
+    }
     if (parent_->tracer_->enabled()) {
       gpr_log(GPR_INFO, "resolving_lb=%p: started name re-resolving",
               parent_.get());
@@ -259,15 +285,71 @@ void ResolvingLoadBalancingPolicy::OnResolverShutdownLocked(grpc_error* error) {
   Unref();
 }
 
+void ResolvingLoadBalancingPolicy::CreateOrUpdateLbPolicyLocked(
+    const char* lb_policy_name, grpc_json* lb_policy_config,
+    TraceStringVector* trace_strings) {
+  // There are several cases here:
+  // 1. If we do not yet have any LB policy, we create one and store
+  //    it in lb_policy_.
+  // 2. If we have an LB policy, whose name equals lb_policy_name, then we
+  //    update the existing LB policy. If there is a pending LB policy, reset
+  //    it.
+  // 3. If we have an LB policy, whose name does not equal lb_policy_name, then:
+  //    a. If we do not yet have any pending LB policy, we create a new policy.
+  //    The policy will be stored in pending_lb_policy_ and will later be
+  //    swapped into lb_policy_ by the helper when the new LB transitions into
+  //    state READY.
+  //    b. If we have a pending LB policy, whose name equals lb_policy_name,
+  //    then we update the existing pending LB policy.
+  //    c. If we have a pending LB policy, whose name does not equal
+  //    lb_policy_name, then we create a new policy. The new policy is stored in
+  //    pending_lb_policy_ (replacing the one that was there before, which will
+  //    be immediately shut down) and will later be swapped into lb_policy_ by
+  //    the helper when the new LB transitions into state READY.
+  const bool create_policy =
+      lb_policy_ == nullptr ||
+      (strcmp(lb_policy_->name(), lb_policy_name) != 0 &&
+       (pending_lb_policy_ == nullptr ||
+        strcmp(pending_lb_policy_->name(), lb_policy_name) != 0));
+  if (!create_policy) {
+    // Cases 2 and 3b: update an existing policy.
+    // If the LB policy's name equals lb_policy_name, send the update to the LB
+    // policy (case 2), else send it to the pending policy (case 3b).
+    LoadBalancingPolicy* policy = nullptr;
+    if (strcmp(lb_policy_->name(), lb_policy_name) == 0) {
+      policy = lb_policy_.get();
+      // Reset the pending LB policy.
+      pending_lb_policy_.reset();
+    } else {
+      policy = pending_lb_policy_.get();
+    }
+    if (tracer_->enabled()) {
+      gpr_log(GPR_INFO, "resolving_lb=%p: updating %sLB policy \"%s\" (%p)",
+              this, policy == lb_policy_.get() ? "" : "pending ",
+              lb_policy_name, lb_policy_.get());
+    }
+    lb_policy_->UpdateLocked(*resolver_result_, lb_policy_config);
+  } else {
+    // Cases 1, 3a, and 3c: create a new LB policy.
+    // CreateLbPolicyLocked() will set lb_policy_ if it is null (case 1), else
+    // it will set pending_lb_policy_ (cases 3a and 3c).
+    if (tracer_->enabled()) {
+      gpr_log(GPR_INFO, "resolving_lb=%p: creating new %sLB policy \"%s\"",
+              this, lb_policy_ == nullptr ? "" : "pending ", lb_policy_name);
+    }
+    CreateLbPolicyLocked(lb_policy_name, lb_policy_config, trace_strings);
+  }
+}
+
 // Creates a new LB policy, replacing any previous one.
 // Updates trace_strings to indicate what was done.
-void ResolvingLoadBalancingPolicy::CreateNewLbPolicyLocked(
+void ResolvingLoadBalancingPolicy::CreateLbPolicyLocked(
     const char* lb_policy_name, grpc_json* lb_config,
     TraceStringVector* trace_strings) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = combiner();
-  lb_policy_args.channel_control_helper =
-      UniquePtr<ChannelControlHelper>(New<ResolvingControlHelper>(Ref()));
+  lb_policy_args.channel_control_helper = UniquePtr<ChannelControlHelper>(
+      New<ResolvingControlHelper>(&lb_policy_, &pending_lb_policy_, Ref()));
   lb_policy_args.args = resolver_result_;
   lb_policy_args.lb_config = lb_config;
   OrphanablePtr<LoadBalancingPolicy> new_lb_policy =
@@ -280,35 +362,38 @@ void ResolvingLoadBalancingPolicy::CreateNewLbPolicyLocked(
       gpr_asprintf(&str, "Could not create LB policy \"%s\"", lb_policy_name);
       trace_strings->push_back(str);
     }
-  } else {
-    if (tracer_->enabled()) {
-      gpr_log(GPR_INFO, "resolving_lb=%p: created new LB policy \"%s\" (%p)",
-              this, lb_policy_name, new_lb_policy.get());
-    }
-    if (channelz_node() != nullptr) {
-      char* str;
-      gpr_asprintf(&str, "Created new LB policy \"%s\"", lb_policy_name);
-      trace_strings->push_back(str);
-    }
-    // Propagate channelz node.
-    auto* channelz = channelz_node();
-    if (channelz != nullptr) {
-      new_lb_policy->set_channelz_node(channelz->Ref());
-    }
-    // Swap out the LB policy and update the fds in interested_parties_.
-    if (lb_policy_ != nullptr) {
-      if (tracer_->enabled()) {
-        gpr_log(GPR_INFO, "resolving_lb=%p: shutting down lb_policy=%p", this,
-                lb_policy_.get());
-      }
-      grpc_pollset_set_del_pollset_set(lb_policy_->interested_parties(),
-                                       interested_parties());
-    }
-    lb_policy_ = std::move(new_lb_policy);
-    grpc_pollset_set_add_pollset_set(lb_policy_->interested_parties(),
-                                     interested_parties());
-    lb_policy_->ExitIdleLocked();
+    return;
   }
+  if (tracer_->enabled()) {
+    gpr_log(GPR_INFO, "resolving_lb=%p: created new LB policy \"%s\" (%p)",
+            this, lb_policy_name, new_lb_policy.get());
+  }
+  if (channelz_node() != nullptr) {
+    char* str;
+    gpr_asprintf(&str, "Created new LB policy \"%s\"", lb_policy_name);
+    trace_strings->push_back(str);
+  }
+  // Propagate channelz node.
+  auto* channelz = channelz_node();
+  if (channelz != nullptr) {
+    new_lb_policy->set_channelz_node(channelz->Ref());
+  }
+  // Swap out the LB policy and update the fds in interested_parties_.
+  OrphanablePtr<LoadBalancingPolicy>& lb_policy =
+      lb_policy_ == nullptr ? lb_policy_ : pending_lb_policy_;
+  if (lb_policy != nullptr) {
+    if (tracer_->enabled()) {
+      gpr_log(GPR_INFO, "resolving_lb=%p: shutting down pending_lb_policy=%p",
+              this, lb_policy.get());
+    }
+    grpc_pollset_set_del_pollset_set(lb_policy->interested_parties(),
+                                     interested_parties());
+  }
+  lb_policy = std::move(new_lb_policy);
+  lb_policy->UpdateLocked(*resolver_result_, lb_config);
+  grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
+                                   interested_parties());
+  lb_policy->ExitIdleLocked();
 }
 
 void ResolvingLoadBalancingPolicy::MaybeAddTraceMessagesForAddressChangesLocked(
@@ -417,27 +502,8 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
       lb_policy_config = self->child_lb_config_;
     }
     GPR_ASSERT(lb_policy_name != nullptr);
-    // Check to see if we're already using the right LB policy.
-    const bool lb_policy_name_changed =
-        self->lb_policy_ == nullptr ||
-        strcmp(self->lb_policy_->name(), lb_policy_name) != 0;
-    if (self->lb_policy_ != nullptr && !lb_policy_name_changed) {
-      // Continue using the same LB policy.  Update with new addresses.
-      if (self->tracer_->enabled()) {
-        gpr_log(GPR_INFO,
-                "resolving_lb=%p: updating existing LB policy \"%s\" (%p)",
-                self, lb_policy_name, self->lb_policy_.get());
-      }
-      self->lb_policy_->UpdateLocked(*self->resolver_result_, lb_policy_config);
-    } else {
-      // Instantiate new LB policy.
-      if (self->tracer_->enabled()) {
-        gpr_log(GPR_INFO, "resolving_lb=%p: creating new LB policy \"%s\"",
-                self, lb_policy_name);
-      }
-      self->CreateNewLbPolicyLocked(lb_policy_name, lb_policy_config,
-                                    &trace_strings);
-    }
+    self->CreateOrUpdateLbPolicyLocked(lb_policy_name, lb_policy_config,
+                                       &trace_strings);
     // Add channel trace event.
     if (self->channelz_node() != nullptr) {
       if (service_config_changed) {

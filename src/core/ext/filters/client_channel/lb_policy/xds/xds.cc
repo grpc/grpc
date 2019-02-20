@@ -221,7 +221,11 @@ class XdsLb : public LoadBalancingPolicy {
 
   class Helper : public ChannelControlHelper {
    public:
-    explicit Helper(RefCountedPtr<XdsLb> parent) : parent_(std::move(parent)) {}
+    explicit Helper(OrphanablePtr<LoadBalancingPolicy>* current_lb_policy,
+                    OrphanablePtr<LoadBalancingPolicy>* pending_lb_policy,
+                    RefCountedPtr<XdsLb> parent)
+        : ChannelControlHelper(current_lb_policy, pending_lb_policy),
+          parent_(std::move(parent)) {}
 
     Subchannel* CreateSubchannel(const grpc_channel_args& args) override;
     grpc_channel* CreateChannel(const char* target,
@@ -260,7 +264,8 @@ class XdsLb : public LoadBalancingPolicy {
   // Methods for dealing with the child policy.
   void CreateOrUpdateChildPolicyLocked();
   grpc_channel_args* CreateChildPolicyArgsLocked();
-  void CreateChildPolicyLocked(const char* name, Args args);
+  void CreateChildPolicyLocked(const char* name, const grpc_channel_args* args,
+                               grpc_json* lb_config);
 
   // Who the client is trying to communicate with.
   const char* server_name_ = nullptr;
@@ -318,6 +323,7 @@ class XdsLb : public LoadBalancingPolicy {
 
   // The policy to use for the backends.
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
+  OrphanablePtr<LoadBalancingPolicy> pending_child_policy_;
   UniquePtr<char> child_policy_json_string_;
 };
 
@@ -1313,20 +1319,46 @@ void XdsLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
 // code for interacting with the child policy
 //
 
-void XdsLb::CreateChildPolicyLocked(const char* name, Args args) {
-  GPR_ASSERT(child_policy_ == nullptr);
-  child_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-      name, std::move(args));
-  if (GPR_UNLIKELY(child_policy_ == nullptr)) {
-    gpr_log(GPR_ERROR, "[xdslb %p] Failure creating a child policy", this);
+void XdsLb::CreateChildPolicyLocked(const char* lb_policy_name,
+                                    const grpc_channel_args* args,
+                                    grpc_json* lb_config) {
+  LoadBalancingPolicy::Args lb_policy_args;
+  lb_policy_args.combiner = combiner();
+  lb_policy_args.args = args;
+  lb_policy_args.channel_control_helper = UniquePtr<ChannelControlHelper>(
+      New<Helper>(&child_policy_, &pending_child_policy_, Ref()));
+  lb_policy_args.lb_config = lb_config;
+  OrphanablePtr<LoadBalancingPolicy> new_lb_policy =
+      LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
+          lb_policy_name, std::move(lb_policy_args));
+  if (GPR_UNLIKELY(new_lb_policy == nullptr)) {
+    gpr_log(GPR_ERROR, "[xdslb %p] Failure creating a child policy \"%s\"",
+            this, lb_policy_name);
     return;
   }
+  if (grpc_lb_xds_trace.enabled()) {
+    gpr_log(GPR_INFO, "[xdslb %p] Created a new child policy \"%s\" (%p)", this,
+            lb_policy_name, new_lb_policy.get());
+  }
+  // Swap out the LB policy and update the fds in interested_parties_.
+  OrphanablePtr<LoadBalancingPolicy>& lb_policy =
+      child_policy_ == nullptr ? child_policy_ : pending_child_policy_;
+  if (lb_policy != nullptr) {
+    if (grpc_lb_xds_trace.enabled()) {
+      gpr_log(GPR_INFO, "[xdslb %p] Shutting down pending_lb_policy=%p", this,
+              lb_policy.get());
+    }
+    grpc_pollset_set_del_pollset_set(lb_policy->interested_parties(),
+                                     interested_parties());
+  }
+  lb_policy = std::move(new_lb_policy);
+  lb_policy->UpdateLocked(*args, lb_config);
   // Add the xDS's interested_parties pollset_set to that of the newly created
   // child policy. This will make the child policy progress upon activity on
   // xDS LB, which in turn is tied to the application's call.
-  grpc_pollset_set_add_pollset_set(child_policy_->interested_parties(),
+  grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
                                    interested_parties());
-  child_policy_->ExitIdleLocked();
+  lb_policy->ExitIdleLocked();
 }
 
 grpc_channel_args* XdsLb::CreateChildPolicyArgsLocked() {
@@ -1374,25 +1406,57 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
     }
     child_policy_name = "round_robin";
   }
-  // TODO(juanlishen): Switch policy according to child_policy_config->key.
-  if (child_policy_ != nullptr) {
+  // There are several cases here:
+  // 1. If we do not yet have any LB policy, we create one and store
+  //    it in child_policy_.
+  // 2. If we have an LB policy, whose name equals child_policy_name, then we
+  //    update the existing LB policy. If there is a pending LB policy, reset
+  //    it.
+  // 3. If we have an LB policy, whose name does not equal child_policy_name,
+  // then:
+  //    a. If we do not yet have any pending LB policy, we create a new policy.
+  //    The policy will be stored in pending_child_policy_ and will later be
+  //    swapped into child_policy_ by the helper when the new LB transitions
+  //    into state READY. b. If we have a pending LB policy, whose name equals
+  //    child_policy_name, then we update the existing pending LB policy. c. If
+  //    we have a pending LB policy, whose name does not equal
+  //    child_policy_name, then we create a new policy. The new policy is stored
+  //    in pending_child_policy_ (replacing the one that was there before, which
+  //    will be immediately shut down) and will later be swapped into
+  //    child_policy_ by the helper when the new LB transitions into state
+  //    READY.
+  const bool create_policy =
+      child_policy_ == nullptr ||
+      (strcmp(child_policy_->name(), child_policy_name) != 0 &&
+       (pending_child_policy_ == nullptr ||
+        strcmp(pending_child_policy_->name(), child_policy_name) != 0));
+  if (!create_policy) {
+    // Cases 2 and 3b: update an existing policy.
+    // If the LB policy's name equals child_policy_name, send the update to the
+    // LB policy (case 2), else send it to the pending policy (case 3b).
+    LoadBalancingPolicy* policy = nullptr;
+    if (strcmp(child_policy_->name(), child_policy_name) == 0) {
+      policy = child_policy_.get();
+      // Reset the pending LB policy.
+      pending_child_policy_.reset();
+    } else {
+      policy = pending_child_policy_.get();
+    }
     if (grpc_lb_xds_trace.enabled()) {
-      gpr_log(GPR_INFO, "[xdslb %p] Updating the child policy %p", this,
-              child_policy_.get());
+      gpr_log(GPR_INFO, "[xdslb %p] updating %schild policy \"%s\" (%p)", this,
+              policy == child_policy_.get() ? "" : "pending ",
+              child_policy_name, child_policy_.get());
     }
     child_policy_->UpdateLocked(*args, child_policy_config);
   } else {
-    LoadBalancingPolicy::Args lb_policy_args;
-    lb_policy_args.combiner = combiner();
-    lb_policy_args.args = args;
-    lb_policy_args.channel_control_helper =
-        UniquePtr<ChannelControlHelper>(New<Helper>(Ref()));
-    lb_policy_args.lb_config = child_policy_config;
-    CreateChildPolicyLocked(child_policy_name, std::move(lb_policy_args));
+    // Cases 1, 3a, and 3c: create a new LB policy.
+    // CreateLbPolicyLocked() will set child_policy_ if it is null (case 1),
+    // else it will set pending_child_policy_ (cases 3a and 3c).
     if (grpc_lb_xds_trace.enabled()) {
-      gpr_log(GPR_INFO, "[xdslb %p] Created a new child policy %p", this,
-              child_policy_.get());
+      gpr_log(GPR_INFO, "[xdslb %p] creating new %sLB policy \"%s\"", this,
+              child_policy_ == nullptr ? "" : "pending ", child_policy_name);
     }
+    CreateChildPolicyLocked(child_policy_name, args, child_policy_config);
   }
   grpc_channel_args_destroy(args);
   grpc_json_destroy(child_policy_json);

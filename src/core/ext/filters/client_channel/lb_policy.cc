@@ -28,6 +28,23 @@ grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(
 
 namespace grpc_core {
 
+bool LoadBalancingPolicy::ChannelControlHelper::CalledByCurrentChild() const {
+  return child_ == current_lb_policy_->get();
+}
+
+bool LoadBalancingPolicy::ChannelControlHelper::CalledByPendingChild() const {
+  return child_ == pending_lb_policy_->get();
+}
+
+bool LoadBalancingPolicy::ChannelControlHelper::HasPendingChild() const {
+  return *pending_lb_policy_ != nullptr;
+}
+
+void LoadBalancingPolicy::ChannelControlHelper::Swap() {
+  // FIXME: Delete the pollset_set?
+  *current_lb_policy_ = std::move(*pending_lb_policy_);
+}
+
 grpc_json* LoadBalancingPolicy::ParseLoadBalancingConfig(
     const grpc_json* lb_config_array) {
   if (lb_config_array == nullptr || lb_config_array->type != GRPC_JSON_ARRAY) {
@@ -58,7 +75,9 @@ LoadBalancingPolicy::LoadBalancingPolicy(Args args, intptr_t initial_refcount)
     : InternallyRefCounted(&grpc_trace_lb_policy_refcount, initial_refcount),
       combiner_(GRPC_COMBINER_REF(args.combiner, "lb_policy")),
       interested_parties_(grpc_pollset_set_create()),
-      channel_control_helper_(std::move(args.channel_control_helper)) {}
+      channel_control_helper_(std::move(args.channel_control_helper)) {
+  channel_control_helper_->set_child(this);
+}
 
 LoadBalancingPolicy::~LoadBalancingPolicy() {
   grpc_pollset_set_destroy(interested_parties_);
