@@ -5,9 +5,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net45;netcoreapp1.1</TargetFrameworks>
-    <AssemblyName>Grpc.IntegrationTesting</AssemblyName>
     <OutputType>Exe</OutputType>
-    <PackageId>Grpc.IntegrationTesting</PackageId>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
