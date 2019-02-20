@@ -57,12 +57,12 @@ constexpr char kRoundRobin[] = "round_robin";
 
 class RoundRobin : public LoadBalancingPolicy {
  public:
-  explicit RoundRobin(Args args);
+  RoundRobin(RefCountedPtr<Config> config, Args args);
 
   const char* name() const override { return kRoundRobin; }
 
   void UpdateLocked(const grpc_channel_args& args,
-                    grpc_json* lb_config) override;
+                    RefCountedPtr<Config> lb_config) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
   void FillChildRefsForChannelz(channelz::ChildRefsList* child_subchannels,
@@ -249,7 +249,8 @@ RoundRobin::Picker::PickResult RoundRobin::Picker::Pick(PickState* pick,
 // RoundRobin
 //
 
-RoundRobin::RoundRobin(Args args) : LoadBalancingPolicy(std::move(args)) {
+RoundRobin::RoundRobin(RefCountedPtr<Config> config, Args args)
+    : LoadBalancingPolicy(std::move(args)) {
   gpr_mu_init(&child_refs_mu_);
   if (grpc_lb_round_robin_trace.enabled()) {
     gpr_log(GPR_INFO, "[RR %p] Created", this);
@@ -258,7 +259,7 @@ RoundRobin::RoundRobin(Args args) : LoadBalancingPolicy(std::move(args)) {
   channel_control_helper()->UpdateState(
       GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
       UniquePtr<SubchannelPicker>(New<QueuePicker>(Ref())));
-  UpdateLocked(*args.args, args.lb_config);
+  UpdateLocked(*args.args, std::move(config));
 }
 
 RoundRobin::~RoundRobin() {
@@ -496,7 +497,7 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
 }
 
 void RoundRobin::UpdateLocked(const grpc_channel_args& args,
-                              grpc_json* lb_config) {
+                              RefCountedPtr<Config> lb_config) {
   AutoChildRefsUpdater guard(this);
   const ServerAddressList* addresses = FindServerAddressListChannelArg(&args);
   if (addresses == nullptr) {
@@ -550,8 +551,10 @@ void RoundRobin::UpdateLocked(const grpc_channel_args& args,
 class RoundRobinFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
+      RefCountedPtr<LoadBalancingPolicy::Config> config,
       LoadBalancingPolicy::Args args) const override {
-    return OrphanablePtr<LoadBalancingPolicy>(New<RoundRobin>(std::move(args)));
+    return OrphanablePtr<LoadBalancingPolicy>(
+        New<RoundRobin>(std::move(config), std::move(args)));
   }
 
   const char* name() const override { return kRoundRobin; }

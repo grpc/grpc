@@ -46,7 +46,8 @@ class LoadBalancingPolicyRegistry {
 
   /// Creates an LB policy of the type specified by \a name.
   static OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-      const char* name, LoadBalancingPolicy::Args args);
+      const char* name, RefCountedPtr<LoadBalancingPolicy::Config> config,
+      LoadBalancingPolicy::Args args);
 
   /// Returns true if the LB policy factory specified by \a name exists in this
   /// registry.

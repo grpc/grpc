@@ -30,6 +30,7 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/service_config.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount;
 
@@ -214,6 +215,23 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     GRPC_ABSTRACT_BASE_CLASS
   };
 
+  // Configuration for an LB policy instance.
+  class Config : public RefCounted<Config> {
+   public:
+    Config(const grpc_json* lb_config,
+           RefCountedPtr<ServiceConfig> service_config)
+        : json_(lb_config), service_config_(std::move(service_config)) {}
+
+    const grpc_json* json() const { return json_; }
+    RefCountedPtr<ServiceConfig> service_config() const {
+      return service_config_;
+    }
+
+   private:
+    const grpc_json* json_;
+    RefCountedPtr<ServiceConfig> service_config_;
+  };
+
   /// Args used to instantiate an LB policy.
   struct Args {
     /// The combiner under which all LB policy calls will be run.
@@ -228,8 +246,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Note that the LB policy gets the set of addresses from the
     /// GRPC_ARG_SERVER_ADDRESS_LIST channel arg.
     const grpc_channel_args* args = nullptr;
-    /// Load balancing config from the resolver.
-    grpc_json* lb_config = nullptr;
   };
 
   // Not copyable nor movable.
@@ -243,7 +259,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// the resolver. Note that the LB policy gets the set of addresses from the
   /// GRPC_ARG_SERVER_ADDRESS_LIST channel arg.
   virtual void UpdateLocked(const grpc_channel_args& args,
-                            grpc_json* lb_config) GRPC_ABSTRACT;
+                            RefCountedPtr<Config> lb_config) {
+    std::move(lb_config);  // Suppress clang-tidy complaint.
+    GRPC_ABSTRACT;
+  }
 
   /// Tries to enter a READY connectivity state.
   /// TODO(roth): As part of restructuring how we handle IDLE state,

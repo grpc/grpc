@@ -129,7 +129,7 @@ class GrpcLb : public LoadBalancingPolicy {
   const char* name() const override { return kGrpclb; }
 
   void UpdateLocked(const grpc_channel_args& args,
-                    grpc_json* lb_config) override;
+                    RefCountedPtr<Config> lb_config) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
   void FillChildRefsForChannelz(
@@ -1176,7 +1176,7 @@ grpc_channel_args* BuildBalancerChannelArgs(
 // ctor and dtor
 //
 
-GrpcLb::GrpcLb(LoadBalancingPolicy::Args args)
+GrpcLb::GrpcLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
       response_generator_(MakeRefCounted<FakeResolverResponseGenerator>()),
       lb_call_backoff_(
@@ -1338,7 +1338,8 @@ void GrpcLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
   grpc_channel_args_destroy(lb_channel_args);
 }
 
-void GrpcLb::UpdateLocked(const grpc_channel_args& args, grpc_json* lb_config) {
+void GrpcLb::UpdateLocked(const grpc_channel_args& args,
+                          RefCountedPtr<Config> lb_config) {
   ProcessChannelArgsLocked(args);
   // Update the existing RR policy.
   if (rr_policy_ != nullptr) CreateOrUpdateRoundRobinPolicyLocked();
@@ -1511,7 +1512,7 @@ void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
 void GrpcLb::CreateRoundRobinPolicyLocked(Args args) {
   GPR_ASSERT(rr_policy_ == nullptr);
   rr_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-      "round_robin", std::move(args));
+      "round_robin", nullptr /* config */, std::move(args));
   if (GPR_UNLIKELY(rr_policy_ == nullptr)) {
     gpr_log(GPR_ERROR, "[grpclb %p] Failure creating a RoundRobin policy",
             this);
@@ -1598,6 +1599,7 @@ void GrpcLb::CreateOrUpdateRoundRobinPolicyLocked() {
 class GrpcLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
+      RefCountedPtr<LoadBalancingPolicy::Config> config,
       LoadBalancingPolicy::Args args) const override {
     /* Count the number of gRPC-LB addresses. There must be at least one. */
     const ServerAddressList* addresses =
