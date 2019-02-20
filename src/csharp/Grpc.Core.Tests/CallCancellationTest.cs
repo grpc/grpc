@@ -189,5 +189,36 @@ namespace Grpc.Core.Tests
 
             using (obj) {}
         }
+
+        [Test]
+        public async Task ServerStreamingCall_CancelAfterServerHasFinished()
+        {
+            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) =>
+            {
+                await responseStream.WriteAsync("abc");
+            });
+
+            var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(), "");
+            // make sure the response and status sent by the server is received on the client side
+            await Task.Delay(3000);
+
+            // cancel the call before actually reading the response
+            var cts = new CancellationTokenSource();
+            cts.Cancel();
+            var moveNextTask = call.ResponseStream.MoveNext(cts.Token);
+
+            try
+            {
+                // cannot use Assert.ThrowsAsync because it uses Task.Wait and would deadlock.
+                await moveNextTask;
+
+                // either the correct response is returned, or the call ends with OK status.
+                Assert.AreEqual("abc", call.ResponseStream.Current);
+            }
+            catch (RpcException ex)
+            {
+                Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
+            }
+        }
     }
 }
