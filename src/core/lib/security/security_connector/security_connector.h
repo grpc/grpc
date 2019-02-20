@@ -109,7 +109,7 @@ class grpc_channel_security_connector : public grpc_security_connector {
                                       grpc_error* error) GRPC_ABSTRACT;
   /// Registers handshakers with \a handshake_mgr.
   virtual void add_handshakers(grpc_pollset_set* interested_parties,
-                               grpc_handshake_manager* handshake_mgr)
+                               grpc_core::HandshakeManager* handshake_mgr)
       GRPC_ABSTRACT;
 
   const grpc_channel_credentials* channel_creds() const {
@@ -150,7 +150,7 @@ class grpc_server_security_connector : public grpc_security_connector {
   ~grpc_server_security_connector() override = default;
 
   virtual void add_handshakers(grpc_pollset_set* interested_parties,
-                               grpc_handshake_manager* handshake_mgr)
+                               grpc_core::HandshakeManager* handshake_mgr)
       GRPC_ABSTRACT;
 
   const grpc_server_credentials* server_creds() const {

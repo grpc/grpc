@@ -188,10 +188,13 @@ Subchannel* GlobalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
     // Check to see if a subchannel already exists.
     c = static_cast<Subchannel*>(grpc_avl_get(old_map, key, &user_data));
     if (c != nullptr) {
-      // The subchannel already exists. Reuse it.
+      // The subchannel already exists. Try to reuse it.
       c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(c, "subchannel_register+reuse");
-      GRPC_SUBCHANNEL_UNREF(constructed, "subchannel_register+found_existing");
-      // Exit the CAS loop without modifying the shared map.
+      if (c != nullptr) {
+        GRPC_SUBCHANNEL_UNREF(constructed,
+                              "subchannel_register+found_existing");
+        // Exit the CAS loop without modifying the shared map.
+      }  // Else, reuse failed, so retry CAS loop.
     } else {
       // There hasn't been such subchannel. Add one.
       // Note that we should ref the old map first because grpc_avl_add() will
@@ -229,7 +232,7 @@ Subchannel* GlobalSubchannelPool::FindSubchannel(SubchannelKey* key) {
   }
   Subchannel* c =
       static_cast<Subchannel*>(grpc_avl_get(index, key, &user_data));
-  if (c != nullptr) GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(c, "found_from_pool");
+  if (c != nullptr) c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(c, "found_from_pool");
   grpc_avl_unref(index, &user_data);
   return c;
 }

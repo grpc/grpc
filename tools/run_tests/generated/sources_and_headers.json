@@ -2722,6 +2722,27 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
+    "name": "bm_alarm", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_alarm.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_benchmark", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
     "name": "bm_arena", 
     "src": [
       "test/cpp/microbenchmarks/bm_arena.cc"
@@ -9419,7 +9440,6 @@
       "src/core/lib/channel/channelz_registry.cc", 
       "src/core/lib/channel/connected_channel.cc", 
       "src/core/lib/channel/handshaker.cc", 
-      "src/core/lib/channel/handshaker_factory.cc", 
       "src/core/lib/channel/handshaker_registry.cc", 
       "src/core/lib/channel/status_util.cc", 
       "src/core/lib/compression/compression.cc", 

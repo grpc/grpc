@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <AssemblyName>Protobuf.MSBuild</AssemblyName>
-    <Version>$(GrpcCsharpVersion)</Version>
+    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
     <!-- If changing targets, change also paths in Google.Protobuf.Tools.targets. -->
     <TargetFrameworks>net45;netstandard1.3</TargetFrameworks>
   </PropertyGroup>

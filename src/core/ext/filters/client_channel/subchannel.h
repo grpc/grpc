@@ -131,10 +131,6 @@ class SubchannelCall {
   // Returns the call stack of the subchannel call.
   grpc_call_stack* GetCallStack();
 
-  grpc_closure* after_call_stack_destroy() const {
-    return after_call_stack_destroy_;
-  }
-
   // Sets the 'then_schedule_closure' argument for call stack destruction.
   // Must be called once per call.
   void SetAfterCallStackDestroy(grpc_closure* closure);
@@ -147,6 +143,8 @@ class SubchannelCall {
   // but does NOT free the memory because it's in the call arena.
   void Unref();
   void Unref(const DebugLocation& location, const char* reason);
+
+  static void Destroy(void* arg, grpc_error* error);
 
  private:
   // Allow RefCountedPtr<> to access IncrementRefCount().
@@ -191,6 +189,9 @@ class Subchannel {
   void Unref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
   Subchannel* WeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
   void WeakUnref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+  // Attempts to return a strong ref when only the weak refcount is guaranteed
+  // non-zero. If the strong refcount is zero, does not alter the refcount and
+  // returns null.
   Subchannel* RefFromWeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 
   // Returns true if the value of the strong ref is 1.

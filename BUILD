@@ -64,11 +64,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gold"
+g_stands_for = "godric"
 
-core_version = "7.0.0-dev"
+core_version = "7.0.0"
 
-version = "1.19.0-dev"
+version = "1.20.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -701,7 +701,6 @@ grpc_cc_library(
         "src/core/lib/channel/channelz_registry.cc",
         "src/core/lib/channel/connected_channel.cc",
         "src/core/lib/channel/handshaker.cc",
-        "src/core/lib/channel/handshaker_factory.cc",
         "src/core/lib/channel/handshaker_registry.cc",
         "src/core/lib/channel/status_util.cc",
         "src/core/lib/compression/compression.cc",

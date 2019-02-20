@@ -110,7 +110,7 @@ There are other possible sample timelines. For example, for client-side streamin
    - These correspond to a client issuing `WritesDone` which causes the server's
      `Read` to fail
 1. Server: send\_message, send\_trailing\_metadata
-   - These correpond to the server doing `Finish`
+   - These correspond to the server doing `Finish`
 
 The sends on one side will call their own callbacks when complete, and they will
 in turn trigger actions that cause the other side's recv operations to

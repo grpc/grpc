@@ -74,14 +74,18 @@ static gpr_timespec now_impl(gpr_clock_type clock) {
 // offset the value returned by gpr_now(GPR_CLOCK_REALTIME) by msecs
 // milliseconds
 static void set_now_offset(int msecs) {
+  gpr_mu_lock(&g_mu);
   g_time_shift_sec = msecs / 1000;
   g_time_shift_nsec = (msecs % 1000) * 1e6;
+  gpr_mu_unlock(&g_mu);
 }
 
 // restore the original implementation of gpr_now()
 static void reset_now_offset() {
+  gpr_mu_lock(&g_mu);
   g_time_shift_sec = 0;
   g_time_shift_nsec = 0;
+  gpr_mu_unlock(&g_mu);
 }
 
 namespace grpc {

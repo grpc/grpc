@@ -62,7 +62,7 @@ void ChannelzRegistry::InternalRegister(BaseNode* node) {
 }
 
 void ChannelzRegistry::MaybePerformCompactionLocked() {
-  constexpr double kEmptinessTheshold = 1 / 3;
+  constexpr double kEmptinessTheshold = 1. / 3;
   double emptiness_ratio =
       double(num_empty_slots_) / double(entities_.capacity());
   if (emptiness_ratio > kEmptinessTheshold) {

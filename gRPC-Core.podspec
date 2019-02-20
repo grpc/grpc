@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.19.0-dev'
+  version = '1.20.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -543,7 +543,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/channelz_registry.cc',
                       'src/core/lib/channel/connected_channel.cc',
                       'src/core/lib/channel/handshaker.cc',
-                      'src/core/lib/channel/handshaker_factory.cc',
                       'src/core/lib/channel/handshaker_registry.cc',
                       'src/core/lib/channel/status_util.cc',
                       'src/core/lib/compression/compression.cc',

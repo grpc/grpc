@@ -1535,6 +1535,9 @@ static void cache_harvest_locked() {
                   gpr_inf_future(GPR_CLOCK_MONOTONIC));
     }
     args->poller_thd.Join();
+    gpr_cv_destroy(&args->trigger);
+    gpr_cv_destroy(&args->harvest);
+    gpr_cv_destroy(&args->join);
     gpr_free(args);
   }
 }
@@ -1713,6 +1716,7 @@ static int cvfd_poll(struct pollfd* fds, nfds_t nfds, int timeout) {
   }
 
   gpr_free(fd_cvs);
+  gpr_cv_destroy(pollcv->cv);
   gpr_free(pollcv);
   if (result) {
     decref_poll_result(result);

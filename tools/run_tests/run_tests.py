@@ -1126,7 +1126,7 @@ class ObjCLanguage(object):
                 }),
             self.config.job_spec(
                 ['test/core/iomgr/ios/CFStreamTests/run_tests.sh'],
-                timeout_seconds=10 * 60,
+                timeout_seconds=20 * 60,
                 shortname='cfstream-tests',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS),

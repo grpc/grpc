@@ -66,6 +66,7 @@ static void TestVerifierCalledOnAckVerifier(void* arg,
   GPR_ASSERT(ts->acked_time.time.clock_type == GPR_CLOCK_REALTIME);
   GPR_ASSERT(ts->acked_time.time.tv_sec == 123);
   GPR_ASSERT(ts->acked_time.time.tv_nsec == 456);
+  GPR_ASSERT(ts->info.length > 0);
   gpr_atm* done = reinterpret_cast<gpr_atm*>(arg);
   gpr_atm_rel_store(done, static_cast<gpr_atm>(1));
 }

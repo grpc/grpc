@@ -1,6 +1,7 @@
 [
   "_sanity._sanity_test.SanityTest",
   "channelz._channelz_servicer_test.ChannelzServicerTest",
+  "fork._fork_interop_test.ForkInteropTest",
   "health_check._health_servicer_test.HealthServicerTest",
   "interop._insecure_intraop_test.InsecureIntraopTest",
   "interop._secure_intraop_test.SecureIntraopTest",

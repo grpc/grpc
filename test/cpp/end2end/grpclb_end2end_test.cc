@@ -400,14 +400,6 @@ class GrpclbEnd2endTest : public ::testing::Test {
     }
   }
 
-  void SetNextResolutionAllBalancers() {
-    std::vector<AddressData> addresses;
-    for (size_t i = 0; i < balancer_servers_.size(); ++i) {
-      addresses.emplace_back(AddressData{balancer_servers_[i].port_, true, ""});
-    }
-    SetNextResolution(addresses);
-  }
-
   void ResetStub(int fallback_timeout = 0,
                  const grpc::string& expected_targets = "") {
     ChannelArguments args;
@@ -529,12 +521,29 @@ class GrpclbEnd2endTest : public ::testing::Test {
     return addresses;
   }
 
-  void SetNextResolution(const std::vector<AddressData>& address_data) {
+  void SetNextResolutionAllBalancers(
+      const char* service_config_json = nullptr) {
+    std::vector<AddressData> addresses;
+    for (size_t i = 0; i < balancer_servers_.size(); ++i) {
+      addresses.emplace_back(AddressData{balancer_servers_[i].port_, true, ""});
+    }
+    SetNextResolution(addresses, service_config_json);
+  }
+
+  void SetNextResolution(const std::vector<AddressData>& address_data,
+                         const char* service_config_json = nullptr) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::ServerAddressList addresses =
         CreateLbAddressesFromAddressDataList(address_data);
-    grpc_arg fake_addresses = CreateServerAddressListChannelArg(&addresses);
-    grpc_channel_args fake_result = {1, &fake_addresses};
+    std::vector<grpc_arg> args = {
+        CreateServerAddressListChannelArg(&addresses),
+    };
+    if (service_config_json != nullptr) {
+      args.push_back(grpc_channel_arg_string_create(
+          const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
+          const_cast<char*>(service_config_json)));
+    }
+    grpc_channel_args fake_result = {args.size(), args.data()};
     response_generator_->SetResponse(&fake_result);
   }
 
@@ -685,6 +694,27 @@ TEST_F(SingleBalancerTest, Vanilla) {
   // and sent a single response.
   EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
 
+  // Check LB policy name for the channel.
+  EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(SingleBalancerTest, SelectGrpclbWithMigrationServiceConfig) {
+  SetNextResolutionAllBalancers(
+      "{\n"
+      "  \"loadBalancingConfig\":[\n"
+      "    { \"does_not_exist\":{} },\n"
+      "    { \"grpclb\":{} }\n"
+      "  ]\n"
+      "}");
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
+      0);
+  CheckRpcSendOk(1, 1000 /* timeout_ms */, true /* wait_for_ready */);
+  balancers_[0]->NotifyDoneWithServerlists();
+  // The balancer got a single request.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
+  // and sent a single response.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
   // Check LB policy name for the channel.
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }

@@ -80,7 +80,7 @@ grpc_auth_refresh_token grpc_auth_refresh_token_create_from_string(
   grpc_json* json = grpc_json_parse_string(scratchpad);
   grpc_auth_refresh_token result =
       grpc_auth_refresh_token_create_from_json(json);
-  if (json != nullptr) grpc_json_destroy(json);
+  grpc_json_destroy(json);
   gpr_free(scratchpad);
   return result;
 }
@@ -199,7 +199,7 @@ end:
   }
   if (null_terminated_body != nullptr) gpr_free(null_terminated_body);
   if (new_access_token != nullptr) gpr_free(new_access_token);
-  if (json != nullptr) grpc_json_destroy(json);
+  grpc_json_destroy(json);
   return status;
 }
 

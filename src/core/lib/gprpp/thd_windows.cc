@@ -33,10 +33,8 @@
 
 #if defined(_MSC_VER)
 #define thread_local __declspec(thread)
-#define WIN_LAMBDA
 #elif defined(__GNUC__)
 #define thread_local __thread
-#define WIN_LAMBDA WINAPI
 #else
 #error "Unknown compiler - please file a bug report"
 #endif
@@ -71,22 +69,7 @@ class ThreadInternalsWindows
       gpr_free(info_);
       *success = false;
     } else {
-      handle = CreateThread(
-          nullptr, 64 * 1024,
-          [](void* v) WIN_LAMBDA -> DWORD {
-            g_thd_info = static_cast<thd_info*>(v);
-            gpr_mu_lock(&g_thd_info->thread->mu_);
-            while (!g_thd_info->thread->started_) {
-              gpr_cv_wait(&g_thd_info->thread->ready_, &g_thd_info->thread->mu_,
-                          gpr_inf_future(GPR_CLOCK_MONOTONIC));
-            }
-            gpr_mu_unlock(&g_thd_info->thread->mu_);
-            g_thd_info->body(g_thd_info->arg);
-            BOOL ret = SetEvent(g_thd_info->join_event);
-            GPR_ASSERT(ret);
-            return 0;
-          },
-          info_, 0, nullptr);
+      handle = CreateThread(nullptr, 64 * 1024, thread_body, info_, 0, nullptr);
       if (handle == nullptr) {
         destroy_thread();
         *success = false;
@@ -116,6 +99,20 @@ class ThreadInternalsWindows
   }
 
  private:
+  static DWORD WINAPI thread_body(void* v) {
+    g_thd_info = static_cast<thd_info*>(v);
+    gpr_mu_lock(&g_thd_info->thread->mu_);
+    while (!g_thd_info->thread->started_) {
+      gpr_cv_wait(&g_thd_info->thread->ready_, &g_thd_info->thread->mu_,
+                  gpr_inf_future(GPR_CLOCK_MONOTONIC));
+    }
+    gpr_mu_unlock(&g_thd_info->thread->mu_);
+    g_thd_info->body(g_thd_info->arg);
+    BOOL ret = SetEvent(g_thd_info->join_event);
+    GPR_ASSERT(ret);
+    return 0;
+  }
+
   void destroy_thread() {
     CloseHandle(info_->join_event);
     gpr_free(info_);

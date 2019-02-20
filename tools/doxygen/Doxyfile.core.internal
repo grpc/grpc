@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 7.0.0-dev
+PROJECT_NUMBER         = 7.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1080,7 +1080,6 @@ src/core/lib/channel/connected_channel.h \
 src/core/lib/channel/context.h \
 src/core/lib/channel/handshaker.cc \
 src/core/lib/channel/handshaker.h \
-src/core/lib/channel/handshaker_factory.cc \
 src/core/lib/channel/handshaker_factory.h \
 src/core/lib/channel/handshaker_registry.cc \
 src/core/lib/channel/handshaker_registry.h \
