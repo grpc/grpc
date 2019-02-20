@@ -139,7 +139,7 @@ def _symlink_genrule_for_dir(repository_ctx,
 def _get_python_bin(repository_ctx):
     """Gets the python bin path."""
     python_bin = repository_ctx.os.environ.get(_PYTHON_BIN_PATH, 'python')
-    if not '/' in python_bin and not '\\' in python_bin:
+    if not repository_ctx.path(python_bin).exists:
         # It's a command, use 'which' to find its path.
         python_bin_path = repository_ctx.which(python_bin)
     else:
