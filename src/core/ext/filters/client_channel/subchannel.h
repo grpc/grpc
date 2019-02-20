@@ -194,17 +194,24 @@ class Subchannel {
   // returns null.
   Subchannel* RefFromWeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 
-  intptr_t GetChildSocketUuid();
+  // Returns true if the value of the strong ref is 1.
+  bool LastStrongRef() const;
+
+  intptr_t GetChildSocketUuid() const;
 
   // Gets the string representing the subchannel address.
   // Caller doesn't take ownership.
-  const char* GetTargetAddress();
+  const char* GetTargetAddress() const;
 
   // Gets the connected subchannel - or nullptr if not connected (which may
   // happen before it initially connects or during transient failures).
   RefCountedPtr<ConnectedSubchannel> connected_subchannel();
 
-  channelz::SubchannelNode* channelz_node();
+  channelz::SubchannelNode* channelz_node() const;
+
+  SubchannelKey* key() const { return key_; }
+
+  grpc_pollset_set* pollset_set() const { return pollset_set_; }
 
   // Polls the current connectivity state of the subchannel.
   grpc_connectivity_state CheckConnectivity(grpc_error** error,
