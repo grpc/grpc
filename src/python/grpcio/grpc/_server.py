@@ -391,11 +391,11 @@ def _call_behavior(rpc_event,
                    behavior,
                    argument,
                    request_deserializer,
-                   on_next_callback=None):
+                   send_response_callback=None):
     context = _Context(rpc_event, state, request_deserializer)
     try:
-        if on_next_callback is not None:
-            return behavior(argument, context, on_next_callback), True
+        if send_response_callback is not None:
+            return behavior(argument, context, send_response_callback), True
         else:
             return behavior(argument, context), True
     except Exception as exception:  # pylint: disable=broad-except
@@ -510,7 +510,7 @@ def _stream_response_in_pool(rpc_event, state, behavior, argument_thunk,
                              request_deserializer, response_serializer):
     cygrpc.install_context_from_call(rpc_event.call)
 
-    def on_next(response):
+    def send_response(response):
         if response is None:
             _status(rpc_event, state, None)
         else:
@@ -530,13 +530,13 @@ def _stream_response_in_pool(rpc_event, state, behavior, argument_thunk,
                     behavior,
                     argument,
                     request_deserializer,
-                    on_next_callback=on_next)
+                    send_response_callback=send_response)
             else:
                 response_iterator, proceed = _call_behavior(
                     rpc_event, state, behavior, argument, request_deserializer)
                 if proceed:
-                    _stream_response_iterator_adapter(rpc_event, state, on_next,
-                                                      response_iterator)
+                    _send_message_callback_to_blocking_iterator_adapter(
+                        rpc_event, state, send_response, response_iterator)
     finally:
         cygrpc.uninstall_context()
 
@@ -545,13 +545,13 @@ def _is_rpc_state_active(state):
     return state.client is not _CANCELLED and not state.statused
 
 
-def _stream_response_iterator_adapter(rpc_event, state, on_next_callback,
-                                      response_iterator):
+def _send_message_callback_to_blocking_iterator_adapter(
+        rpc_event, state, send_response_callback, response_iterator):
     while True:
         response, proceed = _take_response_from_response_iterator(
             rpc_event, state, response_iterator)
         if proceed:
-            on_next_callback(response)
+            send_response_callback(response)
             if not _is_rpc_state_active(state):
                 break
         else:

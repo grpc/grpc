@@ -101,7 +101,6 @@ class _Handler(object):
         for _ in range(test_constants.STREAM_LENGTH):
             self._control.control()
             on_next(request)
-            # yield request
         self._control.control()
         if servicer_context is not None:
             servicer_context.set_trailing_metadata(((

@@ -196,10 +196,11 @@ class BaseWatchTests(object):
             # Wait, if necessary, for serving thread to process client cancellation
             timeout = time.time() + test_constants.SHORT_TIMEOUT
             while time.time(
-            ) < timeout and self._servicer._on_next_callbacks[_WATCH_SERVICE]:
+            ) < timeout and self._servicer._send_response_callbacks[_WATCH_SERVICE]:
                 time.sleep(1)
-            self.assertFalse(self._servicer._on_next_callbacks[_WATCH_SERVICE],
-                             'watch set should be empty')
+            self.assertFalse(
+                self._servicer._send_response_callbacks[_WATCH_SERVICE],
+                'watch set should be empty')
             self.assertTrue(response_queue.empty())
 
 

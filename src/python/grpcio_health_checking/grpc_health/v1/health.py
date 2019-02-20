@@ -60,15 +60,15 @@ class _Watcher():
             self._condition.notify()
 
 
-def _watcher_to_on_next_callback_adapter(watcher):
+def _watcher_to_send_response_callback_adapter(watcher):
 
-    def on_next_callback(response):
+    def send_response_callback(response):
         if response is None:
             watcher.close()
         else:
             watcher.add(response)
 
-    return on_next_callback
+    return send_response_callback
 
 
 class HealthServicer(_health_pb2_grpc.HealthServicer):
@@ -79,16 +79,17 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
                  experimental_thread_pool=None):
         self._lock = threading.RLock()
         self._server_status = {}
-        self._on_next_callbacks = {}
+        self._send_response_callbacks = {}
         self.Watch.__func__.experimental_non_blocking = experimental_non_blocking
         self.Watch.__func__.experimental_thread_pool = experimental_thread_pool
 
-    def _on_close_callback(self, on_next_callback, service):
+    def _on_close_callback(self, send_response_callback, service):
 
         def callback():
             with self._lock:
-                self._on_next_callbacks[service].remove(on_next_callback)
-            on_next_callback(None)
+                self._send_response_callbacks[service].remove(
+                    send_response_callback)
+            send_response_callback(None)
 
         return callback
 
@@ -102,26 +103,27 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
                 return _health_pb2.HealthCheckResponse(status=status)
 
     # pylint: disable=arguments-differ
-    def Watch(self, request, context, on_next_callback=None):
+    def Watch(self, request, context, send_response_callback=None):
         blocking_watcher = None
-        if on_next_callback is None:
+        if send_response_callback is None:
             # The server does not support the experimental_non_blocking
             # parameter. For backwards compatibility, return a blocking response
             # generator.
             blocking_watcher = _Watcher()
-            on_next_callback = _watcher_to_on_next_callback_adapter(
+            send_response_callback = _watcher_to_send_response_callback_adapter(
                 blocking_watcher)
         service = request.service
         with self._lock:
             status = self._server_status.get(service)
             if status is None:
                 status = _health_pb2.HealthCheckResponse.SERVICE_UNKNOWN  # pylint: disable=no-member
-            on_next_callback(_health_pb2.HealthCheckResponse(status=status))
-            if service not in self._on_next_callbacks:
-                self._on_next_callbacks[service] = set()
-            self._on_next_callbacks[service].add(on_next_callback)
+            send_response_callback(
+                _health_pb2.HealthCheckResponse(status=status))
+            if service not in self._send_response_callbacks:
+                self._send_response_callbacks[service] = set()
+            self._send_response_callbacks[service].add(send_response_callback)
             context.add_callback(
-                self._on_close_callback(on_next_callback, service))
+                self._on_close_callback(send_response_callback, service))
         return blocking_watcher
 
     def set(self, service, status):
@@ -134,7 +136,8 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         """
         with self._lock:
             self._server_status[service] = status
-            if service in self._on_next_callbacks:
-                for on_next_callback in self._on_next_callbacks[service]:
-                    on_next_callback(
+            if service in self._send_response_callbacks:
+                for send_response_callback in self._send_response_callbacks[
+                        service]:
+                    send_response_callback(
                         _health_pb2.HealthCheckResponse(status=status))
