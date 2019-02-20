@@ -54,8 +54,8 @@ static void fill_metadata(grpc_call_element* elem, grpc_metadata_batch* mdb) {
   CallData* calld = static_cast<CallData*>(elem->call_data);
   bool expected = false;
   if (!AtomicCompareExchangeStrong(&calld->filled_metadata, &expected, true,
-                                   std::memory_order_relaxed,
-                                   std::memory_order_relaxed)) {
+                                   MemoryOrder::RELAXED,
+                                   MemoryOrder::RELAXED)) {
     return;
   }
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);

@@ -89,9 +89,7 @@ class RefCount {
   }
 
   // Increases the ref-count by `n`.
-  void Ref(Value n = 1) {
-    AtomicFetchAdd(&value_, n, std::memory_order_relaxed);
-  }
+  void Ref(Value n = 1) { AtomicFetchAdd(&value_, n, MemoryOrder::RELAXED); }
   void Ref(const DebugLocation& location, const char* reason, Value n = 1) {
 #ifndef NDEBUG
     if (location.Log() && trace_flag_ != nullptr && trace_flag_->enabled()) {
@@ -107,7 +105,7 @@ class RefCount {
   // Similar to Ref() with an assert on the ref-count being non-zero.
   void RefNonZero() {
 #ifndef NDEBUG
-    const Value prior = AtomicFetchAdd(&value_, 1, std::memory_order_relaxed);
+    const Value prior = AtomicFetchAdd(&value_, 1, MemoryOrder::RELAXED);
     assert(prior > 0);
 #else
     Ref();
@@ -127,7 +125,7 @@ class RefCount {
 
   // Decrements the ref-count and returns true if the ref-count reaches 0.
   bool Unref() {
-    const Value prior = AtomicFetchSub(&value_, 1, std::memory_order_acq_rel);
+    const Value prior = AtomicFetchSub(&value_, 1, MemoryOrder::ACQ_REL);
     GPR_DEBUG_ASSERT(prior > 0);
     return prior == 1;
   }
@@ -144,12 +142,12 @@ class RefCount {
   }
 
  private:
-  Value get() const { return value_.load(std::memory_order_relaxed); }
+  Value get() const { return AtomicLoad(&value_, MemoryOrder::RELAXED); }
 
 #ifndef NDEBUG
   TraceFlag* trace_flag_;
 #endif
-  std::atomic<Value> value_;
+  Atomic<Value> value_;
 };
 
 // A base class for reference-counted objects.
