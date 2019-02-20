@@ -28,7 +28,7 @@ synonymously since all RPCs are actually streams internally.) The ops in a batch
 can include:
 
 * send\_initial\_metadata
-  - Client: initate an RPC
+  - Client: initiate an RPC
   - Server: supply response headers
 * recv\_initial\_metadata
   - Client: get response headers
