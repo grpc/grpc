@@ -76,7 +76,7 @@ gpr_atm gpr_counter_atm_add = 0;
 void gpr_mu_init(gpr_mu* mu) {
 #ifdef GRPC_ASAN_ENABLED
   GPR_ASSERT(pthread_mutex_init(&mu->mutex, nullptr) == 0);
-  mu->leak_checker = static_cast<int*>(gpr_malloc(sizeof(*mu->leak_checker)));
+  mu->leak_checker = static_cast<int*>(malloc(sizeof(*mu->leak_checker)));
   GPR_ASSERT(mu->leak_checker != nullptr);
 #else
   GPR_ASSERT(pthread_mutex_init(mu, nullptr) == 0);
@@ -86,7 +86,7 @@ void gpr_mu_init(gpr_mu* mu) {
 void gpr_mu_destroy(gpr_mu* mu) {
 #ifdef GRPC_ASAN_ENABLED
   GPR_ASSERT(pthread_mutex_destroy(&mu->mutex) == 0);
-  gpr_free(mu->leak_checker);
+  free(mu->leak_checker);
 #else
   GPR_ASSERT(pthread_mutex_destroy(mu) == 0);
 #endif
@@ -136,7 +136,7 @@ void gpr_cv_init(gpr_cv* cv) {
 
 #ifdef GRPC_ASAN_ENABLED
   GPR_ASSERT(pthread_cond_init(&cv->cond_var, &attr) == 0);
-  cv->leak_checker = static_cast<int*>(gpr_malloc(sizeof(*cv->leak_checker)));
+  cv->leak_checker = static_cast<int*>(malloc(sizeof(*cv->leak_checker)));
   GPR_ASSERT(cv->leak_checker != nullptr);
 #else
   GPR_ASSERT(pthread_cond_init(cv, &attr) == 0);
@@ -146,7 +146,7 @@ void gpr_cv_init(gpr_cv* cv) {
 void gpr_cv_destroy(gpr_cv* cv) {
 #ifdef GRPC_ASAN_ENABLED
   GPR_ASSERT(pthread_cond_destroy(&cv->cond_var) == 0);
-  gpr_free(cv->leak_checker);
+  free(cv->leak_checker);
 #else
   GPR_ASSERT(pthread_cond_destroy(cv) == 0);
 #endif
