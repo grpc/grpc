@@ -203,6 +203,30 @@ class BaseWatchTests(object):
                 'watch set should be empty')
             self.assertTrue(response_queue.empty())
 
+        def test_graceful_shutdown(self):
+            request = health_pb2.HealthCheckRequest(service='')
+            response_queue = queue.Queue()
+            rendezvous = self._stub.Watch(request)
+            thread = threading.Thread(
+                target=_consume_responses, args=(rendezvous, response_queue))
+            thread.start()
+
+            response = response_queue.get(timeout=test_constants.SHORT_TIMEOUT)
+            self.assertEqual(health_pb2.HealthCheckResponse.SERVING,
+                             response.status)
+
+            self._servicer.enter_graceful_shutdown()
+            response = response_queue.get(timeout=test_constants.SHORT_TIMEOUT)
+            self.assertEqual(health_pb2.HealthCheckResponse.NOT_SERVING,
+                             response.status)
+
+            # This should be a no-op.
+            self._servicer.set('', health_pb2.HealthCheckResponse.SERVING)
+
+            rendezvous.cancel()
+            thread.join()
+            self.assertTrue(response_queue.empty())
+
 
 class HealthServicerTest(BaseWatchTests.WatchTests):
 
