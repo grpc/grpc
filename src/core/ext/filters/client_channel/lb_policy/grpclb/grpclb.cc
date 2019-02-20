@@ -1697,7 +1697,7 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
       child_policy_ == nullptr ||
       (strcmp(child_policy_->name(), child_policy_name) != 0 &&
        (pending_child_policy_ == nullptr ||
-        strcmp(pending_child_policy_->name(), child_policy_name)));
+        strcmp(pending_child_policy_->name(), child_policy_name) != 0));
   if (!create_policy) {
     // Cases 2a and 3a: update an existing policy.
     // If we have a pending child policy, send the update to the pending
