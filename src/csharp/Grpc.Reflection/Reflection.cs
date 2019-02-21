@@ -380,9 +380,7 @@ namespace Grpc.Reflection.V1Alpha {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
-              return;
-            }
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 10: {
             Host = input.ReadString();
@@ -567,9 +565,7 @@ namespace Grpc.Reflection.V1Alpha {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
-              return;
-            }
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 10: {
             ContainingType = input.ReadString();
@@ -854,7 +850,7 @@ namespace Grpc.Reflection.V1Alpha {
       }
       if (other.originalRequest_ != null) {
         if (originalRequest_ == null) {
-          OriginalRequest = new global::Grpc.Reflection.V1Alpha.ServerReflectionRequest();
+          originalRequest_ = new global::Grpc.Reflection.V1Alpha.ServerReflectionRequest();
         }
         OriginalRequest.MergeFrom(other.OriginalRequest);
       }
@@ -894,9 +890,7 @@ namespace Grpc.Reflection.V1Alpha {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
-              return;
-            }
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 10: {
             ValidHost = input.ReadString();
@@ -904,9 +898,9 @@ namespace Grpc.Reflection.V1Alpha {
           }
           case 18: {
             if (originalRequest_ == null) {
-              OriginalRequest = new global::Grpc.Reflection.V1Alpha.ServerReflectionRequest();
+              originalRequest_ = new global::Grpc.Reflection.V1Alpha.ServerReflectionRequest();
             }
-            input.ReadMessage(OriginalRequest);
+            input.ReadMessage(originalRequest_);
             break;
           }
           case 34: {
@@ -1070,9 +1064,7 @@ namespace Grpc.Reflection.V1Alpha {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
-              return;
-            }
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 10: {
             fileDescriptorProto_.AddEntriesFrom(input, _repeated_fileDescriptorProto_codec);
@@ -1225,9 +1217,7 @@ namespace Grpc.Reflection.V1Alpha {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
-              return;
-            }
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 10: {
             BaseTypeName = input.ReadString();
@@ -1360,9 +1350,7 @@ namespace Grpc.Reflection.V1Alpha {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
-              return;
-            }
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 10: {
             service_.AddEntriesFrom(input, _repeated_service_codec);
@@ -1499,9 +1487,7 @@ namespace Grpc.Reflection.V1Alpha {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
-              return;
-            }
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 10: {
             Name = input.ReadString();
@@ -1660,9 +1646,7 @@ namespace Grpc.Reflection.V1Alpha {
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
           default:
-            if (!pb::UnknownFieldSet.MergeFieldFrom(ref _unknownFields, input)) {
-              return;
-            }
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
             ErrorCode = input.ReadInt32();
