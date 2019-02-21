@@ -194,7 +194,7 @@ class BaseWatchTests(object):
             thread.join()
 
             # Wait, if necessary, for serving thread to process client cancellation
-            timeout = time.time() + test_constants.SHORT_TIMEOUT
+            timeout = time.time() + test_constants.TIME_ALLOWANCE
             while time.time(
             ) < timeout and self._servicer._send_response_callbacks[_WATCH_SERVICE]:
                 time.sleep(1)
