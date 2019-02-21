@@ -118,15 +118,13 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
             status = self._server_status.get(service)
             if status is None:
                 status = _health_pb2.HealthCheckResponse.SERVICE_UNKNOWN  # pylint: disable=no-member
-            else:
-                send_response_callback(
-                    _health_pb2.HealthCheckResponse(status=status))
-                if service not in self._send_response_callbacks:
-                    self._send_response_callbacks[service] = set()
-                self._send_response_callbacks[service].add(
-                    send_response_callback)
-                context.add_callback(
-                    self._on_close_callback(send_response_callback, service))
+            send_response_callback(
+                _health_pb2.HealthCheckResponse(status=status))
+            if service not in self._send_response_callbacks:
+                self._send_response_callbacks[service] = set()
+            self._send_response_callbacks[service].add(send_response_callback)
+            context.add_callback(
+                self._on_close_callback(send_response_callback, service))
         return blocking_watcher
 
     def set(self, service, status):
@@ -140,12 +138,13 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         with self._lock:
             if self._gracefully_shutting_down:
                 return
-            self._server_status[service] = status
-            if service in self._send_response_callbacks:
-                for send_response_callback in self._send_response_callbacks[
-                        service]:
-                    send_response_callback(
-                        _health_pb2.HealthCheckResponse(status=status))
+            else:
+                self._server_status[service] = status
+                if service in self._send_response_callbacks:
+                    for send_response_callback in self._send_response_callbacks[
+                            service]:
+                        send_response_callback(
+                            _health_pb2.HealthCheckResponse(status=status))
 
     def enter_graceful_shutdown(self):
         """Permanently sets the status of all services to NOT_SERVING.
