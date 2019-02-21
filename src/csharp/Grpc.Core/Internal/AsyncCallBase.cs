@@ -336,11 +336,14 @@ namespace Grpc.Core.Internal
             var deserializeException = (success && receivedMessageReader.TotalLength.HasValue) ? TryDeserialize(receivedMessageReader, out msg) : null;
 
             TaskCompletionSource<TRead> origTcs = null;
+            bool origCancelRequested;
             bool releasedResources;
             lock (myLock)
             {
                 origTcs = streamingReadTcs;
+                origCancelRequested = cancelRequested;
                 if (!receivedMessageReader.TotalLength.HasValue)
+                
                 {
                     // This was the last read.
                     readingDone = true;
@@ -367,10 +370,19 @@ namespace Grpc.Core.Internal
                 OnAfterReleaseResourcesUnlocked();
             }
 
-            if (!success)
+            if (!success && IsClient && origCancelRequested)
             {
-                // TODO: update the comment above
-                origTcs.SetException(new IOException("Read failed."));
+                // normally if recv_message operation fails, non-OK status code
+                // will be returned by C-core on the client.
+                // There is an edge case though where all the response messages and OK
+                // status are read (and buffered) by C core early and there is a "late"
+                // cancellation request on the client side. In that case, a subsequent read will
+                // end with success==false (reponse gets thrown away by C-core),
+                // but OK status will still be returned by recv_status_on_client.
+                // This seems to be a problem in C-core, but we are at least
+                // handling it in a way that responses arent silently thrown away
+                // while the call reports OK status.
+                origTcs.SetCanceled();
                 return;
             }
 

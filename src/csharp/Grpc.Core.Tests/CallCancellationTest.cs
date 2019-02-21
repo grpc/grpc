@@ -212,13 +212,13 @@ namespace Grpc.Core.Tests
             {
                 // cannot use Assert.ThrowsAsync because it uses Task.Wait and would deadlock.
                 await moveNextTask;
+                Assert.Fail();
 
                 // either the correct response is returned, or the call ends with OK status.
-                Assert.AreEqual("abc", call.ResponseStream.Current);
+                //Assert.AreEqual("abc", call.ResponseStream.Current);
             }
-            catch (IOException ex)
+            catch (OperationCanceledException)
             {
-                Assert.AreEqual("Read failed.", ex.Message);
             }
         }
     }
