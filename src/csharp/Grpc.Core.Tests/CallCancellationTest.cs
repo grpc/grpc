@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -215,9 +216,9 @@ namespace Grpc.Core.Tests
                 // either the correct response is returned, or the call ends with OK status.
                 Assert.AreEqual("abc", call.ResponseStream.Current);
             }
-            catch (RpcException ex)
+            catch (IOException ex)
             {
-                Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
+                Assert.AreEqual("Read failed.", ex.Message);
             }
         }
     }

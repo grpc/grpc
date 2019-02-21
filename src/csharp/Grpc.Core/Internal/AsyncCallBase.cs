@@ -367,6 +367,13 @@ namespace Grpc.Core.Internal
                 OnAfterReleaseResourcesUnlocked();
             }
 
+            if (!success)
+            {
+                // TODO: update the comment above
+                origTcs.SetException(new IOException("Read failed."));
+                return;
+            }
+
             if (deserializeException != null && !IsClient)
             {
                 origTcs.SetException(new IOException("Failed to deserialize request message.", deserializeException));
