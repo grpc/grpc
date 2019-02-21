@@ -344,22 +344,34 @@ static tsi_result add_subject_alt_names_properties_to_peer(
     size_t subject_alt_name_count) {
   size_t i;
   tsi_result result = TSI_OK;
-
   /* Reset for DNS entries filtering. */
   peer->property_count -= subject_alt_name_count;
-
   for (i = 0; i < subject_alt_name_count; i++) {
     GENERAL_NAME* subject_alt_name =
         sk_GENERAL_NAME_value(subject_alt_names, TSI_SIZE_AS_SIZE(i));
-    /* Filter out the non-dns entries names. */
-    if (subject_alt_name->type == GEN_DNS) {
+    if (subject_alt_name->type == GEN_DNS ||
+        subject_alt_name->type == GEN_EMAIL ||
+        subject_alt_name->type == GEN_URI) {
       unsigned char* name = nullptr;
       int name_size;
-      name_size = ASN1_STRING_to_UTF8(&name, subject_alt_name->d.dNSName);
+      if (subject_alt_name->type == GEN_DNS) {
+        name_size = ASN1_STRING_to_UTF8(&name, subject_alt_name->d.dNSName);
+      } else if (subject_alt_name->type == GEN_EMAIL) {
+        name_size = ASN1_STRING_to_UTF8(&name, subject_alt_name->d.rfc822Name);
+      } else {
+        name_size = ASN1_STRING_to_UTF8(
+            &name, subject_alt_name->d.uniformResourceIdentifier);
+      }
       if (name_size < 0) {
         gpr_log(GPR_ERROR, "Could not get utf8 from asn1 string.");
         result = TSI_INTERNAL_ERROR;
         break;
+      }
+      if (subject_alt_name->type == GEN_URI) {
+        result = tsi_construct_string_peer_property(
+            TSI_X509_SUBJECT_ALTERNATIVE_NAME_URI_PEER_PROPERTY,
+            reinterpret_cast<const char*>(name), static_cast<size_t>(name_size),
+            &peer->properties[peer->property_count++]);
       }
       result = tsi_construct_string_peer_property(
           TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
@@ -369,7 +381,6 @@ static tsi_result add_subject_alt_names_properties_to_peer(
     } else if (subject_alt_name->type == GEN_IPADD) {
       char ntop_buf[INET6_ADDRSTRLEN];
       int af;
-
       if (subject_alt_name->d.iPAddress->length == 4) {
         af = AF_INET;
       } else if (subject_alt_name->d.iPAddress->length == 16) {
@@ -386,7 +397,6 @@ static tsi_result add_subject_alt_names_properties_to_peer(
         result = TSI_INTERNAL_ERROR;
         break;
       }
-
       result = tsi_construct_string_peer_property_from_cstring(
           TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, name,
           &peer->properties[peer->property_count++]);
@@ -1017,7 +1027,6 @@ static void tsi_ssl_handshaker_factory_init(
 }
 
 /* --- tsi_handshaker_result methods implementation. ---*/
-
 static tsi_result ssl_handshaker_result_extract_peer(
     const tsi_handshaker_result* self, tsi_peer* peer) {
   tsi_result result = TSI_OK;
@@ -1025,6 +1034,7 @@ static tsi_result ssl_handshaker_result_extract_peer(
   unsigned int alpn_selected_len;
   const tsi_ssl_handshaker_result* impl =
       reinterpret_cast<const tsi_ssl_handshaker_result*>(self);
+  // TODO(yihuazhang): Return a full certificate chain as a peer property.
   X509* peer_cert = SSL_get_peer_certificate(impl->ssl);
   if (peer_cert != nullptr) {
     result = peer_from_x509(peer_cert, 1, peer);
@@ -1066,7 +1076,6 @@ static tsi_result ssl_handshaker_result_extract_peer(
       &peer->properties[peer->property_count]);
   if (result != TSI_OK) return result;
   peer->property_count++;
-
   return result;
 }
 
@@ -1400,7 +1409,6 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
       static_cast<unsigned char*>(gpr_zalloc(impl->outgoing_bytes_buffer_size));
   impl->base.vtable = &handshaker_vtable;
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
-
   *handshaker = &impl->base;
   return TSI_OK;
 }

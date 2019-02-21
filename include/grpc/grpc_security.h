@@ -711,7 +711,7 @@ struct grpc_tls_credential_reload_arg {
   grpc_tls_on_credential_reload_done_cb cb;
   void* cb_user_data;
   grpc_tls_key_materials_config* key_materials_config;
-  grpc_status_code status;
+  grpc_ssl_certificate_config_reload_status status;
   const char* error_details;
 };
 
@@ -803,6 +803,37 @@ grpc_tls_server_authorization_check_config_create(
     void (*cancel)(void* config_user_data,
                    grpc_tls_server_authorization_check_arg* arg),
     void (*destruct)(void* config_user_data));
+
+/** --- SPIFFE channel/server credentials --- **/
+
+/**
+ * This method creates a TLS SPIFFE channel credential object.
+ * It takes ownership of the options parameter.
+ *
+ * - options: grpc TLS credentials options instance.
+ *
+ * It returns the created credential object.
+ *
+ * It is used for experimental purpose for now and subject
+ * to change.
+ */
+
+grpc_channel_credentials* grpc_tls_spiffe_credentials_create(
+    const grpc_tls_credentials_options* options);
+
+/**
+ * This method creates a TLS server credential object.
+ * It takes ownership of the options parameter.
+ *
+ * - options: grpc TLS credentials options instance.
+ *
+ * It returns the created credential object.
+ *
+ * It is used for experimental purpose for now and subject
+ * to change.
+ */
+grpc_server_credentials* grpc_tls_spiffe_server_credentials_create(
+    const grpc_tls_credentials_options* options);
 
 #ifdef __cplusplus
 }

@@ -30,6 +30,8 @@
 #define TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY "x509_subject_common_name"
 #define TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY \
   "x509_subject_alternative_name"
+#define TSI_X509_SUBJECT_ALTERNATIVE_NAME_URI_PEER_PROPERTY \
+  "x509_subject_alternative_name_uri"
 #define TSI_SSL_SESSION_REUSED_PEER_PROPERTY "ssl_session_reused"
 
 #define TSI_X509_PEM_CERT_PROPERTY "x509_pem_cert"

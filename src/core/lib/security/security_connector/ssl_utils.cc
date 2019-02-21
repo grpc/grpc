@@ -112,6 +112,34 @@ grpc_get_tsi_client_certificate_request_type(
   }
 }
 
+grpc_error* grpc_ssl_check_peer(
+    const char* peer_name, const tsi_peer* peer,
+    grpc_core::RefCountedPtr<grpc_auth_context>* auth_context) {
+#if TSI_OPENSSL_ALPN_SUPPORT
+  /* Check the ALPN if ALPN is supported. */
+  const tsi_peer_property* p =
+      tsi_peer_get_property_by_name(peer, TSI_SSL_ALPN_SELECTED_PROTOCOL);
+  if (p == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Cannot check peer: missing selected ALPN property.");
+  }
+  if (!grpc_chttp2_is_alpn_version_supported(p->value.data, p->value.length)) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Cannot check peer: invalid ALPN value.");
+  }
+#endif /* TSI_OPENSSL_ALPN_SUPPORT */
+  /* Check the peer name if specified. */
+  if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
+    char* msg;
+    gpr_asprintf(&msg, "Peer name %s is not in peer certificate", peer_name);
+    grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+    gpr_free(msg);
+    return error;
+  }
+  *auth_context = grpc_ssl_peer_to_auth_context(peer);
+  return GRPC_ERROR_NONE;
+}
+
 const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols) {
   GPR_ASSERT(num_alpn_protocols != nullptr);
   *num_alpn_protocols = grpc_chttp2_num_alpn_versions();
@@ -228,6 +256,79 @@ tsi_peer grpc_shallow_peer_from_ssl_auth_context(
 
 void grpc_shallow_peer_destruct(tsi_peer* peer) {
   if (peer->properties != nullptr) gpr_free(peer->properties);
+}
+
+grpc_security_status grpc_init_tsi_ssl_client_handshaker_factory(
+    tsi_ssl_pem_key_cert_pair* pem_key_cert_pair, const char* pem_root_certs,
+    tsi_ssl_session_cache* ssl_session_cache,
+    tsi_ssl_client_handshaker_factory** handshaker_factory) {
+  const char* root_certs;
+  const tsi_ssl_root_certs_store* root_store;
+  if (pem_root_certs == nullptr) {
+    // Use default root certificates.
+    root_certs = grpc_core::DefaultSslRootStore::GetPemRootCerts();
+    if (root_certs == nullptr) {
+      gpr_log(GPR_ERROR, "Could not get default pem root certs.");
+      return GRPC_SECURITY_ERROR;
+    }
+    root_store = grpc_core::DefaultSslRootStore::GetRootStore();
+  } else {
+    root_certs = pem_root_certs;
+    root_store = nullptr;
+  }
+  bool has_key_cert_pair = pem_key_cert_pair != nullptr &&
+                           pem_key_cert_pair->private_key != nullptr &&
+                           pem_key_cert_pair->cert_chain != nullptr;
+  tsi_ssl_client_handshaker_options options;
+  GPR_DEBUG_ASSERT(root_certs != nullptr);
+  options.pem_root_certs = root_certs;
+  options.root_store = root_store;
+  options.alpn_protocols =
+      grpc_fill_alpn_protocol_strings(&options.num_alpn_protocols);
+  if (has_key_cert_pair) {
+    options.pem_key_cert_pair = pem_key_cert_pair;
+  }
+  options.cipher_suites = grpc_get_ssl_cipher_suites();
+  options.session_cache = ssl_session_cache;
+  const tsi_result result =
+      tsi_create_ssl_client_handshaker_factory_with_options(&options,
+                                                            handshaker_factory);
+  gpr_free((void*)options.alpn_protocols);
+  if (result != TSI_OK) {
+    gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
+            tsi_result_to_string(result));
+    return GRPC_SECURITY_ERROR;
+  }
+  return GRPC_SECURITY_OK;
+}
+
+grpc_security_status grpc_init_tsi_ssl_server_handshaker_factory(
+    tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs, size_t num_key_cert_pairs,
+    const char* pem_root_certs,
+    grpc_ssl_client_certificate_request_type client_certificate_request,
+    tsi_ssl_server_handshaker_factory** handshaker_factory) {
+  size_t num_alpn_protocols = 0;
+  const char** alpn_protocol_strings =
+      grpc_fill_alpn_protocol_strings(&num_alpn_protocols);
+  tsi_ssl_server_handshaker_options options;
+  options.pem_key_cert_pairs = pem_key_cert_pairs;
+  options.num_key_cert_pairs = num_key_cert_pairs;
+  options.pem_client_root_certs = pem_root_certs;
+  options.client_certificate_request =
+      grpc_get_tsi_client_certificate_request_type(client_certificate_request);
+  options.cipher_suites = grpc_get_ssl_cipher_suites();
+  options.alpn_protocols = alpn_protocol_strings;
+  options.num_alpn_protocols = static_cast<uint16_t>(num_alpn_protocols);
+  const tsi_result result =
+      tsi_create_ssl_server_handshaker_factory_with_options(&options,
+                                                            handshaker_factory);
+  gpr_free((void*)alpn_protocol_strings);
+  if (result != TSI_OK) {
+    gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
+            tsi_result_to_string(result));
+    return GRPC_SECURITY_ERROR;
+  }
+  return GRPC_SECURITY_OK;
 }
 
 /* --- Ssl cache implementation. --- */

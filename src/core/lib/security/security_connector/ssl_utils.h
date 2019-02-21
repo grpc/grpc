@@ -27,13 +27,21 @@
 #include <grpc/slice_buffer.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 
 /* --- Util. --- */
 
 /* --- URL schemes. --- */
 #define GRPC_SSL_URL_SCHEME "https"
+
+/* Check peer information returned from SSL handshakes. */
+grpc_error* grpc_ssl_check_peer(
+    const char* peer_name, const tsi_peer* peer,
+    grpc_core::RefCountedPtr<grpc_auth_context>* auth_context);
 
 /* Return HTTP2-compliant cipher suites that gRPC accepts by default. */
 const char* grpc_get_ssl_cipher_suites(void);
@@ -46,6 +54,18 @@ grpc_get_tsi_client_certificate_request_type(
 
 /* Return an array of strings containing alpn protocols. */
 const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols);
+
+/* Initialize TSI SSL server/client handshaker factory. */
+grpc_security_status grpc_init_tsi_ssl_client_handshaker_factory(
+    tsi_ssl_pem_key_cert_pair* key_cert_pair, const char* pem_root_certs,
+    tsi_ssl_session_cache* ssl_session_cache,
+    tsi_ssl_client_handshaker_factory** handshaker_factory);
+
+grpc_security_status grpc_init_tsi_ssl_server_handshaker_factory(
+    tsi_ssl_pem_key_cert_pair* key_cert_pairs, size_t num_key_cert_pairs,
+    const char* pem_root_certs,
+    grpc_ssl_client_certificate_request_type client_certificate_request,
+    tsi_ssl_server_handshaker_factory** handshaker_factory);
 
 /* Exposed for testing only. */
 grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
