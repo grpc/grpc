@@ -21,13 +21,12 @@
 
 namespace grpc_core {
 
-typedef void (*InterceptRecvTrailingMetadataCallback)(void*);
+typedef void (*InterceptRecvTrailingMetadataCallback)();
 
 // Registers an LB policy called "intercept_trailing_metadata_lb" that
-// invokes cb with argument user_data when trailing metadata is received
-// for each call.
+// invokes cb for each call.
 void RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
-    InterceptRecvTrailingMetadataCallback cb, void* user_data);
+    InterceptRecvTrailingMetadataCallback cb);
 
 }  // namespace grpc_core
 

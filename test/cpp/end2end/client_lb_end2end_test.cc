@@ -37,6 +37,7 @@
 #include <grpcpp/server_builder.h>
 
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
+#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
@@ -144,7 +145,6 @@ class ClientLbEnd2endTest : public ::testing::Test {
   }
 
   void SetUp() override {
-    grpc_init();
     response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
   }
@@ -153,7 +153,6 @@ class ClientLbEnd2endTest : public ::testing::Test {
     for (size_t i = 0; i < servers_.size(); ++i) {
       servers_[i]->Shutdown();
     }
-    grpc_shutdown();
   }
 
   void CreateServers(size_t num_servers,
@@ -1269,13 +1268,25 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingInhibitPerChannel) {
 
 class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
  protected:
-  void SetUp() override {
-    ClientLbEnd2endTest::SetUp();
+  static void SetUpTestCase() {
+    // Use a grpc_init so that the policy registered here will not be cleared as
+    // part of a grpc_shutdown between tests.
+    grpc_init();
     grpc_core::RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
-        ReportTrailerIntercepted, this);
+        ReportTrailerIntercepted);
   }
 
-  void TearDown() override { ClientLbEnd2endTest::TearDown(); }
+  static void TearDownTestCase() { grpc_shutdown(); }
+
+  void SetUp() override {
+    current_test = this;
+    ClientLbEnd2endTest::SetUp();
+  }
+
+  void TearDown() override {
+    ClientLbEnd2endTest::TearDown();
+    current_test = nullptr;
+  }
 
   int trailers_intercepted() {
     std::unique_lock<std::mutex> lock(mu_);
@@ -1283,16 +1294,21 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
   }
 
  private:
-  static void ReportTrailerIntercepted(void* arg) {
-    ClientLbInterceptTrailingMetadataTest* self =
-        static_cast<ClientLbInterceptTrailingMetadataTest*>(arg);
+  static void ReportTrailerIntercepted() {
+    ClientLbInterceptTrailingMetadataTest* self = current_test;
     std::unique_lock<std::mutex> lock(self->mu_);
     self->trailers_intercepted_++;
   }
+  // Set this for each test so that the lb policy callback can find the current
+  // test class object.
+  static ClientLbInterceptTrailingMetadataTest* current_test;
 
   std::mutex mu_;
   int trailers_intercepted_ = 0;
 };
+
+ClientLbInterceptTrailingMetadataTest*
+    ClientLbInterceptTrailingMetadataTest::current_test = nullptr;
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesDisabled) {
   const int kNumServers = 1;

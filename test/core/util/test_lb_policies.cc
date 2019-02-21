@@ -149,11 +149,10 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     : public ForwardingLoadBalancingPolicy {
  public:
   InterceptRecvTrailingMetadataLoadBalancingPolicy(
-      Args args, InterceptRecvTrailingMetadataCallback cb, void* user_data)
+      Args args, InterceptRecvTrailingMetadataCallback cb)
       : ForwardingLoadBalancingPolicy(std::move(args),
                                       /*delegate_lb_policy_name=*/"pick_first"),
-        cb_(cb),
-        user_data_(user_data) {}
+        cb_(cb) {}
 
   ~InterceptRecvTrailingMetadataLoadBalancingPolicy() override = default;
 
@@ -167,7 +166,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     // intercepting recv_trailing_metadata.  If we ever need to use
     // this with a delegate policy that does, then we'll need to
     // handle async pick returns separately.
-    New<TrailingMetadataHandler>(pick, cb_, user_data_);  // deletes itself
+    New<TrailingMetadataHandler>(pick, cb_);  // deletes itself
     return ret;
   }
 
@@ -175,9 +174,8 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
   class TrailingMetadataHandler {
    public:
     TrailingMetadataHandler(PickState* pick,
-                            InterceptRecvTrailingMetadataCallback cb,
-                            void* user_data)
-        : cb_(cb), user_data_(user_data) {
+                            InterceptRecvTrailingMetadataCallback cb)
+        : cb_(cb) {
       GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
                         RecordRecvTrailingMetadata, this,
                         grpc_schedule_on_exec_ctx);
@@ -192,35 +190,32 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
       TrailingMetadataHandler* self =
           static_cast<TrailingMetadataHandler*>(arg);
       GPR_ASSERT(self->recv_trailing_metadata_ != nullptr);
-      self->cb_(self->user_data_);
+      self->cb_();
       GRPC_CLOSURE_SCHED(self->original_recv_trailing_metadata_ready_,
                          GRPC_ERROR_REF(err));
       Delete(self);
     }
 
     InterceptRecvTrailingMetadataCallback cb_;
-    void* user_data_;
     grpc_closure recv_trailing_metadata_ready_;
     grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
     grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
   };
 
   InterceptRecvTrailingMetadataCallback cb_;
-  void* user_data_;
 };
 
 class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
  public:
-  explicit InterceptTrailingFactory(InterceptRecvTrailingMetadataCallback cb,
-                                    void* user_data)
-      : cb_(cb), user_data_(user_data) {}
+  explicit InterceptTrailingFactory(InterceptRecvTrailingMetadataCallback cb)
+      : cb_(cb) {}
 
   grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy>
   CreateLoadBalancingPolicy(
       grpc_core::LoadBalancingPolicy::Args args) const override {
     return grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy>(
         grpc_core::New<InterceptRecvTrailingMetadataLoadBalancingPolicy>(
-            std::move(args), cb_, user_data_));
+            std::move(args), cb_));
   }
 
   const char* name() const override {
@@ -229,17 +224,16 @@ class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
 
  private:
   InterceptRecvTrailingMetadataCallback cb_;
-  void* user_data_;
 };
 
 }  // namespace
 
 void RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
-    InterceptRecvTrailingMetadataCallback cb, void* user_data) {
+    InterceptRecvTrailingMetadataCallback cb) {
   grpc_core::LoadBalancingPolicyRegistry::Builder::
       RegisterLoadBalancingPolicyFactory(
           grpc_core::UniquePtr<grpc_core::LoadBalancingPolicyFactory>(
-              grpc_core::New<InterceptTrailingFactory>(cb, user_data)));
+              grpc_core::New<InterceptTrailingFactory>(cb)));
 }
 
 }  // namespace grpc_core
