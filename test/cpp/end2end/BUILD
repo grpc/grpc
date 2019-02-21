@@ -638,7 +638,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//:grpc_cfstream",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing:simple_messages_proto",
