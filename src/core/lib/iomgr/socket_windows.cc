@@ -184,7 +184,7 @@ int grpc_ipv6_loopback_available(void) {
 SOCKET grpc_create_wsa_socket(int family,
                               int type,
                               int protocol,
-                              LPWSAPROTOCOL_INFOA protocol_info,
+                              LPWSAPROTOCOL_INFO protocol_info,
                               GROUP group,
                               DWORD flags) {
   bool is_wsa_no_handle_inherit_set = flags & WSA_FLAG_NO_HANDLE_INHERIT;
