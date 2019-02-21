@@ -11,9 +11,11 @@ Issues specific to *grpc-java*, *grpc-go*, *grpc-node*, *grpc-dart*, *grpc-web* 
 ### What version of gRPC and what language are you using?
  
  
-### What operating system (Linux, Windows,...) and version?
- 
- 
+### What operating system (Linux, Windows, …) and version?
+- OS: `cat /etc/os-release`
+
+- Kernel version: `uname -r`
+
 ### What runtime / compiler are you using (e.g. python version or version of gcc)
  
  
