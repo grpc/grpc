@@ -118,13 +118,15 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
             status = self._server_status.get(service)
             if status is None:
                 status = _health_pb2.HealthCheckResponse.SERVICE_UNKNOWN  # pylint: disable=no-member
-            send_response_callback(
-                _health_pb2.HealthCheckResponse(status=status))
-            if service not in self._send_response_callbacks:
-                self._send_response_callbacks[service] = set()
-            self._send_response_callbacks[service].add(send_response_callback)
-            context.add_callback(
-                self._on_close_callback(send_response_callback, service))
+            else:
+                send_response_callback(
+                    _health_pb2.HealthCheckResponse(status=status))
+                if service not in self._send_response_callbacks:
+                    self._send_response_callbacks[service] = set()
+                self._send_response_callbacks[service].add(
+                    send_response_callback)
+                context.add_callback(
+                    self._on_close_callback(send_response_callback, service))
         return blocking_watcher
 
     def set(self, service, status):
@@ -157,6 +159,8 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         with self._lock:
             if self._gracefully_shutting_down:
                 return
-            for service in self._server_status:
-                self.set(service, _health_pb2.HealthCheckResponse.NOT_SERVING)  # pylint: disable=no-member
-            self._gracefully_shutting_down = True
+            else:
+                for service in self._server_status:
+                    self.set(service,
+                             _health_pb2.HealthCheckResponse.NOT_SERVING)  # pylint: disable=no-member
+                self._gracefully_shutting_down = True
