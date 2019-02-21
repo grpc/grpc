@@ -176,6 +176,7 @@ class BaseWatchTests(object):
             self.assertTrue(response_queue1.empty())
             self.assertTrue(response_queue2.empty())
 
+        @unittest.skip("https://github.com/grpc/grpc/issues/18127")
         def test_cancelled_watch_removed_from_watch_list(self):
             request = health_pb2.HealthCheckRequest(service=_WATCH_SERVICE)
             response_queue = queue.Queue()
