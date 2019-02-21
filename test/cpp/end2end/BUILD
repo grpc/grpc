@@ -449,6 +449,28 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "xds_end2end_test",
+    srcs = ["xds_end2end_test.cc"],
+    external_deps = [
+        "gmock",
+        "gtest",
+    ],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_resolver_fake",
+        "//src/proto/grpc/lb/v1:load_balancer_proto",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "proto_server_reflection_test",
     srcs = ["proto_server_reflection_test.cc"],
     external_deps = [
@@ -639,11 +661,11 @@ grpc_cc_test(
 grpc_cc_test(
     name = "cfstream_test",
     srcs = ["cfstream_test.cc"],
+    copts = COPTS,
     external_deps = [
         "gtest",
     ],
     tags = ["manual"],  # test requires root, won't work with bazel RBE
-    copts = COPTS,
     deps = [
         ":test_service_impl",
         "//:gpr",
