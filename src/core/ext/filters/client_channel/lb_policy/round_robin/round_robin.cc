@@ -325,14 +325,14 @@ void RoundRobin::RoundRobinSubchannelList::StartWatchingLocked() {
       subchannel(i)->UpdateConnectivityStateLocked(state, error);
     }
   }
-  // Now set the LB policy's state based on the subchannels' states.
-  UpdateRoundRobinStateFromSubchannelStateCountsLocked();
   // Start connectivity watch for each subchannel.
   for (size_t i = 0; i < num_subchannels(); i++) {
     if (subchannel(i)->subchannel() != nullptr) {
       subchannel(i)->StartConnectivityWatchLocked();
     }
   }
+  // Now set the LB policy's state based on the subchannels' states.
+  UpdateRoundRobinStateFromSubchannelStateCountsLocked();
 }
 
 void RoundRobin::RoundRobinSubchannelList::UpdateStateCountersLocked(
@@ -468,11 +468,12 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
     }
     p->channel_control_helper()->RequestReresolution();
   }
+  // Renew connectivity watch.
+  RenewConnectivityWatchLocked();
   // Update state counters.
   UpdateConnectivityStateLocked(connectivity_state, error);
   // Update overall state and renew notification.
   subchannel_list()->UpdateRoundRobinStateFromSubchannelStateCountsLocked();
-  RenewConnectivityWatchLocked();
 }
 
 void RoundRobin::UpdateLocked(const grpc_channel_args& args,

@@ -288,8 +288,8 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args,
     GRPC_ERROR_UNREF(error);
     if (state == GRPC_CHANNEL_READY) {
       subchannel_list_ = std::move(subchannel_list);
-      sd->ProcessUnselectedReadyLocked();
       sd->StartConnectivityWatchLocked();
+      sd->ProcessUnselectedReadyLocked();
       // If there was a previously pending update (which may or may
       // not have contained the currently selected subchannel), drop
       // it, so that it doesn't override what we've done here.
@@ -421,9 +421,9 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
   //    select in place of the current one.
   switch (connectivity_state) {
     case GRPC_CHANNEL_READY: {
-      ProcessUnselectedReadyLocked();
       // Renew notification.
       RenewConnectivityWatchLocked();
+      ProcessUnselectedReadyLocked();
       break;
     }
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
@@ -502,16 +502,18 @@ void PickFirst::PickFirstSubchannelData::ProcessUnselectedReadyLocked() {
 void PickFirst::PickFirstSubchannelData::
     CheckConnectivityStateAndStartWatchingLocked() {
   PickFirst* p = static_cast<PickFirst*>(subchannel_list()->policy());
+  // Check current state.
   grpc_error* error = GRPC_ERROR_NONE;
-  if (p->selected_ != this &&
-      CheckConnectivityStateLocked(&error) == GRPC_CHANNEL_READY) {
-    // We must process the READY subchannel before we start watching it.
-    // Otherwise, we won't know it's READY because we will be waiting for its
-    // connectivity state to change from READY.
+  grpc_connectivity_state current_state = CheckConnectivityStateLocked(&error);
+  GRPC_ERROR_UNREF(error);
+  // Start watch.
+  StartConnectivityWatchLocked();
+  // If current state is READY, select the subchannel now, since we started
+  // watching from this state and will not get a notification of it
+  // transitioning into this state.
+  if (p->selected_ != this && current_state == GRPC_CHANNEL_READY) {
     ProcessUnselectedReadyLocked();
   }
-  GRPC_ERROR_UNREF(error);
-  StartConnectivityWatchLocked();
 }
 
 //
