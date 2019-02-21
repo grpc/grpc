@@ -32,6 +32,10 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 
+#ifndef WSA_FLAG_NO_HANDLE_INHERIT
+#define WSA_FLAG_NO_HANDLE_INHERIT 0x80
+#endif
+
 /* This holds the data for an outstanding read or write on a socket.
    The mutex to protect the concurrent access to that data is the one
    inside the winsocket wrapper. */
