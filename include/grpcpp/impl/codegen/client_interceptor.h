@@ -76,7 +76,7 @@ class ClientRpcInfo {
     UNKNOWN  // UNKNOWN is not API and will be removed later
   };
 
-  ~ClientRpcInfo(){};
+  ~ClientRpcInfo() {}
 
   // Delete copy constructor but allow default move constructor
   ClientRpcInfo(const ClientRpcInfo&) = delete;
