@@ -198,14 +198,14 @@ namespace Grpc.Core.Tests
                 await responseStream.WriteAsync("abc");
             });
 
-            var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(), "");
+            var cts = new CancellationTokenSource();
+            var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(new CallOptions(cancellationToken: cts.Token)), "request1");
             // make sure the response and status sent by the server is received on the client side
-            await Task.Delay(3000);
+            await Task.Delay(2000);
 
             // cancel the call before actually reading the response
-            var cts = new CancellationTokenSource();
             cts.Cancel();
-            var moveNextTask = call.ResponseStream.MoveNext(cts.Token);
+            var moveNextTask = call.ResponseStream.MoveNext();
 
             try
             {
