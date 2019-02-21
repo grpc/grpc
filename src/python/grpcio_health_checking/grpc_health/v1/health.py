@@ -151,6 +151,8 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         This should be invoked when the server is entering a graceful shutdown
         period. After this method is invoked, future attempts to set the status
         of a service will be ignored.
+
+        This is an EXPERIMENTAL API.
         """
         with self._lock:
             if self._gracefully_shutting_down:
