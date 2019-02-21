@@ -20,4 +20,4 @@ PROTO_FILES=['google/protobuf/wrappers.proto', 'google/protobuf/type.proto', 'go
 CC_INCLUDE='third_party/protobuf/src'
 PROTO_INCLUDE='third_party/protobuf/src'
 
-PROTOBUF_SUBMODULE_VERSION="776b3a8b11fd243d709ef726ac963aa7d42e532e"
+PROTOBUF_SUBMODULE_VERSION="c7b339220166e8f78b35e8f6a72775476fde1028"
