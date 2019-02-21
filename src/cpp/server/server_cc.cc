@@ -1251,6 +1251,6 @@ CompletionQueue* Server::CallbackCQ() {
     shutdown_callback->TakeCQ(callback_cq_);
   }
   return callback_cq_;
-};
+}
 
 }  // namespace grpc

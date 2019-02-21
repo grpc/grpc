@@ -140,7 +140,7 @@ class Thread {
     } else {
       GPR_ASSERT(state_ == FAILED);
     }
-  };
+  }
 
  private:
   Thread(const Thread&) = delete;
