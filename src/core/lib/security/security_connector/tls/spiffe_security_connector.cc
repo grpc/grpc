@@ -99,9 +99,6 @@ PopulateSpiffeCredentials(grpc_tls_credentials_options* options) {
   GPR_ASSERT(options != nullptr);
   GPR_ASSERT(options->credential_reload_config() != nullptr ||
              options->key_materials_config() != nullptr);
-  grpc_tls_credential_reload_arg* reload_arg =
-      static_cast<grpc_tls_credential_reload_arg*>(
-          gpr_zalloc(sizeof(*reload_arg)));
   grpc_core::RefCountedPtr<grpc_tls_key_materials_config> key_materials_config;
   /* Use credential reload config to fetch credentials. */
   if (options->credential_reload_config() != nullptr) {
