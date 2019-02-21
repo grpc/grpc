@@ -47,6 +47,10 @@ class FakeResolverResponseGenerator
   // instance to trigger a new resolution with the specified response.
   void SetResponse(grpc_channel_args* next_response);
 
+  // Similar to SetResponse() except that it delays response setting until the
+  // resolver is available.
+  void MaybeSetResponse(grpc_channel_args* next_response);
+
   // Sets the re-resolution response, which is returned by the fake resolver
   // when re-resolution is requested (via \a RequestReresolutionLocked()).
   // The new re-resolution response replaces any previous re-resolution
@@ -79,6 +83,7 @@ class FakeResolverResponseGenerator
   static void SetFailureLocked(void* arg, grpc_error* error);
 
   FakeResolver* resolver_ = nullptr;  // Do not own.
+  grpc_channel_args* response_ = nullptr;
 };
 
 }  // namespace grpc_core

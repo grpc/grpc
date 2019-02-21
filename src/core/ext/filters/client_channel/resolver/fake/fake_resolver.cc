@@ -86,7 +86,14 @@ FakeResolver::FakeResolver(const ResolverArgs& args) : Resolver(args.combiner) {
   channel_args_ = grpc_channel_args_copy(args.args);
   FakeResolverResponseGenerator* response_generator =
       FakeResolverResponseGenerator::GetFromArgs(args.args);
-  if (response_generator != nullptr) response_generator->resolver_ = this;
+  if (response_generator != nullptr) {
+    response_generator->resolver_ = this;
+    if (response_generator->response_ != nullptr) {
+      response_generator->SetResponse(response_generator->response_);
+      grpc_channel_args_destroy(response_generator->response_);
+      response_generator->response_ = nullptr;
+    }
+  }
 }
 
 FakeResolver::~FakeResolver() {
@@ -114,6 +121,7 @@ void FakeResolver::RequestReresolutionLocked() {
 void FakeResolver::MaybeFinishNextLocked() {
   if (next_completion_ != nullptr &&
       (next_results_ != nullptr || return_failure_)) {
+    // The response generator in next_results_ will be preferred.
     *target_result_ =
         return_failure_ ? nullptr
                         : grpc_channel_args_union(next_results_, channel_args_);
@@ -153,6 +161,16 @@ void FakeResolverResponseGenerator::SetResponseLocked(void* arg,
   resolver->next_results_ = closure_arg->response;
   resolver->MaybeFinishNextLocked();
   Delete(closure_arg);
+}
+
+void FakeResolverResponseGenerator::MaybeSetResponse(
+    grpc_channel_args* response) {
+  GPR_ASSERT(response != nullptr);
+  if (resolver_ != nullptr) {
+    SetResponse(response);
+  } else {
+    response_ = grpc_channel_args_copy(response);
+  }
 }
 
 void FakeResolverResponseGenerator::SetResponse(grpc_channel_args* response) {
