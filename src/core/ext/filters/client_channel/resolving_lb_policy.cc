@@ -262,14 +262,12 @@ void ResolvingLoadBalancingPolicy::OnResolverShutdownLocked(grpc_error* error) {
 // Creates a new LB policy, replacing any previous one.
 // Updates trace_strings to indicate what was done.
 void ResolvingLoadBalancingPolicy::CreateNewLbPolicyLocked(
-    const char* lb_policy_name, grpc_json* lb_config,
-    TraceStringVector* trace_strings) {
+    const char* lb_policy_name, TraceStringVector* trace_strings) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = combiner();
   lb_policy_args.channel_control_helper =
       UniquePtr<ChannelControlHelper>(New<ResolvingControlHelper>(Ref()));
   lb_policy_args.args = resolver_result_;
-  lb_policy_args.lb_config = lb_config;
   OrphanablePtr<LoadBalancingPolicy> new_lb_policy =
       LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
           lb_policy_name, std::move(lb_policy_args));
@@ -307,7 +305,6 @@ void ResolvingLoadBalancingPolicy::CreateNewLbPolicyLocked(
     lb_policy_ = std::move(new_lb_policy);
     grpc_pollset_set_add_pollset_set(lb_policy_->interested_parties(),
                                      interested_parties());
-    lb_policy_->ExitIdleLocked();
   }
 }
 
@@ -417,27 +414,23 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
       lb_policy_config = self->child_lb_config_;
     }
     GPR_ASSERT(lb_policy_name != nullptr);
-    // Check to see if we're already using the right LB policy.
-    const bool lb_policy_name_changed =
-        self->lb_policy_ == nullptr ||
-        strcmp(self->lb_policy_->name(), lb_policy_name) != 0;
-    if (self->lb_policy_ != nullptr && !lb_policy_name_changed) {
-      // Continue using the same LB policy.  Update with new addresses.
-      if (self->tracer_->enabled()) {
-        gpr_log(GPR_INFO,
-                "resolving_lb=%p: updating existing LB policy \"%s\" (%p)",
-                self, lb_policy_name, self->lb_policy_.get());
-      }
-      self->lb_policy_->UpdateLocked(*self->resolver_result_, lb_policy_config);
-    } else {
-      // Instantiate new LB policy.
+    // If we're not already using the right LB policy name, instantiate
+    // a new one.
+    if (self->lb_policy_ == nullptr ||
+        strcmp(self->lb_policy_->name(), lb_policy_name) != 0) {
       if (self->tracer_->enabled()) {
         gpr_log(GPR_INFO, "resolving_lb=%p: creating new LB policy \"%s\"",
                 self, lb_policy_name);
       }
-      self->CreateNewLbPolicyLocked(lb_policy_name, lb_policy_config,
-                                    &trace_strings);
+      self->CreateNewLbPolicyLocked(lb_policy_name, &trace_strings);
     }
+    // Update the LB policy with the new addresses and config.
+    if (self->tracer_->enabled()) {
+      gpr_log(GPR_INFO,
+              "resolving_lb=%p: updating LB policy \"%s\" (%p)",
+              self, lb_policy_name, self->lb_policy_.get());
+    }
+    self->lb_policy_->UpdateLocked(*self->resolver_result_, lb_policy_config);
     // Add channel trace event.
     if (self->channelz_node() != nullptr) {
       if (service_config_changed) {
