@@ -46,7 +46,6 @@ struct thd_info {
   void (*body)(void* arg); /* body of a thread */
   void* arg;               /* argument to a thread */
   HANDLE join_event;       /* the join event */
-  bool joinable;           /* whether it is joinable */
 };
 
 thread_local struct thd_info* g_thd_info;
@@ -54,8 +53,7 @@ thread_local struct thd_info* g_thd_info;
 class ThreadInternalsWindows
     : public grpc_core::internal::ThreadInternalsInterface {
  public:
-  ThreadInternalsWindows(void (*thd_body)(void* arg), void* arg, bool* success,
-                         const grpc_core::Thread::Options& options)
+  ThreadInternalsWindows(void (*thd_body)(void* arg), void* arg, bool* success)
       : started_(false) {
     gpr_mu_init(&mu_);
     gpr_cv_init(&ready_);
@@ -65,23 +63,20 @@ class ThreadInternalsWindows
     info_->thread = this;
     info_->body = thd_body;
     info_->arg = arg;
-    info_->join_event = nullptr;
-    info_->joinable = options.joinable();
-    if (info_->joinable) {
-      info_->join_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-      if (info_->join_event == nullptr) {
-        gpr_free(info_);
-        *success = false;
-        return;
-      }
-    }
-    handle = CreateThread(nullptr, 64 * 1024, thread_body, info_, 0, nullptr);
-    if (handle == nullptr) {
-      destroy_thread();
+
+    info_->join_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    if (info_->join_event == nullptr) {
+      gpr_free(info_);
       *success = false;
     } else {
-      CloseHandle(handle);
-      *success = true;
+      handle = CreateThread(nullptr, 64 * 1024, thread_body, info_, 0, nullptr);
+      if (handle == nullptr) {
+        destroy_thread();
+        *success = false;
+      } else {
+        CloseHandle(handle);
+        *success = true;
+      }
     }
   }
 
@@ -112,24 +107,14 @@ class ThreadInternalsWindows
                   gpr_inf_future(GPR_CLOCK_MONOTONIC));
     }
     gpr_mu_unlock(&g_thd_info->thread->mu_);
-    if (!g_thd_info->joinable) {
-      grpc_core::Delete(g_thd_info->thread);
-      g_thd_info->thread = nullptr;
-    }
     g_thd_info->body(g_thd_info->arg);
-    if (g_thd_info->joinable) {
-      BOOL ret = SetEvent(g_thd_info->join_event);
-      GPR_ASSERT(ret);
-    } else {
-      gpr_free(g_thd_info);
-    }
+    BOOL ret = SetEvent(g_thd_info->join_event);
+    GPR_ASSERT(ret);
     return 0;
   }
 
   void destroy_thread() {
-    if (info_ != nullptr && info_->joinable) {
-      CloseHandle(info_->join_event);
-    }
+    CloseHandle(info_->join_event);
     gpr_free(info_);
   }
 
@@ -144,15 +129,14 @@ class ThreadInternalsWindows
 namespace grpc_core {
 
 Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
-               bool* success, const Options& options)
-    : options_(options) {
+               bool* success) {
   bool outcome = false;
-  impl_ = New<ThreadInternalsWindows>(thd_body, arg, &outcome, options);
+  impl_ = grpc_core::New<ThreadInternalsWindows>(thd_body, arg, &outcome);
   if (outcome) {
     state_ = ALIVE;
   } else {
     state_ = FAILED;
-    Delete(impl_);
+    grpc_core::Delete(impl_);
     impl_ = nullptr;
   }
 
