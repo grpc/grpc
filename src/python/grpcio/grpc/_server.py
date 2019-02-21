@@ -111,7 +111,7 @@ def _raise_rpc_error(state):
 
 def _possibly_finish_call(state, token):
     state.due.remove(token)
-    if (state.client is _CANCELLED or state.statused) and not state.due:
+    if not _is_rpc_state_active(state) and not state.due:
         callbacks = state.callbacks
         state.callbacks = None
         return state, callbacks
@@ -218,7 +218,7 @@ class _Context(grpc.ServicerContext):
 
     def is_active(self):
         with self._state.condition:
-            return self._state.client is not _CANCELLED and not self._state.statused
+            return _is_rpc_state_active(self._state)
 
     def time_remaining(self):
         return max(self._rpc_event.call_details.deadline - time.time(), 0)
@@ -316,7 +316,7 @@ class _RequestIterator(object):
     def _raise_or_start_receive_message(self):
         if self._state.client is _CANCELLED:
             _raise_rpc_error(self._state)
-        elif self._state.client is _CLOSED or self._state.statused:
+        elif not _is_rpc_state_active(self._state):
             raise StopIteration()
         else:
             self._call.start_server_batch(
@@ -361,7 +361,7 @@ def _unary_request(rpc_event, state, request_deserializer):
 
     def unary_request():
         with state.condition:
-            if state.client is _CANCELLED or state.statused:
+            if not _is_rpc_state_active(state):
                 return None
             else:
                 rpc_event.call.start_server_batch(
@@ -389,13 +389,20 @@ def _unary_request(rpc_event, state, request_deserializer):
     return unary_request
 
 
-def _call_behavior(rpc_event, state, behavior, argument, request_deserializer):
+def _call_behavior(rpc_event,
+                   state,
+                   behavior,
+                   argument,
+                   request_deserializer,
+                   send_response_callback=None):
     from grpc import _create_servicer_context
     with _create_servicer_context(rpc_event, state,
                                   request_deserializer) as context:
         try:
-            response = behavior(argument, context)
-            return response, True
+            if send_response_callback is not None:
+                return behavior(argument, context, send_response_callback), True
+            else:
+                return behavior(argument, context), True
         except Exception as exception:  # pylint: disable=broad-except
             with state.condition:
                 if state.aborted:
@@ -441,7 +448,7 @@ def _serialize_response(rpc_event, state, response, response_serializer):
 
 def _send_response(rpc_event, state, serialized_response):
     with state.condition:
-        if state.client is _CANCELLED or state.statused:
+        if not _is_rpc_state_active(state):
             return False
         else:
             if state.initial_metadata_allowed:
@@ -462,7 +469,7 @@ def _send_response(rpc_event, state, serialized_response):
             while True:
                 state.condition.wait()
                 if token not in state.due:
-                    return state.client is not _CANCELLED and not state.statused
+                    return _is_rpc_state_active(state)
 
 
 def _status(rpc_event, state, serialized_response):
@@ -508,65 +515,102 @@ def _unary_response_in_pool(rpc_event, state, behavior, argument_thunk,
 def _stream_response_in_pool(rpc_event, state, behavior, argument_thunk,
                              request_deserializer, response_serializer):
     cygrpc.install_context_from_call(rpc_event.call)
+
+    def send_response(response):
+        if response is None:
+            _status(rpc_event, state, None)
+        else:
+            serialized_response = _serialize_response(
+                rpc_event, state, response, response_serializer)
+            if serialized_response is not None:
+                _send_response(rpc_event, state, serialized_response)
+
     try:
         argument = argument_thunk()
         if argument is not None:
-            response_iterator, proceed = _call_behavior(
-                rpc_event, state, behavior, argument, request_deserializer)
-            if proceed:
-                while True:
-                    response, proceed = _take_response_from_response_iterator(
-                        rpc_event, state, response_iterator)
-                    if proceed:
-                        if response is None:
-                            _status(rpc_event, state, None)
-                            break
-                        else:
-                            serialized_response = _serialize_response(
-                                rpc_event, state, response, response_serializer)
-                            if serialized_response is not None:
-                                proceed = _send_response(
-                                    rpc_event, state, serialized_response)
-                                if not proceed:
-                                    break
-                            else:
-                                break
-                    else:
-                        break
+            if hasattr(behavior, 'experimental_non_blocking'
+                      ) and behavior.experimental_non_blocking:
+                _call_behavior(
+                    rpc_event,
+                    state,
+                    behavior,
+                    argument,
+                    request_deserializer,
+                    send_response_callback=send_response)
+            else:
+                response_iterator, proceed = _call_behavior(
+                    rpc_event, state, behavior, argument, request_deserializer)
+                if proceed:
+                    _send_message_callback_to_blocking_iterator_adapter(
+                        rpc_event, state, send_response, response_iterator)
     finally:
         cygrpc.uninstall_context()
 
 
-def _handle_unary_unary(rpc_event, state, method_handler, thread_pool):
+def _is_rpc_state_active(state):
+    return state.client is not _CANCELLED and not state.statused
+
+
+def _send_message_callback_to_blocking_iterator_adapter(
+        rpc_event, state, send_response_callback, response_iterator):
+    while True:
+        response, proceed = _take_response_from_response_iterator(
+            rpc_event, state, response_iterator)
+        if proceed:
+            send_response_callback(response)
+            if not _is_rpc_state_active(state):
+                break
+        else:
+            break
+
+
+def _select_thread_pool_for_behavior(behavior, default_thread_pool):
+    if hasattr(behavior, 'experimental_thread_pool'
+              ) and behavior.experimental_thread_pool is not None:
+        return behavior.experimental_thread_pool
+    else:
+        return default_thread_pool
+
+
+def _handle_unary_unary(rpc_event, state, method_handler, default_thread_pool):
     unary_request = _unary_request(rpc_event, state,
                                    method_handler.request_deserializer)
+    thread_pool = _select_thread_pool_for_behavior(method_handler.unary_unary,
+                                                   default_thread_pool)
     return thread_pool.submit(_unary_response_in_pool, rpc_event, state,
                               method_handler.unary_unary, unary_request,
                               method_handler.request_deserializer,
                               method_handler.response_serializer)
 
 
-def _handle_unary_stream(rpc_event, state, method_handler, thread_pool):
+def _handle_unary_stream(rpc_event, state, method_handler, default_thread_pool):
     unary_request = _unary_request(rpc_event, state,
                                    method_handler.request_deserializer)
+    thread_pool = _select_thread_pool_for_behavior(method_handler.unary_stream,
+                                                   default_thread_pool)
     return thread_pool.submit(_stream_response_in_pool, rpc_event, state,
                               method_handler.unary_stream, unary_request,
                               method_handler.request_deserializer,
                               method_handler.response_serializer)
 
 
-def _handle_stream_unary(rpc_event, state, method_handler, thread_pool):
+def _handle_stream_unary(rpc_event, state, method_handler, default_thread_pool):
     request_iterator = _RequestIterator(state, rpc_event.call,
                                         method_handler.request_deserializer)
+    thread_pool = _select_thread_pool_for_behavior(method_handler.stream_unary,
+                                                   default_thread_pool)
     return thread_pool.submit(
         _unary_response_in_pool, rpc_event, state, method_handler.stream_unary,
         lambda: request_iterator, method_handler.request_deserializer,
         method_handler.response_serializer)
 
 
-def _handle_stream_stream(rpc_event, state, method_handler, thread_pool):
+def _handle_stream_stream(rpc_event, state, method_handler,
+                          default_thread_pool):
     request_iterator = _RequestIterator(state, rpc_event.call,
                                         method_handler.request_deserializer)
+    thread_pool = _select_thread_pool_for_behavior(method_handler.stream_stream,
+                                                   default_thread_pool)
     return thread_pool.submit(
         _stream_response_in_pool, rpc_event, state,
         method_handler.stream_stream, lambda: request_iterator,

@@ -554,6 +554,25 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "flaky_network_test",
+    srcs = ["flaky_network_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = ["manual"],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "shutdown_test",
     srcs = ["shutdown_test.cc"],
     external_deps = [
@@ -602,6 +621,27 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "cfstream_test",
+    srcs = ["cfstream_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = ["manual"],  # test requires root, won't work with bazel RBE
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_cfstream",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:simple_messages_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],

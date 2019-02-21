@@ -68,6 +68,11 @@ config_setting(
     values = {"python_path": "python3"},
 )
 
+config_setting(
+    name = "mac_x86_64",
+    values = {"cpu": "darwin"},
+)
+
 # This should be updated along with build.yaml
 g_stands_for = "godric"
 
@@ -618,10 +623,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "atomic",
-    hdrs = [
-        "src/core/lib/gprpp/atomic_with_atm.h",
-        "src/core/lib/gprpp/atomic_with_std.h",
-    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/gprpp/atomic.h",
@@ -677,6 +678,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/ref_counted.h"],
     deps = [
+        "atomic",
         "debug_location",
         "gpr_base",
         "grpc_trace",
@@ -986,6 +988,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
+    use_cfstream = True,
     deps = [
         "gpr_base",
         "grpc_codegen",
@@ -1049,6 +1052,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/endpoint_cfstream.h",
         "src/core/lib/iomgr/error_cfstream.h",
     ],
+    use_cfstream = True,
     deps = [
         ":gpr_base",
         ":grpc_base",

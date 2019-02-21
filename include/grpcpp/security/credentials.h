@@ -95,7 +95,7 @@ class ChannelCredentials : private GrpcLibraryCodegen {
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators) {
     return nullptr;
-  };
+  }
 };
 
 /// A call credentials object encapsulates the state needed by a client to
