@@ -77,10 +77,8 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   virtual const char* name() const override { return "resolving_lb"; }
 
   // No-op -- should never get updates from the channel.
-  // TODO(roth): Need to support updating child LB policy's config.
-  // For xds policy, will also need to support updating config
-  // independently of args from resolver, since they will be coming from
-  // different places.  Maybe change LB policy API to support that?
+  // TODO(roth): Need to support updating child LB policy's config for xds
+  // use case.
   void UpdateLocked(const grpc_channel_args& args,
                     grpc_json* lb_config) override {}
 
@@ -104,7 +102,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   void StartResolvingLocked();
   void OnResolverShutdownLocked(grpc_error* error);
-  void CreateNewLbPolicyLocked(const char* lb_policy_name, grpc_json* lb_config,
+  void CreateNewLbPolicyLocked(const char* lb_policy_name,
                                TraceStringVector* trace_strings);
   void MaybeAddTraceMessagesForAddressChangesLocked(
       TraceStringVector* trace_strings);
