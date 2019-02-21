@@ -279,8 +279,8 @@ void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_event* done_ev) {
     }
     std::vector<int> sockets;
     for (size_t i = 0; i < 50; i++) {
-      SOCKET s = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, nullptr, 0,
-                           WSA_FLAG_OVERLAPPED);
+      SOCKET s = grpc_create_wsa_socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, nullptr, 0,
+                           WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
       ASSERT_TRUE(s != BAD_SOCKET_RETURN_VAL)
           << "Failed to create TCP ipv6 socket";
       gpr_log(GPR_DEBUG, "Opened socket: %d", s);

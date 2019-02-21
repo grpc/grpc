@@ -181,4 +181,25 @@ int grpc_ipv6_loopback_available(void) {
   return g_ipv6_loopback_available;
 }
 
+SOCKET grpc_create_wsa_socket(int family,
+                              int type,
+                              int protocol,
+                              LPWSAPROTOCOL_INFOA protocol_info,
+                              GROUP group,
+                              DWORD flags) {
+  bool is_wsa_no_handle_inherit_set = flags & WSA_FLAG_NO_HANDLE_INHERIT;
+  if (!g_is_wsa_no_handle_inherit_supported && is_wsa_no_handle_inherit_set) {
+    flags ^= WSA_FLAG_NO_HANDLE_INHERIT;
+  }
+  SOCKET sock = WSASocket(family, type, protocol, protocol_info, group, flags);
+  /* WSA_FLAG_NO_HANDLE_INHERIT may be not supported on the older Windows versions, see
+     https://msdn.microsoft.com/en-us/library/windows/desktop/ms742212(v=vs.85).aspx
+     for details. */
+  if (sock == INVALID_SOCKET && is_wsa_no_handle_inherit_set) {
+    g_is_wsa_no_handle_inherit_supported = false;
+    sock = WSASocket(family, type, protocol, protocol_info, group, flags ^ WSA_FLAG_NO_HANDLE_INHERIT);
+  }
+  return sock;
+}
+
 #endif /* GRPC_WINSOCK_SOCKET */

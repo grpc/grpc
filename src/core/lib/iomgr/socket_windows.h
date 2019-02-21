@@ -114,6 +114,15 @@ void grpc_socket_become_ready(grpc_winsocket* winsocket,
    The value is probed once, and cached for the life of the process. */
 int grpc_ipv6_loopback_available(void);
 
+static bool g_is_wsa_no_handle_inherit_supported = true;
+
+SOCKET grpc_create_wsa_socket(int family,
+                              int type,
+                              int protocol,
+                              LPWSAPROTOCOL_INFOA protocol_info,
+                              GROUP group,
+                              DWORD flags);
+
 #endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_WINDOWS_H */
