@@ -215,7 +215,7 @@ class BuildExt(build_ext.build_ext):
 
         def compiler_ok_with_extra_std():
             """Test if default compiler is okay with specifying c++ version
-            when invokec in C mode. GCC is okay with this, while clang is not.
+            when invoked in C mode. GCC is okay with this, while clang is not.
             """
             cc_test = subprocess.Popen(
                 ['cc', '-x', 'c', '-std=c++11', '-'],
