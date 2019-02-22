@@ -1451,7 +1451,7 @@ static grpc_error* begin_parse_string(grpc_chttp2_hpack_parser* p,
                                       const uint8_t* cur, const uint8_t* end,
                                       uint8_t binary,
                                       grpc_chttp2_hpack_parser_string* str) {
-  if (!p->huff && binary == NOT_BINARY &&
+  if ((end > cur) && !p->huff && binary == NOT_BINARY &&
       (end - cur) >= static_cast<intptr_t>(p->strlen) &&
       p->current_slice_refcount != nullptr) {
     GRPC_STATS_INC_HPACK_RECV_UNCOMPRESSED();
