@@ -31,9 +31,7 @@ class LoadBalancingPolicyFactory {
  public:
   /// Returns a new LB policy instance.
   virtual OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-      RefCountedPtr<LoadBalancingPolicy::Config> config,
       LoadBalancingPolicy::Args args) const {
-    std::move(config);  // Suppress clang-tidy complaints.
     std::move(args);  // Suppress clang-tidy complaint.
     GRPC_ABSTRACT;
   }

@@ -612,6 +612,7 @@ static void pollable_unref(pollable* p, int line, const char* reason) {
     close(p->epfd);
     grpc_wakeup_fd_destroy(&p->wakeup);
     gpr_mu_destroy(&p->owner_orphan_mu);
+    gpr_mu_destroy(&p->mu);
     gpr_free(p);
   }
 }

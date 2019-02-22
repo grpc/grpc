@@ -89,6 +89,7 @@ static void me_destroy(grpc_endpoint* ep) {
   mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
   grpc_slice_buffer_destroy(&m->read_buffer);
   grpc_resource_user_unref(m->resource_user);
+  gpr_mu_destroy(&m->mu);
   gpr_free(m);
 }
 
