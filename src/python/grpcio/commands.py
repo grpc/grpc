@@ -33,8 +33,6 @@ from setuptools.command import test
 
 import support
 
-from typing import Text
-
 PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
 GRPC_STEM = os.path.abspath(PYTHON_STEM + '../../../../')
 PROTO_STEM = os.path.join(GRPC_STEM, 'src', 'proto')
@@ -224,7 +222,7 @@ class BuildExt(build_ext.build_ext):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)
             _, cc_err = cc_test.communicate(input='int main(){return 0;}')
-            return not 'invalid argument' in Text(cc_err)
+            return not 'invalid argument' in str(cc_err)
 
         # This special conditioning is here due to difference of compiler
         #   behavior in gcc and clang. The clang doesn't take --stdc++11
