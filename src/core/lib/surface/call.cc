@@ -281,6 +281,7 @@ static void cancel_with_error(grpc_call* c, grpc_error* error);
 static void destroy_call(void* call_stack, grpc_error* error);
 static void receiving_slice_ready(void* bctlp, grpc_error* error);
 static void set_final_status(grpc_call* call, grpc_error* error);
+static void set_status_error(grpc_call* call, grpc_error* error);
 static void process_data_after_md(batch_control* bctl);
 static void post_batch_completion(batch_control* bctl);
 
@@ -729,7 +730,7 @@ static void set_final_status(grpc_call* call, grpc_error* error) {
                           call->final_op.client.error_string);
     // explicitly take a ref
     grpc_slice_ref_internal(*call->final_op.client.status_details);
-    gpr_atm_rel_store(&call->status_error, reinterpret_cast<gpr_atm>(error));
+    set_status_error(call, error);
     grpc_core::channelz::ChannelNode* channelz_channel =
         grpc_channel_get_channelz_node(call->channel);
     if (channelz_channel != nullptr) {
@@ -755,6 +756,13 @@ static void set_final_status(grpc_call* call, grpc_error* error) {
     }
     GRPC_ERROR_UNREF(error);
   }
+}
+
+static void set_status_error(grpc_call* call, grpc_error* error) {
+  grpc_error* old_error =
+      reinterpret_cast<grpc_error*>(gpr_atm_acq_load(&call->status_error));
+  GRPC_ERROR_UNREF(old_error);
+  gpr_atm_rel_store(&call->status_error, reinterpret_cast<gpr_atm>(error));
 }
 
 /*******************************************************************************
@@ -1712,9 +1720,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
             gpr_free(msg);
           }
         }
-
-        gpr_atm_rel_store(&call->status_error,
-                          reinterpret_cast<gpr_atm>(status_error));
+        set_status_error(call, status_error);
         if (!prepare_application_metadata(
                 call,
                 static_cast<int>(
