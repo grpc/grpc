@@ -265,15 +265,8 @@ def cython_extensions_and_necessity():
                   for name in CYTHON_EXTENSION_MODULE_NAMES]
   config = os.environ.get('CONFIG', 'opt')
   prefix = 'libs/' + config + '/'
-  if "darwin" in sys.platform or USE_PREBUILT_GRPC_CORE:
-    extra_objects = [prefix + 'libares.a',
-                     prefix + 'libboringssl.a',
-                     prefix + 'libgpr.a',
-                     prefix + 'libgrpc.a']
-    core_c_files = []
-  else:
-    core_c_files = list(CORE_C_FILES)
-    extra_objects = []
+  core_c_files = list(CORE_C_FILES)
+  extra_objects = []
   extensions = [
       _extension.Extension(
           name=module_name,
