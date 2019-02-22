@@ -496,7 +496,7 @@ static void BM_IsolatedFilter(benchmark::State& state) {
   std::ostringstream label;
 
   std::vector<grpc_arg> args;
-  grpc_core::RefCountedPtr<grpc_core::ClientChannelFactory>
+  grpc_core::UniquePtr<grpc_core::ClientChannelFactory>
       fake_client_channel_factory(grpc_core::New<FakeClientChannelFactory>());
   args.push_back(grpc_core::ClientChannelFactory::CreateChannelArg(
       fake_client_channel_factory.get()));
