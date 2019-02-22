@@ -278,7 +278,7 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args,
   // READY, then select it immediately.  This can happen when the
   // currently selected subchannel is also present in the update.  It
   // can also happen if one of the subchannels in the update is already
-  // in the subchannel index because it's in use by another channel.
+  // in the global subchannel pool because it's in use by another channel.
   // TODO(roth): If we're in IDLE state, we should probably defer this
   // check and instead do it in ExitIdleLocked().
   for (size_t i = 0; i < subchannel_list->num_subchannels(); ++i) {
@@ -376,11 +376,10 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
           UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(new_error)));
     } else {
       if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-        // If the selected subchannel goes bad, request a re-resolution. We also
-        // set the channel state to IDLE and reset idle_. The reason
-        // is that if the new state is TRANSIENT_FAILURE due to a GOAWAY
-        // reception we don't want to connect to the re-resolved backends until
-        // we leave the IDLE state.
+        // If the selected subchannel goes bad, request a re-resolution. We
+        // also set the channel state to IDLE. The reason is that if the new
+        // state is TRANSIENT_FAILURE due to a GOAWAY reception we don't want
+        // to connect to the re-resolved backends until we leave IDLE state.
         p->idle_ = true;
         p->channel_control_helper()->RequestReresolution();
         // In transient failure. Rely on re-resolution to recover.

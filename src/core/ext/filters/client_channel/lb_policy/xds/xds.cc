@@ -1143,11 +1143,7 @@ void XdsLb::UpdateLocked(const grpc_channel_args& args,
     if (lb_fallback_timeout_ms_ > 0 && serverlist_ == nullptr &&
         !fallback_timer_callback_pending_) {
       grpc_millis deadline = ExecCtx::Get()->Now() + lb_fallback_timeout_ms_;
-      // TODO(roth): We currently track this ref manually.  Once the
-      // ClosureRef API is ready, we should pass the RefCountedPtr<> along
-      // with the callback.
-      auto self = Ref(DEBUG_LOCATION, "on_fallback_timer");
-      self.release();
+      Ref(DEBUG_LOCATION, "on_fallback_timer").release();  // Held by closure
       GRPC_CLOSURE_INIT(&lb_on_fallback_, &XdsLb::OnFallbackTimerLocked, this,
                         grpc_combiner_scheduler(combiner()));
       fallback_timer_callback_pending_ = true;
@@ -1164,11 +1160,8 @@ void XdsLb::UpdateLocked(const grpc_channel_args& args,
         grpc_channel_get_channel_stack(lb_channel_));
     GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
     watching_lb_channel_ = true;
-    // TODO(roth): We currently track this ref manually.  Once the
-    // ClosureRef API is ready, we should pass the RefCountedPtr<> along
-    // with the callback.
-    auto self = Ref(DEBUG_LOCATION, "watch_lb_channel_connectivity");
-    self.release();
+    // Ref held by closure.
+    Ref(DEBUG_LOCATION, "watch_lb_channel_connectivity").release();
     grpc_client_channel_watch_connectivity_state(
         client_channel_elem,
         grpc_polling_entity_create_from_pollset_set(interested_parties()),
