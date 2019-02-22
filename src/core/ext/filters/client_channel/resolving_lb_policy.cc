@@ -218,6 +218,9 @@ void ResolvingLoadBalancingPolicy::StartResolvingLocked() {
   }
   GPR_ASSERT(!started_resolving_);
   started_resolving_ = true;
+  channel_control_helper()->UpdateState(
+      GRPC_CHANNEL_CONNECTING, GRPC_ERROR_NONE,
+      UniquePtr<SubchannelPicker>(New<QueuePicker>(Ref())));
   Ref().release();
   resolver_->NextLocked(&resolver_result_, &on_resolver_result_changed_);
 }
