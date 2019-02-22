@@ -475,7 +475,6 @@ void grpc_mdelem_unref(grpc_mdelem gmd DEBUG_ARGS) {
 }
 
 static void* get_user_data(UserData* user_data, void (*destroy_func)(void*)) {
-  void* result;
   if (gpr_atm_acq_load(&user_data->destroy_user_data) ==
       (gpr_atm)destroy_func) {
     return (void*)gpr_atm_no_barrier_load(&user_data->user_data);
