@@ -31,6 +31,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/abstract.h"
+#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -88,9 +89,7 @@ class RefCount {
   }
 
   // Increases the ref-count by `n`.
-  void Ref(Value n = 1) {
-    GPR_ATM_INC_ADD_THEN(value_.fetch_add(n, std::memory_order_relaxed));
-  }
+  void Ref(Value n = 1) { value_.FetchAdd(n, MemoryOrder::RELAXED); }
   void Ref(const DebugLocation& location, const char* reason, Value n = 1) {
 #ifndef NDEBUG
     if (location.Log() && trace_flag_ != nullptr && trace_flag_->enabled()) {
@@ -106,8 +105,7 @@ class RefCount {
   // Similar to Ref() with an assert on the ref-count being non-zero.
   void RefNonZero() {
 #ifndef NDEBUG
-    const Value prior =
-        GPR_ATM_INC_ADD_THEN(value_.fetch_add(1, std::memory_order_relaxed));
+    const Value prior = value_.FetchAdd(1, MemoryOrder::RELAXED);
     assert(prior > 0);
 #else
     Ref();
@@ -127,8 +125,7 @@ class RefCount {
 
   // Decrements the ref-count and returns true if the ref-count reaches 0.
   bool Unref() {
-    const Value prior =
-        GPR_ATM_INC_ADD_THEN(value_.fetch_sub(1, std::memory_order_acq_rel));
+    const Value prior = value_.FetchSub(1, MemoryOrder::ACQ_REL);
     GPR_DEBUG_ASSERT(prior > 0);
     return prior == 1;
   }
@@ -145,12 +142,12 @@ class RefCount {
   }
 
  private:
-  Value get() const { return value_.load(std::memory_order_relaxed); }
+  Value get() const { return value_.Load(MemoryOrder::RELAXED); }
 
 #ifndef NDEBUG
   TraceFlag* trace_flag_;
 #endif
-  std::atomic<Value> value_;
+  Atomic<Value> value_;
 };
 
 // A base class for reference-counted objects.
@@ -221,8 +218,9 @@ class RefCounted : public Impl {
   // Note: RefCount tracing is only enabled on debug builds, even when a
   //       TraceFlag is used.
   template <typename TraceFlagT = TraceFlag>
-  explicit RefCounted(TraceFlagT* trace_flag = nullptr)
-      : refs_(1, trace_flag) {}
+  explicit RefCounted(TraceFlagT* trace_flag = nullptr,
+                      intptr_t initial_refcount = 1)
+      : refs_(initial_refcount, trace_flag) {}
 
   // Note: Depending on the Impl used, this dtor can be implicitly virtual.
   ~RefCounted() = default;
