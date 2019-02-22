@@ -90,7 +90,7 @@ enum class InterceptionHookPoints {
 ///   5. Set some fields of an RPC at each interception point, when possible
 class InterceptorBatchMethods {
  public:
-  virtual ~InterceptorBatchMethods(){};
+  virtual ~InterceptorBatchMethods() {}
   /// Determine whether the current batch has an interception hook point
   /// of type \a type
   virtual bool QueryInterceptionHookPoint(InterceptionHookPoints type) = 0;

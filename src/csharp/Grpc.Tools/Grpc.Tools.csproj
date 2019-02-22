@@ -45,17 +45,18 @@
     <DevelopmentDependency>true</DevelopmentDependency>
     <NoPackageAnalysis>true</NoPackageAnalysis>
     <PackageId>Grpc.Tools</PackageId>
+    <Authors>The gRPC Authors</Authors>
+    <Copyright>Copyright 2018 The gRPC Authors</Copyright>
     <Description>gRPC and Protocol Buffer compiler for managed C# and native C++ projects.
 
 Add this package to a project that contains .proto files to be compiled to code.
 It contains the compilers, include files and project system integration for gRPC
 and Protocol buffer service description files necessary to build them on Windows,
 Linux and MacOS. Managed runtime is supplied separately in the Grpc.Core package.</Description>
-    <Copyright>Copyright 2018 gRPC authors</Copyright>
-    <Authors>gRPC authors</Authors>
-    <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageIconUrl>https://github.com/grpc/grpc.github.io/raw/master/img/grpc_square_reverse_4x.png</PackageIconUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
-    <PackageTags>gRPC RPC protocol HTTP/2</PackageTags>
+    <PackageTags>gRPC RPC HTTP/2</PackageTags>
   </PropertyGroup>
 
   <ItemGroup Label="NuGet package assets">
