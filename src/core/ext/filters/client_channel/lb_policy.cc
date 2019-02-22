@@ -28,6 +28,17 @@ grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(
 
 namespace grpc_core {
 
+LoadBalancingPolicy::LoadBalancingPolicy(Args args, intptr_t initial_refcount)
+    : InternallyRefCounted(&grpc_trace_lb_policy_refcount, initial_refcount),
+      combiner_(GRPC_COMBINER_REF(args.combiner, "lb_policy")),
+      interested_parties_(grpc_pollset_set_create()),
+      channel_control_helper_(std::move(args.channel_control_helper)) {}
+
+LoadBalancingPolicy::~LoadBalancingPolicy() {
+  grpc_pollset_set_destroy(interested_parties_);
+  GRPC_COMBINER_UNREF(combiner_, "lb_policy");
+}
+
 grpc_json* LoadBalancingPolicy::ParseLoadBalancingConfig(
     const grpc_json* lb_config_array) {
   if (lb_config_array == nullptr || lb_config_array->type != GRPC_JSON_ARRAY) {
@@ -52,37 +63,6 @@ grpc_json* LoadBalancingPolicy::ParseLoadBalancingConfig(
     }
   }
   return nullptr;
-}
-
-LoadBalancingPolicy::LoadBalancingPolicy(Args args)
-    : InternallyRefCounted(&grpc_trace_lb_policy_refcount),
-      combiner_(GRPC_COMBINER_REF(args.combiner, "lb_policy")),
-      client_channel_factory_(args.client_channel_factory),
-      subchannel_pool_(std::move(args.subchannel_pool)),
-      interested_parties_(grpc_pollset_set_create()),
-      request_reresolution_(nullptr) {}
-
-LoadBalancingPolicy::~LoadBalancingPolicy() {
-  grpc_pollset_set_destroy(interested_parties_);
-  GRPC_COMBINER_UNREF(combiner_, "lb_policy");
-}
-
-void LoadBalancingPolicy::TryReresolutionLocked(
-    grpc_core::TraceFlag* grpc_lb_trace, grpc_error* error) {
-  if (request_reresolution_ != nullptr) {
-    GRPC_CLOSURE_SCHED(request_reresolution_, error);
-    request_reresolution_ = nullptr;
-    if (grpc_lb_trace->enabled()) {
-      gpr_log(GPR_INFO,
-              "%s %p: scheduling re-resolution closure with error=%s.",
-              grpc_lb_trace->name(), this, grpc_error_string(error));
-    }
-  } else {
-    if (grpc_lb_trace->enabled()) {
-      gpr_log(GPR_INFO, "%s %p: no available re-resolution closure.",
-              grpc_lb_trace->name(), this);
-    }
-  }
 }
 
 }  // namespace grpc_core
