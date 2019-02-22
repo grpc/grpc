@@ -197,7 +197,7 @@ void VerifyLbAddrOutputs(const grpc_core::ServerAddressList addresses,
 class AddressSortingTest : public ::testing::Test {
  protected:
   void SetUp() override { grpc_init(); }
-  void TearDown() override { grpc_shutdown(); }
+  void TearDown() override { grpc_shutdown_blocking(); }
 };
 
 /* Tests for rule 1 */

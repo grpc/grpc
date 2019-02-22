@@ -5,9 +5,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net45;netcoreapp1.1</TargetFrameworks>
-    <AssemblyName>Grpc.Microbenchmarks</AssemblyName>
     <OutputType>Exe</OutputType>
-    <PackageId>Grpc.Microbenchmarks</PackageId>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
