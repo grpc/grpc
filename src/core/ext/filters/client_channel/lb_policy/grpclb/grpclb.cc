@@ -802,7 +802,7 @@ void GrpcLb::BalancerCallState::StartQuery() {
   call_error = grpc_call_start_batch_and_execute(
       lb_call_, ops, (size_t)(op - ops), &lb_on_balancer_status_received_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
-};
+}
 
 void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
   const grpc_millis next_client_load_report_time =

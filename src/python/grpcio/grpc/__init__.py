@@ -14,6 +14,7 @@
 """gRPC's Python API."""
 
 import abc
+import contextlib
 import enum
 import logging
 import sys
@@ -1777,6 +1778,14 @@ def server(thread_pool,
                                  if interceptors is None else interceptors, ()
                                  if options is None else options,
                                  maximum_concurrent_rpcs)
+
+
+@contextlib.contextmanager
+def _create_servicer_context(rpc_event, state, request_deserializer):
+    from grpc import _server  # pylint: disable=cyclic-import
+    context = _server._Context(rpc_event, state, request_deserializer)
+    yield context
+    context._finalize_state()  # pylint: disable=protected-access
 
 
 ###################################  __all__  #################################

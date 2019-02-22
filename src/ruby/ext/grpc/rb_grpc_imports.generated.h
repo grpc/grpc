@@ -92,6 +92,9 @@ extern grpc_shutdown_type grpc_shutdown_import;
 typedef int(*grpc_is_initialized_type)(void);
 extern grpc_is_initialized_type grpc_is_initialized_import;
 #define grpc_is_initialized grpc_is_initialized_import
+typedef void(*grpc_shutdown_blocking_type)(void);
+extern grpc_shutdown_blocking_type grpc_shutdown_blocking_import;
+#define grpc_shutdown_blocking grpc_shutdown_blocking_import
 typedef const char*(*grpc_version_string_type)(void);
 extern grpc_version_string_type grpc_version_string_import;
 #define grpc_version_string grpc_version_string_import
