@@ -355,6 +355,7 @@ grpc_cc_library(
         "gpr",
         "grpc",
         "grpc++_base",
+        "grpc_cfstream",
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
         "grpc++_codegen_proto",
@@ -618,10 +619,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "atomic",
-    hdrs = [
-        "src/core/lib/gprpp/atomic_with_atm.h",
-        "src/core/lib/gprpp/atomic_with_std.h",
-    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/gprpp/atomic.h",
@@ -677,6 +674,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/ref_counted.h"],
     deps = [
+        "atomic",
         "debug_location",
         "gpr_base",
         "grpc_trace",
