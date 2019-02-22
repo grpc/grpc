@@ -320,8 +320,8 @@ static void DoNothing(void* arg, grpc_error* error) {}
 
 class FakeClientChannelFactory : public grpc_core::ClientChannelFactory {
  public:
-  grpc_core::Subchannel* CreateSubchannel(const grpc_channel_args* args)
-      override {
+  grpc_core::Subchannel* CreateSubchannel(
+      const grpc_channel_args* args) override {
     return nullptr;
   }
   grpc_channel* CreateChannel(const char* target,
