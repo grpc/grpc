@@ -4468,6 +4468,7 @@ targets:
   language: c++
   src:
   - test/cpp/end2end/client_callback_end2end_test.cc
+  - test/cpp/end2end/interceptors_util.cc
   deps:
   - grpc++_test_util
   - grpc_test_util
