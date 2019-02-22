@@ -1483,6 +1483,9 @@ class SingleBalancerWithClientLoadReportingTest : public GrpclbEnd2endTest {
   SingleBalancerWithClientLoadReportingTest() : GrpclbEnd2endTest(4, 1, 3) {}
 };
 
+// TODO(roth): Add test that when switching balancers, we don't include
+// any calls that were sent prior to connecting to the new balancer.
+
 TEST_F(SingleBalancerWithClientLoadReportingTest, Vanilla) {
   SetNextResolutionAllBalancers();
   const size_t kNumRpcsPerAddress = 100;
