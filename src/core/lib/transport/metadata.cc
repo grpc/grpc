@@ -482,7 +482,6 @@ static void* get_user_data(UserData* user_data, void (*destroy_func)(void*)) {
   } else {
     return nullptr;
   }
-  return result;
 }
 
 void* grpc_mdelem_get_user_data(grpc_mdelem md, void (*destroy_func)(void*)) {
