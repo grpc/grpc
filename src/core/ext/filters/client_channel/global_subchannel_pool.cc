@@ -85,7 +85,8 @@ class GlobalSubchannelPool::Sweeper : public InternallyRefCounted<Sweeper> {
 
   static void SweepUnusedSubchannels(void* arg, grpc_error* error) {
     Sweeper* sweeper = static_cast<Sweeper*>(arg);
-    if (gpr_atm_no_barrier_load(&sweeper->shutdown_)) {
+    if (gpr_atm_no_barrier_load(&sweeper->shutdown_) ||
+        error != GRPC_ERROR_NONE) {
       Delete(sweeper);
       return;
     }
