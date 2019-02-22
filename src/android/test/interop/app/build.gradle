@@ -29,7 +29,6 @@ android {
                 arguments '-DgRPC_CPP_PLUGIN_EXECUTABLE=' + grpc_cpp_plugin
             }
         }
-        ndk.abiFilters 'x86'
     }
     buildTypes {
         debug {
