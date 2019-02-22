@@ -31,24 +31,23 @@ bool squelch = true;
 bool leak_check = true;
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  struct grpc_memory_counters counters;
   grpc_init();
-  grpc_memory_counters_init();
-  grpc_slice input = grpc_slice_from_copied_buffer((const char*)data, size);
-  grpc_slice output;
-  if (grpc_strict_percent_decode_slice(
-          input, grpc_url_percent_encoding_unreserved_bytes, &output)) {
-    grpc_slice_unref(output);
+  {
+    grpc_core::testing::LeakDetector leak_detector(true);
+    grpc_slice input = grpc_slice_from_copied_buffer((const char*)data, size);
+    grpc_slice output;
+    if (grpc_strict_percent_decode_slice(
+            input, grpc_url_percent_encoding_unreserved_bytes, &output)) {
+      grpc_slice_unref(output);
+    }
+    if (grpc_strict_percent_decode_slice(
+            input, grpc_compatible_percent_encoding_unreserved_bytes,
+            &output)) {
+      grpc_slice_unref(output);
+    }
+    grpc_slice_unref(grpc_permissive_percent_decode_slice(input));
+    grpc_slice_unref(input);
   }
-  if (grpc_strict_percent_decode_slice(
-          input, grpc_compatible_percent_encoding_unreserved_bytes, &output)) {
-    grpc_slice_unref(output);
-  }
-  grpc_slice_unref(grpc_permissive_percent_decode_slice(input));
-  grpc_slice_unref(input);
-  counters = grpc_memory_counters_snapshot();
-  grpc_memory_counters_destroy();
-  grpc_shutdown();
-  GPR_ASSERT(counters.total_size_relative == 0);
+  grpc_shutdown_blocking();
   return 0;
 }

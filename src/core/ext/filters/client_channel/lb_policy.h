@@ -218,13 +218,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     // of a reference.
     grpc_combiner* combiner = nullptr;
     /// Channel control helper.
+    /// Note: LB policies MUST NOT call any method on the helper from
+    /// their constructor.
     UniquePtr<ChannelControlHelper> channel_control_helper;
-    /// Channel args from the resolver.
-    /// Note that the LB policy gets the set of addresses from the
-    /// GRPC_ARG_SERVER_ADDRESS_LIST channel arg.
+    /// Channel args.
     const grpc_channel_args* args = nullptr;
-    /// Load balancing config from the resolver.
-    grpc_json* lb_config = nullptr;
   };
 
   // Not copyable nor movable.
@@ -235,15 +233,17 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   virtual const char* name() const GRPC_ABSTRACT;
 
   /// Updates the policy with a new set of \a args and a new \a lb_config from
-  /// the resolver. Note that the LB policy gets the set of addresses from the
+  /// the resolver. Will be invoked immediately after LB policy is constructed,
+  /// and then again whenever the resolver returns a new result.
+  /// Note that the LB policy gets the set of addresses from the
   /// GRPC_ARG_SERVER_ADDRESS_LIST channel arg.
   virtual void UpdateLocked(const grpc_channel_args& args,
                             grpc_json* lb_config) GRPC_ABSTRACT;
 
   /// Tries to enter a READY connectivity state.
-  /// TODO(roth): As part of restructuring how we handle IDLE state,
-  /// consider whether this method is still needed.
-  virtual void ExitIdleLocked() GRPC_ABSTRACT;
+  /// This is a no-op by default, since most LB policies never go into
+  /// IDLE state.
+  virtual void ExitIdleLocked() {}
 
   /// Resets connection backoff.
   virtual void ResetBackoffLocked() GRPC_ABSTRACT;
@@ -285,6 +285,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   grpc_combiner* combiner() const { return combiner_; }
 
+  // Note: LB policies MUST NOT call any method on the helper from
+  // their constructor.
   // Note: This will return null after ShutdownLocked() has been called.
   ChannelControlHelper* channel_control_helper() const {
     return channel_control_helper_.get();

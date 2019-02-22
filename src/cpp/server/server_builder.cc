@@ -243,15 +243,25 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       sync_server_cqs(std::make_shared<
                       std::vector<std::unique_ptr<ServerCompletionQueue>>>());
 
-  int num_frequently_polled_cqs = 0;
+  bool has_frequently_polled_cqs = false;
   for (auto it = cqs_.begin(); it != cqs_.end(); ++it) {
     if ((*it)->IsFrequentlyPolled()) {
-      num_frequently_polled_cqs++;
+      has_frequently_polled_cqs = true;
+      break;
     }
   }
 
-  const bool is_hybrid_server =
-      has_sync_methods && num_frequently_polled_cqs > 0;
+  // == Determine if the server has any callback methods ==
+  bool has_callback_methods = false;
+  for (auto it = services_.begin(); it != services_.end(); ++it) {
+    if ((*it)->service->has_callback_methods()) {
+      has_callback_methods = true;
+      has_frequently_polled_cqs = true;
+      break;
+    }
+  }
+
+  const bool is_hybrid_server = has_sync_methods && has_frequently_polled_cqs;
 
   if (has_sync_methods) {
     grpc_cq_polling_type polling_type =
@@ -261,15 +271,6 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     for (int i = 0; i < sync_server_settings_.num_cqs; i++) {
       sync_server_cqs->emplace_back(
           new ServerCompletionQueue(GRPC_CQ_NEXT, polling_type, nullptr));
-    }
-  }
-
-  // == Determine if the server has any callback methods ==
-  bool has_callback_methods = false;
-  for (auto it = services_.begin(); it != services_.end(); ++it) {
-    if ((*it)->service->has_callback_methods()) {
-      has_callback_methods = true;
-      break;
     }
   }
 
@@ -306,13 +307,12 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   for (auto it = sync_server_cqs->begin(); it != sync_server_cqs->end(); ++it) {
     grpc_server_register_completion_queue(server->server_, (*it)->cq(),
                                           nullptr);
-    num_frequently_polled_cqs++;
+    has_frequently_polled_cqs = true;
   }
 
   if (has_callback_methods) {
     auto* cq = server->CallbackCQ();
     grpc_server_register_completion_queue(server->server_, cq->cq(), nullptr);
-    num_frequently_polled_cqs++;
   }
 
   // cqs_ contains the completion queue added by calling the ServerBuilder's
@@ -325,7 +325,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
                                           nullptr);
   }
 
-  if (num_frequently_polled_cqs == 0) {
+  if (!has_frequently_polled_cqs) {
     gpr_log(GPR_ERROR,
             "At least one of the completion queues must be frequently polled");
     return nullptr;

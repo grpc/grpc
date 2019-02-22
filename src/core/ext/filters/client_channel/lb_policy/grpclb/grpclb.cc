@@ -26,15 +26,13 @@
 /// channel that uses pick_first to select from the list of balancer
 /// addresses.
 ///
-/// The first time the policy gets a request for a pick, a ping, or to exit
-/// the idle state, \a StartPickingLocked() is called. This method is
-/// responsible for instantiating the internal *streaming* call to the LB
-/// server (whichever address pick_first chose).  The call will be complete
-/// when either the balancer sends status or when we cancel the call (e.g.,
-/// because we are shutting down).  In needed, we retry the call.  If we
-/// received at least one valid message from the server, a new call attempt
-/// will be made immediately; otherwise, we apply back-off delays between
-/// attempts.
+/// When we get our initial update, we instantiate the internal *streaming*
+/// call to the LB server (whichever address pick_first chose).  The call
+/// will be complete when either the balancer sends status or when we cancel
+/// the call (e.g., because we are shutting down).  In needed, we retry the
+/// call.  If we received at least one valid message from the server, a new
+/// call attempt will be made immediately; otherwise, we apply back-off
+/// delays between attempts.
 ///
 /// We maintain an internal round_robin policy instance for distributing
 /// requests across backends.  Whenever we receive a new serverlist from
@@ -130,7 +128,6 @@ class GrpcLb : public LoadBalancingPolicy {
 
   void UpdateLocked(const grpc_channel_args& args,
                     grpc_json* lb_config) override;
-  void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
   void FillChildRefsForChannelz(
       channelz::ChildRefsList* child_subchannels,
@@ -291,11 +288,10 @@ class GrpcLb : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
-  // Helper function used in ctor and UpdateLocked().
+  // Helper function used in UpdateLocked().
   void ProcessChannelArgsLocked(const grpc_channel_args& args);
 
   // Methods for dealing with the balancer channel and call.
-  void StartPickingLocked();
   void StartBalancerCallLocked();
   static void OnFallbackTimerLocked(void* arg, grpc_error* error);
   void StartBalancerCallRetryTimerLocked();
@@ -304,9 +300,9 @@ class GrpcLb : public LoadBalancingPolicy {
                                                          grpc_error* error);
 
   // Methods for dealing with the RR policy.
-  void CreateOrUpdateRoundRobinPolicyLocked();
   grpc_channel_args* CreateRoundRobinPolicyArgsLocked();
   void CreateRoundRobinPolicyLocked(Args args);
+  void CreateOrUpdateRoundRobinPolicyLocked();
 
   // Who the client is trying to communicate with.
   const char* server_name_ = nullptr;
@@ -315,7 +311,6 @@ class GrpcLb : public LoadBalancingPolicy {
   grpc_channel_args* args_ = nullptr;
 
   // Internal state.
-  bool started_picking_ = false;
   bool shutting_down_ = false;
 
   // The channel for communicating with the LB server.
@@ -799,7 +794,7 @@ void GrpcLb::BalancerCallState::StartQuery() {
   call_error = grpc_call_start_batch_and_execute(
       lb_call_, ops, (size_t)(op - ops), &lb_on_balancer_status_received_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
-};
+}
 
 void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
   const grpc_millis next_client_load_report_time =
@@ -1203,12 +1198,6 @@ GrpcLb::GrpcLb(LoadBalancingPolicy::Args args)
   arg = grpc_channel_args_find(args.args, GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS);
   lb_fallback_timeout_ms_ = grpc_channel_arg_get_integer(
       arg, {GRPC_GRPCLB_DEFAULT_FALLBACK_TIMEOUT_MS, 0, INT_MAX});
-  // Process channel args.
-  ProcessChannelArgsLocked(*args.args);
-  // Initialize channel with a picker that will start us connecting.
-  channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
-      UniquePtr<SubchannelPicker>(New<QueuePicker>(Ref())));
 }
 
 GrpcLb::~GrpcLb() {
@@ -1240,12 +1229,6 @@ void GrpcLb::ShutdownLocked() {
 //
 // public methods
 //
-
-void GrpcLb::ExitIdleLocked() {
-  if (!started_picking_) {
-    StartPickingLocked();
-  }
-}
 
 void GrpcLb::ResetBackoffLocked() {
   if (lb_channel_ != nullptr) {
@@ -1331,12 +1314,26 @@ void GrpcLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
 }
 
 void GrpcLb::UpdateLocked(const grpc_channel_args& args, grpc_json* lb_config) {
+  const bool is_initial_update = lb_channel_ == nullptr;
   ProcessChannelArgsLocked(args);
   // Update the existing RR policy.
   if (rr_policy_ != nullptr) CreateOrUpdateRoundRobinPolicyLocked();
-  // Start watching the LB channel connectivity for connection, if not
-  // already doing so.
-  if (!watching_lb_channel_) {
+  // If this is the initial update, start the fallback timer.
+  if (is_initial_update) {
+    if (lb_fallback_timeout_ms_ > 0 && serverlist_ == nullptr &&
+        !fallback_timer_callback_pending_) {
+      grpc_millis deadline = ExecCtx::Get()->Now() + lb_fallback_timeout_ms_;
+      Ref(DEBUG_LOCATION, "on_fallback_timer").release();  // Ref for callback
+      GRPC_CLOSURE_INIT(&lb_on_fallback_, &GrpcLb::OnFallbackTimerLocked, this,
+                        grpc_combiner_scheduler(combiner()));
+      fallback_timer_callback_pending_ = true;
+      grpc_timer_init(&lb_fallback_timer_, deadline, &lb_on_fallback_);
+    }
+    StartBalancerCallLocked();
+  } else if (!watching_lb_channel_) {
+    // If this is not the initial update and we're not already watching
+    // the LB channel's connectivity state, start a watch now.  This
+    // ensures that we'll know when to switch to a new balancer call.
     lb_channel_connectivity_ = grpc_channel_check_connectivity_state(
         lb_channel_, true /* try to connect */);
     grpc_channel_element* client_channel_elem = grpc_channel_stack_last_element(
@@ -1359,25 +1356,6 @@ void GrpcLb::UpdateLocked(const grpc_channel_args& args, grpc_json* lb_config) {
 //
 // code for balancer channel and call
 //
-
-void GrpcLb::StartPickingLocked() {
-  // Start a timer to fall back.
-  if (lb_fallback_timeout_ms_ > 0 && serverlist_ == nullptr &&
-      !fallback_timer_callback_pending_) {
-    grpc_millis deadline = ExecCtx::Get()->Now() + lb_fallback_timeout_ms_;
-    // TODO(roth): We currently track this ref manually.  Once the
-    // ClosureRef API is ready, we should pass the RefCountedPtr<> along
-    // with the callback.
-    auto self = Ref(DEBUG_LOCATION, "on_fallback_timer");
-    self.release();
-    GRPC_CLOSURE_INIT(&lb_on_fallback_, &GrpcLb::OnFallbackTimerLocked, this,
-                      grpc_combiner_scheduler(combiner()));
-    fallback_timer_callback_pending_ = true;
-    grpc_timer_init(&lb_fallback_timer_, deadline, &lb_on_fallback_);
-  }
-  started_picking_ = true;
-  StartBalancerCallLocked();
-}
 
 void GrpcLb::StartBalancerCallLocked() {
   GPR_ASSERT(lb_channel_ != nullptr);
@@ -1480,13 +1458,11 @@ void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
     case GRPC_CHANNEL_IDLE:
     case GRPC_CHANNEL_READY:
       grpclb_policy->lb_calld_.reset();
-      if (grpclb_policy->started_picking_) {
-        if (grpclb_policy->retry_timer_callback_pending_) {
-          grpc_timer_cancel(&grpclb_policy->lb_call_retry_timer_);
-        }
-        grpclb_policy->lb_call_backoff_.Reset();
-        grpclb_policy->StartBalancerCallLocked();
+      if (grpclb_policy->retry_timer_callback_pending_) {
+        grpc_timer_cancel(&grpclb_policy->lb_call_retry_timer_);
       }
+      grpclb_policy->lb_call_backoff_.Reset();
+      grpclb_policy->StartBalancerCallLocked();
       // fallthrough
     case GRPC_CHANNEL_SHUTDOWN:
     done:
@@ -1499,27 +1475,6 @@ void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
 //
 // code for interacting with the RR policy
 //
-
-void GrpcLb::CreateRoundRobinPolicyLocked(Args args) {
-  GPR_ASSERT(rr_policy_ == nullptr);
-  rr_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-      "round_robin", std::move(args));
-  if (GPR_UNLIKELY(rr_policy_ == nullptr)) {
-    gpr_log(GPR_ERROR, "[grpclb %p] Failure creating a RoundRobin policy",
-            this);
-    return;
-  }
-  if (grpc_lb_glb_trace.enabled()) {
-    gpr_log(GPR_INFO, "[grpclb %p] Created new RR policy %p", this,
-            rr_policy_.get());
-  }
-  // Add the gRPC LB's interested_parties pollset_set to that of the newly
-  // created RR policy. This will make the RR policy progress upon activity on
-  // gRPC LB, which in turn is tied to the application's call.
-  grpc_pollset_set_add_pollset_set(rr_policy_->interested_parties(),
-                                   interested_parties());
-  rr_policy_->ExitIdleLocked();
-}
 
 grpc_channel_args* GrpcLb::CreateRoundRobinPolicyArgsLocked() {
   ServerAddressList tmp_addresses;
@@ -1563,17 +1518,31 @@ grpc_channel_args* GrpcLb::CreateRoundRobinPolicyArgsLocked() {
   return args;
 }
 
+void GrpcLb::CreateRoundRobinPolicyLocked(Args args) {
+  GPR_ASSERT(rr_policy_ == nullptr);
+  rr_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
+      "round_robin", std::move(args));
+  if (GPR_UNLIKELY(rr_policy_ == nullptr)) {
+    gpr_log(GPR_ERROR, "[grpclb %p] Failure creating a RoundRobin policy",
+            this);
+    return;
+  }
+  if (grpc_lb_glb_trace.enabled()) {
+    gpr_log(GPR_INFO, "[grpclb %p] Created new RR policy %p", this,
+            rr_policy_.get());
+  }
+  // Add the gRPC LB's interested_parties pollset_set to that of the newly
+  // created RR policy. This will make the RR policy progress upon activity on
+  // gRPC LB, which in turn is tied to the application's call.
+  grpc_pollset_set_add_pollset_set(rr_policy_->interested_parties(),
+                                   interested_parties());
+}
+
 void GrpcLb::CreateOrUpdateRoundRobinPolicyLocked() {
   if (shutting_down_) return;
   grpc_channel_args* args = CreateRoundRobinPolicyArgsLocked();
   GPR_ASSERT(args != nullptr);
-  if (rr_policy_ != nullptr) {
-    if (grpc_lb_glb_trace.enabled()) {
-      gpr_log(GPR_INFO, "[grpclb %p] Updating RR policy %p", this,
-              rr_policy_.get());
-    }
-    rr_policy_->UpdateLocked(*args, nullptr);
-  } else {
+  if (rr_policy_ == nullptr) {
     LoadBalancingPolicy::Args lb_policy_args;
     lb_policy_args.combiner = combiner();
     lb_policy_args.args = args;
@@ -1581,6 +1550,11 @@ void GrpcLb::CreateOrUpdateRoundRobinPolicyLocked() {
         UniquePtr<ChannelControlHelper>(New<Helper>(Ref()));
     CreateRoundRobinPolicyLocked(std::move(lb_policy_args));
   }
+  if (grpc_lb_glb_trace.enabled()) {
+    gpr_log(GPR_INFO, "[grpclb %p] Updating RR policy %p", this,
+            rr_policy_.get());
+  }
+  rr_policy_->UpdateLocked(*args, nullptr);
   grpc_channel_args_destroy(args);
 }
 

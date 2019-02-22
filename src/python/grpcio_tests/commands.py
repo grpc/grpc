@@ -111,6 +111,8 @@ class TestGevent(setuptools.Command):
     """Command to run tests w/gevent."""
 
     BANNED_TESTS = (
+        # Fork support is not compatible with gevent
+        'fork._fork_interop_test.ForkInteropTest',
         # These tests send a lot of RPCs and are really slow on gevent.  They will
         # eventually succeed, but need to dig into performance issues.
         'unit._cython._no_messages_server_completion_queue_per_call_test.Test.test_rpcs',

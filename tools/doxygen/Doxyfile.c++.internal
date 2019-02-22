@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.19.0-dev
+PROJECT_NUMBER         = 1.20.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1068,8 +1068,6 @@ src/core/lib/gpr/tmpfile.h \
 src/core/lib/gpr/useful.h \
 src/core/lib/gprpp/abstract.h \
 src/core/lib/gprpp/atomic.h \
-src/core/lib/gprpp/atomic_with_atm.h \
-src/core/lib/gprpp/atomic_with_std.h \
 src/core/lib/gprpp/debug_location.h \
 src/core/lib/gprpp/fork.h \
 src/core/lib/gprpp/inlined_vector.h \
