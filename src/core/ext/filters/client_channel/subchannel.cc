@@ -956,22 +956,17 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error* error) {
   } else if (c->disconnected_) {
     GRPC_SUBCHANNEL_WEAK_UNREF(c, "connecting");
   } else {
-    c->SetConnectivityStateLocked(
-        GRPC_CHANNEL_TRANSIENT_FAILURE,
-        grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                               "Connect Failed", &error, 1),
-                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
-        "connect_failed");
-    grpc_connectivity_state_set(
-        &c->state_and_health_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
-        grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                               "Connect Failed", &error, 1),
-                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
-        "connect_failed");
-
     const char* errmsg = grpc_error_string(error);
     gpr_log(GPR_INFO, "Connect failed: %s", errmsg);
-
+    error =
+        grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                               "Connect Failed", &error, 1),
+                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+    c->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                  GRPC_ERROR_REF(error), "connect_failed");
+    grpc_connectivity_state_set(&c->state_and_health_tracker_,
+                                GRPC_CHANNEL_TRANSIENT_FAILURE, error,
+                                "connect_failed");
     c->MaybeStartConnectingLocked();
     GRPC_SUBCHANNEL_WEAK_UNREF(c, "connecting");
   }
