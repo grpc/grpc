@@ -61,8 +61,7 @@ struct channel_data {
 /* We can have a per-call credentials. */
 struct call_data {
   call_data(grpc_call_element* elem, const grpc_call_element_args& args)
-      : owning_call(args.call_stack),
-        call_combiner(args.call_combiner) {
+      : owning_call(args.call_stack), call_combiner(args.call_combiner) {
     channel_data* chand = static_cast<channel_data*>(elem->channel_data);
     GPR_ASSERT(args.context != nullptr);
     if (args.context[GRPC_CONTEXT_SECURITY].value == nullptr) {

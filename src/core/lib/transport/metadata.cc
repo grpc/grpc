@@ -506,7 +506,7 @@ void* grpc_mdelem_get_user_data(grpc_mdelem md, void (*destroy_func)(void*)) {
 }
 
 static void* set_user_data(UserData* ud, void (*destroy_func)(void*),
-                          void* user_data) {
+                           void* user_data) {
   GPR_ASSERT((user_data == nullptr) == (destroy_func == nullptr));
   gpr_mu_lock(&ud->mu_user_data);
   if (gpr_atm_no_barrier_load(&ud->destroy_user_data)) {

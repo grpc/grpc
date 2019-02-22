@@ -97,13 +97,12 @@ static void start_transport_stream_op_batch(
   if (batch->send_initial_metadata) {
     // Grab client stats object from user_data for LB token metadata.
     grpc_linked_mdelem* lb_token =
-        batch->payload->send_initial_metadata.send_initial_metadata
-            ->idx.named.lb_token;
+        batch->payload->send_initial_metadata.send_initial_metadata->idx.named
+            .lb_token;
     if (lb_token != nullptr) {
       grpc_core::GrpcLbClientStats* client_stats =
-          static_cast<grpc_core::GrpcLbClientStats*>(
-              grpc_mdelem_get_user_data(lb_token->md,
-                                        grpc_core::GrpcLbClientStats::Destroy));
+          static_cast<grpc_core::GrpcLbClientStats*>(grpc_mdelem_get_user_data(
+              lb_token->md, grpc_core::GrpcLbClientStats::Destroy));
       if (client_stats != nullptr) {
         calld->client_stats = client_stats->Ref();
         // Intercept completion.

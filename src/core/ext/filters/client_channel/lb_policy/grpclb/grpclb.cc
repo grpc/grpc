@@ -225,8 +225,8 @@ class GrpcLb : public LoadBalancingPolicy {
     UniquePtr<char> AsText() const;
 
     // Extracts all non-drop entries into a ServerAddressList.
-    ServerAddressList GetServerAddressList(GrpcLbClientStats* client_stats)
-        const;
+    ServerAddressList GetServerAddressList(
+        GrpcLbClientStats* client_stats) const;
 
     // Returns true if the serverlist contains at least one drop entry and
     // no backend address entries.
@@ -474,10 +474,9 @@ ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
           server->load_balance_token, lb_token_length);
       lb_token = grpc_mdelem_from_slices(GRPC_MDSTR_LB_TOKEN, lb_token_mdstr);
       if (client_stats != nullptr) {
-        GPR_ASSERT(grpc_mdelem_set_user_data(lb_token,
-                                             GrpcLbClientStats::Destroy,
-                                             client_stats->Ref().release())
-                       == client_stats);
+        GPR_ASSERT(grpc_mdelem_set_user_data(
+                       lb_token, GrpcLbClientStats::Destroy,
+                       client_stats->Ref().release()) == client_stats);
       }
     } else {
       char* uri = grpc_sockaddr_to_uri(&addr);
@@ -550,10 +549,9 @@ GrpcLb::Picker::PickResult GrpcLb::Picker::Pick(PickState* pick,
     }
     grpc_mdelem lb_token = {reinterpret_cast<uintptr_t>(arg->value.pointer.p)};
     GPR_ASSERT(!GRPC_MDISNULL(lb_token));
-    GPR_ASSERT(grpc_metadata_batch_add_tail(pick->initial_metadata,
-                                            &pick->lb_token_mdelem_storage,
-                                            GRPC_MDELEM_REF(lb_token))
-                    == GRPC_ERROR_NONE);
+    GPR_ASSERT(grpc_metadata_batch_add_tail(
+                   pick->initial_metadata, &pick->lb_token_mdelem_storage,
+                   GRPC_MDELEM_REF(lb_token)) == GRPC_ERROR_NONE);
     GrpcLbClientStats* client_stats = static_cast<GrpcLbClientStats*>(
         grpc_mdelem_get_user_data(lb_token, GrpcLbClientStats::Destroy));
     if (client_stats != nullptr) {

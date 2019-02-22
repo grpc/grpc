@@ -292,17 +292,13 @@ static bool maybe_add_filter(grpc_channel_stack_builder* builder, void* arg) {
 
 static void init_plugin(void) {
   grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
-                                   maybe_add_filter,
-                                   (void*)&test_filter);
+                                   maybe_add_filter, (void*)&test_filter);
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
-                                   maybe_add_filter,
-                                   (void*)&test_filter);
+                                   maybe_add_filter, (void*)&test_filter);
   grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
-                                   maybe_add_filter,
-                                   (void*)&test_filter);
+                                   maybe_add_filter, (void*)&test_filter);
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
-                                   maybe_add_filter,
-                                   (void*)&test_filter);
+                                   maybe_add_filter, (void*)&test_filter);
 }
 
 static void destroy_plugin(void) {}
