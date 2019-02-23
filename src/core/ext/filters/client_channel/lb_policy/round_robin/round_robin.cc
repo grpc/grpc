@@ -62,7 +62,7 @@ class RoundRobin : public LoadBalancingPolicy {
   const char* name() const override { return kRoundRobin; }
 
   void UpdateLocked(const grpc_channel_args& args,
-                    grpc_json* lb_config) override;
+                    RefCountedPtr<Config> lb_config) override;
   void ResetBackoffLocked() override;
   void FillChildRefsForChannelz(channelz::ChildRefsList* child_subchannels,
                                 channelz::ChildRefsList* ignored) override;
@@ -477,7 +477,7 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
 }
 
 void RoundRobin::UpdateLocked(const grpc_channel_args& args,
-                              grpc_json* lb_config) {
+                              RefCountedPtr<Config> lb_config) {
   AutoChildRefsUpdater guard(this);
   const ServerAddressList* addresses = FindServerAddressListChannelArg(&args);
   if (addresses == nullptr) {

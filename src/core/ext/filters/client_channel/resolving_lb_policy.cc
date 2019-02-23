@@ -117,14 +117,13 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
 
 ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
     Args args, TraceFlag* tracer, UniquePtr<char> target_uri,
-    UniquePtr<char> child_policy_name, grpc_json* child_lb_config,
+    UniquePtr<char> child_policy_name, RefCountedPtr<Config> child_lb_config,
     grpc_error** error)
     : LoadBalancingPolicy(std::move(args)),
       tracer_(tracer),
       target_uri_(std::move(target_uri)),
       child_policy_name_(std::move(child_policy_name)),
-      child_lb_config_str_(grpc_json_dump_to_string(child_lb_config, 0)),
-      child_lb_config_(grpc_json_parse_string(child_lb_config_str_.get())) {
+      child_lb_config_(std::move(child_lb_config)) {
   GPR_ASSERT(child_policy_name_ != nullptr);
   // Don't fetch service config, since this ctor is for use in nested LB
   // policies, not at the top level, and we only fetch the service
@@ -170,7 +169,6 @@ grpc_error* ResolvingLoadBalancingPolicy::Init(const grpc_channel_args& args) {
 ResolvingLoadBalancingPolicy::~ResolvingLoadBalancingPolicy() {
   GPR_ASSERT(resolver_ == nullptr);
   GPR_ASSERT(lb_policy_ == nullptr);
-  grpc_json_destroy(child_lb_config_);
 }
 
 void ResolvingLoadBalancingPolicy::ShutdownLocked() {
@@ -403,7 +401,7 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   } else {
     // Parse the resolver result.
     const char* lb_policy_name = nullptr;
-    grpc_json* lb_policy_config = nullptr;
+    RefCountedPtr<Config> lb_policy_config;
     bool service_config_changed = false;
     if (self->process_resolver_result_ != nullptr) {
       service_config_changed = self->process_resolver_result_(
@@ -429,7 +427,8 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
       gpr_log(GPR_INFO, "resolving_lb=%p: updating LB policy \"%s\" (%p)", self,
               lb_policy_name, self->lb_policy_.get());
     }
-    self->lb_policy_->UpdateLocked(*self->resolver_result_, lb_policy_config);
+    self->lb_policy_->UpdateLocked(*self->resolver_result_,
+                                   std::move(lb_policy_config));
     // Add channel trace event.
     if (self->channelz_node() != nullptr) {
       if (service_config_changed) {
