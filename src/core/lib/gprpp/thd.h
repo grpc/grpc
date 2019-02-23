@@ -112,22 +112,19 @@ class Thread {
   }
 
   /// The destructor is strictly optional; either the thread never came to life
-  /// and the constructor itself killed it, or it has already been joined and
-  /// the Join function kills it, or it was detached (non-joinable) and it has
-  /// run to completion and is now killing itself. The destructor shouldn't have
-  /// to do anything.
-  ~Thread() { GPR_ASSERT(!options_.joinable() || impl_ == nullptr); }
+  /// and the constructor itself killed it or it has already been joined and
+  /// the Join function kills it. The destructor shouldn't have to do anything.
+  ~Thread() { GPR_ASSERT(impl_ == nullptr); }
 
   void Start() {
     if (impl_ != nullptr) {
       GPR_ASSERT(state_ == ALIVE);
       state_ = STARTED;
       impl_->Start();
-      // If the Thread is not joinable, then the impl_ will cause the deletion
-      // of this Thread object when the thread function completes. Since no
-      // other operation is allowed to a detached thread after Start, there is
-      // no need to change the value of the impl_ or state_ . The next operation
-      // on this object will be the deletion, which will trigger the destructor.
+      if (!options_.joinable()) {
+        state_ = DONE;
+        impl_ = nullptr;
+      }
     } else {
       GPR_ASSERT(state_ == FAILED);
     }
