@@ -53,8 +53,7 @@ void grpc_tracer_enable_flag(grpc_core::TraceFlag* flag);
 class TraceFlag {
  public:
   TraceFlag(bool default_enabled, const char* name);
-  // TraceFlag needs to be trivially destructible since it is used as global
-  // variable.
+  // This needs to be trivially destructible as it is used as global variable.
   ~TraceFlag() = default;
 
   const char* name() const { return name_; }
