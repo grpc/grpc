@@ -84,7 +84,7 @@ grpc_tls_spiffe_server_credentials::create_security_connector() {
 }
 
 static bool CredentialOptionSanityCheck(
-    const grpc_tls_credentials_options* options) {
+    const grpc_tls_credentials_options* options, bool is_client) {
   if (options == nullptr) {
     gpr_log(GPR_ERROR, "SPIFFE TLS credentials options is nullptr.");
     return false;
@@ -97,12 +97,17 @@ static bool CredentialOptionSanityCheck(
         "credential reload config.");
     return false;
   }
+  if (!is_client && options->server_authorization_check_config() != nullptr) {
+    gpr_log(GPR_INFO,
+            "Server's credentials options should not contain server "
+            "authorization check config.");
+  }
   return true;
 }
 
 grpc_channel_credentials* grpc_tls_spiffe_credentials_create(
     const grpc_tls_credentials_options* options) {
-  if (!CredentialOptionSanityCheck(options)) {
+  if (!CredentialOptionSanityCheck(options, true /* is_client */)) {
     gpr_log(GPR_ERROR,
             "Invalid credentials options in creating TLS spiffe channel "
             "credentials.");
@@ -113,7 +118,7 @@ grpc_channel_credentials* grpc_tls_spiffe_credentials_create(
 
 grpc_server_credentials* grpc_tls_spiffe_server_credentials_create(
     const grpc_tls_credentials_options* options) {
-  if (!CredentialOptionSanityCheck(options)) {
+  if (!CredentialOptionSanityCheck(options, false /* is_client */)) {
     gpr_log(GPR_ERROR,
             "Invalid credentials options in creating TLS spiffe server "
             "credentials.");

@@ -367,12 +367,6 @@ static tsi_result add_subject_alt_names_properties_to_peer(
         result = TSI_INTERNAL_ERROR;
         break;
       }
-      if (subject_alt_name->type == GEN_URI) {
-        result = tsi_construct_string_peer_property(
-            TSI_X509_SUBJECT_ALTERNATIVE_NAME_URI_PEER_PROPERTY,
-            reinterpret_cast<const char*>(name), static_cast<size_t>(name_size),
-            &peer->properties[peer->property_count++]);
-      }
       result = tsi_construct_string_peer_property(
           TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
           reinterpret_cast<const char*>(name), static_cast<size_t>(name_size),

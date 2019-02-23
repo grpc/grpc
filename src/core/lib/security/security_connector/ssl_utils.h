@@ -38,10 +38,17 @@
 /* --- URL schemes. --- */
 #define GRPC_SSL_URL_SCHEME "https"
 
-/* Check peer information returned from SSL handshakes. */
-grpc_error* grpc_ssl_check_peer(
-    const char* peer_name, const tsi_peer* peer,
-    grpc_core::RefCountedPtr<grpc_auth_context>* auth_context);
+/* Check ALPN information returned from SSL handshakes. */
+grpc_error* grpc_ssl_check_alpn(const tsi_peer* peer);
+
+/* Check peer name information returned from SSL handshakes. */
+grpc_error* grpc_ssl_check_peer_name(const char* peer_name,
+                                     const tsi_peer* peer);
+/* Compare targer_name information extracted from SSL security connectors. */
+bool grpc_ssl_cmp_target_name(const char* target_name,
+                              const char* other_target_name,
+                              const char* overridden_targer_name,
+                              const char* other_overridden_target_name);
 
 /* Return HTTP2-compliant cipher suites that gRPC accepts by default. */
 const char* grpc_get_ssl_cipher_suites(void);

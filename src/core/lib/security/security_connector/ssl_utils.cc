@@ -112,9 +112,7 @@ grpc_get_tsi_client_certificate_request_type(
   }
 }
 
-grpc_error* grpc_ssl_check_peer(
-    const char* peer_name, const tsi_peer* peer,
-    grpc_core::RefCountedPtr<grpc_auth_context>* auth_context) {
+grpc_error* grpc_ssl_check_alpn(const tsi_peer* peer) {
 #if TSI_OPENSSL_ALPN_SUPPORT
   /* Check the ALPN if ALPN is supported. */
   const tsi_peer_property* p =
@@ -128,6 +126,11 @@ grpc_error* grpc_ssl_check_peer(
         "Cannot check peer: invalid ALPN value.");
   }
 #endif /* TSI_OPENSSL_ALPN_SUPPORT */
+  return GRPC_ERROR_NONE;
+}
+
+grpc_error* grpc_ssl_check_peer_name(const char* peer_name,
+                                     const tsi_peer* peer) {
   /* Check the peer name if specified. */
   if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
     char* msg;
@@ -136,7 +139,6 @@ grpc_error* grpc_ssl_check_peer(
     gpr_free(msg);
     return error;
   }
-  *auth_context = grpc_ssl_peer_to_auth_context(peer);
   return GRPC_ERROR_NONE;
 }
 
@@ -168,6 +170,18 @@ int grpc_ssl_host_matches_name(const tsi_peer* peer, const char* peer_name) {
   r = tsi_ssl_peer_matches_name(peer, peer_name);
   gpr_free(allocated_name);
   return r;
+}
+
+bool grpc_ssl_cmp_target_name(const char* target_name,
+                              const char* other_target_name,
+                              const char* overridden_target_name,
+                              const char* other_overridden_target_name) {
+  int c = strcmp(target_name, other_target_name);
+  if (c != 0) return c;
+  return (overridden_target_name == nullptr ||
+          other_overridden_target_name == nullptr)
+             ? GPR_ICMP(overridden_target_name, other_overridden_target_name)
+             : strcmp(overridden_target_name, other_overridden_target_name);
 }
 
 grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(

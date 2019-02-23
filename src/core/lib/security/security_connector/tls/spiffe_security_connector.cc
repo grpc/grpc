@@ -209,13 +209,22 @@ class grpc_tls_spiffe_channel_security_connector final
     const char* target_name = overridden_target_name_ != nullptr
                                   ? overridden_target_name_
                                   : target_name_;
-    grpc_error* error = grpc_ssl_check_peer(target_name, &peer, auth_context);
+    grpc_error* error = grpc_ssl_check_alpn(&peer);
+    if (error != GRPC_ERROR_NONE) {
+      GRPC_CLOSURE_SCHED(on_peer_checked, error);
+      tsi_peer_destruct(&peer);
+      return;
+    }
+    *auth_context = grpc_ssl_peer_to_auth_context(&peer);
     const grpc_tls_spiffe_credentials* creds =
         static_cast<const grpc_tls_spiffe_credentials*>(channel_creds());
     GPR_ASSERT(creds->options() != nullptr);
     const grpc_tls_server_authorization_check_config* config =
         creds->options()->server_authorization_check_config();
-    if (error == GRPC_ERROR_NONE && config != nullptr) {
+    /* If server authorization config is not null, use it to perform
+     * server authorizaiton check. Otherwise, fallback to original hostname
+     * verification check. */
+    if (config != nullptr) {
       /* Peer property will contain a complete certificate chain. */
       const tsi_peer_property* p =
           tsi_peer_get_property_by_name(&peer, TSI_X509_PEM_CERT_PROPERTY);
@@ -244,6 +253,8 @@ class grpc_tls_spiffe_channel_security_connector final
         /* Server authorization check is handled synchronously. */
         error = ProcessServerAuthorizationCheckResult(check_arg_);
       }
+    } else {
+      error = grpc_ssl_check_peer_name(target_name, &peer);
     }
     GRPC_CLOSURE_SCHED(on_peer_checked, error);
     tsi_peer_destruct(&peer);
@@ -257,16 +268,9 @@ class grpc_tls_spiffe_channel_security_connector final
     if (c != 0) {
       return c;
     }
-    c = strcmp(target_name_, other->target_name_);
-    if (c != 0) {
-      return c;
-    }
-    return (overridden_target_name_ == nullptr ||
-            other->overridden_target_name_ == nullptr)
-               ? GPR_ICMP(overridden_target_name_,
-                          other->overridden_target_name_)
-               : strcmp(overridden_target_name_,
-                        other->overridden_target_name_);
+    return grpc_ssl_cmp_target_name(target_name_, other->target_name_,
+                                    overridden_target_name_,
+                                    other->overridden_target_name_);
   }
 
   bool check_call_host(const char* host, grpc_auth_context* auth_context,
@@ -274,13 +278,12 @@ class grpc_tls_spiffe_channel_security_connector final
                        grpc_error** error) override {
     grpc_security_status status = GRPC_SECURITY_ERROR;
     tsi_peer peer = grpc_shallow_peer_from_ssl_auth_context(auth_context);
-    if (grpc_ssl_host_matches_name(&peer, host)) {
+    /* When whitelist endpoint information is not embedded in certificates. */
+    if (host != nullptr && strcmp(host, target_name_) == 0) {
       status = GRPC_SECURITY_OK;
     }
-    /* If the target name was overridden, then the original target_name was
-       'checked' transitively during the previous peer check at the end of the
-       handshake. */
-    if (overridden_target_name_ != nullptr && strcmp(host, target_name_) == 0) {
+    /* When whitelist endpoint information is embedded in certificates. */
+    if (grpc_ssl_host_matches_name(&peer, host)) {
       status = GRPC_SECURITY_OK;
     }
     if (status != GRPC_SECURITY_OK) {
@@ -393,7 +396,8 @@ class grpc_tls_spiffe_server_security_connector
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
-    grpc_error* error = grpc_ssl_check_peer(nullptr, &peer, auth_context);
+    grpc_error* error = grpc_ssl_check_alpn(&peer);
+    *auth_context = grpc_ssl_peer_to_auth_context(&peer);
     tsi_peer_destruct(&peer);
     GRPC_CLOSURE_SCHED(on_peer_checked, error);
   }
@@ -429,9 +433,15 @@ grpc_tls_spiffe_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
     const char* target_name, const char* overridden_target_name,
     tsi_ssl_session_cache* ssl_session_cache) {
-  if (channel_creds == nullptr || target_name == nullptr) {
+  if (channel_creds == nullptr) {
     gpr_log(GPR_ERROR,
-            "Invalid arguments to "
+            "channel_creds is nullptr in "
+            "grpc_tls_spiffe_channel_security_connector_create()");
+    return nullptr;
+  }
+  if (target_name == nullptr) {
+    gpr_log(GPR_ERROR,
+            "target_name is nullptr in "
             "grpc_tls_spiffe_channel_security_connector_create()");
     return nullptr;
   }
@@ -451,7 +461,7 @@ grpc_tls_spiffe_server_security_connector_create(
     grpc_core::RefCountedPtr<grpc_server_credentials> server_creds) {
   if (server_creds == nullptr) {
     gpr_log(GPR_ERROR,
-            "Invalid arguments to "
+            "server_creds is nullptr in "
             "grpc_tls_spiffe_server_security_connector_create()");
     return nullptr;
   }

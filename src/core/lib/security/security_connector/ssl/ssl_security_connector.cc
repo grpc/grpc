@@ -99,31 +99,38 @@ class grpc_ssl_channel_security_connector final
     const char* target_name = overridden_target_name_ != nullptr
                                   ? overridden_target_name_
                                   : target_name_;
-    grpc_error* error = grpc_ssl_check_peer(target_name, &peer, auth_context);
-    if (error == GRPC_ERROR_NONE &&
-        verify_options_->verify_peer_callback != nullptr) {
-      const tsi_peer_property* p =
-          tsi_peer_get_property_by_name(&peer, TSI_X509_PEM_CERT_PROPERTY);
-      if (p == nullptr) {
-        error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Cannot check peer: missing pem cert property.");
-      } else {
-        char* peer_pem = static_cast<char*>(gpr_malloc(p->value.length + 1));
-        memcpy(peer_pem, p->value.data, p->value.length);
-        peer_pem[p->value.length] = '\0';
-        int callback_status = verify_options_->verify_peer_callback(
-            target_name, peer_pem,
-            verify_options_->verify_peer_callback_userdata);
-        gpr_free(peer_pem);
-        if (callback_status) {
-          char* msg;
-          gpr_asprintf(&msg, "Verify peer callback returned a failure (%d)",
-                       callback_status);
-          error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-          gpr_free(msg);
+    grpc_error* alpn_error = grpc_ssl_check_alpn(&peer);
+    grpc_error* name_error = grpc_ssl_check_peer_name(target_name, &peer);
+    grpc_error* error = GRPC_ERROR_NONE;
+    if (alpn_error == GRPC_ERROR_NONE && name_error == GRPC_ERROR_NONE) {
+      if (verify_options_->verify_peer_callback != nullptr) {
+        const tsi_peer_property* p =
+            tsi_peer_get_property_by_name(&peer, TSI_X509_PEM_CERT_PROPERTY);
+        if (p == nullptr) {
+          error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "Cannot check peer: missing pem cert property.");
+        } else {
+          char* peer_pem = static_cast<char*>(gpr_malloc(p->value.length + 1));
+          memcpy(peer_pem, p->value.data, p->value.length);
+          peer_pem[p->value.length] = '\0';
+          int callback_status = verify_options_->verify_peer_callback(
+              target_name, peer_pem,
+              verify_options_->verify_peer_callback_userdata);
+          gpr_free(peer_pem);
+          if (callback_status) {
+            char* msg;
+            gpr_asprintf(&msg, "Verify peer callback returned a failure (%d)",
+                         callback_status);
+            error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+            gpr_free(msg);
+          }
         }
       }
+      *auth_context = grpc_ssl_peer_to_auth_context(&peer);
     }
+    error = alpn_error == GRPC_ERROR_NONE
+                ? (name_error == GRPC_ERROR_NONE ? error : name_error)
+                : alpn_error;
     GRPC_CLOSURE_SCHED(on_peer_checked, error);
     tsi_peer_destruct(&peer);
   }
@@ -133,14 +140,9 @@ class grpc_ssl_channel_security_connector final
         reinterpret_cast<const grpc_ssl_channel_security_connector*>(other_sc);
     int c = channel_security_connector_cmp(other);
     if (c != 0) return c;
-    c = strcmp(target_name_, other->target_name_);
-    if (c != 0) return c;
-    return (overridden_target_name_ == nullptr ||
-            other->overridden_target_name_ == nullptr)
-               ? GPR_ICMP(overridden_target_name_,
-                          other->overridden_target_name_)
-               : strcmp(overridden_target_name_,
-                        other->overridden_target_name_);
+    return grpc_ssl_cmp_target_name(target_name_, other->target_name_,
+                                    overridden_target_name_,
+                                    other->overridden_target_name_);
   }
 
   bool check_call_host(const char* host, grpc_auth_context* auth_context,
@@ -237,7 +239,8 @@ class grpc_ssl_server_security_connector
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
-    grpc_error* error = grpc_ssl_check_peer(nullptr, &peer, auth_context);
+    grpc_error* error = grpc_ssl_check_alpn(&peer);
+    *auth_context = grpc_ssl_peer_to_auth_context(&peer);
     tsi_peer_destruct(&peer);
     GRPC_CLOSURE_SCHED(on_peer_checked, error);
   }
