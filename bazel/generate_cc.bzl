@@ -21,13 +21,13 @@ def generate_cc_impl(ctx):
     proto_root = "/" + ctx.label.workspace_root
 
   if ctx.executable.plugin:
-    outs += [proto.path[label_len:-len(".proto")] + ".grpc.pb.h" for proto in protos]
-    outs += [proto.path[label_len:-len(".proto")] + ".grpc.pb.cc" for proto in protos]
+    outs += [proto.short_path[label_len:-len(".proto")] + ".grpc.pb.h" for proto in protos]
+    outs += [proto.short_path[label_len:-len(".proto")] + ".grpc.pb.cc" for proto in protos]
     if ctx.attr.generate_mocks:
-      outs += [proto.path[label_len:-len(".proto")] + "_mock.grpc.pb.h" for proto in protos]
+      outs += [proto.short_path[label_len:-len(".proto")] + "_mock.grpc.pb.h" for proto in protos]
   else:
-    outs += [proto.path[label_len:-len(".proto")] + ".pb.h" for proto in protos]
-    outs += [proto.path[label_len:-len(".proto")] + ".pb.cc" for proto in protos]
+    outs += [proto.short_path[label_len:-len(".proto")] + ".pb.h" for proto in protos]
+    outs += [proto.short_path[label_len:-len(".proto")] + ".pb.cc" for proto in protos]
   out_files = [ctx.new_file(out) for out in outs]
   dir_out = str(ctx.genfiles_dir.path + proto_root)
 
@@ -56,7 +56,7 @@ def generate_cc_impl(ctx):
   # Include the output directory so that protoc puts the generated code in the
   # right directory.
   arguments += ["--proto_path={0}{1}".format(dir_out, proto_root)]
-  arguments += [proto.path for proto in protos]
+  arguments += [proto.short_path for proto in protos]
 
   # create a list of well known proto files if the argument is non-None
   well_known_proto_files = []
