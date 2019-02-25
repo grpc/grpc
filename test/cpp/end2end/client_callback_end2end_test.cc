@@ -1000,6 +1000,54 @@ TEST_P(ClientCallbackEnd2endTest, BidiStreamServerCancelAfter) {
   }
 }
 
+TEST_P(ClientCallbackEnd2endTest, SimultaneousReadAndWritesDone) {
+  MAYBE_SKIP_TEST;
+  ResetStub();
+  class Client : public grpc::experimental::ClientBidiReactor<EchoRequest,
+                                                              EchoResponse> {
+   public:
+    Client(grpc::testing::EchoTestService::Stub* stub) {
+      request_.set_message("Hello bidi ");
+      stub->experimental_async()->BidiStream(&context_, this);
+      StartWrite(&request_);
+      StartCall();
+    }
+    void OnReadDone(bool ok) override {
+      EXPECT_TRUE(ok);
+      EXPECT_EQ(response_.message(), request_.message());
+    }
+    void OnWriteDone(bool ok) override {
+      EXPECT_TRUE(ok);
+      // Now send out the simultaneous Read and WritesDone
+      StartWritesDone();
+      StartRead(&response_);
+    }
+    void OnDone(const Status& s) override {
+      EXPECT_TRUE(s.ok());
+      EXPECT_EQ(response_.message(), request_.message());
+      std::unique_lock<std::mutex> l(mu_);
+      done_ = true;
+      cv_.notify_one();
+    }
+    void Await() {
+      std::unique_lock<std::mutex> l(mu_);
+      while (!done_) {
+        cv_.wait(l);
+      }
+    }
+
+   private:
+    EchoRequest request_;
+    EchoResponse response_;
+    ClientContext context_;
+    std::mutex mu_;
+    std::condition_variable cv_;
+    bool done_ = false;
+  } test{stub_.get()};
+
+  test.Await();
+}
+
 std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   std::vector<TestScenario> scenarios;
   std::vector<grpc::string> credentials_types{
