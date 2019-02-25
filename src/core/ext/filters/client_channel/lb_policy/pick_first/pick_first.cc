@@ -51,7 +51,7 @@ class PickFirst : public LoadBalancingPolicy {
   const char* name() const override { return kPickFirst; }
 
   void UpdateLocked(const grpc_channel_args& args,
-                    grpc_json* lb_config) override;
+                    RefCountedPtr<Config> lb_config) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
   void FillChildRefsForChannelz(channelz::ChildRefsList* child_subchannels,
@@ -231,7 +231,7 @@ void PickFirst::UpdateChildRefsLocked() {
 }
 
 void PickFirst::UpdateLocked(const grpc_channel_args& args,
-                             grpc_json* lb_config) {
+                             RefCountedPtr<Config> lb_config) {
   AutoChildRefsUpdater guard(this);
   const ServerAddressList* addresses = FindServerAddressListChannelArg(&args);
   if (addresses == nullptr) {

@@ -590,7 +590,7 @@ Subchannel::Subchannel(SubchannelKey* key, grpc_connector* connector,
   const char* service_config_json = grpc_channel_arg_get_string(
       grpc_channel_args_find(args_, GRPC_ARG_SERVICE_CONFIG));
   if (service_config_json != nullptr) {
-    UniquePtr<ServiceConfig> service_config =
+    RefCountedPtr<ServiceConfig> service_config =
         ServiceConfig::Create(service_config_json);
     if (service_config != nullptr) {
       HealthCheckParams params;
