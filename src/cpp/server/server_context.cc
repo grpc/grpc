@@ -138,7 +138,7 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
   }
 
   internal::Call call_;
-  internal::ServerReactor* reactor_;
+  internal::ServerReactor* const reactor_;
   bool has_tag_;
   void* tag_;
   void* core_cq_tag_;
@@ -200,12 +200,17 @@ bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
     cancelled_ = 1;
   }
 
-  if (cancelled_ && (reactor_ != nullptr)) {
+  // Decide whether to call the cancel callback before releasing the lock
+  bool call_cancel = (cancelled_ != 0);
+
+  // Release the lock since we are going to be calling a callback and
+  // interceptors now
+  lock.unlock();
+
+  if (call_cancel && (reactor_ != nullptr)) {
     reactor_->OnCancel();
   }
-  /* Release the lock since we are going to be running through interceptors now
-   */
-  lock.unlock();
+
   /* Add interception point and run through interceptors */
   interceptor_methods_.AddInterceptionHookPoint(
       experimental::InterceptionHookPoints::POST_RECV_CLOSE);
