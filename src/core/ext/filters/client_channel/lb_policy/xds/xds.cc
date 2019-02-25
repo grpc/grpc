@@ -255,9 +255,7 @@ class XdsLb : public LoadBalancingPolicy {
 
   class LocalityMap {
    public:
-    explicit LocalityMap(RefCountedPtr<XdsLb> parent)
-        : parent_(std::move(parent)) {}
-
+    explicit LocalityMap(RefCountedPtr<XdsLb> parent);
     class LocalityEntry {
      private:
       grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy> child_policy_;
@@ -269,9 +267,9 @@ class XdsLb : public LoadBalancingPolicy {
         return child_policy_.get();
       }
       ::grpc_channel_args* channel_args() { return channel_args_; }
-      grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy>
 
       // Used to move child policy between locality entries
+      grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy>
       MoveChildPolicy() {
         return std::move(child_policy_);
       }
@@ -313,19 +311,21 @@ class XdsLb : public LoadBalancingPolicy {
 
     // Update locality map based on the current state of the parent XdsLb
     void UpdateLocalityMap(bool create_policy);
-    static void DestroyLocalityName(void* p, void* unused);
-    static void* CopyLocalityName(void* key, void* unused);
-    static void DestroyLocalityEntry(void* p, void* unused);
-    static void* CopyLocalityEntry(void* entry, void* unused);
-    static long CompareLocalityName(void* key1, void* key2, void* unused);
-    static constexpr grpc_avl_vtable locality_avl_vtable_ = {
-        DestroyLocalityName, CopyLocalityName, CompareLocalityName,
-        DestroyLocalityEntry, CopyLocalityEntry};
 
     // Methods for dealing with the child policy.
     void CreateChildPolicyLocked(LocalityEntry* e, const char* name, Args args);
     grpc_channel_args* CreateChildPolicyArgsLocked(
         xds_grpclb_serverlist* serverlist);
+
+    // Underlying AVL map functions and vtable
+    static void DestroyLocalityName(void* p, void* unused);
+    static void* CopyLocalityName(void* key, void* unused);
+    static void DestroyLocalityEntry(void* p, void* unused);
+    static void* CopyLocalityEntry(void* entry, void* unused);
+    static long CompareLocalityName(void* key1, void* key2, void* unused);
+    const grpc_avl_vtable locality_avl_vtable_ = {
+        DestroyLocalityName, CopyLocalityName, CompareLocalityName,
+        DestroyLocalityEntry, CopyLocalityEntry};
   };
 
   ~XdsLb();
@@ -483,9 +483,10 @@ void XdsLb::Helper::UpdateState(grpc_connectivity_state state,
 void XdsLb::Helper::RequestReresolution() {
   if (parent_->shutting_down_) return;
   if (grpc_lb_xds_trace.enabled()) {
-    gpr_log(GPR_INFO,
-            "[xdslb %p] Re-resolution requested from the internal child policy ",
-            parent_.get());
+    gpr_log(
+        GPR_INFO,
+        "[xdslb %p] Re-resolution requested from the internal child policy ",
+        parent_.get());
   }
   // If we are talking to a balancer, we expect to get updated addresses
   // from the balancer, so we can ignore the re-resolution request from
@@ -1296,8 +1297,8 @@ void XdsLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
   xdslb_policy->fallback_timer_callback_pending_ = false;
   // If we receive a serverlist after the timer fires but before this callback
   // actually runs, don't fall back.
-  if (xdslb_policy->locality_serverlist_.empty() && !xdslb_policy->shutting_down_ &&
-      error == GRPC_ERROR_NONE) {
+  if (xdslb_policy->locality_serverlist_.empty() &&
+      !xdslb_policy->shutting_down_ && error == GRPC_ERROR_NONE) {
     if (grpc_lb_xds_trace.enabled()) {
       gpr_log(GPR_INFO,
               "[xdslb %p] Fallback timer fired. Not using fallback backends",
@@ -1423,7 +1424,8 @@ void XdsLb::LocalityMap::CreateChildPolicyLocked(LocalityEntry* e,
   e->set_child_policy(LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
       name, std::move(args)));
   if (GPR_UNLIKELY(e->ChildPolicyPtr() == nullptr)) {
-    gpr_log(GPR_ERROR, "[xdslb::LocalityMap %p] Failure creating a child policy", this);
+    gpr_log(GPR_ERROR,
+            "[xdslb::LocalityMap %p] Failure creating a child policy", this);
     return;
   }
   // Add the xDS's interested_parties pollset_set to that of the newly created
@@ -1443,7 +1445,7 @@ void XdsLb::LocalityMap::UpdateExistingChildPolicies() {
 
 void XdsLb::LocalityMap::UpdateLocalityMap(bool create_policy) {
   if (parent_->shutting_down_) return;
-  for (int i = 0; i < parent_->locality_serverlist_.size(); i++) {
+  for (size_t i = 0; i < parent_->locality_serverlist_.size(); i++) {
     LocalityEntry* e =
         GetLocalityEntry(parent_->locality_serverlist_[i]->locality_name);
     // Don't create new child policies if not directed to
@@ -1464,13 +1466,17 @@ void XdsLb::LocalityMap::UpdateLocalityMap(bool create_policy) {
       lb_policy_args.args = args;
       lb_policy_args.channel_control_helper =
           UniquePtr<ChannelControlHelper>(New<XdsLb::Helper>(parent_->Ref()));
-      CreateChildPolicyLocked(e, parent_->child_policy_name_ == nullptr ? "round_robin": parent_->child_policy_name_.get(), std::move(lb_policy_args));
+      CreateChildPolicyLocked(e,
+                              parent_->child_policy_name_ == nullptr
+                                  ? "round_robin"
+                                  : parent_->child_policy_name_.get(),
+                              std::move(lb_policy_args));
       if (grpc_lb_xds_trace.enabled()) {
         gpr_log(GPR_INFO, "[xdslb %p] Created a new child policy %p", this,
                 e->ChildPolicyPtr());
       }
-  }
-  if (grpc_lb_xds_trace.enabled()) {
+    }
+    if (grpc_lb_xds_trace.enabled()) {
       gpr_log(GPR_INFO, "[xdslb %p] Updating the child policy %p", this,
               e->ChildPolicyPtr());
     }
@@ -1525,24 +1531,13 @@ void grpc_lb_policy_xds_shutdown() {}
 //
 // Locality Map Implementation
 //
-grpc_core::XdsLb::LocalityMap::LocalityMap() {
+grpc_core::XdsLb::LocalityMap::LocalityMap(RefCountedPtr<XdsLb> parent)
+    : parent_(std::move(parent)) {
   map_ = grpc_avl_create(&locality_avl_vtable_);
 }
 grpc_core::XdsLb::LocalityMap::~LocalityMap() {
   grpc_avl_unref(map_, nullptr);
   parent_->Unref(DEBUG_LOCATION, "~LocalityMap()");
-}
-
-grpc_core::XdsLb::LocalityMap::LocalityEntry*
-grpc_core::XdsLb::LocalityMap::CreateOrUpdateLocality(
-    char* locality_name, grpc_channel_args* channel_args,
-    grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy> child_policy) {
-  gpr_log(GPR_ERROR, "Adding %s", locality_name);
-  LocalityEntry* locality_entry = grpc_core::New<LocalityEntry>();
-  locality_entry->set_channel_args(grpc_channel_args_copy(channel_args));
-  locality_entry->set_child_policy(std::move(child_policy));
-  map_ = grpc_avl_add(map_, locality_name, locality_entry, nullptr);
-  return locality_entry;
 }
 
 grpc_core::XdsLb::LocalityMap::LocalityEntry*
@@ -1585,14 +1580,14 @@ void* grpc_core::XdsLb::LocalityMap::CopyLocalityEntry(void* entry,
 
 void grpc_core::XdsLb::LocalityMap::ShutdownAll() {
   // for all elements
-  for (int i = 0; i < parent_->locality_serverlist_.size(); i++) {
+  for (size_t i = 0; i < parent_->locality_serverlist_.size(); i++) {
     grpc_avl_remove(map_, parent_->locality_serverlist_[i]->locality_name,
                     nullptr);
   }
 }
 
 void grpc_core::XdsLb::LocalityMap::ResetBackoffLocked() {
-  for (int i = 0; i < parent_->locality_serverlist_.size(); i++) {
+  for (size_t i = 0; i < parent_->locality_serverlist_.size(); i++) {
     LocalityEntry* e =
         GetLocalityEntry(parent_->locality_serverlist_[i]->locality_name);
     if (e != nullptr) {
@@ -1604,7 +1599,7 @@ void grpc_core::XdsLb::LocalityMap::ResetBackoffLocked() {
 void grpc_core::XdsLb::LocalityMap::FillChildRefsForChannelz(
     channelz::ChildRefsList* child_subchannels,
     channelz::ChildRefsList* child_channels) {
-  for (int i = 0; i < parent_->locality_serverlist_.size(); i++) {
+  for (size_t i = 0; i < parent_->locality_serverlist_.size(); i++) {
     LocalityEntry* e =
         GetLocalityEntry(parent_->locality_serverlist_[i]->locality_name);
     if (e != nullptr) {
