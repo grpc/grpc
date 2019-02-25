@@ -77,8 +77,8 @@ Libraries in different languages may be in various states of development. We are
 
 | Language                | Source repo                                          |
 |-------------------------|------------------------------------------------------|
-| Java                    | [grpc-java](http://github.com/grpc/grpc-java)        |
-| Go                      | [grpc-go](http://github.com/grpc/grpc-go)            |
+| Java                    | [grpc-java](https://github.com/grpc/grpc-java)        |
+| Go                      | [grpc-go](https://github.com/grpc/grpc-go)            |
 | NodeJS                  | [grpc-node](https://github.com/grpc/grpc-node)       |
 | WebJS                   | [grpc-web](https://github.com/grpc/grpc-web)         |
 | Dart                    | [grpc-dart](https://github.com/grpc/grpc-dart)       |
