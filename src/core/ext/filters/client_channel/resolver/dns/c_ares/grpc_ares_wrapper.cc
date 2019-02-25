@@ -8,11 +8,11 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software *
+ * distributed under the License is distributed on an "AS IS" BASIS, * WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  *
  */
 
@@ -46,9 +46,6 @@
 
 using grpc_core::ServerAddress;
 using grpc_core::ServerAddressList;
-
-static gpr_once g_basic_init = GPR_ONCE_INIT;
-static gpr_mu g_init_mu;
 
 grpc_core::TraceFlag grpc_trace_cares_address_sorting(false,
                                                       "cares_address_sorting");
@@ -88,8 +85,6 @@ typedef struct grpc_ares_hostbyname_request {
   /** is it a grpclb address */
   bool is_balancer;
 } grpc_ares_hostbyname_request;
-
-static void do_basic_init(void) { gpr_mu_init(&g_init_mu); }
 
 static void log_address_sorting_list(const ServerAddressList& addresses,
                                      const char* input_output_str) {
@@ -588,12 +583,12 @@ static void grpc_cancel_ares_request_locked_impl(grpc_ares_request* r) {
 void (*grpc_cancel_ares_request_locked)(grpc_ares_request* r) =
     grpc_cancel_ares_request_locked_impl;
 
+// ares_library_init and ares_library_cleanup are currently no-op except under
+// Windows. Calling them may cause race conditions when other parts of the
+// binary calls these functions concurrently.
+#ifdef GPR_WINDOWS
 grpc_error* grpc_ares_init(void) {
-  gpr_once_init(&g_basic_init, do_basic_init);
-  gpr_mu_lock(&g_init_mu);
   int status = ares_library_init(ARES_LIB_INIT_ALL);
-  gpr_mu_unlock(&g_init_mu);
-
   if (status != ARES_SUCCESS) {
     char* error_msg;
     gpr_asprintf(&error_msg, "ares_library_init failed: %s",
@@ -605,11 +600,11 @@ grpc_error* grpc_ares_init(void) {
   return GRPC_ERROR_NONE;
 }
 
-void grpc_ares_cleanup(void) {
-  gpr_mu_lock(&g_init_mu);
-  ares_library_cleanup();
-  gpr_mu_unlock(&g_init_mu);
-}
+void grpc_ares_cleanup(void) { ares_library_cleanup(); }
+#else
+grpc_error* grpc_ares_init(void) { return GRPC_ERROR_NONE; }
+void grpc_ares_cleanup(void) {}
+#endif  // GPR_WINDOWS
 
 /*
  * grpc_resolve_address_ares related structs and functions
