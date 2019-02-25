@@ -236,10 +236,14 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
 static void start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  // Make sure we get the same context here that we saw in init_call_elem().
+  // If batch payload context is not null (which will happen in some
+  // cancellation cases), make sure we get the same context here that we
+  // saw in init_call_elem().
   gpr_log(GPR_INFO, "start_transport_stream_op_batch(): context=%p",
           batch->payload->context);
-  GPR_ASSERT(calld->context == batch->payload->context);
+  if (batch->payload->context != nullptr) {
+    GPR_ASSERT(calld->context == batch->payload->context);
+  }
   grpc_call_next_op(elem, batch);
 }
 
