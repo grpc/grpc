@@ -494,14 +494,13 @@ static void BM_IsolatedFilter(benchmark::State& state) {
   TrackCounters track_counters;
   Fixture fixture;
   std::ostringstream label;
+  FakeClientChannelFactory fake_client_channel_factory;
 
-  std::vector<grpc_arg> args;
-  grpc_core::UniquePtr<grpc_core::ClientChannelFactory>
-      fake_client_channel_factory(grpc_core::New<FakeClientChannelFactory>());
-  args.push_back(grpc_core::ClientChannelFactory::CreateChannelArg(
-      fake_client_channel_factory.get()));
-  args.push_back(StringArg(GRPC_ARG_SERVER_URI, "localhost"));
-
+  std::vector<grpc_arg> args = {
+      grpc_core::ClientChannelFactory::CreateChannelArg(
+          &fake_client_channel_factory),
+      StringArg(GRPC_ARG_SERVER_URI, "localhost"),
+  };
   grpc_channel_args channel_args = {args.size(), &args[0]};
 
   std::vector<const grpc_channel_filter*> filters;
