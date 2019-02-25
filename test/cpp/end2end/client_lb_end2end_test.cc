@@ -153,7 +153,13 @@ class ClientLbEnd2endTest : public ::testing::Test {
     for (size_t i = 0; i < servers_.size(); ++i) {
       servers_[i]->Shutdown();
     }
-    grpc_shutdown();
+    // Explicitly destroy all the members so that we can make sure grpc_shutdown
+    // has finished by the end of this function, and thus all the registered
+    // LB policy factories are removed.
+    stub_.reset();
+    servers_.clear();
+    creds_.reset();
+    grpc_shutdown_blocking();
   }
 
   void CreateServers(size_t num_servers,
