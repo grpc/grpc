@@ -272,11 +272,8 @@ class grpc_tls_spiffe_channel_security_connector final
   bool check_call_host(const char* host, grpc_auth_context* auth_context,
                        grpc_closure* on_call_host_checked,
                        grpc_error** error) override {
-    if (host == nullptr || strcmp(host, target_name_) != 0) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "ALTS call host does not match target name");
-    }
-    return true;
+    return grpc_ssl_check_call_host(host, target_name_, overridden_target_name_,
+                                    auth_context, on_call_host_checked, error);
   }
 
   void cancel_check_call_host(grpc_closure* on_call_host_checked,

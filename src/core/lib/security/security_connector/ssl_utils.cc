@@ -142,6 +142,25 @@ grpc_error* grpc_ssl_check_peer_name(const char* peer_name,
   return GRPC_ERROR_NONE;
 }
 
+bool grpc_ssl_check_call_host(const char* host, const char* target_name,
+                              const char* overridden_target_name,
+                              grpc_auth_context* auth_context,
+                              grpc_closure* on_call_host_checked,
+                              grpc_error** error) {
+  grpc_security_status status = GRPC_SECURITY_ERROR;
+  tsi_peer peer = grpc_shallow_peer_from_ssl_auth_context(auth_context);
+  if (grpc_ssl_host_matches_name(&peer, host)) status = GRPC_SECURITY_OK;
+  if (overridden_target_name != nullptr && strcmp(host, target_name) == 0) {
+    status = GRPC_SECURITY_OK;
+  }
+  if (status != GRPC_SECURITY_OK) {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "call host does not match SSL server name");
+  }
+  grpc_shallow_peer_destruct(&peer);
+  return true;
+}
+
 const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols) {
   GPR_ASSERT(num_alpn_protocols != nullptr);
   *num_alpn_protocols = grpc_chttp2_num_alpn_versions();

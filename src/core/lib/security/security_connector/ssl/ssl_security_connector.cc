@@ -148,21 +148,8 @@ class grpc_ssl_channel_security_connector final
   bool check_call_host(const char* host, grpc_auth_context* auth_context,
                        grpc_closure* on_call_host_checked,
                        grpc_error** error) override {
-    grpc_security_status status = GRPC_SECURITY_ERROR;
-    tsi_peer peer = grpc_shallow_peer_from_ssl_auth_context(auth_context);
-    if (grpc_ssl_host_matches_name(&peer, host)) status = GRPC_SECURITY_OK;
-    /* If the target name was overridden, then the original target_name was
-       'checked' transitively during the previous peer check at the end of the
-       handshake. */
-    if (overridden_target_name_ != nullptr && strcmp(host, target_name_) == 0) {
-      status = GRPC_SECURITY_OK;
-    }
-    if (status != GRPC_SECURITY_OK) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "call host does not match SSL server name");
-    }
-    grpc_shallow_peer_destruct(&peer);
-    return true;
+    return grpc_ssl_check_call_host(host, target_name_, overridden_target_name_,
+                                    auth_context, on_call_host_checked, error);
   }
 
   void cancel_check_call_host(grpc_closure* on_call_host_checked,

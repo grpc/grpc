@@ -47,9 +47,14 @@ grpc_error* grpc_ssl_check_peer_name(const char* peer_name,
 /* Compare targer_name information extracted from SSL security connectors. */
 bool grpc_ssl_cmp_target_name(const char* target_name,
                               const char* other_target_name,
-                              const char* overridden_targer_name,
+                              const char* overridden_target_name,
                               const char* other_overridden_target_name);
-
+/* Check the host that will be set for a call is acceptable.*/
+bool grpc_ssl_check_call_host(const char* host, const char* target_name,
+                              const char* overridden_target_name,
+                              grpc_auth_context* auth_context,
+                              grpc_closure* on_call_host_checked,
+                              grpc_error** error);
 /* Return HTTP2-compliant cipher suites that gRPC accepts by default. */
 const char* grpc_get_ssl_cipher_suites(void);
 
