@@ -41,6 +41,9 @@ some configuration as environment variables that can be set.
   - bdp_estimator - traces behavior of bdp estimation logic
   - call_combiner - traces call combiner state
   - call_error - traces the possible errors contributing to final call status
+  - cares_resolver - traces operations of the c-ares based DNS resolver
+  - cares_address_sorting - traces operations of the c-ares based DNS
+    resolver's resolved address sorter
   - channel - traces operations on the C core channel stack
   - client_channel - traces client channel activity, including resolver
     and load balancing policy interaction
