@@ -120,11 +120,8 @@ int grpc_ipv6_loopback_available(void);
 
 static bool g_is_wsa_no_handle_inherit_supported = true;
 
-SOCKET grpc_create_wsa_socket(int family,
-                              int type,
-                              int protocol,
-                              LPWSAPROTOCOL_INFO protocol_info,
-                              GROUP group,
+SOCKET grpc_create_wsa_socket(int family, int type, int protocol,
+                              LPWSAPROTOCOL_INFO protocol_info, GROUP group,
                               DWORD flags);
 
 #endif

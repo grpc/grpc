@@ -442,7 +442,9 @@ class SockToPolledFdMap {
    */
   static ares_socket_t Socket(int af, int type, int protocol, void* user_data) {
     SockToPolledFdMap* map = static_cast<SockToPolledFdMap*>(user_data);
-    SOCKET s = grpc_create_wsa_socket(af, type, protocol, nullptr, 0, WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
+    SOCKET s = grpc_create_wsa_socket(
+        af, type, protocol, nullptr, 0,
+        WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
     if (s == INVALID_SOCKET) {
       return s;
     }
