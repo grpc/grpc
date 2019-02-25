@@ -64,6 +64,11 @@ config_setting(
 )
 
 config_setting(
+    name = "python3",
+    values = {"python_path": "python3"},
+)
+
+config_setting(
     name = "mac_x86_64",
     values = {"cpu": "darwin"},
 )
