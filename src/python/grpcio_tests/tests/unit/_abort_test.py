@@ -115,6 +115,7 @@ class AbortTest(unittest.TestCase):
     # on Python 3 (via the `__traceback__` attribute) holds a reference to
     # all local vars. Storing the raised exception can prevent GC and stop the
     # grpc_call from being unref'ed, even after server shutdown.
+    @unittest.skip("https://github.com/grpc/grpc/issues/17927")
     def test_abort_does_not_leak_local_vars(self):
         global do_not_leak_me  # pylint: disable=global-statement
         weak_ref = weakref.ref(do_not_leak_me)

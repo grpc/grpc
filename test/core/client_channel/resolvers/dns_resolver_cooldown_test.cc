@@ -18,7 +18,6 @@
 
 #include <cstring>
 
-#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
@@ -282,7 +281,7 @@ int main(int argc, char** argv) {
     grpc_core::ExecCtx exec_ctx;
     GRPC_COMBINER_UNREF(g_combiner, "test");
   }
-  grpc_shutdown_blocking();
+  grpc_shutdown();
   GPR_ASSERT(g_all_callbacks_invoked);
   return 0;
 }
