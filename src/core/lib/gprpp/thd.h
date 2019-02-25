@@ -153,7 +153,7 @@ class Thread {
   /// FAKE -- just a dummy placeholder Thread created by the default constructor
   /// ALIVE -- an actual thread of control exists associated with this thread
   /// STARTED -- the thread of control has been started
-  /// DONE -- the thread of control has completed and been joined/detached
+  /// DONE -- the thread of control has completed and been joined
   /// FAILED -- the thread of control never came alive
   /// MOVED -- contents were moved out and we're no longer tracking them
   enum ThreadState { FAKE, ALIVE, STARTED, DONE, FAILED, MOVED };
