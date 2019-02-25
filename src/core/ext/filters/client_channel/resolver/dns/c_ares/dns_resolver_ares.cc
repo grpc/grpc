@@ -489,7 +489,7 @@ void grpc_resolver_dns_ares_init() {
     address_sorting_init();
     grpc_error* error = grpc_ares_init();
     if (error != GRPC_ERROR_NONE) {
-      GRPC_LOG_IF_ERROR("ares_library_init() failed", error);
+      GRPC_LOG_IF_ERROR("grpc_ares_init() failed", error);
       return;
     }
     if (default_resolver == nullptr) {
