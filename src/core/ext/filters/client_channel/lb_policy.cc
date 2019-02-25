@@ -28,6 +28,17 @@ grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(
 
 namespace grpc_core {
 
+LoadBalancingPolicy::LoadBalancingPolicy(Args args, intptr_t initial_refcount)
+    : InternallyRefCounted(&grpc_trace_lb_policy_refcount, initial_refcount),
+      combiner_(GRPC_COMBINER_REF(args.combiner, "lb_policy")),
+      interested_parties_(grpc_pollset_set_create()),
+      channel_control_helper_(std::move(args.channel_control_helper)) {}
+
+LoadBalancingPolicy::~LoadBalancingPolicy() {
+  grpc_pollset_set_destroy(interested_parties_);
+  GRPC_COMBINER_UNREF(combiner_, "lb_policy");
+}
+
 grpc_json* LoadBalancingPolicy::ParseLoadBalancingConfig(
     const grpc_json* lb_config_array) {
   if (lb_config_array == nullptr || lb_config_array->type != GRPC_JSON_ARRAY) {
@@ -52,17 +63,6 @@ grpc_json* LoadBalancingPolicy::ParseLoadBalancingConfig(
     }
   }
   return nullptr;
-}
-
-LoadBalancingPolicy::LoadBalancingPolicy(Args args, intptr_t initial_refcount)
-    : InternallyRefCounted(&grpc_trace_lb_policy_refcount, initial_refcount),
-      combiner_(GRPC_COMBINER_REF(args.combiner, "lb_policy")),
-      interested_parties_(grpc_pollset_set_create()),
-      channel_control_helper_(std::move(args.channel_control_helper)) {}
-
-LoadBalancingPolicy::~LoadBalancingPolicy() {
-  grpc_pollset_set_destroy(interested_parties_);
-  GRPC_COMBINER_UNREF(combiner_, "lb_policy");
 }
 
 }  // namespace grpc_core

@@ -743,7 +743,7 @@ static void process_errors(grpc_tcp* tcp) {
     if (r == -1) {
       return;
     }
-    if ((msg.msg_flags & MSG_CTRUNC) == 1) {
+    if ((msg.msg_flags & MSG_CTRUNC) != 0) {
       gpr_log(GPR_ERROR, "Error message was truncated.");
     }
 

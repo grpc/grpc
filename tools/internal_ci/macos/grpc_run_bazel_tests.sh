@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2019 gRPC authors.
+# Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,3 +26,4 @@ bazel test --spawn_strategy=standalone --genrule_strategy=standalone --test_outp
 
 # kill port_server.py to prevent the build from hanging
 ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
+
