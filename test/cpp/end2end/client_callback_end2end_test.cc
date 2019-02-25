@@ -609,6 +609,17 @@ TEST_P(ClientCallbackEnd2endTest, RequestStream) {
   }
 }
 
+TEST_P(ClientCallbackEnd2endTest, ClientCancelsRequestStream) {
+  MAYBE_SKIP_TEST;
+  ResetStub();
+  WriteClient test{stub_.get(), DO_NOT_CANCEL, 3, {2}};
+  test.Await();
+  // Make sure that the server interceptors got the cancel
+  if (GetParam().use_interceptors) {
+    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+  }
+}
+
 // Server to cancel before doing reading the request
 TEST_P(ClientCallbackEnd2endTest, RequestStreamServerCancelBeforeReads) {
   MAYBE_SKIP_TEST;
