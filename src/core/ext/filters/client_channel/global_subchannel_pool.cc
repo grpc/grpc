@@ -59,9 +59,11 @@ class GlobalSubchannelPool::Sweeper : public InternallyRefCounted<Sweeper> {
   ~Sweeper() { gpr_mu_destroy(&mu_); }
 
   void Orphan() override {
-    MutexLock lock(&mu_);
-    shutdown_ = true;
-    grpc_timer_cancel(&next_sweep_timer_);
+    {
+      MutexLock lock(&mu_);
+      shutdown_ = true;
+      grpc_timer_cancel(&next_sweep_timer_);
+    }
     Unref();  // Drop initial ref.
   }
 
@@ -87,13 +89,13 @@ class GlobalSubchannelPool::Sweeper : public InternallyRefCounted<Sweeper> {
 
   static void SweepUnusedSubchannels(void* arg, grpc_error* error) {
     Sweeper* sweeper = static_cast<Sweeper*>(arg);
-    {
-      MutexLock lock(&sweeper->mu_);
-      if (sweeper->shutdown_ || error != GRPC_ERROR_NONE) {
-        sweeper->Unref();
-        return;
-      }
+    gpr_mu_lock(&sweeper->mu_);
+    if (sweeper->shutdown_ || error != GRPC_ERROR_NONE) {
+      gpr_mu_unlock(&sweeper->mu_);
+      sweeper->Unref();
+      return;
     }
+    gpr_mu_unlock(&sweeper->mu_);
     GlobalSubchannelPool* subchannel_pool = sweeper->subchannel_pool_;
     InlinedVector<Subchannel*, kUnusedSubchannelsInlinedSize>
         unused_subchannels;
