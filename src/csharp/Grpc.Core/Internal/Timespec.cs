@@ -33,6 +33,7 @@ namespace Grpc.Core.Internal
 
         static readonly NativeMethods Native = NativeMethods.Get();
         static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+        static readonly DateTimeOffset DtoUnixEpoch = new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, TimeSpan.Zero);
 
         public Timespec(long tv_sec, int tv_nsec) : this(tv_sec, tv_nsec, ClockType.Realtime)
         {
@@ -111,7 +112,7 @@ namespace Grpc.Core.Internal
         {
             return Native.gprsharp_convert_clock_type(this, targetClock);
         }
-            
+
         /// <summary>
         /// Converts Timespec to DateTime.
         /// Timespec needs to be of type GPRClockType.Realtime and needs to represent a legal value.
@@ -159,7 +160,12 @@ namespace Grpc.Core.Internal
                 return tv_sec > 0 ? DateTime.MaxValue : DateTime.MinValue;
             }
         }
-            
+
+        public DateTimeOffset ToDateTimeOffset()
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Creates DateTime to Timespec.
         /// DateTime has to be in UTC (DateTimeKind.Utc) unless it's DateTime.MaxValue or DateTime.MinValue.
@@ -187,9 +193,9 @@ namespace Grpc.Core.Internal
                 TimeSpan timeSpan = dateTime - UnixEpoch;
                 long ticks = timeSpan.Ticks;
 
-                long seconds = ticks / TicksPerSecond;  
+                long seconds = ticks / TicksPerSecond;
                 int nanos = (int)((ticks % TicksPerSecond) * NanosPerTick);
-                if (nanos < 0) 
+                if (nanos < 0)
                 {
                     // correct the result based on C# modulo semantics for negative dividend
                     seconds--;
@@ -201,6 +207,11 @@ namespace Grpc.Core.Internal
             {
                 return dateTime > UnixEpoch ? Timespec.InfFuture : Timespec.InfPast;
             }
+        }
+
+        public static Timespec FromDateTimeOffset(DateTimeOffset dateTimeOffset)
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>
