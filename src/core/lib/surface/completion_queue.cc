@@ -1097,7 +1097,7 @@ static void cq_shutdown_next(grpc_completion_queue* cq) {
   }
   cqd->shutdown_called = true;
   /* Doing a full_fetch_add (i.e acq/release) here to match with
-   * cq_begin_op_for_next and and cq_end_op_for_next functions which read/write
+   * cq_begin_op_for_next and cq_end_op_for_next functions which read/write
    * on this counter without necessarily holding a lock on cq */
   if (gpr_atm_full_fetch_add(&cqd->pending_events, -1) == 1) {
     cq_finish_shutdown_next(cq);

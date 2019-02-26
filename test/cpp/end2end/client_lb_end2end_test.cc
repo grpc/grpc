@@ -402,6 +402,27 @@ class ClientLbEnd2endTest : public ::testing::Test {
   std::shared_ptr<ChannelCredentials> creds_;
 };
 
+TEST_F(ClientLbEnd2endTest, ChannelStateConnectingWhenResolving) {
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  auto channel = BuildChannel("");
+  auto stub = BuildStub(channel);
+  // Initial state should be IDLE.
+  EXPECT_EQ(channel->GetState(false /* try_to_connect */), GRPC_CHANNEL_IDLE);
+  // Tell the channel to try to connect.
+  // Note that this call also returns IDLE, since the state change has
+  // not yet occurred; it just gets triggered by this call.
+  EXPECT_EQ(channel->GetState(true /* try_to_connect */), GRPC_CHANNEL_IDLE);
+  // Now that the channel is trying to connect, we should be in state
+  // CONNECTING.
+  EXPECT_EQ(channel->GetState(false /* try_to_connect */),
+            GRPC_CHANNEL_CONNECTING);
+  // Return a resolver result, which allows the connection attempt to proceed.
+  SetNextResolution(GetServersPorts());
+  // We should eventually transition into state READY.
+  EXPECT_TRUE(WaitForChannelReady(channel.get()));
+}
+
 TEST_F(ClientLbEnd2endTest, PickFirst) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;

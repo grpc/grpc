@@ -3300,7 +3300,8 @@
     "language": "c++", 
     "name": "client_callback_end2end_test", 
     "src": [
-      "test/cpp/end2end/client_callback_end2end_test.cc"
+      "test/cpp/end2end/client_callback_end2end_test.cc", 
+      "test/cpp/end2end/interceptors_util.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -9310,8 +9311,6 @@
       "src/core/lib/gpr/useful.h", 
       "src/core/lib/gprpp/abstract.h", 
       "src/core/lib/gprpp/atomic.h", 
-      "src/core/lib/gprpp/atomic_with_atm.h", 
-      "src/core/lib/gprpp/atomic_with_std.h", 
       "src/core/lib/gprpp/fork.h", 
       "src/core/lib/gprpp/manual_constructor.h", 
       "src/core/lib/gprpp/memory.h", 
@@ -9358,8 +9357,6 @@
       "src/core/lib/gpr/useful.h", 
       "src/core/lib/gprpp/abstract.h", 
       "src/core/lib/gprpp/atomic.h", 
-      "src/core/lib/gprpp/atomic_with_atm.h", 
-      "src/core/lib/gprpp/atomic_with_std.h", 
       "src/core/lib/gprpp/fork.h", 
       "src/core/lib/gprpp/manual_constructor.h", 
       "src/core/lib/gprpp/memory.h", 

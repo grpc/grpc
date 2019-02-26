@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2019 gRPC authors.
+ * Copyright 2019 The gRPC Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -270,6 +270,9 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc_test_init(argc, argv);
   gpr_setenv("grpc_cfstream", "1");
+  // TODO (pjaikumar): remove the line below when
+  // https://github.com/grpc/grpc/issues/18080 has been fixed.
+  gpr_setenv("GRPC_DNS_RESOLVER", "native");
   const auto result = RUN_ALL_TESTS();
   return result;
 }

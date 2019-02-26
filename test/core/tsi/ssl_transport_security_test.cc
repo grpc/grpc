@@ -107,7 +107,6 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
   ssl_alpn_lib* alpn_lib = ssl_fixture->alpn_lib;
   /* Create client handshaker factory. */
   tsi_ssl_client_handshaker_options client_options;
-  memset(&client_options, 0, sizeof(client_options));
   client_options.pem_root_certs = key_cert_lib->root_cert;
   if (ssl_fixture->force_client_auth) {
     client_options.pem_key_cert_pair =
@@ -131,7 +130,6 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
              TSI_OK);
   /* Create server handshaker factory. */
   tsi_ssl_server_handshaker_options server_options;
-  memset(&server_options, 0, sizeof(server_options));
   if (alpn_lib->alpn_mode == ALPN_SERVER_NO_CLIENT ||
       alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_OK ||
       alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_MISMATCH) {
@@ -681,7 +679,6 @@ void test_tsi_ssl_client_handshaker_factory_refcounting() {
   char* cert_chain = load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "client.pem");
 
   tsi_ssl_client_handshaker_options options;
-  memset(&options, 0, sizeof(options));
   options.pem_root_certs = cert_chain;
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
   GPR_ASSERT(tsi_create_ssl_client_handshaker_factory_with_options(
@@ -726,10 +723,13 @@ void test_tsi_ssl_server_handshaker_factory_refcounting() {
   cert_pair.cert_chain = cert_chain;
   cert_pair.private_key =
       load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "server0.key");
+  tsi_ssl_server_handshaker_options options;
+  options.pem_key_cert_pairs = &cert_pair;
+  options.num_key_cert_pairs = 1;
+  options.pem_client_root_certs = cert_chain;
 
-  GPR_ASSERT(tsi_create_ssl_server_handshaker_factory(
-                 &cert_pair, 1, cert_chain, 0, nullptr, nullptr, 0,
-                 &server_handshaker_factory) == TSI_OK);
+  GPR_ASSERT(tsi_create_ssl_server_handshaker_factory_with_options(
+                 &options, &server_handshaker_factory) == TSI_OK);
 
   handshaker_factory_destructor_called = false;
   original_vtable = tsi_ssl_handshaker_factory_swap_vtable(
@@ -763,7 +763,6 @@ void test_tsi_ssl_client_handshaker_factory_bad_params() {
 
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
   tsi_ssl_client_handshaker_options options;
-  memset(&options, 0, sizeof(options));
   options.pem_root_certs = cert_chain;
   GPR_ASSERT(tsi_create_ssl_client_handshaker_factory_with_options(
                  &options, &client_handshaker_factory) == TSI_INVALID_ARGUMENT);

@@ -254,9 +254,9 @@ class FlakyNetworkTest : public ::testing::Test {
       cond->notify_one();
     }
 
-    void Shutdown(bool join = true) {
+    void Shutdown() {
       server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
-      if (join) thread_->join();
+      thread_->join();
     }
   };
 
@@ -426,6 +426,57 @@ TEST_F(FlakyNetworkTest, FlakyNetwork) {
   // remove network flakiness
   UnflakeNetwork();
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
+}
+
+// Server is shutdown gracefully and restarted. Client keepalives are enabled
+TEST_F(FlakyNetworkTest, ServerRestartKeepaliveEnabled) {
+  const int kKeepAliveTimeMs = 1000;
+  const int kKeepAliveTimeoutMs = 1000;
+  ChannelArguments args;
+  args.SetInt(GRPC_ARG_KEEPALIVE_TIME_MS, kKeepAliveTimeMs);
+  args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, kKeepAliveTimeoutMs);
+  args.SetInt(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 1);
+  args.SetInt(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA, 0);
+
+  auto channel = BuildChannel("pick_first", args);
+  auto stub = BuildStub(channel);
+  // Channel should be in READY state after we send an RPC
+  EXPECT_TRUE(SendRpc(stub));
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
+
+  // server goes down, client should detect server going down and calls should
+  // fail
+  StopServer();
+  EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
+  EXPECT_FALSE(SendRpc(stub));
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+  // server restarts, calls succeed
+  StartServer();
+  EXPECT_TRUE(WaitForChannelReady(channel.get()));
+  // EXPECT_TRUE(SendRpc(stub));
+}
+
+// Server is shutdown gracefully and restarted. Client keepalives are enabled
+TEST_F(FlakyNetworkTest, ServerRestartKeepaliveDisabled) {
+  auto channel = BuildChannel("pick_first", ChannelArguments());
+  auto stub = BuildStub(channel);
+  // Channel should be in READY state after we send an RPC
+  EXPECT_TRUE(SendRpc(stub));
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
+
+  // server sends GOAWAY when it's shutdown, so client attempts to reconnect
+  StopServer();
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+  EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+  // server restarts, calls succeed
+  StartServer();
+  EXPECT_TRUE(WaitForChannelReady(channel.get()));
 }
 
 }  // namespace

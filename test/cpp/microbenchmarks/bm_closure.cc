@@ -183,6 +183,7 @@ static void BM_AcquireMutex(benchmark::State& state) {
     DoNothing(nullptr, GRPC_ERROR_NONE);
     gpr_mu_unlock(&mu);
   }
+  gpr_mu_destroy(&mu);
 
   track_counters.Finish(state);
 }
@@ -202,6 +203,7 @@ static void BM_TryAcquireMutex(benchmark::State& state) {
       abort();
     }
   }
+  gpr_mu_destroy(&mu);
 
   track_counters.Finish(state);
 }

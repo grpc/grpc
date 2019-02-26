@@ -16,16 +16,6 @@ licenses(["notice"])  # Apache v2
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
-config_setting(
-    name = "mac_x86_64",
-    values = {"cpu": "darwin"},
-)
-
-COPTS = select({
-    ":mac_x86_64": ["-DGRPC_CFSTREAM"],
-    "//conditions:default": [],
-})
-
 grpc_package(
     name = "test/cpp/end2end",
     visibility = "public",
@@ -160,6 +150,7 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        ":interceptors_util",
         ":test_service_impl",
         "//:gpr",
         "//:grpc",
@@ -671,7 +662,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//:grpc_cfstream",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing:simple_messages_proto",
