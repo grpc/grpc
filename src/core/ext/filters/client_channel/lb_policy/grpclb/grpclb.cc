@@ -1677,13 +1677,12 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
     policy = pending_child_policy_ != nullptr ? pending_child_policy_.get()
                                               : child_policy_.get();
   }
+  GPR_ASSERT(policy != nullptr);
   // Update the policy.
-  if (policy != nullptr) {
-    if (grpc_lb_glb_trace.enabled()) {
-      gpr_log(GPR_INFO, "[grpclb %p] Updating child policy %p", this, policy);
-    }
-    policy->UpdateLocked(*args, child_policy_config_);
+  if (grpc_lb_glb_trace.enabled()) {
+    gpr_log(GPR_INFO, "[grpclb %p] Updating child policy %p", this, policy);
   }
+  policy->UpdateLocked(*args, child_policy_config_);
   // Clean up.
   grpc_channel_args_destroy(args);
 }
