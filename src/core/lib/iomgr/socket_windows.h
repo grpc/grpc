@@ -118,7 +118,7 @@ void grpc_socket_become_ready(grpc_winsocket* winsocket,
    The value is probed once, and cached for the life of the process. */
 int grpc_ipv6_loopback_available(void);
 
-static DWORD grpc_wsa_socket_flags = 0;
+extern DWORD grpc_wsa_socket_flags;
 
 void grpc_wsa_socket_flags_init();
 

@@ -39,6 +39,8 @@
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 
+DWORD grpc_wsa_socket_flags;
+
 grpc_winsocket* grpc_winsocket_create(SOCKET socket, const char* name) {
   char* final_name;
   grpc_winsocket* r = (grpc_winsocket*)gpr_malloc(sizeof(grpc_winsocket));
