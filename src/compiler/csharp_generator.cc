@@ -467,7 +467,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
       out->Print(
           "public virtual $response$ $methodname$($request$ request, "
           "grpc::Metadata "
-          "headers = null, global::System.DateTime? deadline = null, "
+          "headers = null, global::System.DateTimeOffset? deadline = null, "
           "global::System.Threading.CancellationToken "
           "cancellationToken = "
           "default(global::System.Threading.CancellationToken))\n",
@@ -510,7 +510,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
     out->Print(
         "public virtual $returntype$ "
         "$methodname$($request_maybe$grpc::Metadata "
-        "headers = null, global::System.DateTime? deadline = null, "
+        "headers = null, global::System.DateTimeOffset? deadline = null, "
         "global::System.Threading.CancellationToken "
         "cancellationToken = "
         "default(global::System.Threading.CancellationToken))\n",

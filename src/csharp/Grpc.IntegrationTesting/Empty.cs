@@ -44,7 +44,6 @@ namespace Grpc.Testing {
   ///   service Foo {
   ///     rpc Bar (grpc.testing.Empty) returns (grpc.testing.Empty) { };
   ///   };
-  ///
   /// </summary>
   public sealed partial class Empty : pb::IMessage<Empty> {
     private static readonly pb::MessageParser<Empty> _parser = new pb::MessageParser<Empty>(() => new Empty());

@@ -94,7 +94,7 @@ namespace Grpc.IntegrationTesting
         private async Task Run()
         {
             var credentials = await CreateCredentialsAsync();
-            
+
             List<ChannelOption> channelOptions = null;
             if (!string.IsNullOrEmpty(options.ServerHostOverride))
             {
@@ -343,7 +343,7 @@ namespace Grpc.IntegrationTesting
         public static void RunJwtTokenCreds(TestService.TestServiceClient client)
         {
             Console.WriteLine("running jwt_token_creds");
-           
+
             var request = new SimpleRequest
             {
                 ResponseSize = 314159,
@@ -450,7 +450,7 @@ namespace Grpc.IntegrationTesting
         {
             Console.WriteLine("running timeout_on_sleeping_server");
 
-            var deadline = DateTime.UtcNow.AddMilliseconds(1);
+            var deadline = DateTimeOffset.Now.AddMilliseconds(1);
             using (var call = client.FullDuplexCall(deadline: deadline))
             {
                 try

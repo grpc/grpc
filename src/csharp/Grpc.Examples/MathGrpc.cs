@@ -4,13 +4,13 @@
 // </auto-generated>
 // Original file comments:
 // Copyright 2015 gRPC authors.
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -156,7 +156,7 @@ namespace Math {
       /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
       /// <param name="cancellationToken">An optional token for canceling the call.</param>
       /// <returns>The response received from the server.</returns>
-      public virtual global::Math.DivReply Div(global::Math.DivArgs request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual global::Math.DivReply Div(global::Math.DivArgs request, grpc::Metadata headers = null, global::System.DateTimeOffset? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return Div(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
@@ -180,7 +180,7 @@ namespace Math {
       /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
       /// <param name="cancellationToken">An optional token for canceling the call.</param>
       /// <returns>The call object.</returns>
-      public virtual grpc::AsyncUnaryCall<global::Math.DivReply> DivAsync(global::Math.DivArgs request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual grpc::AsyncUnaryCall<global::Math.DivReply> DivAsync(global::Math.DivArgs request, grpc::Metadata headers = null, global::System.DateTimeOffset? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return DivAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
@@ -205,7 +205,7 @@ namespace Math {
       /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
       /// <param name="cancellationToken">An optional token for canceling the call.</param>
       /// <returns>The call object.</returns>
-      public virtual grpc::AsyncDuplexStreamingCall<global::Math.DivArgs, global::Math.DivReply> DivMany(grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual grpc::AsyncDuplexStreamingCall<global::Math.DivArgs, global::Math.DivReply> DivMany(grpc::Metadata headers = null, global::System.DateTimeOffset? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return DivMany(new grpc::CallOptions(headers, deadline, cancellationToken));
       }
@@ -231,7 +231,7 @@ namespace Math {
       /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
       /// <param name="cancellationToken">An optional token for canceling the call.</param>
       /// <returns>The call object.</returns>
-      public virtual grpc::AsyncServerStreamingCall<global::Math.Num> Fib(global::Math.FibArgs request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual grpc::AsyncServerStreamingCall<global::Math.Num> Fib(global::Math.FibArgs request, grpc::Metadata headers = null, global::System.DateTimeOffset? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return Fib(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
@@ -255,7 +255,7 @@ namespace Math {
       /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
       /// <param name="cancellationToken">An optional token for canceling the call.</param>
       /// <returns>The call object.</returns>
-      public virtual grpc::AsyncClientStreamingCall<global::Math.Num, global::Math.Num> Sum(grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual grpc::AsyncClientStreamingCall<global::Math.Num, global::Math.Num> Sum(grpc::Metadata headers = null, global::System.DateTimeOffset? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return Sum(new grpc::CallOptions(headers, deadline, cancellationToken));
       }

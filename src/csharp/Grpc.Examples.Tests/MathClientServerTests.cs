@@ -133,7 +133,7 @@ namespace Math.Tests
         public void FibWithDeadline()
         {
             using (var call = client.Fib(new FibArgs { Limit = 0 }, 
-                deadline: DateTime.UtcNow.AddMilliseconds(500)))
+                deadline: DateTimeOffset.Now.AddMilliseconds(500)))
             {
                 var ex = Assert.ThrowsAsync<RpcException>(async () => await call.ResponseStream.ToListAsync());
 
