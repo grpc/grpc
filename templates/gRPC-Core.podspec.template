@@ -61,6 +61,8 @@
   def grpc_test_util_files(libs):
     out = grpc_lib_files(libs, ("grpc_test_util",), ("src", "headers"))
     excl = grpc_private_files(libs)
+    # Subprocess is not supported in tvOS and not needed by our tests.
+    excl += ["test/core/util/subprocess_posix.cc"]
     return [file for file in out if not file in excl]
 
   def end2end_tests_files(libs):
