@@ -303,6 +303,9 @@ class _Context(grpc.ServicerContext):
         with self._state.condition:
             self._state.details = _common.encode(details)
 
+    def _finalize_state(self):
+        pass
+
 
 class _RequestIterator(object):
 
