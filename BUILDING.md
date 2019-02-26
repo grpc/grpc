@@ -55,7 +55,7 @@ To prepare for cmake + Microsoft Visual C++ compiler build
 - Install [CMake](https://cmake.org/download/).
 - Install [Active State Perl](https://www.activestate.com/activeperl/) (`choco install activeperl`) - *required by boringssl*
 - Install [Go](https://golang.org/dl/) (`choco install golang`) - *required by boringssl*
-- Install [yasm](http://yasm.tortall.net/) and add it to `PATH` (`choco install yasm`) - *required by boringssl*
+- Install [yasm](https://yasm.tortall.net/) and add it to `PATH` (`choco install yasm`) - *required by boringssl*
 - (Optional) Install [Ninja](https://ninja-build.org/) (`choco install ninja`)
 
 ## Protoc

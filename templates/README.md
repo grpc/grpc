@@ -129,14 +129,14 @@ with static runtime. "only" means it'll only be built with the dll runtime.
 
 # The template system
 
-We're currently using the [mako templates](http://www.makotemplates.org/)
+We're currently using the [mako templates](https://www.makotemplates.org/)
 renderer. That choice enables us to simply render text files without dragging
 with us a lot of other features. Feel free to explore the current templates
 in that directory.
 
 ## The renderer engine
 
-As mentioned, the renderer is using [mako templates](http://www.makotemplates.org/),
+As mentioned, the renderer is using [mako templates](https://www.makotemplates.org/),
 but some glue is needed to process all of that. See the [buildgen folder](../tools/buildgen)
 for more details. We're mainly loading the build.json file, and massaging it,
 in order to get the list of properties we need, into a Python dictionary, that

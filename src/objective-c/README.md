@@ -216,7 +216,7 @@ library. This can be tedious to configure manually.
 Objective-C Protobuf runtime library.
 
 [Protocol Buffers]:https://developers.google.com/protocol-buffers/
-[homebrew]:http://brew.sh
+[homebrew]: https://brew.sh
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
 [example Podfile]:https://github.com/grpc/grpc/blob/master/examples/objective-c/helloworld/Podfile
 [example apps]: https://github.com/grpc/grpc/tree/master/examples/objective-c

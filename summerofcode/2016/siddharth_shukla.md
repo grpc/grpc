@@ -12,10 +12,10 @@ A small, and by no means exhaustive, list of some major python implementations
 is:
 
 - [CPython](https://www.python.org/): The reference implementation
-- [Jython](http://www.jython.org/): Python implemented in Java
-- [Python for .NET](http://pythonnet.sourceforge.net/): CPython implementation that enables .NET library usage
-- [IronPython](http://ironpython.net/): Python implemented in .NET
-- [PyPy](http://pypy.org/): Python implemented completely in Python
+- [Jython](https://www.jython.org/): Python implemented in Java
+- [Python for .NET](https://pythonnet.sourceforge.net/): CPython implementation that enables .NET library usage
+- [IronPython](https://ironpython.net/): Python implemented in .NET
+- [PyPy](https://pypy.org/): Python implemented completely in Python
 - [Stackless](https://bitbucket.org/stackless-dev/stackless/wiki/Home): Replaces the dependency for the C call stack with it's own stack
 
 The development in this project revolved around

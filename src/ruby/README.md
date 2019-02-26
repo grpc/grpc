@@ -28,7 +28,7 @@ BUILD FROM SOURCE
 git submodule update --init
 ```
 
-- Install Ruby 2.x. Consider doing this with [RVM](http://rvm.io), it's a nice way of controlling
+- Install Ruby 2.x. Consider doing this with [RVM](https://rvm.io), it's a nice way of controlling
   the exact ruby version that's used.
 ```sh
 $ command curl -sSL https://rvm.io/mpapis.asc | gpg --import -
@@ -39,7 +39,7 @@ $ # and that the rvm command is installed
 ```
 - Make sure your run `source $HOME/.rvm/scripts/rvm` as instructed to complete the set up of RVM
 
-- Install [bundler](http://bundler.io/)
+- Install [bundler](https://bundler.io/)
 ```
 $ gem install bundler
 ```
@@ -72,7 +72,7 @@ Directory structure is the layout for [ruby extensions][]
   GRPC.logger.info("Answer: #{resp.inspect}")
   ```
 
-[ruby extensions]:http://guides.rubygems.org/gems-with-extensions/
-[rubydoc]: http://www.rubydoc.info/gems/grpc
+[ruby extensions]: https://guides.rubygems.org/gems-with-extensions/
+[rubydoc]: https://www.rubydoc.info/gems/grpc
 [grpc.io]: https://grpc.io/docs/quickstart/ruby.html
-[Debian jessie-backports]:http://backports.debian.org/Instructions/
+[Debian jessie-backports]: http://backports.debian.org/Instructions/

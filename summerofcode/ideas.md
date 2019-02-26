@@ -27,7 +27,7 @@ gRPC Core:
 
 gRPC Python:
 
-1. Support static type-checking of both gRPC Python itself and of code that uses gRPC Python. No one likes dynamic typing and Python is finally outgrowing it! There are probably errors in the implementation of gRPC Python that [pytype](https://github.com/google/pytype) or [mypy](http://mypy-lang.org/) could detect. There are certainly errors in other code that uses gRPC Python that they could detect.
+1. Support static type-checking of both gRPC Python itself and of code that uses gRPC Python. No one likes dynamic typing and Python is finally outgrowing it! There are probably errors in the implementation of gRPC Python that [pytype](https://github.com/google/pytype) or [mypy](https://mypy-lang.org/) could detect. There are certainly errors in other code that uses gRPC Python that they could detect.
     * **Required skills:** Python programming language, open source development across multiple repositories and projects.
     * **Likely mentors:** [Nathaniel Manista](https://github.com/nathanielmanistaatgoogle), [Kailash Sethuraman](https://github.com/hsaliak).
 
