@@ -34,6 +34,7 @@ git_submodule_hashes = {
     for s in git_submodules
 }
 
+_BAZEL_SKYLIB_DEP_NAME = 'bazel_skylib'
 _BAZEL_TOOLCHAINS_DEP_NAME = 'com_github_bazelbuild_bazeltoolchains'
 _TWISTED_TWISTED_DEP_NAME = 'com_github_twisted_twisted'
 _YAML_PYYAML_DEP_NAME = 'com_github_yaml_pyyaml'
@@ -53,6 +54,7 @@ _GRPC_DEP_NAMES = [
     'com_github_cares_cares',
     'com_google_absl',
     'io_opencensus_cpp',
+    _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
     _TWISTED_TWISTED_DEP_NAME,
     _YAML_PYYAML_DEP_NAME,
@@ -62,6 +64,7 @@ _GRPC_DEP_NAMES = [
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
+    _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
     _TWISTED_TWISTED_DEP_NAME,
     _YAML_PYYAML_DEP_NAME,

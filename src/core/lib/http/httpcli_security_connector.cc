@@ -67,7 +67,7 @@ class grpc_httpcli_ssl_channel_security_connector final
   }
 
   void add_handshakers(grpc_pollset_set* interested_parties,
-                       grpc_handshake_manager* handshake_mgr) override {
+                       grpc_core::HandshakeManager* handshake_mgr) override {
     tsi_handshaker* handshaker = nullptr;
     if (handshaker_factory_ != nullptr) {
       tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
@@ -77,8 +77,7 @@ class grpc_httpcli_ssl_channel_security_connector final
                 tsi_result_to_string(result));
       }
     }
-    grpc_handshake_manager_add(
-        handshake_mgr, grpc_security_handshaker_create(handshaker, this));
+    handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(handshaker, this));
   }
 
   tsi_ssl_client_handshaker_factory* handshaker_factory() const {
@@ -155,11 +154,11 @@ httpcli_ssl_channel_security_connector_create(
 typedef struct {
   void (*func)(void* arg, grpc_endpoint* endpoint);
   void* arg;
-  grpc_handshake_manager* handshake_mgr;
+  grpc_core::RefCountedPtr<grpc_core::HandshakeManager> handshake_mgr;
 } on_done_closure;
 
 static void on_handshake_done(void* arg, grpc_error* error) {
-  grpc_handshaker_args* args = static_cast<grpc_handshaker_args*>(arg);
+  auto* args = static_cast<grpc_core::HandshakerArgs*>(arg);
   on_done_closure* c = static_cast<on_done_closure*>(args->user_data);
   if (error != GRPC_ERROR_NONE) {
     const char* msg = grpc_error_string(error);
@@ -172,14 +171,13 @@ static void on_handshake_done(void* arg, grpc_error* error) {
     gpr_free(args->read_buffer);
     c->func(c->arg, args->endpoint);
   }
-  grpc_handshake_manager_destroy(c->handshake_mgr);
-  gpr_free(c);
+  grpc_core::Delete<on_done_closure>(c);
 }
 
 static void ssl_handshake(void* arg, grpc_endpoint* tcp, const char* host,
                           grpc_millis deadline,
                           void (*on_done)(void* arg, grpc_endpoint* endpoint)) {
-  on_done_closure* c = static_cast<on_done_closure*>(gpr_malloc(sizeof(*c)));
+  auto* c = grpc_core::New<on_done_closure>();
   const char* pem_root_certs =
       grpc_core::DefaultSslRootStore::GetPemRootCerts();
   const tsi_ssl_root_certs_store* root_store =
@@ -198,12 +196,13 @@ static void ssl_handshake(void* arg, grpc_endpoint* tcp, const char* host,
   GPR_ASSERT(sc != nullptr);
   grpc_arg channel_arg = grpc_security_connector_to_arg(sc.get());
   grpc_channel_args args = {1, &channel_arg};
-  c->handshake_mgr = grpc_handshake_manager_create();
-  grpc_handshakers_add(HANDSHAKER_CLIENT, &args,
-                       nullptr /* interested_parties */, c->handshake_mgr);
-  grpc_handshake_manager_do_handshake(
-      c->handshake_mgr, tcp, nullptr /* channel_args */, deadline,
-      nullptr /* acceptor */, on_handshake_done, c /* user_data */);
+  c->handshake_mgr = grpc_core::MakeRefCounted<grpc_core::HandshakeManager>();
+  grpc_core::HandshakerRegistry::AddHandshakers(
+      grpc_core::HANDSHAKER_CLIENT, &args, /*interested_parties=*/nullptr,
+      c->handshake_mgr.get());
+  c->handshake_mgr->DoHandshake(tcp, /*channel_args=*/nullptr, deadline,
+                                /*acceptor=*/nullptr, on_handshake_done,
+                                /*user_data=*/c);
   sc.reset(DEBUG_LOCATION, "httpcli");
 }
 

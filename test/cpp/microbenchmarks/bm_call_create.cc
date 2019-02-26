@@ -570,6 +570,7 @@ static void BM_IsolatedFilter(benchmark::State& state) {
   }
   gpr_arena_destroy(call_args.arena);
   grpc_channel_stack_destroy(channel_stack);
+  grpc_core::ExecCtx::Get()->Flush();
 
   gpr_free(channel_stack);
   gpr_free(call_stack);

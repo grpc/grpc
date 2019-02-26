@@ -715,11 +715,15 @@ static void process_errors(grpc_tcp* tcp) {
     msg.msg_iovlen = 0;
     msg.msg_flags = 0;
 
-    // Allocate aligned space for cmsgs received along with a timestamps
+    /* Allocate enough space so we don't need to keep increasing this as size
+     * of OPT_STATS increase */
+    constexpr size_t cmsg_alloc_space =
+        CMSG_SPACE(sizeof(grpc_core::scm_timestamping)) +
+        CMSG_SPACE(sizeof(sock_extended_err) + sizeof(sockaddr_in)) +
+        CMSG_SPACE(32 * NLA_ALIGN(NLA_HDRLEN + sizeof(uint64_t)));
+    /* Allocate aligned space for cmsgs received along with timestamps */
     union {
-      char rbuf[CMSG_SPACE(sizeof(grpc_core::scm_timestamping)) +
-                CMSG_SPACE(sizeof(sock_extended_err) + sizeof(sockaddr_in)) +
-                CMSG_SPACE(16 * NLA_ALIGN(NLA_HDRLEN + sizeof(uint64_t)))];
+      char rbuf[cmsg_alloc_space];
       struct cmsghdr align;
     } aligned_buf;
     memset(&aligned_buf, 0, sizeof(aligned_buf));
@@ -739,10 +743,8 @@ static void process_errors(grpc_tcp* tcp) {
     if (r == -1) {
       return;
     }
-    if (grpc_tcp_trace.enabled()) {
-      if ((msg.msg_flags & MSG_CTRUNC) == 1) {
-        gpr_log(GPR_INFO, "Error message was truncated.");
-      }
+    if ((msg.msg_flags & MSG_CTRUNC) != 0) {
+      gpr_log(GPR_ERROR, "Error message was truncated.");
     }
 
     if (msg.msg_controllen == 0) {

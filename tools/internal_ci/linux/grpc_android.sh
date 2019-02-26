@@ -44,7 +44,8 @@ gcloud firebase test android run \
     --device model=Nexus6P,version=24,locale=en,orientation=portrait \
     --device model=Nexus6P,version=23,locale=en,orientation=portrait \
     --device model=Nexus6,version=22,locale=en,orientation=portrait \
-    --device model=Nexus6,version=21,locale=en,orientation=portrait
+    --device model=Nexus6,version=21,locale=en,orientation=portrait \
+    --device model=walleye,version=28,locale=en,orientation=portrait
 
 
 # Build hello world example

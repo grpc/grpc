@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2017 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,10 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_GPRPP_ATOMIC_WITH_STD_H
-#define GRPC_CORE_LIB_GPRPP_ATOMIC_WITH_STD_H
+#import <UIKit/UIKit.h>
 
-#include <grpc/support/port_platform.h>
+@interface AppDelegate : UIResponder<UIApplicationDelegate>
 
-#include <atomic>
+@property(strong, nonatomic) UIWindow* window;
 
-namespace grpc_core {
-
-template <class T>
-using atomic = std::atomic<T>;
-
-typedef std::memory_order memory_order;
-
-}  // namespace grpc_core
-
-#endif /* GRPC_CORE_LIB_GPRPP_ATOMIC_WITH_STD_H */
+@end

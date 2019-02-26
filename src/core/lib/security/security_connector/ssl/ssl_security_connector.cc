@@ -104,7 +104,6 @@ class grpc_ssl_channel_security_connector final
         config->pem_key_cert_pair->private_key != nullptr &&
         config->pem_key_cert_pair->cert_chain != nullptr;
     tsi_ssl_client_handshaker_options options;
-    memset(&options, 0, sizeof(options));
     GPR_DEBUG_ASSERT(pem_root_certs != nullptr);
     options.pem_root_certs = pem_root_certs;
     options.root_store = root_store;
@@ -128,7 +127,7 @@ class grpc_ssl_channel_security_connector final
   }
 
   void add_handshakers(grpc_pollset_set* interested_parties,
-                       grpc_handshake_manager* handshake_mgr) override {
+                       grpc_core::HandshakeManager* handshake_mgr) override {
     // Instantiate TSI handshaker.
     tsi_handshaker* tsi_hs = nullptr;
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
@@ -142,8 +141,7 @@ class grpc_ssl_channel_security_connector final
       return;
     }
     // Create handshakers.
-    grpc_handshake_manager_add(handshake_mgr,
-                               grpc_security_handshaker_create(tsi_hs, this));
+    handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(tsi_hs, this));
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
@@ -263,15 +261,22 @@ class grpc_ssl_server_security_connector
       size_t num_alpn_protocols = 0;
       const char** alpn_protocol_strings =
           grpc_fill_alpn_protocol_strings(&num_alpn_protocols);
-      const tsi_result result = tsi_create_ssl_server_handshaker_factory_ex(
-          server_credentials->config().pem_key_cert_pairs,
-          server_credentials->config().num_key_cert_pairs,
-          server_credentials->config().pem_root_certs,
+      tsi_ssl_server_handshaker_options options;
+      options.pem_key_cert_pairs =
+          server_credentials->config().pem_key_cert_pairs;
+      options.num_key_cert_pairs =
+          server_credentials->config().num_key_cert_pairs;
+      options.pem_client_root_certs =
+          server_credentials->config().pem_root_certs;
+      options.client_certificate_request =
           grpc_get_tsi_client_certificate_request_type(
-              server_credentials->config().client_certificate_request),
-          grpc_get_ssl_cipher_suites(), alpn_protocol_strings,
-          static_cast<uint16_t>(num_alpn_protocols),
-          &server_handshaker_factory_);
+              server_credentials->config().client_certificate_request);
+      options.cipher_suites = grpc_get_ssl_cipher_suites();
+      options.alpn_protocols = alpn_protocol_strings;
+      options.num_alpn_protocols = static_cast<uint16_t>(num_alpn_protocols);
+      const tsi_result result =
+          tsi_create_ssl_server_handshaker_factory_with_options(
+              &options, &server_handshaker_factory_);
       gpr_free((void*)alpn_protocol_strings);
       if (result != TSI_OK) {
         gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
@@ -283,7 +288,7 @@ class grpc_ssl_server_security_connector
   }
 
   void add_handshakers(grpc_pollset_set* interested_parties,
-                       grpc_handshake_manager* handshake_mgr) override {
+                       grpc_core::HandshakeManager* handshake_mgr) override {
     // Instantiate TSI handshaker.
     try_fetch_ssl_server_credentials();
     tsi_handshaker* tsi_hs = nullptr;
@@ -295,8 +300,7 @@ class grpc_ssl_server_security_connector
       return;
     }
     // Create handshakers.
-    grpc_handshake_manager_add(handshake_mgr,
-                               grpc_security_handshaker_create(tsi_hs, this));
+    handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(tsi_hs, this));
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
@@ -362,19 +366,24 @@ class grpc_ssl_server_security_connector
     size_t num_alpn_protocols = 0;
     const char** alpn_protocol_strings =
         grpc_fill_alpn_protocol_strings(&num_alpn_protocols);
-    tsi_ssl_pem_key_cert_pair* cert_pairs = grpc_convert_grpc_to_tsi_cert_pairs(
-        config->pem_key_cert_pairs, config->num_key_cert_pairs);
     tsi_ssl_server_handshaker_factory* new_handshaker_factory = nullptr;
     const grpc_ssl_server_credentials* server_creds =
         static_cast<const grpc_ssl_server_credentials*>(this->server_creds());
     GPR_DEBUG_ASSERT(config->pem_root_certs != nullptr);
-    tsi_result result = tsi_create_ssl_server_handshaker_factory_ex(
-        cert_pairs, config->num_key_cert_pairs, config->pem_root_certs,
+    tsi_ssl_server_handshaker_options options;
+    options.pem_key_cert_pairs = grpc_convert_grpc_to_tsi_cert_pairs(
+        config->pem_key_cert_pairs, config->num_key_cert_pairs);
+    options.num_key_cert_pairs = config->num_key_cert_pairs;
+    options.pem_client_root_certs = config->pem_root_certs;
+    options.client_certificate_request =
         grpc_get_tsi_client_certificate_request_type(
-            server_creds->config().client_certificate_request),
-        grpc_get_ssl_cipher_suites(), alpn_protocol_strings,
-        static_cast<uint16_t>(num_alpn_protocols), &new_handshaker_factory);
-    gpr_free(cert_pairs);
+            server_creds->config().client_certificate_request);
+    options.cipher_suites = grpc_get_ssl_cipher_suites();
+    options.alpn_protocols = alpn_protocol_strings;
+    options.num_alpn_protocols = static_cast<uint16_t>(num_alpn_protocols);
+    tsi_result result = tsi_create_ssl_server_handshaker_factory_with_options(
+        &options, &new_handshaker_factory);
+    gpr_free((void*)options.pem_key_cert_pairs);
     gpr_free((void*)alpn_protocol_strings);
 
     if (result != TSI_OK) {

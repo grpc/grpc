@@ -353,6 +353,7 @@ static verifier_cb_ctx* verifier_cb_ctx_create(
     grpc_jwt_claims* claims, const char* audience, grpc_slice signature,
     const char* signed_jwt, size_t signed_jwt_len, void* user_data,
     grpc_jwt_verification_done_cb cb) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   verifier_cb_ctx* ctx =
       static_cast<verifier_cb_ctx*>(gpr_zalloc(sizeof(verifier_cb_ctx)));
@@ -666,7 +667,7 @@ static void on_keys_retrieved(void* user_data, grpc_error* error) {
   }
 
 end:
-  if (json != nullptr) grpc_json_destroy(json);
+  grpc_json_destroy(json);
   EVP_PKEY_free(verification_key);
   ctx->user_cb(ctx->user_data, status, claims);
   verifier_cb_ctx_destroy(ctx);
@@ -719,7 +720,7 @@ static void on_openid_config_retrieved(void* user_data, grpc_error* error) {
   return;
 
 error:
-  if (json != nullptr) grpc_json_destroy(json);
+  grpc_json_destroy(json);
   ctx->user_cb(ctx->user_data, GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR, nullptr);
   verifier_cb_ctx_destroy(ctx);
 }

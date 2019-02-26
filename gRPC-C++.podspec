@@ -23,7 +23,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  # version = '1.19.0-dev'
+  # version = '1.20.0-dev'
   version = '0.0.8-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
@@ -31,7 +31,7 @@ Pod::Spec.new do |s|
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  grpc_version = '1.19.0-dev'
+  grpc_version = '1.20.0-dev'
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
@@ -251,8 +251,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/useful.h',
                       'src/core/lib/gprpp/abstract.h',
                       'src/core/lib/gprpp/atomic.h',
-                      'src/core/lib/gprpp/atomic_with_atm.h',
-                      'src/core/lib/gprpp/atomic_with_std.h',
                       'src/core/lib/gprpp/fork.h',
                       'src/core/lib/gprpp/manual_constructor.h',
                       'src/core/lib/gprpp/memory.h',
@@ -360,11 +358,11 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/parse_address.h',
                       'src/core/ext/filters/client_channel/proxy_mapper.h',
                       'src/core/ext/filters/client_channel/proxy_mapper_registry.h',
-                      'src/core/ext/filters/client_channel/request_routing.h',
                       'src/core/ext/filters/client_channel/resolver.h',
                       'src/core/ext/filters/client_channel/resolver_factory.h',
                       'src/core/ext/filters/client_channel/resolver_registry.h',
                       'src/core/ext/filters/client_channel/resolver_result_parsing.h',
+                      'src/core/ext/filters/client_channel/resolving_lb_policy.h',
                       'src/core/ext/filters/client_channel/retry_throttle.h',
                       'src/core/ext/filters/client_channel/server_address.h',
                       'src/core/ext/filters/client_channel/subchannel.h',
@@ -567,8 +565,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/gpr/useful.h',
                               'src/core/lib/gprpp/abstract.h',
                               'src/core/lib/gprpp/atomic.h',
-                              'src/core/lib/gprpp/atomic_with_atm.h',
-                              'src/core/lib/gprpp/atomic_with_std.h',
                               'src/core/lib/gprpp/fork.h',
                               'src/core/lib/gprpp/manual_constructor.h',
                               'src/core/lib/gprpp/memory.h',

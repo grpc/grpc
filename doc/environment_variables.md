@@ -114,7 +114,7 @@ some configuration as environment variables that can be set.
   - ERROR - log only errors
 
 * GRPC_TRACE_FUZZER
-  if set, the fuzzers will output trace (it is usually supressed).
+  if set, the fuzzers will output trace (it is usually suppressed).
 
 * GRPC_DNS_RESOLVER
   Declares which DNS resolver to use. The default is ares if gRPC is built with
@@ -144,7 +144,7 @@ some configuration as environment variables that can be set.
 * GRPC_ARENA_INIT_STRATEGY
   Selects the initialization strategy for blocks allocated in the arena. Valid
   values are:
-  - no_init (default): Do not inialize the arena block.
+  - no_init (default): Do not initialize the arena block.
   - zero_init: Initialize the arena blocks with 0.
   - non_zero_init: Initialize the arena blocks with a non-zero value.
 

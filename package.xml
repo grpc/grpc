@@ -13,8 +13,8 @@
  <date>2018-01-19</date>
  <time>16:06:07</time>
  <version>
-  <release>1.19.0dev</release>
-  <api>1.19.0dev</api>
+  <release>1.20.0dev</release>
+  <api>1.20.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -105,8 +105,6 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/useful.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/abstract.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/atomic.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/atomic_with_atm.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/atomic_with_std.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/fork.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/manual_constructor.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/memory.h" role="src" />
@@ -293,11 +291,11 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/parse_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/request_routing.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_result_parsing.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolving_lb_policy.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_throttle.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/server_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.h" role="src" />
@@ -482,7 +480,6 @@
     <file baseinstalldir="/" name="src/core/lib/channel/channelz_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/handshaker_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/status_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression.cc" role="src" />
@@ -744,10 +741,10 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/parse_address.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper_registry.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/request_routing.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_result_parsing.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolving_lb_policy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_throttle.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/server_address.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.cc" role="src" />

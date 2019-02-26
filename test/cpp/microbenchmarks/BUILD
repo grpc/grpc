@@ -55,6 +55,13 @@ grpc_cc_binary(
 )
 
 grpc_cc_binary(
+    name = "bm_alarm",
+    testonly = 1,
+    srcs = ["bm_alarm.cc"],
+    deps = [":helpers"],
+)
+
+grpc_cc_binary(
     name = "bm_arena",
     testonly = 1,
     srcs = ["bm_arena.cc"],

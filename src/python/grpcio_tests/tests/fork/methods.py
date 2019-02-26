@@ -30,11 +30,13 @@ from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
 
 _LOGGER = logging.getLogger(__name__)
+_RPC_TIMEOUT_S = 10
+_CHILD_FINISH_TIMEOUT_S = 60
 
 
 def _channel(args):
-    target = '{}:{}'.format(args.server_host, args.server_port)
-    if args.use_tls:
+    target = '{}:{}'.format(args['server_host'], args['server_port'])
+    if args['use_tls']:
         channel_credentials = grpc.ssl_channel_credentials()
         channel = grpc.secure_channel(target, channel_credentials)
     else:
@@ -57,7 +59,7 @@ def _async_unary(stub):
         response_type=messages_pb2.COMPRESSABLE,
         response_size=size,
         payload=messages_pb2.Payload(body=b'\x00' * 271828))
-    response_future = stub.UnaryCall.future(request)
+    response_future = stub.UnaryCall.future(request, timeout=_RPC_TIMEOUT_S)
     response = response_future.result()
     _validate_payload_type_and_length(response, messages_pb2.COMPRESSABLE, size)
 
@@ -68,7 +70,7 @@ def _blocking_unary(stub):
         response_type=messages_pb2.COMPRESSABLE,
         response_size=size,
         payload=messages_pb2.Payload(body=b'\x00' * 271828))
-    response = stub.UnaryCall(request)
+    response = stub.UnaryCall(request, timeout=_RPC_TIMEOUT_S)
     _validate_payload_type_and_length(response, messages_pb2.COMPRESSABLE, size)
 
 
@@ -121,6 +123,8 @@ class _ChildProcess(object):
         def record_exceptions():
             try:
                 task(*args)
+            except grpc.RpcError as rpc_error:
+                self._exceptions.put('RpcError: %s' % rpc_error)
             except Exception as e:  # pylint: disable=broad-except
                 self._exceptions.put(e)
 
@@ -130,7 +134,9 @@ class _ChildProcess(object):
         self._process.start()
 
     def finish(self):
-        self._process.join()
+        self._process.join(timeout=_CHILD_FINISH_TIMEOUT_S)
+        if self._process.is_alive():
+            raise RuntimeError('Child process did not terminate')
         if self._process.exitcode != 0:
             raise ValueError('Child process failed with exitcode %d' %
                              self._process.exitcode)
@@ -162,10 +168,10 @@ def _async_unary_same_channel(channel):
 def _async_unary_new_channel(channel, args):
 
     def child_target():
-        child_channel = _channel(args)
-        child_stub = test_pb2_grpc.TestServiceStub(child_channel)
-        _async_unary(child_stub)
-        child_channel.close()
+        with _channel(args) as child_channel:
+            child_stub = test_pb2_grpc.TestServiceStub(child_channel)
+            _async_unary(child_stub)
+            child_channel.close()
 
     stub = test_pb2_grpc.TestServiceStub(channel)
     _async_unary(stub)
@@ -195,10 +201,9 @@ def _blocking_unary_same_channel(channel):
 def _blocking_unary_new_channel(channel, args):
 
     def child_target():
-        child_channel = _channel(args)
-        child_stub = test_pb2_grpc.TestServiceStub(child_channel)
-        _blocking_unary(child_stub)
-        child_channel.close()
+        with _channel(args) as child_channel:
+            child_stub = test_pb2_grpc.TestServiceStub(child_channel)
+            _blocking_unary(child_stub)
 
     stub = test_pb2_grpc.TestServiceStub(channel)
     _blocking_unary(stub)
@@ -213,62 +218,61 @@ def _close_channel_before_fork(channel, args):
 
     def child_target():
         new_channel.close()
-        child_channel = _channel(args)
-        child_stub = test_pb2_grpc.TestServiceStub(child_channel)
-        _blocking_unary(child_stub)
-        child_channel.close()
+        with _channel(args) as child_channel:
+            child_stub = test_pb2_grpc.TestServiceStub(child_channel)
+            _blocking_unary(child_stub)
 
     stub = test_pb2_grpc.TestServiceStub(channel)
     _blocking_unary(stub)
     channel.close()
 
-    new_channel = _channel(args)
-    new_stub = test_pb2_grpc.TestServiceStub(new_channel)
-    child_process = _ChildProcess(child_target)
-    child_process.start()
-    _blocking_unary(new_stub)
-    child_process.finish()
+    with _channel(args) as new_channel:
+        new_stub = test_pb2_grpc.TestServiceStub(new_channel)
+        child_process = _ChildProcess(child_target)
+        child_process.start()
+        _blocking_unary(new_stub)
+        child_process.finish()
 
 
 def _connectivity_watch(channel, args):
 
+    parent_states = []
+    parent_channel_ready_event = threading.Event()
+
     def child_target():
 
-        def child_connectivity_callback(state):
-            child_states.append(state)
+        child_channel_ready_event = threading.Event()
 
-        child_states = []
-        child_channel = _channel(args)
-        child_stub = test_pb2_grpc.TestServiceStub(child_channel)
-        child_channel.subscribe(child_connectivity_callback)
-        _async_unary(child_stub)
-        if len(child_states
-              ) < 2 or child_states[-1] != grpc.ChannelConnectivity.READY:
-            raise ValueError('Channel did not move to READY')
-        if len(parent_states) > 1:
-            raise ValueError('Received connectivity updates on parent callback')
-        child_channel.unsubscribe(child_connectivity_callback)
-        child_channel.close()
+        def child_connectivity_callback(state):
+            if state is grpc.ChannelConnectivity.READY:
+                child_channel_ready_event.set()
+
+        with _channel(args) as child_channel:
+            child_stub = test_pb2_grpc.TestServiceStub(child_channel)
+            child_channel.subscribe(child_connectivity_callback)
+            _async_unary(child_stub)
+            if not child_channel_ready_event.wait(timeout=_RPC_TIMEOUT_S):
+                raise ValueError('Channel did not move to READY')
+            if len(parent_states) > 1:
+                raise ValueError(
+                    'Received connectivity updates on parent callback',
+                    parent_states)
+            child_channel.unsubscribe(child_connectivity_callback)
 
     def parent_connectivity_callback(state):
         parent_states.append(state)
+        if state is grpc.ChannelConnectivity.READY:
+            parent_channel_ready_event.set()
 
-    parent_states = []
     channel.subscribe(parent_connectivity_callback)
     stub = test_pb2_grpc.TestServiceStub(channel)
     child_process = _ChildProcess(child_target)
     child_process.start()
     _async_unary(stub)
-    if len(parent_states
-          ) < 2 or parent_states[-1] != grpc.ChannelConnectivity.READY:
+    if not parent_channel_ready_event.wait(timeout=_RPC_TIMEOUT_S):
         raise ValueError('Channel did not move to READY')
     channel.unsubscribe(parent_connectivity_callback)
     child_process.finish()
-
-    # Need to unsubscribe or _channel.py in _poll_connectivity triggers a
-    # "Cannot invoke RPC on closed channel!" error.
-    # TODO(ericgribkoff) Fix issue with channel.close() and connectivity polling
-    channel.unsubscribe(parent_connectivity_callback)
 
 
 def _ping_pong_with_child_processes_after_first_response(
@@ -380,9 +384,9 @@ def _in_progress_bidi_same_channel_blocking_call(channel):
 def _in_progress_bidi_new_channel_async_call(channel, args):
 
     def child_target(parent_bidi_call, parent_channel, args):
-        channel = _channel(args)
-        stub = test_pb2_grpc.TestServiceStub(channel)
-        _async_unary(stub)
+        with _channel(args) as channel:
+            stub = test_pb2_grpc.TestServiceStub(channel)
+            _async_unary(stub)
 
     _ping_pong_with_child_processes_after_first_response(
         channel, args, child_target)
@@ -391,9 +395,9 @@ def _in_progress_bidi_new_channel_async_call(channel, args):
 def _in_progress_bidi_new_channel_blocking_call(channel, args):
 
     def child_target(parent_bidi_call, parent_channel, args):
-        channel = _channel(args)
-        stub = test_pb2_grpc.TestServiceStub(channel)
-        _blocking_unary(stub)
+        with _channel(args) as channel:
+            stub = test_pb2_grpc.TestServiceStub(channel)
+            _blocking_unary(stub)
 
     _ping_pong_with_child_processes_after_first_response(
         channel, args, child_target)

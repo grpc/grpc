@@ -232,7 +232,7 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
  protected:
   SubchannelList(LoadBalancingPolicy* policy, TraceFlag* tracer,
                  const ServerAddressList& addresses, grpc_combiner* combiner,
-                 grpc_client_channel_factory* client_channel_factory,
+                 LoadBalancingPolicy::ChannelControlHelper* helper,
                  const grpc_channel_args& args);
 
   virtual ~SubchannelList();
@@ -485,7 +485,7 @@ template <typename SubchannelListType, typename SubchannelDataType>
 SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
     LoadBalancingPolicy* policy, TraceFlag* tracer,
     const ServerAddressList& addresses, grpc_combiner* combiner,
-    grpc_client_channel_factory* client_channel_factory,
+    LoadBalancingPolicy::ChannelControlHelper* helper,
     const grpc_channel_args& args)
     : InternallyRefCounted<SubchannelListType>(tracer),
       policy_(policy),
@@ -508,12 +508,8 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
                                          GRPC_ARG_INHIBIT_HEALTH_CHECKING};
   // Create a subchannel for each address.
   for (size_t i = 0; i < addresses.size(); i++) {
-    // If there were any balancer addresses, we would have chosen grpclb
-    // policy, which does not use a SubchannelList.
     GPR_ASSERT(!addresses[i].IsBalancer());
-    InlinedVector<grpc_arg, 4> args_to_add;
-    args_to_add.emplace_back(
-        SubchannelPoolInterface::CreateChannelArg(policy_->subchannel_pool()));
+    InlinedVector<grpc_arg, 3> args_to_add;
     const size_t subchannel_address_arg_index = args_to_add.size();
     args_to_add.emplace_back(
         Subchannel::CreateSubchannelAddressArg(&addresses[i].address()));
@@ -526,9 +522,7 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
         &args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove),
         args_to_add.data(), args_to_add.size());
     gpr_free(args_to_add[subchannel_address_arg_index].value.string);
-    RefCountedPtr<Subchannel> subchannel =
-        grpc_client_channel_factory_create_subchannel(client_channel_factory,
-                                                      new_args);
+    RefCountedPtr<Subchannel> subchannel = helper->CreateSubchannel(*new_args);
     grpc_channel_args_destroy(new_args);
     if (subchannel == nullptr) {
       // Subchannel could not be created.
