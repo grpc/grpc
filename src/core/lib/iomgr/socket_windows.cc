@@ -181,24 +181,19 @@ int grpc_ipv6_loopback_available(void) {
   return g_ipv6_loopback_available;
 }
 
-SOCKET grpc_create_wsa_socket(int family, int type, int protocol,
-                              LPWSAPROTOCOL_INFO protocol_info, GROUP group,
-                              DWORD flags) {
-  bool is_wsa_no_handle_inherit_set = flags & WSA_FLAG_NO_HANDLE_INHERIT;
-  if (!g_is_wsa_no_handle_inherit_supported && is_wsa_no_handle_inherit_set) {
-    flags ^= WSA_FLAG_NO_HANDLE_INHERIT;
-  }
-  SOCKET sock = WSASocket(family, type, protocol, protocol_info, group, flags);
+void grpc_wsa_socket_flags_init() {
+  grpc_wsa_socket_flags = WSA_FLAG_OVERLAPPED;
   /* WSA_FLAG_NO_HANDLE_INHERIT may be not supported on the older Windows
      versions, see
      https://msdn.microsoft.com/en-us/library/windows/desktop/ms742212(v=vs.85).aspx
      for details. */
-  if (sock == INVALID_SOCKET && is_wsa_no_handle_inherit_set) {
-    g_is_wsa_no_handle_inherit_supported = false;
-    sock = WSASocket(family, type, protocol, protocol_info, group,
-                     flags ^ WSA_FLAG_NO_HANDLE_INHERIT);
+  SOCKET sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, 0, NULL,
+                          grpc_wsa_socket_flags & WSA_FLAG_NO_HANDLE_INHERIT);
+  if (sock != INVALID_SOCKET) {
+    /* Windows 7, Windows 2008 R2 with SP1 or later */
+    grpc_wsa_socket_flags &= WSA_FLAG_NO_HANDLE_INHERIT;
+    closesocket(sock);
   }
-  return sock;
 }
 
 #endif /* GRPC_WINSOCK_SOCKET */
