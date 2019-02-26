@@ -19,6 +19,7 @@ import logging
 import threading
 import time
 
+from concurrent import futures
 import six
 
 import grpc
@@ -565,8 +566,8 @@ def _send_message_callback_to_blocking_iterator_adapter(
 
 
 def _select_thread_pool_for_behavior(behavior, default_thread_pool):
-    if hasattr(behavior, 'experimental_thread_pool'
-              ) and behavior.experimental_thread_pool is not None:
+    if hasattr(behavior, 'experimental_thread_pool') and isinstance(
+            behavior.experimental_thread_pool, futures.ThreadPoolExecutor):
         return behavior.experimental_thread_pool
     else:
         return default_thread_pool
