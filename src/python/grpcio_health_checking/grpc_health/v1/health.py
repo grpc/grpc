@@ -82,7 +82,6 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         self._send_response_callbacks = {}
         self.Watch.__func__.experimental_non_blocking = experimental_non_blocking
         self.Watch.__func__.experimental_thread_pool = experimental_thread_pool
-        self._gracefully_shutting_down = False
 
     def _on_close_callback(self, send_response_callback, service):
 
@@ -136,30 +135,9 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
             the service
         """
         with self._lock:
-            if self._gracefully_shutting_down:
-                return
-            else:
-                self._server_status[service] = status
-                if service in self._send_response_callbacks:
-                    for send_response_callback in self._send_response_callbacks[
-                            service]:
-                        send_response_callback(
-                            _health_pb2.HealthCheckResponse(status=status))
-
-    def enter_graceful_shutdown(self):
-        """Permanently sets the status of all services to NOT_SERVING.
-
-        This should be invoked when the server is entering a graceful shutdown
-        period. After this method is invoked, future attempts to set the status
-        of a service will be ignored.
-
-        This is an EXPERIMENTAL API.
-        """
-        with self._lock:
-            if self._gracefully_shutting_down:
-                return
-            else:
-                for service in self._server_status:
-                    self.set(service,
-                             _health_pb2.HealthCheckResponse.NOT_SERVING)  # pylint: disable=no-member
-                self._gracefully_shutting_down = True
+            self._server_status[service] = status
+            if service in self._send_response_callbacks:
+                for send_response_callback in self._send_response_callbacks[
+                        service]:
+                    send_response_callback(
+                        _health_pb2.HealthCheckResponse(status=status))

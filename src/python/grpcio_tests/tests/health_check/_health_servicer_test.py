@@ -195,37 +195,13 @@ class BaseWatchTests(object):
             thread.join()
 
             # Wait, if necessary, for serving thread to process client cancellation
-            timeout = time.time() + test_constants.TIME_ALLOWANCE
+            timeout = time.time() + test_constants.SHORT_TIMEOUT
             while time.time(
             ) < timeout and self._servicer._send_response_callbacks[_WATCH_SERVICE]:
                 time.sleep(1)
             self.assertFalse(
                 self._servicer._send_response_callbacks[_WATCH_SERVICE],
                 'watch set should be empty')
-            self.assertTrue(response_queue.empty())
-
-        def test_graceful_shutdown(self):
-            request = health_pb2.HealthCheckRequest(service='')
-            response_queue = queue.Queue()
-            rendezvous = self._stub.Watch(request)
-            thread = threading.Thread(
-                target=_consume_responses, args=(rendezvous, response_queue))
-            thread.start()
-
-            response = response_queue.get(timeout=test_constants.SHORT_TIMEOUT)
-            self.assertEqual(health_pb2.HealthCheckResponse.SERVING,
-                             response.status)
-
-            self._servicer.enter_graceful_shutdown()
-            response = response_queue.get(timeout=test_constants.SHORT_TIMEOUT)
-            self.assertEqual(health_pb2.HealthCheckResponse.NOT_SERVING,
-                             response.status)
-
-            # This should be a no-op.
-            self._servicer.set('', health_pb2.HealthCheckResponse.SERVING)
-
-            rendezvous.cancel()
-            thread.join()
             self.assertTrue(response_queue.empty())
 
 
