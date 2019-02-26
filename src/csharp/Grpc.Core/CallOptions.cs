@@ -30,7 +30,7 @@ namespace Grpc.Core
     public struct CallOptions
     {
         Metadata headers;
-        DateTime? deadline;
+        DateTimeOffset? deadline;
         CancellationToken cancellationToken;
         WriteOptions writeOptions;
         ContextPropagationToken propagationToken;
@@ -46,7 +46,7 @@ namespace Grpc.Core
         /// <param name="writeOptions">Write options that will be used for this call.</param>
         /// <param name="propagationToken">Context propagation token obtained from <see cref="ServerCallContext"/>.</param>
         /// <param name="credentials">Credentials to use for this call.</param>
-        public CallOptions(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken),
+        public CallOptions(Metadata headers = null, DateTimeOffset? deadline = null, CancellationToken cancellationToken = default(CancellationToken),
                            WriteOptions writeOptions = null, ContextPropagationToken propagationToken = null, CallCredentials credentials = null)
         {
             this.headers = headers;
@@ -69,7 +69,7 @@ namespace Grpc.Core
         /// <summary>
         /// Call deadline.
         /// </summary>
-        public DateTime? Deadline
+        public DateTimeOffset? Deadline
         {
             get { return deadline; }
         }
@@ -147,7 +147,7 @@ namespace Grpc.Core
         /// <c>Deadline</c> set to the value provided. Values of all other fields are preserved.
         /// </summary>
         /// <param name="deadline">The deadline.</param>
-        public CallOptions WithDeadline(DateTime deadline)
+        public CallOptions WithDeadline(DateTimeOffset deadline)
         {
             var newOptions = this;
             newOptions.deadline = deadline;
@@ -255,7 +255,7 @@ namespace Grpc.Core
             }
 
             newOptions.headers = newOptions.headers ?? Metadata.Empty;
-            newOptions.deadline = newOptions.deadline ?? DateTime.MaxValue;
+            newOptions.deadline = newOptions.deadline ?? DateTimeOffset.MaxValue;
             return newOptions;
         }
     }

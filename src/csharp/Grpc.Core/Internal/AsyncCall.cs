@@ -501,7 +501,7 @@ namespace Grpc.Core.Internal
             {
                 var result = details.Channel.Handle.CreateCall(
                              parentCall, ContextPropagationTokenImpl.DefaultMask, cq,
-                             details.Method, details.Host, Timespec.FromDateTime(details.Options.Deadline.Value), nativeCredentials);
+                             details.Method, details.Host, Timespec.FromDateTimeOffset(details.Options.Deadline.Value), nativeCredentials);
                 return result;
             }
         }

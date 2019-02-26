@@ -79,13 +79,13 @@ namespace Grpc.Core.Tests
                 {
                     await Calls.AsyncUnaryCall(helper.CreateUnaryCall(callOptions), "xyz");
                 }
-                catch(RpcException)
+                catch (RpcException)
                 {
                     // Child call will get cancelled, eat the exception.
                 }
                 return "";
             });
-                
+
             var cts = new CancellationTokenSource();
             var parentCall = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall(new CallOptions(cancellationToken: cts.Token)));
             await readyToCancelTcs.Task;
@@ -105,7 +105,7 @@ namespace Grpc.Core.Tests
         [Test]
         public async Task PropagateDeadline()
         {
-            var deadline = DateTime.UtcNow.AddDays(7);
+            var deadline = DateTimeOffset.UtcNow.AddDays(7);
             helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
                 Assert.IsTrue(context.Deadline < deadline.AddMinutes(1));
@@ -119,14 +119,14 @@ namespace Grpc.Core.Tests
                 {
                     // Trying to override deadline while propagating deadline from parent call will throw.
                     Calls.BlockingUnaryCall(helper.CreateUnaryCall(
-                        new CallOptions(deadline: DateTime.UtcNow.AddDays(8),
+                        new CallOptions(deadline: DateTimeOffset.UtcNow.AddDays(8),
                                         propagationToken: context.CreatePropagationToken())), "");
                 });
 
                 var callOptions = new CallOptions(propagationToken: context.CreatePropagationToken());
                 return await Calls.AsyncUnaryCall(helper.CreateUnaryCall(callOptions), "xyz");
             });
-                
+
             var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall(new CallOptions(deadline: deadline)));
             await call.RequestStream.CompleteAsync();
             Assert.AreEqual("PASS", await call);
@@ -137,7 +137,7 @@ namespace Grpc.Core.Tests
         {
             helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
-                Assert.AreEqual(DateTime.MaxValue, context.Deadline);
+                Assert.AreEqual(DateTimeOffset.MaxValue, context.Deadline);
                 return Task.FromResult("PASS");
             });
 
@@ -150,7 +150,7 @@ namespace Grpc.Core.Tests
             });
 
             var cts = new CancellationTokenSource();
-            var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall(new CallOptions(deadline: DateTime.UtcNow.AddDays(7))));
+            var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall(new CallOptions(deadline: DateTimeOffset.UtcNow.AddDays(7))));
             await call.RequestStream.CompleteAsync();
             Assert.AreEqual("PASS", await call);
         }

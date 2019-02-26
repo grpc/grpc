@@ -38,7 +38,7 @@ namespace Math.Tests
 
             // Use a factory method provided by Grpc.Core.Testing.TestServerCallContext to create an instance of server call context.
             // This allows testing even those server-side implementations that rely on the contents of ServerCallContext.
-            var fakeServerCallContext = TestServerCallContext.Create("fooMethod", null, DateTime.UtcNow.AddHours(1), new Metadata(), CancellationToken.None, "127.0.0.1", null, null, (metadata) => TaskUtils.CompletedTask, () => new WriteOptions(), (writeOptions) => { });
+            var fakeServerCallContext = TestServerCallContext.Create("fooMethod", null, DateTimeOffset.Now.AddHours(1), new Metadata(), CancellationToken.None, "127.0.0.1", null, null, (metadata) => TaskUtils.CompletedTask, () => new WriteOptions(), (writeOptions) => { });
             var response = await mathImpl.Div(new DivArgs { Dividend = 10, Divisor = 2 }, fakeServerCallContext);
             Assert.AreEqual(5, response.Quotient);
             Assert.AreEqual(0, response.Remainder);

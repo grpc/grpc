@@ -64,7 +64,7 @@ namespace Grpc.Core
         public string Peer => PeerCore;
 
         /// <summary>Deadline for this RPC.</summary>
-        public DateTime Deadline => DeadlineCore;
+        public DateTimeOffset Deadline => DeadlineCore;
 
         /// <summary>Initial metadata sent by client.</summary>
         public Metadata RequestHeaders => RequestHeadersCore;
@@ -124,7 +124,7 @@ namespace Grpc.Core
         /// <summary>Provides implementation of a non-virtual public member.</summary>
         protected abstract string PeerCore { get; }
         /// <summary>Provides implementation of a non-virtual public member.</summary>
-        protected abstract DateTime DeadlineCore { get; }
+        protected abstract DateTimeOffset DeadlineCore { get; }
         /// <summary>Provides implementation of a non-virtual public member.</summary>
         protected abstract Metadata RequestHeadersCore { get; }
         /// <summary>Provides implementation of a non-virtual public member.</summary>

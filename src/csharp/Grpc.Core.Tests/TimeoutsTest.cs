@@ -59,21 +59,21 @@ namespace Grpc.Core.Tests
         {
             helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
-                Assert.AreEqual(DateTime.MaxValue, context.Deadline);
+                Assert.AreEqual(DateTimeOffset.MaxValue, context.Deadline);
                 return Task.FromResult("PASS");
             });
 
             // no deadline specified, check server sees infinite deadline
             Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
 
-            // DateTime.MaxValue deadline specified, check server sees infinite deadline
-            Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: DateTime.MaxValue)), "abc"));
+            // DateTimeOffset.MaxValue deadline specified, check server sees infinite deadline
+            Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: DateTimeOffset.MaxValue)), "abc"));
         }
 
         [Test]
         public void DeadlineTransferredToServer()
         {
-            var clientDeadline = DateTime.UtcNow + TimeSpan.FromDays(7);
+            var clientDeadline = DateTimeOffset.UtcNow + TimeSpan.FromDays(7);
 
             helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
@@ -95,7 +95,7 @@ namespace Grpc.Core.Tests
                 return "FAIL";
             });
 
-            var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: DateTime.MinValue)), "abc"));
+            var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: DateTimeOffset.MinValue)), "abc"));
             // We can't guarantee the status code always DeadlineExceeded. See issue #2685.
             Assert.Contains(ex.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
         }
@@ -109,7 +109,7 @@ namespace Grpc.Core.Tests
                 return "FAIL";
             });
 
-            var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: DateTime.UtcNow.Add(TimeSpan.FromSeconds(5)))), "abc"));
+            var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: DateTimeOffset.UtcNow.Add(TimeSpan.FromSeconds(5)))), "abc"));
             // We can't guarantee the status code always DeadlineExceeded. See issue #2685.
             Assert.Contains(ex.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
         }
@@ -119,7 +119,7 @@ namespace Grpc.Core.Tests
         {
             var serverReceivedCancellationTcs = new TaskCompletionSource<bool>();
 
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) => 
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
             {
                 // wait until cancellation token is fired.
                 var tcs = new TaskCompletionSource<object>();
@@ -129,7 +129,7 @@ namespace Grpc.Core.Tests
                 return "";
             });
 
-            var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: DateTime.UtcNow.Add(TimeSpan.FromSeconds(5)))), "abc"));
+            var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: DateTimeOffset.UtcNow.Add(TimeSpan.FromSeconds(5)))), "abc"));
             // We can't guarantee the status code always DeadlineExceeded. See issue #2685.
             Assert.Contains(ex.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
 

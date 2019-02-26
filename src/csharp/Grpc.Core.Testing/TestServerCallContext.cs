@@ -31,7 +31,7 @@ namespace Grpc.Core.Testing
         /// Creates a test double for <c>ServerCallContext</c>. Only for testing.
         /// Note: experimental API that can change or be removed without any prior notice.
         /// </summary>
-        public static ServerCallContext Create(string method, string host, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken,
+        public static ServerCallContext Create(string method, string host, DateTimeOffset deadline, Metadata requestHeaders, CancellationToken cancellationToken,
             string peer, AuthContext authContext, ContextPropagationToken contextPropagationToken,
             Func<Metadata, Task> writeHeadersFunc, Func<WriteOptions> writeOptionsGetter, Action<WriteOptions> writeOptionsSetter)
         {
@@ -43,7 +43,7 @@ namespace Grpc.Core.Testing
         {
             private readonly string method;
             private readonly string host;
-            private readonly DateTime deadline;
+            private readonly DateTimeOffset deadline;
             private readonly Metadata requestHeaders;
             private readonly CancellationToken cancellationToken;
             private readonly Metadata responseTrailers = new Metadata();
@@ -55,7 +55,7 @@ namespace Grpc.Core.Testing
             private readonly Func<WriteOptions> writeOptionsGetter;
             private readonly Action<WriteOptions> writeOptionsSetter;
 
-            public TestingServerCallContext(string method, string host, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken,
+            public TestingServerCallContext(string method, string host, DateTimeOffset deadline, Metadata requestHeaders, CancellationToken cancellationToken,
                 string peer, AuthContext authContext, ContextPropagationToken contextPropagationToken,
                 Func<Metadata, Task> writeHeadersFunc, Func<WriteOptions> writeOptionsGetter, Action<WriteOptions> writeOptionsSetter)
             {
@@ -80,7 +80,7 @@ namespace Grpc.Core.Testing
 
             protected override string PeerCore => peer;
 
-            protected override DateTime DeadlineCore => deadline;
+            protected override DateTimeOffset DeadlineCore => deadline;
 
             protected override Metadata RequestHeadersCore => requestHeaders;
 

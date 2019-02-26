@@ -321,7 +321,7 @@ namespace Grpc.Core.Internal
 
         public static ServerCallContext NewContext(ServerRpcNew newRpc, IServerResponseStream serverResponseStream, CancellationToken cancellationToken)
         {
-            DateTime realtimeDeadline = newRpc.Deadline.ToClockType(ClockType.Realtime).ToDateTime();
+            DateTimeOffset realtimeDeadline = newRpc.Deadline.ToClockType(ClockType.Realtime).ToDateTimeOffset();
             return new DefaultServerCallContext(newRpc.Call, newRpc.Method, newRpc.Host, realtimeDeadline, newRpc.RequestMetadata, cancellationToken, serverResponseStream);
         }
     }

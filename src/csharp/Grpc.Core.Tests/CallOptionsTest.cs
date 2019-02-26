@@ -36,7 +36,7 @@ namespace Grpc.Core.Tests
             var metadata = new Metadata();
             Assert.AreSame(metadata, options.WithHeaders(metadata).Headers);
 
-            var deadline = DateTime.UtcNow;
+            var deadline = DateTimeOffset.UtcNow;
             Assert.AreEqual(deadline, options.WithDeadline(deadline).Deadline.Value);
 
             var cancellationToken = new CancellationTokenSource().Token;
@@ -45,7 +45,7 @@ namespace Grpc.Core.Tests
             var writeOptions = new WriteOptions();
             Assert.AreSame(writeOptions, options.WithWriteOptions(writeOptions).WriteOptions);
 
-            var propagationToken = new ContextPropagationTokenImpl(CallSafeHandle.NullInstance, DateTime.UtcNow,
+            var propagationToken = new ContextPropagationTokenImpl(CallSafeHandle.NullInstance, DateTimeOffset.UtcNow,
                 CancellationToken.None, ContextPropagationOptions.Default);
             Assert.AreSame(propagationToken, options.WithPropagationToken(propagationToken).PropagationToken);
 
@@ -69,9 +69,9 @@ namespace Grpc.Core.Tests
         public void Normalize()
         {
             Assert.AreSame(Metadata.Empty, new CallOptions().Normalize().Headers);
-            Assert.AreEqual(DateTime.MaxValue, new CallOptions().Normalize().Deadline.Value);
+            Assert.AreEqual(DateTimeOffset.MaxValue, new CallOptions().Normalize().Deadline.Value);
 
-            var deadline = DateTime.UtcNow;
+            var deadline = DateTimeOffset.UtcNow;
             var propagationToken1 = new ContextPropagationTokenImpl(CallSafeHandle.NullInstance, deadline, CancellationToken.None,
                 new ContextPropagationOptions(propagateDeadline: true, propagateCancellation: false));
             Assert.AreEqual(deadline, new CallOptions(propagationToken: propagationToken1).Normalize().Deadline.Value);

@@ -46,11 +46,11 @@ namespace Grpc.Core.Internal
             & ~ContextPropagationFlags.Deadline & ~ContextPropagationFlags.Cancellation;
 
         readonly CallSafeHandle parentCall;
-        readonly DateTime deadline;
+        readonly DateTimeOffset deadline;
         readonly CancellationToken cancellationToken;
         readonly ContextPropagationOptions options;
 
-        internal ContextPropagationTokenImpl(CallSafeHandle parentCall, DateTime deadline, CancellationToken cancellationToken, ContextPropagationOptions options)
+        internal ContextPropagationTokenImpl(CallSafeHandle parentCall, DateTimeOffset deadline, CancellationToken cancellationToken, ContextPropagationOptions options)
         {
             this.parentCall = GrpcPreconditions.CheckNotNull(parentCall);
             this.deadline = deadline;
@@ -72,7 +72,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Gets the parent call's deadline.
         /// </summary>
-        internal DateTime ParentDeadline
+        internal DateTimeOffset ParentDeadline
         {
             get
             {

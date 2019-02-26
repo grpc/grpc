@@ -32,7 +32,7 @@ namespace Grpc.Core
         private readonly CallSafeHandle callHandle;
         private readonly string method;
         private readonly string host;
-        private readonly DateTime deadline;
+        private readonly DateTimeOffset deadline;
         private readonly Metadata requestHeaders;
         private readonly CancellationToken cancellationToken;
         private readonly Metadata responseTrailers;
@@ -45,7 +45,7 @@ namespace Grpc.Core
         /// To allow reuse of ServerCallContext API by different gRPC implementations, the implementation of some members is provided externally.
         /// To provide state, this <c>ServerCallContext</c> instance and <c>extraData</c> will be passed to the member implementations.
         /// </summary>
-        internal DefaultServerCallContext(CallSafeHandle callHandle, string method, string host, DateTime deadline,
+        internal DefaultServerCallContext(CallSafeHandle callHandle, string method, string host, DateTimeOffset deadline,
             Metadata requestHeaders, CancellationToken cancellationToken, IServerResponseStream serverResponseStream)
         {
             this.callHandle = callHandle;
@@ -77,7 +77,7 @@ namespace Grpc.Core
 
         protected override string PeerCore => callHandle.GetPeer();
 
-        protected override DateTime DeadlineCore => deadline;
+        protected override DateTimeOffset DeadlineCore => deadline;
 
         protected override Metadata RequestHeadersCore => requestHeaders;
 
