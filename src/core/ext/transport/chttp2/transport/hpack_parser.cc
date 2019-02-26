@@ -1452,7 +1452,7 @@ static grpc_error* begin_parse_string(grpc_chttp2_hpack_parser* p,
                                       uint8_t binary,
                                       grpc_chttp2_hpack_parser_string* str) {
   if (!p->huff && binary == NOT_BINARY &&
-      (end - cur) >= static_cast<intptr_t>(p->strlen) &&
+      static_cast<uint32_t>(end - cur) >= p->strlen &&
       p->current_slice_refcount != nullptr) {
     GRPC_STATS_INC_HPACK_RECV_UNCOMPRESSED();
     str->copied = false;
