@@ -652,7 +652,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "cfstream_test",
     srcs = ["cfstream_test.cc"],
-    copts = COPTS,
     external_deps = [
         "gtest",
     ],
