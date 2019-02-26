@@ -65,8 +65,8 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
   ~ForwardingLoadBalancingPolicy() override = default;
 
   void UpdateLocked(const grpc_channel_args& args,
-                    grpc_json* lb_config) override {
-    delegate_->UpdateLocked(args, lb_config);
+                    RefCountedPtr<Config> lb_config) override {
+    delegate_->UpdateLocked(args, std::move(lb_config));
   }
 
   void ExitIdleLocked() override { delegate_->ExitIdleLocked(); }
@@ -102,7 +102,8 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
                 RefCountedPtr<InterceptRecvTrailingMetadataLoadBalancingPolicy>(
                     this),
                 cb, user_data)),
-            std::move(args), /*delegate_lb_policy_name=*/"pick_first",
+            std::move(args),
+            /*delegate_lb_policy_name=*/"pick_first",
             /*initial_refcount=*/2) {}
 
   ~InterceptRecvTrailingMetadataLoadBalancingPolicy() override = default;
@@ -210,12 +211,11 @@ class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
                                     void* user_data)
       : cb_(cb), user_data_(user_data) {}
 
-  grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy>
-  CreateLoadBalancingPolicy(
-      grpc_core::LoadBalancingPolicy::Args args) const override {
-    return grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy>(
-        grpc_core::New<InterceptRecvTrailingMetadataLoadBalancingPolicy>(
-            std::move(args), cb_, user_data_));
+  OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
+      LoadBalancingPolicy::Args args) const override {
+    return OrphanablePtr<LoadBalancingPolicy>(
+        New<InterceptRecvTrailingMetadataLoadBalancingPolicy>(std::move(args),
+                                                              cb_, user_data_));
   }
 
   const char* name() const override {
@@ -231,10 +231,9 @@ class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
 
 void RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
     InterceptRecvTrailingMetadataCallback cb, void* user_data) {
-  grpc_core::LoadBalancingPolicyRegistry::Builder::
-      RegisterLoadBalancingPolicyFactory(
-          grpc_core::UniquePtr<grpc_core::LoadBalancingPolicyFactory>(
-              grpc_core::New<InterceptTrailingFactory>(cb, user_data)));
+  LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
+      UniquePtr<LoadBalancingPolicyFactory>(
+          New<InterceptTrailingFactory>(cb, user_data)));
 }
 
 }  // namespace grpc_core

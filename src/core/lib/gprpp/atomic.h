@@ -23,6 +23,8 @@
 
 #include <atomic>
 
+#include <grpc/support/atm.h>
+
 namespace grpc_core {
 
 enum class MemoryOrder {

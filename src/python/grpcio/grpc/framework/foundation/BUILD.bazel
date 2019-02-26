@@ -23,9 +23,11 @@ py_library(
     name = "callable_util",
     srcs = ["callable_util.py"],
     deps = [
-        requirement("enum34"),
         requirement("six"),
-    ],
+    ] + select({
+        "//conditions:default": [requirement('enum34'),],
+        "//:python3": [],
+    }),
 )
 
 py_library(
@@ -39,9 +41,10 @@ py_library(
 py_library(
     name = "logging_pool",
     srcs = ["logging_pool.py"],
-    deps = [
-        requirement("futures"),
-    ],
+    deps = select({
+        "//conditions:default": [requirement('futures'),],
+        "//:python3": [],
+    }),
 )
 
 py_library(

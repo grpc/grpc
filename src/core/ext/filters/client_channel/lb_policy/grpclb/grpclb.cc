@@ -127,7 +127,7 @@ class GrpcLb : public LoadBalancingPolicy {
   const char* name() const override { return kGrpclb; }
 
   void UpdateLocked(const grpc_channel_args& args,
-                    grpc_json* lb_config) override;
+                    RefCountedPtr<Config> lb_config) override;
   void ResetBackoffLocked() override;
   void FillChildRefsForChannelz(
       channelz::ChildRefsList* child_subchannels,
@@ -1171,7 +1171,7 @@ grpc_channel_args* BuildBalancerChannelArgs(
 // ctor and dtor
 //
 
-GrpcLb::GrpcLb(LoadBalancingPolicy::Args args)
+GrpcLb::GrpcLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
       response_generator_(MakeRefCounted<FakeResolverResponseGenerator>()),
       lb_call_backoff_(
@@ -1321,7 +1321,8 @@ void GrpcLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
   grpc_channel_args_destroy(lb_channel_args);
 }
 
-void GrpcLb::UpdateLocked(const grpc_channel_args& args, grpc_json* lb_config) {
+void GrpcLb::UpdateLocked(const grpc_channel_args& args,
+                          RefCountedPtr<Config> lb_config) {
   const bool is_initial_update = lb_channel_ == nullptr;
   ProcessChannelArgsLocked(args);
   // Update the existing RR policy.
