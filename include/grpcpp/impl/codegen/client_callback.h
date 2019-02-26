@@ -268,9 +268,8 @@ class ClientCallbackReaderWriterImpl
     // This call initiates two batches, plus any backlog, each with a callback
     // 1. Send initial metadata (unless corked) + recv initial metadata
     // 2. Any read backlog
-    // 3. Recv trailing metadata, on_completion callback
-    // 4. Any write backlog
-    // 5. See if the call can finish (if other callbacks were triggered already)
+    // 3. Any write backlog
+    // 4. Recv trailing metadata, on_completion callback
     started_ = true;
 
     start_tag_.Set(call_.call(),
@@ -308,12 +307,6 @@ class ClientCallbackReaderWriterImpl
       call_.PerformOps(&read_ops_);
     }
 
-    finish_tag_.Set(call_.call(), [this](bool ok) { MaybeFinish(); },
-                    &finish_ops_);
-    finish_ops_.ClientRecvStatus(context_, &finish_status_);
-    finish_ops_.set_core_cq_tag(&finish_tag_);
-    call_.PerformOps(&finish_ops_);
-
     if (write_ops_at_start_) {
       call_.PerformOps(&write_ops_);
     }
@@ -321,7 +314,12 @@ class ClientCallbackReaderWriterImpl
     if (writes_done_ops_at_start_) {
       call_.PerformOps(&writes_done_ops_);
     }
-    MaybeFinish();
+
+    finish_tag_.Set(call_.call(), [this](bool ok) { MaybeFinish(); },
+                    &finish_ops_);
+    finish_ops_.ClientRecvStatus(context_, &finish_status_);
+    finish_ops_.set_core_cq_tag(&finish_tag_);
+    call_.PerformOps(&finish_ops_);
   }
 
   void Read(Response* msg) override {
@@ -414,8 +412,8 @@ class ClientCallbackReaderWriterImpl
   CallbackWithSuccessTag read_tag_;
   bool read_ops_at_start_{false};
 
-  // Minimum of 3 callbacks to pre-register for StartCall, start, and finish
-  std::atomic_int callbacks_outstanding_{3};
+  // Minimum of 2 callbacks to pre-register for start and finish
+  std::atomic_int callbacks_outstanding_{2};
   bool started_{false};
 };
 
@@ -468,7 +466,6 @@ class ClientCallbackReaderImpl
     // 1. Send initial metadata (unless corked) + recv initial metadata
     // 2. Any backlog
     // 3. Recv trailing metadata, on_completion callback
-    // 4. See if the call can finish (if other callbacks were triggered already)
     started_ = true;
 
     start_tag_.Set(call_.call(),
@@ -500,8 +497,6 @@ class ClientCallbackReaderImpl
     finish_ops_.ClientRecvStatus(context_, &finish_status_);
     finish_ops_.set_core_cq_tag(&finish_tag_);
     call_.PerformOps(&finish_ops_);
-
-    MaybeFinish();
   }
 
   void Read(Response* msg) override {
@@ -545,8 +540,8 @@ class ClientCallbackReaderImpl
   CallbackWithSuccessTag read_tag_;
   bool read_ops_at_start_{false};
 
-  // Minimum of 3 callbacks to pre-register for StartCall, start, and finish
-  std::atomic_int callbacks_outstanding_{3};
+  // Minimum of 2 callbacks to pre-register for start and finish
+  std::atomic_int callbacks_outstanding_{2};
   bool started_{false};
 };
 
@@ -597,9 +592,8 @@ class ClientCallbackWriterImpl
   void StartCall() override {
     // This call initiates two batches, plus any backlog, each with a callback
     // 1. Send initial metadata (unless corked) + recv initial metadata
-    // 2. Recv trailing metadata, on_completion callback
-    // 3. Any backlog
-    // 4. See if the call can finish (if other callbacks were triggered already)
+    // 2. Any backlog
+    // 3. Recv trailing metadata, on_completion callback
     started_ = true;
 
     start_tag_.Set(call_.call(),
@@ -626,12 +620,6 @@ class ClientCallbackWriterImpl
                    &write_ops_);
     write_ops_.set_core_cq_tag(&write_tag_);
 
-    finish_tag_.Set(call_.call(), [this](bool ok) { MaybeFinish(); },
-                    &finish_ops_);
-    finish_ops_.ClientRecvStatus(context_, &finish_status_);
-    finish_ops_.set_core_cq_tag(&finish_tag_);
-    call_.PerformOps(&finish_ops_);
-
     if (write_ops_at_start_) {
       call_.PerformOps(&write_ops_);
     }
@@ -640,7 +628,11 @@ class ClientCallbackWriterImpl
       call_.PerformOps(&writes_done_ops_);
     }
 
-    MaybeFinish();
+    finish_tag_.Set(call_.call(), [this](bool ok) { MaybeFinish(); },
+                    &finish_ops_);
+    finish_ops_.ClientRecvStatus(context_, &finish_status_);
+    finish_ops_.set_core_cq_tag(&finish_tag_);
+    call_.PerformOps(&finish_ops_);
   }
 
   void Write(const Request* msg, WriteOptions options) override {
@@ -722,8 +714,8 @@ class ClientCallbackWriterImpl
   CallbackWithSuccessTag writes_done_tag_;
   bool writes_done_ops_at_start_{false};
 
-  // Minimum of 3 callbacks to pre-register for StartCall, start, and finish
-  std::atomic_int callbacks_outstanding_{3};
+  // Minimum of 2 callbacks to pre-register for start and finish
+  std::atomic_int callbacks_outstanding_{2};
   bool started_{false};
 };
 

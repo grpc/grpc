@@ -16,7 +16,7 @@ import threading
 from concurrent import futures
 
 
-class RecordingThreadPool(futures.Executor):
+class RecordingThreadPool(futures.ThreadPoolExecutor):
     """A thread pool that records if used."""
 
     def __init__(self, max_workers):

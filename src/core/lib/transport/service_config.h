@@ -23,6 +23,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/inlined_vector.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_hash_table.h"
@@ -41,8 +42,7 @@
 //         }
 //       ],
 //       // remaining fields are optional.
-//       // see
-//       https://developers.google.com/protocol-buffers/docs/proto3#json
+//       // see https://developers.google.com/protocol-buffers/docs/proto3#json
 //       // for format details.
 //       "waitForReady": bool,
 //       "timeout": "duration_string",
@@ -54,11 +54,11 @@
 
 namespace grpc_core {
 
-class ServiceConfig {
+class ServiceConfig : public RefCounted<ServiceConfig> {
  public:
   /// Creates a new service config from parsing \a json_string.
   /// Returns null on parse error.
-  static UniquePtr<ServiceConfig> Create(const char* json);
+  static RefCountedPtr<ServiceConfig> Create(const char* json);
 
   ~ServiceConfig();
 
