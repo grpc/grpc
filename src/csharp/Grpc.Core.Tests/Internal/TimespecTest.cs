@@ -153,14 +153,14 @@ namespace Grpc.Core.Internal.Tests
             Assert.AreEqual(new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero),
                 new Timespec(0, 0).ToDateTimeOffset());
 
-            Assert.AreEqual(new DateTimeOffset(1970, 1, 1, 0, 0, 10, TimeSpan.FromTicks(50)),
+            Assert.AreEqual(new DateTimeOffset(1970, 1, 1, 0, 0, 10, TimeSpan.Zero).AddTicks(50),
                 new Timespec(10, 5000).ToDateTimeOffset());
 
             Assert.AreEqual(new DateTimeOffset(2015, 7, 21, 4, 21, 48, TimeSpan.Zero),
                 new Timespec(1437452508, 0).ToDateTimeOffset());
 
             // before epoch
-            Assert.AreEqual(new DateTimeOffset(1969, 12, 31, 23, 59, 55, TimeSpan.FromTicks(10)),
+            Assert.AreEqual(new DateTimeOffset(1969, 12, 31, 23, 59, 55, TimeSpan.Zero).AddTicks(10),
                 new Timespec(-5, 1000).ToDateTimeOffset());
 
             // infinity
@@ -168,7 +168,7 @@ namespace Grpc.Core.Internal.Tests
             Assert.AreEqual(DateTime.MinValue, Timespec.InfPast.ToDateTime());
 
             // nanos are rounded to ticks are rounded up
-            Assert.AreEqual(new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.FromTicks(1)),
+            Assert.AreEqual(new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero).AddTicks(1),
                 new Timespec(0, 99).ToDateTimeOffset());
 
             // Illegal inputs
@@ -234,14 +234,14 @@ namespace Grpc.Core.Internal.Tests
                 Timespec.FromDateTimeOffset(new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero)));
 
             Assert.AreEqual(new Timespec(10, 5000),
-                Timespec.FromDateTimeOffset(new DateTimeOffset(1970, 1, 1, 0, 0, 10, TimeSpan.FromTicks(50))));
+                Timespec.FromDateTimeOffset(new DateTimeOffset(1970, 1, 1, 0, 0, 10, TimeSpan.Zero).AddTicks(50)));
 
             Assert.AreEqual(new Timespec(1437452508, 0),
                 Timespec.FromDateTimeOffset(new DateTimeOffset(2015, 7, 21, 4, 21, 48, TimeSpan.Zero)));
 
             // before epoch
             Assert.AreEqual(new Timespec(-5, 1000),
-                Timespec.FromDateTimeOffset(new DateTimeOffset(1969, 12, 31, 23, 59, 55, TimeSpan.FromTicks(10))));
+                Timespec.FromDateTimeOffset(new DateTimeOffset(1969, 12, 31, 23, 59, 55, TimeSpan.Zero).AddTicks(10)));
 
             // infinity
             Assert.AreEqual(Timespec.InfFuture, Timespec.FromDateTimeOffset(DateTimeOffset.MaxValue));

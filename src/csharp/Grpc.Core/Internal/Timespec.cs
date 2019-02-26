@@ -163,7 +163,20 @@ namespace Grpc.Core.Internal
 
         public DateTimeOffset ToDateTimeOffset()
         {
-            throw new NotImplementedException();
+            // most straighforward solution: convert to DateTime Utc
+            var datetime = ToDateTime();
+
+            // prevent from overflow
+            if (datetime == DateTime.MaxValue)
+            {
+                return DateTimeOffset.MaxValue;
+            }
+            else if (datetime == DateTime.MinValue)
+            {
+                return DateTimeOffset.MinValue;
+            }
+
+            return new DateTimeOffset(datetime);
         }
 
         /// <summary>
@@ -211,7 +224,34 @@ namespace Grpc.Core.Internal
 
         public static Timespec FromDateTimeOffset(DateTimeOffset dateTimeOffset)
         {
-            throw new NotImplementedException();
+            if (dateTimeOffset == DateTimeOffset.MaxValue)
+            {
+                return Timespec.InfFuture;
+            }
+            if (dateTimeOffset == DateTimeOffset.MinValue)
+            {
+                return Timespec.InfPast;
+            }
+
+            try
+            {
+                TimeSpan timeSpan = dateTimeOffset - DtoUnixEpoch;
+                long ticks = timeSpan.Ticks;
+
+                long seconds = ticks / TicksPerSecond;
+                int nanos = (int)((ticks % TicksPerSecond) * NanosPerTick);
+                if (nanos < 0)
+                {
+                    // correct the result based on C# modulo semantics for negative dividend                                                                                                                                           
+                    seconds--;
+                    nanos += (int)NanosPerSecond;
+                }
+                return new Timespec(seconds, nanos);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                return dateTimeOffset > DtoUnixEpoch ? Timespec.InfFuture : Timespec.InfPast;
+            }
         }
 
         /// <summary>
