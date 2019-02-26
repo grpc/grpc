@@ -30,7 +30,13 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+
+#ifdef WIN32
+#include "src/core/lib/iomgr/sockaddr_windows.h"
+#else
 #include "src/core/lib/iomgr/sockaddr_posix.h"
+#endif
+
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/slice/slice_internal.h"
