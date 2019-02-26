@@ -202,8 +202,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// by the client channel.
     virtual void UpdateState(grpc_connectivity_state state,
                              grpc_error* state_error,
-                             UniquePtr<SubchannelPicker> picker) {
-      std::move(picker);  // Suppress clang-tidy complaint.
+                             UniquePtr<SubchannelPicker>) {
       // The rest of this is copied from the GRPC_ABSTRACT macro.
       gpr_log(GPR_ERROR, "Function marked GRPC_ABSTRACT was not implemented");
       GPR_ASSERT(false);
@@ -261,8 +260,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Note that the LB policy gets the set of addresses from the
   /// GRPC_ARG_SERVER_ADDRESS_LIST channel arg.
   virtual void UpdateLocked(const grpc_channel_args& args,
-                            RefCountedPtr<Config> lb_config) {
-    std::move(lb_config);  // Suppress clang-tidy complaint.
+                            RefCountedPtr<Config>) {
     GRPC_ABSTRACT;
   }
 
