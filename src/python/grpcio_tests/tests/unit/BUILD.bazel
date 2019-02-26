@@ -47,11 +47,6 @@ py_library(
 )
 
 py_library(
-    name = "thread_pool",
-    srcs = ["thread_pool.py"],
-)
-
-py_library(
     name = "_exit_scenarios",
     srcs = ["_exit_scenarios.py"],
 )
@@ -59,6 +54,11 @@ py_library(
 py_library(
     name = "_server_shutdown_scenarios",
     srcs = ["_server_shutdown_scenarios.py"],
+)
+
+py_library(
+    name = "_thread_pool",
+    srcs = ["_thread_pool.py"],
 )
 
 py_library(
@@ -76,9 +76,9 @@ py_library(
             "//src/python/grpcio/grpc:grpcio",
             ":resources",
             ":test_common",
-            ":thread_pool",
             ":_exit_scenarios",
             ":_server_shutdown_scenarios",
+            ":_thread_pool",
             ":_from_grpc_import_star",
             "//src/python/grpcio_tests/tests/unit/framework/common",
             "//src/python/grpcio_tests/tests/testing",

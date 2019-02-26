@@ -19,7 +19,7 @@ import logging
 
 import grpc
 from tests.unit.framework.common import test_constants
-from tests.unit import thread_pool
+from tests.unit import _thread_pool
 
 
 class _Callback(object):
@@ -63,10 +63,8 @@ class ChannelReadyFutureTest(unittest.TestCase):
         channel.close()
 
     def test_immediately_connectable_channel_connectivity(self):
-        recording_thread_pool = thread_pool.RecordingThreadPool(
-            max_workers=None)
-        server = grpc.server(
-            recording_thread_pool, options=(('grpc.so_reuseport', 0),))
+        thread_pool = _thread_pool.RecordingThreadPool(max_workers=None)
+        server = grpc.server(thread_pool, options=(('grpc.so_reuseport', 0),))
         port = server.add_insecure_port('[::]:0')
         server.start()
         channel = grpc.insecure_channel('localhost:{}'.format(port))
@@ -86,7 +84,7 @@ class ChannelReadyFutureTest(unittest.TestCase):
         self.assertFalse(ready_future.cancelled())
         self.assertTrue(ready_future.done())
         self.assertFalse(ready_future.running())
-        self.assertFalse(recording_thread_pool.was_used())
+        self.assertFalse(thread_pool.was_used())
 
         channel.close()
         server.stop(None)
