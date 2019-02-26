@@ -260,7 +260,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Note that the LB policy gets the set of addresses from the
   /// GRPC_ARG_SERVER_ADDRESS_LIST channel arg.
   virtual void UpdateLocked(const grpc_channel_args& args,
-                            RefCountedPtr<Config> lb_config) { // NOLINT
+                            RefCountedPtr<Config> lb_config) {  // NOLINT
     GRPC_ABSTRACT;
   }
 
