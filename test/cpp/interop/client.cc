@@ -17,6 +17,7 @@
  */
 
 #include <memory>
+#include <regex>
 #include <unordered_map>
 
 #include <gflags/gflags.h>
@@ -100,6 +101,34 @@ using grpc::testing::CreateChannelForTestCase;
 using grpc::testing::GetServiceAccountJsonKey;
 using grpc::testing::UpdateActions;
 
+namespace {
+
+// Parse the contents of FLAGS_additional_metadata into a map. Allow
+// alphanumeric characters and dashes in keys, and any character but semicolons
+// in values.
+std::multimap<grpc::string, grpc::string> ParseAdditionalMetadataFlag(
+    const grpc::string& flag) {
+  std::multimap<grpc::string, grpc::string> additional_metadata;
+
+  // Key in group 1; value in group 2.
+  std::regex re("([-a-zA-Z0-9]+):([^;]*);?");
+  auto metadata_entries_begin = std::sregex_iterator(
+      flag.begin(), flag.end(), re, std::regex_constants::match_continuous);
+  auto metadata_entries_end = std::sregex_iterator();
+
+  for (std::sregex_iterator i = metadata_entries_begin;
+       i != metadata_entries_end; ++i) {
+    std::smatch match = *i;
+    gpr_log(GPR_INFO, "Adding additional metadata with key %s and value %s",
+            match[1].str().c_str(), match[2].str().c_str());
+    additional_metadata.insert({match[1].str(), match[2].str()});
+  }
+
+  return additional_metadata;
+}
+
+}  // namespace
+
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   gpr_log(GPR_INFO, "Testing these cases: %s", FLAGS_test_case.c_str());
@@ -113,7 +142,7 @@ int main(int argc, char** argv) {
     };
   } else {
     std::multimap<grpc::string, grpc::string> additional_metadata =
-        grpc::testing::ParseAdditionalMetadataFlag(FLAGS_additional_metadata);
+        ParseAdditionalMetadataFlag(FLAGS_additional_metadata);
 
     channel_creation_func = [test_case, additional_metadata]() {
       std::vector<std::unique_ptr<

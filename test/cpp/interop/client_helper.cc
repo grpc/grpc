@@ -20,7 +20,6 @@
 
 #include <fstream>
 #include <memory>
-#include <regex>
 #include <sstream>
 
 #include <gflags/gflags.h>
@@ -121,40 +120,6 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
                                std::move(interceptor_creators));
     }
   }
-}
-
-std::multimap<grpc::string, grpc::string> ParseAdditionalMetadataFlag(
-    const grpc::string& flag) {
-  std::multimap<grpc::string, grpc::string> additional_metadata;
-
-  // Key in group 1; value in group 2.
-  std::regex re("([-a-zA-Z0-9]+):([^;]*);?");
-  auto metadata_entries_begin = std::sregex_iterator(
-      flag.begin(), flag.end(), re, std::regex_constants::match_continuous);
-  auto metadata_entries_end = std::sregex_iterator();
-
-  for (std::sregex_iterator i = metadata_entries_begin;
-       i != metadata_entries_end; ++i) {
-    std::smatch match = *i;
-    gpr_log(GPR_INFO, "Adding additional metadata with key %s and value %s",
-            match[1].str().c_str(), match[2].str().c_str());
-    additional_metadata.insert({match[1].str(), match[2].str()});
-  }
-
-  return additional_metadata;
-}
-
-void AdditionalMetadataInterceptor::Intercept(
-    experimental::InterceptorBatchMethods* methods) {
-  if (methods->QueryInterceptionHookPoint(
-          experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
-    std::multimap<grpc::string, grpc::string>* metadata =
-        methods->GetSendInitialMetadata();
-    for (const auto& entry : additional_metadata_) {
-      metadata->insert(entry);
-    }
-  }
-  methods->Proceed();
 }
 
 }  // namespace testing
