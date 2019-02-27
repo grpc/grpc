@@ -202,11 +202,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// by the client channel.
     virtual void UpdateState(grpc_connectivity_state state,
                              grpc_error* state_error,
-                             UniquePtr<SubchannelPicker>) {
-      // The rest of this is copied from the GRPC_ABSTRACT macro.
-      gpr_log(GPR_ERROR, "Function marked GRPC_ABSTRACT was not implemented");
-      GPR_ASSERT(false);
-    }
+                             UniquePtr<SubchannelPicker>) GRPC_ABSTRACT;
 
     /// Requests that the resolver re-resolve.
     virtual void RequestReresolution() GRPC_ABSTRACT;
@@ -260,9 +256,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Note that the LB policy gets the set of addresses from the
   /// GRPC_ARG_SERVER_ADDRESS_LIST channel arg.
   virtual void UpdateLocked(const grpc_channel_args& args,
-                            RefCountedPtr<Config> lb_config) {  // NOLINT
-    GRPC_ABSTRACT;
-  }
+                            RefCountedPtr<Config>)  // NOLINT
+      GRPC_ABSTRACT;
 
   /// Tries to enter a READY connectivity state.
   /// This is a no-op by default, since most LB policies never go into
