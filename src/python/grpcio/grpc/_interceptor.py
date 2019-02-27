@@ -126,8 +126,7 @@ class _FailureOutcome(grpc.RpcError, grpc.Future, grpc.Call):  # pylint: disable
     def traceback(self, ignored_timeout=None):
         return self._traceback
 
-    def add_callback(self, callback):
-        del callback
+    def add_callback(self, unused_callback):
         return False
 
     def add_done_callback(self, fn):
