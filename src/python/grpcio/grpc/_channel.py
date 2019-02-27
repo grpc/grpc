@@ -630,10 +630,9 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                 (cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),),
             )
             event_handler = _event_handler(state, self._response_deserializer)
-            deadline_to_propagate = _determine_deadline(deadline)
             call = self._managed_call(
                 cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS,
-                self._method, None, deadline_to_propagate, metadata, None
+                self._method, None, _determine_deadline(deadline), metadata, None
                 if credentials is None else credentials._credentials,
                 operationses, event_handler, self._context)
             return _Rendezvous(state, call, self._response_deserializer,
