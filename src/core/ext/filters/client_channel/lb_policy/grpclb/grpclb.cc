@@ -1684,11 +1684,15 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
   const char* child_policy_name =
       child_policy_name_ == nullptr ? "round_robin" : child_policy_name_.get();
   const bool create_policy =
+      // case 1
       child_policy_ == nullptr ||
-      (strcmp(child_policy_->name(), child_policy_name) != 0 &&
-       (pending_child_policy_ == nullptr ||
-        strcmp(pending_child_policy_->name(), child_policy_name) != 0));
-  LoadBalancingPolicy* policy = nullptr;
+      // case 2b
+      (pending_child_policy_ == nullptr &&
+       strcmp(child_policy_->name(), child_policy_name) != 0) ||
+      // case 3b
+      (pending_child_policy_ != nullptr &&
+       strcmp(pending_child_policy_->name(), child_policy_name) != 0);
+  LoadBalancingPolicy* policy_to_update = nullptr;
   if (create_policy) {
     // Cases 1, 2b, and 3b: create a new child policy.
     // If child_policy_ is null, we set it (case 1), else we set
@@ -1696,20 +1700,22 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
     auto& lb_policy =
         child_policy_ == nullptr ? child_policy_ : pending_child_policy_;
     lb_policy = CreateChildPolicyLocked(child_policy_name, args);
-    policy = lb_policy.get();
+    policy_to_update = lb_policy.get();
   } else {
     // Cases 2a and 3a: update an existing policy.
     // If we have a pending child policy, send the update to the pending
     // policy (case 3a), else send it to the current policy (case 2a).
-    policy = pending_child_policy_ != nullptr ? pending_child_policy_.get()
-                                              : child_policy_.get();
+    policy_to_update = pending_child_policy_ != nullptr
+                           ? pending_child_policy_.get()
+                           : child_policy_.get();
   }
-  GPR_ASSERT(policy != nullptr);
+  GPR_ASSERT(policy_to_update != nullptr);
   // Update the policy.
   if (grpc_lb_glb_trace.enabled()) {
-    gpr_log(GPR_INFO, "[grpclb %p] Updating child policy %p", this, policy);
+    gpr_log(GPR_INFO, "[grpclb %p] Updating child policy %p", this,
+            policy_to_update);
   }
-  policy->UpdateLocked(*args, child_policy_config_);
+  policy_to_update->UpdateLocked(*args, child_policy_config_);
   // Clean up.
   grpc_channel_args_destroy(args);
 }
