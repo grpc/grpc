@@ -32,7 +32,7 @@ typedef struct grpc_connectivity_state_watcher {
   grpc_closure* notify;
   /** the current state as believed by the watcher */
   grpc_connectivity_state* current;
-  /**  */
+  /** whether to notify if state changes from READY to READY */
   bool force_notify_ready;
 } grpc_connectivity_state_watcher;
 
@@ -45,6 +45,7 @@ typedef struct {
   grpc_connectivity_state_watcher root_watcher;
   /** a name to help debugging */
   char* name;
+  /** whether to notify if state changes from READY to READY */
   bool force_notify_ready;
 } grpc_connectivity_state_tracker;
 
