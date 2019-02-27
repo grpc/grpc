@@ -27,7 +27,7 @@
 
 typedef struct grpc_connectivity_state_watcher {
   /** we keep watchers in a linked list */
-  struct grpc_connectivity_state_watcher* next;
+  struct grpc_connectivity_state_watcher* next = nullptr;
   /** closure to notify on change */
   grpc_closure* notify;
   /** the current state as believed by the watcher */
@@ -42,7 +42,7 @@ typedef struct {
   /** error associated with state */
   grpc_error* current_error;
   /** all our watchers */
-  grpc_connectivity_state_watcher* watchers;
+  grpc_connectivity_state_watcher root_watcher;
   /** a name to help debugging */
   char* name;
   bool force_notify_ready;
