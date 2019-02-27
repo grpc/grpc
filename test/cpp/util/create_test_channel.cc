@@ -71,8 +71,8 @@ std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& override_hostname, bool use_prod_roots,
     const std::shared_ptr<CallCredentials>& creds,
     const ChannelArguments& args) {
-  return CreateTestChannel(server, cred_type, override_hostname,
-                           use_prod_roots, creds, args,
+  return CreateTestChannel(server, cred_type, override_hostname, use_prod_roots,
+                           creds, args,
                            /*interceptor_creators=*/{});
 }
 
@@ -124,11 +124,10 @@ std::shared_ptr<Channel> CreateTestChannel(
 std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& cred_type,
     const grpc::string& override_hostname, bool use_prod_roots,
-    const std::shared_ptr<CallCredentials>& creds,
-    const ChannelArguments& args,
+    const std::shared_ptr<CallCredentials>& creds, const ChannelArguments& args,
     std::vector<
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
-    interceptor_creators) {
+        interceptor_creators) {
   ChannelArguments channel_args(args);
   std::shared_ptr<ChannelCredentials> channel_creds;
   if (cred_type.empty()) {
@@ -174,8 +173,8 @@ std::shared_ptr<Channel> CreateTestChannel(
     if (interceptor_creators.empty()) {
       return CreateCustomChannel(server, channel_creds, args);
     } else {
-    return experimental::CreateCustomChannelWithInterceptors(
-        server, channel_creds, args, std::move(interceptor_creators));
+      return experimental::CreateCustomChannelWithInterceptors(
+          server, channel_creds, args, std::move(interceptor_creators));
     }
   }
 }
@@ -186,15 +185,15 @@ std::shared_ptr<Channel> CreateTestChannel(
     const std::shared_ptr<CallCredentials>& creds, const ChannelArguments& args,
     std::vector<
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
-    interceptor_creators) {
+        interceptor_creators) {
   grpc::string credential_type =
       security_type == testing::ALTS
           ? testing::kAltsCredentialsType
           : (security_type == testing::TLS ? testing::kTlsCredentialsType
                                            : testing::kInsecureCredentialsType);
-  return CreateTestChannel(
-      server, credential_type, override_hostname, use_prod_roots, creds, args,
-      std::move(interceptor_creators));
+  return CreateTestChannel(server, credential_type, override_hostname,
+                           use_prod_roots, creds, args,
+                           std::move(interceptor_creators));
 }
 
 std::shared_ptr<Channel> CreateTestChannel(
@@ -204,9 +203,9 @@ std::shared_ptr<Channel> CreateTestChannel(
     std::vector<
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators) {
-  return CreateTestChannel(
-      server, override_hostname, security_type, use_prod_roots, creds,
-      ChannelArguments(), std::move(interceptor_creators));
+  return CreateTestChannel(server, override_hostname, security_type,
+                           use_prod_roots, creds, ChannelArguments(),
+                           std::move(interceptor_creators));
 }
 
 std::shared_ptr<Channel> CreateTestChannel(
@@ -214,7 +213,7 @@ std::shared_ptr<Channel> CreateTestChannel(
     const std::shared_ptr<CallCredentials>& creds,
     std::vector<
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
-    interceptor_creators) {
+        interceptor_creators) {
   ChannelArguments channel_args;
   std::shared_ptr<ChannelCredentials> channel_creds =
       testing::GetCredentialsProvider()->GetChannelCredentials(credential_type,
