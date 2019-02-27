@@ -116,10 +116,21 @@
     </div>
   </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="Grpc.Core.html">Grpc.Core</a></h6>
-  <h6><strong>Assembly</strong>: Grpc.Core.dll</h6>
+  <h6><strong>Assembly</strong>: Grpc.Core.Api.dll</h6>
   <h5 id="Grpc_Core_ServerCallContext_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class ServerCallContext</code></pre>
+    <pre><code class="lang-csharp hljs">public abstract class ServerCallContext</code></pre>
+  </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <a id="Grpc_Core_ServerCallContext__ctor_" data-uid="Grpc.Core.ServerCallContext.#ctor*"></a>
+  <h4 id="Grpc_Core_ServerCallContext__ctor" data-uid="Grpc.Core.ServerCallContext.#ctor">ServerCallContext()</h4>
+  <div class="markdown level1 summary"><p>Creates a new instance of <code>ServerCallContext</code>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected ServerCallContext()</code></pre>
   </div>
   <h3 id="properties">Properties
   </h3>
@@ -132,6 +143,30 @@ Note: Access to AuthContext is an experimental API that can change without any p
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">public AuthContext AuthContext { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.AuthContext.html">AuthContext</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_ServerCallContext_AuthContextCore_" data-uid="Grpc.Core.ServerCallContext.AuthContextCore*"></a>
+  <h4 id="Grpc_Core_ServerCallContext_AuthContextCore" data-uid="Grpc.Core.ServerCallContext.AuthContextCore">AuthContextCore</h4>
+  <div class="markdown level1 summary"><p>Provides implementation of a non-virtual public member.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected abstract AuthContext AuthContextCore { get; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -172,6 +207,30 @@ Note: Access to AuthContext is an experimental API that can change without any p
       </tr>
     </tbody>
   </table>
+  <a id="Grpc_Core_ServerCallContext_CancellationTokenCore_" data-uid="Grpc.Core.ServerCallContext.CancellationTokenCore*"></a>
+  <h4 id="Grpc_Core_ServerCallContext_CancellationTokenCore" data-uid="Grpc.Core.ServerCallContext.CancellationTokenCore">CancellationTokenCore</h4>
+  <div class="markdown level1 summary"><p>Provides implementation of a non-virtual public member.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected abstract CancellationToken CancellationTokenCore { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <a id="Grpc_Core_ServerCallContext_Deadline_" data-uid="Grpc.Core.ServerCallContext.Deadline*"></a>
   <h4 id="Grpc_Core_ServerCallContext_Deadline" data-uid="Grpc.Core.ServerCallContext.Deadline">Deadline</h4>
   <div class="markdown level1 summary"><p>Deadline for this RPC.</p>
@@ -180,6 +239,30 @@ Note: Access to AuthContext is an experimental API that can change without any p
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">public DateTime Deadline { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.DateTime</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_ServerCallContext_DeadlineCore_" data-uid="Grpc.Core.ServerCallContext.DeadlineCore*"></a>
+  <h4 id="Grpc_Core_ServerCallContext_DeadlineCore" data-uid="Grpc.Core.ServerCallContext.DeadlineCore">DeadlineCore</h4>
+  <div class="markdown level1 summary"><p>Provides implementation of a non-virtual public member.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected abstract DateTime DeadlineCore { get; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -220,6 +303,30 @@ Note: Access to AuthContext is an experimental API that can change without any p
       </tr>
     </tbody>
   </table>
+  <a id="Grpc_Core_ServerCallContext_HostCore_" data-uid="Grpc.Core.ServerCallContext.HostCore*"></a>
+  <h4 id="Grpc_Core_ServerCallContext_HostCore" data-uid="Grpc.Core.ServerCallContext.HostCore">HostCore</h4>
+  <div class="markdown level1 summary"><p>Provides implementation of a non-virtual public member.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected abstract string HostCore { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <a id="Grpc_Core_ServerCallContext_Method_" data-uid="Grpc.Core.ServerCallContext.Method*"></a>
   <h4 id="Grpc_Core_ServerCallContext_Method" data-uid="Grpc.Core.ServerCallContext.Method">Method</h4>
   <div class="markdown level1 summary"><p>Name of method called in this RPC.</p>
@@ -228,6 +335,30 @@ Note: Access to AuthContext is an experimental API that can change without any p
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">public string Method { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_ServerCallContext_MethodCore_" data-uid="Grpc.Core.ServerCallContext.MethodCore*"></a>
+  <h4 id="Grpc_Core_ServerCallContext_MethodCore" data-uid="Grpc.Core.ServerCallContext.MethodCore">MethodCore</h4>
+  <div class="markdown level1 summary"><p>Provides implementation of a non-virtual public member.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected abstract string MethodCore { get; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -268,6 +399,30 @@ Note: Access to AuthContext is an experimental API that can change without any p
       </tr>
     </tbody>
   </table>
+  <a id="Grpc_Core_ServerCallContext_PeerCore_" data-uid="Grpc.Core.ServerCallContext.PeerCore*"></a>
+  <h4 id="Grpc_Core_ServerCallContext_PeerCore" data-uid="Grpc.Core.ServerCallContext.PeerCore">PeerCore</h4>
+  <div class="markdown level1 summary"><p>Provides implementation of a non-virtual public member.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected abstract string PeerCore { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <a id="Grpc_Core_ServerCallContext_RequestHeaders_" data-uid="Grpc.Core.ServerCallContext.RequestHeaders*"></a>
   <h4 id="Grpc_Core_ServerCallContext_RequestHeaders" data-uid="Grpc.Core.ServerCallContext.RequestHeaders">RequestHeaders</h4>
   <div class="markdown level1 summary"><p>Initial metadata sent by client.</p>
@@ -276,6 +431,30 @@ Note: Access to AuthContext is an experimental API that can change without any p
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">public Metadata RequestHeaders { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.Metadata.html">Metadata</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_ServerCallContext_RequestHeadersCore_" data-uid="Grpc.Core.ServerCallContext.RequestHeadersCore*"></a>
+  <h4 id="Grpc_Core_ServerCallContext_RequestHeadersCore" data-uid="Grpc.Core.ServerCallContext.RequestHeadersCore">RequestHeadersCore</h4>
+  <div class="markdown level1 summary"><p>Provides implementation of a non-virtual public member.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected abstract Metadata RequestHeadersCore { get; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -316,6 +495,30 @@ Note: Access to AuthContext is an experimental API that can change without any p
       </tr>
     </tbody>
   </table>
+  <a id="Grpc_Core_ServerCallContext_ResponseTrailersCore_" data-uid="Grpc.Core.ServerCallContext.ResponseTrailersCore*"></a>
+  <h4 id="Grpc_Core_ServerCallContext_ResponseTrailersCore" data-uid="Grpc.Core.ServerCallContext.ResponseTrailersCore">ResponseTrailersCore</h4>
+  <div class="markdown level1 summary"><p>Provides implementation of a non-virtual public member.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected abstract Metadata ResponseTrailersCore { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.Metadata.html">Metadata</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <a id="Grpc_Core_ServerCallContext_Status_" data-uid="Grpc.Core.ServerCallContext.Status*"></a>
   <h4 id="Grpc_Core_ServerCallContext_Status" data-uid="Grpc.Core.ServerCallContext.Status">Status</h4>
   <div class="markdown level1 summary"><p>Status to send back to client after RPC finishes.</p>
@@ -324,6 +527,30 @@ Note: Access to AuthContext is an experimental API that can change without any p
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">public Status Status { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.Status.html">Status</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_ServerCallContext_StatusCore_" data-uid="Grpc.Core.ServerCallContext.StatusCore*"></a>
+  <h4 id="Grpc_Core_ServerCallContext_StatusCore" data-uid="Grpc.Core.ServerCallContext.StatusCore">StatusCore</h4>
+  <div class="markdown level1 summary"><p>Provides implementation of a non-virtual public member.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected abstract Status StatusCore { get; set; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -366,6 +593,30 @@ Both properties are backed by the same underlying value.</p>
       </tr>
     </tbody>
   </table>
+  <a id="Grpc_Core_ServerCallContext_WriteOptionsCore_" data-uid="Grpc.Core.ServerCallContext.WriteOptionsCore*"></a>
+  <h4 id="Grpc_Core_ServerCallContext_WriteOptionsCore" data-uid="Grpc.Core.ServerCallContext.WriteOptionsCore">WriteOptionsCore</h4>
+  <div class="markdown level1 summary"><p>Provides implementation of a non-virtual public member.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected abstract WriteOptions WriteOptionsCore { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.WriteOptions.html">WriteOptions</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <h3 id="methods">Methods
   </h3>
   <a id="Grpc_Core_ServerCallContext_CreatePropagationToken_" data-uid="Grpc.Core.ServerCallContext.CreatePropagationToken*"></a>
@@ -376,6 +627,47 @@ Both properties are backed by the same underlying value.</p>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">public ContextPropagationToken CreatePropagationToken(ContextPropagationOptions options = null)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.ContextPropagationOptions.html">ContextPropagationOptions</a></td>
+        <td><span class="parametername">options</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.ContextPropagationToken.html">ContextPropagationToken</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_ServerCallContext_CreatePropagationTokenCore_" data-uid="Grpc.Core.ServerCallContext.CreatePropagationTokenCore*"></a>
+  <h4 id="Grpc_Core_ServerCallContext_CreatePropagationTokenCore_Grpc_Core_ContextPropagationOptions_" data-uid="Grpc.Core.ServerCallContext.CreatePropagationTokenCore(Grpc.Core.ContextPropagationOptions)">CreatePropagationTokenCore(ContextPropagationOptions)</h4>
+  <div class="markdown level1 summary"><p>Provides implementation of a non-virtual public member.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected abstract ContextPropagationToken CreatePropagationTokenCore(ContextPropagationOptions options)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -451,6 +743,47 @@ been called yet.</p>
         <td><span class="xref">System.Threading.Tasks.Task</span></td>
         <td><p>The task that finished once response headers have been written.</p>
 </td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_ServerCallContext_WriteResponseHeadersAsyncCore_" data-uid="Grpc.Core.ServerCallContext.WriteResponseHeadersAsyncCore*"></a>
+  <h4 id="Grpc_Core_ServerCallContext_WriteResponseHeadersAsyncCore_Grpc_Core_Metadata_" data-uid="Grpc.Core.ServerCallContext.WriteResponseHeadersAsyncCore(Grpc.Core.Metadata)">WriteResponseHeadersAsyncCore(Metadata)</h4>
+  <div class="markdown level1 summary"><p>Provides implementation of a non-virtual public member.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected abstract Task WriteResponseHeadersAsyncCore(Metadata responseHeaders)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.Metadata.html">Metadata</a></td>
+        <td><span class="parametername">responseHeaders</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
       </tr>
     </tbody>
   </table>

@@ -4511,6 +4511,19 @@ references:
   commentId: T:Grpc.Core.ServerCallContext
   fullName: Grpc.Core.ServerCallContext
   nameWithType: ServerCallContext
+- uid: Grpc.Core.ServerCallContext.#ctor
+  name: ServerCallContext()
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext__ctor
+  commentId: M:Grpc.Core.ServerCallContext.#ctor
+  fullName: Grpc.Core.ServerCallContext.ServerCallContext()
+  nameWithType: ServerCallContext.ServerCallContext()
+- uid: Grpc.Core.ServerCallContext.#ctor*
+  name: ServerCallContext
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext__ctor_
+  commentId: Overload:Grpc.Core.ServerCallContext.#ctor
+  isSpec: "True"
+  fullName: Grpc.Core.ServerCallContext.ServerCallContext
+  nameWithType: ServerCallContext.ServerCallContext
 - uid: Grpc.Core.ServerCallContext.AuthContext
   name: AuthContext
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_AuthContext
@@ -4524,6 +4537,19 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.AuthContext
   nameWithType: ServerCallContext.AuthContext
+- uid: Grpc.Core.ServerCallContext.AuthContextCore
+  name: AuthContextCore
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_AuthContextCore
+  commentId: P:Grpc.Core.ServerCallContext.AuthContextCore
+  fullName: Grpc.Core.ServerCallContext.AuthContextCore
+  nameWithType: ServerCallContext.AuthContextCore
+- uid: Grpc.Core.ServerCallContext.AuthContextCore*
+  name: AuthContextCore
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_AuthContextCore_
+  commentId: Overload:Grpc.Core.ServerCallContext.AuthContextCore
+  isSpec: "True"
+  fullName: Grpc.Core.ServerCallContext.AuthContextCore
+  nameWithType: ServerCallContext.AuthContextCore
 - uid: Grpc.Core.ServerCallContext.CancellationToken
   name: CancellationToken
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_CancellationToken
@@ -4537,6 +4563,19 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.CancellationToken
   nameWithType: ServerCallContext.CancellationToken
+- uid: Grpc.Core.ServerCallContext.CancellationTokenCore
+  name: CancellationTokenCore
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_CancellationTokenCore
+  commentId: P:Grpc.Core.ServerCallContext.CancellationTokenCore
+  fullName: Grpc.Core.ServerCallContext.CancellationTokenCore
+  nameWithType: ServerCallContext.CancellationTokenCore
+- uid: Grpc.Core.ServerCallContext.CancellationTokenCore*
+  name: CancellationTokenCore
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_CancellationTokenCore_
+  commentId: Overload:Grpc.Core.ServerCallContext.CancellationTokenCore
+  isSpec: "True"
+  fullName: Grpc.Core.ServerCallContext.CancellationTokenCore
+  nameWithType: ServerCallContext.CancellationTokenCore
 - uid: Grpc.Core.ServerCallContext.CreatePropagationToken(Grpc.Core.ContextPropagationOptions)
   name: CreatePropagationToken(ContextPropagationOptions)
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_CreatePropagationToken_Grpc_Core_ContextPropagationOptions_
@@ -4550,6 +4589,19 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.CreatePropagationToken
   nameWithType: ServerCallContext.CreatePropagationToken
+- uid: Grpc.Core.ServerCallContext.CreatePropagationTokenCore(Grpc.Core.ContextPropagationOptions)
+  name: CreatePropagationTokenCore(ContextPropagationOptions)
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_CreatePropagationTokenCore_Grpc_Core_ContextPropagationOptions_
+  commentId: M:Grpc.Core.ServerCallContext.CreatePropagationTokenCore(Grpc.Core.ContextPropagationOptions)
+  fullName: Grpc.Core.ServerCallContext.CreatePropagationTokenCore(Grpc.Core.ContextPropagationOptions)
+  nameWithType: ServerCallContext.CreatePropagationTokenCore(ContextPropagationOptions)
+- uid: Grpc.Core.ServerCallContext.CreatePropagationTokenCore*
+  name: CreatePropagationTokenCore
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_CreatePropagationTokenCore_
+  commentId: Overload:Grpc.Core.ServerCallContext.CreatePropagationTokenCore
+  isSpec: "True"
+  fullName: Grpc.Core.ServerCallContext.CreatePropagationTokenCore
+  nameWithType: ServerCallContext.CreatePropagationTokenCore
 - uid: Grpc.Core.ServerCallContext.Deadline
   name: Deadline
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_Deadline
@@ -4563,6 +4615,19 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.Deadline
   nameWithType: ServerCallContext.Deadline
+- uid: Grpc.Core.ServerCallContext.DeadlineCore
+  name: DeadlineCore
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_DeadlineCore
+  commentId: P:Grpc.Core.ServerCallContext.DeadlineCore
+  fullName: Grpc.Core.ServerCallContext.DeadlineCore
+  nameWithType: ServerCallContext.DeadlineCore
+- uid: Grpc.Core.ServerCallContext.DeadlineCore*
+  name: DeadlineCore
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_DeadlineCore_
+  commentId: Overload:Grpc.Core.ServerCallContext.DeadlineCore
+  isSpec: "True"
+  fullName: Grpc.Core.ServerCallContext.DeadlineCore
+  nameWithType: ServerCallContext.DeadlineCore
 - uid: Grpc.Core.ServerCallContext.Host
   name: Host
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_Host
@@ -4576,6 +4641,19 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.Host
   nameWithType: ServerCallContext.Host
+- uid: Grpc.Core.ServerCallContext.HostCore
+  name: HostCore
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_HostCore
+  commentId: P:Grpc.Core.ServerCallContext.HostCore
+  fullName: Grpc.Core.ServerCallContext.HostCore
+  nameWithType: ServerCallContext.HostCore
+- uid: Grpc.Core.ServerCallContext.HostCore*
+  name: HostCore
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_HostCore_
+  commentId: Overload:Grpc.Core.ServerCallContext.HostCore
+  isSpec: "True"
+  fullName: Grpc.Core.ServerCallContext.HostCore
+  nameWithType: ServerCallContext.HostCore
 - uid: Grpc.Core.ServerCallContext.Method
   name: Method
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_Method
@@ -4589,6 +4667,19 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.Method
   nameWithType: ServerCallContext.Method
+- uid: Grpc.Core.ServerCallContext.MethodCore
+  name: MethodCore
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_MethodCore
+  commentId: P:Grpc.Core.ServerCallContext.MethodCore
+  fullName: Grpc.Core.ServerCallContext.MethodCore
+  nameWithType: ServerCallContext.MethodCore
+- uid: Grpc.Core.ServerCallContext.MethodCore*
+  name: MethodCore
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_MethodCore_
+  commentId: Overload:Grpc.Core.ServerCallContext.MethodCore
+  isSpec: "True"
+  fullName: Grpc.Core.ServerCallContext.MethodCore
+  nameWithType: ServerCallContext.MethodCore
 - uid: Grpc.Core.ServerCallContext.Peer
   name: Peer
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_Peer
@@ -4602,6 +4693,19 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.Peer
   nameWithType: ServerCallContext.Peer
+- uid: Grpc.Core.ServerCallContext.PeerCore
+  name: PeerCore
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_PeerCore
+  commentId: P:Grpc.Core.ServerCallContext.PeerCore
+  fullName: Grpc.Core.ServerCallContext.PeerCore
+  nameWithType: ServerCallContext.PeerCore
+- uid: Grpc.Core.ServerCallContext.PeerCore*
+  name: PeerCore
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_PeerCore_
+  commentId: Overload:Grpc.Core.ServerCallContext.PeerCore
+  isSpec: "True"
+  fullName: Grpc.Core.ServerCallContext.PeerCore
+  nameWithType: ServerCallContext.PeerCore
 - uid: Grpc.Core.ServerCallContext.RequestHeaders
   name: RequestHeaders
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_RequestHeaders
@@ -4615,6 +4719,19 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.RequestHeaders
   nameWithType: ServerCallContext.RequestHeaders
+- uid: Grpc.Core.ServerCallContext.RequestHeadersCore
+  name: RequestHeadersCore
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_RequestHeadersCore
+  commentId: P:Grpc.Core.ServerCallContext.RequestHeadersCore
+  fullName: Grpc.Core.ServerCallContext.RequestHeadersCore
+  nameWithType: ServerCallContext.RequestHeadersCore
+- uid: Grpc.Core.ServerCallContext.RequestHeadersCore*
+  name: RequestHeadersCore
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_RequestHeadersCore_
+  commentId: Overload:Grpc.Core.ServerCallContext.RequestHeadersCore
+  isSpec: "True"
+  fullName: Grpc.Core.ServerCallContext.RequestHeadersCore
+  nameWithType: ServerCallContext.RequestHeadersCore
 - uid: Grpc.Core.ServerCallContext.ResponseTrailers
   name: ResponseTrailers
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_ResponseTrailers
@@ -4628,6 +4745,19 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.ResponseTrailers
   nameWithType: ServerCallContext.ResponseTrailers
+- uid: Grpc.Core.ServerCallContext.ResponseTrailersCore
+  name: ResponseTrailersCore
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_ResponseTrailersCore
+  commentId: P:Grpc.Core.ServerCallContext.ResponseTrailersCore
+  fullName: Grpc.Core.ServerCallContext.ResponseTrailersCore
+  nameWithType: ServerCallContext.ResponseTrailersCore
+- uid: Grpc.Core.ServerCallContext.ResponseTrailersCore*
+  name: ResponseTrailersCore
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_ResponseTrailersCore_
+  commentId: Overload:Grpc.Core.ServerCallContext.ResponseTrailersCore
+  isSpec: "True"
+  fullName: Grpc.Core.ServerCallContext.ResponseTrailersCore
+  nameWithType: ServerCallContext.ResponseTrailersCore
 - uid: Grpc.Core.ServerCallContext.Status
   name: Status
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_Status
@@ -4641,6 +4771,19 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.Status
   nameWithType: ServerCallContext.Status
+- uid: Grpc.Core.ServerCallContext.StatusCore
+  name: StatusCore
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_StatusCore
+  commentId: P:Grpc.Core.ServerCallContext.StatusCore
+  fullName: Grpc.Core.ServerCallContext.StatusCore
+  nameWithType: ServerCallContext.StatusCore
+- uid: Grpc.Core.ServerCallContext.StatusCore*
+  name: StatusCore
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_StatusCore_
+  commentId: Overload:Grpc.Core.ServerCallContext.StatusCore
+  isSpec: "True"
+  fullName: Grpc.Core.ServerCallContext.StatusCore
+  nameWithType: ServerCallContext.StatusCore
 - uid: Grpc.Core.ServerCallContext.WriteOptions
   name: WriteOptions
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_WriteOptions
@@ -4654,6 +4797,19 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.WriteOptions
   nameWithType: ServerCallContext.WriteOptions
+- uid: Grpc.Core.ServerCallContext.WriteOptionsCore
+  name: WriteOptionsCore
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_WriteOptionsCore
+  commentId: P:Grpc.Core.ServerCallContext.WriteOptionsCore
+  fullName: Grpc.Core.ServerCallContext.WriteOptionsCore
+  nameWithType: ServerCallContext.WriteOptionsCore
+- uid: Grpc.Core.ServerCallContext.WriteOptionsCore*
+  name: WriteOptionsCore
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_WriteOptionsCore_
+  commentId: Overload:Grpc.Core.ServerCallContext.WriteOptionsCore
+  isSpec: "True"
+  fullName: Grpc.Core.ServerCallContext.WriteOptionsCore
+  nameWithType: ServerCallContext.WriteOptionsCore
 - uid: Grpc.Core.ServerCallContext.WriteResponseHeadersAsync(Grpc.Core.Metadata)
   name: WriteResponseHeadersAsync(Metadata)
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_WriteResponseHeadersAsync_Grpc_Core_Metadata_
@@ -4667,6 +4823,19 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.WriteResponseHeadersAsync
   nameWithType: ServerCallContext.WriteResponseHeadersAsync
+- uid: Grpc.Core.ServerCallContext.WriteResponseHeadersAsyncCore(Grpc.Core.Metadata)
+  name: WriteResponseHeadersAsyncCore(Metadata)
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_WriteResponseHeadersAsyncCore_Grpc_Core_Metadata_
+  commentId: M:Grpc.Core.ServerCallContext.WriteResponseHeadersAsyncCore(Grpc.Core.Metadata)
+  fullName: Grpc.Core.ServerCallContext.WriteResponseHeadersAsyncCore(Grpc.Core.Metadata)
+  nameWithType: ServerCallContext.WriteResponseHeadersAsyncCore(Metadata)
+- uid: Grpc.Core.ServerCallContext.WriteResponseHeadersAsyncCore*
+  name: WriteResponseHeadersAsyncCore
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_WriteResponseHeadersAsyncCore_
+  commentId: Overload:Grpc.Core.ServerCallContext.WriteResponseHeadersAsyncCore
+  isSpec: "True"
+  fullName: Grpc.Core.ServerCallContext.WriteResponseHeadersAsyncCore
+  nameWithType: ServerCallContext.WriteResponseHeadersAsyncCore
 - uid: Grpc.Core.ServerCredentials
   name: ServerCredentials
   href: api/Grpc.Core.ServerCredentials.html
@@ -5297,13 +5466,13 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.Testing.TestCalls.AsyncClientStreamingCall
   nameWithType: TestCalls.AsyncClientStreamingCall
-- uid: Grpc.Core.Testing.TestCalls.AsyncClientStreamingCall``2(Grpc.Core.IClientStreamWriter{``0},System.Threading.Tasks.Task{``1},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
+- uid: Grpc.Core.Testing.TestCalls.AsyncClientStreamingCall``2(Grpc.Core.IClientStreamWriter{``0},System.Threading.Tasks.Task{``1},System.Threading.Tasks.Task{Metadata},System.Func{Status},System.Func{Metadata},System.Action)
   name: AsyncClientStreamingCall<TRequest, TResponse>(IClientStreamWriter<TRequest>, Task<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
-  href: api/Grpc.Core.Testing.TestCalls.html#Grpc_Core_Testing_TestCalls_AsyncClientStreamingCall__2_Grpc_Core_IClientStreamWriter___0__System_Threading_Tasks_Task___1__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_
-  commentId: M:Grpc.Core.Testing.TestCalls.AsyncClientStreamingCall``2(Grpc.Core.IClientStreamWriter{``0},System.Threading.Tasks.Task{``1},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
+  href: api/Grpc.Core.Testing.TestCalls.html#Grpc_Core_Testing_TestCalls_AsyncClientStreamingCall__2_Grpc_Core_IClientStreamWriter___0__System_Threading_Tasks_Task___1__System_Threading_Tasks_Task_Metadata__System_Func_Status__System_Func_Metadata__System_Action_
+  commentId: M:Grpc.Core.Testing.TestCalls.AsyncClientStreamingCall``2(Grpc.Core.IClientStreamWriter{``0},System.Threading.Tasks.Task{``1},System.Threading.Tasks.Task{Metadata},System.Func{Status},System.Func{Metadata},System.Action)
   name.vb: AsyncClientStreamingCall(Of TRequest, TResponse)(IClientStreamWriter(Of TRequest), Task(Of TResponse), Task(Of Metadata), Func(Of Status), Func(Of Metadata), Action)
-  fullName: Grpc.Core.Testing.TestCalls.AsyncClientStreamingCall<TRequest, TResponse>(Grpc.Core.IClientStreamWriter<TRequest>, System.Threading.Tasks.Task<TResponse>, System.Threading.Tasks.Task<Grpc.Core.Metadata>, System.Func<Grpc.Core.Status>, System.Func<Grpc.Core.Metadata>, System.Action)
-  fullName.vb: Grpc.Core.Testing.TestCalls.AsyncClientStreamingCall(Of TRequest, TResponse)(Grpc.Core.IClientStreamWriter(Of TRequest), System.Threading.Tasks.Task(Of TResponse), System.Threading.Tasks.Task(Of Grpc.Core.Metadata), System.Func(Of Grpc.Core.Status), System.Func(Of Grpc.Core.Metadata), System.Action)
+  fullName: Grpc.Core.Testing.TestCalls.AsyncClientStreamingCall<TRequest, TResponse>(Grpc.Core.IClientStreamWriter<TRequest>, System.Threading.Tasks.Task<TResponse>, System.Threading.Tasks.Task<Metadata>, System.Func<Status>, System.Func<Metadata>, System.Action)
+  fullName.vb: Grpc.Core.Testing.TestCalls.AsyncClientStreamingCall(Of TRequest, TResponse)(Grpc.Core.IClientStreamWriter(Of TRequest), System.Threading.Tasks.Task(Of TResponse), System.Threading.Tasks.Task(Of Metadata), System.Func(Of Status), System.Func(Of Metadata), System.Action)
   nameWithType: TestCalls.AsyncClientStreamingCall<TRequest, TResponse>(IClientStreamWriter<TRequest>, Task<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
   nameWithType.vb: TestCalls.AsyncClientStreamingCall(Of TRequest, TResponse)(IClientStreamWriter(Of TRequest), Task(Of TResponse), Task(Of Metadata), Func(Of Status), Func(Of Metadata), Action)
 - uid: Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall*
@@ -5313,13 +5482,13 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall
   nameWithType: TestCalls.AsyncDuplexStreamingCall
-- uid: Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall``2(Grpc.Core.IClientStreamWriter{``0},Grpc.Core.IAsyncStreamReader{``1},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
+- uid: Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall``2(Grpc.Core.IClientStreamWriter{``0},IAsyncStreamReader{``1},System.Threading.Tasks.Task{Metadata},System.Func{Status},System.Func{Metadata},System.Action)
   name: AsyncDuplexStreamingCall<TRequest, TResponse>(IClientStreamWriter<TRequest>, IAsyncStreamReader<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
-  href: api/Grpc.Core.Testing.TestCalls.html#Grpc_Core_Testing_TestCalls_AsyncDuplexStreamingCall__2_Grpc_Core_IClientStreamWriter___0__Grpc_Core_IAsyncStreamReader___1__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_
-  commentId: M:Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall``2(Grpc.Core.IClientStreamWriter{``0},Grpc.Core.IAsyncStreamReader{``1},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
+  href: api/Grpc.Core.Testing.TestCalls.html#Grpc_Core_Testing_TestCalls_AsyncDuplexStreamingCall__2_Grpc_Core_IClientStreamWriter___0__IAsyncStreamReader___1__System_Threading_Tasks_Task_Metadata__System_Func_Status__System_Func_Metadata__System_Action_
+  commentId: M:Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall``2(Grpc.Core.IClientStreamWriter{``0},IAsyncStreamReader{``1},System.Threading.Tasks.Task{Metadata},System.Func{Status},System.Func{Metadata},System.Action)
   name.vb: AsyncDuplexStreamingCall(Of TRequest, TResponse)(IClientStreamWriter(Of TRequest), IAsyncStreamReader(Of TResponse), Task(Of Metadata), Func(Of Status), Func(Of Metadata), Action)
-  fullName: Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall<TRequest, TResponse>(Grpc.Core.IClientStreamWriter<TRequest>, Grpc.Core.IAsyncStreamReader<TResponse>, System.Threading.Tasks.Task<Grpc.Core.Metadata>, System.Func<Grpc.Core.Status>, System.Func<Grpc.Core.Metadata>, System.Action)
-  fullName.vb: Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall(Of TRequest, TResponse)(Grpc.Core.IClientStreamWriter(Of TRequest), Grpc.Core.IAsyncStreamReader(Of TResponse), System.Threading.Tasks.Task(Of Grpc.Core.Metadata), System.Func(Of Grpc.Core.Status), System.Func(Of Grpc.Core.Metadata), System.Action)
+  fullName: Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall<TRequest, TResponse>(Grpc.Core.IClientStreamWriter<TRequest>, IAsyncStreamReader<TResponse>, System.Threading.Tasks.Task<Metadata>, System.Func<Status>, System.Func<Metadata>, System.Action)
+  fullName.vb: Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall(Of TRequest, TResponse)(Grpc.Core.IClientStreamWriter(Of TRequest), IAsyncStreamReader(Of TResponse), System.Threading.Tasks.Task(Of Metadata), System.Func(Of Status), System.Func(Of Metadata), System.Action)
   nameWithType: TestCalls.AsyncDuplexStreamingCall<TRequest, TResponse>(IClientStreamWriter<TRequest>, IAsyncStreamReader<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
   nameWithType.vb: TestCalls.AsyncDuplexStreamingCall(Of TRequest, TResponse)(IClientStreamWriter(Of TRequest), IAsyncStreamReader(Of TResponse), Task(Of Metadata), Func(Of Status), Func(Of Metadata), Action)
 - uid: Grpc.Core.Testing.TestCalls.AsyncServerStreamingCall*
@@ -5329,13 +5498,13 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.Testing.TestCalls.AsyncServerStreamingCall
   nameWithType: TestCalls.AsyncServerStreamingCall
-- uid: Grpc.Core.Testing.TestCalls.AsyncServerStreamingCall``1(Grpc.Core.IAsyncStreamReader{``0},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
+- uid: Grpc.Core.Testing.TestCalls.AsyncServerStreamingCall``1(IAsyncStreamReader{``0},System.Threading.Tasks.Task{Metadata},System.Func{Status},System.Func{Metadata},System.Action)
   name: AsyncServerStreamingCall<TResponse>(IAsyncStreamReader<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
-  href: api/Grpc.Core.Testing.TestCalls.html#Grpc_Core_Testing_TestCalls_AsyncServerStreamingCall__1_Grpc_Core_IAsyncStreamReader___0__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_
-  commentId: M:Grpc.Core.Testing.TestCalls.AsyncServerStreamingCall``1(Grpc.Core.IAsyncStreamReader{``0},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
+  href: api/Grpc.Core.Testing.TestCalls.html#Grpc_Core_Testing_TestCalls_AsyncServerStreamingCall__1_IAsyncStreamReader___0__System_Threading_Tasks_Task_Metadata__System_Func_Status__System_Func_Metadata__System_Action_
+  commentId: M:Grpc.Core.Testing.TestCalls.AsyncServerStreamingCall``1(IAsyncStreamReader{``0},System.Threading.Tasks.Task{Metadata},System.Func{Status},System.Func{Metadata},System.Action)
   name.vb: AsyncServerStreamingCall(Of TResponse)(IAsyncStreamReader(Of TResponse), Task(Of Metadata), Func(Of Status), Func(Of Metadata), Action)
-  fullName: Grpc.Core.Testing.TestCalls.AsyncServerStreamingCall<TResponse>(Grpc.Core.IAsyncStreamReader<TResponse>, System.Threading.Tasks.Task<Grpc.Core.Metadata>, System.Func<Grpc.Core.Status>, System.Func<Grpc.Core.Metadata>, System.Action)
-  fullName.vb: Grpc.Core.Testing.TestCalls.AsyncServerStreamingCall(Of TResponse)(Grpc.Core.IAsyncStreamReader(Of TResponse), System.Threading.Tasks.Task(Of Grpc.Core.Metadata), System.Func(Of Grpc.Core.Status), System.Func(Of Grpc.Core.Metadata), System.Action)
+  fullName: Grpc.Core.Testing.TestCalls.AsyncServerStreamingCall<TResponse>(IAsyncStreamReader<TResponse>, System.Threading.Tasks.Task<Metadata>, System.Func<Status>, System.Func<Metadata>, System.Action)
+  fullName.vb: Grpc.Core.Testing.TestCalls.AsyncServerStreamingCall(Of TResponse)(IAsyncStreamReader(Of TResponse), System.Threading.Tasks.Task(Of Metadata), System.Func(Of Status), System.Func(Of Metadata), System.Action)
   nameWithType: TestCalls.AsyncServerStreamingCall<TResponse>(IAsyncStreamReader<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
   nameWithType.vb: TestCalls.AsyncServerStreamingCall(Of TResponse)(IAsyncStreamReader(Of TResponse), Task(Of Metadata), Func(Of Status), Func(Of Metadata), Action)
 - uid: Grpc.Core.Testing.TestCalls.AsyncUnaryCall*
@@ -5345,13 +5514,13 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.Testing.TestCalls.AsyncUnaryCall
   nameWithType: TestCalls.AsyncUnaryCall
-- uid: Grpc.Core.Testing.TestCalls.AsyncUnaryCall``1(System.Threading.Tasks.Task{``0},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
+- uid: Grpc.Core.Testing.TestCalls.AsyncUnaryCall``1(System.Threading.Tasks.Task{``0},System.Threading.Tasks.Task{Metadata},System.Func{Status},System.Func{Metadata},System.Action)
   name: AsyncUnaryCall<TResponse>(Task<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
-  href: api/Grpc.Core.Testing.TestCalls.html#Grpc_Core_Testing_TestCalls_AsyncUnaryCall__1_System_Threading_Tasks_Task___0__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_
-  commentId: M:Grpc.Core.Testing.TestCalls.AsyncUnaryCall``1(System.Threading.Tasks.Task{``0},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
+  href: api/Grpc.Core.Testing.TestCalls.html#Grpc_Core_Testing_TestCalls_AsyncUnaryCall__1_System_Threading_Tasks_Task___0__System_Threading_Tasks_Task_Metadata__System_Func_Status__System_Func_Metadata__System_Action_
+  commentId: M:Grpc.Core.Testing.TestCalls.AsyncUnaryCall``1(System.Threading.Tasks.Task{``0},System.Threading.Tasks.Task{Metadata},System.Func{Status},System.Func{Metadata},System.Action)
   name.vb: AsyncUnaryCall(Of TResponse)(Task(Of TResponse), Task(Of Metadata), Func(Of Status), Func(Of Metadata), Action)
-  fullName: Grpc.Core.Testing.TestCalls.AsyncUnaryCall<TResponse>(System.Threading.Tasks.Task<TResponse>, System.Threading.Tasks.Task<Grpc.Core.Metadata>, System.Func<Grpc.Core.Status>, System.Func<Grpc.Core.Metadata>, System.Action)
-  fullName.vb: Grpc.Core.Testing.TestCalls.AsyncUnaryCall(Of TResponse)(System.Threading.Tasks.Task(Of TResponse), System.Threading.Tasks.Task(Of Grpc.Core.Metadata), System.Func(Of Grpc.Core.Status), System.Func(Of Grpc.Core.Metadata), System.Action)
+  fullName: Grpc.Core.Testing.TestCalls.AsyncUnaryCall<TResponse>(System.Threading.Tasks.Task<TResponse>, System.Threading.Tasks.Task<Metadata>, System.Func<Status>, System.Func<Metadata>, System.Action)
+  fullName.vb: Grpc.Core.Testing.TestCalls.AsyncUnaryCall(Of TResponse)(System.Threading.Tasks.Task(Of TResponse), System.Threading.Tasks.Task(Of Metadata), System.Func(Of Status), System.Func(Of Metadata), System.Action)
   nameWithType: TestCalls.AsyncUnaryCall<TResponse>(Task<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
   nameWithType.vb: TestCalls.AsyncUnaryCall(Of TResponse)(Task(Of TResponse), Task(Of Metadata), Func(Of Status), Func(Of Metadata), Action)
 - uid: Grpc.Core.Testing.TestServerCallContext
@@ -5360,13 +5529,13 @@ references:
   commentId: T:Grpc.Core.Testing.TestServerCallContext
   fullName: Grpc.Core.Testing.TestServerCallContext
   nameWithType: TestServerCallContext
-- uid: Grpc.Core.Testing.TestServerCallContext.Create(System.String,System.String,System.DateTime,Grpc.Core.Metadata,System.Threading.CancellationToken,System.String,Grpc.Core.AuthContext,Grpc.Core.ContextPropagationToken,System.Func{Grpc.Core.Metadata,System.Threading.Tasks.Task},System.Func{Grpc.Core.WriteOptions},System.Action{Grpc.Core.WriteOptions})
+- uid: Grpc.Core.Testing.TestServerCallContext.Create(System.String,System.String,System.DateTime,Metadata,System.Threading.CancellationToken,System.String,AuthContext,ContextPropagationToken,System.Func{Metadata,System.Threading.Tasks.Task},System.Func{WriteOptions},System.Action{WriteOptions})
   name: Create(String, String, DateTime, Metadata, CancellationToken, String, AuthContext, ContextPropagationToken, Func<Metadata, Task>, Func<WriteOptions>, Action<WriteOptions>)
-  href: api/Grpc.Core.Testing.TestServerCallContext.html#Grpc_Core_Testing_TestServerCallContext_Create_System_String_System_String_System_DateTime_Grpc_Core_Metadata_System_Threading_CancellationToken_System_String_Grpc_Core_AuthContext_Grpc_Core_ContextPropagationToken_System_Func_Grpc_Core_Metadata_System_Threading_Tasks_Task__System_Func_Grpc_Core_WriteOptions__System_Action_Grpc_Core_WriteOptions__
-  commentId: M:Grpc.Core.Testing.TestServerCallContext.Create(System.String,System.String,System.DateTime,Grpc.Core.Metadata,System.Threading.CancellationToken,System.String,Grpc.Core.AuthContext,Grpc.Core.ContextPropagationToken,System.Func{Grpc.Core.Metadata,System.Threading.Tasks.Task},System.Func{Grpc.Core.WriteOptions},System.Action{Grpc.Core.WriteOptions})
+  href: api/Grpc.Core.Testing.TestServerCallContext.html#Grpc_Core_Testing_TestServerCallContext_Create_System_String_System_String_System_DateTime_Metadata_System_Threading_CancellationToken_System_String_AuthContext_ContextPropagationToken_System_Func_Metadata_System_Threading_Tasks_Task__System_Func_WriteOptions__System_Action_WriteOptions__
+  commentId: M:Grpc.Core.Testing.TestServerCallContext.Create(System.String,System.String,System.DateTime,Metadata,System.Threading.CancellationToken,System.String,AuthContext,ContextPropagationToken,System.Func{Metadata,System.Threading.Tasks.Task},System.Func{WriteOptions},System.Action{WriteOptions})
   name.vb: Create(String, String, DateTime, Metadata, CancellationToken, String, AuthContext, ContextPropagationToken, Func(Of Metadata, Task), Func(Of WriteOptions), Action(Of WriteOptions))
-  fullName: Grpc.Core.Testing.TestServerCallContext.Create(System.String, System.String, System.DateTime, Grpc.Core.Metadata, System.Threading.CancellationToken, System.String, Grpc.Core.AuthContext, Grpc.Core.ContextPropagationToken, System.Func<Grpc.Core.Metadata, System.Threading.Tasks.Task>, System.Func<Grpc.Core.WriteOptions>, System.Action<Grpc.Core.WriteOptions>)
-  fullName.vb: Grpc.Core.Testing.TestServerCallContext.Create(System.String, System.String, System.DateTime, Grpc.Core.Metadata, System.Threading.CancellationToken, System.String, Grpc.Core.AuthContext, Grpc.Core.ContextPropagationToken, System.Func(Of Grpc.Core.Metadata, System.Threading.Tasks.Task), System.Func(Of Grpc.Core.WriteOptions), System.Action(Of Grpc.Core.WriteOptions))
+  fullName: Grpc.Core.Testing.TestServerCallContext.Create(System.String, System.String, System.DateTime, Metadata, System.Threading.CancellationToken, System.String, AuthContext, ContextPropagationToken, System.Func<Metadata, System.Threading.Tasks.Task>, System.Func<WriteOptions>, System.Action<WriteOptions>)
+  fullName.vb: Grpc.Core.Testing.TestServerCallContext.Create(System.String, System.String, System.DateTime, Metadata, System.Threading.CancellationToken, System.String, AuthContext, ContextPropagationToken, System.Func(Of Metadata, System.Threading.Tasks.Task), System.Func(Of WriteOptions), System.Action(Of WriteOptions))
   nameWithType: TestServerCallContext.Create(String, String, DateTime, Metadata, CancellationToken, String, AuthContext, ContextPropagationToken, Func<Metadata, Task>, Func<WriteOptions>, Action<WriteOptions>)
   nameWithType.vb: TestServerCallContext.Create(String, String, DateTime, Metadata, CancellationToken, String, AuthContext, ContextPropagationToken, Func(Of Metadata, Task), Func(Of WriteOptions), Action(Of WriteOptions))
 - uid: Grpc.Core.Testing.TestServerCallContext.Create*
@@ -6249,11 +6418,11 @@ references:
   commentId: T:Grpc.HealthCheck.HealthServiceImpl
   fullName: Grpc.HealthCheck.HealthServiceImpl
   nameWithType: HealthServiceImpl
-- uid: Grpc.HealthCheck.HealthServiceImpl.Check(Grpc.Health.V1.HealthCheckRequest,Grpc.Core.ServerCallContext)
+- uid: Grpc.HealthCheck.HealthServiceImpl.Check(Grpc.Health.V1.HealthCheckRequest,ServerCallContext)
   name: Check(HealthCheckRequest, ServerCallContext)
-  href: api/Grpc.HealthCheck.HealthServiceImpl.html#Grpc_HealthCheck_HealthServiceImpl_Check_Grpc_Health_V1_HealthCheckRequest_Grpc_Core_ServerCallContext_
-  commentId: M:Grpc.HealthCheck.HealthServiceImpl.Check(Grpc.Health.V1.HealthCheckRequest,Grpc.Core.ServerCallContext)
-  fullName: Grpc.HealthCheck.HealthServiceImpl.Check(Grpc.Health.V1.HealthCheckRequest, Grpc.Core.ServerCallContext)
+  href: api/Grpc.HealthCheck.HealthServiceImpl.html#Grpc_HealthCheck_HealthServiceImpl_Check_Grpc_Health_V1_HealthCheckRequest_ServerCallContext_
+  commentId: M:Grpc.HealthCheck.HealthServiceImpl.Check(Grpc.Health.V1.HealthCheckRequest,ServerCallContext)
+  fullName: Grpc.HealthCheck.HealthServiceImpl.Check(Grpc.Health.V1.HealthCheckRequest, ServerCallContext)
   nameWithType: HealthServiceImpl.Check(HealthCheckRequest, ServerCallContext)
 - uid: Grpc.HealthCheck.HealthServiceImpl.Check*
   name: Check
