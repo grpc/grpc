@@ -27,22 +27,22 @@
 
 typedef struct grpc_connectivity_state_watcher {
   /** we keep watchers in a linked list */
-  struct grpc_connectivity_state_watcher* next;
+  struct grpc_connectivity_state_watcher* next = nullptr;
   /** closure to notify on change */
-  grpc_closure* notify;
+  grpc_closure* notify = nullptr;
   /** the current state as believed by the watcher */
-  grpc_connectivity_state* current;
+  grpc_connectivity_state* current = nullptr;
 } grpc_connectivity_state_watcher;
 
 typedef struct {
   /** current grpc_connectivity_state */
   gpr_atm current_state_atm;
   /** error associated with state */
-  grpc_error* current_error;
-  /** all our watchers */
-  grpc_connectivity_state_watcher* watchers;
+  grpc_error* current_error = nullptr;
+  /** dummy root of the watcher list */
+  grpc_connectivity_state_watcher root_watcher;
   /** a name to help debugging */
-  char* name;
+  char* name = nullptr;
 } grpc_connectivity_state_tracker;
 
 extern grpc_core::TraceFlag grpc_connectivity_state_trace;
