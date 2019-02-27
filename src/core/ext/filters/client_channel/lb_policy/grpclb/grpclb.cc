@@ -1632,23 +1632,50 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
   if (shutting_down_) return;
   grpc_channel_args* args = CreateChildPolicyArgsLocked();
   GPR_ASSERT(args != nullptr);
-  // There are several cases here:
-  // 1. If we do not yet have any child policy, we create one and store
-  //    it in child_policy_.
-  // 2. If we have a child policy but no pending child policy, then:
-  //    a. If the child policy's name equals child_policy_name, then we
+  // If the child policy name changes, we need to create a new child
+  // policy.  When this happens, we leave child_policy_ as-is and store
+  // the new child policy in pending_child_policy_.  Once the new child
+  // policy transitions into state READY, we swap it into child_policy_,
+  // replacing the original child policy.  So pending_child_policy_ is
+  // non-null only between when we apply an update that changes the child
+  // policy name and when the new child reports state READY.
+  //
+  // Updates can arrive at any point during this transition.  We always
+  // apply updates relative to the most recently created child policy,
+  // even if the most recent one is still in pending_child_policy_.  This
+  // is true both when applying the updates to an existing child policy
+  // and when determining whether we need to create a new policy.
+  //
+  // As a result of this, there are several cases to consider here:
+  //
+  // 1. We have no existing child policy (i.e., we have started up but
+  //    have not yet received a serverlist from the balancer or gone
+  //    into fallback mode; in this case, both child_policy_ and
+  //    pending_child_policy_ are null).  In this case, we create a
+  //    new child policy and store it in child_policy_.
+  //
+  // 2. We have an existing child policy and have no pending child policy
+  //    from a previous update (i.e., either there has not been a
+  //    previous update that changed the policy name, or we have already
+  //    finished swapping in the new policy; in this case, child_policy_
+  //    is non-null but pending_child_policy_ is null).  In this case:
+  //    a. If child_policy_->name() equals child_policy_name, then we
   //       update the existing child policy.
-  //    b. If the child policy's name does not equal child_policy_name,
+  //    b. If child_policy_->name() does not equal child_policy_name,
   //       we create a new policy.  The policy will be stored in
   //       pending_child_policy_ and will later be swapped into
   //       child_policy_ by the helper when the new child transitions
   //       into state READY.
-  // 3. If we have both a child policy and a pending child policy (i.e.,
-  //    we created a new policy for a previous update that has not yet
-  //    been moved from pending_child_policy_ to child_policy_), then:
-  //    a. If the pending child policy's name equals child_policy_name,
+  //
+  // 3. We have an existing child policy and have a pending child policy
+  //    from a previous update (i.e., a previous update set
+  //    pending_child_policy_ as per case 2b above and that policy has
+  //    not yet transitioned into state READY and been swapped into
+  //    child_policy_; in this case, both child_policy_ and
+  //    pending_child_policy_ are non-null).  In this case:
+  //    a. If pending_child_policy_->name() equals child_policy_name,
   //       then we update the existing pending child policy.
-  //    b. If the pending child policy's name does not equal
+  //    b. If pending_child_policy->name() does not equal
   //       child_policy_name, then we create a new policy.  The new
   //       policy is stored in pending_child_policy_ (replacing the one
   //       that was there before, which will be immediately shut down)
