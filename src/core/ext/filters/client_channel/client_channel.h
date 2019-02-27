@@ -57,7 +57,7 @@ int grpc_client_channel_num_external_connectivity_watchers(
 void grpc_client_channel_watch_connectivity_state(
     grpc_channel_element* elem, grpc_polling_entity pollent,
     grpc_connectivity_state* state, grpc_closure* on_complete,
-    grpc_closure* watcher_timer_init, bool force_notify = false);
+    grpc_closure* watcher_timer_init, bool force_notify_ready = false);
 
 /* Debug helper: pull the subchannel call from a call stack element */
 grpc_core::RefCountedPtr<grpc_core::SubchannelCall>

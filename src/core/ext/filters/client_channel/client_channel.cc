@@ -2932,7 +2932,7 @@ typedef struct external_connectivity_watcher {
   grpc_connectivity_state* state;
   grpc_closure my_closure;
   struct external_connectivity_watcher* next;
-  bool force_notify;
+  bool force_notify_ready;
 } external_connectivity_watcher;
 
 static external_connectivity_watcher* lookup_external_connectivity_watcher(
@@ -3023,8 +3023,9 @@ static void watch_connectivity_state_locked(void* arg,
     GRPC_CLOSURE_RUN(w->watcher_timer_init, GRPC_ERROR_NONE);
     GRPC_CLOSURE_INIT(&w->my_closure, on_external_watch_complete_locked, w,
                       grpc_combiner_scheduler(w->chand->combiner));
-    grpc_connectivity_state_notify_on_state_change(
-        &w->chand->state_tracker, w->state, &w->my_closure, w->force_notify);
+    grpc_connectivity_state_notify_on_state_change(&w->chand->state_tracker,
+                                                   w->state, &w->my_closure,
+                                                   w->force_notify_ready);
   } else {
     GPR_ASSERT(w->watcher_timer_init == nullptr);
     found = lookup_external_connectivity_watcher(w->chand, w->on_complete);
@@ -3032,7 +3033,7 @@ static void watch_connectivity_state_locked(void* arg,
       GPR_ASSERT(found->on_complete == w->on_complete);
       grpc_connectivity_state_notify_on_state_change(
           &found->chand->state_tracker, nullptr, &found->my_closure,
-          w->force_notify);
+          w->force_notify_ready);
     }
     grpc_polling_entity_del_from_pollset_set(&w->pollent,
                                              w->chand->interested_parties);
@@ -3045,7 +3046,7 @@ static void watch_connectivity_state_locked(void* arg,
 void grpc_client_channel_watch_connectivity_state(
     grpc_channel_element* elem, grpc_polling_entity pollent,
     grpc_connectivity_state* state, grpc_closure* closure,
-    grpc_closure* watcher_timer_init, bool force_notify) {
+    grpc_closure* watcher_timer_init, bool force_notify_ready) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   external_connectivity_watcher* w =
       static_cast<external_connectivity_watcher*>(gpr_zalloc(sizeof(*w)));
@@ -3054,7 +3055,7 @@ void grpc_client_channel_watch_connectivity_state(
   w->on_complete = closure;
   w->state = state;
   w->watcher_timer_init = watcher_timer_init;
-  w->force_notify = force_notify;
+  w->force_notify_ready = force_notify_ready;
   grpc_polling_entity_add_to_pollset_set(&w->pollent,
                                          chand->interested_parties);
   GRPC_CHANNEL_STACK_REF(w->chand->owning_stack,

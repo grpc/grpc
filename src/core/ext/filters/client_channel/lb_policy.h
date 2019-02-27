@@ -301,15 +301,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     channelz_node_ = std::move(channelz_node);
   }
 
-  grpc_combiner* combiner() const { return combiner_; }
-
-  // Note: LB policies MUST NOT call any method on the helper from their
-  // constructor. Note: This will return null after ShutdownLocked() has been
-  // called.
-  ChannelControlHelper* channel_control_helper() const {
-    return channel_control_helper_.get();
-  }
-
   GRPC_ABSTRACT_BASE_CLASS
 
  protected:
@@ -317,6 +308,16 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   explicit LoadBalancingPolicy(Args args, intptr_t initial_refcount = 1);
   virtual ~LoadBalancingPolicy();
+
+  grpc_combiner* combiner() const { return combiner_; }
+
+  // Note: LB policies MUST NOT call any method on the helper from their
+  // constructor.
+  // Note: This will return null after ShutdownLocked() has been
+  // called.
+  ChannelControlHelper* channel_control_helper() const {
+    return channel_control_helper_.get();
+  }
 
   channelz::ClientChannelNode* channelz_node() const {
     return channelz_node_.get();
