@@ -57,7 +57,7 @@ constexpr char kRoundRobin[] = "round_robin";
 
 class RoundRobin : public LoadBalancingPolicy {
  public:
-  RoundRobin(Args args);
+  explicit RoundRobin(Args args);
 
   const char* name() const override { return kRoundRobin; }
 

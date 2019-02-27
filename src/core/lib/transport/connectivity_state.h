@@ -32,6 +32,7 @@ typedef struct grpc_connectivity_state_watcher {
   grpc_closure* notify;
   /** the current state as believed by the watcher */
   grpc_connectivity_state* current;
+  bool force_notify;
 } grpc_connectivity_state_watcher;
 
 typedef struct {
@@ -43,6 +44,7 @@ typedef struct {
   grpc_connectivity_state_watcher* watchers;
   /** a name to help debugging */
   char* name;
+  bool force_notify;
 } grpc_connectivity_state_tracker;
 
 extern grpc_core::TraceFlag grpc_connectivity_state_trace;
@@ -82,6 +84,6 @@ grpc_connectivity_state grpc_connectivity_state_get(
     Access must be serialized with an external lock. */
 bool grpc_connectivity_state_notify_on_state_change(
     grpc_connectivity_state_tracker* tracker, grpc_connectivity_state* current,
-    grpc_closure* notify);
+    grpc_closure* notify, bool force_notify = false);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_CONNECTIVITY_STATE_H */

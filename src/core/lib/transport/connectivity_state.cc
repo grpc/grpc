@@ -105,7 +105,7 @@ bool grpc_connectivity_state_has_watchers(
 
 bool grpc_connectivity_state_notify_on_state_change(
     grpc_connectivity_state_tracker* tracker, grpc_connectivity_state* current,
-    grpc_closure* notify) {
+    grpc_closure* notify, bool force_notify) {
   grpc_connectivity_state cur = static_cast<grpc_connectivity_state>(
       gpr_atm_no_barrier_load(&tracker->current_state_atm));
   if (grpc_connectivity_state_trace.enabled()) {
@@ -147,6 +147,7 @@ bool grpc_connectivity_state_notify_on_state_change(
       w->current = current;
       w->notify = notify;
       w->next = tracker->watchers;
+      w->force_notify = force_notify;
       tracker->watchers = w;
     }
     return cur == GRPC_CHANNEL_IDLE;
@@ -178,12 +179,10 @@ void grpc_connectivity_state_set(grpc_connectivity_state_tracker* tracker,
   }
   GRPC_ERROR_UNREF(tracker->current_error);
   tracker->current_error = error;
-  if (cur == state) {
-    return;
-  }
   GPR_ASSERT(cur != GRPC_CHANNEL_SHUTDOWN);
   gpr_atm_no_barrier_store(&tracker->current_state_atm, state);
   while ((w = tracker->watchers) != nullptr) {
+    if (cur == state && !w->force_notify) continue;
     *w->current = state;
     tracker->watchers = w->next;
     if (grpc_connectivity_state_trace.enabled()) {

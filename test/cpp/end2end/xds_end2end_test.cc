@@ -227,8 +227,7 @@ class BalancerServiceImpl : public BalancerService {
     gpr_log(GPR_INFO, "LB[%p]: received initial message '%s'", this,
             request.DebugString().c_str());
 
-    // TODO(juanlishen): Initial response should always be the first response.
-    if (client_load_reporting_interval_seconds_ > 0) {
+    {
       LoadBalanceResponse initial_response;
       initial_response.mutable_initial_response()
           ->mutable_client_stats_report_interval()
@@ -878,9 +877,6 @@ TEST_F(UpdatesTest, UpdateBalancers) {
   // All 10 requests should have gone to the first backend.
   EXPECT_EQ(10U, backend_servers_[0].service_->request_count());
 
-  balancers_[0]->NotifyDoneWithServerlists();
-  balancers_[1]->NotifyDoneWithServerlists();
-  balancers_[2]->NotifyDoneWithServerlists();
   // Balancer 0 got a single request.
   EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
   // and sent a single response.
@@ -908,9 +904,6 @@ TEST_F(UpdatesTest, UpdateBalancers) {
   // All 10 requests should have gone to the second backend.
   EXPECT_EQ(10U, backend_servers_[1].service_->request_count());
 
-  balancers_[0]->NotifyDoneWithServerlists();
-  balancers_[1]->NotifyDoneWithServerlists();
-  balancers_[2]->NotifyDoneWithServerlists();
   EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
   EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
   EXPECT_EQ(1U, balancer_servers_[1].service_->request_count());
@@ -940,9 +933,6 @@ TEST_F(UpdatesTest, UpdateBalancerName) {
   // All 10 requests should have gone to the first backend.
   EXPECT_EQ(10U, backend_servers_[0].service_->request_count());
 
-  balancers_[0]->NotifyDoneWithServerlists();
-  balancers_[1]->NotifyDoneWithServerlists();
-  balancers_[2]->NotifyDoneWithServerlists();
   // Balancer 0 got a single request.
   EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
   // and sent a single response.
@@ -982,9 +972,6 @@ TEST_F(UpdatesTest, UpdateBalancerName) {
   // All 10 requests should have gone to the second backend.
   EXPECT_EQ(10U, backend_servers_[1].service_->request_count());
 
-  balancers_[0]->NotifyDoneWithServerlists();
-  balancers_[1]->NotifyDoneWithServerlists();
-  balancers_[2]->NotifyDoneWithServerlists();
   EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
   EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
   EXPECT_EQ(1U, balancer_servers_[1].service_->request_count());
@@ -1018,7 +1005,6 @@ TEST_F(UpdatesTest, UpdateBalancersRepeated) {
   // All 10 requests should have gone to the first backend.
   EXPECT_EQ(10U, backend_servers_[0].service_->request_count());
 
-  balancers_[0]->NotifyDoneWithServerlists();
   // Balancer 0 got a single request.
   EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
   // and sent a single response.
@@ -1046,7 +1032,6 @@ TEST_F(UpdatesTest, UpdateBalancersRepeated) {
   // grpclb continued using the original LB call to the first balancer, which
   // doesn't assign the second backend.
   EXPECT_EQ(0U, backend_servers_[1].service_->request_count());
-  balancers_[0]->NotifyDoneWithServerlists();
 
   addresses.clear();
   addresses.emplace_back(AddressData{balancer_servers_[0].port_, ""});
@@ -1065,7 +1050,6 @@ TEST_F(UpdatesTest, UpdateBalancersRepeated) {
   // grpclb continued using the original LB call to the first balancer, which
   // doesn't assign the second backend.
   EXPECT_EQ(0U, backend_servers_[1].service_->request_count());
-  balancers_[0]->NotifyDoneWithServerlists();
 }
 
 TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
@@ -1090,7 +1074,6 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
 
   // Kill balancer 0
   gpr_log(GPR_INFO, "********** ABOUT TO KILL BALANCER 0 *************");
-  balancers_[0]->NotifyDoneWithServerlists();
   if (balancers_[0]->Shutdown()) balancer_servers_[0].Shutdown();
   gpr_log(GPR_INFO, "********** KILLED BALANCER 0 *************");
 
@@ -1102,9 +1085,6 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
   EXPECT_EQ(20U, backend_servers_[0].service_->request_count());
   EXPECT_EQ(0U, backend_servers_[1].service_->request_count());
 
-  balancers_[0]->NotifyDoneWithServerlists();
-  balancers_[1]->NotifyDoneWithServerlists();
-  balancers_[2]->NotifyDoneWithServerlists();
   // Balancer 0 got a single request.
   EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
   // and sent a single response.
@@ -1134,9 +1114,6 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
   // All 10 requests should have gone to the second backend.
   EXPECT_EQ(10U, backend_servers_[1].service_->request_count());
 
-  balancers_[0]->NotifyDoneWithServerlists();
-  balancers_[1]->NotifyDoneWithServerlists();
-  balancers_[2]->NotifyDoneWithServerlists();
   EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
   EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
   // The second balancer, published as part of the first update, may end up

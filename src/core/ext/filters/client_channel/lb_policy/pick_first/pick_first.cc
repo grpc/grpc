@@ -46,7 +46,7 @@ constexpr char kPickFirst[] = "pick_first";
 
 class PickFirst : public LoadBalancingPolicy {
  public:
-  PickFirst(Args args);
+  explicit PickFirst(Args args);
 
   const char* name() const override { return kPickFirst; }
 
