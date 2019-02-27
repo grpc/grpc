@@ -520,14 +520,18 @@ class XdsEnd2endTest : public ::testing::Test {
   }
 
   void SetNextResolution(const std::vector<AddressData>& address_data,
-                         const char* service_config_json = nullptr) {
+                         const char* service_config_json = nullptr,
+                         grpc_core::FakeResolverResponseGenerator*
+                             lb_channel_response_generator = nullptr) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::ServerAddressList addresses =
         CreateLbAddressesFromAddressDataList(address_data);
     std::vector<grpc_arg> args = {
         CreateServerAddressListChannelArg(&addresses),
         grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
-            lb_channel_response_generator_.get())};
+            lb_channel_response_generator == nullptr
+                ? lb_channel_response_generator_.get()
+                : lb_channel_response_generator)};
     if (service_config_json != nullptr) {
       args.push_back(grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
@@ -538,17 +542,24 @@ class XdsEnd2endTest : public ::testing::Test {
   }
 
   void SetNextResolutionForLbChannelAllBalancers(
-      const char* service_config_json = nullptr) {
+      const char* service_config_json = nullptr,
+      grpc_core::FakeResolverResponseGenerator* lb_channel_response_generator =
+          nullptr) {
     std::vector<AddressData> addresses;
     for (size_t i = 0; i < balancer_servers_.size(); ++i) {
       addresses.emplace_back(AddressData{balancer_servers_[i].port_, ""});
     }
-    SetNextResolutionForLbChannel(addresses, service_config_json);
+    SetNextResolutionForLbChannel(addresses, service_config_json,
+                                  lb_channel_response_generator == nullptr
+                                      ? lb_channel_response_generator_.get()
+                                      : lb_channel_response_generator);
   }
 
   void SetNextResolutionForLbChannel(
       const std::vector<AddressData>& address_data,
-      const char* service_config_json = nullptr) {
+      const char* service_config_json = nullptr,
+      grpc_core::FakeResolverResponseGenerator* lb_channel_response_generator =
+          nullptr) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::ServerAddressList addresses =
         CreateLbAddressesFromAddressDataList(address_data);
@@ -561,7 +572,10 @@ class XdsEnd2endTest : public ::testing::Test {
           const_cast<char*>(service_config_json)));
     }
     grpc_channel_args fake_result = {args.size(), args.data()};
-    lb_channel_response_generator_->MaybeSetResponse(&fake_result);
+    if (lb_channel_response_generator == nullptr) {
+      lb_channel_response_generator = lb_channel_response_generator_.get();
+    }
+    lb_channel_response_generator->MaybeSetResponse(&fake_result);
   }
 
   void SetNextReresolutionResponse(
@@ -881,6 +895,80 @@ TEST_F(UpdatesTest, UpdateBalancers) {
   gpr_log(GPR_INFO, "========= ABOUT TO UPDATE 1 ==========");
   SetNextResolutionForLbChannel(addresses);
   gpr_log(GPR_INFO, "========= UPDATE 1 DONE ==========");
+
+  // Wait until update has been processed, as signaled by the second backend
+  // receiving a request.
+  EXPECT_EQ(0U, backend_servers_[1].service_->request_count());
+  WaitForBackend(1);
+
+  backend_servers_[1].service_->ResetCounters();
+  gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
+  CheckRpcSendOk(10);
+  gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
+  // All 10 requests should have gone to the second backend.
+  EXPECT_EQ(10U, backend_servers_[1].service_->request_count());
+
+  balancers_[0]->NotifyDoneWithServerlists();
+  balancers_[1]->NotifyDoneWithServerlists();
+  balancers_[2]->NotifyDoneWithServerlists();
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
+  EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
+  EXPECT_EQ(1U, balancer_servers_[1].service_->request_count());
+  EXPECT_EQ(1U, balancer_servers_[1].service_->response_count());
+  EXPECT_EQ(0U, balancer_servers_[2].service_->request_count());
+  EXPECT_EQ(0U, balancer_servers_[2].service_->response_count());
+}
+
+TEST_F(UpdatesTest, UpdateBalancerName) {
+  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannelAllBalancers();
+  const std::vector<int> first_backend{GetBackendPorts()[0]};
+  const std::vector<int> second_backend{GetBackendPorts()[1]};
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends(first_backend, {}), 0);
+  ScheduleResponseForBalancer(
+      1, BalancerServiceImpl::BuildResponseForBackends(second_backend, {}), 0);
+
+  // Wait until the first backend is ready.
+  WaitForBackend(0);
+
+  // Send 10 requests.
+  gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
+  CheckRpcSendOk(10);
+  gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
+
+  // All 10 requests should have gone to the first backend.
+  EXPECT_EQ(10U, backend_servers_[0].service_->request_count());
+
+  balancers_[0]->NotifyDoneWithServerlists();
+  balancers_[1]->NotifyDoneWithServerlists();
+  balancers_[2]->NotifyDoneWithServerlists();
+  // Balancer 0 got a single request.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
+  // and sent a single response.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
+  EXPECT_EQ(0U, balancer_servers_[1].service_->request_count());
+  EXPECT_EQ(0U, balancer_servers_[1].service_->response_count());
+  EXPECT_EQ(0U, balancer_servers_[2].service_->request_count());
+  EXPECT_EQ(0U, balancer_servers_[2].service_->response_count());
+
+  std::vector<AddressData> addresses;
+  addresses.emplace_back(AddressData{balancer_servers_[1].port_, ""});
+  auto new_lb_channel_response_generator =
+      grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
+  SetNextResolutionForLbChannel(addresses, nullptr,
+                                new_lb_channel_response_generator.get());
+  gpr_log(GPR_INFO, "========= ABOUT TO UPDATE BALANCER NAME ==========");
+  SetNextResolution(
+      {},
+      "{\n"
+      "  \"loadBalancingConfig\":[\n"
+      "    { \"does_not_exist\":{} },\n"
+      "    { \"xds_experimental\":{ \"balancerName\": \"updated_lb\" } }\n"
+      "  ]\n"
+      "}",
+      new_lb_channel_response_generator.get());
+  gpr_log(GPR_INFO, "========= UPDATED BALANCER NAME ==========");
 
   // Wait until update has been processed, as signaled by the second backend
   // receiving a request.
