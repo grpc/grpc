@@ -83,6 +83,6 @@ int main(int argc, char* argv[]) {
       UniquePtr<HandshakerFactory>(New<ReadAheadHandshakerFactory>()));
   const char* full_alpn_list[] = {"grpc-exp", "h2"};
   GPR_ASSERT(server_ssl_test(full_alpn_list, 2, "grpc-exp"));
-  grpc_shutdown();
+  grpc_shutdown_blocking();
   return 0;
 }

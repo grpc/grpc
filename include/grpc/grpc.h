@@ -73,10 +73,11 @@ GRPCAPI void grpc_init(void);
     Before it's called, there should haven been a matching invocation to
     grpc_init().
 
-    No memory is used by grpc after this call returns, nor are any instructions
-    executing within the grpc library.
-    Prior to calling, all application owned grpc objects must have been
-    destroyed. */
+    The last call to grpc_shutdown will initiate cleaning up of grpc library
+    internals, which can happen in another thread. Once the clean-up is done,
+    no memory is used by grpc, nor are any instructions executing within the
+    grpc library.  Prior to calling, all application owned grpc objects must
+    have been destroyed. */
 GRPCAPI void grpc_shutdown(void);
 
 /** EXPERIMENTAL. Returns 1 if the grpc library has been initialized.
@@ -84,6 +85,10 @@ GRPCAPI void grpc_shutdown(void);
     part of stabilizing the fork support API, as tracked in
     https://github.com/grpc/grpc/issues/15334 */
 GRPCAPI int grpc_is_initialized(void);
+
+/** EXPERIMENTAL. Blocking shut down grpc library.
+    This is only for wrapped language to use now. */
+GRPCAPI void grpc_shutdown_blocking(void);
 
 /** Return a string representing the current version of grpc */
 GRPCAPI const char* grpc_version_string(void);

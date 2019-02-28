@@ -319,7 +319,7 @@ cdef extern from "grpc/grpc.h":
     grpc_op_data data
 
   void grpc_init() nogil
-  void grpc_shutdown() nogil
+  void grpc_shutdown_blocking() nogil
   int grpc_is_initialized() nogil
 
   ctypedef struct grpc_completion_queue_factory:
