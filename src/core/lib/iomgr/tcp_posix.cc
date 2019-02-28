@@ -921,6 +921,7 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
     GPR_ASSERT(tcp->outgoing_byte_idx == 0);
     tcp->bytes_counter += sent_length;
     trailing = sending_length - static_cast<size_t>(sent_length);
+    const bool is_partial = trailing > 0;
     while (trailing > 0) {
       size_t slice_length;
 
@@ -938,6 +939,24 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
       *error = GRPC_ERROR_NONE;
       grpc_slice_buffer_reset_and_unref_internal(tcp->outgoing_buffer);
       return true;
+    }
+
+    /* When we reach here, we may have either of the following scenarios:
+     * 1) partial write: when trailing > 0, kernel did not accept the extra
+     *    bytes.
+     * 2) not enough IOVs: when  tcp->outgoing_buffer->count > MAX_WRITE_IOVEC.
+     *
+     * We should immediately return on (1), and continue writing once we get
+     * POLLOUT. But for (2) we need to continue sending.
+     */
+    if (is_partial) {
+      // unref all and forget about all slices that have been written to this
+      // point
+      for (size_t i = 0; i < outgoing_slice_idx; ++i) {
+        grpc_slice_unref_internal(
+            grpc_slice_buffer_take_first(tcp->outgoing_buffer));
+      }
+      return false;
     }
   }
 }
