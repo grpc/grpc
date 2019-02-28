@@ -155,6 +155,8 @@ class XdsLb : public LoadBalancingPolicy {
     // Note that the connectivity change callback will still be invoked if the
     // connectivity state changes from READY to READY.
     void StartConnectivityWatchLocked();
+    void RenewConnectivityWatchLocked();
+    void CancelConnectivityWatchLocked();
     // Keeps watching the LB channel until it's shut down.
     static void OnConnectivityChangedLocked(void* arg, grpc_error* error);
     void StartCallRetryTimerLocked();
@@ -544,7 +546,8 @@ void XdsLb::BalancerChannelState::Orphan() {
   shutting_down_ = true;
   lb_calld_.reset();
   if (retry_timer_callback_pending_) grpc_timer_cancel(&lb_call_retry_timer_);
-  Unref(DEBUG_LOCATION, "orphaned");
+  CancelConnectivityWatchLocked();
+  Unref(DEBUG_LOCATION, "lb_channel_orphaned");
 }
 
 void XdsLb::BalancerChannelState::StartConnectivityWatchLocked() {
@@ -555,12 +558,6 @@ void XdsLb::BalancerChannelState::StartConnectivityWatchLocked() {
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel_));
   GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
   Ref(DEBUG_LOCATION, "watch_lb_channel_connectivity").release();
-  grpc_client_channel_watch_connectivity_state(
-      client_channel_elem,
-      grpc_polling_entity_create_from_pollset_set(
-          xdslb_policy_->interested_parties()),
-      &connectivity_, &on_connectivity_changed_, nullptr,
-      /* force_notify_ready= */ true);
   if (grpc_lb_xds_trace.enabled()) {
     gpr_log(GPR_INFO,
             "[xdslb %p] Starting LB channel watch (lb_chand: %p): requesting "
@@ -568,6 +565,46 @@ void XdsLb::BalancerChannelState::StartConnectivityWatchLocked() {
             xdslb_policy_.get(), this,
             grpc_connectivity_state_name(connectivity_));
   }
+  grpc_client_channel_watch_connectivity_state(
+      client_channel_elem,
+      grpc_polling_entity_create_from_pollset_set(
+          xdslb_policy_->interested_parties()),
+      &connectivity_, &on_connectivity_changed_, nullptr,
+      /* force_notify_ready= */ true);
+}
+
+void XdsLb::BalancerChannelState::RenewConnectivityWatchLocked() {
+  grpc_channel_element* client_channel_elem =
+      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel_));
+  GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
+  if (grpc_lb_xds_trace.enabled()) {
+    gpr_log(GPR_INFO,
+            "[xdslb %p] Renewing LB channel watch (lb_chand: %p): requesting "
+            "connectivity change notification (from %s)",
+            xdslb_policy_.get(), this,
+            grpc_connectivity_state_name(connectivity_));
+  }
+  grpc_client_channel_watch_connectivity_state(
+      client_channel_elem,
+      grpc_polling_entity_create_from_pollset_set(
+          xdslb_policy_->interested_parties()),
+      &connectivity_, &on_connectivity_changed_, nullptr,
+      /* force_notify_ready= */ true);
+}
+
+void XdsLb::BalancerChannelState::CancelConnectivityWatchLocked() {
+  grpc_channel_element* client_channel_elem =
+      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel_));
+  GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
+  if (grpc_lb_xds_trace.enabled()) {
+    gpr_log(GPR_INFO, "[xdslb %p] Cancelling LB channel watch (lb_chand: %p)",
+            xdslb_policy_.get(), this);
+  }
+  grpc_client_channel_watch_connectivity_state(
+      client_channel_elem,
+      grpc_polling_entity_create_from_pollset_set(
+          xdslb_policy_->interested_parties()),
+      nullptr, &on_connectivity_changed_, nullptr);
 }
 
 void XdsLb::BalancerChannelState::OnConnectivityChangedLocked(
@@ -598,17 +635,7 @@ void XdsLb::BalancerChannelState::OnConnectivityChangedLocked(
       // Fall through.
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-      // Keep watching the LB channel.
-      grpc_channel_element* client_channel_elem =
-          grpc_channel_stack_last_element(
-              grpc_channel_get_channel_stack(lb_chand->channel_));
-      GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-      grpc_client_channel_watch_connectivity_state(
-          client_channel_elem,
-          grpc_polling_entity_create_from_pollset_set(
-              lb_chand->xdslb_policy_->interested_parties()),
-          &lb_chand->connectivity_, &lb_chand->on_connectivity_changed_,
-          nullptr, /* force_notify_ready= */ true);
+      lb_chand->RenewConnectivityWatchLocked();
       return;
     }
     case GRPC_CHANNEL_SHUTDOWN:
@@ -1052,9 +1079,9 @@ void XdsLb::BalancerCallState::OnBalancerStatusReceivedLocked(
         grpc_slice_to_c_string(lb_calld->lb_call_status_details_);
     gpr_log(GPR_INFO,
             "[xdslb %p] Status from LB server received. Status = %d, details "
-            "= '%s', (lb_calld: %p, lb_call: %p), error '%s'",
-            xdslb_policy, lb_calld->lb_call_status_, status_details, lb_calld,
-            lb_calld->lb_call_, grpc_error_string(error));
+            "= '%s', (lb_chand: %p, lb_calld: %p, lb_call: %p), error '%s'",
+            xdslb_policy, lb_calld->lb_call_status_, status_details, lb_chand,
+            lb_calld, lb_calld->lb_call_, grpc_error_string(error));
     gpr_free(status_details);
   }
   // If this lb_calld is still in use, this call ended because of a failure so
@@ -1075,9 +1102,23 @@ void XdsLb::BalancerCallState::OnBalancerStatusReceivedLocked(
       lb_chand->lb_call_backoff_.Reset();
       lb_chand->StartCallLocked();
     } else {
-      // If this LB call fails establishing any connection to the LB server,
-      // retry later.
-      lb_chand->StartCallRetryTimerLocked();
+      // This LB call fails establishing any connection to the LB server.
+      if (lb_chand->IsCurrentChannel() &&
+          xdslb_policy->pending_lb_chand_ != nullptr) {
+        // If the LB call is on the current channel and there is a pending
+        // channel, promote the pending channel.
+        if (grpc_lb_xds_trace.enabled()) {
+          gpr_log(GPR_INFO,
+                  "[xdslb %p] Promoting pending LB channel %p to replace "
+                  "current LB channel %p",
+                  xdslb_policy, lb_calld->lb_chand_.get(),
+                  lb_calld->xdslb_policy()->lb_chand_.get());
+        }
+        xdslb_policy->lb_chand_ = std::move(xdslb_policy->pending_lb_chand_);
+      } else {
+        // Otherwise, retry later.
+        lb_chand->StartCallRetryTimerLocked();
+      }
     }
   }
   lb_calld->Unref(DEBUG_LOCATION, "lb_call_ended");

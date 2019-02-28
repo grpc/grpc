@@ -196,7 +196,8 @@ void grpc_connectivity_state_set(grpc_connectivity_state_tracker* tracker,
         gpr_log(GPR_INFO, "NOTIFY: %p %s: %p", tracker, tracker->name,
                 remove->notify);
       }
-      GRPC_CLOSURE_SCHED(remove->notify, GRPC_ERROR_REF(tracker->current_error));
+      GRPC_CLOSURE_SCHED(remove->notify,
+                         GRPC_ERROR_REF(tracker->current_error));
       gpr_free(remove);
     } else {
       prev = w;
