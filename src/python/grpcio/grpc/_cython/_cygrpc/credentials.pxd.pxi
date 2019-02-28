@@ -53,9 +53,6 @@ cdef class ChannelCredentials:
 
   cdef grpc_channel_credentials *c(self) except *
 
-  # TODO(https://github.com/grpc/grpc/issues/12531): remove.
-  cdef grpc_channel_credentials *c_credentials
-
 
 cdef class SSLSessionCacheLRU:
 

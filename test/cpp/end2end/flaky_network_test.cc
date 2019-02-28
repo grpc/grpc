@@ -339,11 +339,14 @@ TEST_F(FlakyNetworkTest, NetworkTransition) {
 TEST_F(FlakyNetworkTest, ServerUnreachableWithKeepalive) {
   const int kKeepAliveTimeMs = 1000;
   const int kKeepAliveTimeoutMs = 1000;
+  const int kReconnectBackoffMs = 1000;
   ChannelArguments args;
   args.SetInt(GRPC_ARG_KEEPALIVE_TIME_MS, kKeepAliveTimeMs);
   args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, kKeepAliveTimeoutMs);
   args.SetInt(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 1);
   args.SetInt(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA, 0);
+  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, kReconnectBackoffMs);
+  args.SetInt(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, kReconnectBackoffMs);
 
   auto channel = BuildChannel("pick_first", args);
   auto stub = BuildStub(channel);
@@ -421,7 +424,7 @@ TEST_F(FlakyNetworkTest, FlakyNetwork) {
   // simulate flaky network (packet loss, corruption and delays)
   FlakeNetwork();
   for (int i = 0; i < kMessageCount; ++i) {
-    EXPECT_TRUE(SendRpc(stub));
+    SendRpc(stub);
   }
   // remove network flakiness
   UnflakeNetwork();

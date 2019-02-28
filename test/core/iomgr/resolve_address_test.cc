@@ -323,7 +323,11 @@ static bool mock_ipv6_disabled_source_addr_factory_get_source_addr(
 }
 
 void mock_ipv6_disabled_source_addr_factory_destroy(
-    address_sorting_source_addr_factory* factory) {}
+    address_sorting_source_addr_factory* factory) {
+  mock_ipv6_disabled_source_addr_factory* f =
+      reinterpret_cast<mock_ipv6_disabled_source_addr_factory*>(factory);
+  gpr_free(f);
+}
 
 const address_sorting_source_addr_factory_vtable
     kMockIpv6DisabledSourceAddrFactoryVtable = {
@@ -390,9 +394,11 @@ int main(int argc, char** argv) {
     // Run a test case in which c-ares's address sorter
     // thinks that IPv4 is available and IPv6 isn't.
     grpc_init();
-    mock_ipv6_disabled_source_addr_factory factory;
-    factory.base.vtable = &kMockIpv6DisabledSourceAddrFactoryVtable;
-    address_sorting_override_source_addr_factory_for_testing(&factory.base);
+    mock_ipv6_disabled_source_addr_factory* factory =
+        static_cast<mock_ipv6_disabled_source_addr_factory*>(
+            gpr_malloc(sizeof(mock_ipv6_disabled_source_addr_factory)));
+    factory->base.vtable = &kMockIpv6DisabledSourceAddrFactoryVtable;
+    address_sorting_override_source_addr_factory_for_testing(&factory->base);
     test_localhost_result_has_ipv4_first_when_ipv6_isnt_available();
     grpc_shutdown();
   }
