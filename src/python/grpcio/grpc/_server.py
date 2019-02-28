@@ -498,7 +498,7 @@ def _status(rpc_event, state, serialized_response):
 
 def _unary_response_in_pool(rpc_event, state, behavior, argument_thunk,
                             request_deserializer, response_serializer):
-    cygrpc.install_context_from_request_call_event(rpc_event)
+    cygrpc.install_context_from_call(rpc_event.call)
     try:
         argument = argument_thunk()
         if argument is not None:
@@ -515,7 +515,7 @@ def _unary_response_in_pool(rpc_event, state, behavior, argument_thunk,
 
 def _stream_response_in_pool(rpc_event, state, behavior, argument_thunk,
                              request_deserializer, response_serializer):
-    cygrpc.install_context_from_request_call_event(rpc_event)
+    cygrpc.install_context_from_call(rpc_event.call)
 
     def send_response(response):
         if response is None:
