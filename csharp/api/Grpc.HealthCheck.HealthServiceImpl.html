@@ -99,6 +99,9 @@ server.AddServiceDefinition(Grpc.Health.V1.Health.BindService(serviceImpl));</co
   <div class="inheritedMembers">
     <h5>Inherited Members</h5>
     <div>
+      <a class="xref" href="Grpc.Health.V1.Health.HealthBase.html#Grpc_Health_V1_Health_HealthBase_Check_Grpc_Health_V1_HealthCheckRequest_Grpc_Core_ServerCallContext_">Health.HealthBase.Check(HealthCheckRequest, ServerCallContext)</a>
+    </div>
+    <div>
       <a class="xref" href="Grpc.Health.V1.Health.HealthBase.html#Grpc_Health_V1_Health_HealthBase_Watch_Grpc_Health_V1_HealthCheckRequest_Grpc_Core_IServerStreamWriter_Grpc_Health_V1_HealthCheckResponse__Grpc_Core_ServerCallContext_">Health.HealthBase.Watch(HealthCheckRequest, IServerStreamWriter&lt;HealthCheckResponse&gt;, ServerCallContext)</a>
     </div>
     <div>
@@ -132,7 +135,7 @@ server.AddServiceDefinition(Grpc.Health.V1.Health.BindService(serviceImpl));</co
   <h3 id="methods">Methods
   </h3>
   <a id="Grpc_HealthCheck_HealthServiceImpl_Check_" data-uid="Grpc.HealthCheck.HealthServiceImpl.Check*"></a>
-  <h4 id="Grpc_HealthCheck_HealthServiceImpl_Check_Grpc_Health_V1_HealthCheckRequest_Grpc_Core_ServerCallContext_" data-uid="Grpc.HealthCheck.HealthServiceImpl.Check(Grpc.Health.V1.HealthCheckRequest,Grpc.Core.ServerCallContext)">Check(HealthCheckRequest, ServerCallContext)</h4>
+  <h4 id="Grpc_HealthCheck_HealthServiceImpl_Check_Grpc_Health_V1_HealthCheckRequest_ServerCallContext_" data-uid="Grpc.HealthCheck.HealthServiceImpl.Check(Grpc.Health.V1.HealthCheckRequest,ServerCallContext)">Check(HealthCheckRequest, ServerCallContext)</h4>
   <div class="markdown level1 summary"><p>Performs a health status check.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -157,7 +160,7 @@ server.AddServiceDefinition(Grpc.Health.V1.Health.BindService(serviceImpl));</co
 </td>
       </tr>
       <tr>
-        <td><a class="xref" href="Grpc.Core.ServerCallContext.html">ServerCallContext</a></td>
+        <td><span class="xref">ServerCallContext</span></td>
         <td><span class="parametername">context</span></td>
         <td><p>The call context.</p>
 </td>
@@ -180,8 +183,6 @@ server.AddServiceDefinition(Grpc.Health.V1.Health.BindService(serviceImpl));</co
       </tr>
     </tbody>
   </table>
-  <h5 class="overrides">Overrides</h5>
-  <div><a class="xref" href="Grpc.Health.V1.Health.HealthBase.html#Grpc_Health_V1_Health_HealthBase_Check_Grpc_Health_V1_HealthCheckRequest_Grpc_Core_ServerCallContext_">Health.HealthBase.Check(HealthCheckRequest, ServerCallContext)</a></div>
   <a id="Grpc_HealthCheck_HealthServiceImpl_ClearAll_" data-uid="Grpc.HealthCheck.HealthServiceImpl.ClearAll*"></a>
   <h4 id="Grpc_HealthCheck_HealthServiceImpl_ClearAll" data-uid="Grpc.HealthCheck.HealthServiceImpl.ClearAll">ClearAll()</h4>
   <div class="markdown level1 summary"><p>Clears statuses for all services.</p>

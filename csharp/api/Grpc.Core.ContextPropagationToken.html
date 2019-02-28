@@ -87,8 +87,8 @@
 In situations when a backend is making calls to another backend,
 it makes sense to propagate properties like deadline and cancellation 
 token of the server call to the child call.
-The gRPC native layer provides some other contexts (like tracing context) that
-are not accessible to explicitly C# layer, but this token still allows propagating them.</p>
+Underlying gRPC implementation may provide other &quot;opaque&quot; contexts (like tracing context) that
+are not explicitly accesible via the public C# API, but this token still allows propagating them.</p>
 </div>
   <div class="markdown level0 conceptual"></div>
   <div class="inheritance">
@@ -121,10 +121,10 @@ are not accessible to explicitly C# layer, but this token still allows propagati
     </div>
   </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="Grpc.Core.html">Grpc.Core</a></h6>
-  <h6><strong>Assembly</strong>: Grpc.Core.dll</h6>
+  <h6><strong>Assembly</strong>: Grpc.Core.Api.dll</h6>
   <h5 id="Grpc_Core_ContextPropagationToken_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class ContextPropagationToken</code></pre>
+    <pre><code class="lang-csharp hljs">public abstract class ContextPropagationToken</code></pre>
   </div>
 </article>
           </div>

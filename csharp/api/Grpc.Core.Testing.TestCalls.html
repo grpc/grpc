@@ -124,7 +124,7 @@
   <h3 id="methods">Methods
   </h3>
   <a id="Grpc_Core_Testing_TestCalls_AsyncClientStreamingCall_" data-uid="Grpc.Core.Testing.TestCalls.AsyncClientStreamingCall*"></a>
-  <h4 id="Grpc_Core_Testing_TestCalls_AsyncClientStreamingCall__2_Grpc_Core_IClientStreamWriter___0__System_Threading_Tasks_Task___1__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_" data-uid="Grpc.Core.Testing.TestCalls.AsyncClientStreamingCall``2(Grpc.Core.IClientStreamWriter{``0},System.Threading.Tasks.Task{``1},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)">AsyncClientStreamingCall&lt;TRequest, TResponse&gt;(IClientStreamWriter&lt;TRequest&gt;, Task&lt;TResponse&gt;, Task&lt;Metadata&gt;, Func&lt;Status&gt;, Func&lt;Metadata&gt;, Action)</h4>
+  <h4 id="Grpc_Core_Testing_TestCalls_AsyncClientStreamingCall__2_Grpc_Core_IClientStreamWriter___0__System_Threading_Tasks_Task___1__System_Threading_Tasks_Task_Metadata__System_Func_Status__System_Func_Metadata__System_Action_" data-uid="Grpc.Core.Testing.TestCalls.AsyncClientStreamingCall``2(Grpc.Core.IClientStreamWriter{``0},System.Threading.Tasks.Task{``1},System.Threading.Tasks.Task{Metadata},System.Func{Status},System.Func{Metadata},System.Action)">AsyncClientStreamingCall&lt;TRequest, TResponse&gt;(IClientStreamWriter&lt;TRequest&gt;, Task&lt;TResponse&gt;, Task&lt;Metadata&gt;, Func&lt;Status&gt;, Func&lt;Metadata&gt;, Action)</h4>
   <div class="markdown level1 summary"><p>Creates a test double for <code>AsyncClientStreamingCall</code>. Only for testing.
 Note: experimental API that can change or be removed without any prior notice.</p>
 </div>
@@ -154,17 +154,17 @@ Note: experimental API that can change or be removed without any prior notice.</
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="Grpc.Core.Metadata.html">Metadata</a>&gt;</td>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">Metadata</span>&gt;</td>
         <td><span class="parametername">responseHeadersAsync</span></td>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="Grpc.Core.Status.html">Status</a>&gt;</td>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">Status</span>&gt;</td>
         <td><span class="parametername">getStatusFunc</span></td>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="Grpc.Core.Metadata.html">Metadata</a>&gt;</td>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">Metadata</span>&gt;</td>
         <td><span class="parametername">getTrailersFunc</span></td>
         <td></td>
       </tr>
@@ -210,7 +210,7 @@ Note: experimental API that can change or be removed without any prior notice.</
     </tbody>
   </table>
   <a id="Grpc_Core_Testing_TestCalls_AsyncDuplexStreamingCall_" data-uid="Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall*"></a>
-  <h4 id="Grpc_Core_Testing_TestCalls_AsyncDuplexStreamingCall__2_Grpc_Core_IClientStreamWriter___0__Grpc_Core_IAsyncStreamReader___1__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_" data-uid="Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall``2(Grpc.Core.IClientStreamWriter{``0},Grpc.Core.IAsyncStreamReader{``1},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)">AsyncDuplexStreamingCall&lt;TRequest, TResponse&gt;(IClientStreamWriter&lt;TRequest&gt;, IAsyncStreamReader&lt;TResponse&gt;, Task&lt;Metadata&gt;, Func&lt;Status&gt;, Func&lt;Metadata&gt;, Action)</h4>
+  <h4 id="Grpc_Core_Testing_TestCalls_AsyncDuplexStreamingCall__2_Grpc_Core_IClientStreamWriter___0__IAsyncStreamReader___1__System_Threading_Tasks_Task_Metadata__System_Func_Status__System_Func_Metadata__System_Action_" data-uid="Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall``2(Grpc.Core.IClientStreamWriter{``0},IAsyncStreamReader{``1},System.Threading.Tasks.Task{Metadata},System.Func{Status},System.Func{Metadata},System.Action)">AsyncDuplexStreamingCall&lt;TRequest, TResponse&gt;(IClientStreamWriter&lt;TRequest&gt;, IAsyncStreamReader&lt;TResponse&gt;, Task&lt;Metadata&gt;, Func&lt;Status&gt;, Func&lt;Metadata&gt;, Action)</h4>
   <div class="markdown level1 summary"><p>Creates a test double for <code>AsyncDuplexStreamingCall</code>. Only for testing.
 Note: experimental API that can change or be removed without any prior notice.</p>
 </div>
@@ -235,22 +235,22 @@ Note: experimental API that can change or be removed without any prior notice.</
         <td></td>
       </tr>
       <tr>
-        <td><a class="xref" href="Grpc.Core.IAsyncStreamReader-1.html">IAsyncStreamReader</a>&lt;TResponse&gt;</td>
+        <td><span class="xref">IAsyncStreamReader</span>&lt;TResponse&gt;</td>
         <td><span class="parametername">responseStream</span></td>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="Grpc.Core.Metadata.html">Metadata</a>&gt;</td>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">Metadata</span>&gt;</td>
         <td><span class="parametername">responseHeadersAsync</span></td>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="Grpc.Core.Status.html">Status</a>&gt;</td>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">Status</span>&gt;</td>
         <td><span class="parametername">getStatusFunc</span></td>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="Grpc.Core.Metadata.html">Metadata</a>&gt;</td>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">Metadata</span>&gt;</td>
         <td><span class="parametername">getTrailersFunc</span></td>
         <td></td>
       </tr>
@@ -296,7 +296,7 @@ Note: experimental API that can change or be removed without any prior notice.</
     </tbody>
   </table>
   <a id="Grpc_Core_Testing_TestCalls_AsyncServerStreamingCall_" data-uid="Grpc.Core.Testing.TestCalls.AsyncServerStreamingCall*"></a>
-  <h4 id="Grpc_Core_Testing_TestCalls_AsyncServerStreamingCall__1_Grpc_Core_IAsyncStreamReader___0__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_" data-uid="Grpc.Core.Testing.TestCalls.AsyncServerStreamingCall``1(Grpc.Core.IAsyncStreamReader{``0},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)">AsyncServerStreamingCall&lt;TResponse&gt;(IAsyncStreamReader&lt;TResponse&gt;, Task&lt;Metadata&gt;, Func&lt;Status&gt;, Func&lt;Metadata&gt;, Action)</h4>
+  <h4 id="Grpc_Core_Testing_TestCalls_AsyncServerStreamingCall__1_IAsyncStreamReader___0__System_Threading_Tasks_Task_Metadata__System_Func_Status__System_Func_Metadata__System_Action_" data-uid="Grpc.Core.Testing.TestCalls.AsyncServerStreamingCall``1(IAsyncStreamReader{``0},System.Threading.Tasks.Task{Metadata},System.Func{Status},System.Func{Metadata},System.Action)">AsyncServerStreamingCall&lt;TResponse&gt;(IAsyncStreamReader&lt;TResponse&gt;, Task&lt;Metadata&gt;, Func&lt;Status&gt;, Func&lt;Metadata&gt;, Action)</h4>
   <div class="markdown level1 summary"><p>Creates a test double for <code>AsyncServerStreamingCall</code>. Only for testing.
 Note: experimental API that can change or be removed without any prior notice.</p>
 </div>
@@ -316,22 +316,22 @@ Note: experimental API that can change or be removed without any prior notice.</
     </thead>
     <tbody>
       <tr>
-        <td><a class="xref" href="Grpc.Core.IAsyncStreamReader-1.html">IAsyncStreamReader</a>&lt;TResponse&gt;</td>
+        <td><span class="xref">IAsyncStreamReader</span>&lt;TResponse&gt;</td>
         <td><span class="parametername">responseStream</span></td>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="Grpc.Core.Metadata.html">Metadata</a>&gt;</td>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">Metadata</span>&gt;</td>
         <td><span class="parametername">responseHeadersAsync</span></td>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="Grpc.Core.Status.html">Status</a>&gt;</td>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">Status</span>&gt;</td>
         <td><span class="parametername">getStatusFunc</span></td>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="Grpc.Core.Metadata.html">Metadata</a>&gt;</td>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">Metadata</span>&gt;</td>
         <td><span class="parametername">getTrailersFunc</span></td>
         <td></td>
       </tr>
@@ -373,7 +373,7 @@ Note: experimental API that can change or be removed without any prior notice.</
     </tbody>
   </table>
   <a id="Grpc_Core_Testing_TestCalls_AsyncUnaryCall_" data-uid="Grpc.Core.Testing.TestCalls.AsyncUnaryCall*"></a>
-  <h4 id="Grpc_Core_Testing_TestCalls_AsyncUnaryCall__1_System_Threading_Tasks_Task___0__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_" data-uid="Grpc.Core.Testing.TestCalls.AsyncUnaryCall``1(System.Threading.Tasks.Task{``0},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)">AsyncUnaryCall&lt;TResponse&gt;(Task&lt;TResponse&gt;, Task&lt;Metadata&gt;, Func&lt;Status&gt;, Func&lt;Metadata&gt;, Action)</h4>
+  <h4 id="Grpc_Core_Testing_TestCalls_AsyncUnaryCall__1_System_Threading_Tasks_Task___0__System_Threading_Tasks_Task_Metadata__System_Func_Status__System_Func_Metadata__System_Action_" data-uid="Grpc.Core.Testing.TestCalls.AsyncUnaryCall``1(System.Threading.Tasks.Task{``0},System.Threading.Tasks.Task{Metadata},System.Func{Status},System.Func{Metadata},System.Action)">AsyncUnaryCall&lt;TResponse&gt;(Task&lt;TResponse&gt;, Task&lt;Metadata&gt;, Func&lt;Status&gt;, Func&lt;Metadata&gt;, Action)</h4>
   <div class="markdown level1 summary"><p>Creates a test double for <code>AsyncUnaryCall</code>. Only for testing.
 Note: experimental API that can change or be removed without any prior notice.</p>
 </div>
@@ -398,17 +398,17 @@ Note: experimental API that can change or be removed without any prior notice.</
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="Grpc.Core.Metadata.html">Metadata</a>&gt;</td>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">Metadata</span>&gt;</td>
         <td><span class="parametername">responseHeadersAsync</span></td>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="Grpc.Core.Status.html">Status</a>&gt;</td>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">Status</span>&gt;</td>
         <td><span class="parametername">getStatusFunc</span></td>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="Grpc.Core.Metadata.html">Metadata</a>&gt;</td>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">Metadata</span>&gt;</td>
         <td><span class="parametername">getTrailersFunc</span></td>
         <td></td>
       </tr>
