@@ -40,7 +40,7 @@ std::shared_ptr<Channel> CreateCustomChannel(
     const ChannelArguments& args) {
   GrpcLibraryCodegen init_lib;  // We need to call init in case of a bad creds.
   return creds ? creds->CreateChannel(target, args)
-               : CreateChannelInternal(
+               : ::grpc_impl::CreateChannelInternal(
                      "",
                      grpc_lame_client_channel_create(
                          nullptr, GRPC_STATUS_INVALID_ARGUMENT,
@@ -70,7 +70,7 @@ std::shared_ptr<Channel> CreateCustomChannelWithInterceptors(
         interceptor_creators) {
   return creds ? creds->CreateChannelWithInterceptors(
                      target, args, std::move(interceptor_creators))
-               : CreateChannelInternal(
+               : ::grpc_impl::CreateChannelInternal(
                      "",
                      grpc_lame_client_channel_create(
                          nullptr, GRPC_STATUS_INVALID_ARGUMENT,
