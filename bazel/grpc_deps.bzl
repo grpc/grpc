@@ -12,7 +12,7 @@ def grpc_deps():
     )
 
     native.bind(
-        name = "upblib",
+        name = "upb_lib",
         actual = "@upb//:upb",
     )
 
@@ -200,11 +200,12 @@ def grpc_deps():
             url = "https://github.com/census-instrumentation/opencensus-cpp/archive/03dff0352522983ffdee48cedbf87cbe37f1bb7f.tar.gz",
         )
 
+        # TODO:vpowar get the latest version of upb.
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            strip_prefix = "upb-9ce4a77f61c134bbed28bfd5be5cd7dc0e80f5e3",
-            url = "https://github.com/google/upb/archive/9ce4a77f61c134bbed28bfd5be5cd7dc0e80f5e3.tar.gz",
+            strip_prefix = "upb-87b59f445b7be42685491b816416a4e360e30b33",
+            url = "https://github.com/google/upb/archive/87b59f445b7be42685491b816416a4e360e30b33.tar.gz",
         )
 
 # TODO: move some dependencies from "grpc_deps" here?
