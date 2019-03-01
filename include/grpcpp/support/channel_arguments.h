@@ -26,12 +26,16 @@
 #include <grpc/grpc.h>
 #include <grpcpp/support/config.h>
 
+namespace grpc_impl {
+
+class ResourceQuota;
+}
+
 namespace grpc {
 namespace testing {
 class ChannelArgumentsTest;
 }  // namespace testing
 
-class ResourceQuota;
 
 /// Options for channel creation. The user can use generic setters to pass
 /// key value pairs down to C channel creation code. For gRPC related options,
@@ -83,7 +87,7 @@ class ChannelArguments {
   void SetUserAgentPrefix(const grpc::string& user_agent_prefix);
 
   /// Set the buffer pool to be attached to the constructed channel.
-  void SetResourceQuota(const ResourceQuota& resource_quota);
+  void SetResourceQuota(const ::grpc_impl::ResourceQuota& resource_quota);
 
   /// Set the max receive and send message sizes.
   void SetMaxReceiveMessageSize(int size);
