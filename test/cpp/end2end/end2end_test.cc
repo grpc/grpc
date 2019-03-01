@@ -64,6 +64,11 @@ using std::chrono::system_clock;
     }                   \
   } while (0)
 
+namespace grpc_impl {
+
+class ResourceQuota;
+}
+
 namespace grpc {
 namespace testing {
 namespace {
