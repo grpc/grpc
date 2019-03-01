@@ -577,6 +577,7 @@ grpc_cc_library(
         "src/core/lib/gprpp/abstract.h",
         "src/core/lib/gprpp/fork.h",
         "src/core/lib/gprpp/manual_constructor.h",
+        "src/core/lib/gprpp/map.h",
         "src/core/lib/gprpp/memory.h",
         "src/core/lib/gprpp/mutex_lock.h",
         "src/core/lib/gprpp/thd.h",

@@ -71,7 +71,7 @@ inline UniquePtr<T> MakeUnique(Args&&... args) {
 
 // an allocator that uses gpr_malloc/gpr_free
 template <class T>
-class Allocator {
+class Allocator : public std::allocator<T> {
  public:
   typedef T value_type;
   typedef T* pointer;

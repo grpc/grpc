@@ -1162,6 +1162,7 @@ src/core/lib/gprpp/fork.cc \
 src/core/lib/gprpp/fork.h \
 src/core/lib/gprpp/inlined_vector.h \
 src/core/lib/gprpp/manual_constructor.h \
+src/core/lib/gprpp/map.h \
 src/core/lib/gprpp/memory.h \
 src/core/lib/gprpp/mutex_lock.h \
 src/core/lib/gprpp/optional.h \
