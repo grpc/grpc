@@ -204,8 +204,8 @@ def grpc_deps():
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            strip_prefix = "upb-c3e6bb5318065fbefc19607f9e15abd2a256929f",
-            url = "https://github.com/google/upb/archive/c3e6bb5318065fbefc19607f9e15abd2a256929f.tar.gz",
+            strip_prefix = "upb-87b59f445b7be42685491b816416a4e360e30b33",
+            url = "https://github.com/google/upb/archive/87b59f445b7be42685491b816416a4e360e30b33.tar.gz",
         )
 
 # TODO: move some dependencies from "grpc_deps" here?
