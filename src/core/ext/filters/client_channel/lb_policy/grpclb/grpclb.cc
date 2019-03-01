@@ -363,7 +363,7 @@ class GrpcLb : public LoadBalancingPolicy {
   // When switching child policies, the new policy will be stored here
   // until it reports READY, at which point it will be moved to child_policy_.
   OrphanablePtr<LoadBalancingPolicy> pending_child_policy_;
-  // The LB config to use for the child policy.
+  // The child policy name and config.
   UniquePtr<char> child_policy_name_;
   RefCountedPtr<Config> child_policy_config_;
 };
@@ -632,10 +632,14 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
               parent_.get(), this, parent_->pending_child_policy_.get(),
               grpc_connectivity_state_name(state));
     }
-    if (state != GRPC_CHANNEL_READY) return;
+    if (state != GRPC_CHANNEL_READY) {
+      GRPC_ERROR_UNREF(state_error);
+      return;
+    }
     parent_->child_policy_ = std::move(parent_->pending_child_policy_);
   } else if (!CalledByCurrentChild()) {
-    // This request is from an outdating pending child, so ignore it.
+    // This request is from an outdated pending child, so ignore it.
+    GRPC_ERROR_UNREF(state_error);
     return;
   }
   // There are three cases to consider here:
@@ -691,7 +695,7 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
 void GrpcLb::Helper::RequestReresolution() {
   if (parent_->shutting_down_) return;
   // If there is a pending child policy, ignore re-resolution requests
-  // from the current child policy.
+  // from the current child policy (or any outdated pending child).
   if (parent_->pending_child_policy_ != nullptr && !CalledByPendingChild()) {
     return;
   }
@@ -1271,6 +1275,7 @@ void GrpcLb::ShutdownLocked() {
     grpc_timer_cancel(&lb_fallback_timer_);
   }
   child_policy_.reset();
+  pending_child_policy_.reset();
   // We destroy the LB channel here instead of in our destructor because
   // destroying the channel triggers a last callback to
   // OnBalancerChannelConnectivityChangedLocked(), and we need to be
@@ -1293,6 +1298,9 @@ void GrpcLb::ResetBackoffLocked() {
   if (child_policy_ != nullptr) {
     child_policy_->ResetBackoffLocked();
   }
+  if (pending_child_policy_ != nullptr) {
+    pending_child_policy_->ResetBackoffLocked();
+  }
 }
 
 void GrpcLb::FillChildRefsForChannelz(
@@ -1301,6 +1309,10 @@ void GrpcLb::FillChildRefsForChannelz(
   // delegate to the child policy to fill the children subchannels.
   if (child_policy_ != nullptr) {
     child_policy_->FillChildRefsForChannelz(child_subchannels, child_channels);
+  }
+  if (pending_child_policy_ != nullptr) {
+    pending_child_policy_->FillChildRefsForChannelz(child_subchannels,
+                                                    child_channels);
   }
   gpr_atm uuid = gpr_atm_no_barrier_load(&lb_channel_uuid_);
   if (uuid != 0) {
@@ -1593,10 +1605,9 @@ grpc_channel_args* GrpcLb::CreateChildPolicyArgsLocked() {
         const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1);
     ++num_args_to_add;
   }
-  grpc_channel_args* args = grpc_channel_args_copy_and_add_and_remove(
+  return grpc_channel_args_copy_and_add_and_remove(
       args_, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), args_to_add,
       num_args_to_add);
-  return args;
 }
 
 OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
@@ -1699,6 +1710,10 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
     // pending_child_policy_ (cases 2b and 3b).
     auto& lb_policy =
         child_policy_ == nullptr ? child_policy_ : pending_child_policy_;
+    if (grpc_lb_glb_trace.enabled()) {
+      gpr_log(GPR_INFO, "[grpclb %p] Creating new %schild policy %s", this,
+              child_policy_ == nullptr ? "" : "pending ", child_policy_name);
+    }
     lb_policy = CreateChildPolicyLocked(child_policy_name, args);
     policy_to_update = lb_policy.get();
   } else {
@@ -1712,7 +1727,8 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
   GPR_ASSERT(policy_to_update != nullptr);
   // Update the policy.
   if (grpc_lb_glb_trace.enabled()) {
-    gpr_log(GPR_INFO, "[grpclb %p] Updating child policy %p", this,
+    gpr_log(GPR_INFO, "[grpclb %p] Updating %schild policy %p", this,
+            policy_to_update == pending_child_policy_.get() ? "pending " : "",
             policy_to_update);
   }
   policy_to_update->UpdateLocked(*args, child_policy_config_);
