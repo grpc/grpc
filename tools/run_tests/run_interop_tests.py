@@ -58,10 +58,9 @@ _SKIP_SERVER_COMPRESSION = [
 
 _SKIP_COMPRESSION = _SKIP_CLIENT_COMPRESSION + _SKIP_SERVER_COMPRESSION
 
-_SKIP_UNIMPLEMENTED_HANDLERS = ['unimplemented_method', 'unimplemented_service']
-
-_SKIP_ADVANCED = _SKIP_UNIMPLEMENTED_HANDLERS + [
-    'status_code_and_message', 'custom_metadata'
+_SKIP_ADVANCED = [
+    'status_code_and_message', 'custom_metadata', 'unimplemented_method',
+    'unimplemented_service'
 ]
 
 _SKIP_SPECIAL_STATUS_MESSAGE = ['special_status_message']
@@ -199,7 +198,7 @@ class AspNetCoreLanguage:
         return _TEST_CASES + _AUTH_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION + _SKIP_UNIMPLEMENTED_HANDLERS + _SKIP_SPECIAL_STATUS_MESSAGE
+        return _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def __str__(self):
         return 'aspnetcore'
