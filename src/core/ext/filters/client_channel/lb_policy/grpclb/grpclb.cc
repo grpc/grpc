@@ -273,6 +273,7 @@ class GrpcLb : public LoadBalancingPolicy {
 
     Subchannel* CreateSubchannel(const grpc_channel_args& args) override;
     grpc_channel* CreateChannel(const char* target,
+                                grpc_client_channel_type type,
                                 const grpc_channel_args& args) override;
     void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
                      UniquePtr<SubchannelPicker> picker) override;
@@ -580,9 +581,10 @@ Subchannel* GrpcLb::Helper::CreateSubchannel(const grpc_channel_args& args) {
 }
 
 grpc_channel* GrpcLb::Helper::CreateChannel(const char* target,
+                                            grpc_client_channel_type type,
                                             const grpc_channel_args& args) {
   if (parent_->shutting_down_) return nullptr;
-  return parent_->channel_control_helper()->CreateChannel(target, args);
+  return parent_->channel_control_helper()->CreateChannel(target, type, args);
 }
 
 void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
@@ -1303,8 +1305,8 @@ void GrpcLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
   if (lb_channel_ == nullptr) {
     char* uri_str;
     gpr_asprintf(&uri_str, "fake:///%s", server_name_);
-    lb_channel_ =
-        channel_control_helper()->CreateChannel(uri_str, *lb_channel_args);
+    lb_channel_ = channel_control_helper()->CreateChannel(
+        uri_str, GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, *lb_channel_args);
     GPR_ASSERT(lb_channel_ != nullptr);
     grpc_core::channelz::ChannelNode* channel_node =
         grpc_channel_get_channelz_node(lb_channel_);

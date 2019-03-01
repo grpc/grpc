@@ -107,8 +107,8 @@ typedef struct client_channel_channel_data {
   grpc_channel_stack* owning_stack;
   /** interested parties (owned) */
   grpc_pollset_set* interested_parties;
-  // Client channel factory.
-  grpc_core::ClientChannelFactory* client_channel_factory;
+  // Client channel factory.  Holds a ref.
+  grpc_client_channel_factory* client_channel_factory;
   // Subchannel pool.
   grpc_core::RefCountedPtr<grpc_core::SubchannelPoolInterface> subchannel_pool;
 
@@ -205,15 +205,16 @@ class ClientChannelControlHelper
         chand_->subchannel_pool.get());
     grpc_channel_args* new_args =
         grpc_channel_args_copy_and_add(&args, &arg, 1);
-    Subchannel* subchannel =
-        chand_->client_channel_factory->CreateSubchannel(new_args);
+    Subchannel* subchannel = grpc_client_channel_factory_create_subchannel(
+        chand_->client_channel_factory, new_args);
     grpc_channel_args_destroy(new_args);
     return subchannel;
   }
 
-  grpc_channel* CreateChannel(const char* target,
+  grpc_channel* CreateChannel(const char* target, grpc_client_channel_type type,
                               const grpc_channel_args& args) override {
-    return chand_->client_channel_factory->CreateChannel(target, &args);
+    return grpc_client_channel_factory_create_channel(
+        chand_->client_channel_factory, target, type, &args);
   }
 
   void UpdateState(
@@ -419,12 +420,19 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   arg = grpc_channel_args_find(args->channel_args, GRPC_ARG_ENABLE_RETRIES);
   chand->enable_retries = grpc_channel_arg_get_bool(arg, true);
   // Record client channel factory.
-  chand->client_channel_factory =
-      grpc_core::ClientChannelFactory::GetFromChannelArgs(args->channel_args);
-  if (chand->client_channel_factory == nullptr) {
+  arg = grpc_channel_args_find(args->channel_args,
+                               GRPC_ARG_CLIENT_CHANNEL_FACTORY);
+  if (arg == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Missing client channel factory in args for client channel filter");
   }
+  if (arg->type != GRPC_ARG_POINTER) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "client channel factory arg must be a pointer");
+  }
+  chand->client_channel_factory =
+      static_cast<grpc_client_channel_factory*>(arg->value.pointer.p);
+  grpc_client_channel_factory_ref(chand->client_channel_factory);
   // Get server name to resolve, using proxy mapper if needed.
   arg = grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVER_URI);
   if (arg == nullptr) {
@@ -501,6 +509,9 @@ static void cc_destroy_channel_elem(grpc_channel_element* elem) {
   // longer be any need to explicitly reset these smart pointer data members.
   chand->picker.reset();
   chand->subchannel_pool.reset();
+  if (chand->client_channel_factory != nullptr) {
+    grpc_client_channel_factory_unref(chand->client_channel_factory);
+  }
   chand->info_lb_policy_name.reset();
   chand->info_service_config_json.reset();
   chand->retry_throttle_data.reset();

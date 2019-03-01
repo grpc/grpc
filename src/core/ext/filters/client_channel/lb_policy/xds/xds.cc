@@ -223,6 +223,7 @@ class XdsLb : public LoadBalancingPolicy {
 
     Subchannel* CreateSubchannel(const grpc_channel_args& args) override;
     grpc_channel* CreateChannel(const char* target,
+                                grpc_client_channel_type type,
                                 const grpc_channel_args& args) override;
     void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
                      UniquePtr<SubchannelPicker> picker) override;
@@ -353,9 +354,10 @@ Subchannel* XdsLb::Helper::CreateSubchannel(const grpc_channel_args& args) {
 }
 
 grpc_channel* XdsLb::Helper::CreateChannel(const char* target,
+                                           grpc_client_channel_type type,
                                            const grpc_channel_args& args) {
   if (parent_->shutting_down_) return nullptr;
-  return parent_->channel_control_helper()->CreateChannel(target, args);
+  return parent_->channel_control_helper()->CreateChannel(target, type, args);
 }
 
 void XdsLb::Helper::UpdateState(grpc_connectivity_state state,
@@ -1074,8 +1076,8 @@ void XdsLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
     char* uri_str;
     gpr_asprintf(&uri_str, "fake:///%s", server_name_);
     gpr_mu_lock(&lb_channel_mu_);
-    lb_channel_ =
-        channel_control_helper()->CreateChannel(uri_str, *lb_channel_args);
+    lb_channel_ = channel_control_helper()->CreateChannel(
+        uri_str, GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, *lb_channel_args);
     gpr_mu_unlock(&lb_channel_mu_);
     GPR_ASSERT(lb_channel_ != nullptr);
     gpr_free(uri_str);

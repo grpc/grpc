@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
+#include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -192,9 +193,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     virtual Subchannel* CreateSubchannel(const grpc_channel_args& args)
         GRPC_ABSTRACT;
 
-    /// Creates a channel with the specified target and channel args.
+    /// Creates a channel with the specified target, type, and channel args.
     virtual grpc_channel* CreateChannel(
-        const char* target, const grpc_channel_args& args) GRPC_ABSTRACT;
+        const char* target, grpc_client_channel_type type,
+        const grpc_channel_args& args) GRPC_ABSTRACT;
 
     /// Sets the connectivity state and returns a new picker to be used
     /// by the client channel.
