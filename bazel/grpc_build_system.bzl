@@ -120,6 +120,7 @@ def grpc_cc_library(
         linkopts = linkopts,
         includes = [
             "include",
+            "src/core/ext/upb-generated",
         ],
         alwayslink = alwayslink,
         data = data,
