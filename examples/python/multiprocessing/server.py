@@ -30,14 +30,14 @@ import prime_pb2
 import prime_pb2_grpc
 
 _ONE_DAY = datetime.timedelta(days=1)
-_NUM_PROCESSES = 8
+_PROCESS_COUNT = 8
 _THREAD_CONCURRENCY = 10
 _BIND_ADDRESS = '[::]:50051'
 
 
 def is_prime(n):
-    for i in range(2, math.ceil(math.sqrt(n))):
-        if i % n == 0:
+    for i in range(2, int(math.ceil(math.sqrt(n)))):
+        if n % i == 0:
             return False
     else:
         return True
@@ -46,10 +46,10 @@ def is_prime(n):
 class PrimeChecker(prime_pb2_grpc.PrimeCheckerServicer):
 
     def check(self, request, context):
-        logging.info(
+        logging.warning(
             '[PID {}] Determining primality of {}'.format(
                     os.getpid(), request.candidate))
-        return is_prime(request.candidate)
+        return prime_pb2.Primality(isPrime=is_prime(request.candidate))
 
 
 def _wait_forever(server):
@@ -82,7 +82,7 @@ def _run_server(bind_address):
 
 def main():
     workers = []
-    for _ in range(_NUM_PROCESSES):
+    for _ in range(_PROCESS_COUNT):
         # NOTE: It is imperative that the worker subprocesses be forked before
         # any gRPC servers start up. See
         # https://github.com/grpc/grpc/issues/16001 for more details.
@@ -93,6 +93,6 @@ def main():
         worker.join()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     logging.basicConfig()
     main()
