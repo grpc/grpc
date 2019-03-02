@@ -18,6 +18,7 @@ from __future__ import division
 from __future__ import print_function
 
 from concurrent import futures
+import contextlib
 import datetime
 import grpc
 import logging
@@ -25,6 +26,7 @@ import math
 import multiprocessing
 import os
 import time
+import socket
 
 import prime_pb2
 import prime_pb2_grpc
@@ -61,6 +63,7 @@ def _wait_forever(server):
 
 
 def _run_server(bind_address):
+    """Start a server in a subprocess."""
     logging.warning( '[PID {}] Starting new server.'.format( os.getpid()))
     options = (('grpc.so_reuseport', 1),)
 
@@ -80,17 +83,32 @@ def _run_server(bind_address):
     _wait_forever(server)
 
 
+@contextlib.contextmanager
+def _reserve_port():
+    """Find and reserve a port for all subprocesses to use."""
+    sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+    sock.bind(('', 0))
+    try:
+        yield sock.getsockname()[1]
+    finally:
+        sock.close()
+
+
 def main():
-    workers = []
-    for _ in range(_PROCESS_COUNT):
-        # NOTE: It is imperative that the worker subprocesses be forked before
-        # any gRPC servers start up. See
-        # https://github.com/grpc/grpc/issues/16001 for more details.
-        worker = multiprocessing.Process(target=_run_server, args=(_BIND_ADDRESS,))
-        worker.start()
-        workers.append(worker)
-    for worker in workers:
-        worker.join()
+    with _reserve_port() as port:
+        bind_address = '[::]:{}'.format(port)
+        logging.warning("Binding to {}".format(bind_address))
+        workers = []
+        for _ in range(_PROCESS_COUNT):
+            # NOTE: It is imperative that the worker subprocesses be forked before
+            # any gRPC servers start up. See
+            # https://github.com/grpc/grpc/issues/16001 for more details.
+            worker = multiprocessing.Process(target=_run_server, args=(bind_address,))
+            worker.start()
+            workers.append(worker)
+        for worker in workers:
+            worker.join()
 
 
 if __name__ == '__main__':
