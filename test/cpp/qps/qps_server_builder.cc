@@ -18,7 +18,7 @@
 
 #include "qps_server_builder.h"
 
-using grpc::ServerBuilder;
+using grpc_impl::ServerBuilder;
 
 namespace grpc {
 namespace testing {

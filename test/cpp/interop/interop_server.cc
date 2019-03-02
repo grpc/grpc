@@ -46,7 +46,6 @@ DEFINE_int32(port, 0, "Server port.");
 DEFINE_int32(max_send_message_size, -1, "The maximum send message size.");
 
 using grpc::Server;
-using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::ServerCredentials;
 using grpc::ServerReader;
@@ -64,6 +63,7 @@ using grpc::testing::StreamingInputCallResponse;
 using grpc::testing::StreamingOutputCallRequest;
 using grpc::testing::StreamingOutputCallResponse;
 using grpc::testing::TestService;
+using grpc_impl::ServerBuilder;
 
 const char kEchoInitialMetadataKey[] = "x-grpc-test-echo-initial";
 const char kEchoTrailingBinMetadataKey[] = "x-grpc-test-echo-trailing-bin";
