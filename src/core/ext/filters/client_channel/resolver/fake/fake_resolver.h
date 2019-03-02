@@ -44,12 +44,9 @@ class FakeResolverResponseGenerator
   FakeResolverResponseGenerator() {}
 
   // Instructs the fake resolver associated with the response generator
-  // instance to trigger a new resolution with the specified response.
+  // instance to trigger a new resolution with the specified response. If the
+  // resolver is not available yet, delays response setting until it is.
   void SetResponse(grpc_channel_args* next_response);
-
-  // Similar to SetResponse() except that it delays response setting until the
-  // resolver is available.
-  void MaybeSetResponse(grpc_channel_args* next_response);
 
   // Sets the re-resolution response, which is returned by the fake resolver
   // when re-resolution is requested (via \a RequestReresolutionLocked()).

@@ -39,7 +39,6 @@ grpc_channel_args* grpc_lb_policy_xds_modify_lb_channel_args(
   size_t num_args_to_remove = 0;
   grpc_arg args_to_add[2];
   size_t num_args_to_add = 0;
-  // TODO(juanlishen): Add target authority table properly.
   // Substitute the channel credentials with a version without call
   // credentials: the load balancer is not necessarily trusted to handle
   // bearer token credentials.

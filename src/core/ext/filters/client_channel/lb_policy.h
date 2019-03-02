@@ -313,8 +313,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   // Note: LB policies MUST NOT call any method on the helper from their
   // constructor.
-  // Note: This will return null after ShutdownLocked() has been
-  // called.
+  // Note: This will return null after ShutdownLocked() has been called.
   ChannelControlHelper* channel_control_helper() const {
     return channel_control_helper_.get();
   }

@@ -121,7 +121,9 @@ void FakeResolver::RequestReresolutionLocked() {
 void FakeResolver::MaybeFinishNextLocked() {
   if (next_completion_ != nullptr &&
       (next_results_ != nullptr || return_failure_)) {
-    // The response generator in next_results_ will be preferred.
+    // When both next_results_ and channel_args_ contain a response generator,
+    // only the one in next_results_ will be kept since next_results_ is before
+    // channel_args_.
     *target_result_ =
         return_failure_ ? nullptr
                         : grpc_channel_args_union(next_results_, channel_args_);
@@ -163,27 +165,20 @@ void FakeResolverResponseGenerator::SetResponseLocked(void* arg,
   Delete(closure_arg);
 }
 
-void FakeResolverResponseGenerator::MaybeSetResponse(
-    grpc_channel_args* response) {
+void FakeResolverResponseGenerator::SetResponse(grpc_channel_args* response) {
   GPR_ASSERT(response != nullptr);
   if (resolver_ != nullptr) {
-    SetResponse(response);
+    SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+    closure_arg->generator = this;
+    closure_arg->response = grpc_channel_args_copy(response);
+    GRPC_CLOSURE_SCHED(
+        GRPC_CLOSURE_INIT(&closure_arg->set_response_closure, SetResponseLocked,
+                          closure_arg,
+                          grpc_combiner_scheduler(resolver_->combiner())),
+        GRPC_ERROR_NONE);
   } else {
     response_ = grpc_channel_args_copy(response);
   }
-}
-
-void FakeResolverResponseGenerator::SetResponse(grpc_channel_args* response) {
-  GPR_ASSERT(response != nullptr);
-  GPR_ASSERT(resolver_ != nullptr);
-  SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
-  closure_arg->generator = this;
-  closure_arg->response = grpc_channel_args_copy(response);
-  GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_INIT(&closure_arg->set_response_closure, SetResponseLocked,
-                        closure_arg,
-                        grpc_combiner_scheduler(resolver_->combiner())),
-      GRPC_ERROR_NONE);
 }
 
 void FakeResolverResponseGenerator::SetReresolutionResponseLocked(
