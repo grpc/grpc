@@ -17,6 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import argparse
 import atexit
 import grpc
 import logging
@@ -29,7 +30,6 @@ import prime_pb2
 import prime_pb2_grpc
 
 _PROCESS_COUNT = 8
-_SERVER_ADDRESS = 'localhost:50051'
 _MAXIMUM_CANDIDATE = 10000
 
 # Each worker process initializes a single channel after forking.
@@ -61,15 +61,22 @@ def _run_worker_query(primality_candidate):
     return _worker_stub_singleton.check(
             prime_pb2.PrimeCandidate(candidate=primality_candidate))
 
-
-def main():
+def _calculate_primes(server_address):
     worker_pool = multiprocessing.Pool(processes=_PROCESS_COUNT,
-                    initializer=_initialize_worker, initargs=(_SERVER_ADDRESS,))
+                    initializer=_initialize_worker, initargs=(server_address,))
     check_range = range(2, _MAXIMUM_CANDIDATE)
     primality = worker_pool.map(_run_worker_query, check_range)
     primes = zip(check_range, map(operator.attrgetter('isPrime'), primality))
     logging.warning(tuple(primes))
 
+
+def main():
+    msg = 'Determine the primality of the first {} integers.'.format(
+            _MAXIMUM_CANDIDATE)
+    parser = argparse.ArgumentParser(description=msg)
+    parser.add_argument('server_address', help='The address of the server (e.g. localhost:50051)')
+    args = parser.parse_args()
+    _calculate_primes(args.server_address)
 
 if __name__ == '__main__':
     logging.basicConfig()

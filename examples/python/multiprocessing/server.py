@@ -34,7 +34,6 @@ import prime_pb2_grpc
 _ONE_DAY = datetime.timedelta(days=1)
 _PROCESS_COUNT = 8
 _THREAD_CONCURRENCY = 10
-_BIND_ADDRESS = '[::]:50051'
 
 
 def is_prime(n):
