@@ -2280,6 +2280,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "include/grpcpp/opencensus.h",
+        "include/grpcpp/opencensus_impl.h",
         "src/cpp/ext/filters/census/channel_filter.h",
         "src/cpp/ext/filters/census/client_filter.h",
         "src/cpp/ext/filters/census/context.h",
