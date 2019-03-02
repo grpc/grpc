@@ -275,7 +275,6 @@ class XdsLb : public LoadBalancingPolicy {
 
     Subchannel* CreateSubchannel(const grpc_channel_args& args) override;
     grpc_channel* CreateChannel(const char* target,
-                                grpc_client_channel_type type,
                                 const grpc_channel_args& args) override;
     void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
                      UniquePtr<SubchannelPicker> picker) override;
@@ -391,10 +390,9 @@ Subchannel* XdsLb::Helper::CreateSubchannel(const grpc_channel_args& args) {
 }
 
 grpc_channel* XdsLb::Helper::CreateChannel(const char* target,
-                                           grpc_client_channel_type type,
                                            const grpc_channel_args& args) {
   if (parent_->shutting_down_) return nullptr;
-  return parent_->channel_control_helper()->CreateChannel(target, type, args);
+  return parent_->channel_control_helper()->CreateChannel(target, args);
 }
 
 void XdsLb::Helper::UpdateState(grpc_connectivity_state state,

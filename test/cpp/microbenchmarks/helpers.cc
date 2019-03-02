@@ -20,6 +20,17 @@
 
 #include "test/cpp/microbenchmarks/helpers.h"
 
+static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
+
+Library::Library() {
+  g_gli_initializer.summon();
+#ifdef GPR_LOW_LEVEL_COUNTERS
+  grpc_memory_counters_init();
+#endif
+  init_lib_.init();
+  rq_ = grpc_resource_quota_create("bm");
+}
+
 void TrackCounters::Finish(benchmark::State& state) {
   std::ostringstream out;
   for (const auto& l : labels_) {

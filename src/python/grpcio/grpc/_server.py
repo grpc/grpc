@@ -19,6 +19,7 @@ import logging
 import threading
 import time
 
+from concurrent import futures
 import six
 
 import grpc
@@ -497,7 +498,7 @@ def _status(rpc_event, state, serialized_response):
 
 def _unary_response_in_pool(rpc_event, state, behavior, argument_thunk,
                             request_deserializer, response_serializer):
-    cygrpc.install_context_from_call(rpc_event.call)
+    cygrpc.install_context_from_request_call_event(rpc_event)
     try:
         argument = argument_thunk()
         if argument is not None:
@@ -514,7 +515,7 @@ def _unary_response_in_pool(rpc_event, state, behavior, argument_thunk,
 
 def _stream_response_in_pool(rpc_event, state, behavior, argument_thunk,
                              request_deserializer, response_serializer):
-    cygrpc.install_context_from_call(rpc_event.call)
+    cygrpc.install_context_from_request_call_event(rpc_event)
 
     def send_response(response):
         if response is None:
@@ -565,8 +566,8 @@ def _send_message_callback_to_blocking_iterator_adapter(
 
 
 def _select_thread_pool_for_behavior(behavior, default_thread_pool):
-    if hasattr(behavior, 'experimental_thread_pool'
-              ) and behavior.experimental_thread_pool is not None:
+    if hasattr(behavior, 'experimental_thread_pool') and isinstance(
+            behavior.experimental_thread_pool, futures.ThreadPoolExecutor):
         return behavior.experimental_thread_pool
     else:
         return default_thread_pool

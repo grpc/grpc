@@ -318,7 +318,7 @@ int main(int argc, char** argv) {
 
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq);
-  grpc_shutdown();
+  grpc_shutdown_blocking();
   grpc_memory_counters_destroy();
   return 0;
 }

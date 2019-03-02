@@ -42,7 +42,7 @@ class _TestTrigger(object):
         self._finish_condition = threading.Condition()
         self._start_condition = threading.Condition()
 
-    # Wait for all calls be be blocked in their handler
+    # Wait for all calls be blocked in their handler
     def await_calls(self):
         with self._start_condition:
             while self._pending_calls < self._total_call_count:

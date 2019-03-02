@@ -61,7 +61,7 @@ cdef int _get_metadata(
 
 cdef void _destroy(void *state) with gil:
   cpython.Py_DECREF(<object>state)
-  grpc_shutdown()
+  grpc_shutdown_blocking()
 
 
 cdef class MetadataPluginCallCredentials(CallCredentials):
@@ -125,7 +125,7 @@ cdef class SSLSessionCacheLRU:
   def __dealloc__(self):
     if self._cache != NULL:
         grpc_ssl_session_cache_destroy(self._cache)
-    grpc_shutdown()
+    grpc_shutdown_blocking()
 
 
 cdef class SSLChannelCredentials(ChannelCredentials):
@@ -191,7 +191,7 @@ cdef class ServerCertificateConfig:
   def __dealloc__(self):
     grpc_ssl_server_certificate_config_destroy(self.c_cert_config)
     gpr_free(self.c_ssl_pem_key_cert_pairs)
-    grpc_shutdown()
+    grpc_shutdown_blocking()
 
 
 cdef class ServerCredentials:
@@ -207,7 +207,7 @@ cdef class ServerCredentials:
   def __dealloc__(self):
     if self.c_credentials != NULL:
       grpc_server_credentials_release(self.c_credentials)
-    grpc_shutdown()
+    grpc_shutdown_blocking()
 
 cdef const char* _get_c_pem_root_certs(pem_root_certs):
   if pem_root_certs is None:
