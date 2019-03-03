@@ -150,13 +150,12 @@ static void unref_errs(grpc_error* err) {
   }
 }
 
-static void unref_slice(grpc_slice slice) { grpc_slice_unref_internal(slice); }
-
 static void unref_strs(grpc_error* err) {
   for (size_t which = 0; which < GRPC_ERROR_STR_MAX; ++which) {
     uint8_t slot = err->strs[which];
     if (slot != UINT8_MAX) {
-      unref_slice(*reinterpret_cast<grpc_slice*>(err->arena + slot));
+      grpc_slice_unref_internal(
+          *reinterpret_cast<grpc_slice*>(err->arena + slot));
     }
   }
 }
@@ -231,7 +230,7 @@ static void internal_set_int(grpc_error** err, grpc_error_ints which,
 }
 
 static void internal_set_str(grpc_error** err, grpc_error_strs which,
-                             grpc_slice value) {
+                             const grpc_slice& value) {
   uint8_t slot = (*err)->strs[which];
   if (slot == UINT8_MAX) {
     slot = get_placement(err, sizeof(value));
@@ -243,7 +242,8 @@ static void internal_set_str(grpc_error** err, grpc_error_strs which,
       return;
     }
   } else {
-    unref_slice(*reinterpret_cast<grpc_slice*>((*err)->arena + slot));
+    grpc_slice_unref_internal(
+        *reinterpret_cast<grpc_slice*>((*err)->arena + slot));
   }
   (*err)->strs[which] = slot;
   memcpy((*err)->arena + slot, &value, sizeof(value));
@@ -313,8 +313,8 @@ void grpc_enable_error_creation() {
   gpr_atm_no_barrier_store(&g_error_creation_allowed, true);
 }
 
-grpc_error* grpc_error_create(const char* file, int line, grpc_slice desc,
-                              grpc_error** referencing,
+grpc_error* grpc_error_create(const char* file, int line,
+                              const grpc_slice& desc, grpc_error** referencing,
                               size_t num_referencing) {
   GPR_TIMER_SCOPE("grpc_error_create", 0);
   uint8_t initial_arena_capacity = static_cast<uint8_t>(
@@ -472,7 +472,7 @@ bool grpc_error_get_int(grpc_error* err, grpc_error_ints which, intptr_t* p) {
 }
 
 grpc_error* grpc_error_set_str(grpc_error* src, grpc_error_strs which,
-                               grpc_slice str) {
+                               const grpc_slice& str) {
   GPR_TIMER_SCOPE("grpc_error_set_str", 0);
   grpc_error* new_err = copy_error_and_unref(src);
   internal_set_str(&new_err, which, str);
@@ -620,7 +620,7 @@ static char* key_str(grpc_error_strs which) {
   return gpr_strdup(error_str_name(which));
 }
 
-static char* fmt_str(grpc_slice slice) {
+static char* fmt_str(const grpc_slice& slice) {
   char* s = nullptr;
   size_t sz = 0;
   size_t cap = 0;
