@@ -126,7 +126,8 @@ static void handle_read(void* arg, grpc_error* error) {
       SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD) {
     handle_write();
   } else {
-    grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read);
+    grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
+                       /*urgent=*/false);
   }
 }
 
@@ -142,7 +143,8 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
   state.tcp = tcp;
   state.incoming_data_length = 0;
   grpc_endpoint_add_to_pollset(tcp, server->pollset);
-  grpc_endpoint_read(tcp, &state.temp_incoming_buffer, &on_read);
+  grpc_endpoint_read(tcp, &state.temp_incoming_buffer, &on_read,
+                     /*urgent=*/false);
 }
 
 static gpr_timespec n_sec_deadline(int seconds) {

@@ -144,7 +144,7 @@ void HttpConnectHandshaker::OnWriteDone(void* arg, grpc_error* error) {
     // The read callback inherits our ref to the handshaker.
     grpc_endpoint_read(handshaker->args_->endpoint,
                        handshaker->args_->read_buffer,
-                       &handshaker->response_read_closure_);
+                       &handshaker->response_read_closure_, /*urgent=*/true);
     gpr_mu_unlock(&handshaker->mu_);
   }
 }
@@ -207,7 +207,7 @@ void HttpConnectHandshaker::OnReadDone(void* arg, grpc_error* error) {
     grpc_slice_buffer_reset_and_unref_internal(handshaker->args_->read_buffer);
     grpc_endpoint_read(handshaker->args_->endpoint,
                        handshaker->args_->read_buffer,
-                       &handshaker->response_read_closure_);
+                       &handshaker->response_read_closure_, /*urgent=*/true);
     gpr_mu_unlock(&handshaker->mu_);
     return;
   }
