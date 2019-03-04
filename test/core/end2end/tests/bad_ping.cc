@@ -312,7 +312,7 @@ static void test_pings_without_data(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
-  // Send too many pings to the server similar to the prevous test case.
+  // Send too many pings to the server similar to the previous test case.
   // However, since we set the MAX_PINGS_WITHOUT_DATA at the client side, only
   // MAX_PING_STRIKES will actually be sent and the rpc will still succeed.
   int i;

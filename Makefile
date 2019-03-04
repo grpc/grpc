@@ -404,6 +404,28 @@ LIBS = m pthread ws2_32
 LDFLAGS += -pthread
 endif
 
+# If we are installing into a non-default prefix, both
+# the libraries we build, and the apps users build,
+# need to know how to find the libraries they depend on.
+# There is much gnashing of teeth about this subject.
+# It's tricky to do that without editing images during install,
+# as you don't want tests during build to find previously installed and
+# now stale libraries, etc.
+ifeq ($(SYSTEM),Linux)
+ifneq ($(prefix),/usr)
+# Linux best practice for rpath on installed files is probably:
+# 1) .pc file provides -Wl,-rpath,$(prefix)/lib
+# 2) binaries we install into $(prefix)/bin use -Wl,-rpath,$ORIGIN/../lib
+# 3) libraries we install into $(prefix)/lib use -Wl,-rpath,$ORIGIN
+# cf. https://www.akkadia.org/drepper/dsohowto.pdf
+# Doing all of that right is hard, but using -Wl,-rpath,$ORIGIN is always
+# safe, and solves problems seen in the wild.  Note that $ORIGIN
+# is a literal string interpreted much later by ld.so.  Escape it
+# here with a dollar sign so Make doesn't expand $O.
+LDFLAGS += '-Wl,-rpath,$$ORIGIN'
+endif
+endif
+
 #
 # The steps for cross-compiling are as follows:
 # First, clone and make install of grpc using the native compilers for the host.
@@ -809,7 +831,7 @@ ifeq ($(HAS_SYSTEM_PROTOBUF),true)
 ifeq ($(HAS_PKG_CONFIG),true)
 PROTOBUF_PKG_CONFIG = true
 PC_REQUIRES_GRPCXX = protobuf
-CPPFLAGS := $(shell $(PKG_CONFIG) --cflags protobuf) $(CPPFLAGS)
+CPPFLAGS := $(CPPFLAGS) $(shell $(PKG_CONFIG) --cflags protobuf)
 LDFLAGS_PROTOBUF_PKG_CONFIG = $(shell $(PKG_CONFIG) --libs-only-L protobuf)
 ifeq ($(SYSTEM),Linux)
 ifneq ($(LDFLAGS_PROTOBUF_PKG_CONFIG),)
@@ -17464,6 +17486,7 @@ endif
 
 CLIENT_CALLBACK_END2END_TEST_SRC = \
     test/cpp/end2end/client_callback_end2end_test.cc \
+    test/cpp/end2end/interceptors_util.cc \
 
 CLIENT_CALLBACK_END2END_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CLIENT_CALLBACK_END2END_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -17495,6 +17518,8 @@ endif
 endif
 
 $(OBJDIR)/$(CONFIG)/test/cpp/end2end/client_callback_end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/interceptors_util.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_client_callback_end2end_test: $(CLIENT_CALLBACK_END2END_TEST_OBJS:.o=.dep)
 

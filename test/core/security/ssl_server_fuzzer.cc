@@ -52,9 +52,8 @@ static void on_handshake_done(void* arg, grpc_error* error) {
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  struct grpc_memory_counters counters;
   if (squelch) gpr_set_log_function(dont_log);
-  if (leak_check) grpc_memory_counters_init();
+  grpc_core::testing::LeakDetector leak_detector(leak_check);
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
@@ -118,11 +117,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_core::ExecCtx::Get()->Flush();
   }
 
-  grpc_shutdown();
-  if (leak_check) {
-    counters = grpc_memory_counters_snapshot();
-    grpc_memory_counters_destroy();
-    GPR_ASSERT(counters.total_size_relative == 0);
-  }
+  grpc_shutdown_blocking();
   return 0;
 }

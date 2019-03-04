@@ -138,8 +138,9 @@ void grpc_enable_error_creation();
 const char* grpc_error_string(grpc_error* error);
 
 /// Create an error - but use GRPC_ERROR_CREATE instead
-grpc_error* grpc_error_create(const char* file, int line, grpc_slice desc,
-                              grpc_error** referencing, size_t num_referencing);
+grpc_error* grpc_error_create(const char* file, int line,
+                              const grpc_slice& desc, grpc_error** referencing,
+                              size_t num_referencing);
 /// Create an error (this is the preferred way of generating an error that is
 ///   not due to a system call - for system calls, use GRPC_OS_ERROR or
 ///   GRPC_WSA_ERROR as appropriate)
@@ -200,7 +201,7 @@ bool grpc_error_get_int(grpc_error* error, grpc_error_ints which, intptr_t* p);
 /// This call takes ownership of the slice; the error is responsible for
 /// eventually unref-ing it.
 grpc_error* grpc_error_set_str(grpc_error* src, grpc_error_strs which,
-                               grpc_slice str) GRPC_MUST_USE_RESULT;
+                               const grpc_slice& str) GRPC_MUST_USE_RESULT;
 /// Returns false if the specified string is not set.
 /// Caller does NOT own the slice.
 bool grpc_error_get_str(grpc_error* error, grpc_error_strs which,

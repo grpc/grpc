@@ -108,7 +108,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   GRPC_STATS_INC_HTTP2_PINGS_SENT();
   t->ping_state.last_ping_sent_time = now;
   if (grpc_http_trace.enabled() || grpc_bdp_estimator_trace.enabled()) {
-    gpr_log(GPR_INFO, "%s: Ping sent [%p]: %d/%d",
+    gpr_log(GPR_INFO, "%s: Ping sent [%s]: %d/%d",
             t->is_client ? "CLIENT" : "SERVER", t->peer_string,
             t->ping_state.pings_before_data_required,
             t->ping_policy.max_pings_without_data);

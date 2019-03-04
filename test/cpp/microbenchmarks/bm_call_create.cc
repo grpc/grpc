@@ -318,29 +318,17 @@ static void FilterDestroy(void* arg, grpc_error* error) { gpr_free(arg); }
 
 static void DoNothing(void* arg, grpc_error* error) {}
 
-class FakeClientChannelFactory : public grpc_client_channel_factory {
+class FakeClientChannelFactory : public grpc_core::ClientChannelFactory {
  public:
-  FakeClientChannelFactory() { vtable = &vtable_; }
-
- private:
-  static void NoRef(grpc_client_channel_factory* factory) {}
-  static void NoUnref(grpc_client_channel_factory* factory) {}
-  static grpc_core::Subchannel* CreateSubchannel(
-      grpc_client_channel_factory* factory, const grpc_channel_args* args) {
+  grpc_core::Subchannel* CreateSubchannel(
+      const grpc_channel_args* args) override {
     return nullptr;
   }
-  static grpc_channel* CreateClientChannel(grpc_client_channel_factory* factory,
-                                           const char* target,
-                                           grpc_client_channel_type type,
-                                           const grpc_channel_args* args) {
+  grpc_channel* CreateChannel(const char* target,
+                              const grpc_channel_args* args) override {
     return nullptr;
   }
-
-  static const grpc_client_channel_factory_vtable vtable_;
 };
-
-const grpc_client_channel_factory_vtable FakeClientChannelFactory::vtable_ = {
-    NoRef, NoUnref, CreateSubchannel, CreateClientChannel};
 
 static grpc_arg StringArg(const char* key, const char* value) {
   grpc_arg a;
@@ -506,13 +494,13 @@ static void BM_IsolatedFilter(benchmark::State& state) {
   TrackCounters track_counters;
   Fixture fixture;
   std::ostringstream label;
-
-  std::vector<grpc_arg> args;
   FakeClientChannelFactory fake_client_channel_factory;
-  args.push_back(grpc_client_channel_factory_create_channel_arg(
-      &fake_client_channel_factory));
-  args.push_back(StringArg(GRPC_ARG_SERVER_URI, "localhost"));
 
+  std::vector<grpc_arg> args = {
+      grpc_core::ClientChannelFactory::CreateChannelArg(
+          &fake_client_channel_factory),
+      StringArg(GRPC_ARG_SERVER_URI, "localhost"),
+  };
   grpc_channel_args channel_args = {args.size(), &args[0]};
 
   std::vector<const grpc_channel_filter*> filters;

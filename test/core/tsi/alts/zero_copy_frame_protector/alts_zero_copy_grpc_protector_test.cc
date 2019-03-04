@@ -175,7 +175,7 @@ static void seal_unseal_small_buffer(tsi_zero_copy_grpc_protector* sender,
     GPR_ASSERT(tsi_zero_copy_grpc_protector_protect(
                    sender, &var->original_sb, &var->protected_sb) == TSI_OK);
     /* Splits protected slice buffer into two: first one is staging_sb, and
-     * second one is is protected_sb.  */
+     * second one is protected_sb.  */
     uint32_t staging_sb_size =
         gsec_test_bias_random_uint32(
             static_cast<uint32_t>(var->protected_sb.length - 1)) +

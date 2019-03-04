@@ -26,6 +26,7 @@
 
 #include <string.h>
 
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 char* grpc_slice_to_c_string(grpc_slice slice) {
@@ -47,19 +48,6 @@ grpc_slice grpc_slice_copy(grpc_slice s) {
   memcpy(GRPC_SLICE_START_PTR(out), GRPC_SLICE_START_PTR(s),
          GRPC_SLICE_LENGTH(s));
   return out;
-}
-
-grpc_slice grpc_slice_ref_internal(grpc_slice slice) {
-  if (slice.refcount) {
-    slice.refcount->vtable->ref(slice.refcount);
-  }
-  return slice;
-}
-
-void grpc_slice_unref_internal(grpc_slice slice) {
-  if (slice.refcount) {
-    slice.refcount->vtable->unref(slice.refcount);
-  }
 }
 
 /* Public API */
@@ -213,21 +201,35 @@ grpc_slice grpc_slice_from_copied_string(const char* source) {
   return grpc_slice_from_copied_buffer(source, strlen(source));
 }
 
-typedef struct {
+namespace {
+
+struct MallocRefCount {
+  MallocRefCount(const grpc_slice_refcount_vtable* vtable) {
+    base.vtable = vtable;
+    base.sub_refcount = &base;
+  }
+
+  void Ref() { refs.Ref(); }
+  void Unref() {
+    if (refs.Unref()) {
+      gpr_free(this);
+    }
+  }
+
   grpc_slice_refcount base;
-  gpr_refcount refs;
-} malloc_refcount;
+  grpc_core::RefCount refs;
+};
+
+}  // namespace
 
 static void malloc_ref(void* p) {
-  malloc_refcount* r = static_cast<malloc_refcount*>(p);
-  gpr_ref(&r->refs);
+  MallocRefCount* r = static_cast<MallocRefCount*>(p);
+  r->Ref();
 }
 
 static void malloc_unref(void* p) {
-  malloc_refcount* r = static_cast<malloc_refcount*>(p);
-  if (gpr_unref(&r->refs)) {
-    gpr_free(r);
-  }
+  MallocRefCount* r = static_cast<MallocRefCount*>(p);
+  r->Unref();
 }
 
 static const grpc_slice_refcount_vtable malloc_vtable = {
@@ -246,15 +248,10 @@ grpc_slice grpc_slice_malloc_large(size_t length) {
      refcount is a malloc_refcount
      bytes is an array of bytes of the requested length
      Both parts are placed in the same allocation returned from gpr_malloc */
-  malloc_refcount* rc = static_cast<malloc_refcount*>(
-      gpr_malloc(sizeof(malloc_refcount) + length));
+  void* data =
+      static_cast<MallocRefCount*>(gpr_malloc(sizeof(MallocRefCount) + length));
 
-  /* Initial refcount on rc is 1 - and it's up to the caller to release
-     this reference. */
-  gpr_ref_init(&rc->refs, 1);
-
-  rc->base.vtable = &malloc_vtable;
-  rc->base.sub_refcount = &rc->base;
+  auto* rc = new (data) MallocRefCount(&malloc_vtable);
 
   /* Build up the slice to be returned. */
   /* The slices refcount points back to the allocated block. */

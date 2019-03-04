@@ -245,7 +245,7 @@ class Chttp2IncomingByteStream : public ByteStream {
 
   void PublishError(grpc_error* error);
 
-  grpc_error* Push(grpc_slice slice, grpc_slice* slice_out);
+  grpc_error* Push(const grpc_slice& slice, grpc_slice* slice_out);
 
   grpc_error* Finished(grpc_error* error, bool reset_on_error);
 
@@ -438,7 +438,8 @@ struct grpc_chttp2_transport {
   void* parser_data = nullptr;
   grpc_chttp2_stream* incoming_stream = nullptr;
   grpc_error* (*parser)(void* parser_user_data, grpc_chttp2_transport* t,
-                        grpc_chttp2_stream* s, grpc_slice slice, int is_last);
+                        grpc_chttp2_stream* s, const grpc_slice& slice,
+                        int is_last);
 
   grpc_chttp2_write_cb* write_cb_pool = nullptr;
 
@@ -681,7 +682,7 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error* error);
 /** Process one slice of incoming data; return 1 if the connection is still
     viable after reading, or 0 if the connection should be torn down */
 grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
-                                     grpc_slice slice);
+                                     const grpc_slice& slice);
 
 bool grpc_chttp2_list_add_writable_stream(grpc_chttp2_transport* t,
                                           grpc_chttp2_stream* s);
@@ -740,7 +741,7 @@ grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
 
 void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                                      uint32_t goaway_error,
-                                     grpc_slice goaway_text);
+                                     const grpc_slice& goaway_text);
 
 void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t);
 
