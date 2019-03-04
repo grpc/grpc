@@ -300,8 +300,6 @@ class GrpcLb : public LoadBalancingPolicy {
   static void OnFallbackTimerLocked(void* arg, grpc_error* error);
   void StartBalancerCallRetryTimerLocked();
   static void OnBalancerCallRetryTimerLocked(void* arg, grpc_error* error);
-  static void OnBalancerChannelConnectivityChangedLocked(void* arg,
-                                                         grpc_error* error);
 
   // Methods for dealing with the child policy.
   grpc_channel_args* CreateChildPolicyArgsLocked();
@@ -322,10 +320,6 @@ class GrpcLb : public LoadBalancingPolicy {
   grpc_channel* lb_channel_ = nullptr;
   // Uuid of the lb channel. Used for channelz.
   gpr_atm lb_channel_uuid_ = 0;
-  grpc_connectivity_state lb_channel_connectivity_;
-  grpc_closure lb_channel_on_connectivity_changed_;
-  // Are we already watching the LB channel's connectivity?
-  bool watching_lb_channel_ = false;
   // Response generator to inject address updates into lb_channel_.
   RefCountedPtr<FakeResolverResponseGenerator> response_generator_;
 
@@ -1232,10 +1226,6 @@ GrpcLb::GrpcLb(Args args)
               .set_jitter(GRPC_GRPCLB_RECONNECT_JITTER)
               .set_max_backoff(GRPC_GRPCLB_RECONNECT_MAX_BACKOFF_SECONDS *
                                1000)) {
-  // Initialization.
-  GRPC_CLOSURE_INIT(&lb_channel_on_connectivity_changed_,
-                    &GrpcLb::OnBalancerChannelConnectivityChangedLocked, this,
-                    grpc_combiner_scheduler(args.combiner));
   // Record server name.
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
   const char* server_uri = grpc_channel_arg_get_string(arg);
@@ -1337,23 +1327,6 @@ void GrpcLb::UpdateLocked(const grpc_channel_args& args,
       grpc_timer_init(&lb_fallback_timer_, deadline, &lb_on_fallback_);
     }
     StartBalancerCallLocked();
-  } else if (!watching_lb_channel_) {
-    // If this is not the initial update and we're not already watching
-    // the LB channel's connectivity state, start a watch now.  This
-    // ensures that we'll know when to switch to a new balancer call.
-    lb_channel_connectivity_ = grpc_channel_check_connectivity_state(
-        lb_channel_, true /* try to connect */);
-    grpc_channel_element* client_channel_elem = grpc_channel_stack_last_element(
-        grpc_channel_get_channel_stack(lb_channel_));
-    GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-    watching_lb_channel_ = true;
-    // Ref held by callback.
-    Ref(DEBUG_LOCATION, "watch_lb_channel_connectivity").release();
-    grpc_client_channel_watch_connectivity_state(
-        client_channel_elem,
-        grpc_polling_entity_create_from_pollset_set(interested_parties()),
-        &lb_channel_connectivity_, &lb_channel_on_connectivity_changed_,
-        nullptr);
   }
 }
 
@@ -1517,51 +1490,6 @@ void GrpcLb::OnBalancerCallRetryTimerLocked(void* arg, grpc_error* error) {
     grpclb_policy->StartBalancerCallLocked();
   }
   grpclb_policy->Unref(DEBUG_LOCATION, "on_balancer_call_retry_timer");
-}
-
-// Invoked as part of the update process. It continues watching the LB channel
-// until it shuts down or becomes READY. It's invoked even if the LB channel
-// stayed READY throughout the update (for example if the update is identical).
-void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
-                                                        grpc_error* error) {
-  GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
-  if (grpclb_policy->shutting_down_) goto done;
-  // Re-initialize the lb_call. This should also take care of updating the
-  // child policy. Note that the current child policy, if any, will stay in
-  // effect until an update from the new lb_call is received.
-  switch (grpclb_policy->lb_channel_connectivity_) {
-    case GRPC_CHANNEL_CONNECTING:
-    case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-      // Keep watching the LB channel.
-      grpc_channel_element* client_channel_elem =
-          grpc_channel_stack_last_element(
-              grpc_channel_get_channel_stack(grpclb_policy->lb_channel_));
-      GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-      grpc_client_channel_watch_connectivity_state(
-          client_channel_elem,
-          grpc_polling_entity_create_from_pollset_set(
-              grpclb_policy->interested_parties()),
-          &grpclb_policy->lb_channel_connectivity_,
-          &grpclb_policy->lb_channel_on_connectivity_changed_, nullptr);
-      break;
-    }
-      // The LB channel may be IDLE because it's shut down before the update.
-      // Restart the LB call to kick the LB channel into gear.
-    case GRPC_CHANNEL_IDLE:
-    case GRPC_CHANNEL_READY:
-      grpclb_policy->lb_calld_.reset();
-      if (grpclb_policy->retry_timer_callback_pending_) {
-        grpc_timer_cancel(&grpclb_policy->lb_call_retry_timer_);
-      }
-      grpclb_policy->lb_call_backoff_.Reset();
-      grpclb_policy->StartBalancerCallLocked();
-      // fallthrough
-    case GRPC_CHANNEL_SHUTDOWN:
-    done:
-      grpclb_policy->watching_lb_channel_ = false;
-      grpclb_policy->Unref(DEBUG_LOCATION,
-                           "watch_lb_channel_connectivity_cb_shutdown");
-  }
 }
 
 //
