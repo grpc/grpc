@@ -79,9 +79,9 @@
 
 using std::chrono::system_clock;
 
+using grpc::lb::v1::LoadBalancer;
 using grpc::lb::v1::LoadBalanceRequest;
 using grpc::lb::v1::LoadBalanceResponse;
-using grpc::lb::v1::LoadBalancer;
 
 namespace grpc {
 namespace testing {
@@ -804,10 +804,10 @@ TEST_F(SingleBalancerTest, UpdatesGoToMostRecentChildPolicy) {
   gpr_log(GPR_INFO, "PHASE 1: Initial setup with RR with first backend");
   SetNextResolution(
       {
-        // Unreachable balancer.
-        {unreachable_balancer_port, true, ""},
-        // Fallback address: first backend.
-        {backend_servers_[0].port_, false, ""},
+          // Unreachable balancer.
+          {unreachable_balancer_port, true, ""},
+          // Fallback address: first backend.
+          {backend_servers_[0].port_, false, ""},
       },
       "{\n"
       "  \"loadBalancingConfig\":[\n"
@@ -824,10 +824,10 @@ TEST_F(SingleBalancerTest, UpdatesGoToMostRecentChildPolicy) {
   gpr_log(GPR_INFO, "PHASE 2: Update to use PF with unreachable backend");
   SetNextResolution(
       {
-        // Unreachable balancer.
-        {unreachable_balancer_port, true, ""},
-        // Fallback address: unreachable backend.
-        {unreachable_backend_port, false, ""},
+          // Unreachable balancer.
+          {unreachable_balancer_port, true, ""},
+          // Fallback address: unreachable backend.
+          {unreachable_backend_port, false, ""},
       },
       "{\n"
       "  \"loadBalancingConfig\":[\n"
@@ -847,11 +847,11 @@ TEST_F(SingleBalancerTest, UpdatesGoToMostRecentChildPolicy) {
   gpr_log(GPR_INFO, "PHASE 3: Update to use RR again with two backends");
   SetNextResolution(
       {
-        // Unreachable balancer.
-        {unreachable_balancer_port, true, ""},
-        // Fallback address: second and third backends.
-        {backend_servers_[1].port_, false, ""},
-        {backend_servers_[2].port_, false, ""},
+          // Unreachable balancer.
+          {unreachable_balancer_port, true, ""},
+          // Fallback address: second and third backends.
+          {backend_servers_[1].port_, false, ""},
+          {backend_servers_[2].port_, false, ""},
       },
       "{\n"
       "  \"loadBalancingConfig\":[\n"
