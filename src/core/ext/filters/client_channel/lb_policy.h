@@ -73,11 +73,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Will be set to the selected subchannel, or nullptr on failure or when
     /// the LB policy decides to drop the call.
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
-    /// Will be populated with context to pass to the subchannel call, if
-    /// needed.
-    // TODO(roth): Remove this from the API, especially since it's not
-    // working properly anyway (see https://github.com/grpc/grpc/issues/15927).
-    grpc_call_context_element subchannel_call_context[GRPC_CONTEXT_COUNT] = {};
   };
 
   /// A picker is the object used to actual perform picks.

@@ -694,6 +694,7 @@ struct call_data {
         arena(args.arena),
         owning_call(args.call_stack),
         call_combiner(args.call_combiner),
+        call_context(args.context),
         pending_send_initial_metadata(false),
         pending_send_message(false),
         pending_send_trailing_metadata(false),
@@ -706,12 +707,6 @@ struct call_data {
     GRPC_ERROR_UNREF(cancel_error);
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches); ++i) {
       GPR_ASSERT(pending_batches[i].batch == nullptr);
-    }
-    for (size_t i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
-      if (pick.pick.subchannel_call_context[i].destroy != nullptr) {
-        pick.pick.subchannel_call_context[i].destroy(
-            pick.pick.subchannel_call_context[i].value);
-      }
     }
   }
 
@@ -729,6 +724,7 @@ struct call_data {
   gpr_arena* arena;
   grpc_call_stack* owning_call;
   grpc_call_combiner* call_combiner;
+  grpc_call_context_element* call_context;
 
   grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
   grpc_core::RefCountedPtr<ClientChannelMethodParams> method_params;
@@ -2429,14 +2425,16 @@ static void create_subchannel_call(grpc_call_element* elem) {
   const size_t parent_data_size =
       calld->enable_retries ? sizeof(subchannel_call_retry_state) : 0;
   const grpc_core::ConnectedSubchannel::CallArgs call_args = {
-      calld->pollent,                            // pollent
-      calld->path,                               // path
-      calld->call_start_time,                    // start_time
-      calld->deadline,                           // deadline
-      calld->arena,                              // arena
-      calld->pick.pick.subchannel_call_context,  // context
-      calld->call_combiner,                      // call_combiner
-      parent_data_size                           // parent_data_size
+      calld->pollent,          // pollent
+      calld->path,             // path
+      calld->call_start_time,  // start_time
+      calld->deadline,         // deadline
+      calld->arena,            // arena
+      // TODO(roth): When we implement hedging support, we will probably
+      // need to use a separate call context for each subchannel call.
+      calld->call_context,   // context
+      calld->call_combiner,  // call_combiner
+      parent_data_size       // parent_data_size
   };
   grpc_error* error = GRPC_ERROR_NONE;
   calld->subchannel_call =
@@ -2451,7 +2449,7 @@ static void create_subchannel_call(grpc_call_element* elem) {
   } else {
     if (parent_data_size > 0) {
       new (calld->subchannel_call->GetParentData())
-          subchannel_call_retry_state(calld->pick.pick.subchannel_call_context);
+          subchannel_call_retry_state(calld->call_context);
     }
     pending_batches_resume(elem);
   }
