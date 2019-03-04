@@ -56,6 +56,12 @@ class GrpcLbClientStats : public RefCounted<GrpcLbClientStats> {
                  int64_t* num_calls_finished_known_received,
                  UniquePtr<DroppedCallCounts>* drop_token_counts);
 
+  // A destruction function to use as the user_data key when attaching
+  // client stats to a grpc_mdelem.
+  static void Destroy(void* arg) {
+    static_cast<GrpcLbClientStats*>(arg)->Unref();
+  }
+
  private:
   // This field must only be accessed via *_locked() methods.
   UniquePtr<DroppedCallCounts> drop_token_counts_;

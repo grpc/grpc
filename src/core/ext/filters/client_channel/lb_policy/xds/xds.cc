@@ -322,11 +322,6 @@ class XdsLb : public LoadBalancingPolicy {
 // XdsLb::Picker
 //
 
-// Destroy function used when embedding client stats in call context.
-void DestroyClientStats(void* arg) {
-  static_cast<XdsLbClientStats*>(arg)->Unref();
-}
-
 XdsLb::Picker::PickResult XdsLb::Picker::Pick(PickState* pick,
                                               grpc_error** error) {
   // TODO(roth): Add support for drop handling.
@@ -335,10 +330,7 @@ XdsLb::Picker::PickResult XdsLb::Picker::Pick(PickState* pick,
   // If pick succeeded, add client stats.
   if (result == PickResult::PICK_COMPLETE &&
       pick->connected_subchannel != nullptr && client_stats_ != nullptr) {
-    pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].value =
-        client_stats_->Ref().release();
-    pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].destroy =
-        DestroyClientStats;
+    // TODO(roth): Add support for client stats.
   }
   return result;
 }
