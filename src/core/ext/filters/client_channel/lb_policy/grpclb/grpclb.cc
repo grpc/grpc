@@ -636,7 +636,7 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
     }
     parent_->child_policy_ = std::move(parent_->pending_child_policy_);
   } else if (!CalledByCurrentChild()) {
-    // This request is from an outdated pending child, so ignore it.
+    // This request is from an outdated child, so ignore it.
     GRPC_ERROR_UNREF(state_error);
     return;
   }
