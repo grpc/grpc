@@ -189,7 +189,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// \param num_cqs How many completion queues does \a cqs hold.
   void Start(ServerCompletionQueue** cqs, size_t num_cqs) override;
 
-  grpc_server* server() override { return server_; };
+  grpc_server* server() override { return server_; }
 
  private:
   std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>*
@@ -223,7 +223,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
 
   int max_receive_message_size() const override {
     return max_receive_message_size_;
-  };
+  }
 
   CompletionQueue* CallbackCQ() override;
 

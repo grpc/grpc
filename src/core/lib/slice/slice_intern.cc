@@ -196,7 +196,7 @@ grpc_slice grpc_slice_maybe_static_intern(grpc_slice slice,
   return slice;
 }
 
-bool grpc_slice_is_interned(grpc_slice slice) {
+bool grpc_slice_is_interned(const grpc_slice& slice) {
   return (slice.refcount && slice.refcount->vtable == &interned_slice_vtable) ||
          GRPC_IS_STATIC_METADATA_STRING(slice);
 }

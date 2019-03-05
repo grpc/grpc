@@ -105,8 +105,6 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/useful.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/abstract.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/atomic.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/atomic_with_atm.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/atomic_with_std.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/fork.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/manual_constructor.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/memory.h" role="src" />

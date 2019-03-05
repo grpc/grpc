@@ -190,6 +190,13 @@ function(protobuf_generate_grpc_cpp)
     get_filename_component(REL_DIR ${REL_FIL} DIRECTORY)
     set(RELFIL_WE "${REL_DIR}/${FIL_WE}")
 
+    #if cross-compiling, find host plugin
+    if(CMAKE_CROSSCOMPILING)
+        find_program(_gRPC_CPP_PLUGIN grpc_cpp_plugin)
+    else()
+        set(_gRPC_CPP_PLUGIN $<TARGET_FILE:grpc_cpp_plugin>)
+    endif()
+
     add_custom_command(
       OUTPUT "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc"
              "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h"
@@ -199,7 +206,7 @@ function(protobuf_generate_grpc_cpp)
       COMMAND ${_gRPC_PROTOBUF_PROTOC_EXECUTABLE}
       ARGS --grpc_out=generate_mock_code=true:${_gRPC_PROTO_GENS_DIR}
            --cpp_out=${_gRPC_PROTO_GENS_DIR}
-           --plugin=protoc-gen-grpc=$<TARGET_FILE:grpc_cpp_plugin>
+           --plugin=protoc-gen-grpc=${_gRPC_CPP_PLUGIN}
            ${_protobuf_include_path}
            ${REL_FIL}
       DEPENDS ${ABS_FIL} ${_gRPC_PROTOBUF_PROTOC} grpc_cpp_plugin
@@ -5609,6 +5616,7 @@ add_library(end2end_tests
   test/core/end2end/tests/empty_batch.cc
   test/core/end2end/tests/filter_call_init_fails.cc
   test/core/end2end/tests/filter_causes_close.cc
+  test/core/end2end/tests/filter_context.cc
   test/core/end2end/tests/filter_latency.cc
   test/core/end2end/tests/filter_status_code.cc
   test/core/end2end/tests/graceful_server_shutdown.cc
@@ -5732,6 +5740,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/empty_batch.cc
   test/core/end2end/tests/filter_call_init_fails.cc
   test/core/end2end/tests/filter_causes_close.cc
+  test/core/end2end/tests/filter_context.cc
   test/core/end2end/tests/filter_latency.cc
   test/core/end2end/tests/filter_status_code.cc
   test/core/end2end/tests/graceful_server_shutdown.cc
@@ -12434,6 +12443,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(client_callback_end2end_test
   test/cpp/end2end/client_callback_end2end_test.cc
+  test/cpp/end2end/interceptors_util.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )

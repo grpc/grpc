@@ -20,7 +20,7 @@ import unittest
 
 import grpc
 from tests.unit.framework.common import test_constants
-from tests.unit import _thread_pool
+from tests.unit import thread_pool
 
 
 def _ready_in_connectivities(connectivities):
@@ -85,8 +85,10 @@ class ChannelConnectivityTest(unittest.TestCase):
         self.assertNotIn(grpc.ChannelConnectivity.READY, fifth_connectivities)
 
     def test_immediately_connectable_channel_connectivity(self):
-        thread_pool = _thread_pool.RecordingThreadPool(max_workers=None)
-        server = grpc.server(thread_pool, options=(('grpc.so_reuseport', 0),))
+        recording_thread_pool = thread_pool.RecordingThreadPool(
+            max_workers=None)
+        server = grpc.server(
+            recording_thread_pool, options=(('grpc.so_reuseport', 0),))
         port = server.add_insecure_port('[::]:0')
         server.start()
         first_callback = _Callback()
@@ -125,11 +127,13 @@ class ChannelConnectivityTest(unittest.TestCase):
                          fourth_connectivities)
         self.assertNotIn(grpc.ChannelConnectivity.SHUTDOWN,
                          fourth_connectivities)
-        self.assertFalse(thread_pool.was_used())
+        self.assertFalse(recording_thread_pool.was_used())
 
     def test_reachable_then_unreachable_channel_connectivity(self):
-        thread_pool = _thread_pool.RecordingThreadPool(max_workers=None)
-        server = grpc.server(thread_pool, options=(('grpc.so_reuseport', 0),))
+        recording_thread_pool = thread_pool.RecordingThreadPool(
+            max_workers=None)
+        server = grpc.server(
+            recording_thread_pool, options=(('grpc.so_reuseport', 0),))
         port = server.add_insecure_port('[::]:0')
         server.start()
         callback = _Callback()
@@ -143,7 +147,7 @@ class ChannelConnectivityTest(unittest.TestCase):
             _last_connectivity_is_not_ready)
         channel.unsubscribe(callback.update)
         channel.close()
-        self.assertFalse(thread_pool.was_used())
+        self.assertFalse(recording_thread_pool.was_used())
 
 
 if __name__ == '__main__':

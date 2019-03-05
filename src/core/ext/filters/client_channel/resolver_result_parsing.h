@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -60,7 +61,9 @@ class ProcessedResolverResult {
     return std::move(method_params_table_);
   }
   UniquePtr<char> lb_policy_name() { return std::move(lb_policy_name_); }
-  grpc_json* lb_policy_config() { return lb_policy_config_; }
+  RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config() {
+    return std::move(lb_policy_config_);
+  }
 
  private:
   // Finds the service config; extracts LB config and (maybe) retry throttle
@@ -82,10 +85,10 @@ class ProcessedResolverResult {
 
   // Service config.
   UniquePtr<char> service_config_json_;
-  UniquePtr<grpc_core::ServiceConfig> service_config_;
+  RefCountedPtr<ServiceConfig> service_config_;
   // LB policy.
-  grpc_json* lb_policy_config_ = nullptr;
   UniquePtr<char> lb_policy_name_;
+  RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config_;
   // Retry throttle data.
   char* server_name_ = nullptr;
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;

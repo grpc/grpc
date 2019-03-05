@@ -56,17 +56,17 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   ResolvingLoadBalancingPolicy(Args args, TraceFlag* tracer,
                                UniquePtr<char> target_uri,
                                UniquePtr<char> child_policy_name,
-                               grpc_json* child_lb_config, grpc_error** error);
+                               RefCountedPtr<Config> child_lb_config,
+                               grpc_error** error);
 
   // Private ctor, to be used by client_channel only!
   //
   // Synchronous callback that takes the resolver result and sets
   // lb_policy_name and lb_policy_config to point to the right data.
   // Returns true if the service config has changed since the last result.
-  typedef bool (*ProcessResolverResultCallback)(void* user_data,
-                                                const grpc_channel_args& args,
-                                                const char** lb_policy_name,
-                                                grpc_json** lb_policy_config);
+  typedef bool (*ProcessResolverResultCallback)(
+      void* user_data, const grpc_channel_args& args,
+      const char** lb_policy_name, RefCountedPtr<Config>* lb_policy_config);
   // If error is set when this returns, then construction failed, and
   // the caller may not use the new object.
   ResolvingLoadBalancingPolicy(
@@ -77,12 +77,10 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   virtual const char* name() const override { return "resolving_lb"; }
 
   // No-op -- should never get updates from the channel.
-  // TODO(roth): Need to support updating child LB policy's config.
-  // For xds policy, will also need to support updating config
-  // independently of args from resolver, since they will be coming from
-  // different places.  Maybe change LB policy API to support that?
+  // TODO(roth): Need to support updating child LB policy's config for xds
+  // use case.
   void UpdateLocked(const grpc_channel_args& args,
-                    grpc_json* lb_config) override {}
+                    RefCountedPtr<Config> lb_config) override {}
 
   void ExitIdleLocked() override;
 
@@ -105,10 +103,10 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   void StartResolvingLocked();
   void OnResolverShutdownLocked(grpc_error* error);
   void CreateOrUpdateLbPolicyLocked(const char* lb_policy_name,
-                                    grpc_json* lb_policy_config,
+                                    RefCountedPtr<Config>,
                                     TraceStringVector* trace_strings);
-  void CreateLbPolicyLocked(const char* lb_policy_name, grpc_json* lb_config,
-                            TraceStringVector* trace_strings);
+  OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(
+      const char* lb_policy_name, TraceStringVector* trace_strings);
   void MaybeAddTraceMessagesForAddressChangesLocked(
       TraceStringVector* trace_strings);
   void ConcatenateAndAddChannelTraceLocked(
@@ -121,8 +119,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   ProcessResolverResultCallback process_resolver_result_ = nullptr;
   void* process_resolver_result_user_data_ = nullptr;
   UniquePtr<char> child_policy_name_;
-  UniquePtr<char> child_lb_config_str_;
-  grpc_json* child_lb_config_ = nullptr;
+  RefCountedPtr<Config> child_lb_config_;
 
   // Resolver and associated state.
   OrphanablePtr<Resolver> resolver_;

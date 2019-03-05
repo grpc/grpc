@@ -287,7 +287,8 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
 grpc_error* grpc_chttp2_data_parser_parse(void* parser,
                                           grpc_chttp2_transport* t,
                                           grpc_chttp2_stream* s,
-                                          grpc_slice slice, int is_last) {
+                                          const grpc_slice& slice,
+                                          int is_last) {
   if (!s->pending_byte_stream) {
     grpc_slice_ref_internal(slice);
     grpc_slice_buffer_add(&s->frame_storage, slice);

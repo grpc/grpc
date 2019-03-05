@@ -33,14 +33,14 @@
 
 namespace grpc_core {
 
-UniquePtr<ServiceConfig> ServiceConfig::Create(const char* json) {
+RefCountedPtr<ServiceConfig> ServiceConfig::Create(const char* json) {
   UniquePtr<char> json_string(gpr_strdup(json));
   grpc_json* json_tree = grpc_json_parse_string(json_string.get());
   if (json_tree == nullptr) {
     gpr_log(GPR_INFO, "failed to parse JSON for service config");
     return nullptr;
   }
-  return MakeUnique<ServiceConfig>(std::move(json_string), json_tree);
+  return MakeRefCounted<ServiceConfig>(std::move(json_string), json_tree);
 }
 
 ServiceConfig::ServiceConfig(UniquePtr<char> json_string, grpc_json* json_tree)

@@ -160,6 +160,6 @@ void grpc_tcp_set_write_timestamps_callback(void (*fn)(void*,
                                                        grpc_core::Timestamps*,
                                                        grpc_error* error));
 
-}; /* namespace grpc_core */
+} /* namespace grpc_core */
 
 #endif /* GRPC_CORE_LIB_IOMGR_BUFFER_LIST_H */

@@ -824,10 +824,10 @@ static const char* write_state_name(grpc_chttp2_write_state st) {
 
 static void set_write_state(grpc_chttp2_transport* t,
                             grpc_chttp2_write_state st, const char* reason) {
-  GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "W:%p %s state %s -> %s [%s]", t,
-                                 t->is_client ? "CLIENT" : "SERVER",
-                                 write_state_name(t->write_state),
-                                 write_state_name(st), reason));
+  GRPC_CHTTP2_IF_TRACING(
+      gpr_log(GPR_INFO, "W:%p %s [%s] state %s -> %s [%s]", t,
+              t->is_client ? "CLIENT" : "SERVER", t->peer_string,
+              write_state_name(t->write_state), write_state_name(st), reason));
   t->write_state = st;
   /* If the state is being reset back to idle, it means a write was just
    * finished. Make sure all the run_after_write closures are scheduled.
@@ -1062,12 +1062,15 @@ static void write_action_end_locked(void* tp, grpc_error* error) {
   GPR_TIMER_SCOPE("terminate_writing_with_lock", 0);
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
 
+  bool closed = false;
   if (error != GRPC_ERROR_NONE) {
     close_transport_locked(t, GRPC_ERROR_REF(error));
+    closed = true;
   }
 
   if (t->sent_goaway_state == GRPC_CHTTP2_GOAWAY_SEND_SCHEDULED) {
     t->sent_goaway_state = GRPC_CHTTP2_GOAWAY_SENT;
+    closed = true;
     if (grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
       close_transport_locked(
           t, GRPC_ERROR_CREATE_FROM_STATIC_STRING("goaway sent"));
@@ -1086,6 +1089,14 @@ static void write_action_end_locked(void* tp, grpc_error* error) {
       set_write_state(t, GRPC_CHTTP2_WRITE_STATE_WRITING, "continue writing");
       t->is_first_write_in_batch = false;
       GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
+      // If the transport is closed, we will retry writing on the endpoint
+      // and next write may contain part of the currently serialized frames.
+      // So, we should only call the run_after_write callbacks when the next
+      // write finishes, or the callbacks will be invoked when the stream is
+      // closed.
+      if (!closed) {
+        GRPC_CLOSURE_LIST_SCHED(&t->run_after_write);
+      }
       GRPC_CLOSURE_RUN(
           GRPC_CLOSURE_INIT(&t->write_action_begin_locked,
                             write_action_begin_locked, t,
@@ -1118,7 +1129,7 @@ static void queue_setting_update(grpc_chttp2_transport* t,
 
 void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                                      uint32_t goaway_error,
-                                     grpc_slice goaway_text) {
+                                     const grpc_slice& goaway_text) {
   // Discard the error from a previous goaway frame (if any)
   if (t->goaway_error != GRPC_ERROR_NONE) {
     GRPC_ERROR_UNREF(t->goaway_error);
@@ -2985,7 +2996,7 @@ void Chttp2IncomingByteStream::PublishError(grpc_error* error) {
   grpc_chttp2_cancel_stream(transport_, stream_, GRPC_ERROR_REF(error));
 }
 
-grpc_error* Chttp2IncomingByteStream::Push(grpc_slice slice,
+grpc_error* Chttp2IncomingByteStream::Push(const grpc_slice& slice,
                                            grpc_slice* slice_out) {
   if (remaining_bytes_ < GRPC_SLICE_LENGTH(slice)) {
     grpc_error* error =
