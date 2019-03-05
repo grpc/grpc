@@ -297,8 +297,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   grpc_combiner* combiner() const { return combiner_; }
 
-  // Note: LB policies MUST NOT call any method on the helper from
-  // their constructor.
+  // Note: LB policies MUST NOT call any method on the helper from their
+  // constructor.
   // Note: This will return null after ShutdownLocked() has been called.
   ChannelControlHelper* channel_control_helper() const {
     return channel_control_helper_.get();
