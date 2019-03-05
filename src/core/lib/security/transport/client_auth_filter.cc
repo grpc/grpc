@@ -169,8 +169,8 @@ static void on_credentials_metadata(void* arg, grpc_error* input_error) {
 }
 
 void grpc_auth_metadata_context_build(
-    const char* url_scheme, const grpc_slice& call_host,
-    const grpc_slice& call_method, grpc_auth_context* auth_context,
+    const char* url_scheme, grpc_slice call_host, grpc_slice call_method,
+    grpc_auth_context* auth_context,
     grpc_auth_metadata_context* auth_md_context) {
   char* service = grpc_slice_to_c_string(call_method);
   char* last_slash = strrchr(service, '/');

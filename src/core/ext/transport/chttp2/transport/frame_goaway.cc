@@ -57,11 +57,10 @@ grpc_error* grpc_chttp2_goaway_parser_begin_frame(grpc_chttp2_goaway_parser* p,
 grpc_error* grpc_chttp2_goaway_parser_parse(void* parser,
                                             grpc_chttp2_transport* t,
                                             grpc_chttp2_stream* s,
-                                            const grpc_slice& slice,
-                                            int is_last) {
-  const uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
-  const uint8_t* const end = GRPC_SLICE_END_PTR(slice);
-  const uint8_t* cur = beg;
+                                            grpc_slice slice, int is_last) {
+  uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
+  uint8_t* const end = GRPC_SLICE_END_PTR(slice);
+  uint8_t* cur = beg;
   grpc_chttp2_goaway_parser* p =
       static_cast<grpc_chttp2_goaway_parser*>(parser);
 
@@ -150,7 +149,7 @@ grpc_error* grpc_chttp2_goaway_parser_parse(void* parser,
 }
 
 void grpc_chttp2_goaway_append(uint32_t last_stream_id, uint32_t error_code,
-                               const grpc_slice& debug_data,
+                               grpc_slice debug_data,
                                grpc_slice_buffer* slice_buffer) {
   grpc_slice header = GRPC_SLICE_MALLOC(9 + 4 + 4);
   uint8_t* p = GRPC_SLICE_START_PTR(header);

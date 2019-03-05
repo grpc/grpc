@@ -69,11 +69,11 @@ grpc_error* grpc_chttp2_window_update_parser_begin_frame(
 grpc_error* grpc_chttp2_window_update_parser_parse(void* parser,
                                                    grpc_chttp2_transport* t,
                                                    grpc_chttp2_stream* s,
-                                                   const grpc_slice& slice,
+                                                   grpc_slice slice,
                                                    int is_last) {
-  const uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
-  const uint8_t* const end = GRPC_SLICE_END_PTR(slice);
-  const uint8_t* cur = beg;
+  uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
+  uint8_t* const end = GRPC_SLICE_END_PTR(slice);
+  uint8_t* cur = beg;
   grpc_chttp2_window_update_parser* p =
       static_cast<grpc_chttp2_window_update_parser*>(parser);
 

@@ -55,11 +55,11 @@ void xds_grpclb_request_destroy(xds_grpclb_request* request);
 /** Parse (ie, decode) the bytes in \a encoded_xds_grpclb_response as a \a
  * xds_grpclb_initial_response */
 xds_grpclb_initial_response* xds_grpclb_initial_response_parse(
-    const grpc_slice& encoded_xds_grpclb_response);
+    grpc_slice encoded_xds_grpclb_response);
 
 /** Parse the list of servers from an encoded \a xds_grpclb_response */
 xds_grpclb_serverlist* xds_grpclb_response_parse_serverlist(
-    const grpc_slice& encoded_xds_grpclb_response);
+    grpc_slice encoded_xds_grpclb_response);
 
 /** Return a copy of \a sl. The caller is responsible for calling \a
  * xds_grpclb_destroy_serverlist on the returned copy. */
