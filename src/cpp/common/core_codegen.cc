@@ -139,11 +139,6 @@ int CoreCodegen::grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
   return ::grpc_byte_buffer_reader_next(reader, slice);
 }
 
-int CoreCodegen::grpc_byte_buffer_reader_peek(grpc_byte_buffer_reader* reader,
-                                              grpc_slice** slice) {
-  return ::grpc_byte_buffer_reader_peek(reader, slice);
-}
-
 grpc_byte_buffer* CoreCodegen::grpc_raw_byte_buffer_create(grpc_slice* slice,
                                                            size_t nslices) {
   return ::grpc_raw_byte_buffer_create(slice, nslices);
