@@ -1180,13 +1180,6 @@ void XdsLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
       &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &new_arg, 1);
   // Construct args for balancer channel.
   grpc_channel_args* lb_channel_args = BuildBalancerChannelArgs(&args);
-  // FIXME: add fake:/// in test.
-  const bool use_fake_resolver =
-      FakeResolverResponseGenerator::GetFromArgs(lb_channel_args) != nullptr;
-  char* uri_str = balancer_name_.get();
-  if (use_fake_resolver) {
-    gpr_asprintf(&uri_str, "fake:///%s", balancer_name_.get());
-  }
   // Create an LB channel if we don't have one yet or the balancer name has
   // changed from the last received one.
   bool create_lb_channel = lb_chand_ == nullptr;
@@ -1198,7 +1191,8 @@ void XdsLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
   }
   if (create_lb_channel) {
     OrphanablePtr<BalancerChannelState> lb_chand =
-        MakeOrphanable<BalancerChannelState>(uri_str, *lb_channel_args, Ref());
+        MakeOrphanable<BalancerChannelState>(balancer_name_.get(),
+                                             *lb_channel_args, Ref());
     if (lb_chand_ == nullptr || !lb_chand_->HasActiveCall()) {
       GPR_ASSERT(pending_lb_chand_ == nullptr);
       // If we do not have a working LB channel yet, use the newly created one.
@@ -1208,7 +1202,6 @@ void XdsLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
       pending_lb_chand_ = std::move(lb_chand);
     }
   }
-  if (use_fake_resolver) gpr_free(uri_str);
   grpc_channel_args_destroy(lb_channel_args);
 }
 

@@ -691,7 +691,7 @@ class XdsEnd2endTest : public ::testing::Test {
       "{\n"
       "  \"loadBalancingConfig\":[\n"
       "    { \"does_not_exist\":{} },\n"
-      "    { \"xds_experimental\":{ \"balancerName\": \"lb\" } }\n"
+      "    { \"xds_experimental\":{ \"balancerName\": \"fake:///lb\" } }\n"
       "  ]\n"
       "}";
 };
@@ -947,15 +947,15 @@ TEST_F(UpdatesTest, UpdateBalancerName) {
   SetNextResolutionForLbChannel(ports, nullptr,
                                 new_lb_channel_response_generator.get());
   gpr_log(GPR_INFO, "========= ABOUT TO UPDATE BALANCER NAME ==========");
-  SetNextResolution(
-      {},
-      "{\n"
-      "  \"loadBalancingConfig\":[\n"
-      "    { \"does_not_exist\":{} },\n"
-      "    { \"xds_experimental\":{ \"balancerName\": \"updated_lb\" } }\n"
-      "  ]\n"
-      "}",
-      new_lb_channel_response_generator.get());
+  SetNextResolution({},
+                    "{\n"
+                    "  \"loadBalancingConfig\":[\n"
+                    "    { \"does_not_exist\":{} },\n"
+                    "    { \"xds_experimental\":{ \"balancerName\": "
+                    "\"fake:///updated_lb\" } }\n"
+                    "  ]\n"
+                    "}",
+                    new_lb_channel_response_generator.get());
   gpr_log(GPR_INFO, "========= UPDATED BALANCER NAME ==========");
 
   // Wait until update has been processed, as signaled by the second backend
