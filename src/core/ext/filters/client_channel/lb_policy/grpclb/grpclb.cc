@@ -357,8 +357,7 @@ class GrpcLb : public LoadBalancingPolicy {
   // When switching child policies, the new policy will be stored here
   // until it reports READY, at which point it will be moved to child_policy_.
   OrphanablePtr<LoadBalancingPolicy> pending_child_policy_;
-  // The child policy name and config.
-  UniquePtr<char> child_policy_name_;
+  // The child policy config.
   RefCountedPtr<Config> child_policy_config_;
 };
 
@@ -1388,7 +1387,7 @@ void GrpcLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
 void GrpcLb::ParseLbConfig(Config* grpclb_config) {
   const grpc_json* child_policy = nullptr;
   if (grpclb_config != nullptr) {
-    const grpc_json* grpclb_config_json = grpclb_config->json();
+    const grpc_json* grpclb_config_json = grpclb_config->config();
     for (const grpc_json* field = grpclb_config_json; field != nullptr;
          field = field->next) {
       if (field->key == nullptr) return;
@@ -1399,11 +1398,9 @@ void GrpcLb::ParseLbConfig(Config* grpclb_config) {
     }
   }
   if (child_policy != nullptr) {
-    child_policy_name_ = UniquePtr<char>(gpr_strdup(child_policy->key));
-    child_policy_config_ = MakeRefCounted<Config>(
-        child_policy->child, grpclb_config->service_config());
+    child_policy_config_ =
+        MakeRefCounted<Config>(child_policy, grpclb_config->service_config());
   } else {
-    child_policy_name_.reset();
     child_policy_config_.reset();
   }
 }
@@ -1609,8 +1606,9 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
   //       that was there before, which will be immediately shut down)
   //       and will later be swapped into child_policy_ by the helper
   //       when the new child transitions into state READY.
-  const char* child_policy_name =
-      child_policy_name_ == nullptr ? "round_robin" : child_policy_name_.get();
+  const char* child_policy_name = child_policy_config_ == nullptr
+                                      ? "round_robin"
+                                      : child_policy_config_->name();
   const bool create_policy =
       // case 1
       child_policy_ == nullptr ||

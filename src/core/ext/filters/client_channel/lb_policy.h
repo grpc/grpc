@@ -210,7 +210,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
            RefCountedPtr<ServiceConfig> service_config)
         : json_(lb_config), service_config_(std::move(service_config)) {}
 
-    const grpc_json* json() const { return json_; }
+    const char* name() const { return json_->key; }
+    const grpc_json* config() const { return json_->child; }
     RefCountedPtr<ServiceConfig> service_config() const {
       return service_config_;
     }
