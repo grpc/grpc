@@ -68,7 +68,9 @@ cdef extern from "grpc/grpc.h":
     GPR_TIMESPAN
 
   ctypedef struct gpr_timespec:
-    pass
+    int64_t seconds "tv_sec"
+    int32_t nanoseconds "tv_nsec"
+    gpr_clock_type clock_type
 
   gpr_timespec gpr_time_0(gpr_clock_type type) nogil
   gpr_timespec gpr_inf_future(gpr_clock_type type) nogil

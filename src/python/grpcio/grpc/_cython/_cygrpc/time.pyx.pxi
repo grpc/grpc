@@ -18,5 +18,7 @@ cdef gpr_timespec _timespec_from_time(object time):
           gpr_time_from_nanos(time * 1e9, GPR_CLOCK_REALTIME))
 
 cdef double _time_from_timespec(gpr_timespec timespec) except *:
-  return gpr_timespec_to_micros(
-    gpr_convert_clock_type(timespec, GPR_CLOCK_REALTIME)) / 1e6
+  cdef gpr_timespec real_timespec = gpr_convert_clock_type(
+      timespec, GPR_CLOCK_REALTIME)
+  return <double>real_timespec.seconds + <double>real_timespec.nanoseconds * 1e-9
+
