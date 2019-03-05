@@ -408,7 +408,8 @@ class XdsEnd2endTest : public ::testing::Test {
   void ResetStub(int fallback_timeout = 0,
                  const grpc::string& expected_targets = "") {
     ChannelArguments args;
-    args.SetXdsFallbackTimeout(fallback_timeout);
+    // TODO(juanlishen): Add setter to ChannelArguments.
+    args.SetInt(GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS, fallback_timeout);
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());
     if (!expected_targets.empty()) {

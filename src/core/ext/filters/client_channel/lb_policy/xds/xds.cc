@@ -239,8 +239,6 @@ class XdsLb : public LoadBalancingPolicy {
 
     // The channel and its status.
     grpc_channel* channel_;
-    grpc_connectivity_state connectivity_;
-    grpc_closure on_connectivity_changed_;
     bool shutting_down_ = false;
 
     // The data associated with the current LB call. It holds a ref to this LB
@@ -527,7 +525,7 @@ XdsLb::BalancerChannelState::BalancerChannelState(
               .set_jitter(GRPC_XDS_RECONNECT_JITTER)
               .set_max_backoff(GRPC_XDS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)) {
   channel_ = xdslb_policy_->channel_control_helper()->CreateChannel(
-      balancer_name, GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, args);
+      balancer_name, args);
   GPR_ASSERT(channel_ != nullptr);
   StartCallLocked();
 }
@@ -595,7 +593,7 @@ void XdsLb::BalancerChannelState::StartCallLocked() {
 }
 
 //
-// XdsLb::BalancerCallState
+// XdsLb::BalancerChannelState::BalancerCallState
 //
 
 XdsLb::BalancerChannelState::BalancerCallState::BalancerCallState(
@@ -986,9 +984,11 @@ void XdsLb::BalancerChannelState::BalancerCallState::
             lb_calld, lb_calld->lb_call_, grpc_error_string(error));
     gpr_free(status_details);
   }
-  // Ignore status from a stale call or a stale channel.
-  if (lb_calld->IsCurrentCallOnChannel() &&
-      (lb_chand->IsCurrentChannel() || lb_chand->IsPendingChannel())) {
+  // Ignore status from a stale call.
+  if (lb_calld->IsCurrentCallOnChannel()) {
+    // Because this call is the current one on the channel, the channel can't
+    // have been swapped out; otherwise, the call should have been reset.
+    GPR_ASSERT(lb_chand->IsCurrentChannel() || lb_chand->IsPendingChannel());
     GPR_ASSERT(!xdslb_policy->shutting_down_);
     if (lb_chand != xdslb_policy->LatestLbChannel()) {
       // This channel must be the current one and there is a pending one. Swap
@@ -1191,8 +1191,8 @@ void XdsLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
   // changed from the last received one.
   bool create_lb_channel = lb_chand_ == nullptr;
   if (lb_chand_ != nullptr) {
-    UniquePtr<char> last_balancer_name =
-        UniquePtr<char>(grpc_channel_get_target(LatestLbChannel()->channel()));
+    UniquePtr<char> last_balancer_name(
+        grpc_channel_get_target(LatestLbChannel()->channel()));
     create_lb_channel =
         strcmp(last_balancer_name.get(), balancer_name_.get()) != 0;
   }

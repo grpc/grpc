@@ -121,9 +121,9 @@ void FakeResolver::RequestReresolutionLocked() {
 void FakeResolver::MaybeFinishNextLocked() {
   if (next_completion_ != nullptr &&
       (next_results_ != nullptr || return_failure_)) {
-    // When both next_results_ and channel_args_ contain a response generator,
-    // only the one in next_results_ will be kept since next_results_ is before
-    // channel_args_.
+    // When both next_results_ and channel_args_ contain an arg with the same
+    // name, only the one in next_results_ will be kept since next_results_ is
+    // before channel_args_.
     *target_result_ =
         return_failure_ ? nullptr
                         : grpc_channel_args_union(next_results_, channel_args_);
@@ -177,6 +177,7 @@ void FakeResolverResponseGenerator::SetResponse(grpc_channel_args* response) {
                           grpc_combiner_scheduler(resolver_->combiner())),
         GRPC_ERROR_NONE);
   } else {
+    GPR_ASSERT(resolver_ == nullptr);
     response_ = grpc_channel_args_copy(response);
   }
 }
