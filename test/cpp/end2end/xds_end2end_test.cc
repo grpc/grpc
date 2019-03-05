@@ -752,13 +752,52 @@ TEST_F(SingleBalancerTest, SameBackendListedMultipleTimes) {
   balancers_[0]->NotifyDoneWithServerlists();
 }
 
-// The secure naming tests are deferred because we first need to decipher the
-// magical numbers in the fake_security_connector and understand how the secure
-// naming is checked by it.
+TEST_F(SingleBalancerTest, SecureNaming) {
+  ResetStub(0, kApplicationTargetName_ + ";lb");
+  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannel({balancer_servers_[0].port_});
+  const size_t kNumRpcsPerAddress = 100;
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
+      0);
+  // Make sure that trying to connect works without a call.
+  channel_->GetState(true /* try_to_connect */);
+  // We need to wait for all backends to come online.
+  WaitForAllBackends();
+  // Send kNumRpcsPerAddress RPCs per server.
+  CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
 
-// TODO(juanlishen): Add TEST_F(SingleBalancerTest, SecureNaming)
+  // Each backend should have gotten 100 requests.
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    EXPECT_EQ(kNumRpcsPerAddress,
+              backend_servers_[i].service_->request_count());
+  }
+  // The balancer got a single request.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
+  // and sent a single response.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
+}
 
-// TODO(juanlishen): Add TEST_F(SingleBalancerTest, SecureNamingDeathTest)
+TEST_F(SingleBalancerTest, SecureNamingDeathTest) {
+  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
+  // Make sure that we blow up (via abort() from the security connector) when
+  // the name from the balancer doesn't match expectations.
+  ASSERT_DEATH(
+      {
+        ResetStub(0, kApplicationTargetName_ + ";lb");
+        SetNextResolution({},
+                          "{\n"
+                          "  \"loadBalancingConfig\":[\n"
+                          "    { \"does_not_exist\":{} },\n"
+                          "    { \"xds_experimental\":{ \"balancerName\": "
+                          "\"fake:///wrong_lb\" } }\n"
+                          "  ]\n"
+                          "}");
+        SetNextResolutionForLbChannel({balancer_servers_[0].port_});
+        channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(1));
+      },
+      "");
+}
 
 TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
@@ -885,10 +924,8 @@ TEST_F(UpdatesTest, UpdateBalancersNoCurrentBalancer) {
   EXPECT_EQ(0U, balancer_servers_[2].service_->request_count());
   EXPECT_EQ(0U, balancer_servers_[2].service_->response_count());
 
-  std::vector<int> ports;
-  ports.emplace_back(balancer_servers_[1].port_);
   gpr_log(GPR_INFO, "========= ABOUT TO UPDATE 1 ==========");
-  SetNextResolutionForLbChannel(ports);
+  SetNextResolutionForLbChannel({balancer_servers_[1].port_});
   gpr_log(GPR_INFO, "========= UPDATE 1 DONE ==========");
 
   EXPECT_EQ(0U, backend_servers_[1].service_->request_count());
