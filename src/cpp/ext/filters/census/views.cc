@@ -41,7 +41,7 @@ void RegisterOpenCensusViewsForExport() {
   grpc::ServerReceivedBytesPerRpcCumulative().RegisterForExport();
   grpc::ServerServerLatencyCumulative().RegisterForExport();
 }
-}
+}  // namespace grpc_impl
 namespace grpc {
 
 using ::opencensus::stats::Aggregation;
@@ -87,7 +87,6 @@ ViewDescriptor HourDescriptor() {
 }
 
 }  // namespace
-
 
 // client cumulative
 const ViewDescriptor& ClientSentBytesPerRpcCumulative() {
