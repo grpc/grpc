@@ -60,3 +60,35 @@ git_repository(
 load("@org_pubref_rules_protobuf//python:rules.bzl", "py_proto_repositories")
 
 py_proto_repositories()
+
+load("@bazel_toolchains//rules:rbe_repo.bzl", "rbe_autoconfig")
+
+# Creates toolchain configuration for remote execution with BuildKite CI
+# for rbe_ubuntu1604
+rbe_autoconfig(
+    name = "rbe_default",
+)
+
+load("@bazel_toolchains//rules:environments.bzl", "clang_env")
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
+
+rbe_autoconfig(
+    name = "rbe_msan",
+    env = dicts.add(
+        clang_env(),
+        {
+            "BAZEL_LINKOPTS": "-lc++:-lc++abi:-lm",
+        },
+    ),
+)
+
+rbe_autoconfig(
+    name = "rbe_ubsan",
+    env = dicts.add(
+        clang_env(),
+        {
+            "BAZEL_COMPILER": "clang++",
+            "CC": "clang++",
+        },
+    ),
+)
