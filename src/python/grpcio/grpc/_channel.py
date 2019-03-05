@@ -247,7 +247,7 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
     consumption_thread.start()
 
 
-class _Rendezvous(grpc.RpcError, grpc.Future, grpc.Call):
+class _Rendezvous(grpc.RpcError, grpc.Future, grpc.Call):  # pylint: disable=too-many-ancestors
 
     def __init__(self, state, call, response_deserializer, deadline):
         super(_Rendezvous, self).__init__()
