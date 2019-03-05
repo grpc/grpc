@@ -3,6 +3,8 @@ var searchData=
   ['c_2dstyle_2dguide_2emd',['c-style-guide.md',['../c-style-guide_8md.html',1,'']]],
   ['cancelled',['cancelled',['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__close__on__server.html#a9245c801a7d3efc4ded0a04d680f9088',1,'grpc_op::grpc_op_data::grpc_op_recv_close_on_server']]],
   ['capacity',['capacity',['../structgrpc__metadata__array.html#a5b293b4f8e734b032b80741abf538a97',1,'grpc_metadata_array::capacity()'],['../structgrpc__slice__buffer.html#a8f35fa07c9a4d9f9a4e088a1155e5833',1,'grpc_slice_buffer::capacity()']]],
+  ['cb',['cb',['../structgrpc__tls__credential__reload__arg.html#a334d8ef3177532d0a1e2094d4a23233c',1,'grpc_tls_credential_reload_arg::cb()'],['../structgrpc__tls__server__authorization__check__arg.html#a77029657f0b1b653fe3694a05b3272dc',1,'grpc_tls_server_authorization_check_arg::cb()']]],
+  ['cb_5fuser_5fdata',['cb_user_data',['../structgrpc__tls__credential__reload__arg.html#a91a81a3317b88c3c380d7febad26b5e9',1,'grpc_tls_credential_reload_arg::cb_user_data()'],['../structgrpc__tls__server__authorization__check__arg.html#a49f838e2bc8533b18d77e9e31a34033b',1,'grpc_tls_server_authorization_check_arg::cb_user_data()']]],
   ['census_2eh',['census.h',['../census_8h.html',1,'']]],
   ['census_5fcontext',['census_context',['../census_8h.html#a27fc8788690179599713226f1f054736',1,'census.h']]],
   ['censusapi',['CENSUSAPI',['../impl_2codegen_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7',1,'port_platform.h']]],

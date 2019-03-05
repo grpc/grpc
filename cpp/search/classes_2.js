@@ -16,8 +16,6 @@ var searchData=
   ['callopgenericrecvmessage',['CallOpGenericRecvMessage',['../classgrpc_1_1internal_1_1_call_op_generic_recv_message.html',1,'grpc::internal']]],
   ['calloprecvinitialmetadata',['CallOpRecvInitialMetadata',['../classgrpc_1_1internal_1_1_call_op_recv_initial_metadata.html',1,'grpc::internal']]],
   ['calloprecvmessage',['CallOpRecvMessage',['../classgrpc_1_1internal_1_1_call_op_recv_message.html',1,'grpc::internal']]],
-  ['calloprecvmessage_3c_20requesttype_20_3e',['CallOpRecvMessage&lt; RequestType &gt;',['../classgrpc_1_1internal_1_1_call_op_recv_message.html',1,'grpc::internal']]],
-  ['calloprecvmessage_3c_20response_20_3e',['CallOpRecvMessage&lt; Response &gt;',['../classgrpc_1_1internal_1_1_call_op_recv_message.html',1,'grpc::internal']]],
   ['callopsendinitialmetadata',['CallOpSendInitialMetadata',['../classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html',1,'grpc::internal']]],
   ['callopsendmessage',['CallOpSendMessage',['../classgrpc_1_1internal_1_1_call_op_send_message.html',1,'grpc::internal']]],
   ['callopserversendstatus',['CallOpServerSendStatus',['../classgrpc_1_1internal_1_1_call_op_server_send_status.html',1,'grpc::internal']]],
