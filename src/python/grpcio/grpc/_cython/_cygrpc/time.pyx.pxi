@@ -1,4 +1,4 @@
-# Copyright 2018 gRPC authors.
+# Copyright 2018 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 cdef gpr_timespec _timespec_from_time(object time):
-  cdef gpr_timespec timespec
-  if time is None:
-    return gpr_inf_future(GPR_CLOCK_REALTIME)
-  else:
-    timespec.seconds = time
-    timespec.nanoseconds = (time - float(timespec.seconds)) * 1e9
-    timespec.clock_type = GPR_CLOCK_REALTIME
-    return timespec
-
+  return (gpr_inf_future(GPR_CLOCK_REALTIME)
+          if time is None else
+          gpr_time_from_nanos(time * 1e9, GPR_CLOCK_REALTIME))
 
 cdef double _time_from_timespec(gpr_timespec timespec) except *:
-  cdef gpr_timespec real_timespec = gpr_convert_clock_type(
-      timespec, GPR_CLOCK_REALTIME)
-  return <double>real_timespec.seconds + <double>real_timespec.nanoseconds / 1e9
+  return gpr_timespec_to_micros(
+    gpr_convert_clock_type(timespec, GPR_CLOCK_REALTIME)) / 1e6
