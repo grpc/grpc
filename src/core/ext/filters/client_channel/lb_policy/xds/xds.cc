@@ -219,11 +219,7 @@ class XdsLb : public LoadBalancingPolicy {
 
   class Helper : public ChannelControlHelper {
    public:
-    explicit Helper(OrphanablePtr<LoadBalancingPolicy>* current_lb_policy,
-                    OrphanablePtr<LoadBalancingPolicy>* pending_lb_policy,
-                    RefCountedPtr<XdsLb> parent)
-        : ChannelControlHelper(current_lb_policy, pending_lb_policy),
-          parent_(std::move(parent)) {}
+    explicit Helper(RefCountedPtr<XdsLb> parent) : parent_(std::move(parent)) {}
 
     Subchannel* CreateSubchannel(const grpc_channel_args& args) override;
     grpc_channel* CreateChannel(const char* target,
@@ -232,8 +228,14 @@ class XdsLb : public LoadBalancingPolicy {
                      UniquePtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
 
+    void set_child(LoadBalancingPolicy* child) { child_ = child; }
+
    private:
+    bool CalledByPendingChild() const;
+    bool CalledByCurrentChild() const;
+
     RefCountedPtr<XdsLb> parent_;
+    LoadBalancingPolicy* child_ = nullptr;
   };
 
   ~XdsLb();
@@ -345,14 +347,30 @@ XdsLb::Picker::PickResult XdsLb::Picker::Pick(PickState* pick,
 // XdsLb::Helper
 //
 
+bool XdsLb::Helper::CalledByPendingChild() const {
+  GPR_ASSERT(child_ != nullptr);
+  return child_ == parent_->pending_child_policy_.get();
+}
+
+bool XdsLb::Helper::CalledByCurrentChild() const {
+  GPR_ASSERT(child_ != nullptr);
+  return child_ == parent_->child_policy_.get();
+}
+
 Subchannel* XdsLb::Helper::CreateSubchannel(const grpc_channel_args& args) {
-  if (parent_->shutting_down_) return nullptr;
+  if (parent_->shutting_down_ ||
+      (!CalledByPendingChild() && !CalledByCurrentChild())) {
+    return nullptr;
+  }
   return parent_->channel_control_helper()->CreateSubchannel(args);
 }
 
 grpc_channel* XdsLb::Helper::CreateChannel(const char* target,
                                            const grpc_channel_args& args) {
-  if (parent_->shutting_down_) return nullptr;
+  if (parent_->shutting_down_ ||
+      (!CalledByPendingChild() && !CalledByCurrentChild())) {
+    return nullptr;
+  }
   return parent_->channel_control_helper()->CreateChannel(target, args);
 }
 
@@ -363,14 +381,33 @@ void XdsLb::Helper::UpdateState(grpc_connectivity_state state,
     GRPC_ERROR_UNREF(state_error);
     return;
   }
-  // TODO(juanlishen): When in fallback mode, pass the child picker
-  // through without wrapping it.  (Or maybe use a different helper for
-  // the fallback policy?)
+  // If this request is from the pending child policy, ignore it until
+  // it reports READY, at which point we swap it into place.
+  if (CalledByPendingChild()) {
+    if (grpc_lb_xds_trace.enabled()) {
+      gpr_log(GPR_INFO,
+              "[grpclb %p helper %p] pending child policy %p reports state=%s",
+              parent_.get(), this, parent_->pending_child_policy_.get(),
+              grpc_connectivity_state_name(state));
+    }
+    if (state != GRPC_CHANNEL_READY) {
+      GRPC_ERROR_UNREF(state_error);
+      return;
+    }
+    parent_->child_policy_ = std::move(parent_->pending_child_policy_);
+  } else if (!CalledByCurrentChild()) {
+    // This request is from an outdated child, so ignore it.
+    GRPC_ERROR_UNREF(state_error);
+    return;
+  }
   RefCountedPtr<XdsLbClientStats> client_stats;
   if (parent_->lb_calld_ != nullptr &&
       parent_->lb_calld_->client_stats() != nullptr) {
     client_stats = parent_->lb_calld_->client_stats()->Ref();
   }
+  // TODO(juanlishen): When in fallback mode, pass the child picker
+  // through without wrapping it.  (Or maybe use a different helper for
+  // the fallback policy?)
   parent_->channel_control_helper()->UpdateState(
       state, state_error,
       UniquePtr<SubchannelPicker>(
@@ -379,6 +416,11 @@ void XdsLb::Helper::UpdateState(grpc_connectivity_state state,
 
 void XdsLb::Helper::RequestReresolution() {
   if (parent_->shutting_down_) return;
+  // If there is a pending child policy, ignore re-resolution requests
+  // from the current child policy (or any outdated pending child).
+  if (parent_->pending_child_policy_ != nullptr && !CalledByPendingChild()) {
+    return;
+  }
   if (grpc_lb_xds_trace.enabled()) {
     gpr_log(GPR_INFO,
             "[xdslb %p] Re-resolution requested from the internal RR policy "
@@ -1346,25 +1388,6 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
   if (shutting_down_) return;
   grpc_channel_args* args = CreateChildPolicyArgsLocked();
   GPR_ASSERT(args != nullptr);
-  // There are several cases here:
-  // 1. If we do not yet have any LB policy, we create one and store
-  //    it in child_policy_.
-  // 2. If we have an LB policy, whose name equals child_policy_name, then we
-  //    update the existing LB policy. If there is a pending LB policy, reset
-  //    it.
-  // 3. If we have an LB policy, whose name does not equal child_policy_name,
-  // then:
-  //    a. If we do not yet have any pending LB policy, we create a new policy.
-  //    The policy will be stored in pending_child_policy_ and will later be
-  //    swapped into child_policy_ by the helper when the new LB transitions
-  //    into state READY. b. If we have a pending LB policy, whose name equals
-  //    child_policy_name, then we update the existing pending LB policy. c. If
-  //    we have a pending LB policy, whose name does not equal
-  //    child_policy_name, then we create a new policy. The new policy is stored
-  //    in pending_child_policy_ (replacing the one that was there before, which
-  //    will be immediately shut down) and will later be swapped into
-  //    child_policy_ by the helper when the new LB transitions into state
-  //    READY.
   // TODO(juanlishen): If the child policy is not configured via service config,
   // use whatever algorithm is specified by the balancer.
   const char* child_policy_name =

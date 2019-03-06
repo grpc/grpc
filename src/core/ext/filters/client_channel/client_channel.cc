@@ -191,10 +191,7 @@ namespace {
 class ClientChannelControlHelper
     : public LoadBalancingPolicy::ChannelControlHelper {
  public:
-  explicit ClientChannelControlHelper(
-      OrphanablePtr<LoadBalancingPolicy>* current_lb_policy,
-      channel_data* chand)
-      : ChannelControlHelper(current_lb_policy), chand_(chand) {
+  explicit ClientChannelControlHelper(channel_data* chand) : chand_(chand) {
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack, "ClientChannelControlHelper");
   }
 
@@ -458,8 +455,7 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   lb_args.combiner = chand->combiner;
   lb_args.channel_control_helper =
       grpc_core::UniquePtr<LoadBalancingPolicy::ChannelControlHelper>(
-          grpc_core::New<grpc_core::ClientChannelControlHelper>(
-              &chand->resolving_lb_policy, chand));
+          grpc_core::New<grpc_core::ClientChannelControlHelper>(chand));
   lb_args.args = new_args != nullptr ? new_args : args->channel_args;
   grpc_error* error = GRPC_ERROR_NONE;
   chand->resolving_lb_policy.reset(

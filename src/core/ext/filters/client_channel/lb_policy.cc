@@ -28,23 +28,6 @@ grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(
 
 namespace grpc_core {
 
-bool LoadBalancingPolicy::ChannelControlHelper::CalledByCurrentChild() const {
-  return child_ == current_lb_policy_->get();
-}
-
-bool LoadBalancingPolicy::ChannelControlHelper::CalledByPendingChild() const {
-  return child_ == pending_lb_policy_->get();
-}
-
-bool LoadBalancingPolicy::ChannelControlHelper::HasPendingChild() const {
-  return *pending_lb_policy_ != nullptr;
-}
-
-void LoadBalancingPolicy::ChannelControlHelper::Swap() {
-  // FIXME: Delete the pollset_set?
-  *current_lb_policy_ = std::move(*pending_lb_policy_);
-}
-
 LoadBalancingPolicy::LoadBalancingPolicy(Args args, intptr_t initial_refcount)
     : InternallyRefCounted(&grpc_trace_lb_policy_refcount, initial_refcount),
       combiner_(GRPC_COMBINER_REF(args.combiner, "lb_policy")),

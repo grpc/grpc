@@ -72,11 +72,8 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
     : public LoadBalancingPolicy::ChannelControlHelper {
  public:
   explicit ResolvingControlHelper(
-      OrphanablePtr<LoadBalancingPolicy>* current_lb_policy,
-      OrphanablePtr<LoadBalancingPolicy>* pending_lb_policy,
       RefCountedPtr<ResolvingLoadBalancingPolicy> parent)
-      : ChannelControlHelper(current_lb_policy, pending_lb_policy),
-        parent_(std::move(parent)) {}
+      : parent_(std::move(parent)) {}
 
   Subchannel* CreateSubchannel(const grpc_channel_args& args) override {
     if (parent_->resolver_ == nullptr) return nullptr;  // Shutting down.
@@ -105,13 +102,17 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
         gpr_log(GPR_INFO,
                 "resolving_lb=%p helper=%p: pending child policy %p reports "
                 "state=%s",
-                parent_.get(), this, child(),
+                parent_.get(), this, child_,
                 grpc_connectivity_state_name(state));
       }
-      if (state != GRPC_CHANNEL_READY) return;
-      Swap();
+      if (state != GRPC_CHANNEL_READY) {
+        GRPC_ERROR_UNREF(state_error);
+        return;
+      }
+      parent_->lb_policy_ = std::move(parent_->pending_lb_policy_);
     } else if (!CalledByCurrentChild()) {
       // This request is from an outdating pending child, so ignore it.
+      GRPC_ERROR_UNREF(state_error);
       return;
     }
     parent_->channel_control_helper()->UpdateState(state, state_error,
@@ -120,8 +121,8 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
 
   void RequestReresolution() override {
     // If there is a pending child policy, ignore re-resolution requests
-    // from the current child policy.
-    if (HasPendingChild() && !CalledByPendingChild()) {
+    // from the current child policy (or any outdated pending child).
+    if (parent_->pending_lb_policy_ != nullptr && !CalledByPendingChild()) {
       return;
     }
     if (parent_->tracer_->enabled()) {
@@ -133,8 +134,21 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
     }
   }
 
+  void set_child(LoadBalancingPolicy* child) { child_ = child; }
+
  private:
+  bool CalledByPendingChild() const {
+    GPR_ASSERT(child_ != nullptr);
+    return child_ == parent_->pending_lb_policy_.get();
+  }
+
+  bool CalledByCurrentChild() const {
+    GPR_ASSERT(child_ != nullptr);
+    return child_ == parent_->lb_policy_.get();
+  };
+
   RefCountedPtr<ResolvingLoadBalancingPolicy> parent_;
+  LoadBalancingPolicy* child_ = nullptr;
 };
 
 //
@@ -333,15 +347,16 @@ void ResolvingLoadBalancingPolicy::CreateOrUpdateLbPolicyLocked(
 OrphanablePtr<LoadBalancingPolicy>
 ResolvingLoadBalancingPolicy::CreateLbPolicyLocked(
     const char* lb_policy_name, TraceStringVector* trace_strings) {
+  ResolvingControlHelper* helper = New<ResolvingControlHelper>(Ref());
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = combiner();
-  lb_policy_args.channel_control_helper = UniquePtr<ChannelControlHelper>(
-      New<ResolvingControlHelper>(&lb_policy_, &pending_lb_policy_, Ref()));
+  lb_policy_args.channel_control_helper =
+      UniquePtr<ChannelControlHelper>(helper);
   lb_policy_args.args = resolver_result_;
-  OrphanablePtr<LoadBalancingPolicy> new_lb_policy =
+  OrphanablePtr<LoadBalancingPolicy> lb_policy =
       LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
           lb_policy_name, std::move(lb_policy_args));
-  if (GPR_UNLIKELY(new_lb_policy == nullptr)) {
+  if (GPR_UNLIKELY(lb_policy == nullptr)) {
     gpr_log(GPR_ERROR, "could not create LB policy \"%s\"", lb_policy_name);
     if (channelz_node() != nullptr) {
       char* str;
@@ -350,9 +365,10 @@ ResolvingLoadBalancingPolicy::CreateLbPolicyLocked(
     }
     return nullptr;
   }
+  helper->set_child(lb_policy.get());
   if (tracer_->enabled()) {
     gpr_log(GPR_INFO, "resolving_lb=%p: created new LB policy \"%s\" (%p)",
-            this, lb_policy_name, new_lb_policy.get());
+            this, lb_policy_name, lb_policy.get());
   }
   if (channelz_node() != nullptr) {
     char* str;
@@ -362,11 +378,11 @@ ResolvingLoadBalancingPolicy::CreateLbPolicyLocked(
   // Propagate channelz node.
   auto* channelz = channelz_node();
   if (channelz != nullptr) {
-    new_lb_policy->set_channelz_node(channelz->Ref());
+    lb_policy->set_channelz_node(channelz->Ref());
   }
-  grpc_pollset_set_add_pollset_set(new_lb_policy->interested_parties(),
+  grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
                                    interested_parties());
-  return new_lb_policy;
+  return lb_policy;
 }
 
 void ResolvingLoadBalancingPolicy::MaybeAddTraceMessagesForAddressChangesLocked(
