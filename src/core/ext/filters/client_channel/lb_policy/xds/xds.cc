@@ -1376,9 +1376,9 @@ OrphanablePtr<LoadBalancingPolicy> XdsLb::CreateChildPolicyLocked(
     gpr_log(GPR_INFO, "[xdslb %p] Created new child policy %s (%p)", this, name,
             lb_policy.get());
   }
-  // Add the gRPC LB's interested_parties pollset_set to that of the newly
-  // created child policy. This will make the child policy progress upon
-  // activity on gRPC LB, which in turn is tied to the application's call.
+  // Add the xDS's interested_parties pollset_set to that of the newly created
+  // child policy. This will make the child policy progress upon activity on xDS
+  // LB, which in turn is tied to the application's call.
   grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
                                    interested_parties());
   return lb_policy;

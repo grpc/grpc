@@ -391,7 +391,7 @@ void ResolvingLoadBalancingPolicy::CreateOrUpdateLbPolicyLocked(
                                  std::move(lb_policy_config));
 }
 
-// Creates a new LB policy, replacing any previous one.
+// Creates a new LB policy.
 // Updates trace_strings to indicate what was done.
 OrphanablePtr<LoadBalancingPolicy>
 ResolvingLoadBalancingPolicy::CreateLbPolicyLocked(
@@ -540,8 +540,8 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
       lb_policy_config = self->child_lb_config_;
     }
     GPR_ASSERT(lb_policy_name != nullptr);
-    self->CreateOrUpdateLbPolicyLocked(lb_policy_name, lb_policy_config,
-                                       &trace_strings);
+    self->CreateOrUpdateLbPolicyLocked(
+        lb_policy_name, std::move(lb_policy_config), &trace_strings);
     // Add channel trace event.
     if (self->channelz_node() != nullptr) {
       if (service_config_changed) {
