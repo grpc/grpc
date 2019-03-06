@@ -868,7 +868,8 @@ TEST_F(SingleBalancerTest, AllServersUnreachableFailFast) {
 
 // TODO(juanlishen): Add TEST_F(SingleBalancerTest, FallbackUpdate)
 
-// TODO(juanlishen): Add TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerChannelFails)
+// TODO(juanlishen): Add TEST_F(SingleBalancerTest,
+// FallbackEarlyWhenBalancerChannelFails)
 
 TEST_F(SingleBalancerTest, BackendsRestart) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());

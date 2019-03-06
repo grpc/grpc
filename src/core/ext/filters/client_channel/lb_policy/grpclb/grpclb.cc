@@ -1038,7 +1038,8 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
         // Dispose of the fallback.
         gpr_log(GPR_INFO,
                 "[grpclb %p] Received response from balancer; exiting "
-                "fallback mode", grpclb_policy);
+                "fallback mode",
+                grpclb_policy);
         grpclb_policy->fallback_backend_addresses_.reset();
         if (grpclb_policy->fallback_timer_callback_pending_) {
           grpc_timer_cancel(&grpclb_policy->lb_fallback_timer_);
@@ -1471,7 +1472,8 @@ void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
     // fallback mode immediately.
     gpr_log(GPR_INFO,
             "[grpclb %p] balancer channel in state TRANSIENT_FAILURE; "
-            "entering fallback mode", self);
+            "entering fallback mode",
+            self);
     grpc_timer_cancel(&self->lb_fallback_timer_);
     self->CreateOrUpdateChildPolicyLocked();
   }
@@ -1506,13 +1508,13 @@ void GrpcLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
       error == GRPC_ERROR_NONE) {
     gpr_log(GPR_INFO,
             "[grpclb %p] No response from balancer after fallback timeout; "
-            "entering fallback mode", grpclb_policy);
+            "entering fallback mode",
+            grpclb_policy);
     GPR_ASSERT(grpclb_policy->fallback_backend_addresses_ != nullptr);
     grpclb_policy->CreateOrUpdateChildPolicyLocked();
     // Cancel connectivity watch, since we no longer need it.
-    grpc_channel_element* client_channel_elem =
-        grpc_channel_stack_last_element(
-            grpc_channel_get_channel_stack(grpclb_policy->lb_channel_));
+    grpc_channel_element* client_channel_elem = grpc_channel_stack_last_element(
+        grpc_channel_get_channel_stack(grpclb_policy->lb_channel_));
     GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
     grpc_client_channel_watch_connectivity_state(
         client_channel_elem,
