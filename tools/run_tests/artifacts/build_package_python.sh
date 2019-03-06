@@ -23,17 +23,20 @@ mkdir -p artifacts/
 # and we only collect them here to deliver them to the distribtest phase.
 cp -r "${EXTERNAL_GIT_ROOT}"/input_artifacts/python_*/* artifacts/ || true
 
+apt-get install -y python-pip
+python -m pip install wheel --user
+
 strip_binary_wheel() {
     WHEEL_PATH="$1"
     TEMP_WHEEL_DIR=$(mktemp -d)
-    wheel unpack "$WHEEL_PATH" -d "$TEMP_WHEEL_DIR"
+    python -m wheel unpack "$WHEEL_PATH" -d "$TEMP_WHEEL_DIR"
     find "$TEMP_WHEEL_DIR" -name "_protoc_compiler*.so" -exec strip --strip-debug {} ";"
     find "$TEMP_WHEEL_DIR" -name "cygrpc*.so" -exec strip --strip-debug {} ";"
 
     WHEEL_FILE=$(basename "$WHEEL_PATH")
     DISTRIBUTION_NAME=$(basename "$WHEEL_PATH" | cut -d '-' -f 1)
     VERSION=$(basename "$WHEEL_PATH" | cut -d '-' -f 2)
-    wheel pack "$TEMP_WHEEL_DIR/$DISTRIBUTION_NAME-$VERSION" -d "$TEMP_WHEEL_DIR"
+    python -m wheel pack "$TEMP_WHEEL_DIR/$DISTRIBUTION_NAME-$VERSION" -d "$TEMP_WHEEL_DIR"
     mv "$TEMP_WHEEL_DIR/$WHEEL_FILE" "$WHEEL_PATH"
 }
 
