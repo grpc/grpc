@@ -17,7 +17,6 @@
  */
 
 #include <memory>
-#include <regex>
 #include <unordered_map>
 
 #include <gflags/gflags.h>
@@ -105,26 +104,48 @@ namespace {
 
 // Parse the contents of FLAGS_additional_metadata into a map. Allow
 // alphanumeric characters and dashes in keys, and any character but semicolons
-// in values.
-std::multimap<grpc::string, grpc::string> ParseAdditionalMetadataFlag(
-    const grpc::string& flag) {
-  std::multimap<grpc::string, grpc::string> additional_metadata;
+// in values. On failure, log an error and return false.
+bool ParseAdditionalMetadataFlag(
+    const grpc::string& flag,
+    std::multimap<grpc::string, grpc::string>* additional_metadata) {
+  size_t start_pos = 0;
+  while (start_pos < flag.length()) {
+    size_t colon_pos = flag.find(':', start_pos);
+    if (colon_pos == grpc::string::npos) {
+      gpr_log(GPR_ERROR,
+              "Couldn't parse metadata flag: extra characters at end of flag");
+      return false;
+    }
+    size_t semicolon_pos = flag.find(';', colon_pos);
 
-  // Key in group 1; value in group 2.
-  std::regex re("([-a-zA-Z0-9]+):([^;]*);?");
-  auto metadata_entries_begin = std::sregex_iterator(
-      flag.begin(), flag.end(), re, std::regex_constants::match_continuous);
-  auto metadata_entries_end = std::sregex_iterator();
+    grpc::string key = flag.substr(start_pos, colon_pos - start_pos);
+    grpc::string value =
+        flag.substr(colon_pos + 1, semicolon_pos - colon_pos - 1);
 
-  for (std::sregex_iterator i = metadata_entries_begin;
-       i != metadata_entries_end; ++i) {
-    std::smatch match = *i;
+    constexpr char alphanum_and_hyphen[] =
+        "-0123456789"
+        "abcdefghijklmnopqrstuvwxyz"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    if (key.find_first_not_of(alphanum_and_hyphen) != grpc::string::npos) {
+      gpr_log(GPR_ERROR,
+              "Couldn't parse metadata flag: key contains characters other "
+              "than alphanumeric and hyphens: %s",
+              key.c_str());
+      return false;
+    }
+
     gpr_log(GPR_INFO, "Adding additional metadata with key %s and value %s",
-            match[1].str().c_str(), match[2].str().c_str());
-    additional_metadata.insert({match[1].str(), match[2].str()});
+            key.c_str(), value.c_str());
+    additional_metadata->insert({key, value});
+
+    if (semicolon_pos == grpc::string::npos) {
+      break;
+    } else {
+      start_pos = semicolon_pos + 1;
+    }
   }
 
-  return additional_metadata;
+  return true;
 }
 
 }  // namespace
@@ -141,8 +162,11 @@ int main(int argc, char** argv) {
       return CreateChannelForTestCase(test_case);
     };
   } else {
-    std::multimap<grpc::string, grpc::string> additional_metadata =
-        ParseAdditionalMetadataFlag(FLAGS_additional_metadata);
+    std::multimap<grpc::string, grpc::string> additional_metadata;
+    if (!ParseAdditionalMetadataFlag(FLAGS_additional_metadata,
+                                     &additional_metadata)) {
+      return 1;
+    }
 
     channel_creation_func = [test_case, additional_metadata]() {
       std::vector<std::unique_ptr<
