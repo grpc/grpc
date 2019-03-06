@@ -111,7 +111,7 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
       }
       parent_->lb_policy_ = std::move(parent_->pending_lb_policy_);
     } else if (!CalledByCurrentChild()) {
-      // This request is from an outdating pending child, so ignore it.
+      // This request is from an outdated child, so ignore it.
       GRPC_ERROR_UNREF(state_error);
       return;
     }
@@ -121,7 +121,7 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
 
   void RequestReresolution() override {
     // If there is a pending child policy, ignore re-resolution requests
-    // from the current child policy (or any outdated pending child).
+    // from the current child policy (or any outdated child).
     if (parent_->pending_lb_policy_ != nullptr && !CalledByPendingChild()) {
       return;
     }
@@ -157,12 +157,12 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
 
 ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
     Args args, TraceFlag* tracer, UniquePtr<char> target_uri,
-    UniquePtr<char> lb_policy_name, RefCountedPtr<Config> child_lb_config,
+    UniquePtr<char> child_policy_name, RefCountedPtr<Config> child_lb_config,
     grpc_error** error)
     : LoadBalancingPolicy(std::move(args)),
       tracer_(tracer),
       target_uri_(std::move(target_uri)),
-      child_policy_name_(std::move(lb_policy_name)),
+      child_policy_name_(std::move(child_policy_name)),
       child_lb_config_(std::move(child_lb_config)) {
   GPR_ASSERT(child_policy_name_ != nullptr);
   // Don't fetch service config, since this ctor is for use in nested LB
@@ -303,6 +303,55 @@ void ResolvingLoadBalancingPolicy::OnResolverShutdownLocked(grpc_error* error) {
 void ResolvingLoadBalancingPolicy::CreateOrUpdateLbPolicyLocked(
     const char* lb_policy_name, RefCountedPtr<Config> lb_policy_config,
     TraceStringVector* trace_strings) {
+  // If the child policy name changes, we need to create a new child
+  // policy.  When this happens, we leave child_policy_ as-is and store
+  // the new child policy in pending_child_policy_.  Once the new child
+  // policy transitions into state READY, we swap it into child_policy_,
+  // replacing the original child policy.  So pending_child_policy_ is
+  // non-null only between when we apply an update that changes the child
+  // policy name and when the new child reports state READY.
+  //
+  // Updates can arrive at any point during this transition.  We always
+  // apply updates relative to the most recently created child policy,
+  // even if the most recent one is still in pending_child_policy_.  This
+  // is true both when applying the updates to an existing child policy
+  // and when determining whether we need to create a new policy.
+  //
+  // As a result of this, there are several cases to consider here:
+  //
+  // 1. We have no existing child policy (i.e., we have started up but
+  //    have not yet received a serverlist from the balancer or gone
+  //    into fallback mode; in this case, both child_policy_ and
+  //    pending_child_policy_ are null).  In this case, we create a
+  //    new child policy and store it in child_policy_.
+  //
+  // 2. We have an existing child policy and have no pending child policy
+  //    from a previous update (i.e., either there has not been a
+  //    previous update that changed the policy name, or we have already
+  //    finished swapping in the new policy; in this case, child_policy_
+  //    is non-null but pending_child_policy_ is null).  In this case:
+  //    a. If child_policy_->name() equals child_policy_name, then we
+  //       update the existing child policy.
+  //    b. If child_policy_->name() does not equal child_policy_name,
+  //       we create a new policy.  The policy will be stored in
+  //       pending_child_policy_ and will later be swapped into
+  //       child_policy_ by the helper when the new child transitions
+  //       into state READY.
+  //
+  // 3. We have an existing child policy and have a pending child policy
+  //    from a previous update (i.e., a previous update set
+  //    pending_child_policy_ as per case 2b above and that policy has
+  //    not yet transitioned into state READY and been swapped into
+  //    child_policy_; in this case, both child_policy_ and
+  //    pending_child_policy_ are non-null).  In this case:
+  //    a. If pending_child_policy_->name() equals child_policy_name,
+  //       then we update the existing pending child policy.
+  //    b. If pending_child_policy->name() does not equal
+  //       child_policy_name, then we create a new policy.  The new
+  //       policy is stored in pending_child_policy_ (replacing the one
+  //       that was there before, which will be immediately shut down)
+  //       and will later be swapped into child_policy_ by the helper
+  //       when the new child transitions into state READY.
   const bool create_policy =
       // case 1
       lb_policy_ == nullptr ||
@@ -334,7 +383,7 @@ void ResolvingLoadBalancingPolicy::CreateOrUpdateLbPolicyLocked(
   GPR_ASSERT(policy_to_update != nullptr);
   // Update the policy.
   if (tracer_->enabled()) {
-    gpr_log(GPR_INFO, "[grpclb %p] Updating %schild policy %p", this,
+    gpr_log(GPR_INFO, "resolving_lb=%p: Updating %schild policy %p", this,
             policy_to_update == pending_lb_policy_.get() ? "pending " : "",
             policy_to_update);
   }

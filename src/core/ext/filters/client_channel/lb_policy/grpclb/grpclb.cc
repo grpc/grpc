@@ -677,7 +677,7 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
 void GrpcLb::Helper::RequestReresolution() {
   if (parent_->shutting_down_) return;
   // If there is a pending child policy, ignore re-resolution requests
-  // from the current child policy (or any outdated pending child).
+  // from the current child policy (or any outdated child).
   if (parent_->pending_child_policy_ != nullptr && !CalledByPendingChild()) {
     return;
   }

@@ -386,7 +386,7 @@ void XdsLb::Helper::UpdateState(grpc_connectivity_state state,
   if (CalledByPendingChild()) {
     if (grpc_lb_xds_trace.enabled()) {
       gpr_log(GPR_INFO,
-              "[grpclb %p helper %p] pending child policy %p reports state=%s",
+              "[xdslb %p helper %p] pending child policy %p reports state=%s",
               parent_.get(), this, parent_->pending_child_policy_.get(),
               grpc_connectivity_state_name(state));
     }
@@ -417,7 +417,7 @@ void XdsLb::Helper::UpdateState(grpc_connectivity_state state,
 void XdsLb::Helper::RequestReresolution() {
   if (parent_->shutting_down_) return;
   // If there is a pending child policy, ignore re-resolution requests
-  // from the current child policy (or any outdated pending child).
+  // from the current child policy (or any outdated child).
   if (parent_->pending_child_policy_ != nullptr && !CalledByPendingChild()) {
     return;
   }
@@ -1388,6 +1388,55 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
   if (shutting_down_) return;
   grpc_channel_args* args = CreateChildPolicyArgsLocked();
   GPR_ASSERT(args != nullptr);
+  // If the child policy name changes, we need to create a new child
+  // policy.  When this happens, we leave child_policy_ as-is and store
+  // the new child policy in pending_child_policy_.  Once the new child
+  // policy transitions into state READY, we swap it into child_policy_,
+  // replacing the original child policy.  So pending_child_policy_ is
+  // non-null only between when we apply an update that changes the child
+  // policy name and when the new child reports state READY.
+  //
+  // Updates can arrive at any point during this transition.  We always
+  // apply updates relative to the most recently created child policy,
+  // even if the most recent one is still in pending_child_policy_.  This
+  // is true both when applying the updates to an existing child policy
+  // and when determining whether we need to create a new policy.
+  //
+  // As a result of this, there are several cases to consider here:
+  //
+  // 1. We have no existing child policy (i.e., we have started up but
+  //    have not yet received a serverlist from the balancer or gone
+  //    into fallback mode; in this case, both child_policy_ and
+  //    pending_child_policy_ are null).  In this case, we create a
+  //    new child policy and store it in child_policy_.
+  //
+  // 2. We have an existing child policy and have no pending child policy
+  //    from a previous update (i.e., either there has not been a
+  //    previous update that changed the policy name, or we have already
+  //    finished swapping in the new policy; in this case, child_policy_
+  //    is non-null but pending_child_policy_ is null).  In this case:
+  //    a. If child_policy_->name() equals child_policy_name, then we
+  //       update the existing child policy.
+  //    b. If child_policy_->name() does not equal child_policy_name,
+  //       we create a new policy.  The policy will be stored in
+  //       pending_child_policy_ and will later be swapped into
+  //       child_policy_ by the helper when the new child transitions
+  //       into state READY.
+  //
+  // 3. We have an existing child policy and have a pending child policy
+  //    from a previous update (i.e., a previous update set
+  //    pending_child_policy_ as per case 2b above and that policy has
+  //    not yet transitioned into state READY and been swapped into
+  //    child_policy_; in this case, both child_policy_ and
+  //    pending_child_policy_ are non-null).  In this case:
+  //    a. If pending_child_policy_->name() equals child_policy_name,
+  //       then we update the existing pending child policy.
+  //    b. If pending_child_policy->name() does not equal
+  //       child_policy_name, then we create a new policy.  The new
+  //       policy is stored in pending_child_policy_ (replacing the one
+  //       that was there before, which will be immediately shut down)
+  //       and will later be swapped into child_policy_ by the helper
+  //       when the new child transitions into state READY.
   // TODO(juanlishen): If the child policy is not configured via service config,
   // use whatever algorithm is specified by the balancer.
   const char* child_policy_name =
@@ -1409,7 +1458,7 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
     auto& lb_policy =
         child_policy_ == nullptr ? child_policy_ : pending_child_policy_;
     if (grpc_lb_xds_trace.enabled()) {
-      gpr_log(GPR_INFO, "[grpclb %p] Creating new %schild policy %s", this,
+      gpr_log(GPR_INFO, "[xdslb %p] Creating new %schild policy %s", this,
               child_policy_ == nullptr ? "" : "pending ", child_policy_name);
     }
     lb_policy = CreateChildPolicyLocked(child_policy_name, args);
@@ -1425,7 +1474,7 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
   GPR_ASSERT(policy_to_update != nullptr);
   // Update the policy.
   if (grpc_lb_xds_trace.enabled()) {
-    gpr_log(GPR_INFO, "[grpclb %p] Updating %schild policy %p", this,
+    gpr_log(GPR_INFO, "[xdslb %p] Updating %schild policy %p", this,
             policy_to_update == pending_child_policy_.get() ? "pending " : "",
             policy_to_update);
   }

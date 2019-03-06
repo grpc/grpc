@@ -128,7 +128,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   bool previous_resolution_contained_addresses_ = false;
   grpc_closure on_resolver_result_changed_;
 
-  // Child LB policy and associated state.
+  // Child LB policy.
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
   OrphanablePtr<LoadBalancingPolicy> pending_lb_policy_;
 };
