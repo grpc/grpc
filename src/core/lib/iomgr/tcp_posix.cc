@@ -250,8 +250,6 @@ static void notify_on_read(grpc_tcp* tcp) {
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_INFO, "TCP:%p notify_on_read", tcp);
   }
-  GRPC_CLOSURE_INIT(&tcp->read_done_closure, tcp_handle_read, tcp,
-                    grpc_schedule_on_exec_ctx);
   grpc_fd_notify_on_read(tcp->em_fd, &tcp->read_done_closure);
 }
 
@@ -1157,6 +1155,8 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   grpc_resource_quota_unref_internal(resource_quota);
   gpr_mu_init(&tcp->tb_mu);
   tcp->tb_head = nullptr;
+  GRPC_CLOSURE_INIT(&tcp->read_done_closure, tcp_handle_read, tcp,
+                    grpc_schedule_on_exec_ctx);
   /* Start being notified on errors if event engine can track errors. */
   if (grpc_event_engine_can_track_errors()) {
     /* Grab a ref to tcp so that we can safely access the tcp struct when

@@ -106,15 +106,16 @@ bool grpc_gcp_rpc_protocol_versions_encode(
 }
 
 bool grpc_gcp_rpc_protocol_versions_decode(
-    grpc_slice slice, grpc_gcp_rpc_protocol_versions* versions) {
+    const grpc_slice& slice, grpc_gcp_rpc_protocol_versions* versions) {
   if (versions == nullptr) {
     gpr_log(GPR_ERROR,
             "version is nullptr in "
             "grpc_gcp_rpc_protocol_versions_decode().");
     return false;
   }
-  pb_istream_t stream = pb_istream_from_buffer(GRPC_SLICE_START_PTR(slice),
-                                               GRPC_SLICE_LENGTH(slice));
+  pb_istream_t stream =
+      pb_istream_from_buffer(const_cast<uint8_t*>(GRPC_SLICE_START_PTR(slice)),
+                             GRPC_SLICE_LENGTH(slice));
   if (!pb_decode(&stream, grpc_gcp_RpcProtocolVersions_fields, versions)) {
     gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
     return false;

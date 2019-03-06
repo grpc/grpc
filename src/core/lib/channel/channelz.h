@@ -180,11 +180,11 @@ class ChannelNode : public BaseNode {
   bool ChannelIsDestroyed() { return channel_ == nullptr; }
 
   // proxy methods to composed classes.
-  void AddTraceEvent(ChannelTrace::Severity severity, grpc_slice data) {
+  void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
     trace_.AddTraceEvent(severity, data);
   }
   void AddTraceEventWithReference(ChannelTrace::Severity severity,
-                                  grpc_slice data,
+                                  const grpc_slice& data,
                                   RefCountedPtr<BaseNode> referenced_channel) {
     trace_.AddTraceEventWithReference(severity, data,
                                       std::move(referenced_channel));
@@ -214,11 +214,11 @@ class ServerNode : public BaseNode {
                             intptr_t pagination_limit);
 
   // proxy methods to composed classes.
-  void AddTraceEvent(ChannelTrace::Severity severity, grpc_slice data) {
+  void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
     trace_.AddTraceEvent(severity, data);
   }
   void AddTraceEventWithReference(ChannelTrace::Severity severity,
-                                  grpc_slice data,
+                                  const grpc_slice& data,
                                   RefCountedPtr<BaseNode> referenced_channel) {
     trace_.AddTraceEventWithReference(severity, data,
                                       std::move(referenced_channel));

@@ -824,10 +824,10 @@ static const char* write_state_name(grpc_chttp2_write_state st) {
 
 static void set_write_state(grpc_chttp2_transport* t,
                             grpc_chttp2_write_state st, const char* reason) {
-  GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "W:%p %s state %s -> %s [%s]", t,
-                                 t->is_client ? "CLIENT" : "SERVER",
-                                 write_state_name(t->write_state),
-                                 write_state_name(st), reason));
+  GRPC_CHTTP2_IF_TRACING(
+      gpr_log(GPR_INFO, "W:%p %s [%s] state %s -> %s [%s]", t,
+              t->is_client ? "CLIENT" : "SERVER", t->peer_string,
+              write_state_name(t->write_state), write_state_name(st), reason));
   t->write_state = st;
   /* If the state is being reset back to idle, it means a write was just
    * finished. Make sure all the run_after_write closures are scheduled.
@@ -1129,7 +1129,7 @@ static void queue_setting_update(grpc_chttp2_transport* t,
 
 void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                                      uint32_t goaway_error,
-                                     grpc_slice goaway_text) {
+                                     const grpc_slice& goaway_text) {
   // Discard the error from a previous goaway frame (if any)
   if (t->goaway_error != GRPC_ERROR_NONE) {
     GRPC_ERROR_UNREF(t->goaway_error);
@@ -2996,7 +2996,7 @@ void Chttp2IncomingByteStream::PublishError(grpc_error* error) {
   grpc_chttp2_cancel_stream(transport_, stream_, GRPC_ERROR_REF(error));
 }
 
-grpc_error* Chttp2IncomingByteStream::Push(grpc_slice slice,
+grpc_error* Chttp2IncomingByteStream::Push(const grpc_slice& slice,
                                            grpc_slice* slice_out) {
   if (remaining_bytes_ < GRPC_SLICE_LENGTH(slice)) {
     grpc_error* error =

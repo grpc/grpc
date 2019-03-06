@@ -339,12 +339,18 @@ TEST_F(FlakyNetworkTest, NetworkTransition) {
 TEST_F(FlakyNetworkTest, ServerUnreachableWithKeepalive) {
   const int kKeepAliveTimeMs = 1000;
   const int kKeepAliveTimeoutMs = 1000;
+  const int kReconnectBackoffMs = 1000;
   ChannelArguments args;
   args.SetInt(GRPC_ARG_KEEPALIVE_TIME_MS, kKeepAliveTimeMs);
   args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, kKeepAliveTimeoutMs);
   args.SetInt(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 1);
   args.SetInt(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA, 0);
+  // max time for a connection attempt
+  args.SetInt(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, kReconnectBackoffMs);
+  // max time between reconnect attempts
+  args.SetInt(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, kReconnectBackoffMs);
 
+  gpr_log(GPR_DEBUG, "FlakyNetworkTest.ServerUnreachableWithKeepalive start");
   auto channel = BuildChannel("pick_first", args);
   auto stub = BuildStub(channel);
   // Channel should be in READY state after we send an RPC
@@ -363,15 +369,18 @@ TEST_F(FlakyNetworkTest, ServerUnreachableWithKeepalive) {
   });
 
   // break network connectivity
+  gpr_log(GPR_DEBUG, "Adding iptables rule to drop packets");
   DropPackets();
   std::this_thread::sleep_for(std::chrono::milliseconds(10000));
   EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
   // bring network interface back up
   RestoreNetwork();
+  gpr_log(GPR_DEBUG, "Removed iptables rule to drop packets");
   EXPECT_TRUE(WaitForChannelReady(channel.get()));
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
   shutdown.store(true);
   sender.join();
+  gpr_log(GPR_DEBUG, "FlakyNetworkTest.ServerUnreachableWithKeepalive end");
 }
 
 //
@@ -421,7 +430,7 @@ TEST_F(FlakyNetworkTest, FlakyNetwork) {
   // simulate flaky network (packet loss, corruption and delays)
   FlakeNetwork();
   for (int i = 0; i < kMessageCount; ++i) {
-    EXPECT_TRUE(SendRpc(stub));
+    SendRpc(stub);
   }
   // remove network flakiness
   UnflakeNetwork();
