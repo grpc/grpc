@@ -283,6 +283,10 @@ typedef struct poll_args {
   gpr_cv harvest;
   bool joinable;
   gpr_cv join;
+  bool allowed_for_use;  // This is set to false, if this poller has fds that
+                         // are no longer active. Helps avoid race conditions
+                         // where poll results for closed fds might be used for
+                         // newer fds.
   struct pollfd* fds;
   nfds_t nfds;
   poll_result* result;
@@ -395,6 +399,28 @@ static void unref_by(grpc_fd* fd, int n) {
 #endif
   gpr_atm old = gpr_atm_full_fetch_add(&fd->refst, -n);
   if (old == n) {
+    /* We have a cache of pollers and their results. Even though we are done
+     * with this fd, we might get an fd with the same number. To avoid using
+     * results from this fd for a future fd, zero out the results for this fd.
+     */
+    gpr_mu_lock(&g_cvfds.mu);
+    if (poll_cache.active_pollers) {
+      for (unsigned int i = 0; i < poll_cache.size; i++) {
+        if (poll_cache.active_pollers[i]) {
+          poll_args* curr = poll_cache.active_pollers[i];
+          while (curr) {
+            for (unsigned int j = 0; j < curr->result->nfds; j++) {
+              if (curr->result->fds[j].fd == fd->fd) {
+                curr->allowed_for_use = false;
+                break;
+              }
+            }
+            curr = curr->next;
+          }
+        }
+      }
+    }
+    gpr_mu_unlock(&g_cvfds.mu);
     gpr_mu_destroy(&fd->mu);
     grpc_iomgr_unregister_object(&fd->iomgr_object);
     fork_fd_list_remove_node(fd->fork_fd_list);
@@ -1406,7 +1432,7 @@ static poll_args* get_poller_locked(struct pollfd* fds, nfds_t count) {
   key = key % poll_cache.size;
   poll_args* curr = poll_cache.active_pollers[key];
   while (curr) {
-    if (curr->nfds == count &&
+    if (curr->nfds == count && curr->allowed_for_use &&
         memcmp(curr->fds, fds, count * sizeof(struct pollfd)) == 0) {
       gpr_free(fds);
       return curr;
@@ -1420,6 +1446,7 @@ static poll_args* get_poller_locked(struct pollfd* fds, nfds_t count) {
     if (poll_cache.free_pollers) {
       poll_cache.free_pollers->prev = nullptr;
     }
+    pargs->allowed_for_use = true;
     pargs->fds = fds;
     pargs->nfds = count;
     pargs->next = nullptr;
@@ -1436,6 +1463,7 @@ static poll_args* get_poller_locked(struct pollfd* fds, nfds_t count) {
   gpr_cv_init(&pargs->join);
   pargs->harvestable = false;
   pargs->joinable = false;
+  pargs->allowed_for_use = true;
   pargs->fds = fds;
   pargs->nfds = count;
   pargs->next = nullptr;
