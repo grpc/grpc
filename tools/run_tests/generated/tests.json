@@ -169174,6 +169174,29 @@
   }, 
   {
     "args": [
+      "test/core/slice/percent_decode_corpus/clusterfuzz-testcase-minimized-grpc_percent_decode_fuzzer-5652313562808320"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "percent_decode_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
       "test/core/slice/percent_decode_corpus/d5b2a7177339ba2b7ce2f60e5f4459bef1e72758"
     ], 
     "ci_platforms": [
