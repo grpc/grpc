@@ -76,7 +76,7 @@ def _access_token():
                     time.sleep(_ACCESS_TOKEN_FETCH_RETRIES_INTERVAL_S)
         else:
             print("error: Unable to fetch access token, exiting...")
-            sys.exit(1)
+            sys.exit(0)
 
     return _ACCESS_TOKEN_CACHE['token']
 
