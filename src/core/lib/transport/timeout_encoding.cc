@@ -89,7 +89,7 @@ static int is_all_whitespace(const char* p, const char* end) {
   return p == end;
 }
 
-int grpc_http2_decode_timeout(grpc_slice text, grpc_millis* timeout) {
+int grpc_http2_decode_timeout(const grpc_slice& text, grpc_millis* timeout) {
   grpc_millis x = 0;
   const uint8_t* p = GRPC_SLICE_START_PTR(text);
   const uint8_t* end = GRPC_SLICE_END_PTR(text);

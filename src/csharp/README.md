@@ -103,5 +103,5 @@ THE NATIVE DEPENDENCY
 Internally, gRPC C# uses a native library written in C (gRPC C core) and invokes its functionality via P/Invoke. The fact that a native library is used should be fully transparent to the users and just installing the `Grpc.Core` NuGet package is the only step needed to use gRPC C# on all supported platforms.
 
 [API Reference]: https://grpc.io/grpc/csharp/api/Grpc.Core.html
-[Helloworld Example]: ../../examples/csharp/helloworld
+[Helloworld Example]: ../../examples/csharp/Helloworld
 [RouteGuide Tutorial]: https://grpc.io/docs/tutorials/basic/csharp.html 

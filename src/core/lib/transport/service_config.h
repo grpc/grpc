@@ -92,7 +92,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   /// Caller does NOT own a reference to the result.
   template <typename T>
   static RefCountedPtr<T> MethodConfigTableLookup(
-      const SliceHashTable<RefCountedPtr<T>>& table, grpc_slice path);
+      const SliceHashTable<RefCountedPtr<T>>& table, const grpc_slice& path);
 
  private:
   // So New() can call our private ctor.
@@ -223,7 +223,7 @@ ServiceConfig::CreateMethodConfigTable(CreateValue<T> create_value) {
 
 template <typename T>
 RefCountedPtr<T> ServiceConfig::MethodConfigTableLookup(
-    const SliceHashTable<RefCountedPtr<T>>& table, grpc_slice path) {
+    const SliceHashTable<RefCountedPtr<T>>& table, const grpc_slice& path) {
   const RefCountedPtr<T>* value = table.Get(path);
   // If we didn't find a match for the path, try looking for a wildcard
   // entry (i.e., change "/service/method" to "/service/*").

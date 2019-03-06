@@ -147,10 +147,8 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     }
 
     grpc_channel* CreateChannel(const char* target,
-                                grpc_client_channel_type type,
                                 const grpc_channel_args& args) override {
-      return parent_->channel_control_helper()->CreateChannel(target, type,
-                                                              args);
+      return parent_->channel_control_helper()->CreateChannel(target, args);
     }
 
     void UpdateState(grpc_connectivity_state state, grpc_error* state_error,

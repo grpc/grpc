@@ -27,7 +27,7 @@ NSString *const kRemoteHost = @"grpc-test.sandbox.googleapis.com";
 const int32_t kMessageSize = 100;
 
 @interface ViewController : UIViewController<GRPCProtoResponseHandler>
-
+@property(strong, nonatomic) UILabel *fromLabel;
 @end
 
 @implementation ViewController {
@@ -35,16 +35,25 @@ const int32_t kMessageSize = 100;
   dispatch_queue_t _dispatchQueue;
   GRPCStreamingProtoCall *_call;
 }
+- (instancetype)init {
+  self = [super init];
+  return self;
+}
 
 - (void)viewDidLoad {
   [super viewDidLoad];
   _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
+  _fromLabel = [[UILabel alloc] initWithFrame:CGRectMake(100, 500, 200, 20)];
+  _fromLabel.textColor = [UIColor blueColor];
+  _fromLabel.backgroundColor = [UIColor whiteColor];
+  [self.view addSubview:_fromLabel];
 }
 
 - (IBAction)tapUnaryCall:(id)sender {
   if (_service == nil) {
     _service = [RMTTestService serviceWithHost:kRemoteHost];
   }
+  self->_fromLabel.text = @"";
 
   // Set up request proto message
   RMTSimpleRequest *request = [RMTSimpleRequest message];
@@ -61,6 +70,7 @@ const int32_t kMessageSize = 100;
   if (_service == nil) {
     _service = [RMTTestService serviceWithHost:kRemoteHost];
   }
+  self->_fromLabel.text = @"";
 
   // Set up request proto message
   RMTStreamingOutputCallRequest *request = RMTStreamingOutputCallRequest.message;
@@ -92,7 +102,6 @@ const int32_t kMessageSize = 100;
   if (_call == nil) return;
 
   [_call finish];
-
   _call = nil;
 }
 
@@ -107,6 +116,15 @@ const int32_t kMessageSize = 100;
 - (void)didCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata
                                error:(nullable NSError *)error {
   NSLog(@"Recv trailing metadata: %@, error: %@", trailingMetadata, error);
+  if (error == nil) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+      self->_fromLabel.text = @"Call done";
+    });
+  } else {
+    dispatch_async(dispatch_get_main_queue(), ^{
+      self->_fromLabel.text = @"Call failed";
+    });
+  }
 }
 
 - (dispatch_queue_t)dispatchQueue {
