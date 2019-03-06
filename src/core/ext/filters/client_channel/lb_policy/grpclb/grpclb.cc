@@ -1679,18 +1679,6 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    /* Count the number of gRPC-LB addresses. There must be at least one. */
-    const ServerAddressList* addresses =
-        FindServerAddressListChannelArg(args.args);
-    if (addresses == nullptr) return nullptr;
-    bool found_balancer = false;
-    for (size_t i = 0; i < addresses->size(); ++i) {
-      if ((*addresses)[i].IsBalancer()) {
-        found_balancer = true;
-        break;
-      }
-    }
-    if (!found_balancer) return nullptr;
     return OrphanablePtr<LoadBalancingPolicy>(New<GrpcLb>(std::move(args)));
   }
 
