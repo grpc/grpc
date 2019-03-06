@@ -8,6 +8,7 @@ var searchData=
   ['callbackunaryhandler',['CallbackUnaryHandler',['../classgrpc_1_1_server_context.html#a99744cb5f50c9b27c792d3dad982843d',1,'grpc::ServerContext']]],
   ['callopclientrecvstatus',['CallOpClientRecvStatus',['../classgrpc_1_1_client_context.html#a506d0cd94cc911153c6ceb814a59524b',1,'grpc::ClientContext']]],
   ['calloprecvinitialmetadata',['CallOpRecvInitialMetadata',['../classgrpc_1_1_client_context.html#a3b165df6c09402c7753da14140c836cf',1,'grpc::ClientContext']]],
+  ['callopset',['CallOpSet',['../classgrpc_1_1_completion_queue.html#a560fa0fe4346e5487f19cd7403071aca',1,'grpc::CompletionQueue']]],
   ['channel',['Channel',['../classgrpc_1_1_completion_queue.html#a82418631373400a3f110c97c937a9533',1,'grpc::CompletionQueue']]],
   ['clientasyncreader',['ClientAsyncReader',['../classgrpc_1_1_client_context.html#af5343062a44a5633b144751e59969237',1,'grpc::ClientContext']]],
   ['clientasyncreaderfactory',['ClientAsyncReaderFactory',['../classgrpc_1_1_channel_interface.html#a2175726e9cbee09a493f40e1c3b5b088',1,'grpc::ChannelInterface']]],

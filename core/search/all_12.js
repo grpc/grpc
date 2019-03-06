@@ -2,6 +2,7 @@ var searchData=
 [
   ['transport_20explainer',['Transport Explainer',['../md_doc_core_transport_explainer.html',1,'']]],
   ['tag',['tag',['../structgrpc__event.html#a883ab15e862db582116c72cdcdc4c201',1,'grpc_event']]],
+  ['target_5fname',['target_name',['../structgrpc__tls__server__authorization__check__arg.html#a5ea427a08f7acada51d9ace358f8529b',1,'grpc_tls_server_authorization_check_arg']]],
   ['thd_5fid_2eh',['thd_id.h',['../thd__id_8h.html',1,'']]],
   ['time_2eh',['time.h',['../time_8h.html',1,'']]],
   ['trailing_5fmetadata',['trailing_metadata',['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__status__from__server.html#a9725188c1ad2a9a27b5b6c643085d38f',1,'grpc_op::grpc_op_data::grpc_op_send_status_from_server::trailing_metadata()'],['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__status__on__client.html#ac9335d5e1ce9d7accc13364e1f772253',1,'grpc_op::grpc_op_data::grpc_op_recv_status_on_client::trailing_metadata()']]],

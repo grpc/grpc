@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.18.0</span>
+   &#160;<span id="projectnumber">1.19.0</span>
    </div>
   </td>
  </tr>
@@ -80,7 +80,7 @@ $(function() {
 </ul>
 <h3>Compression Method Asymmetry Between Peers</h3>
 <p>A gRPC peer MAY choose to respond using a different compression method to that of the request, including not performing any compression, regardless of channel and RPC settings (for example, if compression would result in small or negative gains).</p>
-<p>When a message from a client compressed with an unsupported algorithm is processed by a server, it WILL result in an <code>UNIMPLEMENTED</code> error status on the server. The server will then include in its response a <code>grpc-accept-encoding</code> header specifying the algorithms it does accept. If an <code>UNIMPLEMENTED</code> error status is returned from the server despite having used one of the algorithms from the <code>grpc-accept-encoding</code> header, the cause MUST NOT be related to compression. Data sent from a server compressed with an algorithm not supported by the client WILL result in an <code>INTERNAL</code> error status on the client side.</p>
+<p>If a client message is compressed by an algorithm that is not supported by a server, the message WILL result in an <code>UNIMPLEMENTED</code> error status on the server. The server will then include a <code>grpc-accept-encoding</code> response header which specifies the algorithms that the server accepts. If the client message is compressed using one of the algorithms from the <code>grpc-accept-encoding</code> header and an <code>UNIMPLEMENTED</code> error status is returned from the server, the cause of the error MUST NOT be related to compression. If a server sent data which is compressed by an algorithm that is not supported by the client, an <code>INTERNAL</code> error status will occur on the client side.</p>
 <p>Note that a peer MAY choose to not disclose all the encodings it supports. However, if it receives a message compressed in an undisclosed but supported encoding, it MUST include said encoding in the response's <code>grpc-accept-encoding</code> header.</p>
 <p>For every message a server is requested to compress using an algorithm it knows the client doesn't support (as indicated by the last <code>grpc-accept-encoding</code> header received from the client), it SHALL send the message uncompressed.</p>
 <h3>Specific Disabling of Compression</h3>
@@ -112,7 +112,7 @@ $(function() {
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 18 2019 16:38:52 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 5 2019 15:13:02 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

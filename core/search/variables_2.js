@@ -2,6 +2,8 @@ var searchData=
 [
   ['cancelled',['cancelled',['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__close__on__server.html#a9245c801a7d3efc4ded0a04d680f9088',1,'grpc_op::grpc_op_data::grpc_op_recv_close_on_server']]],
   ['capacity',['capacity',['../structgrpc__metadata__array.html#a5b293b4f8e734b032b80741abf538a97',1,'grpc_metadata_array::capacity()'],['../structgrpc__slice__buffer.html#a8f35fa07c9a4d9f9a4e088a1155e5833',1,'grpc_slice_buffer::capacity()']]],
+  ['cb',['cb',['../structgrpc__tls__credential__reload__arg.html#a334d8ef3177532d0a1e2094d4a23233c',1,'grpc_tls_credential_reload_arg::cb()'],['../structgrpc__tls__server__authorization__check__arg.html#a77029657f0b1b653fe3694a05b3272dc',1,'grpc_tls_server_authorization_check_arg::cb()']]],
+  ['cb_5fuser_5fdata',['cb_user_data',['../structgrpc__tls__credential__reload__arg.html#a91a81a3317b88c3c380d7febad26b5e9',1,'grpc_tls_credential_reload_arg::cb_user_data()'],['../structgrpc__tls__server__authorization__check__arg.html#a49f838e2bc8533b18d77e9e31a34033b',1,'grpc_tls_server_authorization_check_arg::cb_user_data()']]],
   ['cert_5fchain',['cert_chain',['../structgrpc__ssl__pem__key__cert__pair.html#a483c3601705853f48dfbc8ee66d5e656',1,'grpc_ssl_pem_key_cert_pair']]],
   ['channel_5fauth_5fcontext',['channel_auth_context',['../structgrpc__auth__metadata__context.html#a7cb596d3af7463816fdde64f3e18dbde',1,'grpc_auth_metadata_context']]],
   ['clock_5ftype',['clock_type',['../structgpr__timespec.html#a6dd26976820fa71a7c5a710d4c1845ff',1,'gpr_timespec']]],

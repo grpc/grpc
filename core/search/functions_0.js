@@ -259,6 +259,15 @@ var searchData=
   ['grpc_5fssl_5fsession_5fcache_5fcreate_5fchannel_5farg',['grpc_ssl_session_cache_create_channel_arg',['../grpc__security_8h.html#a4fd0dd05b90f7dcebaaacf8a0088c46f',1,'grpc_security.h']]],
   ['grpc_5fssl_5fsession_5fcache_5fcreate_5flru',['grpc_ssl_session_cache_create_lru',['../grpc__security_8h.html#ae175e13bfcab1b77f4cc7f193d898aff',1,'grpc_security.h']]],
   ['grpc_5fssl_5fsession_5fcache_5fdestroy',['grpc_ssl_session_cache_destroy',['../grpc__security_8h.html#a3f83f8a3390b8b1659b719b7f47005a1',1,'grpc_security.h']]],
+  ['grpc_5ftls_5fcredential_5freload_5fconfig_5fcreate',['grpc_tls_credential_reload_config_create',['../grpc__security_8h.html#a2337a83a6898dde63d4948e8b12aee69',1,'grpc_security.h']]],
+  ['grpc_5ftls_5fcredentials_5foptions_5fcreate',['grpc_tls_credentials_options_create',['../grpc__security_8h.html#a96792c3c3fcc832e64aa0c232f346608',1,'grpc_security.h']]],
+  ['grpc_5ftls_5fcredentials_5foptions_5fset_5fcert_5frequest_5ftype',['grpc_tls_credentials_options_set_cert_request_type',['../grpc__security_8h.html#a74b4321fe0bd90f5014b434ee81c17ae',1,'grpc_security.h']]],
+  ['grpc_5ftls_5fcredentials_5foptions_5fset_5fcredential_5freload_5fconfig',['grpc_tls_credentials_options_set_credential_reload_config',['../grpc__security_8h.html#a1156855c669abbbff6aaa05fe6cfbffd',1,'grpc_security.h']]],
+  ['grpc_5ftls_5fcredentials_5foptions_5fset_5fkey_5fmaterials_5fconfig',['grpc_tls_credentials_options_set_key_materials_config',['../grpc__security_8h.html#a7003ba2a1fef61f102bce642ffbf4a99',1,'grpc_security.h']]],
+  ['grpc_5ftls_5fcredentials_5foptions_5fset_5fserver_5fauthorization_5fcheck_5fconfig',['grpc_tls_credentials_options_set_server_authorization_check_config',['../grpc__security_8h.html#aa38f4543664e3e0be8b7329603d6e014',1,'grpc_security.h']]],
+  ['grpc_5ftls_5fkey_5fmaterials_5fconfig_5fcreate',['grpc_tls_key_materials_config_create',['../grpc__security_8h.html#a621979e43112a0d91eec9d617736069e',1,'grpc_security.h']]],
+  ['grpc_5ftls_5fkey_5fmaterials_5fconfig_5fset_5fkey_5fmaterials',['grpc_tls_key_materials_config_set_key_materials',['../grpc__security_8h.html#ab6371d3ff79d1330eb914bff2122e6f9',1,'grpc_security.h']]],
+  ['grpc_5ftls_5fserver_5fauthorization_5fcheck_5fconfig_5fcreate',['grpc_tls_server_authorization_check_config_create',['../grpc__security_8h.html#a8ff1f21121b5dafaf848683e8eaf74d9',1,'grpc_security.h']]],
   ['grpc_5ftracer_5fset_5fenabled',['grpc_tracer_set_enabled',['../grpc_8h.html#a0bcbc8d69b256843facb8339d812ae2e',1,'grpc.h']]],
   ['grpc_5fversion_5fstring',['grpc_version_string',['../grpc_8h.html#a8bf40c680565d2d3b29b85e8a9e661f3',1,'grpc.h']]]
 ];

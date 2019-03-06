@@ -101,6 +101,12 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__auth__metadata__processor.html">grpc_auth_metadata_processor</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pluggable server-side metadata processor object.  <a href="structgrpc__auth__metadata__processor.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__tls__credential__reload__arg.html">grpc_tls_credential_reload_arg</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A struct containing all information necessary to schedule/cancel a credential reload request.  <a href="structgrpc__tls__credential__reload__arg.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__tls__server__authorization__check__arg.html">grpc_tls_server_authorization_check_arg</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A struct containing all information necessary to schedule/cancel a server authorization check request.  <a href="structgrpc__tls__server__authorization__check__arg.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
@@ -150,6 +156,30 @@ Typedefs</h2></td></tr>
 <tr class="memitem:a196ff73c6ff0dc0d7846635e02016b0f"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a></td></tr>
 <tr class="memdesc:a196ff73c6ff0dc0d7846635e02016b0f"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; ALTS channel/server credentials &mdash;  <a href="#a196ff73c6ff0dc0d7846635e02016b0f">More...</a><br /></td></tr>
 <tr class="separator:a196ff73c6ff0dc0d7846635e02016b0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2967916eed7d3f7aa1f8fbf3fc45d9ce"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="grpc__security_8h.html#a2967916eed7d3f7aa1f8fbf3fc45d9ce">grpc_tls_key_materials_config</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a2967916eed7d3f7aa1f8fbf3fc45d9ce">grpc_tls_key_materials_config</a></td></tr>
+<tr class="memdesc:a2967916eed7d3f7aa1f8fbf3fc45d9ce"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; SPIFFE and HTTPS-based TLS channel/server credentials &mdash; It is used for experimental purpose for now and subject to change.  <a href="#a2967916eed7d3f7aa1f8fbf3fc45d9ce">More...</a><br /></td></tr>
+<tr class="separator:a2967916eed7d3f7aa1f8fbf3fc45d9ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aed7d78aacba36dda7c4e95668e1e8f8e"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="grpc__security_8h.html#aed7d78aacba36dda7c4e95668e1e8f8e">grpc_tls_credential_reload_config</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#aed7d78aacba36dda7c4e95668e1e8f8e">grpc_tls_credential_reload_config</a></td></tr>
+<tr class="memdesc:aed7d78aacba36dda7c4e95668e1e8f8e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Config for TLS credential reload.  <a href="#aed7d78aacba36dda7c4e95668e1e8f8e">More...</a><br /></td></tr>
+<tr class="separator:aed7d78aacba36dda7c4e95668e1e8f8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0927fc30a7bd209877095da5a67ba22c"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="grpc__security_8h.html#a0927fc30a7bd209877095da5a67ba22c">grpc_tls_server_authorization_check_config</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a0927fc30a7bd209877095da5a67ba22c">grpc_tls_server_authorization_check_config</a></td></tr>
+<tr class="memdesc:a0927fc30a7bd209877095da5a67ba22c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Config for TLS server authorization check.  <a href="#a0927fc30a7bd209877095da5a67ba22c">More...</a><br /></td></tr>
+<tr class="separator:a0927fc30a7bd209877095da5a67ba22c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8fe8a5a9b93ff8671a7843add47d57be"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a></td></tr>
+<tr class="memdesc:a8fe8a5a9b93ff8671a7843add47d57be"><td class="mdescLeft">&#160;</td><td class="mdescRight">TLS credentials options.  <a href="#a8fe8a5a9b93ff8671a7843add47d57be">More...</a><br /></td></tr>
+<tr class="separator:a8fe8a5a9b93ff8671a7843add47d57be"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af96a3f2e90b21bdc2a4e6b88745dda5d"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="structgrpc__tls__credential__reload__arg.html">grpc_tls_credential_reload_arg</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#af96a3f2e90b21bdc2a4e6b88745dda5d">grpc_tls_credential_reload_arg</a></td></tr>
+<tr class="memdesc:af96a3f2e90b21bdc2a4e6b88745dda5d"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; TLS credential reload config.  <a href="#af96a3f2e90b21bdc2a4e6b88745dda5d">More...</a><br /></td></tr>
+<tr class="separator:af96a3f2e90b21bdc2a4e6b88745dda5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4c79c219cfe6c68ce52d2b195ec2ed0a"><td class="memItemLeft" align="right" valign="top">typedef void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a4c79c219cfe6c68ce52d2b195ec2ed0a">grpc_tls_on_credential_reload_done_cb</a>) (<a class="el" href="structgrpc__tls__credential__reload__arg.html">grpc_tls_credential_reload_arg</a> *arg)</td></tr>
+<tr class="memdesc:a4c79c219cfe6c68ce52d2b195ec2ed0a"><td class="mdescLeft">&#160;</td><td class="mdescRight">A callback function provided by gRPC to handle the result of credential reload.  <a href="#a4c79c219cfe6c68ce52d2b195ec2ed0a">More...</a><br /></td></tr>
+<tr class="separator:a4c79c219cfe6c68ce52d2b195ec2ed0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aceb7acdc7bce490b9afa974da0b44f89"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="structgrpc__tls__server__authorization__check__arg.html">grpc_tls_server_authorization_check_arg</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#aceb7acdc7bce490b9afa974da0b44f89">grpc_tls_server_authorization_check_arg</a></td></tr>
+<tr class="memdesc:aceb7acdc7bce490b9afa974da0b44f89"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; TLS server authorization check config.  <a href="#aceb7acdc7bce490b9afa974da0b44f89">More...</a><br /></td></tr>
+<tr class="separator:aceb7acdc7bce490b9afa974da0b44f89"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab72de5caa877bbfff84676b1cb024fb3"><td class="memItemLeft" align="right" valign="top">typedef void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#ab72de5caa877bbfff84676b1cb024fb3">grpc_tls_on_server_authorization_check_done_cb</a>) (<a class="el" href="structgrpc__tls__server__authorization__check__arg.html">grpc_tls_server_authorization_check_arg</a> *arg)</td></tr>
+<tr class="memdesc:ab72de5caa877bbfff84676b1cb024fb3"><td class="mdescLeft">&#160;</td><td class="mdescRight">callback function provided by gRPC used to handle the result of server authorization check.  <a href="#ab72de5caa877bbfff84676b1cb024fb3">More...</a><br /></td></tr>
+<tr class="separator:ab72de5caa877bbfff84676b1cb024fb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
@@ -298,6 +328,33 @@ Functions</h2></td></tr>
 <tr class="memitem:a39e8a41f7f9a8d7587343964b18fc464"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a39e8a41f7f9a8d7587343964b18fc464">grpc_local_server_credentials_create</a> (<a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a> type)</td></tr>
 <tr class="memdesc:a39e8a41f7f9a8d7587343964b18fc464"><td class="mdescLeft">&#160;</td><td class="mdescRight">This method creates a local server credential object.  <a href="#a39e8a41f7f9a8d7587343964b18fc464">More...</a><br /></td></tr>
 <tr class="separator:a39e8a41f7f9a8d7587343964b18fc464"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a96792c3c3fcc832e64aa0c232f346608"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a96792c3c3fcc832e64aa0c232f346608">grpc_tls_credentials_options_create</a> ()</td></tr>
+<tr class="memdesc:a96792c3c3fcc832e64aa0c232f346608"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create an empty TLS credentials options.  <a href="#a96792c3c3fcc832e64aa0c232f346608">More...</a><br /></td></tr>
+<tr class="separator:a96792c3c3fcc832e64aa0c232f346608"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a74b4321fe0bd90f5014b434ee81c17ae"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a74b4321fe0bd90f5014b434ee81c17ae">grpc_tls_credentials_options_set_cert_request_type</a> (<a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *options, <a class="el" href="grpc__security__constants_8h.html#a29ffe63a8bb3b4945ecab42d82758f09">grpc_ssl_client_certificate_request_type</a> type)</td></tr>
+<tr class="memdesc:a74b4321fe0bd90f5014b434ee81c17ae"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set grpc_ssl_client_certificate_request_type field in credentials options with the provided type.  <a href="#a74b4321fe0bd90f5014b434ee81c17ae">More...</a><br /></td></tr>
+<tr class="separator:a74b4321fe0bd90f5014b434ee81c17ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7003ba2a1fef61f102bce642ffbf4a99"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a7003ba2a1fef61f102bce642ffbf4a99">grpc_tls_credentials_options_set_key_materials_config</a> (<a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *options, <a class="el" href="grpc__security_8h.html#a2967916eed7d3f7aa1f8fbf3fc45d9ce">grpc_tls_key_materials_config</a> *config)</td></tr>
+<tr class="memdesc:a7003ba2a1fef61f102bce642ffbf4a99"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set grpc_tls_key_materials_config field in credentials options with the provided config struct whose ownership is transferred.  <a href="#a7003ba2a1fef61f102bce642ffbf4a99">More...</a><br /></td></tr>
+<tr class="separator:a7003ba2a1fef61f102bce642ffbf4a99"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1156855c669abbbff6aaa05fe6cfbffd"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a1156855c669abbbff6aaa05fe6cfbffd">grpc_tls_credentials_options_set_credential_reload_config</a> (<a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *options, <a class="el" href="grpc__security_8h.html#aed7d78aacba36dda7c4e95668e1e8f8e">grpc_tls_credential_reload_config</a> *config)</td></tr>
+<tr class="memdesc:a1156855c669abbbff6aaa05fe6cfbffd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set grpc_tls_credential_reload_config field in credentials options with the provided config struct whose ownership is transferred.  <a href="#a1156855c669abbbff6aaa05fe6cfbffd">More...</a><br /></td></tr>
+<tr class="separator:a1156855c669abbbff6aaa05fe6cfbffd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa38f4543664e3e0be8b7329603d6e014"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#aa38f4543664e3e0be8b7329603d6e014">grpc_tls_credentials_options_set_server_authorization_check_config</a> (<a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *options, <a class="el" href="grpc__security_8h.html#a0927fc30a7bd209877095da5a67ba22c">grpc_tls_server_authorization_check_config</a> *config)</td></tr>
+<tr class="memdesc:aa38f4543664e3e0be8b7329603d6e014"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set grpc_tls_server_authorization_check_config field in credentials options with the provided config struct whose ownership is transferred.  <a href="#aa38f4543664e3e0be8b7329603d6e014">More...</a><br /></td></tr>
+<tr class="separator:aa38f4543664e3e0be8b7329603d6e014"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a621979e43112a0d91eec9d617736069e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a2967916eed7d3f7aa1f8fbf3fc45d9ce">grpc_tls_key_materials_config</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a621979e43112a0d91eec9d617736069e">grpc_tls_key_materials_config_create</a> ()</td></tr>
+<tr class="memdesc:a621979e43112a0d91eec9d617736069e"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; TLS key materials config.  <a href="#a621979e43112a0d91eec9d617736069e">More...</a><br /></td></tr>
+<tr class="separator:a621979e43112a0d91eec9d617736069e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab6371d3ff79d1330eb914bff2122e6f9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#ab6371d3ff79d1330eb914bff2122e6f9">grpc_tls_key_materials_config_set_key_materials</a> (<a class="el" href="grpc__security_8h.html#a2967916eed7d3f7aa1f8fbf3fc45d9ce">grpc_tls_key_materials_config</a> *config, const char *pem_root_certs, const <a class="el" href="structgrpc__ssl__pem__key__cert__pair.html">grpc_ssl_pem_key_cert_pair</a> **pem_key_cert_pairs, size_t num_key_cert_pairs)</td></tr>
+<tr class="memdesc:ab6371d3ff79d1330eb914bff2122e6f9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set grpc_tls_key_materials_config instance with provided a TLS certificate.  <a href="#ab6371d3ff79d1330eb914bff2122e6f9">More...</a><br /></td></tr>
+<tr class="separator:ab6371d3ff79d1330eb914bff2122e6f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2337a83a6898dde63d4948e8b12aee69"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#aed7d78aacba36dda7c4e95668e1e8f8e">grpc_tls_credential_reload_config</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a2337a83a6898dde63d4948e8b12aee69">grpc_tls_credential_reload_config_create</a> (const void *config_user_data, int(*schedule)(void *config_user_data, <a class="el" href="structgrpc__tls__credential__reload__arg.html">grpc_tls_credential_reload_arg</a> *arg), void(*cancel)(void *config_user_data, <a class="el" href="structgrpc__tls__credential__reload__arg.html">grpc_tls_credential_reload_arg</a> *arg), void(*destruct)(void *config_user_data))</td></tr>
+<tr class="memdesc:a2337a83a6898dde63d4948e8b12aee69"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a grpc_tls_credential_reload_config instance.  <a href="#a2337a83a6898dde63d4948e8b12aee69">More...</a><br /></td></tr>
+<tr class="separator:a2337a83a6898dde63d4948e8b12aee69"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8ff1f21121b5dafaf848683e8eaf74d9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a0927fc30a7bd209877095da5a67ba22c">grpc_tls_server_authorization_check_config</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a8ff1f21121b5dafaf848683e8eaf74d9">grpc_tls_server_authorization_check_config_create</a> (const void *config_user_data, int(*schedule)(void *config_user_data, <a class="el" href="structgrpc__tls__server__authorization__check__arg.html">grpc_tls_server_authorization_check_arg</a> *arg), void(*cancel)(void *config_user_data, <a class="el" href="structgrpc__tls__server__authorization__check__arg.html">grpc_tls_server_authorization_check_arg</a> *arg), void(*destruct)(void *config_user_data))</td></tr>
+<tr class="memdesc:a8ff1f21121b5dafaf848683e8eaf74d9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a grpc_tls_server_authorization_check_config instance.  <a href="#a8ff1f21121b5dafaf848683e8eaf74d9">More...</a><br /></td></tr>
+<tr class="separator:a8ff1f21121b5dafaf848683e8eaf74d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="a33e259900dbbac0ea018352adf1a4af7"></a>
@@ -563,6 +620,144 @@ Functions</h2></td></tr>
 <p>&mdash; SSL Session Cache. </p>
 <hr/>
 <p>A SSL session cache object represents a way to cache client sessions between connections. Only ticket-based resumption is supported. </p>
+
+</div>
+</div>
+<a id="af96a3f2e90b21bdc2a4e6b88745dda5d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af96a3f2e90b21bdc2a4e6b88745dda5d">&#9670;&nbsp;</a></span>grpc_tls_credential_reload_arg</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct <a class="el" href="structgrpc__tls__credential__reload__arg.html">grpc_tls_credential_reload_arg</a> <a class="el" href="structgrpc__tls__credential__reload__arg.html">grpc_tls_credential_reload_arg</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>&mdash; TLS credential reload config. </p>
+<hr/>
+<p> It is used for experimental purpose for now and subject to change. </p>
+
+</div>
+</div>
+<a id="aed7d78aacba36dda7c4e95668e1e8f8e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aed7d78aacba36dda7c4e95668e1e8f8e">&#9670;&nbsp;</a></span>grpc_tls_credential_reload_config</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct <a class="el" href="grpc__security_8h.html#aed7d78aacba36dda7c4e95668e1e8f8e">grpc_tls_credential_reload_config</a> <a class="el" href="grpc__security_8h.html#aed7d78aacba36dda7c4e95668e1e8f8e">grpc_tls_credential_reload_config</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Config for TLS credential reload. </p>
+<p>It is used for experimental purpose for now and subject to change. </p>
+
+</div>
+</div>
+<a id="a8fe8a5a9b93ff8671a7843add47d57be"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8fe8a5a9b93ff8671a7843add47d57be">&#9670;&nbsp;</a></span>grpc_tls_credentials_options</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct <a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> <a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>TLS credentials options. </p>
+<p>It is used for experimental purpose for now and subject to change. </p>
+
+</div>
+</div>
+<a id="a2967916eed7d3f7aa1f8fbf3fc45d9ce"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2967916eed7d3f7aa1f8fbf3fc45d9ce">&#9670;&nbsp;</a></span>grpc_tls_key_materials_config</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct <a class="el" href="grpc__security_8h.html#a2967916eed7d3f7aa1f8fbf3fc45d9ce">grpc_tls_key_materials_config</a> <a class="el" href="grpc__security_8h.html#a2967916eed7d3f7aa1f8fbf3fc45d9ce">grpc_tls_key_materials_config</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>&mdash; SPIFFE and HTTPS-based TLS channel/server credentials &mdash; It is used for experimental purpose for now and subject to change. </p>
+<p>Config for TLS key materials. It is used for experimental purpose for now and subject to change. </p>
+
+</div>
+</div>
+<a id="a4c79c219cfe6c68ce52d2b195ec2ed0a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4c79c219cfe6c68ce52d2b195ec2ed0a">&#9670;&nbsp;</a></span>grpc_tls_on_credential_reload_done_cb</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef void(* grpc_tls_on_credential_reload_done_cb) (<a class="el" href="structgrpc__tls__credential__reload__arg.html">grpc_tls_credential_reload_arg</a> *arg)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>A callback function provided by gRPC to handle the result of credential reload. </p>
+<p>It is used when schedule API is implemented asynchronously and serves to bring the control back to grpc C core. It is used for experimental purpose for now and subject to change. </p>
+
+</div>
+</div>
+<a id="ab72de5caa877bbfff84676b1cb024fb3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab72de5caa877bbfff84676b1cb024fb3">&#9670;&nbsp;</a></span>grpc_tls_on_server_authorization_check_done_cb</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef void(* grpc_tls_on_server_authorization_check_done_cb) (<a class="el" href="structgrpc__tls__server__authorization__check__arg.html">grpc_tls_server_authorization_check_arg</a> *arg)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>callback function provided by gRPC used to handle the result of server authorization check. </p>
+<p>It is used when schedule API is implemented asynchronously, and serves to bring the control back to gRPC C core. It is used for experimental purpose for now and subject to change. </p>
+
+</div>
+</div>
+<a id="aceb7acdc7bce490b9afa974da0b44f89"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aceb7acdc7bce490b9afa974da0b44f89">&#9670;&nbsp;</a></span>grpc_tls_server_authorization_check_arg</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct <a class="el" href="structgrpc__tls__server__authorization__check__arg.html">grpc_tls_server_authorization_check_arg</a> <a class="el" href="structgrpc__tls__server__authorization__check__arg.html">grpc_tls_server_authorization_check_arg</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>&mdash; TLS server authorization check config. </p>
+<hr/>
+<p> It is used for experimental purpose for now and subject to change. </p>
+
+</div>
+</div>
+<a id="a0927fc30a7bd209877095da5a67ba22c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0927fc30a7bd209877095da5a67ba22c">&#9670;&nbsp;</a></span>grpc_tls_server_authorization_check_config</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct <a class="el" href="grpc__security_8h.html#a0927fc30a7bd209877095da5a67ba22c">grpc_tls_server_authorization_check_config</a> <a class="el" href="grpc__security_8h.html#a0927fc30a7bd209877095da5a67ba22c">grpc_tls_server_authorization_check_config</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Config for TLS server authorization check. </p>
+<p>It is used for experimental purpose for now and subject to change. </p>
 
 </div>
 </div>
@@ -1967,10 +2162,314 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a2337a83a6898dde63d4948e8b12aee69"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2337a83a6898dde63d4948e8b12aee69">&#9670;&nbsp;</a></span>grpc_tls_credential_reload_config_create()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#aed7d78aacba36dda7c4e95668e1e8f8e">grpc_tls_credential_reload_config</a>* grpc_tls_credential_reload_config_create </td>
+          <td>(</td>
+          <td class="paramtype">const void *&#160;</td>
+          <td class="paramname"><em>config_user_data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int(*)(void *config_user_data, <a class="el" href="structgrpc__tls__credential__reload__arg.html">grpc_tls_credential_reload_arg</a> *arg)&#160;</td>
+          <td class="paramname"><em>schedule</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void(*)(void *config_user_data, <a class="el" href="structgrpc__tls__credential__reload__arg.html">grpc_tls_credential_reload_arg</a> *arg)&#160;</td>
+          <td class="paramname"><em>cancel</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void(*)(void *config_user_data)&#160;</td>
+          <td class="paramname"><em>destruct</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Create a grpc_tls_credential_reload_config instance. </p>
+<ul>
+<li>config_user_data is config-specific, read-only user data that works for all channels created with a credential using the config.</li>
+<li>schedule is a pointer to an application-provided callback used to invoke credential reload API. The implementation of this method has to be non-blocking, but can be performed synchronously or asynchronously. 1) If processing occurs synchronously, it populates arg-&gt;key_materials, arg-&gt;status, and arg-&gt;error_details and returns zero. 2) If processing occurs asynchronously, it returns a non-zero value. The application then invokes arg-&gt;cb when processing is completed. Note that arg-&gt;cb cannot be invoked before schedule API returns.</li>
+<li>cancel is a pointer to an application-provided callback used to cancel a credential reload request scheduled via an asynchronous schedule API. arg is used to pinpoint an exact reloading request to be cancelled. The operation may not have any effect if the request has already been processed.</li>
+<li>destruct is a pointer to an application-provided callback used to clean up any data associated with the config. It is used for experimental purpose for now and subject to change. </li>
+</ul>
+
+</div>
+</div>
+<a id="a96792c3c3fcc832e64aa0c232f346608"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a96792c3c3fcc832e64aa0c232f346608">&#9670;&nbsp;</a></span>grpc_tls_credentials_options_create()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a>* grpc_tls_credentials_options_create </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Create an empty TLS credentials options. </p>
+<p>It is used for experimental purpose for now and subject to change. </p>
+
+</div>
+</div>
+<a id="a74b4321fe0bd90f5014b434ee81c17ae"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a74b4321fe0bd90f5014b434ee81c17ae">&#9670;&nbsp;</a></span>grpc_tls_credentials_options_set_cert_request_type()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int grpc_tls_credentials_options_set_cert_request_type </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *&#160;</td>
+          <td class="paramname"><em>options</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="grpc__security__constants_8h.html#a29ffe63a8bb3b4945ecab42d82758f09">grpc_ssl_client_certificate_request_type</a>&#160;</td>
+          <td class="paramname"><em>type</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set grpc_ssl_client_certificate_request_type field in credentials options with the provided type. </p>
+<p>options should not be NULL. It returns 1 on success and 0 on failure. It is used for experimental purpose for now and subject to change. </p>
+
+</div>
+</div>
+<a id="a1156855c669abbbff6aaa05fe6cfbffd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1156855c669abbbff6aaa05fe6cfbffd">&#9670;&nbsp;</a></span>grpc_tls_credentials_options_set_credential_reload_config()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int grpc_tls_credentials_options_set_credential_reload_config </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *&#160;</td>
+          <td class="paramname"><em>options</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#aed7d78aacba36dda7c4e95668e1e8f8e">grpc_tls_credential_reload_config</a> *&#160;</td>
+          <td class="paramname"><em>config</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set grpc_tls_credential_reload_config field in credentials options with the provided config struct whose ownership is transferred. </p>
+<p>Both parameters should not be NULL. It returns 1 on success and 0 on failure. It is used for experimental purpose for now and subject to change. </p>
+
+</div>
+</div>
+<a id="a7003ba2a1fef61f102bce642ffbf4a99"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7003ba2a1fef61f102bce642ffbf4a99">&#9670;&nbsp;</a></span>grpc_tls_credentials_options_set_key_materials_config()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int grpc_tls_credentials_options_set_key_materials_config </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *&#160;</td>
+          <td class="paramname"><em>options</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#a2967916eed7d3f7aa1f8fbf3fc45d9ce">grpc_tls_key_materials_config</a> *&#160;</td>
+          <td class="paramname"><em>config</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set grpc_tls_key_materials_config field in credentials options with the provided config struct whose ownership is transferred. </p>
+<p>Both parameters should not be NULL. It returns 1 on success and 0 on failure. It is used for experimental purpose for now and subject to change. </p>
+
+</div>
+</div>
+<a id="aa38f4543664e3e0be8b7329603d6e014"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa38f4543664e3e0be8b7329603d6e014">&#9670;&nbsp;</a></span>grpc_tls_credentials_options_set_server_authorization_check_config()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int grpc_tls_credentials_options_set_server_authorization_check_config </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *&#160;</td>
+          <td class="paramname"><em>options</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#a0927fc30a7bd209877095da5a67ba22c">grpc_tls_server_authorization_check_config</a> *&#160;</td>
+          <td class="paramname"><em>config</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set grpc_tls_server_authorization_check_config field in credentials options with the provided config struct whose ownership is transferred. </p>
+<p>Both parameters should not be NULL. It returns 1 on success and 0 on failure. It is used for experimental purpose for now and subject to change. </p>
+
+</div>
+</div>
+<a id="a621979e43112a0d91eec9d617736069e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a621979e43112a0d91eec9d617736069e">&#9670;&nbsp;</a></span>grpc_tls_key_materials_config_create()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a2967916eed7d3f7aa1f8fbf3fc45d9ce">grpc_tls_key_materials_config</a>* grpc_tls_key_materials_config_create </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>&mdash; TLS key materials config. </p>
+<hr/>
+<p> It is used for experimental purpose for now and subject to change. Create an empty grpc_tls_key_materials_config instance. It is used for experimental purpose for now and subject to change. </p>
+
+</div>
+</div>
+<a id="ab6371d3ff79d1330eb914bff2122e6f9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab6371d3ff79d1330eb914bff2122e6f9">&#9670;&nbsp;</a></span>grpc_tls_key_materials_config_set_key_materials()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int grpc_tls_key_materials_config_set_key_materials </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#a2967916eed7d3f7aa1f8fbf3fc45d9ce">grpc_tls_key_materials_config</a> *&#160;</td>
+          <td class="paramname"><em>config</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>pem_root_certs</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structgrpc__ssl__pem__key__cert__pair.html">grpc_ssl_pem_key_cert_pair</a> **&#160;</td>
+          <td class="paramname"><em>pem_key_cert_pairs</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>num_key_cert_pairs</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set grpc_tls_key_materials_config instance with provided a TLS certificate. </p>
+<p>config will take the ownership of pem_root_certs and pem_key_cert_pairs. It's valid for the caller to provide nullptr pem_root_certs, in which case the gRPC-provided root cert will be used. pem_key_cert_pairs should not be NULL. It returns 1 on success and 0 on failure. It is used for experimental purpose for now and subject to change. </p>
+
+</div>
+</div>
+<a id="a8ff1f21121b5dafaf848683e8eaf74d9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8ff1f21121b5dafaf848683e8eaf74d9">&#9670;&nbsp;</a></span>grpc_tls_server_authorization_check_config_create()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a0927fc30a7bd209877095da5a67ba22c">grpc_tls_server_authorization_check_config</a>* grpc_tls_server_authorization_check_config_create </td>
+          <td>(</td>
+          <td class="paramtype">const void *&#160;</td>
+          <td class="paramname"><em>config_user_data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int(*)(void *config_user_data, <a class="el" href="structgrpc__tls__server__authorization__check__arg.html">grpc_tls_server_authorization_check_arg</a> *arg)&#160;</td>
+          <td class="paramname"><em>schedule</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void(*)(void *config_user_data, <a class="el" href="structgrpc__tls__server__authorization__check__arg.html">grpc_tls_server_authorization_check_arg</a> *arg)&#160;</td>
+          <td class="paramname"><em>cancel</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void(*)(void *config_user_data)&#160;</td>
+          <td class="paramname"><em>destruct</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Create a grpc_tls_server_authorization_check_config instance. </p>
+<ul>
+<li>config_user_data is config-specific, read-only user data that works for all channels created with a credential using the config.</li>
+<li>schedule is a pointer to an application-provided callback used to invoke server authorization check API. The implementation of this method has to be non-blocking, but can be performed synchronously or asynchronously. 1)If processing occurs synchronously, it populates arg-&gt;result, arg-&gt;status, and arg-&gt;error_details and returns zero. 2) If processing occurs asynchronously, it returns a non-zero value. The application then invokes arg-&gt;cb when processing is completed. Note that arg-&gt;cb cannot be invoked before schedule API returns.</li>
+<li>cancel is a pointer to an application-provided callback used to cancel a server authorization check request scheduled via an asynchronous schedule API. arg is used to pinpoint an exact check request to be cancelled. The operation may not have any effect if the request has already been processed.</li>
+<li>destruct is a pointer to an application-provided callback used to clean up any data associated with the config. It is used for experimental purpose for now and subject to change. </li>
+</ul>
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 18 2019 16:38:51 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 5 2019 15:13:01 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

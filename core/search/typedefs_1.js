@@ -47,5 +47,13 @@ var searchData=
   ['grpc_5fssl_5fserver_5fcertificate_5fconfig',['grpc_ssl_server_certificate_config',['../grpc__security_8h.html#acb8bbd3a6006aee7f7b254d4a91d914f',1,'grpc_security.h']]],
   ['grpc_5fssl_5fserver_5fcertificate_5fconfig_5fcallback',['grpc_ssl_server_certificate_config_callback',['../grpc__security_8h.html#a8c5f064d7d008bc46fa61e87d68898f3',1,'grpc_security.h']]],
   ['grpc_5fssl_5fserver_5fcredentials_5foptions',['grpc_ssl_server_credentials_options',['../grpc__security_8h.html#ade0da78380603c2e26c81695f09ea4c8',1,'grpc_security.h']]],
-  ['grpc_5fssl_5fsession_5fcache',['grpc_ssl_session_cache',['../grpc__security_8h.html#a7008e76d9e21a435a03267390c6f8a37',1,'grpc_security.h']]]
+  ['grpc_5fssl_5fsession_5fcache',['grpc_ssl_session_cache',['../grpc__security_8h.html#a7008e76d9e21a435a03267390c6f8a37',1,'grpc_security.h']]],
+  ['grpc_5ftls_5fcredential_5freload_5farg',['grpc_tls_credential_reload_arg',['../grpc__security_8h.html#af96a3f2e90b21bdc2a4e6b88745dda5d',1,'grpc_security.h']]],
+  ['grpc_5ftls_5fcredential_5freload_5fconfig',['grpc_tls_credential_reload_config',['../grpc__security_8h.html#aed7d78aacba36dda7c4e95668e1e8f8e',1,'grpc_security.h']]],
+  ['grpc_5ftls_5fcredentials_5foptions',['grpc_tls_credentials_options',['../grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be',1,'grpc_security.h']]],
+  ['grpc_5ftls_5fkey_5fmaterials_5fconfig',['grpc_tls_key_materials_config',['../grpc__security_8h.html#a2967916eed7d3f7aa1f8fbf3fc45d9ce',1,'grpc_security.h']]],
+  ['grpc_5ftls_5fon_5fcredential_5freload_5fdone_5fcb',['grpc_tls_on_credential_reload_done_cb',['../grpc__security_8h.html#a4c79c219cfe6c68ce52d2b195ec2ed0a',1,'grpc_security.h']]],
+  ['grpc_5ftls_5fon_5fserver_5fauthorization_5fcheck_5fdone_5fcb',['grpc_tls_on_server_authorization_check_done_cb',['../grpc__security_8h.html#ab72de5caa877bbfff84676b1cb024fb3',1,'grpc_security.h']]],
+  ['grpc_5ftls_5fserver_5fauthorization_5fcheck_5farg',['grpc_tls_server_authorization_check_arg',['../grpc__security_8h.html#aceb7acdc7bce490b9afa974da0b44f89',1,'grpc_security.h']]],
+  ['grpc_5ftls_5fserver_5fauthorization_5fcheck_5fconfig',['grpc_tls_server_authorization_check_config',['../grpc__security_8h.html#a0927fc30a7bd209877095da5a67ba22c',1,'grpc_security.h']]]
 ];

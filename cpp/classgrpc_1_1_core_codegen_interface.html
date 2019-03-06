@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.18.0</span>
+   &#160;<span id="projectnumber">1.19.0</span>
    </div>
   </td>
  </tr>
@@ -90,6 +90,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:aff34581bb69881e3661901f9e94896ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a68c8d3d9b6468bd3209443438c4abab4"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a68c8d3d9b6468bd3209443438c4abab4">grpc_completion_queue_create_for_pluck</a> (void *reserved)=0</td></tr>
 <tr class="separator:a68c8d3d9b6468bd3209443438c4abab4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5c8ae32535772ce9a44735f034efed56"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a5c8ae32535772ce9a44735f034efed56">grpc_completion_queue_shutdown</a> (<a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *cq)=0</td></tr>
+<tr class="separator:a5c8ae32535772ce9a44735f034efed56"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a09c4780b55009b806366d7fec6c5b6c5"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a09c4780b55009b806366d7fec6c5b6c5">grpc_completion_queue_destroy</a> (<a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *cq)=0</td></tr>
 <tr class="separator:a09c4780b55009b806366d7fec6c5b6c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4fcba9ee61fc1cc73d0e68022d2b80ad"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__event.html">grpc_event</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a4fcba9ee61fc1cc73d0e68022d2b80ad">grpc_completion_queue_pluck</a> (<a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *cq, void *tag, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> deadline, void *reserved)=0</td></tr>
@@ -1197,6 +1199,32 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a5c8ae32535772ce9a44735f034efed56"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5c8ae32535772ce9a44735f034efed56">&#9670;&nbsp;</a></span>grpc_completion_queue_shutdown()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void grpc::CoreCodegenInterface::grpc_completion_queue_shutdown </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *&#160;</td>
+          <td class="paramname"><em>cq</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a48ec1eb8637d95b2eb452db2846bf76c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a48ec1eb8637d95b2eb452db2846bf76c">&#9670;&nbsp;</a></span>grpc_empty_slice()</h2>
 
@@ -1807,7 +1835,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 18 2019 16:38:52 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 5 2019 15:13:02 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

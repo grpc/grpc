@@ -96,6 +96,14 @@ $(function() {
 : <a class="el" href="structgrpc__metadata__array.html#a5b293b4f8e734b032b80741abf538a97">grpc_metadata_array</a>
 , <a class="el" href="structgrpc__slice__buffer.html#a8f35fa07c9a4d9f9a4e088a1155e5833">grpc_slice_buffer</a>
 </li>
+<li>cb
+: <a class="el" href="structgrpc__tls__credential__reload__arg.html#a334d8ef3177532d0a1e2094d4a23233c">grpc_tls_credential_reload_arg</a>
+, <a class="el" href="structgrpc__tls__server__authorization__check__arg.html#a77029657f0b1b653fe3694a05b3272dc">grpc_tls_server_authorization_check_arg</a>
+</li>
+<li>cb_user_data
+: <a class="el" href="structgrpc__tls__credential__reload__arg.html#a91a81a3317b88c3c380d7febad26b5e9">grpc_tls_credential_reload_arg</a>
+, <a class="el" href="structgrpc__tls__server__authorization__check__arg.html#a49f838e2bc8533b18d77e9e31a34033b">grpc_tls_server_authorization_check_arg</a>
+</li>
 <li>cert_chain
 : <a class="el" href="structgrpc__ssl__pem__key__cert__pair.html#a483c3601705853f48dfbc8ee66d5e656">grpc_ssl_pem_key_cert_pair</a>
 </li>
@@ -171,6 +179,10 @@ $(function() {
 <li>eq
 : <a class="el" href="structgrpc__slice__refcount__vtable.html#a2a90794c3e3ead5ee4cbe2b492d1788c">grpc_slice_refcount_vtable</a>
 </li>
+<li>error_details
+: <a class="el" href="structgrpc__tls__credential__reload__arg.html#af48e5dec8c568ba772552750f9019a93">grpc_tls_credential_reload_arg</a>
+, <a class="el" href="structgrpc__tls__server__authorization__check__arg.html#a602504f40324d142e186527ce99a01c2">grpc_tls_server_authorization_check_arg</a>
+</li>
 <li>error_string
 : <a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__status__on__client.html#a6d5471266248e60c09104ca5bf2e4b63">grpc_op::grpc_op_data::grpc_op_recv_status_on_client</a>
 </li>
@@ -227,6 +239,12 @@ $(function() {
 <li>internal_data
 : <a class="el" href="structgrpc__metadata.html#af57c3b2e391435caff04793bf30243f0">grpc_metadata</a>
 </li>
+<li>internal_next
+: <a class="el" href="structgrpc__experimental__completion__queue__functor.html#ae46538af71e1db1da0b2ffc27a3b0da0">grpc_experimental_completion_queue_functor</a>
+</li>
+<li>internal_success
+: <a class="el" href="structgrpc__experimental__completion__queue__functor.html#a48923cdb284a8d75fd2f5a52ef413ec6">grpc_experimental_completion_queue_functor</a>
+</li>
 <li>is_set
 : <a class="el" href="structgrpc__compression__options_1_1grpc__compression__options__default__algorithm.html#a2cb65e409b0c08519a43812baf000888">grpc_compression_options::grpc_compression_options_default_algorithm</a>
 , <a class="el" href="structgrpc__compression__options_1_1grpc__compression__options__default__level.html#ac870ba7683a8da44a3bfb3086553fc60">grpc_compression_options::grpc_compression_options_default_level</a>
@@ -239,6 +257,9 @@ $(function() {
 <li>key
 : <a class="el" href="structgrpc__arg.html#aeb230fbd50daacfe654abc3500a44968">grpc_arg</a>
 , <a class="el" href="structgrpc__metadata.html#a97e0b57621fa9ae74f15e833bece37a6">grpc_metadata</a>
+</li>
+<li>key_materials_config
+: <a class="el" href="structgrpc__tls__credential__reload__arg.html#aa28bad2203a56f05707535913ffdde98">grpc_tls_credential_reload_arg</a>
 </li>
 </ul>
 
@@ -313,6 +334,9 @@ $(function() {
 <li>p
 : <a class="el" href="structgrpc__arg_1_1grpc__arg__value_1_1grpc__arg__pointer.html#ae710895cf375541f68bcf2c46940c63e">grpc_arg::grpc_arg_value::grpc_arg_pointer</a>
 </li>
+<li>peer_cert
+: <a class="el" href="structgrpc__tls__server__authorization__check__arg.html#aa33742301cfcf0e968360da852d7bcc0">grpc_tls_server_authorization_check_arg</a>
+</li>
 <li>pointer
 : <a class="el" href="uniongrpc__arg_1_1grpc__arg__value.html#aed77f552b492a65ec44d848589b57570">grpc_arg::grpc_arg_value</a>
 </li>
@@ -357,11 +381,14 @@ $(function() {
 </li>
 <li>reserved
 : <a class="el" href="structgrpc__auth__metadata__context.html#a0ca2d1c0da619c1e50cef8437f1ef517">grpc_auth_metadata_context</a>
-, <a class="el" href="uniongrpc__byte__buffer_1_1grpc__byte__buffer__data.html#a83dbb8e4a7b9660b1d8b3a21b68128c0">grpc_byte_buffer::grpc_byte_buffer_data</a>
+, <a class="el" href="uniongrpc__byte__buffer_1_1grpc__byte__buffer__data.html#a4336cf56aea5c505f2cd44826e2954ab">grpc_byte_buffer::grpc_byte_buffer_data</a>
 , <a class="el" href="structgrpc__byte__buffer.html#a0945e647b3a7b14083537a6d3e51fde5">grpc_byte_buffer</a>
 , <a class="el" href="structgrpc__call__details.html#a5c323f3f0c94cbb867f13453dd43dd9d">grpc_call_details</a>
-, <a class="el" href="uniongrpc__op_1_1grpc__op__data.html#ad3859f113f08d8564d504161c263bc08">grpc_op::grpc_op_data</a>
+, <a class="el" href="uniongrpc__op_1_1grpc__op__data.html#ada262cf2f51816ed6a9e5b32c41bdf03">grpc_op::grpc_op_data</a>
 , <a class="el" href="structgrpc__op.html#a58d279ba14f133153eb0ee801deb74f5">grpc_op</a>
+</li>
+<li>result
+: <a class="el" href="structgrpc__tls__server__authorization__check__arg.html#a4b78f22c65e8a5a796063c3a31742f5d">grpc_tls_server_authorization_check_arg</a>
 </li>
 </ul>
 
@@ -400,6 +427,8 @@ $(function() {
 <li>status
 : <a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__status__on__client.html#a2118d693bf827b6098f6963ffedc0758">grpc_op::grpc_op_data::grpc_op_recv_status_on_client</a>
 , <a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__status__from__server.html#ab4f0d42f69e3920aea595fd1e02da398">grpc_op::grpc_op_data::grpc_op_send_status_from_server</a>
+, <a class="el" href="structgrpc__tls__credential__reload__arg.html#a6c1d56b60ec2d6e2d8249c2c2cc24ca9">grpc_tls_credential_reload_arg</a>
+, <a class="el" href="structgrpc__tls__server__authorization__check__arg.html#ad5947a871b4a54e5562d4419f7dafc56">grpc_tls_server_authorization_check_arg</a>
 </li>
 <li>status_details
 : <a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__status__on__client.html#ac91a0142a9f4a7dc2bc4a186b08d237f">grpc_op::grpc_op_data::grpc_op_recv_status_on_client</a>
@@ -420,6 +449,9 @@ $(function() {
 <h3><a id="index_t"></a>- t -</h3><ul>
 <li>tag
 : <a class="el" href="structgrpc__event.html#a883ab15e862db582116c72cdcdc4c201">grpc_event</a>
+</li>
+<li>target_name
+: <a class="el" href="structgrpc__tls__server__authorization__check__arg.html#a5ea427a08f7acada51d9ace358f8529b">grpc_tls_server_authorization_check_arg</a>
 </li>
 <li>trailing_metadata
 : <a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__status__on__client.html#ac9335d5e1ce9d7accc13364e1f772253">grpc_op::grpc_op_data::grpc_op_recv_status_on_client</a>
@@ -487,7 +519,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 18 2019 16:38:51 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 5 2019 15:13:01 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.18.0</span>
+   &#160;<span id="projectnumber">1.19.0</span>
    </div>
   </td>
  </tr>
@@ -76,6 +76,11 @@ Data Fields</h2></td></tr>
 <tr class="memitem:a803544c5034a25e2f6de1bc1ee465ff6"><td class="memItemLeft" align="right" valign="top">void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__experimental__completion__queue__functor.html#a803544c5034a25e2f6de1bc1ee465ff6">functor_run</a> )(struct <a class="el" href="structgrpc__experimental__completion__queue__functor.html">grpc_experimental_completion_queue_functor</a> *, int)</td></tr>
 <tr class="memdesc:a803544c5034a25e2f6de1bc1ee465ff6"><td class="mdescLeft">&#160;</td><td class="mdescRight">The run member specifies a function that will be called when this tag is extracted from the completion queue.  <a href="#a803544c5034a25e2f6de1bc1ee465ff6">More...</a><br /></td></tr>
 <tr class="separator:a803544c5034a25e2f6de1bc1ee465ff6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a48923cdb284a8d75fd2f5a52ef413ec6"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__experimental__completion__queue__functor.html#a48923cdb284a8d75fd2f5a52ef413ec6">internal_success</a></td></tr>
+<tr class="memdesc:a48923cdb284a8d75fd2f5a52ef413ec6"><td class="mdescLeft">&#160;</td><td class="mdescRight">The following fields are not API.  <a href="#a48923cdb284a8d75fd2f5a52ef413ec6">More...</a><br /></td></tr>
+<tr class="separator:a48923cdb284a8d75fd2f5a52ef413ec6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae46538af71e1db1da0b2ffc27a3b0da0"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structgrpc__experimental__completion__queue__functor.html">grpc_experimental_completion_queue_functor</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__experimental__completion__queue__functor.html#ae46538af71e1db1da0b2ffc27a3b0da0">internal_next</a></td></tr>
+<tr class="separator:ae46538af71e1db1da0b2ffc27a3b0da0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>EXPERIMENTAL: Specifies an interface class to be used as a tag for callback-based completion queues. </p>
@@ -98,13 +103,44 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
+<a id="ae46538af71e1db1da0b2ffc27a3b0da0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae46538af71e1db1da0b2ffc27a3b0da0">&#9670;&nbsp;</a></span>internal_next</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">struct <a class="el" href="structgrpc__experimental__completion__queue__functor.html">grpc_experimental_completion_queue_functor</a>* grpc_experimental_completion_queue_functor::internal_next</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a48923cdb284a8d75fd2f5a52ef413ec6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a48923cdb284a8d75fd2f5a52ef413ec6">&#9670;&nbsp;</a></span>internal_success</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int grpc_experimental_completion_queue_functor::internal_success</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The following fields are not API. </p>
+<p>They are meant for internal use. </p>
+
+</div>
+</div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
 <li>include/grpc/impl/codegen/<a class="el" href="grpc__types_8h_source.html">grpc_types.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 18 2019 16:38:52 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Mar 5 2019 15:13:02 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>
