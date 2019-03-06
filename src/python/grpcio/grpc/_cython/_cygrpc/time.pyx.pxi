@@ -18,10 +18,7 @@ cdef gpr_timespec _timespec_from_time(object time):
   if time is None:
     return gpr_inf_future(GPR_CLOCK_REALTIME)
   else:
-    timespec.seconds = time
-    timespec.nanoseconds = (time - float(timespec.seconds)) * 1e9
-    timespec.clock_type = GPR_CLOCK_REALTIME
-    return timespec
+    return gpr_time_from_millis(<int64_t>(int(float(time) * GPR_MS_PER_SEC)), GPR_CLOCK_REALTIME)
 
 
 cdef double _time_from_timespec(gpr_timespec timespec) except *:
