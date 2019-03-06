@@ -63,8 +63,7 @@ py_proto_repositories()
 
 load("@bazel_toolchains//rules:rbe_repo.bzl", "rbe_autoconfig")
 
-# Creates toolchain configuration for remote execution with BuildKite CI
-# for rbe_ubuntu1604
+# Create toolchain configuration for remote execution.
 rbe_autoconfig(
     name = "rbe_default",
 )
@@ -72,6 +71,7 @@ rbe_autoconfig(
 load("@bazel_toolchains//rules:environments.bzl", "clang_env")
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 
+# Create sanitizer (msan, ubsan) toolchain configuration for remote execution.
 rbe_autoconfig(
     name = "rbe_msan",
     env = dicts.add(

@@ -85,7 +85,3 @@ build:ubsan --copt=-gmlt
 build:ubsan --test_timeout=3600
 # override the config-agnostic crosstool_top
 build:ubsan --crosstool_top=@rbe_ubsan//cc:toolchain
-# TODO(jtattermusch): remove this once Foundry adds the env to the docker image.
-# ubsan needs symbolizer to work properly, otherwise the suppression file doesn't work
-# and we get test failures.
-build:ubsan --action_env=UBSAN_SYMBOLIZER_PATH=/usr/local/bin/llvm-symbolizer
