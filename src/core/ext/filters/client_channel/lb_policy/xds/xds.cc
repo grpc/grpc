@@ -396,7 +396,6 @@ class XdsLb : public LoadBalancingPolicy {
 
   // Timeout in milliseconds for before using fallback backend addresses.
   // 0 means not using fallback.
-  UniquePtr<char> fallback_policy_name_;
   RefCountedPtr<Config> fallback_policy_config_;
   int lb_fallback_timeout_ms_ = 0;
   // The backend addresses from the resolver.
@@ -407,7 +406,6 @@ class XdsLb : public LoadBalancingPolicy {
   grpc_closure lb_on_fallback_;
 
   // The policy to use for the backends.
-  UniquePtr<char> child_policy_name_;
   RefCountedPtr<Config> child_policy_config_;
   // Map of policies to use in the backend
   LocalityMap locality_map_;
@@ -1216,7 +1214,7 @@ void XdsLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
 }
 
 void XdsLb::ParseLbConfig(Config* xds_config) {
-  const grpc_json* xds_config_json = xds_config->json();
+  const grpc_json* xds_config_json = xds_config->config();
   const char* balancer_name = nullptr;
   grpc_json* child_policy = nullptr;
   grpc_json* fallback_policy = nullptr;
@@ -1236,17 +1234,15 @@ void XdsLb::ParseLbConfig(Config* xds_config) {
     }
   }
   if (balancer_name == nullptr) return;  // Required field.
+  balancer_name_ = UniquePtr<char>(gpr_strdup(balancer_name));
   if (child_policy != nullptr) {
-    child_policy_name_ = UniquePtr<char>(gpr_strdup(child_policy->key));
-    child_policy_config_ = MakeRefCounted<Config>(child_policy->child,
-                                                  xds_config->service_config());
+    child_policy_config_ =
+        MakeRefCounted<Config>(child_policy, xds_config->service_config());
   }
   if (fallback_policy != nullptr) {
-    fallback_policy_name_ = UniquePtr<char>(gpr_strdup(fallback_policy->key));
-    fallback_policy_config_ = MakeRefCounted<Config>(
-        fallback_policy->child, xds_config->service_config());
+    fallback_policy_config_ =
+        MakeRefCounted<Config>(fallback_policy, xds_config->service_config());
   }
-  balancer_name_ = UniquePtr<char>(gpr_strdup(balancer_name));
 }
 
 void XdsLb::UpdateLocked(const grpc_channel_args& args,
@@ -1439,7 +1435,7 @@ void XdsLb::LocalityMap::LocalityEntry::Update(
     parent_ = parent;
     LoadBalancingPolicy::Args lb_policy_args;
     lb_policy_args.combiner = parent_->combiner();
-    lb_policy_args.args = args;
+    lb_policy_args.args = args;k
     lb_policy_args.channel_control_helper = UniquePtr<ChannelControlHelper>(
         New<XdsLb::LocalityMap::LocalityEntry::Helper>(parent_->Ref()));
     CreateChildPolicyLocked(
