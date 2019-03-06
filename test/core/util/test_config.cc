@@ -31,6 +31,7 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/surface/init.h"
 
 int64_t g_fixture_slowdown_factor = 1;
 int64_t g_poller_slowdown_factor = 1;
@@ -405,7 +406,7 @@ TestEnvironment::TestEnvironment(int argc, char** argv) {
   grpc_test_init(argc, argv);
 }
 
-TestEnvironment::~TestEnvironment() {}
+TestEnvironment::~TestEnvironment() { grpc_maybe_wait_for_async_shutdown(); }
 
 }  // namespace testing
 }  // namespace grpc

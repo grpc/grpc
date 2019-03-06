@@ -224,7 +224,8 @@ def _pull_images_for_lang(lang, images):
             cmdline=cmdline,
             shortname='pull_image_%s' % (image),
             timeout_seconds=_PULL_IMAGE_TIMEOUT_SECONDS,
-            shell=True)
+            shell=True,
+            flake_retries=2)
         download_specs.append(spec)
     # too many image downloads at once tend to get stuck
     max_pull_jobs = min(args.jobs, _MAX_PARALLEL_DOWNLOADS)

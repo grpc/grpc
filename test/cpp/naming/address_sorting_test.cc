@@ -197,7 +197,7 @@ void VerifyLbAddrOutputs(const grpc_core::ServerAddressList addresses,
 class AddressSortingTest : public ::testing::Test {
  protected:
   void SetUp() override { grpc_init(); }
-  void TearDown() override { grpc_shutdown(); }
+  void TearDown() override { grpc_shutdown_blocking(); }
 };
 
 /* Tests for rule 1 */
@@ -790,7 +790,7 @@ TEST_F(AddressSortingTest, TestPrefersIpv6LoopbackInputsFlipped) {
 /* Try to rule out false positives in the above two tests in which
  * the sorter might think that neither ipv6 or ipv4 loopback is
  * available, but ipv6 loopback is still preferred only due
- * to precedance table lookups. */
+ * to precedence table lookups. */
 TEST_F(AddressSortingTest, TestSorterKnowsIpv6LoopbackIsAvailable) {
   sockaddr_in6 ipv6_loopback;
   memset(&ipv6_loopback, 0, sizeof(ipv6_loopback));

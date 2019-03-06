@@ -65,7 +65,7 @@
 
 #define HTTP1_DETAIL_MSG "Trying to connect an http1.x server"
 
-/* TODO(zyc) Check the content of incomming data instead of using this length */
+/* TODO(zyc) Check the content of incoming data instead of using this length */
 /* The 'bad' server will start sending responses after reading this amount of
  * data from the client. */
 #define SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD (size_t)200

@@ -21,6 +21,8 @@
 
 int main(int argc, char* argv[]) {
   @autoreleasepool {
+    // enable CFStream API
+    setenv("grpc_cfstream", "1", 1);
     return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));
   }
 }
