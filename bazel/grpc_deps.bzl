@@ -147,16 +147,16 @@ def grpc_deps():
     if "com_github_gflags_gflags" not in native.existing_rules():
         http_archive(
             name = "com_github_gflags_gflags",
-            strip_prefix = "gflags-30dbc81fb5ffdc98ea9b14b1918bfe4e8779b26e",
-            url = "https://github.com/gflags/gflags/archive/30dbc81fb5ffdc98ea9b14b1918bfe4e8779b26e.tar.gz",
+            strip_prefix = "gflags-28f50e0fed19872e0fd50dd23ce2ee8cd759338e",
+            url = "https://github.com/gflags/gflags/archive/28f50e0fed19872e0fd50dd23ce2ee8cd759338e.tar.gz",
         )
 
     if "com_github_google_benchmark" not in native.existing_rules():
         http_archive(
             name = "com_github_google_benchmark",
-            build_file = "@com_github_grpc_grpc//third_party:benchmark.BUILD",
-            strip_prefix = "benchmark-9913418d323e64a0111ca0da81388260c2bbe1e9",
-            url = "https://github.com/google/benchmark/archive/9913418d323e64a0111ca0da81388260c2bbe1e9.tar.gz",
+            #build_file = "@com_github_grpc_grpc//third_party:benchmark.BUILD",
+            strip_prefix = "benchmark-e776aa0275e293707b6a0901e0e8d8a8a3679508",
+            url = "https://github.com/google/benchmark/archive/e776aa0275e293707b6a0901e0e8d8a8a3679508.tar.gz",
         )
 
     if "com_github_cares_cares" not in native.existing_rules():

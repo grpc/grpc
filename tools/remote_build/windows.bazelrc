@@ -1,0 +1,2 @@
+build --test_tag_filters=-exclude_windows
+build --build_tag_filters=-exclude_windows
