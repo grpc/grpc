@@ -1036,10 +1036,12 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
     } else {  // New serverlist.
       if (grpclb_policy->serverlist_ == nullptr) {
         // Dispose of the fallback.
-        gpr_log(GPR_INFO,
-                "[grpclb %p] Received response from balancer; exiting "
-                "fallback mode",
-                grpclb_policy);
+        if (grpclb_policy->child_policy_ == nullptr) {
+          gpr_log(GPR_INFO,
+                  "[grpclb %p] Received response from balancer; exiting "
+                  "fallback mode",
+                  grpclb_policy);
+        }
         grpclb_policy->fallback_backend_addresses_.reset();
         if (grpclb_policy->fallback_timer_callback_pending_) {
           grpc_timer_cancel(&grpclb_policy->lb_fallback_timer_);
