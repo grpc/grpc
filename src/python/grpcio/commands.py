@@ -219,9 +219,10 @@ class BuildExt(build_ext.build_ext):
             """
             cc_test = subprocess.Popen(
                 ['cc', '-x', 'c', '-std=c++11', '-'],
+                stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)
-            _, cc_err = cc_test.communicate(input='int main(){return 0;}')
+            _, cc_err = cc_test.communicate(input=b'int main(){return 0;}')
             return not 'invalid argument' in str(cc_err)
 
         # This special conditioning is here due to difference of compiler
