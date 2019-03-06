@@ -1036,7 +1036,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
     } else {  // New serverlist.
       if (grpclb_policy->serverlist_ == nullptr) {
         // Dispose of the fallback.
-        if (grpclb_policy->child_policy_ == nullptr) {
+        if (grpclb_policy->child_policy_ != nullptr) {
           gpr_log(GPR_INFO,
                   "[grpclb %p] Received response from balancer; exiting "
                   "fallback mode",
