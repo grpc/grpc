@@ -20,7 +20,7 @@
 startup --host_jvm_args=-Dbazel.DigestFunction=SHA256
 
 build --crosstool_top=@rbe_default//cc:toolchain
-build --extra_toolchains=//third_party/toolchains:cc-toolchain-clang-x86_64-default
+build --extra_toolchains=@rbe_default//config:cc-toolchain
 # Use custom execution platforms defined in third_party/toolchains
 build --extra_execution_platforms=//third_party/toolchains:rbe_ubuntu1604,//third_party/toolchains:rbe_ubuntu1604_large
 build --host_platform=//third_party/toolchains:rbe_ubuntu1604

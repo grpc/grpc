@@ -78,12 +78,18 @@ platform(
     """,
 )
 
-toolchain(
-    name = "cc-toolchain-clang-x86_64-default",
-    exec_compatible_with = [
+platform(
+    name = "local",
+    parents = ["@bazel_tools//platforms:target_platform"],
+    constraint_values = [
+        "//third_party/toolchains/machine_size:standard",
     ],
-    target_compatible_with = [
+)
+
+platform(
+    name = "local_large",
+    parents = ["@bazel_tools//platforms:target_platform"],
+    constraint_values = [
+        "//third_party/toolchains/machine_size:large",
     ],
-    toolchain = "@rbe_default//cc:cc-compiler-k8",
-    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
 )
