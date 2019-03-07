@@ -170,23 +170,27 @@ static int cmp_key_stable(const void* ap, const void* bp) {
   return c;
 }
 
-grpc_channel_args* grpc_channel_args_normalize(const grpc_channel_args* a) {
-  grpc_arg** args =
-      static_cast<grpc_arg**>(gpr_malloc(sizeof(grpc_arg*) * a->num_args));
-  for (size_t i = 0; i < a->num_args; i++) {
-    args[i] = &a->args[i];
+grpc_channel_args* grpc_channel_args_remove_and_normalize(
+    const grpc_channel_args* a, const char* to_remove) {
+  size_t num_args_to_copy = a->num_args;
+  for (size_t i = 0; i < a->num_args; ++i) {
+    if (strcmp(a->args[i].key, to_remove) == 0) --num_args_to_copy;
   }
-  if (a->num_args > 1)
-    qsort(args, a->num_args, sizeof(grpc_arg*), cmp_key_stable);
-
+  grpc_arg** args =
+      static_cast<grpc_arg**>(gpr_malloc(sizeof(grpc_arg*) * num_args_to_copy));
+  for (size_t i = 0, j = 0; i < a->num_args; ++i) {
+    if (strcmp(a->args[i].key, to_remove) != 0) args[j++] = &a->args[i];
+  }
+  if (num_args_to_copy > 1) {
+    qsort(args, num_args_to_copy, sizeof(grpc_arg*), cmp_key_stable);
+  }
   grpc_channel_args* b =
       static_cast<grpc_channel_args*>(gpr_malloc(sizeof(grpc_channel_args)));
-  b->num_args = a->num_args;
+  b->num_args = num_args_to_copy;
   b->args = static_cast<grpc_arg*>(gpr_malloc(sizeof(grpc_arg) * b->num_args));
-  for (size_t i = 0; i < a->num_args; i++) {
+  for (size_t i = 0; i < b->num_args; ++i) {
     b->args[i] = copy_arg(args[i]);
   }
-
   gpr_free(args);
   return b;
 }

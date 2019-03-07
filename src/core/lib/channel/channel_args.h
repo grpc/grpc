@@ -30,8 +30,10 @@
 /** Copy the arguments in \a src into a new instance */
 grpc_channel_args* grpc_channel_args_copy(const grpc_channel_args* src);
 
-/** Copy the arguments in \a src into a new instance, stably sorting keys */
-grpc_channel_args* grpc_channel_args_normalize(const grpc_channel_args* src);
+/** Copy the arguments in \a src into a new instance except for that whose key
+ * is \a to_remove, stably sorting keys */
+grpc_channel_args* grpc_channel_args_remove_and_normalize(
+    const grpc_channel_args* src, const char* to_remove);
 
 /** Copy the arguments in \a src and append \a to_add. If \a to_add is NULL, it
  * is equivalent to calling \a grpc_channel_args_copy. */

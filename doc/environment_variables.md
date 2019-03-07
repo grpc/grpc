@@ -135,6 +135,13 @@ some configuration as environment variables that can be set.
   channels (mostly due to idleness), so that the next RPC on this channel won't
   fail. Set to 0 to turn off the backup polls.
 
+* GRPC_SUBCHANNEL_INDEX_SWEEP_INTERVAL_MS
+  Default: 1000
+  Declares the interval (from the end of the last one to the start of the next one) between two
+  sweepings of unused subchannels in the global subchannel pool. The subchannel in the global
+  subchannel pool won't be immediately removed from the pool if no channels are using them. Instead,
+  they will be removed periodically by the pool.
+
 * GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL
   if set, flow control will be effectively disabled. Max out all values and
   assume the remote peer does the same. Thus we can ignore any flow control

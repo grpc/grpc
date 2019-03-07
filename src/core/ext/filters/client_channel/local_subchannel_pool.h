@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 
 namespace grpc_core {
 
@@ -49,6 +50,8 @@ class LocalSubchannelPool final : public SubchannelPoolInterface {
   static const grpc_avl_vtable subchannel_avl_vtable_;
   // A map from subchannel key to subchannel.
   grpc_avl subchannel_map_;
+  // For backup polling.
+  grpc_pollset_set* pollset_set_ = nullptr;
 };
 
 }  // namespace grpc_core
