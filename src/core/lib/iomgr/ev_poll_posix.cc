@@ -362,9 +362,12 @@ static void fork_fd_list_add_wakeup_fd(grpc_cached_wakeup_fd* fd) {
   }
 }
 
-  /*******************************************************************************
-   * fd_posix.c
-   */
+/*******************************************************************************
+ * fd_posix.c
+ */
+
+/* Poll function for poll-cv engine */
+static int cvfd_poll(struct pollfd* fds, nfds_t nfds, int timeout);
 
 #ifndef NDEBUG
 #define REF_BY(fd, n, reason) ref_by(fd, n, reason, __FILE__, __LINE__)
@@ -403,24 +406,26 @@ static void unref_by(grpc_fd* fd, int n) {
      * with this fd, we might get an fd with the same number. To avoid using
      * results from this fd for a future fd, zero out the results for this fd.
      */
-    gpr_mu_lock(&g_cvfds.mu);
-    if (poll_cache.active_pollers) {
-      for (unsigned int i = 0; i < poll_cache.size; i++) {
-        if (poll_cache.active_pollers[i]) {
-          poll_args* curr = poll_cache.active_pollers[i];
-          while (curr) {
-            for (unsigned int j = 0; j < curr->result->nfds; j++) {
-              if (curr->result->fds[j].fd == fd->fd) {
-                curr->allowed_for_use = false;
-                break;
+    if (grpc_poll_function == cvfd_poll) {
+      gpr_mu_lock(&g_cvfds.mu);
+      if (poll_cache.active_pollers) {
+        for (unsigned int i = 0; i < poll_cache.size; i++) {
+          if (poll_cache.active_pollers[i]) {
+            poll_args* curr = poll_cache.active_pollers[i];
+            while (curr) {
+              for (unsigned int j = 0; j < curr->result->nfds; j++) {
+                if (curr->result->fds[j].fd == fd->fd) {
+                  curr->allowed_for_use = false;
+                  break;
+                }
               }
+              curr = curr->next;
             }
-            curr = curr->next;
           }
         }
       }
+      gpr_mu_unlock(&g_cvfds.mu);
     }
-    gpr_mu_unlock(&g_cvfds.mu);
     gpr_mu_destroy(&fd->mu);
     grpc_iomgr_unregister_object(&fd->iomgr_object);
     fork_fd_list_remove_node(fd->fork_fd_list);
