@@ -1,4 +1,4 @@
-# Copyright 2017 gRPC authors.
+# Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM microsoft/dotnet:3.0.100-preview2-sdk-stretch
-
-RUN rm /usr/bin/dotnet  # remove symlink
-RUN curl -sSL -o dotnet.tar.gz https://dotnetcli.azureedge.net/dotnet/Sdk/3.0.100-preview3-010313/dotnet-sdk-3.0.100-preview3-010313-linux-x64.tar.gz \
-  && mkdir -p /usr/share/dotnet \
-  && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
-  && rm dotnet.tar.gz \
-  && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
+FROM mcr.microsoft.com/dotnet/core/sdk:3.0.100-preview3-stretch
 
 # Define the default command.
 CMD ["bash"]
