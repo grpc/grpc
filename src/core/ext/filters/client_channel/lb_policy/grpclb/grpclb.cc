@@ -1281,6 +1281,7 @@ void GrpcLb::ResetBackoffLocked() {
   if (lb_channel_ != nullptr) {
     grpc_channel_reset_connect_backoff(lb_channel_);
   }
+  MutexLock lock(&child_policy_mu_);
   if (child_policy_ != nullptr) {
     child_policy_->ResetBackoffLocked();
   }
@@ -1666,7 +1667,10 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
             policy_to_update == pending_child_policy_.get() ? "pending " : "",
             policy_to_update);
   }
-  policy_to_update->UpdateLocked(*args, child_policy_config_);
+  {
+    MutexLock lock(&child_policy_mu_);
+    policy_to_update->UpdateLocked(*args, child_policy_config_);
+  }
   // Clean up.
   grpc_channel_args_destroy(args);
 }

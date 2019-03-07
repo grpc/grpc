@@ -131,6 +131,9 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   // Child LB policy.
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
   OrphanablePtr<LoadBalancingPolicy> pending_lb_policy_;
+  // Lock held when modifying the value of child_policy_ or
+  // pending_child_policy_.
+  gpr_mu lb_policy_mu_;
 };
 
 }  // namespace grpc_core
