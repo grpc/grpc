@@ -362,10 +362,6 @@ static void fork_fd_list_add_wakeup_fd(grpc_cached_wakeup_fd* fd) {
   }
 }
 
-/*******************************************************************************
- * fd_posix.c
- */
-
 /* Poll function for poll-cv engine */
 static int cvfd_poll(struct pollfd* fds, nfds_t nfds, int timeout);
 
