@@ -345,15 +345,6 @@ class CLanguage(object):
                         # Scale overall test timeout if running under various sanitizers.
                         # scaling value is based on historical data analysis
                         timeout_scaling *= 3
-                    elif polling_strategy == 'poll-cv':
-                        # scale test timeout if running with poll-cv
-                        # sanitizer and poll-cv scaling is not cumulative to ensure
-                        # reasonable timeout values.
-                        # TODO(jtattermusch): based on historical data and 5min default
-                        # test timeout poll-cv scaling is currently not useful.
-                        # Leaving here so it can be reintroduced if the default test timeout
-                        # is decreased in the future.
-                        timeout_scaling *= 1
 
                 if self.config.build_config in target['exclude_configs']:
                     continue
