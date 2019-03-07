@@ -171,7 +171,8 @@ class AuthContextTest(unittest.TestCase):
         channel_creds = grpc.ssl_channel_credentials(
             root_certificates=_TEST_ROOT_CERTIFICATES)
         channel_options = _PROPERTY_OPTIONS + (
-            ('grpc.ssl_session_cache', cache),)
+            ('grpc.ssl_session_cache', cache),
+            ('grpc.use_local_subchannel_pool', 1))
 
         # Initial connection has no session to resume
         self._do_one_shot_client_rpc(
