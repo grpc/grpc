@@ -723,6 +723,47 @@ TEST_F(SingleBalancerTest, SelectGrpclbWithMigrationServiceConfig) {
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
 
+TEST_F(SingleBalancerTest,
+       SelectGrpclbWithMigrationServiceConfigAndNoAddresses) {
+  const int kFallbackTimeoutMs = 200 * grpc_test_slowdown_factor();
+  ResetStub(kFallbackTimeoutMs);
+  SetNextResolution({},
+                    "{\n"
+                    "  \"loadBalancingConfig\":[\n"
+                    "    { \"does_not_exist\":{} },\n"
+                    "    { \"grpclb\":{} }\n"
+                    "  ]\n"
+                    "}");
+  // Try to connect.
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(true));
+  // Should go into state TRANSIENT_FAILURE when we enter fallback mode.
+  const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(1);
+  grpc_connectivity_state state;
+  while ((state = channel_->GetState(false)) !=
+         GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    ASSERT_TRUE(channel_->WaitForStateChange(state, deadline));
+  }
+  // Check LB policy name for the channel.
+  EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(SingleBalancerTest,
+       SelectGrpclbWithMigrationServiceConfigAndNoBalancerAddresses) {
+  const int kFallbackTimeoutMs = 200 * grpc_test_slowdown_factor();
+  ResetStub(kFallbackTimeoutMs);
+  // Resolution includes fallback address but no balancers.
+  SetNextResolution({AddressData{backend_servers_[0].port_, false, ""}},
+                    "{\n"
+                    "  \"loadBalancingConfig\":[\n"
+                    "    { \"does_not_exist\":{} },\n"
+                    "    { \"grpclb\":{} }\n"
+                    "  ]\n"
+                    "}");
+  CheckRpcSendOk(1, 1000 /* timeout_ms */, true /* wait_for_ready */);
+  // Check LB policy name for the channel.
+  EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
+}
+
 TEST_F(SingleBalancerTest, UsePickFirstChildPolicy) {
   SetNextResolutionAllBalancers(
       "{\n"
