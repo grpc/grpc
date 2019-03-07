@@ -81,7 +81,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    tags = ["exclude_windows"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -93,7 +93,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    tags = ["exclude_windows"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -105,7 +105,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    tags = ["exclude_windows"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -142,7 +142,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    tags = ["exclude_windows"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -157,7 +157,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    tags = ["exclude_windows"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -219,7 +219,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    tags = ["exclude_windows"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -231,7 +231,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    tags = ["exclude_windows"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -244,7 +244,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    tags = ["exclude_windows"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -267,7 +267,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    tags = ["exclude_windows"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -312,7 +312,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    tags = ["exclude_windows"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_test(

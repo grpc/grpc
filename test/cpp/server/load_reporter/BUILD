@@ -45,7 +45,7 @@ grpc_cc_test(
         "//:lb_server_load_reporting_filter",
         "//test/core/util:grpc_test_util",
     ],
-    tags = ["exclude_windows"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_test(
