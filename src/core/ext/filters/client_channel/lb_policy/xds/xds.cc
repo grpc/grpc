@@ -1254,6 +1254,9 @@ void XdsLb::UpdateLocked(const grpc_channel_args& args,
                         grpc_combiner_scheduler(combiner()));
       fallback_timer_callback_pending_ = true;
       grpc_timer_init(&lb_fallback_timer_, deadline, &lb_on_fallback_);
+      // TODO(juanlishen): Monitor the connectivity state of the balancer
+      // channel.  If the channel reports TRANSIENT_FAILURE before the
+      // fallback timeout expires, go into fallback mode early.
     }
   }
 }
