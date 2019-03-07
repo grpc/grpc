@@ -361,6 +361,12 @@ class Server::CallbackRequest final : public Server::CallbackRequestBase {
   static_assert(std::is_base_of<ServerContext, ServerContextType>::value,
                 "ServerContextType must be derived from ServerContext");
 
+  // The constructor needs to know the server for this callback request and its
+  // index in the server's request count array to allow for proper dynamic
+  // requesting of incoming RPCs. For codegen services, the values of method and
+  // method_tag represent the defined characteristics of the method being
+  // requested. For generic services, method and method_tag are nullptr since
+  // these services don't have pre-defined methods or method registration tags.
   CallbackRequest(Server* server, size_t method_idx,
                   internal::RpcServiceMethod* method, void* method_tag)
       : server_(server),
