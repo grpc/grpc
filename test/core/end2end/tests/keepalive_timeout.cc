@@ -228,8 +228,7 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
   char* poller = gpr_getenv("GRPC_POLL_STRATEGY");
   /* It is hard to get the timing right for the polling engines poll and poll-cv
    */
-  if (poller != nullptr &&
-      (0 == strcmp(poller, "poll-cv") || 0 == strcmp(poller, "poll"))) {
+  if (poller != nullptr && (0 == strcmp(poller, "poll"))) {
     gpr_free(poller);
     return;
   }
