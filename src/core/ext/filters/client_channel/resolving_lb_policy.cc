@@ -242,7 +242,6 @@ void ResolvingLoadBalancingPolicy::ShutdownLocked() {
 
 void ResolvingLoadBalancingPolicy::ExitIdleLocked() {
   if (lb_policy_ != nullptr) {
-    MutexLock lock(&lb_policy_mu_);
     lb_policy_->ExitIdleLocked();
     if (pending_lb_policy_ != nullptr) pending_lb_policy_->ExitIdleLocked();
   } else {
@@ -257,7 +256,6 @@ void ResolvingLoadBalancingPolicy::ResetBackoffLocked() {
     resolver_->ResetBackoffLocked();
     resolver_->RequestReresolutionLocked();
   }
-  MutexLock lock(&lb_policy_mu_);
   if (lb_policy_ != nullptr) lb_policy_->ResetBackoffLocked();
   if (pending_lb_policy_ != nullptr) pending_lb_policy_->ResetBackoffLocked();
 }
@@ -431,7 +429,6 @@ void ResolvingLoadBalancingPolicy::CreateOrUpdateLbPolicyLocked(
             policy_to_update == pending_lb_policy_.get() ? "pending " : "",
             policy_to_update);
   }
-  MutexLock lock(&lb_policy_mu_);
   policy_to_update->UpdateLocked(*resolver_result_,
                                  std::move(lb_policy_config));
 }

@@ -1175,23 +1175,17 @@ void XdsLb::ShutdownLocked() {
 //
 
 void XdsLb::ResetBackoffLocked() {
-  {
-    MutexLock lock(&lb_chand_mu_);
-    if (lb_chand_ != nullptr) {
-      grpc_channel_reset_connect_backoff(lb_chand_->channel());
-    }
-    if (pending_lb_chand_ != nullptr) {
-      grpc_channel_reset_connect_backoff(pending_lb_chand_->channel());
-    }
+  if (lb_chand_ != nullptr) {
+    grpc_channel_reset_connect_backoff(lb_chand_->channel());
   }
-  {
-    MutexLock lock(&child_policy_mu_);
-    if (child_policy_ != nullptr) {
-      child_policy_->ResetBackoffLocked();
-    }
-    if (pending_child_policy_ != nullptr) {
-      pending_child_policy_->ResetBackoffLocked();
-    }
+  if (pending_lb_chand_ != nullptr) {
+    grpc_channel_reset_connect_backoff(pending_lb_chand_->channel());
+  }
+  if (child_policy_ != nullptr) {
+    child_policy_->ResetBackoffLocked();
+  }
+  if (pending_child_policy_ != nullptr) {
+    pending_child_policy_->ResetBackoffLocked();
   }
 }
 
@@ -1516,10 +1510,7 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
             policy_to_update == pending_child_policy_.get() ? "pending " : "",
             policy_to_update);
   }
-  {
-    MutexLock lock(&child_policy_mu_);
-    policy_to_update->UpdateLocked(*args, child_policy_config_);
-  }
+  policy_to_update->UpdateLocked(*args, child_policy_config_);
   // Clean up.
   grpc_channel_args_destroy(args);
 }
