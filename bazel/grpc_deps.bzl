@@ -200,7 +200,6 @@ def grpc_deps():
             url = "https://github.com/census-instrumentation/opencensus-cpp/archive/03dff0352522983ffdee48cedbf87cbe37f1bb7f.tar.gz",
         )
 
-        # TODO:vpowar get the latest version of upb.
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
