@@ -307,7 +307,7 @@ class GrpcLb : public LoadBalancingPolicy {
   // Methods for dealing with the child policy.
   grpc_channel_args* CreateChildPolicyArgsLocked();
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
-      const char* name, grpc_channel_args* args);
+      const char* name, const grpc_channel_args* args);
   void CreateOrUpdateChildPolicyLocked();
 
   // Who the client is trying to communicate with.
@@ -685,7 +685,7 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
 void GrpcLb::Helper::RequestReresolution() {
   if (parent_->shutting_down_) return;
   // If there is a pending child policy, ignore re-resolution requests
-  // from the current child policy (or any outdated pending child).
+  // from the current child policy (or any outdated child).
   if (parent_->pending_child_policy_ != nullptr && !CalledByPendingChild()) {
     return;
   }
@@ -1608,7 +1608,7 @@ grpc_channel_args* GrpcLb::CreateChildPolicyArgsLocked() {
 }
 
 OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
-    const char* name, grpc_channel_args* args) {
+    const char* name, const grpc_channel_args* args) {
   Helper* helper = New<Helper>(Ref());
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = combiner();
