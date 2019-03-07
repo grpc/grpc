@@ -15,3 +15,7 @@ number:
   `include/grpc/impl/codegen/grpc_types.h` (commit `af00d8b`)
   (cannot be done until after next grpc release, so that TensorFlow can
   use the same code both internally and externally)
+- get rid of all of the grpc++ headers that are currently deprecated
+  in favor of their grpcpp counterpart due to iOS' parsing issue on the
+  + sign.
+- require a C++ runtime for all languages.
