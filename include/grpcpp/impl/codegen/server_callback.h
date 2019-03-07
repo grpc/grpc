@@ -102,7 +102,7 @@ class ServerCallbackWriter {
     // Default implementation that can/should be overridden
     Write(msg, std::move(options));
     Finish(std::move(s));
-  };
+  }
 
  protected:
   template <class Request>
@@ -125,7 +125,7 @@ class ServerCallbackReaderWriter {
     // Default implementation that can/should be overridden
     Write(msg, std::move(options));
     Finish(std::move(s));
-  };
+  }
 
  protected:
   void BindReactor(ServerBidiReactor<Request, Response>* reactor) {

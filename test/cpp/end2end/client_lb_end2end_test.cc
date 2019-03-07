@@ -149,7 +149,13 @@ class ClientLbEnd2endTest : public ::testing::Test {
     for (size_t i = 0; i < servers_.size(); ++i) {
       servers_[i]->Shutdown();
     }
-    grpc_shutdown();
+    // Explicitly destroy all the members so that we can make sure grpc_shutdown
+    // has finished by the end of this function, and thus all the registered
+    // LB policy factories are removed.
+    stub_.reset();
+    servers_.clear();
+    creds_.reset();
+    grpc_shutdown_blocking();
   }
 
   void CreateServers(size_t num_servers,
@@ -397,6 +403,27 @@ class ClientLbEnd2endTest : public ::testing::Test {
   const grpc::string kRequestMessage_;
   std::shared_ptr<ChannelCredentials> creds_;
 };
+
+TEST_F(ClientLbEnd2endTest, ChannelStateConnectingWhenResolving) {
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  auto channel = BuildChannel("");
+  auto stub = BuildStub(channel);
+  // Initial state should be IDLE.
+  EXPECT_EQ(channel->GetState(false /* try_to_connect */), GRPC_CHANNEL_IDLE);
+  // Tell the channel to try to connect.
+  // Note that this call also returns IDLE, since the state change has
+  // not yet occurred; it just gets triggered by this call.
+  EXPECT_EQ(channel->GetState(true /* try_to_connect */), GRPC_CHANNEL_IDLE);
+  // Now that the channel is trying to connect, we should be in state
+  // CONNECTING.
+  EXPECT_EQ(channel->GetState(false /* try_to_connect */),
+            GRPC_CHANNEL_CONNECTING);
+  // Return a resolver result, which allows the connection attempt to proceed.
+  SetNextResolution(GetServersPorts());
+  // We should eventually transition into state READY.
+  EXPECT_TRUE(WaitForChannelReady(channel.get()));
+}
 
 TEST_F(ClientLbEnd2endTest, PickFirst) {
   // Start servers and send one RPC per server.

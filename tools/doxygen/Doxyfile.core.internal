@@ -936,8 +936,6 @@ src/core/ext/filters/client_channel/proxy_mapper.cc \
 src/core/ext/filters/client_channel/proxy_mapper.h \
 src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
 src/core/ext/filters/client_channel/proxy_mapper_registry.h \
-src/core/ext/filters/client_channel/request_routing.cc \
-src/core/ext/filters/client_channel/request_routing.h \
 src/core/ext/filters/client_channel/resolver.cc \
 src/core/ext/filters/client_channel/resolver.h \
 src/core/ext/filters/client_channel/resolver/README.md \
@@ -962,6 +960,8 @@ src/core/ext/filters/client_channel/resolver_registry.cc \
 src/core/ext/filters/client_channel/resolver_registry.h \
 src/core/ext/filters/client_channel/resolver_result_parsing.cc \
 src/core/ext/filters/client_channel/resolver_result_parsing.h \
+src/core/ext/filters/client_channel/resolving_lb_policy.cc \
+src/core/ext/filters/client_channel/resolving_lb_policy.h \
 src/core/ext/filters/client_channel/retry_throttle.cc \
 src/core/ext/filters/client_channel/retry_throttle.h \
 src/core/ext/filters/client_channel/server_address.cc \
@@ -1157,8 +1157,6 @@ src/core/lib/gpr/wrap_memcpy.cc \
 src/core/lib/gprpp/README.md \
 src/core/lib/gprpp/abstract.h \
 src/core/lib/gprpp/atomic.h \
-src/core/lib/gprpp/atomic_with_atm.h \
-src/core/lib/gprpp/atomic_with_std.h \
 src/core/lib/gprpp/debug_location.h \
 src/core/lib/gprpp/fork.cc \
 src/core/lib/gprpp/fork.h \

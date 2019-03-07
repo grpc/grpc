@@ -43,18 +43,4 @@ Status ByteBuffer::Dump(std::vector<Slice>* slices) const {
   return Status::OK;
 }
 
-ByteBuffer::ByteBuffer(const ByteBuffer& buf) : buffer_(nullptr) {
-  operator=(buf);
-}
-
-ByteBuffer& ByteBuffer::operator=(const ByteBuffer& buf) {
-  if (this != &buf) {
-    Clear();  // first remove existing data
-  }
-  if (buf.buffer_) {
-    buffer_ = grpc_byte_buffer_copy(buf.buffer_);  // then copy
-  }
-  return *this;
-}
-
 }  // namespace grpc

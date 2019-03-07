@@ -351,7 +351,8 @@ void grpc_http_response_destroy(grpc_http_response* response) {
   gpr_free(response->hdrs);
 }
 
-grpc_error* grpc_http_parser_parse(grpc_http_parser* parser, grpc_slice slice,
+grpc_error* grpc_http_parser_parse(grpc_http_parser* parser,
+                                   const grpc_slice& slice,
                                    size_t* start_of_body) {
   for (size_t i = 0; i < GRPC_SLICE_LENGTH(slice); i++) {
     bool found_body_start = false;

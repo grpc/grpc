@@ -1452,7 +1452,7 @@ static grpc_error* begin_parse_string(grpc_chttp2_hpack_parser* p,
                                       uint8_t binary,
                                       grpc_chttp2_hpack_parser_string* str) {
   if (!p->huff && binary == NOT_BINARY &&
-      (end - cur) >= static_cast<intptr_t>(p->strlen) &&
+      static_cast<uint32_t>(end - cur) >= p->strlen &&
       p->current_slice_refcount != nullptr) {
     GRPC_STATS_INC_HPACK_RECV_UNCOMPRESSED();
     str->copied = false;
@@ -1570,16 +1570,16 @@ void grpc_chttp2_hpack_parser_destroy(grpc_chttp2_hpack_parser* p) {
 }
 
 grpc_error* grpc_chttp2_hpack_parser_parse(grpc_chttp2_hpack_parser* p,
-                                           grpc_slice slice) {
+                                           const grpc_slice& slice) {
 /* max number of bytes to parse at a time... limits call stack depth on
  * compilers without TCO */
 #define MAX_PARSE_LENGTH 1024
   p->current_slice_refcount = slice.refcount;
-  uint8_t* start = GRPC_SLICE_START_PTR(slice);
-  uint8_t* end = GRPC_SLICE_END_PTR(slice);
+  const uint8_t* start = GRPC_SLICE_START_PTR(slice);
+  const uint8_t* end = GRPC_SLICE_END_PTR(slice);
   grpc_error* error = GRPC_ERROR_NONE;
   while (start != end && error == GRPC_ERROR_NONE) {
-    uint8_t* target = start + GPR_MIN(MAX_PARSE_LENGTH, end - start);
+    const uint8_t* target = start + GPR_MIN(MAX_PARSE_LENGTH, end - start);
     error = p->state(p, start, target);
     start = target;
   }
@@ -1621,7 +1621,8 @@ static void parse_stream_compression_md(grpc_chttp2_transport* t,
 grpc_error* grpc_chttp2_header_parser_parse(void* hpack_parser,
                                             grpc_chttp2_transport* t,
                                             grpc_chttp2_stream* s,
-                                            grpc_slice slice, int is_last) {
+                                            const grpc_slice& slice,
+                                            int is_last) {
   GPR_TIMER_SCOPE("grpc_chttp2_header_parser_parse", 0);
   grpc_chttp2_hpack_parser* parser =
       static_cast<grpc_chttp2_hpack_parser*>(hpack_parser);
