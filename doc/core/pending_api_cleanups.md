@@ -17,5 +17,5 @@ number:
   use the same code both internally and externally)
 - get rid of all of the grpc++ headers that are currently deprecated
   in favor of their grpcpp counterpart due to iOS' parsing issue on the
-  + sign.
+  plus sign.
 - require a C++ runtime for all languages.
