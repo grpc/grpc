@@ -148,7 +148,8 @@ void ProcessedResolverResult::ParseLbConfigFromServiceConfig(
       LoadBalancingPolicy::ParseLoadBalancingConfig(field);
   if (policy != nullptr) {
     lb_policy_name_.reset(gpr_strdup(policy->key));
-    lb_policy_config_ = policy->child;
+    lb_policy_config_ =
+        MakeRefCounted<LoadBalancingPolicy::Config>(policy, service_config_);
   }
 }
 

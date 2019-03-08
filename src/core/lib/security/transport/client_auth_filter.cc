@@ -41,12 +41,42 @@
 #define MAX_CREDENTIALS_METADATA_COUNT 4
 
 namespace {
+
+/* We can have a per-channel credentials. */
+struct channel_data {
+  channel_data(grpc_channel_security_connector* security_connector,
+               grpc_auth_context* auth_context)
+      : security_connector(
+            security_connector->Ref(DEBUG_LOCATION, "client_auth_filter")),
+        auth_context(auth_context->Ref(DEBUG_LOCATION, "client_auth_filter")) {}
+  ~channel_data() {
+    security_connector.reset(DEBUG_LOCATION, "client_auth_filter");
+    auth_context.reset(DEBUG_LOCATION, "client_auth_filter");
+  }
+
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> security_connector;
+  grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
+};
+
 /* We can have a per-call credentials. */
 struct call_data {
   call_data(grpc_call_element* elem, const grpc_call_element_args& args)
-      : arena(args.arena),
-        owning_call(args.call_stack),
-        call_combiner(args.call_combiner) {}
+      : owning_call(args.call_stack), call_combiner(args.call_combiner) {
+    channel_data* chand = static_cast<channel_data*>(elem->channel_data);
+    GPR_ASSERT(args.context != nullptr);
+    if (args.context[GRPC_CONTEXT_SECURITY].value == nullptr) {
+      args.context[GRPC_CONTEXT_SECURITY].value =
+          grpc_client_security_context_create(args.arena, /*creds=*/nullptr);
+      args.context[GRPC_CONTEXT_SECURITY].destroy =
+          grpc_client_security_context_destroy;
+    }
+    grpc_client_security_context* sec_ctx =
+        static_cast<grpc_client_security_context*>(
+            args.context[GRPC_CONTEXT_SECURITY].value);
+    sec_ctx->auth_context.reset(DEBUG_LOCATION, "client_auth_filter");
+    sec_ctx->auth_context =
+        chand->auth_context->Ref(DEBUG_LOCATION, "client_auth_filter");
+  }
 
   // This method is technically the dtor of this class. However, since
   // `get_request_metadata_cancel_closure` can run in parallel to
@@ -61,7 +91,6 @@ struct call_data {
     grpc_auth_metadata_context_reset(&auth_md_context);
   }
 
-  gpr_arena* arena;
   grpc_call_stack* owning_call;
   grpc_call_combiner* call_combiner;
   grpc_core::RefCountedPtr<grpc_call_credentials> creds;
@@ -81,21 +110,6 @@ struct call_data {
   grpc_closure get_request_metadata_cancel_closure;
 };
 
-/* We can have a per-channel credentials. */
-struct channel_data {
-  channel_data(grpc_channel_security_connector* security_connector,
-               grpc_auth_context* auth_context)
-      : security_connector(
-            security_connector->Ref(DEBUG_LOCATION, "client_auth_filter")),
-        auth_context(auth_context->Ref(DEBUG_LOCATION, "client_auth_filter")) {}
-  ~channel_data() {
-    security_connector.reset(DEBUG_LOCATION, "client_auth_filter");
-    auth_context.reset(DEBUG_LOCATION, "client_auth_filter");
-  }
-
-  grpc_core::RefCountedPtr<grpc_channel_security_connector> security_connector;
-  grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
-};
 }  // namespace
 
 void grpc_auth_metadata_context_reset(
@@ -155,8 +169,8 @@ static void on_credentials_metadata(void* arg, grpc_error* input_error) {
 }
 
 void grpc_auth_metadata_context_build(
-    const char* url_scheme, grpc_slice call_host, grpc_slice call_method,
-    grpc_auth_context* auth_context,
+    const char* url_scheme, const grpc_slice& call_host,
+    const grpc_slice& call_method, grpc_auth_context* auth_context,
     grpc_auth_metadata_context* auth_md_context) {
   char* service = grpc_slice_to_c_string(call_method);
   char* last_slash = strrchr(service, '/');
@@ -306,24 +320,6 @@ static void auth_start_transport_stream_op_batch(
   /* grab pointers to our data from the call element */
   call_data* calld = static_cast<call_data*>(elem->call_data);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-
-  if (!batch->cancel_stream) {
-    // TODO(hcaseyal): move this to init_call_elem once issue #15927 is
-    // resolved.
-    GPR_ASSERT(batch->payload->context != nullptr);
-    if (batch->payload->context[GRPC_CONTEXT_SECURITY].value == nullptr) {
-      batch->payload->context[GRPC_CONTEXT_SECURITY].value =
-          grpc_client_security_context_create(calld->arena, /*creds=*/nullptr);
-      batch->payload->context[GRPC_CONTEXT_SECURITY].destroy =
-          grpc_client_security_context_destroy;
-    }
-    grpc_client_security_context* sec_ctx =
-        static_cast<grpc_client_security_context*>(
-            batch->payload->context[GRPC_CONTEXT_SECURITY].value);
-    sec_ctx->auth_context.reset(DEBUG_LOCATION, "client_auth_filter");
-    sec_ctx->auth_context =
-        chand->auth_context->Ref(DEBUG_LOCATION, "client_auth_filter");
-  }
 
   if (batch->send_initial_metadata) {
     grpc_metadata_batch* metadata =

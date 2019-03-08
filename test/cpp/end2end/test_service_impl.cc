@@ -583,7 +583,10 @@ CallbackTestServiceImpl::RequestStream() {
       StartRead(&request_);
     }
     void OnDone() override { delete this; }
-    void OnCancel() override { FinishOnce(Status::CANCELLED); }
+    void OnCancel() override {
+      EXPECT_TRUE(ctx_->IsCancelled());
+      FinishOnce(Status::CANCELLED);
+    }
     void OnReadDone(bool ok) override {
       if (ok) {
         response_->mutable_message()->append(request_.message());
@@ -666,7 +669,10 @@ CallbackTestServiceImpl::ResponseStream() {
       }
     }
     void OnDone() override { delete this; }
-    void OnCancel() override { FinishOnce(Status::CANCELLED); }
+    void OnCancel() override {
+      EXPECT_TRUE(ctx_->IsCancelled());
+      FinishOnce(Status::CANCELLED);
+    }
     void OnWriteDone(bool ok) override {
       if (num_msgs_sent_ < server_responses_to_send_) {
         NextWrite();
@@ -749,7 +755,10 @@ CallbackTestServiceImpl::BidiStream() {
       StartRead(&request_);
     }
     void OnDone() override { delete this; }
-    void OnCancel() override { FinishOnce(Status::CANCELLED); }
+    void OnCancel() override {
+      EXPECT_TRUE(ctx_->IsCancelled());
+      FinishOnce(Status::CANCELLED);
+    }
     void OnReadDone(bool ok) override {
       if (ok) {
         num_msgs_read_++;

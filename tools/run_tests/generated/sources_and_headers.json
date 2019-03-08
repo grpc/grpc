@@ -3300,7 +3300,8 @@
     "language": "c++", 
     "name": "client_callback_end2end_test", 
     "src": [
-      "test/cpp/end2end/client_callback_end2end_test.cc"
+      "test/cpp/end2end/client_callback_end2end_test.cc", 
+      "test/cpp/end2end/interceptors_util.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4997,6 +4998,28 @@
     "name": "writes_per_rpc_test", 
     "src": [
       "test/cpp/performance/writes_per_rpc_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h", 
+      "src/proto/grpc/lb/v1/load_balancer.pb.h", 
+      "src/proto/grpc/lb/v1/load_balancer_mock.grpc.pb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "xds_end2end_test", 
+    "src": [
+      "test/cpp/end2end/xds_end2end_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -8868,6 +8891,7 @@
       "test/core/end2end/tests/empty_batch.cc", 
       "test/core/end2end/tests/filter_call_init_fails.cc", 
       "test/core/end2end/tests/filter_causes_close.cc", 
+      "test/core/end2end/tests/filter_context.cc", 
       "test/core/end2end/tests/filter_latency.cc", 
       "test/core/end2end/tests/filter_status_code.cc", 
       "test/core/end2end/tests/graceful_server_shutdown.cc", 
@@ -8966,6 +8990,7 @@
       "test/core/end2end/tests/empty_batch.cc", 
       "test/core/end2end/tests/filter_call_init_fails.cc", 
       "test/core/end2end/tests/filter_causes_close.cc", 
+      "test/core/end2end/tests/filter_context.cc", 
       "test/core/end2end/tests/filter_latency.cc", 
       "test/core/end2end/tests/filter_status_code.cc", 
       "test/core/end2end/tests/graceful_server_shutdown.cc", 

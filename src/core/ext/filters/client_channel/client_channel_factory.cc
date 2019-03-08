@@ -21,47 +21,35 @@
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/lib/channel/channel_args.h"
 
-void grpc_client_channel_factory_ref(grpc_client_channel_factory* factory) {
-  factory->vtable->ref(factory);
-}
+// Channel arg key for client channel factory.
+#define GRPC_ARG_CLIENT_CHANNEL_FACTORY "grpc.client_channel_factory"
 
-void grpc_client_channel_factory_unref(grpc_client_channel_factory* factory) {
-  factory->vtable->unref(factory);
-}
+namespace grpc_core {
 
-grpc_core::Subchannel* grpc_client_channel_factory_create_subchannel(
-    grpc_client_channel_factory* factory, const grpc_channel_args* args) {
-  return factory->vtable->create_subchannel(factory, args);
-}
+namespace {
 
-grpc_channel* grpc_client_channel_factory_create_channel(
-    grpc_client_channel_factory* factory, const char* target,
-    grpc_client_channel_type type, const grpc_channel_args* args) {
-  return factory->vtable->create_client_channel(factory, target, type, args);
+void* factory_arg_copy(void* f) { return f; }
+void factory_arg_destroy(void* f) {}
+int factory_arg_cmp(void* factory1, void* factory2) {
+  return GPR_ICMP(factory1, factory2);
 }
-
-static void* factory_arg_copy(void* factory) {
-  grpc_client_channel_factory_ref(
-      static_cast<grpc_client_channel_factory*>(factory));
-  return factory;
-}
-
-static void factory_arg_destroy(void* factory) {
-  grpc_client_channel_factory_unref(
-      static_cast<grpc_client_channel_factory*>(factory));
-}
-
-static int factory_arg_cmp(void* factory1, void* factory2) {
-  if (factory1 < factory2) return -1;
-  if (factory1 > factory2) return 1;
-  return 0;
-}
-
-static const grpc_arg_pointer_vtable factory_arg_vtable = {
+const grpc_arg_pointer_vtable factory_arg_vtable = {
     factory_arg_copy, factory_arg_destroy, factory_arg_cmp};
 
-grpc_arg grpc_client_channel_factory_create_channel_arg(
-    grpc_client_channel_factory* factory) {
-  return grpc_channel_arg_pointer_create((char*)GRPC_ARG_CLIENT_CHANNEL_FACTORY,
-                                         factory, &factory_arg_vtable);
+}  // namespace
+
+grpc_arg ClientChannelFactory::CreateChannelArg(ClientChannelFactory* factory) {
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_ARG_CLIENT_CHANNEL_FACTORY), factory,
+      &factory_arg_vtable);
 }
+
+ClientChannelFactory* ClientChannelFactory::GetFromChannelArgs(
+    const grpc_channel_args* args) {
+  const grpc_arg* arg =
+      grpc_channel_args_find(args, GRPC_ARG_CLIENT_CHANNEL_FACTORY);
+  if (arg == nullptr || arg->type != GRPC_ARG_POINTER) return nullptr;
+  return static_cast<ClientChannelFactory*>(arg->value.pointer.p);
+}
+
+}  // namespace grpc_core

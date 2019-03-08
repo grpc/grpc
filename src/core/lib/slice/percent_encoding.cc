@@ -38,7 +38,7 @@ static bool is_unreserved_character(uint8_t c,
   return ((unreserved_bytes[c / 8] >> (c % 8)) & 1) != 0;
 }
 
-grpc_slice grpc_percent_encode_slice(grpc_slice slice,
+grpc_slice grpc_percent_encode_slice(const grpc_slice& slice,
                                      const uint8_t* unreserved_bytes) {
   static const uint8_t hex[] = "0123456789ABCDEF";
 
@@ -86,7 +86,7 @@ static uint8_t dehex(uint8_t c) {
   GPR_UNREACHABLE_CODE(return 255);
 }
 
-bool grpc_strict_percent_decode_slice(grpc_slice slice_in,
+bool grpc_strict_percent_decode_slice(const grpc_slice& slice_in,
                                       const uint8_t* unreserved_bytes,
                                       grpc_slice* slice_out) {
   const uint8_t* p = GRPC_SLICE_START_PTR(slice_in);
@@ -126,7 +126,7 @@ bool grpc_strict_percent_decode_slice(grpc_slice slice_in,
   return true;
 }
 
-grpc_slice grpc_permissive_percent_decode_slice(grpc_slice slice_in) {
+grpc_slice grpc_permissive_percent_decode_slice(const grpc_slice& slice_in) {
   const uint8_t* p = GRPC_SLICE_START_PTR(slice_in);
   const uint8_t* in_end = GRPC_SLICE_END_PTR(slice_in);
   size_t out_length = 0;

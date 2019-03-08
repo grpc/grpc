@@ -51,7 +51,7 @@ static uint8_t decode_table[] = {
 
 static const uint8_t tail_xtra[4] = {0, 0, 1, 2};
 
-static bool input_is_valid(uint8_t* input_ptr, size_t length) {
+static bool input_is_valid(const uint8_t* input_ptr, size_t length) {
   size_t i;
 
   for (i = 0; i < length; ++i) {
@@ -158,7 +158,7 @@ bool grpc_base64_decode_partial(struct grpc_base64_decode_context* ctx) {
   return true;
 }
 
-grpc_slice grpc_chttp2_base64_decode(grpc_slice input) {
+grpc_slice grpc_chttp2_base64_decode(const grpc_slice& input) {
   size_t input_length = GRPC_SLICE_LENGTH(input);
   size_t output_length = input_length / 4 * 3;
   struct grpc_base64_decode_context ctx;
@@ -174,7 +174,7 @@ grpc_slice grpc_chttp2_base64_decode(grpc_slice input) {
   }
 
   if (input_length > 0) {
-    uint8_t* input_end = GRPC_SLICE_END_PTR(input);
+    const uint8_t* input_end = GRPC_SLICE_END_PTR(input);
     if (*(--input_end) == '=') {
       output_length--;
       if (*(--input_end) == '=') {
@@ -202,7 +202,7 @@ grpc_slice grpc_chttp2_base64_decode(grpc_slice input) {
   return output;
 }
 
-grpc_slice grpc_chttp2_base64_decode_with_length(grpc_slice input,
+grpc_slice grpc_chttp2_base64_decode_with_length(const grpc_slice& input,
                                                  size_t output_length) {
   size_t input_length = GRPC_SLICE_LENGTH(input);
   grpc_slice output = GRPC_SLICE_MALLOC(output_length);

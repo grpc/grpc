@@ -323,14 +323,14 @@ GRPCAPI void grpc_channel_destroy(grpc_channel* channel);
    If a grpc_call fails, it's guaranteed that no change to the call state
    has been made. */
 
-/** Called by clients to cancel an RPC on the server.
+/** Cancel an RPC.
     Can be called multiple times, from any thread.
     THREAD-SAFETY grpc_call_cancel and grpc_call_cancel_with_status
     are thread-safe, and can be called at any point before grpc_call_unref
     is called.*/
 GRPCAPI grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved);
 
-/** Called by clients to cancel an RPC on the server.
+/** Cancel an RPC.
     Can be called multiple times, from any thread.
     If a status has not been received for the call, set it to the status code
     and description passed in.

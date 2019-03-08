@@ -170,8 +170,8 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            strip_prefix = "abseil-cpp-cd95e71df6eaf8f2a282b1da556c2cf1c9b09207",
-            url = "https://github.com/abseil/abseil-cpp/archive/cd95e71df6eaf8f2a282b1da556c2cf1c9b09207.tar.gz",
+            strip_prefix = "abseil-cpp-308ce31528a7edfa39f5f6d36142278a0ae1bf45",
+            url = "https://github.com/abseil/abseil-cpp/archive/308ce31528a7edfa39f5f6d36142278a0ae1bf45.tar.gz",
         )
 
     if "com_github_bazelbuild_bazeltoolchains" not in native.existing_rules():
@@ -196,8 +196,8 @@ def grpc_deps():
     if "io_opencensus_cpp" not in native.existing_rules():
         http_archive(
             name = "io_opencensus_cpp",
-            strip_prefix = "opencensus-cpp-fdf0f308b1631bb4a942e32ba5d22536a6170274",
-            url = "https://github.com/census-instrumentation/opencensus-cpp/archive/fdf0f308b1631bb4a942e32ba5d22536a6170274.tar.gz",
+            strip_prefix = "opencensus-cpp-03dff0352522983ffdee48cedbf87cbe37f1bb7f",
+            url = "https://github.com/census-instrumentation/opencensus-cpp/archive/03dff0352522983ffdee48cedbf87cbe37f1bb7f.tar.gz",
         )
 
     if "upb" not in native.existing_rules():

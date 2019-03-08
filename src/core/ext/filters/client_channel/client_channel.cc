@@ -107,8 +107,8 @@ typedef struct client_channel_channel_data {
   grpc_channel_stack* owning_stack;
   /** interested parties (owned) */
   grpc_pollset_set* interested_parties;
-  // Client channel factory.  Holds a ref.
-  grpc_client_channel_factory* client_channel_factory;
+  // Client channel factory.
+  grpc_core::ClientChannelFactory* client_channel_factory;
   // Subchannel pool.
   grpc_core::RefCountedPtr<grpc_core::SubchannelPoolInterface> subchannel_pool;
 
@@ -205,16 +205,15 @@ class ClientChannelControlHelper
         chand_->subchannel_pool.get());
     grpc_channel_args* new_args =
         grpc_channel_args_copy_and_add(&args, &arg, 1);
-    Subchannel* subchannel = grpc_client_channel_factory_create_subchannel(
-        chand_->client_channel_factory, new_args);
+    Subchannel* subchannel =
+        chand_->client_channel_factory->CreateSubchannel(new_args);
     grpc_channel_args_destroy(new_args);
     return subchannel;
   }
 
-  grpc_channel* CreateChannel(const char* target, grpc_client_channel_type type,
+  grpc_channel* CreateChannel(const char* target,
                               const grpc_channel_args& args) override {
-    return grpc_client_channel_factory_create_channel(
-        chand_->client_channel_factory, target, type, &args);
+    return chand_->client_channel_factory->CreateChannel(target, &args);
   }
 
   void UpdateState(
@@ -249,10 +248,9 @@ class ClientChannelControlHelper
 
 // Synchronous callback from chand->resolving_lb_policy to process a resolver
 // result update.
-static bool process_resolver_result_locked(void* arg,
-                                           const grpc_channel_args& args,
-                                           const char** lb_policy_name,
-                                           grpc_json** lb_policy_config) {
+static bool process_resolver_result_locked(
+    void* arg, const grpc_channel_args& args, const char** lb_policy_name,
+    grpc_core::RefCountedPtr<LoadBalancingPolicy::Config>* lb_policy_config) {
   channel_data* chand = static_cast<channel_data*>(arg);
   chand->have_service_config = true;
   ProcessedResolverResult resolver_result(args, chand->enable_retries);
@@ -420,19 +418,12 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   arg = grpc_channel_args_find(args->channel_args, GRPC_ARG_ENABLE_RETRIES);
   chand->enable_retries = grpc_channel_arg_get_bool(arg, true);
   // Record client channel factory.
-  arg = grpc_channel_args_find(args->channel_args,
-                               GRPC_ARG_CLIENT_CHANNEL_FACTORY);
-  if (arg == nullptr) {
+  chand->client_channel_factory =
+      grpc_core::ClientChannelFactory::GetFromChannelArgs(args->channel_args);
+  if (chand->client_channel_factory == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Missing client channel factory in args for client channel filter");
   }
-  if (arg->type != GRPC_ARG_POINTER) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "client channel factory arg must be a pointer");
-  }
-  chand->client_channel_factory =
-      static_cast<grpc_client_channel_factory*>(arg->value.pointer.p);
-  grpc_client_channel_factory_ref(chand->client_channel_factory);
   // Get server name to resolve, using proxy mapper if needed.
   arg = grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVER_URI);
   if (arg == nullptr) {
@@ -509,9 +500,6 @@ static void cc_destroy_channel_elem(grpc_channel_element* elem) {
   // longer be any need to explicitly reset these smart pointer data members.
   chand->picker.reset();
   chand->subchannel_pool.reset();
-  if (chand->client_channel_factory != nullptr) {
-    grpc_client_channel_factory_unref(chand->client_channel_factory);
-  }
   chand->info_lb_policy_name.reset();
   chand->info_service_config_json.reset();
   chand->retry_throttle_data.reset();
@@ -704,6 +692,7 @@ struct call_data {
         arena(args.arena),
         owning_call(args.call_stack),
         call_combiner(args.call_combiner),
+        call_context(args.context),
         pending_send_initial_metadata(false),
         pending_send_message(false),
         pending_send_trailing_metadata(false),
@@ -716,12 +705,6 @@ struct call_data {
     GRPC_ERROR_UNREF(cancel_error);
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches); ++i) {
       GPR_ASSERT(pending_batches[i].batch == nullptr);
-    }
-    for (size_t i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
-      if (pick.pick.subchannel_call_context[i].destroy != nullptr) {
-        pick.pick.subchannel_call_context[i].destroy(
-            pick.pick.subchannel_call_context[i].value);
-      }
     }
   }
 
@@ -739,6 +722,7 @@ struct call_data {
   gpr_arena* arena;
   grpc_call_stack* owning_call;
   grpc_call_combiner* call_combiner;
+  grpc_call_context_element* call_context;
 
   grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
   grpc_core::RefCountedPtr<ClientChannelMethodParams> method_params;
@@ -2439,14 +2423,16 @@ static void create_subchannel_call(grpc_call_element* elem) {
   const size_t parent_data_size =
       calld->enable_retries ? sizeof(subchannel_call_retry_state) : 0;
   const grpc_core::ConnectedSubchannel::CallArgs call_args = {
-      calld->pollent,                            // pollent
-      calld->path,                               // path
-      calld->call_start_time,                    // start_time
-      calld->deadline,                           // deadline
-      calld->arena,                              // arena
-      calld->pick.pick.subchannel_call_context,  // context
-      calld->call_combiner,                      // call_combiner
-      parent_data_size                           // parent_data_size
+      calld->pollent,          // pollent
+      calld->path,             // path
+      calld->call_start_time,  // start_time
+      calld->deadline,         // deadline
+      calld->arena,            // arena
+      // TODO(roth): When we implement hedging support, we will probably
+      // need to use a separate call context for each subchannel call.
+      calld->call_context,   // context
+      calld->call_combiner,  // call_combiner
+      parent_data_size       // parent_data_size
   };
   grpc_error* error = GRPC_ERROR_NONE;
   calld->subchannel_call =
@@ -2461,7 +2447,7 @@ static void create_subchannel_call(grpc_call_element* elem) {
   } else {
     if (parent_data_size > 0) {
       new (calld->subchannel_call->GetParentData())
-          subchannel_call_retry_state(calld->pick.pick.subchannel_call_context);
+          subchannel_call_retry_state(calld->call_context);
     }
     pending_batches_resume(elem);
   }

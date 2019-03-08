@@ -404,6 +404,28 @@ LIBS = m pthread ws2_32
 LDFLAGS += -pthread
 endif
 
+# If we are installing into a non-default prefix, both
+# the libraries we build, and the apps users build,
+# need to know how to find the libraries they depend on.
+# There is much gnashing of teeth about this subject.
+# It's tricky to do that without editing images during install,
+# as you don't want tests during build to find previously installed and
+# now stale libraries, etc.
+ifeq ($(SYSTEM),Linux)
+ifneq ($(prefix),/usr)
+# Linux best practice for rpath on installed files is probably:
+# 1) .pc file provides -Wl,-rpath,$(prefix)/lib
+# 2) binaries we install into $(prefix)/bin use -Wl,-rpath,$ORIGIN/../lib
+# 3) libraries we install into $(prefix)/lib use -Wl,-rpath,$ORIGIN
+# cf. https://www.akkadia.org/drepper/dsohowto.pdf
+# Doing all of that right is hard, but using -Wl,-rpath,$ORIGIN is always
+# safe, and solves problems seen in the wild.  Note that $ORIGIN
+# is a literal string interpreted much later by ld.so.  Escape it
+# here with a dollar sign so Make doesn't expand $O.
+LDFLAGS += '-Wl,-rpath,$$ORIGIN'
+endif
+endif
+
 #
 # The steps for cross-compiling are as follows:
 # First, clone and make install of grpc using the native compilers for the host.
@@ -809,7 +831,7 @@ ifeq ($(HAS_SYSTEM_PROTOBUF),true)
 ifeq ($(HAS_PKG_CONFIG),true)
 PROTOBUF_PKG_CONFIG = true
 PC_REQUIRES_GRPCXX = protobuf
-CPPFLAGS := $(shell $(PKG_CONFIG) --cflags protobuf) $(CPPFLAGS)
+CPPFLAGS := $(CPPFLAGS) $(shell $(PKG_CONFIG) --cflags protobuf)
 LDFLAGS_PROTOBUF_PKG_CONFIG = $(shell $(PKG_CONFIG) --libs-only-L protobuf)
 ifeq ($(SYSTEM),Linux)
 ifneq ($(LDFLAGS_PROTOBUF_PKG_CONFIG),)
@@ -1254,6 +1276,7 @@ time_change_test: $(BINDIR)/$(CONFIG)/time_change_test
 transport_pid_controller_test: $(BINDIR)/$(CONFIG)/transport_pid_controller_test
 transport_security_common_api_test: $(BINDIR)/$(CONFIG)/transport_security_common_api_test
 writes_per_rpc_test: $(BINDIR)/$(CONFIG)/writes_per_rpc_test
+xds_end2end_test: $(BINDIR)/$(CONFIG)/xds_end2end_test
 public_headers_must_be_c89: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89
 gen_hpack_tables: $(BINDIR)/$(CONFIG)/gen_hpack_tables
 gen_legal_metadata_characters: $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters
@@ -1765,6 +1788,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
   $(BINDIR)/$(CONFIG)/transport_security_common_api_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
+  $(BINDIR)/$(CONFIG)/xds_end2end_test \
   $(BINDIR)/$(CONFIG)/boringssl_crypto_test_data \
   $(BINDIR)/$(CONFIG)/boringssl_asn1_test \
   $(BINDIR)/$(CONFIG)/boringssl_base64_test \
@@ -1954,6 +1978,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
   $(BINDIR)/$(CONFIG)/transport_security_common_api_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
+  $(BINDIR)/$(CONFIG)/xds_end2end_test \
   $(BINDIR)/$(CONFIG)/resolver_component_test_unsecure \
   $(BINDIR)/$(CONFIG)/resolver_component_test \
   $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker_unsecure \
@@ -2478,6 +2503,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/transport_security_common_api_test || ( echo test transport_security_common_api_test failed ; exit 1 )
 	$(E) "[RUN]     Testing writes_per_rpc_test"
 	$(Q) $(BINDIR)/$(CONFIG)/writes_per_rpc_test || ( echo test writes_per_rpc_test failed ; exit 1 )
+	$(E) "[RUN]     Testing xds_end2end_test"
+	$(Q) $(BINDIR)/$(CONFIG)/xds_end2end_test || ( echo test xds_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing resolver_component_tests_runner_invoker_unsecure"
 	$(Q) $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker_unsecure || ( echo test resolver_component_tests_runner_invoker_unsecure failed ; exit 1 )
 	$(E) "[RUN]     Testing resolver_component_tests_runner_invoker"
@@ -10388,6 +10415,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/empty_batch.cc \
     test/core/end2end/tests/filter_call_init_fails.cc \
     test/core/end2end/tests/filter_causes_close.cc \
+    test/core/end2end/tests/filter_context.cc \
     test/core/end2end/tests/filter_latency.cc \
     test/core/end2end/tests/filter_status_code.cc \
     test/core/end2end/tests/graceful_server_shutdown.cc \
@@ -10504,6 +10532,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/empty_batch.cc \
     test/core/end2end/tests/filter_call_init_fails.cc \
     test/core/end2end/tests/filter_causes_close.cc \
+    test/core/end2end/tests/filter_context.cc \
     test/core/end2end/tests/filter_latency.cc \
     test/core/end2end/tests/filter_status_code.cc \
     test/core/end2end/tests/graceful_server_shutdown.cc \
@@ -17464,6 +17493,7 @@ endif
 
 CLIENT_CALLBACK_END2END_TEST_SRC = \
     test/cpp/end2end/client_callback_end2end_test.cc \
+    test/cpp/end2end/interceptors_util.cc \
 
 CLIENT_CALLBACK_END2END_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CLIENT_CALLBACK_END2END_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -17495,6 +17525,8 @@ endif
 endif
 
 $(OBJDIR)/$(CONFIG)/test/cpp/end2end/client_callback_end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/interceptors_util.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_client_callback_end2end_test: $(CLIENT_CALLBACK_END2END_TEST_OBJS:.o=.dep)
 
@@ -21279,6 +21311,53 @@ ifneq ($(NO_DEPS),true)
 -include $(WRITES_PER_RPC_TEST_OBJS:.o=.dep)
 endif
 endif
+
+
+XDS_END2END_TEST_SRC = \
+    $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc \
+    test/cpp/end2end/xds_end2end_test.cc \
+
+XDS_END2END_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(XDS_END2END_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/xds_end2end_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/xds_end2end_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/xds_end2end_test: $(PROTOBUF_DEP) $(XDS_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(XDS_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/xds_end2end_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/lb/v1/load_balancer.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/xds_end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_xds_end2end_test: $(XDS_END2END_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(XDS_END2END_TEST_OBJS:.o=.dep)
+endif
+endif
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/xds_end2end_test.o: $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
 
 
 PUBLIC_HEADERS_MUST_BE_C89_SRC = \

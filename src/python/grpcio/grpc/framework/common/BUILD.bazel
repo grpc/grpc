@@ -13,15 +13,17 @@ py_library(
 py_library(
     name = "cardinality",
     srcs = ["cardinality.py"],
-    deps = [
-        requirement("enum34"),
-    ],
+    deps = select({
+        "//conditions:default": [requirement('enum34'),],
+        "//:python3": [],
+    }),
 )
 
 py_library(
     name = "style",
     srcs = ["style.py"],
-    deps = [
-        requirement("enum34"),
-    ],
+    deps = select({
+        "//conditions:default": [requirement('enum34'),],
+        "//:python3": [],
+    }),
 )
