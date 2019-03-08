@@ -3828,6 +3828,7 @@ foreach(_hdr
 endforeach()
 endif (gRPC_BUILD_CODEGEN)
 
+if (gRPC_BUILD_CODEGEN)
 
 if (gRPC_INSTALL)
   install(TARGETS grpc++_error_details EXPORT gRPCTargets
@@ -3837,6 +3838,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CODEGEN)
 if (gRPC_BUILD_TESTS)
 
 if (gRPC_BUILD_CODEGEN)
@@ -3958,6 +3960,7 @@ foreach(_hdr
 endforeach()
 endif (gRPC_BUILD_CODEGEN)
 
+if (gRPC_BUILD_CODEGEN)
 
 if (gRPC_INSTALL)
   install(TARGETS grpc++_reflection EXPORT gRPCTargets
@@ -3967,6 +3970,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CODEGEN)
 if (gRPC_BUILD_TESTS)
 
 add_library(grpc++_test_config
@@ -4959,6 +4963,7 @@ foreach(_hdr
 endforeach()
 endif (gRPC_BUILD_CODEGEN)
 
+if (gRPC_BUILD_CODEGEN)
 
 if (gRPC_INSTALL)
   install(TARGETS grpcpp_channelz EXPORT gRPCTargets
@@ -4968,6 +4973,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CODEGEN)
 if (gRPC_BUILD_TESTS)
 
 if (gRPC_BUILD_CODEGEN)
