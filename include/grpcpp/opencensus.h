@@ -19,30 +19,6 @@
 #ifndef GRPCPP_OPENCENSUS_H
 #define GRPCPP_OPENCENSUS_H
 
-#include "opencensus/trace/span.h"
-
-namespace grpc {
-// These symbols in this file will not be included in the binary unless
-// grpc_opencensus_plugin build target was added as a dependency. At the moment
-// it is only setup to be built with Bazel.
-
-// Registers the OpenCensus plugin with gRPC, so that it will be used for future
-// RPCs. This must be called before any views are created.
-void RegisterOpenCensusPlugin();
-
-// RPC stats definitions, defined by
-// https://github.com/census-instrumentation/opencensus-specs/blob/master/stats/gRPC.md
-
-// Registers the cumulative gRPC views so that they will be exported by any
-// registered stats exporter. For on-task stats, construct a View using the
-// ViewDescriptors below.
-void RegisterOpenCensusViewsForExport();
-
-class ServerContext;
-
-// Returns the tracing Span for the current RPC.
-::opencensus::trace::Span GetSpanFromServerContext(ServerContext* context);
-
-}  // namespace grpc
+#include "grpcpp/opencensus_impl.h"
 
 #endif  // GRPCPP_OPENCENSUS_H
