@@ -57,7 +57,6 @@ class ChannelTest(unittest.TestCase):
     def test_multiple_channels_lonely_connectivity(self):
         _in_parallel(_create_loop_destroy, ())
 
-    @unittest.skip('See if windows are happy now')
     def test_negative_deadline_connectivity(self):
         channel = _channel()
         connectivity = channel.check_connectivity_state(True)
