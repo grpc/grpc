@@ -69,6 +69,7 @@ grpc_cc_binary(
     testonly = 1,
     srcs = ["bm_arena.cc"],
     deps = [":helpers"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_binary(
