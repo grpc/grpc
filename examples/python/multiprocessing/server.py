@@ -63,7 +63,7 @@ def _wait_forever(server):
 
 def _run_server(bind_address):
     """Start a server in a subprocess."""
-    logging.warning( '[PID {}] Starting new server.'.format( os.getpid()))
+    logging.warning( '[PID {}] Starting new server.'.format(os.getpid()))
     options = (('grpc.so_reuseport', 1),)
 
     # WARNING: This example takes advantage of SO_REUSEPORT. Due to the
@@ -87,6 +87,8 @@ def _reserve_port():
     """Find and reserve a port for all subprocesses to use."""
     sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+    if sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT) != 1:
+        raise RuntimeError("Failed to set SO_REUSEPORT.")
     sock.bind(('', 0))
     try:
         yield sock.getsockname()[1]

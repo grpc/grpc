@@ -7,6 +7,7 @@ py_binary(
     deps = [
         "//src/python/grpcio/grpc:grpcio"
     ],
+    default_python_version = "PY3",
 )
 
 py_binary(
@@ -15,7 +16,11 @@ py_binary(
     srcs = ["server.py"],
     deps = [
         "//src/python/grpcio/grpc:grpcio"
-    ],
+    ] + select({
+        "//conditions:default": [requirement("futures")],
+        "//:python3": [],
+    }),
+    default_python_version = "PY3",
 )
 
 py_test(
