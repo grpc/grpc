@@ -154,7 +154,6 @@ def grpc_deps():
     if "com_github_google_benchmark" not in native.existing_rules():
         http_archive(
             name = "com_github_google_benchmark",
-            #build_file = "@com_github_grpc_grpc//third_party:benchmark.BUILD",
             strip_prefix = "benchmark-e776aa0275e293707b6a0901e0e8d8a8a3679508",
             url = "https://github.com/google/benchmark/archive/e776aa0275e293707b6a0901e0e8d8a8a3679508.tar.gz",
         )
