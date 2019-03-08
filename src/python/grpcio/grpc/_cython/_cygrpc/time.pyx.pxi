@@ -15,13 +15,14 @@
 
 cdef gpr_timespec _timespec_from_time(object time):
   cdef gpr_timespec timespec
+  cdef double c_seconds = time
   if time is None:
     return gpr_inf_future(GPR_CLOCK_REALTIME)
   else:
-    return gpr_time_from_millis(<int64_t>(int(float(time) * GPR_MS_PER_SEC)), GPR_CLOCK_REALTIME)
+    return gpr_time_from_nanos(<int64_t>(c_seconds * GPR_NS_PER_SEC), GPR_CLOCK_REALTIME)
 
 
 cdef double _time_from_timespec(gpr_timespec timespec) except *:
   cdef gpr_timespec real_timespec = gpr_convert_clock_type(
       timespec, GPR_CLOCK_REALTIME)
-  return <double>real_timespec.seconds + <double>real_timespec.nanoseconds / 1e9
+  return <double>real_timespec.seconds + <double>real_timespec.nanoseconds / GPR_NS_PER_SEC

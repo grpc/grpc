@@ -82,6 +82,7 @@ cdef extern from "grpc/grpc.h":
                                       gpr_clock_type target_clock) nogil
 
   const int GPR_MS_PER_SEC
+  const int GPR_NS_PER_SEC
 
   gpr_timespec gpr_time_from_millis(int64_t ms, gpr_clock_type type) nogil
   gpr_timespec gpr_time_from_nanos(int64_t ns, gpr_clock_type type) nogil
