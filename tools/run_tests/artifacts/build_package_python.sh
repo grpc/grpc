@@ -24,7 +24,8 @@ mkdir -p artifacts/
 cp -r "${EXTERNAL_GIT_ROOT}"/input_artifacts/python_*/* artifacts/ || true
 
 apt-get install -y python-pip
-python -m pip install wheel --user
+python -m pip install -U pip
+python -m pip install -U wheel
 
 strip_binary_wheel() {
     WHEEL_PATH="$1"
