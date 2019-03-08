@@ -1190,6 +1190,20 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
   EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
 }
 
+TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerChannelFails) {
+  const int kFallbackTimeoutMs = 10000 * grpc_test_slowdown_factor();
+  ResetStub(kFallbackTimeoutMs);
+  // Return an unreachable balancer and one fallback backend.
+  std::vector<AddressData> addresses;
+  addresses.emplace_back(AddressData{grpc_pick_unused_port_or_die(), true, ""});
+  addresses.emplace_back(AddressData{backend_servers_[0].port_, false, ""});
+  SetNextResolution(addresses);
+  // Send RPC with deadline less than the fallback timeout and make sure it
+  // succeeds.
+  CheckRpcSendOk(/* times */ 1, /* timeout_ms */ 1000,
+                 /* wait_for_ready */ false);
+}
+
 TEST_F(SingleBalancerTest, BackendsRestart) {
   SetNextResolutionAllBalancers();
   const size_t kNumRpcsPerAddress = 100;

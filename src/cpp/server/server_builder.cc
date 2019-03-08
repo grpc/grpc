@@ -44,8 +44,7 @@ ServerBuilder::ServerBuilder()
     : max_receive_message_size_(INT_MIN),
       max_send_message_size_(INT_MIN),
       sync_server_settings_(SyncServerSettings()),
-      resource_quota_(nullptr),
-      generic_service_(nullptr) {
+      resource_quota_(nullptr) {
   gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
   for (auto it = g_plugin_factory_list->begin();
        it != g_plugin_factory_list->end(); it++) {
@@ -91,15 +90,28 @@ ServerBuilder& ServerBuilder::RegisterService(const grpc::string& addr,
 
 ServerBuilder& ServerBuilder::RegisterAsyncGenericService(
     AsyncGenericService* service) {
-  if (generic_service_) {
+  if (generic_service_ || callback_generic_service_) {
     gpr_log(GPR_ERROR,
-            "Adding multiple AsyncGenericService is unsupported for now. "
+            "Adding multiple generic services is unsupported for now. "
             "Dropping the service %p",
             (void*)service);
   } else {
     generic_service_ = service;
   }
   return *this;
+}
+
+ServerBuilder& ServerBuilder::experimental_type::RegisterCallbackGenericService(
+    experimental::CallbackGenericService* service) {
+  if (builder_->generic_service_ || builder_->callback_generic_service_) {
+    gpr_log(GPR_ERROR,
+            "Adding multiple generic services is unsupported for now. "
+            "Dropping the service %p",
+            (void*)service);
+  } else {
+    builder_->callback_generic_service_ = service;
+  }
+  return *builder_;
 }
 
 ServerBuilder& ServerBuilder::SetOption(
@@ -310,7 +322,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     has_frequently_polled_cqs = true;
   }
 
-  if (has_callback_methods) {
+  if (has_callback_methods || callback_generic_service_ != nullptr) {
     auto* cq = server->CallbackCQ();
     grpc_server_register_completion_queue(server->server_, cq->cq(), nullptr);
   }
@@ -344,6 +356,8 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
 
   if (generic_service_) {
     server->RegisterAsyncGenericService(generic_service_);
+  } else if (callback_generic_service_) {
+    server->RegisterCallbackGenericService(callback_generic_service_);
   } else {
     for (auto it = services_.begin(); it != services_.end(); ++it) {
       if ((*it)->service->has_generic_methods()) {
