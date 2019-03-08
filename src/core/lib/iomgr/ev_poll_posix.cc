@@ -125,7 +125,7 @@ struct grpc_fd {
   grpc_fork_fd_list* fork_fd_list;
 };
 
-/* True when GRPC_ENABLE_FORK_SUPPORT=1. We do not support fork with poll-cv */
+/* True when GRPC_ENABLE_FORK_SUPPORT=1. */
 static bool track_fds_for_fork = false;
 
 /* Only used when GRPC_ENABLE_FORK_SUPPORT=1 */

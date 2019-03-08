@@ -242,7 +242,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "end2end_test",
-    size = "large",  # with poll-cv this takes long, see #17493
+    size = "large",
     deps = [
         ":end2end_test_lib",
     ],
