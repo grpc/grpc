@@ -33,7 +33,6 @@ _CLIENT_FORK_SCRIPT_TEMPLATE = """if True:
     from tests.fork import methods
 
     cygrpc._GRPC_ENABLE_FORK_SUPPORT = True
-    os.environ['GRPC_POLL_STRATEGY'] = 'epoll1'
     methods.TestCase.%s.run_test({
       'server_host': 'localhost',
       'server_port': %d,
