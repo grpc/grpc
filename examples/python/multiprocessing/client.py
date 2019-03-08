@@ -43,8 +43,7 @@ _LOGGER = logging.getLogger(__name__)
 def _initialize_worker(server_address):
     global _worker_channel_singleton
     global _worker_stub_singleton
-    _LOGGER.info('[PID {}] Initializing worker process.'.format(
-            os.getpid()))
+    _LOGGER.info('Initializing worker process.')
     _worker_channel_singleton = grpc.insecure_channel(server_address)
     _worker_stub_singleton = prime_pb2_grpc.PrimeCheckerStub(
                                 _worker_channel_singleton)
@@ -52,15 +51,14 @@ def _initialize_worker(server_address):
 
 
 def _shutdown_worker():
-    _LOGGER.info('[PID {}] Shutting worker process down.'.format(
-            os.getpid()))
+    _LOGGER.info('Shutting worker process down.')
     if _worker_channel_singleton is not None:
         _worker_channel_singleton.stop()
 
 
 def _run_worker_query(primality_candidate):
-    _LOGGER.info('[PID {}] Checking primality of {}.'.format(
-            os.getpid(), primality_candidate))
+    _LOGGER.info('Checking primality of {}.'.format(
+            primality_candidate))
     return _worker_stub_singleton.check(
             prime_pb2.PrimeCandidate(candidate=primality_candidate))
 
@@ -71,26 +69,25 @@ def _calculate_primes(server_address):
     check_range = range(2, _MAXIMUM_CANDIDATE)
     primality = worker_pool.map(_run_worker_query, check_range)
     primes = zip(check_range, map(operator.attrgetter('isPrime'), primality))
-    _LOGGER.info(tuple(primes))
+    return tuple(primes)
 
 
 def main():
     msg = 'Determine the primality of the first {} integers.'.format(
             _MAXIMUM_CANDIDATE)
     parser = argparse.ArgumentParser(description=msg)
-    parser.add_argument('server_address', help='The address of the server (e.g. localhost:50051)')
+    parser.add_argument('server_address',
+                        help='The address of the server (e.g. localhost:50051)')
     args = parser.parse_args()
-    _calculate_primes(args.server_address)
+    primes = _calculate_primes(args.server_address)
+    print(primes)
     sys.stdout.flush()
 
 
 if __name__ == '__main__':
-    # TODO(rbellevi): Add PID to formatter
-    fh = logging.FileHandler('/tmp/client.log')
-    fh.setLevel(logging.INFO)
-    ch = logging.StreamHandler(sys.stdout)
-    ch.setLevel(logging.INFO)
-    _LOGGER.addHandler(fh)
-    _LOGGER.addHandler(ch)
+    handler = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter('[PID %(process)d] %(message)s')
+    handler.setFormatter(formatter)
+    _LOGGER.addHandler(handler)
     _LOGGER.setLevel(logging.INFO)
     main()

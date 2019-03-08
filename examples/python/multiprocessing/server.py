@@ -51,8 +51,8 @@ class PrimeChecker(prime_pb2_grpc.PrimeCheckerServicer):
 
     def check(self, request, context):
         _LOGGER.info(
-            '[PID {}] Determining primality of {}'.format(
-                    os.getpid(), request.candidate))
+            'Determining primality of {}'.format(
+                    request.candidate))
         return prime_pb2.Primality(isPrime=is_prime(request.candidate))
 
 
@@ -66,7 +66,7 @@ def _wait_forever(server):
 
 def _run_server(bind_address):
     """Start a server in a subprocess."""
-    _LOGGER.info( '[PID {}] Starting new server.'.format(os.getpid()))
+    _LOGGER.info('Starting new server.')
     options = (('grpc.so_reuseport', 1),)
 
     # WARNING: This example takes advantage of SO_REUSEPORT. Due to the
@@ -116,12 +116,9 @@ def main():
             worker.join()
 
 if __name__ == '__main__':
-    # TODO(rbellevi): Add PID to formatter
-    fh = logging.FileHandler('/tmp/server.log')
-    fh.setLevel(logging.INFO)
-    ch = logging.StreamHandler(sys.stdout)
-    ch.setLevel(logging.INFO)
-    _LOGGER.addHandler(fh)
-    _LOGGER.addHandler(ch)
+    handler = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter('[PID %(process)d] %(message)s')
+    handler.setFormatter(formatter)
+    _LOGGER.addHandler(handler)
     _LOGGER.setLevel(logging.INFO)
     main()
