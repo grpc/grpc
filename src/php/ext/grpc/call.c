@@ -217,7 +217,7 @@ PHP_METHOD(Call, __construct) {
   }
   wrapped_grpc_channel *channel =
     PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_channel, channel_obj);
-  if (channel->wrapper == NULL || channel->wrapper->wrapped == NULL) {
+  if (channel->wrapper == NULL) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "Call cannot be constructed from a closed Channel",
                          1 TSRMLS_CC);
