@@ -27,9 +27,12 @@ import multiprocessing
 import os
 import time
 import socket
+import sys
 
 import prime_pb2
 import prime_pb2_grpc
+
+_LOGGER = logging.getLogger(__name__)
 
 _ONE_DAY = datetime.timedelta(days=1)
 _PROCESS_COUNT = 8
@@ -47,7 +50,7 @@ def is_prime(n):
 class PrimeChecker(prime_pb2_grpc.PrimeCheckerServicer):
 
     def check(self, request, context):
-        logging.warning(
+        _LOGGER.info(
             '[PID {}] Determining primality of {}'.format(
                     os.getpid(), request.candidate))
         return prime_pb2.Primality(isPrime=is_prime(request.candidate))
@@ -63,7 +66,7 @@ def _wait_forever(server):
 
 def _run_server(bind_address):
     """Start a server in a subprocess."""
-    logging.warning( '[PID {}] Starting new server.'.format(os.getpid()))
+    _LOGGER.info( '[PID {}] Starting new server.'.format(os.getpid()))
     options = (('grpc.so_reuseport', 1),)
 
     # WARNING: This example takes advantage of SO_REUSEPORT. Due to the
@@ -99,7 +102,8 @@ def _reserve_port():
 def main():
     with _reserve_port() as port:
         bind_address = '[::]:{}'.format(port)
-        logging.warning("Binding to {}".format(bind_address))
+        _LOGGER.info("Binding to '{}'".format(bind_address))
+        sys.stdout.flush()
         workers = []
         for _ in range(_PROCESS_COUNT):
             # NOTE: It is imperative that the worker subprocesses be forked before
@@ -111,7 +115,13 @@ def main():
         for worker in workers:
             worker.join()
 
-
 if __name__ == '__main__':
-    logging.basicConfig()
+    # TODO(rbellevi): Add PID to formatter
+    fh = logging.FileHandler('/tmp/server.log')
+    fh.setLevel(logging.INFO)
+    ch = logging.StreamHandler(sys.stdout)
+    ch.setLevel(logging.INFO)
+    _LOGGER.addHandler(fh)
+    _LOGGER.addHandler(ch)
+    _LOGGER.setLevel(logging.INFO)
     main()

@@ -24,10 +24,11 @@ py_binary(
 )
 
 py_test(
-    name = "_multiprocessing_example_test",
+    name = "test/_multiprocessing_example_test",
     srcs = ["test/_multiprocessing_example_test.py"],
     data = [
         ":client",
         ":server"
-    ]
+    ],
+    size = "small",
 )
