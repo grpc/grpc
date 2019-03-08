@@ -110,6 +110,9 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
         GRPC_ERROR_UNREF(state_error);
         return;
       }
+      grpc_pollset_set_del_pollset_set(
+          parent_->lb_policy_->interested_parties(),
+          parent_->interested_parties());
       MutexLock lock(&parent_->lb_policy_mu_);
       parent_->lb_policy_ = std::move(parent_->pending_lb_policy_);
     } else if (!CalledByCurrentChild()) {
