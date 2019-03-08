@@ -24,8 +24,7 @@ import time
 import unittest
 
 _BINARY_DIR = os.path.realpath(
-    os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), '..'))
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 _SERVER_PATH = os.path.join(_BINARY_DIR, 'server')
 _CLIENT_PATH = os.path.join(_BINARY_DIR, 'client')
 
@@ -53,12 +52,14 @@ class MultiprocessingExampleTest(unittest.TestCase):
 
     def test_multiprocessing_example(self):
         server_stdout = tempfile.TemporaryFile(mode='r')
-        server_process = subprocess.Popen((_SERVER_PATH,),
-                                          stdout=server_stdout)
+        server_process = subprocess.Popen((_SERVER_PATH,), stdout=server_stdout)
         server_address = _get_server_address(server_stdout)
         client_stdout = tempfile.TemporaryFile(mode='r')
-        client_process = subprocess.Popen((_CLIENT_PATH, server_address,),
-                                          stdout=client_stdout)
+        client_process = subprocess.Popen(
+            (
+                _CLIENT_PATH,
+                server_address,
+            ), stdout=client_stdout)
         client_process.wait()
         server_process.terminate()
         client_stdout.seek(0)

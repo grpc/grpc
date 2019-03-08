@@ -50,9 +50,7 @@ def is_prime(n):
 class PrimeChecker(prime_pb2_grpc.PrimeCheckerServicer):
 
     def check(self, request, context):
-        _LOGGER.info(
-            'Determining primality of {}'.format(
-                    request.candidate))
+        _LOGGER.info('Determining primality of {}'.format(request.candidate))
         return prime_pb2.Primality(isPrime=is_prime(request.candidate))
 
 
@@ -76,9 +74,8 @@ def _run_server(bind_address):
     # `pip install grpcio --no-binary grpcio`.
 
     server = grpc.server(
-                futures.ThreadPoolExecutor(
-                    max_workers=_THREAD_CONCURRENCY,),
-                    options=options)
+        futures.ThreadPoolExecutor(max_workers=_THREAD_CONCURRENCY,),
+        options=options)
     prime_pb2_grpc.add_PrimeCheckerServicer_to_server(PrimeChecker(), server)
     server.add_insecure_port(bind_address)
     server.start()
@@ -109,11 +106,13 @@ def main():
             # NOTE: It is imperative that the worker subprocesses be forked before
             # any gRPC servers start up. See
             # https://github.com/grpc/grpc/issues/16001 for more details.
-            worker = multiprocessing.Process(target=_run_server, args=(bind_address,))
+            worker = multiprocessing.Process(
+                target=_run_server, args=(bind_address,))
             worker.start()
             workers.append(worker)
         for worker in workers:
             worker.join()
+
 
 if __name__ == '__main__':
     handler = logging.StreamHandler(sys.stdout)

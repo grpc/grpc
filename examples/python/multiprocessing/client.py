@@ -46,7 +46,7 @@ def _initialize_worker(server_address):
     _LOGGER.info('Initializing worker process.')
     _worker_channel_singleton = grpc.insecure_channel(server_address)
     _worker_stub_singleton = prime_pb2_grpc.PrimeCheckerStub(
-                                _worker_channel_singleton)
+        _worker_channel_singleton)
     atexit.register(_shutdown_worker)
 
 
@@ -57,15 +57,16 @@ def _shutdown_worker():
 
 
 def _run_worker_query(primality_candidate):
-    _LOGGER.info('Checking primality of {}.'.format(
-            primality_candidate))
+    _LOGGER.info('Checking primality of {}.'.format(primality_candidate))
     return _worker_stub_singleton.check(
-            prime_pb2.PrimeCandidate(candidate=primality_candidate))
+        prime_pb2.PrimeCandidate(candidate=primality_candidate))
 
 
 def _calculate_primes(server_address):
-    worker_pool = multiprocessing.Pool(processes=_PROCESS_COUNT,
-                    initializer=_initialize_worker, initargs=(server_address,))
+    worker_pool = multiprocessing.Pool(
+        processes=_PROCESS_COUNT,
+        initializer=_initialize_worker,
+        initargs=(server_address,))
     check_range = range(2, _MAXIMUM_CANDIDATE)
     primality = worker_pool.map(_run_worker_query, check_range)
     primes = zip(check_range, map(operator.attrgetter('isPrime'), primality))
@@ -74,10 +75,11 @@ def _calculate_primes(server_address):
 
 def main():
     msg = 'Determine the primality of the first {} integers.'.format(
-            _MAXIMUM_CANDIDATE)
+        _MAXIMUM_CANDIDATE)
     parser = argparse.ArgumentParser(description=msg)
-    parser.add_argument('server_address',
-                        help='The address of the server (e.g. localhost:50051)')
+    parser.add_argument(
+        'server_address',
+        help='The address of the server (e.g. localhost:50051)')
     args = parser.parse_args()
     primes = _calculate_primes(args.server_address)
     print(primes)
