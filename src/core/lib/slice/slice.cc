@@ -50,19 +50,6 @@ grpc_slice grpc_slice_copy(grpc_slice s) {
   return out;
 }
 
-grpc_slice grpc_slice_ref_internal(grpc_slice slice) {
-  if (slice.refcount) {
-    slice.refcount->vtable->ref(slice.refcount);
-  }
-  return slice;
-}
-
-void grpc_slice_unref_internal(grpc_slice slice) {
-  if (slice.refcount) {
-    slice.refcount->vtable->unref(slice.refcount);
-  }
-}
-
 /* Public API */
 grpc_slice grpc_slice_ref(grpc_slice slice) {
   return grpc_slice_ref_internal(slice);

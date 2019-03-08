@@ -223,7 +223,6 @@ class XdsLb : public LoadBalancingPolicy {
 
     Subchannel* CreateSubchannel(const grpc_channel_args& args) override;
     grpc_channel* CreateChannel(const char* target,
-                                grpc_client_channel_type type,
                                 const grpc_channel_args& args) override;
     void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
                      UniquePtr<SubchannelPicker> picker) override;
@@ -323,11 +322,6 @@ class XdsLb : public LoadBalancingPolicy {
 // XdsLb::Picker
 //
 
-// Destroy function used when embedding client stats in call context.
-void DestroyClientStats(void* arg) {
-  static_cast<XdsLbClientStats*>(arg)->Unref();
-}
-
 XdsLb::Picker::PickResult XdsLb::Picker::Pick(PickState* pick,
                                               grpc_error** error) {
   // TODO(roth): Add support for drop handling.
@@ -336,10 +330,7 @@ XdsLb::Picker::PickResult XdsLb::Picker::Pick(PickState* pick,
   // If pick succeeded, add client stats.
   if (result == PickResult::PICK_COMPLETE &&
       pick->connected_subchannel != nullptr && client_stats_ != nullptr) {
-    pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].value =
-        client_stats_->Ref().release();
-    pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].destroy =
-        DestroyClientStats;
+    // TODO(roth): Add support for client stats.
   }
   return result;
 }
@@ -354,10 +345,9 @@ Subchannel* XdsLb::Helper::CreateSubchannel(const grpc_channel_args& args) {
 }
 
 grpc_channel* XdsLb::Helper::CreateChannel(const char* target,
-                                           grpc_client_channel_type type,
                                            const grpc_channel_args& args) {
   if (parent_->shutting_down_) return nullptr;
-  return parent_->channel_control_helper()->CreateChannel(target, type, args);
+  return parent_->channel_control_helper()->CreateChannel(target, args);
 }
 
 void XdsLb::Helper::UpdateState(grpc_connectivity_state state,
@@ -1076,8 +1066,8 @@ void XdsLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
     char* uri_str;
     gpr_asprintf(&uri_str, "fake:///%s", server_name_);
     gpr_mu_lock(&lb_channel_mu_);
-    lb_channel_ = channel_control_helper()->CreateChannel(
-        uri_str, GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, *lb_channel_args);
+    lb_channel_ =
+        channel_control_helper()->CreateChannel(uri_str, *lb_channel_args);
     gpr_mu_unlock(&lb_channel_mu_);
     GPR_ASSERT(lb_channel_ != nullptr);
     gpr_free(uri_str);
@@ -1307,11 +1297,14 @@ grpc_channel_args* XdsLb::CreateChildPolicyArgsLocked() {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_ADDRESS_IS_BACKEND_FROM_XDS_LOAD_BALANCER),
           1),
+      // Inhibit client-side health checking, since the balancer does
+      // this for us.
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1),
   };
-  grpc_channel_args* args = grpc_channel_args_copy_and_add_and_remove(
+  return grpc_channel_args_copy_and_add_and_remove(
       args_, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), args_to_add,
       GPR_ARRAY_SIZE(args_to_add));
-  return args;
 }
 
 void XdsLb::CreateChildPolicyLocked(const char* name, Args args) {
