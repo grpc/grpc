@@ -1422,6 +1422,15 @@ static void perform_stream_op_locked(void* stream_op,
   on_complete->next_data.scratch = CLOSURE_BARRIER_FIRST_REF_BIT;
   on_complete->error_data.error = GRPC_ERROR_NONE;
 
+  // Cache these bits locally here.  If a batch includes only send ops,
+  // then the on_complete callback may be invoked before we look at
+  // these bits, and surface/call.cc may try to reuse the batch struct
+  // in another thread before we check these bits, thus causing a TSAN
+  // failure.
+  const bool has_recv_initial_metadata = op->recv_initial_metadata;
+  const bool has_recv_message = op->recv_message;
+  const bool has_recv_trailing_metadata = op->recv_trailing_metadata;
+
   if (op->cancel_stream) {
     GRPC_STATS_INC_HTTP2_OP_CANCEL();
     grpc_chttp2_cancel_stream(t, s, op_payload->cancel_stream.cancel_error);
@@ -1616,7 +1625,7 @@ static void perform_stream_op_locked(void* stream_op,
     }
   }
 
-  if (op->recv_initial_metadata) {
+  if (has_recv_initial_metadata) {
     GRPC_STATS_INC_HTTP2_OP_RECV_INITIAL_METADATA();
     GPR_ASSERT(s->recv_initial_metadata_ready == nullptr);
     s->recv_initial_metadata_ready =
@@ -1632,7 +1641,7 @@ static void perform_stream_op_locked(void* stream_op,
     grpc_chttp2_maybe_complete_recv_initial_metadata(t, s);
   }
 
-  if (op->recv_message) {
+  if (has_recv_message) {
     GRPC_STATS_INC_HTTP2_OP_RECV_MESSAGE();
     size_t before = 0;
     GPR_ASSERT(s->recv_message_ready == nullptr);
@@ -1657,7 +1666,7 @@ static void perform_stream_op_locked(void* stream_op,
     }
   }
 
-  if (op->recv_trailing_metadata) {
+  if (has_recv_trailing_metadata) {
     GRPC_STATS_INC_HTTP2_OP_RECV_TRAILING_METADATA();
     GPR_ASSERT(s->collecting_stats == nullptr);
     s->collecting_stats = op_payload->recv_trailing_metadata.collect_stats;
