@@ -2577,7 +2577,8 @@ static void read_action_locked(void* tp, grpc_error* error) {
   grpc_slice_buffer_reset_and_unref_internal(&t->read_buffer);
 
   if (keep_reading) {
-    grpc_endpoint_read(t->ep, &t->read_buffer, &t->read_action_locked);
+    const bool urgent = t->goaway_error != GRPC_ERROR_NONE;
+    grpc_endpoint_read(t->ep, &t->read_buffer, &t->read_action_locked, urgent);
     grpc_chttp2_act_on_flowctl_action(t->flow_control->MakeAction(), t,
                                       nullptr);
     GRPC_CHTTP2_UNREF_TRANSPORT(t, "keep_reading");
