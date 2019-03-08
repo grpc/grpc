@@ -47,6 +47,10 @@ namespace internal {
 class ServerAsyncStreamingInterface;
 }  // namespace internal
 
+namespace experimental {
+class CallbackGenericService;
+}  // namespace experimental
+
 class ServerInterface : public internal::CallHook {
  public:
   virtual ~ServerInterface() {}
@@ -114,6 +118,25 @@ class ServerInterface : public internal::CallHook {
   /// Register a generic service. This call does not take ownership of the
   /// service. The service must exist for the lifetime of the Server instance.
   virtual void RegisterAsyncGenericService(AsyncGenericService* service) = 0;
+
+  /// NOTE: class experimental_registration_interface is not part of the public
+  /// API of this class
+  /// TODO(vjpai): Move these contents to public API when no longer experimental
+  class experimental_registration_interface {
+   public:
+    virtual ~experimental_registration_interface() {}
+    /// May not be abstract since this is a post-1.0 API addition
+    virtual void RegisterCallbackGenericService(
+        experimental::CallbackGenericService* service) {}
+  };
+
+  /// NOTE: The function experimental_registration() is not stable public API.
+  /// It is a view to the experimental components of this class. It may be
+  /// changed or removed at any time. May not be abstract since this is a
+  /// post-1.0 API addition
+  virtual experimental_registration_interface* experimental_registration() {
+    return nullptr;
+  }
 
   /// Tries to bind \a server to the given \a addr.
   ///
