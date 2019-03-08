@@ -68,7 +68,7 @@ g_stands_for = "gold"
 
 core_version = "7.0.0"
 
-version = "1.19.0"
+version = "1.19.1"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
