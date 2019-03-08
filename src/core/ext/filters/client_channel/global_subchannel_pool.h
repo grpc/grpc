@@ -26,10 +26,6 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
-// This number was picked pseudo-randomly and could probably be tuned for
-// performance reasons.
-constexpr size_t kUnusedSubchannelsInlinedSize = 4;
-
 namespace grpc_core {
 
 // The global subchannel pool. It shares subchannels among channels. There
@@ -71,11 +67,13 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   static void TestOnlyStartSweep();
 
  private:
+  // This initial size was picked pseudo-randomly and could probably be tuned
+  // for performance reasons.
+  using UnusedSubchanels = InlinedVector<Subchannel*, 4>;
+
   class Sweeper;
 
-  void UnregisterUnusedSubchannels(
-      const InlinedVector<Subchannel*, kUnusedSubchannelsInlinedSize>&
-          unused_subchannels);
+  void UnregisterUnusedSubchannels(const UnusedSubchanels& unused_subchannels);
 
   // The singleton instance. (It's a pointer to RefCountedPtr so that this
   // non-local static object can be trivially destructible.)

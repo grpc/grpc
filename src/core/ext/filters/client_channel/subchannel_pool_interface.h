@@ -26,6 +26,9 @@
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 
+// The subchannel pool to reuse subchannels.
+#define GRPC_ARG_SUBCHANNEL_POOL "grpc.subchannel_pool"
+
 namespace grpc_core {
 
 class Subchannel;
@@ -48,12 +51,6 @@ class SubchannelKey {
   int Cmp(const SubchannelKey& other) const;
 
  private:
-  // Initializes the subchannel key with the given \a args and the function to
-  // copy channel args.
-  void Init(
-      const grpc_channel_args* args,
-      grpc_channel_args* (*copy_channel_args)(const grpc_channel_args* args));
-
   const grpc_channel_args* args_;
 };
 
@@ -69,6 +66,8 @@ class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
   // Registers a subchannel against a key. Returns the subchannel registered
   // with \a key, which may be different from \a constructed because we reuse
   // (instead of update) any existing subchannel already registered with \a key.
+  // Sets the subchannel pool in the subchannel if the subchannel is responsible
+  // to unregister itself when it's not used by anyone.
   virtual Subchannel* RegisterSubchannel(SubchannelKey* key,
                                          Subchannel* constructed) GRPC_ABSTRACT;
 

@@ -213,6 +213,11 @@ class Subchannel {
 
   grpc_pollset_set* pollset_set() const { return pollset_set_; }
 
+  void set_subchannel_pool(
+      RefCountedPtr<SubchannelPoolInterface> subchannel_pool) {
+    subchannel_pool_ = std::move(subchannel_pool);
+  }
+
   // Polls the current connectivity state of the subchannel.
   grpc_connectivity_state CheckConnectivity(grpc_error** error,
                                             bool inhibit_health_checking);

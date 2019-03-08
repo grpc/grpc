@@ -581,7 +581,10 @@ Subchannel::Subchannel(SubchannelKey* key, grpc_connector* connector,
     gpr_free(addr);
     addr = new_address;
   }
-  static const char* keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS};
+  // Remove the subchannel pool arg to break the circular reference between the
+  // subchannel pool and the subchannel, if any.
+  static const char* keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS,
+                                         GRPC_ARG_SUBCHANNEL_POOL};
   grpc_arg new_arg = CreateSubchannelAddressArg(addr);
   gpr_free(addr);
   args_ = grpc_channel_args_copy_and_add_and_remove(
@@ -646,29 +649,15 @@ Subchannel* Subchannel::Create(grpc_connector* connector,
                                const grpc_channel_args* args) {
   SubchannelPoolInterface* subchannel_pool =
       SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(args);
-  grpc_channel_args* new_args =
-      SubchannelPoolInterface::RemoveSubchannelPoolArg(args);
-  SubchannelKey* key = New<SubchannelKey>(new_args);
+  SubchannelKey* key = New<SubchannelKey>(args);
   GPR_ASSERT(subchannel_pool != nullptr);
   Subchannel* c = subchannel_pool->FindSubchannel(key);
   if (c != nullptr) {
     Delete(key);
-    grpc_channel_args_destroy(new_args);
     return c;
   }
-  c = New<Subchannel>(key, connector, new_args);
-  grpc_channel_args_destroy(new_args);
-  // Try to register the subchannel before setting the subchannel pool.
-  // Otherwise, in case of a registration race, unreffing c in
-  // RegisterSubchannel() will cause c to be tried to be unregistered, while
-  // its key maps to a different subchannel.
-  Subchannel* registered = subchannel_pool->RegisterSubchannel(key, c);
-  // If the global subchannel pool is used, don't record it so that we don't
-  // proactively unregister from it.
-  if (registered == c &&
-      subchannel_pool != GlobalSubchannelPool::instance_raw())
-    c->subchannel_pool_ = subchannel_pool->Ref();
-  return registered;
+  c = New<Subchannel>(key, connector, args);
+  return subchannel_pool->RegisterSubchannel(key, c);
 }
 
 Subchannel* Subchannel::Ref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {

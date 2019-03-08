@@ -20,16 +20,29 @@
 
 #include "src/core/ext/filters/client_channel/local_subchannel_pool.h"
 
+#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/lib/gpr/env.h"
 
 namespace grpc_core {
 
 LocalSubchannelPool::LocalSubchannelPool() {
+  // Start backup polling as long as the poll strategy is not specified "none".
+  char* s = gpr_getenv("GRPC_POLL_STRATEGY");
+  if (s == nullptr || strcmp(s, "none") != 0) {
+    pollset_set_ = grpc_pollset_set_create();
+    grpc_client_channel_start_backup_polling(pollset_set_);
+  }
+  gpr_free(s);
   subchannel_map_ = grpc_avl_create(&subchannel_avl_vtable_);
 }
 
 LocalSubchannelPool::~LocalSubchannelPool() {
   grpc_avl_unref(subchannel_map_, nullptr);
+  if (pollset_set_ != nullptr) {
+    grpc_client_channel_stop_backup_polling(pollset_set_);
+    grpc_pollset_set_destroy(pollset_set_);
+  }
 }
 
 Subchannel* LocalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
@@ -45,6 +58,7 @@ Subchannel* LocalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
     // There hasn't been such subchannel. Add one.
     subchannel_map_ = grpc_avl_add(subchannel_map_, New<SubchannelKey>(*key),
                                    constructed, nullptr);
+    constructed->set_subchannel_pool(Ref());
     c = constructed;
   }
   return c;

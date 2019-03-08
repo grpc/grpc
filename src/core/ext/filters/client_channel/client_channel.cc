@@ -31,7 +31,6 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
