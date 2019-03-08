@@ -126,10 +126,9 @@ static event_engine_factory g_factories[] = {
     {ENGINE_HEAD_CUSTOM, nullptr},        {ENGINE_HEAD_CUSTOM, nullptr},
     {ENGINE_HEAD_CUSTOM, nullptr},        {ENGINE_HEAD_CUSTOM, nullptr},
     {"epollex", grpc_init_epollex_linux}, {"epoll1", grpc_init_epoll1_linux},
-    {"poll", grpc_init_poll_posix},       {"poll-cv", grpc_init_poll_cv_posix},
-    {"none", init_non_polling},           {ENGINE_TAIL_CUSTOM, nullptr},
+    {"poll", grpc_init_poll_posix},       {"none", init_non_polling},
     {ENGINE_TAIL_CUSTOM, nullptr},        {ENGINE_TAIL_CUSTOM, nullptr},
-    {ENGINE_TAIL_CUSTOM, nullptr},
+    {ENGINE_TAIL_CUSTOM, nullptr},        {ENGINE_TAIL_CUSTOM, nullptr},
 };
 
 static void add(const char* beg, const char* end, char*** ss, size_t* ns) {
