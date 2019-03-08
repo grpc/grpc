@@ -41,7 +41,7 @@ PYTHON=$VIRTUAL_ENV/bin/python
 
 function at_least_one_installs() {
   for file in "$@"; do
-    if "$PYTHON" -m pip install "$file"; then
+    if "$PYTHON" -m pip install --require-hashes "$file"; then
       return 0
     fi
   done
