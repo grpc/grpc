@@ -1,8 +1,10 @@
 """Generates and compiles C++ grpc stubs from proto_library rules."""
 
 load("//bazel:generate_cc.bzl", "generate_cc")
+load("@build_stack_rules_proto//python:python_grpc_library.bzl", "python_grpc_library")
+load("@build_stack_rules_proto//python:python_proto_library.bzl", "python_proto_library")
 
-def cc_grpc_library(name, srcs, deps, proto_only, well_known_protos, generate_mocks = False, use_external = False, **kwargs):
+def cc_grpc_library(name, srcs, deps, proto_only, well_known_protos, generate_mocks = False, use_external = False, generate_python = False, **kwargs):
   """Generates C++ grpc classes from a .proto file.
 
   Assumes the generated classes will be used in cc_api_version = 2.
@@ -23,10 +25,19 @@ def cc_grpc_library(name, srcs, deps, proto_only, well_known_protos, generate_mo
     fail("Only one srcs value supported", "srcs")
 
   proto_target = "_" + name + "_only"
+  py_proto_target = "py_" + name
   codegen_target = "_" + name + "_codegen"
   codegen_grpc_target = "_" + name + "_grpc_codegen"
   proto_deps = ["_" + dep + "_only" for dep in deps if dep.find(':') == -1]
   proto_deps += [dep.split(':')[0] + ':' + "_" + dep.split(':')[1] + "_only" for dep in deps if dep.find(':') != -1]
+
+  if well_known_protos:
+    proto_deps.extend([
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:timestamp_proto",
+        "@com_google_protobuf//:wrappers_proto",
+    ])
 
   native.proto_library(
       name = proto_target,
@@ -43,6 +54,13 @@ def cc_grpc_library(name, srcs, deps, proto_only, well_known_protos, generate_mo
   )
 
   if not proto_only:
+    if generate_python:
+      python_grpc_library(
+          name = py_proto_target,
+          deps = [proto_target],
+          has_services = True
+      )
+
     plugin = "@com_github_grpc_grpc//:grpc_cpp_plugin"
     generate_cc(
         name = codegen_grpc_target,
@@ -62,6 +80,13 @@ def cc_grpc_library(name, srcs, deps, proto_only, well_known_protos, generate_mo
         **kwargs
     )
   else:
+    if generate_python:
+      python_proto_library(
+          name = py_proto_target,
+          deps = [proto_target],
+          has_services = True
+      )
+
     native.cc_library(
         name = name,
         srcs = [":" + codegen_target],

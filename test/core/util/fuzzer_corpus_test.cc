@@ -70,12 +70,6 @@ class ExampleGenerator
     if (examples_.empty()) {
       if (!FLAGS_file.empty()) examples_.push_back(FLAGS_file);
       if (!FLAGS_directory.empty()) {
-        char* test_srcdir = gpr_getenv("TEST_SRCDIR");
-        if (test_srcdir != nullptr) {
-          FLAGS_directory = test_srcdir +
-                            std::string("/com_github_grpc_grpc/") +
-                            FLAGS_directory;
-        }
         DIR* dp;
         struct dirent* ep;
         dp = opendir(FLAGS_directory.c_str());
@@ -92,7 +86,6 @@ class ExampleGenerator
           perror("Couldn't open the directory");
           abort();
         }
-        gpr_free(test_srcdir);
       }
     }
   }

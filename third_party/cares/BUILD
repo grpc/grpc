@@ -1,3 +1,5 @@
+licenses(["notice"])  # MIT
+
 exports_files([
     "ares_build.h",
     "cares.BUILD",

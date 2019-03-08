@@ -1,5 +1,4 @@
-load("@grpc_python_dependencies//:requirements.bzl", "requirement")
-load("@org_pubref_rules_protobuf//python:rules.bzl", "py_proto_library")
+load("@build_stack_rules_proto//python:python_grpc_library.bzl", "python_grpc_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -12,22 +11,13 @@ genrule(
     cmd = "cp $< $@",
 )
 
-py_proto_library(
-    name = "py_health_proto",
-    protos = [":mv_health_proto",],
-    with_grpc = True,
-    deps = [
-        requirement('protobuf'),
-    ],
+proto_library(
+    name = "health_proto",
+    srcs = [":health.proto"],
 )
 
-py_library(
+python_grpc_library(
     name = "grpc_health",
-    srcs = ["health.py",],
-    deps = [
-        ":py_health_proto",
-        "//src/python/grpcio/grpc:grpcio",
-    ],
-    imports=["../../",],
+    deps = [":health_proto"],
+    has_services = True
 )
-

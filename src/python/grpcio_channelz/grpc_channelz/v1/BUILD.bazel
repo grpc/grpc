@@ -1,5 +1,4 @@
-load("@grpc_python_dependencies//:requirements.bzl", "requirement")
-load("@org_pubref_rules_protobuf//python:rules.bzl", "py_proto_library")
+load("@build_stack_rules_proto//python:python_grpc_library.bzl", "python_grpc_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -8,31 +7,23 @@ genrule(
     srcs = [
         "//src/proto/grpc/channelz:channelz_proto_file",
     ],
-    outs = ["channelz.proto",],
+    outs = ["channelz.proto"],
     cmd = "cp $< $@",
 )
 
-py_proto_library(
-    name = "py_channelz_proto",
-    protos = ["mv_channelz_proto",],
-    imports = [
-        "external/com_google_protobuf/src/",
-    ],
-    inputs = [
-        "@com_google_protobuf//:well_known_protos",
-    ],
-    with_grpc = True,
+proto_library(
+    name = "channelz_proto",
+    srcs = [":channelz.proto"],
     deps = [
-        requirement('protobuf'),
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:timestamp_proto",
+        "@com_google_protobuf//:wrappers_proto",
     ],
 )
 
-py_library(
+python_grpc_library(
     name = "grpc_channelz",
-    srcs = ["channelz.py",],
-    deps = [
-        ":py_channelz_proto",
-        "//src/python/grpcio/grpc:grpcio",
-    ],
-    imports=["../../",],
+    deps = [":channelz_proto"],
+    has_services = True,
 )
