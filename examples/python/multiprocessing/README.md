@@ -30,8 +30,7 @@ _PROCESS_COUNT = multiprocessing.cpu_count()
 
 On the server side, we detect the number of CPUs available on the system and
 spawn exactly that many child processes. If we spin up fewer, we won't be taking
-full advantage of the hardware resources available. If we spin up more, then the
-kernel will have to multiplex the processes on the available CPUs.
+full advantage of the hardware resources available.
 
 ## Running the Example
 
