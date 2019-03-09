@@ -32,8 +32,13 @@ TraceFlag grpc_subchannel_pool_trace(false, "subchannel_pool");
 SubchannelKey::SubchannelKey(const grpc_channel_args* args) {
   // Remove the subchannel pool arg to break the circular reference between the
   // subchannel pool and the subchannel key, if any.
-  args_ =
-      grpc_channel_args_remove_and_normalize(args, GRPC_ARG_SUBCHANNEL_POOL);
+  static const char* args_to_remove[] = {
+      GRPC_ARG_SUBCHANNEL_POOL,
+  };
+  grpc_channel_args* new_args = grpc_channel_args_copy_and_remove(
+      args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove));
+  args_ = grpc_channel_args_normalize(new_args);
+  grpc_channel_args_destroy(new_args);
 }
 
 SubchannelKey::~SubchannelKey() {

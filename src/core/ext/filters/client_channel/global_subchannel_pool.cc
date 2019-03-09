@@ -72,7 +72,9 @@ class GlobalSubchannelPool::Sweeper : public InternallyRefCounted<Sweeper> {
     // The next sweep is scheduled relative to the time that the current run
     // ends. This ensures that we will wait for a long enough period before the
     // next sweep, so that we don't burden the CPU too much when sweeping takes
-    // a long time.
+    // a long time. The trade-off here is that if a sweep takes too long, unused
+    // subchannels may actually stick around longer than the configured sweep
+    // interval.
     const grpc_millis next_sweep_time =
         ExecCtx::Get()->Now() + sweep_interval_ms_;
     MutexLock lock(&mu_);
@@ -116,7 +118,7 @@ class GlobalSubchannelPool::Sweeper : public InternallyRefCounted<Sweeper> {
   grpc_millis sweep_interval_ms_ = kDefaultSweepIntervalMs;
   grpc_timer next_sweep_timer_;
   bool shutdown_ = false;
-  gpr_mu mu_;  // Protect next_sweep_timer_.
+  gpr_mu mu_;
 };
 
 GlobalSubchannelPool::GlobalSubchannelPool() {

@@ -366,22 +366,13 @@ class Subchannel::ConnectedSubchannelStateWatcher
             }
             c->connected_subchannel_.reset();
             c->connected_subchannel_watcher_.reset();
-            if (c->LastStrongRef() && c->subchannel_pool_ == nullptr) {
-              self->last_connectivity_state_ = GRPC_CHANNEL_IDLE;
-              c->SetConnectivityStateLocked(GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
-                                            "reset");
-              grpc_connectivity_state_set(&c->state_and_health_tracker_,
-                                          GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
-                                          "reset");
-            } else {
-              self->last_connectivity_state_ = GRPC_CHANNEL_TRANSIENT_FAILURE;
-              c->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                            GRPC_ERROR_REF(error),
-                                            "reflect_child");
-              grpc_connectivity_state_set(
-                  &c->state_and_health_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
-                  GRPC_ERROR_REF(error), "reflect_child");
-            }
+            self->last_connectivity_state_ = GRPC_CHANNEL_TRANSIENT_FAILURE;
+            c->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                          GRPC_ERROR_REF(error),
+                                          "reflect_child");
+            grpc_connectivity_state_set(&c->state_and_health_tracker_,
+                                        GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                        GRPC_ERROR_REF(error), "reflect_child");
             c->backoff_begun_ = false;
             c->backoff_.Reset();
             c->MaybeStartConnectingLocked();
@@ -676,15 +667,6 @@ void Subchannel::Unref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
       1 GRPC_SUBCHANNEL_REF_MUTATE_PURPOSE("STRONG_UNREF"));
   if ((old_refs & STRONG_REF_MASK) == (1 << INTERNAL_REF_BITS)) {
     Disconnect();
-  }
-  {
-    MutexLock lock(&mu_);
-    if ((old_refs & STRONG_REF_MASK) == (2 << INTERNAL_REF_BITS) &&
-        connected_subchannel_ == nullptr && subchannel_pool_ == nullptr) {
-      SetConnectivityStateLocked(GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE, "reset");
-      grpc_connectivity_state_set(&state_and_health_tracker_, GRPC_CHANNEL_IDLE,
-                                  GRPC_ERROR_NONE, "reset");
-    }
   }
   GRPC_SUBCHANNEL_WEAK_UNREF(this, "strong-unref");
 }
