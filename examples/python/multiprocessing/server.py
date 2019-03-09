@@ -20,14 +20,14 @@ from __future__ import print_function
 from concurrent import futures
 import contextlib
 import datetime
-import grpc
 import logging
 import math
 import multiprocessing
-import os
 import time
 import socket
 import sys
+
+import grpc
 
 import prime_pb2
 import prime_pb2_grpc
@@ -50,7 +50,7 @@ def is_prime(n):
 class PrimeChecker(prime_pb2_grpc.PrimeCheckerServicer):
 
     def check(self, request, context):
-        _LOGGER.info('Determining primality of {}'.format(request.candidate))
+        _LOGGER.info('Determining primality of %s', request.candidate)
         return prime_pb2.Primality(isPrime=is_prime(request.candidate))
 
 
@@ -99,7 +99,7 @@ def _reserve_port():
 def main():
     with _reserve_port() as port:
         bind_address = '[::]:{}'.format(port)
-        _LOGGER.info("Binding to '{}'".format(bind_address))
+        _LOGGER.info("Binding to '%s'", bind_address)
         sys.stdout.flush()
         workers = []
         for _ in range(_PROCESS_COUNT):

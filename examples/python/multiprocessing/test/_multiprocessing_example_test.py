@@ -13,14 +13,13 @@
 # limitations under the License.
 """Test for multiprocessing example."""
 
-import datetime
+import ast
 import logging
 import math
 import os
 import re
 import subprocess
 import tempfile
-import time
 import unittest
 
 _BINARY_DIR = os.path.realpath(
@@ -63,7 +62,7 @@ class MultiprocessingExampleTest(unittest.TestCase):
         client_process.wait()
         server_process.terminate()
         client_stdout.seek(0)
-        results = eval(client_stdout.read().strip().split('\n')[-1])
+        results = ast.literal_eval(client_stdout.read().strip().split('\n')[-1])
         values = tuple(result[0] for result in results)
         self.assertSequenceEqual(range(2, 10000), values)
         for result in results:

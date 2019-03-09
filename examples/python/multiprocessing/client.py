@@ -19,13 +19,12 @@ from __future__ import print_function
 
 import argparse
 import atexit
-import grpc
 import logging
 import multiprocessing
 import operator
-import os
-import time
 import sys
+
+import grpc
 
 import prime_pb2
 import prime_pb2_grpc
@@ -34,20 +33,12 @@ _PROCESS_COUNT = 8
 _MAXIMUM_CANDIDATE = 10000
 
 # Each worker process initializes a single channel after forking.
+# It's regrettable, but to ensure that each subprocess only has to instantiate
+# a single channel to be reused across all RPCs, we use globals.
 _worker_channel_singleton = None
 _worker_stub_singleton = None
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def _initialize_worker(server_address):
-    global _worker_channel_singleton
-    global _worker_stub_singleton
-    _LOGGER.info('Initializing worker process.')
-    _worker_channel_singleton = grpc.insecure_channel(server_address)
-    _worker_stub_singleton = prime_pb2_grpc.PrimeCheckerStub(
-        _worker_channel_singleton)
-    atexit.register(_shutdown_worker)
 
 
 def _shutdown_worker():
@@ -56,8 +47,18 @@ def _shutdown_worker():
         _worker_channel_singleton.stop()
 
 
+def _initialize_worker(server_address):
+    global _worker_channel_singleton  # pylint: disable=global-statement
+    global _worker_stub_singleton  # pylint: disable=global-statement
+    _LOGGER.info('Initializing worker process.')
+    _worker_channel_singleton = grpc.insecure_channel(server_address)
+    _worker_stub_singleton = prime_pb2_grpc.PrimeCheckerStub(
+        _worker_channel_singleton)
+    atexit.register(_shutdown_worker)
+
+
 def _run_worker_query(primality_candidate):
-    _LOGGER.info('Checking primality of {}.'.format(primality_candidate))
+    _LOGGER.info('Checking primality of %s.', primality_candidate)
     return _worker_stub_singleton.check(
         prime_pb2.PrimeCandidate(candidate=primality_candidate))
 
