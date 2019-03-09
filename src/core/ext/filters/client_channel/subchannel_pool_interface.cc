@@ -22,8 +22,6 @@
 
 #include "src/core/lib/gpr/useful.h"
 
-// The subchannel pool to reuse subchannels.
-#define GRPC_ARG_SUBCHANNEL_POOL "grpc.subchannel_pool"
 // The subchannel key ID that is only used in test to make each key unique.
 #define GRPC_ARG_SUBCHANNEL_KEY_TEST_ONLY_ID "grpc.subchannel_key_test_only_id"
 
@@ -32,7 +30,10 @@ namespace grpc_core {
 TraceFlag grpc_subchannel_pool_trace(false, "subchannel_pool");
 
 SubchannelKey::SubchannelKey(const grpc_channel_args* args) {
-  Init(args, grpc_channel_args_normalize);
+  // Remove the subchannel pool arg to break the circular reference between the
+  // subchannel pool and the subchannel key, if any.
+  args_ =
+      grpc_channel_args_remove_and_normalize(args, GRPC_ARG_SUBCHANNEL_POOL);
 }
 
 SubchannelKey::~SubchannelKey() {
@@ -40,23 +41,17 @@ SubchannelKey::~SubchannelKey() {
 }
 
 SubchannelKey::SubchannelKey(const SubchannelKey& other) {
-  Init(other.args_, grpc_channel_args_copy);
+  args_ = grpc_channel_args_copy(other.args_);
 }
 
 SubchannelKey& SubchannelKey::operator=(const SubchannelKey& other) {
   grpc_channel_args_destroy(const_cast<grpc_channel_args*>(args_));
-  Init(other.args_, grpc_channel_args_copy);
+  args_ = grpc_channel_args_copy(other.args_);
   return *this;
 }
 
 int SubchannelKey::Cmp(const SubchannelKey& other) const {
   return grpc_channel_args_compare(args_, other.args_);
-}
-
-void SubchannelKey::Init(
-    const grpc_channel_args* args,
-    grpc_channel_args* (*copy_channel_args)(const grpc_channel_args* args)) {
-  args_ = copy_channel_args(args);
 }
 
 namespace {

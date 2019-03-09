@@ -31,7 +31,6 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
@@ -409,7 +408,6 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   chand->deadline_checking_enabled =
       grpc_deadline_checking_enabled(args->channel_args);
   chand->interested_parties = grpc_pollset_set_create();
-  grpc_client_channel_start_backup_polling(chand->interested_parties);
   // Record max per-RPC retry buffer size.
   const grpc_arg* arg = grpc_channel_args_find(
       args->channel_args, GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE);
@@ -505,7 +503,6 @@ static void cc_destroy_channel_elem(grpc_channel_element* elem) {
   chand->info_service_config_json.reset();
   chand->retry_throttle_data.reset();
   chand->method_params_table.reset();
-  grpc_client_channel_stop_backup_polling(chand->interested_parties);
   grpc_pollset_set_destroy(chand->interested_parties);
   GRPC_COMBINER_UNREF(chand->combiner, "client_channel");
   GRPC_ERROR_UNREF(chand->disconnect_error);
