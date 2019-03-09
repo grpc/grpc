@@ -20,7 +20,7 @@ This example calculates the first 10,000 prime numbers as an RPC. We instantiate
 one server per subprocess, balancing requests between the servers using the
 [`SO_REUSEPORT`](https://lwn.net/Articles/542629/) socket option. Note that this
 option is not available in `manylinux1` distributions, which are, as of the time
-of writing, the only gRPC Python wheels available on PyPi. To take advantage of this
+of writing, the only gRPC Python wheels available on PyPI. To take advantage of this
 feature, you'll need to build from source, either using bazel (as we do for
 these examples) or via pip, using `pip install grpcio --no-binary grpcio`.
 
