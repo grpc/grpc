@@ -625,6 +625,9 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
       GRPC_ERROR_UNREF(state_error);
       return;
     }
+    grpc_pollset_set_del_pollset_set(
+        parent_->child_policy_->interested_parties(),
+        parent_->interested_parties());
     MutexLock lock(&parent_->child_policy_mu_);
     parent_->child_policy_ = std::move(parent_->pending_child_policy_);
   } else if (!CalledByCurrentChild()) {
@@ -1271,6 +1274,14 @@ void GrpcLb::ShutdownLocked() {
   }
   if (fallback_timer_callback_pending_) {
     grpc_timer_cancel(&lb_fallback_timer_);
+  }
+  if (child_policy_ != nullptr) {
+    grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
+                                     interested_parties());
+  }
+  if (pending_child_policy_ != nullptr) {
+    grpc_pollset_set_del_pollset_set(
+        pending_child_policy_->interested_parties(), interested_parties());
   }
   {
     MutexLock lock(&child_policy_mu_);
