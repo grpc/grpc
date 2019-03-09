@@ -35,8 +35,8 @@ import prime_pb2_grpc
 _LOGGER = logging.getLogger(__name__)
 
 _ONE_DAY = datetime.timedelta(days=1)
-_PROCESS_COUNT = 8
-_THREAD_CONCURRENCY = 10
+_PROCESS_COUNT = multiprocessing.cpu_count()
+_THREAD_CONCURRENCY = _PROCESS_COUNT
 
 
 def is_prime(n):

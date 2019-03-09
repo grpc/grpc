@@ -14,11 +14,26 @@ However, calling `fork` without `exec` in your python process is supported
 *before* any gRPC servers have been instantiated. Application developers can
 take advantage of this to parallelize their CPU-intensive operations.
 
-## Running the Example
+## Calculating Prime Numbers with Multiple Processes
 
 This example calculates the first 10,000 prime numbers as an RPC. We instantiate
 one server per subprocess, balancing requests between the servers using the
-[`SO_REUSEPORT`](https://lwn.net/Articles/542629/) socket option.
+[`SO_REUSEPORT`](https://lwn.net/Articles/542629/) socket option. Note that this
+option is not available in `manylinux1` distributions, which are, as of the time
+of writing, the only gRPC Python wheels available on PyPi. To take advantage of this
+feature, you'll need to build from source, either using bazel (as we do for
+these examples) or via pip, using `pip install grpcio --no-binary grpcio`.
+
+```python
+_PROCESS_COUNT = multiprocessing.cpu_count()
+```
+
+On the server side, we detect the number of CPUs available on the system and
+spawn exactly that many child processes. If we spin up fewer, we won't be taking
+full advantage of the hardware resources available. If we spin up more, then the
+kernel will have to multiplex the processes on the available CPUs.
+
+## Running the Example
 
 To run the server,
 [ensure `bazel` is installed](https://docs.bazel.build/versions/master/install.html)
@@ -37,6 +52,8 @@ Note the address at which the server is running. For example,
 [PID 107508] Starting new server.
 ...
 ```
+
+Note that several servers have been started, each with its own PID.
 
 Now, start the client by running
 
