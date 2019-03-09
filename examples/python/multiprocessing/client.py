@@ -84,7 +84,6 @@ def main():
     args = parser.parse_args()
     primes = _calculate_primes(args.server_address)
     print(primes)
-    sys.stdout.flush()
 
 
 if __name__ == '__main__':
