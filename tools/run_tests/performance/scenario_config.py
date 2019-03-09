@@ -168,8 +168,6 @@ def _ping_pong_scenario(name,
     scenario['client_config']['payload_config'] = _payload_type(
         use_generic_payload, req_size, resp_size)
 
-    # Optimization target of 'throughput' does not work well with epoll1 polling
-    # engine. Use the default value of 'blend'
     optimization_target = 'throughput'
 
     if unconstrained_client:

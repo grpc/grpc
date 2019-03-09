@@ -135,17 +135,17 @@ const char* grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "Number of polling syscalls (epoll_wait, poll, etc) made by this process",
     "Number of sleeping syscalls made by this process",
     "How many polling wakeups were performed by the process (only valid for "
-    "epoll1 right now)",
+    "epollex right now)",
     "How many times was a polling wakeup requested without an active poller "
-    "(only valid for epoll1 right now)",
+    "(only valid for epollex right now)",
     "How many times was the same polling worker awoken repeatedly before "
-    "waking up (only valid for epoll1 right now)",
+    "waking up (only valid for epollex right now)",
     "How many times was an eventfd used as the wakeup vector for a polling "
-    "wakeup (only valid for epoll1 right now)",
+    "wakeup (only valid for epollex right now)",
     "How many times was a condition variable used as the wakeup vector for a "
-    "polling wakeup (only valid for epoll1 right now)",
+    "polling wakeup (only valid for epollex right now)",
     "How many times could a polling wakeup be satisfied by keeping the waking "
-    "thread awake? (only valid for epoll1 right now)",
+    "thread awake? (only valid for epollex right now)",
     "Number of epoll_ctl calls made (only valid for epollex right now)",
     "Number of epoll_ctl calls skipped because the fd was cached as already "
     "being added.  (only valid for epollex right now)",

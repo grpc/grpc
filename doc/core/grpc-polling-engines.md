@@ -21,8 +21,7 @@ There are multiple polling engine implementations depending on the OS and the OS
 - Linux:
 
   - **`epollex`** (default but requires kernel version >= 4.5),
-  - `epoll1` (If `epollex` is not available and glibc version >= 2.9)
-  - `poll` (If kernel does not have epoll support)
+  - `poll` (If kernel does not have epoll support or kernel version < 4.5)
 - Mac: **`poll`** (default)
 - Windows: (no name)
 - One-off polling engines:
@@ -106,20 +105,6 @@ __grpc_pollset_set__
 
 ## Polling Engine Implementations
 
-### epoll1
-
-![image](../images/grpc-epoll1.png)
-
-Code at `src/core/lib/iomgr/ev_epoll1_posix.cc`
-
-- The logic to choose a designated poller is quite complicated. Pollsets are internally sharded into what are called `pollset_neighborhood` (a structure internal to `epoll1` polling engine implementation). `grpc_pollset_workers` that call `grpc_pollset_work` on a given pollset are all queued in a linked-list against the `grpc_pollset`. The head of the linked list is called "root worker"
-
-- There are as many neighborhoods as the number of cores. A pollset is put in a neighborhood based on the CPU core of the root worker thread. When picking the next designated poller, we always try to find another worker on the current pollset. If there are no more workers in the current pollset, a `pollset_neighborhood` listed is scanned to pick the next pollset and worker that could be the new designated poller.
-  - NOTE: There is room to tune this implementation. All we really need is good way to maintain a list of `grpc_pollset_workers` with a way to group them per-pollset (needed to implement `grpc_pollset_kick` semantics) and a way randomly select a new designated poller
-
-- See [`begin_worker()`](https://github.com/grpc/grpc/blob/v1.15.1/src/core/lib/iomgr/ev_epoll1_linux.cc#L729) function to see how a designated poller is chosen. Similarly [`end_worker()`](https://github.com/grpc/grpc/blob/v1.15.1/src/core/lib/iomgr/ev_epoll1_linux.cc#L916) function is called by the worker that was just out of `epoll_wait()` and will have to choose a new designated poller)
-
-
 ### epollex
 
 ![image](../images/grpc-epollex.png)
@@ -146,7 +131,7 @@ Code at `src/core/lib/iomgr/ev_epollex_posix.cc`
   - The implementation is further complicated by the fact that poll() is level triggered (just keep this in mind in case you wonder why the code at `src/core/lib/iomgr/ev_poll_posix.cc` is written a certain/seemingly complicated way :))
 
 - **Polling engine on Windows**: Windows polling engine looks nothing like other polling engines
-  - Unlike the grpc polling engines for Unix systems (epollex, epoll1 and poll) Windows endpoint implementation and polling engine implementations are very closely tied together
+  - Unlike the grpc polling engines for Unix systems (epollex and poll) Windows endpoint implementation and polling engine implementations are very closely tied together
   - Windows endpoint read/write API implementations use the Windows IO API which require specifying an [I/O completion port](https://docs.microsoft.com/en-us/windows/desktop/fileio/i-o-completion-ports)
-  - In Windows polling engine’s grpc_pollset_work() implementation, ONE of the threads is chosen to wait on the I/O completion port while other threads wait on a condition variable (much like the turnstile polling in epollex/epoll1)
+  - In Windows polling engine’s grpc_pollset_work() implementation, ONE of the threads is chosen to wait on the I/O completion port while other threads wait on a condition variable (much like the turnstile polling in epollex)
 
