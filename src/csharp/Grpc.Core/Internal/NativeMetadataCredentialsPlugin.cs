@@ -46,9 +46,10 @@ namespace Grpc.Core.Internal
             get { return credentials; }
         }
 
-        private void HandleUniversalCallback(IntPtr arg0, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4, IntPtr arg5)
+        private int HandleUniversalCallback(IntPtr arg0, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4, IntPtr arg5)
         {
             NativeMetadataInterceptorHandler(arg0, arg1, arg2, arg3, arg4 != IntPtr.Zero);
+            return 0;
         }
 
         private void NativeMetadataInterceptorHandler(IntPtr serviceUrlPtr, IntPtr methodNamePtr, IntPtr callbackPtr, IntPtr userDataPtr, bool isDestroy)

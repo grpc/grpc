@@ -1012,7 +1012,7 @@ grpcsharp_composite_call_credentials_create(grpc_call_credentials* creds1,
 
 /* Native callback dispatcher */
 
-typedef void(GPR_CALLTYPE* grpcsharp_native_callback_dispatcher_func)(
+typedef int(GPR_CALLTYPE* grpcsharp_native_callback_dispatcher_func)(
     void* tag, void* arg0, void* arg1, void* arg2, void* arg3, void* arg4, void *arg5);
 
 static grpcsharp_native_callback_dispatcher_func native_callback_dispatcher = NULL;

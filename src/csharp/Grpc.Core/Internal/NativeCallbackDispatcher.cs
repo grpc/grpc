@@ -27,9 +27,9 @@ using Grpc.Core.Logging;
 
 namespace Grpc.Core.Internal
 {
-    internal delegate void UniversalNativeCallback(IntPtr arg0, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4, IntPtr arg5);
+    internal delegate int UniversalNativeCallback(IntPtr arg0, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4, IntPtr arg5);
 
-    internal delegate void NativeCallbackDispatcherCallback(IntPtr tag, IntPtr arg0, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4, IntPtr arg5);
+    internal delegate int NativeCallbackDispatcherCallback(IntPtr tag, IntPtr arg0, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4, IntPtr arg5);
 
     internal class NativeCallbackDispatcher
     {
@@ -81,7 +81,7 @@ namespace Grpc.Core.Internal
         }
 
         [MonoPInvokeCallback(typeof(NativeCallbackDispatcherCallback))]
-        private static void HandleDispatcherCallback(IntPtr tag, IntPtr arg0, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4, IntPtr arg5)
+        private static int HandleDispatcherCallback(IntPtr tag, IntPtr arg0, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4, IntPtr arg5)
         {
             try
             {
@@ -89,13 +89,15 @@ namespace Grpc.Core.Internal
                 if (!TryGetCallback(tag, out callback))
                 {
                     Logger.Error("No native callback handler registered for tag {0}.", tag);
+                    return 0;
                 }
-                callback(arg0, arg1, arg2, arg3, arg4, arg5);
+                return callback(arg0, arg1, arg2, arg3, arg4, arg5);
             }
             catch (Exception e)
             {
                 // eat the exception, we must not throw when inside callback from native code.
                 Logger.Error(e, "Caught exception inside callback from native callback.");
+                return 0;
             }
         }
     }
@@ -103,9 +105,8 @@ namespace Grpc.Core.Internal
     internal class NativeCallbackRegistration : IDisposable
     {
         readonly IntPtr tag;
-        readonly Action disposeAction;
 
-        public NativeCallbackRegistration(IntPtr tag, Action disposeAction)
+        public NativeCallbackRegistration(IntPtr tag)
         {
             this.tag = tag;
         }
