@@ -21,6 +21,7 @@ grpc_package(name = "health", visibility = "public")
 grpc_proto_library(
     name = "health_proto",
     srcs = ["health.proto"],
+    generate_python = True,
 )
 
 filegroup(

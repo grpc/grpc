@@ -1,23 +1,11 @@
-load("@build_stack_rules_proto//python:python_grpc_library.bzl", "python_grpc_library")
-
 package(default_visibility = ["//visibility:public"])
 
-genrule(
-    name = "mv_health_proto",
-    srcs = [
-        "//src/proto/grpc/health/v1:health_proto_file",
-    ],
-    outs = ["health.proto",],
-    cmd = "cp $< $@",
-)
-
-proto_library(
-    name = "health_proto",
-    srcs = [":health.proto"],
-)
-
-python_grpc_library(
+py_library(
     name = "grpc_health",
-    deps = [":health_proto"],
-    has_services = True
+    srcs = ["health.py",],
+    deps = [
+        "//src/proto/grpc/health/v1:py_health_proto",
+        "//src/python/grpcio/grpc:grpcio",
+    ],
+    imports=["../../",],
 )
