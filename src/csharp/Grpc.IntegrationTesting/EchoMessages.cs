@@ -864,7 +864,7 @@ namespace Grpc.Testing {
       }
       if (other.debugInfo_ != null) {
         if (debugInfo_ == null) {
-          debugInfo_ = new global::Grpc.Testing.DebugInfo();
+          DebugInfo = new global::Grpc.Testing.DebugInfo();
         }
         DebugInfo.MergeFrom(other.DebugInfo);
       }
@@ -876,7 +876,7 @@ namespace Grpc.Testing {
       }
       if (other.expectedError_ != null) {
         if (expectedError_ == null) {
-          expectedError_ = new global::Grpc.Testing.ErrorStatus();
+          ExpectedError = new global::Grpc.Testing.ErrorStatus();
         }
         ExpectedError.MergeFrom(other.ExpectedError);
       }
@@ -939,9 +939,9 @@ namespace Grpc.Testing {
           }
           case 90: {
             if (debugInfo_ == null) {
-              debugInfo_ = new global::Grpc.Testing.DebugInfo();
+              DebugInfo = new global::Grpc.Testing.DebugInfo();
             }
-            input.ReadMessage(debugInfo_);
+            input.ReadMessage(DebugInfo);
             break;
           }
           case 96: {
@@ -954,9 +954,9 @@ namespace Grpc.Testing {
           }
           case 114: {
             if (expectedError_ == null) {
-              expectedError_ = new global::Grpc.Testing.ErrorStatus();
+              ExpectedError = new global::Grpc.Testing.ErrorStatus();
             }
-            input.ReadMessage(expectedError_);
+            input.ReadMessage(ExpectedError);
             break;
           }
           case 120: {
@@ -1104,7 +1104,7 @@ namespace Grpc.Testing {
       }
       if (other.param_ != null) {
         if (param_ == null) {
-          param_ = new global::Grpc.Testing.RequestParams();
+          Param = new global::Grpc.Testing.RequestParams();
         }
         Param.MergeFrom(other.Param);
       }
@@ -1125,9 +1125,9 @@ namespace Grpc.Testing {
           }
           case 18: {
             if (param_ == null) {
-              param_ = new global::Grpc.Testing.RequestParams();
+              Param = new global::Grpc.Testing.RequestParams();
             }
-            input.ReadMessage(param_);
+            input.ReadMessage(Param);
             break;
           }
         }
@@ -1452,7 +1452,7 @@ namespace Grpc.Testing {
       }
       if (other.param_ != null) {
         if (param_ == null) {
-          param_ = new global::Grpc.Testing.ResponseParams();
+          Param = new global::Grpc.Testing.ResponseParams();
         }
         Param.MergeFrom(other.Param);
       }
@@ -1473,9 +1473,9 @@ namespace Grpc.Testing {
           }
           case 18: {
             if (param_ == null) {
-              param_ = new global::Grpc.Testing.ResponseParams();
+              Param = new global::Grpc.Testing.ResponseParams();
             }
-            input.ReadMessage(param_);
+            input.ReadMessage(Param);
             break;
           }
         }
