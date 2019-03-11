@@ -191,6 +191,14 @@ class Proxy : public ::grpc::testing::EchoTestService::Service {
     return stub_->Echo(client_context.get(), *request, response);
   }
 
+  //  Status ResponseStream(ServerContext* context, const EchoRequest* request,
+  //                        ServerWriter<EchoResponse>* writer) override {
+  //    EchoResponse response;
+  //      response.set_message("a quick response");
+  //      writer->Write(response);
+  //    return Status::OK;
+  //  }
+
  private:
   std::unique_ptr<::grpc::testing::EchoTestService::Stub> stub_;
 };
@@ -1147,18 +1155,22 @@ TEST_P(End2endTest, ClientCancelsResponseStream) {
   context.TryCancel();
 
   // The cancellation races with responses, so there might be zero or
-  // one responses pending, read till failure
-
+  // one responses pending, read till failure.
   if (stream->Read(&response)) {
+    // If read succeeds, the cancellation races with the status from the server,
+    // so the final status could be either of CANCELLED or OK depending on who
+    // won the race.
+    Status s = stream->Finish();
+    EXPECT_GE(grpc::StatusCode::CANCELLED, s.error_code());
     EXPECT_EQ(response.message(), request.message() + "2");
-    // Since we have cancelled, we expect the next attempt to read to fail
+    // Since we have cancelled, we expect the next attempt to read to fail.
     EXPECT_FALSE(stream->Read(&response));
+  } else {
+    // If read fails, which means cancellation is done first, the final status
+    // must be CANCELLED.
+    Status s = stream->Finish();
+    EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
   }
-
-  Status s = stream->Finish();
-  // The final status could be either of CANCELLED or OK depending on
-  // who won the race.
-  EXPECT_GE(grpc::StatusCode::CANCELLED, s.error_code());
   if (GetParam().use_interceptors) {
     EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
   }
