@@ -34,6 +34,10 @@ netsh interface ip add dnsservers "Local Area Connection 8" 8.8.4.4 index=3
 @rem Needed for big_query_utils
 python -m pip install google-api-python-client
 
+@rem C# prerequisites: Install dotnet SDK
+powershell -File src\csharp\install_dotnet_sdk.ps1
+set PATH=%LOCALAPPDATA%\Microsoft\dotnet;%PATH%
+
 @rem Disable some unwanted dotnet options
 set NUGET_XMLDOC_MODE=skip
 set DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
