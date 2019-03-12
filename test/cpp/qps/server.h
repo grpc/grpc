@@ -34,6 +34,11 @@
 #include "test/cpp/qps/usage_timer.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
+namespace grpc_impl {
+
+class ResourceQuota;
+}
+
 namespace grpc {
 namespace testing {
 
