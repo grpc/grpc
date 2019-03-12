@@ -191,6 +191,15 @@ typedef struct {
      try to get the roots set by grpc_override_ssl_default_roots. Eventually,
      if all these fail, it will try to get the roots from a well-known place on
      disk (in the grpc install directory).
+
+     gRPC has implemented root cache if the underlying OpenSSL library supports
+     it. The gRPC root certificates cache is only applicable on the default
+     root certificates, which is used when this parameter is nullptr. If user
+     provides their own pem_root_certs, when creating an SSL credential object,
+     gRPC would not be able to cache it, and each subchannel will generate a
+     copy of the root store. So it is recommended to avoid providing large room
+     pem with pem_root_certs parameter to avoid excessive memory consumption,
+     particularly on mobile platforms such as iOS.
    - pem_key_cert_pair is a pointer on the object containing client's private
      key and certificate chain. This parameter can be NULL if the client does
      not have such a key/cert pair.
