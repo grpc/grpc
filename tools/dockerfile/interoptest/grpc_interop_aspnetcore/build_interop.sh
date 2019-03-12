@@ -13,13 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Source this rc script to prepare the environment for MacOS interop
-# builds. This rc script must be used in the root directory of gRPC
-# and is expected to be used before prepare_build_macos_rc
+# Builds Grpc.AspNetCore.Server interop server in a base image.
+set -e
 
-# Set up gRPC-Go and gRPC-Java to test
-git clone --recursive https://github.com/grpc/grpc-go ./../grpc-go
-git clone --recursive https://github.com/grpc/grpc-java ./../grpc-java
-git clone --recursive https://github.com/grpc/grpc-node ./../grpc-node
-git clone --recursive https://github.com/grpc/grpc-dart ./../grpc-dart
-git clone --recursive https://github.com/grpc/grpc-dotnet ./../grpc-dotnet
+mkdir -p /var/local/git
+git clone /var/local/jenkins/grpc-dotnet /var/local/git/grpc-dotnet
+
+# copy service account keys if available
+cp -r /var/local/jenkins/service_account $HOME || true
+
+cd /var/local/git/grpc-dotnet
+./build/get-grpc.sh
+
+cd testassets/InteropTestsWebsite
+dotnet build --configuration Debug
