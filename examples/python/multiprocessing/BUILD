@@ -15,13 +15,20 @@
 # limitations under the License.
 
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+load("@org_pubref_rules_protobuf//python:rules.bzl", "py_proto_library")
+
+py_proto_library(
+    name = "prime_proto",
+    protos = ["prime.proto",],
+)
 
 py_binary(
     name = "client",
     testonly = 1,
     srcs = ["client.py"],
     deps = [
-        "//src/python/grpcio/grpc:grpcio"
+        "//src/python/grpcio/grpc:grpcio",
+        ":prime_proto",
     ],
     default_python_version = "PY3",
 )
@@ -31,7 +38,8 @@ py_binary(
     testonly = 1,
     srcs = ["server.py"],
     deps = [
-        "//src/python/grpcio/grpc:grpcio"
+        "//src/python/grpcio/grpc:grpcio",
+        ":prime_proto"
     ] + select({
         "//conditions:default": [requirement("futures")],
         "//:python3": [],
