@@ -386,17 +386,13 @@ class GrpclbEnd2endTest : public ::testing::Test {
     for (auto& backend : backends_) backend->Start(server_host_);
   }
 
-  void StartBackend(size_t index) {
-    backends_[index]->Start(server_host_);
-  }
+  void StartBackend(size_t index) { backends_[index]->Start(server_host_); }
 
   void ShutdownAllBackends() {
     for (auto& backend : backends_) backend->Shutdown();
   }
 
-  void ShutdownBackend(size_t index) {
-    backends_[index]->Shutdown();
-  }
+  void ShutdownBackend(size_t index) { backends_[index]->Shutdown(); }
 
   void ResetStub(int fallback_timeout = 0,
                  const grpc::string& expected_targets = "") {
@@ -459,9 +455,9 @@ class GrpclbEnd2endTest : public ::testing::Test {
     ++*num_total;
   }
 
-  std::tuple<int, int, int> WaitForAllBackends(
-      int num_requests_multiple_of = 1, size_t start_index = 0,
-      size_t stop_index = 0) {
+  std::tuple<int, int, int> WaitForAllBackends(int num_requests_multiple_of = 1,
+                                               size_t start_index = 0,
+                                               size_t stop_index = 0) {
     int num_ok = 0;
     int num_failure = 0;
     int num_drops = 0;
@@ -967,8 +963,7 @@ TEST_F(SingleBalancerTest, SecureNamingDeathTest) {
   ASSERT_DEATH(
       {
         ResetStub(0, kApplicationTargetName_ + ";lb");
-        SetNextResolution(
-            {AddressData{balancers_[0]->port_, true, "woops"}});
+        SetNextResolution({AddressData{balancers_[0]->port_, true, "woops"}});
         channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(1));
       },
       "");
@@ -1617,8 +1612,7 @@ TEST_F(SingleBalancerTest, Drop) {
   EXPECT_EQ(kNumRpcsPerAddress * num_of_drop_addresses, num_drops);
   // Each backend should have gotten 100 requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
-    EXPECT_EQ(kNumRpcsPerAddress,
-              backends_[i]->service_.request_count());
+    EXPECT_EQ(kNumRpcsPerAddress, backends_[i]->service_.request_count());
   }
   // The balancer got a single request.
   EXPECT_EQ(1U, balancers_[0]->service_.request_count());
@@ -1688,8 +1682,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Vanilla) {
   CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
   // Each backend should have gotten 100 requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
-    EXPECT_EQ(kNumRpcsPerAddress,
-              backends_[i]->service_.request_count());
+    EXPECT_EQ(kNumRpcsPerAddress, backends_[i]->service_.request_count());
   }
   balancers_[0]->service_.NotifyDoneWithServerlists();
   // The balancer got a single request.
@@ -1746,11 +1739,10 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, BalancerRestart) {
   }
   // Now restart the balancer, this time pointing to all backends.
   balancers_[0]->Start(server_host_);
-  ScheduleResponseForBalancer(
-      0,
-      BalancerServiceImpl::BuildResponseForBackends(
-          GetBackendPorts(kNumBackendsFirstPass), {}),
-      0);
+  ScheduleResponseForBalancer(0,
+                              BalancerServiceImpl::BuildResponseForBackends(
+                                  GetBackendPorts(kNumBackendsFirstPass), {}),
+                              0);
   // Wait for queries to start going to one of the new backends.
   // This tells us that we're now using the new serverlist.
   do {
@@ -1813,8 +1805,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
   EXPECT_EQ(kNumRpcsPerAddress * num_of_drop_addresses, num_drops);
   // Each backend should have gotten 100 requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
-    EXPECT_EQ(kNumRpcsPerAddress,
-              backends_[i]->service_.request_count());
+    EXPECT_EQ(kNumRpcsPerAddress, backends_[i]->service_.request_count());
   }
   balancers_[0]->service_.NotifyDoneWithServerlists();
   // The balancer got a single request.
