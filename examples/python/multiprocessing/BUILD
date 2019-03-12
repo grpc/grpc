@@ -20,6 +20,7 @@ load("@org_pubref_rules_protobuf//python:rules.bzl", "py_proto_library")
 py_proto_library(
     name = "prime_proto",
     protos = ["prime.proto",],
+    deps = [requirement("protobuf")],
 )
 
 py_binary(
