@@ -142,6 +142,8 @@ class BackendServiceImpl : public BackendService {
     return status;
   }
 
+  void Start() {}
+
   void Shutdown() {}
 
   std::set<grpc::string> clients() {
@@ -278,10 +280,18 @@ class BalancerServiceImpl : public BalancerService {
     responses_and_delays_.push_back(std::make_pair(response, send_after_ms));
   }
 
-  void Shutdown() {
-    NotifyDoneWithServerlists();
+  void Start() {
+    {
+      std::lock_guard<std::mutex> lock(mu_);
+      serverlist_ready_ = false;
+      load_report_ready_ = false;
+    }
     responses_and_delays_.clear();
     client_stats_.Reset();
+  }
+
+  void Shutdown() {
+    NotifyDoneWithServerlists();
   }
 
   static LoadBalanceResponse BuildResponseForBackends(
@@ -615,6 +625,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
       gpr_log(GPR_INFO, "starting %s server on port %d", type_.c_str(), port_);
       GPR_ASSERT(!running_);
       running_ = true;
+      service_.Start();
       std::mutex mu;
       // We need to acquire the lock here in order to prevent the notify_one
       // by ServerThread::Start from firing before the wait below is hit.
@@ -1196,6 +1207,116 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
   EXPECT_EQ(1U, balancers_[0]->service_.response_count());
 }
 
+TEST_F(SingleBalancerTest,
+       FallbackAfterStartup_LoseContactWithBalancerThenBackends) {
+  // First two backends are fallback, last two are pointed to by balancer.
+  const size_t kNumFallbackBackends = 2;
+  const size_t kNumBalancerBackends = backends_.size() - kNumFallbackBackends;
+  std::vector<AddressData> addresses;
+  for (size_t i = 0; i < kNumFallbackBackends; ++i) {
+    addresses.emplace_back(AddressData{backends_[i]->port_, false, ""});
+  }
+  for (size_t i = 0; i < balancers_.size(); ++i) {
+    addresses.emplace_back(AddressData{balancers_[i]->port_, true, ""});
+  }
+  SetNextResolution(addresses);
+  ScheduleResponseForBalancer(
+      0,
+      BalancerServiceImpl::BuildResponseForBackends(
+          GetBackendPorts(kNumFallbackBackends), {}),
+      0);
+  // Try to connect.
+  channel_->GetState(true /* try_to_connect */);
+  WaitForAllBackends(1 /* num_requests_multiple_of */,
+                     kNumFallbackBackends /* start_index */);
+  // Stop balancer.  RPCs should continue going to backends from balancer.
+  balancers_[0]->Shutdown();
+  CheckRpcSendOk(100 * kNumBalancerBackends);
+  for (size_t i = kNumFallbackBackends; i < backends_.size(); ++i) {
+    EXPECT_EQ(100UL, backends_[i]->service_.request_count());
+  }
+  // Stop backends from balancer.  This should put us in fallback mode.
+  for (size_t i = kNumFallbackBackends; i < backends_.size(); ++i) {
+    ShutdownBackend(i);
+  }
+  WaitForAllBackends(1 /* num_requests_multiple_of */, 0 /* start_index */,
+                     kNumFallbackBackends /* stop_index */);
+  // Restart the backends from the balancer.  We should *not* start
+  // sending traffic back to them at this point (although the behavior
+  // in xds may be different).
+  for (size_t i = kNumFallbackBackends; i < backends_.size(); ++i) {
+    StartBackend(i);
+  }
+  CheckRpcSendOk(100 * kNumBalancerBackends);
+  for (size_t i = 0; i < kNumFallbackBackends; ++i) {
+    EXPECT_EQ(100UL, backends_[i]->service_.request_count());
+  }
+  // Now start the balancer again.  This should cause us to exit
+  // fallback mode.
+  balancers_[0]->Start(server_host_);
+  ScheduleResponseForBalancer(
+      0,
+      BalancerServiceImpl::BuildResponseForBackends(
+          GetBackendPorts(kNumFallbackBackends), {}),
+      0);
+  WaitForAllBackends(1 /* num_requests_multiple_of */,
+                     kNumFallbackBackends /* start_index */);
+}
+
+TEST_F(SingleBalancerTest,
+       FallbackAfterStartup_LoseContactWithBackendsThenBalancer) {
+  // First two backends are fallback, last two are pointed to by balancer.
+  const size_t kNumFallbackBackends = 2;
+  const size_t kNumBalancerBackends = backends_.size() - kNumFallbackBackends;
+  std::vector<AddressData> addresses;
+  for (size_t i = 0; i < kNumFallbackBackends; ++i) {
+    addresses.emplace_back(AddressData{backends_[i]->port_, false, ""});
+  }
+  for (size_t i = 0; i < balancers_.size(); ++i) {
+    addresses.emplace_back(AddressData{balancers_[i]->port_, true, ""});
+  }
+  SetNextResolution(addresses);
+  ScheduleResponseForBalancer(
+      0,
+      BalancerServiceImpl::BuildResponseForBackends(
+          GetBackendPorts(kNumFallbackBackends), {}),
+      0);
+  // Try to connect.
+  channel_->GetState(true /* try_to_connect */);
+  WaitForAllBackends(1 /* num_requests_multiple_of */,
+                     kNumFallbackBackends /* start_index */);
+  // Stop backends from balancer.  Since we are still in contact with
+  // the balancer at this point, RPCs should be failing.
+  for (size_t i = kNumFallbackBackends; i < backends_.size(); ++i) {
+    ShutdownBackend(i);
+  }
+  CheckRpcSendFailure();
+  // Stop balancer.  This should put us in fallback mode.
+  balancers_[0]->Shutdown();
+  WaitForAllBackends(1 /* num_requests_multiple_of */, 0 /* start_index */,
+                     kNumFallbackBackends /* stop_index */);
+  // Restart the backends from the balancer.  We should *not* start
+  // sending traffic back to them at this point (although the behavior
+  // in xds may be different).
+  for (size_t i = kNumFallbackBackends; i < backends_.size(); ++i) {
+    StartBackend(i);
+  }
+  CheckRpcSendOk(100 * kNumBalancerBackends);
+  for (size_t i = 0; i < kNumFallbackBackends; ++i) {
+    EXPECT_EQ(100UL, backends_[i]->service_.request_count());
+  }
+  // Now start the balancer again.  This should cause us to exit
+  // fallback mode.
+  balancers_[0]->Start(server_host_);
+  ScheduleResponseForBalancer(
+      0,
+      BalancerServiceImpl::BuildResponseForBackends(
+          GetBackendPorts(kNumFallbackBackends), {}),
+      0);
+  WaitForAllBackends(1 /* num_requests_multiple_of */,
+                     kNumFallbackBackends /* start_index */);
+}
+
 TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerChannelFails) {
   const int kFallbackTimeoutMs = 10000 * grpc_test_slowdown_factor();
   ResetStub(kFallbackTimeoutMs);
@@ -1220,11 +1341,6 @@ TEST_F(SingleBalancerTest, BackendsRestart) {
   channel_->GetState(true /* try_to_connect */);
   // Send kNumRpcsPerAddress RPCs per server.
   CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
-  balancers_[0]->service_.NotifyDoneWithServerlists();
-  // The balancer got a single request.
-  EXPECT_EQ(1U, balancers_[0]->service_.request_count());
-  // and sent a single response.
-  EXPECT_EQ(1U, balancers_[0]->service_.response_count());
   // Stop backends.  RPCs should fail.
   ShutdownAllBackends();
   CheckRpcSendFailure();
@@ -1232,6 +1348,10 @@ TEST_F(SingleBalancerTest, BackendsRestart) {
   StartAllBackends();
   CheckRpcSendOk(1 /* times */, 1000 /* timeout_ms */,
                  true /* wait_for_ready */);
+  // The balancer got a single request.
+  EXPECT_EQ(1U, balancers_[0]->service_.request_count());
+  // and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->service_.response_count());
 }
 
 class UpdatesTest : public GrpclbEnd2endTest {
