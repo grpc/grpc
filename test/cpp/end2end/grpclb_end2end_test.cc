@@ -290,9 +290,7 @@ class BalancerServiceImpl : public BalancerService {
     client_stats_.Reset();
   }
 
-  void Shutdown() {
-    NotifyDoneWithServerlists();
-  }
+  void Shutdown() { NotifyDoneWithServerlists(); }
 
   static LoadBalanceResponse BuildResponseForBackends(
       const std::vector<int>& backend_ports,
@@ -1215,11 +1213,10 @@ TEST_F(SingleBalancerTest,
     addresses.emplace_back(AddressData{balancers_[i]->port_, true, ""});
   }
   SetNextResolution(addresses);
-  ScheduleResponseForBalancer(
-      0,
-      BalancerServiceImpl::BuildResponseForBackends(
-          GetBackendPorts(kNumFallbackBackends), {}),
-      0);
+  ScheduleResponseForBalancer(0,
+                              BalancerServiceImpl::BuildResponseForBackends(
+                                  GetBackendPorts(kNumFallbackBackends), {}),
+                              0);
   // Try to connect.
   channel_->GetState(true /* try_to_connect */);
   WaitForAllBackends(1 /* num_requests_multiple_of */,
@@ -1249,11 +1246,10 @@ TEST_F(SingleBalancerTest,
   // Now start the balancer again.  This should cause us to exit
   // fallback mode.
   balancers_[0]->Start(server_host_);
-  ScheduleResponseForBalancer(
-      0,
-      BalancerServiceImpl::BuildResponseForBackends(
-          GetBackendPorts(kNumFallbackBackends), {}),
-      0);
+  ScheduleResponseForBalancer(0,
+                              BalancerServiceImpl::BuildResponseForBackends(
+                                  GetBackendPorts(kNumFallbackBackends), {}),
+                              0);
   WaitForAllBackends(1 /* num_requests_multiple_of */,
                      kNumFallbackBackends /* start_index */);
 }
@@ -1271,11 +1267,10 @@ TEST_F(SingleBalancerTest,
     addresses.emplace_back(AddressData{balancers_[i]->port_, true, ""});
   }
   SetNextResolution(addresses);
-  ScheduleResponseForBalancer(
-      0,
-      BalancerServiceImpl::BuildResponseForBackends(
-          GetBackendPorts(kNumFallbackBackends), {}),
-      0);
+  ScheduleResponseForBalancer(0,
+                              BalancerServiceImpl::BuildResponseForBackends(
+                                  GetBackendPorts(kNumFallbackBackends), {}),
+                              0);
   // Try to connect.
   channel_->GetState(true /* try_to_connect */);
   WaitForAllBackends(1 /* num_requests_multiple_of */,
@@ -1303,11 +1298,10 @@ TEST_F(SingleBalancerTest,
   // Now start the balancer again.  This should cause us to exit
   // fallback mode.
   balancers_[0]->Start(server_host_);
-  ScheduleResponseForBalancer(
-      0,
-      BalancerServiceImpl::BuildResponseForBackends(
-          GetBackendPorts(kNumFallbackBackends), {}),
-      0);
+  ScheduleResponseForBalancer(0,
+                              BalancerServiceImpl::BuildResponseForBackends(
+                                  GetBackendPorts(kNumFallbackBackends), {}),
+                              0);
   WaitForAllBackends(1 /* num_requests_multiple_of */,
                      kNumFallbackBackends /* start_index */);
 }
