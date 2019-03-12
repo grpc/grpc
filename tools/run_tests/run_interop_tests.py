@@ -147,8 +147,8 @@ class CSharpLanguage:
 class CSharpCoreCLRLanguage:
 
     def __init__(self):
-        self.client_cwd = 'src/csharp/Grpc.IntegrationTesting.Client/bin/Debug/netcoreapp1.1'
-        self.server_cwd = 'src/csharp/Grpc.IntegrationTesting.Server/bin/Debug/netcoreapp1.1'
+        self.client_cwd = 'src/csharp/Grpc.IntegrationTesting.Client/bin/Debug/netcoreapp2.1'
+        self.server_cwd = 'src/csharp/Grpc.IntegrationTesting.Server/bin/Debug/netcoreapp2.1'
         self.safename = str(self)
 
     def client_cmd(self, args):
