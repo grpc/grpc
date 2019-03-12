@@ -405,7 +405,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
   void ResetStub(int fallback_timeout = 0,
                  const grpc::string& expected_targets = "") {
     ChannelArguments args;
-    args.SetGrpclbFallbackTimeout(fallback_timeout);
+    if (fallback_timeout > 0) args.SetGrpclbFallbackTimeout(fallback_timeout);
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());
     if (!expected_targets.empty()) {
@@ -1314,6 +1314,22 @@ TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerChannelFails) {
   addresses.emplace_back(AddressData{grpc_pick_unused_port_or_die(), true, ""});
   addresses.emplace_back(AddressData{backends_[0]->port_, false, ""});
   SetNextResolution(addresses);
+  // Send RPC with deadline less than the fallback timeout and make sure it
+  // succeeds.
+  CheckRpcSendOk(/* times */ 1, /* timeout_ms */ 1000,
+                 /* wait_for_ready */ false);
+}
+
+TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerCallFails) {
+  const int kFallbackTimeoutMs = 10000 * grpc_test_slowdown_factor();
+  ResetStub(kFallbackTimeoutMs);
+  // Return an unreachable balancer and one fallback backend.
+  std::vector<AddressData> addresses;
+  addresses.emplace_back(AddressData{balancers_[0]->port_, true, ""});
+  addresses.emplace_back(AddressData{backends_[0]->port_, false, ""});
+  SetNextResolution(addresses);
+  // Balancer drops call without sending a serverlist.
+  balancers_[0]->service_.NotifyDoneWithServerlists();
   // Send RPC with deadline less than the fallback timeout and make sure it
   // succeeds.
   CheckRpcSendOk(/* times */ 1, /* timeout_ms */ 1000,
