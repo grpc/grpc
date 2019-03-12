@@ -391,17 +391,13 @@ class XdsEnd2endTest : public ::testing::Test {
     for (auto& backend : backends_) backend->Start(server_host_);
   }
 
-  void StartBackend(size_t index) {
-    backends_[index]->Start(server_host_);
-  }
+  void StartBackend(size_t index) { backends_[index]->Start(server_host_); }
 
   void ShutdownAllBackends() {
     for (auto& backend : backends_) backend->Shutdown();
   }
 
-  void ShutdownBackend(size_t index) {
-    backends_[index]->Shutdown();
-  }
+  void ShutdownBackend(size_t index) { backends_[index]->Shutdown(); }
 
   void ResetStub(int fallback_timeout = 0,
                  const grpc::string& expected_targets = "") {
@@ -465,9 +461,9 @@ class XdsEnd2endTest : public ::testing::Test {
     ++*num_total;
   }
 
-  std::tuple<int, int, int> WaitForAllBackends(
-      int num_requests_multiple_of = 1, size_t start_index = 0,
-      size_t stop_index = 0) {
+  std::tuple<int, int, int> WaitForAllBackends(int num_requests_multiple_of = 1,
+                                               size_t start_index = 0,
+                                               size_t stop_index = 0) {
     int num_ok = 0;
     int num_failure = 0;
     int num_drops = 0;
@@ -752,8 +748,7 @@ TEST_F(SingleBalancerTest, SameBackendListedMultipleTimes) {
   // Send kNumRpcsPerAddress RPCs per server.
   CheckRpcSendOk(kNumRpcsPerAddress * ports.size());
   // Backend should have gotten 20 requests.
-  EXPECT_EQ(kNumRpcsPerAddress * 2,
-            backends_[0]->service_.request_count());
+  EXPECT_EQ(kNumRpcsPerAddress * 2, backends_[0]->service_.request_count());
   // And they should have come from a single client port, because of
   // subchannel sharing.
   EXPECT_EQ(1UL, backends_[0]->service_.clients().size());

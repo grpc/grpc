@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015 gRPC authors.
+# Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,12 +12,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Builds Grpc.AspNetCore.Server interop server in a base image.
+set -e
 
-set -ex
+mkdir -p /var/local/git
+git clone /var/local/jenkins/grpc-dotnet /var/local/git/grpc-dotnet
 
-cd "$(dirname "$0")/../../.."
+# copy service account keys if available
+cp -r /var/local/jenkins/service_account $HOME || true
 
-# needed to correctly locate testca
-cd src/csharp/Grpc.IntegrationTesting.QpsWorker/bin/Release/netcoreapp2.1
+cd /var/local/git/grpc-dotnet
+./build/get-grpc.sh
 
-dotnet exec Grpc.IntegrationTesting.QpsWorker.dll "$@"
+cd testassets/InteropTestsWebsite
+dotnet build --configuration Debug

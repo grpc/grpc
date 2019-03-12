@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015 gRPC authors.
+# Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,11 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+FROM mcr.microsoft.com/dotnet/core/sdk:3.0.100-preview3-stretch
 
-cd "$(dirname "$0")/../../.."
-
-# needed to correctly locate testca
-cd src/csharp/Grpc.IntegrationTesting.QpsWorker/bin/Release/netcoreapp2.1
-
-dotnet exec Grpc.IntegrationTesting.QpsWorker.dll "$@"
+# Define the default command.
+CMD ["bash"]
