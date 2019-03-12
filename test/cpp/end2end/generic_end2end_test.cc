@@ -52,6 +52,8 @@ void* tag(int i) { return (void*)static_cast<intptr_t>(i); }
 void verify_ok(CompletionQueue* cq, int i, bool expect_ok) {
   bool ok;
   void* got_tag;
+  gpr_log(GPR_INFO, "Verifying tag %d with expected ok %d", i,
+          static_cast<int>(expect_ok));
   EXPECT_TRUE(cq->Next(&got_tag, &ok));
   EXPECT_EQ(expect_ok, ok);
   EXPECT_EQ(tag(i), got_tag);
@@ -253,6 +255,58 @@ TEST_F(GenericEnd2endTest, SequentialUnaryRpcs) {
     EXPECT_EQ(send_response.message(), recv_response.message());
     EXPECT_TRUE(recv_status.ok());
   }
+}
+
+TEST_F(GenericEnd2endTest, EmptyUnaryRpc) {
+  ResetStub();
+  const grpc::string kMethodName("/grpc.cpp.test.util.EchoTestService/Echo");
+  EchoRequest recv_request;
+  EchoResponse send_response;
+  EchoResponse recv_response;
+  Status recv_status;
+
+  ClientContext cli_ctx;
+  GenericServerContext srv_ctx;
+  GenericServerAsyncReaderWriter stream(&srv_ctx);
+
+  // Send an empty byte buffer request
+  ByteBuffer cli_send_buffer;
+
+  // Use the same cq as server so that events can be polled in time.
+  std::unique_ptr<GenericClientAsyncResponseReader> call =
+      generic_stub_->PrepareUnaryCall(&cli_ctx, kMethodName, cli_send_buffer,
+                                      &cli_cq_);
+  call->StartCall();
+  ByteBuffer cli_recv_buffer;
+  call->Finish(&cli_recv_buffer, &recv_status, tag(1));
+  std::thread client_check([this] { client_ok(1); });
+
+  generic_service_.RequestCall(&srv_ctx, &stream, srv_cq_.get(), srv_cq_.get(),
+                               tag(4));
+
+  server_ok(4);
+  EXPECT_EQ(server_host_, srv_ctx.host().substr(0, server_host_.length()));
+  EXPECT_EQ(kMethodName, srv_ctx.method());
+
+  ByteBuffer srv_recv_buffer;
+  stream.Read(&srv_recv_buffer, tag(5));
+  server_ok(5);
+  EXPECT_TRUE(ParseFromByteBuffer(&srv_recv_buffer, &recv_request));
+
+  send_response.set_message(recv_request.message());
+  std::unique_ptr<ByteBuffer> srv_send_buffer =
+      SerializeToByteBuffer(&send_response);
+  stream.Write(*srv_send_buffer, tag(6));
+  server_ok(6);
+
+  stream.Finish(Status::OK, tag(7));
+  server_ok(7);
+
+  client_check.join();
+  EXPECT_EQ(cli_recv_buffer.Length(), 0u);
+  EXPECT_TRUE(ParseFromByteBuffer(&cli_recv_buffer, &recv_response));
+  EXPECT_EQ(send_response.message(), "");
+  EXPECT_TRUE(recv_status.ok());
 }
 
 // One ping, one pong.
