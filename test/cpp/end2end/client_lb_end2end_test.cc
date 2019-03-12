@@ -56,6 +56,7 @@
 #include "test/core/util/test_lb_policies.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 using grpc::testing::EchoRequest;
@@ -221,9 +222,11 @@ class ClientLbEnd2endTest : public ::testing::Test {
     response_generator_->SetFailureOnReresolution();
   }
 
-  std::vector<int> GetServersPorts() {
+  std::vector<int> GetServersPorts(size_t start_index = 0) {
     std::vector<int> ports;
-    for (const auto& server : servers_) ports.push_back(server->port_);
+    for (size_t i = start_index; i < servers_.size(); ++i) {
+      ports.push_back(servers_[i]->port_);
+    }
     return ports;
   }
 
@@ -895,6 +898,53 @@ TEST_F(ClientLbEnd2endTest, PickFirstIdleOnDisconnect) {
   EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_IDLE);
   servers_.clear();
+}
+
+TEST_F(ClientLbEnd2endTest, PickFirstPendingUpdateAndSelectedSubchannelFails) {
+  auto channel = BuildChannel("");  // pick_first is the default.
+  auto stub = BuildStub(channel);
+  // Create a number of servers, but only start 1 of them.
+  CreateServers(10);
+  StartServer(0);
+  // Initially resolve to first server and make sure it connects.
+  gpr_log(GPR_INFO, "Phase 1: Connect to first server.");
+  SetNextResolution({servers_[0]->port_});
+  CheckRpcSendOk(stub, DEBUG_LOCATION, true /* wait_for_ready */);
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
+  // Send a resolution update with the remaining servers, none of which are
+  // running yet, so the update will stay pending.  Note that it's important
+  // to have multiple servers here, or else the test will be flaky; with only
+  // one server, the pending subchannel list has already gone into
+  // TRANSIENT_FAILURE due to hitting the end of the list by the time we
+  // check the state.
+  gpr_log(GPR_INFO,
+          "Phase 2: Resolver update pointing to remaining "
+          "(not started) servers.");
+  SetNextResolution(GetServersPorts(1 /* start_index */));
+  // RPCs will continue to be sent to the first server.
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+  // Now stop the first server, so that the current subchannel list
+  // fails.  This should cause us to immediately swap over to the
+  // pending list, even though it's not yet connected.  The state should
+  // be set to CONNECTING, since that's what the pending subchannel list
+  // was doing when we swapped over.
+  gpr_log(GPR_INFO, "Phase 3: Stopping first server.");
+  servers_[0]->Shutdown();
+  WaitForChannelNotReady(channel.get());
+  // TODO(roth): This should always return CONNECTING, but it's flaky
+  // between that and TRANSIENT_FAILURE.  I suspect that this problem
+  // will go away once we move the backoff code out of the subchannel
+  // and into the LB policies.
+  EXPECT_THAT(channel->GetState(false),
+              ::testing::AnyOf(GRPC_CHANNEL_CONNECTING,
+                               GRPC_CHANNEL_TRANSIENT_FAILURE));
+  // Now start the second server.
+  gpr_log(GPR_INFO, "Phase 4: Starting second server.");
+  StartServer(1);
+  // The channel should go to READY state and RPCs should go to the
+  // second server.
+  WaitForChannelReady(channel.get());
+  WaitForServer(stub, 1, DEBUG_LOCATION, true /* ignore_failure */);
 }
 
 TEST_F(ClientLbEnd2endTest, RoundRobin) {
