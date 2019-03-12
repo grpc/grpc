@@ -48,6 +48,11 @@ const int kNumAsyncReceiveThreads = 50;
 const int kNumAsyncServerThreads = 50;
 const int kNumRpcs = 1000;  // Number of RPCs per thread
 
+namespace grpc_impl {
+
+class ResourceQuota;
+}
+
 namespace grpc {
 namespace testing {
 
