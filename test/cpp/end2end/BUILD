@@ -89,6 +89,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_windows"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -245,6 +246,9 @@ grpc_cc_test(
     size = "large",
     deps = [
         ":end2end_test_lib",
+        # DO NOT REMOVE THE grpc++ dependence below since the internal build
+        # system uses it to specialize targets
+        "//:grpc++",
     ],
 )
 
@@ -620,6 +624,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
