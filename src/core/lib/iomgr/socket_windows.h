@@ -122,6 +122,8 @@ extern DWORD grpc_wsa_socket_flags;
 
 void grpc_wsa_socket_flags_init();
 
+DWORD grpc_get_default_wsa_socket_flags();
+
 #endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_WINDOWS_H */

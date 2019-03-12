@@ -183,13 +183,15 @@ int grpc_ipv6_loopback_available(void) {
   return g_ipv6_loopback_available;
 }
 
+DWORD grpc_get_default_wsa_socket_flags() { return grpc_wsa_socket_flags; }
+
 void grpc_wsa_socket_flags_init() {
   grpc_wsa_socket_flags = WSA_FLAG_OVERLAPPED;
   /* WSA_FLAG_NO_HANDLE_INHERIT may be not supported on the older Windows
      versions, see
      https://msdn.microsoft.com/en-us/library/windows/desktop/ms742212(v=vs.85).aspx
      for details. */
-  SOCKET sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, 0, NULL,
+  SOCKET sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
                           grpc_wsa_socket_flags | WSA_FLAG_NO_HANDLE_INHERIT);
   if (sock != INVALID_SOCKET) {
     /* Windows 7, Windows 2008 R2 with SP1 or later */
