@@ -222,7 +222,6 @@ add_custom_target(plugins
   DEPENDS
   grpc_cpp_plugin
   grpc_csharp_plugin
-  grpc_node_plugin
   grpc_objective_c_plugin
   grpc_php_plugin
   grpc_python_plugin
@@ -4844,7 +4843,6 @@ endif (gRPC_BUILD_TESTS)
 add_library(grpc_plugin_support
   src/compiler/cpp_generator.cc
   src/compiler/csharp_generator.cc
-  src/compiler/node_generator.cc
   src/compiler/objective_c_generator.cc
   src/compiler/php_generator.cc
   src/compiler/python_generator.cc
@@ -13496,45 +13494,6 @@ target_link_libraries(grpc_linux_system_roots_test
 
 
 endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_CODEGEN)
-
-add_executable(grpc_node_plugin
-  src/compiler/node_plugin.cc
-)
-
-
-target_include_directories(grpc_node_plugin
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(grpc_node_plugin
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_plugin_support
-)
-
-
-
-if (gRPC_INSTALL)
-  install(TARGETS grpc_node_plugin EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
-
-endif (gRPC_BUILD_CODEGEN)
 if (gRPC_BUILD_CODEGEN)
 
 add_executable(grpc_objective_c_plugin

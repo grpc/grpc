@@ -1621,7 +1621,6 @@
       'sources': [
         'src/compiler/cpp_generator.cc',
         'src/compiler/csharp_generator.cc',
-        'src/compiler/node_generator.cc',
         'src/compiler/objective_c_generator.cc',
         'src/compiler/php_generator.cc',
         'src/compiler/python_generator.cc',
