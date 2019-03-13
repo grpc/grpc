@@ -1255,7 +1255,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   if (setsockopt(tcp->fd, SOL_TCP, TCP_INQ, &one, sizeof(one)) == 0) {
     tcp->inq_capable = true;
   } else {
-    gpr_log(GPR_INFO, "cannot set inq fd=%d errno=%d", tcp->fd, errno);
+    gpr_log(GPR_DEBUG, "cannot set inq fd=%d errno=%d", tcp->fd, errno);
     tcp->inq_capable = false;
   }
 #else
