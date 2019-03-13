@@ -322,6 +322,7 @@ namespace Grpc.Tools
             {
                 cmd.AddArg(proto.ItemSpec);
             }
+            cmd.AddSwitchMaybe("error_format", "msvs");
             return cmd.ToString();
         }
 
