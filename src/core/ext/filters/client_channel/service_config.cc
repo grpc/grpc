@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/transport/service_config.h"
+#include "src/core/ext/filters/client_channel/service_config.h"
 
 #include <string.h>
 
