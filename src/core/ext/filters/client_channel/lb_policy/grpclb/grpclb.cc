@@ -1407,9 +1407,8 @@ void GrpcLb::UpdateLocked(const grpc_channel_args& args,
     // Start watching the channel's connectivity state.  If the channel
     // goes into state TRANSIENT_FAILURE before the timer fires, we go into
     // fallback mode even if the fallback timeout has not elapsed.
-    grpc_channel_element* client_channel_elem =
-        grpc_channel_stack_last_element(
-            grpc_channel_get_channel_stack(lb_channel_));
+    grpc_channel_element* client_channel_elem = grpc_channel_stack_last_element(
+        grpc_channel_get_channel_stack(lb_channel_));
     GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
     // Ref held by callback.
     Ref(DEBUG_LOCATION, "watch_lb_channel_connectivity").release();
