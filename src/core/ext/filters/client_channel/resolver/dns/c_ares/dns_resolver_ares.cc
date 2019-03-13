@@ -299,28 +299,21 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     return;
   }
   if (r->addresses_ != nullptr) {
-    static const char* args_to_remove[1];
-    size_t num_args_to_remove = 0;
-    grpc_arg args_to_add[2];
-    size_t num_args_to_add = 0;
-    args_to_add[num_args_to_add++] =
-        CreateServerAddressListChannelArg(r->addresses_.get());
-    char* service_config_string = nullptr;
+    RefCountedPtr<ServiceConfig> service_config;
     if (r->service_config_json_ != nullptr) {
-      service_config_string = ChooseServiceConfig(r->service_config_json_);
+      char* service_config_string =
+          ChooseServiceConfig(r->service_config_json_);
       gpr_free(r->service_config_json_);
       if (service_config_string != nullptr) {
         GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
                              r, service_config_string);
-        args_to_remove[num_args_to_remove++] = GRPC_ARG_SERVICE_CONFIG;
-        args_to_add[num_args_to_add++] = grpc_channel_arg_string_create(
-            (char*)GRPC_ARG_SERVICE_CONFIG, service_config_string);
+        service_config = ServiceConfig::Create(service_config_string);
       }
+      gpr_free(service_config_string);
     }
-    r->result_handler()->ReturnResult(grpc_channel_args_copy_and_add_and_remove(
-        r->channel_args_, args_to_remove, num_args_to_remove, args_to_add,
-        num_args_to_add));
-    gpr_free(service_config_string);
+    r->result_handler()->ReturnResult(
+        Result(std::move(*r->addresses_), std::move(service_config),
+               grpc_channel_args_copy(r->channel_args_)));
     r->addresses_.reset();
     // Reset backoff state so that we start from the beginning when the
     // next request gets triggered.

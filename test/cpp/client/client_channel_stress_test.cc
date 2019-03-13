@@ -240,9 +240,8 @@ class ClientChannelStressTest {
       grpc_uri_destroy(lb_uri);
       gpr_free(lb_uri_str);
     }
-    grpc_arg fake_addresses = CreateServerAddressListChannelArg(&addresses);
-    grpc_channel_args fake_result = {1, &fake_addresses};
-    response_generator_->SetResponse(&fake_result);
+    response_generator_->SetResponse(
+        grpc_core::Resolver::Result(std::move(addresses), nullptr));
   }
 
   void KeepSendingRequests() {

@@ -64,9 +64,9 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   ~ForwardingLoadBalancingPolicy() override = default;
 
-  void UpdateLocked(const grpc_channel_args& args,
+  void UpdateLocked(Resolver::Result result,
                     RefCountedPtr<Config> lb_config) override {
-    delegate_->UpdateLocked(args, std::move(lb_config));
+    delegate_->UpdateLocked(std::move(result), std::move(lb_config));
   }
 
   void ExitIdleLocked() override { delegate_->ExitIdleLocked(); }

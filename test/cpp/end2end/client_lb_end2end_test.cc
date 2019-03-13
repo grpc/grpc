@@ -182,7 +182,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }
   }
 
-  grpc_channel_args* BuildFakeResults(const std::vector<int>& ports) {
+  grpc_core::Resolver::Result BuildFakeResults(const std::vector<int>& ports) {
     grpc_core::ServerAddressList addresses;
     for (const int& port : ports) {
       char* lb_uri_str;
@@ -195,25 +195,17 @@ class ClientLbEnd2endTest : public ::testing::Test {
       grpc_uri_destroy(lb_uri);
       gpr_free(lb_uri_str);
     }
-    const grpc_arg fake_addresses =
-        CreateServerAddressListChannelArg(&addresses);
-    grpc_channel_args* fake_results =
-        grpc_channel_args_copy_and_add(nullptr, &fake_addresses, 1);
-    return fake_results;
+    return grpc_core::Resolver::Result(std::move(addresses), nullptr);
   }
 
   void SetNextResolution(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
-    grpc_channel_args* fake_results = BuildFakeResults(ports);
-    response_generator_->SetResponse(fake_results);
-    grpc_channel_args_destroy(fake_results);
+    response_generator_->SetResponse(BuildFakeResults(ports));
   }
 
   void SetNextResolutionUponError(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
-    grpc_channel_args* fake_results = BuildFakeResults(ports);
-    response_generator_->SetReresolutionResponse(fake_results);
-    grpc_channel_args_destroy(fake_results);
+    response_generator_->SetReresolutionResponse(BuildFakeResults(ports));
   }
 
   void SetFailureOnReresolution() {

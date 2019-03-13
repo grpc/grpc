@@ -22,6 +22,8 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
+#include "src/core/ext/filters/client_channel/resolver.h"
+#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -29,7 +31,6 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/service_config.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount;
 
@@ -244,13 +245,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Returns the name of the LB policy.
   virtual const char* name() const GRPC_ABSTRACT;
 
-  /// Updates the policy with a new set of \a args and a new \a lb_config from
+  /// Updates the policy with a new \a result and a new \a lb_config from
   /// the resolver. Will be invoked immediately after LB policy is constructed,
   /// and then again whenever the resolver returns a new result.
-  /// Note that the LB policy gets the set of addresses from the
-  /// GRPC_ARG_SERVER_ADDRESS_LIST channel arg.
-  virtual void UpdateLocked(const grpc_channel_args& args,
-                            RefCountedPtr<Config>)  // NOLINT
+  virtual void UpdateLocked(Resolver::Result, RefCountedPtr<Config>)  // NOLINT
       GRPC_ABSTRACT;
 
   /// Tries to enter a READY connectivity state.

@@ -23,8 +23,11 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/iomgr.h"
 
@@ -46,6 +49,92 @@ namespace grpc_core {
 /// combiner passed to the constructor.
 class Resolver : public InternallyRefCounted<Resolver> {
  public:
+  /// Results returned by the resolver.
+  struct Result {
+    ServerAddressList addresses;
+    RefCountedPtr<ServiceConfig> service_config;
+    grpc_error* service_config_error = GRPC_ERROR_NONE;
+    const grpc_channel_args* args = nullptr;
+
+    Result() = default;
+
+    Result(ServerAddressList addresses,
+           RefCountedPtr<ServiceConfig> service_config,
+           grpc_error* service_config_error,
+           const grpc_channel_args* args)
+        : addresses(std::move(addresses)),
+          service_config(std::move(service_config)),
+          service_config_error(service_config_error),
+          args(args) {}
+
+    Result(ServerAddressList addresses,
+           RefCountedPtr<ServiceConfig> service_config,
+           const grpc_channel_args* args)
+        : addresses(std::move(addresses)),
+          service_config(std::move(service_config)),
+          args(args) {}
+
+    Result(ServerAddressList addresses,
+           grpc_error* service_config_error,
+           const grpc_channel_args* args)
+        : addresses(std::move(addresses)),
+          service_config_error(service_config_error),
+          args(args) {}
+
+    Result(ServerAddressList addresses,
+           const grpc_channel_args* args)
+        : addresses(std::move(addresses)), args(args) {}
+
+    // Copy ctor and assignment.
+    // TODO(roth): These can go away once we have C++ represenations of
+    // grpc_error and grpc_channel_args that support copying.
+    Result(const Result& other) {
+      addresses = other.addresses;
+      service_config = other.service_config;
+      service_config_error = GRPC_ERROR_REF(other.service_config_error);
+      args = grpc_channel_args_copy(other.args);
+    }
+    Result& operator=(const Result& other) {
+      addresses = other.addresses;
+      service_config = other.service_config;
+      GRPC_ERROR_UNREF(service_config_error);
+      service_config_error = GRPC_ERROR_REF(other.service_config_error);
+      grpc_channel_args_destroy(args);
+      args = grpc_channel_args_copy(other.args);
+      return *this;
+    }
+
+    // Move ctor and assignment.
+    // TODO(roth): These can go away once we have C++ represenations of
+    // grpc_error and grpc_channel_args that support std::move().
+    Result(Result&& other) {
+      addresses = std::move(other.addresses);
+      service_config = std::move(other.service_config);
+      service_config_error = other.service_config_error;
+      other.service_config_error = GRPC_ERROR_NONE;
+      args = other.args;
+      other.args = nullptr;
+    }
+    Result& operator=(Result&& other) {
+      addresses = std::move(other.addresses);
+      service_config = std::move(other.service_config);
+      GRPC_ERROR_UNREF(service_config_error);
+      service_config_error = other.service_config_error;
+      other.service_config_error = GRPC_ERROR_NONE;
+      grpc_channel_args_destroy(args);
+      args = other.args;
+      other.args = nullptr;
+      return *this;
+    }
+
+    // TODO(roth): This can go away once we have C++ represenations of
+    // grpc_error and grpc_channel_args that support destruction.
+    ~Result() {
+      GRPC_ERROR_UNREF(service_config_error);
+      grpc_channel_args_destroy(args);
+    }
+  };
+
   /// A proxy object used by the resolver to return results to the
   /// client channel.
   class ResultHandler {
@@ -53,17 +142,16 @@ class Resolver : public InternallyRefCounted<Resolver> {
     virtual ~ResultHandler() {}
 
     /// Returns a result to the channel.
-    /// The list of addresses will be in GRPC_ARG_SERVER_ADDRESS_LIST.
-    /// The service config (if any) will be in GRPC_ARG_SERVICE_CONFIG.
-    /// Takes ownership of \a result.
-    // TODO(roth): Change this API so that addresses and service config are
-    // passed explicitly instead of being in channel args.
-    virtual void ReturnResult(const grpc_channel_args* result) GRPC_ABSTRACT;
+    /// Takes ownership of \a result.args.
+    virtual void ReturnResult(Result result) GRPC_ABSTRACT;
 
     /// Returns a transient error to the channel.
     /// If the resolver does not set the GRPC_ERROR_INT_GRPC_STATUS
     /// attribute on the error, calls will be failed with status UNKNOWN.
     virtual void ReturnError(grpc_error* error) GRPC_ABSTRACT;
+
+    // TODO(yashkt): As part of the service config error handling
+    // changes, add a method to parse the service config JSON string.
 
     GRPC_ABSTRACT_BASE_CLASS
   };
