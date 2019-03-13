@@ -32,13 +32,13 @@ expand_dev_version.sh
 @rem To be able to build, we also need to put grpc_csharp_ext to its normal location
 xcopy /Y /I nativelibs\csharp_ext_windows_x64\grpc_csharp_ext.dll ..\..\cmake\build\x64\Release\
 
-%DOTNET% pack --configuration Release Grpc.Core.Api --output ..\..\..\artifacts || goto :error
-%DOTNET% pack --configuration Release Grpc.Core --output ..\..\..\artifacts || goto :error
-%DOTNET% pack --configuration Release Grpc.Core.Testing --output ..\..\..\artifacts || goto :error
-%DOTNET% pack --configuration Release Grpc.Auth --output ..\..\..\artifacts || goto :error
-%DOTNET% pack --configuration Release Grpc.HealthCheck --output ..\..\..\artifacts || goto :error
-%DOTNET% pack --configuration Release Grpc.Reflection --output ..\..\..\artifacts || goto :error
-%DOTNET% pack --configuration Release Grpc.Tools --output ..\..\..\artifacts || goto :error
+%DOTNET% pack --configuration Release Grpc.Core.Api /p:SourceLinkCreate=true --output ..\..\..\artifacts || goto :error
+%DOTNET% pack --configuration Release Grpc.Core /p:SourceLinkCreate=true --output ..\..\..\artifacts || goto :error
+%DOTNET% pack --configuration Release Grpc.Core.Testing /p:SourceLinkCreate=true --output ..\..\..\artifacts || goto :error
+%DOTNET% pack --configuration Release Grpc.Auth /p:SourceLinkCreate=true --output ..\..\..\artifacts || goto :error
+%DOTNET% pack --configuration Release Grpc.HealthCheck /p:SourceLinkCreate=true --output ..\..\..\artifacts || goto :error
+%DOTNET% pack --configuration Release Grpc.Reflection /p:SourceLinkCreate=true --output ..\..\..\artifacts || goto :error
+%DOTNET% pack --configuration Release Grpc.Tools /p:SourceLinkCreate=true --output ..\..\..\artifacts || goto :error
 @rem build auxiliary packages
 %DOTNET% pack --configuration Release Grpc --output ..\..\..\artifacts || goto :error
 %DOTNET% pack --configuration Release Grpc.Core.NativeDebug --output ..\..\..\artifacts || goto :error
