@@ -39,7 +39,7 @@
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 
-DWORD grpc_wsa_socket_flags;
+static DWORD s_wsa_socket_flags;
 
 grpc_winsocket* grpc_winsocket_create(SOCKET socket, const char* name) {
   char* final_name;
@@ -183,19 +183,19 @@ int grpc_ipv6_loopback_available(void) {
   return g_ipv6_loopback_available;
 }
 
-DWORD grpc_get_default_wsa_socket_flags() { return grpc_wsa_socket_flags; }
+DWORD grpc_get_default_wsa_socket_flags() { return s_wsa_socket_flags; }
 
 void grpc_wsa_socket_flags_init() {
-  grpc_wsa_socket_flags = WSA_FLAG_OVERLAPPED;
+  s_wsa_socket_flags = WSA_FLAG_OVERLAPPED;
   /* WSA_FLAG_NO_HANDLE_INHERIT may be not supported on the older Windows
      versions, see
      https://msdn.microsoft.com/en-us/library/windows/desktop/ms742212(v=vs.85).aspx
      for details. */
   SOCKET sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
-                          grpc_wsa_socket_flags | WSA_FLAG_NO_HANDLE_INHERIT);
+                          s_wsa_socket_flags | WSA_FLAG_NO_HANDLE_INHERIT);
   if (sock != INVALID_SOCKET) {
     /* Windows 7, Windows 2008 R2 with SP1 or later */
-    grpc_wsa_socket_flags |= WSA_FLAG_NO_HANDLE_INHERIT;
+    s_wsa_socket_flags |= WSA_FLAG_NO_HANDLE_INHERIT;
     closesocket(sock);
   }
 }
