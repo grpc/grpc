@@ -41,7 +41,7 @@ PYTHON=$VIRTUAL_ENV/bin/python
 
 function validate_wheel_hashes() {
   for file in "$@"; do
-    "$PYTHON" -m wheel unpack "$file" --dest-dir /tmp || return 1
+    "$PYTHON" -m wheel unpack "$file" -d /tmp || return 1
   done
   return 0
 }
