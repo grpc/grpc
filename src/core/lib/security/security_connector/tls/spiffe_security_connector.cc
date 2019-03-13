@@ -40,10 +40,7 @@
 
 namespace {
 
-static void ServerAuthorizationCheckDone(
-    grpc_tls_server_authorization_check_arg* arg);
-
-static tsi_ssl_pem_key_cert_pair* ConvertToTsiPemKeyCertPair(
+tsi_ssl_pem_key_cert_pair* ConvertToTsiPemKeyCertPair(
     const grpc_tls_key_materials_config::PemKeyCertPairList& cert_pair_list) {
   tsi_ssl_pem_key_cert_pair* tsi_pairs = nullptr;
   size_t num_key_cert_pairs = cert_pair_list.size();
@@ -61,8 +58,235 @@ static tsi_ssl_pem_key_cert_pair* ConvertToTsiPemKeyCertPair(
   return tsi_pairs;
 }
 
-/** -- Util function to process server authorization check result. -- */
-static grpc_error* ProcessServerAuthorizationCheckResult(
+/** -- Util function to populate SPIFFE server/channel credentials. -- */
+grpc_core::RefCountedPtr<grpc_tls_key_materials_config>
+PopulateSpiffeCredentials(grpc_tls_credentials_options* options) {
+  GPR_ASSERT(options != nullptr);
+  GPR_ASSERT(options->credential_reload_config() != nullptr ||
+             options->key_materials_config() != nullptr);
+  grpc_core::RefCountedPtr<grpc_tls_key_materials_config> key_materials_config;
+  /* Use credential reload config to fetch credentials. */
+  if (options->credential_reload_config() != nullptr) {
+    grpc_tls_credential_reload_arg* arg =
+        grpc_core::New<grpc_tls_credential_reload_arg>();
+    key_materials_config = grpc_tls_key_materials_config_create()->Ref();
+    arg->key_materials_config = key_materials_config.get();
+    int result = options->credential_reload_config()->Schedule(arg);
+    if (result) {
+      /* Do not support async credential reload. */
+      gpr_log(GPR_ERROR, "Async credential reload is unsupported now.");
+    } else {
+      grpc_ssl_certificate_config_reload_status status = arg->status;
+      if (status == GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED) {
+        gpr_log(GPR_DEBUG, "Credential does not change after reload.");
+      } else if (status == GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL) {
+        gpr_log(GPR_ERROR, "Credential reload failed with an error: %s",
+                arg->error_details);
+      }
+    }
+    gpr_free((void*)arg->error_details);
+    grpc_core::Delete(arg);
+    /* Use existing key materials config. */
+  } else {
+    key_materials_config = const_cast<grpc_tls_credentials_options*>(options)
+                               ->mutable_key_materials_config()
+                               ->Ref();
+  }
+  return key_materials_config;
+}
+
+}  // namespace
+
+SpiffeChannelSecurityConnector::SpiffeChannelSecurityConnector(
+    grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+    const char* target_name, const char* overridden_target_name)
+    : grpc_channel_security_connector(GRPC_SSL_URL_SCHEME,
+                                      std::move(channel_creds),
+                                      std::move(request_metadata_creds)),
+      overridden_target_name_(overridden_target_name == nullptr
+                                  ? nullptr
+                                  : gpr_strdup(overridden_target_name)) {
+  check_arg_ = ServerAuthorizationCheckArgCreate(this);
+  char* port;
+  gpr_split_host_port(target_name, &target_name_, &port);
+  gpr_free(port);
+}
+
+SpiffeChannelSecurityConnector::~SpiffeChannelSecurityConnector() {
+  if (target_name_ != nullptr) {
+    gpr_free(target_name_);
+  }
+  if (overridden_target_name_ != nullptr) {
+    gpr_free(overridden_target_name_);
+  }
+  if (client_handshaker_factory_ != nullptr) {
+    tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
+  }
+  ServerAuthorizationCheckArgDestroy(check_arg_);
+}
+
+void SpiffeChannelSecurityConnector::add_handshakers(
+    grpc_pollset_set* interested_parties,
+    grpc_core::HandshakeManager* handshake_mgr) {
+  // Instantiate TSI handshaker.
+  tsi_handshaker* tsi_hs = nullptr;
+  tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
+      client_handshaker_factory_,
+      overridden_target_name_ != nullptr ? overridden_target_name_
+                                         : target_name_,
+      &tsi_hs);
+  if (result != TSI_OK) {
+    gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
+            tsi_result_to_string(result));
+    return;
+  }
+  // Create handshakers.
+  handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(tsi_hs, this));
+}
+
+void SpiffeChannelSecurityConnector::check_peer(
+    tsi_peer peer, grpc_endpoint* ep,
+    grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
+    grpc_closure* on_peer_checked) {
+  const char* target_name = overridden_target_name_ != nullptr
+                                ? overridden_target_name_
+                                : target_name_;
+  grpc_error* error = grpc_ssl_check_alpn(&peer);
+  if (error != GRPC_ERROR_NONE) {
+    GRPC_CLOSURE_SCHED(on_peer_checked, error);
+    tsi_peer_destruct(&peer);
+    return;
+  }
+  *auth_context = grpc_ssl_peer_to_auth_context(&peer);
+  const SpiffeCredentials* creds =
+      static_cast<const SpiffeCredentials*>(channel_creds());
+  GPR_ASSERT(creds->options() != nullptr);
+  const grpc_tls_server_authorization_check_config* config =
+      creds->options()->server_authorization_check_config();
+  /* If server authorization config is not null, use it to perform
+   * server authorizaiton check. */
+  if (config != nullptr) {
+    const tsi_peer_property* p =
+        tsi_peer_get_property_by_name(&peer, TSI_X509_PEM_CERT_PROPERTY);
+    if (p == nullptr) {
+      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Cannot check peer: missing pem cert property.");
+    } else {
+      char* peer_pem = static_cast<char*>(gpr_malloc(p->value.length + 1));
+      memcpy(peer_pem, p->value.data, p->value.length);
+      peer_pem[p->value.length] = '\0';
+      GPR_ASSERT(check_arg_ != nullptr);
+      check_arg_->peer_cert = check_arg_->peer_cert == nullptr
+                                  ? gpr_strdup(peer_pem)
+                                  : check_arg_->peer_cert;
+      check_arg_->target_name = check_arg_->target_name == nullptr
+                                    ? gpr_strdup(target_name)
+                                    : check_arg_->target_name;
+      on_peer_checked_ = on_peer_checked;
+      gpr_free(peer_pem);
+      int callback_status = config->Schedule(check_arg_);
+      /* Server authorization check is handled asynchronously. */
+      if (callback_status) {
+        tsi_peer_destruct(&peer);
+        return;
+      }
+      /* Server authorization check is handled synchronously. */
+      error = ProcessServerAuthorizationCheckResult(check_arg_);
+    }
+  }
+  GRPC_CLOSURE_SCHED(on_peer_checked, error);
+  tsi_peer_destruct(&peer);
+}
+
+int SpiffeChannelSecurityConnector::cmp(
+    const grpc_security_connector* other_sc) const {
+  auto* other =
+      reinterpret_cast<const SpiffeChannelSecurityConnector*>(other_sc);
+  int c = channel_security_connector_cmp(other);
+  if (c != 0) {
+    return c;
+  }
+  return grpc_ssl_cmp_target_name(target_name_, other->target_name_,
+                                  overridden_target_name_,
+                                  other->overridden_target_name_);
+}
+
+bool SpiffeChannelSecurityConnector::check_call_host(
+    const char* host, grpc_auth_context* auth_context,
+    grpc_closure* on_call_host_checked, grpc_error** error) {
+  return grpc_ssl_check_call_host(host, target_name_, overridden_target_name_,
+                                  auth_context, on_call_host_checked, error);
+}
+
+void SpiffeChannelSecurityConnector::cancel_check_call_host(
+    grpc_closure* on_call_host_checked, grpc_error* error) {
+  GRPC_ERROR_UNREF(error);
+}
+
+grpc_core::RefCountedPtr<grpc_channel_security_connector>
+SpiffeChannelSecurityConnector::CreateSpiffeChannelSecurityConnector(
+    grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+    const char* target_name, const char* overridden_target_name,
+    tsi_ssl_session_cache* ssl_session_cache) {
+  if (channel_creds == nullptr) {
+    gpr_log(GPR_ERROR,
+            "channel_creds is nullptr in "
+            "SpiffeChannelSecurityConnectorCreate()");
+    return nullptr;
+  }
+  if (target_name == nullptr) {
+    gpr_log(GPR_ERROR,
+            "target_name is nullptr in "
+            "SpiffeChannelSecurityConnectorCreate()");
+    return nullptr;
+  }
+  grpc_core::RefCountedPtr<SpiffeChannelSecurityConnector> c =
+      grpc_core::MakeRefCounted<SpiffeChannelSecurityConnector>(
+          std::move(channel_creds), std::move(request_metadata_creds),
+          target_name, overridden_target_name);
+  if (c->InitializeHandshakerFactory(ssl_session_cache) != GRPC_SECURITY_OK) {
+    return nullptr;
+  }
+  return c;
+}
+
+grpc_security_status
+SpiffeChannelSecurityConnector::InitializeHandshakerFactory(
+    tsi_ssl_session_cache* ssl_session_cache) {
+  const SpiffeCredentials* creds =
+      static_cast<const SpiffeCredentials*>(channel_creds());
+  GPR_ASSERT(creds->options() != nullptr);
+  auto key_materials_config = PopulateSpiffeCredentials(
+      const_cast<grpc_tls_credentials_options*>(creds->options()));
+  if (!key_materials_config.get()->pem_key_cert_pair_list().size()) {
+    key_materials_config.get()->Unref();
+    return GRPC_SECURITY_ERROR;
+  }
+  tsi_ssl_pem_key_cert_pair* pem_key_cert_pair = ConvertToTsiPemKeyCertPair(
+      key_materials_config.get()->pem_key_cert_pair_list());
+  grpc_security_status status = grpc_ssl_tsi_client_handshaker_factory_init(
+      pem_key_cert_pair, key_materials_config.get()->pem_root_certs(),
+      ssl_session_cache, &client_handshaker_factory_);
+  // Free memory.
+  key_materials_config.get()->Unref();
+  grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pair, 1);
+  return status;
+}
+
+void SpiffeChannelSecurityConnector::ServerAuthorizationCheckDone(
+    grpc_tls_server_authorization_check_arg* arg) {
+  GPR_ASSERT(arg != nullptr);
+  grpc_core::ExecCtx exec_ctx;
+  grpc_error* error = ProcessServerAuthorizationCheckResult(arg);
+  SpiffeChannelSecurityConnector* sc =
+      static_cast<SpiffeChannelSecurityConnector*>(arg->cb_user_data);
+  GRPC_CLOSURE_SCHED(const_cast<grpc_closure*>(sc->on_peer_checked()), error);
+}
+
+grpc_error*
+SpiffeChannelSecurityConnector::ProcessServerAuthorizationCheckResult(
     grpc_tls_server_authorization_check_arg* arg) {
   grpc_error* error = GRPC_ERROR_NONE;
   char* msg = nullptr;
@@ -93,365 +317,118 @@ static grpc_error* ProcessServerAuthorizationCheckResult(
   return error;
 }
 
-/** -- Util function to populate SPIFFE server/channel credentials. -- */
-static grpc_core::RefCountedPtr<grpc_tls_key_materials_config>
-PopulateSpiffeCredentials(grpc_tls_credentials_options* options) {
-  GPR_ASSERT(options != nullptr);
-  GPR_ASSERT(options->credential_reload_config() != nullptr ||
-             options->key_materials_config() != nullptr);
-  grpc_core::RefCountedPtr<grpc_tls_key_materials_config> key_materials_config;
-  /* Use credential reload config to fetch credentials. */
-  if (options->credential_reload_config() != nullptr) {
-    grpc_tls_credential_reload_arg* arg =
-        static_cast<grpc_tls_credential_reload_arg*>(gpr_zalloc(sizeof(*arg)));
-    key_materials_config = grpc_tls_key_materials_config_create()->Ref();
-    arg->key_materials_config = key_materials_config.get();
-    int result = options->credential_reload_config()->Schedule(arg);
-    if (result) {
-      /* Do not support async credential reload. */
-      gpr_log(GPR_ERROR, "Async credential reload is unsupported now.");
-    } else {
-      grpc_ssl_certificate_config_reload_status status = arg->status;
-      if (status == GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED) {
-        gpr_log(GPR_DEBUG, "Credential does not change after reload.");
-      } else if (status == GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL) {
-        gpr_log(GPR_ERROR, "Credential reload failed with an error: %s",
-                arg->error_details);
-      }
-    }
-    gpr_free((void*)arg->error_details);
-    gpr_free(arg);
-    /* Use existing key materials config. */
-  } else {
-    key_materials_config = const_cast<grpc_tls_credentials_options*>(options)
-                               ->mutable_key_materials_config()
-                               ->Ref();
-  }
-  return key_materials_config;
+grpc_tls_server_authorization_check_arg*
+SpiffeChannelSecurityConnector::ServerAuthorizationCheckArgCreate(
+    void* user_data) {
+  grpc_tls_server_authorization_check_arg* arg =
+      grpc_core::New<grpc_tls_server_authorization_check_arg>();
+  arg->cb = ServerAuthorizationCheckDone;
+  arg->cb_user_data = user_data;
+  arg->status = GRPC_STATUS_OK;
+  return arg;
 }
 
-class grpc_tls_spiffe_channel_security_connector final
-    : public grpc_channel_security_connector {
- public:
-  grpc_tls_spiffe_channel_security_connector(
-      grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
-      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-      const char* target_name, const char* overridden_target_name)
-      : grpc_channel_security_connector(GRPC_SSL_URL_SCHEME,
-                                        std::move(channel_creds),
-                                        std::move(request_metadata_creds)),
-        overridden_target_name_(overridden_target_name == nullptr
-                                    ? nullptr
-                                    : gpr_strdup(overridden_target_name)),
-        client_handshaker_factory_(nullptr) {
-    check_arg_ = ServerAuthorizationCheckArgCreate(this);
-    char* port;
-    gpr_split_host_port(target_name, &target_name_, &port);
-    gpr_free(port);
-  }
-
-  ~grpc_tls_spiffe_channel_security_connector() override {
-    if (target_name_ != nullptr) {
-      gpr_free(target_name_);
-    }
-    if (overridden_target_name_ != nullptr) {
-      gpr_free(overridden_target_name_);
-    }
-    if (client_handshaker_factory_ != nullptr) {
-      tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
-    }
-    ServerAuthorizationCheckArgDestroy(check_arg_);
-  }
-
-  grpc_security_status InitializeHandshakerFactory(
-      tsi_ssl_session_cache* ssl_session_cache) {
-    const grpc_tls_spiffe_credentials* creds =
-        static_cast<const grpc_tls_spiffe_credentials*>(channel_creds());
-    GPR_ASSERT(creds->options() != nullptr);
-    auto key_materials_config = PopulateSpiffeCredentials(
-        const_cast<grpc_tls_credentials_options*>(creds->options()));
-    if (!key_materials_config.get()->pem_key_cert_pair_list().size()) {
-      key_materials_config.get()->Unref();
-      return GRPC_SECURITY_ERROR;
-    }
-    tsi_ssl_pem_key_cert_pair* pem_key_cert_pair = ConvertToTsiPemKeyCertPair(
-        key_materials_config.get()->pem_key_cert_pair_list());
-    grpc_security_status status = grpc_init_tsi_ssl_client_handshaker_factory(
-        pem_key_cert_pair, key_materials_config.get()->pem_root_certs(),
-        ssl_session_cache, &client_handshaker_factory_);
-    // Free memory.
-    key_materials_config.get()->Unref();
-    grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pair, 1);
-    return status;
-  }
-
-  void add_handshakers(grpc_pollset_set* interested_parties,
-                       grpc_core::HandshakeManager* handshake_mgr) override {
-    // Instantiate TSI handshaker.
-    tsi_handshaker* tsi_hs = nullptr;
-    tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
-        client_handshaker_factory_,
-        overridden_target_name_ != nullptr ? overridden_target_name_
-                                           : target_name_,
-        &tsi_hs);
-    if (result != TSI_OK) {
-      gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
-              tsi_result_to_string(result));
-      return;
-    }
-    // Create handshakers.
-    handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(tsi_hs, this));
-  }
-
-  void check_peer(tsi_peer peer, grpc_endpoint* ep,
-                  grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
-                  grpc_closure* on_peer_checked) override {
-    const char* target_name = overridden_target_name_ != nullptr
-                                  ? overridden_target_name_
-                                  : target_name_;
-    grpc_error* error = grpc_ssl_check_alpn(&peer);
-    if (error != GRPC_ERROR_NONE) {
-      GRPC_CLOSURE_SCHED(on_peer_checked, error);
-      tsi_peer_destruct(&peer);
-      return;
-    }
-    *auth_context = grpc_ssl_peer_to_auth_context(&peer);
-    const grpc_tls_spiffe_credentials* creds =
-        static_cast<const grpc_tls_spiffe_credentials*>(channel_creds());
-    GPR_ASSERT(creds->options() != nullptr);
-    const grpc_tls_server_authorization_check_config* config =
-        creds->options()->server_authorization_check_config();
-    /* If server authorization config is not null, use it to perform
-     * server authorizaiton check. */
-    if (config != nullptr) {
-      const tsi_peer_property* p =
-          tsi_peer_get_property_by_name(&peer, TSI_X509_PEM_CERT_PROPERTY);
-      if (p == nullptr) {
-        error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Cannot check peer: missing pem cert property.");
-      } else {
-        char* peer_pem = static_cast<char*>(gpr_malloc(p->value.length + 1));
-        memcpy(peer_pem, p->value.data, p->value.length);
-        peer_pem[p->value.length] = '\0';
-        GPR_ASSERT(check_arg_ != nullptr);
-        check_arg_->peer_cert = check_arg_->peer_cert == nullptr
-                                    ? gpr_strdup(peer_pem)
-                                    : check_arg_->peer_cert;
-        check_arg_->target_name = check_arg_->target_name == nullptr
-                                      ? gpr_strdup(target_name)
-                                      : check_arg_->target_name;
-        on_peer_checked_ = on_peer_checked;
-        gpr_free(peer_pem);
-        int callback_status = config->Schedule(check_arg_);
-        /* Server authorization check is handled asynchronously. */
-        if (callback_status) {
-          tsi_peer_destruct(&peer);
-          return;
-        }
-        /* Server authorization check is handled synchronously. */
-        error = ProcessServerAuthorizationCheckResult(check_arg_);
-      }
-    }
-    GRPC_CLOSURE_SCHED(on_peer_checked, error);
-    tsi_peer_destruct(&peer);
-  }
-
-  int cmp(const grpc_security_connector* other_sc) const override {
-    auto* other =
-        reinterpret_cast<const grpc_tls_spiffe_channel_security_connector*>(
-            other_sc);
-    int c = channel_security_connector_cmp(other);
-    if (c != 0) {
-      return c;
-    }
-    return grpc_ssl_cmp_target_name(target_name_, other->target_name_,
-                                    overridden_target_name_,
-                                    other->overridden_target_name_);
-  }
-
-  bool check_call_host(const char* host, grpc_auth_context* auth_context,
-                       grpc_closure* on_call_host_checked,
-                       grpc_error** error) override {
-    return grpc_ssl_check_call_host(host, target_name_, overridden_target_name_,
-                                    auth_context, on_call_host_checked, error);
-  }
-
-  void cancel_check_call_host(grpc_closure* on_call_host_checked,
-                              grpc_error* error) override {
-    GRPC_ERROR_UNREF(error);
-  }
-
-  const grpc_closure* on_peer_checked() const { return on_peer_checked_; }
-
- private:
-  char* target_name_;
-  char* overridden_target_name_;
-  tsi_ssl_client_handshaker_factory* client_handshaker_factory_;
-  grpc_tls_server_authorization_check_arg* check_arg_;
-  grpc_closure* on_peer_checked_;
-
-  grpc_tls_server_authorization_check_arg* ServerAuthorizationCheckArgCreate(
-      void* user_data) {
-    grpc_tls_server_authorization_check_arg* arg =
-        static_cast<grpc_tls_server_authorization_check_arg*>(
-            gpr_zalloc(sizeof(*arg)));
-    arg->cb = ServerAuthorizationCheckDone;
-    arg->cb_user_data = user_data;
-    arg->status = GRPC_STATUS_OK;
-    return arg;
-  }
-
-  void ServerAuthorizationCheckArgDestroy(
-      grpc_tls_server_authorization_check_arg* arg) {
-    if (arg == nullptr) {
-      return;
-    }
-    gpr_free((void*)arg->target_name);
-    gpr_free((void*)arg->peer_cert);
-    gpr_free((void*)arg->error_details);
-    gpr_free(arg);
-  }
-};
-
-class grpc_tls_spiffe_server_security_connector
-    : public grpc_server_security_connector {
- public:
-  grpc_tls_spiffe_server_security_connector(
-      grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
-      : grpc_server_security_connector(GRPC_SSL_URL_SCHEME,
-                                       std::move(server_creds)),
-        server_handshaker_factory_(nullptr) {}
-
-  ~grpc_tls_spiffe_server_security_connector() override {
-    if (server_handshaker_factory_ != nullptr) {
-      tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
-    }
-  }
-
-  grpc_security_status RefreshServerHandshakerFactory() {
-    const grpc_tls_spiffe_server_credentials* creds =
-        static_cast<const grpc_tls_spiffe_server_credentials*>(server_creds());
-    GPR_ASSERT(creds->options() != nullptr);
-    auto key_materials_config = PopulateSpiffeCredentials(
-        const_cast<grpc_tls_credentials_options*>(creds->options()));
-    /* Credential reload does NOT take effect and we need to keep using
-     * the existing handshaker factory. */
-    if (key_materials_config.get()->pem_key_cert_pair_list().empty()) {
-      key_materials_config.get()->Unref();
-      return GRPC_SECURITY_ERROR;
-    }
-    /* Credential reload takes effect and we need to free the existing
-     * handshaker library. */
-    if (server_handshaker_factory_) {
-      tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
-    }
-    tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs = ConvertToTsiPemKeyCertPair(
-        key_materials_config.get()->pem_key_cert_pair_list());
-    size_t num_key_cert_pairs =
-        key_materials_config.get()->pem_key_cert_pair_list().size();
-    grpc_security_status status = grpc_init_tsi_ssl_server_handshaker_factory(
-        pem_key_cert_pairs, num_key_cert_pairs,
-        key_materials_config.get()->pem_root_certs(),
-        creds->options()->cert_request_type(), &server_handshaker_factory_);
-    // Free memory.
-    key_materials_config.get()->Unref();
-    grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pairs,
-                                            num_key_cert_pairs);
-    return status;
-  }
-
-  void add_handshakers(grpc_pollset_set* interested_parties,
-                       grpc_core::HandshakeManager* handshake_mgr) override {
-    /* Create a TLS SPIFFE TSI handshaker for server. */
-    RefreshServerHandshakerFactory();
-    tsi_handshaker* tsi_hs = nullptr;
-    tsi_result result = tsi_ssl_server_handshaker_factory_create_handshaker(
-        server_handshaker_factory_, &tsi_hs);
-    if (result != TSI_OK) {
-      gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
-              tsi_result_to_string(result));
-      return;
-    }
-    handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(tsi_hs, this));
-  }
-
-  void check_peer(tsi_peer peer, grpc_endpoint* ep,
-                  grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
-                  grpc_closure* on_peer_checked) override {
-    grpc_error* error = grpc_ssl_check_alpn(&peer);
-    *auth_context = grpc_ssl_peer_to_auth_context(&peer);
-    tsi_peer_destruct(&peer);
-    GRPC_CLOSURE_SCHED(on_peer_checked, error);
-  }
-
-  int cmp(const grpc_security_connector* other) const override {
-    return server_security_connector_cmp(
-        static_cast<const grpc_server_security_connector*>(other));
-  }
-
- private:
-  tsi_ssl_server_handshaker_factory* server_handshaker_factory_;
-};
-
-/* gRPC-provided callback executed by application, which servers to bring the
- * control back to gRPC core. */
-static void ServerAuthorizationCheckDone(
+void SpiffeChannelSecurityConnector::ServerAuthorizationCheckArgDestroy(
     grpc_tls_server_authorization_check_arg* arg) {
-  GPR_ASSERT(arg != nullptr);
-  grpc_core::ExecCtx exec_ctx;
-  grpc_error* error = ProcessServerAuthorizationCheckResult(arg);
-  grpc_tls_spiffe_channel_security_connector* sc =
-      static_cast<grpc_tls_spiffe_channel_security_connector*>(
-          arg->cb_user_data);
-  GRPC_CLOSURE_SCHED(const_cast<grpc_closure*>(sc->on_peer_checked()), error);
+  if (arg == nullptr) {
+    return;
+  }
+  gpr_free((void*)arg->target_name);
+  gpr_free((void*)arg->peer_cert);
+  gpr_free((void*)arg->error_details);
+  grpc_core::Delete(arg);
 }
 
-}  // namespace
+SpiffeServerSecurityConnector::SpiffeServerSecurityConnector(
+    grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
+    : grpc_server_security_connector(GRPC_SSL_URL_SCHEME,
+                                     std::move(server_creds)) {}
 
-/** Create a gRPC TLS SPIFFE channel security connector. */
-grpc_core::RefCountedPtr<grpc_channel_security_connector>
-grpc_tls_spiffe_channel_security_connector_create(
-    grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
-    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-    const char* target_name, const char* overridden_target_name,
-    tsi_ssl_session_cache* ssl_session_cache) {
-  if (channel_creds == nullptr) {
-    gpr_log(GPR_ERROR,
-            "channel_creds is nullptr in "
-            "grpc_tls_spiffe_channel_security_connector_create()");
-    return nullptr;
+SpiffeServerSecurityConnector::~SpiffeServerSecurityConnector() {
+  if (server_handshaker_factory_ != nullptr) {
+    tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
   }
-  if (target_name == nullptr) {
-    gpr_log(GPR_ERROR,
-            "target_name is nullptr in "
-            "grpc_tls_spiffe_channel_security_connector_create()");
-    return nullptr;
-  }
-  grpc_core::RefCountedPtr<grpc_tls_spiffe_channel_security_connector> c =
-      grpc_core::MakeRefCounted<grpc_tls_spiffe_channel_security_connector>(
-          std::move(channel_creds), std::move(request_metadata_creds),
-          target_name, overridden_target_name);
-  if (c->InitializeHandshakerFactory(ssl_session_cache) != GRPC_SECURITY_OK) {
-    return nullptr;
-  }
-  return c;
 }
 
-/** Create a gRPC TLS SPIFFE server security connector. */
+void SpiffeServerSecurityConnector::add_handshakers(
+    grpc_pollset_set* interested_parties,
+    grpc_core::HandshakeManager* handshake_mgr) {
+  /* Create a TLS SPIFFE TSI handshaker for server. */
+  RefreshServerHandshakerFactory();
+  tsi_handshaker* tsi_hs = nullptr;
+  tsi_result result = tsi_ssl_server_handshaker_factory_create_handshaker(
+      server_handshaker_factory_, &tsi_hs);
+  if (result != TSI_OK) {
+    gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
+            tsi_result_to_string(result));
+    return;
+  }
+  handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(tsi_hs, this));
+}
+
+void SpiffeServerSecurityConnector::check_peer(
+    tsi_peer peer, grpc_endpoint* ep,
+    grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
+    grpc_closure* on_peer_checked) {
+  grpc_error* error = grpc_ssl_check_alpn(&peer);
+  *auth_context = grpc_ssl_peer_to_auth_context(&peer);
+  tsi_peer_destruct(&peer);
+  GRPC_CLOSURE_SCHED(on_peer_checked, error);
+}
+
+int SpiffeServerSecurityConnector::cmp(
+    const grpc_security_connector* other) const {
+  return server_security_connector_cmp(
+      static_cast<const grpc_server_security_connector*>(other));
+}
+
 grpc_core::RefCountedPtr<grpc_server_security_connector>
-grpc_tls_spiffe_server_security_connector_create(
+SpiffeServerSecurityConnector::CreateSpiffeServerSecurityConnector(
     grpc_core::RefCountedPtr<grpc_server_credentials> server_creds) {
   if (server_creds == nullptr) {
     gpr_log(GPR_ERROR,
             "server_creds is nullptr in "
-            "grpc_tls_spiffe_server_security_connector_create()");
+            "SpiffeServerSecurityConnectorCreate()");
     return nullptr;
   }
-  grpc_core::RefCountedPtr<grpc_tls_spiffe_server_security_connector> c =
-      grpc_core::MakeRefCounted<grpc_tls_spiffe_server_security_connector>(
+  grpc_core::RefCountedPtr<SpiffeServerSecurityConnector> c =
+      grpc_core::MakeRefCounted<SpiffeServerSecurityConnector>(
           std::move(server_creds));
   if (c->RefreshServerHandshakerFactory() != GRPC_SECURITY_OK) {
     return nullptr;
   }
   return c;
+}
+
+grpc_security_status
+SpiffeServerSecurityConnector::RefreshServerHandshakerFactory() {
+  const SpiffeServerCredentials* creds =
+      static_cast<const SpiffeServerCredentials*>(server_creds());
+  GPR_ASSERT(creds->options() != nullptr);
+  auto key_materials_config = PopulateSpiffeCredentials(
+      const_cast<grpc_tls_credentials_options*>(creds->options()));
+  /* Credential reload does NOT take effect and we need to keep using
+   * the existing handshaker factory. */
+  if (key_materials_config.get()->pem_key_cert_pair_list().empty()) {
+    key_materials_config.get()->Unref();
+    return GRPC_SECURITY_ERROR;
+  }
+  /* Credential reload takes effect and we need to free the existing
+   * handshaker library. */
+  if (server_handshaker_factory_) {
+    tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
+  }
+  tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs = ConvertToTsiPemKeyCertPair(
+      key_materials_config.get()->pem_key_cert_pair_list());
+  size_t num_key_cert_pairs =
+      key_materials_config.get()->pem_key_cert_pair_list().size();
+  grpc_security_status status = grpc_ssl_tsi_server_handshaker_factory_init(
+      pem_key_cert_pairs, num_key_cert_pairs,
+      key_materials_config.get()->pem_root_certs(),
+      creds->options()->cert_request_type(), &server_handshaker_factory_);
+  // Free memory.
+  key_materials_config.get()->Unref();
+  grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pairs,
+                                          num_key_cert_pairs);
+  return status;
 }

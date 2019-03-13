@@ -26,36 +26,98 @@
 
 #define GRPC_TLS_SPIFFE_TRANSPORT_SECURITY_TYPE "spiffe"
 
-/**
- * This method creates a TLS SPIFFE channel security connector.
- *
- * - channel_creds: channel credential instance.
- * - request_metadata_creds: credential object which will be sent with each
- *   request. This parameter can be nullptr.
- * - target_name: the name of the endpoint that the channel is connecting to.
- * - overridden_target_name: overridden target name used for testing.
- * - ssl_session_cache: TSI SSL session cache instance used for sessions
- *   resumption.
- *
- * It returns nullptr on failure.
- */
-grpc_core::RefCountedPtr<grpc_channel_security_connector>
-grpc_tls_spiffe_channel_security_connector_create(
-    grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
-    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-    const char* target_name, const char* overridden_target_name,
-    tsi_ssl_session_cache* ssl_session_cache);
+// Spiffe channel security connector.
+class SpiffeChannelSecurityConnector final
+    : public grpc_channel_security_connector {
+ public:
+  explicit SpiffeChannelSecurityConnector(
+      grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+      const char* target_name, const char* overridden_target_name);
+  ~SpiffeChannelSecurityConnector() override;
 
-/**
- * This method creates an TLS SPIFFE server security connector.
- *
- * - server_creds: server credential instance.
- *
- * It returns nullptr on failure.
- */
-grpc_core::RefCountedPtr<grpc_server_security_connector>
-grpc_tls_spiffe_server_security_connector_create(
-    grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
+  void add_handshakers(grpc_pollset_set* interested_parties,
+                       grpc_core::HandshakeManager* handshake_mgr) override;
+
+  void check_peer(tsi_peer peer, grpc_endpoint* ep,
+                  grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
+                  grpc_closure* on_peer_checked) override;
+
+  int cmp(const grpc_security_connector* other_sc) const override;
+
+  bool check_call_host(const char* host, grpc_auth_context* auth_context,
+                       grpc_closure* on_call_host_checked,
+                       grpc_error** error) override;
+
+  void cancel_check_call_host(grpc_closure* on_call_host_checked,
+                              grpc_error* error) override;
+
+  // static factory method to create a SPIFFE channel security connector.
+  static grpc_core::RefCountedPtr<grpc_channel_security_connector>
+  CreateSpiffeChannelSecurityConnector(
+      grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+      const char* target_name, const char* overridden_target_name,
+      tsi_ssl_session_cache* ssl_session_cache);
+
+ private:
+  const grpc_closure* on_peer_checked() const { return on_peer_checked_; }
+
+  // Initialize SSL TSI client handshaker factory.
+  grpc_security_status InitializeHandshakerFactory(
+      tsi_ssl_session_cache* ssl_session_cache);
+
+  // gRPC-provided callback executed by application, which servers to bring the
+  // control back to gRPC core.
+  static void ServerAuthorizationCheckDone(
+      grpc_tls_server_authorization_check_arg* arg);
+
+  // A util function to process server authorization check result.
+  static grpc_error* ProcessServerAuthorizationCheckResult(
+      grpc_tls_server_authorization_check_arg* arg);
+
+  // A util function to create a server authorization check arg instance.
+  static grpc_tls_server_authorization_check_arg*
+  ServerAuthorizationCheckArgCreate(void* user_data);
+
+  // A util function to destroy a server authorization check arg instance.
+  static void ServerAuthorizationCheckArgDestroy(
+      grpc_tls_server_authorization_check_arg* arg);
+
+  char* target_name_;
+  char* overridden_target_name_;
+  tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
+  grpc_tls_server_authorization_check_arg* check_arg_;
+  grpc_closure* on_peer_checked_;
+};
+
+// Spiffe server security connector.
+class SpiffeServerSecurityConnector final
+    : public grpc_server_security_connector {
+ public:
+  explicit SpiffeServerSecurityConnector(
+      grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
+  ~SpiffeServerSecurityConnector() override;
+
+  void add_handshakers(grpc_pollset_set* interested_parties,
+                       grpc_core::HandshakeManager* handshake_mgr) override;
+
+  void check_peer(tsi_peer peer, grpc_endpoint* ep,
+                  grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
+                  grpc_closure* on_peer_checked) override;
+  int cmp(const grpc_security_connector* other) const override;
+
+  // static factory method to create a SPIFFE server security connector.
+  static grpc_core::RefCountedPtr<grpc_server_security_connector>
+  CreateSpiffeServerSecurityConnector(
+      grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
+
+ private:
+  // A util function to refresh SSL TSI server handshaker factory with a valid
+  // credential.
+  grpc_security_status RefreshServerHandshakerFactory();
+  tsi_ssl_server_handshaker_factory* server_handshaker_factory_ = nullptr;
+};
 
 #endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_TLS_SPIFFE_SECURITY_CONNECTOR_H \
         */

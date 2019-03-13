@@ -70,7 +70,7 @@ class grpc_ssl_channel_security_connector final
 
   grpc_security_status InitializeHandshakerFactory(
       const grpc_ssl_config* config, tsi_ssl_session_cache* ssl_session_cache) {
-    return grpc_init_tsi_ssl_client_handshaker_factory(
+    return grpc_ssl_tsi_client_handshaker_factory_init(
         config->pem_key_cert_pair, config->pem_root_certs, ssl_session_cache,
         &client_handshaker_factory_);
   }
@@ -101,13 +101,13 @@ class grpc_ssl_channel_security_connector final
                                   : target_name_;
     grpc_error* alpn_error = grpc_ssl_check_alpn(&peer);
     grpc_error* name_error = grpc_ssl_check_peer_name(target_name, &peer);
-    grpc_error* error = GRPC_ERROR_NONE;
+    grpc_error* server_authz_error = GRPC_ERROR_NONE;
     if (alpn_error == GRPC_ERROR_NONE && name_error == GRPC_ERROR_NONE) {
       if (verify_options_->verify_peer_callback != nullptr) {
         const tsi_peer_property* p =
             tsi_peer_get_property_by_name(&peer, TSI_X509_PEM_CERT_PROPERTY);
         if (p == nullptr) {
-          error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          server_authz_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "Cannot check peer: missing pem cert property.");
         } else {
           char* peer_pem = static_cast<char*>(gpr_malloc(p->value.length + 1));
@@ -121,17 +121,22 @@ class grpc_ssl_channel_security_connector final
             char* msg;
             gpr_asprintf(&msg, "Verify peer callback returned a failure (%d)",
                          callback_status);
-            error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+            server_authz_error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
             gpr_free(msg);
           }
         }
       }
       *auth_context = grpc_ssl_peer_to_auth_context(&peer);
     }
-    error = alpn_error == GRPC_ERROR_NONE
-                ? (name_error == GRPC_ERROR_NONE ? error : name_error)
-                : alpn_error;
+
+    grpc_error* error =
+        alpn_error == GRPC_ERROR_NONE
+            ? (name_error == GRPC_ERROR_NONE ? server_authz_error : name_error)
+            : alpn_error;
     GRPC_CLOSURE_SCHED(on_peer_checked, error);
+    GRPC_ERROR_UNREF(alpn_error);
+    GRPC_ERROR_UNREF(name_error);
+    GRPC_ERROR_UNREF(server_authz_error);
     tsi_peer_destruct(&peer);
   }
 
@@ -197,7 +202,7 @@ class grpc_ssl_server_security_connector
     } else {
       auto* server_credentials =
           static_cast<const grpc_ssl_server_credentials*>(server_creds());
-      retval = grpc_init_tsi_ssl_server_handshaker_factory(
+      retval = grpc_ssl_tsi_server_handshaker_factory_init(
           server_credentials->config().pem_key_cert_pairs,
           server_credentials->config().num_key_cert_pairs,
           server_credentials->config().pem_root_certs,
@@ -285,7 +290,7 @@ class grpc_ssl_server_security_connector
     const grpc_ssl_server_credentials* server_credentials =
         static_cast<const grpc_ssl_server_credentials*>(this->server_creds());
     tsi_ssl_server_handshaker_factory* new_handshaker_factory = nullptr;
-    grpc_security_status retval = grpc_init_tsi_ssl_server_handshaker_factory(
+    grpc_security_status retval = grpc_ssl_tsi_server_handshaker_factory_init(
         pem_key_cert_pairs, config->num_key_cert_pairs, config->pem_root_certs,
         server_credentials->config().client_certificate_request,
         &new_handshaker_factory);

@@ -26,10 +26,11 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
-class grpc_tls_spiffe_credentials final : public grpc_channel_credentials {
+class SpiffeCredentials final : public grpc_channel_credentials {
  public:
-  grpc_tls_spiffe_credentials(const grpc_tls_credentials_options* options);
-  ~grpc_tls_spiffe_credentials() override;
+  explicit SpiffeCredentials(
+      grpc_core::RefCountedPtr<grpc_tls_credentials_options> options);
+  ~SpiffeCredentials() override;
 
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
@@ -38,24 +39,21 @@ class grpc_tls_spiffe_credentials final : public grpc_channel_credentials {
       grpc_channel_args** new_args) override;
 
   const grpc_tls_credentials_options* options() const { return options_.get(); }
-  grpc_tls_credentials_options* mutable_options() { return options_.get(); }
 
  private:
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
 };
 
-class grpc_tls_spiffe_server_credentials final
-    : public grpc_server_credentials {
+class SpiffeServerCredentials final : public grpc_server_credentials {
  public:
-  grpc_tls_spiffe_server_credentials(
-      const grpc_tls_credentials_options* options);
-  ~grpc_tls_spiffe_server_credentials() override;
+  explicit SpiffeServerCredentials(
+      grpc_core::RefCountedPtr<grpc_tls_credentials_options> options);
+  ~SpiffeServerCredentials() override;
 
   grpc_core::RefCountedPtr<grpc_server_security_connector>
   create_security_connector() override;
 
   const grpc_tls_credentials_options* options() const { return options_.get(); }
-  grpc_tls_credentials_options* mutable_options() { return options_.get(); }
 
  private:
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;

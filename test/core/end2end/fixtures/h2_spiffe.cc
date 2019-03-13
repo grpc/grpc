@@ -38,12 +38,9 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-#define TOTAL_NUM_THREADS 100
-static grpc_core::Thread threads[TOTAL_NUM_THREADS];
-static size_t num_threads = 0;
-
 typedef struct fullstack_secure_fixture_data {
   char* localaddr;
+  grpc_core::Thread* thd;
 } fullstack_secure_fixture_data;
 
 static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
@@ -53,6 +50,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(
           gpr_malloc(sizeof(fullstack_secure_fixture_data)));
+  ffd->thd = nullptr;
   memset(&f, 0, sizeof(f));
   gpr_join_host_port(&ffd->localaddr, "localhost", port);
   f.fixture_data = ffd;
@@ -99,39 +97,43 @@ static void chttp2_init_server_secure_fullstack(
 void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
-  for (size_t ind = 0; ind < num_threads; ind++) {
-    threads[ind].Join();
+  if (ffd->thd != nullptr) {
+    ffd->thd->Join();
+    grpc_core::Delete(ffd->thd);
   }
-  num_threads = 0;
   gpr_free(ffd->localaddr);
   gpr_free(ffd);
 }
 
+// Application-provided callback for server authorization check.
 static void server_authz_check_cb(void* user_data) {
   grpc_tls_server_authorization_check_arg* check_arg =
       static_cast<grpc_tls_server_authorization_check_arg*>(user_data);
   GPR_ASSERT(check_arg != nullptr);
+  // result = 1 indicates the server authorization check passes.
+  // Normally, the applicaiton code should resort to mapping information
+  // between server identity and target name to derive the result.
+  // For this test, we directly return 1 for simplicity.
   check_arg->result = 1;
   check_arg->status = GRPC_STATUS_OK;
   check_arg->cb(check_arg);
 }
 
-static int server_authz_check_sync(
-    void* config_user_data, grpc_tls_server_authorization_check_arg* arg) {
-  arg->result = 1;
-  arg->status = GRPC_STATUS_OK;
-  return 0;
-}
-
+// Asynchronous implementation of schedule field in
+// grpc_server_authorization_check_config.
 static int server_authz_check_async(
     void* config_user_data, grpc_tls_server_authorization_check_arg* arg) {
-  threads[num_threads] =
-      grpc_core::Thread("h2_spiffe_test", &server_authz_check_cb, arg);
-  threads[num_threads].Start();
-  num_threads++;
+  fullstack_secure_fixture_data* ffd =
+      static_cast<fullstack_secure_fixture_data*>(config_user_data);
+  ffd->thd = grpc_core::New<grpc_core::Thread>("h2_spiffe_test",
+                                               &server_authz_check_cb, arg);
+  ffd->thd->Start();
   return 1;
 }
 
+// Synchronous implementation of schedule field in
+// grpc_tls_credential_reload_config instance that is a part of client-side
+// grpc_tls_credentials_options instance.
 static int client_cred_reload_sync(void* config_user_data,
                                    grpc_tls_credential_reload_arg* arg) {
   grpc_ssl_pem_key_cert_pair** key_cert_pair =
@@ -146,10 +148,14 @@ static int client_cred_reload_sync(void* config_user_data,
         arg->key_materials_config, gpr_strdup(test_root_cert),
         (const grpc_ssl_pem_key_cert_pair**)key_cert_pair, 1);
   }
+  // new credential has been reloaded.
   arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW;
   return 0;
 }
 
+// Synchronous implementation of schedule field in
+// grpc_tls_credential_reload_config instance that is a part of server-side
+// grpc_tls_credentials_options instance.
 static int server_cred_reload_sync(void* config_user_data,
                                    grpc_tls_credential_reload_arg* arg) {
   grpc_ssl_pem_key_cert_pair** key_cert_pair =
@@ -168,12 +174,14 @@ static int server_cred_reload_sync(void* config_user_data,
         arg->key_materials_config, gpr_strdup(test_root_cert),
         (const grpc_ssl_pem_key_cert_pair**)key_cert_pair, 1);
   }
+  // new credential has been reloaded.
   arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW;
   return 0;
 }
 
+// Create a SPIFFE channel credential.
 static grpc_channel_credentials* create_spiffe_channel_credentials(
-    bool authz_check_sync) {
+    fullstack_secure_fixture_data* ffd) {
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
   /* Set credential reload config. */
   grpc_tls_credential_reload_config* reload_config =
@@ -183,11 +191,8 @@ static grpc_channel_credentials* create_spiffe_channel_credentials(
                                                             reload_config);
   /* Set server authorization check config. */
   grpc_tls_server_authorization_check_config* check_config =
-      authz_check_sync
-          ? grpc_tls_server_authorization_check_config_create(
-                nullptr, server_authz_check_sync, nullptr, nullptr)
-          : grpc_tls_server_authorization_check_config_create(
-                nullptr, server_authz_check_async, nullptr, nullptr);
+      grpc_tls_server_authorization_check_config_create(
+          ffd, server_authz_check_async, nullptr, nullptr);
   grpc_tls_credentials_options_set_server_authorization_check_config(
       options, check_config);
   /* Create SPIFFE channel credentials. */
@@ -195,6 +200,7 @@ static grpc_channel_credentials* create_spiffe_channel_credentials(
   return creds;
 }
 
+// Create a SPIFFE server credential.
 static grpc_server_credentials* create_spiffe_server_credentials() {
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
   /* Set credential reload config. */
@@ -213,8 +219,8 @@ static grpc_server_credentials* create_spiffe_server_credentials() {
 
 static void chttp2_init_client(grpc_end2end_test_fixture* f,
                                grpc_channel_args* client_args) {
-  grpc_channel_credentials* ssl_creds =
-      create_spiffe_channel_credentials(false);
+  grpc_channel_credentials* ssl_creds = create_spiffe_channel_credentials(
+      static_cast<fullstack_secure_fixture_data*>(f->fixture_data));
   grpc_arg ssl_name_override = {
       GRPC_ARG_STRING,
       const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),

@@ -759,12 +759,14 @@ typedef void (*grpc_tls_on_server_authorization_check_done_cb)(
 /** A struct containing all information necessary to schedule/cancel a server
    authorization check request. cb and cb_user_data represent a gRPC-provided
    callback and an argument passed to it. result will store the result of
-   server authorization check. target_name is the name of an endpoint the
-   channel is connecting to and certificate represents a complete certificate
-   chain including both signing and leaf certificates. status and error_details
-   contain information about errors occurred when a server authorization check
-   request is scheduled/cancelled. It is used for experimental purpose for now
-   and subject to change.*/
+   server authorization check. That is, if result returns a non-zero value, it
+   means the authorization check passes and if returning zero, it means the
+   check fails. target_name is the name of an endpoint the channel is connecting
+   to and certificate represents a complete certificate chain including both
+   signing and leaf certificates. status and error_details contain information
+   about errors occurred when a server authorization check request is
+   scheduled/cancelled. It is used for experimental purpose for now and subject
+   to change.*/
 struct grpc_tls_server_authorization_check_arg {
   grpc_tls_on_server_authorization_check_done_cb cb;
   void* cb_user_data;
@@ -819,7 +821,7 @@ grpc_tls_server_authorization_check_config_create(
  */
 
 grpc_channel_credentials* grpc_tls_spiffe_credentials_create(
-    const grpc_tls_credentials_options* options);
+    grpc_tls_credentials_options* options);
 
 /**
  * This method creates a TLS server credential object.
@@ -833,7 +835,7 @@ grpc_channel_credentials* grpc_tls_spiffe_credentials_create(
  * to change.
  */
 grpc_server_credentials* grpc_tls_spiffe_server_credentials_create(
-    const grpc_tls_credentials_options* options);
+    grpc_tls_credentials_options* options);
 
 #ifdef __cplusplus
 }

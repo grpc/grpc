@@ -291,7 +291,7 @@ void grpc_shallow_peer_destruct(tsi_peer* peer) {
   if (peer->properties != nullptr) gpr_free(peer->properties);
 }
 
-grpc_security_status grpc_init_tsi_ssl_client_handshaker_factory(
+grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* pem_key_cert_pair, const char* pem_root_certs,
     tsi_ssl_session_cache* ssl_session_cache,
     tsi_ssl_client_handshaker_factory** handshaker_factory) {
@@ -335,7 +335,7 @@ grpc_security_status grpc_init_tsi_ssl_client_handshaker_factory(
   return GRPC_SECURITY_OK;
 }
 
-grpc_security_status grpc_init_tsi_ssl_server_handshaker_factory(
+grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs, size_t num_key_cert_pairs,
     const char* pem_root_certs,
     grpc_ssl_client_certificate_request_type client_certificate_request,
