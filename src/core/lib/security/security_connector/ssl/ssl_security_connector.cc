@@ -128,15 +128,23 @@ class grpc_ssl_channel_security_connector final
       }
       *auth_context = grpc_ssl_peer_to_auth_context(&peer);
     }
-
     grpc_error* error =
         alpn_error == GRPC_ERROR_NONE
             ? (name_error == GRPC_ERROR_NONE ? server_authz_error : name_error)
             : alpn_error;
     GRPC_CLOSURE_SCHED(on_peer_checked, error);
-    GRPC_ERROR_UNREF(alpn_error);
-    GRPC_ERROR_UNREF(name_error);
-    GRPC_ERROR_UNREF(server_authz_error);
+    // Error cleanup
+    if (alpn_error == GRPC_ERROR_NONE && name_error == GRPC_ERROR_NONE) {
+      GRPC_ERROR_UNREF(alpn_error);
+      GRPC_ERROR_UNREF(name_error);
+    } else {
+      GRPC_ERROR_UNREF(server_authz_error);
+      if (alpn_error != GRPC_ERROR_NONE) {
+        GRPC_ERROR_UNREF(name_error);
+      } else {
+        GRPC_ERROR_UNREF(alpn_error);
+      }
+    }
     tsi_peer_destruct(&peer);
   }
 
