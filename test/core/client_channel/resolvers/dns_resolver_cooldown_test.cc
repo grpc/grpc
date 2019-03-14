@@ -174,7 +174,7 @@ struct OnResolutionCallbackArg;
 
 class ResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
-  using ResultCallback = void (*)(const grpc_channel_args* result,
+  using ResultCallback = void (*)(grpc_core::Resolver::Result result,
                                   OnResolutionCallbackArg* state);
 
   void SetCallback(ResultCallback result_cb, OnResolutionCallbackArg* state) {
@@ -184,14 +184,14 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     state_ = state;
   }
 
-  void ReturnResult(const grpc_channel_args* args) override {
+  void ReturnResult(grpc_core::Resolver::Result result) override {
     GPR_ASSERT(result_cb_ != nullptr);
     GPR_ASSERT(state_ != nullptr);
     ResultCallback cb = result_cb_;
     OnResolutionCallbackArg* state = state_;
     result_cb_ = nullptr;
     state_ = nullptr;
-    cb(args, state);
+    cb(std::move(result), state);
   }
 
   void ReturnError(grpc_error* error) override {
@@ -213,9 +213,8 @@ struct OnResolutionCallbackArg {
 // Set to true by the last callback in the resolution chain.
 static bool g_all_callbacks_invoked;
 
-static void on_second_resolution(const grpc_channel_args* result,
+static void on_second_resolution(grpc_core::Resolver::Result result,
                                  OnResolutionCallbackArg* cb_arg) {
-  grpc_channel_args_destroy(result);
   gpr_log(GPR_INFO, "2nd: g_resolution_count: %d", g_resolution_count);
   // The resolution callback was not invoked until new data was
   // available, which was delayed until after the cooldown period.
@@ -230,9 +229,8 @@ static void on_second_resolution(const grpc_channel_args* result,
   g_all_callbacks_invoked = true;
 }
 
-static void on_first_resolution(const grpc_channel_args* result,
+static void on_first_resolution(grpc_core::Resolver::Result result,
                                 OnResolutionCallbackArg* cb_arg) {
-  grpc_channel_args_destroy(result);
   gpr_log(GPR_INFO, "1st: g_resolution_count: %d", g_resolution_count);
   // There's one initial system-level resolution and one invocation of a
   // notification callback (the current function).
