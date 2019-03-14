@@ -143,7 +143,7 @@ class Resolver : public InternallyRefCounted<Resolver> {
 
     /// Returns a result to the channel.
     /// Takes ownership of \a result.args.
-    virtual void ReturnResult(Result result) GRPC_ABSTRACT;
+    virtual void ReturnResult(Result result) GRPC_ABSTRACT;  // NOLINT
 
     /// Returns a transient error to the channel.
     /// If the resolver does not set the GRPC_ERROR_INT_GRPC_STATUS

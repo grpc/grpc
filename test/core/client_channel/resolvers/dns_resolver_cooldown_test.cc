@@ -174,8 +174,7 @@ struct OnResolutionCallbackArg;
 
 class ResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
-  using ResultCallback = void (*)(grpc_core::Resolver::Result result,
-                                  OnResolutionCallbackArg* state);
+  using ResultCallback = void (*)(OnResolutionCallbackArg* state);
 
   void SetCallback(ResultCallback result_cb, OnResolutionCallbackArg* state) {
     GPR_ASSERT(result_cb_ == nullptr);
@@ -191,7 +190,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     OnResolutionCallbackArg* state = state_;
     result_cb_ = nullptr;
     state_ = nullptr;
-    cb(std::move(result), state);
+    cb(state);
   }
 
   void ReturnError(grpc_error* error) override {
@@ -213,8 +212,7 @@ struct OnResolutionCallbackArg {
 // Set to true by the last callback in the resolution chain.
 static bool g_all_callbacks_invoked;
 
-static void on_second_resolution(grpc_core::Resolver::Result result,
-                                 OnResolutionCallbackArg* cb_arg) {
+static void on_second_resolution(OnResolutionCallbackArg* cb_arg) {
   gpr_log(GPR_INFO, "2nd: g_resolution_count: %d", g_resolution_count);
   // The resolution callback was not invoked until new data was
   // available, which was delayed until after the cooldown period.
@@ -229,8 +227,7 @@ static void on_second_resolution(grpc_core::Resolver::Result result,
   g_all_callbacks_invoked = true;
 }
 
-static void on_first_resolution(grpc_core::Resolver::Result result,
-                                OnResolutionCallbackArg* cb_arg) {
+static void on_first_resolution(OnResolutionCallbackArg* cb_arg) {
   gpr_log(GPR_INFO, "1st: g_resolution_count: %d", g_resolution_count);
   // There's one initial system-level resolution and one invocation of a
   // notification callback (the current function).
