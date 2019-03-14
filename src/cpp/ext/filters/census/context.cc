@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "opencensus/trace/propagation/grpc_trace_bin.h"
 #include "src/cpp/ext/filters/census/context.h"
 
 namespace grpc {
@@ -31,14 +32,11 @@ void GenerateServerContext(absl::string_view tracing, absl::string_view stats,
   // Destruct the current CensusContext to free the Span memory before
   // overwriting it below.
   context->~CensusContext();
-  GrpcTraceContext trace_ctxt;
-  if (TraceContextEncoding::Decode(tracing, &trace_ctxt) !=
-      TraceContextEncoding::kEncodeDecodeFailure) {
-    SpanContext parent_ctx = trace_ctxt.ToSpanContext();
-    if (parent_ctx.IsValid()) {
-      new (context) CensusContext(method, parent_ctx);
-      return;
-    }
+  SpanContext parent_ctx =
+      opencensus::trace::propagation::FromGrpcTraceBinHeader(tracing);
+  if (parent_ctx.IsValid()) {
+    new (context) CensusContext(method, parent_ctx);
+    return;
   }
   new (context) CensusContext(method);
 }
@@ -61,9 +59,13 @@ void GenerateClientContext(absl::string_view method, CensusContext* ctxt,
 
 size_t TraceContextSerialize(const ::opencensus::trace::SpanContext& context,
                              char* tracing_buf, size_t tracing_buf_size) {
-  GrpcTraceContext trace_ctxt(context);
-  return TraceContextEncoding::Encode(trace_ctxt, tracing_buf,
-                                      tracing_buf_size);
+  if (tracing_buf_size <
+      opencensus::trace::propagation::kGrpcTraceBinHeaderLen) {
+    return 0;
+  }
+  opencensus::trace::propagation::ToGrpcTraceBinHeader(context,
+                                                       (uint8_t*)tracing_buf);
+  return opencensus::trace::propagation::kGrpcTraceBinHeaderLen;
 }
 
 size_t StatsContextSerialize(size_t max_tags_len, grpc_slice* tags) {

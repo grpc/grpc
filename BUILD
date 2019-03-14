@@ -2292,6 +2292,7 @@ grpc_cc_library(
         "absl-base",
         "absl-time",
         "opencensus-trace",
+        "opencensus-trace-propagation",
         "opencensus-stats",
     ],
     language = "c++",
