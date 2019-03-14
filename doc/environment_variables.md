@@ -45,8 +45,9 @@ some configuration as environment variables that can be set.
   - cares_address_sorting - traces operations of the c-ares based DNS
     resolver's resolved address sorter
   - channel - traces operations on the C core channel stack
-  - client_channel - traces client channel activity, including resolver
-    and load balancing policy interaction
+  - client_channel_call - traces client channel call batch activity
+  - client_channel_routing - traces client channel call routing, including
+    resolver and load balancing policy interaction
   - compression - traces compression operations
   - connectivity_state - traces connectivity state changes to channels
   - executor - traces grpc's internal thread pool ('the executor')

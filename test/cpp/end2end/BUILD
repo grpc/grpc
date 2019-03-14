@@ -99,6 +99,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -242,7 +243,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "end2end_test",
-    size = "large",  # with poll-cv this takes long, see #17493
+    size = "large",
     deps = [
         ":end2end_test_lib",
     ],
@@ -629,6 +630,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_windows"],
 )
 
 grpc_cc_test(

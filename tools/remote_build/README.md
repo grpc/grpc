@@ -29,5 +29,11 @@ Sanitizer runs (asan, msan, tsan, ubsan):
 bazel --bazelrc=tools/remote_build/manual.bazelrc test --config=asan //test/...
 ```
 
+Run on Windows MSVC:
+```
+# local manual run only for C++ targets (RBE to be supported)
+bazel --bazelrc=tools/remote_build/windows.bazelrc test //test/cpp/...
+```
+
 Available command line options can be found in
 [Bazel command line reference](https://docs.bazel.build/versions/master/command-line-reference.html)

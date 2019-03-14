@@ -125,6 +125,19 @@ void ServerTryCancelNonblocking(ServerContext* context) {
   gpr_log(GPR_INFO, "Server called TryCancel() to cancel the request");
 }
 
+void LoopUntilCancelled(Alarm* alarm, ServerContext* context,
+                        experimental::ServerCallbackRpcController* controller) {
+  if (!context->IsCancelled()) {
+    alarm->experimental().Set(
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                     gpr_time_from_micros(1000, GPR_TIMESPAN)),
+        [alarm, context, controller](bool) {
+          LoopUntilCancelled(alarm, context, controller);
+        });
+  } else {
+    controller->Finish(Status::CANCELLED);
+  }
+}
 }  // namespace
 
 Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
@@ -290,18 +303,7 @@ void CallbackTestServiceImpl::EchoNonDelayed(
     gpr_log(GPR_INFO, "Server called TryCancel() to cancel the request");
     // Now wait until it's really canceled
 
-    std::function<void(bool)> recurrence = [this, context, controller,
-                                            &recurrence](bool) {
-      if (!context->IsCancelled()) {
-        alarm_.experimental().Set(
-            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                         gpr_time_from_micros(1000, GPR_TIMESPAN)),
-            recurrence);
-      } else {
-        controller->Finish(Status::CANCELLED);
-      }
-    };
-    recurrence(true);
+    LoopUntilCancelled(&alarm_, context, controller);
     return;
   }
 

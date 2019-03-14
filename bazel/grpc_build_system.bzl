@@ -26,7 +26,13 @@
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 
 # The set of pollers to test against if a test exercises polling
-POLLERS = ["epollex", "epoll1", "poll", "poll-cv"]
+POLLERS = ["epollex", "epoll1", "poll"]
+
+def is_msvc():
+    return select({
+        "//:windows_msvc": True,
+        "//conditions:default": False,
+    })
 
 def if_not_windows(a):
     return select({
@@ -80,7 +86,8 @@ def grpc_cc_library(
         visibility = None,
         alwayslink = 0,
         data = [],
-        use_cfstream = False):
+        use_cfstream = False,
+        tags = []):
     copts = []
     if use_cfstream:
         copts = if_mac(["-DGRPC_CFSTREAM"])
@@ -116,6 +123,7 @@ def grpc_cc_library(
         ],
         alwayslink = alwayslink,
         data = data,
+        tags = tags,
     )
 
 def grpc_proto_plugin(name, srcs = [], deps = []):
@@ -158,8 +166,9 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "size": size,
         "timeout": timeout,
         "exec_compatible_with": exec_compatible_with,
+        "tags": tags,
     }
-    if uses_polling:
+    if uses_polling and not is_msvc():
         native.cc_test(testonly = True, tags = ["manual"], **args)
         for poller in POLLERS:
             native.sh_test(
@@ -180,7 +189,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     else:
         native.cc_test(**args)
 
-def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = []):
+def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = []):
     copts = []
     if language.upper() == "C":
         copts = ["-std=c99"]
@@ -194,6 +203,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
         deps = deps + _get_external_deps(external_deps),
         copts = copts,
         linkopts = if_not_windows(["-pthread"]) + linkopts,
+        tags = tags,
     )
 
 def grpc_generate_one_off_targets():

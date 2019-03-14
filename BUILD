@@ -307,6 +307,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
     standalone = True,
     deps = [
+        "grpc_cfstream",
         "grpc_common",
         "grpc_lb_policy_grpclb_secure",
         "grpc_lb_policy_xds_secure",
@@ -801,7 +802,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/udp_server.cc",
         "src/core/lib/iomgr/unix_sockets_posix.cc",
         "src/core/lib/iomgr/unix_sockets_posix_noop.cc",
-        "src/core/lib/iomgr/wakeup_fd_cv.cc",
         "src/core/lib/iomgr/wakeup_fd_eventfd.cc",
         "src/core/lib/iomgr/wakeup_fd_nospecial.cc",
         "src/core/lib/iomgr/wakeup_fd_pipe.cc",
@@ -942,7 +942,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/timer_manager.h",
         "src/core/lib/iomgr/udp_server.h",
         "src/core/lib/iomgr/unix_sockets_posix.h",
-        "src/core/lib/iomgr/wakeup_fd_cv.h",
         "src/core/lib/iomgr/wakeup_fd_pipe.h",
         "src/core/lib/iomgr/wakeup_fd_posix.h",
         "src/core/lib/json/json.h",
@@ -2281,6 +2280,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "include/grpcpp/opencensus.h",
+        "include/grpcpp/opencensus_impl.h",
         "src/cpp/ext/filters/census/channel_filter.h",
         "src/cpp/ext/filters/census/client_filter.h",
         "src/cpp/ext/filters/census/context.h",

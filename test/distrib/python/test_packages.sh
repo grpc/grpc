@@ -39,6 +39,13 @@ virtualenv "$VIRTUAL_ENV"
 PYTHON=$VIRTUAL_ENV/bin/python
 "$PYTHON" -m pip install --upgrade six pip
 
+function validate_wheel_hashes() {
+  for file in "$@"; do
+    "$PYTHON" -m wheel unpack "$file" --dest-dir /tmp || return 1
+  done
+  return 0
+}
+
 function at_least_one_installs() {
   for file in "$@"; do
     if "$PYTHON" -m pip install "$file"; then
@@ -47,6 +54,16 @@ function at_least_one_installs() {
   done
   return 1
 }
+
+
+#
+# Validate the files in wheel matches their hashes and size in RECORD
+#
+
+if [[ "$1" == "binary" ]]; then
+  validate_wheel_hashes "${ARCHIVES[@]}"
+  validate_wheel_hashes "${TOOLS_ARCHIVES[@]}"
+fi
 
 
 #

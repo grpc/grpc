@@ -15,9 +15,9 @@
 
 """Generates the appropriate build.json data for all the end2end tests."""
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "is_msvc")
 
-POLLERS = ["epollex", "epoll1", "poll", "poll-cv"]
+POLLERS = ["epollex", "epoll1", "poll"]
 
 def _fixture_options(
         fullstack = True,
@@ -31,7 +31,8 @@ def _fixture_options(
         is_http2 = True,
         supports_proxy_auth = False,
         supports_write_buffering = True,
-        client_channel = True):
+        client_channel = True,
+        supports_msvc = True,):
     return struct(
         fullstack = fullstack,
         includes_proxy = includes_proxy,
@@ -44,6 +45,7 @@ def _fixture_options(
         supports_proxy_auth = supports_proxy_auth,
         supports_write_buffering = supports_write_buffering,
         client_channel = client_channel,
+        supports_msvc = supports_msvc,
         #_platforms=_platforms,
     )
 
@@ -119,10 +121,11 @@ END2END_NOSEC_FIXTURES = {
         client_channel = False,
         secure = False,
         _platforms = ["linux", "mac", "posix"],
+        supports_msvc = False,
     ),
     "h2_full": _fixture_options(secure = False),
-    "h2_full+pipe": _fixture_options(secure = False, _platforms = ["linux"]),
-    "h2_full+trace": _fixture_options(secure = False, tracing = True),
+    "h2_full+pipe": _fixture_options(secure = False, _platforms = ["linux"], supports_msvc = False),
+    "h2_full+trace": _fixture_options(secure = False, tracing = True, supports_msvc = False),
     "h2_full+workarounds": _fixture_options(secure = False),
     "h2_http_proxy": _fixture_options(secure = False, supports_proxy_auth = True),
     "h2_proxy": _fixture_options(secure = False, includes_proxy = True),
@@ -151,6 +154,7 @@ END2END_NOSEC_FIXTURES = {
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
         secure = False,
+        supports_msvc = False,
     ),
 }
 
@@ -329,6 +333,9 @@ END2END_TESTS = {
 }
 
 def _compatible(fopt, topt):
+    if is_msvc:
+        if not fopt.supports_msvc:
+            return False
     if topt.needs_fullstack:
         if not fopt.fullstack:
             return False

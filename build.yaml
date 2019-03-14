@@ -334,7 +334,6 @@ filegroups:
   - src/core/lib/iomgr/udp_server.cc
   - src/core/lib/iomgr/unix_sockets_posix.cc
   - src/core/lib/iomgr/unix_sockets_posix_noop.cc
-  - src/core/lib/iomgr/wakeup_fd_cv.cc
   - src/core/lib/iomgr/wakeup_fd_eventfd.cc
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
@@ -499,7 +498,6 @@ filegroups:
   - src/core/lib/iomgr/timer_manager.h
   - src/core/lib/iomgr/udp_server.h
   - src/core/lib/iomgr/unix_sockets_posix.h
-  - src/core/lib/iomgr/wakeup_fd_cv.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/json/json.h
@@ -3741,21 +3739,6 @@ targets:
   - grpc_test_util
   - grpc
   - gpr
-- name: wakeup_fd_cv_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/wakeup_fd_cv_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  exclude_iomgrs:
-  - uv
-  platforms:
-  - mac
-  - linux
-  - posix
 - name: alarm_test
   gtest: true
   build: test
@@ -4181,7 +4164,6 @@ targets:
   defaults: benchmark
   excluded_poll_engines:
   - poll
-  - poll-cv
   platforms:
   - mac
   - linux
@@ -4207,7 +4189,6 @@ targets:
   defaults: benchmark
   excluded_poll_engines:
   - poll
-  - poll-cv
   platforms:
   - mac
   - linux
@@ -4233,7 +4214,6 @@ targets:
   - tsan
   excluded_poll_engines:
   - poll
-  - poll-cv
   platforms:
   - mac
   - linux
@@ -4259,7 +4239,6 @@ targets:
   defaults: benchmark
   excluded_poll_engines:
   - poll
-  - poll-cv
   platforms:
   - mac
   - linux
@@ -5033,6 +5012,20 @@ targets:
   - mac
   - linux
   - posix
+- name: map_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/gprpp/map_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  uses:
+  - grpc++_test
+  uses_polling: false
 - name: memory_test
   gtest: true
   build: test
