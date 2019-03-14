@@ -36,7 +36,6 @@ namespace testing {
 class ChannelArgumentsTest;
 }  // namespace testing
 
-
 /// Options for channel creation. The user can use generic setters to pass
 /// key value pairs down to C channel creation code. For gRPC related options,
 /// concrete setters are provided.
