@@ -45,6 +45,16 @@ namespace internal {
 ProcessedResolverResult::ProcessedResolverResult(
     const Resolver::Result& resolver_result, bool parse_retry)
     : service_config_(resolver_result.service_config) {
+  // If resolver did not return a service config, use the default
+  // specified via the client API.
+  if (service_config_ == nullptr) {
+    const char* service_config_json = grpc_channel_arg_get_string(
+        grpc_channel_args_find(resolver_result.args, GRPC_ARG_SERVICE_CONFIG));
+    if (service_config_json != nullptr) {
+      service_config_ = ServiceConfig::Create(service_config_json);
+    }
+  }
+  // Process service config.
   ProcessServiceConfig(resolver_result, parse_retry);
   // If no LB config was found above, just find the LB policy name then.
   if (lb_policy_name_ == nullptr) ProcessLbPolicyName(resolver_result);
