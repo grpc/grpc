@@ -87,16 +87,12 @@ PopulateSpiffeCredentials(const grpc_tls_credentials_options& options) {
     grpc_core::Delete(arg);
     /* Use existing key materials config. */
   } else {
-    key_materials_config = const_cast<grpc_tls_key_materials_config*>(
-                               options.key_materials_config())
-                               ->Ref();
+    key_materials_config = options.key_materials_config()->Ref();
   }
   return key_materials_config;
 }
 
 }  // namespace
-
-grpc_closure* SpiffeChannelSecurityConnector::on_peer_checked_(nullptr);
 
 SpiffeChannelSecurityConnector::SpiffeChannelSecurityConnector(
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
@@ -278,7 +274,9 @@ void SpiffeChannelSecurityConnector::ServerAuthorizationCheckDone(
   GPR_ASSERT(arg != nullptr);
   grpc_core::ExecCtx exec_ctx;
   grpc_error* error = ProcessServerAuthorizationCheckResult(arg);
-  GRPC_CLOSURE_SCHED(const_cast<grpc_closure*>(on_peer_checked_), error);
+  SpiffeChannelSecurityConnector* connector =
+      static_cast<SpiffeChannelSecurityConnector*>(arg->cb_user_data);
+  GRPC_CLOSURE_SCHED(connector->on_peer_checked_, error);
 }
 
 grpc_error*

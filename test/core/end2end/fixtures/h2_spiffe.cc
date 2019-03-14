@@ -39,7 +39,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-typedef grpc_core::InlinedVector<grpc_core::Thread*, 1> ThreadList;
+typedef grpc_core::InlinedVector<grpc_core::Thread, 1> ThreadList;
 
 typedef struct fullstack_secure_fixture_data {
   char* localaddr;
@@ -99,7 +99,7 @@ void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
   for (size_t ind = 0; ind < ffd->thd_list.size(); ind++) {
-    ffd->thd_list[ind]->Join();
+    ffd->thd_list[ind].Join();
   }
   gpr_free(ffd->localaddr);
   grpc_core::Delete(ffd);
@@ -125,9 +125,9 @@ static int server_authz_check_async(
     void* config_user_data, grpc_tls_server_authorization_check_arg* arg) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(config_user_data);
-  ffd->thd_list.push_back(grpc_core::New<grpc_core::Thread>(
-      "h2_spiffe_test", &server_authz_check_cb, arg));
-  ffd->thd_list[ffd->thd_list.size() - 1]->Start();
+  ffd->thd_list.push_back(
+      grpc_core::Thread("h2_spiffe_test", &server_authz_check_cb, arg));
+  ffd->thd_list[ffd->thd_list.size() - 1].Start();
   return 1;
 }
 

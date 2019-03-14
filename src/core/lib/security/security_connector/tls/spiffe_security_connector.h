@@ -82,7 +82,7 @@ class SpiffeChannelSecurityConnector final
   static void ServerAuthorizationCheckArgDestroy(
       grpc_tls_server_authorization_check_arg* arg);
 
-  static grpc_closure* on_peer_checked_;
+  grpc_closure* on_peer_checked_;
   char* target_name_;
   char* overridden_target_name_;
   tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
@@ -108,6 +108,7 @@ class SpiffeServerSecurityConnector final
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
+
   int cmp(const grpc_security_connector* other) const override;
 
  private:
