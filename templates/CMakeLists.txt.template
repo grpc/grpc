@@ -331,12 +331,24 @@
   % elif lib.name in ['grpc_csharp_ext']:
   if (gRPC_BUILD_CSHARP_EXT)
   ${cc_library(lib)}
+  % if any(proto_re.match(src) for src in lib.src):
+  if (gRPC_BUILD_CODEGEN)
+  % endif
   ${cc_install(lib)}
+  % if any(proto_re.match(src) for src in lib.src):
+  endif (gRPC_BUILD_CODEGEN)
+  % endif
   endif (gRPC_BUILD_CSHARP_EXT)
   % else:
   ${cc_library(lib)}
   % if not lib.build in ["tool"]:
+  % if any(proto_re.match(src) for src in lib.src):
+  if (gRPC_BUILD_CODEGEN)
+  % endif
   ${cc_install(lib)}
+  % if any(proto_re.match(src) for src in lib.src):
+  endif (gRPC_BUILD_CODEGEN)
+  % endif
   % endif
   % endif
   % endif

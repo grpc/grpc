@@ -1084,6 +1084,39 @@ TEST_P(ClientCallbackEnd2endTest, SimultaneousReadAndWritesDone) {
   test.Await();
 }
 
+TEST_P(ClientCallbackEnd2endTest, UnimplementedRpc) {
+  MAYBE_SKIP_TEST;
+  ChannelArguments args;
+  const auto& channel_creds = GetCredentialsProvider()->GetChannelCredentials(
+      GetParam().credentials_type, &args);
+  std::shared_ptr<Channel> channel =
+      (GetParam().protocol == Protocol::TCP)
+          ? CreateCustomChannel(server_address_.str(), channel_creds, args)
+          : server_->InProcessChannel(args);
+  std::unique_ptr<grpc::testing::UnimplementedEchoService::Stub> stub;
+  stub = grpc::testing::UnimplementedEchoService::NewStub(channel);
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext cli_ctx;
+  request.set_message("Hello world.");
+  std::mutex mu;
+  std::condition_variable cv;
+  bool done = false;
+  stub->experimental_async()->Unimplemented(
+      &cli_ctx, &request, &response, [&done, &mu, &cv](Status s) {
+        EXPECT_EQ(StatusCode::UNIMPLEMENTED, s.error_code());
+        EXPECT_EQ("", s.error_message());
+
+        std::lock_guard<std::mutex> l(mu);
+        done = true;
+        cv.notify_one();
+      });
+  std::unique_lock<std::mutex> l(mu);
+  while (!done) {
+    cv.wait(l);
+  }
+}
+
 std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   std::vector<TestScenario> scenarios;
   std::vector<grpc::string> credentials_types{

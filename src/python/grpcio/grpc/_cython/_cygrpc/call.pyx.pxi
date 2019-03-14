@@ -17,11 +17,11 @@ cimport cpython
 
 cdef class Call:
 
-  def __cinit__(self):
+  def __cinit__(self, _VTable vtable not None):
     # Create an *empty* call
     fork_handlers_and_grpc_init()
     self.c_call = NULL
-    self.references = []
+    self.references = [vtable]
 
   def _start_batch(self, operations, tag, retain_self):
     if not self.is_valid:
