@@ -28,6 +28,10 @@ grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(
 
 namespace grpc_core {
 
+//
+// LoadBalancingPolicy
+//
+
 LoadBalancingPolicy::LoadBalancingPolicy(Args args, intptr_t initial_refcount)
     : InternallyRefCounted(&grpc_trace_lb_policy_refcount, initial_refcount),
       combiner_(GRPC_COMBINER_REF(args.combiner, "lb_policy")),
@@ -37,6 +41,26 @@ LoadBalancingPolicy::LoadBalancingPolicy(Args args, intptr_t initial_refcount)
 LoadBalancingPolicy::~LoadBalancingPolicy() {
   grpc_pollset_set_destroy(interested_parties_);
   GRPC_COMBINER_UNREF(combiner_, "lb_policy");
+}
+
+void LoadBalancingPolicy::Orphan() {
+  // Invoke ShutdownAndUnrefLocked() inside of the combiner.
+  // TODO(roth): Is this actually needed?  We should already be in the
+  // combiner here.  Note that if we directly call ShutdownLocked(),
+  // then we can probably remove the hack whereby the helper is
+  // destroyed at shutdown instead of at destruction.
+  GRPC_CLOSURE_SCHED(
+      GRPC_CLOSURE_CREATE(&LoadBalancingPolicy::ShutdownAndUnrefLocked, this,
+                          grpc_combiner_scheduler(combiner_)),
+      GRPC_ERROR_NONE);
+}
+
+void LoadBalancingPolicy::ShutdownAndUnrefLocked(void* arg,
+                                                 grpc_error* ignored) {
+  LoadBalancingPolicy* policy = static_cast<LoadBalancingPolicy*>(arg);
+  policy->ShutdownLocked();
+  policy->channel_control_helper_.reset();
+  policy->Unref();
 }
 
 grpc_json* LoadBalancingPolicy::ParseLoadBalancingConfig(
@@ -63,6 +87,42 @@ grpc_json* LoadBalancingPolicy::ParseLoadBalancingConfig(
     }
   }
   return nullptr;
+}
+
+//
+// LoadBalancingPolicy::QueuePicker
+//
+
+LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
+    PickArgs* pick, grpc_error** error) {
+  // We invoke the parent's ExitIdleLocked() via a closure instead
+  // of doing it directly here, for two reasons:
+  // 1. ExitIdleLocked() may cause the policy's state to change and
+  //    a new picker to be delivered to the channel.  If that new
+  //    picker is delivered before ExitIdleLocked() returns, then by
+  //    the time this function returns, the pick will already have
+  //    been processed, and we'll be trying to re-process the same
+  //    pick again, leading to a crash.
+  // 2. In a subsequent PR, we will split the data plane and control
+  //    plane synchronization into separate combiners, at which
+  //    point this will need to hop from the data plane combiner into
+  //    the control plane combiner.
+  if (!exit_idle_called_) {
+    exit_idle_called_ = true;
+    parent_->Ref().release();  // ref held by closure.
+    GRPC_CLOSURE_SCHED(
+        GRPC_CLOSURE_CREATE(&CallExitIdle, parent_.get(),
+                            grpc_combiner_scheduler(parent_->combiner())),
+        GRPC_ERROR_NONE);
+  }
+  return PICK_QUEUE;
+}
+
+void LoadBalancingPolicy::QueuePicker::CallExitIdle(void* arg,
+                                                    grpc_error* error) {
+  LoadBalancingPolicy* parent = static_cast<LoadBalancingPolicy*>(arg);
+  parent->ExitIdleLocked();
+  parent->Unref();
 }
 
 }  // namespace grpc_core
