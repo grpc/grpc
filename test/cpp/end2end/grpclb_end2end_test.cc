@@ -237,7 +237,7 @@ class BalancerServiceImpl : public BalancerService {
     }
     {
       std::unique_lock<std::mutex> lock(mu_);
-      serverlist_cond_.wait(lock, [this] { return serverlist_ready_; });
+      serverlist_cond_.wait(lock, [this] { return serverlist_done_; });
     }
 
     if (client_load_reporting_interval_seconds_ > 0) {
@@ -282,6 +282,7 @@ class BalancerServiceImpl : public BalancerService {
     NotifyDoneWithServerlists();
     responses_and_delays_.clear();
     client_stats_.Reset();
+    gpr_log(GPR_INFO, "LB[%p]: shut down", this);
   }
 
   static LoadBalanceResponse BuildResponseForBackends(
@@ -317,8 +318,8 @@ class BalancerServiceImpl : public BalancerService {
 
   void NotifyDoneWithServerlists() {
     std::lock_guard<std::mutex> lock(mu_);
-    if (!serverlist_ready_) {
-      serverlist_ready_ = true;
+    if (!serverlist_done_) {
+      serverlist_done_ = true;
       serverlist_cond_.notify_all();
     }
   }
@@ -342,7 +343,7 @@ class BalancerServiceImpl : public BalancerService {
   std::condition_variable load_report_cond_;
   bool load_report_ready_ = false;
   std::condition_variable serverlist_cond_;
-  bool serverlist_ready_ = false;
+  bool serverlist_done_ = false;
   ClientStats client_stats_;
 };
 
@@ -613,7 +614,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
       running_ = true;
       std::mutex mu;
       // We need to acquire the lock here in order to prevent the notify_one
-      // by ServerThread::Start from firing before the wait below is hit.
+      // by ServerThread::Serve from firing before the wait below is hit.
       std::unique_lock<std::mutex> lock(mu);
       std::condition_variable cond;
       thread_.reset(new std::thread(
@@ -1752,9 +1753,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, BalancerRestart) {
   // Send one RPC per backend.
   CheckRpcSendOk(kNumBackendsSecondPass);
   balancers_[0]->service_.NotifyDoneWithServerlists();
-  // The balancer got a single request.
   EXPECT_EQ(2U, balancers_[0]->service_.request_count());
-  // and sent a single response.
   EXPECT_EQ(2U, balancers_[0]->service_.response_count());
   // Check client stats.
   client_stats = WaitForLoadReports();
