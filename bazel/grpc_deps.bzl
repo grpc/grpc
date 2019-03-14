@@ -106,6 +106,11 @@ def grpc_deps():
         actual = "@io_opencensus_cpp//opencensus/stats:test_utils",
     )
 
+    native.bind(
+        name = "opencensus-tags",
+        actual = "@io_opencensus_cpp//opencensus/tags:tags",
+    )
+
     if "boringssl" not in native.existing_rules():
         http_archive(
             name = "boringssl",

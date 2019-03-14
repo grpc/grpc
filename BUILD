@@ -1429,6 +1429,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "opencensus-stats",
+        "opencensus-tags",
     ],
     language = "c++",
     deps = [
@@ -1525,6 +1526,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "opencensus-stats",
+        "opencensus-tags",
     ],
     language = "c++",
     deps = [
@@ -2291,8 +2293,9 @@ grpc_cc_library(
     external_deps = [
         "absl-base",
         "absl-time",
-        "opencensus-trace",
         "opencensus-stats",
+        "opencensus-tags",
+        "opencensus-trace",
     ],
     language = "c++",
     deps = [
