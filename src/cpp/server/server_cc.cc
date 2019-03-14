@@ -987,7 +987,7 @@ void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   DefaultHealthCheckService::HealthCheckServiceImpl*
       default_health_check_service_impl = nullptr;
   if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
-      DefaultHealthCheckServiceEnabled()) {
+      grpc_impl::DefaultHealthCheckServiceEnabled()) {
     auto* default_hc_service = new DefaultHealthCheckService;
     health_check_service_.reset(default_hc_service);
     // We create a non-polling CQ to avoid impacting application
