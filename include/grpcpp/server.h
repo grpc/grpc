@@ -40,10 +40,13 @@
 
 struct grpc_server;
 
+namespace grpc_impl {
+
+class HealthCheckServiceInterface;
+}
 namespace grpc {
 
 class AsyncGenericService;
-class HealthCheckServiceInterface;
 class ServerContext;
 class ServerInitializer;
 
@@ -94,7 +97,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   grpc_server* c_server();
 
   /// Returns the health check service.
-  HealthCheckServiceInterface* GetHealthCheckService() const {
+  grpc_impl::HealthCheckServiceInterface* GetHealthCheckService() const {
     return health_check_service_.get();
   }
 
@@ -323,7 +326,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
 
   std::unique_ptr<ServerInitializer> server_initializer_;
 
-  std::unique_ptr<HealthCheckServiceInterface> health_check_service_;
+  std::unique_ptr<grpc_impl::HealthCheckServiceInterface> health_check_service_;
   bool health_check_service_disabled_;
 
   // When appropriate, use a default callback generic service to handle
