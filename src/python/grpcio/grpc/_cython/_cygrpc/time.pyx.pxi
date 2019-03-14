@@ -17,7 +17,7 @@ cdef gpr_timespec _timespec_from_time(object time) except *:
   if time is None:
     return gpr_inf_future(GPR_CLOCK_REALTIME)
   else:
-    timespec = gpr_time_from_nanos(<int64_t>(float(time) * GPR_NS_PER_SEC), GPR_CLOCK_REALTIME)
+    timespec = gpr_time_from_nanos(<int64_t>(time * GPR_NS_PER_SEC), GPR_CLOCK_REALTIME)
     return timespec
 
 
