@@ -170,15 +170,12 @@ struct grpc_tls_credentials_options
   grpc_tls_key_materials_config* key_materials_config() const {
     return key_materials_config_.get();
   }
-  const grpc_tls_credential_reload_config* credential_reload_config() const {
+  grpc_tls_credential_reload_config* credential_reload_config() const {
     return credential_reload_config_.get();
   }
-  const grpc_tls_server_authorization_check_config*
+  grpc_tls_server_authorization_check_config*
   server_authorization_check_config() const {
     return server_authorization_check_config_.get();
-  }
-  grpc_tls_key_materials_config* mutable_key_materials_config() {
-    return key_materials_config_.get();
   }
 
   /* Setters for member fields. */
