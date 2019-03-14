@@ -1,7 +1,7 @@
 ## gRPC Compression
 
-The keywords "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
-"SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in this document are to be
+The keywords `MUST`, `MUST NOT`, `REQUIRED`, `SHALL`, `SHALL NOT`, `SHOULD`,
+`SHOULD NOT`, `RECOMMENDED`,  `MAY`, and `OPTIONAL` in this document are to be
 interpreted as described in [RFC 2119](http://www.ietf.org/rfc/rfc2119.txt).
 
 ### Intent
@@ -71,7 +71,7 @@ cases.
 The set of supported algorithm is implementation dependent. In order to simplify
 the public API and to operate seamlessly across implementations (both in terms
 of languages but also different version of the same one), we introduce the idea
-of _compression levels_ (such as "low", "medium", "high").
+of _compression levels_ (such as `low`, `medium`, `high`).
 
 Levels map to concrete algorithms and/or their settings (such as "low" mapping
 to "gzip -3" and "high" mapping to "gzip -9") automatically depending on what a
