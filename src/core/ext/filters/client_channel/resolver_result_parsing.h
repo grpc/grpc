@@ -48,8 +48,7 @@ class ProcessedResolverResult {
   // Processes the resolver result and populates the relative members
   // for later consumption. Tries to parse retry parameters only if parse_retry
   // is true.
-  ProcessedResolverResult(Resolver::Result* resolver_result,
-                          bool parse_retry);
+  ProcessedResolverResult(Resolver::Result* resolver_result, bool parse_retry);
 
   // Getters. Any managed object's ownership is transferred.
   UniquePtr<char> service_config_json() {

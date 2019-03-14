@@ -48,7 +48,8 @@ RefCountedPtr<ServiceConfig> ServiceConfig::Create(const char* json) {
 ServiceConfig::ServiceConfig(UniquePtr<char> service_config_json,
                              UniquePtr<char> json_string, grpc_json* json_tree)
     : service_config_json_(std::move(service_config_json)),
-      json_string_(std::move(json_string)), json_tree_(json_tree) {}
+      json_string_(std::move(json_string)),
+      json_tree_(json_tree) {}
 
 ServiceConfig::~ServiceConfig() { grpc_json_destroy(json_tree_); }
 

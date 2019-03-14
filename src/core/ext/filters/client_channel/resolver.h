@@ -60,8 +60,7 @@ class Resolver : public InternallyRefCounted<Resolver> {
 
     Result(ServerAddressList addresses,
            RefCountedPtr<ServiceConfig> service_config,
-           grpc_error* service_config_error,
-           const grpc_channel_args* args)
+           grpc_error* service_config_error, const grpc_channel_args* args)
         : addresses(std::move(addresses)),
           service_config(std::move(service_config)),
           service_config_error(service_config_error),
@@ -74,15 +73,13 @@ class Resolver : public InternallyRefCounted<Resolver> {
           service_config(std::move(service_config)),
           args(args) {}
 
-    Result(ServerAddressList addresses,
-           grpc_error* service_config_error,
+    Result(ServerAddressList addresses, grpc_error* service_config_error,
            const grpc_channel_args* args)
         : addresses(std::move(addresses)),
           service_config_error(service_config_error),
           args(args) {}
 
-    Result(ServerAddressList addresses,
-           const grpc_channel_args* args)
+    Result(ServerAddressList addresses, const grpc_channel_args* args)
         : addresses(std::move(addresses)), args(args) {}
 
     // Copy ctor and assignment.

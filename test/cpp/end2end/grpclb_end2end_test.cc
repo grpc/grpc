@@ -542,18 +542,16 @@ class GrpclbEnd2endTest : public ::testing::Test {
     if (service_config_json != nullptr) {
       service_config = grpc_core::ServiceConfig::Create(service_config_json);
     }
-    response_generator_->SetResponse(
-        grpc_core::Resolver::Result(
-            CreateLbAddressesFromAddressDataList(address_data),
-            std::move(service_config), nullptr));
+    response_generator_->SetResponse(grpc_core::Resolver::Result(
+        CreateLbAddressesFromAddressDataList(address_data),
+        std::move(service_config), nullptr));
   }
 
   void SetNextReresolutionResponse(
       const std::vector<AddressData>& address_data) {
     grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetReresolutionResponse(
-        grpc_core::Resolver::Result(
-            CreateLbAddressesFromAddressDataList(address_data), nullptr));
+    response_generator_->SetReresolutionResponse(grpc_core::Resolver::Result(
+        CreateLbAddressesFromAddressDataList(address_data), nullptr));
   }
 
   const std::vector<int> GetBackendPorts(const size_t start_index = 0) const {

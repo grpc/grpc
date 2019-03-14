@@ -248,6 +248,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Updates the policy with a new \a result and a new \a lb_config from
   /// the resolver. Will be invoked immediately after LB policy is constructed,
   /// and then again whenever the resolver returns a new result.
+  // TODO(roth): Do we actually want to use Resolver::Result here?  This
+  // will pass in a ref to the service config, which we don't really
+  // need in the LB policy.
   virtual void UpdateLocked(Resolver::Result, RefCountedPtr<Config>)  // NOLINT
       GRPC_ABSTRACT;
 

@@ -1411,7 +1411,6 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
   // TODO(juanlishen): Change this as part of implementing fallback mode.
   GPR_ASSERT(serverlist_ != nullptr);
   GPR_ASSERT(serverlist_->num_servers > 0);
-// FIXME: pass service config down
   Resolver::Result result(ProcessServerlist(serverlist_),
                           CreateChildPolicyArgsLocked());
   // If the child policy name changes, we need to create a new child

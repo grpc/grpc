@@ -539,11 +539,9 @@ class XdsEnd2endTest : public ::testing::Test {
         lb_channel_response_generator == nullptr
             ? lb_channel_response_generator_.get()
             : lb_channel_response_generator);
-    response_generator_->SetResponse(
-        grpc_core::Resolver::Result(
-            CreateLbAddressesFromPortList(ports),
-            std::move(service_config), 
-            grpc_channel_args_copy_and_add(nullptr, &arg, 1)));
+    response_generator_->SetResponse(grpc_core::Resolver::Result(
+        CreateLbAddressesFromPortList(ports), std::move(service_config),
+        grpc_channel_args_copy_and_add(nullptr, &arg, 1)));
   }
 
   void SetNextResolutionForLbChannelAllBalancers(
@@ -577,9 +575,8 @@ class XdsEnd2endTest : public ::testing::Test {
 
   void SetNextReresolutionResponse(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetReresolutionResponse(
-        grpc_core::Resolver::Result(CreateLbAddressesFromPortList(ports),
-                                    nullptr));
+    response_generator_->SetReresolutionResponse(grpc_core::Resolver::Result(
+        CreateLbAddressesFromPortList(ports), nullptr));
   }
 
   const std::vector<int> GetBackendPorts(const size_t start_index = 0) const {

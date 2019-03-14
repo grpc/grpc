@@ -114,9 +114,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     gpr_event ev;
 
     ResolverOutput() { gpr_event_init(&ev); }
-    ~ResolverOutput() {
-      GRPC_ERROR_UNREF(error);
-    }
+    ~ResolverOutput() { GRPC_ERROR_UNREF(error); }
   };
 
   void SetOutput(ResolverOutput* output) {

@@ -1626,7 +1626,6 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
   grpc_channel_args* args =
       CreateChildPolicyArgsLocked(is_backend_from_grpclb_load_balancer);
   GPR_ASSERT(args != nullptr);
-// FIXME: pass in service config?
   Resolver::Result result(std::move(addresses), args);
   // If the child policy name changes, we need to create a new child
   // policy.  When this happens, we leave child_policy_ as-is and store
