@@ -237,6 +237,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/server_builder_option.h",
     "include/grpcpp/impl/server_builder_plugin.h",
     "include/grpcpp/impl/server_initializer.h",
+    "include/grpcpp/impl/server_initializer_impl.h",
     "include/grpcpp/impl/service_type.h",
     "include/grpcpp/impl/sync_cxx11.h",
     "include/grpcpp/impl/sync_no_cxx11.h",

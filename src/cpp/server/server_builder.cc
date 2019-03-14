@@ -309,7 +309,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       sync_server_settings_.cq_timeout_msec, resource_quota_,
       std::move(interceptor_creators_)));
 
-  ServerInitializer* initializer = server->initializer();
+  grpc_impl::ServerInitializer* initializer = server->initializer();
 
   // Register all the completion queues with the server. i.e
   //  1. sync_server_cqs: internal completion queues created IF this is a sync
