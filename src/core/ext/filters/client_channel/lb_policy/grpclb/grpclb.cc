@@ -302,7 +302,7 @@ class GrpcLb : public LoadBalancingPolicy {
   void CancelBalancerChannelConnectivityWatchLocked();
 
   // Methods for dealing with fallback state.
-  void MaybeEnterFallbackMode();
+  void MaybeEnterFallbackModeAfterStartup();
   static void OnFallbackTimerLocked(void* arg, grpc_error* error);
 
   // Methods for dealing with the balancer call.
@@ -647,7 +647,7 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
   // Record whether child policy reports READY.
   parent_->child_policy_ready_ = state == GRPC_CHANNEL_READY;
   // Enter fallback mode if needed.
-  parent_->MaybeEnterFallbackMode();
+  parent_->MaybeEnterFallbackModeAfterStartup();
   // There are three cases to consider here:
   // 1. We're in fallback mode.  In this case, we're always going to use
   //    the child policy's result, so we pass its picker through as-is.
@@ -1149,7 +1149,7 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
       grpclb_policy->CreateOrUpdateChildPolicyLocked();
     } else {
       // This handles the fallback-after-startup case.
-      grpclb_policy->MaybeEnterFallbackMode();
+      grpclb_policy->MaybeEnterFallbackModeAfterStartup();
     }
     grpclb_policy->lb_calld_.reset();
     GPR_ASSERT(!grpclb_policy->shutting_down_);
@@ -1610,7 +1610,7 @@ void GrpcLb::OnBalancerCallRetryTimerLocked(void* arg, grpc_error* error) {
 // code for handling fallback mode
 //
 
-void GrpcLb::MaybeEnterFallbackMode() {
+void GrpcLb::MaybeEnterFallbackModeAfterStartup() {
   // Enter fallback mode if all of the following are true:
   // - We are not currently in fallback mode.
   // - We are not currently waiting for the initial fallback timeout.
