@@ -111,7 +111,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
       const char* lb_policy_name, const grpc_channel_args& args,
       TraceStringVector* trace_strings);
   void MaybeAddTraceMessagesForAddressChangesLocked(
-      const ServerAddressList& addresses, TraceStringVector* trace_strings);
+      bool resolution_contains_addresses, TraceStringVector* trace_strings);
   void ConcatenateAndAddChannelTraceLocked(
       TraceStringVector* trace_strings) const;
   void OnResolverResultChangedLocked(Resolver::Result result);

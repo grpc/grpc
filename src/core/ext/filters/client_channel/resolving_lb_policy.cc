@@ -481,8 +481,7 @@ ResolvingLoadBalancingPolicy::CreateLbPolicyLocked(
 }
 
 void ResolvingLoadBalancingPolicy::MaybeAddTraceMessagesForAddressChangesLocked(
-    const ServerAddressList& addresses, TraceStringVector* trace_strings) {
-  const bool resolution_contains_addresses = addresses.size() > 0;
+    bool resolution_contains_addresses, TraceStringVector* trace_strings) {
   if (!resolution_contains_addresses &&
       previous_resolution_contained_addresses_) {
     trace_strings->push_back(gpr_strdup("Address list became empty"));
@@ -531,6 +530,7 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   //
   // We track a list of strings to eventually be concatenated and traced.
   TraceStringVector trace_strings;
+  const bool resolution_contains_addresses = result.addresses.size() > 0;
   // Process the resolver result.
   const char* lb_policy_name = nullptr;
   RefCountedPtr<Config> lb_policy_config;
@@ -554,7 +554,7 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
       // config in the trace, at the risk of bloating the trace logs.
       trace_strings.push_back(gpr_strdup("Service config changed"));
     }
-    MaybeAddTraceMessagesForAddressChangesLocked(result.addresses,
+    MaybeAddTraceMessagesForAddressChangesLocked(resolution_contains_addresses,
                                                  &trace_strings);
     ConcatenateAndAddChannelTraceLocked(&trace_strings);
   }
