@@ -104,7 +104,8 @@ namespace {
 
 // Parse the contents of FLAGS_additional_metadata into a map. Allow
 // alphanumeric characters and dashes in keys, and any character but semicolons
-// in values. On failure, log an error and return false.
+// in values. Convert keys to lowercase. On failure, log an error and return
+// false.
 bool ParseAdditionalMetadataFlag(
     const grpc::string& flag,
     std::multimap<grpc::string, grpc::string>* additional_metadata) {
@@ -132,6 +133,13 @@ bool ParseAdditionalMetadataFlag(
               "than alphanumeric and hyphens: %s",
               key.c_str());
       return false;
+    }
+
+    // Convert to lowercase.
+    for (char& c : key) {
+      if (c >= 'A' && c <= 'Z') {
+        c += ('a' - 'A');
+      }
     }
 
     gpr_log(GPR_INFO, "Adding additional metadata with key %s and value %s",
