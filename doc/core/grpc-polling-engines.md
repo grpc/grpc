@@ -23,11 +23,9 @@ There are multiple polling engine implementations depending on the OS and the OS
   - **`epollex`** (default but requires kernel version >= 4.5),
   - `epoll1` (If `epollex` is not available and glibc version >= 2.9)
   - `poll` (If kernel does not have epoll support)
-  - `poll-cv` (If explicitly configured)
-- Mac: **`poll`** (default), `poll-cv` (If explicitly configured)
+- Mac: **`poll`** (default)
 - Windows: (no name)
 - One-off polling engines:
-  - AppEngine platform: **`poll-cv`** (default)
   - NodeJS : `libuv` polling engine implementation (requires different compile `#define`s)
 
 ## Polling Engine Interface
@@ -87,7 +85,7 @@ Add/Remove fd to the `grpc_pollset_set`
 - **grpc\_pollset\_set_[add|del]\_pollset**
   - Signature: `grpc_pollset_set_[add|del]_pollset(grpc_pollset_set* pss, grpc_pollset* ps)`
   - What does adding a pollset to a pollset_set mean ?
-    - It means that calling `grpc_pollset_work()` on the pollset will also poll all the fds in the pollset_set i.e semantically, it is similar to adding all the fds inside pollset_set to the pollset. 
+    - It means that calling `grpc_pollset_work()` on the pollset will also poll all the fds in the pollset_set i.e semantically, it is similar to adding all the fds inside pollset_set to the pollset.
     - This guarantee is no longer true once the pollset is removed from the pollset_set
 
 - **grpc\_pollset\_set_[add|del]\_pollset\_set**

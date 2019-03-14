@@ -2398,22 +2398,6 @@
   {
     "deps": [
       "gpr", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "wakeup_fd_cv_test", 
-    "src": [
-      "test/core/iomgr/wakeup_fd_cv_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_test_util_unsecure", 
@@ -8758,6 +8742,26 @@
   {
     "deps": [], 
     "headers": [
+      "third_party/upb/google/protobuf/descriptor.upb.h", 
+      "third_party/upb/upb/decode.h", 
+      "third_party/upb/upb/def.h", 
+      "third_party/upb/upb/encode.h", 
+      "third_party/upb/upb/handlers.h", 
+      "third_party/upb/upb/msg.h", 
+      "third_party/upb/upb/msgfactory.h", 
+      "third_party/upb/upb/sink.h", 
+      "third_party/upb/upb/upb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "upb", 
+    "src": [], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
       "third_party/zlib/crc32.h", 
       "third_party/zlib/deflate.h", 
       "third_party/zlib/gzguts.h", 
@@ -9554,7 +9558,6 @@
       "src/core/lib/iomgr/udp_server.cc", 
       "src/core/lib/iomgr/unix_sockets_posix.cc", 
       "src/core/lib/iomgr/unix_sockets_posix_noop.cc", 
-      "src/core/lib/iomgr/wakeup_fd_cv.cc", 
       "src/core/lib/iomgr/wakeup_fd_eventfd.cc", 
       "src/core/lib/iomgr/wakeup_fd_nospecial.cc", 
       "src/core/lib/iomgr/wakeup_fd_pipe.cc", 
@@ -9720,7 +9723,6 @@
       "src/core/lib/iomgr/timer_manager.h", 
       "src/core/lib/iomgr/udp_server.h", 
       "src/core/lib/iomgr/unix_sockets_posix.h", 
-      "src/core/lib/iomgr/wakeup_fd_cv.h", 
       "src/core/lib/iomgr/wakeup_fd_pipe.h", 
       "src/core/lib/iomgr/wakeup_fd_posix.h", 
       "src/core/lib/json/json.h", 
@@ -9874,7 +9876,6 @@
       "src/core/lib/iomgr/timer_manager.h", 
       "src/core/lib/iomgr/udp_server.h", 
       "src/core/lib/iomgr/unix_sockets_posix.h", 
-      "src/core/lib/iomgr/wakeup_fd_cv.h", 
       "src/core/lib/iomgr/wakeup_fd_pipe.h", 
       "src/core/lib/iomgr/wakeup_fd_posix.h", 
       "src/core/lib/json/json.h", 

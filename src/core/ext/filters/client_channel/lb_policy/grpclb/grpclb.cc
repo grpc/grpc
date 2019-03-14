@@ -295,8 +295,10 @@ class GrpcLb : public LoadBalancingPolicy {
   // Helper functions used in UpdateLocked().
   void ProcessChannelArgsLocked(const grpc_channel_args& args);
   void ParseLbConfig(Config* grpclb_config);
+  static void OnBalancerChannelConnectivityChangedLocked(void* arg,
+                                                         grpc_error* error);
 
-  // Methods for dealing with the balancer channel and call.
+  // Methods for dealing with the balancer call.
   void StartBalancerCallLocked();
   static void OnFallbackTimerLocked(void* arg, grpc_error* error);
   void StartBalancerCallRetryTimerLocked();
@@ -305,7 +307,7 @@ class GrpcLb : public LoadBalancingPolicy {
   // Methods for dealing with the child policy.
   grpc_channel_args* CreateChildPolicyArgsLocked();
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
-      const char* name, grpc_channel_args* args);
+      const char* name, const grpc_channel_args* args);
   void CreateOrUpdateChildPolicyLocked();
 
   // Who the client is trying to communicate with.
@@ -323,6 +325,9 @@ class GrpcLb : public LoadBalancingPolicy {
   gpr_atm lb_channel_uuid_ = 0;
   // Response generator to inject address updates into lb_channel_.
   RefCountedPtr<FakeResolverResponseGenerator> response_generator_;
+  // Connectivity state notification.
+  grpc_connectivity_state lb_channel_connectivity_ = GRPC_CHANNEL_IDLE;
+  grpc_closure lb_channel_on_connectivity_changed_;
 
   // The data associated with the current LB call. It holds a ref to this LB
   // policy. It's initialized every time we query for backends. It's reset to
@@ -360,8 +365,7 @@ class GrpcLb : public LoadBalancingPolicy {
   // When switching child policies, the new policy will be stored here
   // until it reports READY, at which point it will be moved to child_policy_.
   OrphanablePtr<LoadBalancingPolicy> pending_child_policy_;
-  // The child policy name and config.
-  UniquePtr<char> child_policy_name_;
+  // The child policy config.
   RefCountedPtr<Config> child_policy_config_;
 };
 
@@ -621,6 +625,9 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
       GRPC_ERROR_UNREF(state_error);
       return;
     }
+    grpc_pollset_set_del_pollset_set(
+        parent_->child_policy_->interested_parties(),
+        parent_->interested_parties());
     MutexLock lock(&parent_->child_policy_mu_);
     parent_->child_policy_ = std::move(parent_->pending_child_policy_);
   } else if (!CalledByCurrentChild()) {
@@ -681,7 +688,7 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
 void GrpcLb::Helper::RequestReresolution() {
   if (parent_->shutting_down_) return;
   // If there is a pending child policy, ignore re-resolution requests
-  // from the current child policy (or any outdated pending child).
+  // from the current child policy (or any outdated child).
   if (parent_->pending_child_policy_ != nullptr && !CalledByPendingChild()) {
     return;
   }
@@ -1031,6 +1038,12 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
     } else {  // New serverlist.
       if (grpclb_policy->serverlist_ == nullptr) {
         // Dispose of the fallback.
+        if (grpclb_policy->child_policy_ != nullptr) {
+          gpr_log(GPR_INFO,
+                  "[grpclb %p] Received response from balancer; exiting "
+                  "fallback mode",
+                  grpclb_policy);
+        }
         grpclb_policy->fallback_backend_addresses_.reset();
         if (grpclb_policy->fallback_timer_callback_pending_) {
           grpc_timer_cancel(&grpclb_policy->lb_fallback_timer_);
@@ -1220,6 +1233,10 @@ GrpcLb::GrpcLb(Args args)
               .set_jitter(GRPC_GRPCLB_RECONNECT_JITTER)
               .set_max_backoff(GRPC_GRPCLB_RECONNECT_MAX_BACKOFF_SECONDS *
                                1000)) {
+  // Initialization.
+  GRPC_CLOSURE_INIT(&lb_channel_on_connectivity_changed_,
+                    &GrpcLb::OnBalancerChannelConnectivityChangedLocked, this,
+                    grpc_combiner_scheduler(args.combiner));
   gpr_mu_init(&child_policy_mu_);
   // Record server name.
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
@@ -1257,6 +1274,14 @@ void GrpcLb::ShutdownLocked() {
   }
   if (fallback_timer_callback_pending_) {
     grpc_timer_cancel(&lb_fallback_timer_);
+  }
+  if (child_policy_ != nullptr) {
+    grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
+                                     interested_parties());
+  }
+  if (pending_child_policy_ != nullptr) {
+    grpc_pollset_set_del_pollset_set(
+        pending_child_policy_->interested_parties(), interested_parties());
   }
   {
     MutexLock lock(&child_policy_mu_);
@@ -1330,6 +1355,20 @@ void GrpcLb::UpdateLocked(const grpc_channel_args& args,
                         grpc_combiner_scheduler(combiner()));
       fallback_timer_callback_pending_ = true;
       grpc_timer_init(&lb_fallback_timer_, deadline, &lb_on_fallback_);
+      // Start watching the channel's connectivity state.  If the channel
+      // goes into state TRANSIENT_FAILURE, we go into fallback mode even if
+      // the fallback timeout has not elapsed.
+      grpc_channel_element* client_channel_elem =
+          grpc_channel_stack_last_element(
+              grpc_channel_get_channel_stack(lb_channel_));
+      GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
+      // Ref held by callback.
+      Ref(DEBUG_LOCATION, "watch_lb_channel_connectivity").release();
+      grpc_client_channel_watch_connectivity_state(
+          client_channel_elem,
+          grpc_polling_entity_create_from_pollset_set(interested_parties()),
+          &lb_channel_connectivity_, &lb_channel_on_connectivity_changed_,
+          nullptr);
     }
     StartBalancerCallLocked();
   }
@@ -1403,7 +1442,7 @@ void GrpcLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
 void GrpcLb::ParseLbConfig(Config* grpclb_config) {
   const grpc_json* child_policy = nullptr;
   if (grpclb_config != nullptr) {
-    const grpc_json* grpclb_config_json = grpclb_config->json();
+    const grpc_json* grpclb_config_json = grpclb_config->config();
     for (const grpc_json* field = grpclb_config_json; field != nullptr;
          field = field->next) {
       if (field->key == nullptr) return;
@@ -1414,13 +1453,42 @@ void GrpcLb::ParseLbConfig(Config* grpclb_config) {
     }
   }
   if (child_policy != nullptr) {
-    child_policy_name_ = UniquePtr<char>(gpr_strdup(child_policy->key));
-    child_policy_config_ = MakeRefCounted<Config>(
-        child_policy->child, grpclb_config->service_config());
+    child_policy_config_ =
+        MakeRefCounted<Config>(child_policy, grpclb_config->service_config());
   } else {
-    child_policy_name_.reset();
     child_policy_config_.reset();
   }
+}
+
+void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
+                                                        grpc_error* error) {
+  GrpcLb* self = static_cast<GrpcLb*>(arg);
+  if (!self->shutting_down_ && self->fallback_timer_callback_pending_) {
+    if (self->lb_channel_connectivity_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      // Not in TRANSIENT_FAILURE.  Renew connectivity watch.
+      grpc_channel_element* client_channel_elem =
+          grpc_channel_stack_last_element(
+              grpc_channel_get_channel_stack(self->lb_channel_));
+      GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
+      grpc_client_channel_watch_connectivity_state(
+          client_channel_elem,
+          grpc_polling_entity_create_from_pollset_set(
+              self->interested_parties()),
+          &self->lb_channel_connectivity_,
+          &self->lb_channel_on_connectivity_changed_, nullptr);
+      return;  // Early out so we don't drop the ref below.
+    }
+    // In TRANSIENT_FAILURE.  Cancel the fallback timer and go into
+    // fallback mode immediately.
+    gpr_log(GPR_INFO,
+            "[grpclb %p] balancer channel in state TRANSIENT_FAILURE; "
+            "entering fallback mode",
+            self);
+    grpc_timer_cancel(&self->lb_fallback_timer_);
+    self->CreateOrUpdateChildPolicyLocked();
+  }
+  // Done watching connectivity state, so drop ref.
+  self->Unref(DEBUG_LOCATION, "watch_lb_channel_connectivity");
 }
 
 //
@@ -1448,13 +1516,21 @@ void GrpcLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
   // actually runs, don't fall back.
   if (grpclb_policy->serverlist_ == nullptr && !grpclb_policy->shutting_down_ &&
       error == GRPC_ERROR_NONE) {
-    if (grpc_lb_glb_trace.enabled()) {
-      gpr_log(GPR_INFO,
-              "[grpclb %p] Falling back to use backends from resolver",
-              grpclb_policy);
-    }
+    gpr_log(GPR_INFO,
+            "[grpclb %p] No response from balancer after fallback timeout; "
+            "entering fallback mode",
+            grpclb_policy);
     GPR_ASSERT(grpclb_policy->fallback_backend_addresses_ != nullptr);
     grpclb_policy->CreateOrUpdateChildPolicyLocked();
+    // Cancel connectivity watch, since we no longer need it.
+    grpc_channel_element* client_channel_elem = grpc_channel_stack_last_element(
+        grpc_channel_get_channel_stack(grpclb_policy->lb_channel_));
+    GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
+    grpc_client_channel_watch_connectivity_state(
+        client_channel_elem,
+        grpc_polling_entity_create_from_pollset_set(
+            grpclb_policy->interested_parties()),
+        nullptr, &grpclb_policy->lb_channel_on_connectivity_changed_, nullptr);
   }
   grpclb_policy->Unref(DEBUG_LOCATION, "on_fallback_timer");
 }
@@ -1543,7 +1619,7 @@ grpc_channel_args* GrpcLb::CreateChildPolicyArgsLocked() {
 }
 
 OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
-    const char* name, grpc_channel_args* args) {
+    const char* name, const grpc_channel_args* args) {
   Helper* helper = New<Helper>(Ref());
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = combiner();
@@ -1624,8 +1700,9 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
   //       that was there before, which will be immediately shut down)
   //       and will later be swapped into child_policy_ by the helper
   //       when the new child transitions into state READY.
-  const char* child_policy_name =
-      child_policy_name_ == nullptr ? "round_robin" : child_policy_name_.get();
+  const char* child_policy_name = child_policy_config_ == nullptr
+                                      ? "round_robin"
+                                      : child_policy_config_->name();
   const bool create_policy =
       // case 1
       child_policy_ == nullptr ||
@@ -1681,18 +1758,6 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    /* Count the number of gRPC-LB addresses. There must be at least one. */
-    const ServerAddressList* addresses =
-        FindServerAddressListChannelArg(args.args);
-    if (addresses == nullptr) return nullptr;
-    bool found_balancer = false;
-    for (size_t i = 0; i < addresses->size(); ++i) {
-      if ((*addresses)[i].IsBalancer()) {
-        found_balancer = true;
-        break;
-      }
-    }
-    if (!found_balancer) return nullptr;
     return OrphanablePtr<LoadBalancingPolicy>(New<GrpcLb>(std::move(args)));
   }
 

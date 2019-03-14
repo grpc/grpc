@@ -437,9 +437,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c udp_server_test)
 endif()
 add_dependencies(buildtests_c uri_parser_test)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-add_dependencies(buildtests_c wakeup_fd_cv_test)
-endif()
 add_dependencies(buildtests_c public_headers_must_be_c89)
 add_dependencies(buildtests_c badreq_bad_client_test)
 add_dependencies(buildtests_c connection_prefix_bad_client_test)
@@ -1072,7 +1069,6 @@ add_library(grpc
   src/core/lib/iomgr/udp_server.cc
   src/core/lib/iomgr/unix_sockets_posix.cc
   src/core/lib/iomgr/unix_sockets_posix_noop.cc
-  src/core/lib/iomgr/wakeup_fd_cv.cc
   src/core/lib/iomgr/wakeup_fd_eventfd.cc
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
@@ -1497,7 +1493,6 @@ add_library(grpc_cronet
   src/core/lib/iomgr/udp_server.cc
   src/core/lib/iomgr/unix_sockets_posix.cc
   src/core/lib/iomgr/unix_sockets_posix_noop.cc
-  src/core/lib/iomgr/wakeup_fd_cv.cc
   src/core/lib/iomgr/wakeup_fd_eventfd.cc
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
@@ -1907,7 +1902,6 @@ add_library(grpc_test_util
   src/core/lib/iomgr/udp_server.cc
   src/core/lib/iomgr/unix_sockets_posix.cc
   src/core/lib/iomgr/unix_sockets_posix_noop.cc
-  src/core/lib/iomgr/wakeup_fd_cv.cc
   src/core/lib/iomgr/wakeup_fd_eventfd.cc
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
@@ -2232,7 +2226,6 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/udp_server.cc
   src/core/lib/iomgr/unix_sockets_posix.cc
   src/core/lib/iomgr/unix_sockets_posix_noop.cc
-  src/core/lib/iomgr/wakeup_fd_cv.cc
   src/core/lib/iomgr/wakeup_fd_eventfd.cc
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
@@ -2533,7 +2526,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/udp_server.cc
   src/core/lib/iomgr/unix_sockets_posix.cc
   src/core/lib/iomgr/unix_sockets_posix_noop.cc
-  src/core/lib/iomgr/wakeup_fd_cv.cc
   src/core/lib/iomgr/wakeup_fd_eventfd.cc
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
@@ -3420,7 +3412,6 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/udp_server.cc
   src/core/lib/iomgr/unix_sockets_posix.cc
   src/core/lib/iomgr/unix_sockets_posix_noop.cc
-  src/core/lib/iomgr/wakeup_fd_cv.cc
   src/core/lib/iomgr/wakeup_fd_eventfd.cc
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
@@ -3837,6 +3828,7 @@ foreach(_hdr
 endforeach()
 endif (gRPC_BUILD_CODEGEN)
 
+if (gRPC_BUILD_CODEGEN)
 
 if (gRPC_INSTALL)
   install(TARGETS grpc++_error_details EXPORT gRPCTargets
@@ -3846,6 +3838,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CODEGEN)
 if (gRPC_BUILD_TESTS)
 
 if (gRPC_BUILD_CODEGEN)
@@ -3967,6 +3960,7 @@ foreach(_hdr
 endforeach()
 endif (gRPC_BUILD_CODEGEN)
 
+if (gRPC_BUILD_CODEGEN)
 
 if (gRPC_INSTALL)
   install(TARGETS grpc++_reflection EXPORT gRPCTargets
@@ -3976,6 +3970,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CODEGEN)
 if (gRPC_BUILD_TESTS)
 
 add_library(grpc++_test_config
@@ -4968,6 +4963,7 @@ foreach(_hdr
 endforeach()
 endif (gRPC_BUILD_CODEGEN)
 
+if (gRPC_BUILD_CODEGEN)
 
 if (gRPC_INSTALL)
   install(TARGETS grpcpp_channelz EXPORT gRPCTargets
@@ -4977,6 +4973,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CODEGEN)
 if (gRPC_BUILD_TESTS)
 
 if (gRPC_BUILD_CODEGEN)
@@ -5501,6 +5498,58 @@ if (gRPC_INSTALL)
 endif()
 
 endif (gRPC_BUILD_CSHARP_EXT)
+if (gRPC_BUILD_TESTS)
+
+add_library(upb
+  third_party/upb/google/protobuf/descriptor.upb.c
+  third_party/upb/upb/decode.c
+  third_party/upb/upb/def.c
+  third_party/upb/upb/encode.c
+  third_party/upb/upb/handlers.c
+  third_party/upb/upb/msg.c
+  third_party/upb/upb/msgfactory.c
+  third_party/upb/upb/sink.c
+  third_party/upb/upb/table.c
+  third_party/upb/upb/upb.c
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(upb PROPERTIES COMPILE_PDB_NAME "upb"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+
+target_include_directories(upb
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+)
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(upb PROPERTIES LINKER_LANGUAGE C)
+    # only use the flags for C++ source files
+    target_compile_options(upb PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+target_link_libraries(upb
+  ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_library(bad_client_test
@@ -10451,42 +10500,6 @@ target_link_libraries(uri_parser_test
     target_compile_options(uri_parser_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
   endif()
 
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-add_executable(wakeup_fd_cv_test
-  test/core/iomgr/wakeup_fd_cv_test.cc
-)
-
-
-target_include_directories(wakeup_fd_cv_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-)
-
-target_link_libraries(wakeup_fd_cv_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr
-)
-
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(wakeup_fd_cv_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(wakeup_fd_cv_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
-
-endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 

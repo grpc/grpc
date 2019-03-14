@@ -12,7 +12,7 @@ def grpc_deps():
     )
 
     native.bind(
-        name = "upblib",
+        name = "upb_lib",
         actual = "@upb//:upb",
     )
 
@@ -124,8 +124,8 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            strip_prefix = "protobuf-66dc42d891a4fc8e9190c524fd67961688a37bbe",
-            url = "https://github.com/google/protobuf/archive/66dc42d891a4fc8e9190c524fd67961688a37bbe.tar.gz",
+            strip_prefix = "protobuf-582743bf40c5d3639a70f98f183914a2c0cd0680",
+            url = "https://github.com/google/protobuf/archive/582743bf40c5d3639a70f98f183914a2c0cd0680.tar.gz",
         )
 
     if "com_github_nanopb_nanopb" not in native.existing_rules():
@@ -147,16 +147,15 @@ def grpc_deps():
     if "com_github_gflags_gflags" not in native.existing_rules():
         http_archive(
             name = "com_github_gflags_gflags",
-            strip_prefix = "gflags-30dbc81fb5ffdc98ea9b14b1918bfe4e8779b26e",
-            url = "https://github.com/gflags/gflags/archive/30dbc81fb5ffdc98ea9b14b1918bfe4e8779b26e.tar.gz",
+            strip_prefix = "gflags-28f50e0fed19872e0fd50dd23ce2ee8cd759338e",
+            url = "https://github.com/gflags/gflags/archive/28f50e0fed19872e0fd50dd23ce2ee8cd759338e.tar.gz",
         )
 
     if "com_github_google_benchmark" not in native.existing_rules():
         http_archive(
             name = "com_github_google_benchmark",
-            build_file = "@com_github_grpc_grpc//third_party:benchmark.BUILD",
-            strip_prefix = "benchmark-9913418d323e64a0111ca0da81388260c2bbe1e9",
-            url = "https://github.com/google/benchmark/archive/9913418d323e64a0111ca0da81388260c2bbe1e9.tar.gz",
+            strip_prefix = "benchmark-e776aa0275e293707b6a0901e0e8d8a8a3679508",
+            url = "https://github.com/google/benchmark/archive/e776aa0275e293707b6a0901e0e8d8a8a3679508.tar.gz",
         )
 
     if "com_github_cares_cares" not in native.existing_rules():
@@ -203,8 +202,8 @@ def grpc_deps():
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            strip_prefix = "upb-9ce4a77f61c134bbed28bfd5be5cd7dc0e80f5e3",
-            url = "https://github.com/google/upb/archive/9ce4a77f61c134bbed28bfd5be5cd7dc0e80f5e3.tar.gz",
+            strip_prefix = "upb-ed9faae0993704b033c594b072d65e1bf19207fa",
+            url = "https://github.com/google/upb/archive/ed9faae0993704b033c594b072d65e1bf19207fa.tar.gz",
         )
 
 # TODO: move some dependencies from "grpc_deps" here?
