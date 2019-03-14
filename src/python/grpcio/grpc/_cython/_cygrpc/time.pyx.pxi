@@ -14,12 +14,10 @@
 
 
 cdef gpr_timespec _timespec_from_time(object time) except *:
-  cdef gpr_timespec timespec
   if time is None:
     return gpr_inf_future(GPR_CLOCK_REALTIME)
   else:
     timespec = gpr_time_from_nanos(<int64_t>(<double>(time) * GPR_NS_PER_SEC), GPR_CLOCK_REALTIME)
-    print '==Time Conv Target %.2f Type %d==' % (time, timespec.clock_type)
     return timespec
 
 
