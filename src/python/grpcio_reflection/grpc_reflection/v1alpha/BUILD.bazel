@@ -1,24 +1,11 @@
-load("@build_stack_rules_proto//python:python_grpc_library.bzl", "python_grpc_library")
-
 package(default_visibility = ["//visibility:public"])
 
-genrule(
-    name = "mv_reflection_proto",
-    srcs = [
-        "//src/proto/grpc/reflection/v1alpha:reflection_proto_file",
-    ],
-    outs = ["reflection.proto"],
-    cmd = "cp $< $@",
-)
-
-proto_library(
-    name = "reflection_proto",
-    srcs = [":reflection.proto"],
-)
-
-python_grpc_library(
+py_library(
     name = "grpc_reflection",
-    deps = [":reflection_proto"],
-    has_services = True,
+    srcs = ["reflection.py",],
+    deps = [
+        "//src/proto/grpc/reflection/v1alpha:py_reflection_proto",
+        "//src/python/grpcio/grpc:grpcio",
+    ],
+    imports=["../../",],
 )
-

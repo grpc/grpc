@@ -17,8 +17,8 @@ import grpc
 from google.protobuf import descriptor_pb2
 from google.protobuf import descriptor_pool
 
-from grpc_reflection.v1alpha import reflection_pb2 as _reflection_pb2
-from grpc_reflection.v1alpha import reflection_pb2_grpc as _reflection_pb2_grpc
+from src.proto.grpc.reflection.v1alpha import reflection_pb2 as _reflection_pb2
+from src.proto.grpc.reflection.v1alpha import reflection_pb2_grpc as _reflection_pb2_grpc
 
 _POOL = descriptor_pool.Default()
 SERVICE_NAME = _reflection_pb2.DESCRIPTOR.services_by_name[

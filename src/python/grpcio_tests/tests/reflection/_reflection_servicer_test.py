@@ -17,8 +17,8 @@ import unittest
 
 import grpc
 from grpc_reflection.v1alpha import reflection
-from grpc_reflection.v1alpha import reflection_pb2
-from grpc_reflection.v1alpha import reflection_pb2_grpc
+from src.proto.grpc.reflection.v1alpha import reflection_pb2
+from src.proto.grpc.reflection.v1alpha import reflection_pb2_grpc
 
 from google.protobuf import descriptor_pool
 from google.protobuf import descriptor_pb2

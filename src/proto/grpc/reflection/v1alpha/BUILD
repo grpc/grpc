@@ -21,12 +21,5 @@ grpc_package(name = "reflection", visibility = "public")
 grpc_proto_library(
     name = "reflection_proto",
     srcs = ["reflection.proto"],
+    generate_python = True,
 )
-
-filegroup(
-    name = "reflection_proto_file",
-    srcs = [
-        "reflection.proto",
-    ],
-)
-
