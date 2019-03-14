@@ -31,6 +31,7 @@
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -43,21 +44,38 @@ namespace grpc_core {
 namespace internal {
 
 ProcessedResolverResult::ProcessedResolverResult(
-    const Resolver::Result& resolver_result, bool parse_retry)
-    : service_config_(resolver_result.service_config) {
+    Resolver::Result* resolver_result, bool parse_retry)
+    : service_config_(resolver_result->service_config) {
   // If resolver did not return a service config, use the default
   // specified via the client API.
   if (service_config_ == nullptr) {
     const char* service_config_json = grpc_channel_arg_get_string(
-        grpc_channel_args_find(resolver_result.args, GRPC_ARG_SERVICE_CONFIG));
+        grpc_channel_args_find(resolver_result->args, GRPC_ARG_SERVICE_CONFIG));
     if (service_config_json != nullptr) {
       service_config_ = ServiceConfig::Create(service_config_json);
     }
+  } else {
+    // Add the service config JSON to channel args so that it's
+    // accessible in the subchannel.
+    // TODO(roth): Consider whether there's a better way to pass the
+    // service config down into the subchannel stack, such as maybe via
+    // call context or metadata.  This would avoid the problem of having
+    // to recreate all subchannels whenever the service config changes.
+    // It would also avoid the need to pass in the resolver result in
+    // mutable form, both here and in
+    // ResolvingLoadBalancingPolicy::ProcessResolverResultCallback().
+    grpc_arg arg = grpc_channel_arg_string_create(
+        const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
+        const_cast<char*>(service_config_->service_config_json()));
+    grpc_channel_args* new_args =
+        grpc_channel_args_copy_and_add(resolver_result->args, &arg, 1);
+    grpc_channel_args_destroy(resolver_result->args);
+    resolver_result->args = new_args;
   }
   // Process service config.
-  ProcessServiceConfig(resolver_result, parse_retry);
+  ProcessServiceConfig(*resolver_result, parse_retry);
   // If no LB config was found above, just find the LB policy name then.
-  if (lb_policy_name_ == nullptr) ProcessLbPolicyName(resolver_result);
+  if (lb_policy_name_ == nullptr) ProcessLbPolicyName(*resolver_result);
 }
 
 void ProcessedResolverResult::ProcessServiceConfig(

@@ -252,8 +252,7 @@ class ClientChannelControlHelper
 // Synchronous callback from chand->resolving_lb_policy to process a resolver
 // result update.
 static bool process_resolver_result_locked(
-    void* arg, const grpc_core::Resolver::Result& result,
-    const char** lb_policy_name,
+    void* arg, grpc_core::Resolver::Result* result, const char** lb_policy_name,
     grpc_core::RefCountedPtr<LoadBalancingPolicy::Config>* lb_policy_config) {
   channel_data* chand = static_cast<channel_data*>(arg);
   chand->have_service_config = true;
