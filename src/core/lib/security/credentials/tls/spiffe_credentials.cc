@@ -63,11 +63,7 @@ SpiffeCredentials::SpiffeCredentials(
     : grpc_channel_credentials(GRPC_CREDENTIALS_TYPE_SPIFFE),
       options_(std::move(options)) {}
 
-SpiffeCredentials::~SpiffeCredentials() {
-  if (options_.get() != nullptr) {
-    options_.get()->Unref();
-  }
-}
+SpiffeCredentials::~SpiffeCredentials() {}
 
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 SpiffeCredentials::create_security_connector(
@@ -106,11 +102,7 @@ SpiffeServerCredentials::SpiffeServerCredentials(
     : grpc_server_credentials(GRPC_CREDENTIALS_TYPE_SPIFFE),
       options_(std::move(options)) {}
 
-SpiffeServerCredentials::~SpiffeServerCredentials() {
-  if (options_.get() != nullptr) {
-    options_.get()->Unref();
-  }
-}
+SpiffeServerCredentials::~SpiffeServerCredentials() {}
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 SpiffeServerCredentials::create_security_connector() {
@@ -123,7 +115,8 @@ grpc_channel_credentials* grpc_tls_spiffe_credentials_create(
   if (!CredentialOptionSanityCheck(options, true /* is_client */)) {
     return nullptr;
   }
-  return grpc_core::New<SpiffeCredentials>(options->Ref());
+  return grpc_core::New<SpiffeCredentials>(
+      grpc_core::RefCountedPtr<grpc_tls_credentials_options>(options));
 }
 
 grpc_server_credentials* grpc_tls_spiffe_server_credentials_create(
@@ -131,5 +124,6 @@ grpc_server_credentials* grpc_tls_spiffe_server_credentials_create(
   if (!CredentialOptionSanityCheck(options, false /* is_client */)) {
     return nullptr;
   }
-  return grpc_core::New<SpiffeServerCredentials>(options->Ref());
+  return grpc_core::New<SpiffeServerCredentials>(
+      grpc_core::RefCountedPtr<grpc_tls_credentials_options>(options));
 }

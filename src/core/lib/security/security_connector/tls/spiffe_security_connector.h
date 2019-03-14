@@ -30,7 +30,15 @@
 class SpiffeChannelSecurityConnector final
     : public grpc_channel_security_connector {
  public:
-  explicit SpiffeChannelSecurityConnector(
+  // static factory method to create a SPIFFE channel security connector.
+  static grpc_core::RefCountedPtr<grpc_channel_security_connector>
+  CreateSpiffeChannelSecurityConnector(
+      grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+      const char* target_name, const char* overridden_target_name,
+      tsi_ssl_session_cache* ssl_session_cache);
+
+  SpiffeChannelSecurityConnector(
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
       grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
       const char* target_name, const char* overridden_target_name);
@@ -52,17 +60,7 @@ class SpiffeChannelSecurityConnector final
   void cancel_check_call_host(grpc_closure* on_call_host_checked,
                               grpc_error* error) override;
 
-  // static factory method to create a SPIFFE channel security connector.
-  static grpc_core::RefCountedPtr<grpc_channel_security_connector>
-  CreateSpiffeChannelSecurityConnector(
-      grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
-      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-      const char* target_name, const char* overridden_target_name,
-      tsi_ssl_session_cache* ssl_session_cache);
-
  private:
-  const grpc_closure* on_peer_checked() const { return on_peer_checked_; }
-
   // Initialize SSL TSI client handshaker factory.
   grpc_security_status InitializeHandshakerFactory(
       tsi_ssl_session_cache* ssl_session_cache);
@@ -84,17 +82,22 @@ class SpiffeChannelSecurityConnector final
   static void ServerAuthorizationCheckArgDestroy(
       grpc_tls_server_authorization_check_arg* arg);
 
+  static grpc_closure* on_peer_checked_;
   char* target_name_;
   char* overridden_target_name_;
   tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
   grpc_tls_server_authorization_check_arg* check_arg_;
-  grpc_closure* on_peer_checked_;
 };
 
 // Spiffe server security connector.
 class SpiffeServerSecurityConnector final
     : public grpc_server_security_connector {
  public:
+  // static factory method to create a SPIFFE server security connector.
+  static grpc_core::RefCountedPtr<grpc_server_security_connector>
+  CreateSpiffeServerSecurityConnector(
+      grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
+
   explicit SpiffeServerSecurityConnector(
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
   ~SpiffeServerSecurityConnector() override;
@@ -106,11 +109,6 @@ class SpiffeServerSecurityConnector final
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
   int cmp(const grpc_security_connector* other) const override;
-
-  // static factory method to create a SPIFFE server security connector.
-  static grpc_core::RefCountedPtr<grpc_server_security_connector>
-  CreateSpiffeServerSecurityConnector(
-      grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
 
  private:
   // A util function to refresh SSL TSI server handshaker factory with a valid

@@ -99,52 +99,38 @@ class grpc_ssl_channel_security_connector final
     const char* target_name = overridden_target_name_ != nullptr
                                   ? overridden_target_name_
                                   : target_name_;
-    grpc_error* alpn_error = grpc_ssl_check_alpn(&peer);
-    grpc_error* name_error = grpc_ssl_check_peer_name(target_name, &peer);
-    grpc_error* server_authz_error = GRPC_ERROR_NONE;
-    if (alpn_error == GRPC_ERROR_NONE && name_error == GRPC_ERROR_NONE) {
-      if (verify_options_->verify_peer_callback != nullptr) {
-        const tsi_peer_property* p =
-            tsi_peer_get_property_by_name(&peer, TSI_X509_PEM_CERT_PROPERTY);
-        if (p == nullptr) {
-          server_authz_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "Cannot check peer: missing pem cert property.");
-        } else {
-          char* peer_pem = static_cast<char*>(gpr_malloc(p->value.length + 1));
-          memcpy(peer_pem, p->value.data, p->value.length);
-          peer_pem[p->value.length] = '\0';
-          int callback_status = verify_options_->verify_peer_callback(
-              target_name, peer_pem,
-              verify_options_->verify_peer_callback_userdata);
-          gpr_free(peer_pem);
-          if (callback_status) {
-            char* msg;
-            gpr_asprintf(&msg, "Verify peer callback returned a failure (%d)",
-                         callback_status);
-            server_authz_error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-            gpr_free(msg);
+    grpc_error* error = grpc_ssl_check_alpn(&peer);
+    if (error == GRPC_ERROR_NONE) {
+      error = grpc_ssl_check_peer_name(target_name, &peer);
+      if (error == GRPC_ERROR_NONE) {
+        if (verify_options_->verify_peer_callback != nullptr) {
+          const tsi_peer_property* p =
+              tsi_peer_get_property_by_name(&peer, TSI_X509_PEM_CERT_PROPERTY);
+          if (p == nullptr) {
+            error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "Cannot check peer: missing pem cert property.");
+          } else {
+            char* peer_pem =
+                static_cast<char*>(gpr_malloc(p->value.length + 1));
+            memcpy(peer_pem, p->value.data, p->value.length);
+            peer_pem[p->value.length] = '\0';
+            int callback_status = verify_options_->verify_peer_callback(
+                target_name, peer_pem,
+                verify_options_->verify_peer_callback_userdata);
+            gpr_free(peer_pem);
+            if (callback_status) {
+              char* msg;
+              gpr_asprintf(&msg, "Verify peer callback returned a failure (%d)",
+                           callback_status);
+              error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+              gpr_free(msg);
+            }
           }
         }
+        *auth_context = grpc_ssl_peer_to_auth_context(&peer);
       }
-      *auth_context = grpc_ssl_peer_to_auth_context(&peer);
     }
-    grpc_error* error =
-        alpn_error == GRPC_ERROR_NONE
-            ? (name_error == GRPC_ERROR_NONE ? server_authz_error : name_error)
-            : alpn_error;
     GRPC_CLOSURE_SCHED(on_peer_checked, error);
-    // Error cleanup
-    if (alpn_error == GRPC_ERROR_NONE && name_error == GRPC_ERROR_NONE) {
-      GRPC_ERROR_UNREF(alpn_error);
-      GRPC_ERROR_UNREF(name_error);
-    } else {
-      GRPC_ERROR_UNREF(server_authz_error);
-      if (alpn_error != GRPC_ERROR_NONE) {
-        GRPC_ERROR_UNREF(name_error);
-      } else {
-        GRPC_ERROR_UNREF(alpn_error);
-      }
-    }
     tsi_peer_destruct(&peer);
   }
 

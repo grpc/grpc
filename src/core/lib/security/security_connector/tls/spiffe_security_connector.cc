@@ -60,18 +60,17 @@ tsi_ssl_pem_key_cert_pair* ConvertToTsiPemKeyCertPair(
 
 /** -- Util function to populate SPIFFE server/channel credentials. -- */
 grpc_core::RefCountedPtr<grpc_tls_key_materials_config>
-PopulateSpiffeCredentials(grpc_tls_credentials_options* options) {
-  GPR_ASSERT(options != nullptr);
-  GPR_ASSERT(options->credential_reload_config() != nullptr ||
-             options->key_materials_config() != nullptr);
+PopulateSpiffeCredentials(const grpc_tls_credentials_options& options) {
+  GPR_ASSERT(options.credential_reload_config() != nullptr ||
+             options.key_materials_config() != nullptr);
   grpc_core::RefCountedPtr<grpc_tls_key_materials_config> key_materials_config;
   /* Use credential reload config to fetch credentials. */
-  if (options->credential_reload_config() != nullptr) {
+  if (options.credential_reload_config() != nullptr) {
     grpc_tls_credential_reload_arg* arg =
         grpc_core::New<grpc_tls_credential_reload_arg>();
     key_materials_config = grpc_tls_key_materials_config_create()->Ref();
     arg->key_materials_config = key_materials_config.get();
-    int result = options->credential_reload_config()->Schedule(arg);
+    int result = options.credential_reload_config()->Schedule(arg);
     if (result) {
       /* Do not support async credential reload. */
       gpr_log(GPR_ERROR, "Async credential reload is unsupported now.");
@@ -88,14 +87,16 @@ PopulateSpiffeCredentials(grpc_tls_credentials_options* options) {
     grpc_core::Delete(arg);
     /* Use existing key materials config. */
   } else {
-    key_materials_config = const_cast<grpc_tls_credentials_options*>(options)
-                               ->mutable_key_materials_config()
+    key_materials_config = const_cast<grpc_tls_key_materials_config*>(
+                               options.key_materials_config())
                                ->Ref();
   }
   return key_materials_config;
 }
 
 }  // namespace
+
+grpc_closure* SpiffeChannelSecurityConnector::on_peer_checked_(nullptr);
 
 SpiffeChannelSecurityConnector::SpiffeChannelSecurityConnector(
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
@@ -161,9 +162,8 @@ void SpiffeChannelSecurityConnector::check_peer(
   *auth_context = grpc_ssl_peer_to_auth_context(&peer);
   const SpiffeCredentials* creds =
       static_cast<const SpiffeCredentials*>(channel_creds());
-  GPR_ASSERT(creds->options() != nullptr);
   const grpc_tls_server_authorization_check_config* config =
-      creds->options()->server_authorization_check_config();
+      creds->options().server_authorization_check_config();
   /* If server authorization config is not null, use it to perform
    * server authorizaiton check. */
   if (config != nullptr) {
@@ -257,9 +257,7 @@ SpiffeChannelSecurityConnector::InitializeHandshakerFactory(
     tsi_ssl_session_cache* ssl_session_cache) {
   const SpiffeCredentials* creds =
       static_cast<const SpiffeCredentials*>(channel_creds());
-  GPR_ASSERT(creds->options() != nullptr);
-  auto key_materials_config = PopulateSpiffeCredentials(
-      const_cast<grpc_tls_credentials_options*>(creds->options()));
+  auto key_materials_config = PopulateSpiffeCredentials(creds->options());
   if (!key_materials_config.get()->pem_key_cert_pair_list().size()) {
     key_materials_config.get()->Unref();
     return GRPC_SECURITY_ERROR;
@@ -280,9 +278,7 @@ void SpiffeChannelSecurityConnector::ServerAuthorizationCheckDone(
   GPR_ASSERT(arg != nullptr);
   grpc_core::ExecCtx exec_ctx;
   grpc_error* error = ProcessServerAuthorizationCheckResult(arg);
-  SpiffeChannelSecurityConnector* sc =
-      static_cast<SpiffeChannelSecurityConnector*>(arg->cb_user_data);
-  GRPC_CLOSURE_SCHED(const_cast<grpc_closure*>(sc->on_peer_checked()), error);
+  GRPC_CLOSURE_SCHED(const_cast<grpc_closure*>(on_peer_checked_), error);
 }
 
 grpc_error*
@@ -300,7 +296,7 @@ SpiffeChannelSecurityConnector::ProcessServerAuthorizationCheckResult(
   } else if (arg->status == GRPC_STATUS_OK) {
     /* Server authorization check completed successfully but returned check
      * failure. */
-    if (!arg->result) {
+    if (!arg->success) {
       gpr_asprintf(&msg, "Server authorization check failed with error: %s",
                    arg->error_details);
       error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
@@ -404,9 +400,7 @@ grpc_security_status
 SpiffeServerSecurityConnector::RefreshServerHandshakerFactory() {
   const SpiffeServerCredentials* creds =
       static_cast<const SpiffeServerCredentials*>(server_creds());
-  GPR_ASSERT(creds->options() != nullptr);
-  auto key_materials_config = PopulateSpiffeCredentials(
-      const_cast<grpc_tls_credentials_options*>(creds->options()));
+  auto key_materials_config = PopulateSpiffeCredentials(creds->options());
   /* Credential reload does NOT take effect and we need to keep using
    * the existing handshaker factory. */
   if (key_materials_config.get()->pem_key_cert_pair_list().empty()) {
@@ -425,7 +419,7 @@ SpiffeServerSecurityConnector::RefreshServerHandshakerFactory() {
   grpc_security_status status = grpc_ssl_tsi_server_handshaker_factory_init(
       pem_key_cert_pairs, num_key_cert_pairs,
       key_materials_config.get()->pem_root_certs(),
-      creds->options()->cert_request_type(), &server_handshaker_factory_);
+      creds->options().cert_request_type(), &server_handshaker_factory_);
   // Free memory.
   key_materials_config.get()->Unref();
   grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pairs,

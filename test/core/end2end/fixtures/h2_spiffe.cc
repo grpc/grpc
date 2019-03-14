@@ -31,6 +31,7 @@
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
@@ -38,12 +39,11 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-#define TOTAL_NUM_THREADS 100
+typedef grpc_core::InlinedVector<grpc_core::Thread*, 1> ThreadList;
 
 typedef struct fullstack_secure_fixture_data {
   char* localaddr;
-  grpc_core::Thread threads[TOTAL_NUM_THREADS];
-  size_t num_threads;
+  ThreadList thd_list;
 } fullstack_secure_fixture_data;
 
 static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
@@ -51,10 +51,8 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
   fullstack_secure_fixture_data* ffd =
-      static_cast<fullstack_secure_fixture_data*>(
-          gpr_malloc(sizeof(fullstack_secure_fixture_data)));
+      grpc_core::New<fullstack_secure_fixture_data>();
   memset(&f, 0, sizeof(f));
-  ffd->num_threads = 0;
   gpr_join_host_port(&ffd->localaddr, "localhost", port);
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
@@ -100,11 +98,11 @@ static void chttp2_init_server_secure_fullstack(
 void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
-  for (size_t ind = 0; ind < ffd->num_threads; ind++) {
-    ffd->threads[ind].Join();
+  for (size_t ind = 0; ind < ffd->thd_list.size(); ind++) {
+    ffd->thd_list[ind]->Join();
   }
   gpr_free(ffd->localaddr);
-  gpr_free(ffd);
+  grpc_core::Delete(ffd);
 }
 
 // Application-provided callback for server authorization check.
@@ -116,7 +114,7 @@ static void server_authz_check_cb(void* user_data) {
   // Normally, the applicaiton code should resort to mapping information
   // between server identity and target name to derive the result.
   // For this test, we directly return 1 for simplicity.
-  check_arg->result = 1;
+  check_arg->success = 1;
   check_arg->status = GRPC_STATUS_OK;
   check_arg->cb(check_arg);
 }
@@ -127,10 +125,9 @@ static int server_authz_check_async(
     void* config_user_data, grpc_tls_server_authorization_check_arg* arg) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(config_user_data);
-  ffd->threads[ffd->num_threads] =
-      grpc_core::Thread("h2_spiffe_test", &server_authz_check_cb, arg);
-  ffd->threads[ffd->num_threads].Start();
-  ffd->num_threads++;
+  ffd->thd_list.push_back(grpc_core::New<grpc_core::Thread>(
+      "h2_spiffe_test", &server_authz_check_cb, arg));
+  ffd->thd_list[ffd->thd_list.size() - 1]->Start();
   return 1;
 }
 

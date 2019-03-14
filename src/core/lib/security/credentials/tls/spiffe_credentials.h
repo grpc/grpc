@@ -38,7 +38,7 @@ class SpiffeCredentials final : public grpc_channel_credentials {
       const char* target_name, const grpc_channel_args* args,
       grpc_channel_args** new_args) override;
 
-  const grpc_tls_credentials_options* options() const { return options_.get(); }
+  const grpc_tls_credentials_options& options() const { return *options_; }
 
  private:
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
@@ -53,7 +53,7 @@ class SpiffeServerCredentials final : public grpc_server_credentials {
   grpc_core::RefCountedPtr<grpc_server_security_connector>
   create_security_connector() override;
 
-  const grpc_tls_credentials_options* options() const { return options_.get(); }
+  const grpc_tls_credentials_options& options() const { return *options_; }
 
  private:
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;

@@ -758,8 +758,8 @@ typedef void (*grpc_tls_on_server_authorization_check_done_cb)(
 
 /** A struct containing all information necessary to schedule/cancel a server
    authorization check request. cb and cb_user_data represent a gRPC-provided
-   callback and an argument passed to it. result will store the result of
-   server authorization check. That is, if result returns a non-zero value, it
+   callback and an argument passed to it. success will store the result of
+   server authorization check. That is, if success returns a non-zero value, it
    means the authorization check passes and if returning zero, it means the
    check fails. target_name is the name of an endpoint the channel is connecting
    to and certificate represents a complete certificate chain including both
@@ -770,7 +770,7 @@ typedef void (*grpc_tls_on_server_authorization_check_done_cb)(
 struct grpc_tls_server_authorization_check_arg {
   grpc_tls_on_server_authorization_check_done_cb cb;
   void* cb_user_data;
-  int result;
+  int success;
   const char* target_name;
   const char* peer_cert;
   grpc_status_code status;
