@@ -7219,6 +7219,7 @@ LIBGRPCPP_CHANNELZ_SRC = \
 
 PUBLIC_HEADERS_CXX += \
     include/grpcpp/ext/channelz_service_plugin.h \
+    include/grpcpp/ext/channelz_service_plugin_impl.h \
 
 LIBGRPCPP_CHANNELZ_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPCPP_CHANNELZ_SRC))))
 
