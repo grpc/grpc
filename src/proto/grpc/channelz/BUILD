@@ -23,11 +23,5 @@ grpc_proto_library(
     srcs = ["channelz.proto"],
     has_services = True,
     well_known_protos = True,
-)
-
-filegroup(
-    name = "channelz_proto_file",
-    srcs = [
-        "channelz.proto",
-    ],
+    generate_python = True,
 )
