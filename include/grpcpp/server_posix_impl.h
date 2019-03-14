@@ -16,25 +16,27 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include <grpcpp/resource_quota.h>
+#ifndef GRPCPP_SERVER_POSIX_IMPL_H
+#define GRPCPP_SERVER_POSIX_IMPL_H
+
+#include <memory>
+
+#include <grpc/support/port_platform.h>
+#include <grpcpp/server.h>
 
 namespace grpc_impl {
 
-ResourceQuota::ResourceQuota() : impl_(grpc_resource_quota_create(nullptr)) {}
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
-ResourceQuota::ResourceQuota(const grpc::string& name)
-    : impl_(grpc_resource_quota_create(name.c_str())) {}
+/// Add a new client to a \a Server communicating over the given
+/// file descriptor.
+///
+/// \param server The server to add the client to.
+/// \param fd The file descriptor representing a socket.
+void AddInsecureChannelFromFd(grpc::Server* server, int fd);
 
-ResourceQuota::~ResourceQuota() { grpc_resource_quota_unref(impl_); }
+#endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
-ResourceQuota& ResourceQuota::Resize(size_t new_size) {
-  grpc_resource_quota_resize(impl_, new_size);
-  return *this;
-}
+}  // namespace grpc
 
-ResourceQuota& ResourceQuota::SetMaxThreads(int new_max_threads) {
-  grpc_resource_quota_set_max_threads(impl_, new_max_threads);
-  return *this;
-}
-}  // namespace grpc_impl
+#endif  // GRPCPP_SERVER_POSIX_IMPL_H
