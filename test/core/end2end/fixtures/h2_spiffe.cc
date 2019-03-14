@@ -40,7 +40,8 @@
 
 typedef struct fullstack_secure_fixture_data {
   char* localaddr;
-  grpc_core::Thread* thd;
+  grpc_core::Thread thd;
+  bool is_client;
 } fullstack_secure_fixture_data;
 
 static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
@@ -50,7 +51,6 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(
           gpr_malloc(sizeof(fullstack_secure_fixture_data)));
-  ffd->thd = nullptr;
   memset(&f, 0, sizeof(f));
   gpr_join_host_port(&ffd->localaddr, "localhost", port);
   f.fixture_data = ffd;
@@ -72,6 +72,7 @@ static void chttp2_init_client_secure_fullstack(
     grpc_channel_credentials* creds) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
+  ffd->is_client = true;
   f->client =
       grpc_secure_channel_create(creds, ffd->localaddr, client_args, nullptr);
   GPR_ASSERT(f->client != nullptr);
@@ -83,6 +84,7 @@ static void chttp2_init_server_secure_fullstack(
     grpc_server_credentials* server_creds) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
+  ffd->is_client = false;
   if (f->server) {
     grpc_server_destroy(f->server);
   }
@@ -97,9 +99,8 @@ static void chttp2_init_server_secure_fullstack(
 void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
-  if (ffd->thd != nullptr) {
-    ffd->thd->Join();
-    grpc_core::Delete(ffd->thd);
+  if (ffd->is_client) {
+    ffd->thd.Join();
   }
   gpr_free(ffd->localaddr);
   gpr_free(ffd);
@@ -125,9 +126,8 @@ static int server_authz_check_async(
     void* config_user_data, grpc_tls_server_authorization_check_arg* arg) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(config_user_data);
-  ffd->thd = grpc_core::New<grpc_core::Thread>("h2_spiffe_test",
-                                               &server_authz_check_cb, arg);
-  ffd->thd->Start();
+  ffd->thd = grpc_core::Thread("h2_spiffe_test", &server_authz_check_cb, arg);
+  ffd->thd.Start();
   return 1;
 }
 
