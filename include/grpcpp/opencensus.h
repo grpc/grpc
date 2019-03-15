@@ -21,4 +21,13 @@
 
 #include "grpcpp/opencensus_impl.h"
 
+namespace grpc {
+
+typedef void (*RegisterOpenCensusPluginMethodTemplate)(void);
+
+RegisterOpenCensusPluginMethodTemplate RegisterOpenCensusPlugin =
+    ::grpc_impl::RegisterOpenCensusPluginMethod;
+
+}  // namespace grpc
+
 #endif  // GRPCPP_OPENCENSUS_H
