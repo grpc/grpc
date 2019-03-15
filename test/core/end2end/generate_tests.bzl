@@ -32,7 +32,7 @@ def _fixture_options(
         supports_proxy_auth = False,
         supports_write_buffering = True,
         client_channel = True,
-        supports_msvc = True,):
+        supports_msvc = True):
     return struct(
         fullstack = fullstack,
         includes_proxy = includes_proxy,
@@ -333,7 +333,7 @@ END2END_TESTS = {
 }
 
 def _compatible(fopt, topt):
-    if is_msvc:
+    if is_msvc():
         if not fopt.supports_msvc:
             return False
     if topt.needs_fullstack:

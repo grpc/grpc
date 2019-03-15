@@ -152,7 +152,7 @@ def grpc_proto_library(
         generate_mocks = generate_mocks,
     )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = []):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = not is_msvc(), language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = []):
     copts = if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
@@ -169,7 +169,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "exec_compatible_with": exec_compatible_with,
         "tags": tags,
     }
-    if uses_polling and not is_msvc():
+    if uses_polling:
         native.cc_test(testonly = True, tags = ["manual"], **args)
         for poller in POLLERS:
             native.sh_test(
