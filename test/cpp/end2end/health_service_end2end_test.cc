@@ -323,7 +323,7 @@ TEST_F(HealthServiceEnd2endTest, ExplicitlyDisableViaOverride) {
   EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
   std::unique_ptr<HealthCheckServiceInterface> empty_service;
   SetUpServer(true, false, true, std::move(empty_service));
-  grpc_impl::HealthCheckServiceInterface* service = server_->GetHealthCheckService();
+  HealthCheckServiceInterface* service = server_->GetHealthCheckService();
   EXPECT_TRUE(service == nullptr);
 
   ResetStubs();
