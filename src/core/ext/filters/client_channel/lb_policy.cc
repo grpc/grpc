@@ -28,6 +28,10 @@ grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(
 
 namespace grpc_core {
 
+//
+// LoadBalancingPolicy
+//
+
 LoadBalancingPolicy::LoadBalancingPolicy(Args args, intptr_t initial_refcount)
     : InternallyRefCounted(&grpc_trace_lb_policy_refcount, initial_refcount),
       combiner_(GRPC_COMBINER_REF(args.combiner, "lb_policy")),
@@ -63,6 +67,41 @@ grpc_json* LoadBalancingPolicy::ParseLoadBalancingConfig(
     }
   }
   return nullptr;
+}
+
+//
+// LoadBalancingPolicy::UpdateArgs
+//
+
+LoadBalancingPolicy::UpdateArgs::UpdateArgs(const UpdateArgs& other) {
+  addresses = other.addresses;
+  config = other.config;
+  args = grpc_channel_args_copy(other.args);
+}
+
+LoadBalancingPolicy::UpdateArgs::UpdateArgs(UpdateArgs&& other) {
+  addresses = std::move(other.addresses);
+  config = std::move(other.config);
+  args = other.args;
+  other.args = nullptr;
+}
+
+LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
+    const UpdateArgs& other) {
+  addresses = other.addresses;
+  config = other.config;
+  grpc_channel_args_destroy(args);
+  args = grpc_channel_args_copy(other.args);
+  return *this;
+}
+
+LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
+    UpdateArgs&& other) {
+  addresses = std::move(other.addresses);
+  config = std::move(other.config);
+  args = other.args;
+  other.args = nullptr;
+  return *this;
 }
 
 }  // namespace grpc_core

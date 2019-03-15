@@ -64,9 +64,8 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   ~ForwardingLoadBalancingPolicy() override = default;
 
-  void UpdateLocked(Resolver::Result result,
-                    RefCountedPtr<Config> lb_config) override {
-    delegate_->UpdateLocked(std::move(result), std::move(lb_config));
+  void UpdateLocked(UpdateArgs args) override {
+    delegate_->UpdateLocked(std::move(args));
   }
 
   void ExitIdleLocked() override { delegate_->ExitIdleLocked(); }

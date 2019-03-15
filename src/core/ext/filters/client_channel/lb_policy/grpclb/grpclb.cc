@@ -125,8 +125,7 @@ class GrpcLb : public LoadBalancingPolicy {
 
   const char* name() const override { return kGrpclb; }
 
-  void UpdateLocked(Resolver::Result result,
-                    RefCountedPtr<Config> lb_config) override;
+  void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
   void FillChildRefsForChannelz(
       channelz::ChildRefsList* child_subchannels,
@@ -1326,11 +1325,10 @@ void GrpcLb::FillChildRefsForChannelz(
   }
 }
 
-void GrpcLb::UpdateLocked(Resolver::Result result,
-                          RefCountedPtr<Config> lb_config) {
+void GrpcLb::UpdateLocked(UpdateArgs args) {
   const bool is_initial_update = lb_channel_ == nullptr;
-  ParseLbConfig(lb_config.get());
-  ProcessChannelArgsLocked(result.addresses, *result.args);
+  ParseLbConfig(args.config.get());
+  ProcessChannelArgsLocked(args.addresses, *args.args);
   // Update the existing child policy.
   if (child_policy_ != nullptr) CreateOrUpdateChildPolicyLocked();
   // If this is the initial update, start the fallback timer.
@@ -1607,11 +1605,11 @@ OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
 
 void GrpcLb::CreateOrUpdateChildPolicyLocked() {
   if (shutting_down_) return;
-  // Get addresses.
-  ServerAddressList addresses;
+  // Construct update args.
+  UpdateArgs update_args;
   bool is_backend_from_grpclb_load_balancer = false;
   if (serverlist_ != nullptr) {
-    addresses = serverlist_->GetServerAddressList(
+    update_args.addresses = serverlist_->GetServerAddressList(
         lb_calld_ == nullptr ? nullptr : lb_calld_->client_stats());
     is_backend_from_grpclb_load_balancer = true;
   } else {
@@ -1621,12 +1619,12 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
     // empty, in which case the new round_robin policy will keep the requested
     // picks pending.
     GPR_ASSERT(fallback_backend_addresses_ != nullptr);
-    addresses = *fallback_backend_addresses_;
+    update_args.addresses = *fallback_backend_addresses_;
   }
-  grpc_channel_args* args =
+  update_args.args =
       CreateChildPolicyArgsLocked(is_backend_from_grpclb_load_balancer);
-  GPR_ASSERT(args != nullptr);
-  Resolver::Result result(std::move(addresses), args);
+  GPR_ASSERT(update_args.args != nullptr);
+  update_args.config = child_policy_config_;
   // If the child policy name changes, we need to create a new child
   // policy.  When this happens, we leave child_policy_ as-is and store
   // the new child policy in pending_child_policy_.  Once the new child
@@ -1697,7 +1695,8 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
       gpr_log(GPR_INFO, "[grpclb %p] Creating new %schild policy %s", this,
               child_policy_ == nullptr ? "" : "pending ", child_policy_name);
     }
-    auto new_policy = CreateChildPolicyLocked(child_policy_name, args);
+    auto new_policy =
+        CreateChildPolicyLocked(child_policy_name, update_args.args);
     // Swap the policy into place.
     auto& lb_policy =
         child_policy_ == nullptr ? child_policy_ : pending_child_policy_;
@@ -1721,7 +1720,7 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
             policy_to_update == pending_child_policy_.get() ? "pending " : "",
             policy_to_update);
   }
-  policy_to_update->UpdateLocked(std::move(result), child_policy_config_);
+  policy_to_update->UpdateLocked(std::move(update_args));
 }
 
 //

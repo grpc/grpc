@@ -121,8 +121,7 @@ class XdsLb : public LoadBalancingPolicy {
 
   const char* name() const override { return kXds; }
 
-  void UpdateLocked(Resolver::Result result,
-                    RefCountedPtr<Config> lb_config) override;
+  void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
   void FillChildRefsForChannelz(
       channelz::ChildRefsList* child_subchannels,
@@ -1301,17 +1300,16 @@ void XdsLb::ParseLbConfig(Config* xds_config) {
   }
 }
 
-void XdsLb::UpdateLocked(Resolver::Result result,
-                         RefCountedPtr<Config> lb_config) {
+void XdsLb::UpdateLocked(UpdateArgs args) {
   const bool is_initial_update = lb_chand_ == nullptr;
-  ParseLbConfig(lb_config.get());
+  ParseLbConfig(args.config.get());
   // TODO(juanlishen): Pass fallback policy config update after fallback policy
   // is added.
   if (balancer_name_ == nullptr) {
     gpr_log(GPR_ERROR, "[xdslb %p] LB config parsing fails.", this);
     return;
   }
-  ProcessChannelArgsLocked(result.addresses, *result.args);
+  ProcessChannelArgsLocked(args.addresses, *args.args);
   // Update the existing child policy.
   // Note: We have disabled fallback mode in the code, so this child policy must
   // have been created from a serverlist.
@@ -1411,8 +1409,11 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
   // TODO(juanlishen): Change this as part of implementing fallback mode.
   GPR_ASSERT(serverlist_ != nullptr);
   GPR_ASSERT(serverlist_->num_servers > 0);
-  Resolver::Result result(ProcessServerlist(serverlist_),
-                          CreateChildPolicyArgsLocked());
+  // Construct update args.
+  UpdateArgs update_args;
+  update_args.addresses = ProcessServerlist(serverlist_);
+  update_args.config = child_policy_config_;
+  update_args.args = CreateChildPolicyArgsLocked();
   // If the child policy name changes, we need to create a new child
   // policy.  When this happens, we leave child_policy_ as-is and store
   // the new child policy in pending_child_policy_.  Once the new child
@@ -1485,7 +1486,8 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
       gpr_log(GPR_INFO, "[xdslb %p] Creating new %schild policy %s", this,
               child_policy_ == nullptr ? "" : "pending ", child_policy_name);
     }
-    auto new_policy = CreateChildPolicyLocked(child_policy_name, result.args);
+    auto new_policy =
+        CreateChildPolicyLocked(child_policy_name, update_args.args);
     auto& lb_policy =
         child_policy_ == nullptr ? child_policy_ : pending_child_policy_;
     {
@@ -1508,7 +1510,7 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
             policy_to_update == pending_child_policy_.get() ? "pending " : "",
             policy_to_update);
   }
-  policy_to_update->UpdateLocked(std::move(result), child_policy_config_);
+  policy_to_update->UpdateLocked(std::move(update_args));
 }
 
 //

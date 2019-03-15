@@ -432,8 +432,13 @@ void ResolvingLoadBalancingPolicy::CreateOrUpdateLbPolicyLocked(
             policy_to_update == pending_lb_policy_.get() ? "pending " : "",
             policy_to_update);
   }
-  policy_to_update->UpdateLocked(std::move(result),
-                                 std::move(lb_policy_config));
+  UpdateArgs update_args;
+  update_args.addresses = std::move(result.addresses);
+  update_args.config = std::move(lb_policy_config);
+  // TODO(roth): Once channel args is converted to C++, use std::move() here.
+  update_args.args = result.args;
+  result.args = nullptr;
+  policy_to_update->UpdateLocked(std::move(update_args));
 }
 
 // Creates a new LB policy.

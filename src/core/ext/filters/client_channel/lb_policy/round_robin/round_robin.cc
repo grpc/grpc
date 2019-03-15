@@ -61,8 +61,7 @@ class RoundRobin : public LoadBalancingPolicy {
 
   const char* name() const override { return kRoundRobin; }
 
-  void UpdateLocked(Resolver::Result result,
-                    RefCountedPtr<Config> lb_config) override;
+  void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
   void FillChildRefsForChannelz(channelz::ChildRefsList* child_subchannels,
                                 channelz::ChildRefsList* ignored) override;
@@ -476,12 +475,11 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
   subchannel_list()->UpdateRoundRobinStateFromSubchannelStateCountsLocked();
 }
 
-void RoundRobin::UpdateLocked(Resolver::Result result,
-                              RefCountedPtr<Config> lb_config) {
+void RoundRobin::UpdateLocked(UpdateArgs args) {
   AutoChildRefsUpdater guard(this);
   if (grpc_lb_round_robin_trace.enabled()) {
     gpr_log(GPR_INFO, "[RR %p] received update with %" PRIuPTR " addresses",
-            this, result.addresses.size());
+            this, args.addresses.size());
   }
   // Replace latest_pending_subchannel_list_.
   if (latest_pending_subchannel_list_ != nullptr) {
@@ -492,8 +490,7 @@ void RoundRobin::UpdateLocked(Resolver::Result result,
     }
   }
   latest_pending_subchannel_list_ = MakeOrphanable<RoundRobinSubchannelList>(
-      this, &grpc_lb_round_robin_trace, result.addresses, combiner(),
-      *result.args);
+      this, &grpc_lb_round_robin_trace, args.addresses, combiner(), *args.args);
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {
     // If the new list is empty, immediately promote the new list to the
     // current list and transition to TRANSIENT_FAILURE.

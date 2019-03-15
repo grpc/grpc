@@ -22,7 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
-#include "src/core/ext/filters/client_channel/resolver.h"
+#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/gprpp/abstract.h"
@@ -222,6 +222,23 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     RefCountedPtr<ServiceConfig> service_config_;
   };
 
+  /// Data passed to the UpdateLocked() method when new addresses and
+  /// config are available.
+  struct UpdateArgs {
+    ServerAddressList addresses;
+    RefCountedPtr<Config> config;
+    const grpc_channel_args* args = nullptr;
+
+    // TODO(roth): Remove everything below once channel args is
+    // converted to a copyable and movable C++ object.
+    UpdateArgs() = default;
+    ~UpdateArgs() { grpc_channel_args_destroy(args); }
+    UpdateArgs(const UpdateArgs& other);
+    UpdateArgs(UpdateArgs&& other);
+    UpdateArgs& operator=(const UpdateArgs& other);
+    UpdateArgs& operator=(UpdateArgs&& other);
+  };
+
   /// Args used to instantiate an LB policy.
   struct Args {
     /// The combiner under which all LB policy calls will be run.
@@ -245,14 +262,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Returns the name of the LB policy.
   virtual const char* name() const GRPC_ABSTRACT;
 
-  /// Updates the policy with a new \a result and a new \a lb_config from
-  /// the resolver. Will be invoked immediately after LB policy is constructed,
-  /// and then again whenever the resolver returns a new result.
-  // TODO(roth): Do we actually want to use Resolver::Result here?  This
-  // will pass in a ref to the service config, which we don't really
-  // need in the LB policy.
-  virtual void UpdateLocked(Resolver::Result, RefCountedPtr<Config>)  // NOLINT
-      GRPC_ABSTRACT;
+  /// Updates the policy with new data from the resolver.  Will be invoked
+  /// immediately after LB policy is constructed, and then again whenever
+  /// the resolver returns a new result.
+  virtual void UpdateLocked(UpdateArgs) GRPC_ABSTRACT;  // NOLINT
 
   /// Tries to enter a READY connectivity state.
   /// This is a no-op by default, since most LB policies never go into

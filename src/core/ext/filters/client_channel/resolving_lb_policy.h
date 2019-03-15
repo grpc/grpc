@@ -79,8 +79,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   // No-op -- should never get updates from the channel.
   // TODO(roth): Need to support updating child LB policy's config for xds
   // use case.
-  void UpdateLocked(Resolver::Result result,
-                    RefCountedPtr<Config> lb_config) override {}
+  void UpdateLocked(UpdateArgs args) override {}
 
   void ExitIdleLocked() override;
 

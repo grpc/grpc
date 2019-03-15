@@ -58,6 +58,7 @@ class Resolver : public InternallyRefCounted<Resolver> {
 
     Result() = default;
 
+// FIXME: remove these ctors and make callers fill in fields manually
     Result(ServerAddressList addresses,
            RefCountedPtr<ServiceConfig> service_config,
            grpc_error* service_config_error, const grpc_channel_args* args)

@@ -50,8 +50,7 @@ class PickFirst : public LoadBalancingPolicy {
 
   const char* name() const override { return kPickFirst; }
 
-  void UpdateLocked(Resolver::Result result,
-                    RefCountedPtr<Config> lb_config) override;
+  void UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
   void FillChildRefsForChannelz(channelz::ChildRefsList* child_subchannels,
@@ -230,20 +229,19 @@ void PickFirst::UpdateChildRefsLocked() {
   child_subchannels_ = std::move(cs);
 }
 
-void PickFirst::UpdateLocked(Resolver::Result result,
-                             RefCountedPtr<Config> lb_config) {
+void PickFirst::UpdateLocked(UpdateArgs args) {
   AutoChildRefsUpdater guard(this);
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO,
             "Pick First %p received update with %" PRIuPTR " addresses", this,
-            result.addresses.size());
+            args.addresses.size());
   }
   grpc_arg new_arg = grpc_channel_arg_integer_create(
       const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1);
   grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_add(result.args, &new_arg, 1);
+      grpc_channel_args_copy_and_add(args.args, &new_arg, 1);
   auto subchannel_list = MakeOrphanable<PickFirstSubchannelList>(
-      this, &grpc_lb_pick_first_trace, result.addresses, combiner(), *new_args);
+      this, &grpc_lb_pick_first_trace, args.addresses, combiner(), *new_args);
   grpc_channel_args_destroy(new_args);
   if (subchannel_list->num_subchannels() == 0) {
     // Empty update or no valid subchannels. Unsubscribe from all current
