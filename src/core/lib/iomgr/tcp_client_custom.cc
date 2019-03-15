@@ -134,7 +134,8 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
   grpc_custom_socket* socket =
       (grpc_custom_socket*)gpr_malloc(sizeof(grpc_custom_socket));
   socket->refs = 2;
-  grpc_custom_socket_vtable->init(socket, GRPC_AF_UNSPEC);
+  grpc_sockaddr* sock_addr = (grpc_sockaddr*)resolved_addr->addr;
+  grpc_custom_socket_vtable->init(socket, sock_addr->sa_family);
   connect =
       (grpc_custom_tcp_connect*)gpr_malloc(sizeof(grpc_custom_tcp_connect));
   connect->closure = closure;

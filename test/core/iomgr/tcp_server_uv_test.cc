@@ -23,6 +23,11 @@
 
 #include <uv.h>
 
+#ifdef GRPC_HAVE_UNIX_SOCKET
+#include <sys/un.h>
+#include <unistd.h>
+#endif
+
 #include "src/core/lib/iomgr/tcp_server.h"
 
 #include <string.h>
@@ -282,6 +287,86 @@ static void test_connect(unsigned n) {
   GPR_ASSERT(weak_ref.server == NULL);
 }
 
+#ifdef GRPC_HAVE_UNIX_SOCKET
+
+static void pipe_connect(const char* remote, on_connect_result* result) {
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
+  uv_pipe_t* client_handle =
+      static_cast<uv_pipe_t*>(gpr_malloc(sizeof(uv_pipe_t)));
+  uv_connect_t* req =
+      static_cast<uv_connect_t*>(gpr_malloc(sizeof(uv_connect_t)));
+  int nconnects_before;
+
+  gpr_mu_lock(g_mu);
+  nconnects_before = g_nconnects;
+  on_connect_result_init(&g_result);
+  GPR_ASSERT(uv_pipe_init(uv_default_loop(), client_handle, 0) == 0);
+  gpr_log(GPR_DEBUG, "start connect");
+  uv_pipe_connect(req, client_handle, remote, connect_cb);
+  gpr_log(GPR_DEBUG, "wait");
+  while (g_nconnects == nconnects_before &&
+         gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0) {
+    grpc_pollset_worker* worker = NULL;
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(g_pollset, &worker,
+                          grpc_timespec_to_millis_round_up(deadline))));
+    gpr_mu_unlock(g_mu);
+
+    gpr_mu_lock(g_mu);
+  }
+  gpr_log(GPR_DEBUG, "wait done");
+  GPR_ASSERT(g_nconnects == nconnects_before + 1);
+  uv_close((uv_handle_t*)client_handle, close_cb);
+  *result = g_result;
+
+  gpr_mu_unlock(g_mu);
+}
+
+/* Tests a unix domain socket server */
+static void test_pipe_connect(void) {
+  const char* sock_path = "/tmp/grpc_libuv_test.sock";
+  grpc_core::ExecCtx exec_ctx;
+  grpc_resolved_address resolved_addr;
+  struct sockaddr_un* addr = (struct sockaddr_un*)resolved_addr.addr;
+  int svr_port;
+  grpc_tcp_server* s;
+  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
+  server_weak_ref weak_ref;
+  server_weak_ref_init(&weak_ref);
+  LOG_TEST("test_pipe_connect");
+  memset(&resolved_addr, 0, sizeof(resolved_addr));
+  strcpy(addr->sun_path, sock_path);
+  resolved_addr.len = sizeof(addr->sun_family) + strlen(addr->sun_path) + 2;
+  addr->sun_family = AF_UNIX;
+  (void)unlink(addr->sun_path);
+  GPR_ASSERT(GRPC_ERROR_NONE ==
+             grpc_tcp_server_add_port(s, &resolved_addr, &svr_port));
+  GPR_ASSERT(svr_port > 0);
+
+  grpc_tcp_server_start(s, &g_pollset, 1, on_connect, NULL);
+
+  on_connect_result result;
+  on_connect_result_init(&result);
+  pipe_connect(sock_path, &result);
+  GPR_ASSERT(result.port_index == 0);
+  GPR_ASSERT(result.server == s);
+  if (weak_ref.server == NULL) {
+    server_weak_ref_set(&weak_ref, result.server);
+  }
+  grpc_tcp_server_unref(result.server);
+
+  /* Weak ref to server valid until final unref. */
+  GPR_ASSERT(weak_ref.server != NULL);
+
+  grpc_tcp_server_unref(s);
+  grpc_core::ExecCtx::Get()->Flush();
+  /* Weak ref lost. */
+  GPR_ASSERT(weak_ref.server == NULL);
+}
+
+#endif
+
 static void destroy_pollset(void* p, grpc_error* error) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
@@ -301,6 +386,9 @@ int main(int argc, char** argv) {
     test_no_op_with_port_and_start();
     test_connect(1);
     test_connect(10);
+#ifdef GRPC_HAVE_UNIX_SOCKET
+    test_pipe_connect();
+#endif
 
     GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
                       grpc_schedule_on_exec_ctx);

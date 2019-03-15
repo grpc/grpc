@@ -90,15 +90,22 @@ static grpc_error* try_split_host_port(const char* name,
                                        const char* default_port,
                                        grpc_core::UniquePtr<char>* host,
                                        grpc_core::UniquePtr<char>* port) {
-  /* parse name, splitting it into host and port parts */
   grpc_error* error;
-  SplitHostPort(name, host, port);
-  if (*host == nullptr) {
-    char* msg;
-    gpr_asprintf(&msg, "unparseable host:port: '%s'", name);
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
-    return error;
+  *port = nullptr;
+  // all hosts beginning with / are treated as unix domain sockets
+  if (name[0] == 'u' && name[1] == 'n' && name[2] == 'i' && name[3] == 'x' &&
+      name[4] == ':' && name[5] != 0) {
+    host->reset(gpr_strdup(name + 5));
+  } else {
+    /* parse name, splitting it into host and port parts */
+    SplitHostPort(name, host, port);
+    if (*host == nullptr) {
+      char* msg;
+      gpr_asprintf(&msg, "unparseable host:port: '%s'", name);
+      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+      gpr_free(msg);
+      return error;
+    }
   }
   if (*port == nullptr) {
     // TODO(murgatroid99): add tests for this case
