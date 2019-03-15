@@ -27,7 +27,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/generic/async_generic_service.h>
-//#include <grpcpp/resource_quota.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
