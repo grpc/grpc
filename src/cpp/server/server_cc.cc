@@ -802,7 +802,7 @@ Server::Server(
       if (channel_args.args[i].value.pointer.p == nullptr) {
         health_check_service_disabled_ = true;
       } else {
-        health_check_service_.reset(static_cast<grpc_impl::HealthCheckServiceInterface*>(
+        health_check_service_.reset(static_cast<HealthCheckServiceInterface*>(
             channel_args.args[i].value.pointer.p));
       }
       break;
@@ -987,7 +987,7 @@ void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   DefaultHealthCheckService::HealthCheckServiceImpl*
       default_health_check_service_impl = nullptr;
   if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
-      grpc_impl::DefaultHealthCheckServiceEnabled()) {
+      DefaultHealthCheckServiceEnabled()) {
     auto* default_hc_service = new DefaultHealthCheckService;
     health_check_service_.reset(default_hc_service);
     // We create a non-polling CQ to avoid impacting application
