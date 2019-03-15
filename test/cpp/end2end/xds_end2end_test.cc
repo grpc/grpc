@@ -531,17 +531,18 @@ class XdsEnd2endTest : public ::testing::Test {
                          grpc_core::FakeResolverResponseGenerator*
                              lb_channel_response_generator = nullptr) {
     grpc_core::ExecCtx exec_ctx;
-    grpc_core::RefCountedPtr<grpc_core::ServiceConfig> service_config;
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateLbAddressesFromPortList(ports);
     if (service_config_json != nullptr) {
-      service_config = grpc_core::ServiceConfig::Create(service_config_json);
+      result.service_config =
+          grpc_core::ServiceConfig::Create(service_config_json);
     }
     grpc_arg arg = grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
         lb_channel_response_generator == nullptr
             ? lb_channel_response_generator_.get()
             : lb_channel_response_generator);
-    response_generator_->SetResponse(grpc_core::Resolver::Result(
-        CreateLbAddressesFromPortList(ports), std::move(service_config),
-        grpc_channel_args_copy_and_add(nullptr, &arg, 1)));
+    result.args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
+    response_generator_->SetResponse(std::move(result));
   }
 
   void SetNextResolutionForLbChannelAllBalancers(
@@ -561,22 +562,23 @@ class XdsEnd2endTest : public ::testing::Test {
       grpc_core::FakeResolverResponseGenerator* lb_channel_response_generator =
           nullptr) {
     grpc_core::ExecCtx exec_ctx;
-    grpc_core::RefCountedPtr<grpc_core::ServiceConfig> service_config;
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateLbAddressesFromPortList(ports);
     if (service_config_json != nullptr) {
-      service_config = grpc_core::ServiceConfig::Create(service_config_json);
+      result.service_config =
+          grpc_core::ServiceConfig::Create(service_config_json);
     }
     if (lb_channel_response_generator == nullptr) {
       lb_channel_response_generator = lb_channel_response_generator_.get();
     }
-    lb_channel_response_generator->SetResponse(
-        grpc_core::Resolver::Result(CreateLbAddressesFromPortList(ports),
-                                    std::move(service_config), nullptr));
+    lb_channel_response_generator->SetResponse(std::move(result));
   }
 
   void SetNextReresolutionResponse(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetReresolutionResponse(grpc_core::Resolver::Result(
-        CreateLbAddressesFromPortList(ports), nullptr));
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateLbAddressesFromPortList(ports);
+    response_generator_->SetReresolutionResponse(std::move(result));
   }
 
   const std::vector<int> GetBackendPorts(const size_t start_index = 0) const {

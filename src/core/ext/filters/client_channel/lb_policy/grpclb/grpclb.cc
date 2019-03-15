@@ -1414,8 +1414,10 @@ void GrpcLb::ProcessChannelArgsLocked(const ServerAddressList& addresses,
   }
   // Propagate updates to the LB channel (pick_first) through the fake
   // resolver.
-  response_generator_->SetResponse(
-      Resolver::Result(std::move(balancer_addresses), lb_channel_args));
+  Resolver::Result result;
+  result.addresses = std::move(balancer_addresses);
+  result.args = lb_channel_args;
+  response_generator_->SetResponse(std::move(result));
 }
 
 void GrpcLb::ParseLbConfig(Config* grpclb_config) {

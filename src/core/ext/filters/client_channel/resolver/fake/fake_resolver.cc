@@ -137,11 +137,14 @@ void FakeResolver::MaybeSendResultLocked() {
     // When both next_results_ and channel_args_ contain an arg with the same
     // name, only the one in next_results_ will be kept since next_results_ is
     // before channel_args_.
-    result_handler()->ReturnResult(
-        Result(std::move(next_result_.addresses),
-               std::move(next_result_.service_config),
-               GRPC_ERROR_REF(next_result_.service_config_error),
-               grpc_channel_args_union(next_result_.args, channel_args_)));
+    Result result;
+    result.addresses = std::move(next_result_.addresses);
+    result.service_config = std::move(next_result_.service_config);
+    // TODO(roth): Use std::move() once grpc_error is converted to C++.
+    result.service_config_error = next_result_.service_config_error;
+    next_result_.service_config_error = GRPC_ERROR_NONE;
+    result.args = grpc_channel_args_union(next_result_.args, channel_args_);
+    result_handler()->ReturnResult(std::move(result));
     has_next_result_ = false;
   }
 }

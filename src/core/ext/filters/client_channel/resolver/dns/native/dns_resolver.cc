@@ -169,14 +169,15 @@ void NativeDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     return;
   }
   if (r->addresses_ != nullptr) {
-    ServerAddressList addresses;
+    Result result;
     for (size_t i = 0; i < r->addresses_->naddrs; ++i) {
-      addresses.emplace_back(&r->addresses_->addrs[i].addr,
-                             r->addresses_->addrs[i].len, nullptr /* args */);
+      result.addresses.emplace_back(&r->addresses_->addrs[i].addr,
+                                    r->addresses_->addrs[i].len,
+                                    nullptr /* args */);
     }
     grpc_resolved_addresses_destroy(r->addresses_);
-    r->result_handler()->ReturnResult(
-        Result(std::move(addresses), grpc_channel_args_copy(r->channel_args_)));
+    result.args = grpc_channel_args_copy(r->channel_args_);
+    r->result_handler()->ReturnResult(std::move(result));
     // Reset backoff state so that we start from the beginning when the
     // next request gets triggered.
     r->backoff_.Reset();

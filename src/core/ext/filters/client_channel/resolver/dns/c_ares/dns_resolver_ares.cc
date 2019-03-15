@@ -299,7 +299,8 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     return;
   }
   if (r->addresses_ != nullptr) {
-    RefCountedPtr<ServiceConfig> service_config;
+    Result result;
+    result.addresses = std::move(*r->addresses_);
     if (r->service_config_json_ != nullptr) {
       char* service_config_string =
           ChooseServiceConfig(r->service_config_json_);
@@ -307,13 +308,12 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
       if (service_config_string != nullptr) {
         GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
                              r, service_config_string);
-        service_config = ServiceConfig::Create(service_config_string);
+        result.service_config = ServiceConfig::Create(service_config_string);
       }
       gpr_free(service_config_string);
     }
-    r->result_handler()->ReturnResult(
-        Result(std::move(*r->addresses_), std::move(service_config),
-               grpc_channel_args_copy(r->channel_args_)));
+    result.args = grpc_channel_args_copy(r->channel_args_);
+    r->result_handler()->ReturnResult(std::move(result));
     r->addresses_.reset();
     // Reset backoff state so that we start from the beginning when the
     // next request gets triggered.

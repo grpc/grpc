@@ -56,81 +56,14 @@ class Resolver : public InternallyRefCounted<Resolver> {
     grpc_error* service_config_error = GRPC_ERROR_NONE;
     const grpc_channel_args* args = nullptr;
 
+    // TODO(roth): Remove everything below once grpc_error and
+    // grpc_channel_args are convert to copyable and movable C++ objects.
     Result() = default;
-
-// FIXME: remove these ctors and make callers fill in fields manually
-    Result(ServerAddressList addresses,
-           RefCountedPtr<ServiceConfig> service_config,
-           grpc_error* service_config_error, const grpc_channel_args* args)
-        : addresses(std::move(addresses)),
-          service_config(std::move(service_config)),
-          service_config_error(service_config_error),
-          args(args) {}
-
-    Result(ServerAddressList addresses,
-           RefCountedPtr<ServiceConfig> service_config,
-           const grpc_channel_args* args)
-        : addresses(std::move(addresses)),
-          service_config(std::move(service_config)),
-          args(args) {}
-
-    Result(ServerAddressList addresses, grpc_error* service_config_error,
-           const grpc_channel_args* args)
-        : addresses(std::move(addresses)),
-          service_config_error(service_config_error),
-          args(args) {}
-
-    Result(ServerAddressList addresses, const grpc_channel_args* args)
-        : addresses(std::move(addresses)), args(args) {}
-
-    // Copy ctor and assignment.
-    // TODO(roth): These can go away once we have C++ represenations of
-    // grpc_error and grpc_channel_args that support copying.
-    Result(const Result& other) {
-      addresses = other.addresses;
-      service_config = other.service_config;
-      service_config_error = GRPC_ERROR_REF(other.service_config_error);
-      args = grpc_channel_args_copy(other.args);
-    }
-    Result& operator=(const Result& other) {
-      addresses = other.addresses;
-      service_config = other.service_config;
-      GRPC_ERROR_UNREF(service_config_error);
-      service_config_error = GRPC_ERROR_REF(other.service_config_error);
-      grpc_channel_args_destroy(args);
-      args = grpc_channel_args_copy(other.args);
-      return *this;
-    }
-
-    // Move ctor and assignment.
-    // TODO(roth): These can go away once we have C++ represenations of
-    // grpc_error and grpc_channel_args that support std::move().
-    Result(Result&& other) {
-      addresses = std::move(other.addresses);
-      service_config = std::move(other.service_config);
-      service_config_error = other.service_config_error;
-      other.service_config_error = GRPC_ERROR_NONE;
-      args = other.args;
-      other.args = nullptr;
-    }
-    Result& operator=(Result&& other) {
-      addresses = std::move(other.addresses);
-      service_config = std::move(other.service_config);
-      GRPC_ERROR_UNREF(service_config_error);
-      service_config_error = other.service_config_error;
-      other.service_config_error = GRPC_ERROR_NONE;
-      grpc_channel_args_destroy(args);
-      args = other.args;
-      other.args = nullptr;
-      return *this;
-    }
-
-    // TODO(roth): This can go away once we have C++ represenations of
-    // grpc_error and grpc_channel_args that support destruction.
-    ~Result() {
-      GRPC_ERROR_UNREF(service_config_error);
-      grpc_channel_args_destroy(args);
-    }
+    ~Result();
+    Result(const Result& other);
+    Result(Result&& other);
+    Result& operator=(const Result& other);
+    Result& operator=(Result&& other);
   };
 
   /// A proxy object used by the resolver to return results to the
