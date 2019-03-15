@@ -2476,7 +2476,6 @@ static grpc_error* try_http_parsing(grpc_chttp2_transport* t) {
   size_t i = 0;
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_http_response response;
-  memset(&response, 0, sizeof(response));
 
   grpc_http_parser_init(&parser, GRPC_HTTP_RESPONSE, &response);
 
