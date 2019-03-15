@@ -28,6 +28,15 @@ const char kHealthCheckServiceInterfaceArg[] =
 
 typedef ::grpc_impl::HealthCheckServiceInterface HealthCheckServiceInterface;
 
+static inline void EnableDefaultHealthCheckService(bool enable) {
+  ::grpc_impl::EnableDefaultHealthCheckService(enable);
+}
+
+static inline bool DefaultHealthCheckServiceEnabled() {
+  return ::grpc_impl::DefaultHealthCheckServiceEnabled();
+}
+
+
 }  // namespace grpc
 
 #endif  // GRPCPP_HEALTH_CHECK_SERVICE_INTERFACE_H

@@ -1242,7 +1242,7 @@ TEST_F(ClientLbEnd2endTest,
 }
 
 TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthChecking) {
-  grpc_impl::EnableDefaultHealthCheckService(true);
+  EnableDefaultHealthCheckService(true);
   // Start servers.
   const int kNumServers = 3;
   StartServers(kNumServers);
@@ -1311,11 +1311,11 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthChecking) {
   EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
   CheckRpcSendFailure(stub);
   // Clean up.
-  grpc_impl::EnableDefaultHealthCheckService(false);
+  EnableDefaultHealthCheckService(false);
 }
 
 TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingInhibitPerChannel) {
-  grpc_impl::EnableDefaultHealthCheckService(true);
+  EnableDefaultHealthCheckService(true);
   // Start server.
   const int kNumServers = 1;
   StartServers(kNumServers);
@@ -1341,7 +1341,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingInhibitPerChannel) {
   EXPECT_TRUE(WaitForChannelReady(channel2.get(), 1));
   CheckRpcSendOk(stub2, DEBUG_LOCATION);
   // Clean up.
-  grpc_impl::EnableDefaultHealthCheckService(false);
+  EnableDefaultHealthCheckService(false);
 }
 
 class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
