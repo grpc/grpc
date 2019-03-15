@@ -861,15 +861,161 @@ TEST_F(SingleBalancerTest, AllServersUnreachableFailFast) {
   EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
 }
 
-// The fallback tests are deferred because the fallback mode hasn't been
-// supported yet.
+TEST_F(SingleBalancerTest, Fallback) {
+  const int kFallbackTimeoutMs = 200 * grpc_test_slowdown_factor();
+  const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
+  const size_t kNumBackendInResolution = backends_.size() / 2;
+  ResetStub(kFallbackTimeoutMs);
+  std::vector<int> ports;
+  for (size_t i = 0; i < kNumBackendInResolution; ++i) {
+    ports.emplace_back(backend_servers_[i].port_);
+  }
+  SetNextResolution(ports, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannelAllBalancers();
+  // Send non-empty serverlist only after kServerlistDelayMs.
+  ScheduleResponseForBalancer(
+      0,
+      BalancerServiceImpl::BuildResponseForBackends(
+          GetBackendPorts(kNumBackendInResolution /* start_index */), {}),
+      kServerlistDelayMs);
+  // Wait until all the fallback backends are reachable.
+  for (size_t i = 0; i < kNumBackendInResolution; ++i) {
+    WaitForBackend(i);
+  }
+  gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
+  CheckRpcSendOk(kNumBackendInResolution);
+  gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
+  // Fallback is used: each backend returned by the resolver should have
+  // gotten one request.
+  for (size_t i = 0; i < kNumBackendInResolution; ++i) {
+    EXPECT_EQ(1U, backend_servers_[i].service_->request_count());
+  }
+  for (size_t i = kNumBackendInResolution; i < backends_.size(); ++i) {
+    EXPECT_EQ(0U, backend_servers_[i].service_->request_count());
+  }
+  // Wait until the serverlist reception has been processed and all backends
+  // in the serverlist are reachable.
+  for (size_t i = kNumBackendInResolution; i < backends_.size(); ++i) {
+    WaitForBackend(i);
+  }
+  gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
+  CheckRpcSendOk(backends_.size() - kNumBackendInResolution);
+  gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
+  // Serverlist is used: each backend returned by the balancer should
+  // have gotten one request.
+  for (size_t i = 0; i < kNumBackendInResolution; ++i) {
+    EXPECT_EQ(0U, backend_servers_[i].service_->request_count());
+  }
+  for (size_t i = kNumBackendInResolution; i < backends_.size(); ++i) {
+    EXPECT_EQ(1U, backend_servers_[i].service_->request_count());
+  }
+  // The balancer got a single request.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
+  // and sent a single response.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
+}
 
-// TODO(juanlishen): Add TEST_F(SingleBalancerTest, Fallback)
+TEST_F(SingleBalancerTest, FallbackUpdate) {
+  const int kFallbackTimeoutMs = 200 * grpc_test_slowdown_factor();
+  const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
+  const size_t kNumBackendInResolution = backends_.size() / 3;
+  const size_t kNumBackendInResolutionUpdate = backends_.size() / 3;
+  ResetStub(kFallbackTimeoutMs);
+  std::vector<int> ports;
+  for (size_t i = 0; i < kNumBackendInResolution; ++i) {
+    ports.emplace_back(backend_servers_[i].port_);
+  }
+  SetNextResolution(ports, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannelAllBalancers();
+  // Send non-empty serverlist only after kServerlistDelayMs.
+  ScheduleResponseForBalancer(
+      0,
+      BalancerServiceImpl::BuildResponseForBackends(
+          GetBackendPorts(kNumBackendInResolution +
+                          kNumBackendInResolutionUpdate /* start_index */),
+          {}),
+      kServerlistDelayMs);
+  // Wait until all the fallback backends are reachable.
+  for (size_t i = 0; i < kNumBackendInResolution; ++i) {
+    WaitForBackend(i);
+  }
+  gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
+  CheckRpcSendOk(kNumBackendInResolution);
+  gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
+  // Fallback is used: each backend returned by the resolver should have
+  // gotten one request.
+  for (size_t i = 0; i < kNumBackendInResolution; ++i) {
+    EXPECT_EQ(1U, backend_servers_[i].service_->request_count());
+  }
+  for (size_t i = kNumBackendInResolution; i < backends_.size(); ++i) {
+    EXPECT_EQ(0U, backend_servers_[i].service_->request_count());
+  }
+  ports.clear();
+  for (size_t i = kNumBackendInResolution;
+       i < kNumBackendInResolution + kNumBackendInResolutionUpdate; ++i) {
+    ports.emplace_back(backend_servers_[i].port_);
+  }
+  SetNextResolution(ports, kDefaultServiceConfig_.c_str());
+  // Wait until the resolution update has been processed and all the new
+  // fallback backends are reachable.
+  for (size_t i = kNumBackendInResolution;
+       i < kNumBackendInResolution + kNumBackendInResolutionUpdate; ++i) {
+    WaitForBackend(i);
+  }
+  gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
+  CheckRpcSendOk(kNumBackendInResolutionUpdate);
+  gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
+  // The resolution update is used: each backend in the resolution update should
+  // have gotten one request.
+  for (size_t i = 0; i < kNumBackendInResolution; ++i) {
+    EXPECT_EQ(0U, backend_servers_[i].service_->request_count());
+  }
+  for (size_t i = kNumBackendInResolution;
+       i < kNumBackendInResolution + kNumBackendInResolutionUpdate; ++i) {
+    EXPECT_EQ(1U, backend_servers_[i].service_->request_count());
+  }
+  for (size_t i = kNumBackendInResolution + kNumBackendInResolutionUpdate;
+       i < backends_.size(); ++i) {
+    EXPECT_EQ(0U, backend_servers_[i].service_->request_count());
+  }
+  // Wait until the serverlist reception has been processed and all backends
+  // in the serverlist are reachable.
+  for (size_t i = kNumBackendInResolution + kNumBackendInResolutionUpdate;
+       i < backends_.size(); ++i) {
+    WaitForBackend(i);
+  }
+  gpr_log(GPR_INFO, "========= BEFORE THIRD BATCH ==========");
+  CheckRpcSendOk(backends_.size() - kNumBackendInResolution -
+                 kNumBackendInResolutionUpdate);
+  gpr_log(GPR_INFO, "========= DONE WITH THIRD BATCH ==========");
+  // Serverlist is used: each backend returned by the balancer should
+  // have gotten one request.
+  for (size_t i = 0;
+       i < kNumBackendInResolution + kNumBackendInResolutionUpdate; ++i) {
+    EXPECT_EQ(0U, backend_servers_[i].service_->request_count());
+  }
+  for (size_t i = kNumBackendInResolution + kNumBackendInResolutionUpdate;
+       i < backends_.size(); ++i) {
+    EXPECT_EQ(1U, backend_servers_[i].service_->request_count());
+  }
+  // The balancer got a single request.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
+  // and sent a single response.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
+}
 
-// TODO(juanlishen): Add TEST_F(SingleBalancerTest, FallbackUpdate)
-
-// TODO(juanlishen): Add TEST_F(SingleBalancerTest,
-// FallbackEarlyWhenBalancerChannelFails)
+TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerChannelFails) {
+  const int kFallbackTimeoutMs = 10000 * grpc_test_slowdown_factor();
+  ResetStub(kFallbackTimeoutMs);
+  // Return an unreachable balancer and one fallback backend.
+  SetNextResolution({backend_servers_[0].port_},
+                    kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannel({grpc_pick_unused_port_or_die()});
+  // Send RPC with deadline less than the fallback timeout and make sure it
+  // succeeds.
+  CheckRpcSendOk(/* times */ 1, /* timeout_ms */ 1000,
+                 /* wait_for_ready */ false);
+}
 
 TEST_F(SingleBalancerTest, BackendsRestart) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
