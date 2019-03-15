@@ -285,8 +285,8 @@ class HealthServiceEnd2endTest : public ::testing::Test {
 };
 
 TEST_F(HealthServiceEnd2endTest, DefaultHealthServiceDisabled) {
-  grpc_impl::EnableDefaultHealthCheckService(false);
-  EXPECT_FALSE(grpc_impl::DefaultHealthCheckServiceEnabled());
+  EnableDefaultHealthCheckService(false);
+  EXPECT_FALSE(DefaultHealthCheckServiceEnabled());
   SetUpServer(true, false, false, nullptr);
   HealthCheckServiceInterface* default_service =
       server_->GetHealthCheckService();
@@ -298,8 +298,8 @@ TEST_F(HealthServiceEnd2endTest, DefaultHealthServiceDisabled) {
 }
 
 TEST_F(HealthServiceEnd2endTest, DefaultHealthService) {
-  grpc_impl::EnableDefaultHealthCheckService(true);
-  EXPECT_TRUE(grpc_impl::DefaultHealthCheckServiceEnabled());
+  EnableDefaultHealthCheckService(true);
+  EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
   SetUpServer(true, false, false, nullptr);
   VerifyHealthCheckService();
   VerifyHealthCheckServiceStreaming();
@@ -311,16 +311,16 @@ TEST_F(HealthServiceEnd2endTest, DefaultHealthService) {
 }
 
 TEST_F(HealthServiceEnd2endTest, DefaultHealthServiceShutdown) {
-  grpc_impl::EnableDefaultHealthCheckService(true);
-  EXPECT_TRUE(grpc_impl::DefaultHealthCheckServiceEnabled());
+  EnableDefaultHealthCheckService(true);
+  EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
   SetUpServer(true, false, false, nullptr);
   VerifyHealthCheckServiceShutdown();
 }
 
 // Provide an empty service to disable the default service.
 TEST_F(HealthServiceEnd2endTest, ExplicitlyDisableViaOverride) {
-  grpc_impl::EnableDefaultHealthCheckService(true);
-  EXPECT_TRUE(grpc_impl::DefaultHealthCheckServiceEnabled());
+  EnableDefaultHealthCheckService(true);
+  EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
   std::unique_ptr<HealthCheckServiceInterface> empty_service;
   SetUpServer(true, false, true, std::move(empty_service));
   grpc_impl::HealthCheckServiceInterface* service = server_->GetHealthCheckService();
@@ -333,8 +333,8 @@ TEST_F(HealthServiceEnd2endTest, ExplicitlyDisableViaOverride) {
 
 // Provide an explicit override of health checking service interface.
 TEST_F(HealthServiceEnd2endTest, ExplicitlyOverride) {
-  grpc_impl::EnableDefaultHealthCheckService(true);
-  EXPECT_TRUE(grpc_impl::DefaultHealthCheckServiceEnabled());
+  EnableDefaultHealthCheckService(true);
+  EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
   std::unique_ptr<HealthCheckServiceInterface> override_service(
       new CustomHealthCheckService(&health_check_service_impl_));
   HealthCheckServiceInterface* underlying_service = override_service.get();
@@ -349,8 +349,8 @@ TEST_F(HealthServiceEnd2endTest, ExplicitlyOverride) {
 }
 
 TEST_F(HealthServiceEnd2endTest, ExplicitlyHealthServiceShutdown) {
-  grpc_impl::EnableDefaultHealthCheckService(true);
-  EXPECT_TRUE(grpc_impl::DefaultHealthCheckServiceEnabled());
+  EnableDefaultHealthCheckService(true);
+  EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
   std::unique_ptr<HealthCheckServiceInterface> override_service(
       new CustomHealthCheckService(&health_check_service_impl_));
   HealthCheckServiceInterface* underlying_service = override_service.get();
