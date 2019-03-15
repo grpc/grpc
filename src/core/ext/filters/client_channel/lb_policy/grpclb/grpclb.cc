@@ -691,8 +691,8 @@ void GrpcLb::Helper::RequestReresolution() {
   if (child_ != latest_child_policy) return;
   if (grpc_lb_glb_trace.enabled()) {
     gpr_log(GPR_INFO,
-            "[grpclb %p] Re-resolution requested from child policy (%p).",
-            parent_.get(), child_);
+            "[grpclb %p] Re-resolution requested from %schild policy (%p).",
+            parent_.get(), CalledByPendingChild() ? "pending " : "", child_);
   }
   // If we are talking to a balancer, we expect to get updated addresses
   // from the balancer, so we can ignore the re-resolution request from
