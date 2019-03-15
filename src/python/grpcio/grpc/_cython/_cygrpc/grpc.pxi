@@ -13,15 +13,7 @@
 # limitations under the License.
 
 cimport libc.time
-from libc.stdint cimport intptr_t
-
-
-# Typedef types with approximately the same semantics to provide their names to
-# Cython
-ctypedef unsigned char uint8_t
-ctypedef int int32_t
-ctypedef unsigned uint32_t
-ctypedef long int64_t
+from libc.stdint cimport intptr_t, int64_t, int32_t, uint8_t, uint32_t
 
 
 cdef extern from "grpc/support/alloc.h":
