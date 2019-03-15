@@ -17,7 +17,13 @@ cdef gpr_timespec _timespec_from_time(object time) except *:
   if time is None:
     return gpr_inf_future(GPR_CLOCK_REALTIME)
   else:
-    timespec = gpr_time_from_nanos(<int64_t>(time * GPR_NS_PER_SEC), GPR_CLOCK_REALTIME)
+    timespec = gpr_time_from_nanos(<int64_t>(<double>time * GPR_NS_PER_SEC), GPR_CLOCK_REALTIME)
+    print 'Input %.2f time, output %d seconds %d nanoseconds %d clock type' % (
+      time,
+      timespec.seconds,
+      timespec.nanoseconds,
+      timespec.clock_type,
+    )
     return timespec
 
 
