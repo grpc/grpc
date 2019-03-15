@@ -1634,7 +1634,6 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
     const char** alpn_protocols, uint16_t num_alpn_protocols,
     tsi_ssl_client_handshaker_factory** factory) {
   tsi_ssl_client_handshaker_options options;
-  memset(&options, 0, sizeof(options));
   options.pem_key_cert_pair = pem_key_cert_pair;
   options.pem_root_certs = pem_root_certs;
   options.cipher_suites = cipher_suites;
@@ -1764,7 +1763,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
     const char* cipher_suites, const char** alpn_protocols,
     uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory) {
   tsi_ssl_server_handshaker_options options;
-  memset(&options, 0, sizeof(options));
   options.pem_key_cert_pairs = pem_key_cert_pairs;
   options.num_key_cert_pairs = num_key_cert_pairs;
   options.pem_client_root_certs = pem_client_root_certs;
