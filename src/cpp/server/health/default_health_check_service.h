@@ -37,7 +37,7 @@ namespace grpc {
 
 // Default implementation of HealthCheckServiceInterface. Server will create and
 // own it.
-class DefaultHealthCheckService final : public HealthCheckServiceInterface {
+class DefaultHealthCheckService final : public grpc_impl::HealthCheckServiceInterface {
  public:
   enum ServingStatus { NOT_FOUND, SERVING, NOT_SERVING };
 

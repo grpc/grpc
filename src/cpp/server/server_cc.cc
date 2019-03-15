@@ -802,7 +802,7 @@ Server::Server(
       if (channel_args.args[i].value.pointer.p == nullptr) {
         health_check_service_disabled_ = true;
       } else {
-        health_check_service_.reset(static_cast<HealthCheckServiceInterface*>(
+        health_check_service_.reset(static_cast<grpc_impl::HealthCheckServiceInterface*>(
             channel_args.args[i].value.pointer.p));
       }
       break;
