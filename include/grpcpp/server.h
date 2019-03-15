@@ -44,6 +44,7 @@ struct grpc_server;
 namespace grpc {
 
 class AsyncGenericService;
+class HealthCheckServiceInterface;
 class ServerContext;
 class ServerInitializer;
 
