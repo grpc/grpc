@@ -991,6 +991,7 @@ include/grpcpp/impl/rpc_method.h \
 include/grpcpp/impl/rpc_service_method.h \
 include/grpcpp/impl/serialization_traits.h \
 include/grpcpp/impl/server_builder_option.h \
+include/grpcpp/impl/server_builder_option_impl.h \
 include/grpcpp/impl/server_builder_plugin.h \
 include/grpcpp/impl/server_initializer.h \
 include/grpcpp/impl/service_type.h \
