@@ -21,4 +21,19 @@
 
 #include "grpcpp/opencensus_impl.h"
 
+namespace grpc {
+
+static inline void RegisterOpenCensusPlugin() {
+  ::grpc_impl::RegisterOpenCensusPlugin();
+}
+static inline void RegisterOpenCensusViewsForExport() {
+  ::grpc_impl::RegisterOpenCensusViewsForExport();
+}
+static inline ::opencensus::trace::Span GetSpanFromServerContext(
+    ServerContext* context) {
+  return ::grpc_impl::GetSpanFromServerContext(context);
+}
+
+}  // namespace grpc
+
 #endif  // GRPCPP_OPENCENSUS_H
