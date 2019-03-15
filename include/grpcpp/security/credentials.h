@@ -37,12 +37,12 @@ namespace grpc {
 class CallCredentials;
 class ChannelArguments;
 class ChannelCredentials;
-}
+}  // namespace grpc
 namespace grpc_impl {
 std::shared_ptr<grpc::Channel> CreateCustomChannel(
-      const grpc::string& target,
-      const std::shared_ptr<grpc::ChannelCredentials>& creds,
-      const grpc::ChannelArguments& args);
+    const grpc::string& target,
+    const std::shared_ptr<grpc::ChannelCredentials>& creds,
+    const grpc::ChannelArguments& args);
 
 namespace experimental {
 std::shared_ptr<grpc::Channel> CreateCustomChannelWithInterceptors(
@@ -58,7 +58,6 @@ namespace grpc {
 class Channel;
 class SecureChannelCredentials;
 class SecureCallCredentials;
-
 
 /// A channel credentials object encapsulates all the state needed by a client
 /// to authenticate with a server for a given channel.

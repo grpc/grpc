@@ -40,7 +40,8 @@ std::shared_ptr<grpc::Channel> CreateCustomChannel(
     const grpc::string& target,
     const std::shared_ptr<grpc::ChannelCredentials>& creds,
     const grpc::ChannelArguments& args) {
-  grpc::GrpcLibraryCodegen init_lib;  // We need to call init in case of a bad creds.
+  grpc::GrpcLibraryCodegen
+      init_lib;  // We need to call init in case of a bad creds.
   return creds ? creds->CreateChannel(target, args)
                : grpc::CreateChannelInternal(
                      "",
@@ -48,7 +49,8 @@ std::shared_ptr<grpc::Channel> CreateCustomChannel(
                          nullptr, GRPC_STATUS_INVALID_ARGUMENT,
                          "Invalid credentials."),
                      std::vector<std::unique_ptr<
-                         grpc::experimental::ClientInterceptorFactoryInterface>>());
+                         grpc::experimental::
+                             ClientInterceptorFactoryInterface>>());
 }
 
 namespace experimental {
@@ -78,7 +80,8 @@ std::shared_ptr<grpc::Channel> CreateCustomChannelWithInterceptors(
                          nullptr, GRPC_STATUS_INVALID_ARGUMENT,
                          "Invalid credentials."),
                      std::vector<std::unique_ptr<
-                         grpc::experimental::ClientInterceptorFactoryInterface>>());
+                         grpc::experimental::
+                             ClientInterceptorFactoryInterface>>());
 }
 }  // namespace experimental
 
