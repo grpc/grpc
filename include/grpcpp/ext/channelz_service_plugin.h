@@ -21,4 +21,16 @@
 
 #include <grpcpp/ext/channelz_service_plugin_impl.h>
 
+namespace grpc {
+namespace channelz {
+namespace experimental {
+
+static inline void InitChannelzService() {
+  ::grpc_impl::channelz::experimental::InitChannelzService();
+}
+
+}  // namespace experimental
+}  // namespace channelz
+}  // namespace grpc
+
 #endif  // GRPCPP_EXT_CHANNELZ_SERVICE_PLUGIN_H
