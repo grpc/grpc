@@ -88,7 +88,7 @@ static grpc_core::Resolver::Result create_new_resolver_result() {
   char* uri_string;
   char* balancer_name;
   // Create address list.
-  grpc_core::ServerAddressList addresses;
+  grpc_core::Resolver::Result result;
   for (size_t i = 0; i < num_addresses; ++i) {
     gpr_asprintf(&uri_string, "ipv4:127.0.0.1:100%" PRIuPTR,
                  test_counter * num_addresses + i);
@@ -107,13 +107,13 @@ static grpc_core::Resolver::Result create_new_resolver_result() {
     }
     grpc_channel_args* args = grpc_channel_args_copy_and_add(
         nullptr, args_to_add.data(), args_to_add.size());
-    addresses.emplace_back(address.addr, address.len, args);
+    result.addresses.emplace_back(address.addr, address.len, args);
     gpr_free(balancer_name);
     grpc_uri_destroy(uri);
     gpr_free(uri_string);
   }
   ++test_counter;
-  return grpc_core::Resolver::Result(std::move(addresses), nullptr);
+  return result;
 }
 
 static void test_fake_resolver() {
