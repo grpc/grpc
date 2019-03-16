@@ -62,6 +62,8 @@ class ChannelTest(unittest.TestCase):
         connectivity = channel.check_connectivity_state(True)
         channel.watch_connectivity_state(connectivity, -3.14)
         channel.close(cygrpc.StatusCode.ok, 'Channel close!')
+        # NOTE(lidiz) The negative timeout should not trigger SIGABRT.
+        # Bug report: https://github.com/grpc/grpc/issues/18244
 
 
 if __name__ == '__main__':
