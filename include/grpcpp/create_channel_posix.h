@@ -25,8 +25,8 @@ namespace grpc {
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
-static inline std::shared_ptr<Channel> CreateInsecureChannelFromFd(const grpc::string& target,
-                                                     int fd) {
+static inline std::shared_ptr<Channel> CreateInsecureChannelFromFd(
+    const grpc::string& target, int fd) {
   return ::grpc_impl::CreateInsecureChannelFromFd(target, fd);
 }
 
@@ -37,12 +37,14 @@ static inline std::shared_ptr<Channel> CreateCustomInsecureChannelFromFd(
 
 namespace experimental {
 
-static inline std::shared_ptr<Channel> CreateCustomInsecureChannelWithInterceptorsFromFd(
+static inline std::shared_ptr<Channel>
+CreateCustomInsecureChannelWithInterceptorsFromFd(
     const grpc::string& target, int fd, const ChannelArguments& args,
     std::unique_ptr<std::vector<
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
         interceptor_creators) {
-  return CreateCustomInsecureChannelWithInterceptorsFromFd(target, fd, args, std::move(interceptor_creators));
+  return CreateCustomInsecureChannelWithInterceptorsFromFd(
+      target, fd, args, std::move(interceptor_creators));
 }
 
 }  // namespace experimental
@@ -50,6 +52,5 @@ static inline std::shared_ptr<Channel> CreateCustomInsecureChannelWithIntercepto
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
 }  // namespace grpc
-
 
 #endif  // GRPCPP_CREATE_CHANNEL_POSIX_H
