@@ -14,5 +14,8 @@
 
 FROM mcr.microsoft.com/dotnet/core/sdk:3.0.100-preview3-stretch
 
+# needed by get-dotnet.sh script
+RUN apt-get update && apt-get install -y jq && apt-get clean
+
 # Define the default command.
 CMD ["bash"]
