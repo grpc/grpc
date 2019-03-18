@@ -7315,6 +7315,7 @@
     "headers": [
       "include/grpc++/ext/proto_server_reflection_plugin.h", 
       "include/grpcpp/ext/proto_server_reflection_plugin.h", 
+      "include/grpcpp/ext/proto_server_reflection_plugin_impl.h", 
       "src/cpp/ext/proto_server_reflection.h"
     ], 
     "is_filegroup": false, 
@@ -7323,6 +7324,7 @@
     "src": [
       "include/grpc++/ext/proto_server_reflection_plugin.h", 
       "include/grpcpp/ext/proto_server_reflection_plugin.h", 
+      "include/grpcpp/ext/proto_server_reflection_plugin_impl.h", 
       "src/cpp/ext/proto_server_reflection.cc", 
       "src/cpp/ext/proto_server_reflection.h", 
       "src/cpp/ext/proto_server_reflection_plugin.cc"

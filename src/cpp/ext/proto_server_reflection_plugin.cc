@@ -23,7 +23,7 @@
 
 #include "src/cpp/ext/proto_server_reflection.h"
 
-namespace grpc {
+namespace grpc_impl {
 namespace reflection {
 
 ProtoServerReflectionPlugin::ProtoServerReflectionPlugin()
