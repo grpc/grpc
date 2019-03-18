@@ -687,15 +687,15 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
 
 void GrpcLb::Helper::RequestReresolution() {
   if (parent_->shutting_down_) return;
-  // If there is a pending child policy, ignore re-resolution requests
-  // from the current child policy (or any outdated child).
-  if (parent_->pending_child_policy_ != nullptr && !CalledByPendingChild()) {
-    return;
-  }
+  const LoadBalancingPolicy* latest_child_policy =
+      parent_->pending_child_policy_ != nullptr
+          ? parent_->pending_child_policy_.get()
+          : parent_->child_policy_.get();
+  if (child_ != latest_child_policy) return;
   if (grpc_lb_glb_trace.enabled()) {
     gpr_log(GPR_INFO,
-            "[grpclb %p] Re-resolution requested from child policy (%p).",
-            parent_.get(), child_);
+            "[grpclb %p] Re-resolution requested from %schild policy (%p).",
+            parent_.get(), CalledByPendingChild() ? "pending " : "", child_);
   }
   // If we are talking to a balancer, we expect to get updated addresses
   // from the balancer, so we can ignore the re-resolution request from
