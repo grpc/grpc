@@ -263,6 +263,10 @@ void CallbackTestServiceImpl::Echo(
       EXPECT_TRUE(context->IsCancelled());
       EXPECT_TRUE(
           cancel_state->callback_invoked.load(std::memory_order_relaxed));
+    } else {
+      EXPECT_FALSE(context->IsCancelled());
+      EXPECT_FALSE(
+          cancel_state->callback_invoked.load(std::memory_order_relaxed));
     }
   }
   // A bit of sleep to make sure that short deadline tests fail
