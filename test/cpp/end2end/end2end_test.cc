@@ -1381,7 +1381,26 @@ TEST_P(End2endTest, ExpectErrorTest) {
   }
 }
 
-TEST_P(End2endTest, DelayedRpcCanceledUsingCancelCallback) {
+TEST_P(End2endTest, DelayedRpcEarlyCanceledUsingCancelCallback) {
+  MAYBE_SKIP_TEST;
+  if (!GetParam().callback_server || GetParam().use_interceptors) {
+    return;
+  }
+
+  ResetStub();
+  ClientContext context;
+  context.AddMetadata(kServerUseCancelCallback,
+                      grpc::to_string(MAYBE_USE_CALLBACK_EARLY_CANCEL));
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+  request.mutable_param()->set_skip_cancelled_check(true);
+  context.TryCancel();
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
+}
+
+TEST_P(End2endTest, DelayedRpcLateCanceledUsingCancelCallback) {
   MAYBE_SKIP_TEST;
   // This test case is only relevant with callback server.
   // Additionally, using interceptors makes this test subject to
@@ -1393,26 +1412,23 @@ TEST_P(End2endTest, DelayedRpcCanceledUsingCancelCallback) {
   ResetStub();
   ClientContext context;
   context.AddMetadata(kServerUseCancelCallback,
-                      grpc::to_string(MAYBE_USE_CALLBACK_CANCEL));
+                      grpc::to_string(MAYBE_USE_CALLBACK_LATE_CANCEL));
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello");
   request.mutable_param()->set_skip_cancelled_check(true);
-  // Let server sleep for 40 ms first to give the cancellation a chance.
-  // 40 ms might seem a bit extreme but the timer manager would have been just
-  // initialized (when ResetStub() was called) and there are some warmup costs
-  // i.e the timer thread many not have even started. There might also be
-  // other delays in the timer manager thread (in acquiring locks, timer data
-  // structure manipulations, starting backup timer threads) that add to the
-  // delays. 40ms is still not enough in some cases but this significantly
-  // reduces the test flakes
-  request.mutable_param()->set_server_sleep_us(40 * 1000);
+  // Let server sleep for 80 ms first to give the cancellation a chance.
+  // This is split into 40 ms to start the cancel and 40 ms extra time for
+  // it to make it to the server, to make it highly probable that the server
+  // RPC would have already started by the time the cancellation is sent
+  // and the server-side gets enough time to react to it.
+  request.mutable_param()->set_server_sleep_us(80 * 1000);
 
   std::thread echo_thread{[this, &context, &request, &response] {
     Status s = stub_->Echo(&context, request, &response);
     EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
   }};
-  std::this_thread::sleep_for(std::chrono::microseconds(500));
+  std::this_thread::sleep_for(std::chrono::microseconds(40000));
   context.TryCancel();
   echo_thread.join();
 }

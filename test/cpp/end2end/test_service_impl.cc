@@ -259,6 +259,11 @@ void CallbackTestServiceImpl::Echo(
       EXPECT_FALSE(cancel_state->callback_invoked.exchange(
           true, std::memory_order_relaxed));
     });
+    if (server_use_cancel_callback == MAYBE_USE_CALLBACK_EARLY_CANCEL) {
+      EXPECT_TRUE(context->IsCancelled());
+      EXPECT_TRUE(
+          cancel_state->callback_invoked.load(std::memory_order_relaxed));
+    }
   }
   // A bit of sleep to make sure that short deadline tests fail
   if (request->has_param() && request->param().server_sleep_us() > 0) {
@@ -298,7 +303,8 @@ void CallbackTestServiceImpl::EchoNonDelayed(
 
   // Safe to clear cancel callback even if it wasn't set
   controller->ClearCancelCallback();
-  if (server_use_cancel_callback == MAYBE_USE_CALLBACK_CANCEL) {
+  if (server_use_cancel_callback == MAYBE_USE_CALLBACK_EARLY_CANCEL ||
+      server_use_cancel_callback == MAYBE_USE_CALLBACK_LATE_CANCEL) {
     EXPECT_TRUE(context->IsCancelled());
     EXPECT_TRUE(cancel_state->callback_invoked.load(std::memory_order_relaxed));
     delete cancel_state;
