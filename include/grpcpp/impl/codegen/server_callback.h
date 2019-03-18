@@ -72,10 +72,17 @@ class ServerCallbackRpcController {
 
   /// SetCancelCallback passes in a callback to be called when the RPC is
   /// canceled for whatever reason (streaming calls have OnCancel instead). This
-  /// is an advanced and uncommon use with several important restrictions.
+  /// is an advanced and uncommon use with several important restrictions. (This
+  /// function may be called multiple times on the same RPC but only that last
+  /// registered callback is actually used.)
   ///
   /// If code calls SetCancelCallback on an RPC, it must also call
-  /// ClearCancelCallback before calling Finish on the RPC controller.
+  /// ClearCancelCallback before calling Finish on the RPC controller. That
+  /// method makes sure that no cancellation callback is executed for this RPC
+  /// beyond the point of its return. ClearCancelCallback may be called even if
+  /// SetCancelCallback was not called for this RPC, and it may be called
+  /// multiple times. It _must_ be called if SetCancelCallback was called for
+  /// this RPC.
   ///
   /// The callback should generally be lightweight and nonblocking and primarily
   /// concerned with clearing application state related to the RPC or causing
@@ -88,10 +95,11 @@ class ServerCallbackRpcController {
   /// handler that invokes it but will certainly not issue or execute after the
   /// return of ClearCancelCallback.
   ///
-  /// The callback is called under a lock that is also used for
-  /// ClearCancelCallback and ServerContext::IsCancelled, so the callback CANNOT
-  /// call either of those operations on this RPC or any other function that
-  /// causes those operations to be called before the callback completes.
+  /// To preserve the orderings described above, the callback may be called
+  /// under a lock that is also used for ClearCancelCallback and
+  /// ServerContext::IsCancelled, so the callback CANNOT call either of those
+  /// operations on this RPC or any other function that causes those operations
+  /// to be called before the callback completes.
   virtual void SetCancelCallback(std::function<void()> callback) = 0;
   virtual void ClearCancelCallback() = 0;
 };

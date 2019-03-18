@@ -89,7 +89,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["no_windows"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -624,7 +623,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
