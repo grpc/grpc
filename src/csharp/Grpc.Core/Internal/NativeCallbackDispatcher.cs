@@ -35,8 +35,6 @@ namespace Grpc.Core.Internal
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<NativeCallbackDispatcher>();
         static readonly object staticLock = new object();
-        static readonly AtomicCounter atomicCounter = new AtomicCounter();
-        static readonly ConcurrentDictionary<IntPtr, UniversalNativeCallback> registry = new ConcurrentDictionary<IntPtr, UniversalNativeCallback>();
 
         static NativeCallbackDispatcherCallback dispatcherCallback;
 
@@ -54,30 +52,14 @@ namespace Grpc.Core.Internal
 
         public static NativeCallbackRegistration RegisterCallback(UniversalNativeCallback callback)
         {
-            while (true)
-            {
-                // TODO: retries might not work well on 32-bit
-                var tag = NextTag();
-                if (registry.TryAdd(tag, callback))
-                {
-                    return new NativeCallbackRegistration(tag);
-                }
-            }
+            var gcHandle = GCHandle.Alloc(callback);
+            return new NativeCallbackRegistration(gcHandle);
         }
 
-        public static void UnregisterCallback(IntPtr tag)
+        private static UniversalNativeCallback GetCallback(IntPtr tag)
         {
-            registry.TryRemove(tag, out UniversalNativeCallback callback);
-        }
-
-        private static bool TryGetCallback(IntPtr tag, out UniversalNativeCallback callback)
-        {
-            return registry.TryGetValue(tag, out callback);
-        }
-
-        private static IntPtr NextTag()
-        {
-            return (IntPtr) atomicCounter.Increment();
+            var gcHandle = GCHandle.FromIntPtr(tag);
+            return (UniversalNativeCallback) gcHandle.Target;
         }
 
         [MonoPInvokeCallback(typeof(NativeCallbackDispatcherCallback))]
@@ -85,12 +67,7 @@ namespace Grpc.Core.Internal
         {
             try
             {
-                UniversalNativeCallback callback;
-                if (!TryGetCallback(tag, out callback))
-                {
-                    Logger.Error("No native callback handler registered for tag {0}.", tag);
-                    return 0;
-                }
+                var callback = GetCallback(tag);
                 return callback(arg0, arg1, arg2, arg3, arg4, arg5);
             }
             catch (Exception e)
@@ -104,18 +81,21 @@ namespace Grpc.Core.Internal
 
     internal class NativeCallbackRegistration : IDisposable
     {
-        readonly IntPtr tag;
+        readonly GCHandle handle;
 
-        public NativeCallbackRegistration(IntPtr tag)
+        public NativeCallbackRegistration(GCHandle handle)
         {
-            this.tag = tag;
+            this.handle = handle;
         }
 
-        public IntPtr Tag => tag;
+        public IntPtr Tag => GCHandle.ToIntPtr(handle);
 
         public void Dispose()
         {
-            NativeCallbackDispatcher.UnregisterCallback(tag);
+            if (handle.IsAllocated)
+            {
+                handle.Free();
+            }
         }
     }
 }
