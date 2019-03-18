@@ -1041,13 +1041,13 @@ static int grpcsharp_get_metadata_handler(
     grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
     size_t* num_creds_md, grpc_status_code* status,
     const char** error_details) {
-  native_callback_dispatcher(state, context.service_url, context.method_name, cb, user_data,
-              0, NULL);
+  native_callback_dispatcher(state, (void*)context.service_url, (void*)context.method_name, cb, user_data,
+              (void*)0, NULL);
   return 0; /* Asynchronous return. */
 }
 
 static void grpcsharp_metadata_credentials_destroy_handler(void* state) {
-  native_callback_dispatcher(state, NULL, NULL, NULL, NULL, 1, NULL);
+  native_callback_dispatcher(state, NULL, NULL, NULL, NULL, (void*)1, NULL);
 }
 
 GPR_EXPORT grpc_call_credentials* GPR_CALLTYPE
