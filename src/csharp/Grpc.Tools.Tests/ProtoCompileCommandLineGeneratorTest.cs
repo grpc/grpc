@@ -49,7 +49,7 @@ namespace Grpc.Tools.Tests
             ExecuteExpectSuccess();
             Assert.That(_task.LastPathToTool, Does.Match(@"protoc(.exe)?$"));
             Assert.That(_task.LastResponseFile, Is.EqualTo(new[] {
-                "--csharp_out=outdir", "a.proto" }));
+                "--csharp_out=outdir", "--error_format=msvs", "a.proto" }));
         }
 
         [Test]
@@ -58,7 +58,7 @@ namespace Grpc.Tools.Tests
             _task.ProtoBuf = Utils.MakeSimpleItems("a.proto", "foo/b.proto");
             ExecuteExpectSuccess();
             Assert.That(_task.LastResponseFile, Is.EqualTo(new[] {
-                "--csharp_out=outdir", "a.proto", "foo/b.proto" }));
+                "--csharp_out=outdir", "--error_format=msvs", "a.proto", "foo/b.proto" }));
         }
 
         [Test]
@@ -68,7 +68,7 @@ namespace Grpc.Tools.Tests
             ExecuteExpectSuccess();
             Assert.That(_task.LastResponseFile, Is.EqualTo(new[] {
                 "--csharp_out=outdir", "--proto_path=/path1",
-                "--proto_path=/path2", "a.proto" }));
+                "--proto_path=/path2", "--error_format=msvs", "a.proto" }));
         }
 
         [TestCase("Cpp")]
@@ -87,7 +87,7 @@ namespace Grpc.Tools.Tests
             ExecuteExpectSuccess();
             gen = gen.ToLowerInvariant();
             Assert.That(_task.LastResponseFile, Is.EqualTo(new[] {
-                $"--{gen}_out=outdir", $"--{gen}_opt=foo,bar", "a.proto" }));
+                $"--{gen}_out=outdir", $"--{gen}_opt=foo,bar", "--error_format=msvs", "a.proto" }));
         }
 
         [Test]

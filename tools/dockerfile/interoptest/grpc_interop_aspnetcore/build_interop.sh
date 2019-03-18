@@ -23,6 +23,7 @@ git clone /var/local/jenkins/grpc-dotnet /var/local/git/grpc-dotnet
 cp -r /var/local/jenkins/service_account $HOME || true
 
 cd /var/local/git/grpc-dotnet
+./build/get-dotnet.sh
 ./build/get-grpc.sh
 
 cd testassets/InteropTestsWebsite

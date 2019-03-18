@@ -13,15 +13,7 @@
 # limitations under the License.
 
 cimport libc.time
-from libc.stdint cimport intptr_t
-
-
-# Typedef types with approximately the same semantics to provide their names to
-# Cython
-ctypedef unsigned char uint8_t
-ctypedef int int32_t
-ctypedef unsigned uint32_t
-ctypedef long int64_t
+from libc.stdint cimport intptr_t, uint8_t, int32_t, uint32_t, int64_t
 
 
 cdef extern from "grpc/support/alloc.h":
@@ -61,6 +53,10 @@ cdef extern from "grpc/grpc.h":
   void *grpc_slice_start_ptr "GRPC_SLICE_START_PTR" (grpc_slice s) nogil
   size_t grpc_slice_length "GRPC_SLICE_LENGTH" (grpc_slice s) nogil
 
+  const int GPR_MS_PER_SEC
+  const int GPR_US_PER_SEC
+  const int GPR_NS_PER_SEC
+
   ctypedef enum gpr_clock_type:
     GPR_CLOCK_MONOTONIC
     GPR_CLOCK_REALTIME
@@ -82,6 +78,8 @@ cdef extern from "grpc/grpc.h":
                                       gpr_clock_type target_clock) nogil
 
   gpr_timespec gpr_time_from_millis(int64_t ms, gpr_clock_type type) nogil
+  gpr_timespec gpr_time_from_nanos(int64_t ns, gpr_clock_type type) nogil
+  double gpr_timespec_to_micros(gpr_timespec t) nogil
 
   gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b) nogil
 

@@ -20,22 +20,21 @@ import grpc
 
 _LOGGER = logging.getLogger(__name__)
 
+
 cdef class Server:
 
   def __cinit__(self, object arguments):
     fork_handlers_and_grpc_init()
     self.references = []
     self.registered_completion_queues = []
-    self._vtable.copy = &_copy_pointer
-    self._vtable.destroy = &_destroy_pointer
-    self._vtable.cmp = &_compare_pointer
-    cdef _ChannelArgs channel_args = _ChannelArgs.from_args(
-        arguments, &self._vtable)
-    self.c_server = grpc_server_create(channel_args.c_args(), NULL)
-    self.references.append(arguments)
     self.is_started = False
     self.is_shutting_down = False
     self.is_shutdown = False
+    self.c_server = NULL
+    self._vtable = _VTable()
+    cdef _ChannelArgs channel_args = _ChannelArgs(arguments, self._vtable)
+    self.c_server = grpc_server_create(channel_args.c_args(), NULL)
+    self.references.append(arguments)
 
   def request_call(
       self, CompletionQueue call_queue not None,
@@ -44,7 +43,7 @@ cdef class Server:
       raise ValueError("server must be started and not shutting down")
     if server_queue not in self.registered_completion_queues:
       raise ValueError("server_queue must be a registered completion queue")
-    cdef _RequestCallTag request_call_tag = _RequestCallTag(tag)
+    cdef _RequestCallTag request_call_tag = _RequestCallTag(tag, self._vtable)
     request_call_tag.prepare()
     cpython.Py_INCREF(request_call_tag)
     return grpc_server_request_call(

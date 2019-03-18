@@ -318,6 +318,7 @@ namespace Grpc.Tools
                     cmd.AddSwitchMaybe("proto_path", TrimEndSlash(path));
             }
             cmd.AddSwitchMaybe("dependency_out", DependencyOut);
+            cmd.AddSwitchMaybe("error_format", "msvs");
             foreach (var proto in ProtoBuf)
             {
                 cmd.AddArg(proto.ItemSpec);
