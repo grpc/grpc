@@ -6923,6 +6923,7 @@
     ], 
     "headers": [
       "include/grpcpp/ext/channelz_service_plugin.h", 
+      "include/grpcpp/ext/channelz_service_plugin_impl.h", 
       "src/cpp/server/channelz/channelz_service.h"
     ], 
     "is_filegroup": false, 
@@ -6930,6 +6931,7 @@
     "name": "grpcpp_channelz", 
     "src": [
       "include/grpcpp/ext/channelz_service_plugin.h", 
+      "include/grpcpp/ext/channelz_service_plugin_impl.h", 
       "src/cpp/server/channelz/channelz_service.cc", 
       "src/cpp/server/channelz/channelz_service.h", 
       "src/cpp/server/channelz/channelz_service_plugin.cc"
