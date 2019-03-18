@@ -209,7 +209,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_byte_buffer_reader_init);
   printf("%lx", (unsigned long) grpc_byte_buffer_reader_destroy);
   printf("%lx", (unsigned long) grpc_byte_buffer_reader_next);
-  printf("%lx", (unsigned long) grpc_byte_buffer_reader_peek);
   printf("%lx", (unsigned long) grpc_byte_buffer_reader_readall);
   printf("%lx", (unsigned long) grpc_raw_byte_buffer_from_reader);
   printf("%lx", (unsigned long) gpr_log_severity_string);

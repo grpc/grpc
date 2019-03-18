@@ -333,7 +333,6 @@ filegroups:
   - src/core/lib/iomgr/udp_server.cc
   - src/core/lib/iomgr/unix_sockets_posix.cc
   - src/core/lib/iomgr/unix_sockets_posix_noop.cc
-  - src/core/lib/iomgr/wakeup_fd_cv.cc
   - src/core/lib/iomgr/wakeup_fd_eventfd.cc
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
@@ -498,7 +497,6 @@ filegroups:
   - src/core/lib/iomgr/timer_manager.h
   - src/core/lib/iomgr/udp_server.h
   - src/core/lib/iomgr/unix_sockets_posix.h
-  - src/core/lib/iomgr/wakeup_fd_cv.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/json/json.h
@@ -835,6 +833,7 @@ filegroups:
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
   - src/core/lib/security/credentials/ssl/ssl_credentials.h
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
+  - src/core/lib/security/credentials/tls/spiffe_credentials.h
   - src/core/lib/security/security_connector/alts/alts_security_connector.h
   - src/core/lib/security/security_connector/fake/fake_security_connector.h
   - src/core/lib/security/security_connector/load_system_roots.h
@@ -843,6 +842,7 @@ filegroups:
   - src/core/lib/security/security_connector/security_connector.h
   - src/core/lib/security/security_connector/ssl/ssl_security_connector.h
   - src/core/lib/security/security_connector/ssl_utils.h
+  - src/core/lib/security/security_connector/tls/spiffe_security_connector.h
   - src/core/lib/security/transport/auth_filters.h
   - src/core/lib/security/transport/secure_endpoint.h
   - src/core/lib/security/transport/security_handshaker.h
@@ -868,6 +868,7 @@ filegroups:
   - src/core/lib/security/credentials/plugin/plugin_credentials.cc
   - src/core/lib/security/credentials/ssl/ssl_credentials.cc
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
+  - src/core/lib/security/credentials/tls/spiffe_credentials.cc
   - src/core/lib/security/security_connector/alts/alts_security_connector.cc
   - src/core/lib/security/security_connector/fake/fake_security_connector.cc
   - src/core/lib/security/security_connector/load_system_roots_fallback.cc
@@ -876,6 +877,7 @@ filegroups:
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
   - src/core/lib/security/security_connector/ssl_utils.cc
+  - src/core/lib/security/security_connector/tls/spiffe_security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
   - src/core/lib/security/transport/secure_endpoint.cc
   - src/core/lib/security/transport/security_handshaker.cc
@@ -3741,21 +3743,6 @@ targets:
   - grpc_test_util
   - grpc
   - gpr
-- name: wakeup_fd_cv_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/wakeup_fd_cv_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  exclude_iomgrs:
-  - uv
-  platforms:
-  - mac
-  - linux
-  - posix
 - name: alarm_test
   gtest: true
   build: test
@@ -4181,7 +4168,6 @@ targets:
   defaults: benchmark
   excluded_poll_engines:
   - poll
-  - poll-cv
   platforms:
   - mac
   - linux
@@ -4207,7 +4193,6 @@ targets:
   defaults: benchmark
   excluded_poll_engines:
   - poll
-  - poll-cv
   platforms:
   - mac
   - linux
@@ -4233,7 +4218,6 @@ targets:
   - tsan
   excluded_poll_engines:
   - poll
-  - poll-cv
   platforms:
   - mac
   - linux
@@ -4259,7 +4243,6 @@ targets:
   defaults: benchmark
   excluded_poll_engines:
   - poll
-  - poll-cv
   platforms:
   - mac
   - linux
@@ -5645,6 +5628,19 @@ targets:
   - mac
   - linux
   - posix
+- name: xds_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/lb/v1/load_balancer.proto
+  - test/cpp/end2end/xds_end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
 - name: public_headers_must_be_c89
   build: test
   language: c89
@@ -5846,6 +5842,9 @@ defaults:
       -Wno-deprecated-declarations -Ithird_party/nanopb -DPB_FIELD_32BIT
     CXXFLAGS: -Wnon-virtual-dtor
     LDFLAGS: -g
+  upb:
+    CFLAGS: -Ithird_party/upb -Wno-sign-conversion -Wno-shadow -Wno-conversion -Wno-implicit-fallthrough
+      -Wno-sign-compare -Wno-missing-field-initializers
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
       -Wno-implicit-fallthrough $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden

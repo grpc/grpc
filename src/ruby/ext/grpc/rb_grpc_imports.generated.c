@@ -172,7 +172,6 @@ grpc_byte_buffer_destroy_type grpc_byte_buffer_destroy_import;
 grpc_byte_buffer_reader_init_type grpc_byte_buffer_reader_init_import;
 grpc_byte_buffer_reader_destroy_type grpc_byte_buffer_reader_destroy_import;
 grpc_byte_buffer_reader_next_type grpc_byte_buffer_reader_next_import;
-grpc_byte_buffer_reader_peek_type grpc_byte_buffer_reader_peek_import;
 grpc_byte_buffer_reader_readall_type grpc_byte_buffer_reader_readall_import;
 grpc_raw_byte_buffer_from_reader_type grpc_raw_byte_buffer_from_reader_import;
 gpr_log_severity_string_type gpr_log_severity_string_import;
@@ -441,7 +440,6 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_byte_buffer_reader_init_import = (grpc_byte_buffer_reader_init_type) GetProcAddress(library, "grpc_byte_buffer_reader_init");
   grpc_byte_buffer_reader_destroy_import = (grpc_byte_buffer_reader_destroy_type) GetProcAddress(library, "grpc_byte_buffer_reader_destroy");
   grpc_byte_buffer_reader_next_import = (grpc_byte_buffer_reader_next_type) GetProcAddress(library, "grpc_byte_buffer_reader_next");
-  grpc_byte_buffer_reader_peek_import = (grpc_byte_buffer_reader_peek_type) GetProcAddress(library, "grpc_byte_buffer_reader_peek");
   grpc_byte_buffer_reader_readall_import = (grpc_byte_buffer_reader_readall_type) GetProcAddress(library, "grpc_byte_buffer_reader_readall");
   grpc_raw_byte_buffer_from_reader_import = (grpc_raw_byte_buffer_from_reader_type) GetProcAddress(library, "grpc_raw_byte_buffer_from_reader");
   gpr_log_severity_string_import = (gpr_log_severity_string_type) GetProcAddress(library, "gpr_log_severity_string");

@@ -48,6 +48,10 @@ class Service;
 namespace testing {
 class ServerBuilderPluginTest;
 }  // namespace testing
+
+namespace experimental {
+class CallbackGenericService;
+}  
 }  // namespace grpc
 namespace grpc_impl {
 
@@ -233,6 +237,9 @@ class ServerBuilder {
       builder_->interceptor_creators_ = std::move(interceptor_creators);
     }
 
+    ServerBuilder& RegisterCallbackGenericService(
+        grpc::experimental::CallbackGenericService* service);
+
    private:
     ServerBuilder* builder_;
   };
@@ -318,6 +325,7 @@ class ServerBuilder {
   std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>> plugins_;
   grpc_resource_quota* resource_quota_;
   grpc::AsyncGenericService* generic_service_;
+  grpc::experimental::CallbackGenericService* callback_generic_service_{nullptr};
   struct {
     bool is_set;
     grpc_compression_level level;

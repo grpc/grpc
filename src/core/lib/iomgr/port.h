@@ -60,6 +60,9 @@
 #define GRPC_HAVE_IP_PKTINFO 1
 #define GRPC_HAVE_MSG_NOSIGNAL 1
 #define GRPC_HAVE_UNIX_SOCKET 1
+/* Linux has TCP_INQ support since 4.18, but it is safe to set
+   the socket option on older kernels. */
+#define GRPC_HAVE_TCP_INQ 1
 #ifdef LINUX_VERSION_CODE
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
 #define GRPC_LINUX_ERRQUEUE 1

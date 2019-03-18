@@ -1140,7 +1140,6 @@ transport_security_test: $(BINDIR)/$(CONFIG)/transport_security_test
 udp_server_test: $(BINDIR)/$(CONFIG)/udp_server_test
 uri_fuzzer_test: $(BINDIR)/$(CONFIG)/uri_fuzzer_test
 uri_parser_test: $(BINDIR)/$(CONFIG)/uri_parser_test
-wakeup_fd_cv_test: $(BINDIR)/$(CONFIG)/wakeup_fd_cv_test
 alarm_test: $(BINDIR)/$(CONFIG)/alarm_test
 alts_counter_test: $(BINDIR)/$(CONFIG)/alts_counter_test
 alts_crypt_test: $(BINDIR)/$(CONFIG)/alts_crypt_test
@@ -1276,6 +1275,7 @@ time_change_test: $(BINDIR)/$(CONFIG)/time_change_test
 transport_pid_controller_test: $(BINDIR)/$(CONFIG)/transport_pid_controller_test
 transport_security_common_api_test: $(BINDIR)/$(CONFIG)/transport_security_common_api_test
 writes_per_rpc_test: $(BINDIR)/$(CONFIG)/writes_per_rpc_test
+xds_end2end_test: $(BINDIR)/$(CONFIG)/xds_end2end_test
 public_headers_must_be_c89: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89
 gen_hpack_tables: $(BINDIR)/$(CONFIG)/gen_hpack_tables
 gen_legal_metadata_characters: $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters
@@ -1361,6 +1361,7 @@ h2_proxy_test: $(BINDIR)/$(CONFIG)/h2_proxy_test
 h2_sockpair_test: $(BINDIR)/$(CONFIG)/h2_sockpair_test
 h2_sockpair+trace_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_test
 h2_sockpair_1byte_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_test
+h2_spiffe_test: $(BINDIR)/$(CONFIG)/h2_spiffe_test
 h2_ssl_test: $(BINDIR)/$(CONFIG)/h2_ssl_test
 h2_ssl_proxy_test: $(BINDIR)/$(CONFIG)/h2_ssl_proxy_test
 h2_uds_test: $(BINDIR)/$(CONFIG)/h2_uds_test
@@ -1443,7 +1444,7 @@ plugins: $(PROTOC_PLUGINS)
 
 privatelibs: privatelibs_c privatelibs_cxx
 
-privatelibs_c:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libcxxabi.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libz.a $(LIBDIR)/$(CONFIG)/libares.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
+privatelibs_c:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libcxxabi.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libz.a $(LIBDIR)/$(CONFIG)/libares.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
 pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
 
 pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
@@ -1592,7 +1593,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/transport_security_test \
   $(BINDIR)/$(CONFIG)/udp_server_test \
   $(BINDIR)/$(CONFIG)/uri_parser_test \
-  $(BINDIR)/$(CONFIG)/wakeup_fd_cv_test \
   $(BINDIR)/$(CONFIG)/public_headers_must_be_c89 \
   $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
   $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test \
@@ -1624,6 +1624,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_sockpair_test \
   $(BINDIR)/$(CONFIG)/h2_sockpair+trace_test \
   $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_test \
+  $(BINDIR)/$(CONFIG)/h2_spiffe_test \
   $(BINDIR)/$(CONFIG)/h2_ssl_test \
   $(BINDIR)/$(CONFIG)/h2_ssl_proxy_test \
   $(BINDIR)/$(CONFIG)/h2_uds_test \
@@ -1787,6 +1788,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
   $(BINDIR)/$(CONFIG)/transport_security_common_api_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
+  $(BINDIR)/$(CONFIG)/xds_end2end_test \
   $(BINDIR)/$(CONFIG)/boringssl_crypto_test_data \
   $(BINDIR)/$(CONFIG)/boringssl_asn1_test \
   $(BINDIR)/$(CONFIG)/boringssl_base64_test \
@@ -1976,6 +1978,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
   $(BINDIR)/$(CONFIG)/transport_security_common_api_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
+  $(BINDIR)/$(CONFIG)/xds_end2end_test \
   $(BINDIR)/$(CONFIG)/resolver_component_test_unsecure \
   $(BINDIR)/$(CONFIG)/resolver_component_test \
   $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker_unsecure \
@@ -2240,8 +2243,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/udp_server_test || ( echo test udp_server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing uri_parser_test"
 	$(Q) $(BINDIR)/$(CONFIG)/uri_parser_test || ( echo test uri_parser_test failed ; exit 1 )
-	$(E) "[RUN]     Testing wakeup_fd_cv_test"
-	$(Q) $(BINDIR)/$(CONFIG)/wakeup_fd_cv_test || ( echo test wakeup_fd_cv_test failed ; exit 1 )
 	$(E) "[RUN]     Testing public_headers_must_be_c89"
 	$(Q) $(BINDIR)/$(CONFIG)/public_headers_must_be_c89 || ( echo test public_headers_must_be_c89 failed ; exit 1 )
 	$(E) "[RUN]     Testing badreq_bad_client_test"
@@ -2500,6 +2501,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/transport_security_common_api_test || ( echo test transport_security_common_api_test failed ; exit 1 )
 	$(E) "[RUN]     Testing writes_per_rpc_test"
 	$(Q) $(BINDIR)/$(CONFIG)/writes_per_rpc_test || ( echo test writes_per_rpc_test failed ; exit 1 )
+	$(E) "[RUN]     Testing xds_end2end_test"
+	$(Q) $(BINDIR)/$(CONFIG)/xds_end2end_test || ( echo test xds_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing resolver_component_tests_runner_invoker_unsecure"
 	$(Q) $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker_unsecure || ( echo test resolver_component_tests_runner_invoker_unsecure failed ; exit 1 )
 	$(E) "[RUN]     Testing resolver_component_tests_runner_invoker"
@@ -3612,7 +3615,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/udp_server.cc \
     src/core/lib/iomgr/unix_sockets_posix.cc \
     src/core/lib/iomgr/unix_sockets_posix_noop.cc \
-    src/core/lib/iomgr/wakeup_fd_cv.cc \
     src/core/lib/iomgr/wakeup_fd_eventfd.cc \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
@@ -3708,6 +3710,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/plugin/plugin_credentials.cc \
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
     src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
+    src/core/lib/security/credentials/tls/spiffe_credentials.cc \
     src/core/lib/security/security_connector/alts/alts_security_connector.cc \
     src/core/lib/security/security_connector/fake/fake_security_connector.cc \
     src/core/lib/security/security_connector/load_system_roots_fallback.cc \
@@ -3716,6 +3719,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/security_connector/security_connector.cc \
     src/core/lib/security/security_connector/ssl/ssl_security_connector.cc \
     src/core/lib/security/security_connector/ssl_utils.cc \
+    src/core/lib/security/security_connector/tls/spiffe_security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
     src/core/lib/security/transport/secure_endpoint.cc \
     src/core/lib/security/transport/security_handshaker.cc \
@@ -4031,7 +4035,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/udp_server.cc \
     src/core/lib/iomgr/unix_sockets_posix.cc \
     src/core/lib/iomgr/unix_sockets_posix_noop.cc \
-    src/core/lib/iomgr/wakeup_fd_cv.cc \
     src/core/lib/iomgr/wakeup_fd_eventfd.cc \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
@@ -4160,6 +4163,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/security/credentials/plugin/plugin_credentials.cc \
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
     src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
+    src/core/lib/security/credentials/tls/spiffe_credentials.cc \
     src/core/lib/security/security_connector/alts/alts_security_connector.cc \
     src/core/lib/security/security_connector/fake/fake_security_connector.cc \
     src/core/lib/security/security_connector/load_system_roots_fallback.cc \
@@ -4168,6 +4172,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/security/security_connector/security_connector.cc \
     src/core/lib/security/security_connector/ssl/ssl_security_connector.cc \
     src/core/lib/security/security_connector/ssl_utils.cc \
+    src/core/lib/security/security_connector/tls/spiffe_security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
     src/core/lib/security/transport/secure_endpoint.cc \
     src/core/lib/security/transport/security_handshaker.cc \
@@ -4434,7 +4439,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/udp_server.cc \
     src/core/lib/iomgr/unix_sockets_posix.cc \
     src/core/lib/iomgr/unix_sockets_posix_noop.cc \
-    src/core/lib/iomgr/wakeup_fd_cv.cc \
     src/core/lib/iomgr/wakeup_fd_eventfd.cc \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
@@ -4746,7 +4750,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/udp_server.cc \
     src/core/lib/iomgr/unix_sockets_posix.cc \
     src/core/lib/iomgr/unix_sockets_posix_noop.cc \
-    src/core/lib/iomgr/wakeup_fd_cv.cc \
     src/core/lib/iomgr/wakeup_fd_eventfd.cc \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
@@ -5021,7 +5024,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/udp_server.cc \
     src/core/lib/iomgr/unix_sockets_posix.cc \
     src/core/lib/iomgr/unix_sockets_posix_noop.cc \
-    src/core/lib/iomgr/wakeup_fd_cv.cc \
     src/core/lib/iomgr/wakeup_fd_eventfd.cc \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
@@ -5886,7 +5888,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/udp_server.cc \
     src/core/lib/iomgr/unix_sockets_posix.cc \
     src/core/lib/iomgr/unix_sockets_posix_noop.cc \
-    src/core/lib/iomgr/wakeup_fd_cv.cc \
     src/core/lib/iomgr/wakeup_fd_eventfd.cc \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
@@ -10193,6 +10194,41 @@ endif
 
 ifneq ($(NO_DEPS),true)
 -include $(LIBBENCHMARK_OBJS:.o=.dep)
+endif
+
+
+LIBUPB_SRC = \
+    third_party/upb/google/protobuf/descriptor.upb.c \
+    third_party/upb/upb/decode.c \
+    third_party/upb/upb/def.c \
+    third_party/upb/upb/encode.c \
+    third_party/upb/upb/handlers.c \
+    third_party/upb/upb/msg.c \
+    third_party/upb/upb/msgfactory.c \
+    third_party/upb/upb/sink.c \
+    third_party/upb/upb/table.c \
+    third_party/upb/upb/upb.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBUPB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBUPB_SRC))))
+
+$(LIBUPB_OBJS): CFLAGS += -Ithird_party/upb -Wno-sign-conversion -Wno-shadow -Wno-conversion -Wno-implicit-fallthrough -Wno-sign-compare -Wno-missing-field-initializers
+
+$(LIBDIR)/$(CONFIG)/libupb.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP)  $(LIBUPB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libupb.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libupb.a $(LIBUPB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libupb.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBUPB_OBJS:.o=.dep)
 endif
 
 
@@ -15399,38 +15435,6 @@ deps_uri_parser_test: $(URI_PARSER_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(URI_PARSER_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-WAKEUP_FD_CV_TEST_SRC = \
-    test/core/iomgr/wakeup_fd_cv_test.cc \
-
-WAKEUP_FD_CV_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(WAKEUP_FD_CV_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/wakeup_fd_cv_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/wakeup_fd_cv_test: $(WAKEUP_FD_CV_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(WAKEUP_FD_CV_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/wakeup_fd_cv_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/iomgr/wakeup_fd_cv_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_wakeup_fd_cv_test: $(WAKEUP_FD_CV_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(WAKEUP_FD_CV_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -21311,6 +21315,53 @@ endif
 endif
 
 
+XDS_END2END_TEST_SRC = \
+    $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc \
+    test/cpp/end2end/xds_end2end_test.cc \
+
+XDS_END2END_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(XDS_END2END_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/xds_end2end_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/xds_end2end_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/xds_end2end_test: $(PROTOBUF_DEP) $(XDS_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(XDS_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/xds_end2end_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/lb/v1/load_balancer.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/xds_end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_xds_end2end_test: $(XDS_END2END_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(XDS_END2END_TEST_OBJS:.o=.dep)
+endif
+endif
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/xds_end2end_test.o: $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
+
+
 PUBLIC_HEADERS_MUST_BE_C89_SRC = \
     test/core/surface/public_headers_must_be_c89.c \
 
@@ -24311,6 +24362,38 @@ endif
 endif
 
 
+H2_SPIFFE_TEST_SRC = \
+    test/core/end2end/fixtures/h2_spiffe.cc \
+
+H2_SPIFFE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SPIFFE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_spiffe_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_spiffe_test: $(H2_SPIFFE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_SPIFFE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_spiffe_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_spiffe.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_spiffe_test: $(H2_SPIFFE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SPIFFE_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 H2_SSL_TEST_SRC = \
     test/core/end2end/fixtures/h2_ssl.cc \
 
@@ -25530,6 +25613,7 @@ src/core/lib/security/credentials/oauth2/oauth2_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/plugin/plugin_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/ssl/ssl_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/tls/spiffe_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/alts/alts_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/fake/fake_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/load_system_roots_fallback.cc: $(OPENSSL_DEP)
@@ -25538,6 +25622,7 @@ src/core/lib/security/security_connector/local/local_security_connector.cc: $(OP
 src/core/lib/security/security_connector/security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/ssl/ssl_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/ssl_utils.cc: $(OPENSSL_DEP)
+src/core/lib/security/security_connector/tls/spiffe_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/client_auth_filter.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/secure_endpoint.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/security_handshaker.cc: $(OPENSSL_DEP)

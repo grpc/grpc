@@ -19,6 +19,7 @@
 
 #include <cstdlib>
 #include <sstream>
+#include <type_traits>
 #include <utility>
 
 #include <grpc/grpc.h>
@@ -348,8 +349,24 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
   grpc_completion_queue* cq_;
 };
 
-class Server::CallbackRequest final : public internal::CompletionQueueTag {
+class Server::CallbackRequestBase : public internal::CompletionQueueTag {
  public:
+  virtual ~CallbackRequestBase() {}
+  virtual bool Request() = 0;
+};
+
+template <class ServerContextType>
+class Server::CallbackRequest final : public Server::CallbackRequestBase {
+ public:
+  static_assert(std::is_base_of<ServerContext, ServerContextType>::value,
+                "ServerContextType must be derived from ServerContext");
+
+  // The constructor needs to know the server for this callback request and its
+  // index in the server's request count array to allow for proper dynamic
+  // requesting of incoming RPCs. For codegen services, the values of method and
+  // method_tag represent the defined characteristics of the method being
+  // requested. For generic services, method and method_tag are nullptr since
+  // these services don't have pre-defined methods or method registration tags.
   CallbackRequest(Server* server, size_t method_idx,
                   internal::RpcServiceMethod* method, void* method_tag)
       : server_(server),
@@ -357,8 +374,9 @@ class Server::CallbackRequest final : public internal::CompletionQueueTag {
         method_(method),
         method_tag_(method_tag),
         has_request_payload_(
-            method->method_type() == internal::RpcMethod::NORMAL_RPC ||
-            method->method_type() == internal::RpcMethod::SERVER_STREAMING),
+            method_ != nullptr &&
+            (method->method_type() == internal::RpcMethod::NORMAL_RPC ||
+             method->method_type() == internal::RpcMethod::SERVER_STREAMING)),
         cq_(server->CallbackCQ()),
         tag_(this) {
     server_->callback_reqs_outstanding_++;
@@ -376,7 +394,7 @@ class Server::CallbackRequest final : public internal::CompletionQueueTag {
     }
   }
 
-  bool Request() {
+  bool Request() override {
     if (method_tag_) {
       if (GRPC_CALL_OK !=
           grpc_server_request_registered_call(
@@ -400,12 +418,18 @@ class Server::CallbackRequest final : public internal::CompletionQueueTag {
     return true;
   }
 
-  bool FinalizeResult(void** tag, bool* status) override { return false; }
+  // Needs specialization to account for different processing of metadata
+  // in generic API
+  bool FinalizeResult(void** tag, bool* status) override;
 
  private:
+  // method_name needs to be specialized between named method and generic
+  const char* method_name() const;
+
   class CallbackCallTag : public grpc_experimental_completion_queue_functor {
    public:
-    CallbackCallTag(Server::CallbackRequest* req) : req_(req) {
+    CallbackCallTag(Server::CallbackRequest<ServerContextType>* req)
+        : req_(req) {
       functor_run = &CallbackCallTag::StaticRun;
     }
 
@@ -415,7 +439,7 @@ class Server::CallbackRequest final : public internal::CompletionQueueTag {
     void force_run(bool ok) { Run(ok); }
 
    private:
-    Server::CallbackRequest* req_;
+    Server::CallbackRequest<ServerContextType>* req_;
     internal::Call* call_;
 
     static void StaticRun(grpc_experimental_completion_queue_functor* cb,
@@ -446,8 +470,9 @@ class Server::CallbackRequest final : public internal::CompletionQueueTag {
       if (count == 0 || (count < SOFT_MINIMUM_SPARE_CALLBACK_REQS_PER_METHOD &&
                          req_->server_->callback_reqs_outstanding_ <
                              SOFT_MAXIMUM_CALLBACK_REQS_OUTSTANDING)) {
-        auto* new_req = new CallbackRequest(req_->server_, req_->method_index_,
-                                            req_->method_, req_->method_tag_);
+        auto* new_req = new CallbackRequest<ServerContextType>(
+            req_->server_, req_->method_index_, req_->method_,
+            req_->method_tag_);
         if (!new_req->Request()) {
           // The server must have just decided to shutdown.
           gpr_atm_no_barrier_fetch_add(
@@ -467,12 +492,14 @@ class Server::CallbackRequest final : public internal::CompletionQueueTag {
 
       // Create a C++ Call to control the underlying core call
       call_ = new (grpc_call_arena_alloc(req_->call_, sizeof(internal::Call)))
-          internal::Call(
-              req_->call_, req_->server_, req_->cq_,
-              req_->server_->max_receive_message_size(),
-              req_->ctx_.set_server_rpc_info(
-                  req_->method_->name(), req_->method_->method_type(),
-                  req_->server_->interceptor_creators_));
+          internal::Call(req_->call_, req_->server_, req_->cq_,
+                         req_->server_->max_receive_message_size(),
+                         req_->ctx_.set_server_rpc_info(
+                             req_->method_name(),
+                             (req_->method_ != nullptr)
+                                 ? req_->method_->method_type()
+                                 : internal::RpcMethod::BIDI_STREAMING,
+                             req_->server_->interceptor_creators_));
 
       req_->interceptor_methods_.SetCall(call_);
       req_->interceptor_methods_.SetReverse();
@@ -501,31 +528,32 @@ class Server::CallbackRequest final : public internal::CompletionQueueTag {
       }
     }
     void ContinueRunAfterInterception() {
-      req_->method_->handler()->RunHandler(
-          internal::MethodHandler::HandlerParameter(
-              call_, &req_->ctx_, req_->request_, req_->request_status_,
-              [this] {
-                // Recycle this request if there aren't too many outstanding.
-                // Note that we don't have to worry about a case where there
-                // are no requests waiting to match for this method since that
-                // is already taken care of when binding a request to a call.
-                // TODO(vjpai): Also don't recycle this request if the dynamic
-                //              load no longer justifies it. Consider measuring
-                //              dynamic load and setting a target accordingly.
-                if (req_->server_->callback_reqs_outstanding_ <
-                    SOFT_MAXIMUM_CALLBACK_REQS_OUTSTANDING) {
-                  req_->Clear();
-                  req_->Setup();
-                } else {
-                  // We can free up this request because there are too many
-                  delete req_;
-                  return;
-                }
-                if (!req_->Request()) {
-                  // The server must have just decided to shutdown.
-                  delete req_;
-                }
-              }));
+      auto* handler = (req_->method_ != nullptr)
+                          ? req_->method_->handler()
+                          : req_->server_->generic_handler_.get();
+      handler->RunHandler(internal::MethodHandler::HandlerParameter(
+          call_, &req_->ctx_, req_->request_, req_->request_status_, [this] {
+            // Recycle this request if there aren't too many outstanding.
+            // Note that we don't have to worry about a case where there
+            // are no requests waiting to match for this method since that
+            // is already taken care of when binding a request to a call.
+            // TODO(vjpai): Also don't recycle this request if the dynamic
+            //              load no longer justifies it. Consider measuring
+            //              dynamic load and setting a target accordingly.
+            if (req_->server_->callback_reqs_outstanding_ <
+                SOFT_MAXIMUM_CALLBACK_REQS_OUTSTANDING) {
+              req_->Clear();
+              req_->Setup();
+            } else {
+              // We can free up this request because there are too many
+              delete req_;
+              return;
+            }
+            if (!req_->Request()) {
+              // The server must have just decided to shutdown.
+              delete req_;
+            }
+          }));
     }
   };
 
@@ -553,7 +581,7 @@ class Server::CallbackRequest final : public internal::CompletionQueueTag {
   }
 
   Server* const server_;
-  size_t method_index_;
+  const size_t method_index_;
   internal::RpcServiceMethod* const method_;
   void* const method_tag_;
   const bool has_request_payload_;
@@ -566,9 +594,38 @@ class Server::CallbackRequest final : public internal::CompletionQueueTag {
   grpc_metadata_array request_metadata_;
   CompletionQueue* cq_;
   CallbackCallTag tag_;
-  ServerContext ctx_;
+  ServerContextType ctx_;
   internal::InterceptorBatchMethodsImpl interceptor_methods_;
 };
+
+template <>
+bool Server::CallbackRequest<ServerContext>::FinalizeResult(void** tag,
+                                                            bool* status) {
+  return false;
+}
+
+template <>
+bool Server::CallbackRequest<GenericServerContext>::FinalizeResult(
+    void** tag, bool* status) {
+  if (*status) {
+    // TODO(yangg) remove the copy here
+    ctx_.method_ = StringFromCopiedSlice(call_details_->method);
+    ctx_.host_ = StringFromCopiedSlice(call_details_->host);
+  }
+  grpc_slice_unref(call_details_->method);
+  grpc_slice_unref(call_details_->host);
+  return false;
+}
+
+template <>
+const char* Server::CallbackRequest<ServerContext>::method_name() const {
+  return method_->name();
+}
+
+template <>
+const char* Server::CallbackRequest<GenericServerContext>::method_name() const {
+  return ctx_.method().c_str();
+}
 
 // Implementation of ThreadManager. Each instance of SyncRequestThreadManager
 // manages a pool of threads that poll for incoming Sync RPCs and call the
@@ -708,7 +765,6 @@ Server::Server(
       started_(false),
       shutdown_(false),
       shutdown_notified_(false),
-      has_generic_service_(false),
       server_(nullptr),
       server_initializer_(new ServerInitializer(this)),
       health_check_service_disabled_(false) {
@@ -865,7 +921,7 @@ bool Server::RegisterService(const grpc::string* host, Service* service) {
       auto method_index = callback_unmatched_reqs_count_.size() - 1;
       // TODO(vjpai): Register these dynamically based on need
       for (int i = 0; i < DEFAULT_CALLBACK_REQS_PER_METHOD; i++) {
-        callback_reqs_to_start_.push_back(new CallbackRequest(
+        callback_reqs_to_start_.push_back(new CallbackRequest<ServerContext>(
             this, method_index, method, method_registration_tag));
       }
       // Enqueue it so that it will be Request'ed later after all request
@@ -891,7 +947,25 @@ void Server::RegisterAsyncGenericService(AsyncGenericService* service) {
   GPR_ASSERT(service->server_ == nullptr &&
              "Can only register an async generic service against one server.");
   service->server_ = this;
-  has_generic_service_ = true;
+  has_async_generic_service_ = true;
+}
+
+void Server::RegisterCallbackGenericService(
+    experimental::CallbackGenericService* service) {
+  GPR_ASSERT(
+      service->server_ == nullptr &&
+      "Can only register a callback generic service against one server.");
+  service->server_ = this;
+  has_callback_generic_service_ = true;
+  generic_handler_.reset(service->Handler());
+
+  callback_unmatched_reqs_count_.push_back(0);
+  auto method_index = callback_unmatched_reqs_count_.size() - 1;
+  // TODO(vjpai): Register these dynamically based on need
+  for (int i = 0; i < DEFAULT_CALLBACK_REQS_PER_METHOD; i++) {
+    callback_reqs_to_start_.push_back(new CallbackRequest<GenericServerContext>(
+        this, method_index, nullptr, nullptr));
+  }
 }
 
 int Server::AddListeningPort(const grpc::string& addr,
@@ -930,9 +1004,17 @@ void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
     RegisterService(nullptr, default_health_check_service_impl);
   }
 
+  // If this server uses callback methods, then create a callback generic
+  // service to handle any unimplemented methods using the default reactor
+  // creator
+  if (!callback_reqs_to_start_.empty() && !has_callback_generic_service_) {
+    unimplemented_service_.reset(new experimental::CallbackGenericService);
+    RegisterCallbackGenericService(unimplemented_service_.get());
+  }
+
   grpc_server_start(server_);
 
-  if (!has_generic_service_) {
+  if (!has_async_generic_service_ && !has_callback_generic_service_) {
     for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
       (*it)->AddUnknownSyncMethod();
     }

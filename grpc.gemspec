@@ -29,7 +29,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.1'
+  s.add_dependency 'google-protobuf', '~> 3.7'
   s.add_dependency 'googleapis-common-protos-types', '~> 1.0.0'
 
   s.add_development_dependency 'bundler',            '~> 1.9'
@@ -223,6 +223,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/credentials/plugin/plugin_credentials.h )
   s.files += %w( src/core/lib/security/credentials/ssl/ssl_credentials.h )
   s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h )
+  s.files += %w( src/core/lib/security/credentials/tls/spiffe_credentials.h )
   s.files += %w( src/core/lib/security/security_connector/alts/alts_security_connector.h )
   s.files += %w( src/core/lib/security/security_connector/fake/fake_security_connector.h )
   s.files += %w( src/core/lib/security/security_connector/load_system_roots.h )
@@ -231,6 +232,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/security_connector/security_connector.h )
   s.files += %w( src/core/lib/security/security_connector/ssl/ssl_security_connector.h )
   s.files += %w( src/core/lib/security/security_connector/ssl_utils.h )
+  s.files += %w( src/core/lib/security/security_connector/tls/spiffe_security_connector.h )
   s.files += %w( src/core/lib/security/transport/auth_filters.h )
   s.files += %w( src/core/lib/security/transport/secure_endpoint.h )
   s.files += %w( src/core/lib/security/transport/security_handshaker.h )
@@ -402,7 +404,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/timer_manager.h )
   s.files += %w( src/core/lib/iomgr/udp_server.h )
   s.files += %w( src/core/lib/iomgr/unix_sockets_posix.h )
-  s.files += %w( src/core/lib/iomgr/wakeup_fd_cv.h )
   s.files += %w( src/core/lib/iomgr/wakeup_fd_pipe.h )
   s.files += %w( src/core/lib/iomgr/wakeup_fd_posix.h )
   s.files += %w( src/core/lib/json/json.h )
@@ -568,7 +569,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/udp_server.cc )
   s.files += %w( src/core/lib/iomgr/unix_sockets_posix.cc )
   s.files += %w( src/core/lib/iomgr/unix_sockets_posix_noop.cc )
-  s.files += %w( src/core/lib/iomgr/wakeup_fd_cv.cc )
   s.files += %w( src/core/lib/iomgr/wakeup_fd_eventfd.cc )
   s.files += %w( src/core/lib/iomgr/wakeup_fd_nospecial.cc )
   s.files += %w( src/core/lib/iomgr/wakeup_fd_pipe.cc )
@@ -664,6 +664,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/credentials/plugin/plugin_credentials.cc )
   s.files += %w( src/core/lib/security/credentials/ssl/ssl_credentials.cc )
   s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc )
+  s.files += %w( src/core/lib/security/credentials/tls/spiffe_credentials.cc )
   s.files += %w( src/core/lib/security/security_connector/alts/alts_security_connector.cc )
   s.files += %w( src/core/lib/security/security_connector/fake/fake_security_connector.cc )
   s.files += %w( src/core/lib/security/security_connector/load_system_roots_fallback.cc )
@@ -672,6 +673,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/security_connector/security_connector.cc )
   s.files += %w( src/core/lib/security/security_connector/ssl/ssl_security_connector.cc )
   s.files += %w( src/core/lib/security/security_connector/ssl_utils.cc )
+  s.files += %w( src/core/lib/security/security_connector/tls/spiffe_security_connector.cc )
   s.files += %w( src/core/lib/security/transport/client_auth_filter.cc )
   s.files += %w( src/core/lib/security/transport/secure_endpoint.cc )
   s.files += %w( src/core/lib/security/transport/security_handshaker.cc )

@@ -92,7 +92,7 @@ class DummyEndpoint : public grpc_endpoint {
   }
 
   static void read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                   grpc_closure* cb) {
+                   grpc_closure* cb, bool urgent) {
     static_cast<DummyEndpoint*>(ep)->QueueRead(slices, cb);
   }
 

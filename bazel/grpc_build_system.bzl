@@ -26,7 +26,7 @@
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 
 # The set of pollers to test against if a test exercises polling
-POLLERS = ["epollex", "epoll1", "poll", "poll-cv"]
+POLLERS = ["epollex", "epoll1", "poll"]
 
 def if_not_windows(a):
     return select({
@@ -113,6 +113,7 @@ def grpc_cc_library(
         linkopts = linkopts,
         includes = [
             "include",
+            "src/core/ext/upb-generated",
         ],
         alwayslink = alwayslink,
         data = data,

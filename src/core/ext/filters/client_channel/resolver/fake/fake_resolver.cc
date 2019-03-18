@@ -86,7 +86,14 @@ FakeResolver::FakeResolver(const ResolverArgs& args) : Resolver(args.combiner) {
   channel_args_ = grpc_channel_args_copy(args.args);
   FakeResolverResponseGenerator* response_generator =
       FakeResolverResponseGenerator::GetFromArgs(args.args);
-  if (response_generator != nullptr) response_generator->resolver_ = this;
+  if (response_generator != nullptr) {
+    response_generator->resolver_ = this;
+    if (response_generator->response_ != nullptr) {
+      response_generator->SetResponse(response_generator->response_);
+      grpc_channel_args_destroy(response_generator->response_);
+      response_generator->response_ = nullptr;
+    }
+  }
 }
 
 FakeResolver::~FakeResolver() {
@@ -114,6 +121,9 @@ void FakeResolver::RequestReresolutionLocked() {
 void FakeResolver::MaybeFinishNextLocked() {
   if (next_completion_ != nullptr &&
       (next_results_ != nullptr || return_failure_)) {
+    // When both next_results_ and channel_args_ contain an arg with the same
+    // name, only the one in next_results_ will be kept since next_results_ is
+    // before channel_args_.
     *target_result_ =
         return_failure_ ? nullptr
                         : grpc_channel_args_union(next_results_, channel_args_);
@@ -157,15 +167,19 @@ void FakeResolverResponseGenerator::SetResponseLocked(void* arg,
 
 void FakeResolverResponseGenerator::SetResponse(grpc_channel_args* response) {
   GPR_ASSERT(response != nullptr);
-  GPR_ASSERT(resolver_ != nullptr);
-  SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
-  closure_arg->generator = this;
-  closure_arg->response = grpc_channel_args_copy(response);
-  GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_INIT(&closure_arg->set_response_closure, SetResponseLocked,
-                        closure_arg,
-                        grpc_combiner_scheduler(resolver_->combiner())),
-      GRPC_ERROR_NONE);
+  if (resolver_ != nullptr) {
+    SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+    closure_arg->generator = this;
+    closure_arg->response = grpc_channel_args_copy(response);
+    GRPC_CLOSURE_SCHED(
+        GRPC_CLOSURE_INIT(&closure_arg->set_response_closure, SetResponseLocked,
+                          closure_arg,
+                          grpc_combiner_scheduler(resolver_->combiner())),
+        GRPC_ERROR_NONE);
+  } else {
+    GPR_ASSERT(response_ == nullptr);
+    response_ = grpc_channel_args_copy(response);
+  }
 }
 
 void FakeResolverResponseGenerator::SetReresolutionResponseLocked(

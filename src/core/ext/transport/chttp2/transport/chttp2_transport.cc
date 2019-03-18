@@ -1136,8 +1136,10 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
   }
   t->goaway_error = grpc_error_set_str(
       grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("GOAWAY received"),
-          GRPC_ERROR_INT_HTTP2_ERROR, static_cast<intptr_t>(goaway_error)),
+          grpc_error_set_int(
+              GRPC_ERROR_CREATE_FROM_STATIC_STRING("GOAWAY received"),
+              GRPC_ERROR_INT_HTTP2_ERROR, static_cast<intptr_t>(goaway_error)),
+          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
       GRPC_ERROR_STR_RAW_BYTES, goaway_text);
 
   /* We want to log this irrespective of whether http tracing is enabled */
@@ -2474,7 +2476,6 @@ static grpc_error* try_http_parsing(grpc_chttp2_transport* t) {
   size_t i = 0;
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_http_response response;
-  memset(&response, 0, sizeof(response));
 
   grpc_http_parser_init(&parser, GRPC_HTTP_RESPONSE, &response);
 
@@ -2577,7 +2578,8 @@ static void read_action_locked(void* tp, grpc_error* error) {
   grpc_slice_buffer_reset_and_unref_internal(&t->read_buffer);
 
   if (keep_reading) {
-    grpc_endpoint_read(t->ep, &t->read_buffer, &t->read_action_locked);
+    const bool urgent = t->goaway_error != GRPC_ERROR_NONE;
+    grpc_endpoint_read(t->ep, &t->read_buffer, &t->read_action_locked, urgent);
     grpc_chttp2_act_on_flowctl_action(t->flow_control->MakeAction(), t,
                                       nullptr);
     GRPC_CHTTP2_UNREF_TRANSPORT(t, "keep_reading");
