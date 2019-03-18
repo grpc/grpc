@@ -1383,6 +1383,9 @@ TEST_P(End2endTest, ExpectErrorTest) {
 
 TEST_P(End2endTest, DelayedRpcEarlyCanceledUsingCancelCallback) {
   MAYBE_SKIP_TEST;
+  // This test case is only relevant with callback server.
+  // Additionally, using interceptors makes this test subject to
+  // timing-dependent failures if the interceptors take too long to run.
   if (!GetParam().callback_server || GetParam().use_interceptors) {
     return;
   }

@@ -72,9 +72,8 @@ class ServerCallbackRpcController {
 
   /// SetCancelCallback passes in a callback to be called when the RPC is
   /// canceled for whatever reason (streaming calls have OnCancel instead). This
-  /// is an advanced and uncommon use with several important restrictions. (This
-  /// function may be called multiple times on the same RPC but only that last
-  /// registered callback is actually used.)
+  /// is an advanced and uncommon use with several important restrictions. This
+  /// function may not be called more than once on the same RPC.
   ///
   /// If code calls SetCancelCallback on an RPC, it must also call
   /// ClearCancelCallback before calling Finish on the RPC controller. That
@@ -93,7 +92,9 @@ class ServerCallbackRpcController {
   ///
   /// The cancellation callback may be executed concurrently with the method
   /// handler that invokes it but will certainly not issue or execute after the
-  /// return of ClearCancelCallback.
+  /// return of ClearCancelCallback. If ClearCancelCallback is invoked while the
+  /// callback is already executing, the callback will complete its execution
+  /// before ClearCancelCallback takes effect.
   ///
   /// To preserve the orderings described above, the callback may be called
   /// under a lock that is also used for ClearCancelCallback and
