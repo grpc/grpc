@@ -16,10 +16,8 @@
  *
  */
 
-#include "src/core/lib/gprpp/map.h"
 #include <gtest/gtest.h>
-#include <functional>
-#include <iostream>
+#include "src/core/lib/gprpp/map_tester.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -36,6 +34,12 @@ class Payload {
   int data_;
 };
 
+struct StringComparator {
+  bool operator()(const char* a, const char* b) const {
+    return strcmp(a, b) < 0;
+  }
+};
+
 class ReffedPayload : public ::grpc_core::InternallyRefCounted<ReffedPayload> {
  public:
   ReffedPayload(int data) : data_(data) {}
@@ -46,148 +50,230 @@ class ReffedPayload : public ::grpc_core::InternallyRefCounted<ReffedPayload> {
   int data_;
 };
 
+class OrphanablePayload
+    : public ::grpc_core::InternallyRefCounted<OrphanablePayload> {
+ public:
+  OrphanablePayload(int data) : data_(data) {}
+  int data() { return data_; }
+  void Orphan() override { Unref(); }
+
+ private:
+  int data_;
+};
+
 // Test insertion of raw pointer values
 TEST(MapTest, MapAddTestRawPtr) {
-  grpc_core::Map<const char*, Payload*> map(strcmp);
+  grpc_core::map<const char*, Payload*, StringComparator> test_map;
   Payload* p[3];
   for (int i = 0; i < 3; i++) {
     p[i] = New<Payload>(i);
   }
-  map.Insert("abc", p[0]);
-  map.Insert("efg", p[1]);
-  map.Insert("hij", p[2]);
-  EXPECT_EQ(0, map.Find("abc")->data());
-  EXPECT_EQ(1, map.Find("efg")->data());
-  EXPECT_EQ(2, map.Find("hij")->data());
-  for (int i = 0; i < 3; i++) {
-    Delete(p[i]);
+  test_map.emplace("abc", std::move(p[0]));
+  test_map.emplace("efg", std::move(p[1]));
+  test_map.emplace("hij", std::move(p[2]));
+  EXPECT_EQ(0, test_map.find("abc")->second->data());
+  EXPECT_EQ(1, test_map.find("efg")->second->data());
+  EXPECT_EQ(2, test_map.find("hij")->second->data());
+  for (auto iter = test_map.begin(); iter != test_map.end(); iter++) {
+    Delete(iter->second);
   }
+  test_map.clear();
+}
+
+// Test insertion of raw pointer values
+TEST(MapTest, MapTestBracketOperator) {
+  grpc_core::map<const char*, Payload*, StringComparator> test_map;
+  Payload* p[3];
+  for (int i = 0; i < 3; i++) {
+    p[i] = New<Payload>(i);
+  }
+  test_map["abc"] = std::move(p[0]);
+  test_map["efg"] = std::move(p[1]);
+  test_map["hij"] = std::move(p[2]);
+  EXPECT_EQ(0, test_map["abc"]->data());
+  EXPECT_EQ(1, test_map["efg"]->data());
+  EXPECT_EQ(2, test_map["hij"]->data());
+  for (auto iter = test_map.begin(); iter != test_map.end(); iter++) {
+    Delete(iter->second);
+  }
+  test_map.clear();
 }
 
 // Test removal of raw pointer values
 TEST(MapTest, MapRemoveTestRawPtr) {
-  grpc_core::Map<const char*, Payload*> map(strcmp);
+  grpc_core::map<const char*, Payload*, StringComparator> test_map;
   Payload* p[3];
   for (int i = 0; i < 3; i++) {
     p[i] = New<Payload>(i);
   }
-  map.Insert("abc", p[0]);
-  map.Insert("efg", p[1]);
-  map.Insert("hij", p[2]);
-  map.Remove("hij");
-  EXPECT_EQ(0, map.Find("abc")->data());
-  EXPECT_EQ(1, map.Find("efg")->data());
-  EXPECT_TRUE(map.Find("hij") == nullptr);
-  for (int i = 0; i < 3; i++) {
-    Delete(p[i]);
+  test_map.emplace("abc", std::move(p[0]));
+  test_map.emplace("efg", std::move(p[1]));
+  test_map.emplace("hij", std::move(p[2]));
+  Delete(test_map.find("hij")->second);
+  test_map.erase("hij");
+  EXPECT_EQ(0, test_map.find("abc")->second->data());
+  EXPECT_EQ(1, test_map.find("efg")->second->data());
+  EXPECT_TRUE(test_map.find("hij") == test_map.end());
+  for (auto iter = test_map.begin(); iter != test_map.end(); iter++) {
+    Delete(iter->second);
   }
+  test_map.clear();
 }
 
 // Test insertion of Reffed Pointers
 TEST(MapTest, MapAddTestReffedPtr) {
-  grpc_core::Map<const char*, RefCountedPtr<ReffedPayload>> map(strcmp);
-  map.Insert("abc", MakeRefCounted<ReffedPayload>(1));
-  map.Insert("efg", MakeRefCounted<ReffedPayload>(2));
-  map.Insert("hij", MakeRefCounted<ReffedPayload>(3));
-  EXPECT_EQ(1, map.Find("abc")->data());
-  EXPECT_EQ(2, map.Find("efg")->data());
-  EXPECT_EQ(3, map.Find("hij")->data());
+  grpc_core::map<const char*, RefCountedPtr<ReffedPayload>, StringComparator>
+      test_map;
+  test_map.emplace("abc", MakeRefCounted<ReffedPayload>(1));
+  test_map.emplace("efg", MakeRefCounted<ReffedPayload>(2));
+  test_map.emplace("hij", MakeRefCounted<ReffedPayload>(3));
+  EXPECT_EQ(1, test_map.find("abc")->second->data());
+  EXPECT_EQ(2, test_map.find("efg")->second->data());
+  EXPECT_EQ(3, test_map.find("hij")->second->data());
+  test_map.clear();
 }
 
 // Test Removal of Reffed Pointers from map
 TEST(MapTest, MapRemoveTestReffedPtr) {
-  grpc_core::Map<const char*, RefCountedPtr<ReffedPayload>> map(strcmp);
-
-  map.Insert("xyz", MakeRefCounted<ReffedPayload>(5));
-  map.Insert("klm", MakeRefCounted<ReffedPayload>(4));
-  map.Insert("hij", MakeRefCounted<ReffedPayload>(3));
-  map.Insert("efg", MakeRefCounted<ReffedPayload>(2));
-  map.Insert("abc", MakeRefCounted<ReffedPayload>(1));
-  map.Remove("hij");
-  map.Remove("abc");
-  map.Remove("klm");
-  map.Remove("xyz");
-  map.Remove("efg");
-  EXPECT_TRUE(map.Find("hij") == nullptr);
-  EXPECT_TRUE(map.Empty());
+  grpc_core::map<const char*, RefCountedPtr<ReffedPayload>, StringComparator>
+      test_map;
+  test_map.emplace("xyz", MakeRefCounted<ReffedPayload>(5));
+  test_map.emplace("klm", MakeRefCounted<ReffedPayload>(4));
+  test_map.emplace("hij", MakeRefCounted<ReffedPayload>(3));
+  test_map.emplace("efg", MakeRefCounted<ReffedPayload>(2));
+  test_map.emplace("abc", MakeRefCounted<ReffedPayload>(1));
+  test_map.erase("hij");
+  test_map.erase("abc");
+  test_map.erase("klm");
+  test_map.erase("xyz");
+  test_map.erase("efg");
+  EXPECT_TRUE(test_map.find("hij") == test_map.end());
+  EXPECT_TRUE(test_map.empty());
 }
 
 // Test correction of Left-Left Tree imbalance
 TEST(MapTest, MapLL) {
-  grpc_core::Map<const char*, RefCountedPtr<ReffedPayload>> map(strcmp);
-
-  map.Insert("hij", MakeRefCounted<ReffedPayload>(3));
-  map.Insert("efg", MakeRefCounted<ReffedPayload>(2));
-  map.Insert("abc", MakeRefCounted<ReffedPayload>(1));
-  EXPECT_TRUE(!strcmp(map.root()->key(), "efg"));
-  EXPECT_TRUE(!strcmp(map.root()->left()->key(), "abc"));
-  EXPECT_TRUE(!strcmp(map.root()->right()->key(), "hij"));
+  auto* test_map = New<grpc_core::map<const char*, RefCountedPtr<ReffedPayload>,
+                                      StringComparator>>();
+  grpc_core::MapTester<const char*, RefCountedPtr<ReffedPayload>,
+                       StringComparator>
+      mapt(test_map);
+  test_map->emplace("hij", MakeRefCounted<ReffedPayload>(3));
+  test_map->emplace("efg", MakeRefCounted<ReffedPayload>(2));
+  test_map->emplace("abc", MakeRefCounted<ReffedPayload>(1));
+  EXPECT_TRUE(!strcmp(mapt.Root()->pair().first, "efg"));
+  EXPECT_TRUE(!strcmp(mapt.Left(mapt.Root())->pair().first, "abc"));
+  EXPECT_TRUE(!strcmp(mapt.Right(mapt.Root())->pair().first, "hij"));
+  EXPECT_EQ(1, test_map->find("abc")->second->data());
+  EXPECT_EQ(2, test_map->find("efg")->second->data());
+  EXPECT_EQ(3, test_map->find("hij")->second->data());
+  test_map->clear();
+  Delete(test_map);
 }
 
 // Test correction of Left-Right tree imbalance
 TEST(MapTest, MapLR) {
-  grpc_core::Map<const char*, RefCountedPtr<ReffedPayload>> map(strcmp);
-
-  map.Insert("hij", MakeRefCounted<ReffedPayload>(3));
-  map.Insert("abc", MakeRefCounted<ReffedPayload>(1));
-  map.Insert("efg", MakeRefCounted<ReffedPayload>(2));
-  EXPECT_TRUE(!strcmp(map.root()->key(), "efg"));
-  EXPECT_TRUE(!strcmp(map.root()->left()->key(), "abc"));
-  EXPECT_TRUE(!strcmp(map.root()->right()->key(), "hij"));
+  auto* test_map = New<grpc_core::map<const char*, RefCountedPtr<ReffedPayload>,
+                                      StringComparator>>();
+  grpc_core::MapTester<const char*, RefCountedPtr<ReffedPayload>,
+                       StringComparator>
+      mapt(test_map);
+  test_map->emplace("hij", MakeRefCounted<ReffedPayload>(3));
+  test_map->emplace("abc", MakeRefCounted<ReffedPayload>(1));
+  test_map->emplace("efg", MakeRefCounted<ReffedPayload>(2));
+  EXPECT_TRUE(!strcmp(mapt.Root()->pair().first, "efg"));
+  EXPECT_TRUE(!strcmp(mapt.Left(mapt.Root())->pair().first, "abc"));
+  EXPECT_TRUE(!strcmp(mapt.Right(mapt.Root())->pair().first, "hij"));
+  EXPECT_EQ(1, test_map->find("abc")->second->data());
+  EXPECT_EQ(2, test_map->find("efg")->second->data());
+  EXPECT_EQ(3, test_map->find("hij")->second->data());
+  test_map->clear();
+  Delete(test_map);
 }
 
-// Test correction of Right-Left tree imbalance
+//// Test correction of Right-Left tree imbalance
 TEST(MapTest, MapRL) {
-  grpc_core::Map<const char*, RefCountedPtr<ReffedPayload>> map(strcmp);
-
-  map.Insert("xyz", MakeRefCounted<ReffedPayload>(5));
-  map.Insert("klm", MakeRefCounted<ReffedPayload>(4));
-  map.Insert("hij", MakeRefCounted<ReffedPayload>(3));
-  map.Insert("efg", MakeRefCounted<ReffedPayload>(2));
-  map.Insert("abc", MakeRefCounted<ReffedPayload>(1));
-  EXPECT_TRUE(!strcmp(map.root()->key(), "klm"));
-  EXPECT_TRUE(!strcmp(map.root()->left()->key(), "efg"));
-  EXPECT_TRUE(!strcmp(map.root()->left()->left()->key(), "abc"));
-  EXPECT_TRUE(!strcmp(map.root()->left()->right()->key(), "hij"));
-  EXPECT_TRUE(!strcmp(map.root()->right()->key(), "xyz"));
+  auto* test_map = New<grpc_core::map<const char*, RefCountedPtr<ReffedPayload>,
+                                      StringComparator>>();
+  grpc_core::MapTester<const char*, RefCountedPtr<ReffedPayload>,
+                       StringComparator>
+      mapt(test_map);
+  test_map->emplace("xyz", MakeRefCounted<ReffedPayload>(5));
+  test_map->emplace("klm", MakeRefCounted<ReffedPayload>(4));
+  test_map->emplace("hij", MakeRefCounted<ReffedPayload>(3));
+  test_map->emplace("efg", MakeRefCounted<ReffedPayload>(2));
+  test_map->emplace("abc", MakeRefCounted<ReffedPayload>(1));
+  EXPECT_TRUE(!strcmp(mapt.Root()->pair().first, "klm"));
+  EXPECT_TRUE(!strcmp(mapt.Left(mapt.Root())->pair().first, "efg"));
+  EXPECT_TRUE(!strcmp(mapt.Right(mapt.Root())->pair().first, "xyz"));
+  EXPECT_TRUE(!strcmp(mapt.Right(mapt.Left(mapt.Root()))->pair().first, "hij"));
+  EXPECT_TRUE(!strcmp(mapt.Left(mapt.Left(mapt.Root()))->pair().first, "abc"));
+  EXPECT_EQ(1, test_map->find("abc")->second->data());
+  EXPECT_EQ(2, test_map->find("efg")->second->data());
+  EXPECT_EQ(3, test_map->find("hij")->second->data());
+  EXPECT_EQ(4, test_map->find("klm")->second->data());
+  EXPECT_EQ(5, test_map->find("xyz")->second->data());
+  test_map->clear();
+  Delete(test_map);
 }
 
 // Test Map iterator
 TEST(MapTest, MapIter) {
-  grpc_core::Map<const char*, RefCountedPtr<ReffedPayload>> map(strcmp);
+  grpc_core::map<const char*, RefCountedPtr<ReffedPayload>, StringComparator>
+      test_map;
 
-  map.Insert("xyz", MakeRefCounted<ReffedPayload>(5));
-  map.Insert("klm", MakeRefCounted<ReffedPayload>(4));
-  map.Insert("hij", MakeRefCounted<ReffedPayload>(3));
-  map.Insert("efg", MakeRefCounted<ReffedPayload>(2));
-  map.Insert("abc", MakeRefCounted<ReffedPayload>(1));
+  test_map.emplace("xyz", MakeRefCounted<ReffedPayload>(5));
+  test_map.emplace("klm", MakeRefCounted<ReffedPayload>(4));
+  test_map.emplace("hij", MakeRefCounted<ReffedPayload>(3));
+  test_map.emplace("efg", MakeRefCounted<ReffedPayload>(2));
+  test_map.emplace("abc", MakeRefCounted<ReffedPayload>(1));
   int count = 0;
-  for (auto iter = map.Begin(); iter != map.End(); iter++)
-  {
-    EXPECT_EQ(iter.GetValue()->data(), (count + 1));
+  for (auto iter = test_map.begin(); iter != test_map.end(); iter++) {
+    EXPECT_EQ(iter->second->data(), (count + 1));
     count++;
   }
   EXPECT_EQ(count, 5);
+  test_map.clear();
 }
 
 // Test removing entries while iterating the map
 TEST(MapTest, MapIterAndRemove) {
-  grpc_core::Map<const char*, RefCountedPtr<ReffedPayload>> map(strcmp);
+  grpc_core::map<const char*, RefCountedPtr<ReffedPayload>, StringComparator>
+      test_map;
 
-  map.Insert("xyz", MakeRefCounted<ReffedPayload>(5));
-  map.Insert("klm", MakeRefCounted<ReffedPayload>(4));
-  map.Insert("hij", MakeRefCounted<ReffedPayload>(3));
-  map.Insert("efg", MakeRefCounted<ReffedPayload>(2));
-  map.Insert("abc", MakeRefCounted<ReffedPayload>(1));
+  test_map.emplace("xyz", MakeRefCounted<ReffedPayload>(5));
+  test_map.emplace("klm", MakeRefCounted<ReffedPayload>(4));
+  test_map.emplace("hij", MakeRefCounted<ReffedPayload>(3));
+  test_map.emplace("efg", MakeRefCounted<ReffedPayload>(2));
+  test_map.emplace("abc", MakeRefCounted<ReffedPayload>(1));
   int count = 0;
-  for (auto iter = map.Begin(); iter != map.End();)
-  {
-    EXPECT_EQ(iter.RemoveCurrent()->data(), (count + 1));
+  for (auto iter = test_map.begin(); iter != test_map.end();) {
+    EXPECT_EQ(iter->second->data(), (count + 1));
+    iter = test_map.erase(iter);
     count++;
   }
   EXPECT_EQ(count, 5);
-  EXPECT_TRUE(map.Empty());
+  EXPECT_TRUE(test_map.empty());
 }
+
+// Test insertion of raw pointer values
+TEST(MapTest, MapAddTestOrphanablePtr) {
+  grpc_core::map<const char*, OrphanablePtr<OrphanablePayload>,
+                 StringComparator>
+      test_map;
+  OrphanablePtr<OrphanablePayload> p[3];
+  for (int i = 0; i < 3; i++) {
+    p[i] = MakeOrphanable<OrphanablePayload>(i);
+  }
+  test_map.emplace("abc", std::move(p[0]));
+  test_map.emplace("efg", std::move(p[1]));
+  test_map.emplace("hij", std::move(p[2]));
+  EXPECT_EQ(0, test_map.find("abc")->second->data());
+  EXPECT_EQ(1, test_map.find("efg")->second->data());
+  EXPECT_EQ(2, test_map.find("hij")->second->data());
+  test_map.clear();
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 
