@@ -30,13 +30,14 @@ cdef class _ConnectivityTag(_Tag):
 
 cdef class _RequestCallTag(_Tag):
 
-  def __cinit__(self, user_tag):
+  def __cinit__(self, user_tag, _VTable vtable not None):
     self._user_tag = user_tag
     self.call = None
     self.call_details = None
+    self._vtable = vtable
 
   cdef void prepare(self) except *:
-    self.call = Call()
+    self.call = Call(self._vtable)
     self.call_details = CallDetails()
     grpc_metadata_array_init(&self.c_invocation_metadata)
 

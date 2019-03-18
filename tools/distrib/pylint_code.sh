@@ -32,7 +32,7 @@ TEST_DIRS=(
 )
 
 VIRTUALENV=python_pylint_venv
-python3 -m virtualenv $VIRTUALENV
+python3 -m virtualenv $VIRTUALENV -p $(which python3)
 
 PYTHON=$VIRTUALENV/bin/python
 

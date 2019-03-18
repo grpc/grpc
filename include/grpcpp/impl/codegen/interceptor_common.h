@@ -403,7 +403,6 @@ class InterceptorBatchMethodsImpl
   grpc_status_code* code_ = nullptr;
   grpc::string* error_details_ = nullptr;
   grpc::string* error_message_ = nullptr;
-  Status send_status_;
 
   std::multimap<grpc::string, grpc::string>* send_trailing_metadata_ = nullptr;
 
