@@ -81,15 +81,15 @@ class ChannelCredentials : private GrpcLibraryCodegen {
   friend std::shared_ptr<Channel> grpc_impl::CreateCustomChannel(
       const grpc::string& target,
       const std::shared_ptr<ChannelCredentials>& creds,
-      const ChannelArguments& args);
+      const grpc::ChannelArguments& args);
 
   friend std::shared_ptr<Channel>
   grpc_impl::experimental::CreateCustomChannelWithInterceptors(
       const grpc::string& target,
       const std::shared_ptr<ChannelCredentials>& creds,
-      const ChannelArguments& args,
+      const grpc::ChannelArguments& args,
       std::vector<
-          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+          std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators);
 
   virtual std::shared_ptr<Channel> CreateChannel(
