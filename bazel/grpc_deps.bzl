@@ -196,8 +196,8 @@ def grpc_deps():
     if "io_opencensus_cpp" not in native.existing_rules():
         http_archive(
             name = "io_opencensus_cpp",
-            strip_prefix = "opencensus-cpp-03dff0352522983ffdee48cedbf87cbe37f1bb7f",
-            url = "https://github.com/census-instrumentation/opencensus-cpp/archive/03dff0352522983ffdee48cedbf87cbe37f1bb7f.tar.gz",
+            strip_prefix = "opencensus-cpp-9b1e354e89bf3d92aedc00af45b418ce870f3d77",
+            url = "https://github.com/census-instrumentation/opencensus-cpp/archive/9b1e354e89bf3d92aedc00af45b418ce870f3d77.tar.gz",
         )
 
     if "upb" not in native.existing_rules():
