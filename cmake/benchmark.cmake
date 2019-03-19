@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
+set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "Turn off gTest in gBenchmark")
 
 if("${gRPC_BENCHMARK_PROVIDER}" STREQUAL "module")
   if(NOT BENCHMARK_ROOT_DIR)
