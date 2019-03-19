@@ -104,6 +104,13 @@ typedef struct client_channel_channel_data {
   bool enable_retries;
   size_t per_rpc_retry_buffer_size;
 
+  /** combiner protecting picker and queued_picks */
+  grpc_combiner* data_plane_combiner;
+  // Subchannel picker from LB policy.
+  grpc_core::UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker;
+  // Linked list of queued picks.
+  QueuedPick* queued_picks;
+
   /** combiner protecting all variables below in this data structure */
   grpc_combiner* combiner;
   /** owning stack */
@@ -119,10 +126,6 @@ typedef struct client_channel_channel_data {
 
   // Resolving LB policy.
   grpc_core::OrphanablePtr<LoadBalancingPolicy> resolving_lb_policy;
-  // Subchannel picker from LB policy.
-  grpc_core::UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker;
-  // Linked list of queued picks.
-  QueuedPick* queued_picks;
 
   bool have_service_config;
   /** retry throttle data from service config */
@@ -137,7 +140,9 @@ typedef struct client_channel_channel_data {
   grpc_core::UniquePtr<char> info_service_config_json;
 
   grpc_connectivity_state_tracker state_tracker;
-  grpc_error* disconnect_error;
+  // This is an atomic so that it can be accessed from both the control
+  // plane and data plane combiners.
+  gpr_atm disconnect_error;  // grpc_error*
 
   /* external_connectivity_watcher_list head is guarded by its own mutex, since
    * counts need to be grabbed immediately without polling on a cq */
@@ -166,30 +171,55 @@ static const char* get_channel_connectivity_state_change_string(
   GPR_UNREACHABLE_CODE(return "UNKNOWN");
 }
 
-static void set_connectivity_state_and_picker_locked(
-    channel_data* chand, grpc_connectivity_state state, grpc_error* state_error,
-    const char* reason,
-    grpc_core::UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker) {
-  // Update connectivity state.
-  grpc_connectivity_state_set(&chand->state_tracker, state, state_error,
-                              reason);
-  if (chand->channelz_node != nullptr) {
-    chand->channelz_node->AddTraceEvent(
-        grpc_core::channelz::ChannelTrace::Severity::Info,
-        grpc_slice_from_static_string(
-            get_channel_connectivity_state_change_string(state)));
-  }
-  // Update picker.
-  chand->picker = std::move(picker);
-  // Re-process queued picks.
-  for (QueuedPick* pick = chand->queued_picks; pick != nullptr;
-       pick = pick->next) {
-    start_pick_locked(pick->elem, GRPC_ERROR_NONE);
-  }
-}
-
 namespace grpc_core {
 namespace {
+
+// A fire-and-forget class that sets the channel's connectivity state
+// and updates the picker.  Deletes itself when done.
+class ConnectivityStateAndPickerSetter {
+ public:
+  ConnectivityStateAndPickerSetter(
+      channel_data* chand, grpc_connectivity_state state,
+      grpc_error* state_error, const char* reason,
+      UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker)
+      : chand_(chand), picker_(std::move(picker)) {
+    // Update connectivity state here, while holding control plane combiner.
+    grpc_connectivity_state_set(&chand->state_tracker, state, state_error,
+                                reason);
+    if (chand->channelz_node != nullptr) {
+      chand->channelz_node->AddTraceEvent(
+          channelz::ChannelTrace::Severity::Info,
+          grpc_slice_from_static_string(
+              get_channel_connectivity_state_change_string(state)));
+    }
+    // Bounce into the data plane combiner to reset the picker.
+    GRPC_CHANNEL_STACK_REF(chand->owning_stack,
+                           "ConnectivityStateAndPickerSetter");
+    GRPC_CLOSURE_INIT(&closure_, SetPicker, this,
+                      grpc_combiner_scheduler(chand->data_plane_combiner));
+    GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
+  }
+
+ private:
+  static void SetPicker(void* arg, grpc_error* ignored) {
+    auto* self = static_cast<ConnectivityStateAndPickerSetter*>(arg);
+    // Update picker.
+    self->chand_->picker = std::move(self->picker_);
+    // Re-process queued picks.
+    for (QueuedPick* pick = self->chand_->queued_picks; pick != nullptr;
+         pick = pick->next) {
+      start_pick_locked(pick->elem, GRPC_ERROR_NONE);
+    }
+    // Clean up.
+    GRPC_CHANNEL_STACK_UNREF(self->chand_->owning_stack,
+                             "ConnectivityStateAndPickerSetter");
+    Delete(self);
+  }
+
+  channel_data* chand_;
+  UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker_;
+  grpc_closure closure_;
+};
 
 class ClientChannelControlHelper
     : public LoadBalancingPolicy::ChannelControlHelper {
@@ -222,8 +252,10 @@ class ClientChannelControlHelper
   void UpdateState(
       grpc_connectivity_state state, grpc_error* state_error,
       UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
+    grpc_error* disconnect_error = reinterpret_cast<grpc_error*>(
+        gpr_atm_acq_load(&chand_->disconnect_error));
     if (grpc_client_channel_routing_trace.enabled()) {
-      const char* extra = chand_->disconnect_error == GRPC_ERROR_NONE
+      const char* extra = disconnect_error == GRPC_ERROR_NONE
                               ? ""
                               : " (ignoring -- channel shutting down)";
       gpr_log(GPR_INFO, "chand=%p: update: state=%s error=%s picker=%p%s",
@@ -231,9 +263,10 @@ class ClientChannelControlHelper
               grpc_error_string(state_error), picker.get(), extra);
     }
     // Do update only if not shutting down.
-    if (chand_->disconnect_error == GRPC_ERROR_NONE) {
-      set_connectivity_state_and_picker_locked(chand_, state, state_error,
-                                               "helper", std::move(picker));
+    if (disconnect_error == GRPC_ERROR_NONE) {
+      // Will delete itself.
+      New<ConnectivityStateAndPickerSetter>(chand_, state, state_error,
+                                            "helper", std::move(picker));
     } else {
       GRPC_ERROR_UNREF(state_error);
     }
@@ -342,12 +375,15 @@ static void start_transport_op_locked(void* arg, grpc_error* error_ignored) {
   }
 
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
-    chand->disconnect_error = op->disconnect_with_error;
+    GPR_ASSERT(gpr_atm_full_cas(
+        &chand->disconnect_error, reinterpret_cast<gpr_atm>(GRPC_ERROR_NONE),
+        reinterpret_cast<gpr_atm>(op->disconnect_with_error)));
     grpc_pollset_set_del_pollset_set(
         chand->resolving_lb_policy->interested_parties(),
         chand->interested_parties);
     chand->resolving_lb_policy.reset();
-    set_connectivity_state_and_picker_locked(
+    // Will delete itself.
+    grpc_core::New<grpc_core::ConnectivityStateAndPickerSetter>(
         chand, GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(op->disconnect_with_error),
         "shutdown from API",
         grpc_core::UniquePtr<LoadBalancingPolicy::SubchannelPicker>(
@@ -397,10 +433,12 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   GPR_ASSERT(args->is_last);
   GPR_ASSERT(elem->filter == &grpc_client_channel_filter);
   // Initialize data members.
+  chand->data_plane_combiner = grpc_combiner_create();
   chand->combiner = grpc_combiner_create();
   grpc_connectivity_state_init(&chand->state_tracker, GRPC_CHANNEL_IDLE,
                                "client_channel");
-  chand->disconnect_error = GRPC_ERROR_NONE;
+  gpr_atm_rel_store(&chand->disconnect_error,
+                    reinterpret_cast<gpr_atm>(GRPC_ERROR_NONE));
   gpr_mu_init(&chand->info_mu);
   gpr_mu_init(&chand->external_connectivity_watcher_list_mu);
 
@@ -511,8 +549,11 @@ static void cc_destroy_channel_elem(grpc_channel_element* elem) {
   chand->method_params_table.reset();
   grpc_client_channel_stop_backup_polling(chand->interested_parties);
   grpc_pollset_set_destroy(chand->interested_parties);
+  GRPC_COMBINER_UNREF(chand->data_plane_combiner, "client_channel");
   GRPC_COMBINER_UNREF(chand->combiner, "client_channel");
-  GRPC_ERROR_UNREF(chand->disconnect_error);
+  grpc_error* disconnect_error = reinterpret_cast<grpc_error*>(
+      gpr_atm_acq_load(&chand->disconnect_error));
+  GRPC_ERROR_UNREF(disconnect_error);
   grpc_connectivity_state_destroy(&chand->state_tracker);
   gpr_mu_destroy(&chand->info_mu);
   gpr_mu_destroy(&chand->external_connectivity_watcher_list_mu);
@@ -1261,7 +1302,7 @@ static void do_retry(grpc_call_element* elem,
   }
   // Schedule retry after computed delay.
   GRPC_CLOSURE_INIT(&calld->pick_closure, start_pick_locked, elem,
-                    grpc_combiner_scheduler(chand->combiner));
+                    grpc_combiner_scheduler(chand->data_plane_combiner));
   grpc_timer_init(&calld->retry_timer, next_attempt_time, &calld->pick_closure);
   // Update bookkeeping.
   if (retry_state != nullptr) retry_state->retry_dispatched = true;
@@ -2677,7 +2718,7 @@ static void start_pick_locked(void* arg, grpc_error* error) {
                  .send_initial_metadata_flags;
   // Apply service config to call if needed.
   maybe_apply_service_config_to_call_locked(elem);
-  // When done, we schedule this closure to leave the channel combiner.
+  // When done, we schedule this closure to leave the data plane combiner.
   GRPC_CLOSURE_INIT(&calld->pick_closure, pick_done, elem,
                     grpc_schedule_on_exec_ctx);
   // Attempt pick.
@@ -2692,12 +2733,14 @@ static void start_pick_locked(void* arg, grpc_error* error) {
             grpc_error_string(error));
   }
   switch (pick_result) {
-    case LoadBalancingPolicy::SubchannelPicker::PICK_TRANSIENT_FAILURE:
+    case LoadBalancingPolicy::SubchannelPicker::PICK_TRANSIENT_FAILURE: {
       // If we're shutting down, fail all RPCs.
-      if (chand->disconnect_error != GRPC_ERROR_NONE) {
+      grpc_error* disconnect_error = reinterpret_cast<grpc_error*>(
+          gpr_atm_acq_load(&chand->disconnect_error));
+      if (disconnect_error != GRPC_ERROR_NONE) {
         GRPC_ERROR_UNREF(error);
         GRPC_CLOSURE_SCHED(&calld->pick_closure,
-                           GRPC_ERROR_REF(chand->disconnect_error));
+                           GRPC_ERROR_REF(disconnect_error));
         break;
       }
       // If wait_for_ready is false, then the error indicates the RPC
@@ -2724,6 +2767,7 @@ static void start_pick_locked(void* arg, grpc_error* error) {
       // picker.
       GRPC_ERROR_UNREF(error);
       // Fallthrough
+    }
     case LoadBalancingPolicy::SubchannelPicker::PICK_QUEUE:
       if (!calld->pick_queued) add_call_to_queued_picks_locked(elem);
       break;
@@ -2817,7 +2861,8 @@ static void cc_start_transport_stream_op_batch(
     }
     GRPC_CLOSURE_SCHED(
         GRPC_CLOSURE_INIT(&batch->handler_private.closure, start_pick_locked,
-                          elem, grpc_combiner_scheduler(chand->combiner)),
+                          elem,
+                          grpc_combiner_scheduler(chand->data_plane_combiner)),
         GRPC_ERROR_NONE);
   } else {
     // For all other batches, release the call combiner.
