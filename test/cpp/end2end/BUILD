@@ -99,7 +99,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -402,6 +401,7 @@ grpc_cc_test(
     name = "client_lb_end2end_test",
     srcs = ["client_lb_end2end_test.cc"],
     external_deps = [
+        "gmock",
         "gtest",
     ],
     deps = [
@@ -630,7 +630,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(
