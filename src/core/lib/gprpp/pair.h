@@ -46,4 +46,4 @@ pair<Key, T> make_pair(Key&& k, T&& v) {
   return std::move(pair<Key, T>(std::move(k), std::move(v)));
 }
 }  // namespace grpc_core
-#endif  // GRPC_CORE_LIB_GPRPP_PAIR_H
+#endif /* GRPC_CORE_LIB_GPRPP_PAIR_H */

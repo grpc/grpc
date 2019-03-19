@@ -49,7 +49,7 @@ class map {
  public:
   class iterator {
    public:
-    iterator(map<key_type, mapped_type, Compare>* map,
+    iterator(typename ::grpc_core::map<key_type, mapped_type, Compare>* map,
              ::grpc_core::map<key_type, mapped_type, Compare>::Entry* curr)
         : curr_(curr), map_(map) {}
 
@@ -347,4 +347,4 @@ class map {
   friend class MapTester<Key, T, Compare>;
 };
 }  // namespace grpc_core
-#endif  // GRPC_CORE_LIB_GPRPP_MAP_H
+#endif /* GRPC_CORE_LIB_GPRPP_MAP_H */

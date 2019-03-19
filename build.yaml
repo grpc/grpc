@@ -4733,6 +4733,20 @@ targets:
   - grpc
   - gpr
   - grpc++_test_config
+- name: grpc_core_map_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/gprpp/map_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  uses:
+  - grpc++_test
+  uses_polling: false
 - name: grpc_cpp_plugin
   build: protoc
   language: c++
@@ -5013,20 +5027,6 @@ targets:
   - mac
   - linux
   - posix
-- name: map_test
-  gtest: true
-  build: test
-  language: c++
-  src:
-  - test/core/gprpp/map_test.cc
-  deps:
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr
-  uses:
-  - grpc++_test
-  uses_polling: false
 - name: memory_test
   gtest: true
   build: test

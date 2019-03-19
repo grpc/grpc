@@ -46,4 +46,4 @@ class MapTester {
   grpc_core::map<Key, T, Compare>* map_;
 };
 }  // namespace grpc_core
-#endif  // GRPC_CORE_LIB_GPRPP_MAP_TESTER_H
+#endif /* GRPC_CORE_LIB_GPRPP_MAP_TESTER_H */
