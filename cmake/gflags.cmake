@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+set(gRPC_GFLAGS_PROVIDER "module" CACHE STRING "portability fix")
 if("${gRPC_GFLAGS_PROVIDER}" STREQUAL "module")
   if(NOT GFLAGS_ROOT_DIR)
     set(GFLAGS_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gflags)
