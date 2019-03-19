@@ -43,7 +43,7 @@ CreateCustomInsecureChannelWithInterceptorsFromFd(
     std::unique_ptr<std::vector<
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
         interceptor_creators) {
-  return CreateCustomInsecureChannelWithInterceptorsFromFd(
+  return ::grpc_impl::experimental::CreateCustomInsecureChannelWithInterceptorsFromFd(
       target, fd, args, std::move(interceptor_creators));
 }
 
