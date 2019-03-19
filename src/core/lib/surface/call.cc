@@ -1037,8 +1037,7 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b,
     if (status_code != GRPC_STATUS_OK) {
       char* peer_msg = nullptr;
       char* peer = grpc_call_get_peer(call);
-      gpr_asprintf(&peer_msg, "Error received from peer %s",
-                   grpc_call_get_peer(call));
+      gpr_asprintf(&peer_msg, "Error received from peer %s", peer);
       error = grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(peer_msg),
                                  GRPC_ERROR_INT_GRPC_STATUS,
                                  static_cast<intptr_t>(status_code));
