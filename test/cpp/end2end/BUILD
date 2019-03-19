@@ -245,6 +245,9 @@ grpc_cc_test(
     size = "large",
     deps = [
         ":end2end_test_lib",
+        # DO NOT REMOVE THE grpc++ dependence below since the internal build
+        # system uses it to specialize targets
+        "//:grpc++",
     ],
 )
 

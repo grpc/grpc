@@ -485,11 +485,11 @@ void XdsLb::Helper::UpdateState(grpc_connectivity_state state,
 
 void XdsLb::Helper::RequestReresolution() {
   if (parent_->shutting_down_) return;
-  // If there is a pending child policy, ignore re-resolution requests
-  // from the current child policy (or any outdated child).
-  if (parent_->pending_child_policy_ != nullptr && !CalledByPendingChild()) {
-    return;
-  }
+  const LoadBalancingPolicy* latest_child_policy =
+      parent_->pending_child_policy_ != nullptr
+          ? parent_->pending_child_policy_.get()
+          : parent_->child_policy_.get();
+  if (child_ != latest_child_policy) return;
   if (grpc_lb_xds_trace.enabled()) {
     gpr_log(GPR_INFO,
             "[xdslb %p] Re-resolution requested from the internal child policy "
@@ -576,13 +576,12 @@ void XdsLb::FallbackHelper::UpdateState(grpc_connectivity_state state,
 
 void XdsLb::FallbackHelper::RequestReresolution() {
   if (parent_->shutting_down_) return;
-  // FIXME: Merge
-  // If there is a pending fallback policy, ignore re-resolution requests
-  // from the current fallback policy (or any outdated fallback policy).
-  if (parent_->pending_fallback_policy_ != nullptr &&
-      !CalledByPendingFallback()) {
-    return;
-  }
+  // FIXME: check child
+  const LoadBalancingPolicy* latest_fallback_policy =
+      parent_->pending_fallback_policy_ != nullptr
+          ? parent_->pending_fallback_policy_.get()
+          : parent_->fallback_policy_.get();
+  if (child_ != latest_fallback_policy) return;
   if (grpc_lb_xds_trace.enabled()) {
     gpr_log(
         GPR_INFO,
@@ -593,7 +592,7 @@ void XdsLb::FallbackHelper::RequestReresolution() {
   GPR_ASSERT(parent_->lb_chand_ != nullptr);
   // If we are talking to a balancer, we expect to get updated addresses
   // from the balancer, so we can ignore the re-resolution request from
-  // the child policy. Otherwise, pass the re-resolution request up to the
+  // the fallback policy. Otherwise, pass the re-resolution request up to the
   // channel.
   if (parent_->lb_chand_->lb_calld() == nullptr ||
       !parent_->lb_chand_->lb_calld()->seen_initial_response()) {
@@ -1103,75 +1102,66 @@ void XdsLb::BalancerChannelState::BalancerCallState::
         gpr_free(ipport);
       }
     }
-    /* update serverlist */
-    // TODO(juanlishen): Don't ingore empty serverlist.
-    if (serverlist->num_servers > 0) {
-      // Pending LB channel receives a serverlist; promote it.
-      // Note that this call can't be on a discarded pending channel, because
-      // such channels don't have any current call but we have checked this call
-      // is a current call.
-      if (!lb_calld->lb_chand_->IsCurrentChannel()) {
-        if (grpc_lb_xds_trace.enabled()) {
-          gpr_log(GPR_INFO,
-                  "[xdslb %p] Promoting pending LB channel %p to replace "
-                  "current LB channel %p",
-                  xdslb_policy, lb_calld->lb_chand_.get(),
-                  lb_calld->xdslb_policy()->lb_chand_.get());
-        }
-        lb_calld->xdslb_policy()->lb_chand_ =
-            std::move(lb_calld->xdslb_policy()->pending_lb_chand_);
-      }
-      // Start sending client load report only after we start using the
-      // serverlist returned from the current LB call.
-      if (lb_calld->client_stats_report_interval_ > 0 &&
-          lb_calld->client_stats_ == nullptr) {
-        lb_calld->client_stats_ = MakeRefCounted<XdsLbClientStats>();
-        // TODO(roth): We currently track this ref manually.  Once the
-        // ClosureRef API is ready, we should pass the RefCountedPtr<> along
-        // with the callback.
-        auto self = lb_calld->Ref(DEBUG_LOCATION, "client_load_report");
-        self.release();
-        lb_calld->ScheduleNextClientLoadReportLocked();
-      }
-      if (xds_grpclb_serverlist_equals(xdslb_policy->serverlist_, serverlist)) {
-        if (grpc_lb_xds_trace.enabled()) {
-          gpr_log(GPR_INFO,
-                  "[xdslb %p] Incoming server list identical to current, "
-                  "ignoring.",
-                  xdslb_policy);
-        }
-        xds_grpclb_destroy_serverlist(serverlist);
-      } else {  // New serverlist.
-        if (xdslb_policy->serverlist_ == nullptr) {
-          // Dispose of the fallback.
-          if (xdslb_policy->fallback_policy_ != nullptr) {
-            gpr_log(GPR_INFO,
-                    "[xdslb %p] Received response from balancer; exiting "
-                    "fallback mode",
-                    xdslb_policy);
-            xdslb_policy->fallback_policy_.reset();
-            xdslb_policy->pending_fallback_policy_.reset();
-          }
-          xdslb_policy->fallback_backend_addresses_.reset();
-          if (xdslb_policy->fallback_timer_callback_pending_) {
-            grpc_timer_cancel(&xdslb_policy->lb_fallback_timer_);
-          }
-        } else {
-          // Dispose of the old serverlist.
-          xds_grpclb_destroy_serverlist(xdslb_policy->serverlist_);
-        }
-        // Update the serverlist in the XdsLb instance. This serverlist
-        // instance will be destroyed either upon the next update or when the
-        // XdsLb instance is destroyed.
-        xdslb_policy->serverlist_ = serverlist;
-        xdslb_policy->CreateOrUpdateChildPolicyLocked();
-      }
-    } else {
+    // Pending LB channel receives a serverlist; promote it.
+    // Note that this call can't be on a discarded pending channel, because
+    // such channels don't have any current call but we have checked this call
+    // is a current call.
+    if (!lb_calld->lb_chand_->IsCurrentChannel()) {
       if (grpc_lb_xds_trace.enabled()) {
-        gpr_log(GPR_INFO, "[xdslb %p] Received empty server list, ignoring.",
+        gpr_log(GPR_INFO,
+                "[xdslb %p] Promoting pending LB channel %p to replace "
+                "current LB channel %p",
+                xdslb_policy, lb_calld->lb_chand_.get(),
+                lb_calld->xdslb_policy()->lb_chand_.get());
+      }
+      lb_calld->xdslb_policy()->lb_chand_ =
+          std::move(lb_calld->xdslb_policy()->pending_lb_chand_);
+    }
+    // Start sending client load report only after we start using the
+    // serverlist returned from the current LB call.
+    if (lb_calld->client_stats_report_interval_ > 0 &&
+        lb_calld->client_stats_ == nullptr) {
+      lb_calld->client_stats_ = MakeRefCounted<XdsLbClientStats>();
+      // TODO(roth): We currently track this ref manually.  Once the
+      // ClosureRef API is ready, we should pass the RefCountedPtr<> along
+      // with the callback.
+      auto self = lb_calld->Ref(DEBUG_LOCATION, "client_load_report");
+      self.release();
+      lb_calld->ScheduleNextClientLoadReportLocked();
+    }
+    if (xds_grpclb_serverlist_equals(xdslb_policy->serverlist_, serverlist)) {
+      if (grpc_lb_xds_trace.enabled()) {
+        gpr_log(GPR_INFO,
+                "[xdslb %p] Incoming server list identical to current, "
+                "ignoring.",
                 xdslb_policy);
       }
       xds_grpclb_destroy_serverlist(serverlist);
+    } else {  // New serverlist.
+      if (xdslb_policy->serverlist_ == nullptr) {
+        // Dispose of the fallback.
+        if (xdslb_policy->fallback_policy_ != nullptr) {
+          gpr_log(GPR_INFO,
+                  "[xdslb %p] Received response from balancer; exiting "
+                  "fallback mode",
+                  xdslb_policy);
+          // FIXME: wait until ready
+          xdslb_policy->fallback_policy_.reset();
+          xdslb_policy->pending_fallback_policy_.reset();
+        }
+        xdslb_policy->fallback_backend_addresses_.reset();
+        if (xdslb_policy->fallback_timer_callback_pending_) {
+          grpc_timer_cancel(&xdslb_policy->lb_fallback_timer_);
+        }
+      } else {
+        // Dispose of the old serverlist.
+        xds_grpclb_destroy_serverlist(xdslb_policy->serverlist_);
+      }
+      // Update the serverlist in the XdsLb instance. This serverlist
+      // instance will be destroyed either upon the next update or when the
+      // XdsLb instance is destroyed.
+      xdslb_policy->serverlist_ = serverlist;
+      xdslb_policy->CreateOrUpdateChildPolicyLocked();
     }
   } else {
     // No valid initial response or serverlist found.
@@ -1527,14 +1517,12 @@ void XdsLb::UpdateLocked(const grpc_channel_args& args,
                          RefCountedPtr<Config> lb_config) {
   const bool is_initial_update = lb_chand_ == nullptr;
   ParseLbConfig(lb_config.get());
-  // TODO(juanlishen): Pass fallback policy config update after fallback policy
-  // is added.
   if (balancer_name_ == nullptr) {
     gpr_log(GPR_ERROR, "[xdslb %p] LB config parsing fails.", this);
     return;
   }
   ProcessChannelArgsLocked(args);
-  // Update the existing fallback policy.
+  // Apply the fallback update if we are in fallback mode.
   if (fallback_policy_ != nullptr) CreateOrUpdateChildPolicyLocked();
   // If this is the initial update, start the fallback timer.
   if (is_initial_update) {
