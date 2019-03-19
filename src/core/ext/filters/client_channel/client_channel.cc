@@ -551,8 +551,8 @@ static void cc_destroy_channel_elem(grpc_channel_element* elem) {
   grpc_pollset_set_destroy(chand->interested_parties);
   GRPC_COMBINER_UNREF(chand->data_plane_combiner, "client_channel");
   GRPC_COMBINER_UNREF(chand->combiner, "client_channel");
-  grpc_error* disconnect_error = reinterpret_cast<grpc_error*>(
-      gpr_atm_acq_load(&chand->disconnect_error));
+  grpc_error* disconnect_error =
+      reinterpret_cast<grpc_error*>(gpr_atm_acq_load(&chand->disconnect_error));
   GRPC_ERROR_UNREF(disconnect_error);
   grpc_connectivity_state_destroy(&chand->state_tracker);
   gpr_mu_destroy(&chand->info_mu);
