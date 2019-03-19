@@ -295,7 +295,8 @@ class XdsLb : public LoadBalancingPolicy {
      private:
       class Helper : public ChannelControlHelper {
        public:
-        explicit Helper(RefCountedPtr<LocalityEntry> entry) : entry_(entry) {}
+        explicit Helper(RefCountedPtr<LocalityEntry> entry)
+            : entry_(std::move(entry)) {}
 
         Subchannel* CreateSubchannel(const grpc_channel_args& args) override;
         grpc_channel* CreateChannel(const char* target,
@@ -1335,9 +1336,9 @@ void XdsLb::LocalityMap::UpdateLocked(
   for (size_t i = 0; i < locality_serverlist.size(); i++) {
     auto iter = map_.find(locality_serverlist[i]->locality_name);
     if (iter == map_.end()) {
-      MutexLock lock(&child_refs_mu_);
       OrphanablePtr<LocalityEntry> newEntry =
           MakeOrphanable<LocalityEntry>(parent->Ref());
+      MutexLock lock(&child_refs_mu_);
       iter = map_.emplace(locality_serverlist[i]->locality_name,
                           std::move(newEntry))
                  .first;
@@ -1533,7 +1534,9 @@ void XdsLb::LocalityMap::LocalityEntry::UpdateLocked(
             policy_to_update == pending_child_policy_.get() ? "pending " : "",
             policy_to_update);
   }
-  policy_to_update->UpdateLocked(*args, child_policy_config->Ref());
+  policy_to_update->UpdateLocked(*args, child_policy_config == nullptr
+                                            ? nullptr
+                                            : child_policy_config->Ref());
   // Clean up.
   grpc_channel_args_destroy(args);
 }

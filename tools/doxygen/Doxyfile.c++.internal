@@ -1077,6 +1077,7 @@ src/core/lib/gprpp/memory.h \
 src/core/lib/gprpp/mutex_lock.h \
 src/core/lib/gprpp/optional.h \
 src/core/lib/gprpp/orphanable.h \
+src/core/lib/gprpp/pair.h \
 src/core/lib/gprpp/ref_counted.h \
 src/core/lib/gprpp/ref_counted_ptr.h \
 src/core/lib/gprpp/thd.h \
