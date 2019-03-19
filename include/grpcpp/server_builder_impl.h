@@ -324,7 +324,7 @@ class ServerBuilder {
   std::shared_ptr<grpc::ServerCredentials> creds_;
   std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>> plugins_;
   grpc_resource_quota* resource_quota_;
-  grpc::AsyncGenericService* generic_service_;
+  grpc::AsyncGenericService* generic_service_{nullptr};
   grpc::experimental::CallbackGenericService* callback_generic_service_{
       nullptr};
   struct {
