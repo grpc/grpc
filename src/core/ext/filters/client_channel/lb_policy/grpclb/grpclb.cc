@@ -1689,8 +1689,7 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
     // returned by the resolver. Note that the fallback backend list may be
     // empty, in which case the new round_robin policy will keep the requested
     // picks pending.
-    GPR_ASSERT(fallback_backend_addresses_ != nullptr);
-    update_args.addresses = *fallback_backend_addresses_;
+    update_args.addresses = fallback_backend_addresses_;
   } else {
     update_args.addresses = serverlist_->GetServerAddressList(
         lb_calld_ == nullptr ? nullptr : lb_calld_->client_stats());
