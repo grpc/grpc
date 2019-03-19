@@ -67,14 +67,10 @@ Resolvers should be able to contact the authority and get a resolution
 that they return back to the gRPC client library. The returned contents
 include:
 
-- A list of resolved addresses, each of which has three attributes:
-  - The address itself, including both IP address and port.
-  - A boolean indicating whether the address is a backend address (i.e.,
-    the address to use to contact the server directly) or a balancer
-    address (for cases where [external load balancing](load-balancing.md)
-    is in use).
-  - The name of the balancer, if the address is a balancer address.
-    This will be used to perform peer authorization.
+- A list of resolved addresses (both IP address and port).  Each address
+  may have a set of arbitrary attributes (key/value pairs) associated with
+  it, which can be used to communicate information from the resolver to the
+  [load balancing](load-balancing.md) policy.
 - A [service config](service_config.md).
 
 The plugin API allows the resolvers to continuously watch an endpoint

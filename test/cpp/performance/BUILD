@@ -31,5 +31,4 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util_base",
     ],
-    tags = ["no_windows"],
 )

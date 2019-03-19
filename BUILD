@@ -1621,6 +1621,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/plugin/plugin_credentials.cc",
         "src/core/lib/security/credentials/ssl/ssl_credentials.cc",
         "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc",
+        "src/core/lib/security/credentials/tls/spiffe_credentials.cc",
         "src/core/lib/security/security_connector/alts/alts_security_connector.cc",
         "src/core/lib/security/security_connector/fake/fake_security_connector.cc",
         "src/core/lib/security/security_connector/load_system_roots_fallback.cc",
@@ -1629,6 +1630,7 @@ grpc_cc_library(
         "src/core/lib/security/security_connector/security_connector.cc",
         "src/core/lib/security/security_connector/ssl/ssl_security_connector.cc",
         "src/core/lib/security/security_connector/ssl_utils.cc",
+        "src/core/lib/security/security_connector/tls/spiffe_security_connector.cc",
         "src/core/lib/security/transport/client_auth_filter.cc",
         "src/core/lib/security/transport/secure_endpoint.cc",
         "src/core/lib/security/transport/security_handshaker.cc",
@@ -1656,6 +1658,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/plugin/plugin_credentials.h",
         "src/core/lib/security/credentials/ssl/ssl_credentials.h",
         "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h",
+        "src/core/lib/security/credentials/tls/spiffe_credentials.h",
         "src/core/lib/security/security_connector/alts/alts_security_connector.h",
         "src/core/lib/security/security_connector/fake/fake_security_connector.h",
         "src/core/lib/security/security_connector/load_system_roots.h",
@@ -1664,6 +1667,7 @@ grpc_cc_library(
         "src/core/lib/security/security_connector/security_connector.h",
         "src/core/lib/security/security_connector/ssl/ssl_security_connector.h",
         "src/core/lib/security/security_connector/ssl_utils.h",
+        "src/core/lib/security/security_connector/tls/spiffe_security_connector.h",
         "src/core/lib/security/transport/auth_filters.h",
         "src/core/lib/security/transport/secure_endpoint.h",
         "src/core/lib/security/transport/security_handshaker.h",
@@ -2282,7 +2286,6 @@ grpc_cc_library(
     ],
     hdrs = [
         "include/grpcpp/opencensus.h",
-        "include/grpcpp/opencensus_impl.h",
         "src/cpp/ext/filters/census/channel_filter.h",
         "src/cpp/ext/filters/census/client_filter.h",
         "src/cpp/ext/filters/census/context.h",
@@ -2313,22 +2316,92 @@ grpc_cc_library(
 
 #TODO: Get this into build.yaml once we start using it.
 grpc_cc_library(
-    name = "google_protobuf_upb",
+    name = "envoy_ads_upb",
     srcs = [
+        "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h",
+    ],
+    language = "c++",
+    external_deps = [
+        "upb_lib",
+    ],
+    deps = [
+        ":google_api_upb",
+        ":proto_gen_validate_upb",
+        ":envoy_type_upb",
+    ]
+)
+
+grpc_cc_library(
+    name = "envoy_type_upb",
+    srcs = [
+        "src/core/ext/upb-generated/envoy/type/percent.upb.c",
+        "src/core/ext/upb-generated/envoy/type/range.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/envoy/type/percent.upb.h",
+        "src/core/ext/upb-generated/envoy/type/range.upb.h",
+    ],
+    language = "c++",
+    external_deps = [
+        "upb_lib",
+    ],
+    deps = [
+        ":google_api_upb",
+        ":proto_gen_validate_upb"
+    ]
+)
+
+grpc_cc_library(
+    name = "proto_gen_validate_upb",
+    srcs = [
+        "src/core/ext/upb-generated/gogoproto/gogo.upb.c",
+        "src/core/ext/upb-generated/validate/validate.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/gogoproto/gogo.upb.h",
+        "src/core/ext/upb-generated/validate/validate.upb.h",
+    ],
+    language = "c++",
+    external_deps = [
+        "upb_lib",
+    ],
+    deps = [
+        ":google_api_upb",
+    ]
+)
+
+grpc_cc_library(
+    name = "google_api_upb",
+    srcs = [
+        "src/core/ext/upb-generated/google/api/annotations.upb.c",
+        "src/core/ext/upb-generated/google/api/http.upb.c",
         "src/core/ext/upb-generated/google/protobuf/any.upb.c",
         "src/core/ext/upb-generated/google/protobuf/descriptor.upb.c",
         "src/core/ext/upb-generated/google/protobuf/duration.upb.c",
         "src/core/ext/upb-generated/google/protobuf/struct.upb.c",
         "src/core/ext/upb-generated/google/protobuf/timestamp.upb.c",
         "src/core/ext/upb-generated/google/protobuf/wrappers.upb.c",
+        "src/core/ext/upb-generated/google/rpc/status.upb.c",
     ],
     hdrs = [
+        "src/core/ext/upb-generated/google/api/annotations.upb.h",
+        "src/core/ext/upb-generated/google/api/http.upb.h",
         "src/core/ext/upb-generated/google/protobuf/any.upb.h",
         "src/core/ext/upb-generated/google/protobuf/descriptor.upb.h",
         "src/core/ext/upb-generated/google/protobuf/duration.upb.h",
         "src/core/ext/upb-generated/google/protobuf/struct.upb.h",
         "src/core/ext/upb-generated/google/protobuf/timestamp.upb.h",
         "src/core/ext/upb-generated/google/protobuf/wrappers.upb.h",
+        "src/core/ext/upb-generated/google/rpc/status.upb.h",
     ],
     language = "c++",
     external_deps = [

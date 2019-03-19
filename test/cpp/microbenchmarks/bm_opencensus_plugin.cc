@@ -29,9 +29,7 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 
 absl::once_flag once;
-void RegisterOnce() {
-  absl::call_once(once, grpc_impl::RegisterOpenCensusPlugin);
-}
+void RegisterOnce() { absl::call_once(once, grpc::RegisterOpenCensusPlugin); }
 
 class EchoServer final : public grpc::testing::EchoTestService::Service {
   grpc::Status Echo(grpc::ServerContext* context,
@@ -101,7 +99,7 @@ static void BM_E2eLatencyCensusEnabled(benchmark::State& state) {
   RegisterOnce();
   // This we can safely repeat, and doing so clears accumulated data to avoid
   // initialization costs varying between runs.
-  grpc_impl::RegisterOpenCensusViewsForExport();
+  grpc::RegisterOpenCensusViewsForExport();
 
   EchoServerThread server;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub =
