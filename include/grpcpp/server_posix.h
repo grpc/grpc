@@ -21,4 +21,16 @@
 
 #include <grpcpp/server_posix_impl.h>
 
+namespace grpc {
+
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+
+static inline void AddInsecureChannelFromFd(Server* server, int fd) {
+  ::grpc_impl::AddInsecureChannelFromFd(server, fd);
+}
+
+#endif  // GPR_SUPPORT_CHANNELS_FROM_FD
+
+}  // namespace grpc
+
 #endif  // GRPCPP_SERVER_POSIX_H
