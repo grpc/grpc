@@ -637,6 +637,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "thread_stress_test",
+    timeout = "long",
     srcs = ["thread_stress_test.cc"],
     external_deps = [
         "gtest",
