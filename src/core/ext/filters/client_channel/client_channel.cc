@@ -2766,8 +2766,8 @@ static void start_pick_locked(void* arg, grpc_error* error) {
       // If wait_for_ready is true, then queue to retry when we get a new
       // picker.
       GRPC_ERROR_UNREF(error);
-      // Fallthrough
     }
+    // Fallthrough
     case LoadBalancingPolicy::SubchannelPicker::PICK_QUEUE:
       if (!calld->pick_queued) add_call_to_queued_picks_locked(elem);
       break;
