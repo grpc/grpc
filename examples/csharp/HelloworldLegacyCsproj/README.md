@@ -6,7 +6,7 @@ BACKGROUND
 This is a different version of the helloworld example, using the "classic" .csproj
 files, the only format supported by VS2013 (and older versions of mono).
 You can still use gRPC with the classic .csproj files, but [using the new-style
-.csproj projects](../helloworld/README.md) (supported by VS2015 Update3 and above,
+.csproj projects](../Helloworld/README.md) (supported by VS2017 v15.3 and above,
 and dotnet SDK) is recommended.
 
 Example projects depend on the [Grpc](https://www.nuget.org/packages/Grpc/),
