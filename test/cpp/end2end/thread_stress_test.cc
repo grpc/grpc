@@ -97,7 +97,7 @@ class CommonStressTestInsecure : public CommonStressTest<Service> {
  public:
   void ResetStub() override {
     std::shared_ptr<Channel> channel =
-        CreateChannel(server_address_.str(), InsecureChannelCredentials());
+        grpc::CreateChannel(server_address_.str(), InsecureChannelCredentials());
     this->stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
   bool AllowExhaustion() override { return false; }

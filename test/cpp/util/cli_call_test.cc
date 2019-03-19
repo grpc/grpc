@@ -75,7 +75,7 @@ class CliCallTest : public ::testing::Test {
 
   void ResetStub() {
     channel_ =
-        CreateChannel(server_address_.str(), InsecureChannelCredentials());
+        grpc::CreateChannel(server_address_.str(), InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 

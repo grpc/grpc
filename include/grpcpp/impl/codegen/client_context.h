@@ -57,12 +57,15 @@
 struct census_context;
 struct grpc_call;
 
+namespace grpc_impl {
+
+class CallCredentials;
+}
 namespace grpc {
 
 class Channel;
 class ChannelInterface;
 class CompletionQueue;
-class CallCredentials;
 class ClientContext;
 
 namespace internal {
@@ -306,7 +309,7 @@ class ClientContext {
   /// call.
   ///
   /// \see  https://grpc.io/docs/guides/auth.html
-  void set_credentials(const std::shared_ptr<CallCredentials>& creds) {
+  void set_credentials(const std::shared_ptr<grpc_impl::CallCredentials>& creds) {
     creds_ = creds;
   }
 
@@ -465,7 +468,7 @@ class ClientContext {
   bool call_canceled_;
   gpr_timespec deadline_;
   grpc::string authority_;
-  std::shared_ptr<CallCredentials> creds_;
+  std::shared_ptr<grpc_impl::CallCredentials> creds_;
   mutable std::shared_ptr<const AuthContext> auth_context_;
   struct census_context* census_context_;
   std::multimap<grpc::string, grpc::string> send_initial_metadata_;

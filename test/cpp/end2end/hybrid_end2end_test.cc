@@ -296,7 +296,7 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
   void ResetStub() {
     std::shared_ptr<Channel> channel =
         inproc_ ? server_->InProcessChannel(ChannelArguments())
-                : CreateChannel(server_address_.str(),
+                : grpc::CreateChannel(server_address_.str(),
                                 InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
@@ -322,7 +322,7 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
 
   void SendEchoToDupService() {
     std::shared_ptr<Channel> channel =
-        CreateChannel(server_address_.str(), InsecureChannelCredentials());
+        grpc::CreateChannel(server_address_.str(), InsecureChannelCredentials());
     auto stub = grpc::testing::duplicate::EchoTestService::NewStub(channel);
     EchoRequest send_request;
     EchoResponse recv_response;
@@ -374,7 +374,7 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
 
   void SendSimpleServerStreamingToDupService() {
     std::shared_ptr<Channel> channel =
-        CreateChannel(server_address_.str(), InsecureChannelCredentials());
+        grpc::CreateChannel(server_address_.str(), InsecureChannelCredentials());
     auto stub = grpc::testing::duplicate::EchoTestService::NewStub(channel);
     EchoRequest request;
     EchoResponse response;

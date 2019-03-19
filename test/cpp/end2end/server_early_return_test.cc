@@ -123,7 +123,7 @@ class ServerEarlyReturnTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
 
     channel_ =
-        CreateChannel(server_address_.str(), InsecureChannelCredentials());
+        grpc::CreateChannel(server_address_.str(), InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 

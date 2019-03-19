@@ -94,7 +94,7 @@ class ServerLoadReportingEnd2endTest : public ::testing::Test {
                            const grpc::string& lb_tag,
                            const grpc::string& message, size_t num_requests) {
     auto stub = EchoTestService::NewStub(
-        CreateChannel(server_address_, InsecureChannelCredentials()));
+        grpc::CreateChannel(server_address_, InsecureChannelCredentials()));
     grpc::string lb_token = lb_id + lb_tag;
     for (int i = 0; i < num_requests; ++i) {
       ClientContext ctx;
