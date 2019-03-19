@@ -19,7 +19,7 @@
 #include <grpc/grpc.h>
 #include <grpcpp/resource_quota.h>
 
-namespace grpc_impl {
+namespace grpc {
 
 ResourceQuota::ResourceQuota() : impl_(grpc_resource_quota_create(nullptr)) {}
 
