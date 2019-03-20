@@ -156,7 +156,7 @@ class RoundRobin : public LoadBalancingPolicy {
    public:
     Picker(RoundRobin* parent, RoundRobinSubchannelList* subchannel_list);
 
-    PickResult Pick(PickState* pick, grpc_error** error) override;
+    PickResult Pick(PickArgs* pick, grpc_error** error) override;
 
    private:
     // Using pointer value only, no ref held -- do not dereference!
@@ -227,8 +227,8 @@ RoundRobin::Picker::Picker(RoundRobin* parent,
   }
 }
 
-RoundRobin::Picker::PickResult RoundRobin::Picker::Pick(PickState* pick,
-                                                        grpc_error** error) {
+RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs* pick,
+                                                grpc_error** error) {
   last_picked_index_ = (last_picked_index_ + 1) % subchannels_.size();
   if (grpc_lb_round_robin_trace.enabled()) {
     gpr_log(GPR_INFO,

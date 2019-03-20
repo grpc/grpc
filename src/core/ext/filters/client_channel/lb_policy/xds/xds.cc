@@ -267,7 +267,7 @@ class XdsLb : public LoadBalancingPolicy {
         : child_picker_(std::move(child_picker)),
           client_stats_(std::move(client_stats)) {}
 
-    PickResult Pick(PickState* pick, grpc_error** error) override;
+    PickResult Pick(PickArgs* pick, grpc_error** error) override;
 
    private:
     UniquePtr<SubchannelPicker> child_picker_;
@@ -428,8 +428,7 @@ class XdsLb : public LoadBalancingPolicy {
 // XdsLb::Picker
 //
 
-XdsLb::Picker::PickResult XdsLb::Picker::Pick(PickState* pick,
-                                              grpc_error** error) {
+XdsLb::PickResult XdsLb::Picker::Pick(PickArgs* pick, grpc_error** error) {
   // TODO(roth): Add support for drop handling.
   // Forward pick to child policy.
   PickResult result = child_picker_->Pick(pick, error);
