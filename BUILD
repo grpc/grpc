@@ -395,6 +395,7 @@ grpc_cc_library(
     hdrs = [
         "include/grpc++/support/error_details.h",
         "include/grpcpp/support/error_details.h",
+        "include/grpcpp/support/error_details_impl.h",
     ],
     language = "c++",
     standalone = True,
