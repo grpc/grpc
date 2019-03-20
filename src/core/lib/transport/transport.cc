@@ -261,7 +261,6 @@ grpc_transport_op* grpc_make_transport_op(grpc_closure* on_complete) {
   GRPC_CLOSURE_INIT(&op->outer_on_complete, destroy_made_transport_op, op,
                     grpc_schedule_on_exec_ctx);
   op->inner_on_complete = on_complete;
-  memset(&op->op, 0, sizeof(op->op));
   op->op.on_consumed = &op->outer_on_complete;
   return &op->op;
 }
