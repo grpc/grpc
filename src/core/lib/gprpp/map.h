@@ -64,10 +64,10 @@ class Map {
 
   // TODO(mhaidry) : Experiment with inheriting std::iterator
   //   : public std::iterator<std::input_iterator_tag, value_type,
-  //       long, value_type*, value_type& >
+  //       int32_t, value_type*, value_type& >
   class iterator {
-    using GrpcMap = Map<key_type, mapped_type, Compare>;
-    using GrpcMapEntry = Map<key_type, mapped_type, Compare>::Entry;
+    using GrpcMap = typename ::grpc_core::Map<Key, T, Compare>;
+    using GrpcMapEntry = typename ::grpc_core::Map<Key, T, Compare>::Entry;
 
    public:
     bool operator==(const iterator& rhs) const { return (curr_ == rhs.curr_); }
@@ -93,8 +93,8 @@ class Map {
 
    private:
     iterator(GrpcMap* map, GrpcMapEntry* curr) : curr_(curr), map_(map) {}
-    Entry* curr_;
-    Map* map_;
+    GrpcMapEntry* curr_;
+    GrpcMap* map_;
     friend class Map<key_type, mapped_type, Compare>;
   };
 
@@ -193,13 +193,13 @@ class Map {
     value_type pair;
     Entry* left = nullptr;
     Entry* right = nullptr;
-    long height = 1;
+    int32_t height = 1;
 
     friend class iterator;
     friend class testing::MapTester<Key, T, Compare>;
   };
 
-  long EntryHeight(Entry* e) { return e == nullptr ? 0 : e->height; }
+  int32_t EntryHeight(Entry* e) { return e == nullptr ? 0 : e->height; }
 
   Entry* GetMinEntry(Entry* e) {
     if (e != nullptr) {
@@ -254,7 +254,8 @@ class Map {
   Entry* RebalanceTreeAfterInsertion(Entry* root, key_type k) {
     root->height =
         1 + GPR_MAX(EntryHeight(root->left), EntryHeight(root->right));
-    long heightDifference = EntryHeight(root->left) - EntryHeight(root->right);
+    int32_t heightDifference =
+        EntryHeight(root->left) - EntryHeight(root->right);
     if (heightDifference > 1 && CompareKeys(root->left->pair.first, k) > 0) {
       return RotateRight(root);
     }
@@ -275,7 +276,8 @@ class Map {
   Entry* RebalanceTreeAfterDeletion(Entry* root) {
     root->height =
         1 + GPR_MAX(EntryHeight(root->left), EntryHeight(root->right));
-    long heightDifference = EntryHeight(root->left) - EntryHeight(root->right);
+    int32_t heightDifference =
+        EntryHeight(root->left) - EntryHeight(root->right);
     if (heightDifference > 1) {
       int leftHeightDifference =
           EntryHeight(root->left->left) - EntryHeight(root->left->right);
