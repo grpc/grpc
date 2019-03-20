@@ -28,8 +28,11 @@
 
 struct grpc_server;
 
-namespace grpc {
+namespace grpc_impl {
+
 class Server;
+} // namespace grpc_impl
+namespace grpc {
 
 /// Wrapper around \a grpc_server_credentials, a way to authenticate a server.
 class ServerCredentials {
@@ -42,7 +45,7 @@ class ServerCredentials {
       const std::shared_ptr<AuthMetadataProcessor>& processor) = 0;
 
  private:
-  friend class ::grpc::Server;
+  friend class ::grpc_impl::Server;
 
   /// Tries to bind \a server to the given \a addr (eg, localhost:1234,
   /// 192.168.1.1:31416, [::1]:27182, etc.)

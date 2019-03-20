@@ -35,12 +35,15 @@
 
 struct grpc_resource_quota;
 
+namespace grpc_impl {
+
+class Server;
+} // namespace grpc_impl
 namespace grpc {
 
 class AsyncGenericService;
 class ResourceQuota;
 class CompletionQueue;
-class Server;
 class ServerCompletionQueue;
 class ServerCredentials;
 class Service;
@@ -70,7 +73,7 @@ class ServerBuilder {
   ///     traffic (via AddListeningPort)
   ///  3. [for async api only] completion queues have been added via
   ///     AddCompletionQueue
-  virtual std::unique_ptr<Server> BuildAndStart();
+  virtual std::unique_ptr<grpc_impl::Server> BuildAndStart();
 
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the \a Server instance returned

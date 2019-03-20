@@ -24,9 +24,12 @@
 
 #include <grpcpp/server.h>
 
-namespace grpc {
+namespace grpc_impl {
 
 class Server;
+} // namespace grpc_impl
+namespace grpc {
+
 class Service;
 
 class ServerInitializer {
