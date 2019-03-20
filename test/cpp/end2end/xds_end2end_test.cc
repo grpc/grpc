@@ -208,6 +208,10 @@ class BalancerServiceImpl : public BalancerService {
     // TODO(juanlishen): Clean up the scoping.
     gpr_log(GPR_INFO, "LB[%p]: BalanceLoad", this);
     {
+      std::unique_lock<std::mutex> lock(mu_);
+      if (shutdown_) goto done;
+    }
+    {
       // Balancer shouldn't receive the call credentials metadata.
       EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
                 context->client_metadata().end());
@@ -283,6 +287,7 @@ class BalancerServiceImpl : public BalancerService {
 
   void Shutdown() {
     std::unique_lock<std::mutex> lock(mu_);
+    shutdown_ = true;
     NotifyDoneWithServerlistsLocked();
     responses_and_delays_.clear();
     client_stats_.Reset();
@@ -353,6 +358,7 @@ class BalancerServiceImpl : public BalancerService {
   std::condition_variable serverlist_cond_;
   bool serverlist_done_ = false;
   ClientStats client_stats_;
+  bool shutdown_ = false;
 };
 
 class XdsEnd2endTest : public ::testing::Test {
