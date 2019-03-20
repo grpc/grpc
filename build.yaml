@@ -4741,6 +4741,8 @@ targets:
   gtest: true
   build: test
   language: c++
+  headers:
+  - test/core/gprpp/map_tester.h
   src:
   - test/core/gprpp/map_test.cc
   deps:

@@ -3723,12 +3723,15 @@
       "grpc++_test", 
       "grpc_test_util"
     ], 
-    "headers": [], 
+    "headers": [
+      "test/core/gprpp/map_tester.h"
+    ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "grpc_core_map_test", 
     "src": [
-      "test/core/gprpp/map_test.cc"
+      "test/core/gprpp/map_test.cc", 
+      "test/core/gprpp/map_tester.h"
     ], 
     "third_party": false, 
     "type": "target"

@@ -53,7 +53,7 @@ class MapTester;
 // TODO(mhaidry) : Experiment with using std::less
 template <class Key, class T, class Compare = Less<Key>>
 class Map {
-  class Entry;
+  struct Entry;
 
  public:
   typedef Key key_type;
@@ -94,7 +94,7 @@ class Map {
     iterator(GrpcMap* map, GrpcMapEntry* curr) : curr_(curr), map_(map) {}
     Entry* curr_;
     Map* map_;
-    friend class GrpcMap;
+    friend class Map<key_type, mapped_type, Compare>;
   };
 
   ~Map() { clear(); }

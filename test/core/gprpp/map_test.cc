@@ -16,13 +16,13 @@
  *
  */
 
-#include <gtest/gtest.h>
 #include "src/core/lib/gprpp/map.h"
+#include <gtest/gtest.h>
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "test/core/util/map_tester.h"
 #include "test/core/util/test_config.h"
-#include "test/core/gprpp/map_tester.h"
 
 namespace grpc_core {
 namespace testing {
@@ -74,7 +74,6 @@ TEST(MapTest, MapAddTestRawPtr) {
   }
   test_map.clear();
 }
-
 
 // Test insertion of raw pointer values
 TEST(MapTest, MapTestBracketOperator) {
@@ -151,8 +150,8 @@ TEST(MapTest, MapRemoveTestReffedPtr) {
 TEST(MapTest, MapLL) {
   grpc_core::Map<const char*, RefCountedPtr<ReffedPayload>, StringLess>
       test_map;
-  MapTester<const char*, RefCountedPtr<ReffedPayload>, StringLess>
-      mapt(&test_map);
+  MapTester<const char*, RefCountedPtr<ReffedPayload>, StringLess> mapt(
+      &test_map);
   test_map.emplace(std::move("hij"), MakeRefCounted<ReffedPayload>(3));
   test_map.emplace(std::move("efg"), MakeRefCounted<ReffedPayload>(2));
   test_map.emplace(std::move("abc"), MakeRefCounted<ReffedPayload>(1));
@@ -169,8 +168,8 @@ TEST(MapTest, MapLL) {
 TEST(MapTest, MapLR) {
   grpc_core::Map<const char*, RefCountedPtr<ReffedPayload>, StringLess>
       test_map;
-  MapTester<const char*, RefCountedPtr<ReffedPayload>, StringLess>
-      mapt(&test_map);
+  MapTester<const char*, RefCountedPtr<ReffedPayload>, StringLess> mapt(
+      &test_map);
   test_map.emplace(std::move("hij"), MakeRefCounted<ReffedPayload>(3));
   test_map.emplace(std::move("abc"), MakeRefCounted<ReffedPayload>(1));
   test_map.emplace(std::move("efg"), MakeRefCounted<ReffedPayload>(2));
@@ -187,8 +186,8 @@ TEST(MapTest, MapLR) {
 TEST(MapTest, MapRL) {
   grpc_core::Map<const char*, RefCountedPtr<ReffedPayload>, StringLess>
       test_map;
-  MapTester<const char*, RefCountedPtr<ReffedPayload>, StringLess>
-      mapt(&test_map);
+  MapTester<const char*, RefCountedPtr<ReffedPayload>, StringLess> mapt(
+      &test_map);
   test_map.emplace(std::move("xyz"), MakeRefCounted<ReffedPayload>(5));
   test_map.emplace(std::move("klm"), MakeRefCounted<ReffedPayload>(4));
   test_map.emplace(std::move("hij"), MakeRefCounted<ReffedPayload>(3));
@@ -208,7 +207,7 @@ TEST(MapTest, MapRL) {
 }
 
 //// Test correction after random insertion
-//TEST(MapTest, MapRandomInsertions) {
+// TEST(MapTest, MapRandomInsertions) {
 //  grpc_core::Map<const char*, RefCountedPtr<ReffedPayload>, StringLess>
 //      test_map;
 //  MapTester<const char*, RefCountedPtr<ReffedPayload>, StringLess> mapt(
@@ -272,8 +271,7 @@ TEST(MapTest, MapIterAndRemove) {
 
 // Test insertion of raw pointer values
 TEST(MapTest, MapAddTestOrphanablePtr) {
-  grpc_core::Map<const char*, OrphanablePtr<OrphanablePayload>,
-                 StringLess>
+  grpc_core::Map<const char*, OrphanablePtr<OrphanablePayload>, StringLess>
       test_map;
   OrphanablePtr<OrphanablePayload> p[3];
   for (int i = 0; i < 3; i++) {
