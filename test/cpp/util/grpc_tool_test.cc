@@ -246,7 +246,7 @@ class GrpcToolTest : public ::testing::Test {
       SslServerCredentialsOptions ssl_opts;
       ssl_opts.pem_root_certs = "";
       ssl_opts.pem_key_cert_pairs.push_back(pkcp);
-      creds = SslServerCredentials(ssl_opts);
+      creds = grpc::SslServerCredentials(ssl_opts);
     } else {
       creds = InsecureServerCredentials();
     }
