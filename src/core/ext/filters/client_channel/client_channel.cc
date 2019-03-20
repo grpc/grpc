@@ -94,7 +94,7 @@ grpc_core::TraceFlag grpc_client_channel_routing_trace(
 struct external_connectivity_watcher;
 
 struct QueuedPick {
-  LoadBalancingPolicy::PickState pick;
+  LoadBalancingPolicy::PickArgs pick;
   grpc_call_element* elem;
   QueuedPick* next = nullptr;
 };
@@ -331,7 +331,7 @@ static grpc_error* do_ping_locked(channel_data* chand, grpc_transport_op* op) {
     GRPC_ERROR_UNREF(error);
     return new_error;
   }
-  LoadBalancingPolicy::PickState pick;
+  LoadBalancingPolicy::PickArgs pick;
   chand->picker->Pick(&pick, &error);
   if (pick.connected_subchannel != nullptr) {
     pick.connected_subchannel->Ping(op->send_ping.on_initiate,
@@ -972,7 +972,7 @@ static void free_cached_send_op_data_for_completed_batch(
 //
 
 void maybe_inject_recv_trailing_metadata_ready_for_lb(
-    const LoadBalancingPolicy::PickState& pick,
+    const LoadBalancingPolicy::PickArgs& pick,
     grpc_transport_stream_op_batch* batch) {
   if (pick.recv_trailing_metadata_ready != nullptr) {
     *pick.original_recv_trailing_metadata_ready =
@@ -2676,14 +2676,13 @@ static void maybe_apply_service_config_to_call_locked(grpc_call_element* elem) {
   }
 }
 
-static const char* pick_result_name(
-    LoadBalancingPolicy::SubchannelPicker::PickResult result) {
+static const char* pick_result_name(LoadBalancingPolicy::PickResult result) {
   switch (result) {
-    case LoadBalancingPolicy::SubchannelPicker::PICK_COMPLETE:
+    case LoadBalancingPolicy::PICK_COMPLETE:
       return "COMPLETE";
-    case LoadBalancingPolicy::SubchannelPicker::PICK_QUEUE:
+    case LoadBalancingPolicy::PICK_QUEUE:
       return "QUEUE";
-    case LoadBalancingPolicy::SubchannelPicker::PICK_TRANSIENT_FAILURE:
+    case LoadBalancingPolicy::PICK_TRANSIENT_FAILURE:
       return "TRANSIENT_FAILURE";
   }
   GPR_UNREACHABLE_CODE(return "UNKNOWN");
@@ -2733,7 +2732,7 @@ static void start_pick_locked(void* arg, grpc_error* error) {
             grpc_error_string(error));
   }
   switch (pick_result) {
-    case LoadBalancingPolicy::SubchannelPicker::PICK_TRANSIENT_FAILURE: {
+    case LoadBalancingPolicy::PICK_TRANSIENT_FAILURE: {
       // If we're shutting down, fail all RPCs.
       grpc_error* disconnect_error = reinterpret_cast<grpc_error*>(
           gpr_atm_acq_load(&chand->disconnect_error));
@@ -2768,7 +2767,7 @@ static void start_pick_locked(void* arg, grpc_error* error) {
       GRPC_ERROR_UNREF(error);
     }
     // Fallthrough
-    case LoadBalancingPolicy::SubchannelPicker::PICK_QUEUE:
+    case LoadBalancingPolicy::PICK_QUEUE:
       if (!calld->pick_queued) add_call_to_queued_picks_locked(elem);
       break;
     default:  // PICK_COMPLETE

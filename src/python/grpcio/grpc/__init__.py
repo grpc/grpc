@@ -282,7 +282,7 @@ class Status(six.with_metaclass(abc.ABCMeta)):
 
     Attributes:
       code: A StatusCode object to be sent to the client.
-      details: An ASCII-encodable string to be sent to the client upon
+      details: A UTF-8-encodable string to be sent to the client upon
         termination of the RPC.
       trailing_metadata: The trailing :term:`metadata` in the RPC.
     """
@@ -1131,7 +1131,7 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         Args:
           code: A StatusCode object to be sent to the client.
             It must not be StatusCode.OK.
-          details: An ASCII-encodable string to be sent to the client upon
+          details: A UTF-8-encodable string to be sent to the client upon
             termination of the RPC.
 
         Raises:
@@ -1179,7 +1179,7 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         no details to transmit.
 
         Args:
-          details: An ASCII-encodable string to be sent to the client upon
+          details: A UTF-8-encodable string to be sent to the client upon
             termination of the RPC.
         """
         raise NotImplementedError()
