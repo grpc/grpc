@@ -34,6 +34,11 @@ GRPCIO_TESTS_UNIT = [
 ]
 
 py_library(
+    name = "_tcp_proxy",
+    srcs = ["_tcp_proxy.py"],
+)
+
+py_library(
     name = "resources",
     srcs = ["resources.py"],
     data=[
@@ -80,6 +85,7 @@ py_library(
             ":_exit_scenarios",
             ":_server_shutdown_scenarios",
             ":_from_grpc_import_star",
+            ":_tcp_proxy",
             "//src/python/grpcio_tests/tests/unit/framework/common",
             "//src/python/grpcio_tests/tests/testing",
             requirement('six'),
