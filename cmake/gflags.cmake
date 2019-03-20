@@ -26,7 +26,7 @@ if("${gRPC_GFLAGS_PROVIDER}" STREQUAL "module")
 elseif("${gRPC_GFLAGS_PROVIDER}" STREQUAL "package")
   # Use "CONFIG" as there is no built-in cmake module for gflags.
   find_package(gflags REQUIRED CONFIG)
-  if(TARGET gflags)
+  if(TARGET gflags::gflags)
     set(_gRPC_GFLAGS_LIBRARIES gflags::gflags)
     set(_gRPC_GFLAGS_INCLUDE_DIR ${GFLAGS_INCLUDE_DIR})
   endif()
