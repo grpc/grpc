@@ -1017,14 +1017,12 @@ TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerChannelFails) {
 TEST_F(SingleBalancerTest, BackendsRestart) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
-  const size_t kNumRpcsPerAddress = 100;
   ScheduleResponseForBalancer(
       0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
       0);
   // Make sure that trying to connect works without a call.
   channel_->GetState(true /* try_to_connect */);
-  // Send kNumRpcsPerAddress RPCs per server.
-  CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
+  WaitForAllBackends();
   balancers_[0]->service_.NotifyDoneWithServerlists();
   // The balancer got a single request.
   EXPECT_EQ(1U, balancers_[0]->service_.request_count());
