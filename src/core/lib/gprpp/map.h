@@ -22,37 +22,53 @@
 #include <grpc/support/port_platform.h>
 
 #include <functional>
+#include <iterator>
 #include <utility>
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/pair.h"
+
+#define Pair std::pair
+#define MakePair std::make_pair
+
 namespace grpc_core {
 template <class Key>
-struct less {
-  bool operator()(Key lhs, Key rhs) const {
-    if (lhs < rhs) return true;
+struct Less {
+  bool operator()(const Key& lhs, const Key& rhs) const { return (lhs < rhs); }
+};
+
+struct StringLess {
+  bool operator()(const char* a, const char* b) const {
+    return strcmp(a, b) < 0;
   }
 };
 
+namespace testing {
 template <class Key, class T, class Compare>
 class MapTester;
+}
 
 // Alternative map implementation for grpc_core
-template <class Key, class T, class Compare = less<Key>>
-class map {
-  typedef Key key_type;
-  typedef T mapped_type;
-  typedef pair<key_type, mapped_type> value_type;
-  typedef Compare key_compare;
+
+// TODO(mhaidry) : Experiment with using std::less
+template <class Key, class T, class Compare = Less<Key>>
+class Map {
   class Entry;
 
  public:
-  class iterator {
-   public:
-    iterator(typename ::grpc_core::map<key_type, mapped_type, Compare>* map,
-             ::grpc_core::map<key_type, mapped_type, Compare>::Entry* curr)
-        : curr_(curr), map_(map) {}
+  typedef Key key_type;
+  typedef T mapped_type;
+  typedef Pair<key_type, mapped_type> value_type;
+  typedef Compare key_compare;
 
+  // TODO(mhaidry) : Experiment with inheriting std::iterator
+  //   : public std::iterator<std::input_iterator_tag, value_type,
+  //       long, value_type*, value_type& >
+  class iterator {
+    using GrpcMap = Map<key_type, mapped_type, Compare>;
+    using GrpcMapEntry = Map<key_type, mapped_type, Compare>::Entry;
+
+   public:
     bool operator==(const iterator& rhs) const { return (curr_ == rhs.curr_); }
     bool operator!=(const iterator& rhs) const { return (curr_ != rhs.curr_); }
 
@@ -67,49 +83,49 @@ class map {
     }
 
     // operator*()
-    value_type& operator*() { return curr_->pair(); }
-    const value_type& operator*() const { return curr_->pair(); }
+    value_type& operator*() { return curr_->pair; }
+    const value_type& operator*() const { return curr_->pair; }
 
     // operator->()
-    value_type* operator->() { return &curr_->pair(); }
-
-    value_type const* operator->() const { return &curr_->pair(); }
+    value_type* operator->() { return &curr_->pair; }
+    value_type const* operator->() const { return &curr_->pair; }
 
    private:
+    iterator(GrpcMap* map, GrpcMapEntry* curr) : curr_(curr), map_(map) {}
     Entry* curr_;
-    map* map_;
+    Map* map_;
+    friend class GrpcMap;
   };
 
-  ~map() { clear(); }
+  ~Map() { clear(); }
 
   T& operator[](key_type&& key) {
     if (find(key) == end())
-      return insert(make_pair(std::move(key), std::move(T()))).first->second;
+      return insert(MakePair(std::move(key), std::move(T()))).first->second;
     return find(key)->second;
   }
 
-  T& operator[](const key_type&& key) {
-    if (find(key) == end())
-      return insert(make_pair(std::move(key), std::move(T()))).first->second;
+  T& operator[](const key_type& key) {
+    if (find(key) == end()) return insert(MakePair(key, T())).first->second;
     return find(key)->second;
   }
 
   iterator find(key_type k) {
     Entry* iter = root_;
     while (iter != nullptr) {
-      int comp = CompareKeys(iter->pair().first, k);
+      int comp = CompareKeys(iter->pair.first, k);
       if (!comp) {
         return iterator(this, iter);
       } else if (comp < 0) {
-        iter = iter->right();
+        iter = iter->right;
       } else {
-        iter = iter->left();
+        iter = iter->left;
       }
     }
     return end();
   }
 
-  int erase(const key_type& key) {
+  size_t erase(const key_type& key) {
     if (find(key) == end()) return 0;
     root_ = RemoveRecursive(root_, key);
     return 1;
@@ -117,13 +133,13 @@ class map {
 
   // Removes the current entry and points to the next one
   iterator erase(iterator iter) {
-    key_type delKey = iter->first;
+    key_type del_key = iter->first;
     iter++;
-    root_ = RemoveRecursive(root_, delKey);
+    root_ = RemoveRecursive(root_, del_key);
     return iter;
   }
 
-  pair<iterator, bool> insert(value_type&& pair) {
+  Pair<iterator, bool> insert(value_type&& pair) {
     iterator ret = find(pair.first);
     bool insertion = false;
     if (ret == end()) {
@@ -131,12 +147,26 @@ class map {
       ret = find(pair.first);
       insertion = true;
     }
-    return make_pair<iterator, bool>(std::move(ret), std::move(insertion));
+    return MakePair<iterator, bool>(std::move(ret), std::move(insertion));
   }
 
-  pair<iterator, bool> emplace(key_type&& k, mapped_type&& v) {
-    return insert(grpc_core::make_pair<key_type, mapped_type>(std::move(k),
-                                                              std::move(v)));
+  Pair<iterator, bool> insert(const value_type& pair) {
+    iterator ret = find(pair.first);
+    bool insertion = false;
+    if (ret == end()) {
+      root_ = InsertRecursive(root_, pair);
+      ret = find(pair.first);
+      insertion = true;
+    }
+    return MakePair<iterator, bool>(std::move(ret), std::move(insertion));
+  }
+
+  Pair<iterator, bool> emplace(key_type&& k, mapped_type&& v) {
+    return insert(MakePair<key_type, mapped_type>(std::move(k), std::move(v)));
+  }
+
+  Pair<iterator, bool> emplace(const key_type& k, const mapped_type& v) {
+    return insert(MakePair<key_type, mapped_type>(k, v));
   }
 
   bool empty() { return root_ == nullptr; }
@@ -156,56 +186,42 @@ class map {
   iterator end() { return iterator(this, nullptr); }
 
  private:
-  class Entry {
+  struct Entry {
    public:
-    Entry(value_type pair)
-        : pair_(std::move(pair)), left_(nullptr), right_(nullptr), height_(1) {}
-
-    value_type& pair() { return pair_; }
-    Entry* left() { return left_; }
-    Entry* right() { return right_; }
-    long height() { return height_; }
-    void set_pair(value_type pair) { pair_ = std::move(pair); }
-    void set_left(Entry* left) { left_ = left; }
-    void set_right(Entry* right) { right_ = right; }
-    void set_height(long height) { height_ = height; }
-
-   private:
-    value_type pair_;
-    Entry* left_;
-    Entry* right_;
-    long height_;
+    explicit Entry(value_type pair) : pair(std::move(pair)) {}
+    value_type pair;
+    Entry* left = nullptr;
+    Entry* right = nullptr;
+    long height = 1;
 
     friend class iterator;
-    friend class MapTester<Key, T, Compare>;
+    friend class testing::MapTester<Key, T, Compare>;
   };
 
-  Entry* root() { return root_; }
-
-  long EntryHeight(Entry* e) { return e == nullptr ? 0 : e->height(); }
+  long EntryHeight(Entry* e) { return e == nullptr ? 0 : e->height; }
 
   Entry* GetMinEntry(Entry* e) {
     if (e != nullptr) {
-      while (e->left() != nullptr) {
-        e = e->left();
+      while (e->left != nullptr) {
+        e = e->left;
       }
     }
     return e;
   }
 
   Entry* InOrderSuccessor(Entry* e) {
-    if (e->right() != nullptr) {
-      return GetMinEntry(e->right());
+    if (e->right != nullptr) {
+      return GetMinEntry(e->right);
     }
     Entry* successor = nullptr;
-    Entry* iter = root();
+    Entry* iter = root_;
     while (iter != nullptr) {
-      int comp = CompareKeys(iter->pair().first, e->pair().first);
+      int comp = CompareKeys(iter->pair.first, e->pair.first);
       if (comp > 0) {
         successor = iter;
-        iter = iter->left();
+        iter = iter->left;
       } else if (comp < 0) {
-        iter = iter->right();
+        iter = iter->right;
       } else
         break;
     }
@@ -213,71 +229,65 @@ class map {
   }
 
   Entry* RotateLeft(Entry* e) {
-    Entry* rightChild = e->right();
-    Entry* rightLeftChild = rightChild->left();
-    rightChild->set_left(e);
-    e->set_right(rightLeftChild);
-    e->set_height(1 + GPR_MAX(EntryHeight(e->left()), EntryHeight(e->right())));
-    rightChild->set_height(1 + GPR_MAX(EntryHeight(rightChild->left()),
-                                       EntryHeight(rightChild->right())));
+    Entry* rightChild = e->right;
+    Entry* rightLeftChild = rightChild->left;
+    rightChild->left = e;
+    e->right = rightLeftChild;
+    e->height = 1 + GPR_MAX(EntryHeight(e->left), EntryHeight(e->right));
+    rightChild->height = 1 + GPR_MAX(EntryHeight(rightChild->left),
+                                     EntryHeight(rightChild->right));
     return rightChild;
   }
 
   Entry* RotateRight(Entry* e) {
-    Entry* leftChild = e->left();
-    Entry* leftRightChild = leftChild->right();
-    leftChild->set_right(e);
-    e->set_left(leftRightChild);
-    e->set_height(1 + GPR_MAX(EntryHeight(e->left()), EntryHeight(e->right())));
-    leftChild->set_height(1 + GPR_MAX(EntryHeight(leftChild->left()),
-                                      EntryHeight(leftChild->right())));
+    Entry* leftChild = e->left;
+    Entry* leftRightChild = leftChild->right;
+    leftChild->right = e;
+    e->left = leftRightChild;
+    e->height = 1 + GPR_MAX(EntryHeight(e->left), EntryHeight(e->right));
+    leftChild->height = 1 + GPR_MAX(EntryHeight(leftChild->left),
+                                    EntryHeight(leftChild->right));
     return leftChild;
   }
 
   Entry* RebalanceTreeAfterInsertion(Entry* root, key_type k) {
-    root->set_height(
-        1 + GPR_MAX(EntryHeight(root->left()), EntryHeight(root->right())));
-    int heightDifference =
-        EntryHeight(root->left()) - EntryHeight(root->right());
-    if (heightDifference > 1 &&
-        CompareKeys(root->left()->pair().first, k) > 0) {
+    root->height =
+        1 + GPR_MAX(EntryHeight(root->left), EntryHeight(root->right));
+    long heightDifference = EntryHeight(root->left) - EntryHeight(root->right);
+    if (heightDifference > 1 && CompareKeys(root->left->pair.first, k) > 0) {
       return RotateRight(root);
     }
-    if (heightDifference < -1 &&
-        CompareKeys(root->right()->pair().first, k) < 0) {
+    if (heightDifference < -1 && CompareKeys(root->right->pair.first, k) < 0) {
       return RotateLeft(root);
     }
-    if (heightDifference > 1 &&
-        CompareKeys(root->left()->pair().first, k) < 0) {
-      root->set_left(RotateLeft(root->left()));
+    if (heightDifference > 1 && CompareKeys(root->left->pair.first, k) < 0) {
+      root->left = RotateLeft(root->left);
       return RotateRight(root);
     }
-    if (heightDifference < -1 &&
-        CompareKeys(root->left()->pair().first, k) > 0) {
-      root->set_right(RotateRight(root->right()));
+    if (heightDifference < -1 && CompareKeys(root->left->pair.first, k) > 0) {
+      root->right = RotateRight(root->right);
       return RotateLeft(root);
     }
     return root;
   }
 
   Entry* RebalanceTreeAfterDeletion(Entry* root) {
-    root->set_height(
-        1 + GPR_MAX(EntryHeight(root->left()), EntryHeight(root->right())));
-    int heightDifference =
-        EntryHeight(root->left()) - EntryHeight(root->right());
+    root->height =
+        1 + GPR_MAX(EntryHeight(root->left), EntryHeight(root->right));
+    long heightDifference = EntryHeight(root->left) - EntryHeight(root->right);
     if (heightDifference > 1) {
-      int leftHeightDifference = EntryHeight(root->left()->left()) -
-                                 EntryHeight(root->left()->right());
+      int leftHeightDifference =
+          EntryHeight(root->left->left) - EntryHeight(root->left->right);
       if (leftHeightDifference < 0) {
-        root->set_left(RotateLeft(root->left()));
+        root->left = RotateLeft(root->left);
       }
       return RotateRight(root);
     }
     if (heightDifference < -1) {
-      int rightHeightDifference = EntryHeight(root->right()->left()) -
-                                  EntryHeight(root->right()->right());
+      int rightHeightDifference =
+          EntryHeight(root->right->left) - EntryHeight(root->right->right);
       if (rightHeightDifference > 0) {
-        root->set_right(RotateRight(root->right()));
+        root->right = RotateRight(root->right);
       }
       return RotateLeft(root);
     }
@@ -288,13 +298,13 @@ class map {
     if (root == nullptr) {
       return New<Entry>(std::move(p));
     }
-    int comp = CompareKeys(root->pair().first, p.first);
+    int comp = CompareKeys(root->pair.first, p.first);
     if (comp > 0) {
-      root->set_left(InsertRecursive(root->left(), std::move(p)));
+      root->left = InsertRecursive(root->left, std::move(p));
     } else if (comp < 0) {
-      root->set_right(InsertRecursive(root->right(), std::move(p)));
+      root->right = InsertRecursive(root->right, std::move(p));
     } else {
-      root->set_pair(std::move(p));
+      root->pair = std::move(p);
       return root;
     }
     return RebalanceTreeAfterInsertion(root, p.first);
@@ -302,28 +312,28 @@ class map {
 
   Entry* RemoveRecursive(Entry* root, key_type k) {
     if (root == nullptr) return root;
-    int comp = CompareKeys(root->pair().first, k);
+    int comp = CompareKeys(root->pair.first, k);
     if (comp > 0) {
-      root->set_left(RemoveRecursive(root->left(), k));
+      root->left = RemoveRecursive(root->left, k);
     } else if (comp < 0) {
-      root->set_right(RemoveRecursive(root->right(), k));
+      root->right = RemoveRecursive(root->right, k);
     } else {
       Entry* ret;
-      if (root->left() == nullptr) {
-        ret = root->right();
+      if (root->left == nullptr) {
+        ret = root->right;
         grpc_core::Delete(root);
         return ret;
-      } else if (root->right() == nullptr) {
-        ret = root->left();
+      } else if (root->right == nullptr) {
+        ret = root->left;
         grpc_core::Delete(root);
         return ret;
       } else {
-        ret = root->right();
-        while (ret->left() != nullptr) {
-          ret = ret->left();
+        ret = root->right;
+        while (ret->left != nullptr) {
+          ret = ret->left;
         }
-        root->pair().swap(ret->pair());
-        root->set_right(RemoveRecursive(root->right(), ret->pair().first));
+        root->pair.swap(ret->pair);
+        root->right = RemoveRecursive(root->right, ret->pair.first);
       }
     }
     return RebalanceTreeAfterDeletion(root);
@@ -334,17 +344,18 @@ class map {
    *       -1 if lhs < rhs
    */
   int CompareKeys(Key lhs, Key rhs) {
+    key_compare compare;
+    bool left_comparison = compare(lhs, rhs);
+    bool right_comparison = compare(rhs, lhs);
     // Both values are equal
-    if (!key_compare_(lhs, rhs) && !key_compare_(rhs, lhs)) {
+    if (!left_comparison && !right_comparison) {
       return 0;
     }
-    return key_compare_(lhs, rhs) ? -1 : 1;
+    return left_comparison ? -1 : 1;
   }
 
-  key_compare key_compare_;
   Entry* root_ = nullptr;
-
-  friend class MapTester<Key, T, Compare>;
+  friend class testing::MapTester<Key, T, Compare>;
 };
 }  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_GPRPP_MAP_H */
