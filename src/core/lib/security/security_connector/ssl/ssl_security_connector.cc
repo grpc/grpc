@@ -319,6 +319,11 @@ grpc_ssl_channel_security_connector_create(
     gpr_log(GPR_ERROR, "An ssl channel needs a config and a target name.");
     return nullptr;
   }
+  if (config->pem_root_certs == nullptr &&
+      grpc_core::DefaultSslRootStore::GetPemRootCerts() == nullptr) {
+    gpr_log(GPR_ERROR, "Could not get pem root certs.");
+    return nullptr;
+  }
   grpc_core::RefCountedPtr<grpc_ssl_channel_security_connector> c =
       grpc_core::MakeRefCounted<grpc_ssl_channel_security_connector>(
           std::move(channel_creds), std::move(request_metadata_creds), config,
