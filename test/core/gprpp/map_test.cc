@@ -208,9 +208,11 @@ TEST(MapTest, MapRL) {
 
 //// Test correction after random insertion
 // TEST(MapTest, MapRandomInsertions) {
-//  grpc_core::Map<const char*, RefCountedPtr<ReffedPayload>, StringLess>
+//  grpc_core::Map<const char*, RefCountedPtr<ReffedPayload>,
+//  CaseInsensitiveStringLess>
 //      test_map;
-//  MapTester<const char*, RefCountedPtr<ReffedPayload>, StringLess> mapt(
+//  MapTester<const char*, RefCountedPtr<ReffedPayload>,
+//  CaseInsensitiveStringLess> mapt(
 //      &test_map);
 //  test_map.emplace(std::move("efg"), MakeRefCounted<ReffedPayload>(2));
 //  test_map.emplace(std::move("xyz"), MakeRefCounted<ReffedPayload>(5));

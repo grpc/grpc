@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string.h>
 #include <functional>
 #include <iterator>
 #include <utility>
@@ -51,7 +52,7 @@ class MapTester;
 // Alternative map implementation for grpc_core
 
 // TODO(mhaidry) : Experiment with using std::less
-template <class Key, class T, class Compare = Less<Key>>
+template <class Key, class T, class Compare = std::less<Key>>
 class Map {
   struct Entry;
 
