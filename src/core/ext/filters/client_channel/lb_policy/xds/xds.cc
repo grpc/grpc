@@ -334,7 +334,9 @@ class XdsLb : public LoadBalancingPolicy {
                                         : lb_chand_.get();
   }
 
-  // Callback to enter fallback mode.
+  // Methods for dealing with fallback state.
+  void MaybeExitFallbackMode();
+  void MaybeEnterFallbackModeAfterStartup();
   static void OnFallbackTimerLocked(void* arg, grpc_error* error);
 
   // Methods for dealing with the child policy.
@@ -370,13 +372,22 @@ class XdsLb : public LoadBalancingPolicy {
   // such response has arrived.
   xds_grpclb_serverlist* serverlist_ = nullptr;
 
+  // Whether we're in fallback mode.
+  bool fallback_mode_ = false;
+  // Whether the checks for fallback at startup are all pending. There are
+  // several cases where this can be reset:
+  // 1. The fallback timer fires, we enter fallback mode.
+  // 2. Before the fallback timer fires, the child policy becomes READY, we use
+  // the child policy.
+  // 3. Before the fallback timer fires, the LB channel becomes
+  // TRANSIENT_FAILURE or the LB call fails, we enter fallback mode.
+  bool fallback_at_startup_checks_pending_ = false;
   // Timeout in milliseconds for before using fallback backend addresses.
   // 0 means not using fallback.
   int lb_fallback_timeout_ms_ = 0;
   // The backend addresses from the resolver.
   UniquePtr<ServerAddressList> fallback_backend_addresses_;
   // Fallback timer.
-  bool fallback_timer_callback_pending_ = false;
   grpc_timer lb_fallback_timer_;
   grpc_closure lb_on_fallback_;
 
@@ -392,6 +403,8 @@ class XdsLb : public LoadBalancingPolicy {
   // Lock held when modifying the value of child_policy_ or
   // pending_child_policy_.
   gpr_mu child_policy_mu_;
+  // Child policy in state READY.
+  bool child_policy_ready_ = false;
 };
 
 //
@@ -472,6 +485,11 @@ void XdsLb::Helper::UpdateState(grpc_connectivity_state state,
     GRPC_ERROR_UNREF(state_error);
     return;
   }
+  // Record whether child policy reports READY.
+  parent_->child_policy_ready_ = state == GRPC_CHANNEL_READY;
+  // Enter or exit fallback mode if needed.
+  parent_->MaybeExitFallbackMode();
+  parent_->MaybeEnterFallbackModeAfterStartup();
   GPR_ASSERT(parent_->lb_chand_ != nullptr);
   RefCountedPtr<XdsLbClientStats> client_stats =
       parent_->lb_chand_->lb_calld() == nullptr
@@ -789,7 +807,7 @@ void XdsLb::BalancerChannelState::OnConnectivityChangedLocked(
     void* arg, grpc_error* error) {
   BalancerChannelState* self = static_cast<BalancerChannelState*>(arg);
   if (!self->shutting_down_ &&
-      self->xdslb_policy_->fallback_timer_callback_pending_) {
+      self->xdslb_policy_->fallback_at_startup_checks_pending_) {
     if (self->connectivity_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
       // Not in TRANSIENT_FAILURE.  Renew connectivity watch.
       grpc_channel_element* client_channel_elem =
@@ -806,10 +824,12 @@ void XdsLb::BalancerChannelState::OnConnectivityChangedLocked(
     // In TRANSIENT_FAILURE.  Cancel the fallback timer and go into
     // fallback mode immediately.
     gpr_log(GPR_INFO,
-            "[xdslb %p] balancer channel in state TRANSIENT_FAILURE; "
+            "[xdslb %p] Balancer channel in state TRANSIENT_FAILURE; "
             "entering fallback mode",
             self);
+    self->xdslb_policy_->fallback_at_startup_checks_pending_ = false;
     grpc_timer_cancel(&self->xdslb_policy_->lb_fallback_timer_);
+    self->xdslb_policy_->fallback_mode_ = true;
     self->xdslb_policy_->CreateOrUpdateChildPolicyLocked();
   }
   // Done watching connectivity state, so drop ref.
@@ -1122,11 +1142,7 @@ void XdsLb::BalancerChannelState::BalancerCallState::
     if (lb_calld->client_stats_report_interval_ > 0 &&
         lb_calld->client_stats_ == nullptr) {
       lb_calld->client_stats_ = MakeRefCounted<XdsLbClientStats>();
-      // TODO(roth): We currently track this ref manually.  Once the
-      // ClosureRef API is ready, we should pass the RefCountedPtr<> along
-      // with the callback.
-      auto self = lb_calld->Ref(DEBUG_LOCATION, "client_load_report");
-      self.release();
+      lb_calld->Ref(DEBUG_LOCATION, "client_load_report").release();
       lb_calld->ScheduleNextClientLoadReportLocked();
     }
     if (xds_grpclb_serverlist_equals(xdslb_policy->serverlist_, serverlist)) {
@@ -1138,28 +1154,12 @@ void XdsLb::BalancerChannelState::BalancerCallState::
       }
       xds_grpclb_destroy_serverlist(serverlist);
     } else {  // New serverlist.
-      if (xdslb_policy->serverlist_ == nullptr) {
-        // Dispose of the fallback.
-        if (xdslb_policy->fallback_policy_ != nullptr) {
-          gpr_log(GPR_INFO,
-                  "[xdslb %p] Received response from balancer; exiting "
-                  "fallback mode",
-                  xdslb_policy);
-          // FIXME: wait until ready
-          xdslb_policy->fallback_policy_.reset();
-          xdslb_policy->pending_fallback_policy_.reset();
-        }
-        xdslb_policy->fallback_backend_addresses_.reset();
-        if (xdslb_policy->fallback_timer_callback_pending_) {
-          grpc_timer_cancel(&xdslb_policy->lb_fallback_timer_);
-        }
-      } else {
-        // Dispose of the old serverlist.
-        xds_grpclb_destroy_serverlist(xdslb_policy->serverlist_);
-      }
       // Update the serverlist in the XdsLb instance. This serverlist
       // instance will be destroyed either upon the next update or when the
       // XdsLb instance is destroyed.
+      if (xdslb_policy->serverlist_ != nullptr) {
+        xds_grpclb_destroy_serverlist(xdslb_policy->serverlist_);
+      }
       xdslb_policy->serverlist_ = serverlist;
       xdslb_policy->CreateOrUpdateChildPolicyLocked();
     }
@@ -1238,6 +1238,19 @@ void XdsLb::BalancerChannelState::BalancerCallState::
         lb_chand->StartCallRetryTimerLocked();
       }
       xdslb_policy->channel_control_helper()->RequestReresolution();
+      // If the fallback-at-startup checks are pending, go into fallback mode
+      // immediately.  This short-circuits the timeout for the
+      // fallback-at-startup case.
+      if (xdslb_policy->fallback_at_startup_checks_pending_) {
+        gpr_log(GPR_INFO,
+                "[xdslb %p] Balancer call finished; entering fallback mode",
+                xdslb_policy);
+        xdslb_policy->fallback_at_startup_checks_pending_ = false;
+        grpc_timer_cancel(&xdslb_policy->lb_fallback_timer_);
+        lb_chand->CancelConnectivityWatchLocked();
+        xdslb_policy->fallback_mode_ = true;
+        xdslb_policy->CreateOrUpdateChildPolicyLocked();
+      }
     }
   }
   lb_calld->Unref(DEBUG_LOCATION, "lb_call_ended");
@@ -1332,7 +1345,7 @@ XdsLb::~XdsLb() {
 
 void XdsLb::ShutdownLocked() {
   shutting_down_ = true;
-  if (fallback_timer_callback_pending_) {
+  if (fallback_at_startup_checks_pending_) {
     grpc_timer_cancel(&lb_fallback_timer_);
   }
   if (child_policy_ != nullptr) {
@@ -1360,8 +1373,8 @@ void XdsLb::ShutdownLocked() {
   }
   // We destroy the LB channel here instead of in our destructor because
   // destroying the channel triggers a last callback to
-  // OnBalancerChannelConnectivityChangedLocked(), and we need to be
-  // alive when that callback is invoked.
+  // OnConnectivityChangedLocked(), and we need to be alive when that callback
+  // is invoked.
   {
     MutexLock lock(&lb_chand_mu_);
     lb_chand_.reset();
@@ -1524,21 +1537,18 @@ void XdsLb::UpdateLocked(const grpc_channel_args& args,
   ProcessChannelArgsLocked(args);
   // Apply the fallback update if we are in fallback mode.
   if (fallback_policy_ != nullptr) CreateOrUpdateChildPolicyLocked();
-  // If this is the initial update, start the fallback timer.
+  // If this is the initial update, start the fallback-at-startup checks.
   if (is_initial_update) {
-    if (lb_fallback_timeout_ms_ > 0 && serverlist_ == nullptr &&
-        !fallback_timer_callback_pending_) {
-      grpc_millis deadline = ExecCtx::Get()->Now() + lb_fallback_timeout_ms_;
-      Ref(DEBUG_LOCATION, "on_fallback_timer").release();  // Held by closure
-      GRPC_CLOSURE_INIT(&lb_on_fallback_, &XdsLb::OnFallbackTimerLocked, this,
-                        grpc_combiner_scheduler(combiner()));
-      fallback_timer_callback_pending_ = true;
-      grpc_timer_init(&lb_fallback_timer_, deadline, &lb_on_fallback_);
-      // Start watching the channel's connectivity state.  If the channel
-      // goes into state TRANSIENT_FAILURE, we go into fallback mode even if
-      // the fallback timeout has not elapsed.
-      lb_chand_->StartConnectivityWatchLocked();
-    }
+    grpc_millis deadline = ExecCtx::Get()->Now() + lb_fallback_timeout_ms_;
+    Ref(DEBUG_LOCATION, "on_fallback_timer").release();  // Held by closure
+    GRPC_CLOSURE_INIT(&lb_on_fallback_, &XdsLb::OnFallbackTimerLocked, this,
+                      grpc_combiner_scheduler(combiner()));
+    fallback_at_startup_checks_pending_ = true;
+    grpc_timer_init(&lb_fallback_timer_, deadline, &lb_on_fallback_);
+    // Start watching the channel's connectivity state.  If the channel
+    // goes into state TRANSIENT_FAILURE, we go into fallback mode even if
+    // the fallback timeout has not elapsed.
+    lb_chand_->StartConnectivityWatchLocked();
   }
 }
 
@@ -1546,20 +1556,60 @@ void XdsLb::UpdateLocked(const grpc_channel_args& args,
 // code for balancer channel and call
 //
 
+void XdsLb::MaybeExitFallbackMode() {
+  // Exit fallback mode if the child policy is READY.
+  if (child_policy_ready_) {
+    if (fallback_mode_) {
+      gpr_log(GPR_INFO,
+              "[xdslb %p] Child policy becomes ready; exiting fallback mode",
+              this);
+      fallback_policy_.reset();
+      pending_fallback_policy_.reset();
+      fallback_mode_ = false;
+    }
+    if (fallback_at_startup_checks_pending_) {
+      gpr_log(GPR_INFO,
+              "[xdslb %p] Child policy becomes ready; cancelling fallback "
+              "timer and LB channel connectivity watch",
+              this);
+      grpc_timer_cancel(&lb_fallback_timer_);
+      lb_chand_->CancelConnectivityWatchLocked();
+    }
+  }
+}
+
+void XdsLb::MaybeEnterFallbackModeAfterStartup() {
+  // Enter fallback mode if all of the following are true:
+  // - We are not currently waiting for the checks for fallback-at-startup.
+  // - We are not currently in fallback mode.
+  // (The above two conditions together imply that the child policy was READY
+  // before.)
+  // - The child policy is not READY.
+  if (!fallback_at_startup_checks_pending_ && !fallback_mode_ &&
+      !child_policy_ready_) {
+    gpr_log(GPR_INFO,
+            "[xdslb %p] Child policy is not ready; entering fallback mode",
+            this);
+    fallback_mode_ = true;
+    CreateOrUpdateChildPolicyLocked();
+  }
+}
+
 void XdsLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
   XdsLb* xdslb_policy = static_cast<XdsLb*>(arg);
-  xdslb_policy->fallback_timer_callback_pending_ = false;
-  // If we receive a serverlist after the timer fires but before this callback
-  // actually runs, don't fall back.
-  if (xdslb_policy->serverlist_ == nullptr && !xdslb_policy->shutting_down_ &&
+  xdslb_policy->fallback_at_startup_checks_pending_ = false;
+  // If the child policy becomes READY after the timer fires but before this
+  // callback actually runs, don't fall back.
+  if (!xdslb_policy->child_policy_ready_ && !xdslb_policy->shutting_down_ &&
       error == GRPC_ERROR_NONE) {
     if (grpc_lb_xds_trace.enabled()) {
       gpr_log(GPR_INFO,
-              "[xdslb %p] No response from balancer after fallback timeout; "
+              "[xdslb %p] Child policy not ready after fallback timeout; "
               "entering fallback mode",
               xdslb_policy);
     }
     GPR_ASSERT(xdslb_policy->fallback_backend_addresses_ != nullptr);
+    xdslb_policy->fallback_mode_ = true;
     xdslb_policy->CreateOrUpdateChildPolicyLocked();
     // Cancel connectivity watch, since we no longer need it.
     xdslb_policy->lb_chand_->CancelConnectivityWatchLocked();
