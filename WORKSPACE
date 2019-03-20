@@ -78,13 +78,3 @@ rbe_autoconfig(
     ),
 )
 
-rbe_autoconfig(
-    name = "rbe_ubsan",
-    env = dicts.add(
-        clang_env(),
-        {
-            "BAZEL_COMPILER": "clang++",
-            "CC": "clang++",
-        },
-    ),
-)
