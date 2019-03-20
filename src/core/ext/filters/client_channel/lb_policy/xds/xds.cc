@@ -340,10 +340,10 @@ class XdsLb : public LoadBalancingPolicy {
   static void OnFallbackTimerLocked(void* arg, grpc_error* error);
 
   // Methods for dealing with the child policy.
-  void CreateOrUpdateChildPolicyLocked();
-  grpc_channel_args* CreateChildPolicyArgsLocked();
+  void CreateOrUpdateChildPolicyLocked(bool fallback = false);
+  grpc_channel_args* CreateChildPolicyArgsLocked(bool fallback = false);
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
-      const char* name, const grpc_channel_args* args);
+      const char* name, const grpc_channel_args* args, bool fallback = false);
 
   // Who the client is trying to communicate with.
   const char* server_name_ = nullptr;
@@ -372,8 +372,6 @@ class XdsLb : public LoadBalancingPolicy {
   // such response has arrived.
   xds_grpclb_serverlist* serverlist_ = nullptr;
 
-  // Whether we're in fallback mode.
-  bool fallback_mode_ = false;
   // Whether the checks for fallback at startup are all pending. There are
   // several cases where this can be reset:
   // 1. The fallback timer fires, we enter fallback mode.
@@ -393,6 +391,7 @@ class XdsLb : public LoadBalancingPolicy {
 
   // The policy to use for the fallback backends.
   RefCountedPtr<Config> fallback_policy_config_;
+  // Non-null iff we are in fallback mode.
   OrphanablePtr<LoadBalancingPolicy> fallback_policy_;
   OrphanablePtr<LoadBalancingPolicy> pending_fallback_policy_;
 
@@ -829,8 +828,7 @@ void XdsLb::BalancerChannelState::OnConnectivityChangedLocked(
             self);
     self->xdslb_policy_->fallback_at_startup_checks_pending_ = false;
     grpc_timer_cancel(&self->xdslb_policy_->lb_fallback_timer_);
-    self->xdslb_policy_->fallback_mode_ = true;
-    self->xdslb_policy_->CreateOrUpdateChildPolicyLocked();
+    self->xdslb_policy_->CreateOrUpdateChildPolicyLocked(/*fallback=*/true);
   }
   // Done watching connectivity state, so drop ref.
   self->Unref(DEBUG_LOCATION, "watch_lb_channel_connectivity");
@@ -1248,8 +1246,7 @@ void XdsLb::BalancerChannelState::BalancerCallState::
         xdslb_policy->fallback_at_startup_checks_pending_ = false;
         grpc_timer_cancel(&xdslb_policy->lb_fallback_timer_);
         lb_chand->CancelConnectivityWatchLocked();
-        xdslb_policy->fallback_mode_ = true;
-        xdslb_policy->CreateOrUpdateChildPolicyLocked();
+        xdslb_policy->CreateOrUpdateChildPolicyLocked(/*fallback=*/true);
       }
     }
   }
@@ -1536,7 +1533,8 @@ void XdsLb::UpdateLocked(const grpc_channel_args& args,
   }
   ProcessChannelArgsLocked(args);
   // Apply the fallback update if we are in fallback mode.
-  if (fallback_policy_ != nullptr) CreateOrUpdateChildPolicyLocked();
+  if (fallback_policy_ != nullptr)
+    CreateOrUpdateChildPolicyLocked(/*fallback=*/true);
   // If this is the initial update, start the fallback-at-startup checks.
   if (is_initial_update) {
     grpc_millis deadline = ExecCtx::Get()->Now() + lb_fallback_timeout_ms_;
@@ -1559,13 +1557,12 @@ void XdsLb::UpdateLocked(const grpc_channel_args& args,
 void XdsLb::MaybeExitFallbackMode() {
   // Exit fallback mode if the child policy is READY.
   if (child_policy_ready_) {
-    if (fallback_mode_) {
+    if (fallback_policy_ != nullptr) {
       gpr_log(GPR_INFO,
               "[xdslb %p] Child policy becomes ready; exiting fallback mode",
               this);
       fallback_policy_.reset();
       pending_fallback_policy_.reset();
-      fallback_mode_ = false;
     }
     if (fallback_at_startup_checks_pending_) {
       gpr_log(GPR_INFO,
@@ -1585,13 +1582,12 @@ void XdsLb::MaybeEnterFallbackModeAfterStartup() {
   // (The above two conditions together imply that the child policy was READY
   // before.)
   // - The child policy is not READY.
-  if (!fallback_at_startup_checks_pending_ && !fallback_mode_ &&
+  if (!fallback_at_startup_checks_pending_ && fallback_policy_ == nullptr &&
       !child_policy_ready_) {
     gpr_log(GPR_INFO,
             "[xdslb %p] Child policy is not ready; entering fallback mode",
             this);
-    fallback_mode_ = true;
-    CreateOrUpdateChildPolicyLocked();
+    CreateOrUpdateChildPolicyLocked(/*fallback=*/true);
   }
 }
 
@@ -1609,8 +1605,7 @@ void XdsLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
               xdslb_policy);
     }
     GPR_ASSERT(xdslb_policy->fallback_backend_addresses_ != nullptr);
-    xdslb_policy->fallback_mode_ = true;
-    xdslb_policy->CreateOrUpdateChildPolicyLocked();
+    xdslb_policy->CreateOrUpdateChildPolicyLocked(/*fallback=*/true);
     // Cancel connectivity watch, since we no longer need it.
     xdslb_policy->lb_chand_->CancelConnectivityWatchLocked();
   }
@@ -1621,19 +1616,16 @@ void XdsLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
 // code for interacting with the child policy
 //
 
-grpc_channel_args* XdsLb::CreateChildPolicyArgsLocked() {
+grpc_channel_args* XdsLb::CreateChildPolicyArgsLocked(bool fallback) {
   ServerAddressList tmp_addresses;
   ServerAddressList* addresses = &tmp_addresses;
-  if (serverlist_ != nullptr) {
-    tmp_addresses = ProcessServerlist(serverlist_);
-  } else {
-    // If CreateOrUpdateChildPolicyLocked() is invoked when we haven't
-    // received any serverlist from the balancer, we use the fallback backends
-    // returned by the resolver. Note that the fallback backend list may be
-    // empty, in which case the new round_robin policy will keep the requested
-    // picks pending.
+  if (fallback) {
+    // Note: If fallback backend address list is empty, the child policy
+    // will go into state TRANSIENT_FAILURE.
     GPR_ASSERT(fallback_backend_addresses_ != nullptr);
     addresses = fallback_backend_addresses_.get();
+  } else {
+    tmp_addresses = ProcessServerlist(serverlist_);
   }
   GPR_ASSERT(addresses != nullptr);
   // Replace the server address list in the channel args that we pass down to
@@ -1658,8 +1650,18 @@ grpc_channel_args* XdsLb::CreateChildPolicyArgsLocked() {
 }
 
 OrphanablePtr<LoadBalancingPolicy> XdsLb::CreateChildPolicyLocked(
-    const char* name, const grpc_channel_args* args) {
-  Helper* helper = New<Helper>(Ref());
+    const char* name, const grpc_channel_args* args, bool fallback) {
+  Helper* normal_helper = nullptr;
+  FallbackHelper* fallback_helper = nullptr;
+  ChannelControlHelper* helper = nullptr;
+  if (fallback) {
+    fallback_helper = New<FallbackHelper>(Ref());
+    helper = fallback_helper;
+  } else {
+    normal_helper = New<Helper>(Ref());
+    helper = normal_helper;
+  }
+  GPR_ASSERT(helper != nullptr);
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = combiner();
   lb_policy_args.args = args;
@@ -1673,7 +1675,11 @@ OrphanablePtr<LoadBalancingPolicy> XdsLb::CreateChildPolicyLocked(
             name);
     return nullptr;
   }
-  helper->set_child(lb_policy.get());
+  if (fallback) {
+    fallback_helper->set_child(lb_policy.get());
+  } else {
+    normal_helper->set_child(lb_policy.get());
+  }
   if (grpc_lb_xds_trace.enabled()) {
     gpr_log(GPR_INFO, "[xdslb %p] Created new child policy %s (%p)", this, name,
             lb_policy.get());
@@ -1686,9 +1692,9 @@ OrphanablePtr<LoadBalancingPolicy> XdsLb::CreateChildPolicyLocked(
   return lb_policy;
 }
 
-void XdsLb::CreateOrUpdateChildPolicyLocked() {
+void XdsLb::CreateOrUpdateChildPolicyLocked(bool fallback) {
   if (shutting_down_) return;
-  grpc_channel_args* args = CreateChildPolicyArgsLocked();
+  grpc_channel_args* args = CreateChildPolicyArgsLocked(fallback);
   GPR_ASSERT(args != nullptr);
   // If the child policy name changes, we need to create a new child
   // policy.  When this happens, we leave child_policy_ as-is and store
@@ -1739,7 +1745,6 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
   //       that was there before, which will be immediately shut down)
   //       and will later be swapped into child_policy_ by the helper
   //       when the new child transitions into state READY.
-  const bool fallback = serverlist_ == nullptr;
   RefCountedPtr<Config>& child_policy_config =
       fallback ? fallback_policy_config_ : child_policy_config_;
   OrphanablePtr<LoadBalancingPolicy>& child_policy =
@@ -1766,11 +1771,12 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
     // If child_policy_ is null, we set it (case 1), else we set
     // pending_child_policy_ (cases 2b and 3b).
     if (grpc_lb_xds_trace.enabled()) {
-      gpr_log(GPR_INFO, "[xdslb %p] Creating new %s %s policy %s", this,
+      gpr_log(GPR_INFO, "[xdslb %p] Creating new %s%s policy %s", this,
               child_policy == nullptr ? "" : "pending ",
               fallback ? "fallback" : "child", child_policy_name);
     }
-    auto new_policy = CreateChildPolicyLocked(child_policy_name, args);
+    auto new_policy =
+        CreateChildPolicyLocked(child_policy_name, args, fallback);
     auto& lb_policy =
         child_policy == nullptr ? child_policy : pending_child_policy;
     {
