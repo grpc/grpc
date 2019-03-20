@@ -23,27 +23,31 @@
 
 namespace grpc_core {
 // Alternative to std::pair for grpc_core
-template <class Key, class T>
-struct pair {
+template <class T1, class T2>
+struct Pair {
  public:
-  pair(Key k, T v) : first(std::move(k)), second(std::move(v)) {}
-  void swap(pair& other) {
-    Key temp_first = std::move(first);
-    T temp_second = std::move(second);
+  Pair(T1&& u, T2&& v) : first(std::move(u)), second(std::move(v)) {}
+  Pair(const T1& u, const T2& v) : first(u), second(v) {}
+  void swap(Pair& other) {
+    T1 temp_first = std::move(first);
+    T2 temp_second = std::move(second);
     first = std::move(other.first);
     second = std::move(other.second);
     other.first = std::move(temp_first);
     other.second = std::move(temp_second);
   }
-  Key first;
-  T second;
-
- private:
+  T1 first;
+  T2 second;
 };
 
-template <class Key, class T>
-pair<Key, T> make_pair(Key&& k, T&& v) {
-  return std::move(pair<Key, T>(std::move(k), std::move(v)));
+template <class T1, class T2>
+Pair<T1, T2> MakePair(T1&& u, T2&& v) {
+  return Pair<T1, T2>(std::move(u), std::move(v));
+}
+
+template <class T1, class T2>
+Pair<T1, T2> MakePair(const T1& u, const T2& v) {
+  return Pair<T1, T2>(u, v);
 }
 }  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_GPRPP_PAIR_H */

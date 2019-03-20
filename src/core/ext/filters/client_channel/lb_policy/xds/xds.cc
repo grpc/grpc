@@ -282,6 +282,7 @@ class XdsLb : public LoadBalancingPolicy {
           : parent_(std::move(parent)) {
         gpr_mu_init(&child_policy_mu_);
       }
+      ~LocalityEntry() { gpr_mu_destroy(&child_policy_mu_); }
 
       void UpdateLocked(xds_grpclb_serverlist* serverlist,
                         LoadBalancingPolicy::Config* child_policy_config,
@@ -327,7 +328,7 @@ class XdsLb : public LoadBalancingPolicy {
       RefCountedPtr<XdsLb> parent_;
     };
 
-    LocalityMap() : map_() { gpr_mu_init(&child_refs_mu_); }
+    LocalityMap() { gpr_mu_init(&child_refs_mu_); }
     ~LocalityMap() { gpr_mu_destroy(&child_refs_mu_); }
 
     void UpdateLocked(const LocalityList& locality_list,
@@ -339,14 +340,9 @@ class XdsLb : public LoadBalancingPolicy {
                                   channelz::ChildRefsList* child_channels);
 
    private:
-    struct StringComparator {
-      bool operator()(const char* a, const char* b) const {
-        return gpr_stricmp(a, b) < 0;
-      }
-    };
     void PruneLocalities(const LocalityList& locality_list);
 
-    map<const char*, OrphanablePtr<LocalityEntry>, StringComparator> map_;
+    Map<const char*, OrphanablePtr<LocalityEntry>, StringLess> map_;
     // Lock held while filling child refs for all localities
     // inside the map
     gpr_mu child_refs_mu_;
@@ -1336,12 +1332,14 @@ void XdsLb::LocalityMap::UpdateLocked(
   for (size_t i = 0; i < locality_serverlist.size(); i++) {
     auto iter = map_.find(locality_serverlist[i]->locality_name);
     if (iter == map_.end()) {
-      OrphanablePtr<LocalityEntry> newEntry =
+      OrphanablePtr<LocalityEntry> new_entry =
           MakeOrphanable<LocalityEntry>(parent->Ref());
       MutexLock lock(&child_refs_mu_);
-      iter = map_.emplace(locality_serverlist[i]->locality_name,
-                          std::move(newEntry))
-                 .first;
+      iter =
+          map_.emplace(
+                  std::move(gpr_strdup(locality_serverlist[i]->locality_name)),
+                  std::move(new_entry))
+              .first;
     }
     // Don't create new child policies if not directed to
     xds_grpclb_serverlist* serverlist =
@@ -1578,7 +1576,6 @@ void XdsLb::LocalityMap::LocalityEntry::FillChildRefsForChannelz(
 
 void XdsLb::LocalityMap::LocalityEntry::Orphan() {
   ShutdownLocked();
-  gpr_mu_destroy(&child_policy_mu_);
   Unref();
 }
 
