@@ -161,7 +161,7 @@ void SpiffeChannelSecurityConnector::check_peer(
   const grpc_tls_server_authorization_check_config* config =
       creds->options().server_authorization_check_config();
   /* If server authorization config is not null, use it to perform
-   * server authorizaiton check. */
+   * server authorization check. */
   if (config != nullptr) {
     const tsi_peer_property* p =
         tsi_peer_get_property_by_name(&peer, TSI_X509_PEM_CERT_PROPERTY);
@@ -254,17 +254,17 @@ SpiffeChannelSecurityConnector::InitializeHandshakerFactory(
   const SpiffeCredentials* creds =
       static_cast<const SpiffeCredentials*>(channel_creds());
   auto key_materials_config = PopulateSpiffeCredentials(creds->options());
-  if (!key_materials_config.get()->pem_key_cert_pair_list().size()) {
-    key_materials_config.get()->Unref();
+  if (key_materials_config->pem_key_cert_pair_list().empty()) {
+    key_materials_config->Unref();
     return GRPC_SECURITY_ERROR;
   }
   tsi_ssl_pem_key_cert_pair* pem_key_cert_pair = ConvertToTsiPemKeyCertPair(
-      key_materials_config.get()->pem_key_cert_pair_list());
+      key_materials_config->pem_key_cert_pair_list());
   grpc_security_status status = grpc_ssl_tsi_client_handshaker_factory_init(
-      pem_key_cert_pair, key_materials_config.get()->pem_root_certs(),
+      pem_key_cert_pair, key_materials_config->pem_root_certs(),
       ssl_session_cache, &client_handshaker_factory_);
   // Free memory.
-  key_materials_config.get()->Unref();
+  key_materials_config->Unref();
   grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pair, 1);
   return status;
 }
@@ -401,8 +401,8 @@ SpiffeServerSecurityConnector::RefreshServerHandshakerFactory() {
   auto key_materials_config = PopulateSpiffeCredentials(creds->options());
   /* Credential reload does NOT take effect and we need to keep using
    * the existing handshaker factory. */
-  if (key_materials_config.get()->pem_key_cert_pair_list().empty()) {
-    key_materials_config.get()->Unref();
+  if (key_materials_config->pem_key_cert_pair_list().empty()) {
+    key_materials_config->Unref();
     return GRPC_SECURITY_ERROR;
   }
   /* Credential reload takes effect and we need to free the existing
@@ -411,15 +411,15 @@ SpiffeServerSecurityConnector::RefreshServerHandshakerFactory() {
     tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
   }
   tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs = ConvertToTsiPemKeyCertPair(
-      key_materials_config.get()->pem_key_cert_pair_list());
+      key_materials_config->pem_key_cert_pair_list());
   size_t num_key_cert_pairs =
-      key_materials_config.get()->pem_key_cert_pair_list().size();
+      key_materials_config->pem_key_cert_pair_list().size();
   grpc_security_status status = grpc_ssl_tsi_server_handshaker_factory_init(
       pem_key_cert_pairs, num_key_cert_pairs,
-      key_materials_config.get()->pem_root_certs(),
+      key_materials_config->pem_root_certs(),
       creds->options().cert_request_type(), &server_handshaker_factory_);
   // Free memory.
-  key_materials_config.get()->Unref();
+  key_materials_config->Unref();
   grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pairs,
                                           num_key_cert_pairs);
   return status;

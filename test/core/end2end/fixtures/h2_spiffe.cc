@@ -111,7 +111,7 @@ static void server_authz_check_cb(void* user_data) {
       static_cast<grpc_tls_server_authorization_check_arg*>(user_data);
   GPR_ASSERT(check_arg != nullptr);
   // result = 1 indicates the server authorization check passes.
-  // Normally, the applicaiton code should resort to mapping information
+  // Normally, the application code should resort to mapping information
   // between server identity and target name to derive the result.
   // For this test, we directly return 1 for simplicity.
   check_arg->success = 1;
@@ -143,7 +143,7 @@ static int client_cred_reload_sync(void* config_user_data,
       gpr_zalloc(sizeof(grpc_ssl_pem_key_cert_pair)));
   key_cert_pair[0]->private_key = gpr_strdup(test_server1_key);
   key_cert_pair[0]->cert_chain = gpr_strdup(test_server1_cert);
-  if (!arg->key_materials_config->pem_key_cert_pair_list().size()) {
+  if (arg->key_materials_config->pem_key_cert_pair_list().empty()) {
     grpc_tls_key_materials_config_set_key_materials(
         arg->key_materials_config, gpr_strdup(test_root_cert),
         (const grpc_ssl_pem_key_cert_pair**)key_cert_pair, 1);
@@ -169,7 +169,7 @@ static int server_cred_reload_sync(void* config_user_data,
   GPR_ASSERT(arg->key_materials_config != nullptr);
   GPR_ASSERT(arg->key_materials_config->pem_key_cert_pair_list().data() !=
              nullptr);
-  if (!arg->key_materials_config->pem_key_cert_pair_list().size()) {
+  if (arg->key_materials_config->pem_key_cert_pair_list().empty()) {
     grpc_tls_key_materials_config_set_key_materials(
         arg->key_materials_config, gpr_strdup(test_root_cert),
         (const grpc_ssl_pem_key_cert_pair**)key_cert_pair, 1);

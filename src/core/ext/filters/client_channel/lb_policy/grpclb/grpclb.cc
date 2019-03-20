@@ -148,6 +148,7 @@ class GrpcLb : public LoadBalancingPolicy {
     GrpcLbClientStats* client_stats() const { return client_stats_.get(); }
 
     bool seen_initial_response() const { return seen_initial_response_; }
+    bool seen_serverlist() const { return seen_serverlist_; }
 
    private:
     // So Delete() can access our private dtor.
@@ -188,6 +189,7 @@ class GrpcLb : public LoadBalancingPolicy {
     grpc_byte_buffer* recv_message_payload_ = nullptr;
     grpc_closure lb_on_balancer_message_received_;
     bool seen_initial_response_ = false;
+    bool seen_serverlist_ = false;
 
     // recv_trailing_metadata
     grpc_closure lb_on_balancer_status_received_;
@@ -252,7 +254,7 @@ class GrpcLb : public LoadBalancingPolicy {
           child_picker_(std::move(child_picker)),
           client_stats_(std::move(client_stats)) {}
 
-    PickResult Pick(PickState* pick, grpc_error** error) override;
+    PickResult Pick(PickArgs* pick, grpc_error** error) override;
 
    private:
     // Storing the address for logging, but not holding a ref.
@@ -297,10 +299,14 @@ class GrpcLb : public LoadBalancingPolicy {
   void ParseLbConfig(Config* grpclb_config);
   static void OnBalancerChannelConnectivityChangedLocked(void* arg,
                                                          grpc_error* error);
+  void CancelBalancerChannelConnectivityWatchLocked();
+
+  // Methods for dealing with fallback state.
+  void MaybeEnterFallbackModeAfterStartup();
+  static void OnFallbackTimerLocked(void* arg, grpc_error* error);
 
   // Methods for dealing with the balancer call.
   void StartBalancerCallLocked();
-  static void OnFallbackTimerLocked(void* arg, grpc_error* error);
   void StartBalancerCallRetryTimerLocked();
   static void OnBalancerCallRetryTimerLocked(void* arg, grpc_error* error);
 
@@ -325,9 +331,6 @@ class GrpcLb : public LoadBalancingPolicy {
   gpr_atm lb_channel_uuid_ = 0;
   // Response generator to inject address updates into lb_channel_.
   RefCountedPtr<FakeResolverResponseGenerator> response_generator_;
-  // Connectivity state notification.
-  grpc_connectivity_state lb_channel_connectivity_ = GRPC_CHANNEL_IDLE;
-  grpc_closure lb_channel_on_connectivity_changed_;
 
   // The data associated with the current LB call. It holds a ref to this LB
   // policy. It's initialized every time we query for backends. It's reset to
@@ -347,15 +350,19 @@ class GrpcLb : public LoadBalancingPolicy {
   // such response has arrived.
   RefCountedPtr<Serverlist> serverlist_;
 
-  // Timeout in milliseconds for before using fallback backend addresses.
-  // 0 means not using fallback.
-  int lb_fallback_timeout_ms_ = 0;
+  // Whether we're in fallback mode.
+  bool fallback_mode_ = false;
   // The backend addresses from the resolver.
-  UniquePtr<ServerAddressList> fallback_backend_addresses_;
-  // Fallback timer.
-  bool fallback_timer_callback_pending_ = false;
+  ServerAddressList fallback_backend_addresses_;
+  // State for fallback-at-startup checks.
+  // Timeout after startup after which we will go into fallback mode if
+  // we have not received a serverlist from the balancer.
+  int fallback_at_startup_timeout_ = 0;
+  bool fallback_at_startup_checks_pending_ = false;
   grpc_timer lb_fallback_timer_;
   grpc_closure lb_on_fallback_;
+  grpc_connectivity_state lb_channel_connectivity_ = GRPC_CHANNEL_IDLE;
+  grpc_closure lb_channel_on_connectivity_changed_;
 
   // Lock held when modifying the value of child_policy_ or
   // pending_child_policy_.
@@ -367,6 +374,8 @@ class GrpcLb : public LoadBalancingPolicy {
   OrphanablePtr<LoadBalancingPolicy> pending_child_policy_;
   // The child policy config.
   RefCountedPtr<Config> child_policy_config_;
+  // Child policy in state READY.
+  bool child_policy_ready_ = false;
 };
 
 //
@@ -531,8 +540,7 @@ const char* GrpcLb::Serverlist::ShouldDrop() {
 // GrpcLb::Picker
 //
 
-GrpcLb::Picker::PickResult GrpcLb::Picker::Pick(PickState* pick,
-                                                grpc_error** error) {
+GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs* pick, grpc_error** error) {
   // Check if we should drop the call.
   const char* drop_token = serverlist_->ShouldDrop();
   if (drop_token != nullptr) {
@@ -635,6 +643,10 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
     GRPC_ERROR_UNREF(state_error);
     return;
   }
+  // Record whether child policy reports READY.
+  parent_->child_policy_ready_ = state == GRPC_CHANNEL_READY;
+  // Enter fallback mode if needed.
+  parent_->MaybeEnterFallbackModeAfterStartup();
   // There are three cases to consider here:
   // 1. We're in fallback mode.  In this case, we're always going to use
   //    the child policy's result, so we pass its picker through as-is.
@@ -687,15 +699,15 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
 
 void GrpcLb::Helper::RequestReresolution() {
   if (parent_->shutting_down_) return;
-  // If there is a pending child policy, ignore re-resolution requests
-  // from the current child policy (or any outdated child).
-  if (parent_->pending_child_policy_ != nullptr && !CalledByPendingChild()) {
-    return;
-  }
+  const LoadBalancingPolicy* latest_child_policy =
+      parent_->pending_child_policy_ != nullptr
+          ? parent_->pending_child_policy_.get()
+          : parent_->child_policy_.get();
+  if (child_ != latest_child_policy) return;
   if (grpc_lb_glb_trace.enabled()) {
     gpr_log(GPR_INFO,
-            "[grpclb %p] Re-resolution requested from child policy (%p).",
-            parent_.get(), child_);
+            "[grpclb %p] Re-resolution requested from %schild policy (%p).",
+            parent_.get(), CalledByPendingChild() ? "pending " : "", child_);
   }
   // If we are talking to a balancer, we expect to get updated addresses
   // from the balancer, so we can ignore the re-resolution request from
@@ -791,7 +803,8 @@ void GrpcLb::BalancerCallState::StartQuery() {
   grpc_op* op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
+  op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY |
+              GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
   op->reserved = nullptr;
   op++;
   // Op: send request message.
@@ -1014,16 +1027,14 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
               grpclb_policy, lb_calld, serverlist->num_servers,
               serverlist_text.get());
     }
+    lb_calld->seen_serverlist_ = true;
     // Start sending client load report only after we start using the
     // serverlist returned from the current LB call.
     if (lb_calld->client_stats_report_interval_ > 0 &&
         lb_calld->client_stats_ == nullptr) {
       lb_calld->client_stats_ = MakeRefCounted<GrpcLbClientStats>();
-      // TODO(roth): We currently track this ref manually.  Once the
-      // ClosureRef API is ready, we should pass the RefCountedPtr<> along
-      // with the callback.
-      auto self = lb_calld->Ref(DEBUG_LOCATION, "client_load_report");
-      self.release();
+      // Ref held by callback.
+      lb_calld->Ref(DEBUG_LOCATION, "client_load_report").release();
       lb_calld->ScheduleNextClientLoadReportLocked();
     }
     // Check if the serverlist differs from the previous one.
@@ -1036,18 +1047,36 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
                 grpclb_policy, lb_calld);
       }
     } else {  // New serverlist.
-      if (grpclb_policy->serverlist_ == nullptr) {
-        // Dispose of the fallback.
-        if (grpclb_policy->child_policy_ != nullptr) {
-          gpr_log(GPR_INFO,
-                  "[grpclb %p] Received response from balancer; exiting "
-                  "fallback mode",
-                  grpclb_policy);
-        }
-        grpclb_policy->fallback_backend_addresses_.reset();
-        if (grpclb_policy->fallback_timer_callback_pending_) {
-          grpc_timer_cancel(&grpclb_policy->lb_fallback_timer_);
-        }
+      // Dispose of the fallback.
+      // TODO(roth): Ideally, we should stay in fallback mode until we
+      // know that we can reach at least one of the backends in the new
+      // serverlist.  Unfortunately, we can't do that, since we need to
+      // send the new addresses to the child policy in order to determine
+      // if they are reachable, and if we don't exit fallback mode now,
+      // CreateOrUpdateChildPolicyLocked() will use the fallback
+      // addresses instead of the addresses from the new serverlist.
+      // However, if we can't reach any of the servers in the new
+      // serverlist, then the child policy will never switch away from
+      // the fallback addresses, but the grpclb policy will still think
+      // that we're not in fallback mode, which means that we won't send
+      // updates to the child policy when the fallback addresses are
+      // updated by the resolver.  This is sub-optimal, but the only way
+      // to fix it is to maintain a completely separate child policy for
+      // fallback mode, and that's more work than we want to put into
+      // the grpclb implementation at this point, since we're deprecating
+      // it in favor of the xds policy.  We will implement this the
+      // right way in the xds policy instead.
+      if (grpclb_policy->fallback_mode_) {
+        gpr_log(GPR_INFO,
+                "[grpclb %p] Received response from balancer; exiting "
+                "fallback mode",
+                grpclb_policy);
+        grpclb_policy->fallback_mode_ = false;
+      }
+      if (grpclb_policy->fallback_at_startup_checks_pending_) {
+        grpclb_policy->fallback_at_startup_checks_pending_ = false;
+        grpc_timer_cancel(&grpclb_policy->lb_fallback_timer_);
+        grpclb_policy->CancelBalancerChannelConnectivityWatchLocked();
       }
       // Update the serverlist in the GrpcLb instance. This serverlist
       // instance will be destroyed either upon the next update or when the
@@ -1103,6 +1132,24 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
   // we want to retry connecting. Otherwise, we have deliberately ended this
   // call and no further action is required.
   if (lb_calld == grpclb_policy->lb_calld_.get()) {
+    // If we did not receive a serverlist and the fallback-at-startup checks
+    // are pending, go into fallback mode immediately.  This short-circuits
+    // the timeout for the fallback-at-startup case.
+    if (!lb_calld->seen_serverlist_ &&
+        grpclb_policy->fallback_at_startup_checks_pending_) {
+      gpr_log(GPR_INFO,
+              "[grpclb %p] balancer call finished without receiving "
+              "serverlist; entering fallback mode",
+              grpclb_policy);
+      grpclb_policy->fallback_at_startup_checks_pending_ = false;
+      grpc_timer_cancel(&grpclb_policy->lb_fallback_timer_);
+      grpclb_policy->CancelBalancerChannelConnectivityWatchLocked();
+      grpclb_policy->fallback_mode_ = true;
+      grpclb_policy->CreateOrUpdateChildPolicyLocked();
+    } else {
+      // This handles the fallback-after-startup case.
+      grpclb_policy->MaybeEnterFallbackModeAfterStartup();
+    }
     grpclb_policy->lb_calld_.reset();
     GPR_ASSERT(!grpclb_policy->shutting_down_);
     grpclb_policy->channel_control_helper()->RequestReresolution();
@@ -1234,6 +1281,8 @@ GrpcLb::GrpcLb(Args args)
               .set_max_backoff(GRPC_GRPCLB_RECONNECT_MAX_BACKOFF_SECONDS *
                                1000)) {
   // Initialization.
+  GRPC_CLOSURE_INIT(&lb_on_fallback_, &GrpcLb::OnFallbackTimerLocked, this,
+                    grpc_combiner_scheduler(combiner()));
   GRPC_CLOSURE_INIT(&lb_channel_on_connectivity_changed_,
                     &GrpcLb::OnBalancerChannelConnectivityChangedLocked, this,
                     grpc_combiner_scheduler(args.combiner));
@@ -1254,9 +1303,9 @@ GrpcLb::GrpcLb(Args args)
   // Record LB call timeout.
   arg = grpc_channel_args_find(args.args, GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS);
   lb_call_timeout_ms_ = grpc_channel_arg_get_integer(arg, {0, 0, INT_MAX});
-  // Record fallback timeout.
+  // Record fallback-at-startup timeout.
   arg = grpc_channel_args_find(args.args, GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS);
-  lb_fallback_timeout_ms_ = grpc_channel_arg_get_integer(
+  fallback_at_startup_timeout_ = grpc_channel_arg_get_integer(
       arg, {GRPC_GRPCLB_DEFAULT_FALLBACK_TIMEOUT_MS, 0, INT_MAX});
 }
 
@@ -1272,8 +1321,9 @@ void GrpcLb::ShutdownLocked() {
   if (retry_timer_callback_pending_) {
     grpc_timer_cancel(&lb_call_retry_timer_);
   }
-  if (fallback_timer_callback_pending_) {
+  if (fallback_at_startup_checks_pending_) {
     grpc_timer_cancel(&lb_fallback_timer_);
+    CancelBalancerChannelConnectivityWatchLocked();
   }
   if (child_policy_ != nullptr) {
     grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
@@ -1345,31 +1395,28 @@ void GrpcLb::UpdateLocked(const grpc_channel_args& args,
   ProcessChannelArgsLocked(args);
   // Update the existing child policy.
   if (child_policy_ != nullptr) CreateOrUpdateChildPolicyLocked();
-  // If this is the initial update, start the fallback timer.
+  // If this is the initial update, start the fallback-at-startup checks
+  // and the balancer call.
   if (is_initial_update) {
-    if (lb_fallback_timeout_ms_ > 0 && serverlist_ == nullptr &&
-        !fallback_timer_callback_pending_) {
-      grpc_millis deadline = ExecCtx::Get()->Now() + lb_fallback_timeout_ms_;
-      Ref(DEBUG_LOCATION, "on_fallback_timer").release();  // Ref for callback
-      GRPC_CLOSURE_INIT(&lb_on_fallback_, &GrpcLb::OnFallbackTimerLocked, this,
-                        grpc_combiner_scheduler(combiner()));
-      fallback_timer_callback_pending_ = true;
-      grpc_timer_init(&lb_fallback_timer_, deadline, &lb_on_fallback_);
-      // Start watching the channel's connectivity state.  If the channel
-      // goes into state TRANSIENT_FAILURE, we go into fallback mode even if
-      // the fallback timeout has not elapsed.
-      grpc_channel_element* client_channel_elem =
-          grpc_channel_stack_last_element(
-              grpc_channel_get_channel_stack(lb_channel_));
-      GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-      // Ref held by callback.
-      Ref(DEBUG_LOCATION, "watch_lb_channel_connectivity").release();
-      grpc_client_channel_watch_connectivity_state(
-          client_channel_elem,
-          grpc_polling_entity_create_from_pollset_set(interested_parties()),
-          &lb_channel_connectivity_, &lb_channel_on_connectivity_changed_,
-          nullptr);
-    }
+    fallback_at_startup_checks_pending_ = true;
+    // Start timer.
+    grpc_millis deadline = ExecCtx::Get()->Now() + fallback_at_startup_timeout_;
+    Ref(DEBUG_LOCATION, "on_fallback_timer").release();  // Ref for callback
+    grpc_timer_init(&lb_fallback_timer_, deadline, &lb_on_fallback_);
+    // Start watching the channel's connectivity state.  If the channel
+    // goes into state TRANSIENT_FAILURE before the timer fires, we go into
+    // fallback mode even if the fallback timeout has not elapsed.
+    grpc_channel_element* client_channel_elem = grpc_channel_stack_last_element(
+        grpc_channel_get_channel_stack(lb_channel_));
+    GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
+    // Ref held by callback.
+    Ref(DEBUG_LOCATION, "watch_lb_channel_connectivity").release();
+    grpc_client_channel_watch_connectivity_state(
+        client_channel_elem,
+        grpc_polling_entity_create_from_pollset_set(interested_parties()),
+        &lb_channel_connectivity_, &lb_channel_on_connectivity_changed_,
+        nullptr);
+    // Start balancer call.
     StartBalancerCallLocked();
   }
 }
@@ -1379,16 +1426,15 @@ void GrpcLb::UpdateLocked(const grpc_channel_args& args,
 //
 
 // Returns the backend addresses extracted from the given addresses.
-UniquePtr<ServerAddressList> ExtractBackendAddresses(
-    const ServerAddressList& addresses) {
+ServerAddressList ExtractBackendAddresses(const ServerAddressList& addresses) {
   void* lb_token = (void*)GRPC_MDELEM_LB_TOKEN_EMPTY.payload;
   grpc_arg arg = grpc_channel_arg_pointer_create(
       const_cast<char*>(GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN), lb_token,
       &lb_token_arg_vtable);
-  auto backend_addresses = MakeUnique<ServerAddressList>();
+  ServerAddressList backend_addresses;
   for (size_t i = 0; i < addresses.size(); ++i) {
     if (!addresses[i].IsBalancer()) {
-      backend_addresses->emplace_back(
+      backend_addresses.emplace_back(
           addresses[i].address(),
           grpc_channel_args_copy_and_add(addresses[i].args(), &arg, 1));
     }
@@ -1463,7 +1509,7 @@ void GrpcLb::ParseLbConfig(Config* grpclb_config) {
 void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
                                                         grpc_error* error) {
   GrpcLb* self = static_cast<GrpcLb*>(arg);
-  if (!self->shutting_down_ && self->fallback_timer_callback_pending_) {
+  if (!self->shutting_down_ && self->fallback_at_startup_checks_pending_) {
     if (self->lb_channel_connectivity_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
       // Not in TRANSIENT_FAILURE.  Renew connectivity watch.
       grpc_channel_element* client_channel_elem =
@@ -1484,11 +1530,23 @@ void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
             "[grpclb %p] balancer channel in state TRANSIENT_FAILURE; "
             "entering fallback mode",
             self);
+    self->fallback_at_startup_checks_pending_ = false;
     grpc_timer_cancel(&self->lb_fallback_timer_);
+    self->fallback_mode_ = true;
     self->CreateOrUpdateChildPolicyLocked();
   }
   // Done watching connectivity state, so drop ref.
   self->Unref(DEBUG_LOCATION, "watch_lb_channel_connectivity");
+}
+
+void GrpcLb::CancelBalancerChannelConnectivityWatchLocked() {
+  grpc_channel_element* client_channel_elem = grpc_channel_stack_last_element(
+      grpc_channel_get_channel_stack(lb_channel_));
+  GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
+  grpc_client_channel_watch_connectivity_state(
+      client_channel_elem,
+      grpc_polling_entity_create_from_pollset_set(interested_parties()),
+      nullptr, &lb_channel_on_connectivity_changed_, nullptr);
 }
 
 //
@@ -1507,32 +1565,6 @@ void GrpcLb::StartBalancerCallLocked() {
             this, lb_channel_, lb_calld_.get());
   }
   lb_calld_->StartQuery();
-}
-
-void GrpcLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
-  GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
-  grpclb_policy->fallback_timer_callback_pending_ = false;
-  // If we receive a serverlist after the timer fires but before this callback
-  // actually runs, don't fall back.
-  if (grpclb_policy->serverlist_ == nullptr && !grpclb_policy->shutting_down_ &&
-      error == GRPC_ERROR_NONE) {
-    gpr_log(GPR_INFO,
-            "[grpclb %p] No response from balancer after fallback timeout; "
-            "entering fallback mode",
-            grpclb_policy);
-    GPR_ASSERT(grpclb_policy->fallback_backend_addresses_ != nullptr);
-    grpclb_policy->CreateOrUpdateChildPolicyLocked();
-    // Cancel connectivity watch, since we no longer need it.
-    grpc_channel_element* client_channel_elem = grpc_channel_stack_last_element(
-        grpc_channel_get_channel_stack(grpclb_policy->lb_channel_));
-    GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-    grpc_client_channel_watch_connectivity_state(
-        client_channel_elem,
-        grpc_polling_entity_create_from_pollset_set(
-            grpclb_policy->interested_parties()),
-        nullptr, &grpclb_policy->lb_channel_on_connectivity_changed_, nullptr);
-  }
-  grpclb_policy->Unref(DEBUG_LOCATION, "on_fallback_timer");
 }
 
 void GrpcLb::StartBalancerCallRetryTimerLocked() {
@@ -1574,6 +1606,46 @@ void GrpcLb::OnBalancerCallRetryTimerLocked(void* arg, grpc_error* error) {
 }
 
 //
+// code for handling fallback mode
+//
+
+void GrpcLb::MaybeEnterFallbackModeAfterStartup() {
+  // Enter fallback mode if all of the following are true:
+  // - We are not currently in fallback mode.
+  // - We are not currently waiting for the initial fallback timeout.
+  // - We are not currently in contact with the balancer.
+  // - The child policy is not in state READY.
+  if (!fallback_mode_ && !fallback_at_startup_checks_pending_ &&
+      (lb_calld_ == nullptr || !lb_calld_->seen_serverlist()) &&
+      !child_policy_ready_) {
+    gpr_log(GPR_INFO,
+            "[grpclb %p] lost contact with balancer and backends from "
+            "most recent serverlist; entering fallback mode",
+            this);
+    fallback_mode_ = true;
+    CreateOrUpdateChildPolicyLocked();
+  }
+}
+
+void GrpcLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
+  GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
+  // If we receive a serverlist after the timer fires but before this callback
+  // actually runs, don't fall back.
+  if (grpclb_policy->fallback_at_startup_checks_pending_ &&
+      !grpclb_policy->shutting_down_ && error == GRPC_ERROR_NONE) {
+    gpr_log(GPR_INFO,
+            "[grpclb %p] No response from balancer after fallback timeout; "
+            "entering fallback mode",
+            grpclb_policy);
+    grpclb_policy->fallback_at_startup_checks_pending_ = false;
+    grpclb_policy->CancelBalancerChannelConnectivityWatchLocked();
+    grpclb_policy->fallback_mode_ = true;
+    grpclb_policy->CreateOrUpdateChildPolicyLocked();
+  }
+  grpclb_policy->Unref(DEBUG_LOCATION, "on_fallback_timer");
+}
+
+//
 // code for interacting with the child policy
 //
 
@@ -1581,18 +1653,14 @@ grpc_channel_args* GrpcLb::CreateChildPolicyArgsLocked() {
   ServerAddressList tmp_addresses;
   ServerAddressList* addresses = &tmp_addresses;
   bool is_backend_from_grpclb_load_balancer = false;
-  if (serverlist_ != nullptr) {
+  if (fallback_mode_) {
+    // Note: If fallback backend address list is empty, the child policy
+    // will go into state TRANSIENT_FAILURE.
+    addresses = &fallback_backend_addresses_;
+  } else {
     tmp_addresses = serverlist_->GetServerAddressList(
         lb_calld_ == nullptr ? nullptr : lb_calld_->client_stats());
     is_backend_from_grpclb_load_balancer = true;
-  } else {
-    // If CreateOrUpdateChildPolicyLocked() is invoked when we haven't
-    // received any serverlist from the balancer, we use the fallback backends
-    // returned by the resolver. Note that the fallback backend list may be
-    // empty, in which case the new round_robin policy will keep the requested
-    // picks pending.
-    GPR_ASSERT(fallback_backend_addresses_ != nullptr);
-    addresses = fallback_backend_addresses_.get();
   }
   GPR_ASSERT(addresses != nullptr);
   // Replace the server address list in the channel args that we pass down to
