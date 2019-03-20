@@ -2371,6 +2371,7 @@ target_include_directories(grpc_test_util_unsecure
   endif()
 target_link_libraries(grpc_test_util_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  ${_gRPC_GFLAGS_LIBRARIES}
   gpr
   grpc_unsecure
 )
@@ -4014,6 +4015,7 @@ target_include_directories(grpc++_test_config
 target_link_libraries(grpc++_test_config
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 
@@ -16042,7 +16044,6 @@ target_link_libraries(thread_manager_test
   grpc_unsecure
   gpr
   grpc++_test_config
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 
@@ -18891,11 +18892,6 @@ target_link_libraries(uri_fuzzer_test_one_entry
   endif()
 
 endif (gRPC_BUILD_TESTS)
-
-
-
-
-
 
 
 if (gRPC_INSTALL)
