@@ -593,12 +593,17 @@ void XdsLb::FallbackHelper::UpdateState(grpc_connectivity_state state,
 
 void XdsLb::FallbackHelper::RequestReresolution() {
   if (parent_->shutting_down_) return;
-  // FIXME: check child
-  const LoadBalancingPolicy* latest_fallback_policy =
-      parent_->pending_fallback_policy_ != nullptr
-          ? parent_->pending_fallback_policy_.get()
-          : parent_->fallback_policy_.get();
-  if (child_ != latest_fallback_policy) return;
+  const LoadBalancingPolicy* latest_child_policy = nullptr;
+  if (parent_->pending_child_policy_ != nullptr) {
+    latest_child_policy = parent_->pending_child_policy_.get();
+  } else if (parent_->child_policy_ != nullptr) {
+    latest_child_policy = parent_->child_policy_.get();
+  } else if (parent_->pending_fallback_policy_ != nullptr) {
+    latest_child_policy = parent_->pending_fallback_policy_.get();
+  } else {
+    latest_child_policy = parent_->fallback_policy_.get();
+  }
+  if (child_ != latest_child_policy) return;
   if (grpc_lb_xds_trace.enabled()) {
     gpr_log(
         GPR_INFO,

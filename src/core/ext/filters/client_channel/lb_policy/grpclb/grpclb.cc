@@ -1394,10 +1394,8 @@ void GrpcLb::UpdateLocked(const grpc_channel_args& args,
   const bool is_initial_update = lb_channel_ == nullptr;
   ParseLbConfig(lb_config.get());
   ProcessChannelArgsLocked(args);
-  // Update the existing (fallback) child policy.
-  if (child_policy_ != nullptr && serverlist_ == nullptr) {
-    CreateOrUpdateChildPolicyLocked();
-  }
+  // Update the existing child policy.
+  if (child_policy_ != nullptr) CreateOrUpdateChildPolicyLocked();
   // If this is the initial update, start the fallback-at-startup checks
   // and the balancer call.
   if (is_initial_update) {

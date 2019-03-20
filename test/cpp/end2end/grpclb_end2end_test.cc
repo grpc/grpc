@@ -828,6 +828,7 @@ TEST_F(SingleBalancerTest, SwapChildPolicy) {
     EXPECT_EQ(backends_[i]->service_.request_count(), 0UL);
   }
   // Send new resolution that removes child policy from service config.
+  gpr_log(GPR_INFO, "Sending empty service config");
   SetNextResolutionAllBalancers("{}");
   WaitForAllBackends();
   CheckRpcSendOk(kNumRpcs, 1000 /* timeout_ms */, true /* wait_for_ready */);
