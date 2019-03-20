@@ -271,7 +271,6 @@
       GrpcPluginExe="%(_Protobuf_OutOfDateProto.GrpcPluginExe)"
       GrpcOutputDir="%(_Protobuf_OutOfDateProto.GrpcOutputDir)"
       GrpcOutputOptions="%(_Protobuf_OutOfDateProto._GrpcOutputOptions)"
-      LogStandardErrorAsError="true"
     >
       <Output TaskParameter="GeneratedFiles" ItemName="_Protobuf_GeneratedFiles"/>
     </ProtoCompile>

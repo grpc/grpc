@@ -16,7 +16,10 @@
 
 #endregion
 
+using System;
+using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
@@ -122,6 +125,110 @@ namespace Grpc.Tools
         static string[] s_supportedGenerators = new[] { "cpp", "csharp", "java",
                                                         "javanano", "js", "objc",
                                                         "php", "python", "ruby" };
+
+        static readonly TimeSpan s_regexTimeout = TimeSpan.FromMilliseconds(100);
+
+        static readonly List<ErrorListFilter> s_errorListFilters = new List<ErrorListFilter>()
+        {
+            // Example warning with location
+            //../Protos/greet.proto(19) : warning in column=5 : warning : When enum name is stripped and label is PascalCased (Zero),
+            // this value label conflicts with Zero. This will make the proto fail to compile for some languages, such as C#.
+            new ErrorListFilter
+            {
+                Pattern = new Regex(
+                    pattern: "(?'FILENAME'.+)\\((?'LINE'\\d+)\\) ?: ?warning in column=(?'COLUMN'\\d+) ?: ?(?'TEXT'.*)",
+                    options: RegexOptions.Compiled | RegexOptions.IgnoreCase,
+                    matchTimeout: s_regexTimeout),
+                LogAction = (log, match) =>
+                {
+                    int.TryParse(match.Groups["LINE"].Value, out var line);
+                    int.TryParse(match.Groups["COLUMN"].Value, out var column);
+
+                    log.LogWarning(
+                        subcategory: null,
+                        warningCode: null,
+                        helpKeyword: null,
+                        file: match.Groups["FILENAME"].Value,
+                        lineNumber: line,
+                        columnNumber: column,
+                        endLineNumber: 0,
+                        endColumnNumber: 0,
+                        message: match.Groups["TEXT"].Value);
+                }
+            },
+
+            // Example error with location
+            //../Protos/greet.proto(14) : error in column=10: "name" is already defined in "Greet.HelloRequest".
+            new ErrorListFilter
+            {
+                Pattern = new Regex(
+                    pattern: "(?'FILENAME'.+)\\((?'LINE'\\d+)\\) ?: ?error in column=(?'COLUMN'\\d+) ?: ?(?'TEXT'.*)",
+                    options: RegexOptions.Compiled | RegexOptions.IgnoreCase,
+                    matchTimeout: s_regexTimeout),
+                LogAction = (log, match) =>
+                {
+                    int.TryParse(match.Groups["LINE"].Value, out var line);
+                    int.TryParse(match.Groups["COLUMN"].Value, out var column);
+
+                    log.LogError(
+                        subcategory: null,
+                        errorCode: null,
+                        helpKeyword: null,
+                        file: match.Groups["FILENAME"].Value,
+                        lineNumber: line,
+                        columnNumber: column,
+                        endLineNumber: 0,
+                        endColumnNumber: 0,
+                        message: match.Groups["TEXT"].Value);
+                }
+            },
+
+            // Example warning without location
+            //../Protos/greet.proto: warning: Import google/protobuf/empty.proto but not used.
+            new ErrorListFilter 
+            {
+                Pattern = new Regex(
+                    pattern: "(?'FILENAME'.+): ?warning: ?(?'TEXT'.*)",
+                    options: RegexOptions.Compiled | RegexOptions.IgnoreCase,
+                    matchTimeout: s_regexTimeout),
+                LogAction = (log, match) =>
+                {
+                    log.LogWarning(
+                        subcategory: null,
+                        warningCode: null,
+                        helpKeyword: null,
+                        file: match.Groups["FILENAME"].Value,
+                        lineNumber: 0,
+                        columnNumber: 0,
+                        endLineNumber: 0,
+                        endColumnNumber: 0,
+                        message: match.Groups["TEXT"].Value);
+                }
+            },
+
+            // Example error without location
+            //../Protos/greet.proto: Import "google/protobuf/empty.proto" was listed twice.
+            new ErrorListFilter
+            {
+                Pattern = new Regex(
+                    pattern: "(?'FILENAME'.+): ?(?'TEXT'.*)",
+                    options: RegexOptions.Compiled | RegexOptions.IgnoreCase,
+                    matchTimeout: s_regexTimeout),
+                LogAction = (log, match) =>
+                {
+                    log.LogError(
+                        subcategory: null,
+                        errorCode: null,
+                        helpKeyword: null,
+                        file: match.Groups["FILENAME"].Value,
+                        lineNumber: 0,
+                        columnNumber: 0,
+                        endLineNumber: 0,
+                        endColumnNumber: 0,
+                        message: match.Groups["TEXT"].Value);
+                }
+            }
+        };
 
         /// <summary>
         /// Code generator.
@@ -406,6 +513,22 @@ namespace Grpc.Tools
             base.LogToolCommand(printer.ToString());
         }
 
+        protected override void LogEventsFromTextOutput(string singleLine, MessageImportance messageImportance)
+        {
+            foreach (ErrorListFilter filter in s_errorListFilters)
+            {
+                Match match = filter.Pattern.Match(singleLine);
+                
+                if (match.Success)
+                {
+                    filter.LogAction(Log, match);
+                    return;
+                }
+            }
+
+            base.LogEventsFromTextOutput(singleLine, messageImportance);
+        }
+
         // Main task entry point.
         public override bool Execute()
         {
@@ -437,6 +560,12 @@ namespace Grpc.Tools
             }
 
             return true;
+        }
+
+        class ErrorListFilter
+        {
+            public Regex Pattern { get; set; }
+            public Action<TaskLoggingHelper, Match> LogAction { get; set; }
         }
     };
 }
