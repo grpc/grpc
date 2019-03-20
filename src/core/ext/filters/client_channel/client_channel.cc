@@ -127,7 +127,9 @@ typedef struct client_channel_channel_data {
   // Resolving LB policy.
   grpc_core::OrphanablePtr<LoadBalancingPolicy> resolving_lb_policy;
 
-  bool have_service_config;
+  // This is an atomic so that it can be accessed from both the control
+  // plane and data plane combiners.
+  grpc_core::Atomic<bool> received_resolver_result;
   /** retry throttle data from service config */
   grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
   /** per-method service config data */
@@ -142,7 +144,7 @@ typedef struct client_channel_channel_data {
   grpc_connectivity_state_tracker state_tracker;
   // This is an atomic so that it can be accessed from both the control
   // plane and data plane combiners.
-  gpr_atm disconnect_error;  // grpc_error*
+  grpc_core::Atomic<grpc_error*> disconnect_error;
 
   /* external_connectivity_watcher_list head is guarded by its own mutex, since
    * counts need to be grabbed immediately without polling on a cq */
@@ -252,8 +254,8 @@ class ClientChannelControlHelper
   void UpdateState(
       grpc_connectivity_state state, grpc_error* state_error,
       UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
-    grpc_error* disconnect_error = reinterpret_cast<grpc_error*>(
-        gpr_atm_acq_load(&chand_->disconnect_error));
+    grpc_error* disconnect_error =
+        chand_->disconnect_error.Load(grpc_core::MemoryOrder::ACQUIRE);
     if (grpc_client_channel_routing_trace.enabled()) {
       const char* extra = disconnect_error == GRPC_ERROR_NONE
                               ? ""
@@ -288,7 +290,7 @@ static bool process_resolver_result_locked(
     void* arg, const grpc_channel_args& args, const char** lb_policy_name,
     grpc_core::RefCountedPtr<LoadBalancingPolicy::Config>* lb_policy_config) {
   channel_data* chand = static_cast<channel_data*>(arg);
-  chand->have_service_config = true;
+  chand->received_resolver_result.Store(true, grpc_core::MemoryOrder::RELEASE);
   ProcessedResolverResult resolver_result(args, chand->enable_retries);
   grpc_core::UniquePtr<char> service_config_json =
       resolver_result.service_config_json();
@@ -375,9 +377,10 @@ static void start_transport_op_locked(void* arg, grpc_error* error_ignored) {
   }
 
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
-    GPR_ASSERT(gpr_atm_full_cas(
-        &chand->disconnect_error, reinterpret_cast<gpr_atm>(GRPC_ERROR_NONE),
-        reinterpret_cast<gpr_atm>(op->disconnect_with_error)));
+    grpc_error* error = GRPC_ERROR_NONE;
+    GPR_ASSERT(chand->disconnect_error.CompareExchangeStrong(
+        &error, op->disconnect_with_error, grpc_core::MemoryOrder::ACQ_REL,
+        grpc_core::MemoryOrder::ACQUIRE));
     grpc_pollset_set_del_pollset_set(
         chand->resolving_lb_policy->interested_parties(),
         chand->interested_parties);
@@ -437,8 +440,8 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   chand->combiner = grpc_combiner_create();
   grpc_connectivity_state_init(&chand->state_tracker, GRPC_CHANNEL_IDLE,
                                "client_channel");
-  gpr_atm_rel_store(&chand->disconnect_error,
-                    reinterpret_cast<gpr_atm>(GRPC_ERROR_NONE));
+  chand->disconnect_error.Store(GRPC_ERROR_NONE,
+                                grpc_core::MemoryOrder::RELEASE);
   gpr_mu_init(&chand->info_mu);
   gpr_mu_init(&chand->external_connectivity_watcher_list_mu);
 
@@ -551,9 +554,8 @@ static void cc_destroy_channel_elem(grpc_channel_element* elem) {
   grpc_pollset_set_destroy(chand->interested_parties);
   GRPC_COMBINER_UNREF(chand->data_plane_combiner, "client_channel");
   GRPC_COMBINER_UNREF(chand->combiner, "client_channel");
-  grpc_error* disconnect_error =
-      reinterpret_cast<grpc_error*>(gpr_atm_acq_load(&chand->disconnect_error));
-  GRPC_ERROR_UNREF(disconnect_error);
+  GRPC_ERROR_UNREF(
+      chand->disconnect_error.Load(grpc_core::MemoryOrder::ACQUIRE));
   grpc_connectivity_state_destroy(&chand->state_tracker);
   gpr_mu_destroy(&chand->info_mu);
   gpr_mu_destroy(&chand->external_connectivity_watcher_list_mu);
@@ -2669,7 +2671,8 @@ static void maybe_apply_service_config_to_call_locked(grpc_call_element* elem) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   // Apply service config data to the call only once, and only if the
   // channel has the data available.
-  if (GPR_LIKELY(chand->have_service_config &&
+  if (GPR_LIKELY(chand->received_resolver_result.Load(
+                     grpc_core::MemoryOrder::ACQUIRE) &&
                  !calld->service_config_applied)) {
     calld->service_config_applied = true;
     apply_service_config_to_call_locked(elem);
@@ -2734,8 +2737,8 @@ static void start_pick_locked(void* arg, grpc_error* error) {
   switch (pick_result) {
     case LoadBalancingPolicy::PICK_TRANSIENT_FAILURE: {
       // If we're shutting down, fail all RPCs.
-      grpc_error* disconnect_error = reinterpret_cast<grpc_error*>(
-          gpr_atm_acq_load(&chand->disconnect_error));
+      grpc_error* disconnect_error =
+          chand->disconnect_error.Load(grpc_core::MemoryOrder::ACQUIRE);
       if (disconnect_error != GRPC_ERROR_NONE) {
         GRPC_ERROR_UNREF(error);
         GRPC_CLOSURE_SCHED(&calld->pick_closure,
