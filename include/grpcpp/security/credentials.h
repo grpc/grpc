@@ -27,13 +27,13 @@
 #include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/security/auth_context.h>
+#include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
 
 struct grpc_call;
 
 namespace grpc {
-class ChannelArguments;
 class Channel;
 class SecureChannelCredentials;
 class CallCredentials;
