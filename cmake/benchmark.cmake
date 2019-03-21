@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "Turn off gTest in gBenchmark")
-
 if("${gRPC_BENCHMARK_PROVIDER}" STREQUAL "module")
+  set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "Turn off gTest in gBenchmark")
   if(NOT BENCHMARK_ROOT_DIR)
     set(BENCHMARK_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/benchmark)
   endif()
