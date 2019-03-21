@@ -509,8 +509,7 @@ void XdsLb::Helper::RequestReresolution() {
   if (child_ != latest_child_policy) return;
   if (grpc_lb_xds_trace.enabled()) {
     gpr_log(GPR_INFO,
-            "[xdslb %p] Re-resolution requested from the internal child policy "
-            "(%p).",
+            "[xdslb %p] Re-resolution requested from the child policy (%p).",
             parent_.get(), parent_->child_policy_.get());
   }
   GPR_ASSERT(parent_->lb_chand_ != nullptr);
@@ -605,11 +604,9 @@ void XdsLb::FallbackHelper::RequestReresolution() {
   }
   if (child_ != latest_child_policy) return;
   if (grpc_lb_xds_trace.enabled()) {
-    gpr_log(
-        GPR_INFO,
-        "[xdslb %p] Re-resolution requested from the internal fallback policy "
-        "(%p).",
-        parent_.get(), parent_->child_policy_.get());
+    gpr_log(GPR_INFO,
+            "[xdslb %p] Re-resolution requested from the fallback policy (%p).",
+            parent_.get(), parent_->child_policy_.get());
   }
   GPR_ASSERT(parent_->lb_chand_ != nullptr);
   // If we are talking to a balancer, we expect to get updated addresses
@@ -1373,10 +1370,8 @@ void XdsLb::ShutdownLocked() {
     fallback_policy_.reset();
     pending_fallback_policy_.reset();
   }
-  // We destroy the LB channel here instead of in our destructor because
-  // destroying the channel triggers a last callback to
-  // OnConnectivityChangedLocked(), and we need to be alive when that callback
-  // is invoked.
+  // We reset the LB channels here instead of in our destructor because they
+  // hold refs to XdsLb.
   {
     MutexLock lock(&lb_chand_mu_);
     lb_chand_.reset();
@@ -1537,9 +1532,13 @@ void XdsLb::UpdateLocked(const grpc_channel_args& args,
     return;
   }
   ProcessChannelArgsLocked(args);
-  // Apply the fallback update if we are in fallback mode.
-  if (fallback_policy_ != nullptr)
+  // Update the existing child policy. The child policy config may be new.
+  if (child_policy_ != nullptr) CreateOrUpdateChildPolicyLocked();
+  // Update the existing fallback policy. The fallback policy config and/or the
+  // fallback addresses may be new.
+  if (fallback_policy_ != nullptr) {
     CreateOrUpdateChildPolicyLocked(/*fallback=*/true);
+  }
   // If this is the initial update, start the fallback-at-startup checks.
   if (is_initial_update) {
     grpc_millis deadline = ExecCtx::Get()->Now() + lb_fallback_timeout_ms_;
@@ -1560,23 +1559,22 @@ void XdsLb::UpdateLocked(const grpc_channel_args& args,
 //
 
 void XdsLb::MaybeExitFallbackMode() {
-  // Exit fallback mode if the child policy is READY.
-  if (child_policy_ready_) {
-    if (fallback_policy_ != nullptr) {
-      gpr_log(GPR_INFO,
-              "[xdslb %p] Child policy becomes ready; exiting fallback mode",
-              this);
-      fallback_policy_.reset();
-      pending_fallback_policy_.reset();
-    }
-    if (fallback_at_startup_checks_pending_) {
-      gpr_log(GPR_INFO,
-              "[xdslb %p] Child policy becomes ready; cancelling fallback "
-              "timer and LB channel connectivity watch",
-              this);
-      grpc_timer_cancel(&lb_fallback_timer_);
-      lb_chand_->CancelConnectivityWatchLocked();
-    }
+  if (!child_policy_ready_) return;
+  if (fallback_policy_ != nullptr) {
+    gpr_log(GPR_INFO,
+            "[xdslb %p] Child policy becomes ready; exiting fallback mode",
+            this);
+    fallback_policy_.reset();
+    pending_fallback_policy_.reset();
+  }
+  if (fallback_at_startup_checks_pending_) {
+    gpr_log(GPR_INFO,
+            "[xdslb %p] Child policy becomes ready; cancelling fallback "
+            "timer and LB channel connectivity watch",
+            this);
+    grpc_timer_cancel(&lb_fallback_timer_);
+    lb_chand_->CancelConnectivityWatchLocked();
+    fallback_at_startup_checks_pending_ = false;
   }
 }
 
@@ -1598,20 +1596,19 @@ void XdsLb::MaybeEnterFallbackModeAfterStartup() {
 
 void XdsLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
   XdsLb* xdslb_policy = static_cast<XdsLb*>(arg);
-  xdslb_policy->fallback_at_startup_checks_pending_ = false;
-  // If the child policy becomes READY after the timer fires but before this
-  // callback actually runs, don't fall back.
-  if (!xdslb_policy->child_policy_ready_ && !xdslb_policy->shutting_down_ &&
-      error == GRPC_ERROR_NONE) {
+  // If some fallback-at-startup check is done after the timer fires but before
+  // this callback actually runs, don't fall back.
+  if (xdslb_policy->fallback_at_startup_checks_pending_ &&
+      !xdslb_policy->shutting_down_ && error == GRPC_ERROR_NONE) {
     if (grpc_lb_xds_trace.enabled()) {
       gpr_log(GPR_INFO,
               "[xdslb %p] Child policy not ready after fallback timeout; "
               "entering fallback mode",
               xdslb_policy);
     }
+    xdslb_policy->fallback_at_startup_checks_pending_ = false;
     GPR_ASSERT(xdslb_policy->fallback_backend_addresses_ != nullptr);
     xdslb_policy->CreateOrUpdateChildPolicyLocked(/*fallback=*/true);
-    // Cancel connectivity watch, since we no longer need it.
     xdslb_policy->lb_chand_->CancelConnectivityWatchLocked();
   }
   xdslb_policy->Unref(DEBUG_LOCATION, "on_fallback_timer");
@@ -1636,42 +1633,41 @@ grpc_channel_args* XdsLb::CreateChildPolicyArgsLocked(bool fallback) {
   // Replace the server address list in the channel args that we pass down to
   // the subchannel.
   static const char* keys_to_remove[] = {GRPC_ARG_SERVER_ADDRESS_LIST};
-  const grpc_arg args_to_add[] = {
+  grpc_arg args_to_add[3] = {
       CreateServerAddressListChannelArg(addresses),
       // A channel arg indicating if the target is a backend inferred from a
       // xDS load balancer.
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_ADDRESS_IS_BACKEND_FROM_XDS_LOAD_BALANCER),
-          serverlist_ != nullptr),
-      // Inhibit client-side health checking, since the balancer does
-      // this for us.
-      // TODO(juanlishen): Should the fallback addresses have this arg?
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1),
+          !fallback),
   };
+  size_t num_args_to_add = 2;
+  if (!fallback) {
+    args_to_add[num_args_to_add++] = grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1);
+  }
   return grpc_channel_args_copy_and_add_and_remove(
       args_, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), args_to_add,
-      GPR_ARRAY_SIZE(args_to_add));
+      num_args_to_add);
 }
 
 OrphanablePtr<LoadBalancingPolicy> XdsLb::CreateChildPolicyLocked(
     const char* name, const grpc_channel_args* args, bool fallback) {
-  Helper* normal_helper = nullptr;
+  Helper* helper = nullptr;
   FallbackHelper* fallback_helper = nullptr;
-  ChannelControlHelper* helper = nullptr;
+  ChannelControlHelper* channel_control_helper = nullptr;
   if (fallback) {
     fallback_helper = New<FallbackHelper>(Ref());
-    helper = fallback_helper;
+    channel_control_helper = fallback_helper;
   } else {
-    normal_helper = New<Helper>(Ref());
-    helper = normal_helper;
+    helper = New<Helper>(Ref());
+    channel_control_helper = helper;
   }
-  GPR_ASSERT(helper != nullptr);
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = combiner();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
-      UniquePtr<ChannelControlHelper>(helper);
+      UniquePtr<ChannelControlHelper>(channel_control_helper);
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
           name, std::move(lb_policy_args));
@@ -1683,7 +1679,7 @@ OrphanablePtr<LoadBalancingPolicy> XdsLb::CreateChildPolicyLocked(
   if (fallback) {
     fallback_helper->set_child(lb_policy.get());
   } else {
-    normal_helper->set_child(lb_policy.get());
+    helper->set_child(lb_policy.get());
   }
   if (grpc_lb_xds_trace.enabled()) {
     gpr_log(GPR_INFO, "[xdslb %p] Created new child policy %s (%p)", this, name,
@@ -1800,7 +1796,7 @@ void XdsLb::CreateOrUpdateChildPolicyLocked(bool fallback) {
   GPR_ASSERT(policy_to_update != nullptr);
   // Update the policy.
   if (grpc_lb_xds_trace.enabled()) {
-    gpr_log(GPR_INFO, "[xdslb %p] Updating  %s %s policy %p", this,
+    gpr_log(GPR_INFO, "[xdslb %p] Updating %s%s policy %p", this,
             policy_to_update == pending_child_policy.get() ? "pending " : "",
             fallback ? "fallback" : "child", policy_to_update);
   }

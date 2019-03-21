@@ -1678,9 +1678,8 @@ grpc_channel_args* GrpcLb::CreateChildPolicyArgsLocked() {
   };
   size_t num_args_to_add = 2;
   if (is_backend_from_grpclb_load_balancer) {
-    args_to_add[2] = grpc_channel_arg_integer_create(
+    args_to_add[num_args_to_add++] = grpc_channel_arg_integer_create(
         const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1);
-    ++num_args_to_add;
   }
   return grpc_channel_args_copy_and_add_and_remove(
       args_, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), args_to_add,
