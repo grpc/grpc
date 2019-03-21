@@ -24,6 +24,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Collections.Generic;
 using Grpc.Core.Logging;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
@@ -34,20 +35,14 @@ namespace Grpc.Core.Internal
     internal class NativeCallbackDispatcher
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<NativeCallbackDispatcher>();
-        static readonly object staticLock = new object();
 
         static NativeCallbackDispatcherCallback dispatcherCallback;
 
         public static void Init(NativeMethods native)
         {
-            lock (staticLock)
-            {
-                if (dispatcherCallback == null)
-                {
-                    dispatcherCallback = new NativeCallbackDispatcherCallback(HandleDispatcherCallback);
-                    native.grpcsharp_native_callback_dispatcher_init(dispatcherCallback);
-                }
-            }
+            GrpcPreconditions.CheckState(dispatcherCallback == null);
+            dispatcherCallback = new NativeCallbackDispatcherCallback(HandleDispatcherCallback);
+            native.grpcsharp_native_callback_dispatcher_init(dispatcherCallback);
         }
 
         public static NativeCallbackRegistration RegisterCallback(UniversalNativeCallback callback)
@@ -56,18 +51,13 @@ namespace Grpc.Core.Internal
             return new NativeCallbackRegistration(gcHandle);
         }
 
-        private static UniversalNativeCallback GetCallback(IntPtr tag)
-        {
-            var gcHandle = GCHandle.FromIntPtr(tag);
-            return (UniversalNativeCallback) gcHandle.Target;
-        }
-
         [MonoPInvokeCallback(typeof(NativeCallbackDispatcherCallback))]
         private static int HandleDispatcherCallback(IntPtr tag, IntPtr arg0, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4, IntPtr arg5)
         {
             try
             {
-                var callback = GetCallback(tag);
+                var gcHandle = GCHandle.FromIntPtr(tag);
+                var callback = (UniversalNativeCallback) gcHandle.Target;
                 return callback(arg0, arg1, arg2, arg3, arg4, arg5);
             }
             catch (Exception e)
