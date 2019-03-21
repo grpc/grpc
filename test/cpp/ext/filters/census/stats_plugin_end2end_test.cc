@@ -59,7 +59,7 @@ class EchoServer final : public EchoTestService::Service {
 
 class StatsPluginEnd2EndTest : public ::testing::Test {
  protected:
-  static void SetUpTestCase() { grpc::RegisterOpenCensusPlugin(); }
+  static void SetUpTestCase() { RegisterOpenCensusPlugin(); }
 
   void SetUp() {
     // Set up a synchronous server on a different thread to avoid the asynch
