@@ -46,27 +46,34 @@ namespace grpc_core {
 /// combiner passed to the constructor.
 class Resolver : public InternallyRefCounted<Resolver> {
  public:
+  /// A proxy object used by the resolver to return results to the
+  /// client channel.
+  class ResultHandler {
+   public:
+    virtual ~ResultHandler() {}
+
+    /// Returns a result to the channel.
+    /// The list of addresses will be in GRPC_ARG_SERVER_ADDRESS_LIST.
+    /// The service config (if any) will be in GRPC_ARG_SERVICE_CONFIG.
+    /// Takes ownership of \a result.
+    // TODO(roth): Change this API so that addresses and service config are
+    // passed explicitly instead of being in channel args.
+    virtual void ReturnResult(const grpc_channel_args* result) GRPC_ABSTRACT;
+
+    /// Returns a transient error to the channel.
+    /// If the resolver does not set the GRPC_ERROR_INT_GRPC_STATUS
+    /// attribute on the error, calls will be failed with status UNKNOWN.
+    virtual void ReturnError(grpc_error* error) GRPC_ABSTRACT;
+
+    GRPC_ABSTRACT_BASE_CLASS
+  };
+
   // Not copyable nor movable.
   Resolver(const Resolver&) = delete;
   Resolver& operator=(const Resolver&) = delete;
 
-  /// Requests a callback when a new result becomes available.
-  /// When the new result is available, sets \a *result to the new result
-  /// and schedules \a on_complete for execution.
-  /// Upon transient failure, sets \a *result to nullptr and schedules
-  /// \a on_complete with no error.
-  /// If resolution is fatally broken, sets \a *result to nullptr and
-  /// schedules \a on_complete with an error.
-  /// TODO(roth): When we have time, improve the way this API represents
-  /// transient failure vs. shutdown.
-  ///
-  /// Note that the client channel will almost always have a request
-  /// to \a NextLocked() pending.  When it gets the callback, it will
-  /// process the new result and then immediately make another call to
-  /// \a NextLocked().  This allows push-based resolvers to provide new
-  /// data as soon as it becomes available.
-  virtual void NextLocked(grpc_channel_args** result,
-                          grpc_closure* on_complete) GRPC_ABSTRACT;
+  /// Starts resolving.
+  virtual void StartLocked() GRPC_ABSTRACT;
 
   /// Asks the resolver to obtain an updated resolver result, if
   /// applicable.
@@ -79,8 +86,8 @@ class Resolver : public InternallyRefCounted<Resolver> {
   ///
   /// For push-based implementations, this may be a no-op.
   ///
-  /// If this causes new data to become available, then the currently
-  /// pending call to \a NextLocked() will return the new result.
+  /// Note: Implementations must not invoke any method on the
+  /// ResultHandler from within this call.
   virtual void RequestReresolutionLocked() {}
 
   /// Resets the re-resolution backoff, if any.
@@ -108,15 +115,17 @@ class Resolver : public InternallyRefCounted<Resolver> {
   // TODO(roth): Once we have a C++-like interface for combiners, this
   // API should change to take a RefCountedPtr<>, so that we always take
   // ownership of a new ref.
-  explicit Resolver(grpc_combiner* combiner);
+  explicit Resolver(grpc_combiner* combiner,
+                    UniquePtr<ResultHandler> result_handler);
 
   virtual ~Resolver();
 
-  /// Shuts down the resolver.  If there is a pending call to
-  /// NextLocked(), the callback will be scheduled with an error.
+  /// Shuts down the resolver.
   virtual void ShutdownLocked() GRPC_ABSTRACT;
 
   grpc_combiner* combiner() const { return combiner_; }
+
+  ResultHandler* result_handler() const { return result_handler_.get(); }
 
  private:
   static void ShutdownAndUnrefLocked(void* arg, grpc_error* ignored) {
@@ -125,6 +134,7 @@ class Resolver : public InternallyRefCounted<Resolver> {
     resolver->Unref();
   }
 
+  UniquePtr<ResultHandler> result_handler_;
   grpc_combiner* combiner_;
 };
 

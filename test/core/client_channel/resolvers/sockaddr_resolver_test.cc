@@ -30,15 +30,14 @@
 
 static grpc_combiner* g_combiner;
 
-typedef struct on_resolution_arg {
-  char* expected_server_name;
-  grpc_channel_args* resolver_result;
-} on_resolution_arg;
+class ResultHandler : public grpc_core::Resolver::ResultHandler {
+ public:
+  void ReturnResult(const grpc_channel_args* args) override {
+    grpc_channel_args_destroy(args);
+  }
 
-void on_resolution_cb(void* arg, grpc_error* error) {
-  on_resolution_arg* res = static_cast<on_resolution_arg*>(arg);
-  grpc_channel_args_destroy(res->resolver_result);
-}
+  void ReturnError(grpc_error* error) override { GRPC_ERROR_UNREF(error); }
+};
 
 static void test_succeeds(grpc_core::ResolverFactory* factory,
                           const char* string) {
@@ -50,18 +49,14 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   grpc_core::ResolverArgs args;
   args.uri = uri;
   args.combiner = g_combiner;
+  args.result_handler =
+      grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler>(
+          grpc_core::New<ResultHandler>());
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
-      factory->CreateResolver(args);
+      factory->CreateResolver(std::move(args));
   GPR_ASSERT(resolver != nullptr);
-
-  on_resolution_arg on_res_arg;
-  memset(&on_res_arg, 0, sizeof(on_res_arg));
-  on_res_arg.expected_server_name = uri->path;
-  grpc_closure* on_resolution = GRPC_CLOSURE_CREATE(
-      on_resolution_cb, &on_res_arg, grpc_schedule_on_exec_ctx);
-
-  resolver->NextLocked(&on_res_arg.resolver_result, on_resolution);
   grpc_uri_destroy(uri);
+  resolver->StartLocked();
   /* Flush ExecCtx to avoid stack-use-after-scope on on_res_arg which is
    * accessed in the closure on_resolution_cb */
   grpc_core::ExecCtx::Get()->Flush();
@@ -77,8 +72,11 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   grpc_core::ResolverArgs args;
   args.uri = uri;
   args.combiner = g_combiner;
+  args.result_handler =
+      grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler>(
+          grpc_core::New<ResultHandler>());
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
-      factory->CreateResolver(args);
+      factory->CreateResolver(std::move(args));
   GPR_ASSERT(resolver == nullptr);
   grpc_uri_destroy(uri);
 }

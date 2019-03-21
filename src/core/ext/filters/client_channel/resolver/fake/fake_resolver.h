@@ -58,8 +58,7 @@ class FakeResolverResponseGenerator
   // is called.
   void SetReresolutionResponse(grpc_channel_args* response);
 
-  // Tells the resolver to return a transient failure (signalled by
-  // returning a null result with no error).
+  // Tells the resolver to return a transient failure.
   void SetFailure();
 
   // Same as SetFailure(), but instead of returning the error
