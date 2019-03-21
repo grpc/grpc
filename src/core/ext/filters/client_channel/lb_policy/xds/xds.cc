@@ -292,8 +292,8 @@ class XdsLb : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   // Helper function used in UpdateLocked().
-  void ProcessChannelArgsLocked(const ServerAddressList& addresses,
-                                const grpc_channel_args& args);
+  void ProcessAddressesAndChannelArgsLocked(const ServerAddressList& addresses,
+                                            const grpc_channel_args& args);
 
   // Parses the xds config given the JSON node of the first child of XdsConfig.
   // If parsing succeeds, updates \a balancer_name, and updates \a
@@ -1228,8 +1228,8 @@ void XdsLb::FillChildRefsForChannelz(channelz::ChildRefsList* child_subchannels,
   }
 }
 
-void XdsLb::ProcessChannelArgsLocked(const ServerAddressList& addresses,
-                                     const grpc_channel_args& args) {
+void XdsLb::ProcessAddressesAndChannelArgsLocked(
+    const ServerAddressList& addresses, const grpc_channel_args& args) {
   // Update fallback address list.
   fallback_backend_addresses_ = ExtractBackendAddresses(addresses);
   // Make sure that GRPC_ARG_LB_POLICY_NAME is set in channel args,
@@ -1308,7 +1308,7 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
     gpr_log(GPR_ERROR, "[xdslb %p] LB config parsing fails.", this);
     return;
   }
-  ProcessChannelArgsLocked(args.addresses, *args.args);
+  ProcessAddressesAndChannelArgsLocked(args.addresses, *args.args);
   // Update the existing child policy.
   // Note: We have disabled fallback mode in the code, so this child policy must
   // have been created from a serverlist.

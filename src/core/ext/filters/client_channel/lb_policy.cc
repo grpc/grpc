@@ -101,6 +101,7 @@ LoadBalancingPolicy::UpdateArgs::UpdateArgs(const UpdateArgs& other) {
 LoadBalancingPolicy::UpdateArgs::UpdateArgs(UpdateArgs&& other) {
   addresses = std::move(other.addresses);
   config = std::move(other.config);
+  // TODO(roth): Use std::move() once channel args is converted to C++.
   args = other.args;
   other.args = nullptr;
 }
@@ -118,6 +119,8 @@ LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
     UpdateArgs&& other) {
   addresses = std::move(other.addresses);
   config = std::move(other.config);
+  // TODO(roth): Use std::move() once channel args is converted to C++.
+  grpc_channel_args_destroy(args);
   args = other.args;
   other.args = nullptr;
   return *this;

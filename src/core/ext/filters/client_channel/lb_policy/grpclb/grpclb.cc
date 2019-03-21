@@ -294,8 +294,8 @@ class GrpcLb : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   // Helper functions used in UpdateLocked().
-  void ProcessChannelArgsLocked(const ServerAddressList& addresses,
-                                const grpc_channel_args& args);
+  void ProcessAddressesAndChannelArgsLocked(const ServerAddressList& addresses,
+                                            const grpc_channel_args& args);
   void ParseLbConfig(Config* grpclb_config);
   static void OnBalancerChannelConnectivityChangedLocked(void* arg,
                                                          grpc_error* error);
@@ -1378,7 +1378,7 @@ void GrpcLb::FillChildRefsForChannelz(
 void GrpcLb::UpdateLocked(UpdateArgs args) {
   const bool is_initial_update = lb_channel_ == nullptr;
   ParseLbConfig(args.config.get());
-  ProcessChannelArgsLocked(args.addresses, *args.args);
+  ProcessAddressesAndChannelArgsLocked(args.addresses, *args.args);
   // Update the existing child policy.
   if (child_policy_ != nullptr) CreateOrUpdateChildPolicyLocked();
   // If this is the initial update, start the fallback-at-startup checks
@@ -1428,8 +1428,8 @@ ServerAddressList ExtractBackendAddresses(const ServerAddressList& addresses) {
   return backend_addresses;
 }
 
-void GrpcLb::ProcessChannelArgsLocked(const ServerAddressList& addresses,
-                                      const grpc_channel_args& args) {
+void GrpcLb::ProcessAddressesAndChannelArgsLocked(
+    const ServerAddressList& addresses, const grpc_channel_args& args) {
   // Update fallback address list.
   fallback_backend_addresses_ = ExtractBackendAddresses(addresses);
   // Make sure that GRPC_ARG_LB_POLICY_NAME is set in channel args,
