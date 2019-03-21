@@ -8059,6 +8059,7 @@ endif
 
 LIBBENCHMARK_SRC = \
     third_party/benchmark/src/benchmark.cc \
+    third_party/benchmark/src/benchmark_main.cc \
     third_party/benchmark/src/benchmark_register.cc \
     third_party/benchmark/src/colorprint.cc \
     third_party/benchmark/src/commandlineflags.cc \
@@ -8069,6 +8070,7 @@ LIBBENCHMARK_SRC = \
     third_party/benchmark/src/json_reporter.cc \
     third_party/benchmark/src/reporter.cc \
     third_party/benchmark/src/sleep.cc \
+    third_party/benchmark/src/statistics.cc \
     third_party/benchmark/src/string_util.cc \
     third_party/benchmark/src/sysinfo.cc \
     third_party/benchmark/src/timers.cc \
