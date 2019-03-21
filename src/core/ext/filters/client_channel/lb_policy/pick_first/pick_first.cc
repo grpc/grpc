@@ -116,7 +116,7 @@ class PickFirst : public LoadBalancingPolicy {
     explicit Picker(RefCountedPtr<ConnectedSubchannel> connected_subchannel)
         : connected_subchannel_(std::move(connected_subchannel)) {}
 
-    PickResult Pick(PickState* pick, grpc_error** error) override {
+    PickResult Pick(PickArgs* pick, grpc_error** error) override {
       pick->connected_subchannel = connected_subchannel_;
       return PICK_COMPLETE;
     }
