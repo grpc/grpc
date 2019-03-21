@@ -127,8 +127,6 @@ namespace Grpc.Core
         readonly string rootCertificates;
         readonly KeyCertificatePair keyCertificatePair;
         readonly VerifyPeerCallback verifyPeerCallback;
-        readonly VerifyPeerCallbackInternal verifyPeerCallbackInternal;
-        readonly GCHandle gcHandle;
 
         /// <summary>
         /// Creates client-side SSL credentials loaded from
@@ -168,12 +166,7 @@ namespace Grpc.Core
         {
             this.rootCertificates = rootCertificates;
             this.keyCertificatePair = keyCertificatePair;
-            if (verifyPeerCallback != null)
-            {
-                this.verifyPeerCallback = verifyPeerCallback;
-                this.verifyPeerCallbackInternal = this.VerifyPeerCallbackHandler;
-                gcHandle = GCHandle.Alloc(verifyPeerCallbackInternal);
-            }
+            this.verifyPeerCallback = verifyPeerCallback;
         }
 
         /// <summary>
@@ -207,29 +200,53 @@ namespace Grpc.Core
 
         internal override ChannelCredentialsSafeHandle CreateNativeCredentials()
         {
-            return ChannelCredentialsSafeHandle.CreateSslCredentials(rootCertificates, keyCertificatePair, this.verifyPeerCallbackInternal);
+            IntPtr verifyPeerCallbackTag = IntPtr.Zero;
+            if (verifyPeerCallback != null)
+            {
+                verifyPeerCallbackTag = new VerifyPeerCallbackRegistration(verifyPeerCallback).CallbackRegistration.Tag;
+            }
+            return ChannelCredentialsSafeHandle.CreateSslCredentials(rootCertificates, keyCertificatePair, verifyPeerCallbackTag);
         }
 
-        private int VerifyPeerCallbackHandler(IntPtr host, IntPtr pem, IntPtr userData, bool isDestroy)
+        private class VerifyPeerCallbackRegistration
         {
-            if (isDestroy)
+            readonly VerifyPeerCallback verifyPeerCallback;
+            readonly NativeCallbackRegistration callbackRegistration;
+
+            public VerifyPeerCallbackRegistration(VerifyPeerCallback verifyPeerCallback)
             {
-                this.gcHandle.Free();
-                return 0;
+                this.verifyPeerCallback = verifyPeerCallback;
+                this.callbackRegistration = NativeCallbackDispatcher.RegisterCallback(HandleUniversalCallback);
             }
 
-            try
-            {
-                var context = new VerifyPeerContext(Marshal.PtrToStringAnsi(host), Marshal.PtrToStringAnsi(pem));
+            public NativeCallbackRegistration CallbackRegistration => callbackRegistration;
 
-                return this.verifyPeerCallback(context) ? 0 : 1;
-            }
-            catch (Exception e)
+            private int HandleUniversalCallback(IntPtr arg0, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4, IntPtr arg5)
             {
-                // eat the exception, we must not throw when inside callback from native code.
-                Logger.Error(e, "Exception occurred while invoking verify peer callback handler.");
-                // Return validation failure in case of exception.
-                return 1;
+                return VerifyPeerCallbackHandler(arg0, arg1, arg2 != IntPtr.Zero);
+            }
+
+            private int VerifyPeerCallbackHandler(IntPtr host, IntPtr pem, bool isDestroy)
+            {
+                if (isDestroy)
+                {
+                    this.callbackRegistration.Dispose();
+                    return 0;
+                }
+
+                try
+                {
+                    var context = new VerifyPeerContext(Marshal.PtrToStringAnsi(host), Marshal.PtrToStringAnsi(pem));
+
+                    return this.verifyPeerCallback(context) ? 0 : 1;
+                }
+                catch (Exception e)
+                {
+                    // eat the exception, we must not throw when inside callback from native code.
+                    Logger.Error(e, "Exception occurred while invoking verify peer callback handler.");
+                    // Return validation failure in case of exception.
+                    return 1;
+                }
             }
         }
     }
