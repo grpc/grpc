@@ -1333,12 +1333,11 @@ void XdsLb::LocalityMap::UpdateLocked(
     if (iter == map_.end()) {
       OrphanablePtr<LocalityEntry> new_entry =
           MakeOrphanable<LocalityEntry>(parent->Ref());
+      UniquePtr<char> locality_name =
+          UniquePtr<char>(gpr_strdup(locality_serverlist[i]->locality_name));
       MutexLock lock(&child_refs_mu_);
-      iter =
-          map_.emplace(
-                  std::move(gpr_strdup(locality_serverlist[i]->locality_name)),
-                  std::move(new_entry))
-              .first;
+
+      iter = map_.emplace(locality_name.get(), std::move(new_entry)).first;
     }
     // Don't create new child policies if not directed to
     xds_grpclb_serverlist* serverlist =

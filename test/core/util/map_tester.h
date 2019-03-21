@@ -31,8 +31,7 @@ class MapTester {
   using GrpcMapEntry = typename ::grpc_core::Map<Key, T, Compare>::Entry;
 
  public:
-  MapTester(GrpcMap* test_map) : map_(test_map) {}
-  GrpcMapEntry* Root() { return map_->root_; }
+  GrpcMapEntry* Root(GrpcMap* map) { return map->root_; }
 
   GrpcMapEntry* Left(typename Map<Key, T, Compare>::Entry* e) {
     return e->left;
@@ -41,9 +40,6 @@ class MapTester {
   GrpcMapEntry* Right(typename Map<Key, T, Compare>::Entry* e) {
     return e->right;
   }
-
- private:
-  Map<Key, T, Compare>* map_;
 };
 }  // namespace testing
 }  // namespace grpc_core

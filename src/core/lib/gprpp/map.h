@@ -24,20 +24,11 @@
 #include <string.h>
 #include <functional>
 #include <iterator>
-#include <utility>
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/pair.h"
 
-#define Pair std::pair
-#define MakePair std::make_pair
-
 namespace grpc_core {
-template <class Key>
-struct Less {
-  bool operator()(const Key& lhs, const Key& rhs) const { return (lhs < rhs); }
-};
-
 struct StringLess {
   bool operator()(const char* a, const char* b) const {
     return strcmp(a, b) < 0;
@@ -50,8 +41,6 @@ class MapTester;
 }
 
 // Alternative map implementation for grpc_core
-
-// TODO(mhaidry) : Experiment with using std::less
 template <class Key, class T, class Compare = std::less<Key>>
 class Map {
   struct Entry;
@@ -62,10 +51,8 @@ class Map {
   typedef Pair<key_type, mapped_type> value_type;
   typedef Compare key_compare;
 
-  // TODO(mhaidry) : Experiment with inheriting std::iterator
-  //   : public std::iterator<std::input_iterator_tag, value_type,
-  //       int32_t, value_type*, value_type& >
-  class iterator {
+  class iterator : public std::iterator<std::input_iterator_tag, value_type,
+                                        int32_t, value_type*, value_type&> {
     using GrpcMap = typename ::grpc_core::Map<Key, T, Compare>;
     using GrpcMapEntry = typename ::grpc_core::Map<Key, T, Compare>::Entry;
 
@@ -144,8 +131,9 @@ class Map {
     iterator ret = find(pair.first);
     bool insertion = false;
     if (ret == end()) {
+      key_type key = pair.first;
       root_ = InsertRecursive(root_, std::move(pair));
-      ret = find(pair.first);
+      ret = find(key);
       insertion = true;
     }
     return MakePair<iterator, bool>(std::move(ret), std::move(insertion));
@@ -155,19 +143,17 @@ class Map {
     iterator ret = find(pair.first);
     bool insertion = false;
     if (ret == end()) {
+      key_type key = pair.first;
       root_ = InsertRecursive(root_, pair);
-      ret = find(pair.first);
+      ret = find(key);
       insertion = true;
     }
     return MakePair<iterator, bool>(std::move(ret), std::move(insertion));
   }
 
-  Pair<iterator, bool> emplace(key_type&& k, mapped_type&& v) {
-    return insert(MakePair<key_type, mapped_type>(std::move(k), std::move(v)));
-  }
-
-  Pair<iterator, bool> emplace(const key_type& k, const mapped_type& v) {
-    return insert(MakePair<key_type, mapped_type>(k, v));
+  template <class... Args>
+  Pair<iterator, bool> emplace(Args&&... args) {
+    return insert(MakePair<key_type, mapped_type>(std::forward<Args>(args)...));
   }
 
   bool empty() { return root_ == nullptr; }
@@ -266,7 +252,7 @@ class Map {
       root->left = RotateLeft(root->left);
       return RotateRight(root);
     }
-    if (heightDifference < -1 && CompareKeys(root->left->pair.first, k) > 0) {
+    if (heightDifference < -1 && CompareKeys(root->right->pair.first, k) > 0) {
       root->right = RotateRight(root->right);
       return RotateLeft(root);
     }

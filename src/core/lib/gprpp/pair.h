@@ -21,33 +21,20 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <utility>
+
 namespace grpc_core {
-// Alternative to std::pair for grpc_core
 template <class T1, class T2>
-struct Pair {
- public:
-  Pair(T1&& u, T2&& v) : first(std::move(u)), second(std::move(v)) {}
-  Pair(const T1& u, const T2& v) : first(u), second(v) {}
-  void swap(Pair& other) {
-    T1 temp_first = std::move(first);
-    T2 temp_second = std::move(second);
-    first = std::move(other.first);
-    second = std::move(other.second);
-    other.first = std::move(temp_first);
-    other.second = std::move(temp_second);
-  }
-  T1 first;
-  T2 second;
-};
+using Pair = std::pair<T1, T2>;
 
 template <class T1, class T2>
-Pair<T1, T2> MakePair(T1&& u, T2&& v) {
-  return Pair<T1, T2>(std::move(u), std::move(v));
+inline Pair<T1, T2> MakePair(T1&& u, T2&& v) {
+  return std::make_pair<T1, T2>(std::move(u), std::move(v));
 }
 
 template <class T1, class T2>
-Pair<T1, T2> MakePair(const T1& u, const T2& v) {
-  return Pair<T1, T2>(u, v);
+inline Pair<T1, T2> MakePair(const T1& u, const T2& v) {
+  return std::make_pair<T1, T2>(u, v);
 }
 }  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_GPRPP_PAIR_H */
