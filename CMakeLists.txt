@@ -5932,7 +5932,6 @@ target_link_libraries(algorithm_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -5967,7 +5966,6 @@ target_link_libraries(alloc_test
   gpr
   grpc_test_util_unsecure
   grpc_unsecure
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6002,7 +6000,6 @@ target_link_libraries(alpn_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6037,7 +6034,6 @@ target_link_libraries(arena_test
   gpr
   grpc_test_util_unsecure
   grpc_unsecure
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6072,7 +6068,6 @@ target_link_libraries(avl_test
   gpr
   grpc_test_util
   grpc
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6108,7 +6103,6 @@ target_link_libraries(bad_server_response_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6142,7 +6136,6 @@ target_link_libraries(bin_decoder_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6176,7 +6169,6 @@ target_link_libraries(bin_encoder_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6212,7 +6204,6 @@ target_link_libraries(buffer_list_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6248,7 +6239,6 @@ target_link_libraries(channel_create_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6314,7 +6304,6 @@ target_link_libraries(chttp2_hpack_encoder_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6349,7 +6338,6 @@ target_link_libraries(chttp2_stream_map_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6384,7 +6372,6 @@ target_link_libraries(chttp2_varint_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6420,7 +6407,6 @@ target_link_libraries(close_fd_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6456,7 +6442,6 @@ target_link_libraries(cmdline_test
   gpr
   grpc_test_util
   grpc
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6491,7 +6476,6 @@ target_link_libraries(combiner_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6526,7 +6510,6 @@ target_link_libraries(compression_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6561,7 +6544,6 @@ target_link_libraries(concurrent_connectivity_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6596,7 +6578,6 @@ target_link_libraries(connection_refused_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6631,7 +6612,6 @@ target_link_libraries(dns_resolver_connectivity_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6666,7 +6646,6 @@ target_link_libraries(dns_resolver_cooldown_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6701,7 +6680,6 @@ target_link_libraries(dns_resolver_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6737,7 +6715,6 @@ target_link_libraries(dualstack_socket_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6773,7 +6750,6 @@ target_link_libraries(endpoint_pair_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6808,7 +6784,6 @@ target_link_libraries(error_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6844,7 +6819,6 @@ target_link_libraries(ev_epollex_linux_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6880,7 +6854,6 @@ target_link_libraries(fake_resolver_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6917,7 +6890,6 @@ target_link_libraries(fake_transport_security_test
   gpr
   grpc_test_util
   grpc
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6954,7 +6926,6 @@ target_link_libraries(fd_conservation_posix_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -6991,7 +6962,6 @@ target_link_libraries(fd_posix_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7027,7 +6997,6 @@ target_link_libraries(fling_client
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7062,7 +7031,6 @@ target_link_libraries(fling_server
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7098,7 +7066,6 @@ target_link_libraries(fling_stream_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7135,7 +7102,6 @@ target_link_libraries(fling_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7172,7 +7138,6 @@ target_link_libraries(fork_test
   gpr
   grpc_test_util_unsecure
   grpc_unsecure
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7209,7 +7174,6 @@ target_link_libraries(goaway_server_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7245,7 +7209,6 @@ target_link_libraries(gpr_cpu_test
   gpr
   grpc_test_util_unsecure
   grpc_unsecure
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7280,7 +7243,6 @@ target_link_libraries(gpr_env_test
   gpr
   grpc_test_util_unsecure
   grpc_unsecure
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7315,7 +7277,6 @@ target_link_libraries(gpr_host_port_test
   gpr
   grpc_test_util_unsecure
   grpc_unsecure
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7350,7 +7311,6 @@ target_link_libraries(gpr_log_test
   gpr
   grpc_test_util_unsecure
   grpc_unsecure
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7385,7 +7345,6 @@ target_link_libraries(gpr_manual_constructor_test
   gpr
   grpc_test_util_unsecure
   grpc_unsecure
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7420,7 +7379,6 @@ target_link_libraries(gpr_mpscq_test
   gpr
   grpc_test_util_unsecure
   grpc_unsecure
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7455,7 +7413,6 @@ target_link_libraries(gpr_spinlock_test
   gpr
   grpc_test_util_unsecure
   grpc_unsecure
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7490,7 +7447,6 @@ target_link_libraries(gpr_string_test
   gpr
   grpc_test_util_unsecure
   grpc_unsecure
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7525,7 +7481,6 @@ target_link_libraries(gpr_sync_test
   gpr
   grpc_test_util_unsecure
   grpc_unsecure
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7560,7 +7515,6 @@ target_link_libraries(gpr_thd_test
   gpr
   grpc_test_util_unsecure
   grpc_unsecure
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7595,7 +7549,6 @@ target_link_libraries(gpr_time_test
   gpr
   grpc_test_util_unsecure
   grpc_unsecure
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7630,7 +7583,6 @@ target_link_libraries(gpr_tls_test
   gpr
   grpc_test_util_unsecure
   grpc_unsecure
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7665,7 +7617,6 @@ target_link_libraries(gpr_useful_test
   gpr
   grpc_test_util_unsecure
   grpc_unsecure
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7700,7 +7651,6 @@ target_link_libraries(grpc_auth_context_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7735,7 +7685,6 @@ target_link_libraries(grpc_b64_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7770,7 +7719,6 @@ target_link_libraries(grpc_byte_buffer_reader_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7805,7 +7753,6 @@ target_link_libraries(grpc_channel_args_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7840,7 +7787,6 @@ target_link_libraries(grpc_channel_stack_builder_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7875,7 +7821,6 @@ target_link_libraries(grpc_channel_stack_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7910,7 +7855,6 @@ target_link_libraries(grpc_completion_queue_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -7945,7 +7889,6 @@ target_link_libraries(grpc_completion_queue_threading_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8013,7 +7956,6 @@ target_link_libraries(grpc_credentials_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8048,7 +7990,6 @@ target_link_libraries(grpc_fetch_oauth2
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8083,7 +8024,6 @@ target_link_libraries(grpc_ipv6_loopback_available_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8119,7 +8059,6 @@ target_link_libraries(grpc_json_token_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8155,7 +8094,6 @@ target_link_libraries(grpc_jwt_verifier_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8222,7 +8160,6 @@ target_link_libraries(grpc_security_connector_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8257,7 +8194,6 @@ target_link_libraries(grpc_ssl_credentials_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8326,7 +8262,6 @@ target_link_libraries(handshake_client_ssl
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8365,7 +8300,6 @@ target_link_libraries(handshake_server_ssl
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8404,7 +8338,6 @@ target_link_libraries(handshake_server_with_readahead_handshaker
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8442,7 +8375,6 @@ target_link_libraries(handshake_verify_peer_options
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8477,7 +8409,6 @@ target_link_libraries(histogram_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8512,7 +8443,6 @@ target_link_libraries(hpack_parser_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8547,7 +8477,6 @@ target_link_libraries(hpack_table_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8582,7 +8511,6 @@ target_link_libraries(http_parser_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8617,7 +8545,6 @@ target_link_libraries(httpcli_format_request_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8653,7 +8580,6 @@ target_link_libraries(httpcli_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8690,7 +8616,6 @@ target_link_libraries(httpscli_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8726,7 +8651,6 @@ target_link_libraries(init_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8761,7 +8685,6 @@ target_link_libraries(inproc_callback_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8796,7 +8719,6 @@ target_link_libraries(invalid_call_argument_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8831,7 +8753,6 @@ target_link_libraries(json_rewrite
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8866,7 +8787,6 @@ target_link_libraries(json_rewrite_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8901,7 +8821,6 @@ target_link_libraries(json_stream_error_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8936,7 +8855,6 @@ target_link_libraries(json_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -8971,7 +8889,6 @@ target_link_libraries(lame_client_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9006,7 +8923,6 @@ target_link_libraries(load_file_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9041,7 +8957,6 @@ target_link_libraries(memory_usage_client
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9076,7 +8991,6 @@ target_link_libraries(memory_usage_server
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9112,7 +9026,6 @@ target_link_libraries(memory_usage_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9148,7 +9061,6 @@ target_link_libraries(message_compress_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9183,7 +9095,6 @@ target_link_libraries(minimal_stack_is_minimal_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9218,7 +9129,6 @@ target_link_libraries(multiple_server_queues_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9253,7 +9163,6 @@ target_link_libraries(murmur_hash_test
   gpr
   grpc_test_util_unsecure
   grpc_unsecure
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9288,7 +9197,6 @@ target_link_libraries(no_server_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9323,7 +9231,6 @@ target_link_libraries(num_external_connectivity_watchers_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9358,7 +9265,6 @@ target_link_libraries(parse_address_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9394,7 +9300,6 @@ target_link_libraries(parse_address_with_named_scope_id_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9430,7 +9335,6 @@ target_link_libraries(percent_encoding_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9466,7 +9370,6 @@ target_link_libraries(resolve_address_using_ares_resolver_posix_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9502,7 +9405,6 @@ target_link_libraries(resolve_address_using_ares_resolver_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9538,7 +9440,6 @@ target_link_libraries(resolve_address_using_native_resolver_posix_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9574,7 +9475,6 @@ target_link_libraries(resolve_address_using_native_resolver_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9609,7 +9509,6 @@ target_link_libraries(resource_quota_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9644,7 +9543,6 @@ target_link_libraries(secure_channel_create_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9679,7 +9577,6 @@ target_link_libraries(secure_endpoint_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9714,7 +9611,6 @@ target_link_libraries(sequential_connectivity_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9749,7 +9645,6 @@ target_link_libraries(server_chttp2_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9784,7 +9679,6 @@ target_link_libraries(server_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9819,7 +9713,6 @@ target_link_libraries(slice_buffer_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9854,7 +9747,6 @@ target_link_libraries(slice_string_helpers_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9889,7 +9781,6 @@ target_link_libraries(slice_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9924,7 +9815,6 @@ target_link_libraries(sockaddr_resolver_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9959,7 +9849,6 @@ target_link_libraries(sockaddr_utils_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -9995,7 +9884,6 @@ target_link_libraries(socket_utils_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -10033,7 +9921,6 @@ target_link_libraries(ssl_transport_security_test
   gpr
   grpc_test_util
   grpc
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -10069,7 +9956,6 @@ target_link_libraries(status_conversion_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -10104,7 +9990,6 @@ target_link_libraries(stream_compression_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -10139,7 +10024,6 @@ target_link_libraries(stream_owned_slice_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -10175,7 +10059,6 @@ target_link_libraries(tcp_client_posix_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -10211,7 +10094,6 @@ target_link_libraries(tcp_client_uv_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -10247,7 +10129,6 @@ target_link_libraries(tcp_posix_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -10284,7 +10165,6 @@ target_link_libraries(tcp_server_posix_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -10320,7 +10200,6 @@ target_link_libraries(tcp_server_uv_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -10355,7 +10234,6 @@ target_link_libraries(time_averaged_stats_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -10390,7 +10268,6 @@ target_link_libraries(timeout_encoding_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -10425,7 +10302,6 @@ target_link_libraries(timer_heap_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -10460,7 +10336,6 @@ target_link_libraries(timer_list_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -10495,7 +10370,6 @@ target_link_libraries(transport_connectivity_state_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -10530,7 +10404,6 @@ target_link_libraries(transport_metadata_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -10566,7 +10439,6 @@ target_link_libraries(transport_security_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -10603,7 +10475,6 @@ target_link_libraries(udp_server_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -10639,7 +10510,6 @@ target_link_libraries(uri_parser_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -16463,7 +16333,6 @@ target_link_libraries(public_headers_must_be_c89
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 
@@ -16569,7 +16438,6 @@ target_link_libraries(badreq_bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -16606,7 +16474,6 @@ target_link_libraries(connection_prefix_bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -16643,7 +16510,6 @@ target_link_libraries(duplicate_header_bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -16680,7 +16546,6 @@ target_link_libraries(head_of_line_blocking_bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -16717,7 +16582,6 @@ target_link_libraries(headers_bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -16754,7 +16618,6 @@ target_link_libraries(initial_settings_frame_bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -16791,7 +16654,6 @@ target_link_libraries(large_metadata_bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -16828,7 +16690,6 @@ target_link_libraries(server_registered_method_bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -16865,7 +16726,6 @@ target_link_libraries(simple_request_bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -16902,7 +16762,6 @@ target_link_libraries(unknown_frame_bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -16939,7 +16798,6 @@ target_link_libraries(window_overflow_bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -16976,7 +16834,6 @@ target_link_libraries(bad_ssl_cert_server
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17013,7 +16870,6 @@ target_link_libraries(bad_ssl_cert_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17050,7 +16906,6 @@ target_link_libraries(h2_census_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17086,7 +16941,6 @@ target_link_libraries(h2_compress_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17122,7 +16976,6 @@ target_link_libraries(h2_fakesec_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17159,7 +17012,6 @@ target_link_libraries(h2_fd_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17196,7 +17048,6 @@ target_link_libraries(h2_full_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17233,7 +17084,6 @@ target_link_libraries(h2_full+pipe_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17270,7 +17120,6 @@ target_link_libraries(h2_full+trace_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17306,7 +17155,6 @@ target_link_libraries(h2_full+workarounds_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17342,7 +17190,6 @@ target_link_libraries(h2_http_proxy_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17379,7 +17226,6 @@ target_link_libraries(h2_local_ipv4_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17417,7 +17263,6 @@ target_link_libraries(h2_local_ipv6_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17455,7 +17300,6 @@ target_link_libraries(h2_local_uds_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17492,7 +17336,6 @@ target_link_libraries(h2_oauth2_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17528,7 +17371,6 @@ target_link_libraries(h2_proxy_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17564,7 +17406,6 @@ target_link_libraries(h2_sockpair_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17600,7 +17441,6 @@ target_link_libraries(h2_sockpair+trace_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17636,7 +17476,6 @@ target_link_libraries(h2_sockpair_1byte_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17672,7 +17511,6 @@ target_link_libraries(h2_spiffe_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17708,7 +17546,6 @@ target_link_libraries(h2_ssl_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17744,7 +17581,6 @@ target_link_libraries(h2_ssl_proxy_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17781,7 +17617,6 @@ target_link_libraries(h2_uds_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17818,7 +17653,6 @@ target_link_libraries(inproc_test
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17854,7 +17688,6 @@ target_link_libraries(h2_census_nosec_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17890,7 +17723,6 @@ target_link_libraries(h2_compress_nosec_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17927,7 +17759,6 @@ target_link_libraries(h2_fd_nosec_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -17964,7 +17795,6 @@ target_link_libraries(h2_full_nosec_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -18001,7 +17831,6 @@ target_link_libraries(h2_full+pipe_nosec_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -18038,7 +17867,6 @@ target_link_libraries(h2_full+trace_nosec_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -18074,7 +17902,6 @@ target_link_libraries(h2_full+workarounds_nosec_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -18110,7 +17937,6 @@ target_link_libraries(h2_http_proxy_nosec_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -18146,7 +17972,6 @@ target_link_libraries(h2_proxy_nosec_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -18182,7 +18007,6 @@ target_link_libraries(h2_sockpair_nosec_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -18218,7 +18042,6 @@ target_link_libraries(h2_sockpair+trace_nosec_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -18254,7 +18077,6 @@ target_link_libraries(h2_sockpair_1byte_nosec_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -18291,7 +18113,6 @@ target_link_libraries(h2_uds_nosec_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -18619,7 +18440,6 @@ target_link_libraries(alts_credentials_fuzzer_one_entry
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -18655,7 +18475,6 @@ target_link_libraries(api_fuzzer_one_entry
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -18691,7 +18510,6 @@ target_link_libraries(client_fuzzer_one_entry
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -18727,7 +18545,6 @@ target_link_libraries(hpack_parser_fuzzer_test_one_entry
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -18763,7 +18580,6 @@ target_link_libraries(http_request_fuzzer_test_one_entry
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -18799,7 +18615,6 @@ target_link_libraries(http_response_fuzzer_test_one_entry
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -18835,7 +18650,6 @@ target_link_libraries(json_fuzzer_test_one_entry
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -18871,7 +18685,6 @@ target_link_libraries(nanopb_fuzzer_response_test_one_entry
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -18907,7 +18720,6 @@ target_link_libraries(nanopb_fuzzer_serverlist_test_one_entry
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -18943,7 +18755,6 @@ target_link_libraries(percent_decode_fuzzer_one_entry
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -18979,7 +18790,6 @@ target_link_libraries(percent_encode_fuzzer_one_entry
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -19015,7 +18825,6 @@ target_link_libraries(server_fuzzer_one_entry
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -19051,7 +18860,6 @@ target_link_libraries(ssl_server_fuzzer_one_entry
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
@@ -19087,7 +18895,6 @@ target_link_libraries(uri_fuzzer_test_one_entry
   grpc_test_util
   grpc
   gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
   # avoid dependency on libstdc++
