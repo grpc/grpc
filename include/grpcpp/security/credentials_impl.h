@@ -44,7 +44,7 @@ class CallCredentials;
 class SecureCallCredentials;
 class SecureChannelCredentials;
 
-std::shared_ptr<grpc::Channel> CreateCustomChannel(
+std::shared_ptr<grpc::Channel> CreateCustomChannelImpl(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds,
     const grpc::ChannelArguments& args);
@@ -78,7 +78,7 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
   virtual SecureChannelCredentials* AsSecureCredentials() = 0;
 
  private:
-  friend std::shared_ptr<grpc::Channel> CreateCustomChannel(
+  friend std::shared_ptr<grpc::Channel> CreateCustomChannelImpl(
       const grpc::string& target,
       const std::shared_ptr<ChannelCredentials>& creds,
       const grpc::ChannelArguments& args);

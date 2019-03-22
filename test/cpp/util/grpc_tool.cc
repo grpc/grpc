@@ -217,7 +217,7 @@ std::shared_ptr<grpc::Channel> CreateCliChannel(
   if (!cred.GetSslTargetNameOverride().empty()) {
     args.SetSslTargetNameOverride(cred.GetSslTargetNameOverride());
   }
-  return grpc::CreateCustomChannel(server_address, cred.GetCredentials(), args);
+  return CreateCustomChannel(server_address, cred.GetCredentials(), args);
 }
 
 struct Command {
