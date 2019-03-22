@@ -29,3 +29,16 @@ cc_grpc_library(
     proto_only = True,
     deps = [],
 )
+
+environment(name = "windows_msvc")
+
+environment(name = "non_windows_msvc")
+
+environment_group(
+    name = "os",
+    defaults = [":non_windows_msvc"],
+    environments = [
+        ":non_windows_msvc",
+        ":windows_msvc",
+    ],
+)

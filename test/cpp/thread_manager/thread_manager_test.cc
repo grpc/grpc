@@ -21,13 +21,12 @@
 #include <memory>
 #include <string>
 
-#include <gflags/gflags.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/grpcpp.h>
 
-#include "src/cpp/thread_manager/thread_manager.h"
 #include "test/cpp/util/test_config.h"
+#include "src/cpp/thread_manager/thread_manager.h"
 
 namespace grpc {
 
