@@ -167,22 +167,12 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "size": size,
         "timeout": timeout,
         "exec_compatible_with": exec_compatible_with,
-        "tags": tags,
     }
     if uses_polling:
         native.cc_test(
             testonly = True,
-            tags = (["manual"] if not is_msvc() else tags),
-            name = name,
-            srcs = srcs,
-            args = args["args"],
-            data = data,
-            deps = deps + _get_external_deps(external_deps),
-            copts = copts,
-            linkopts = if_not_windows(["-pthread"]),
-            size = size,
-            timeout = timeout,
-            exec_compatible_with = exec_compatible_with,
+            tags = (["manual"] if is_msvc() else tags),
+            **args
         )
         for poller in POLLERS:
             native.sh_test(
@@ -197,11 +187,11 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
                     poller,
                     "$(location %s)" % name,
                 ] + args["args"],
-                tags = tags if is_msvc() else tags + ["no_windows"],
+                tags = (tags + ["no_windows"]) if is_msvc() else tags,
                 exec_compatible_with = exec_compatible_with,
             )
     else:
-        native.cc_test(**args)
+        native.cc_test(tags = tags, **args)
 
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = []):
     copts = []
