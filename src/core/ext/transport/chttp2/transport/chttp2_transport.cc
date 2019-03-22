@@ -1409,20 +1409,12 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   grpc_closure* on_complete = op->on_complete;
-  // TODO(roth): This is a hack needed because we use data inside of the
-  // closure itself to do the barrier calculation (i.e., to ensure that
-  // we don't schedule the closure until all ops in the batch have been
-  // completed).  This can go away once we move to a new C++ closure API
-  // that provides the ability to create a barrier closure.
-  if (on_complete == nullptr) {
-    on_complete = GRPC_CLOSURE_INIT(&op->handler_private.closure, do_nothing,
-                                    nullptr, grpc_schedule_on_exec_ctx);
+  if(on_complete != nullptr) {
+    /* This batch has send ops. Use final_data as a barrier until enqueue time;
+     * the inital counter is dropped at the end of this function */
+    on_complete->next_data.scratch = CLOSURE_BARRIER_FIRST_REF_BIT;
+    on_complete->error_data.error = GRPC_ERROR_NONE;
   }
-
-  /* use final_data as a barrier until enqueue time; the inital counter is
-     dropped at the end of this function */
-  on_complete->next_data.scratch = CLOSURE_BARRIER_FIRST_REF_BIT;
-  on_complete->error_data.error = GRPC_ERROR_NONE;
 
   if (op->cancel_stream) {
     GRPC_STATS_INC_HTTP2_OP_CANCEL();
@@ -1672,8 +1664,10 @@ static void perform_stream_op_locked(void* stream_op,
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
   }
 
-  grpc_chttp2_complete_closure_step(t, s, &on_complete, GRPC_ERROR_NONE,
-                                    "op->on_complete");
+  if(on_complete != nullptr) {
+    grpc_chttp2_complete_closure_step(t, s, &on_complete, GRPC_ERROR_NONE,
+                                      "op->on_complete");
+  }
 
   GRPC_CHTTP2_STREAM_UNREF(s, "perform_stream_op");
 }
