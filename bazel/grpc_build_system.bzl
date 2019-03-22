@@ -169,9 +169,11 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "exec_compatible_with": exec_compatible_with,
     }
     if uses_polling:
+        # Only run targets with pollers for non-MSVC
+        # Only run targets without pollers for MSVC
         native.cc_test(
             testonly = True,
-            tags = (["manual"] if is_msvc() else tags),
+            tags = tags if is_msvc() else ["manual"],
             **args
         )
         for poller in POLLERS:
