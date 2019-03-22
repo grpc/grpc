@@ -298,6 +298,10 @@ void grpcsharp_redirect_log() {
   fprintf(stderr, "Should never reach here");
   abort();
 }
+void grpcsharp_native_callback_dispatcher_init() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
 void grpcsharp_metadata_credentials_create_from_plugin() {
   fprintf(stderr, "Should never reach here");
   abort();
