@@ -30,7 +30,7 @@ namespace grpc_core {
 namespace testing {
 class Payload {
  public:
-  Payload(int data) : data_(data) {}
+  explicit Payload(int data) : data_(data) {}
   int data() { return data_; }
 
  private:
@@ -39,7 +39,7 @@ class Payload {
 
 class ReffedPayload : public ::grpc_core::InternallyRefCounted<ReffedPayload> {
  public:
-  ReffedPayload(int data) : data_(data) {}
+  explicit ReffedPayload(int data) : data_(data) {}
   int data() { return data_; }
   void Orphan() override {}
 
@@ -50,7 +50,7 @@ class ReffedPayload : public ::grpc_core::InternallyRefCounted<ReffedPayload> {
 class OrphanablePayload
     : public ::grpc_core::InternallyRefCounted<OrphanablePayload> {
  public:
-  OrphanablePayload(int data) : data_(data) {}
+  explicit OrphanablePayload(int data) : data_(data) {}
   int data() { return data_; }
   void Orphan() override { Unref(); }
 
