@@ -32,9 +32,14 @@ struct grpc_chttp2_incoming_metadata_buffer {
     grpc_metadata_batch_destroy(&batch);
   }
 
+  static constexpr size_t kPreallocatedMDElem = 10;
+
   gpr_arena* arena;
+  size_t size = 0;   // total size of metadata.
+  size_t count = 0;  // minimum of count of metadata and kPreallocatedMDElem.
+  // These preallocated mdelems are used while count < kPreallocatedMDElem.
+  grpc_linked_mdelem preallocated_mdelems[kPreallocatedMDElem];
   grpc_metadata_batch batch;
-  size_t size = 0;  // total size of metadata
 };
 
 void grpc_chttp2_incoming_metadata_buffer_publish(
