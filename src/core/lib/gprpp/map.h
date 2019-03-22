@@ -33,6 +33,9 @@ struct StringLess {
   bool operator()(const char* a, const char* b) const {
     return strcmp(a, b) < 0;
   }
+  bool operator()(const UniquePtr<char>& k1, const UniquePtr<char>& k2) {
+    return strcmp(k1.get(), k2.get()) < 0;
+  }
 };
 
 namespace testing {
@@ -237,7 +240,7 @@ class Map {
     return leftChild;
   }
 
-  Entry* RebalanceTreeAfterInsertion(Entry* root, key_type& k) {
+  Entry* RebalanceTreeAfterInsertion(Entry* root, const key_type& k) {
     root->height =
         1 + GPR_MAX(EntryHeight(root->left), EntryHeight(root->right));
     int32_t heightDifference =
@@ -292,12 +295,14 @@ class Map {
     if (comp > 0) {
       Pair<iterator, Entry*> ret = InsertRecursive(root->left, std::move(p));
       root->left = ret.second;
-      ret.second = std::move(RebalanceTreeAfterInsertion(root, p.first));
+      ret.second =
+          std::move(RebalanceTreeAfterInsertion(root, ret.first->first));
       return ret;
     } else if (comp < 0) {
       Pair<iterator, Entry*> ret = InsertRecursive(root->right, std::move(p));
       root->right = ret.second;
-      ret.second = std::move(RebalanceTreeAfterInsertion(root, p.first));
+      ret.second =
+          std::move(RebalanceTreeAfterInsertion(root, ret.first->first));
       return ret;
     } else {
       root->pair = std::move(p);

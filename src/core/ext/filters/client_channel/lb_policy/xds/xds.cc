@@ -341,14 +341,7 @@ class XdsLb : public LoadBalancingPolicy {
 
    private:
     void PruneLocalities(const LocalityList& locality_list);
-
-    struct CompareLocality {
-      bool operator()(const UniquePtr<char>& k1, const UniquePtr<char>& k2) {
-        return gpr_stricmp(k1.get(), k2.get()) < 0;
-      }
-    };
-
-    Map<UniquePtr<char>, OrphanablePtr<LocalityEntry>, CompareLocality> map_;
+    Map<UniquePtr<char>, OrphanablePtr<LocalityEntry>, StringLess> map_;
     // Lock held while filling child refs for all localities
     // inside the map
     gpr_mu child_refs_mu_;
