@@ -2531,7 +2531,7 @@ class QueuedPickCanceller {
     auto* chand = static_cast<channel_data*>(elem->channel_data);
     GRPC_CALL_STACK_REF(calld->owning_call, "QueuedPickCanceller");
     GRPC_CLOSURE_INIT(&closure_, &CancelLocked, this,
-                      grpc_combiner_scheduler(chand->combiner));
+                      grpc_combiner_scheduler(chand->data_plane_combiner));
     grpc_call_combiner_set_notify_on_cancel(calld->call_combiner, &closure_);
   }
 
