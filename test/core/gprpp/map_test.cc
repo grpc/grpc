@@ -289,35 +289,35 @@ TEST_F(MapTest, MapIterAndRemove) {
 }
 
 // Test insertion of raw pointer values
-// TEST_F(MapTest, MapAddTestOrphanablePtr) {
-//  grpc_core::Map<const char*, OrphanablePtr<OrphanablePayload>, StringLess>
-//      test_map;
-//  OrphanablePtr<OrphanablePayload> p[3];
-//  for (int i = 0; i < 3; i++) {
-//    p[i] = MakeOrphanable<OrphanablePayload>(i);
-//  }
-//  test_map.emplace("abc", std::move(p[0]));
-//  test_map.emplace("efg", std::move(p[1]));
-//  test_map.emplace("hij", std::move(p[2]));
-//  EXPECT_EQ(0, test_map.find("abc")->second->data());
-//  EXPECT_EQ(1, test_map.find("efg")->second->data());
-//  EXPECT_EQ(2, test_map.find("hij")->second->data());
-//}
-//
-//// Test insertion of unique pointer values
-// TEST_F(MapTest, MapAddTestUniquePtr) {
-//  grpc_core::Map<const char*, UniquePtr<Payload>, StringLess> test_map;
-//  UniquePtr<Payload> p[3];
-//  for (int i = 0; i < 3; i++) {
-//    p[i] = MakeUnique<Payload>(i);
-//  }
-//  test_map.emplace("abc", std::move(p[0]));
-//  test_map.emplace("efg", std::move(p[1]));
-//  test_map.emplace("hij", std::move(p[2]));
-//  EXPECT_EQ(0, test_map.find("abc")->second->data());
-//  EXPECT_EQ(1, test_map.find("efg")->second->data());
-//  EXPECT_EQ(2, test_map.find("hij")->second->data());
-//}
+TEST_F(MapTest, MapAddTestOrphanablePtr) {
+  grpc_core::Map<const char*, OrphanablePtr<OrphanablePayload>, StringLess>
+      test_map;
+  OrphanablePtr<OrphanablePayload> p[3];
+  for (int i = 0; i < 3; i++) {
+    p[i] = MakeOrphanable<OrphanablePayload>(i);
+  }
+  test_map.emplace("abc", std::move(p[0]));
+  test_map.emplace("efg", std::move(p[1]));
+  test_map.emplace("hij", std::move(p[2]));
+  EXPECT_EQ(0, test_map.find("abc")->second->data());
+  EXPECT_EQ(1, test_map.find("efg")->second->data());
+  EXPECT_EQ(2, test_map.find("hij")->second->data());
+}
+
+// Test insertion of unique pointer values
+TEST_F(MapTest, MapAddTestUniquePtr) {
+  grpc_core::Map<const char*, UniquePtr<Payload>, StringLess> test_map;
+  UniquePtr<Payload> p[3];
+  for (int i = 0; i < 3; i++) {
+    p[i] = MakeUnique<Payload>(i);
+  }
+  test_map.emplace("abc", std::move(p[0]));
+  test_map.emplace("efg", std::move(p[1]));
+  test_map.emplace("hij", std::move(p[2]));
+  EXPECT_EQ(0, test_map.find("abc")->second->data());
+  EXPECT_EQ(1, test_map.find("efg")->second->data());
+  EXPECT_EQ(2, test_map.find("hij")->second->data());
+}
 }  // namespace testing
 }  // namespace grpc_core
 
