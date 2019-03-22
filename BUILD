@@ -2334,7 +2334,8 @@ grpc_cc_library(
         ":google_api_upb",
         ":proto_gen_validate_upb",
         ":envoy_type_upb",
-    ]
+    ],
+    tags = ["no_windows"],
 )
 
 grpc_cc_library(
@@ -2354,7 +2355,8 @@ grpc_cc_library(
     deps = [
         ":google_api_upb",
         ":proto_gen_validate_upb"
-    ]
+    ],
+    tags = ["no_windows"],
 )
 
 grpc_cc_library(
@@ -2373,7 +2375,8 @@ grpc_cc_library(
     ],
     deps = [
         ":google_api_upb",
-    ]
+    ],
+    tags = ["no_windows"],
 )
 
 grpc_cc_library(
@@ -2404,6 +2407,7 @@ grpc_cc_library(
     external_deps = [
         "upb_lib",
     ],
+    tags = ["no_windows"],
 )
 
 grpc_generate_one_off_targets()
