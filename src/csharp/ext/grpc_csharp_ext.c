@@ -1010,6 +1010,21 @@ grpcsharp_composite_call_credentials_create(grpc_call_credentials* creds1,
   return grpc_composite_call_credentials_create(creds1, creds2, NULL);
 }
 
+/* Native callback dispatcher */
+
+typedef int(GPR_CALLTYPE* grpcsharp_native_callback_dispatcher_func)(
+    void* tag, void* arg0, void* arg1, void* arg2, void* arg3, void* arg4,
+    void* arg5);
+
+static grpcsharp_native_callback_dispatcher_func native_callback_dispatcher =
+    NULL;
+
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_native_callback_dispatcher_init(
+    grpcsharp_native_callback_dispatcher_func func) {
+  GPR_ASSERT(func);
+  native_callback_dispatcher = func;
+}
+
 /* Metadata credentials plugin */
 
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_metadata_credentials_notify_from_plugin(
@@ -1023,37 +1038,28 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_metadata_credentials_notify_from_plugin(
   }
 }
 
-typedef void(GPR_CALLTYPE* grpcsharp_metadata_interceptor_func)(
-    void* state, const char* service_url, const char* method_name,
-    grpc_credentials_plugin_metadata_cb cb, void* user_data,
-    int32_t is_destroy);
-
 static int grpcsharp_get_metadata_handler(
     void* state, grpc_auth_metadata_context context,
     grpc_credentials_plugin_metadata_cb cb, void* user_data,
     grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
     size_t* num_creds_md, grpc_status_code* status,
     const char** error_details) {
-  grpcsharp_metadata_interceptor_func interceptor =
-      (grpcsharp_metadata_interceptor_func)(intptr_t)state;
-  interceptor(state, context.service_url, context.method_name, cb, user_data,
-              0);
+  native_callback_dispatcher(state, (void*)context.service_url,
+                             (void*)context.method_name, cb, user_data,
+                             (void*)0, NULL);
   return 0; /* Asynchronous return. */
 }
 
 static void grpcsharp_metadata_credentials_destroy_handler(void* state) {
-  grpcsharp_metadata_interceptor_func interceptor =
-      (grpcsharp_metadata_interceptor_func)(intptr_t)state;
-  interceptor(state, NULL, NULL, NULL, NULL, 1);
+  native_callback_dispatcher(state, NULL, NULL, NULL, NULL, (void*)1, NULL);
 }
 
 GPR_EXPORT grpc_call_credentials* GPR_CALLTYPE
-grpcsharp_metadata_credentials_create_from_plugin(
-    grpcsharp_metadata_interceptor_func metadata_interceptor) {
+grpcsharp_metadata_credentials_create_from_plugin(void* callback_tag) {
   grpc_metadata_credentials_plugin plugin;
   plugin.get_metadata = grpcsharp_get_metadata_handler;
   plugin.destroy = grpcsharp_metadata_credentials_destroy_handler;
-  plugin.state = (void*)(intptr_t)metadata_interceptor;
+  plugin.state = callback_tag;
   plugin.type = "";
   return grpc_metadata_credentials_create_from_plugin(plugin, NULL);
 }

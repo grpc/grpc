@@ -43,6 +43,9 @@ namespace Grpc.Core.Internal
             // to make sure we don't lose any logs.
             NativeLogRedirector.Redirect(this.nativeMethods);
 
+            // Initialize
+            NativeCallbackDispatcher.Init(this.nativeMethods);
+
             DefaultSslRootsOverride.Override(this.nativeMethods);
 
             Logger.Debug("gRPC native library loaded successfully.");
