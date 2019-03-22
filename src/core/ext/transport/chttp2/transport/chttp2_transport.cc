@@ -1407,9 +1407,10 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   grpc_closure* on_complete = op->on_complete;
+  // on_complete will be null if and only if there are no send ops in the batch.
   if (on_complete != nullptr) {
-    /* This batch has send ops. Use final_data as a barrier until enqueue time;
-     * the inital counter is dropped at the end of this function */
+    // This batch has send ops. Use final_data as a barrier until enqueue time;
+    // the inital counter is dropped at the end of this function.
     on_complete->next_data.scratch = CLOSURE_BARRIER_FIRST_REF_BIT;
     on_complete->error_data.error = GRPC_ERROR_NONE;
   }
