@@ -35,11 +35,11 @@ SecureChannelCredentials::SecureChannelCredentials(
 }
 
 std::shared_ptr<grpc::Channel> SecureChannelCredentials::CreateChannelImpl(
-    const string& target, const grpc::ChannelArguments& args) {
+    const grpc::string& target, const grpc::ChannelArguments& args) {
   return CreateChannelWithInterceptors(
       target, args,
-      std::vector<
-          std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>());
+      std::vector<std::unique_ptr<
+          grpc::experimental::ClientInterceptorFactoryInterface>>());
 }
 
 std::shared_ptr<grpc::Channel>
@@ -220,7 +220,7 @@ std::shared_ptr<grpc_impl::CallCredentials> MetadataCredentialsFromPlugin(
       grpc_metadata_credentials_create_from_plugin(c_plugin, nullptr));
 }
 
-} // namespace grpc_impl
+}  // namespace grpc_impl
 
 namespace grpc {
 
@@ -325,4 +325,4 @@ MetadataCredentialsPluginWrapper::MetadataCredentialsPluginWrapper(
     std::unique_ptr<MetadataCredentialsPlugin> plugin)
     : thread_pool_(CreateDefaultThreadPool()), plugin_(std::move(plugin)) {}
 
-}  // namespace grpc_impl
+}  // namespace grpc

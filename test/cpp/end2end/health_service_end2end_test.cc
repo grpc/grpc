@@ -124,8 +124,8 @@ class HealthServiceEnd2endTest : public ::testing::Test {
   }
 
   void ResetStubs() {
-    std::shared_ptr<Channel> channel =
-        grpc::CreateChannel(server_address_.str(), InsecureChannelCredentials());
+    std::shared_ptr<Channel> channel = grpc::CreateChannel(
+        server_address_.str(), InsecureChannelCredentials());
     hc_stub_ = grpc::health::v1::Health::NewStub(channel);
   }
 

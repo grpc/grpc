@@ -265,7 +265,8 @@ class ServerInterceptorsEnd2endSyncUnaryTest : public ::testing::Test {
 TEST_F(ServerInterceptorsEnd2endSyncUnaryTest, UnaryTest) {
   ChannelArguments args;
   DummyInterceptor::Reset();
-  auto channel = grpc::CreateChannel(server_address_, InsecureChannelCredentials());
+  auto channel =
+      grpc::CreateChannel(server_address_, InsecureChannelCredentials());
   MakeCall(channel);
   // Make sure all 20 dummy interceptors were run
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
@@ -308,7 +309,8 @@ class ServerInterceptorsEnd2endSyncStreamingTest : public ::testing::Test {
 TEST_F(ServerInterceptorsEnd2endSyncStreamingTest, ClientStreamingTest) {
   ChannelArguments args;
   DummyInterceptor::Reset();
-  auto channel = grpc::CreateChannel(server_address_, InsecureChannelCredentials());
+  auto channel =
+      grpc::CreateChannel(server_address_, InsecureChannelCredentials());
   MakeClientStreamingCall(channel);
   // Make sure all 20 dummy interceptors were run
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
@@ -317,7 +319,8 @@ TEST_F(ServerInterceptorsEnd2endSyncStreamingTest, ClientStreamingTest) {
 TEST_F(ServerInterceptorsEnd2endSyncStreamingTest, ServerStreamingTest) {
   ChannelArguments args;
   DummyInterceptor::Reset();
-  auto channel = grpc::CreateChannel(server_address_, InsecureChannelCredentials());
+  auto channel =
+      grpc::CreateChannel(server_address_, InsecureChannelCredentials());
   MakeServerStreamingCall(channel);
   // Make sure all 20 dummy interceptors were run
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
@@ -326,7 +329,8 @@ TEST_F(ServerInterceptorsEnd2endSyncStreamingTest, ServerStreamingTest) {
 TEST_F(ServerInterceptorsEnd2endSyncStreamingTest, BidiStreamingTest) {
   ChannelArguments args;
   DummyInterceptor::Reset();
-  auto channel = grpc::CreateChannel(server_address_, InsecureChannelCredentials());
+  auto channel =
+      grpc::CreateChannel(server_address_, InsecureChannelCredentials());
   MakeBidiStreamingCall(channel);
   // Make sure all 20 dummy interceptors were run
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
@@ -356,7 +360,8 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnaryTest) {
   auto server = builder.BuildAndStart();
 
   ChannelArguments args;
-  auto channel = grpc::CreateChannel(server_address, InsecureChannelCredentials());
+  auto channel =
+      grpc::CreateChannel(server_address, InsecureChannelCredentials());
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
 
   EchoRequest send_request;
@@ -428,7 +433,8 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, BidiStreamingTest) {
   auto server = builder.BuildAndStart();
 
   ChannelArguments args;
-  auto channel = grpc::CreateChannel(server_address, InsecureChannelCredentials());
+  auto channel =
+      grpc::CreateChannel(server_address, InsecureChannelCredentials());
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
 
   EchoRequest send_request;
@@ -509,7 +515,8 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
   auto server = builder.BuildAndStart();
 
   ChannelArguments args;
-  auto channel = grpc::CreateChannel(server_address, InsecureChannelCredentials());
+  auto channel =
+      grpc::CreateChannel(server_address, InsecureChannelCredentials());
   GenericStub generic_stub(channel);
 
   const grpc::string kMethodName("/grpc.cpp.test.util.EchoTestService/Echo");

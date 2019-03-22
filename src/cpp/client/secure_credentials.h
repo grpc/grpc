@@ -38,15 +38,15 @@ class SecureChannelCredentials final : public ChannelCredentials {
   grpc_channel_credentials* GetRawCreds() { return c_creds_; }
 
   std::shared_ptr<grpc::Channel> CreateChannelImpl(
-      const string& target, const grpc::ChannelArguments& args) override;
+      const grpc::string& target, const grpc::ChannelArguments& args) override;
 
   SecureChannelCredentials* AsSecureCredentials() override { return this; }
 
  private:
   std::shared_ptr<grpc::Channel> CreateChannelWithInterceptors(
       const grpc::string& target, const grpc::ChannelArguments& args,
-      std::vector<
-          std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
+      std::vector<std::unique_ptr<
+          grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators) override;
   grpc_channel_credentials* const c_creds_;
 };
@@ -66,7 +66,7 @@ class SecureCallCredentials final : public CallCredentials {
   grpc_call_credentials* const c_creds_;
 };
 
-} // namespace grpc_impl
+}  // namespace grpc_impl
 
 namespace grpc {
 

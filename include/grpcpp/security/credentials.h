@@ -30,7 +30,8 @@ typedef ::grpc_impl::SslCredentialsOptions SslCredentialsOptions;
 typedef ::grpc_impl::SecureCallCredentials SecureCallCredentials;
 typedef ::grpc_impl::SecureChannelCredentials SecureChannelCredentials;
 
-static inline std::shared_ptr<grpc_impl::ChannelCredentials> GoogleDefaultCredentials() {
+static inline std::shared_ptr<grpc_impl::ChannelCredentials>
+GoogleDefaultCredentials() {
   return ::grpc_impl::GoogleDefaultCredentials();
 }
 
@@ -39,30 +40,34 @@ static inline std::shared_ptr<ChannelCredentials> SslCredentials(
   return ::grpc_impl::SslCredentials(options);
 }
 
-static inline std::shared_ptr<grpc_impl::CallCredentials> GoogleComputeEngineCredentials() {
+static inline std::shared_ptr<grpc_impl::CallCredentials>
+GoogleComputeEngineCredentials() {
   return ::grpc_impl::GoogleComputeEngineCredentials();
 }
 
-static inline std::shared_ptr<grpc_impl::CallCredentials> ServiceAccountJWTAccessCredentials(
+static inline std::shared_ptr<grpc_impl::CallCredentials>
+ServiceAccountJWTAccessCredentials(
     const grpc::string& json_key,
     long token_lifetime_seconds = ::grpc_impl::kMaxAuthTokenLifetimeSecs) {
-  return ::grpc_impl::ServiceAccountJWTAccessCredentials(json_key, token_lifetime_seconds);
+  return ::grpc_impl::ServiceAccountJWTAccessCredentials(
+      json_key, token_lifetime_seconds);
 }
 
-static inline std::shared_ptr<grpc_impl::CallCredentials> GoogleRefreshTokenCredentials(
-    const grpc::string& json_refresh_token) {
+static inline std::shared_ptr<grpc_impl::CallCredentials>
+GoogleRefreshTokenCredentials(const grpc::string& json_refresh_token) {
   return ::grpc_impl::GoogleRefreshTokenCredentials(json_refresh_token);
 }
 
-static inline std::shared_ptr<grpc_impl::CallCredentials> AccessTokenCredentials(
-    const grpc::string& access_token) {
+static inline std::shared_ptr<grpc_impl::CallCredentials>
+AccessTokenCredentials(const grpc::string& access_token) {
   return ::grpc_impl::AccessTokenCredentials(access_token);
 }
 
 static inline std::shared_ptr<grpc_impl::CallCredentials> GoogleIAMCredentials(
     const grpc::string& authorization_token,
     const grpc::string& authority_selector) {
-  return ::grpc_impl::GoogleIAMCredentials(authorization_token, authority_selector);
+  return ::grpc_impl::GoogleIAMCredentials(authorization_token,
+                                           authority_selector);
 }
 
 static inline std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
@@ -71,30 +76,34 @@ static inline std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
   return ::grpc_impl::CompositeChannelCredentials(channel_creds, call_creds);
 }
 
-static inline std::shared_ptr<grpc_impl::CallCredentials> CompositeCallCredentials(
-    const std::shared_ptr<CallCredentials>& creds1,
-    const std::shared_ptr<CallCredentials>& creds2) {
+static inline std::shared_ptr<grpc_impl::CallCredentials>
+CompositeCallCredentials(const std::shared_ptr<CallCredentials>& creds1,
+                         const std::shared_ptr<CallCredentials>& creds2) {
   return ::grpc_impl::CompositeCallCredentials(creds1, creds2);
 }
 
-static inline std::shared_ptr<grpc_impl::ChannelCredentials> InsecureChannelCredentials() {
+static inline std::shared_ptr<grpc_impl::ChannelCredentials>
+InsecureChannelCredentials() {
   return ::grpc_impl::InsecureChannelCredentials();
 }
 
-static inline std::shared_ptr<grpc_impl::ChannelCredentials> CronetChannelCredentials(void* engine) {
+static inline std::shared_ptr<grpc_impl::ChannelCredentials>
+CronetChannelCredentials(void* engine) {
   return ::grpc_impl::CronetChannelCredentials(engine);
 }
 
 typedef ::grpc_impl::MetadataCredentialsPlugin MetadataCredentialsPlugin;
 
-static inline std::shared_ptr<grpc_impl::CallCredentials> MetadataCredentialsFromPlugin(
+static inline std::shared_ptr<grpc_impl::CallCredentials>
+MetadataCredentialsFromPlugin(
     std::unique_ptr<MetadataCredentialsPlugin> plugin) {
   return ::grpc_impl::MetadataCredentialsFromPlugin(std::move(plugin));
 }
 
 namespace experimental {
 
-typedef ::grpc_impl::experimental::AltsCredentialsOptions AltsCredentialsOptions;
+typedef ::grpc_impl::experimental::AltsCredentialsOptions
+    AltsCredentialsOptions;
 
 static inline std::shared_ptr<grpc_impl::ChannelCredentials> AltsCredentials(
     const AltsCredentialsOptions& options) {

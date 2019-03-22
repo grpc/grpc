@@ -309,7 +309,8 @@ class ClientContext {
   /// call.
   ///
   /// \see  https://grpc.io/docs/guides/auth.html
-  void set_credentials(const std::shared_ptr<grpc_impl::CallCredentials>& creds) {
+  void set_credentials(
+      const std::shared_ptr<grpc_impl::CallCredentials>& creds) {
     creds_ = creds;
   }
 

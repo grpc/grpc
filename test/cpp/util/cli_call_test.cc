@@ -74,8 +74,8 @@ class CliCallTest : public ::testing::Test {
   void TearDown() override { server_->Shutdown(); }
 
   void ResetStub() {
-    channel_ =
-        grpc::CreateChannel(server_address_.str(), InsecureChannelCredentials());
+    channel_ = grpc::CreateChannel(server_address_.str(),
+                                   InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 

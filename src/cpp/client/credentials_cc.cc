@@ -30,4 +30,4 @@ CallCredentials::CallCredentials() { g_gli_initializer.summon(); }
 
 CallCredentials::~CallCredentials() {}
 
-}  // namespace grpc
+}  // namespace grpc_impl

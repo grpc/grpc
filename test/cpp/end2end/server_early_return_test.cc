@@ -122,8 +122,8 @@ class ServerEarlyReturnTest : public ::testing::Test {
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
 
-    channel_ =
-        grpc::CreateChannel(server_address_.str(), InsecureChannelCredentials());
+    channel_ = grpc::CreateChannel(server_address_.str(),
+                                   InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 

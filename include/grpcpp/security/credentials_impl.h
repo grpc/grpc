@@ -88,19 +88,19 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
       const grpc::string& target,
       const std::shared_ptr<ChannelCredentials>& creds,
       const grpc::ChannelArguments& args,
-      std::vector<
-          std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
+      std::vector<std::unique_ptr<
+          grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators);
 
-  virtual std::shared_ptr<grpc::Channel> CreateChannel(
+  virtual std::shared_ptr<grpc::Channel> CreateChannelImpl(
       const grpc::string& target, const grpc::ChannelArguments& args) = 0;
 
   // This function should have been a pure virtual function, but it is
   // implemented as a virtual function so that it does not break API.
   virtual std::shared_ptr<grpc::Channel> CreateChannelWithInterceptors(
       const grpc::string& target, const grpc::ChannelArguments& args,
-      std::vector<
-          std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
+      std::vector<std::unique_ptr<
+          grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators) {
     return nullptr;
   }
@@ -280,6 +280,6 @@ std::shared_ptr<ChannelCredentials> LocalCredentials(
     grpc_local_connect_type type);
 
 }  // namespace experimental
-}  // namespace grpc
+}  // namespace grpc_impl
 
 #endif  // GRPCPP_SECURITY_CREDENTIALS_H

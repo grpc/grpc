@@ -19,8 +19,8 @@
 #ifndef GRPCPP_CREATE_CHANNEL_H
 #define GRPCPP_CREATE_CHANNEL_H
 
-#include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/create_channel_impl.h>
+#include <grpcpp/support/channel_arguments.h>
 
 namespace grpc {
 
