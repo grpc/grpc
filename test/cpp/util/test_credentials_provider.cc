@@ -24,6 +24,7 @@
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <grpcpp/security/server_credentials.h>
 
 #include "test/core/end2end/data/ssl_test_data.h"
 
@@ -91,7 +92,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       SslServerCredentialsOptions ssl_opts;
       ssl_opts.pem_root_certs = "";
       ssl_opts.pem_key_cert_pairs.push_back(pkcp);
-      return grpc::SslServerCredentials(ssl_opts);
+      return SslServerCredentials(ssl_opts);
     } else {
       std::unique_lock<std::mutex> lock(mu_);
       auto it(std::find(added_secure_type_names_.begin(),

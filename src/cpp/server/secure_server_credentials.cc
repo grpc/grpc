@@ -111,7 +111,7 @@ void SecureServerCredentials::SetAuthMetadataProcessor(
 }
 
 std::shared_ptr<ServerCredentials> SslServerCredentials(
-    const SslServerCredentialsOptions& options) {
+    const grpc::SslServerCredentialsOptions& options) {
   std::vector<grpc_ssl_pem_key_cert_pair> pem_key_cert_pairs;
   for (auto key_cert_pair = options.pem_key_cert_pairs.begin();
        key_cert_pair != options.pem_key_cert_pairs.end(); key_cert_pair++) {
