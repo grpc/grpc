@@ -100,56 +100,52 @@ struct QueuedPick {
 };
 
 typedef struct client_channel_channel_data {
+  //
+  // Fields set at construction and never modified.
+  //
   bool deadline_checking_enabled;
   bool enable_retries;
   size_t per_rpc_retry_buffer_size;
-
-  /** combiner protecting picker and queued_picks */
-  grpc_combiner* data_plane_combiner;
-  // Subchannel picker from LB policy.
-  grpc_core::UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker;
-  // Linked list of queued picks.
-  QueuedPick* queued_picks;
-
-  /** combiner protecting all variables below in this data structure */
-  grpc_combiner* combiner;
-  /** owning stack */
   grpc_channel_stack* owning_stack;
-  /** interested parties (owned) */
-  grpc_pollset_set* interested_parties;
-  // Client channel factory.
   grpc_core::ClientChannelFactory* client_channel_factory;
-  // Subchannel pool.
-  grpc_core::RefCountedPtr<grpc_core::SubchannelPoolInterface> subchannel_pool;
 
   grpc_core::channelz::ClientChannelNode* channelz_node;
 
-  // Resolving LB policy.
-  grpc_core::OrphanablePtr<LoadBalancingPolicy> resolving_lb_policy;
-
-  // This is an atomic so that it can be accessed from both the control
-  // plane and data plane combiners.
-  grpc_core::Atomic<bool> received_resolver_result;
-  /** retry throttle data from service config */
+  //
+  // Fields used in the data plane.  Protected by data_plane_combiner.
+  //
+  grpc_combiner* data_plane_combiner;
+  grpc_core::UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker;
+  QueuedPick* queued_picks;  // Linked list of queued picks.
+  // Data from service config.
   grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
-  /** per-method service config data */
   grpc_core::RefCountedPtr<ClientChannelMethodParamsTable> method_params_table;
 
-  /* the following properties are guarded by a mutex since APIs require them
-     to be instantaneously available */
+  //
+  // Fields used in the control plane.  Protected by combiner.
+  //
+  grpc_combiner* combiner;
+  grpc_pollset_set* interested_parties;
+  grpc_core::RefCountedPtr<grpc_core::SubchannelPoolInterface> subchannel_pool;
+  grpc_core::OrphanablePtr<LoadBalancingPolicy> resolving_lb_policy;
+  grpc_connectivity_state_tracker state_tracker;
+
+  //
+  // Fields accessed from both data plane and control plane combiners.
+  //
+  grpc_core::Atomic<bool> received_resolver_result;
+  grpc_core::Atomic<grpc_error*> disconnect_error;
+
+  // external_connectivity_watcher_list head is guarded by its own mutex, since
+  // counts need to be grabbed immediately without polling on a CQ.
+  gpr_mu external_connectivity_watcher_list_mu;
+  struct external_connectivity_watcher* external_connectivity_watcher_list_head;
+
+  // The following properties are guarded by a mutex since APIs require them
+  // to be instantaneously available.
   gpr_mu info_mu;
   grpc_core::UniquePtr<char> info_lb_policy_name;
   grpc_core::UniquePtr<char> info_service_config_json;
-
-  grpc_connectivity_state_tracker state_tracker;
-  // This is an atomic so that it can be accessed from both the control
-  // plane and data plane combiners.
-  grpc_core::Atomic<grpc_error*> disconnect_error;
-
-  /* external_connectivity_watcher_list head is guarded by its own mutex, since
-   * counts need to be grabbed immediately without polling on a cq */
-  gpr_mu external_connectivity_watcher_list_mu;
-  struct external_connectivity_watcher* external_connectivity_watcher_list_head;
 } channel_data;
 
 // Forward declarations.
@@ -177,7 +173,8 @@ namespace grpc_core {
 namespace {
 
 // A fire-and-forget class that sets the channel's connectivity state
-// and updates the picker.  Deletes itself when done.
+// and updates the picker in the data plane combiner.  Deletes itself
+// when done.
 class ConnectivityStateAndPickerSetter {
  public:
   ConnectivityStateAndPickerSetter(
@@ -220,6 +217,43 @@ class ConnectivityStateAndPickerSetter {
 
   channel_data* chand_;
   UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker_;
+  grpc_closure closure_;
+};
+
+// A fire-and-forget class that sets the channel's service config data
+// in the data plane combiner.  Deletes itself when done.
+class ServiceConfigSetter {
+ public:
+  ServiceConfigSetter(
+      channel_data* chand,
+      RefCountedPtr<ServerRetryThrottleData> retry_throttle_data,
+      RefCountedPtr<ClientChannelMethodParamsTable> method_params_table)
+      : chand_(chand), retry_throttle_data_(std::move(retry_throttle_data)),
+        method_params_table_(std::move(method_params_table)) {
+    GRPC_CLOSURE_INIT(&closure_, SetServiceConfigData, this,
+                      grpc_combiner_scheduler(chand->data_plane_combiner));
+    GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
+  }
+
+ private:
+  static void SetServiceConfigData(void* arg, grpc_error* ignored) {
+    ServiceConfigSetter* self = static_cast<ServiceConfigSetter*>(arg);
+    channel_data* chand = self->chand_;
+    // Update channel state.
+    chand->retry_throttle_data = std::move(self->retry_throttle_data_);
+    chand->method_params_table = std::move(self->method_params_table_);
+    // Apply service config to queued picks.
+    for (QueuedPick* pick = chand->queued_picks; pick != nullptr;
+         pick = pick->next) {
+      maybe_apply_service_config_to_call_locked(pick->elem);
+    }
+    // Clean up.
+    Delete(self);
+  }
+
+  channel_data* chand_;
+  RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
+  RefCountedPtr<ClientChannelMethodParamsTable> method_params_table_;
   grpc_closure closure_;
 };
 
@@ -298,9 +332,11 @@ static bool process_resolver_result_locked(
     gpr_log(GPR_INFO, "chand=%p: resolver returned service config: \"%s\"",
             chand, service_config_json.get());
   }
-  // Update channel state.
-  chand->retry_throttle_data = resolver_result.retry_throttle_data();
-  chand->method_params_table = resolver_result.method_params_table();
+  // Create service config setter to update channel state in the data
+  // plane combiner.  Destroys itself when done.
+  grpc_core::New<grpc_core::ServiceConfigSetter>(
+      chand, resolver_result.retry_throttle_data(),
+      resolver_result.method_params_table());
   // Swap out the data used by cc_get_channel_info().
   gpr_mu_lock(&chand->info_mu);
   chand->info_lb_policy_name = resolver_result.lb_policy_name();
@@ -315,11 +351,6 @@ static bool process_resolver_result_locked(
   // Return results.
   *lb_policy_name = chand->info_lb_policy_name.get();
   *lb_policy_config = resolver_result.lb_policy_config();
-  // Apply service config to queued picks.
-  for (QueuedPick* pick = chand->queued_picks; pick != nullptr;
-       pick = pick->next) {
-    maybe_apply_service_config_to_call_locked(pick->elem);
-  }
   return service_config_changed;
 }
 
