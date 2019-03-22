@@ -110,7 +110,7 @@ namespace Grpc.Tools
         }
 
         // This is how the protoc codegen constructs its output filename.
-        // See protobuf/compiler/csharp/csharp_helpers.cc:356.
+        // See protobuf/compiler/csharp/csharp_helpers.cc:137.
         // Note that protoc explicitly discards non-ASCII letters.
         string LowerUnderscoreToUpperCamelProtocWay(string str)
         {
