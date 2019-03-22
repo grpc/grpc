@@ -98,7 +98,7 @@ class Map {
     return find(key)->second;
   }
 
-  iterator find(key_type k) {
+  iterator find(const key_type& k) {
     Entry* iter = root_;
     while (iter != nullptr) {
       int comp = CompareKeys(iter->pair.first, k);
@@ -121,7 +121,7 @@ class Map {
 
   // Removes the current entry and points to the next one
   iterator erase(iterator iter) {
-    key_type del_key = iter->first;
+    key_type& del_key = iter->first;
     iter++;
     root_ = RemoveRecursive(root_, del_key);
     return iter;
@@ -131,9 +131,9 @@ class Map {
     iterator ret = find(pair.first);
     bool insertion = false;
     if (ret == end()) {
-      key_type key = pair.first;
-      root_ = InsertRecursive(root_, std::move(pair));
-      ret = find(key);
+      Pair<iterator, Entry*> p = InsertRecursive(root_, std::move(pair));
+      root_ = p.second;
+      ret = p.first;
       insertion = true;
     }
     return MakePair<iterator, bool>(std::move(ret), std::move(insertion));
@@ -143,9 +143,9 @@ class Map {
     iterator ret = find(pair.first);
     bool insertion = false;
     if (ret == end()) {
-      key_type key = pair.first;
-      root_ = InsertRecursive(root_, pair);
-      ret = find(key);
+      Pair<iterator, Entry*> p = InsertRecursive(root_, pair);
+      root_ = p.second;
+      ret = p.first;
       insertion = true;
     }
     return MakePair<iterator, bool>(std::move(ret), std::move(insertion));
@@ -175,7 +175,7 @@ class Map {
  private:
   struct Entry {
    public:
-    explicit Entry(value_type pair) : pair(std::move(pair)) {}
+    explicit Entry(value_type&& pair) : pair(std::move(pair)) {}
     value_type pair;
     Entry* left = nullptr;
     Entry* right = nullptr;
@@ -237,7 +237,7 @@ class Map {
     return leftChild;
   }
 
-  Entry* RebalanceTreeAfterInsertion(Entry* root, key_type k) {
+  Entry* RebalanceTreeAfterInsertion(Entry* root, key_type& k) {
     root->height =
         1 + GPR_MAX(EntryHeight(root->left), EntryHeight(root->right));
     int32_t heightDifference =
@@ -283,23 +283,29 @@ class Map {
     return root;
   }
 
-  Entry* InsertRecursive(Entry* root, value_type p) {
+  Pair<iterator, Entry*> InsertRecursive(Entry* root, value_type&& p) {
     if (root == nullptr) {
-      return New<Entry>(std::move(p));
+      Entry* e = New<Entry>(std::move(p));
+      return MakePair(iterator(this, e), std::move(e));
     }
     int comp = CompareKeys(root->pair.first, p.first);
     if (comp > 0) {
-      root->left = InsertRecursive(root->left, std::move(p));
+      Pair<iterator, Entry*> ret = InsertRecursive(root->left, std::move(p));
+      root->left = ret.second;
+      ret.second = std::move(RebalanceTreeAfterInsertion(root, p.first));
+      return ret;
     } else if (comp < 0) {
-      root->right = InsertRecursive(root->right, std::move(p));
+      Pair<iterator, Entry*> ret = InsertRecursive(root->right, std::move(p));
+      root->right = ret.second;
+      ret.second = std::move(RebalanceTreeAfterInsertion(root, p.first));
+      return ret;
     } else {
       root->pair = std::move(p);
-      return root;
+      return MakePair(iterator(this, root), std::move(root));
     }
-    return RebalanceTreeAfterInsertion(root, p.first);
   }
 
-  Entry* RemoveRecursive(Entry* root, key_type k) {
+  Entry* RemoveRecursive(Entry* root, const key_type& k) {
     if (root == nullptr) return root;
     int comp = CompareKeys(root->pair.first, k);
     if (comp > 0) {
@@ -332,7 +338,7 @@ class Map {
    *        1 if lhs > rhs
    *       -1 if lhs < rhs
    */
-  int CompareKeys(Key lhs, Key rhs) {
+  int CompareKeys(const Key& lhs, const Key& rhs) {
     key_compare compare;
     bool left_comparison = compare(lhs, rhs);
     bool right_comparison = compare(rhs, lhs);
