@@ -28,6 +28,7 @@ grpc_cc_test(
         "//:grpc++_unsecure",
         "//test/core/util:grpc_test_util_unsecure",
     ],
+    tags = ["no_windows"],
 )
 
 grpc_cc_test(

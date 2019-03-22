@@ -15,7 +15,7 @@
 
 """Generates the appropriate build.json data for all the end2end tests."""
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "is_msvc")
 
 POLLERS = ["epollex", "epoll1", "poll"]
 
@@ -31,7 +31,8 @@ def _fixture_options(
         is_http2 = True,
         supports_proxy_auth = False,
         supports_write_buffering = True,
-        client_channel = True):
+        client_channel = True,
+        supports_msvc = True):
     return struct(
         fullstack = fullstack,
         includes_proxy = includes_proxy,
@@ -44,6 +45,7 @@ def _fixture_options(
         supports_proxy_auth = supports_proxy_auth,
         supports_write_buffering = supports_write_buffering,
         client_channel = client_channel,
+        supports_msvc = supports_msvc,
         #_platforms=_platforms,
     )
 
@@ -120,10 +122,11 @@ END2END_NOSEC_FIXTURES = {
         client_channel = False,
         secure = False,
         _platforms = ["linux", "mac", "posix"],
+        supports_msvc = False,
     ),
     "h2_full": _fixture_options(secure = False),
-    "h2_full+pipe": _fixture_options(secure = False, _platforms = ["linux"]),
-    "h2_full+trace": _fixture_options(secure = False, tracing = True),
+    "h2_full+pipe": _fixture_options(secure = False, _platforms = ["linux"], supports_msvc = False),
+    "h2_full+trace": _fixture_options(secure = False, tracing = True, supports_msvc = False),
     "h2_full+workarounds": _fixture_options(secure = False),
     "h2_http_proxy": _fixture_options(secure = False, supports_proxy_auth = True),
     "h2_proxy": _fixture_options(secure = False, includes_proxy = True),
@@ -152,6 +155,7 @@ END2END_NOSEC_FIXTURES = {
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
         secure = False,
+        supports_msvc = False,
     ),
 }
 
@@ -453,6 +457,16 @@ def grpc_end2end_nosec_tests():
                 continue
             if topt.secure:
                 continue
+            native.sh_test(
+                name = "%s_nosec_test@%s" % (f, t),
+                data = [":%s_nosec_test" % f],
+                srcs = ["end2end_test.sh"],
+                args = [
+                    "$(location %s_nosec_test)" % f,
+                    t,
+                ],
+                tags = ["no_windows"],
+            )
             for poller in POLLERS:
                 native.sh_test(
                     name = "%s_nosec_test@%s@poller=%s" % (f, t, poller),
@@ -463,4 +477,5 @@ def grpc_end2end_nosec_tests():
                         t,
                         poller,
                     ],
+                    tags = ["no_windows"],
                 )
