@@ -22,14 +22,11 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/string_view.h"
-#include "include/grpcpp/opencensus_impl.h"
+#include "include/grpcpp/opencensus.h"
 #include "opencensus/stats/stats.h"
 
-namespace grpc_impl {
-
-class ServerContext;
-}
 namespace grpc {
+class ServerContext;
 
 // The tag keys set when recording RPC stats.
 ::opencensus::stats::TagKey ClientMethodTagKey();
