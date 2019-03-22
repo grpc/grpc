@@ -39,6 +39,7 @@ typedef enum {
   google_protobuf_NULL_VALUE = 0
 } google_protobuf_NullValue;
 
+
 /* google.protobuf.Struct */
 
 UPB_INLINE google_protobuf_Struct *google_protobuf_Struct_new(upb_arena *arena) {
@@ -127,7 +128,7 @@ typedef enum {
 UPB_INLINE google_protobuf_Value_kind_oneofcases google_protobuf_Value_kind_case(const google_protobuf_Value* msg) { return UPB_FIELD_AT(msg, int, UPB_SIZE(8, 16)); }
 
 UPB_INLINE bool google_protobuf_Value_has_null_value(const google_protobuf_Value *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(8, 16), 1); }
-UPB_INLINE google_protobuf_NullValue google_protobuf_Value_null_value(const google_protobuf_Value *msg) { return UPB_READ_ONEOF(msg, google_protobuf_NullValue, UPB_SIZE(0, 0), UPB_SIZE(8, 16), 1, google_protobuf_NULL_VALUE); }
+UPB_INLINE int32_t google_protobuf_Value_null_value(const google_protobuf_Value *msg) { return UPB_READ_ONEOF(msg, int32_t, UPB_SIZE(0, 0), UPB_SIZE(8, 16), 1, google_protobuf_NULL_VALUE); }
 UPB_INLINE bool google_protobuf_Value_has_number_value(const google_protobuf_Value *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(8, 16), 2); }
 UPB_INLINE double google_protobuf_Value_number_value(const google_protobuf_Value *msg) { return UPB_READ_ONEOF(msg, double, UPB_SIZE(0, 0), UPB_SIZE(8, 16), 2, 0); }
 UPB_INLINE bool google_protobuf_Value_has_string_value(const google_protobuf_Value *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(8, 16), 3); }
@@ -139,8 +140,8 @@ UPB_INLINE const google_protobuf_Struct* google_protobuf_Value_struct_value(cons
 UPB_INLINE bool google_protobuf_Value_has_list_value(const google_protobuf_Value *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(8, 16), 6); }
 UPB_INLINE const google_protobuf_ListValue* google_protobuf_Value_list_value(const google_protobuf_Value *msg) { return UPB_READ_ONEOF(msg, const google_protobuf_ListValue*, UPB_SIZE(0, 0), UPB_SIZE(8, 16), 6, NULL); }
 
-UPB_INLINE void google_protobuf_Value_set_null_value(google_protobuf_Value *msg, google_protobuf_NullValue value) {
-  UPB_WRITE_ONEOF(msg, google_protobuf_NullValue, UPB_SIZE(0, 0), value, UPB_SIZE(8, 16), 1);
+UPB_INLINE void google_protobuf_Value_set_null_value(google_protobuf_Value *msg, int32_t value) {
+  UPB_WRITE_ONEOF(msg, int32_t, UPB_SIZE(0, 0), value, UPB_SIZE(8, 16), 1);
 }
 UPB_INLINE void google_protobuf_Value_set_number_value(google_protobuf_Value *msg, double value) {
   UPB_WRITE_ONEOF(msg, double, UPB_SIZE(0, 0), value, UPB_SIZE(8, 16), 2);

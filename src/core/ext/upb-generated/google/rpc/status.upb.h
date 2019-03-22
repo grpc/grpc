@@ -28,6 +28,7 @@ extern const upb_msglayout google_protobuf_Any_msginit;
 
 /* Enums */
 
+
 /* google.rpc.Status */
 
 UPB_INLINE google_rpc_Status *google_rpc_Status_new(upb_arena *arena) {

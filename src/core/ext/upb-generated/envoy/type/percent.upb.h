@@ -35,6 +35,7 @@ typedef enum {
   envoy_type_FractionalPercent_MILLION = 2
 } envoy_type_FractionalPercent_DenominatorType;
 
+
 /* envoy.type.Percent */
 
 UPB_INLINE envoy_type_Percent *envoy_type_Percent_new(upb_arena *arena) {
@@ -69,13 +70,13 @@ UPB_INLINE char *envoy_type_FractionalPercent_serialize(const envoy_type_Fractio
 }
 
 UPB_INLINE uint32_t envoy_type_FractionalPercent_numerator(const envoy_type_FractionalPercent *msg) { return UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(8, 8)); }
-UPB_INLINE envoy_type_FractionalPercent_DenominatorType envoy_type_FractionalPercent_denominator(const envoy_type_FractionalPercent *msg) { return UPB_FIELD_AT(msg, envoy_type_FractionalPercent_DenominatorType, UPB_SIZE(0, 0)); }
+UPB_INLINE int32_t envoy_type_FractionalPercent_denominator(const envoy_type_FractionalPercent *msg) { return UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)); }
 
 UPB_INLINE void envoy_type_FractionalPercent_set_numerator(envoy_type_FractionalPercent *msg, uint32_t value) {
   UPB_FIELD_AT(msg, uint32_t, UPB_SIZE(8, 8)) = value;
 }
-UPB_INLINE void envoy_type_FractionalPercent_set_denominator(envoy_type_FractionalPercent *msg, envoy_type_FractionalPercent_DenominatorType value) {
-  UPB_FIELD_AT(msg, envoy_type_FractionalPercent_DenominatorType, UPB_SIZE(0, 0)) = value;
+UPB_INLINE void envoy_type_FractionalPercent_set_denominator(envoy_type_FractionalPercent *msg, int32_t value) {
+  UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)) = value;
 }
 
 
