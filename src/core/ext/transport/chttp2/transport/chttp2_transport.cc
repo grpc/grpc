@@ -1363,8 +1363,6 @@ static void complete_fetch_locked(void* gs, grpc_error* error) {
   }
 }
 
-static void do_nothing(void* arg, grpc_error* error) {}
-
 static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
                          bool is_client, bool is_initial) {
   for (grpc_linked_mdelem* md = md_batch->list.head; md != nullptr;
@@ -1409,7 +1407,7 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   grpc_closure* on_complete = op->on_complete;
-  if(on_complete != nullptr) {
+  if (on_complete != nullptr) {
     /* This batch has send ops. Use final_data as a barrier until enqueue time;
      * the inital counter is dropped at the end of this function */
     on_complete->next_data.scratch = CLOSURE_BARRIER_FIRST_REF_BIT;
@@ -1664,7 +1662,7 @@ static void perform_stream_op_locked(void* stream_op,
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
   }
 
-  if(on_complete != nullptr) {
+  if (on_complete != nullptr) {
     grpc_chttp2_complete_closure_step(t, s, &on_complete, GRPC_ERROR_NONE,
                                       "op->on_complete");
   }
