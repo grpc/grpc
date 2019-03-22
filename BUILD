@@ -2321,12 +2321,18 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/eds.upb.c",
+        "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c",
     ],
     hdrs = [
         "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h",
+        "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h",
     ],
     language = "c++",
     external_deps = [

@@ -53,14 +53,14 @@ extern const upb_msglayout envoy_api_v2_core_DataSource_msginit;
 extern const upb_msglayout envoy_api_v2_core_TransportSocket_msginit;
 extern const upb_msglayout envoy_api_v2_core_SocketOption_msginit;
 extern const upb_msglayout envoy_api_v2_core_RuntimeFractionalPercent_msginit;
-struct google_protobuf_Any;
-struct google_protobuf_Struct;
-struct google_protobuf_BoolValue;
 struct envoy_type_FractionalPercent;
-extern const upb_msglayout google_protobuf_Any_msginit;
-extern const upb_msglayout google_protobuf_Struct_msginit;
-extern const upb_msglayout google_protobuf_BoolValue_msginit;
+struct google_protobuf_Any;
+struct google_protobuf_BoolValue;
+struct google_protobuf_Struct;
 extern const upb_msglayout envoy_type_FractionalPercent_msginit;
+extern const upb_msglayout google_protobuf_Any_msginit;
+extern const upb_msglayout google_protobuf_BoolValue_msginit;
+extern const upb_msglayout google_protobuf_Struct_msginit;
 
 /* Enums */
 
@@ -86,6 +86,7 @@ typedef enum {
   envoy_api_v2_core_SocketOption_STATE_BOUND = 1,
   envoy_api_v2_core_SocketOption_STATE_LISTENING = 2
 } envoy_api_v2_core_SocketOption_SocketState;
+
 
 /* envoy.api.v2.core.Locality */
 
@@ -443,7 +444,7 @@ UPB_INLINE bool envoy_api_v2_core_SocketOption_has_int_value(const envoy_api_v2_
 UPB_INLINE int64_t envoy_api_v2_core_SocketOption_int_value(const envoy_api_v2_core_SocketOption *msg) { return UPB_READ_ONEOF(msg, int64_t, UPB_SIZE(32, 40), UPB_SIZE(40, 56), 4, 0); }
 UPB_INLINE bool envoy_api_v2_core_SocketOption_has_buf_value(const envoy_api_v2_core_SocketOption *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(40, 56), 5); }
 UPB_INLINE upb_strview envoy_api_v2_core_SocketOption_buf_value(const envoy_api_v2_core_SocketOption *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(32, 40), UPB_SIZE(40, 56), 5, upb_strview_make("", strlen(""))); }
-UPB_INLINE envoy_api_v2_core_SocketOption_SocketState envoy_api_v2_core_SocketOption_state(const envoy_api_v2_core_SocketOption *msg) { return UPB_FIELD_AT(msg, envoy_api_v2_core_SocketOption_SocketState, UPB_SIZE(16, 16)); }
+UPB_INLINE int32_t envoy_api_v2_core_SocketOption_state(const envoy_api_v2_core_SocketOption *msg) { return UPB_FIELD_AT(msg, int32_t, UPB_SIZE(16, 16)); }
 
 UPB_INLINE void envoy_api_v2_core_SocketOption_set_description(envoy_api_v2_core_SocketOption *msg, upb_strview value) {
   UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(24, 24)) = value;
@@ -460,8 +461,8 @@ UPB_INLINE void envoy_api_v2_core_SocketOption_set_int_value(envoy_api_v2_core_S
 UPB_INLINE void envoy_api_v2_core_SocketOption_set_buf_value(envoy_api_v2_core_SocketOption *msg, upb_strview value) {
   UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(32, 40), value, UPB_SIZE(40, 56), 5);
 }
-UPB_INLINE void envoy_api_v2_core_SocketOption_set_state(envoy_api_v2_core_SocketOption *msg, envoy_api_v2_core_SocketOption_SocketState value) {
-  UPB_FIELD_AT(msg, envoy_api_v2_core_SocketOption_SocketState, UPB_SIZE(16, 16)) = value;
+UPB_INLINE void envoy_api_v2_core_SocketOption_set_state(envoy_api_v2_core_SocketOption *msg, int32_t value) {
+  UPB_FIELD_AT(msg, int32_t, UPB_SIZE(16, 16)) = value;
 }
 
 

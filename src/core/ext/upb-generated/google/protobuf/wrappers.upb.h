@@ -50,6 +50,7 @@ extern const upb_msglayout google_protobuf_BytesValue_msginit;
 
 /* Enums */
 
+
 /* google.protobuf.DoubleValue */
 
 UPB_INLINE google_protobuf_DoubleValue *google_protobuf_DoubleValue_new(upb_arena *arena) {
