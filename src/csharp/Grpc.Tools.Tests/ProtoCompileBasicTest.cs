@@ -62,7 +62,7 @@ namespace Grpc.Tools.Tests
             };
         }
 
-        [TestCase("ProtoBuf")]
+        [TestCase("Protobuf")]
         [TestCase("Generator")]
         [TestCase("OutputDir")]
         [Description("We trust MSBuild to initialize these properties.")]

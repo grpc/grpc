@@ -164,7 +164,7 @@ namespace Grpc.Tools
             protoDir = EndWithSlash(protoDir);
             if (!protoDir.StartsWith(rootDir))
             {
-                Log.LogWarning("ProtoBuf item '{0}' has the ProtoRoot metadata '{1}' " +
+                Log.LogWarning("Protobuf item '{0}' has the ProtoRoot metadata '{1}' " +
                   "which is not prefix to its path. Cannot compute relative path.",
                   proto, root);
                 return "";
