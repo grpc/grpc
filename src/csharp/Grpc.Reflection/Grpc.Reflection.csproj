@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\Grpc.Core\Version.csproj.include" />
   <Import Project="..\Grpc.Core\Common.csproj.include" />
@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Grpc.Core/Grpc.Core.csproj">
+    <ProjectReference Include="../Grpc.Core.Api/Grpc.Core.Api.csproj">
       <PrivateAssets>None</PrivateAssets>
     </ProjectReference>
   </ItemGroup>

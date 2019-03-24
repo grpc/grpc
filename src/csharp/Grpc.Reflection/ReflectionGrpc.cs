@@ -63,58 +63,6 @@ namespace Grpc.Reflection.V1Alpha {
 
     }
 
-    /// <summary>Client for ServerReflection</summary>
-    public partial class ServerReflectionClient : grpc::ClientBase<ServerReflectionClient>
-    {
-      /// <summary>Creates a new client for ServerReflection</summary>
-      /// <param name="channel">The channel to use to make remote calls.</param>
-      public ServerReflectionClient(grpc::Channel channel) : base(channel)
-      {
-      }
-      /// <summary>Creates a new client for ServerReflection that uses a custom <c>CallInvoker</c>.</summary>
-      /// <param name="callInvoker">The callInvoker to use to make remote calls.</param>
-      public ServerReflectionClient(grpc::CallInvoker callInvoker) : base(callInvoker)
-      {
-      }
-      /// <summary>Protected parameterless constructor to allow creation of test doubles.</summary>
-      protected ServerReflectionClient() : base()
-      {
-      }
-      /// <summary>Protected constructor to allow creation of configured clients.</summary>
-      /// <param name="configuration">The client configuration.</param>
-      protected ServerReflectionClient(ClientBaseConfiguration configuration) : base(configuration)
-      {
-      }
-
-      /// <summary>
-      /// The reflection service is structured as a bidirectional stream, ensuring
-      /// all related requests go to a single server.
-      /// </summary>
-      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
-      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
-      /// <param name="cancellationToken">An optional token for canceling the call.</param>
-      /// <returns>The call object.</returns>
-      public virtual grpc::AsyncDuplexStreamingCall<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest, global::Grpc.Reflection.V1Alpha.ServerReflectionResponse> ServerReflectionInfo(grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
-      {
-        return ServerReflectionInfo(new grpc::CallOptions(headers, deadline, cancellationToken));
-      }
-      /// <summary>
-      /// The reflection service is structured as a bidirectional stream, ensuring
-      /// all related requests go to a single server.
-      /// </summary>
-      /// <param name="options">The options for the call.</param>
-      /// <returns>The call object.</returns>
-      public virtual grpc::AsyncDuplexStreamingCall<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest, global::Grpc.Reflection.V1Alpha.ServerReflectionResponse> ServerReflectionInfo(grpc::CallOptions options)
-      {
-        return CallInvoker.AsyncDuplexStreamingCall(__Method_ServerReflectionInfo, null, options);
-      }
-      /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
-      protected override ServerReflectionClient NewInstance(ClientBaseConfiguration configuration)
-      {
-        return new ServerReflectionClient(configuration);
-      }
-    }
-
     /// <summary>Creates service definition that can be registered with a server</summary>
     /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
     public static grpc::ServerServiceDefinition BindService(ServerReflectionBase serviceImpl)
