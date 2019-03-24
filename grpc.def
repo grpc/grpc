@@ -149,6 +149,7 @@ EXPORTS
     grpc_byte_buffer_reader_init
     grpc_byte_buffer_reader_destroy
     grpc_byte_buffer_reader_next
+    grpc_byte_buffer_reader_peek
     grpc_byte_buffer_reader_readall
     grpc_raw_byte_buffer_from_reader
     gpr_log_severity_string
