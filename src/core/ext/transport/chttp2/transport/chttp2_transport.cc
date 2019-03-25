@@ -678,7 +678,7 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
   grpc_slice_buffer_init(&decompressed_data_buffer);
 
   GRPC_CLOSURE_INIT(&complete_fetch_locked, ::complete_fetch_locked, this,
-                    grpc_schedule_on_exec_ctx);
+                    grpc_combiner_scheduler(t->combiner));
   GRPC_CLOSURE_INIT(&reset_byte_stream, ::reset_byte_stream, this,
                     grpc_combiner_scheduler(t->combiner));
 }
