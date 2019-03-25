@@ -1,6 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\Grpc.Core.Api\Version.csproj.include" />
   <Import Project="Common.csproj.include" />
 
   <PropertyGroup>
