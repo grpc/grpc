@@ -6,7 +6,26 @@ The definition for an RPC method in proto files contains request message and res
 
 Ideally, the final status of an RPC should be described in the trailing headers of HTTP2, and gRPC Python provides helper functions in `grpcio-status` package to assist the packing and unpacking of error status.
 
+
+### Requirement
+```
+grpcio>=1.18.0
+grpcio-status>=1.18.0
+googleapis-common-protos>=1.5.5
+```
+
+
+### Error Detail Proto
+
+You may provide any custom proto message as error detail in your implementation. Here are protos are defined by Google Cloud Library Team:
+
+* [code.proto](https://github.com/googleapis/api-common-protos/blob/master/google/rpc/code.proto) contains definition of RPC error codes.
+* [error_details.proto](https://github.com/googleapis/api-common-protos/blob/master/google/rpc/error_details.proto) contains definitions of common error details.
+
+
 ### Definition of Status Proto
+
+Here is the definition of Status proto. For full text, please see [status.proto](https://github.com/googleapis/api-common-protos/blob/master/google/rpc/status.proto).
 
 ```proto
 // The `Status` type defines a logical error model that is suitable for different
@@ -76,6 +95,7 @@ message Status {
 }
 ```
 
+
 ### Usage of Well-Known-Proto `Any`
 
 Please check [ProtoBuf Document: Any](https://developers.google.com/protocol-buffers/docs/reference/python-generated#any)
@@ -85,12 +105,3 @@ any_message.Pack(message)
 any_message.Unpack(message)
 assert any_message.Is(message.DESCRIPTOR)
 ```
-
-### Common Protos
-
-These protos are defined by Google Cloud API. Most error cases are covered in `error_dettails.proto`, but you may provide any custom error detail proto you want.
-
-Please refer to:
-* [code.proto](https://github.com/googleapis/api-common-protos/blob/master/google/rpc/code.proto).
-* [status.proto](https://github.com/googleapis/api-common-protos/blob/master/google/rpc/status.proto).
-* [error_details.proto](https://github.com/googleapis/api-common-protos/blob/master/google/rpc/error_details.proto).

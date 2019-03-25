@@ -20,31 +20,37 @@ import grpc
 from grpc_status import rpc_status
 from google.rpc import error_details_pb2
 
-import helloworld_pb2
-import helloworld_pb2_grpc
+from examples.protos import helloworld_pb2
+from examples.protos import helloworld_pb2_grpc
+
+_LOGGER = logging.getLogger(__name__)
 
 
-def run():
+def process(stub):
+    try:
+        response = stub.SayHello(helloworld_pb2.HelloRequest(name='Alice'))
+        _LOGGER.info('Call success: %s', response.message)
+    except grpc.RpcError as rpc_error:
+        _LOGGER.error('Call failure: %s', rpc_error)
+        status = rpc_status.from_call(rpc_error)
+        for detail in status.details:
+            if detail.Is(error_details_pb2.QuotaFailure.DESCRIPTOR):
+                info = error_details_pb2.QuotaFailure()
+                detail.Unpack(info)
+                _LOGGER.error('Quota failure: %s', info)
+            else:
+                raise RuntimeError('Unexpected failure: %s' % detail)
+
+
+def main():
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
     # used in circumstances in which the with statement does not fit the needs
     # of the code.
     with grpc.insecure_channel('localhost:50051') as channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
-        try:
-            response = stub.SayHello(helloworld_pb2.HelloRequest(name='Alice'))
-            print('Call success:', response.message)
-        except grpc.RpcError as rpc_error:
-            print('Call failure:', rpc_error)
-            status = rpc_status.from_call(rpc_error)
-            for detail in status.details:
-                if detail.Is(error_details_pb2.QuotaFailure.DESCRIPTOR):
-                    info = error_details_pb2.QuotaFailure()
-                    detail.Unpack(info)
-                    print('Quota failure:', info)
-                else:
-                    print('Unexpected failure:', detail)
+        process(stub)
 
 
 if __name__ == '__main__':
     logging.basicConfig()
-    run()
+    main()
