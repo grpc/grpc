@@ -79,7 +79,10 @@ class TestScenario {
 static std::ostream& operator<<(std::ostream& out,
                                 const TestScenario& scenario) {
   return out << "TestScenario{callback_server="
-             << (scenario.callback_server ? "true" : "false") << "}";
+             << (scenario.callback_server ? "true" : "false") << ",protocol="
+             << (scenario.protocol == Protocol::INPROC ? "INPROC" : "TCP")
+             << ",intercept=" << (scenario.use_interceptors ? "true" : "false")
+             << ",creds=" << scenario.credentials_type << "}";
 }
 
 void TestScenario::Log() const {
