@@ -4,18 +4,18 @@
 
   <ContentType Name="ProtoFile"
                DisplayName="Protocol buffer definitions file"
-               ItemType="ProtoBuf" />
+               ItemType="Protobuf" />
 
-  <ItemType Name="ProtoBuf"
+  <ItemType Name="Protobuf"
             DisplayName="Protobuf compiler" />
 
-  <Rule Name="ProtoBuf"
+  <Rule Name="Protobuf"
         DisplayName="File Properties"
         PageTemplate="generic"
         Description="File Properties"
         OverrideMode="Extend">
     <Rule.DataSource>
-      <DataSource Persistence="ProjectFile" Label="Configuration" ItemType="ProtoBuf"
+      <DataSource Persistence="ProjectFile" Label="Configuration" ItemType="Protobuf"
                   HasConfigurationCondition="false" SourceOfDefaultValue="AfterContext" />
     </Rule.DataSource>
 
@@ -31,7 +31,7 @@
 
     <StringProperty Name="Identity" Visible="false" ReadOnly="true">
       <StringProperty.DataSource>
-        <DataSource Persistence="Intrinsic" ItemType="ProtoBuf"
+        <DataSource Persistence="Intrinsic" ItemType="Protobuf"
                     PersistedName="Identity" SourceOfDefaultValue="AfterContext" />
       </StringProperty.DataSource>
     </StringProperty>
@@ -42,7 +42,7 @@
                     Category="Misc"
                     Description="Location of the file.">
       <StringProperty.DataSource>
-        <DataSource Persistence="Intrinsic" ItemType="ProtoBuf"
+        <DataSource Persistence="Intrinsic" ItemType="Protobuf"
                     PersistedName="FullPath" SourceOfDefaultValue="AfterContext" />
       </StringProperty.DataSource>
     </StringProperty>
@@ -53,7 +53,7 @@
                     Category="Misc"
                     Description="Name of the file or folder.">
       <StringProperty.DataSource>
-        <DataSource Persistence="Intrinsic" ItemType="ProtoBuf"
+        <DataSource Persistence="Intrinsic" ItemType="Protobuf"
                     PersistedName="FileNameAndExtension" SourceOfDefaultValue="AfterContext" />
       </StringProperty.DataSource>
     </StringProperty>
@@ -81,7 +81,7 @@
       <EnumValue Name="Public" DisplayName="Public" IsDefault="true" />
       <EnumValue Name="Internal" DisplayName="Internal" />
       <EnumProperty.DataSource>
-        <DataSource ItemType="ProtoBuf" SourceOfDefaultValue="AfterContext"
+        <DataSource ItemType="Protobuf" SourceOfDefaultValue="AfterContext"
                     PersistenceStyle="Attribute" />
       </EnumProperty.DataSource>
     </EnumProperty>
@@ -90,7 +90,7 @@
                   Category="Protobuf" Default="true"
                   Description="Specifies if this file is compiled or only imported by other files.">
       <BoolProperty.DataSource>
-        <DataSource ItemType="ProtoBuf" SourceOfDefaultValue="AfterContext"
+        <DataSource ItemType="Protobuf" SourceOfDefaultValue="AfterContext"
                     PersistenceStyle="Attribute" />
       </BoolProperty.DataSource>
     </BoolProperty>

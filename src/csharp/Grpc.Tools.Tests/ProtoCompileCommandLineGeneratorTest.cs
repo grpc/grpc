@@ -30,7 +30,7 @@ namespace Grpc.Tools.Tests
         {
             _task.Generator = "csharp";
             _task.OutputDir = "outdir";
-            _task.ProtoBuf = Utils.MakeSimpleItems("a.proto");
+            _task.Protobuf = Utils.MakeSimpleItems("a.proto");
         }
 
         void ExecuteExpectSuccess()
@@ -55,7 +55,7 @@ namespace Grpc.Tools.Tests
         [Test]
         public void CompileTwoFiles()
         {
-            _task.ProtoBuf = Utils.MakeSimpleItems("a.proto", "foo/b.proto");
+            _task.Protobuf = Utils.MakeSimpleItems("a.proto", "foo/b.proto");
             ExecuteExpectSuccess();
             Assert.That(_task.LastResponseFile, Is.EqualTo(new[] {
                 "--csharp_out=outdir", "--error_format=msvs", "a.proto", "foo/b.proto" }));
