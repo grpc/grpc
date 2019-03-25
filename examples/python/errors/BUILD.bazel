@@ -13,7 +13,6 @@
 # limitations under the License.
 
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
-load("@org_pubref_rules_protobuf//python:rules.bzl", "py_proto_library")
 
 py_library(
     name = "client",
@@ -22,7 +21,7 @@ py_library(
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_status/grpc_status:grpc_status",
-        "//examples/protos:py_helloworld_proto",
+        "//examples:py_helloworld",
         requirement('googleapis-common-protos'),
     ],
 )
@@ -34,7 +33,7 @@ py_library(
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_status/grpc_status:grpc_status",
-        "//examples/protos:py_helloworld_proto",
+        "//examples:py_helloworld",
     ] + select({
         "//conditions:default": [requirement("futures")],
         "//:python3": [],
