@@ -36,7 +36,6 @@ static inline bool DefaultHealthCheckServiceEnabled() {
   return ::grpc_impl::DefaultHealthCheckServiceEnabled();
 }
 
-
 }  // namespace grpc
 
 #endif  // GRPCPP_HEALTH_CHECK_SERVICE_INTERFACE_H
