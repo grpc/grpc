@@ -232,6 +232,7 @@ class ServiceConfigSetter {
       : chand_(chand),
         retry_throttle_data_(std::move(retry_throttle_data)),
         method_params_table_(std::move(method_params_table)) {
+    GRPC_CHANNEL_STACK_REF(chand->owning_stack, "ServiceConfigSetter");
     GRPC_CLOSURE_INIT(&closure_, SetServiceConfigData, this,
                       grpc_combiner_scheduler(chand->data_plane_combiner));
     GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
@@ -251,6 +252,7 @@ class ServiceConfigSetter {
       maybe_apply_service_config_to_call_locked(pick->elem);
     }
     // Clean up.
+    GRPC_CHANNEL_STACK_UNREF(self->chand_->owning_stack, "ServiceConfigSetter");
     Delete(self);
   }
 
