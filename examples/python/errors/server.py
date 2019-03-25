@@ -24,8 +24,8 @@ from grpc_status import rpc_status
 from google.protobuf import any_pb2
 from google.rpc import code_pb2, status_pb2, error_details_pb2
 
-import helloworld_pb2
-import helloworld_pb2_grpc
+from examples.protos import helloworld_pb2
+from examples.protos import helloworld_pb2_grpc
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
@@ -36,7 +36,7 @@ def create_greet_limit_exceed_error_status(name):
         error_details_pb2.QuotaFailure(
             violations=[
                 error_details_pb2.QuotaFailure.Violation(
-                    subject="name:%s" % name,
+                    subject="name: %s" % name,
                     description="Limit one greeting per person",
                 )
             ],))
@@ -64,10 +64,14 @@ class LimitedGreeter(helloworld_pb2_grpc.GreeterServicer):
         return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
 
 
-def serve():
+def create_server(server_address):
     server = grpc.server(futures.ThreadPoolExecutor())
     helloworld_pb2_grpc.add_GreeterServicer_to_server(LimitedGreeter(), server)
-    server.add_insecure_port('[::]:50051')
+    port = server.add_insecure_port(server_address)
+    return server, port
+
+
+def serve(server):
     server.start()
     try:
         while True:
@@ -76,6 +80,11 @@ def serve():
         server.stop(None)
 
 
+def main():
+    server, unused_port = create_server('[::]:50051')
+    serve(server)
+
+
 if __name__ == '__main__':
     logging.basicConfig()
-    serve()
+    main()
