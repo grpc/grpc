@@ -19,7 +19,12 @@ using System;
 namespace Grpc.Core
 {
     /// <summary>
-    /// Defines the location of the service bind method for a gRPC service.
+    /// Specifies the location of the service bind method for a gRPC service.
+    /// The bind method is typically generated code and is used to register a service's
+    /// methods with the server on startup.
+    /// 
+    /// The bind method signature takes a <see cref="ServiceBinderBase"/> and an optional
+    /// instance of the service base class, e.g. <c>static void BindService(ServiceBinderBase, GreeterService)</c>.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = true)]
     public class BindServiceAttribute : Attribute
