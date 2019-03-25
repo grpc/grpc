@@ -19,13 +19,13 @@ googleapis-common-protos>=1.5.5
 
 You may provide any custom proto message as error detail in your implementation. Here are protos are defined by Google Cloud Library Team:
 
-* [code.proto](https://github.com/googleapis/api-common-protos/blob/master/google/rpc/code.proto) contains definition of RPC error codes.
-* [error_details.proto](https://github.com/googleapis/api-common-protos/blob/master/google/rpc/error_details.proto) contains definitions of common error details.
+* [code.proto]([https://github.com/googleapis/api-common-protos/blob/master/google/rpc/code.proto](https://github.com/googleapis/api-common-protos/blob/87185dfffad4afa5a33a8c153f0e1ea53b4f85dc/google/rpc/code.proto)) contains definition of RPC error codes.
+* [error_details.proto]([https://github.com/googleapis/api-common-protos/blob/master/google/rpc/error_details.proto](https://github.com/googleapis/api-common-protos/blob/87185dfffad4afa5a33a8c153f0e1ea53b4f85dc/google/rpc/error_details.proto)) contains definitions of common error details.
 
 
 ### Definition of Status Proto
 
-Here is the definition of Status proto. For full text, please see [status.proto](https://github.com/googleapis/api-common-protos/blob/master/google/rpc/status.proto).
+Here is the definition of Status proto. For full text, please see [status.proto](https://github.com/googleapis/api-common-protos/blob/87185dfffad4afa5a33a8c153f0e1ea53b4f85dc/google/rpc/status.proto).
 
 ```proto
 // The `Status` type defines a logical error model that is suitable for different
