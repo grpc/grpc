@@ -58,6 +58,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of MetricsService</summary>
+    [grpc::BindService(typeof(MetricsService), "BindService")]
     public abstract partial class MetricsServiceBase
     {
       /// <summary>

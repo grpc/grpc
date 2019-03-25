@@ -67,6 +67,7 @@ namespace Math {
     }
 
     /// <summary>Base class for server-side implementations of Math</summary>
+    [grpc::BindService(typeof(Math), "BindService")]
     public abstract partial class MathBase
     {
       /// <summary>
