@@ -33,9 +33,7 @@ using ::grpc::RegisterOpenCensusPlugin;
 using ::grpc::RegisterOpenCensusViewsForExport;
 
 absl::once_flag once;
-void RegisterOnce() {
-  absl::call_once(once, RegisterOpenCensusPlugin);
-}
+void RegisterOnce() { absl::call_once(once, RegisterOpenCensusPlugin); }
 
 class EchoServer final : public grpc::testing::EchoTestService::Service {
   grpc::Status Echo(grpc::ServerContext* context,
