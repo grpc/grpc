@@ -254,7 +254,7 @@ class GrpcLb : public LoadBalancingPolicy {
           child_picker_(std::move(child_picker)),
           client_stats_(std::move(client_stats)) {}
 
-    PickResult Pick(PickArgs* pick, grpc_error** error) override;
+    PickResult Pick(PickState* pick, grpc_error** error) override;
 
    private:
     // Storing the address for logging, but not holding a ref.
@@ -540,7 +540,8 @@ const char* GrpcLb::Serverlist::ShouldDrop() {
 // GrpcLb::Picker
 //
 
-GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs* pick, grpc_error** error) {
+GrpcLb::Picker::PickResult GrpcLb::Picker::Pick(PickState* pick,
+                                                grpc_error** error) {
   // Check if we should drop the call.
   const char* drop_token = serverlist_->ShouldDrop();
   if (drop_token != nullptr) {
