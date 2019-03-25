@@ -118,7 +118,7 @@ typedef struct client_channel_channel_data {
   grpc_core::UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker;
   QueuedPick* queued_picks;  // Linked list of queued picks.
   // Data from service config.
-  bool received_resolver_result;
+  bool received_service_config_data;
   grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
   grpc_core::RefCountedPtr<ClientChannelMethodParamsTable> method_params_table;
 
@@ -173,8 +173,9 @@ namespace grpc_core {
 namespace {
 
 // A fire-and-forget class that sets the channel's connectivity state
-// and updates the picker in the data plane combiner.  Deletes itself
-// when done.
+// and then hops into the data plane combiner to update the picker.
+// Must be instantiated while holding the control plane combiner.
+// Deletes itself when done.
 class ConnectivityStateAndPickerSetter {
  public:
   ConnectivityStateAndPickerSetter(
@@ -240,7 +241,7 @@ class ServiceConfigSetter {
     ServiceConfigSetter* self = static_cast<ServiceConfigSetter*>(arg);
     channel_data* chand = self->chand_;
     // Update channel state.
-    chand->received_resolver_result = true;
+    chand->received_service_config_data = true;
     chand->retry_throttle_data = std::move(self->retry_throttle_data_);
     chand->method_params_table = std::move(self->method_params_table_);
     // Apply service config to queued picks.
@@ -2702,7 +2703,7 @@ static void maybe_apply_service_config_to_call_locked(grpc_call_element* elem) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   // Apply service config data to the call only once, and only if the
   // channel has the data available.
-  if (GPR_LIKELY(chand->received_resolver_result &&
+  if (GPR_LIKELY(chand->received_service_config_data &&
                  !calld->service_config_applied)) {
     calld->service_config_applied = true;
     apply_service_config_to_call_locked(elem);
