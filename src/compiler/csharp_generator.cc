@@ -384,7 +384,7 @@ void GenerateServerClass(Printer* out, const ServiceDescriptor* service) {
       "servicename", GetServiceClassName(service));
   out->Print(
       "[grpc::BindService(typeof($classname$), "
-      "nameof($classname$.BindService))]\n",
+      "\"BindService\")]\n",
       "classname", GetServiceClassName(service));
   out->Print("public abstract partial class $name$\n", "name",
              GetServerClassName(service));
