@@ -229,7 +229,8 @@ class ServiceConfigSetter {
       channel_data* chand,
       RefCountedPtr<ServerRetryThrottleData> retry_throttle_data,
       RefCountedPtr<ClientChannelMethodParamsTable> method_params_table)
-      : chand_(chand), retry_throttle_data_(std::move(retry_throttle_data)),
+      : chand_(chand),
+        retry_throttle_data_(std::move(retry_throttle_data)),
         method_params_table_(std::move(method_params_table)) {
     GRPC_CLOSURE_INIT(&closure_, SetServiceConfigData, this,
                       grpc_combiner_scheduler(chand->data_plane_combiner));
