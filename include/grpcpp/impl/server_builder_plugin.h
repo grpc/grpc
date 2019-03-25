@@ -23,9 +23,12 @@
 
 #include <grpcpp/support/config.h>
 
-namespace grpc {
+namespace grpc_impl {
 
 class ServerBuilder;
+}
+namespace grpc {
+
 class ServerInitializer;
 class ChannelArguments;
 
@@ -40,7 +43,7 @@ class ServerBuilderPlugin {
   /// UpdateServerBuilder will be called at an early stage in
   /// ServerBuilder::BuildAndStart(), right after the ServerBuilderOptions have
   /// done their updates.
-  virtual void UpdateServerBuilder(ServerBuilder* builder) {}
+  virtual void UpdateServerBuilder(grpc_impl::ServerBuilder* builder) {}
 
   /// InitServer will be called in ServerBuilder::BuildAndStart(), after the
   /// Server instance is created.
