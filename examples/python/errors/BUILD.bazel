@@ -46,6 +46,8 @@ py_test(
     data = [
         ":client",
         ":server",
+        "//src/python/grpcio/grpc:grpcio",
+        "//examples:py_helloworld",
         "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
     ],
     size = "small",
