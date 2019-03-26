@@ -1235,7 +1235,6 @@ Pod::Spec.new do |s|
                       'test/core/util/port_isolated_runtime_environment.cc',
                       'test/core/util/port_server_client.cc',
                       'test/core/util/slice_splitter.cc',
-                      'test/core/util/subprocess_posix.cc',
                       'test/core/util/subprocess_windows.cc',
                       'test/core/util/test_config.cc',
                       'test/core/util/test_lb_policies.cc',
