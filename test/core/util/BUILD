@@ -62,7 +62,6 @@ grpc_cc_library(
         "fuzzer_util.h",
         "grpc_profiler.h",
         "histogram.h",
-        "map_tester.h",
         "memory_counters.h",
         "mock_endpoint.h",
         "parse_hexstring.h",

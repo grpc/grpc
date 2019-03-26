@@ -57,9 +57,10 @@ class Map {
   class iterator : public std::iterator<std::input_iterator_tag, value_type,
                                         int32_t, value_type*, value_type&> {
    public:
-    iterator(iterator&& iter)
-        : curr_(std::forward<GrpcMapEntry*>(iter.curr_)),
-          map_(std::forward<GrpcMap*>(iter.map_)) {}
+    iterator(iterator&& other) : curr_(other.curr_), map_(other.map_) {
+      other.curr_ = nullptr;
+      other.map_ = nullptr;
+    }
     iterator(const iterator& iter) : curr_(iter.curr_), map_(iter.map_) {}
     bool operator==(const iterator& rhs) const { return (curr_ == rhs.curr_); }
     bool operator!=(const iterator& rhs) const { return (curr_ != rhs.curr_); }
@@ -74,15 +75,21 @@ class Map {
       return *this;
     }
 
-    iterator&& operator=(iterator&& iter) {
-      this->curr_ = std::move(iter.curr_);
-      this->map_ = std::move(iter.map_);
-      return std::forward<iterator>(*this);
+    iterator& operator=(iterator&& other) {
+      if (this != &other) {
+        this->curr_ = other.curr_;
+        this->map_ = other.map_;
+        other.curr_ = nullptr;
+        other.map_ = nullptr;
+      }
+      return *this;
     }
 
-    iterator& operator=(const iterator& iter) {
-      this->curr_ = iter.curr_;
-      this->map_ = iter.map_;
+    iterator& operator=(const iterator& other) {
+      if (this != &other) {
+        this->curr_ = other.curr_;
+        this->map_ = other.map_;
+      }
       return *this;
     }
 
@@ -163,13 +170,13 @@ class Map {
     iterator ret = find(pair.first);
     bool insertion = false;
     if (ret == end()) {
-      Pair<iterator, Entry*> p = InsertRecursive(
-          std::forward<Entry*>(root_), std::forward<value_type>(pair));
+      Pair<iterator, Entry*> p =
+          InsertRecursive(root_, std::forward<value_type>(pair));
       root_ = p.second;
       ret = p.first;
       insertion = true;
     }
-    return MakePair<iterator, bool>(std::forward<iterator>(ret),
+    return MakePair<iterator, bool>(std::move(ret),
                                     std::forward<bool>(insertion));
   }
 
@@ -305,26 +312,24 @@ class Map {
   Pair<iterator, Entry*> InsertRecursive(Entry* root, value_type&& p) {
     if (root == nullptr) {
       Entry* e = New<Entry>(std::forward<value_type>(p));
-      return MakePair(std::forward<iterator>(iterator(this, e)),
-                      std::forward<Entry*>(e));
+      return MakePair(iterator(this, e), std::forward<Entry*>(e));
     }
     int comp = CompareKeys(root->pair.first, p.first);
     if (comp > 0) {
       Pair<iterator, Entry*> ret =
           InsertRecursive(root->left, std::forward<value_type>(p));
       root->left = ret.second;
-      ret.second = (RebalanceTreeAfterInsertion(root, ret.first->first));
+      ret.second = RebalanceTreeAfterInsertion(root, ret.first->first);
       return ret;
     } else if (comp < 0) {
       Pair<iterator, Entry*> ret =
           InsertRecursive(root->right, std::forward<value_type>(p));
       root->right = ret.second;
-      ret.second = (RebalanceTreeAfterInsertion(root, ret.first->first));
+      ret.second = RebalanceTreeAfterInsertion(root, ret.first->first);
       return ret;
     } else {
       root->pair = std::move(p);
-      return MakePair(std::forward<iterator>(iterator(this, root)),
-                      std::forward<Entry*>(root));
+      return MakePair(iterator(this, root), std::forward<Entry*>(root));
     }
   }
 
