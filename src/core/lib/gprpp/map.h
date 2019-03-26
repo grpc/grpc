@@ -39,8 +39,7 @@ struct StringLess {
 };
 
 namespace testing {
-template <class Key, class T, class Compare>
-class MapTester;
+class MapTest;
 }
 
 // Alternative map implementation for grpc_core
@@ -151,6 +150,8 @@ class Map {
   }
 
   // Removes the current entry and points to the next one
+  // TODO(mhaidry): Modify erase to use the iterator location
+  // to create an efficient erase method
   iterator erase(iterator iter) {
     key_type& del_key = iter->first;
     iter++;
@@ -204,9 +205,6 @@ class Map {
     Entry* left = nullptr;
     Entry* right = nullptr;
     int32_t height = 1;
-
-    friend class iterator;
-    friend class testing::MapTester<Key, T, Compare>;
   };
 
   static int32_t EntryHeight(const Entry* e) {
@@ -378,7 +376,7 @@ class Map {
   }
 
   Entry* root_ = nullptr;
-  friend class testing::MapTester<Key, T, Compare>;
+  friend class testing::MapTest;
 };
 }  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_GPRPP_MAP_H */
