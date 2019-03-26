@@ -502,7 +502,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
   [self waitForExpectationsWithTimeout:kTestTimeout handler:nil];
 }
 
-- (void)testWriteFlowControl {
+- (void)testFlowControlWrite {
   __weak XCTestExpectation *expectWriteData =
       [self expectationWithDescription:@"Reported write data"];
 
@@ -531,7 +531,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
                                     callOptions:options];
 
   [call start];
-  [call receiveNextMessage];
+  [call receiveNextMessages:1];
   [call writeData:[request data]];
 
   // Wait for 3 seconds and make sure we do not receive the response
@@ -540,7 +540,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
   [call finish];
 }
 
-- (void)testReadFlowControl {
+- (void)testFlowControlRead {
   __weak __block XCTestExpectation *expectBlockedMessage =
       [self expectationWithDescription:@"Message not delivered without recvNextMessage"];
   __weak __block XCTestExpectation *expectPassedMessage = nil;
@@ -593,29 +593,31 @@ static const NSTimeInterval kInvertedTimeout = 2;
   expectPassedClose = [self expectationWithDescription:@"Close delivered after receiveNextMessage"];
 
   unblocked = YES;
-  [call receiveNextMessage];
+  [call receiveNextMessages:1];
 
   [self waitForExpectationsWithTimeout:kTestTimeout handler:nil];
 }
 
-- (void)testReadFlowControlMultipleMessages {
-  XCTestExpectation *expectPassedMessage =
+- (void)testFlowControlMultipleMessages {
+  __weak XCTestExpectation *expectPassedMessage =
       [self expectationWithDescription:@"two messages delivered with receiveNextMessage"];
   expectPassedMessage.expectedFulfillmentCount = 2;
-  XCTestExpectation *expectBlockedMessage =
+  __weak XCTestExpectation *expectBlockedMessage =
       [self expectationWithDescription:@"Message 3 not delivered"];
   expectBlockedMessage.inverted = YES;
+  __weak XCTestExpectation *expectWriteTwice =
+      [self expectationWithDescription:@"Write 2 messages done"];
+  expectWriteTwice.expectedFulfillmentCount = 2;
 
   RMTStreamingOutputCallRequest *request = [RMTStreamingOutputCallRequest message];
   RMTResponseParameters *parameters = [RMTResponseParameters message];
   parameters.size = kSimpleDataLength;
   [request.responseParametersArray addObject:parameters];
-  [request.responseParametersArray addObject:parameters];
   request.payload.body = [NSMutableData dataWithLength:kSimpleDataLength];
 
   GRPCRequestOptions *callRequest =
   [[GRPCRequestOptions alloc] initWithHost:(NSString *)kHostAddress
-                                      path:kOutputStreamingCallMethod.HTTPPath
+                                      path:kFullDuplexCallMethod.HTTPPath
                                     safety:GRPCCallSafetyDefault];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   options.transportType = GRPCTransportTypeInsecure;
@@ -628,25 +630,26 @@ static const NSTimeInterval kInvertedTimeout = 2;
                                       messageCallback:^(NSData *message) {
                                         if (messageId <= 1) {
                                           [expectPassedMessage fulfill];
-                                          if (messageId < 1) {
-                                            [call receiveNextMessage];
-                                          }
                                         } else {
                                           [expectBlockedMessage fulfill];
                                         }
                                         messageId++;
                                       }
-                                      closeCallback:nil]
+                                      closeCallback:nil
+                                      writeDataCallback:^{
+                                        [expectWriteTwice fulfill];
+                                      }]
                      callOptions:options];
 
-  [call receiveNextMessage];
+  [call receiveNextMessages:2];
   [call start];
+  [call writeData:[request data]];
   [call writeData:[request data]];
 
   [self waitForExpectationsWithTimeout:kInvertedTimeout handler:nil];
 }
 
-- (void)testReadFlowControlReadyBeforeStart {
+- (void)testFlowControlReadReadyBeforeStart {
   __weak XCTestExpectation *expectPassedMessage =
       [self expectationWithDescription:@"Message delivered with receiveNextMessage"];
   __weak XCTestExpectation *expectPassedClose =
@@ -678,7 +681,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
                               }]
                  callOptions:options];
 
-  [call receiveNextMessage];
+  [call receiveNextMessages:1];
   [call start];
   [call writeData:[request data]];
   [call finish];
@@ -686,7 +689,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
   [self waitForExpectationsWithTimeout:kInvertedTimeout handler:nil];
 }
 
-- (void)testReadFlowControlReadyAfterStart {
+- (void)testFlowControlReadReadyAfterStart {
   __weak XCTestExpectation *expectPassedMessage =
       [self expectationWithDescription:@"Message delivered with receiveNextMessage"];
   __weak XCTestExpectation *expectPassedClose =
@@ -720,14 +723,14 @@ static const NSTimeInterval kInvertedTimeout = 2;
                  callOptions:options];
 
   [call start];
-  [call receiveNextMessage];
+  [call receiveNextMessages:1];
   [call writeData:[request data]];
   [call finish];
 
   [self waitForExpectationsWithTimeout:kTestTimeout handler:nil];
 }
 
-- (void)testReadFlowControlNonBlockingFailure {
+- (void)testFlowControlReadNonBlockingFailure {
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"RPC completed."];
 
   GRPCRequestOptions *requestOptions =

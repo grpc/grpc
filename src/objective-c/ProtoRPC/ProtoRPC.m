@@ -72,6 +72,7 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 
 - (void)start {
   [_call start];
+  [_call receiveNextMessage];
   [_call writeMessage:_message];
   [_call finish];
 }
@@ -198,11 +199,14 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 }
 
 - (void)receiveNextMessage {
+  [self receiveNextMessages:1];
+}
+- (void)receiveNextMessages:(NSUInteger)numberOfMessages {
   GRPCCall2 *copiedCall;
   @synchronized(self) {
     copiedCall = _call;
   }
-  [copiedCall receiveNextMessage];
+  [copiedCall receiveNextMessages:numberOfMessages];
 }
 
 - (void)didReceiveInitialMetadata:(NSDictionary *)initialMetadata {

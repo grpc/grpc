@@ -136,7 +136,19 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)finish;
 
+/**
+ * Tell gRPC to receive the next message. If flow control is enabled, the messages received from the
+ * server are buffered in gRPC until the user want to receive the next message. If flow control is
+ * not enabled, messages will be automatically received after the previous one is delivered.
+ */
 - (void)receiveNextMessage;
+
+/**
+ * Tell gRPC to receive the next N message. If flow control is enabled, the messages received from
+ * the server are buffered in gRPC until the user want to receive the next message. If flow control
+ * is not enabled, messages will be automatically received after the previous one is delivered.
+ */
+- (void)receiveNextMessages:(NSUInteger)numberOfMessages;
 
 @end
 

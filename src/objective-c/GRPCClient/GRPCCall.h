@@ -265,7 +265,7 @@ extern NSString *const kGRPCTrailersKey;
  */
 - (void)finish;
 
-- (void)receiveNextMessage;
+- (void)receiveNextMessages:(NSUInteger)numberOfMessages;
 
 /**
  * Get a copy of the original call options.

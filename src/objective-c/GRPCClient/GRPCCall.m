@@ -70,7 +70,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
                  callOptions:(GRPCCallOptions *)callOptions
                    writeDone:(void (^)(void))writeDone;
 
-- (void)receiveNextMessage;
+- (void)receiveNextMessages:(NSUInteger)numberOfMessages;
 
 @end
 
@@ -123,7 +123,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
   /** Flags whether call has been finished. */
   BOOL _finished;
   /** The number of pending messages receiving requests. */
-  NSUInteger _pendingReceiveNextMessage;
+  NSUInteger _pendingReceiveNextMessages;
 }
 
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
@@ -212,9 +212,9 @@ const char *kCFStreamVarName = "grpc_cfstream";
     if (_callOptions.initialMetadata) {
       [_call.requestHeaders addEntriesFromDictionary:_callOptions.initialMetadata];
     }
-    if (_pendingReceiveNextMessage) {
-      [_call receiveNextMessage];
-      _pendingReceiveNextMessage = NO;
+    if (_pendingReceiveNextMessages > 0) {
+      [_call receiveNextMessages:_pendingReceiveNextMessages];
+      _pendingReceiveNextMessages = 0;
     }
     copiedCall = _call;
   }
@@ -399,16 +399,16 @@ const char *kCFStreamVarName = "grpc_cfstream";
   }
 }
 
-- (void)receiveNextMessage {
+- (void)receiveNextMessages:(NSUInteger)numberOfMessages {
   GRPCCall *copiedCall = nil;
   @synchronized(self) {
     copiedCall = _call;
     if (copiedCall == nil) {
-      _pendingReceiveNextMessage = YES;
+      _pendingReceiveNextMessages += numberOfMessages;
       return;
     }
   }
-  [copiedCall receiveNextMessage];
+  [copiedCall receiveNextMessages:numberOfMessages];
 }
 
 @end
@@ -481,8 +481,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
   // Indicate a read request to core is pending.
   BOOL _pendingCoreRead;
 
-  // Indicate a read message request from user.
-  BOOL _pendingReceiveNextMessage;
+  // Indicate pending read message request from user.
+  NSUInteger _pendingReceiveNextMessages;
 }
 
 @synthesize state = _state;
@@ -591,7 +591,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
     _responseQueue = dispatch_get_main_queue();
 
     // do not start a read until initial metadata is received
-    _pendingReceiveNextMessage = NO;
+    _pendingReceiveNextMessages = 0;
     _pendingCoreRead = YES;
   }
   return self;
@@ -669,11 +669,11 @@ const char *kCFStreamVarName = "grpc_cfstream";
     if (_state != GRXWriterStateStarted) {
       return;
     }
-    if (_callOptions.enableFlowControl && (_pendingCoreRead || !_pendingReceiveNextMessage)) {
+    if (_callOptions.enableFlowControl && (_pendingCoreRead || _pendingReceiveNextMessages == 0)) {
       return;
     }
     _pendingCoreRead = YES;
-    _pendingReceiveNextMessage = NO;
+    _pendingReceiveNextMessages--;
   }
 
   dispatch_async(_callQueue, ^{
@@ -696,7 +696,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
         // that's on the hands of any server to have. Instead we finish and ask
         // the server to cancel.
         @synchronized(strongSelf) {
-          strongSelf->_pendingReceiveNextMessage = NO;
+          strongSelf->_pendingReceiveNextMessages--;
           [strongSelf
               finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
                                                   code:GRPCErrorCodeResourceExhausted
@@ -764,13 +764,13 @@ const char *kCFStreamVarName = "grpc_cfstream";
   });
 }
 
-- (void)receiveNextMessage {
+- (void)receiveNextMessages:(NSUInteger)numberOfMessages {
+  if (numberOfMessages == 0) {
+    return;
+  }
   @synchronized(self) {
-    // Duplicate invocation of this method. Return
-    if (_pendingReceiveNextMessage) {
-      return;
-    }
-    _pendingReceiveNextMessage = YES;
+    _pendingReceiveNextMessages += numberOfMessages;
+
     [self maybeStartNextRead];
   }
 }
@@ -793,7 +793,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
       }
     }
   };
-
   GRPCOpSendMessage *op =
       [[GRPCOpSendMessage alloc] initWithMessage:message handler:resumingHandler];
   if (!_unaryCall) {
