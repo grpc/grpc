@@ -150,6 +150,8 @@ class Map {
   }
 
   // Removes the current entry and points to the next one
+  // TODO(mhaidry): Modify erase to use the iterator location
+  // to create an efficient erase method
   iterator erase(iterator iter) {
     key_type& del_key = iter->first;
     iter++;
