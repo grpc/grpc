@@ -47,7 +47,7 @@ inline UniquePtr<char> CopyString(const char* string) {
   return UniquePtr<char>(gpr_strdup(string));
 }
 
-const char* const keys[] = {"abc", "efg", "hij", "klm", "xyz"};
+static const char* const keys[] = {"abc", "efg", "hij", "klm", "xyz"};
 
 class MapTest : public ::testing::Test {
  public:
@@ -122,7 +122,7 @@ TEST_F(MapTest, MapTestBracketOperator) {
 TEST_F(MapTest, MapTestBracketOperatorWithUniquePtrPayload) {
   Map<int, UniquePtr<Payload>> test_map;
   for (int i = 0; i < 5; i++) {
-    test_map[i] = std::move(MakeUnique<Payload>(i));
+    test_map[i] = MakeUnique<Payload>(i);
   }
   for (int i = 0; i < 5; i++) {
     EXPECT_EQ(i, test_map[i]->data());
