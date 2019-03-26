@@ -64,7 +64,7 @@ RUN /bin/bash -l -c "gem install bundler -v 1.17.3 --no-ri --no-rdoc"
 # C# dependencies (needed to build grpc_csharp_ext)
 
 # Use cmake 3.6 from jessie-backports
-RUN echo "deb http://ftp.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
+RUN echo "deb [check-valid-until=no] http://archive.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
 RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
 
 RUN mkdir /var/local/jenkins
