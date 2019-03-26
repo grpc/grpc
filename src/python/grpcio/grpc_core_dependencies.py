@@ -699,6 +699,7 @@ CORE_SOURCE_FILES = [
     'third_party/cares/cares/ares_strcasecmp.c',
     'third_party/cares/cares/ares_strdup.c',
     'third_party/cares/cares/ares_strerror.c',
+    'third_party/cares/cares/ares_strsplit.c',
     'third_party/cares/cares/ares_timeout.c',
     'third_party/cares/cares/ares_version.c',
     'third_party/cares/cares/ares_writev.c',
