@@ -133,7 +133,7 @@ namespace Grpc.Tools
         /// Protobuf files to compile.
         /// </summary>
         [Required]
-        public ITaskItem[] ProtoBuf { get; set; }
+        public ITaskItem[] Protobuf { get; set; }
 
         /// <summary>
         /// Directory where protoc dependency files are cached. If provided, dependency
@@ -237,7 +237,7 @@ namespace Grpc.Tools
                 Log.LogError("Properties ProtoDepDir and DependencyOut may not be both specified");
             }
 
-            if (ProtoBuf.Length > 1 && (ProtoDepDir != null || DependencyOut != null))
+            if (Protobuf.Length > 1 && (ProtoDepDir != null || DependencyOut != null))
             {
                 Log.LogError("Proto compiler currently allows only one input when " +
                              "--dependency_out is specified (via ProtoDepDir or DependencyOut). " +
@@ -247,7 +247,7 @@ namespace Grpc.Tools
             // Use ProtoDepDir to autogenerate DependencyOut
             if (ProtoDepDir != null)
             {
-                DependencyOut = DepFileUtil.GetDepFilenameForProto(ProtoDepDir, ProtoBuf[0].ItemSpec);
+                DependencyOut = DepFileUtil.GetDepFilenameForProto(ProtoDepDir, Protobuf[0].ItemSpec);
             }
 
             if (GrpcPluginExe == null)
@@ -319,7 +319,7 @@ namespace Grpc.Tools
             }
             cmd.AddSwitchMaybe("dependency_out", DependencyOut);
             cmd.AddSwitchMaybe("error_format", "msvs");
-            foreach (var proto in ProtoBuf)
+            foreach (var proto in Protobuf)
             {
                 cmd.AddArg(proto.ItemSpec);
             }

@@ -29,15 +29,15 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
-namespace grpc {
+namespace grpc_impl {
 
-static std::vector<std::unique_ptr<ServerBuilderPlugin> (*)()>*
+static std::vector<std::unique_ptr<grpc::ServerBuilderPlugin> (*)()>*
     g_plugin_factory_list;
 static gpr_once once_init_plugin_list = GPR_ONCE_INIT;
 
 static void do_plugin_list_init(void) {
   g_plugin_factory_list =
-      new std::vector<std::unique_ptr<ServerBuilderPlugin> (*)()>();
+      new std::vector<std::unique_ptr<grpc::ServerBuilderPlugin> (*)()>();
 }
 
 ServerBuilder::ServerBuilder()
@@ -67,29 +67,29 @@ ServerBuilder::~ServerBuilder() {
   }
 }
 
-std::unique_ptr<ServerCompletionQueue> ServerBuilder::AddCompletionQueue(
+std::unique_ptr<grpc::ServerCompletionQueue> ServerBuilder::AddCompletionQueue(
     bool is_frequently_polled) {
-  ServerCompletionQueue* cq = new ServerCompletionQueue(
+  grpc::ServerCompletionQueue* cq = new grpc::ServerCompletionQueue(
       GRPC_CQ_NEXT,
       is_frequently_polled ? GRPC_CQ_DEFAULT_POLLING : GRPC_CQ_NON_LISTENING,
       nullptr);
   cqs_.push_back(cq);
-  return std::unique_ptr<ServerCompletionQueue>(cq);
+  return std::unique_ptr<grpc::ServerCompletionQueue>(cq);
 }
 
-ServerBuilder& ServerBuilder::RegisterService(Service* service) {
+ServerBuilder& ServerBuilder::RegisterService(grpc::Service* service) {
   services_.emplace_back(new NamedService(service));
   return *this;
 }
 
 ServerBuilder& ServerBuilder::RegisterService(const grpc::string& addr,
-                                              Service* service) {
+                                              grpc::Service* service) {
   services_.emplace_back(new NamedService(addr, service));
   return *this;
 }
 
 ServerBuilder& ServerBuilder::RegisterAsyncGenericService(
-    AsyncGenericService* service) {
+    grpc::AsyncGenericService* service) {
   if (generic_service_ || callback_generic_service_) {
     gpr_log(GPR_ERROR,
             "Adding multiple generic services is unsupported for now. "
@@ -102,7 +102,7 @@ ServerBuilder& ServerBuilder::RegisterAsyncGenericService(
 }
 
 ServerBuilder& ServerBuilder::experimental_type::RegisterCallbackGenericService(
-    experimental::CallbackGenericService* service) {
+    grpc::experimental::CallbackGenericService* service) {
   if (builder_->generic_service_ || builder_->callback_generic_service_) {
     gpr_log(GPR_ERROR,
             "Adding multiple generic services is unsupported for now. "
@@ -115,7 +115,7 @@ ServerBuilder& ServerBuilder::experimental_type::RegisterCallbackGenericService(
 }
 
 ServerBuilder& ServerBuilder::SetOption(
-    std::unique_ptr<ServerBuilderOption> option) {
+    std::unique_ptr<grpc::ServerBuilderOption> option) {
   options_.push_back(std::move(option));
   return *this;
 }
@@ -174,8 +174,8 @@ ServerBuilder& ServerBuilder::SetResourceQuota(
 }
 
 ServerBuilder& ServerBuilder::AddListeningPort(
-    const grpc::string& addr_uri, std::shared_ptr<ServerCredentials> creds,
-    int* selected_port) {
+    const grpc::string& addr_uri,
+    std::shared_ptr<grpc::ServerCredentials> creds, int* selected_port) {
   const grpc::string uri_scheme = "dns:";
   grpc::string addr = addr_uri;
   if (addr_uri.compare(0, uri_scheme.size(), uri_scheme) == 0) {
@@ -188,8 +188,8 @@ ServerBuilder& ServerBuilder::AddListeningPort(
   return *this;
 }
 
-std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
-  ChannelArguments args;
+std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
+  grpc::ChannelArguments args;
   for (auto option = options_.begin(); option != options_.end(); ++option) {
     (*option)->UpdateArguments(&args);
     (*option)->UpdatePlugins(&plugins_);
@@ -251,9 +251,10 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   // This is different from the completion queues added to the server via
   // ServerBuilder's AddCompletionQueue() method (those completion queues
   // are in 'cqs_' member variable of ServerBuilder object)
-  std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
-      sync_server_cqs(std::make_shared<
-                      std::vector<std::unique_ptr<ServerCompletionQueue>>>());
+  std::shared_ptr<std::vector<std::unique_ptr<grpc::ServerCompletionQueue>>>
+      sync_server_cqs(
+          std::make_shared<
+              std::vector<std::unique_ptr<grpc::ServerCompletionQueue>>>());
 
   bool has_frequently_polled_cqs = false;
   for (auto it = cqs_.begin(); it != cqs_.end(); ++it) {
@@ -282,7 +283,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     // Create completion queues to listen to incoming rpc requests
     for (int i = 0; i < sync_server_settings_.num_cqs; i++) {
       sync_server_cqs->emplace_back(
-          new ServerCompletionQueue(GRPC_CQ_NEXT, polling_type, nullptr));
+          new grpc::ServerCompletionQueue(GRPC_CQ_NEXT, polling_type, nullptr));
     }
   }
 
@@ -303,13 +304,13 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     gpr_log(GPR_INFO, "Callback server.");
   }
 
-  std::unique_ptr<Server> server(new Server(
+  std::unique_ptr<grpc::Server> server(new grpc::Server(
       max_receive_message_size_, &args, sync_server_cqs,
       sync_server_settings_.min_pollers, sync_server_settings_.max_pollers,
       sync_server_settings_.cq_timeout_msec, resource_quota_,
       std::move(interceptor_creators_)));
 
-  ServerInitializer* initializer = server->initializer();
+  grpc::ServerInitializer* initializer = server->initializer();
 
   // Register all the completion queues with the server. i.e
   //  1. sync_server_cqs: internal completion queues created IF this is a sync
@@ -393,7 +394,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
 }
 
 void ServerBuilder::InternalAddPluginFactory(
-    std::unique_ptr<ServerBuilderPlugin> (*CreatePlugin)()) {
+    std::unique_ptr<grpc::ServerBuilderPlugin> (*CreatePlugin)()) {
   gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
   (*g_plugin_factory_list).push_back(CreatePlugin);
 }
@@ -408,4 +409,4 @@ ServerBuilder& ServerBuilder::EnableWorkaround(grpc_workaround_list id) {
   }
 }
 
-}  // namespace grpc
+}  // namespace grpc_impl
