@@ -124,7 +124,8 @@ some configuration as environment variables that can be set.
   Declares which DNS resolver to use. The default is ares if gRPC is built with
   c-ares support. Otherwise, the value of this environment variable is ignored.
   Available DNS resolver include:
-  - ares (default)- a DNS resolver based around the c-ares library
+  - ares (default on most platforms except iOS, Android or Node)- a DNS
+    resolver based around the c-ares library
   - native - a DNS resolver based around getaddrinfo(), creates a new thread to
     perform name resolution
 
