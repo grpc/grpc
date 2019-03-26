@@ -111,10 +111,11 @@ void grpc_transport_move_stats(grpc_transport_stream_stats* from,
 // currently handling the batch).  Once a filter or transport passes control
 // of the batch to the next handler, it cannot depend on the contents of
 // this struct anymore, because the next handler may reuse it.
-typedef struct {
-  void* extra_arg;
+struct grpc_handler_private_op_data {
+  void* extra_arg = nullptr;
   grpc_closure closure;
-} grpc_handler_private_op_data;
+  grpc_handler_private_op_data() { memset(&closure, 0, sizeof(closure)); }
+};
 
 typedef struct grpc_transport_stream_op_batch_payload
     grpc_transport_stream_op_batch_payload;
