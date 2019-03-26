@@ -122,6 +122,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
   BOOL _canceled;
   /** Flags whether call has been finished. */
   BOOL _finished;
+  /** The number of pending messages receiving requests. */
+  NSUInteger _pendingReceiveNextMessage;
 }
 
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
@@ -209,6 +211,10 @@ const char *kCFStreamVarName = "grpc_cfstream";
                                  }];
     if (_callOptions.initialMetadata) {
       [_call.requestHeaders addEntriesFromDictionary:_callOptions.initialMetadata];
+    }
+    if (_pendingReceiveNextMessage) {
+      [_call receiveNextMessage];
+      _pendingReceiveNextMessage = NO;
     }
     copiedCall = _call;
   }
@@ -397,6 +403,10 @@ const char *kCFStreamVarName = "grpc_cfstream";
   GRPCCall *copiedCall = nil;
   @synchronized(self) {
     copiedCall = _call;
+    if (copiedCall == nil) {
+      _pendingReceiveNextMessage = YES;
+      return;
+    }
   }
   [copiedCall receiveNextMessage];
 }
@@ -662,6 +672,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
     if (_callOptions.enableFlowControl && (_pendingCoreRead || !_pendingReceiveNextMessage)) {
       return;
     }
+    _pendingCoreRead = YES;
+    _pendingReceiveNextMessage = NO;
   }
 
   dispatch_async(_callQueue, ^{
