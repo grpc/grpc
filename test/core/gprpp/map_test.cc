@@ -47,28 +47,15 @@ inline UniquePtr<char> CopyString(const char* string) {
   return UniquePtr<char>(gpr_strdup(string));
 }
 
-static const char* const keys[] = {"abc", "efg", "hij", "klm", "xyz"};
+const char* const keys[] = {"abc", "efg", "hij", "klm", "xyz"};
 
 class MapTest : public ::testing::Test {
- protected:
-  template <class Key, class T, class Compare>
-class MapTester {
-  using GrpcMap = typename ::grpc_core::Map<Key, T, Compare>;
-  using GrpcMapEntry = typename ::grpc_core::Map<Key, T, Compare>::Entry;
-
  public:
-  GrpcMapEntry* Root(GrpcMap* map) { return map->root_; }
-
-  GrpcMapEntry* Left(typename Map<Key, T, Compare>::Entry* e) {
-    return e->left;
+  template <class Key, class T, class Compare>
+  typename ::grpc_core::Map<Key, T, Compare>::Entry* Root(
+      typename ::grpc_core::Map<Key, T, Compare>* map) {
+    return map->root_;
   }
-
-  GrpcMapEntry* Right(typename Map<Key, T, Compare>::Entry* e) {
-    return e->right;
-  }
-};
-  MapTest(){};
-  MapTester<const char*, Payload, StringLess> mapt_;
 };
 
 // Test insertion of Payload
@@ -253,9 +240,9 @@ TEST_F(MapTest, MapLL) {
   for (int i = 2; i >= 0; i--) {
     test_map.emplace(keys[i], Payload(i));
   }
-  EXPECT_TRUE(!strcmp(mapt_.Root(&test_map)->pair.first, keys[1]));
-  EXPECT_TRUE(!strcmp(mapt_.Left(mapt_.Root(&test_map))->pair.first, keys[0]));
-  EXPECT_TRUE(!strcmp(mapt_.Right(mapt_.Root(&test_map))->pair.first, keys[2]));
+  EXPECT_TRUE(!strcmp(Root(&test_map)->pair.first, keys[1]));
+  EXPECT_TRUE(!strcmp(Root(&test_map)->left->pair.first, keys[0]));
+  EXPECT_TRUE(!strcmp(Root(&test_map)->right->pair.first, keys[2]));
 }
 
 // Test correction of Left-Right tree imbalance
@@ -266,9 +253,9 @@ TEST_F(MapTest, MapLR) {
     int key_index = insertion_key_index[i];
     test_map.emplace(keys[key_index], Payload(key_index));
   }
-  EXPECT_TRUE(!strcmp(mapt_.Root(&test_map)->pair.first, keys[1]));
-  EXPECT_TRUE(!strcmp(mapt_.Left(mapt_.Root(&test_map))->pair.first, keys[0]));
-  EXPECT_TRUE(!strcmp(mapt_.Right(mapt_.Root(&test_map))->pair.first, keys[2]));
+  EXPECT_TRUE(!strcmp(Root(&test_map)->pair.first, keys[1]));
+  EXPECT_TRUE(!strcmp(Root(&test_map)->left->pair.first, keys[0]));
+  EXPECT_TRUE(!strcmp(Root(&test_map)->right->pair.first, keys[2]));
 }
 
 // Test correction of Right-Left tree imbalance
@@ -279,9 +266,9 @@ TEST_F(MapTest, MapRL) {
     int key_index = insertion_key_index[i];
     test_map.emplace(keys[key_index], Payload(key_index));
   }
-  EXPECT_TRUE(!strcmp(mapt_.Root(&test_map)->pair.first, keys[1]));
-  EXPECT_TRUE(!strcmp(mapt_.Left(mapt_.Root(&test_map))->pair.first, keys[0]));
-  EXPECT_TRUE(!strcmp(mapt_.Right(mapt_.Root(&test_map))->pair.first, keys[2]));
+  EXPECT_TRUE(!strcmp(Root(&test_map)->pair.first, keys[1]));
+  EXPECT_TRUE(!strcmp(Root(&test_map)->left->pair.first, keys[0]));
+  EXPECT_TRUE(!strcmp(Root(&test_map)->right->pair.first, keys[2]));
 }
 
 // Test correction of Right-Right tree imbalance
@@ -290,13 +277,11 @@ TEST_F(MapTest, MapRR) {
   for (int i = 0; i < 5; i++) {
     test_map.emplace(keys[i], Payload(i));
   }
-  EXPECT_TRUE(!strcmp(mapt_.Root(&test_map)->pair.first, keys[1]));
-  EXPECT_TRUE(!strcmp(mapt_.Left(mapt_.Root(&test_map))->pair.first, keys[0]));
-  EXPECT_TRUE(!strcmp(mapt_.Right(mapt_.Root(&test_map))->pair.first, keys[3]));
-  EXPECT_TRUE(!strcmp(
-      mapt_.Left(mapt_.Right(mapt_.Root(&test_map)))->pair.first, keys[2]));
-  EXPECT_TRUE(!strcmp(
-      mapt_.Right(mapt_.Right(mapt_.Root(&test_map)))->pair.first, keys[4]));
+  EXPECT_TRUE(!strcmp(Root(&test_map)->pair.first, keys[1]));
+  EXPECT_TRUE(!strcmp(Root(&test_map)->left->pair.first, keys[0]));
+  EXPECT_TRUE(!strcmp(Root(&test_map)->right->pair.first, keys[3]));
+  EXPECT_TRUE(!strcmp(Root(&test_map)->right->left->pair.first, keys[2]));
+  EXPECT_TRUE(!strcmp(Root(&test_map)->right->right->pair.first, keys[4]));
 }
 
 // Test correction after random insertion
@@ -307,13 +292,11 @@ TEST_F(MapTest, MapRandomInsertions) {
     int key_index = insertion_key_index[i];
     test_map.emplace(keys[key_index], Payload(key_index));
   }
-  EXPECT_TRUE(!strcmp(mapt_.Root(&test_map)->pair.first, keys[3]));
-  EXPECT_TRUE(!strcmp(mapt_.Left(mapt_.Root(&test_map))->pair.first, keys[1]));
-  EXPECT_TRUE(!strcmp(mapt_.Right(mapt_.Root(&test_map))->pair.first, keys[4]));
-  EXPECT_TRUE(!strcmp(
-      mapt_.Right(mapt_.Left(mapt_.Root(&test_map)))->pair.first, keys[2]));
-  EXPECT_TRUE(!strcmp(mapt_.Left(mapt_.Left(mapt_.Root(&test_map)))->pair.first,
-                      keys[0]));
+  EXPECT_TRUE(!strcmp(Root(&test_map)->pair.first, keys[3]));
+  EXPECT_TRUE(!strcmp(Root(&test_map)->left->pair.first, keys[1]));
+  EXPECT_TRUE(!strcmp(Root(&test_map)->right->pair.first, keys[4]));
+  EXPECT_TRUE(!strcmp(Root(&test_map)->left->right->pair.first, keys[2]));
+  EXPECT_TRUE(!strcmp(Root(&test_map)->left->left->pair.first, keys[0]));
 }
 
 // Test Map iterator
