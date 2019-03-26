@@ -29,7 +29,7 @@ using Pair = std::pair<T1, T2>;
 
 template <class T1, class T2>
 inline Pair<T1, T2> MakePair(T1&& u, T2&& v) {
-  return std::make_pair<T1, T2>(std::move(u), std::move(v));
+  return std::make_pair<T1, T2>(std::forward<T1>(u), std::forward<T2>(v));
 }
 
 template <class T1, class T2>

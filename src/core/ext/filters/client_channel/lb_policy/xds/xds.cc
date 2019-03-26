@@ -1328,14 +1328,13 @@ void XdsLb::LocalityMap::UpdateLocked(
     const grpc_channel_args* args, XdsLb* parent) {
   if (parent->shutting_down_) return;
   for (size_t i = 0; i < locality_serverlist.size(); i++) {
-    UniquePtr<char> locality_name =
-        UniquePtr<char>(gpr_strdup(locality_serverlist[i]->locality_name));
+    UniquePtr<char> locality_name(
+        gpr_strdup(locality_serverlist[i]->locality_name));
     auto iter = map_.find(locality_name);
     if (iter == map_.end()) {
       OrphanablePtr<LocalityEntry> new_entry =
           MakeOrphanable<LocalityEntry>(parent->Ref());
       MutexLock lock(&child_refs_mu_);
-
       iter = map_.emplace(std::move(locality_name), std::move(new_entry)).first;
     }
     // Don't create new child policies if not directed to

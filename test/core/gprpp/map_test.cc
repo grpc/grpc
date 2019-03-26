@@ -30,6 +30,7 @@ namespace grpc_core {
 namespace testing {
 class Payload {
  public:
+  Payload() : data_(-1) {}
   explicit Payload(int data) : data_(data) {}
   int data() { return data_; }
 
@@ -37,18 +38,17 @@ class Payload {
   int data_;
 };
 
-class ReffedPayload : public ::grpc_core::InternallyRefCounted<ReffedPayload> {
+class ReffedPayload : public InternallyRefCounted<ReffedPayload> {
  public:
   explicit ReffedPayload(int data) : data_(data) {}
   int data() { return data_; }
-  void Orphan() override {}
+  void Orphan() override { Unref(); }
 
  private:
   int data_;
 };
 
-class OrphanablePayload
-    : public ::grpc_core::InternallyRefCounted<OrphanablePayload> {
+class OrphanablePayload : public InternallyRefCounted<OrphanablePayload> {
  public:
   explicit OrphanablePayload(int data) : data_(data) {}
   int data() { return data_; }
@@ -58,98 +58,103 @@ class OrphanablePayload
   int data_;
 };
 
-inline UniquePtr<char> getStringCopy(const char* string) {
+inline UniquePtr<char> CopyString(const char* string) {
   return UniquePtr<char>(gpr_strdup(string));
 }
 
 class MapTest : public ::testing::Test {
  protected:
   MapTest() {
-    abc = getStringCopy("abc");
-    efg = getStringCopy("efg");
-    hij = getStringCopy("hij");
-    klm = getStringCopy("klm");
-    xyz = getStringCopy("xyz");
+    abc_ = CopyString("abc");
+    efg_ = CopyString("efg");
+    hij_ = CopyString("hij");
+    klm_ = CopyString("klm");
+    xyz_ = CopyString("xyz");
   };
-  MapTester<UniquePtr<char>, RefCountedPtr<ReffedPayload>, StringLess> mapt;
-  UniquePtr<char> abc, efg, hij, klm, xyz;
+  MapTester<UniquePtr<char>, RefCountedPtr<ReffedPayload>, StringLess> mapt_;
+  UniquePtr<char> abc_, efg_, hij_, klm_, xyz_;
 };
 
 // Test insertion of raw pointer values
 TEST_F(MapTest, MapAddTest) {
-  grpc_core::Map<UniquePtr<char>, Payload*, StringLess> test_map;
-  InlinedVector<Payload, 3> p;
-  for (int i = 0; i < 3; i++) {
-    p.emplace_back(Payload(i));
-  }
+  Map<UniquePtr<char>, Payload, StringLess> test_map;
+  UniquePtr<char> abc_copy = CopyString(abc_.get());
+  UniquePtr<char> efg_copy = CopyString(efg_.get());
+  UniquePtr<char> hij_copy = CopyString(hij_.get());
+  test_map.emplace(std::move(abc_copy), Payload(0));
+  test_map.emplace(std::move(efg_copy), Payload(1));
+  test_map.emplace(std::move(hij_copy), Payload(2));
+  EXPECT_EQ(0, test_map.find(abc_)->second.data());
+  EXPECT_EQ(1, test_map.find(efg_)->second.data());
+  EXPECT_EQ(2, test_map.find(hij_)->second.data());
+}
 
-  UniquePtr<char> abc_copy = getStringCopy(abc.get());
-  UniquePtr<char> efg_copy = getStringCopy(efg.get());
-  UniquePtr<char> hij_copy = getStringCopy(hij.get());
-  test_map.emplace(std::move(abc_copy), &p[0]);
-  test_map.emplace(std::move(efg_copy), &p[1]);
-  test_map.emplace(std::move(hij_copy), &p[2]);
-  EXPECT_EQ(0, test_map.find(abc)->second->data());
-  EXPECT_EQ(1, test_map.find(efg)->second->data());
-  EXPECT_EQ(2, test_map.find(hij)->second->data());
+TEST_F(MapTest, MapConstCharAddTest) {
+  Map<const char*, Payload, StringLess> test_map;
+  test_map.emplace("abc", Payload(0));
+  test_map.emplace("efg", Payload(1));
+  test_map.emplace("hij", Payload(2));
+  EXPECT_EQ(0, test_map.find("abc")->second.data());
+  EXPECT_EQ(1, test_map.find("efg")->second.data());
+  EXPECT_EQ(2, test_map.find("hij")->second.data());
 }
 
 // Test insertion of raw pointer values
 TEST_F(MapTest, MapTestBracketOperator) {
-  grpc_core::Map<int, Payload*> test_map;
-  InlinedVector<Payload, 3> p;
-  for (int i = 0; i < 3; i++) {
-    p.emplace_back(Payload(i));
-  }
-  test_map[0] = &p[0];
-  test_map[1] = &p[1];
-  test_map[2] = &p[2];
-  EXPECT_EQ(0, test_map[0]->data());
-  EXPECT_EQ(1, test_map[1]->data());
-  EXPECT_EQ(2, test_map[2]->data());
+  Map<int, Payload> test_map;
+  test_map[0] = Payload(0);
+  test_map[1] = Payload(1);
+  test_map[2] = Payload(2);
+  EXPECT_EQ(0, test_map[0].data());
+  EXPECT_EQ(1, test_map[1].data());
+  EXPECT_EQ(2, test_map[2].data());
+}
+
+TEST_F(MapTest, MapConstCharReffedPayloadAddTest) {
+  Map<const char*, RefCountedPtr<ReffedPayload>, StringLess> test_map;
+  test_map.emplace("abc", MakeRefCounted<ReffedPayload>(0));
+  test_map.emplace("efg", MakeRefCounted<ReffedPayload>(1));
+  test_map.emplace("hij", MakeRefCounted<ReffedPayload>(2));
+  EXPECT_EQ(0, test_map.find("abc")->second->data());
+  EXPECT_EQ(1, test_map.find("efg")->second->data());
+  EXPECT_EQ(2, test_map.find("hij")->second->data());
 }
 
 // Test removal of raw pointer values
 TEST_F(MapTest, MapRemoveTestRawPtr) {
-  grpc_core::Map<UniquePtr<char>, Payload*, StringLess> test_map;
-  InlinedVector<Payload, 3> p;
-  for (int i = 0; i < 3; i++) {
-    p.emplace_back(Payload(i));
-  }
-  UniquePtr<char> abc_copy = getStringCopy(abc.get());
-  UniquePtr<char> efg_copy = getStringCopy(efg.get());
-  UniquePtr<char> hij_copy = getStringCopy(hij.get());
-  test_map.emplace(std::move(abc_copy), &p[0]);
-  test_map.emplace(std::move(efg_copy), &p[1]);
-  test_map.emplace(std::move(hij_copy), &p[2]);
-  test_map.erase(hij);
-  EXPECT_EQ(0, test_map.find(abc)->second->data());
-  EXPECT_EQ(1, test_map.find(efg)->second->data());
-  EXPECT_TRUE(test_map.find(hij) == test_map.end());
+  Map<UniquePtr<char>, Payload, StringLess> test_map;
+  UniquePtr<char> abc_copy = CopyString(abc_.get());
+  UniquePtr<char> efg_copy = CopyString(efg_.get());
+  UniquePtr<char> hij_copy = CopyString(hij_.get());
+  test_map.emplace(std::move(abc_copy), Payload(0));
+  test_map.emplace(std::move(efg_copy), Payload(1));
+  test_map.emplace(std::move(hij_copy), Payload(2));
+  test_map.erase(hij_);
+  EXPECT_EQ(0, test_map.find(abc_)->second.data());
+  EXPECT_EQ(1, test_map.find(efg_)->second.data());
+  EXPECT_TRUE(test_map.find(hij_) == test_map.end());
 }
 
 // Test insertion of Reffed Pointers
 TEST_F(MapTest, MapAddTestReffedPtr) {
-  grpc_core::Map<UniquePtr<char>, RefCountedPtr<ReffedPayload>, StringLess>
-      test_map;
-  UniquePtr<char> abc_copy = getStringCopy(abc.get());
-  UniquePtr<char> efg_copy = getStringCopy(efg.get());
-  UniquePtr<char> hij_copy = getStringCopy(hij.get());
+  Map<UniquePtr<char>, RefCountedPtr<ReffedPayload>, StringLess> test_map;
+  UniquePtr<char> abc_copy = CopyString(abc_.get());
+  UniquePtr<char> efg_copy = CopyString(efg_.get());
+  UniquePtr<char> hij_copy = CopyString(hij_.get());
   test_map.emplace(std::move(abc_copy), MakeRefCounted<ReffedPayload>(1));
   test_map.emplace(std::move(efg_copy), MakeRefCounted<ReffedPayload>(2));
   test_map.emplace(std::move(hij_copy), MakeRefCounted<ReffedPayload>(3));
-  EXPECT_EQ(1, test_map.find(abc)->second->data());
-  EXPECT_EQ(2, test_map.find(efg)->second->data());
-  EXPECT_EQ(3, test_map.find(hij)->second->data());
+  EXPECT_EQ(1, test_map.find(abc_)->second->data());
+  EXPECT_EQ(2, test_map.find(efg_)->second->data());
+  EXPECT_EQ(3, test_map.find(hij_)->second->data());
 }
 
 // Test clear
 TEST_F(MapTest, MapClearTestReffedPtr) {
-  grpc_core::Map<UniquePtr<char>, RefCountedPtr<ReffedPayload>, StringLess>
-      test_map;
-  UniquePtr<char> abc_copy = getStringCopy(abc.get());
-  UniquePtr<char> efg_copy = getStringCopy(efg.get());
-  UniquePtr<char> hij_copy = getStringCopy(hij.get());
+  Map<UniquePtr<char>, RefCountedPtr<ReffedPayload>, StringLess> test_map;
+  UniquePtr<char> abc_copy = CopyString(abc_.get());
+  UniquePtr<char> efg_copy = CopyString(efg_.get());
+  UniquePtr<char> hij_copy = CopyString(hij_.get());
   test_map.emplace(std::move(abc_copy), MakeRefCounted<ReffedPayload>(1));
   test_map.emplace(std::move(efg_copy), MakeRefCounted<ReffedPayload>(2));
   test_map.emplace(std::move(hij_copy), MakeRefCounted<ReffedPayload>(3));
@@ -159,170 +164,165 @@ TEST_F(MapTest, MapClearTestReffedPtr) {
 
 // Test Removal of Reffed Pointers from map
 TEST_F(MapTest, MapRemoveTestReffedPtr) {
-  grpc_core::Map<UniquePtr<char>, RefCountedPtr<ReffedPayload>, StringLess>
-      test_map;
-  UniquePtr<char> abc_copy = getStringCopy(abc.get());
-  UniquePtr<char> efg_copy = getStringCopy(efg.get());
-  UniquePtr<char> hij_copy = getStringCopy(hij.get());
-  UniquePtr<char> klm_copy = getStringCopy(klm.get());
-  UniquePtr<char> xyz_copy = getStringCopy(xyz.get());
+  Map<UniquePtr<char>, RefCountedPtr<ReffedPayload>, StringLess> test_map;
+  UniquePtr<char> abc_copy = CopyString(abc_.get());
+  UniquePtr<char> efg_copy = CopyString(efg_.get());
+  UniquePtr<char> hij_copy = CopyString(hij_.get());
+  UniquePtr<char> klm_copy = CopyString(klm_.get());
+  UniquePtr<char> xyz_copy = CopyString(xyz_.get());
   test_map.emplace(std::move(xyz_copy), MakeRefCounted<ReffedPayload>(5));
   test_map.emplace(std::move(klm_copy), MakeRefCounted<ReffedPayload>(4));
   test_map.emplace(std::move(abc_copy), MakeRefCounted<ReffedPayload>(1));
   test_map.emplace(std::move(efg_copy), MakeRefCounted<ReffedPayload>(2));
   test_map.emplace(std::move(hij_copy), MakeRefCounted<ReffedPayload>(3));
-  test_map.erase(hij);
-  test_map.erase(abc);
-  test_map.erase(klm);
-  test_map.erase(xyz);
-  test_map.erase(efg);
-  EXPECT_TRUE(test_map.find(hij) == test_map.end());
+  test_map.erase(hij_);
+  test_map.erase(abc_);
+  test_map.erase(klm_);
+  test_map.erase(xyz_);
+  test_map.erase(efg_);
+  EXPECT_TRUE(test_map.find(hij_) == test_map.end());
   EXPECT_TRUE(test_map.empty());
 }
 
 // Test correction of Left-Left Tree imbalance
 TEST_F(MapTest, MapLL) {
-  grpc_core::Map<UniquePtr<char>, RefCountedPtr<ReffedPayload>, StringLess>
-      test_map;
-  UniquePtr<char> abc_copy = getStringCopy(abc.get());
-  UniquePtr<char> efg_copy = getStringCopy(efg.get());
-  UniquePtr<char> hij_copy = getStringCopy(hij.get());
+  Map<UniquePtr<char>, RefCountedPtr<ReffedPayload>, StringLess> test_map;
+  UniquePtr<char> abc_copy = CopyString(abc_.get());
+  UniquePtr<char> efg_copy = CopyString(efg_.get());
+  UniquePtr<char> hij_copy = CopyString(hij_.get());
   test_map.emplace(std::move(hij_copy), MakeRefCounted<ReffedPayload>(3));
   test_map.emplace(std::move(efg_copy), MakeRefCounted<ReffedPayload>(2));
   test_map.emplace(std::move(abc_copy), MakeRefCounted<ReffedPayload>(1));
-  EXPECT_TRUE(!strcmp(mapt.Root(&test_map)->pair.first.get(), efg.get()));
+  EXPECT_TRUE(!strcmp(mapt_.Root(&test_map)->pair.first.get(), efg_.get()));
   EXPECT_TRUE(
-      !strcmp(mapt.Left(mapt.Root(&test_map))->pair.first.get(), abc.get()));
-  EXPECT_TRUE(
-      !strcmp(mapt.Right(mapt.Root(&test_map))->pair.first.get(), hij.get()));
-  EXPECT_EQ(1, test_map.find(abc)->second->data());
-  EXPECT_EQ(2, test_map.find(efg)->second->data());
-  EXPECT_EQ(3, test_map.find(hij)->second->data());
+      !strcmp(mapt_.Left(mapt_.Root(&test_map))->pair.first.get(), abc_.get()));
+  EXPECT_TRUE(!strcmp(mapt_.Right(mapt_.Root(&test_map))->pair.first.get(),
+                      hij_.get()));
+  EXPECT_EQ(1, test_map.find(abc_)->second->data());
+  EXPECT_EQ(2, test_map.find(efg_)->second->data());
+  EXPECT_EQ(3, test_map.find(hij_)->second->data());
 }
 
 // Test correction of Left-Right tree imbalance
 TEST_F(MapTest, MapLR) {
-  grpc_core::Map<UniquePtr<char>, RefCountedPtr<ReffedPayload>, StringLess>
-      test_map;
-  UniquePtr<char> abc_copy = getStringCopy(abc.get());
-  UniquePtr<char> efg_copy = getStringCopy(efg.get());
-  UniquePtr<char> hij_copy = getStringCopy(hij.get());
+  Map<UniquePtr<char>, RefCountedPtr<ReffedPayload>, StringLess> test_map;
+  UniquePtr<char> abc_copy = CopyString(abc_.get());
+  UniquePtr<char> efg_copy = CopyString(efg_.get());
+  UniquePtr<char> hij_copy = CopyString(hij_.get());
   test_map.emplace(std::move(hij_copy), MakeRefCounted<ReffedPayload>(3));
   test_map.emplace(std::move(abc_copy), MakeRefCounted<ReffedPayload>(1));
   test_map.emplace(std::move(efg_copy), MakeRefCounted<ReffedPayload>(2));
-  EXPECT_TRUE(!strcmp(mapt.Root(&test_map)->pair.first.get(), efg.get()));
+  EXPECT_TRUE(!strcmp(mapt_.Root(&test_map)->pair.first.get(), efg_.get()));
   EXPECT_TRUE(
-      !strcmp(mapt.Left(mapt.Root(&test_map))->pair.first.get(), abc.get()));
-  EXPECT_TRUE(
-      !strcmp(mapt.Right(mapt.Root(&test_map))->pair.first.get(), hij.get()));
-  EXPECT_EQ(1, test_map.find(abc)->second->data());
-  EXPECT_EQ(2, test_map.find(efg)->second->data());
-  EXPECT_EQ(3, test_map.find(hij)->second->data());
+      !strcmp(mapt_.Left(mapt_.Root(&test_map))->pair.first.get(), abc_.get()));
+  EXPECT_TRUE(!strcmp(mapt_.Right(mapt_.Root(&test_map))->pair.first.get(),
+                      hij_.get()));
+  EXPECT_EQ(1, test_map.find(abc_)->second->data());
+  EXPECT_EQ(2, test_map.find(efg_)->second->data());
+  EXPECT_EQ(3, test_map.find(hij_)->second->data());
 }
 
 // Test correction of Right-Left tree imbalance
 TEST_F(MapTest, MapRL) {
-  grpc_core::Map<UniquePtr<char>, RefCountedPtr<ReffedPayload>, StringLess>
-      test_map;
-  UniquePtr<char> abc_copy = getStringCopy(abc.get());
-  UniquePtr<char> efg_copy = getStringCopy(efg.get());
-  UniquePtr<char> hij_copy = getStringCopy(hij.get());
-  UniquePtr<char> klm_copy = getStringCopy(klm.get());
-  UniquePtr<char> xyz_copy = getStringCopy(xyz.get());
+  Map<UniquePtr<char>, RefCountedPtr<ReffedPayload>, StringLess> test_map;
+  UniquePtr<char> abc_copy = CopyString(abc_.get());
+  UniquePtr<char> efg_copy = CopyString(efg_.get());
+  UniquePtr<char> hij_copy = CopyString(hij_.get());
+  UniquePtr<char> klm_copy = CopyString(klm_.get());
+  UniquePtr<char> xyz_copy = CopyString(xyz_.get());
   test_map.emplace(std::move(xyz_copy), MakeRefCounted<ReffedPayload>(5));
   test_map.emplace(std::move(klm_copy), MakeRefCounted<ReffedPayload>(4));
   test_map.emplace(std::move(hij_copy), MakeRefCounted<ReffedPayload>(3));
   test_map.emplace(std::move(efg_copy), MakeRefCounted<ReffedPayload>(2));
   test_map.emplace(std::move(abc_copy), MakeRefCounted<ReffedPayload>(1));
-  EXPECT_TRUE(!strcmp(mapt.Root(&test_map)->pair.first.get(), klm.get()));
+  EXPECT_TRUE(!strcmp(mapt_.Root(&test_map)->pair.first.get(), klm_.get()));
   EXPECT_TRUE(
-      !strcmp(mapt.Left(mapt.Root(&test_map))->pair.first.get(), efg.get()));
+      !strcmp(mapt_.Left(mapt_.Root(&test_map))->pair.first.get(), efg_.get()));
+  EXPECT_TRUE(!strcmp(mapt_.Right(mapt_.Root(&test_map))->pair.first.get(),
+                      xyz_.get()));
   EXPECT_TRUE(
-      !strcmp(mapt.Right(mapt.Root(&test_map))->pair.first.get(), xyz.get()));
+      !strcmp(mapt_.Right(mapt_.Left(mapt_.Root(&test_map)))->pair.first.get(),
+              hij_.get()));
   EXPECT_TRUE(
-      !strcmp(mapt.Right(mapt.Left(mapt.Root(&test_map)))->pair.first.get(),
-              hij.get()));
-  EXPECT_TRUE(!strcmp(
-      mapt.Left(mapt.Left(mapt.Root(&test_map)))->pair.first.get(), abc.get()));
-  EXPECT_EQ(1, test_map.find(abc)->second->data());
-  EXPECT_EQ(2, test_map.find(efg)->second->data());
-  EXPECT_EQ(3, test_map.find(hij)->second->data());
-  EXPECT_EQ(4, test_map.find(klm)->second->data());
-  EXPECT_EQ(5, test_map.find(xyz)->second->data());
+      !strcmp(mapt_.Left(mapt_.Left(mapt_.Root(&test_map)))->pair.first.get(),
+              abc_.get()));
+  EXPECT_EQ(1, test_map.find(abc_)->second->data());
+  EXPECT_EQ(2, test_map.find(efg_)->second->data());
+  EXPECT_EQ(3, test_map.find(hij_)->second->data());
+  EXPECT_EQ(4, test_map.find(klm_)->second->data());
+  EXPECT_EQ(5, test_map.find(xyz_)->second->data());
 }
 
 // Test correction of Right-Right tree imbalance
 TEST_F(MapTest, MapRR) {
-  grpc_core::Map<UniquePtr<char>, RefCountedPtr<ReffedPayload>, StringLess>
-      test_map;
-  UniquePtr<char> abc_copy = getStringCopy(abc.get());
-  UniquePtr<char> efg_copy = getStringCopy(efg.get());
-  UniquePtr<char> hij_copy = getStringCopy(hij.get());
-  UniquePtr<char> klm_copy = getStringCopy(klm.get());
-  UniquePtr<char> xyz_copy = getStringCopy(xyz.get());
+  Map<UniquePtr<char>, RefCountedPtr<ReffedPayload>, StringLess> test_map;
+  UniquePtr<char> abc_copy = CopyString(abc_.get());
+  UniquePtr<char> efg_copy = CopyString(efg_.get());
+  UniquePtr<char> hij_copy = CopyString(hij_.get());
+  UniquePtr<char> klm_copy = CopyString(klm_.get());
+  UniquePtr<char> xyz_copy = CopyString(xyz_.get());
   test_map.emplace(std::move(abc_copy), MakeRefCounted<ReffedPayload>(1));
   test_map.emplace(std::move(efg_copy), MakeRefCounted<ReffedPayload>(2));
   test_map.emplace(std::move(hij_copy), MakeRefCounted<ReffedPayload>(3));
   test_map.emplace(std::move(klm_copy), MakeRefCounted<ReffedPayload>(4));
   test_map.emplace(std::move(xyz_copy), MakeRefCounted<ReffedPayload>(5));
-  EXPECT_TRUE(!strcmp(mapt.Root(&test_map)->pair.first.get(), efg.get()));
+  EXPECT_TRUE(!strcmp(mapt_.Root(&test_map)->pair.first.get(), efg_.get()));
   EXPECT_TRUE(
-      !strcmp(mapt.Left(mapt.Root(&test_map))->pair.first.get(), abc.get()));
+      !strcmp(mapt_.Left(mapt_.Root(&test_map))->pair.first.get(), abc_.get()));
+  EXPECT_TRUE(!strcmp(mapt_.Right(mapt_.Root(&test_map))->pair.first.get(),
+                      klm_.get()));
   EXPECT_TRUE(
-      !strcmp(mapt.Right(mapt.Root(&test_map))->pair.first.get(), klm.get()));
+      !strcmp(mapt_.Left(mapt_.Right(mapt_.Root(&test_map)))->pair.first.get(),
+              hij_.get()));
   EXPECT_TRUE(
-      !strcmp(mapt.Left(mapt.Right(mapt.Root(&test_map)))->pair.first.get(),
-              hij.get()));
-  EXPECT_TRUE(
-      !strcmp(mapt.Right(mapt.Right(mapt.Root(&test_map)))->pair.first.get(),
-              xyz.get()));
-  EXPECT_EQ(1, test_map.find(abc)->second->data());
-  EXPECT_EQ(2, test_map.find(efg)->second->data());
-  EXPECT_EQ(3, test_map.find(hij)->second->data());
-  EXPECT_EQ(4, test_map.find(klm)->second->data());
-  EXPECT_EQ(5, test_map.find(xyz)->second->data());
+      !strcmp(mapt_.Right(mapt_.Right(mapt_.Root(&test_map)))->pair.first.get(),
+              xyz_.get()));
+  EXPECT_EQ(1, test_map.find(abc_)->second->data());
+  EXPECT_EQ(2, test_map.find(efg_)->second->data());
+  EXPECT_EQ(3, test_map.find(hij_)->second->data());
+  EXPECT_EQ(4, test_map.find(klm_)->second->data());
+  EXPECT_EQ(5, test_map.find(xyz_)->second->data());
 }
 
 // Test correction after random insertion
 TEST_F(MapTest, MapRandomInsertions) {
-  grpc_core::Map<UniquePtr<char>, RefCountedPtr<ReffedPayload>, StringLess>
-      test_map;
-  UniquePtr<char> abc_copy = getStringCopy(abc.get());
-  UniquePtr<char> efg_copy = getStringCopy(efg.get());
-  UniquePtr<char> hij_copy = getStringCopy(hij.get());
-  UniquePtr<char> klm_copy = getStringCopy(klm.get());
-  UniquePtr<char> xyz_copy = getStringCopy(xyz.get());
+  Map<UniquePtr<char>, RefCountedPtr<ReffedPayload>, StringLess> test_map;
+  UniquePtr<char> abc_copy = CopyString(abc_.get());
+  UniquePtr<char> efg_copy = CopyString(efg_.get());
+  UniquePtr<char> hij_copy = CopyString(hij_.get());
+  UniquePtr<char> klm_copy = CopyString(klm_.get());
+  UniquePtr<char> xyz_copy = CopyString(xyz_.get());
   test_map.emplace(std::move(efg_copy), MakeRefCounted<ReffedPayload>(2));
   test_map.emplace(std::move(xyz_copy), MakeRefCounted<ReffedPayload>(5));
   test_map.emplace(std::move(klm_copy), MakeRefCounted<ReffedPayload>(4));
   test_map.emplace(std::move(abc_copy), MakeRefCounted<ReffedPayload>(1));
   test_map.emplace(std::move(hij_copy), MakeRefCounted<ReffedPayload>(3));
-  EXPECT_TRUE(!strcmp(mapt.Root(&test_map)->pair.first.get(), klm.get()));
+  EXPECT_TRUE(!strcmp(mapt_.Root(&test_map)->pair.first.get(), klm_.get()));
   EXPECT_TRUE(
-      !strcmp(mapt.Left(mapt.Root(&test_map))->pair.first.get(), efg.get()));
+      !strcmp(mapt_.Left(mapt_.Root(&test_map))->pair.first.get(), efg_.get()));
+  EXPECT_TRUE(!strcmp(mapt_.Right(mapt_.Root(&test_map))->pair.first.get(),
+                      xyz_.get()));
   EXPECT_TRUE(
-      !strcmp(mapt.Right(mapt.Root(&test_map))->pair.first.get(), xyz.get()));
+      !strcmp(mapt_.Right(mapt_.Left(mapt_.Root(&test_map)))->pair.first.get(),
+              hij_.get()));
   EXPECT_TRUE(
-      !strcmp(mapt.Right(mapt.Left(mapt.Root(&test_map)))->pair.first.get(),
-              hij.get()));
-  EXPECT_TRUE(!strcmp(
-      mapt.Left(mapt.Left(mapt.Root(&test_map)))->pair.first.get(), abc.get()));
-  EXPECT_EQ(1, test_map.find(abc)->second->data());
-  EXPECT_EQ(2, test_map.find(efg)->second->data());
-  EXPECT_EQ(3, test_map.find(hij)->second->data());
-  EXPECT_EQ(4, test_map.find(klm)->second->data());
-  EXPECT_EQ(5, test_map.find(xyz)->second->data());
+      !strcmp(mapt_.Left(mapt_.Left(mapt_.Root(&test_map)))->pair.first.get(),
+              abc_.get()));
+  EXPECT_EQ(1, test_map.find(abc_)->second->data());
+  EXPECT_EQ(2, test_map.find(efg_)->second->data());
+  EXPECT_EQ(3, test_map.find(hij_)->second->data());
+  EXPECT_EQ(4, test_map.find(klm_)->second->data());
+  EXPECT_EQ(5, test_map.find(xyz_)->second->data());
 }
 
 // Test Map iterator
 TEST_F(MapTest, MapIter) {
-  grpc_core::Map<UniquePtr<char>, RefCountedPtr<ReffedPayload>, StringLess>
-      test_map;
-  UniquePtr<char> abc_copy = getStringCopy(abc.get());
-  UniquePtr<char> efg_copy = getStringCopy(efg.get());
-  UniquePtr<char> hij_copy = getStringCopy(hij.get());
-  UniquePtr<char> klm_copy = getStringCopy(klm.get());
-  UniquePtr<char> xyz_copy = getStringCopy(xyz.get());
+  Map<UniquePtr<char>, RefCountedPtr<ReffedPayload>, StringLess> test_map;
+  UniquePtr<char> abc_copy = CopyString(abc_.get());
+  UniquePtr<char> efg_copy = CopyString(efg_.get());
+  UniquePtr<char> hij_copy = CopyString(hij_.get());
+  UniquePtr<char> klm_copy = CopyString(klm_.get());
+  UniquePtr<char> xyz_copy = CopyString(xyz_.get());
   test_map.emplace(std::move(xyz_copy), MakeRefCounted<ReffedPayload>(5));
   test_map.emplace(std::move(klm_copy), MakeRefCounted<ReffedPayload>(4));
   test_map.emplace(std::move(hij_copy), MakeRefCounted<ReffedPayload>(3));
@@ -338,13 +338,12 @@ TEST_F(MapTest, MapIter) {
 
 // Test removing entries while iterating the map
 TEST_F(MapTest, MapIterAndRemove) {
-  grpc_core::Map<UniquePtr<char>, RefCountedPtr<ReffedPayload>, StringLess>
-      test_map;
-  UniquePtr<char> abc_copy = getStringCopy(abc.get());
-  UniquePtr<char> efg_copy = getStringCopy(efg.get());
-  UniquePtr<char> hij_copy = getStringCopy(hij.get());
-  UniquePtr<char> klm_copy = getStringCopy(klm.get());
-  UniquePtr<char> xyz_copy = getStringCopy(xyz.get());
+  Map<UniquePtr<char>, RefCountedPtr<ReffedPayload>, StringLess> test_map;
+  UniquePtr<char> abc_copy = CopyString(abc_.get());
+  UniquePtr<char> efg_copy = CopyString(efg_.get());
+  UniquePtr<char> hij_copy = CopyString(hij_.get());
+  UniquePtr<char> klm_copy = CopyString(klm_.get());
+  UniquePtr<char> xyz_copy = CopyString(xyz_.get());
   test_map.emplace(std::move(xyz_copy), MakeRefCounted<ReffedPayload>(5));
   test_map.emplace(std::move(klm_copy), MakeRefCounted<ReffedPayload>(4));
   test_map.emplace(std::move(hij_copy), MakeRefCounted<ReffedPayload>(3));
@@ -362,39 +361,34 @@ TEST_F(MapTest, MapIterAndRemove) {
 
 // Test insertion of raw pointer values
 TEST_F(MapTest, MapAddTestOrphanablePtr) {
-  grpc_core::Map<UniquePtr<char>, OrphanablePtr<OrphanablePayload>, StringLess>
-      test_map;
-  OrphanablePtr<OrphanablePayload> p[3];
-  for (int i = 0; i < 3; i++) {
-    p[i] = MakeOrphanable<OrphanablePayload>(i);
-  }
-  UniquePtr<char> abc_copy = getStringCopy(abc.get());
-  UniquePtr<char> efg_copy = getStringCopy(efg.get());
-  UniquePtr<char> hij_copy = getStringCopy(hij.get());
-  test_map.emplace(std::move(abc_copy), std::move(p[0]));
-  test_map.emplace(std::move(efg_copy), std::move(p[1]));
-  test_map.emplace(std::move(hij_copy), std::move(p[2]));
-  EXPECT_EQ(0, test_map.find(abc)->second->data());
-  EXPECT_EQ(1, test_map.find(efg)->second->data());
-  EXPECT_EQ(2, test_map.find(hij)->second->data());
+  Map<UniquePtr<char>, OrphanablePtr<OrphanablePayload>, StringLess> test_map;
+  UniquePtr<char> abc_copy = CopyString(abc_.get());
+  UniquePtr<char> efg_copy = CopyString(efg_.get());
+  UniquePtr<char> hij_copy = CopyString(hij_.get());
+  test_map.emplace(std::move(abc_copy), MakeOrphanable<OrphanablePayload>(0));
+  test_map.emplace(std::move(efg_copy), MakeOrphanable<OrphanablePayload>(1));
+  test_map.emplace(std::move(hij_copy), MakeOrphanable<OrphanablePayload>(2));
+  EXPECT_EQ(0, test_map.find(abc_)->second->data());
+  EXPECT_EQ(1, test_map.find(efg_)->second->data());
+  EXPECT_EQ(2, test_map.find(hij_)->second->data());
 }
 
 // Test insertion of unique pointer values
 TEST_F(MapTest, MapAddTestUniquePtr) {
-  grpc_core::Map<UniquePtr<char>, UniquePtr<Payload>, StringLess> test_map;
+  Map<UniquePtr<char>, UniquePtr<Payload>, StringLess> test_map;
   UniquePtr<Payload> p[3];
   for (int i = 0; i < 3; i++) {
     p[i] = MakeUnique<Payload>(i);
   }
-  UniquePtr<char> abc_copy = getStringCopy(abc.get());
-  UniquePtr<char> efg_copy = getStringCopy(efg.get());
-  UniquePtr<char> hij_copy = getStringCopy(hij.get());
+  UniquePtr<char> abc_copy = CopyString(abc_.get());
+  UniquePtr<char> efg_copy = CopyString(efg_.get());
+  UniquePtr<char> hij_copy = CopyString(hij_.get());
   test_map.emplace(std::move(abc_copy), std::move(p[0]));
   test_map.emplace(std::move(efg_copy), std::move(p[1]));
   test_map.emplace(std::move(hij_copy), std::move(p[2]));
-  EXPECT_EQ(0, test_map.find(abc)->second->data());
-  EXPECT_EQ(1, test_map.find(efg)->second->data());
-  EXPECT_EQ(2, test_map.find(hij)->second->data());
+  EXPECT_EQ(0, test_map.find(abc_)->second->data());
+  EXPECT_EQ(1, test_map.find(efg_)->second->data());
+  EXPECT_EQ(2, test_map.find(hij_)->second->data());
 }
 }  // namespace testing
 }  // namespace grpc_core
