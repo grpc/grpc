@@ -105,7 +105,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of TestService</summary>
-    [grpc::BindService(typeof(TestService), "BindService")]
+    [grpc::BindServiceMethod(typeof(TestService), "BindService")]
     public abstract partial class TestServiceBase
     {
       /// <summary>
@@ -581,7 +581,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of UnimplementedService</summary>
-    [grpc::BindService(typeof(UnimplementedService), "BindService")]
+    [grpc::BindServiceMethod(typeof(UnimplementedService), "BindService")]
     public abstract partial class UnimplementedServiceBase
     {
       /// <summary>
@@ -721,7 +721,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of ReconnectService</summary>
-    [grpc::BindService(typeof(ReconnectService), "BindService")]
+    [grpc::BindServiceMethod(typeof(ReconnectService), "BindService")]
     public abstract partial class ReconnectServiceBase
     {
       public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.Empty> Start(global::Grpc.Testing.ReconnectParams request, grpc::ServerCallContext context)

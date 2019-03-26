@@ -39,7 +39,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of EmptyService</summary>
-    [grpc::BindService(typeof(EmptyService), "BindService")]
+    [grpc::BindServiceMethod(typeof(EmptyService), "BindService")]
     public abstract partial class EmptyServiceBase
     {
     }

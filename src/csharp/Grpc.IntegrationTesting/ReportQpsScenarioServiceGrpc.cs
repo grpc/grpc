@@ -46,7 +46,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of ReportQpsScenarioService</summary>
-    [grpc::BindService(typeof(ReportQpsScenarioService), "BindService")]
+    [grpc::BindServiceMethod(typeof(ReportQpsScenarioService), "BindService")]
     public abstract partial class ReportQpsScenarioServiceBase
     {
       /// <summary>

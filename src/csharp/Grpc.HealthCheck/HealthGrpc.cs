@@ -54,7 +54,7 @@ namespace Grpc.Health.V1 {
     }
 
     /// <summary>Base class for server-side implementations of Health</summary>
-    [grpc::BindService(typeof(Health), "BindService")]
+    [grpc::BindServiceMethod(typeof(Health), "BindService")]
     public abstract partial class HealthBase
     {
       /// <summary>
