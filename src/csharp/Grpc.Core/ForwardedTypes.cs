@@ -27,12 +27,17 @@ using Grpc.Core.Utils;
 // TODO(jtattermusch): move types needed for implementing a client
 
 [assembly:TypeForwardedToAttribute(typeof(GrpcPreconditions))]
+[assembly:TypeForwardedToAttribute(typeof(AsyncClientStreamingCall<,>))]
+[assembly:TypeForwardedToAttribute(typeof(AsyncDuplexStreamingCall<,>))]
+[assembly:TypeForwardedToAttribute(typeof(AsyncServerStreamingCall<>))]
+[assembly:TypeForwardedToAttribute(typeof(AsyncUnaryCall<>))]
 [assembly:TypeForwardedToAttribute(typeof(AuthContext))]
 [assembly:TypeForwardedToAttribute(typeof(ContextPropagationOptions))]
 [assembly:TypeForwardedToAttribute(typeof(ContextPropagationToken))]
 [assembly:TypeForwardedToAttribute(typeof(DeserializationContext))]
 [assembly:TypeForwardedToAttribute(typeof(IAsyncStreamReader<>))]
 [assembly:TypeForwardedToAttribute(typeof(IAsyncStreamWriter<>))]
+[assembly:TypeForwardedToAttribute(typeof(IClientStreamWriter<>))]
 [assembly:TypeForwardedToAttribute(typeof(IServerStreamWriter<>))]
 [assembly:TypeForwardedToAttribute(typeof(Marshaller<>))]
 [assembly:TypeForwardedToAttribute(typeof(Marshallers))]
