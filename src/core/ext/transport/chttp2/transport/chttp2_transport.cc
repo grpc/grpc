@@ -645,17 +645,22 @@ void grpc_chttp2_stream_unref(grpc_chttp2_stream* s) {
 }
 #endif
 
+grpc_chttp2_stream::Reffer::Reffer(grpc_chttp2_stream* s) {
+  /* We reserve one 'active stream' that's dropped when the stream is
+     read-closed. The others are for Chttp2IncomingByteStreams that are
+     actively reading */
+  GRPC_CHTTP2_STREAM_REF(s, "chttp2");
+  GRPC_CHTTP2_REF_TRANSPORT(s->t, "stream");
+}
+
 grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
                                        grpc_stream_refcount* refcount,
                                        const void* server_data,
                                        gpr_arena* arena)
-    : t(t), refcount(refcount), metadata_buffer{{arena}, {arena}} {
-  /* We reserve one 'active stream' that's dropped when the stream is
-     read-closed. The others are for Chttp2IncomingByteStreams that are
-     actively reading */
-  GRPC_CHTTP2_STREAM_REF(this, "chttp2");
-  GRPC_CHTTP2_REF_TRANSPORT(t, "stream");
-
+    : t(t),
+      refcount(refcount),
+      reffer(this),
+      metadata_buffer{{arena}, {arena}} {
   if (server_data) {
     id = static_cast<uint32_t>((uintptr_t)server_data);
     *t->accepting_stream = this;
