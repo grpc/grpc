@@ -66,7 +66,6 @@ TEST_F(MapTest, MapAddTest) {
   }
   for (int i = 0; i < 5; i++) {
     EXPECT_EQ(i, test_map.find(keys[i])->second.data());
-    ;
   }
 }
 
@@ -78,7 +77,6 @@ TEST_F(MapTest, MapAddTestWithUniquePtrPayload) {
   }
   for (int i = 0; i < 5; i++) {
     EXPECT_EQ(i, test_map.find(keys[i])->second->data());
-    ;
   }
 }
 
@@ -90,7 +88,6 @@ TEST_F(MapTest, MapAddTestWithUniquePtrCharAndPayload) {
   }
   for (int i = 0; i < 5; i++) {
     EXPECT_EQ(i, test_map.find(CopyString(keys[i]))->second.data());
-    ;
   }
 }
 
@@ -102,7 +99,6 @@ TEST_F(MapTest, MapAddTestWithUniquePtrCharAndUniquePtrPayload) {
   }
   for (int i = 0; i < 5; i++) {
     EXPECT_EQ(i, test_map.find(CopyString(keys[i]))->second->data());
-    ;
   }
 }
 
@@ -114,7 +110,6 @@ TEST_F(MapTest, MapTestBracketOperator) {
   }
   for (int i = 0; i < 5; i++) {
     EXPECT_EQ(i, test_map[i].data());
-    ;
   }
 }
 
