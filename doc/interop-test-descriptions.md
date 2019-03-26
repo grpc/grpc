@@ -652,7 +652,7 @@ The test
 downloaded from https://console.developers.google.com. Alternately, if using a
 usable auth implementation, it may specify the file location in the environment
 variable GOOGLE_APPLICATION_CREDENTIALS
-- optionally uses the flag `--oauth_scope` for the oauth scope if implementator
+- optionally uses the flag `--oauth_scope` for the oauth scope if implementer
 wishes to use service account credential instead of JWT credential. For testing
 against grpc-test.sandbox.googleapis.com, oauth scope
 "https://www.googleapis.com/auth/xapi.zoo" should be used.
@@ -679,6 +679,81 @@ Client asserts:
 by the auth library. The client can optionally check the username matches the
 email address in the key file.
 
+### google_default_credentials
+
+Similar to the other auth tests, this test should only be run against prod
+servers. Different from some of the other auth tests however, this test
+may be also run from outside of GCP.
+
+This test verifies unary calls succeed when the client uses
+GoogleDefaultCredentials. The path to a service account key file in the
+GOOGLE_APPLICATION_CREDENTIALS environment variable may or may not be
+provided by the test runner. For example, the test runner might set
+this environment when outside of GCP but keep it unset when on GCP.
+
+The test uses `--default_service_account` with GCE service account email.
+
+Server features:
+* [UnaryCall][]
+* [Echo Authenticated Username][]
+
+Procedure:
+ 1. Client configures the channel to use GoogleDefaultCredentials
+     * Note: the term `GoogleDefaultCredentials` within the context
+       of this test description refers to an API which encapsulates
+       both "transport credentials" and "call credentials" and which
+       is capable of transport creds auto-selection (including ALTS).
+       Similar APIs involving only auto-selection of OAuth mechanisms
+       might work for this test but aren't the intended subjects.
+ 2. Client calls UnaryCall with:
+
+    ```
+    {
+      fill_username: true
+    }
+    ```
+
+Client asserts:
+* call was successful
+* received SimpleResponse.username matches the value of
+  `--default_service_account`
+
+### compute_engine_channel_credentials
+
+Similar to the other auth tests, this test should only be run against prod
+servers. Note that this test may only be ran on GCP.
+
+This test verifies unary calls succeed when the client uses
+ComputeEngineChannelCredentials. All that is needed by the test environment
+is for the client to be running on GCP.
+
+The test uses `--default_service_account` with GCE service account email. This
+email must identify the default service account of the GCP VM that the test
+is running on.
+
+Server features:
+* [UnaryCall][]
+* [Echo Authenticated Username][]
+
+Procedure:
+ 1. Client configures the channel to use ComputeEngineChannelCredentials
+     * Note: the term `ComputeEngineChannelCredentials` within the context
+       of this test description refers to an API which encapsulates
+       both "transport credentials" and "call credentials" and which
+       is capable of transport creds auto-selection (including ALTS).
+       The exact name of the API may vary per language.
+ 2. Client calls UnaryCall with:
+
+    ```
+    {
+      fill_username: true
+    }
+    ```
+
+Client asserts:
+* call was successful
+* received SimpleResponse.username matches the value of
+  `--default_service_account`
 
 ### custom_metadata
 

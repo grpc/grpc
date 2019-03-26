@@ -17,4 +17,6 @@
 - 1.15 'g' stands for ['glider'](https://github.com/grpc/grpc/tree/v1.15.x)
 - 1.16 'g' stands for ['gao'](https://github.com/grpc/grpc/tree/v1.16.x)
 - 1.17 'g' stands for ['gizmo'](https://github.com/grpc/grpc/tree/v1.17.x)
-- 1.18 'g' stands for ['goose'](https://github.com/grpc/grpc/tree/master)
+- 1.18 'g' stands for ['goose'](https://github.com/grpc/grpc/tree/v1.18.x)
+- 1.19 'g' stands for ['gold'](https://github.com/grpc/grpc/tree/v1.19.x)
+- 1.20 'g' stands for ['godric'](https://github.com/grpc/grpc/tree/master)

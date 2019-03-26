@@ -335,6 +335,9 @@ static void add_to_storage(struct stream_obj* s,
   /* add new op at the beginning of the linked list. The memory is freed
   in remove_from_storage */
   op_and_state* new_op = grpc_core::New<op_and_state>(s, *op);
+  // Pontential fix to crash on GPR_ASSERT(!curr->done)
+  // TODO (mxyan): check if this is indeed necessary.
+  new_op->done = false;
   gpr_mu_lock(&s->mu);
   storage->head = new_op;
   storage->num_pending_ops++;
@@ -391,7 +394,7 @@ static void execute_from_storage(stream_obj* s) {
   gpr_mu_lock(&s->mu);
   for (struct op_and_state* curr = s->storage.head; curr != nullptr;) {
     CRONET_LOG(GPR_DEBUG, "calling op at %p. done = %d", curr, curr->done);
-    GPR_ASSERT(curr->done == 0);
+    GPR_ASSERT(!curr->done);
     enum e_op_result result = execute_stream_op(curr);
     CRONET_LOG(GPR_DEBUG, "execute_stream_op[%p] returns %s", curr,
                op_result_string(result));
@@ -400,13 +403,12 @@ static void execute_from_storage(stream_obj* s) {
       struct op_and_state* next = curr->next;
       remove_from_storage(s, curr);
       curr = next;
-    }
-    /* continue processing the same op if ACTION_TAKEN_WITHOUT_CALLBACK */
-    if (result == NO_ACTION_POSSIBLE) {
+    } else if (result == NO_ACTION_POSSIBLE) {
       curr = curr->next;
     } else if (result == ACTION_TAKEN_WITH_CALLBACK) {
+      /* wait for the callback */
       break;
-    }
+    } /* continue processing the same op if ACTION_TAKEN_WITHOUT_CALLBACK */
   }
   gpr_mu_unlock(&s->mu);
 }
@@ -439,6 +441,7 @@ static void convert_cronet_array_to_metadata(
 */
 static void on_failed(bidirectional_stream* stream, int net_error) {
   gpr_log(GPR_ERROR, "on_failed(%p, %d)", stream, net_error);
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
 
   stream_obj* s = static_cast<stream_obj*>(stream->annotation);
@@ -465,6 +468,7 @@ static void on_failed(bidirectional_stream* stream, int net_error) {
 */
 static void on_canceled(bidirectional_stream* stream) {
   CRONET_LOG(GPR_DEBUG, "on_canceled(%p)", stream);
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
 
   stream_obj* s = static_cast<stream_obj*>(stream->annotation);
@@ -491,6 +495,7 @@ static void on_canceled(bidirectional_stream* stream) {
 */
 static void on_succeeded(bidirectional_stream* stream) {
   CRONET_LOG(GPR_DEBUG, "on_succeeded(%p)", stream);
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
 
   stream_obj* s = static_cast<stream_obj*>(stream->annotation);
@@ -509,6 +514,7 @@ static void on_succeeded(bidirectional_stream* stream) {
 */
 static void on_stream_ready(bidirectional_stream* stream) {
   CRONET_LOG(GPR_DEBUG, "W: on_stream_ready(%p)", stream);
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   stream_obj* s = static_cast<stream_obj*>(stream->annotation);
   grpc_cronet_transport* t = s->curr_ct;
@@ -539,6 +545,7 @@ static void on_response_headers_received(
     bidirectional_stream* stream,
     const bidirectional_stream_header_array* headers,
     const char* negotiated_protocol) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   CRONET_LOG(GPR_DEBUG, "R: on_response_headers_received(%p, %p, %s)", stream,
              headers, negotiated_protocol);
@@ -578,6 +585,7 @@ static void on_response_headers_received(
   Cronet callback
 */
 static void on_write_completed(bidirectional_stream* stream, const char* data) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   stream_obj* s = static_cast<stream_obj*>(stream->annotation);
   CRONET_LOG(GPR_DEBUG, "W: on_write_completed(%p, %s)", stream, data);
@@ -596,6 +604,7 @@ static void on_write_completed(bidirectional_stream* stream, const char* data) {
 */
 static void on_read_completed(bidirectional_stream* stream, char* data,
                               int count) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   stream_obj* s = static_cast<stream_obj*>(stream->annotation);
   CRONET_LOG(GPR_DEBUG, "R: on_read_completed(%p, %p, %d)", stream, data,
@@ -638,6 +647,7 @@ static void on_read_completed(bidirectional_stream* stream, char* data,
 static void on_response_trailers_received(
     bidirectional_stream* stream,
     const bidirectional_stream_header_array* trailers) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   CRONET_LOG(GPR_DEBUG, "R: on_response_trailers_received(%p,%p)", stream,
              trailers);

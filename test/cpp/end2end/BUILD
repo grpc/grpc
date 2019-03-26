@@ -36,6 +36,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "test_health_check_service_impl",
+    testonly = True,
+    srcs = ["test_health_check_service_impl.cc"],
+    hdrs = ["test_health_check_service_impl.h"],
+    deps = [
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/health/v1:health_proto",
+    ],
+)
+
+grpc_cc_library(
     name = "interceptors_util",
     testonly = True,
     srcs = ["interceptors_util.cc"],
@@ -63,7 +75,27 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "time_change_test",
+    srcs = ["time_change_test.cc"],
+    data = [
+        ":client_crash_test_server",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -85,7 +117,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -100,13 +131,13 @@ grpc_cc_binary(
         "gtest",
     ],
     deps = [
+        ":test_service_impl",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -119,14 +150,14 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        ":interceptors_util",
         ":test_service_impl",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
-        "//src/proto/grpc/testing:simple_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:gpr_test_util",
+        "//src/proto/grpc/testing:simple_messages_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -146,7 +177,6 @@ grpc_cc_test(
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -168,7 +198,6 @@ grpc_cc_library(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -189,7 +218,6 @@ grpc_cc_test(
         "//src/proto/grpc/channelz:channelz_proto",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -207,7 +235,6 @@ grpc_cc_test(
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -215,8 +242,12 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "end2end_test",
+    size = "large",
     deps = [
         ":end2end_test_lib",
+        # DO NOT REMOVE THE grpc++ dependence below since the internal build
+        # system uses it to specialize targets
+        "//:grpc++",
     ],
 )
 
@@ -232,7 +263,6 @@ grpc_cc_test(
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -251,7 +281,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -270,7 +299,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -283,6 +311,7 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        ":test_health_check_service_impl",
         ":test_service_impl",
         "//:gpr",
         "//:grpc",
@@ -291,7 +320,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -311,7 +339,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -331,7 +358,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -352,7 +378,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -370,7 +395,6 @@ grpc_cc_test(
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -380,6 +404,7 @@ grpc_cc_test(
     name = "client_lb_end2end_test",
     srcs = ["client_lb_end2end_test.cc"],
     external_deps = [
+        "gmock",
         "gtest",
     ],
     deps = [
@@ -390,8 +415,8 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:test_lb_policies",
         "//test/cpp/util:test_util",
     ],
 )
@@ -413,7 +438,28 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_end2end_test",
+    srcs = ["xds_end2end_test.cc"],
+    external_deps = [
+        "gmock",
+        "gtest",
+    ],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_resolver_fake",
+        "//src/proto/grpc/lb/v1:load_balancer_proto",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -435,7 +481,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:grpc++_proto_reflection_desc_db",
         "//test/cpp/util:test_util",
@@ -456,7 +501,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -478,7 +522,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -499,7 +542,6 @@ grpc_cc_binary(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -519,7 +561,6 @@ grpc_cc_test(
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -540,6 +581,25 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "flaky_network_test",
+    srcs = ["flaky_network_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = ["manual"],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "shutdown_test",
     srcs = ["shutdown_test.cc"],
     external_deps = [
@@ -552,7 +612,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -571,7 +630,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -579,6 +637,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "thread_stress_test",
+    timeout = "long",
     srcs = ["thread_stress_test.cc"],
     external_deps = [
         "gtest",
@@ -590,7 +649,26 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "cfstream_test",
+    srcs = ["cfstream_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = ["manual"],  # test requires root, won't work with bazel RBE
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:simple_messages_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],

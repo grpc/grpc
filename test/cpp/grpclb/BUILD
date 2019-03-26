@@ -32,7 +32,6 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/lb/v1:load_balancer_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],

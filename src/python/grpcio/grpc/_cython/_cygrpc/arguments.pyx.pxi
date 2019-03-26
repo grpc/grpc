@@ -15,25 +15,6 @@
 cimport cpython
 
 
-# TODO(https://github.com/grpc/grpc/issues/15662): Reform this.
-cdef void* _copy_pointer(void* pointer):
-  return pointer
-
-
-# TODO(https://github.com/grpc/grpc/issues/15662): Reform this.
-cdef void _destroy_pointer(void* pointer):
-  pass
-
-
-cdef int _compare_pointer(void* first_pointer, void* second_pointer):
-  if first_pointer < second_pointer:
-    return -1
-  elif first_pointer > second_pointer:
-    return 1
-  else:
-    return 0
-
-
 cdef class _GrpcArgWrapper:
 
   cdef grpc_arg arg
@@ -50,9 +31,9 @@ cdef grpc_arg _unwrap_grpc_arg(tuple wrapped_arg):
   return wrapped.arg
 
 
-cdef class _ArgumentProcessor:
+cdef class _ChannelArg:
 
-  cdef void c(self, argument, grpc_arg_pointer_vtable *vtable, references) except *:
+  cdef void c(self, argument, _VTable vtable, references) except *:
     key, value = argument
     cdef bytes encoded_key = _encode(key)
     if encoded_key is not key:
@@ -75,34 +56,32 @@ cdef class _ArgumentProcessor:
       # lifecycle of the pointer is fixed to the lifecycle of the
       # python object wrapping it.
       self.c_argument.type = GRPC_ARG_POINTER
-      self.c_argument.value.pointer.vtable = vtable
+      self.c_argument.value.pointer.vtable = &vtable.c_vtable
       self.c_argument.value.pointer.address = <void*>(<intptr_t>int(value))
     else:
       raise TypeError(
           'Expected int, bytes, or behavior, got {}'.format(type(value)))
 
 
-cdef class _ArgumentsProcessor:
+cdef class _ChannelArgs:
 
-  def __cinit__(self, arguments):
+  def __cinit__(self, arguments, _VTable vtable not None):
     self._arguments = () if arguments is None else tuple(arguments)
-    self._argument_processors = []
+    self._channel_args = []
     self._references = []
-
-  cdef grpc_channel_args *c(self, grpc_arg_pointer_vtable *vtable) except *:
     self._c_arguments.arguments_length = len(self._arguments)
-    if self._c_arguments.arguments_length == 0:
-      return NULL
-    else:
+    if self._c_arguments.arguments_length != 0:
       self._c_arguments.arguments = <grpc_arg *>gpr_malloc(
           self._c_arguments.arguments_length * sizeof(grpc_arg))
       for index, argument in enumerate(self._arguments):
-        argument_processor = _ArgumentProcessor()
-        argument_processor.c(argument, vtable, self._references)
-        self._c_arguments.arguments[index] = argument_processor.c_argument
-        self._argument_processors.append(argument_processor)
-      return &self._c_arguments
+        channel_arg = _ChannelArg()
+        channel_arg.c(argument, vtable, self._references)
+        self._c_arguments.arguments[index] = channel_arg.c_argument
+        self._channel_args.append(channel_arg)
 
-  cdef un_c(self):
-    if self._arguments:
+  cdef grpc_channel_args *c_args(self) except *:
+    return &self._c_arguments
+
+  def __dealloc__(self):
+    if self._c_arguments.arguments != NULL:
       gpr_free(self._c_arguments.arguments)

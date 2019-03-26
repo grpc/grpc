@@ -23,8 +23,8 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 grpc_fuzzer(
     name = "response_fuzzer",
     srcs = ["response_fuzzer.cc"],
-    language = "C++",
     corpus = "response_corpus",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -35,8 +35,8 @@ grpc_fuzzer(
 grpc_fuzzer(
     name = "request_fuzzer",
     srcs = ["request_fuzzer.cc"],
-    language = "C++",
     corpus = "request_corpus",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -65,18 +65,17 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 grpc_cc_test(
     name = "httpcli_test",
     srcs = ["httpcli_test.cc"],
-    language = "C++",
     data = [
         "python_wrapper.sh",
         "test_server.py",
+        "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
-        "//src/core/tsi/test_creds:server1.key"
     ],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/end2end:ssl_test_data",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -84,19 +83,18 @@ grpc_cc_test(
 grpc_cc_test(
     name = "httpscli_test",
     srcs = ["httpscli_test.cc"],
-    language = "C++",
     data = [
         "python_wrapper.sh",
         "test_server.py",
         "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
-        "//src/core/tsi/test_creds:server1.key"
     ],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/end2end:ssl_test_data",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -109,7 +107,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/end2end:ssl_test_data",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -122,7 +119,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/end2end:ssl_test_data",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )

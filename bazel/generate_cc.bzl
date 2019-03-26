@@ -28,7 +28,7 @@ def generate_cc_impl(ctx):
   else:
     outs += [proto.path[label_len:-len(".proto")] + ".pb.h" for proto in protos]
     outs += [proto.path[label_len:-len(".proto")] + ".pb.cc" for proto in protos]
-  out_files = [ctx.new_file(out) for out in outs]
+  out_files = [ctx.actions.declare_file(out) for out in outs]
   dir_out = str(ctx.genfiles_dir.path + proto_root)
 
   arguments = []
@@ -38,10 +38,10 @@ def generate_cc_impl(ctx):
     if ctx.attr.generate_mocks:
       flags.append("generate_mock_code=true")
     arguments += ["--PLUGIN_out=" + ",".join(flags) + ":" + dir_out]
-    additional_input = [ctx.executable.plugin]
+    tools = [ctx.executable.plugin]
   else:
     arguments += ["--cpp_out=" + ",".join(ctx.attr.flags) + ":" + dir_out]
-    additional_input = []
+    tools = []
 
   # Import protos relative to their workspace root so that protoc prints the
   # right include paths.
@@ -70,8 +70,9 @@ def generate_cc_impl(ctx):
       arguments += ["-I{0}".format(f + "/../..")]
       well_known_proto_files = [f for f in ctx.attr.well_known_protos.files]
 
-  ctx.action(
-      inputs = protos + includes + additional_input + well_known_proto_files,
+  ctx.actions.run(
+      inputs = protos + includes + well_known_proto_files,
+      tools = tools,
       outputs = out_files,
       executable = ctx.executable._protoc,
       arguments = arguments,
@@ -83,7 +84,7 @@ _generate_cc = rule(
     attrs = {
         "srcs": attr.label_list(
             mandatory = True,
-            non_empty = True,
+            allow_empty = False,
             providers = ["proto"],
         ),
         "plugin": attr.label(

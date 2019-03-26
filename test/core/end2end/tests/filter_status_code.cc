@@ -260,6 +260,7 @@ typedef struct final_status_data {
 static void server_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
   auto* data = static_cast<final_status_data*>(elem->call_data);
+  gpr_mu_lock(&g_mu);
   if (data->call == g_server_call_stack) {
     if (op->send_initial_metadata) {
       auto* batch = op->payload->send_initial_metadata.send_initial_metadata;
@@ -270,6 +271,7 @@ static void server_start_transport_stream_op_batch(
       }
     }
   }
+  gpr_mu_unlock(&g_mu);
   grpc_call_next_op(elem, op);
 }
 

@@ -25,7 +25,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h"
-#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 #define XDS_SERVICE_NAME_MAX_LENGTH 128
 
@@ -55,11 +55,11 @@ void xds_grpclb_request_destroy(xds_grpclb_request* request);
 /** Parse (ie, decode) the bytes in \a encoded_xds_grpclb_response as a \a
  * xds_grpclb_initial_response */
 xds_grpclb_initial_response* xds_grpclb_initial_response_parse(
-    grpc_slice encoded_xds_grpclb_response);
+    const grpc_slice& encoded_xds_grpclb_response);
 
 /** Parse the list of servers from an encoded \a xds_grpclb_response */
 xds_grpclb_serverlist* xds_grpclb_response_parse_serverlist(
-    grpc_slice encoded_xds_grpclb_response);
+    const grpc_slice& encoded_xds_grpclb_response);
 
 /** Return a copy of \a sl. The caller is responsible for calling \a
  * xds_grpclb_destroy_serverlist on the returned copy. */

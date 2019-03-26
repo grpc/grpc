@@ -31,7 +31,6 @@ namespace Grpc.Core.Internal
     internal interface IServerCallHandler
     {
         Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq);
-        IServerCallHandler Intercept(Interceptor interceptor);
     }
 
     internal class UnaryServerCallHandler<TRequest, TResponse> : IServerCallHandler
@@ -71,7 +70,7 @@ namespace Grpc.Core.Internal
                 var response = await handler(request, context).ConfigureAwait(false);
                 status = context.Status;
                 responseWithFlags = new AsyncCallServer<TRequest, TResponse>.ResponseWithFlags(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
-            } 
+            }
             catch (Exception e)
             {
                 if (!(e is RpcException))
@@ -90,11 +89,6 @@ namespace Grpc.Core.Internal
                 throw;
             }
             await finishedTask.ConfigureAwait(false);
-        }
-
-        public IServerCallHandler Intercept(Interceptor interceptor)
-        {
-            return new UnaryServerCallHandler<TRequest, TResponse>(method, (request, context) => interceptor.UnaryServerHandler(request, context, handler));
         }
     }
 
@@ -154,11 +148,6 @@ namespace Grpc.Core.Internal
             }
             await finishedTask.ConfigureAwait(false);
         }
-
-        public IServerCallHandler Intercept(Interceptor interceptor)
-        {
-            return new ServerStreamingServerCallHandler<TRequest, TResponse>(method, (request, responseStream, context) => interceptor.ServerStreamingServerHandler(request, responseStream, context, handler));
-        }
     }
 
     internal class ClientStreamingServerCallHandler<TRequest, TResponse> : IServerCallHandler
@@ -217,11 +206,6 @@ namespace Grpc.Core.Internal
             }
             await finishedTask.ConfigureAwait(false);
         }
-
-        public IServerCallHandler Intercept(Interceptor interceptor)
-        {
-            return new ClientStreamingServerCallHandler<TRequest, TResponse>(method, (requestStream, context) => interceptor.ClientStreamingServerHandler(requestStream, context, handler));
-        }
     }
 
     internal class DuplexStreamingServerCallHandler<TRequest, TResponse> : IServerCallHandler
@@ -277,11 +261,6 @@ namespace Grpc.Core.Internal
             }
             await finishedTask.ConfigureAwait(false);
         }
-
-        public IServerCallHandler Intercept(Interceptor interceptor)
-        {
-            return new DuplexStreamingServerCallHandler<TRequest, TResponse>(method, (requestStream, responseStream, context) => interceptor.DuplexStreamingServerHandler(requestStream, responseStream, context, handler));
-        }
     }
 
     internal class UnimplementedMethodCallHandler : IServerCallHandler
@@ -309,11 +288,6 @@ namespace Grpc.Core.Internal
         public Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             return callHandlerImpl.HandleCall(newRpc, cq);
-        }
-
-        public IServerCallHandler Intercept(Interceptor interceptor)
-        {
-            return this;  // Do not intercept unimplemented methods.
         }
     }
 
@@ -345,14 +319,10 @@ namespace Grpc.Core.Internal
             return writeOptions != null ? writeOptions.Flags : default(WriteFlags);
         }
 
-        public static ServerCallContext NewContext<TRequest, TResponse>(ServerRpcNew newRpc, ServerResponseStream<TRequest, TResponse> serverResponseStream, CancellationToken cancellationToken)
-            where TRequest : class
-            where TResponse : class
+        public static ServerCallContext NewContext(ServerRpcNew newRpc, IServerResponseStream serverResponseStream, CancellationToken cancellationToken)
         {
             DateTime realtimeDeadline = newRpc.Deadline.ToClockType(ClockType.Realtime).ToDateTime();
-
-            return new ServerCallContext(newRpc.Call, newRpc.Method, newRpc.Host, realtimeDeadline,
-                newRpc.RequestMetadata, cancellationToken, serverResponseStream.WriteResponseHeadersAsync, serverResponseStream);
+            return new DefaultServerCallContext(newRpc.Call, newRpc.Method, newRpc.Host, realtimeDeadline, newRpc.RequestMetadata, cancellationToken, serverResponseStream);
         }
     }
 }

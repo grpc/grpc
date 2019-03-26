@@ -26,6 +26,7 @@
 #include <vector>
 
 #include <grpc/compression.h>
+#include <grpc/support/atm.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
@@ -188,7 +189,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// \param num_cqs How many completion queues does \a cqs hold.
   void Start(ServerCompletionQueue** cqs, size_t num_cqs) override;
 
-  grpc_server* server() override { return server_; };
+  grpc_server* server() override { return server_; }
 
  private:
   std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>*
@@ -201,6 +202,8 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   friend class ServerInitializer;
 
   class SyncRequest;
+  class CallbackRequestBase;
+  template <class ServerContextType>
   class CallbackRequest;
   class UnimplementedAsyncRequest;
   class UnimplementedAsyncResponse;
@@ -215,6 +218,34 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// service. The service must exist for the lifetime of the Server instance.
   void RegisterAsyncGenericService(AsyncGenericService* service) override;
 
+  /// NOTE: class experimental_registration_type is not part of the public API
+  /// of this class
+  /// TODO(vjpai): Move these contents to the public API of Server when
+  ///              they are no longer experimental
+  class experimental_registration_type final
+      : public experimental_registration_interface {
+   public:
+    explicit experimental_registration_type(Server* server) : server_(server) {}
+    void RegisterCallbackGenericService(
+        experimental::CallbackGenericService* service) override {
+      server_->RegisterCallbackGenericService(service);
+    }
+
+   private:
+    Server* server_;
+  };
+
+  /// TODO(vjpai): Mark this override when experimental type above is deleted
+  void RegisterCallbackGenericService(
+      experimental::CallbackGenericService* service);
+
+  /// NOTE: The function experimental_registration() is not stable public API.
+  /// It is a view to the experimental components of this class. It may be
+  /// changed or removed at any time.
+  experimental_registration_interface* experimental_registration() override {
+    return &experimental_registration_;
+  }
+
   void PerformOpsOnCall(internal::CallOpSetInterface* ops,
                         internal::Call* call) override;
 
@@ -222,7 +253,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
 
   int max_receive_message_size() const override {
     return max_receive_message_size_;
-  };
+  }
 
   CompletionQueue* CallbackCQ() override;
 
@@ -248,8 +279,19 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// the \a sync_server_cqs)
   std::vector<std::unique_ptr<SyncRequestThreadManager>> sync_req_mgrs_;
 
-  /// Outstanding callback requests
-  std::vector<std::unique_ptr<CallbackRequest>> callback_reqs_;
+  // Outstanding unmatched callback requests, indexed by method.
+  // NOTE: Using a gpr_atm rather than atomic_int because atomic_int isn't
+  //       copyable or movable and thus will cause compilation errors. We
+  //       actually only want to extend the vector before the threaded use
+  //       starts, but this is still a limitation.
+  std::vector<gpr_atm> callback_unmatched_reqs_count_;
+
+  // List of callback requests to start when server actually starts.
+  std::list<CallbackRequestBase*> callback_reqs_to_start_;
+
+  // For registering experimental callback generic service; remove when that
+  // method longer experimental
+  experimental_registration_type experimental_registration_{this};
 
   // Server status
   std::mutex mu_;
@@ -259,10 +301,22 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
 
   std::condition_variable shutdown_cv_;
 
+  // It is ok (but not required) to nest callback_reqs_mu_ under mu_ .
+  // Incrementing callback_reqs_outstanding_ is ok without a lock but it must be
+  // decremented under the lock in case it is the last request and enables the
+  // server shutdown. The increment is performance-critical since it happens
+  // during periods of increasing load; the decrement happens only when memory
+  // is maxed out, during server shutdown, or (possibly in a future version)
+  // during decreasing load, so it is less performance-critical.
+  std::mutex callback_reqs_mu_;
+  std::condition_variable callback_reqs_done_cv_;
+  std::atomic_int callback_reqs_outstanding_{0};
+
   std::shared_ptr<GlobalCallbacks> global_callbacks_;
 
   std::vector<grpc::string> services_;
-  bool has_generic_service_;
+  bool has_async_generic_service_{false};
+  bool has_callback_generic_service_{false};
 
   // Pointer to the wrapped grpc_server.
   grpc_server* server_;
@@ -272,8 +326,15 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   std::unique_ptr<HealthCheckServiceInterface> health_check_service_;
   bool health_check_service_disabled_;
 
+  // When appropriate, use a default callback generic service to handle
+  // unimplemented methods
+  std::unique_ptr<experimental::CallbackGenericService> unimplemented_service_;
+
   // A special handler for resource exhausted in sync case
   std::unique_ptr<internal::MethodHandler> resource_exhausted_handler_;
+
+  // Handler for callback generic service, if any
+  std::unique_ptr<internal::MethodHandler> generic_handler_;
 
   // callback_cq_ references the callbackable completion queue associated
   // with this server (if any). It is set on the first call to CallbackCQ().

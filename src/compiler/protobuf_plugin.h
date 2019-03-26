@@ -108,11 +108,11 @@ class ProtoBufService : public grpc_generator::Service {
 
   grpc::string name() const { return service_->name(); }
 
-  int method_count() const { return service_->method_count(); };
+  int method_count() const { return service_->method_count(); }
   std::unique_ptr<const grpc_generator::Method> method(int i) const {
     return std::unique_ptr<const grpc_generator::Method>(
         new ProtoBufMethod(service_->method(i)));
-  };
+  }
 
   grpc::string GetLeadingComments(const grpc::string prefix) const {
     return GetCommentsHelper(service_, true, prefix);
@@ -166,7 +166,7 @@ class ProtoBufFile : public grpc_generator::File {
 
   grpc::string additional_headers() const { return ""; }
 
-  int service_count() const { return file_->service_count(); };
+  int service_count() const { return file_->service_count(); }
   std::unique_ptr<const grpc_generator::Service> service(int i) const {
     return std::unique_ptr<const grpc_generator::Service>(
         new ProtoBufService(file_->service(i)));

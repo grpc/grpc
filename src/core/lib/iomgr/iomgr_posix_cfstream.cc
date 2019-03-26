@@ -58,9 +58,14 @@ static void iomgr_platform_shutdown_background_closure(void) {
   grpc_shutdown_background_closure();
 }
 
+static bool iomgr_platform_is_any_background_poller_thread(void) {
+  return grpc_is_any_background_poller_thread();
+}
+
 static grpc_iomgr_platform_vtable vtable = {
     iomgr_platform_init, iomgr_platform_flush, iomgr_platform_shutdown,
-    iomgr_platform_shutdown_background_closure};
+    iomgr_platform_shutdown_background_closure,
+    iomgr_platform_is_any_background_poller_thread};
 
 void grpc_set_default_iomgr_platform() {
   char* enable_cfstream = getenv(grpc_cfstream_env_var);

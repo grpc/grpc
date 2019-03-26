@@ -24,10 +24,10 @@
 #include <grpcpp/create_channel.h>
 #include <grpcpp/generic/generic_stub.h>
 #include <grpcpp/impl/codegen/proto_utils.h>
-#include <grpcpp/impl/codegen/server_interceptor.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/support/server_interceptor.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -44,9 +44,36 @@ namespace {
 
 class LoggingInterceptor : public experimental::Interceptor {
  public:
-  LoggingInterceptor(experimental::ServerRpcInfo* info) { info_ = info; }
+  LoggingInterceptor(experimental::ServerRpcInfo* info) {
+    info_ = info;
 
-  virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
+    // Check the method name and compare to the type
+    const char* method = info->method();
+    experimental::ServerRpcInfo::Type type = info->type();
+
+    // Check that we use one of our standard methods with expected type.
+    // Also allow the health checking service.
+    // We accept BIDI_STREAMING for Echo in case it's an AsyncGenericService
+    // being tested (the GenericRpc test).
+    // The empty method is for the Unimplemented requests that arise
+    // when draining the CQ.
+    EXPECT_TRUE(
+        strstr(method, "/grpc.health") == method ||
+        (strcmp(method, "/grpc.testing.EchoTestService/Echo") == 0 &&
+         (type == experimental::ServerRpcInfo::Type::UNARY ||
+          type == experimental::ServerRpcInfo::Type::BIDI_STREAMING)) ||
+        (strcmp(method, "/grpc.testing.EchoTestService/RequestStream") == 0 &&
+         type == experimental::ServerRpcInfo::Type::CLIENT_STREAMING) ||
+        (strcmp(method, "/grpc.testing.EchoTestService/ResponseStream") == 0 &&
+         type == experimental::ServerRpcInfo::Type::SERVER_STREAMING) ||
+        (strcmp(method, "/grpc.testing.EchoTestService/BidiStream") == 0 &&
+         type == experimental::ServerRpcInfo::Type::BIDI_STREAMING) ||
+        strcmp(method, "/grpc.testing.EchoTestService/Unimplemented") == 0 ||
+        (strcmp(method, "") == 0 &&
+         type == experimental::ServerRpcInfo::Type::BIDI_STREAMING));
+  }
+
+  void Intercept(experimental::InterceptorBatchMethods* methods) override {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       auto* map = methods->GetSendInitialMetadata();
@@ -56,7 +83,7 @@ class LoggingInterceptor : public experimental::Interceptor {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
       EchoRequest req;
-      auto* buffer = methods->GetSendMessage();
+      auto* buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
       EXPECT_TRUE(
           SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
@@ -115,6 +142,71 @@ class LoggingInterceptorFactory
   }
 };
 
+// Test if SendMessage function family works as expected for sync/callback apis
+class SyncSendMessageTester : public experimental::Interceptor {
+ public:
+  SyncSendMessageTester(experimental::ServerRpcInfo* info) {}
+
+  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+    if (methods->QueryInterceptionHookPoint(
+            experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
+      string old_msg =
+          static_cast<const EchoRequest*>(methods->GetSendMessage())->message();
+      EXPECT_EQ(old_msg.find("Hello"), 0u);
+      new_msg_.set_message("World" + old_msg);
+      methods->ModifySendMessage(&new_msg_);
+    }
+    methods->Proceed();
+  }
+
+ private:
+  EchoRequest new_msg_;
+};
+
+class SyncSendMessageTesterFactory
+    : public experimental::ServerInterceptorFactoryInterface {
+ public:
+  virtual experimental::Interceptor* CreateServerInterceptor(
+      experimental::ServerRpcInfo* info) override {
+    return new SyncSendMessageTester(info);
+  }
+};
+
+// Test if SendMessage function family works as expected for sync/callback apis
+class SyncSendMessageVerifier : public experimental::Interceptor {
+ public:
+  SyncSendMessageVerifier(experimental::ServerRpcInfo* info) {}
+
+  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+    if (methods->QueryInterceptionHookPoint(
+            experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
+      // Make sure that the changes made in SyncSendMessageTester persisted
+      string old_msg =
+          static_cast<const EchoRequest*>(methods->GetSendMessage())->message();
+      EXPECT_EQ(old_msg.find("World"), 0u);
+
+      // Remove the "World" part of the string that we added earlier
+      new_msg_.set_message(old_msg.erase(0, 5));
+      methods->ModifySendMessage(&new_msg_);
+
+      // LoggingInterceptor verifies that changes got reverted
+    }
+    methods->Proceed();
+  }
+
+ private:
+  EchoRequest new_msg_;
+};
+
+class SyncSendMessageVerifierFactory
+    : public experimental::ServerInterceptorFactoryInterface {
+ public:
+  virtual experimental::Interceptor* CreateServerInterceptor(
+      experimental::ServerRpcInfo* info) override {
+    return new SyncSendMessageVerifier(info);
+  }
+};
+
 void MakeBidiStreamingCall(const std::shared_ptr<Channel>& channel) {
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
   ClientContext ctx;
@@ -148,10 +240,19 @@ class ServerInterceptorsEnd2endSyncUnaryTest : public ::testing::Test {
         creators;
     creators.push_back(
         std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
+            new SyncSendMessageTesterFactory()));
+    creators.push_back(
+        std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
+            new SyncSendMessageVerifierFactory()));
+    creators.push_back(
+        std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
             new LoggingInterceptorFactory()));
+    // Add 20 dummy interceptor factories and null interceptor factories
     for (auto i = 0; i < 20; i++) {
       creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
           new DummyInterceptorFactory()));
+      creators.push_back(std::unique_ptr<NullInterceptorFactory>(
+          new NullInterceptorFactory()));
     }
     builder.experimental().SetInterceptorCreators(std::move(creators));
     server_ = builder.BuildAndStart();
@@ -183,6 +284,12 @@ class ServerInterceptorsEnd2endSyncStreamingTest : public ::testing::Test {
     std::vector<
         std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
         creators;
+    creators.push_back(
+        std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
+            new SyncSendMessageTesterFactory()));
+    creators.push_back(
+        std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
+            new SyncSendMessageVerifierFactory()));
     creators.push_back(
         std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
             new LoggingInterceptorFactory()));
@@ -397,7 +504,8 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
         new DummyInterceptorFactory()));
   }
   builder.experimental().SetInterceptorCreators(std::move(creators));
-  auto cq = builder.AddCompletionQueue();
+  auto srv_cq = builder.AddCompletionQueue();
+  CompletionQueue cli_cq;
   auto server = builder.BuildAndStart();
 
   ChannelArguments args;
@@ -420,28 +528,28 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
   cli_ctx.AddMetadata("testkey", "testvalue");
 
   std::unique_ptr<GenericClientAsyncReaderWriter> call =
-      generic_stub.PrepareCall(&cli_ctx, kMethodName, cq.get());
+      generic_stub.PrepareCall(&cli_ctx, kMethodName, &cli_cq);
   call->StartCall(tag(1));
-  Verifier().Expect(1, true).Verify(cq.get());
+  Verifier().Expect(1, true).Verify(&cli_cq);
   std::unique_ptr<ByteBuffer> send_buffer =
       SerializeToByteBuffer(&send_request);
   call->Write(*send_buffer, tag(2));
   // Send ByteBuffer can be destroyed after calling Write.
   send_buffer.reset();
-  Verifier().Expect(2, true).Verify(cq.get());
+  Verifier().Expect(2, true).Verify(&cli_cq);
   call->WritesDone(tag(3));
-  Verifier().Expect(3, true).Verify(cq.get());
+  Verifier().Expect(3, true).Verify(&cli_cq);
 
-  service.RequestCall(&srv_ctx, &stream, cq.get(), cq.get(), tag(4));
+  service.RequestCall(&srv_ctx, &stream, srv_cq.get(), srv_cq.get(), tag(4));
 
-  Verifier().Expect(4, true).Verify(cq.get());
+  Verifier().Expect(4, true).Verify(srv_cq.get());
   EXPECT_EQ(kMethodName, srv_ctx.method());
   EXPECT_TRUE(CheckMetadata(srv_ctx.client_metadata(), "testkey", "testvalue"));
   srv_ctx.AddTrailingMetadata("testkey", "testvalue");
 
   ByteBuffer recv_buffer;
   stream.Read(&recv_buffer, tag(5));
-  Verifier().Expect(5, true).Verify(cq.get());
+  Verifier().Expect(5, true).Verify(srv_cq.get());
   EXPECT_TRUE(ParseFromByteBuffer(&recv_buffer, &recv_request));
   EXPECT_EQ(send_request.message(), recv_request.message());
 
@@ -449,18 +557,23 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
   send_buffer = SerializeToByteBuffer(&send_response);
   stream.Write(*send_buffer, tag(6));
   send_buffer.reset();
-  Verifier().Expect(6, true).Verify(cq.get());
+  Verifier().Expect(6, true).Verify(srv_cq.get());
 
   stream.Finish(Status::OK, tag(7));
-  Verifier().Expect(7, true).Verify(cq.get());
+  // Shutdown srv_cq before we try to get the tag back, to verify that the
+  // interception API handles completion queue shutdowns that take place before
+  // all the tags are returned
+  srv_cq->Shutdown();
+  Verifier().Expect(7, true).Verify(srv_cq.get());
 
   recv_buffer.Clear();
   call->Read(&recv_buffer, tag(8));
-  Verifier().Expect(8, true).Verify(cq.get());
+  Verifier().Expect(8, true).Verify(&cli_cq);
   EXPECT_TRUE(ParseFromByteBuffer(&recv_buffer, &recv_response));
 
   call->Finish(&recv_status, tag(9));
-  Verifier().Expect(9, true).Verify(cq.get());
+  cli_cq.Shutdown();
+  Verifier().Expect(9, true).Verify(&cli_cq);
 
   EXPECT_EQ(send_response.message(), recv_response.message());
   EXPECT_TRUE(recv_status.ok());
@@ -471,10 +584,11 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
 
   server->Shutdown();
-  cq->Shutdown();
   void* ignored_tag;
   bool ignored_ok;
-  while (cq->Next(&ignored_tag, &ignored_ok))
+  while (cli_cq.Next(&ignored_tag, &ignored_ok))
+    ;
+  while (srv_cq->Next(&ignored_tag, &ignored_ok))
     ;
   grpc_recycle_unused_port(port);
 }

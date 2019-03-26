@@ -19,6 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -41,6 +42,7 @@
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
+#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/host_port.h"
@@ -90,6 +92,20 @@ DEFINE_string(expected_chosen_service_config, "",
 DEFINE_string(
     local_dns_server_address, "",
     "Optional. This address is placed as the uri authority if present.");
+DEFINE_string(
+    enable_srv_queries, "",
+    "Whether or not to enable SRV queries for the ares resolver instance."
+    "It would be better if this arg could be bool, but the way that we "
+    "generate "
+    "the python script runner doesn't allow us to pass a gflags bool to this "
+    "binary.");
+DEFINE_string(
+    enable_txt_queries, "",
+    "Whether or not to enable TXT queries for the ares resolver instance."
+    "It would be better if this arg could be bool, but the way that we "
+    "generate "
+    "the python script runner doesn't allow us to pass a gflags bool to this "
+    "binary.");
 DEFINE_string(expected_lb_policy, "",
               "Expected lb policy name that appears in resolver result channel "
               "arg. Empty for none.");
@@ -223,7 +239,7 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
   gpr_event_set(&args->ev, (void*)1);
 }
 
-void CheckServiceConfigResultLocked(grpc_channel_args* channel_args,
+void CheckServiceConfigResultLocked(const grpc_channel_args* channel_args,
                                     ArgsStruct* args) {
   const grpc_arg* service_config_arg =
       grpc_channel_args_find(channel_args, GRPC_ARG_SERVICE_CONFIG);
@@ -237,7 +253,7 @@ void CheckServiceConfigResultLocked(grpc_channel_args* channel_args,
   }
 }
 
-void CheckLBPolicyResultLocked(grpc_channel_args* channel_args,
+void CheckLBPolicyResultLocked(const grpc_channel_args* channel_args,
                                ArgsStruct* args) {
   const grpc_arg* lb_policy_arg =
       grpc_channel_args_find(channel_args, GRPC_ARG_LB_POLICY_NAME);
@@ -378,58 +394,86 @@ void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_event* done_ev) {
 }
 #endif
 
-void CheckResolverResultLocked(void* argsp, grpc_error* err) {
-  EXPECT_EQ(err, GRPC_ERROR_NONE);
-  ArgsStruct* args = (ArgsStruct*)argsp;
-  grpc_channel_args* channel_args = args->channel_args;
-  const grpc_arg* channel_arg =
-      grpc_channel_args_find(channel_args, GRPC_ARG_LB_ADDRESSES);
-  GPR_ASSERT(channel_arg != nullptr);
-  GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
-  grpc_lb_addresses* addresses =
-      (grpc_lb_addresses*)channel_arg->value.pointer.p;
-  gpr_log(GPR_INFO, "num addrs found: %" PRIdPTR ". expected %" PRIdPTR,
-          addresses->num_addresses, args->expected_addrs.size());
-  GPR_ASSERT(addresses->num_addresses == args->expected_addrs.size());
-  std::vector<GrpcLBAddress> found_lb_addrs;
-  for (size_t i = 0; i < addresses->num_addresses; i++) {
-    grpc_lb_address addr = addresses->addresses[i];
-    char* str;
-    grpc_sockaddr_to_string(&str, &addr.address, 1 /* normalize */);
-    gpr_log(GPR_INFO, "%s", str);
-    found_lb_addrs.emplace_back(
-        GrpcLBAddress(std::string(str), addr.is_balancer));
-    gpr_free(str);
+class ResultHandler : public grpc_core::Resolver::ResultHandler {
+ public:
+  static grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler> Create(
+      ArgsStruct* args) {
+    return grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler>(
+        grpc_core::New<ResultHandler>(args));
   }
-  if (args->expected_addrs.size() != found_lb_addrs.size()) {
-    gpr_log(GPR_DEBUG,
-            "found lb addrs size is: %" PRIdPTR
-            ". expected addrs size is %" PRIdPTR,
-            found_lb_addrs.size(), args->expected_addrs.size());
-    abort();
-  }
-  EXPECT_THAT(args->expected_addrs, UnorderedElementsAreArray(found_lb_addrs));
-  CheckServiceConfigResultLocked(channel_args, args);
-  if (args->expected_service_config_string == "") {
-    CheckLBPolicyResultLocked(channel_args, args);
-  }
-  gpr_atm_rel_store(&args->done_atm, 1);
-  gpr_mu_lock(args->mu);
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
-  gpr_mu_unlock(args->mu);
-}
 
-void CheckResolvedWithoutErrorLocked(void* argsp, grpc_error* err) {
-  EXPECT_EQ(err, GRPC_ERROR_NONE);
-  ArgsStruct* args = (ArgsStruct*)argsp;
-  gpr_atm_rel_store(&args->done_atm, 1);
-  gpr_mu_lock(args->mu);
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
-  gpr_mu_unlock(args->mu);
-}
+  explicit ResultHandler(ArgsStruct* args) : args_(args) {}
 
-void RunResolvesRelevantRecordsTest(void (*OnDoneLocked)(void* arg,
-                                                         grpc_error* error)) {
+  void ReturnResult(const grpc_channel_args* result) override {
+    CheckResult(result);
+    gpr_atm_rel_store(&args_->done_atm, 1);
+    gpr_mu_lock(args_->mu);
+    GRPC_LOG_IF_ERROR("pollset_kick",
+                      grpc_pollset_kick(args_->pollset, nullptr));
+    gpr_mu_unlock(args_->mu);
+    grpc_channel_args_destroy(result);
+  }
+
+  void ReturnError(grpc_error* error) override {
+    gpr_log(GPR_ERROR, "resolver returned error: %s", grpc_error_string(error));
+    GPR_ASSERT(false);
+  }
+
+  virtual void CheckResult(const grpc_channel_args* channel_args) {}
+
+ protected:
+  ArgsStruct* args_struct() const { return args_; }
+
+ private:
+  ArgsStruct* args_;
+};
+
+class CheckingResultHandler : public ResultHandler {
+ public:
+  static grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler> Create(
+      ArgsStruct* args) {
+    return grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler>(
+        grpc_core::New<CheckingResultHandler>(args));
+  }
+
+  explicit CheckingResultHandler(ArgsStruct* args) : ResultHandler(args) {}
+
+  void CheckResult(const grpc_channel_args* channel_args) override {
+    ArgsStruct* args = args_struct();
+    grpc_core::ServerAddressList* addresses =
+        grpc_core::FindServerAddressListChannelArg(channel_args);
+    gpr_log(GPR_INFO, "num addrs found: %" PRIdPTR ". expected %" PRIdPTR,
+            addresses->size(), args->expected_addrs.size());
+    GPR_ASSERT(addresses->size() == args->expected_addrs.size());
+    std::vector<GrpcLBAddress> found_lb_addrs;
+    for (size_t i = 0; i < addresses->size(); i++) {
+      grpc_core::ServerAddress& addr = (*addresses)[i];
+      char* str;
+      grpc_sockaddr_to_string(&str, &addr.address(), 1 /* normalize */);
+      gpr_log(GPR_INFO, "%s", str);
+      found_lb_addrs.emplace_back(
+          GrpcLBAddress(std::string(str), addr.IsBalancer()));
+      gpr_free(str);
+    }
+    if (args->expected_addrs.size() != found_lb_addrs.size()) {
+      gpr_log(GPR_DEBUG,
+              "found lb addrs size is: %" PRIdPTR
+              ". expected addrs size is %" PRIdPTR,
+              found_lb_addrs.size(), args->expected_addrs.size());
+      abort();
+    }
+    EXPECT_THAT(args->expected_addrs,
+                UnorderedElementsAreArray(found_lb_addrs));
+    CheckServiceConfigResultLocked(channel_args, args);
+    if (args->expected_service_config_string == "") {
+      CheckLBPolicyResultLocked(channel_args, args);
+    }
+  }
+};
+
+void RunResolvesRelevantRecordsTest(
+    grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler> (
+        *CreateResultHandler)(ArgsStruct* args)) {
   grpc_core::ExecCtx exec_ctx;
   ArgsStruct args;
   ArgsInit(&args);
@@ -441,22 +485,56 @@ void RunResolvesRelevantRecordsTest(void (*OnDoneLocked)(void* arg,
   GPR_ASSERT(gpr_asprintf(&whole_uri, "dns://%s/%s",
                           FLAGS_local_dns_server_address.c_str(),
                           FLAGS_target_name.c_str()));
+  gpr_log(GPR_DEBUG, "resolver_component_test: --enable_srv_queries: %s",
+          FLAGS_enable_srv_queries.c_str());
+  grpc_channel_args* resolver_args = nullptr;
+  // By default, SRV queries are disabled, so tests that expect no SRV query
+  // should avoid setting any channel arg. Test cases that do rely on the SRV
+  // query must explicitly enable SRV though.
+  if (FLAGS_enable_srv_queries == "True") {
+    grpc_arg srv_queries_arg = grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_DNS_ENABLE_SRV_QUERIES), true);
+    resolver_args =
+        grpc_channel_args_copy_and_add(nullptr, &srv_queries_arg, 1);
+  } else if (FLAGS_enable_srv_queries != "False") {
+    gpr_log(GPR_DEBUG, "Invalid value for --enable_srv_queries.");
+    abort();
+  }
+  gpr_log(GPR_DEBUG, "resolver_component_test: --enable_txt_queries: %s",
+          FLAGS_enable_txt_queries.c_str());
+  // By default, TXT queries are disabled, so tests that expect no TXT query
+  // should avoid setting any channel arg. Test cases that do rely on the TXT
+  // query must explicitly enable TXT though.
+  if (FLAGS_enable_txt_queries == "True") {
+    // Unlike SRV queries, there isn't a channel arg specific to TXT records.
+    // Rather, we use the resolver-agnostic "service config" resolution option,
+    // for which c-ares has its own specific default value, which isn't
+    // necessarily shared by other resolvers.
+    grpc_arg txt_queries_arg = grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION), false);
+    grpc_channel_args* tmp_args =
+        grpc_channel_args_copy_and_add(resolver_args, &txt_queries_arg, 1);
+    grpc_channel_args_destroy(resolver_args);
+    resolver_args = tmp_args;
+  } else if (FLAGS_enable_txt_queries != "False") {
+    gpr_log(GPR_DEBUG, "Invalid value for --enable_txt_queries.");
+    abort();
+  }
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
-      grpc_core::ResolverRegistry::CreateResolver(whole_uri, nullptr,
-                                                  args.pollset_set, args.lock);
+      grpc_core::ResolverRegistry::CreateResolver(whole_uri, resolver_args,
+                                                  args.pollset_set, args.lock,
+                                                  CreateResultHandler(&args));
+  grpc_channel_args_destroy(resolver_args);
   gpr_free(whole_uri);
-  grpc_closure on_resolver_result_changed;
-  GRPC_CLOSURE_INIT(&on_resolver_result_changed, OnDoneLocked, (void*)&args,
-                    grpc_combiner_scheduler(args.lock));
-  resolver->NextLocked(&args.channel_args, &on_resolver_result_changed);
+  resolver->StartLocked();
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone(&args);
   ArgsFinish(&args);
 }
 
 TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
-  RunResolvesRelevantRecordsTest(CheckResolverResultLocked);
+  RunResolvesRelevantRecordsTest(CheckingResultHandler::Create);
 }
 
 TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
@@ -467,7 +545,7 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
   std::thread socket_stress_thread(OpenAndCloseSocketsStressLoop, dummy_port,
                                    &done_ev);
   // Run the resolver test
-  RunResolvesRelevantRecordsTest(CheckResolvedWithoutErrorLocked);
+  RunResolvesRelevantRecordsTest(ResultHandler::Create);
   // Shutdown and join stress thread
   gpr_event_set(&done_ev, (void*)1);
   socket_stress_thread.join();

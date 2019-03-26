@@ -17,7 +17,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library")
 
-POLLERS = ["epollex", "epoll1", "poll", "poll-cv"]
+POLLERS = ["epollex", "epoll1", "poll"]
 
 def _fixture_options(
         fullstack = True,
@@ -85,7 +85,10 @@ END2END_FIXTURES = {
         client_channel = False,
     ),
     "h2_ssl": _fixture_options(secure = True),
-    "h2_local": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
+    "h2_spiffe": _fixture_options(secure = True),
+    "h2_local_uds": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
+    "h2_local_ipv4": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
+    "h2_local_ipv6": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
     "h2_ssl_proxy": _fixture_options(includes_proxy = True, secure = True),
     "h2_uds": _fixture_options(
         dns_resolver = False,
@@ -213,6 +216,7 @@ END2END_TESTS = {
     "empty_batch": _test_options(),
     "filter_causes_close": _test_options(),
     "filter_call_init_fails": _test_options(),
+    "filter_context": _test_options(),
     "graceful_server_shutdown": _test_options(exclude_inproc = True),
     "hpack_size": _test_options(
         proxyable = False,
@@ -232,7 +236,6 @@ END2END_TESTS = {
     "max_connection_idle": _test_options(needs_fullstack = True, proxyable = False),
     "max_message_length": _test_options(),
     "negative_deadline": _test_options(),
-    "network_status_change": _test_options(),
     "no_error_on_hotpath": _test_options(proxyable = False),
     "no_logging": _test_options(traceable = False),
     "no_op": _test_options(),
@@ -376,6 +379,7 @@ def grpc_end2end_tests():
             ":ssl_test_data",
             ":http_proxy",
             ":proxy",
+            ":local_util",
         ],
     )
 
@@ -388,7 +392,6 @@ def grpc_end2end_tests():
                 ":end2end_tests",
                 "//test/core/util:grpc_test_util",
                 "//:grpc",
-                "//test/core/util:gpr_test_util",
                 "//:gpr",
             ],
         )
@@ -426,6 +429,7 @@ def grpc_end2end_nosec_tests():
             ":ssl_test_data",
             ":http_proxy",
             ":proxy",
+            ":local_util",
         ],
     )
 
@@ -440,7 +444,6 @@ def grpc_end2end_nosec_tests():
                 ":end2end_nosec_tests",
                 "//test/core/util:grpc_test_util_unsecure",
                 "//:grpc_unsecure",
-                "//test/core/util:gpr_test_util",
                 "//:gpr",
             ],
         )

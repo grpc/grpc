@@ -21,12 +21,21 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/support/string_util.h>
+
 #include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/inlined_vector.h"
+#include "src/core/lib/gprpp/mutex_lock.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/iomgr/timer.h"
+
+namespace grpc_core {
 
 /// Handshakers are used to perform initial handshakes on a connection
 /// before the client sends the initial request.  Some examples of what
@@ -34,12 +43,6 @@
 /// the client side and various types of security initialization.
 ///
 /// In general, handshakers should be used via a handshake manager.
-
-///
-/// grpc_handshaker
-///
-
-typedef struct grpc_handshaker grpc_handshaker;
 
 /// Arguments passed through handshakers and to the on_handshake_done callback.
 ///
@@ -55,115 +58,121 @@ typedef struct grpc_handshaker grpc_handshaker;
 ///
 /// For the on_handshake_done callback, all members are input arguments,
 /// which the callback takes ownership of.
-typedef struct {
-  grpc_endpoint* endpoint;
-  grpc_channel_args* args;
-  grpc_slice_buffer* read_buffer;
+struct HandshakerArgs {
+  grpc_endpoint* endpoint = nullptr;
+  grpc_channel_args* args = nullptr;
+  grpc_slice_buffer* read_buffer = nullptr;
   // A handshaker may set this to true before invoking on_handshake_done
   // to indicate that subsequent handshakers should be skipped.
-  bool exit_early;
+  bool exit_early = false;
   // User data passed through the handshake manager.  Not used by
   // individual handshakers.
-  void* user_data;
-} grpc_handshaker_args;
-
-typedef struct {
-  /// Destroys the handshaker.
-  void (*destroy)(grpc_handshaker* handshaker);
-
-  /// Shuts down the handshaker (e.g., to clean up when the operation is
-  /// aborted in the middle).
-  void (*shutdown)(grpc_handshaker* handshaker, grpc_error* why);
-
-  /// Performs handshaking, modifying \a args as needed (e.g., to
-  /// replace \a endpoint with a wrapped endpoint).
-  /// When finished, invokes \a on_handshake_done.
-  /// \a acceptor will be NULL for client-side handshakers.
-  void (*do_handshake)(grpc_handshaker* handshaker,
-                       grpc_tcp_server_acceptor* acceptor,
-                       grpc_closure* on_handshake_done,
-                       grpc_handshaker_args* args);
-
-  /// The name of the handshaker, for debugging purposes.
-  const char* name;
-} grpc_handshaker_vtable;
-
-/// Base struct.  To subclass, make this the first member of the
-/// implementation struct.
-struct grpc_handshaker {
-  const grpc_handshaker_vtable* vtable;
+  void* user_data = nullptr;
 };
 
-/// Called by concrete implementations to initialize the base struct.
-void grpc_handshaker_init(const grpc_handshaker_vtable* vtable,
-                          grpc_handshaker* handshaker);
-
-void grpc_handshaker_destroy(grpc_handshaker* handshaker);
-void grpc_handshaker_shutdown(grpc_handshaker* handshaker, grpc_error* why);
-void grpc_handshaker_do_handshake(grpc_handshaker* handshaker,
-                                  grpc_tcp_server_acceptor* acceptor,
-                                  grpc_closure* on_handshake_done,
-                                  grpc_handshaker_args* args);
-const char* grpc_handshaker_name(grpc_handshaker* handshaker);
-
 ///
-/// grpc_handshake_manager
+/// Handshaker
 ///
 
-typedef struct grpc_handshake_manager grpc_handshake_manager;
+class Handshaker : public RefCounted<Handshaker> {
+ public:
+  virtual ~Handshaker() = default;
+  virtual void Shutdown(grpc_error* why) GRPC_ABSTRACT;
+  virtual void DoHandshake(grpc_tcp_server_acceptor* acceptor,
+                           grpc_closure* on_handshake_done,
+                           HandshakerArgs* args) GRPC_ABSTRACT;
+  virtual const char* name() const GRPC_ABSTRACT;
+  GRPC_ABSTRACT_BASE_CLASS
+};
 
-/// Creates a new handshake manager.  Caller takes ownership.
-grpc_handshake_manager* grpc_handshake_manager_create();
+//
+// HandshakeManager
+//
 
-/// Adds a handshaker to the handshake manager.
-/// Takes ownership of \a handshaker.
+class HandshakeManager : public RefCounted<HandshakeManager> {
+ public:
+  HandshakeManager();
+  ~HandshakeManager();
+
+  /// Add \a mgr to the server side list of all pending handshake managers, the
+  /// list starts with \a *head.
+  // Not thread-safe. Caller needs to synchronize.
+  void AddToPendingMgrList(HandshakeManager** head);
+
+  /// Remove \a mgr from the server side list of all pending handshake managers.
+  // Not thread-safe. Caller needs to synchronize.
+  void RemoveFromPendingMgrList(HandshakeManager** head);
+
+  /// Shutdown all pending handshake managers starting at head on the server
+  /// side. Not thread-safe. Caller needs to synchronize.
+  void ShutdownAllPending(grpc_error* why);
+
+  /// Adds a handshaker to the handshake manager.
+  /// Takes ownership of \a handshaker.
+  void Add(RefCountedPtr<Handshaker> handshaker);
+
+  /// Shuts down the handshake manager (e.g., to clean up when the operation is
+  /// aborted in the middle).
+  void Shutdown(grpc_error* why);
+
+  /// Invokes handshakers in the order they were added.
+  /// Takes ownership of \a endpoint, and then passes that ownership to
+  /// the \a on_handshake_done callback.
+  /// Does NOT take ownership of \a channel_args.  Instead, makes a copy before
+  /// invoking the first handshaker.
+  /// \a acceptor will be nullptr for client-side handshakers.
+  ///
+  /// When done, invokes \a on_handshake_done with a HandshakerArgs
+  /// object as its argument.  If the callback is invoked with error !=
+  /// GRPC_ERROR_NONE, then handshaking failed and the handshaker has done
+  /// the necessary clean-up.  Otherwise, the callback takes ownership of
+  /// the arguments.
+  void DoHandshake(grpc_endpoint* endpoint,
+                   const grpc_channel_args* channel_args, grpc_millis deadline,
+                   grpc_tcp_server_acceptor* acceptor,
+                   grpc_iomgr_cb_func on_handshake_done, void* user_data);
+
+ private:
+  bool CallNextHandshakerLocked(grpc_error* error);
+
+  // A function used as the handshaker-done callback when chaining
+  // handshakers together.
+  static void CallNextHandshakerFn(void* arg, grpc_error* error);
+
+  // Callback invoked when deadline is exceeded.
+  static void OnTimeoutFn(void* arg, grpc_error* error);
+
+  static const size_t HANDSHAKERS_INIT_SIZE = 2;
+
+  gpr_mu mu_;
+  bool is_shutdown_ = false;
+  // An array of handshakers added via grpc_handshake_manager_add().
+  InlinedVector<RefCountedPtr<Handshaker>, HANDSHAKERS_INIT_SIZE> handshakers_;
+  // The index of the handshaker to invoke next and closure to invoke it.
+  size_t index_ = 0;
+  grpc_closure call_next_handshaker_;
+  // The acceptor to call the handshakers with.
+  grpc_tcp_server_acceptor* acceptor_;
+  // Deadline timer across all handshakers.
+  grpc_timer deadline_timer_;
+  grpc_closure on_timeout_;
+  // The final callback and user_data to invoke after the last handshaker.
+  grpc_closure on_handshake_done_;
+  // Handshaker args.
+  HandshakerArgs args_;
+  // Links to the previous and next managers in a list of all pending handshakes
+  // Used at server side only.
+  HandshakeManager* prev_ = nullptr;
+  HandshakeManager* next_ = nullptr;
+};
+
+}  // namespace grpc_core
+
+// TODO(arjunroy): These are transitional to account for the new handshaker API
+// and will eventually be removed entirely.
+typedef grpc_core::HandshakeManager grpc_handshake_manager;
+typedef grpc_core::Handshaker grpc_handshaker;
 void grpc_handshake_manager_add(grpc_handshake_manager* mgr,
                                 grpc_handshaker* handshaker);
-
-/// Destroys the handshake manager.
-void grpc_handshake_manager_destroy(grpc_handshake_manager* mgr);
-
-/// Shuts down the handshake manager (e.g., to clean up when the operation is
-/// aborted in the middle).
-/// The caller must still call grpc_handshake_manager_destroy() after
-/// calling this function.
-void grpc_handshake_manager_shutdown(grpc_handshake_manager* mgr,
-                                     grpc_error* why);
-
-/// Invokes handshakers in the order they were added.
-/// Takes ownership of \a endpoint, and then passes that ownership to
-/// the \a on_handshake_done callback.
-/// Does NOT take ownership of \a channel_args.  Instead, makes a copy before
-/// invoking the first handshaker.
-/// \a acceptor will be nullptr for client-side handshakers.
-///
-/// When done, invokes \a on_handshake_done with a grpc_handshaker_args
-/// object as its argument.  If the callback is invoked with error !=
-/// GRPC_ERROR_NONE, then handshaking failed and the handshaker has done
-/// the necessary clean-up.  Otherwise, the callback takes ownership of
-/// the arguments.
-void grpc_handshake_manager_do_handshake(grpc_handshake_manager* mgr,
-                                         grpc_endpoint* endpoint,
-                                         const grpc_channel_args* channel_args,
-                                         grpc_millis deadline,
-                                         grpc_tcp_server_acceptor* acceptor,
-                                         grpc_iomgr_cb_func on_handshake_done,
-                                         void* user_data);
-
-/// Add \a mgr to the server side list of all pending handshake managers, the
-/// list starts with \a *head.
-// Not thread-safe. Caller needs to synchronize.
-void grpc_handshake_manager_pending_list_add(grpc_handshake_manager** head,
-                                             grpc_handshake_manager* mgr);
-
-/// Remove \a mgr from the server side list of all pending handshake managers.
-// Not thread-safe. Caller needs to synchronize.
-void grpc_handshake_manager_pending_list_remove(grpc_handshake_manager** head,
-                                                grpc_handshake_manager* mgr);
-
-/// Shutdown all pending handshake managers on the server side.
-// Not thread-safe. Caller needs to synchronize.
-void grpc_handshake_manager_pending_list_shutdown_all(
-    grpc_handshake_manager* head, grpc_error* why);
 
 #endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H */

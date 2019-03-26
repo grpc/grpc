@@ -14,28 +14,25 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  FROM debian:jessie
-  
-  <%include file="../../apt_get_basic.include"/>
-  <%include file="../../gcp_api_libraries.include"/>
-  <%include file="../../python_deps.include"/>
+  <%include file="../../python_stretch.include"/>
   <%include file="../../cxx_deps.include"/>
   #========================
   # Sanity test dependencies
+  RUN apt-get update && apt-get -t testing install -y python3.7 python3-all-dev
+  RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7
+  # Make Python 3.7 the default Python 3 version
+  RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 1
   RUN apt-get update && apt-get install -y ${"\\"}
-        python-pip ${"\\"}
         autoconf ${"\\"}
         automake ${"\\"}
         libtool ${"\\"}
         curl ${"\\"}
-        python-virtualenv ${"\\"}
-        python-lxml ${"\\"}
         shellcheck
-  RUN pip install simplejson mako
-  
+  RUN python2 -m pip install simplejson mako virtualenv lxml
+  RUN python3 -m pip install simplejson mako virtualenv lxml
+
   <%include file="../../clang5.include"/>
-  <%include file="../../run_tests_addons.include"/>
-  
+  <%include file="../../bazel.include"/>
+
   # Define the default command.
   CMD ["bash"]
-  

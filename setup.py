@@ -159,8 +159,8 @@ if EXTRA_ENV_COMPILE_ARGS is None:
   elif "linux" in sys.platform:
     EXTRA_ENV_COMPILE_ARGS += ' -std=gnu99 -fvisibility=hidden -fno-wrapv -fno-exceptions'
   elif "darwin" in sys.platform:
-    EXTRA_ENV_COMPILE_ARGS += ' -fvisibility=hidden -fno-wrapv -fno-exceptions'
-EXTRA_ENV_COMPILE_ARGS += ' -DPB_FIELD_16BIT'
+    EXTRA_ENV_COMPILE_ARGS += ' -stdlib=libc++ -fvisibility=hidden -fno-wrapv -fno-exceptions'
+EXTRA_ENV_COMPILE_ARGS += ' -DPB_FIELD_32BIT'
 
 if EXTRA_ENV_LINK_ARGS is None:
   EXTRA_ENV_LINK_ARGS = ''
@@ -265,7 +265,7 @@ def cython_extensions_and_necessity():
                   for name in CYTHON_EXTENSION_MODULE_NAMES]
   config = os.environ.get('CONFIG', 'opt')
   prefix = 'libs/' + config + '/'
-  if "darwin" in sys.platform or USE_PREBUILT_GRPC_CORE:
+  if USE_PREBUILT_GRPC_CORE:
     extra_objects = [prefix + 'libares.a',
                      prefix + 'libboringssl.a',
                      prefix + 'libgpr.a',
@@ -298,11 +298,10 @@ PACKAGE_DIRECTORIES = {
 }
 
 INSTALL_REQUIRES = (
-    'six>=1.5.2',
+    "six>=1.5.2",
+    "futures>=2.2.0; python_version<'3.2'",
+    "enum34>=1.0.4; python_version<'3.4'",
 )
-
-if not PY3:
-  INSTALL_REQUIRES += ('futures>=2.2.0', 'enum34>=1.0.4')
 
 SETUP_REQUIRES = INSTALL_REQUIRES + (
     'Sphinx~=1.8.1',

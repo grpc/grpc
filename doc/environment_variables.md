@@ -41,9 +41,13 @@ some configuration as environment variables that can be set.
   - bdp_estimator - traces behavior of bdp estimation logic
   - call_combiner - traces call combiner state
   - call_error - traces the possible errors contributing to final call status
+  - cares_resolver - traces operations of the c-ares based DNS resolver
+  - cares_address_sorting - traces operations of the c-ares based DNS
+    resolver's resolved address sorter
   - channel - traces operations on the C core channel stack
-  - client_channel - traces client channel activity, including resolver
-    and load balancing policy interaction
+  - client_channel_call - traces client channel call batch activity
+  - client_channel_routing - traces client channel call routing, including
+    resolver and load balancing policy interaction
   - compression - traces compression operations
   - connectivity_state - traces connectivity state changes to channels
   - executor - traces grpc's internal thread pool ('the executor')
@@ -114,7 +118,7 @@ some configuration as environment variables that can be set.
   - ERROR - log only errors
 
 * GRPC_TRACE_FUZZER
-  if set, the fuzzers will output trace (it is usually supressed).
+  if set, the fuzzers will output trace (it is usually suppressed).
 
 * GRPC_DNS_RESOLVER
   Declares which DNS resolver to use. The default is ares if gRPC is built with
@@ -144,7 +148,7 @@ some configuration as environment variables that can be set.
 * GRPC_ARENA_INIT_STRATEGY
   Selects the initialization strategy for blocks allocated in the arena. Valid
   values are:
-  - no_init (default): Do not inialize the arena block.
+  - no_init (default): Do not initialize the arena block.
   - zero_init: Initialize the arena blocks with 0.
   - non_zero_init: Initialize the arena blocks with a non-zero value.
 

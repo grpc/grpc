@@ -126,10 +126,9 @@ static event_engine_factory g_factories[] = {
     {ENGINE_HEAD_CUSTOM, nullptr},        {ENGINE_HEAD_CUSTOM, nullptr},
     {ENGINE_HEAD_CUSTOM, nullptr},        {ENGINE_HEAD_CUSTOM, nullptr},
     {"epollex", grpc_init_epollex_linux}, {"epoll1", grpc_init_epoll1_linux},
-    {"poll", grpc_init_poll_posix},       {"poll-cv", grpc_init_poll_cv_posix},
-    {"none", init_non_polling},           {ENGINE_TAIL_CUSTOM, nullptr},
+    {"poll", grpc_init_poll_posix},       {"none", init_non_polling},
     {ENGINE_TAIL_CUSTOM, nullptr},        {ENGINE_TAIL_CUSTOM, nullptr},
-    {ENGINE_TAIL_CUSTOM, nullptr},
+    {ENGINE_TAIL_CUSTOM, nullptr},        {ENGINE_TAIL_CUSTOM, nullptr},
 };
 
 static void add(const char* beg, const char* end, char*** ss, size_t* ns) {
@@ -397,6 +396,10 @@ void grpc_pollset_set_del_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
   GRPC_POLLING_API_TRACE("pollset_set_del_fd(%p, %d)", pollset_set,
                          grpc_fd_wrapped_fd(fd));
   g_event_engine->pollset_set_del_fd(pollset_set, fd);
+}
+
+bool grpc_is_any_background_poller_thread(void) {
+  return g_event_engine->is_any_background_poller_thread();
 }
 
 void grpc_shutdown_background_closure(void) {

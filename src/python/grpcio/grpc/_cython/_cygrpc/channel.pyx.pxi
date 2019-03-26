@@ -159,7 +159,8 @@ cdef void _call(
     _ChannelState channel_state, _CallState call_state,
     grpc_completion_queue *c_completion_queue, on_success, int flags, method,
     host, object deadline, CallCredentials credentials,
-    object operationses_and_user_tags, object metadata) except *:
+    object operationses_and_user_tags, object metadata,
+    object context) except *:
   """Invokes an RPC.
 
   Args:
@@ -185,6 +186,7 @@ cdef void _call(
       which is an object to be used as a tag. A SendInitialMetadataOperation
       must be present in the first element of this value.
     metadata: The metadata for this call.
+    context: Context object for distributed tracing.
   """
   cdef grpc_slice method_slice
   cdef grpc_slice host_slice
@@ -208,6 +210,8 @@ cdef void _call(
       grpc_slice_unref(method_slice)
       if host_slice_ptr:
         grpc_slice_unref(host_slice)
+      if context is not None:
+        set_census_context_on_call(call_state, context)
       if credentials is not None:
         c_call_credentials = credentials.c()
         c_call_error = grpc_call_set_credentials(
@@ -257,7 +261,8 @@ cdef class IntegratedCall:
 
 cdef IntegratedCall _integrated_call(
     _ChannelState state, int flags, method, host, object deadline,
-    object metadata, CallCredentials credentials, operationses_and_user_tags):
+    object metadata, CallCredentials credentials, operationses_and_user_tags,
+    object context):
   call_state = _CallState()
 
   def on_success(started_tags):
@@ -266,7 +271,7 @@ cdef IntegratedCall _integrated_call(
 
   _call(
       state, call_state, state.c_call_completion_queue, on_success, flags,
-      method, host, deadline, credentials, operationses_and_user_tags, metadata)
+      method, host, deadline, credentials, operationses_and_user_tags, metadata, context)
 
   return IntegratedCall(state, call_state)
 
@@ -308,7 +313,8 @@ cdef class SegregatedCall:
 
 cdef SegregatedCall _segregated_call(
     _ChannelState state, int flags, method, host, object deadline,
-    object metadata, CallCredentials credentials, operationses_and_user_tags):
+    object metadata, CallCredentials credentials, operationses_and_user_tags,
+    object context):
   cdef _CallState call_state = _CallState()
   cdef SegregatedCall segregated_call
   cdef grpc_completion_queue *c_completion_queue
@@ -325,7 +331,8 @@ cdef SegregatedCall _segregated_call(
   try:
     _call(
         state, call_state, c_completion_queue, on_success, flags, method, host,
-        deadline, credentials, operationses_and_user_tags, metadata)
+        deadline, credentials, operationses_and_user_tags, metadata,
+        context)
   except:
     _destroy_c_completion_queue(c_completion_queue)
     raise
@@ -392,7 +399,7 @@ cdef _close(Channel channel, grpc_status_code code, object details,
       _destroy_c_completion_queue(state.c_connectivity_completion_queue)
       grpc_channel_destroy(state.c_channel)
       state.c_channel = NULL
-      grpc_shutdown()
+      grpc_shutdown_blocking()
       state.condition.notify_all()
     else:
       # Another call to close already completed in the past or is currently
@@ -413,25 +420,22 @@ cdef class Channel:
     arguments = () if arguments is None else tuple(arguments)
     fork_handlers_and_grpc_init()
     self._state = _ChannelState()
-    self._vtable.copy = &_copy_pointer
-    self._vtable.destroy = &_destroy_pointer
-    self._vtable.cmp = &_compare_pointer
-    cdef _ArgumentsProcessor arguments_processor = _ArgumentsProcessor(
-        arguments)
-    cdef grpc_channel_args *c_arguments = arguments_processor.c(&self._vtable)
-    if channel_credentials is None:
-      self._state.c_channel = grpc_insecure_channel_create(
-          <char *>target, c_arguments, NULL)
-    else:
-      c_channel_credentials = channel_credentials.c()
-      self._state.c_channel = grpc_secure_channel_create(
-          c_channel_credentials, <char *>target, c_arguments, NULL)
-      grpc_channel_credentials_release(c_channel_credentials)
     self._state.c_call_completion_queue = (
         grpc_completion_queue_create_for_next(NULL))
     self._state.c_connectivity_completion_queue = (
         grpc_completion_queue_create_for_next(NULL))
     self._arguments = arguments
+    self._vtable = _VTable()
+    cdef _ChannelArgs channel_args = _ChannelArgs(
+        arguments, self._vtable)
+    if channel_credentials is None:
+      self._state.c_channel = grpc_insecure_channel_create(
+          <char *>target, channel_args.c_args(), NULL)
+    else:
+      c_channel_credentials = channel_credentials.c()
+      self._state.c_channel = grpc_secure_channel_create(
+          c_channel_credentials, <char *>target, channel_args.c_args(), NULL)
+      grpc_channel_credentials_release(c_channel_credentials)
 
   def target(self):
     cdef char *c_target
@@ -443,10 +447,11 @@ cdef class Channel:
 
   def integrated_call(
       self, int flags, method, host, object deadline, object metadata,
-      CallCredentials credentials, operationses_and_tags):
+      CallCredentials credentials, operationses_and_tags,
+      object context = None):
     return _integrated_call(
         self._state, flags, method, host, deadline, metadata, credentials,
-        operationses_and_tags)
+        operationses_and_tags, context)
 
   def next_call_event(self):
     def on_success(tag):
@@ -461,10 +466,11 @@ cdef class Channel:
 
   def segregated_call(
       self, int flags, method, host, object deadline, object metadata,
-      CallCredentials credentials, operationses_and_tags):
+      CallCredentials credentials, operationses_and_tags,
+      object context = None):
     return _segregated_call(
         self._state, flags, method, host, deadline, metadata, credentials,
-        operationses_and_tags)
+        operationses_and_tags, context)
 
   def check_connectivity_state(self, bint try_to_connect):
     with self._state.condition:

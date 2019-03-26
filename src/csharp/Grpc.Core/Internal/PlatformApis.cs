@@ -49,7 +49,7 @@ namespace Grpc.Core.Internal
 
         static PlatformApis()
         {
-#if NETSTANDARD1_5
+#if NETSTANDARD1_5 || NETSTANDARD2_0
             isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
             isMacOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
             isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
@@ -171,7 +171,7 @@ namespace Grpc.Core.Internal
         public static string GetUnityRuntimePlatform()
         {
             GrpcPreconditions.CheckState(IsUnity, "Not running on Unity.");
-#if NETSTANDARD1_5
+#if NETSTANDARD1_5 || NETSTANDARD2_0
             return Type.GetType(UnityEngineApplicationClassName).GetTypeInfo().GetProperty("platform").GetValue(null).ToString();
 #else
             return Type.GetType(UnityEngineApplicationClassName).GetProperty("platform").GetValue(null).ToString();

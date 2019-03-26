@@ -1,19 +1,20 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\Grpc.Core\Version.csproj.include" />
   <Import Project="..\Grpc.Core\Common.csproj.include" />
 
   <PropertyGroup>
-    <Copyright>Copyright 2016, Google Inc.</Copyright>
-    <AssemblyTitle>gRPC C# Reflection</AssemblyTitle>
-    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
-    <Authors>Google Inc.</Authors>
-    <TargetFrameworks>net45;netstandard1.5</TargetFrameworks>
-    <AssemblyName>Grpc.Reflection</AssemblyName>
-    <PackageId>Grpc.Reflection</PackageId>
-    <PackageTags>gRPC reflection</PackageTags>
+    <Authors>The gRPC Authors</Authors>
+    <Copyright>Copyright 2016 The gRPC Authors</Copyright>
+    <Description>gRPC C# Server Reflection (for Grpc.Core)</Description>
+    <PackageIconUrl>https://github.com/grpc/grpc.github.io/raw/master/img/grpc_square_reverse_4x.png</PackageIconUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageTags>gRPC reflection</PackageTags>
+    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;netstandard1.5;netstandard2.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
@@ -21,7 +22,7 @@
   <Import Project="..\Grpc.Core\SourceLink.csproj.include" />
 
   <ItemGroup>
-    <Compile Include="..\Grpc.Core\Version.cs" />
+    <Compile Include="..\Grpc.Core.Api\Version.cs" />
   </ItemGroup>
 
   <ItemGroup>

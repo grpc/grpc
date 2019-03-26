@@ -111,7 +111,7 @@ void FlowControlTrace::Finish() {
     saw_str = gpr_leftpad("", ' ', kTracePadding);
   }
   gpr_log(GPR_DEBUG,
-          "%p[%u][%s] | %s | trw:%s, ttw:%s, taw:%s, srw:%s, slw:%s, saw:%s",
+          "%p[%u][%s] | %s | trw:%s, tlw:%s, taw:%s, srw:%s, slw:%s, saw:%s",
           tfc_, sfc_ != nullptr ? sfc_->stream()->id : 0,
           tfc_->transport()->is_client ? "cli" : "svr", reason_, trw_str,
           tlw_str, taw_str, srw_str, slw_str, saw_str);
@@ -190,7 +190,7 @@ TransportFlowControl::TransportFlowControl(const grpc_chttp2_transport* t,
 uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
   FlowControlTrace trace("t updt sent", this, nullptr);
   const uint32_t target_announced_window =
-      static_cast<const uint32_t>(target_window());
+      static_cast<uint32_t>(target_window());
   if ((writing_anyway || announced_window_ <= target_announced_window / 2) &&
       announced_window_ != target_announced_window) {
     const uint32_t announce = static_cast<uint32_t> GPR_CLAMP(

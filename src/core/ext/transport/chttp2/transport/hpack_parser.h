@@ -97,13 +97,14 @@ void grpc_chttp2_hpack_parser_destroy(grpc_chttp2_hpack_parser* p);
 void grpc_chttp2_hpack_parser_set_has_priority(grpc_chttp2_hpack_parser* p);
 
 grpc_error* grpc_chttp2_hpack_parser_parse(grpc_chttp2_hpack_parser* p,
-                                           grpc_slice slice);
+                                           const grpc_slice& slice);
 
 /* wraps grpc_chttp2_hpack_parser_parse to provide a frame level parser for
    the transport */
 grpc_error* grpc_chttp2_header_parser_parse(void* hpack_parser,
                                             grpc_chttp2_transport* t,
                                             grpc_chttp2_stream* s,
-                                            grpc_slice slice, int is_last);
+                                            const grpc_slice& slice,
+                                            int is_last);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_H */

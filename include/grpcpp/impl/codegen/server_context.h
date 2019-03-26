@@ -43,6 +43,10 @@ struct census_context;
 
 namespace grpc {
 class ClientContext;
+class GenericServerContext;
+class CompletionQueue;
+class Server;
+class ServerInterface;
 template <class W, class R>
 class ServerAsyncReader;
 template <class W>
@@ -55,6 +59,7 @@ template <class R>
 class ServerReader;
 template <class W>
 class ServerWriter;
+
 namespace internal {
 template <class W, class R>
 class ServerReaderWriterBody;
@@ -81,10 +86,6 @@ class ErrorMethodHandler;
 class Call;
 class ServerReactor;
 }  // namespace internal
-
-class CompletionQueue;
-class Server;
-class ServerInterface;
 
 namespace testing {
 class InteropServerContextInspector;
@@ -131,6 +132,13 @@ class ServerContext {
   /// end in "-bin".
   /// \param value The metadata value. If its value is binary, the key name
   /// must end in "-bin".
+  ///
+  /// Metadata must conform to the following format:
+  /// Custom-Metadata -> Binary-Header / ASCII-Header
+  /// Binary-Header -> {Header-Name "-bin" } {binary value}
+  /// ASCII-Header -> Header-Name ASCII-Value
+  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
   void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
 
   /// Add the (\a key, \a value) pair to the initial metadata
@@ -145,6 +153,13 @@ class ServerContext {
   /// it must end in "-bin".
   /// \param value The metadata value. If its value is binary, the key name
   /// must end in "-bin".
+  ///
+  /// Metadata must conform to the following format:
+  /// Custom-Metadata -> Binary-Header / ASCII-Header
+  /// Binary-Header -> {Header-Name "-bin" } {binary value}
+  /// ASCII-Header -> Header-Name ASCII-Value
+  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
 
   /// IsCancelled is always safe to call when using sync or callback API.
@@ -288,6 +303,7 @@ class ServerContext {
   template <StatusCode code>
   friend class internal::ErrorMethodHandler;
   friend class ::grpc::ClientContext;
+  friend class ::grpc::GenericServerContext;
 
   /// Prevent copying.
   ServerContext(const ServerContext&);
@@ -313,13 +329,16 @@ class ServerContext {
 
   uint32_t initial_metadata_flags() const { return 0; }
 
+  void SetCancelCallback(std::function<void()> callback);
+  void ClearCancelCallback();
+
   experimental::ServerRpcInfo* set_server_rpc_info(
-      const char* method,
+      const char* method, internal::RpcMethod::RpcType type,
       const std::vector<
           std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>&
           creators) {
     if (creators.size() != 0) {
-      rpc_info_ = new experimental::ServerRpcInfo(this, method);
+      rpc_info_ = new experimental::ServerRpcInfo(this, method, type);
       rpc_info_->RegisterInterceptors(creators);
     }
     return rpc_info_;

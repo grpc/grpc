@@ -44,10 +44,9 @@ _LANGUAGES = client_matrix.LANG_RUNTIME_MATRIX.keys()
 # All gRPC release tags, flattened, deduped and sorted.
 _RELEASES = sorted(
     list(
-        set(
-            client_matrix.get_release_tag_name(info)
-            for lang in client_matrix.LANG_RELEASE_MATRIX.values()
-            for info in lang)))
+        set(release
+            for release_dict in client_matrix.LANG_RELEASE_MATRIX.values()
+            for release in release_dict.keys())))
 
 argp = argparse.ArgumentParser(description='Run interop tests.')
 argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
@@ -113,35 +112,39 @@ def _get_test_images_for_lang(lang, release_arg, image_path_prefix):
             return {}
         releases = [release_arg]
 
-    # Images tuples keyed by runtime.
+    # Image tuples keyed by runtime.
     images = {}
-    for runtime in client_matrix.LANG_RUNTIME_MATRIX[lang]:
-        image_path = '%s/grpc_interop_%s' % (image_path_prefix, runtime)
-        images[runtime] = [
-            (tag, '%s:%s' % (image_path, tag)) for tag in releases
-        ]
+    for tag in releases:
+        for runtime in client_matrix.get_runtimes_for_lang_release(lang, tag):
+            image_name = '%s/grpc_interop_%s:%s' % (image_path_prefix, runtime,
+                                                    tag)
+            image_tuple = (tag, image_name)
+
+            if not images.has_key(runtime):
+                images[runtime] = []
+            images[runtime].append(image_tuple)
     return images
 
 
 def _read_test_cases_file(lang, runtime, release):
     """Read test cases from a bash-like file and return a list of commands"""
-    testcase_dir = os.path.join(os.path.dirname(__file__), 'testcases')
-    filename_prefix = lang
-    if lang == 'csharp':
-        # TODO(jtattermusch): remove this odd specialcase
-        filename_prefix = runtime
     # Check to see if we need to use a particular version of test cases.
-    lang_version = '%s_%s' % (filename_prefix, release)
-    if lang_version in client_matrix.TESTCASES_VERSION_MATRIX:
-        testcase_file = os.path.join(
-            testcase_dir, client_matrix.TESTCASES_VERSION_MATRIX[lang_version])
-    else:
+    release_info = client_matrix.LANG_RELEASE_MATRIX[lang].get(release)
+    if release_info:
+        testcases_file = release_info.testcases_file
+    if not testcases_file:
         # TODO(jtattermusch): remove the double-underscore, it is pointless
-        testcase_file = os.path.join(testcase_dir,
-                                     '%s__master' % filename_prefix)
+        testcases_file = '%s__master' % lang
 
+    # For csharp, the testcases file used depends on the runtime
+    # TODO(jtattermusch): remove this odd specialcase
+    if lang == 'csharp' and runtime == 'csharpcoreclr':
+        testcases_file = testcases_file.replace('csharp_', 'csharpcoreclr_')
+
+    testcases_filepath = os.path.join(
+        os.path.dirname(__file__), 'testcases', testcases_file)
     lines = []
-    with open(testcase_file) as f:
+    with open(testcases_filepath) as f:
         for line in f.readlines():
             line = re.sub('\\#.*$', '', line)  # remove hash comments
             line = line.strip()
@@ -168,25 +171,35 @@ def _generate_test_case_jobspecs(lang, runtime, release, suite_name):
     for line in testcase_lines:
         # TODO(jtattermusch): revisit the logic for updating test case commands
         # what it currently being done seems fragile.
-        m = re.search('--test_case=(.*)"', line)
-        shortname = m.group(1) if m else 'unknown_test'
-        m = re.search('--server_host_override=(.*).sandbox.googleapis.com',
-                      line)
-        server = m.group(1) if m else 'unknown_server'
 
-        # If server_host arg is not None, replace the original
-        # server_host with the one provided or append to the end of
-        # the command if server_host does not appear originally.
-        if args.server_host:
-            if line.find('--server_host=') > -1:
-                line = re.sub('--server_host=[^ ]*',
-                              '--server_host=%s' % args.server_host, line)
-            else:
-                line = '%s --server_host=%s"' % (line[:-1], args.server_host)
+        # Extract test case name from the command line
+        m = re.search(r'--test_case=(\w+)', line)
+        testcase_name = m.group(1) if m else 'unknown_test'
+
+        # Extract the server name from the command line
+        if '--server_host_override=' in line:
+            m = re.search(
+                r'--server_host_override=((.*).sandbox.googleapis.com)', line)
+        else:
+            m = re.search(r'--server_host=((.*).sandbox.googleapis.com)', line)
+        server = m.group(1) if m else 'unknown_server'
+        server_short = m.group(2) if m else 'unknown_server'
+
+        # replace original server_host argument
+        assert '--server_host=' in line
+        line = re.sub(r'--server_host=[^ ]*',
+                      r'--server_host=%s' % args.server_host, line)
+
+        # some interop tests don't set server_host_override (see #17407),
+        # but we need to use it if different host is set via cmdline args.
+        if args.server_host != server and not '--server_host_override=' in line:
+            line = re.sub(r'(--server_host=[^ ]*)',
+                          r'\1 --server_host_override=%s' % server, line)
 
         spec = jobset.JobSpec(
             cmdline=line,
-            shortname='%s:%s:%s:%s' % (suite_name, lang, server, shortname),
+            shortname='%s:%s:%s:%s' % (suite_name, lang, server_short,
+                                       testcase_name),
             timeout_seconds=_TEST_TIMEOUT_SECONDS,
             shell=True,
             flake_retries=5 if args.allow_flakes else 0)
@@ -211,7 +224,8 @@ def _pull_images_for_lang(lang, images):
             cmdline=cmdline,
             shortname='pull_image_%s' % (image),
             timeout_seconds=_PULL_IMAGE_TIMEOUT_SECONDS,
-            shell=True)
+            shell=True,
+            flake_retries=2)
         download_specs.append(spec)
     # too many image downloads at once tend to get stuck
     max_pull_jobs = min(args.jobs, _MAX_PARALLEL_DOWNLOADS)
@@ -232,10 +246,13 @@ def _run_tests_for_lang(lang, runtime, images, xml_report_tree):
 
   images is a list of (<release-tag>, <image-full-path>) tuple.
   """
+    skip_tests = False
     if not _pull_images_for_lang(lang, images):
         jobset.message(
-            'FAILED', 'Image download failed. Exiting.', do_newline=True)
-        return 1
+            'FAILED',
+            'Image download failed. Skipping tests for language "%s"' % lang,
+            do_newline=True)
+        skip_tests = True
 
     total_num_failures = 0
     for release, image in images:
@@ -246,17 +263,22 @@ def _run_tests_for_lang(lang, runtime, images, xml_report_tree):
         if not job_spec_list:
             jobset.message(
                 'FAILED', 'No test cases were found.', do_newline=True)
-            return 1
+            total_num_failures += 1
+            continue
 
         num_failures, resultset = jobset.run(
             job_spec_list,
             newline_on_success=True,
             add_env={'docker_image': image},
-            maxjobs=args.jobs)
+            maxjobs=args.jobs,
+            skip_jobs=skip_tests)
         if args.bq_result_table and resultset:
             upload_test_results.upload_interop_results_to_bq(
                 resultset, args.bq_result_table)
-        if num_failures:
+        if skip_tests:
+            jobset.message('FAILED', 'Tests were skipped', do_newline=True)
+            total_num_failures += 1
+        elif num_failures:
             jobset.message('FAILED', 'Some tests failed', do_newline=True)
             total_num_failures += num_failures
         else:
@@ -266,6 +288,8 @@ def _run_tests_for_lang(lang, runtime, images, xml_report_tree):
                                               'grpc_interop_matrix', suite_name,
                                               str(uuid.uuid4()))
 
+    # cleanup all downloaded docker images
+    for _, image in images:
         if not args.keep:
             _cleanup_docker_image(image)
 

@@ -36,15 +36,17 @@ def channelz_get_server(server_id):
                          ' server_id==%s is valid' % server_id)
     return c_returned_str
     
-def channelz_get_server_sockets(server_id, start_socket_id):
+def channelz_get_server_sockets(server_id, start_socket_id, max_results):
     cdef char *c_returned_str = grpc_channelz_get_server_sockets(
         server_id,
         start_socket_id,
+        max_results,
     )
     if c_returned_str == NULL:
         raise ValueError('Failed to get server sockets, please ensure your' \
-                         ' server_id==%s and start_socket_id==%s is valid' %
-                         (server_id, start_socket_id))
+                         ' server_id==%s and start_socket_id==%s and' \
+                         ' max_results==%s is valid' %
+                         (server_id, start_socket_id, max_results))
     return c_returned_str
     
 def channelz_get_channel(channel_id):

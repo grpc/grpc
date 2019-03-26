@@ -53,6 +53,13 @@ static void exec_ctx_sched(grpc_closure* closure, grpc_error* error) {
 
 static gpr_timespec g_start_time;
 
+// For debug of the timer manager crash only.
+// TODO (mxyan): remove after bug is fixed.
+#ifdef GRPC_DEBUG_TIMER_MANAGER
+extern int64_t g_start_time_sec;
+extern int64_t g_start_time_nsec;
+#endif  // GRPC_DEBUG_TIMER_MANAGER
+
 static grpc_millis timespec_to_millis_round_down(gpr_timespec ts) {
   ts = gpr_time_sub(ts, g_start_time);
   double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
@@ -108,6 +115,7 @@ grpc_closure_scheduler* grpc_schedule_on_exec_ctx = &exec_ctx_scheduler;
 
 namespace grpc_core {
 GPR_TLS_CLASS_DEF(ExecCtx::exec_ctx_);
+GPR_TLS_CLASS_DEF(ApplicationCallbackExecCtx::callback_exec_ctx_);
 
 // WARNING: for testing purposes only!
 void ExecCtx::TestOnlyGlobalInit(gpr_timespec new_val) {
@@ -117,6 +125,12 @@ void ExecCtx::TestOnlyGlobalInit(gpr_timespec new_val) {
 
 void ExecCtx::GlobalInit(void) {
   g_start_time = gpr_now(GPR_CLOCK_MONOTONIC);
+  // For debug of the timer manager crash only.
+  // TODO (mxyan): remove after bug is fixed.
+#ifdef GRPC_DEBUG_TIMER_MANAGER
+  g_start_time_sec = g_start_time.tv_sec;
+  g_start_time_nsec = g_start_time.tv_nsec;
+#endif
   gpr_tls_init(&exec_ctx_);
 }
 

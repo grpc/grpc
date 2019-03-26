@@ -13,34 +13,24 @@
 # limitations under the License.
 
 
-cdef void* _copy_pointer(void* pointer)
-
-
-cdef void _destroy_pointer(void* pointer)
-
-
-cdef int _compare_pointer(void* first_pointer, void* second_pointer)
-
-
 cdef tuple _wrap_grpc_arg(grpc_arg arg)
 
 
 cdef grpc_arg _unwrap_grpc_arg(tuple wrapped_arg)
 
 
-cdef class _ArgumentProcessor:
+cdef class _ChannelArg:
 
   cdef grpc_arg c_argument
 
-  cdef void c(self, argument, grpc_arg_pointer_vtable *vtable, references) except *
+  cdef void c(self, argument, _VTable vtable, references) except *
 
 
-cdef class _ArgumentsProcessor:
+cdef class _ChannelArgs:
 
   cdef readonly tuple _arguments
-  cdef list _argument_processors
+  cdef list _channel_args
   cdef readonly list _references
   cdef grpc_channel_args _c_arguments
 
-  cdef grpc_channel_args *c(self, grpc_arg_pointer_vtable *vtable) except *
-  cdef un_c(self)
+  cdef grpc_channel_args *c_args(self) except *

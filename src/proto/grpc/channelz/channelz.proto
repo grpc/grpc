@@ -177,6 +177,7 @@ message SubchannelRef {
 
 // SocketRef is a reference to a Socket.
 message SocketRef {
+  // The globally unique id for this socket.  Must be a positive number.
   int64 socket_id = 3;
   // An optional name associated with the socket.
   string name = 4;
@@ -288,7 +289,8 @@ message SocketData {
   // include stream level or TCP level flow control info.
   google.protobuf.Int64Value  remote_flow_control_window = 12;
 
-  // Socket options set on this socket.  May be absent.
+  // Socket options set on this socket.  May be absent if 'summary' is set
+  // on GetSocketRequest.
   repeated SocketOption option = 13;
 }
 
@@ -439,12 +441,21 @@ service Channelz {
 message GetTopChannelsRequest {
   // start_channel_id indicates that only channels at or above this id should be
   // included in the results.
+  // To request the first page, this should be set to 0. To request
+  // subsequent pages, the client generates this value by adding 1 to
+  // the highest seen result ID.
   int64 start_channel_id = 1;
+
+  // If non-zero, the server will return a page of results containing
+  // at most this many items. If zero, the server will choose a
+  // reasonable page size.  Must never be negative.
+  int64 max_results = 2;
 }
 
 message GetTopChannelsResponse {
   // list of channels that the connection detail service knows about.  Sorted in
   // ascending channel_id order.
+  // Must contain at least 1 result, otherwise 'end' must be true.
   repeated Channel channel = 1;
   // If set, indicates that the list of channels is the final list.  Requesting
   // more channels can only return more if they are created after this RPC
@@ -455,12 +466,21 @@ message GetTopChannelsResponse {
 message GetServersRequest {
   // start_server_id indicates that only servers at or above this id should be
   // included in the results.
+  // To request the first page, this must be set to 0. To request
+  // subsequent pages, the client generates this value by adding 1 to
+  // the highest seen result ID.
   int64 start_server_id = 1;
+
+  // If non-zero, the server will return a page of results containing
+  // at most this many items. If zero, the server will choose a
+  // reasonable page size.  Must never be negative.
+  int64 max_results = 2;
 }
 
 message GetServersResponse {
   // list of servers that the connection detail service knows about.  Sorted in
   // ascending server_id order.
+  // Must contain at least 1 result, otherwise 'end' must be true.
   repeated Server server = 1;
   // If set, indicates that the list of servers is the final list.  Requesting
   // more servers will only return more if they are created after this RPC
@@ -483,12 +503,21 @@ message GetServerSocketsRequest {
   int64 server_id = 1;
   // start_socket_id indicates that only sockets at or above this id should be
   // included in the results.
+  // To request the first page, this must be set to 0. To request
+  // subsequent pages, the client generates this value by adding 1 to
+  // the highest seen result ID.
   int64 start_socket_id = 2;
+
+  // If non-zero, the server will return a page of results containing
+  // at most this many items. If zero, the server will choose a
+  // reasonable page size.  Must never be negative.
+  int64 max_results = 3;
 }
 
 message GetServerSocketsResponse {
   // list of socket refs that the connection detail service knows about.  Sorted in
   // ascending socket_id order.
+  // Must contain at least 1 result, otherwise 'end' must be true.
   repeated SocketRef socket_ref = 1;
   // If set, indicates that the list of sockets is the final list.  Requesting
   // more sockets will only return more if they are created after this RPC
@@ -521,6 +550,11 @@ message GetSubchannelResponse {
 message GetSocketRequest {
   // socket_id is the identifier of the specific socket to get.
   int64 socket_id = 1;
+
+  // If true, the response will contain only high level information
+  // that is inexpensive to obtain. Fields thay may be omitted are
+  // documented.
+  bool summary = 2;
 }
 
 message GetSocketResponse {

@@ -80,7 +80,7 @@ def _unwrap_client_call_details(call_details, default_details):
     return method, timeout, metadata, credentials, wait_for_ready
 
 
-class _FailureOutcome(grpc.RpcError, grpc.Future, grpc.Call):
+class _FailureOutcome(grpc.RpcError, grpc.Future, grpc.Call):  # pylint: disable=too-many-ancestors
 
     def __init__(self, exception, traceback):
         super(_FailureOutcome, self).__init__()
@@ -126,7 +126,7 @@ class _FailureOutcome(grpc.RpcError, grpc.Future, grpc.Call):
     def traceback(self, ignored_timeout=None):
         return self._traceback
 
-    def add_callback(self, callback):
+    def add_callback(self, unused_callback):
         return False
 
     def add_done_callback(self, fn):
@@ -135,8 +135,11 @@ class _FailureOutcome(grpc.RpcError, grpc.Future, grpc.Call):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         raise self._exception
+
+    def next(self):
+        return self.__next__()
 
 
 class _UnaryOutcome(grpc.Call, grpc.Future):

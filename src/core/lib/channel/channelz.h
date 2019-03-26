@@ -59,6 +59,9 @@ namespace channelz {
 // add human readable names as in the channelz.proto
 typedef InlinedVector<intptr_t, 10> ChildRefsList;
 
+class SocketNode;
+typedef InlinedVector<SocketNode*, 10> ChildSocketsList;
+
 namespace testing {
 class CallCountingHelperPeer;
 class ChannelNodePeer;
@@ -177,11 +180,11 @@ class ChannelNode : public BaseNode {
   bool ChannelIsDestroyed() { return channel_ == nullptr; }
 
   // proxy methods to composed classes.
-  void AddTraceEvent(ChannelTrace::Severity severity, grpc_slice data) {
+  void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
     trace_.AddTraceEvent(severity, data);
   }
   void AddTraceEventWithReference(ChannelTrace::Severity severity,
-                                  grpc_slice data,
+                                  const grpc_slice& data,
                                   RefCountedPtr<BaseNode> referenced_channel) {
     trace_.AddTraceEventWithReference(severity, data,
                                       std::move(referenced_channel));
@@ -207,14 +210,15 @@ class ServerNode : public BaseNode {
 
   grpc_json* RenderJson() override;
 
-  char* RenderServerSockets(intptr_t start_socket_id);
+  char* RenderServerSockets(intptr_t start_socket_id,
+                            intptr_t pagination_limit);
 
   // proxy methods to composed classes.
-  void AddTraceEvent(ChannelTrace::Severity severity, grpc_slice data) {
+  void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
     trace_.AddTraceEvent(severity, data);
   }
   void AddTraceEventWithReference(ChannelTrace::Severity severity,
-                                  grpc_slice data,
+                                  const grpc_slice& data,
                                   RefCountedPtr<BaseNode> referenced_channel) {
     trace_.AddTraceEventWithReference(severity, data,
                                       std::move(referenced_channel));
@@ -250,6 +254,8 @@ class SocketNode : public BaseNode {
   void RecordKeepaliveSent() {
     gpr_atm_no_barrier_fetch_add(&keepalives_sent_, static_cast<gpr_atm>(1));
   }
+
+  const char* remote() { return remote_.get(); }
 
  private:
   gpr_atm streams_started_ = 0;

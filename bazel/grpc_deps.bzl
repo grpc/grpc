@@ -12,7 +12,7 @@ def grpc_deps():
     )
 
     native.bind(
-        name = "upblib",
+        name = "upb_lib",
         actual = "@upb//:upb",
     )
 
@@ -93,17 +93,17 @@ def grpc_deps():
 
     native.bind(
         name = "opencensus-trace",
-        actual = "@io_opencensus_cpp//opencensus/trace:trace"
+        actual = "@io_opencensus_cpp//opencensus/trace:trace",
     )
 
     native.bind(
         name = "opencensus-stats",
-        actual = "@io_opencensus_cpp//opencensus/stats:stats"
+        actual = "@io_opencensus_cpp//opencensus/stats:stats",
     )
 
     native.bind(
         name = "opencensus-stats-test",
-        actual = "@io_opencensus_cpp//opencensus/stats:test_utils"
+        actual = "@io_opencensus_cpp//opencensus/stats:test_utils",
     )
 
     if "boringssl" not in native.existing_rules():
@@ -124,8 +124,8 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            strip_prefix = "protobuf-48cb18e5c419ddd23d9badcfe4e9df7bde1979b2",
-            url = "https://github.com/google/protobuf/archive/48cb18e5c419ddd23d9badcfe4e9df7bde1979b2.tar.gz",
+            strip_prefix = "protobuf-582743bf40c5d3639a70f98f183914a2c0cd0680",
+            url = "https://github.com/google/protobuf/archive/582743bf40c5d3639a70f98f183914a2c0cd0680.tar.gz",
         )
 
     if "com_github_nanopb_nanopb" not in native.existing_rules():
@@ -147,16 +147,15 @@ def grpc_deps():
     if "com_github_gflags_gflags" not in native.existing_rules():
         http_archive(
             name = "com_github_gflags_gflags",
-            strip_prefix = "gflags-30dbc81fb5ffdc98ea9b14b1918bfe4e8779b26e",
-            url = "https://github.com/gflags/gflags/archive/30dbc81fb5ffdc98ea9b14b1918bfe4e8779b26e.tar.gz",
+            strip_prefix = "gflags-28f50e0fed19872e0fd50dd23ce2ee8cd759338e",
+            url = "https://github.com/gflags/gflags/archive/28f50e0fed19872e0fd50dd23ce2ee8cd759338e.tar.gz",
         )
 
     if "com_github_google_benchmark" not in native.existing_rules():
         http_archive(
             name = "com_github_google_benchmark",
-            build_file = "@com_github_grpc_grpc//third_party:benchmark.BUILD",
-            strip_prefix = "benchmark-9913418d323e64a0111ca0da81388260c2bbe1e9",
-            url = "https://github.com/google/benchmark/archive/9913418d323e64a0111ca0da81388260c2bbe1e9.tar.gz",
+            strip_prefix = "benchmark-e776aa0275e293707b6a0901e0e8d8a8a3679508",
+            url = "https://github.com/google/benchmark/archive/e776aa0275e293707b6a0901e0e8d8a8a3679508.tar.gz",
         )
 
     if "com_github_cares_cares" not in native.existing_rules():
@@ -170,35 +169,42 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            strip_prefix = "abseil-cpp-cd95e71df6eaf8f2a282b1da556c2cf1c9b09207",
-            url = "https://github.com/abseil/abseil-cpp/archive/cd95e71df6eaf8f2a282b1da556c2cf1c9b09207.tar.gz",
+            strip_prefix = "abseil-cpp-308ce31528a7edfa39f5f6d36142278a0ae1bf45",
+            url = "https://github.com/abseil/abseil-cpp/archive/308ce31528a7edfa39f5f6d36142278a0ae1bf45.tar.gz",
         )
 
     if "com_github_bazelbuild_bazeltoolchains" not in native.existing_rules():
         http_archive(
             name = "com_github_bazelbuild_bazeltoolchains",
-            strip_prefix = "bazel-toolchains-280edaa6f93623074513d2b426068de42e62ea4d",
+            strip_prefix = "bazel-toolchains-37419a124bdb9af2fec5b99a973d359b6b899b61",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/280edaa6f93623074513d2b426068de42e62ea4d.tar.gz",
-                "https://github.com/bazelbuild/bazel-toolchains/archive/280edaa6f93623074513d2b426068de42e62ea4d.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/37419a124bdb9af2fec5b99a973d359b6b899b61.tar.gz",
+                "https://github.com/bazelbuild/bazel-toolchains/archive/37419a124bdb9af2fec5b99a973d359b6b899b61.tar.gz",
             ],
-            sha256 = "50c9df51f80cdf9ff8f2bc27620c155526b9ba67be95e8a686f32ff8898a06e2",
+            sha256 = "ee854b5de299138c1f4a2edb5573d22b21d975acfc7aa938f36d30b49ef97498",
+        )
+
+    if "bazel_skylib" not in native.existing_rules():
+        http_archive(
+            name = "bazel_skylib",
+            sha256 = "ba5d15ca230efca96320085d8e4d58da826d1f81b444ef8afccd8b23e0799b52",
+            strip_prefix = "bazel-skylib-f83cb8dd6f5658bc574ccd873e25197055265d1c",
+            url = "https://github.com/bazelbuild/bazel-skylib/archive/f83cb8dd6f5658bc574ccd873e25197055265d1c.tar.gz",
         )
 
     if "io_opencensus_cpp" not in native.existing_rules():
-      http_archive(
+        http_archive(
             name = "io_opencensus_cpp",
-            strip_prefix = "opencensus-cpp-fdf0f308b1631bb4a942e32ba5d22536a6170274",
-            url = "https://github.com/census-instrumentation/opencensus-cpp/archive/fdf0f308b1631bb4a942e32ba5d22536a6170274.tar.gz",
+            strip_prefix = "opencensus-cpp-9b1e354e89bf3d92aedc00af45b418ce870f3d77",
+            url = "https://github.com/census-instrumentation/opencensus-cpp/archive/9b1e354e89bf3d92aedc00af45b418ce870f3d77.tar.gz",
         )
 
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            strip_prefix = "upb-9ce4a77f61c134bbed28bfd5be5cd7dc0e80f5e3",
-            url = "https://github.com/google/upb/archive/9ce4a77f61c134bbed28bfd5be5cd7dc0e80f5e3.tar.gz",
+            strip_prefix = "upb-ed9faae0993704b033c594b072d65e1bf19207fa",
+            url = "https://github.com/google/upb/archive/ed9faae0993704b033c594b072d65e1bf19207fa.tar.gz",
         )
-
 
 # TODO: move some dependencies from "grpc_deps" here?
 def grpc_test_only_deps():

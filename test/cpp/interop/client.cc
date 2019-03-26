@@ -38,7 +38,7 @@ DEFINE_string(custom_credentials_type, "", "User provided credentials type.");
 DEFINE_bool(use_test_ca, false, "False to use SSL roots for google");
 DEFINE_int32(server_port, 0, "Server port.");
 DEFINE_string(server_host, "localhost", "Server host to connect to");
-DEFINE_string(server_host_override, "foo.test.google.fr",
+DEFINE_string(server_host_override, "",
               "Override the server host which is sent in HTTP header");
 DEFINE_string(
     test_case, "large_unary",
@@ -54,6 +54,7 @@ DEFINE_string(
     "custom_metadata: server will echo custom metadata;\n"
     "empty_stream : bi-di stream with no request/response;\n"
     "empty_unary : empty (zero bytes) request and response;\n"
+    "google_default_credentials: large unary using GDC;\n"
     "half_duplex : half-duplex streaming;\n"
     "jwt_token_creds: large_unary with JWT token auth;\n"
     "large_unary : single request and (large) response;\n"
@@ -91,17 +92,101 @@ DEFINE_int32(soak_iterations, 1000,
 DEFINE_int32(iteration_interval, 10,
              "The interval in seconds between rpcs. This is used by "
              "long_connection test");
+DEFINE_string(additional_metadata, "",
+              "Additional metadata to send in each request, as a "
+              "semicolon-separated list of key:value pairs.");
 
 using grpc::testing::CreateChannelForTestCase;
 using grpc::testing::GetServiceAccountJsonKey;
 using grpc::testing::UpdateActions;
 
+namespace {
+
+// Parse the contents of FLAGS_additional_metadata into a map. Allow
+// alphanumeric characters and dashes in keys, and any character but semicolons
+// in values. Convert keys to lowercase. On failure, log an error and return
+// false.
+bool ParseAdditionalMetadataFlag(
+    const grpc::string& flag,
+    std::multimap<grpc::string, grpc::string>* additional_metadata) {
+  size_t start_pos = 0;
+  while (start_pos < flag.length()) {
+    size_t colon_pos = flag.find(':', start_pos);
+    if (colon_pos == grpc::string::npos) {
+      gpr_log(GPR_ERROR,
+              "Couldn't parse metadata flag: extra characters at end of flag");
+      return false;
+    }
+    size_t semicolon_pos = flag.find(';', colon_pos);
+
+    grpc::string key = flag.substr(start_pos, colon_pos - start_pos);
+    grpc::string value =
+        flag.substr(colon_pos + 1, semicolon_pos - colon_pos - 1);
+
+    constexpr char alphanum_and_hyphen[] =
+        "-0123456789"
+        "abcdefghijklmnopqrstuvwxyz"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    if (key.find_first_not_of(alphanum_and_hyphen) != grpc::string::npos) {
+      gpr_log(GPR_ERROR,
+              "Couldn't parse metadata flag: key contains characters other "
+              "than alphanumeric and hyphens: %s",
+              key.c_str());
+      return false;
+    }
+
+    // Convert to lowercase.
+    for (char& c : key) {
+      if (c >= 'A' && c <= 'Z') {
+        c += ('a' - 'A');
+      }
+    }
+
+    gpr_log(GPR_INFO, "Adding additional metadata with key %s and value %s",
+            key.c_str(), value.c_str());
+    additional_metadata->insert({key, value});
+
+    if (semicolon_pos == grpc::string::npos) {
+      break;
+    } else {
+      start_pos = semicolon_pos + 1;
+    }
+  }
+
+  return true;
+}
+
+}  // namespace
+
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   gpr_log(GPR_INFO, "Testing these cases: %s", FLAGS_test_case.c_str());
   int ret = 0;
-  grpc::testing::ChannelCreationFunc channel_creation_func =
-      std::bind(&CreateChannelForTestCase, FLAGS_test_case);
+
+  grpc::testing::ChannelCreationFunc channel_creation_func;
+  grpc::string test_case = FLAGS_test_case;
+  if (FLAGS_additional_metadata == "") {
+    channel_creation_func = [test_case]() {
+      return CreateChannelForTestCase(test_case);
+    };
+  } else {
+    std::multimap<grpc::string, grpc::string> additional_metadata;
+    if (!ParseAdditionalMetadataFlag(FLAGS_additional_metadata,
+                                     &additional_metadata)) {
+      return 1;
+    }
+
+    channel_creation_func = [test_case, additional_metadata]() {
+      std::vector<std::unique_ptr<
+          grpc::experimental::ClientInterceptorFactoryInterface>>
+          factories;
+      factories.emplace_back(
+          new grpc::testing::AdditionalMetadataInterceptorFactory(
+              additional_metadata));
+      return CreateChannelForTestCase(test_case, std::move(factories));
+    };
+  }
+
   grpc::testing::InteropClient client(channel_creation_func, true,
                                       FLAGS_do_not_abort_on_transient_failures);
 
@@ -150,6 +235,11 @@ int main(int argc, char** argv) {
     actions["per_rpc_creds"] =
         std::bind(&grpc::testing::InteropClient::DoPerRpcCreds, &client,
                   GetServiceAccountJsonKey());
+  }
+  if (FLAGS_custom_credentials_type == "google_default_credentials") {
+    actions["google_default_credentials"] =
+        std::bind(&grpc::testing::InteropClient::DoGoogleDefaultCredentials,
+                  &client, FLAGS_default_service_account);
   }
   actions["status_code_and_message"] =
       std::bind(&grpc::testing::InteropClient::DoStatusWithMessage, &client);

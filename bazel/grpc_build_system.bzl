@@ -23,14 +23,22 @@
 # each change must be ported from one to the other.
 #
 
+load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+
 # The set of pollers to test against if a test exercises polling
-POLLERS = ["epollex", "epoll1", "poll", "poll-cv"]
+POLLERS = ["epollex", "epoll1", "poll"]
 
 def if_not_windows(a):
     return select({
         "//:windows": [],
         "//:windows_msvc": [],
         "//conditions:default": a,
+    })
+
+def if_mac(a):
+    return select({
+        "//:mac_x86_64": a,
+        "//conditions:default": [],
     })
 
 def _get_external_deps(external_deps):
@@ -71,10 +79,16 @@ def grpc_cc_library(
         testonly = False,
         visibility = None,
         alwayslink = 0,
-        data = []):
+        data = [],
+        use_cfstream = False):
     copts = []
+    if use_cfstream:
+        copts = if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
-        copts = if_not_windows(["-std=c99"])
+        copts = copts + if_not_windows(["-std=c99"])
+    linkopts = if_not_windows(["-pthread"])
+    if use_cfstream:
+        linkopts = linkopts + if_mac(["-framework CoreFoundation"])
     native.cc_library(
         name = name,
         srcs = srcs,
@@ -96,9 +110,10 @@ def grpc_cc_library(
         copts = copts,
         visibility = visibility,
         testonly = testonly,
-        linkopts = if_not_windows(["-pthread"]),
+        linkopts = linkopts,
         includes = [
             "include",
+            "src/core/ext/upb-generated",
         ],
         alwayslink = alwayslink,
         data = data,
@@ -110,8 +125,6 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
         srcs = srcs,
         deps = deps,
     )
-
-load("//:bazel/cc_grpc_library.bzl", "cc_grpc_library")
 
 def grpc_proto_library(
         name,
@@ -131,10 +144,10 @@ def grpc_proto_library(
         generate_mocks = generate_mocks,
     )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = "moderate", tags = [], exec_compatible_with = []):
-    copts = []
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = []):
+    copts = if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
-        copts = if_not_windows(["-std=c99"])
+        copts = copts + if_not_windows(["-std=c99"])
     args = {
         "name": name,
         "srcs": srcs,

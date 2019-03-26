@@ -17,6 +17,7 @@
 # ./tools/run_tests/run_tests.py -l objc
 
 set -ev
+set -o pipefail
 
 cd "$(dirname "$0")"
 

@@ -21,6 +21,7 @@
 
 #include <grpcpp/impl/codegen/async_stream.h>
 #include <grpcpp/impl/codegen/byte_buffer.h>
+#include <grpcpp/impl/codegen/server_callback.h>
 
 struct grpc_server;
 
@@ -40,6 +41,12 @@ class GenericServerContext final : public ServerContext {
  private:
   friend class Server;
   friend class ServerInterface;
+
+  void Clear() {
+    method_.clear();
+    host_.clear();
+    ServerContext::Clear();
+  }
 
   grpc::string method_;
   grpc::string host_;
@@ -76,6 +83,50 @@ class AsyncGenericService final {
   Server* server_;
 };
 
+namespace experimental {
+
+class ServerGenericBidiReactor
+    : public ServerBidiReactor<ByteBuffer, ByteBuffer> {
+ public:
+  void OnStarted(ServerContext* ctx) final {
+    OnStarted(static_cast<GenericServerContext*>(ctx));
+  }
+  virtual void OnStarted(GenericServerContext* ctx) {}
+};
+
+}  // namespace experimental
+
+namespace internal {
+class UnimplementedGenericBidiReactor
+    : public experimental::ServerGenericBidiReactor {
+ public:
+  void OnDone() override { delete this; }
+  void OnStarted(GenericServerContext*) override {
+    this->Finish(Status(StatusCode::UNIMPLEMENTED, ""));
+  }
+};
+}  // namespace internal
+
+namespace experimental {
+class CallbackGenericService {
+ public:
+  CallbackGenericService() {}
+  virtual ~CallbackGenericService() {}
+  virtual ServerGenericBidiReactor* CreateReactor() {
+    return new internal::UnimplementedGenericBidiReactor;
+  }
+
+ private:
+  friend class ::grpc::Server;
+
+  internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>* Handler() {
+    return new internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>(
+        [this] { return CreateReactor(); });
+  }
+
+  Server* server_{nullptr};
+};
+}  // namespace experimental
 }  // namespace grpc
 
 #endif  // GRPCPP_IMPL_CODEGEN_ASYNC_GENERIC_SERVICE_H

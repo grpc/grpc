@@ -73,7 +73,7 @@ class CallbackUnaryCallImpl {
         CallbackWithStatusTag(call.call(), on_completion, ops);
 
     // TODO(vjpai): Unify code with sync API as much as possible
-    Status s = ops->SendMessage(*request);
+    Status s = ops->SendMessagePtr(request);
     if (!s.ok()) {
       tag->force_run(s);
       return;
@@ -112,6 +112,8 @@ class ClientCallbackReaderWriter {
   virtual void Write(const Request* req, WriteOptions options) = 0;
   virtual void WritesDone() = 0;
   virtual void Read(Response* resp) = 0;
+  virtual void AddHold(int holds) = 0;
+  virtual void RemoveHold() = 0;
 
  protected:
   void BindReactor(ClientBidiReactor<Request, Response>* reactor) {
@@ -125,6 +127,8 @@ class ClientCallbackReader {
   virtual ~ClientCallbackReader() {}
   virtual void StartCall() = 0;
   virtual void Read(Response* resp) = 0;
+  virtual void AddHold(int holds) = 0;
+  virtual void RemoveHold() = 0;
 
  protected:
   void BindReactor(ClientReadReactor<Response>* reactor) {
@@ -143,6 +147,9 @@ class ClientCallbackWriter {
     Write(req, options.set_last_message());
   }
   virtual void WritesDone() = 0;
+
+  virtual void AddHold(int holds) = 0;
+  virtual void RemoveHold() = 0;
 
  protected:
   void BindReactor(ClientWriteReactor<Request>* reactor) {
@@ -174,6 +181,29 @@ class ClientBidiReactor {
   }
   void StartWritesDone() { stream_->WritesDone(); }
 
+  /// Holds are needed if (and only if) this stream has operations that take
+  /// place on it after StartCall but from outside one of the reactions
+  /// (OnReadDone, etc). This is _not_ a common use of the streaming API.
+  ///
+  /// Holds must be added before calling StartCall. If a stream still has a hold
+  /// in place, its resources will not be destroyed even if the status has
+  /// already come in from the wire and there are currently no active callbacks
+  /// outstanding. Similarly, the stream will not call OnDone if there are still
+  /// holds on it.
+  ///
+  /// For example, if a StartRead or StartWrite operation is going to be
+  /// initiated from elsewhere in the application, the application should call
+  /// AddHold or AddMultipleHolds before StartCall.  If there is going to be,
+  /// for example, a read-flow and a write-flow taking place outside the
+  /// reactions, then call AddMultipleHolds(2) before StartCall. When the
+  /// application knows that it won't issue any more Read operations (such as
+  /// when a read comes back as not ok), it should issue a RemoveHold(). It
+  /// should also call RemoveHold() again after it does StartWriteLast or
+  /// StartWritesDone that indicates that there will be no more Write ops.
+  void AddHold() { AddMultipleHolds(1); }
+  void AddMultipleHolds(int holds) { stream_->AddHold(holds); }
+  void RemoveHold() { stream_->RemoveHold(); }
+
  private:
   friend class ClientCallbackReaderWriter<Request, Response>;
   void BindStream(ClientCallbackReaderWriter<Request, Response>* stream) {
@@ -192,6 +222,10 @@ class ClientReadReactor {
 
   void StartCall() { reader_->StartCall(); }
   void StartRead(Response* resp) { reader_->Read(resp); }
+
+  void AddHold() { AddMultipleHolds(1); }
+  void AddMultipleHolds(int holds) { reader_->AddHold(holds); }
+  void RemoveHold() { reader_->RemoveHold(); }
 
  private:
   friend class ClientCallbackReader<Response>;
@@ -217,6 +251,10 @@ class ClientWriteReactor {
     StartWrite(req, std::move(options.set_last_message()));
   }
   void StartWritesDone() { writer_->WritesDone(); }
+
+  void AddHold() { AddMultipleHolds(1); }
+  void AddMultipleHolds(int holds) { writer_->AddHold(holds); }
+  void RemoveHold() { writer_->RemoveHold(); }
 
  private:
   friend class ClientCallbackWriter<Request>;
@@ -255,10 +293,12 @@ class ClientCallbackReaderWriterImpl
 
   void MaybeFinish() {
     if (--callbacks_outstanding_ == 0) {
-      reactor_->OnDone(finish_status_);
+      Status s = std::move(finish_status_);
+      auto* reactor = reactor_;
       auto* call = call_.call();
       this->~ClientCallbackReaderWriterImpl();
       g_core_codegen_interface->grpc_call_unref(call);
+      reactor->OnDone(s);
     }
   }
 
@@ -266,8 +306,8 @@ class ClientCallbackReaderWriterImpl
     // This call initiates two batches, plus any backlog, each with a callback
     // 1. Send initial metadata (unless corked) + recv initial metadata
     // 2. Any read backlog
-    // 3. Recv trailing metadata, on_completion callback
-    // 4. Any write backlog
+    // 3. Any write backlog
+    // 4. Recv trailing metadata, on_completion callback
     started_ = true;
 
     start_tag_.Set(call_.call(),
@@ -305,12 +345,6 @@ class ClientCallbackReaderWriterImpl
       call_.PerformOps(&read_ops_);
     }
 
-    finish_tag_.Set(call_.call(), [this](bool ok) { MaybeFinish(); },
-                    &finish_ops_);
-    finish_ops_.ClientRecvStatus(context_, &finish_status_);
-    finish_ops_.set_core_cq_tag(&finish_tag_);
-    call_.PerformOps(&finish_ops_);
-
     if (write_ops_at_start_) {
       call_.PerformOps(&write_ops_);
     }
@@ -318,6 +352,12 @@ class ClientCallbackReaderWriterImpl
     if (writes_done_ops_at_start_) {
       call_.PerformOps(&writes_done_ops_);
     }
+
+    finish_tag_.Set(call_.call(), [this](bool ok) { MaybeFinish(); },
+                    &finish_ops_);
+    finish_ops_.ClientRecvStatus(context_, &finish_status_);
+    finish_ops_.set_core_cq_tag(&finish_tag_);
+    call_.PerformOps(&finish_ops_);
   }
 
   void Read(Response* msg) override {
@@ -336,13 +376,13 @@ class ClientCallbackReaderWriterImpl
                                      context_->initial_metadata_flags());
       start_corked_ = false;
     }
-    // TODO(vjpai): don't assert
-    GPR_CODEGEN_ASSERT(write_ops_.SendMessage(*msg).ok());
 
     if (options.is_last_message()) {
       options.set_buffer_hint();
       write_ops_.ClientSendClose();
     }
+    // TODO(vjpai): don't assert
+    GPR_CODEGEN_ASSERT(write_ops_.SendMessagePtr(msg, options).ok());
     callbacks_outstanding_++;
     if (started_) {
       call_.PerformOps(&write_ops_);
@@ -371,6 +411,9 @@ class ClientCallbackReaderWriterImpl
       writes_done_ops_at_start_ = true;
     }
   }
+
+  virtual void AddHold(int holds) override { callbacks_outstanding_ += holds; }
+  virtual void RemoveHold() override { MaybeFinish(); }
 
  private:
   friend class ClientCallbackReaderWriterFactory<Request, Response>;
@@ -410,7 +453,7 @@ class ClientCallbackReaderWriterImpl
   CallbackWithSuccessTag read_tag_;
   bool read_ops_at_start_{false};
 
-  // Minimum of 2 outstanding callbacks to pre-register for start and finish
+  // Minimum of 2 callbacks to pre-register for start and finish
   std::atomic_int callbacks_outstanding_{2};
   bool started_{false};
 };
@@ -450,10 +493,12 @@ class ClientCallbackReaderImpl
 
   void MaybeFinish() {
     if (--callbacks_outstanding_ == 0) {
-      reactor_->OnDone(finish_status_);
+      Status s = std::move(finish_status_);
+      auto* reactor = reactor_;
       auto* call = call_.call();
       this->~ClientCallbackReaderImpl();
       g_core_codegen_interface->grpc_call_unref(call);
+      reactor->OnDone(s);
     }
   }
 
@@ -505,6 +550,9 @@ class ClientCallbackReaderImpl
     }
   }
 
+  virtual void AddHold(int holds) override { callbacks_outstanding_ += holds; }
+  virtual void RemoveHold() override { MaybeFinish(); }
+
  private:
   friend class ClientCallbackReaderFactory<Response>;
 
@@ -515,7 +563,7 @@ class ClientCallbackReaderImpl
       : context_(context), call_(call), reactor_(reactor) {
     this->BindReactor(reactor);
     // TODO(vjpai): don't assert
-    GPR_CODEGEN_ASSERT(start_ops_.SendMessage(*request).ok());
+    GPR_CODEGEN_ASSERT(start_ops_.SendMessagePtr(request).ok());
     start_ops_.ClientSendClose();
   }
 
@@ -536,7 +584,7 @@ class ClientCallbackReaderImpl
   CallbackWithSuccessTag read_tag_;
   bool read_ops_at_start_{false};
 
-  // Minimum of 2 outstanding callbacks to pre-register for start and finish
+  // Minimum of 2 callbacks to pre-register for start and finish
   std::atomic_int callbacks_outstanding_{2};
   bool started_{false};
 };
@@ -576,18 +624,20 @@ class ClientCallbackWriterImpl
 
   void MaybeFinish() {
     if (--callbacks_outstanding_ == 0) {
-      reactor_->OnDone(finish_status_);
+      Status s = std::move(finish_status_);
+      auto* reactor = reactor_;
       auto* call = call_.call();
       this->~ClientCallbackWriterImpl();
       g_core_codegen_interface->grpc_call_unref(call);
+      reactor->OnDone(s);
     }
   }
 
   void StartCall() override {
     // This call initiates two batches, plus any backlog, each with a callback
     // 1. Send initial metadata (unless corked) + recv initial metadata
-    // 2. Recv trailing metadata, on_completion callback
-    // 3. Any backlog
+    // 2. Any backlog
+    // 3. Recv trailing metadata, on_completion callback
     started_ = true;
 
     start_tag_.Set(call_.call(),
@@ -614,12 +664,6 @@ class ClientCallbackWriterImpl
                    &write_ops_);
     write_ops_.set_core_cq_tag(&write_tag_);
 
-    finish_tag_.Set(call_.call(), [this](bool ok) { MaybeFinish(); },
-                    &finish_ops_);
-    finish_ops_.ClientRecvStatus(context_, &finish_status_);
-    finish_ops_.set_core_cq_tag(&finish_tag_);
-    call_.PerformOps(&finish_ops_);
-
     if (write_ops_at_start_) {
       call_.PerformOps(&write_ops_);
     }
@@ -627,6 +671,12 @@ class ClientCallbackWriterImpl
     if (writes_done_ops_at_start_) {
       call_.PerformOps(&writes_done_ops_);
     }
+
+    finish_tag_.Set(call_.call(), [this](bool ok) { MaybeFinish(); },
+                    &finish_ops_);
+    finish_ops_.ClientRecvStatus(context_, &finish_status_);
+    finish_ops_.set_core_cq_tag(&finish_tag_);
+    call_.PerformOps(&finish_ops_);
   }
 
   void Write(const Request* msg, WriteOptions options) override {
@@ -635,13 +685,13 @@ class ClientCallbackWriterImpl
                                      context_->initial_metadata_flags());
       start_corked_ = false;
     }
-    // TODO(vjpai): don't assert
-    GPR_CODEGEN_ASSERT(write_ops_.SendMessage(*msg).ok());
 
     if (options.is_last_message()) {
       options.set_buffer_hint();
       write_ops_.ClientSendClose();
     }
+    // TODO(vjpai): don't assert
+    GPR_CODEGEN_ASSERT(write_ops_.SendMessagePtr(msg, options).ok());
     callbacks_outstanding_++;
     if (started_) {
       call_.PerformOps(&write_ops_);
@@ -670,6 +720,9 @@ class ClientCallbackWriterImpl
       writes_done_ops_at_start_ = true;
     }
   }
+
+  virtual void AddHold(int holds) override { callbacks_outstanding_ += holds; }
+  virtual void RemoveHold() override { MaybeFinish(); }
 
  private:
   friend class ClientCallbackWriterFactory<Request>;
@@ -708,7 +761,7 @@ class ClientCallbackWriterImpl
   CallbackWithSuccessTag writes_done_tag_;
   bool writes_done_ops_at_start_{false};
 
-  // Minimum of 2 outstanding callbacks to pre-register for start and finish
+  // Minimum of 2 callbacks to pre-register for start and finish
   std::atomic_int callbacks_outstanding_{2};
   bool started_{false};
 };

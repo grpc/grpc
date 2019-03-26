@@ -19,6 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/parse_address.h"
+#include "src/core/lib/iomgr/grpc_if_nametoindex.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 
@@ -34,6 +35,11 @@
 
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+
+#ifdef GRPC_POSIX_SOCKET
+#include <errno.h>
+#include <net/if.h>
+#endif
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
@@ -69,7 +75,12 @@ bool grpc_parse_ipv4_hostport(const char* hostport, grpc_resolved_address* addr,
   // Split host and port.
   char* host;
   char* port;
-  if (!gpr_split_host_port(hostport, &host, &port)) return false;
+  if (!gpr_split_host_port(hostport, &host, &port)) {
+    if (log_errors) {
+      gpr_log(GPR_ERROR, "Failed gpr_split_host_port(%s, ...)", hostport);
+    }
+    return false;
+  }
   // Parse IP address.
   memset(addr, 0, sizeof(*addr));
   addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
@@ -115,7 +126,12 @@ bool grpc_parse_ipv6_hostport(const char* hostport, grpc_resolved_address* addr,
   // Split host and port.
   char* host;
   char* port;
-  if (!gpr_split_host_port(hostport, &host, &port)) return false;
+  if (!gpr_split_host_port(hostport, &host, &port)) {
+    if (log_errors) {
+      gpr_log(GPR_ERROR, "Failed gpr_split_host_port(%s, ...)", hostport);
+    }
+    return false;
+  }
   // Parse IP address.
   memset(addr, 0, sizeof(*addr));
   addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
@@ -150,10 +166,13 @@ bool grpc_parse_ipv6_hostport(const char* hostport, grpc_resolved_address* addr,
     if (gpr_parse_bytes_to_uint32(host_end + 1,
                                   strlen(host) - host_without_scope_len - 1,
                                   &sin6_scope_id) == 0) {
-      if (log_errors) {
-        gpr_log(GPR_ERROR, "invalid ipv6 scope id: '%s'", host_end + 1);
+      if ((sin6_scope_id = grpc_if_nametoindex(host_end + 1)) == 0) {
+        gpr_log(GPR_ERROR,
+                "Invalid interface name: '%s'. "
+                "Non-numeric and failed if_nametoindex.",
+                host_end + 1);
+        goto done;
       }
-      goto done;
     }
     // Handle "sin6_scope_id" being type "u_long". See grpc issue #10027.
     in6->sin6_scope_id = sin6_scope_id;

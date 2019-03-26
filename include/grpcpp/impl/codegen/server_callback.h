@@ -69,6 +69,40 @@ class ServerCallbackRpcController {
   // Allow the method handler to push out the initial metadata before
   // the response and status are ready
   virtual void SendInitialMetadata(std::function<void(bool)>) = 0;
+
+  /// SetCancelCallback passes in a callback to be called when the RPC is
+  /// canceled for whatever reason (streaming calls have OnCancel instead). This
+  /// is an advanced and uncommon use with several important restrictions. This
+  /// function may not be called more than once on the same RPC.
+  ///
+  /// If code calls SetCancelCallback on an RPC, it must also call
+  /// ClearCancelCallback before calling Finish on the RPC controller. That
+  /// method makes sure that no cancellation callback is executed for this RPC
+  /// beyond the point of its return. ClearCancelCallback may be called even if
+  /// SetCancelCallback was not called for this RPC, and it may be called
+  /// multiple times. It _must_ be called if SetCancelCallback was called for
+  /// this RPC.
+  ///
+  /// The callback should generally be lightweight and nonblocking and primarily
+  /// concerned with clearing application state related to the RPC or causing
+  /// operations (such as cancellations) to happen on dependent RPCs.
+  ///
+  /// If the RPC is already canceled at the time that SetCancelCallback is
+  /// called, the callback is invoked immediately.
+  ///
+  /// The cancellation callback may be executed concurrently with the method
+  /// handler that invokes it but will certainly not issue or execute after the
+  /// return of ClearCancelCallback. If ClearCancelCallback is invoked while the
+  /// callback is already executing, the callback will complete its execution
+  /// before ClearCancelCallback takes effect.
+  ///
+  /// To preserve the orderings described above, the callback may be called
+  /// under a lock that is also used for ClearCancelCallback and
+  /// ServerContext::IsCancelled, so the callback CANNOT call either of those
+  /// operations on this RPC or any other function that causes those operations
+  /// to be called before the callback completes.
+  virtual void SetCancelCallback(std::function<void()> callback) = 0;
+  virtual void ClearCancelCallback() = 0;
 };
 
 // NOTE: The actual streaming object classes are provided
@@ -102,7 +136,7 @@ class ServerCallbackWriter {
     // Default implementation that can/should be overridden
     Write(msg, std::move(options));
     Finish(std::move(s));
-  };
+  }
 
  protected:
   template <class Request>
@@ -125,7 +159,7 @@ class ServerCallbackReaderWriter {
     // Default implementation that can/should be overridden
     Write(msg, std::move(options));
     Finish(std::move(s));
-  };
+  }
 
  protected:
   void BindReactor(ServerBidiReactor<Request, Response>* reactor) {
@@ -320,7 +354,7 @@ class CallbackUnaryHandler : public MethodHandler {
       // The response is dropped if the status is not OK.
       if (s.ok()) {
         finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_,
-                                     finish_ops_.SendMessage(resp_));
+                                     finish_ops_.SendMessagePtr(&resp_));
       } else {
         finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
       }
@@ -348,6 +382,15 @@ class CallbackUnaryHandler : public MethodHandler {
       meta_ops_.set_core_cq_tag(&meta_tag_);
       call_.PerformOps(&meta_ops_);
     }
+
+    // Neither SetCancelCallback nor ClearCancelCallback should affect the
+    // callbacks_outstanding_ count since they are paired and both must precede
+    // the invocation of Finish (if they are used at all)
+    void SetCancelCallback(std::function<void()> callback) override {
+      ctx_->SetCancelCallback(std::move(callback));
+    }
+
+    void ClearCancelCallback() override { ctx_->ClearCancelCallback(); }
 
    private:
     friend class CallbackUnaryHandler<RequestType, ResponseType>;
@@ -449,7 +492,7 @@ class CallbackClientStreamingHandler : public MethodHandler {
       // The response is dropped if the status is not OK.
       if (s.ok()) {
         finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_,
-                                     finish_ops_.SendMessage(resp_));
+                                     finish_ops_.SendMessagePtr(&resp_));
       } else {
         finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
       }
@@ -642,7 +685,7 @@ class CallbackServerStreamingHandler : public MethodHandler {
         ctx_->sent_initial_metadata_ = true;
       }
       // TODO(vjpai): don't assert
-      GPR_CODEGEN_ASSERT(write_ops_.SendMessage(*resp, options).ok());
+      GPR_CODEGEN_ASSERT(write_ops_.SendMessagePtr(resp, options).ok());
       call_.PerformOps(&write_ops_);
     }
 
@@ -652,7 +695,7 @@ class CallbackServerStreamingHandler : public MethodHandler {
       // Don't send any message if the status is bad
       if (s.ok()) {
         // TODO(vjpai): don't assert
-        GPR_CODEGEN_ASSERT(finish_ops_.SendMessage(*resp, options).ok());
+        GPR_CODEGEN_ASSERT(finish_ops_.SendMessagePtr(resp, options).ok());
       }
       Finish(std::move(s));
     }
@@ -804,7 +847,7 @@ class CallbackBidiHandler : public MethodHandler {
         ctx_->sent_initial_metadata_ = true;
       }
       // TODO(vjpai): don't assert
-      GPR_CODEGEN_ASSERT(write_ops_.SendMessage(*resp, options).ok());
+      GPR_CODEGEN_ASSERT(write_ops_.SendMessagePtr(resp, options).ok());
       call_.PerformOps(&write_ops_);
     }
 
@@ -813,7 +856,7 @@ class CallbackBidiHandler : public MethodHandler {
       // Don't send any message if the status is bad
       if (s.ok()) {
         // TODO(vjpai): don't assert
-        GPR_CODEGEN_ASSERT(finish_ops_.SendMessage(*resp, options).ok());
+        GPR_CODEGEN_ASSERT(finish_ops_.SendMessagePtr(resp, options).ok());
       }
       Finish(std::move(s));
     }

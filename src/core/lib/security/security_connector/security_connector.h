@@ -26,6 +26,7 @@
 #include <grpc/grpc_security.h>
 
 #include "src/core/lib/channel/handshaker.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/tcp_server.h"
@@ -34,8 +35,6 @@
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount;
 
-/* --- status enum. --- */
-
 typedef enum { GRPC_SECURITY_OK = 0, GRPC_SECURITY_ERROR } grpc_security_status;
 
 /* --- security_connector object. ---
@@ -43,54 +42,34 @@ typedef enum { GRPC_SECURITY_OK = 0, GRPC_SECURITY_ERROR } grpc_security_status;
     A security connector object represents away to configure the underlying
     transport security mechanism and check the resulting trusted peer.  */
 
-typedef struct grpc_security_connector grpc_security_connector;
-
 #define GRPC_ARG_SECURITY_CONNECTOR "grpc.security_connector"
 
-typedef struct {
-  void (*destroy)(grpc_security_connector* sc);
-  void (*check_peer)(grpc_security_connector* sc, tsi_peer peer,
-                     grpc_auth_context** auth_context,
-                     grpc_closure* on_peer_checked);
-  int (*cmp)(grpc_security_connector* sc, grpc_security_connector* other);
-} grpc_security_connector_vtable;
+class grpc_security_connector
+    : public grpc_core::RefCounted<grpc_security_connector> {
+ public:
+  explicit grpc_security_connector(const char* url_scheme)
+      : grpc_core::RefCounted<grpc_security_connector>(
+            &grpc_trace_security_connector_refcount),
+        url_scheme_(url_scheme) {}
+  virtual ~grpc_security_connector() = default;
 
-struct grpc_security_connector {
-  const grpc_security_connector_vtable* vtable;
-  gpr_refcount refcount;
-  const char* url_scheme;
+  /* Check the peer. Callee takes ownership of the peer object.
+     When done, sets *auth_context and invokes on_peer_checked. */
+  virtual void check_peer(
+      tsi_peer peer, grpc_endpoint* ep,
+      grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
+      grpc_closure* on_peer_checked) GRPC_ABSTRACT;
+
+  /* Compares two security connectors. */
+  virtual int cmp(const grpc_security_connector* other) const GRPC_ABSTRACT;
+
+  const char* url_scheme() const { return url_scheme_; }
+
+  GRPC_ABSTRACT_BASE_CLASS
+
+ private:
+  const char* url_scheme_;
 };
-
-/* Refcounting. */
-#ifndef NDEBUG
-#define GRPC_SECURITY_CONNECTOR_REF(p, r) \
-  grpc_security_connector_ref((p), __FILE__, __LINE__, (r))
-#define GRPC_SECURITY_CONNECTOR_UNREF(p, r) \
-  grpc_security_connector_unref((p), __FILE__, __LINE__, (r))
-grpc_security_connector* grpc_security_connector_ref(
-    grpc_security_connector* policy, const char* file, int line,
-    const char* reason);
-void grpc_security_connector_unref(grpc_security_connector* policy,
-                                   const char* file, int line,
-                                   const char* reason);
-#else
-#define GRPC_SECURITY_CONNECTOR_REF(p, r) grpc_security_connector_ref((p))
-#define GRPC_SECURITY_CONNECTOR_UNREF(p, r) grpc_security_connector_unref((p))
-grpc_security_connector* grpc_security_connector_ref(
-    grpc_security_connector* policy);
-void grpc_security_connector_unref(grpc_security_connector* policy);
-#endif
-
-/* Check the peer. Callee takes ownership of the peer object.
-   When done, sets *auth_context and invokes on_peer_checked. */
-void grpc_security_connector_check_peer(grpc_security_connector* sc,
-                                        tsi_peer peer,
-                                        grpc_auth_context** auth_context,
-                                        grpc_closure* on_peer_checked);
-
-/* Compares two security connectors. */
-int grpc_security_connector_cmp(grpc_security_connector* sc,
-                                grpc_security_connector* other);
 
 /* Util to encapsulate the connector in a channel arg. */
 grpc_arg grpc_security_connector_to_arg(grpc_security_connector* sc);
@@ -107,71 +86,89 @@ grpc_security_connector* grpc_security_connector_find_in_args(
     A channel security connector object represents a way to configure the
     underlying transport security mechanism on the client side.  */
 
-typedef struct grpc_channel_security_connector grpc_channel_security_connector;
+class grpc_channel_security_connector : public grpc_security_connector {
+ public:
+  grpc_channel_security_connector(
+      const char* url_scheme,
+      grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds);
+  ~grpc_channel_security_connector() override;
 
-struct grpc_channel_security_connector {
-  grpc_security_connector base;
-  grpc_channel_credentials* channel_creds;
-  grpc_call_credentials* request_metadata_creds;
-  bool (*check_call_host)(grpc_channel_security_connector* sc, const char* host,
-                          grpc_auth_context* auth_context,
-                          grpc_closure* on_call_host_checked,
-                          grpc_error** error);
-  void (*cancel_check_call_host)(grpc_channel_security_connector* sc,
-                                 grpc_closure* on_call_host_checked,
-                                 grpc_error* error);
-  void (*add_handshakers)(grpc_channel_security_connector* sc,
-                          grpc_pollset_set* interested_parties,
-                          grpc_handshake_manager* handshake_mgr);
+  /// Checks that the host that will be set for a call is acceptable.
+  /// Returns true if completed synchronously, in which case \a error will
+  /// be set to indicate the result.  Otherwise, \a on_call_host_checked
+  /// will be invoked when complete.
+  virtual bool check_call_host(const char* host,
+                               grpc_auth_context* auth_context,
+                               grpc_closure* on_call_host_checked,
+                               grpc_error** error) GRPC_ABSTRACT;
+  /// Cancels a pending asychronous call to
+  /// grpc_channel_security_connector_check_call_host() with
+  /// \a on_call_host_checked as its callback.
+  virtual void cancel_check_call_host(grpc_closure* on_call_host_checked,
+                                      grpc_error* error) GRPC_ABSTRACT;
+  /// Registers handshakers with \a handshake_mgr.
+  virtual void add_handshakers(grpc_pollset_set* interested_parties,
+                               grpc_core::HandshakeManager* handshake_mgr)
+      GRPC_ABSTRACT;
+
+  const grpc_channel_credentials* channel_creds() const {
+    return channel_creds_.get();
+  }
+  grpc_channel_credentials* mutable_channel_creds() {
+    return channel_creds_.get();
+  }
+  const grpc_call_credentials* request_metadata_creds() const {
+    return request_metadata_creds_.get();
+  }
+  grpc_call_credentials* mutable_request_metadata_creds() {
+    return request_metadata_creds_.get();
+  }
+
+  GRPC_ABSTRACT_BASE_CLASS
+
+ protected:
+  // Helper methods to be used in subclasses.
+  int channel_security_connector_cmp(
+      const grpc_channel_security_connector* other) const;
+
+ private:
+  grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds_;
+  grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds_;
 };
-
-/// A helper function for use in grpc_security_connector_cmp() implementations.
-int grpc_channel_security_connector_cmp(grpc_channel_security_connector* sc1,
-                                        grpc_channel_security_connector* sc2);
-
-/// Checks that the host that will be set for a call is acceptable.
-/// Returns true if completed synchronously, in which case \a error will
-/// be set to indicate the result.  Otherwise, \a on_call_host_checked
-/// will be invoked when complete.
-bool grpc_channel_security_connector_check_call_host(
-    grpc_channel_security_connector* sc, const char* host,
-    grpc_auth_context* auth_context, grpc_closure* on_call_host_checked,
-    grpc_error** error);
-
-/// Cancels a pending asychronous call to
-/// grpc_channel_security_connector_check_call_host() with
-/// \a on_call_host_checked as its callback.
-void grpc_channel_security_connector_cancel_check_call_host(
-    grpc_channel_security_connector* sc, grpc_closure* on_call_host_checked,
-    grpc_error* error);
-
-/* Registers handshakers with \a handshake_mgr. */
-void grpc_channel_security_connector_add_handshakers(
-    grpc_channel_security_connector* connector,
-    grpc_pollset_set* interested_parties,
-    grpc_handshake_manager* handshake_mgr);
 
 /* --- server_security_connector object. ---
 
     A server security connector object represents a way to configure the
     underlying transport security mechanism on the server side.  */
 
-typedef struct grpc_server_security_connector grpc_server_security_connector;
+class grpc_server_security_connector : public grpc_security_connector {
+ public:
+  grpc_server_security_connector(
+      const char* url_scheme,
+      grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
+  ~grpc_server_security_connector() override = default;
 
-struct grpc_server_security_connector {
-  grpc_security_connector base;
-  grpc_server_credentials* server_creds;
-  void (*add_handshakers)(grpc_server_security_connector* sc,
-                          grpc_pollset_set* interested_parties,
-                          grpc_handshake_manager* handshake_mgr);
+  virtual void add_handshakers(grpc_pollset_set* interested_parties,
+                               grpc_core::HandshakeManager* handshake_mgr)
+      GRPC_ABSTRACT;
+
+  const grpc_server_credentials* server_creds() const {
+    return server_creds_.get();
+  }
+  grpc_server_credentials* mutable_server_creds() {
+    return server_creds_.get();
+  }
+
+  GRPC_ABSTRACT_BASE_CLASS
+
+ protected:
+  // Helper methods to be used in subclasses.
+  int server_security_connector_cmp(
+      const grpc_server_security_connector* other) const;
+
+ private:
+  grpc_core::RefCountedPtr<grpc_server_credentials> server_creds_;
 };
-
-/// A helper function for use in grpc_security_connector_cmp() implementations.
-int grpc_server_security_connector_cmp(grpc_server_security_connector* sc1,
-                                       grpc_server_security_connector* sc2);
-
-void grpc_server_security_connector_add_handshakers(
-    grpc_server_security_connector* sc, grpc_pollset_set* interested_parties,
-    grpc_handshake_manager* handshake_mgr);
 
 #endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SECURITY_CONNECTOR_H */

@@ -70,6 +70,19 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "local_util",
+    srcs = ["fixtures/local_util.cc"],
+    hdrs = ["fixtures/local_util.h",
+            "end2end_tests.h"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+  ],
+)
+
 grpc_cc_test(
     name = "bad_server_response_test",
     srcs = ["bad_server_response_test.cc"],
@@ -78,7 +91,6 @@ grpc_cc_test(
         ":cq_verifier",
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -91,7 +103,6 @@ grpc_cc_test(
         ":cq_verifier",
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -104,7 +115,6 @@ grpc_cc_test(
         ":cq_verifier",
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -117,7 +127,6 @@ grpc_cc_test(
         ":cq_verifier",
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -130,7 +139,6 @@ grpc_cc_test(
         ":end2end_tests",
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -143,7 +151,6 @@ grpc_cc_test(
         ":cq_verifier",
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -156,7 +163,6 @@ grpc_cc_test(
         ":cq_verifier",
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -169,7 +175,6 @@ grpc_cc_test(
         ":cq_verifier",
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -190,7 +195,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:tsi",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
