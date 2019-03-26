@@ -245,7 +245,8 @@ namespace Grpc.Tools.Tests
                     else
                     {
                         // Ignore expected error
-                        if (e.Message != "\"protoc.exe\" exited with code -1.")
+                        // "protoc/protoc.exe" existed with code -1.
+                        if (!e.Message.EndsWith("exited with code -1."))
                         {
                             Assert.Fail($"Error logged by build engine:\n{e.Message}");
                         }
