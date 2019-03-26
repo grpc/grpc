@@ -27,14 +27,14 @@ namespace Grpc.Core
     /// instance of the service base class, e.g. <c>static void BindService(ServiceBinderBase, GreeterService)</c>.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = true)]
-    public class BindServiceAttribute : Attribute
+    public class BindServiceMethodAttribute : Attribute
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="BindServiceAttribute"/> class.
+        /// Initializes a new instance of the <see cref="BindServiceMethodAttribute"/> class.
         /// </summary>
         /// <param name="bindType">The type the service bind method is defined on.</param>
         /// <param name="bindMethodName">The name of the service bind method.</param>
-        public BindServiceAttribute(Type bindType, string bindMethodName)
+        public BindServiceMethodAttribute(Type bindType, string bindMethodName)
         {
             BindType = bindType;
             BindMethodName = bindMethodName;
