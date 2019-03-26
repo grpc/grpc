@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from libc.stdint cimport intptr_t
-
 
 cdef bytes _slice_bytes(grpc_slice slice):
   cdef void *start = grpc_slice_start_ptr(slice)
