@@ -66,7 +66,7 @@ typedef struct {
   grpc_call_stack* call_stack;
   const void* server_transport_data;
   grpc_call_context_element* context;
-  grpc_slice path;
+  const grpc_slice& path;
   gpr_timespec start_time;
   grpc_millis deadline;
   gpr_arena* arena;

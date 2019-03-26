@@ -93,6 +93,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
  private:
   using TraceStringVector = InlinedVector<char*, 3>;
 
+  class ResolverResultHandler;
   class ResolvingControlHelper;
 
   ~ResolvingLoadBalancingPolicy();
@@ -101,17 +102,20 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   void StartResolvingLocked();
-  void OnResolverShutdownLocked(grpc_error* error);
+  void OnResolverError(grpc_error* error);
   void CreateOrUpdateLbPolicyLocked(const char* lb_policy_name,
-                                    RefCountedPtr<Config>,
+                                    RefCountedPtr<Config> lb_policy_config,
+                                    const grpc_channel_args& args,
                                     TraceStringVector* trace_strings);
   OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(
-      const char* lb_policy_name, TraceStringVector* trace_strings);
+      const char* lb_policy_name, const grpc_channel_args& args,
+      TraceStringVector* trace_strings);
   void MaybeAddTraceMessagesForAddressChangesLocked(
+      const grpc_channel_args& resolver_result,
       TraceStringVector* trace_strings);
   void ConcatenateAndAddChannelTraceLocked(
       TraceStringVector* trace_strings) const;
-  static void OnResolverResultChangedLocked(void* arg, grpc_error* error);
+  void OnResolverResultChangedLocked(const grpc_channel_args* result);
 
   // Passed in from caller at construction time.
   TraceFlag* tracer_;
@@ -124,9 +128,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   // Resolver and associated state.
   OrphanablePtr<Resolver> resolver_;
   bool started_resolving_ = false;
-  grpc_channel_args* resolver_result_ = nullptr;
   bool previous_resolution_contained_addresses_ = false;
-  grpc_closure on_resolver_result_changed_;
 
   // Child LB policy.
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;

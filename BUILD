@@ -2315,25 +2315,63 @@ grpc_cc_library(
 grpc_cc_library(
     name = "envoy_ads_upb",
     srcs = [
-        "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/cds.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/eds.upb.c",
+        "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c",
     ],
     hdrs = [
-        "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/cds.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h",
+        "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h",
     ],
     language = "c++",
     external_deps = [
         "upb_lib",
     ],
     deps = [
+        ":envoy_core_upb",
+        ":envoy_type_upb",
         ":google_api_upb",
         ":proto_gen_validate_upb",
+    ]
+)
+
+grpc_cc_library(
+    name = "envoy_core_upb",
+    srcs = [
+        "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h",
+    ],
+    language = "c++",
+    external_deps = [
+        "upb_lib",
+    ],
+    deps = [
         ":envoy_type_upb",
+        ":google_api_upb",
+        ":proto_gen_validate_upb"
     ]
 )
 
@@ -2384,6 +2422,7 @@ grpc_cc_library(
         "src/core/ext/upb-generated/google/protobuf/any.upb.c",
         "src/core/ext/upb-generated/google/protobuf/descriptor.upb.c",
         "src/core/ext/upb-generated/google/protobuf/duration.upb.c",
+        "src/core/ext/upb-generated/google/protobuf/empty.upb.c",
         "src/core/ext/upb-generated/google/protobuf/struct.upb.c",
         "src/core/ext/upb-generated/google/protobuf/timestamp.upb.c",
         "src/core/ext/upb-generated/google/protobuf/wrappers.upb.c",
@@ -2395,6 +2434,7 @@ grpc_cc_library(
         "src/core/ext/upb-generated/google/protobuf/any.upb.h",
         "src/core/ext/upb-generated/google/protobuf/descriptor.upb.h",
         "src/core/ext/upb-generated/google/protobuf/duration.upb.h",
+        "src/core/ext/upb-generated/google/protobuf/empty.upb.h",
         "src/core/ext/upb-generated/google/protobuf/struct.upb.h",
         "src/core/ext/upb-generated/google/protobuf/timestamp.upb.h",
         "src/core/ext/upb-generated/google/protobuf/wrappers.upb.h",

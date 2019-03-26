@@ -26,8 +26,10 @@ grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount(false,
 
 namespace grpc_core {
 
-Resolver::Resolver(grpc_combiner* combiner)
+Resolver::Resolver(grpc_combiner* combiner,
+                   UniquePtr<ResultHandler> result_handler)
     : InternallyRefCounted(&grpc_trace_resolver_refcount),
+      result_handler_(std::move(result_handler)),
       combiner_(GRPC_COMBINER_REF(combiner, "resolver")) {}
 
 Resolver::~Resolver() { GRPC_COMBINER_UNREF(combiner_, "resolver"); }
