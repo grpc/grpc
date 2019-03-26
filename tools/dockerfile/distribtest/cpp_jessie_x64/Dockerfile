@@ -29,7 +29,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN apt-get update && apt-get install -y golang && apt-get clean
 
-RUN echo "deb http://ftp.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
+RUN echo "deb [check-valid-until=no] http://archive.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
 RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
 
 CMD ["bash"]
