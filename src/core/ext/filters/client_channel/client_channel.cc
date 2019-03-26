@@ -41,6 +41,7 @@
 #include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/ext/filters/client_channel/resolving_lb_policy.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
+#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/deadline/deadline_filter.h"
 #include "src/core/lib/backoff/backoff.h"
@@ -61,7 +62,6 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/service_config.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_metadata.h"
 
@@ -252,11 +252,11 @@ class ClientChannelControlHelper
 // Synchronous callback from chand->resolving_lb_policy to process a resolver
 // result update.
 static bool process_resolver_result_locked(
-    void* arg, const grpc_channel_args& args, const char** lb_policy_name,
+    void* arg, grpc_core::Resolver::Result* result, const char** lb_policy_name,
     grpc_core::RefCountedPtr<LoadBalancingPolicy::Config>* lb_policy_config) {
   channel_data* chand = static_cast<channel_data*>(arg);
   chand->have_service_config = true;
-  ProcessedResolverResult resolver_result(args, chand->enable_retries);
+  ProcessedResolverResult resolver_result(result, chand->enable_retries);
   grpc_core::UniquePtr<char> service_config_json =
       resolver_result.service_config_json();
   if (grpc_client_channel_routing_trace.enabled()) {
