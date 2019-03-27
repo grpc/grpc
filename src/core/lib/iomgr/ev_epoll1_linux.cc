@@ -1246,6 +1246,11 @@ static bool is_any_background_poller_thread(void) { return false; }
 
 static void shutdown_background_closure(void) {}
 
+static bool add_closure_to_background_poller(grpc_closure* closure,
+                                             grpc_error* error) {
+  return false;
+}
+
 static void shutdown_engine(void) {
   fd_global_shutdown();
   pollset_global_shutdown();
@@ -1292,6 +1297,7 @@ static const grpc_event_engine_vtable vtable = {
     is_any_background_poller_thread,
     shutdown_background_closure,
     shutdown_engine,
+    add_closure_to_background_poller,
 };
 
 /* Called by the child process's post-fork handler to close open fds, including

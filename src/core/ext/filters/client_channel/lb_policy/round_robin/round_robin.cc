@@ -61,8 +61,7 @@ class RoundRobin : public LoadBalancingPolicy {
 
   const char* name() const override { return kRoundRobin; }
 
-  void UpdateLocked(const grpc_channel_args& args,
-                    RefCountedPtr<Config> lb_config) override;
+  void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
   void FillChildRefsForChannelz(channelz::ChildRefsList* child_subchannels,
                                 channelz::ChildRefsList* ignored) override;
@@ -156,7 +155,7 @@ class RoundRobin : public LoadBalancingPolicy {
    public:
     Picker(RoundRobin* parent, RoundRobinSubchannelList* subchannel_list);
 
-    PickResult Pick(PickState* pick, grpc_error** error) override;
+    PickResult Pick(PickArgs* pick, grpc_error** error) override;
 
    private:
     // Using pointer value only, no ref held -- do not dereference!
@@ -227,8 +226,8 @@ RoundRobin::Picker::Picker(RoundRobin* parent,
   }
 }
 
-RoundRobin::Picker::PickResult RoundRobin::Picker::Pick(PickState* pick,
-                                                        grpc_error** error) {
+RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs* pick,
+                                                grpc_error** error) {
   last_picked_index_ = (last_picked_index_ + 1) % subchannels_.size();
   if (grpc_lb_round_robin_trace.enabled()) {
     gpr_log(GPR_INFO,
@@ -476,26 +475,11 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
   subchannel_list()->UpdateRoundRobinStateFromSubchannelStateCountsLocked();
 }
 
-void RoundRobin::UpdateLocked(const grpc_channel_args& args,
-                              RefCountedPtr<Config> lb_config) {
+void RoundRobin::UpdateLocked(UpdateArgs args) {
   AutoChildRefsUpdater guard(this);
-  const ServerAddressList* addresses = FindServerAddressListChannelArg(&args);
-  if (addresses == nullptr) {
-    gpr_log(GPR_ERROR, "[RR %p] update provided no addresses; ignoring", this);
-    // If we don't have a current subchannel list, go into TRANSIENT_FAILURE.
-    // Otherwise, keep using the current subchannel list (ignore this update).
-    if (subchannel_list_ == nullptr) {
-      grpc_error* error =
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing update in args");
-      channel_control_helper()->UpdateState(
-          GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(error),
-          UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(error)));
-    }
-    return;
-  }
   if (grpc_lb_round_robin_trace.enabled()) {
     gpr_log(GPR_INFO, "[RR %p] received update with %" PRIuPTR " addresses",
-            this, addresses->size());
+            this, args.addresses.size());
   }
   // Replace latest_pending_subchannel_list_.
   if (latest_pending_subchannel_list_ != nullptr) {
@@ -506,7 +490,7 @@ void RoundRobin::UpdateLocked(const grpc_channel_args& args,
     }
   }
   latest_pending_subchannel_list_ = MakeOrphanable<RoundRobinSubchannelList>(
-      this, &grpc_lb_round_robin_trace, *addresses, combiner(), args);
+      this, &grpc_lb_round_robin_trace, args.addresses, combiner(), *args.args);
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {
     // If the new list is empty, immediately promote the new list to the
     // current list and transition to TRANSIENT_FAILURE.

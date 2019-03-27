@@ -53,7 +53,7 @@
         deps.append("${_gRPC_BENCHMARK_LIBRARIES}")
       else:
         deps.append(d)
-    if target_dict.build == 'test' and target_dict.language == 'c++':
+    if (target_dict.build == 'test' or target_dict.build == 'private') and target_dict.language == 'c++':
       deps.append("${_gRPC_GFLAGS_LIBRARIES}")
     return deps
 

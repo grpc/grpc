@@ -718,6 +718,43 @@ Client asserts:
 * received SimpleResponse.username matches the value of
   `--default_service_account`
 
+### compute_engine_channel_credentials
+
+Similar to the other auth tests, this test should only be run against prod
+servers. Note that this test may only be ran on GCP.
+
+This test verifies unary calls succeed when the client uses
+ComputeEngineChannelCredentials. All that is needed by the test environment
+is for the client to be running on GCP.
+
+The test uses `--default_service_account` with GCE service account email. This
+email must identify the default service account of the GCP VM that the test
+is running on.
+
+Server features:
+* [UnaryCall][]
+* [Echo Authenticated Username][]
+
+Procedure:
+ 1. Client configures the channel to use ComputeEngineChannelCredentials
+     * Note: the term `ComputeEngineChannelCredentials` within the context
+       of this test description refers to an API which encapsulates
+       both "transport credentials" and "call credentials" and which
+       is capable of transport creds auto-selection (including ALTS).
+       The exact name of the API may vary per language.
+ 2. Client calls UnaryCall with:
+
+    ```
+    {
+      fill_username: true
+    }
+    ```
+
+Client asserts:
+* call was successful
+* received SimpleResponse.username matches the value of
+  `--default_service_account`
+
 ### custom_metadata
 
 This test verifies that custom metadata in either binary or ascii format can be

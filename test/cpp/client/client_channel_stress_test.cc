@@ -218,7 +218,7 @@ class ClientChannelStressTest {
 
   void SetNextResolution(const std::vector<AddressData>& address_data) {
     grpc_core::ExecCtx exec_ctx;
-    grpc_core::ServerAddressList addresses;
+    grpc_core::Resolver::Result result;
     for (const auto& addr : address_data) {
       char* lb_uri_str;
       gpr_asprintf(&lb_uri_str, "ipv4:127.0.0.1:%d", addr.port);
@@ -236,13 +236,11 @@ class ClientChannelStressTest {
       }
       grpc_channel_args* args = grpc_channel_args_copy_and_add(
           nullptr, args_to_add.data(), args_to_add.size());
-      addresses.emplace_back(address.addr, address.len, args);
+      result.addresses.emplace_back(address.addr, address.len, args);
       grpc_uri_destroy(lb_uri);
       gpr_free(lb_uri_str);
     }
-    grpc_arg fake_addresses = CreateServerAddressListChannelArg(&addresses);
-    grpc_channel_args fake_result = {1, &fake_addresses};
-    response_generator_->SetResponse(&fake_result);
+    response_generator_->SetResponse(std::move(result));
   }
 
   void KeepSendingRequests() {

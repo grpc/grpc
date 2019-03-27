@@ -62,10 +62,11 @@ class ResolverRegistry {
   /// \a args are the channel args to be included in resolver results.
   /// \a pollset_set is used to drive I/O in the name resolution process.
   /// \a combiner is the combiner under which all resolver calls will be run.
-  static OrphanablePtr<Resolver> CreateResolver(const char* target,
-                                                const grpc_channel_args* args,
-                                                grpc_pollset_set* pollset_set,
-                                                grpc_combiner* combiner);
+  /// \a result_handler is used to return results from the resolver.
+  static OrphanablePtr<Resolver> CreateResolver(
+      const char* target, const grpc_channel_args* args,
+      grpc_pollset_set* pollset_set, grpc_combiner* combiner,
+      UniquePtr<Resolver::ResultHandler> result_handler);
 
   /// Returns the default authority to pass from a client for \a target.
   static UniquePtr<char> GetDefaultAuthority(const char* target);
