@@ -21,6 +21,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h"
 
 grpc_channel_args* grpc_lb_policy_grpclb_modify_lb_channel_args(
-    grpc_channel_args* args) {
+    const grpc_core::ServerAddressList& addresses, grpc_channel_args* args) {
   return args;
 }

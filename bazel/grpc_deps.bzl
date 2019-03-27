@@ -147,24 +147,23 @@ def grpc_deps():
     if "com_github_gflags_gflags" not in native.existing_rules():
         http_archive(
             name = "com_github_gflags_gflags",
-            strip_prefix = "gflags-30dbc81fb5ffdc98ea9b14b1918bfe4e8779b26e",
-            url = "https://github.com/gflags/gflags/archive/30dbc81fb5ffdc98ea9b14b1918bfe4e8779b26e.tar.gz",
+            strip_prefix = "gflags-28f50e0fed19872e0fd50dd23ce2ee8cd759338e",
+            url = "https://github.com/gflags/gflags/archive/28f50e0fed19872e0fd50dd23ce2ee8cd759338e.tar.gz",
         )
 
     if "com_github_google_benchmark" not in native.existing_rules():
         http_archive(
             name = "com_github_google_benchmark",
-            build_file = "@com_github_grpc_grpc//third_party:benchmark.BUILD",
-            strip_prefix = "benchmark-9913418d323e64a0111ca0da81388260c2bbe1e9",
-            url = "https://github.com/google/benchmark/archive/9913418d323e64a0111ca0da81388260c2bbe1e9.tar.gz",
+            strip_prefix = "benchmark-e776aa0275e293707b6a0901e0e8d8a8a3679508",
+            url = "https://github.com/google/benchmark/archive/e776aa0275e293707b6a0901e0e8d8a8a3679508.tar.gz",
         )
 
     if "com_github_cares_cares" not in native.existing_rules():
         http_archive(
             name = "com_github_cares_cares",
             build_file = "@com_github_grpc_grpc//third_party:cares/cares.BUILD",
-            strip_prefix = "c-ares-3be1924221e1326df520f8498d704a5c4c8d0cce",
-            url = "https://github.com/c-ares/c-ares/archive/3be1924221e1326df520f8498d704a5c4c8d0cce.tar.gz",
+            strip_prefix = "c-ares-e982924acee7f7313b4baa4ee5ec000c5e373c30",
+            url = "https://github.com/c-ares/c-ares/archive/e982924acee7f7313b4baa4ee5ec000c5e373c30.tar.gz",
         )
 
     if "com_google_absl" not in native.existing_rules():
@@ -196,8 +195,8 @@ def grpc_deps():
     if "io_opencensus_cpp" not in native.existing_rules():
         http_archive(
             name = "io_opencensus_cpp",
-            strip_prefix = "opencensus-cpp-03dff0352522983ffdee48cedbf87cbe37f1bb7f",
-            url = "https://github.com/census-instrumentation/opencensus-cpp/archive/03dff0352522983ffdee48cedbf87cbe37f1bb7f.tar.gz",
+            strip_prefix = "opencensus-cpp-9b1e354e89bf3d92aedc00af45b418ce870f3d77",
+            url = "https://github.com/census-instrumentation/opencensus-cpp/archive/9b1e354e89bf3d92aedc00af45b418ce870f3d77.tar.gz",
         )
 
     if "upb" not in native.existing_rules():

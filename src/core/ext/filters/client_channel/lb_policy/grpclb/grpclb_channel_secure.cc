@@ -68,18 +68,14 @@ RefCountedPtr<TargetAuthorityTable> CreateTargetAuthorityTable(
 }  // namespace grpc_core
 
 grpc_channel_args* grpc_lb_policy_grpclb_modify_lb_channel_args(
-    grpc_channel_args* args) {
+    const grpc_core::ServerAddressList& addresses, grpc_channel_args* args) {
   const char* args_to_remove[1];
   size_t num_args_to_remove = 0;
   grpc_arg args_to_add[2];
   size_t num_args_to_add = 0;
   // Add arg for targets info table.
-  grpc_core::ServerAddressList* addresses =
-      grpc_core::FindServerAddressListChannelArg(args);
-  GPR_ASSERT(addresses != nullptr);
   grpc_core::RefCountedPtr<grpc_core::TargetAuthorityTable>
-      target_authority_table =
-          grpc_core::CreateTargetAuthorityTable(*addresses);
+      target_authority_table = grpc_core::CreateTargetAuthorityTable(addresses);
   args_to_add[num_args_to_add++] =
       grpc_core::CreateTargetAuthorityTableChannelArg(
           target_authority_table.get());
