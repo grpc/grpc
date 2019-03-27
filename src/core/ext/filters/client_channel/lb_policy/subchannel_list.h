@@ -505,7 +505,6 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
   inhibit_health_checking_ = grpc_channel_arg_get_bool(
       grpc_channel_args_find(&args, GRPC_ARG_INHIBIT_HEALTH_CHECKING), false);
   static const char* keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS,
-                                         GRPC_ARG_SERVER_ADDRESS_LIST,
                                          GRPC_ARG_INHIBIT_HEALTH_CHECKING};
   // Create a subchannel for each address.
   for (size_t i = 0; i < addresses.size(); i++) {

@@ -26,9 +26,6 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/uri/uri_parser.h"
 
-// Channel arg key for ServerAddressList.
-#define GRPC_ARG_SERVER_ADDRESS_LIST "grpc.server_address_list"
-
 // Channel arg key for a bool indicating whether an address is a grpclb
 // load balancer (as opposed to a backend).
 #define GRPC_ARG_ADDRESS_IS_BALANCER "grpc.address_is_balancer"
@@ -95,13 +92,6 @@ class ServerAddress {
 //
 
 typedef InlinedVector<ServerAddress, 1> ServerAddressList;
-
-// Returns a channel arg containing \a addresses.
-grpc_arg CreateServerAddressListChannelArg(const ServerAddressList* addresses);
-
-// Returns the ServerListAddress instance in channel_args or NULL.
-ServerAddressList* FindServerAddressListChannelArg(
-    const grpc_channel_args* channel_args);
 
 }  // namespace grpc_core
 

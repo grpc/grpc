@@ -13,8 +13,6 @@
 # limitations under the License.
 # distutils: language=c++
 
-from libc.stdint cimport uint32_t
-
 cdef extern from "grpc/impl/codegen/slice.h":
   struct grpc_slice_buffer:
     int count

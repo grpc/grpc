@@ -162,6 +162,11 @@ bool grpc_iomgr_is_any_background_poller_thread() {
   return grpc_iomgr_platform_is_any_background_poller_thread();
 }
 
+bool grpc_iomgr_add_closure_to_background_poller(grpc_closure* closure,
+                                                 grpc_error* error) {
+  return grpc_iomgr_platform_add_closure_to_background_poller(closure, error);
+}
+
 void grpc_iomgr_register_object(grpc_iomgr_object* obj, const char* name) {
   obj->name = gpr_strdup(name);
   gpr_mu_lock(&g_mu);
