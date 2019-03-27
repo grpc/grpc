@@ -84,4 +84,4 @@ build:ubsan --copt=-gmlt
 # TODO(jtattermusch): use more reasonable test timeout
 build:ubsan --test_timeout=3600
 # override the config-agnostic crosstool_top
-build:ubsan --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/experimental/ubuntu16_04_clang/1.2/bazel_0.21.0/ubsan:toolchain
+build:ubsan --crosstool_top=@bazel_toolchains//configs/experimental/ubuntu16_04_clang/1.2/bazel_0.21.0/ubsan:toolchain
