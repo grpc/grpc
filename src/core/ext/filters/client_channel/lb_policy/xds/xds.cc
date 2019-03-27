@@ -150,6 +150,7 @@ class XdsLb : public LoadBalancingPolicy {
       }
 
       bool seen_initial_response() const { return seen_initial_response_; }
+      bool seen_serverlist() const { return seen_serverlist_; }
 
      private:
       // So Delete() can access our private dtor.
@@ -191,6 +192,7 @@ class XdsLb : public LoadBalancingPolicy {
       grpc_byte_buffer* recv_message_payload_ = nullptr;
       grpc_closure lb_on_balancer_message_received_;
       bool seen_initial_response_ = false;
+      bool seen_serverlist_ = false;
 
       // recv_trailing_metadata
       grpc_closure lb_on_balancer_status_received_;
@@ -484,11 +486,14 @@ void XdsLb::Helper::UpdateState(grpc_connectivity_state state,
     GRPC_ERROR_UNREF(state_error);
     return;
   }
-  // Record whether child policy reports READY.
+  // At this point, child_ must be the current child policy.
+  // Record whether the current child policy is READY.
   parent_->child_policy_ready_ = state == GRPC_CHANNEL_READY;
   // Enter or exit fallback mode if needed.
-  parent_->MaybeExitFallbackMode();
   parent_->MaybeEnterFallbackModeAfterStartup();
+  parent_->MaybeExitFallbackMode();
+  // If we are in fallback mode, ignore update request from the child policy.
+  if (parent_->fallback_policy_ != nullptr) return;
   GPR_ASSERT(parent_->lb_chand_ != nullptr);
   RefCountedPtr<XdsLbClientStats> client_stats =
       parent_->lb_chand_->lb_calld() == nullptr
@@ -1081,6 +1086,14 @@ void XdsLb::BalancerChannelState::BalancerCallState::
       (initial_response = xds_grpclb_initial_response_parse(response_slice)) !=
           nullptr) {
     // Have NOT seen initial response, look for initial response.
+    // TODO(juanlishen): When we convert this to use the xds protocol, the
+    // balancer will send us a fallback timeout such that we should go into
+    // fallback mode if we have lost contact with the balancer after a certain
+    // period of time. We will need to save the timeout value here, and then
+    // when the balancer call ends, we will need to start a timer for the
+    // specified period of time, and if the timer fires, we go into fallback
+    // mode. We will also need to cancel the timer when we receive a serverlist
+    // from the balancer.
     if (initial_response->has_client_stats_report_interval) {
       const grpc_millis interval = xds_grpclb_duration_to_millis(
           &initial_response->client_stats_report_interval);
@@ -1122,6 +1135,7 @@ void XdsLb::BalancerChannelState::BalancerCallState::
         gpr_free(ipport);
       }
     }
+    lb_calld->seen_serverlist_ = true;
     // Pending LB channel receives a serverlist; promote it.
     // Note that this call can't be on a discarded pending channel, because
     // such channels don't have any current call but we have checked this call
@@ -1249,6 +1263,9 @@ void XdsLb::BalancerChannelState::BalancerCallState::
         grpc_timer_cancel(&xdslb_policy->lb_fallback_timer_);
         lb_chand->CancelConnectivityWatchLocked();
         xdslb_policy->CreateOrUpdateChildPolicyLocked(/*fallback=*/true);
+      } else {
+        // This handles the fallback-after-startup case.
+        xdslb_policy->MaybeEnterFallbackModeAfterStartup();
       }
     }
   }
@@ -1562,14 +1579,14 @@ void XdsLb::MaybeExitFallbackMode() {
   if (!child_policy_ready_) return;
   if (fallback_policy_ != nullptr) {
     gpr_log(GPR_INFO,
-            "[xdslb %p] Child policy becomes ready; exiting fallback mode",
+            "[xdslb %p] Child policy became ready; exiting fallback mode",
             this);
     fallback_policy_.reset();
     pending_fallback_policy_.reset();
   }
   if (fallback_at_startup_checks_pending_) {
     gpr_log(GPR_INFO,
-            "[xdslb %p] Child policy becomes ready; cancelling fallback "
+            "[xdslb %p] Child policy became ready; cancelling fallback "
             "timer and LB channel connectivity watch",
             this);
     grpc_timer_cancel(&lb_fallback_timer_);
@@ -1585,8 +1602,12 @@ void XdsLb::MaybeEnterFallbackModeAfterStartup() {
   // (The above two conditions together imply that the child policy was READY
   // before.)
   // - The child policy is not READY.
+  // - We are not in contact with the balancer.
+  // FIXME: What defines lost contact with LB?
   if (!fallback_at_startup_checks_pending_ && fallback_policy_ == nullptr &&
-      !child_policy_ready_) {
+      !child_policy_ready_ &&
+      (lb_chand_->lb_calld() == nullptr ||
+       !lb_chand_->lb_calld()->seen_serverlist())) {
     gpr_log(GPR_INFO,
             "[xdslb %p] Child policy is not ready; entering fallback mode",
             this);
@@ -1633,22 +1654,18 @@ grpc_channel_args* XdsLb::CreateChildPolicyArgsLocked(bool fallback) {
   // Replace the server address list in the channel args that we pass down to
   // the subchannel.
   static const char* keys_to_remove[] = {GRPC_ARG_SERVER_ADDRESS_LIST};
-  grpc_arg args_to_add[3] = {
-      CreateServerAddressListChannelArg(addresses),
-      // A channel arg indicating if the target is a backend inferred from a
-      // xDS load balancer.
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_ADDRESS_IS_BACKEND_FROM_XDS_LOAD_BALANCER),
-          !fallback),
-  };
-  size_t num_args_to_add = 2;
+  InlinedVector<grpc_arg, 3> args_to_add;
+  args_to_add.emplace_back(CreateServerAddressListChannelArg(addresses));
+  args_to_add.emplace_back(grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_ADDRESS_IS_BACKEND_FROM_XDS_LOAD_BALANCER),
+      !fallback));
   if (!fallback) {
-    args_to_add[num_args_to_add++] = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1);
+    args_to_add.emplace_back(grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1));
   }
   return grpc_channel_args_copy_and_add_and_remove(
-      args_, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), args_to_add,
-      num_args_to_add);
+      args_, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), args_to_add.data(),
+      args_to_add.size());
 }
 
 OrphanablePtr<LoadBalancingPolicy> XdsLb::CreateChildPolicyLocked(
