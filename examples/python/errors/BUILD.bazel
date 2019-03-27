@@ -43,11 +43,9 @@ py_library(
 py_test(
     name = "test/_error_handling_example_test",
     srcs = ["test/_error_handling_example_test.py"],
-    data = [
+    deps = [
         ":client",
         ":server",
-        "//src/python/grpcio/grpc:grpcio",
-        "//examples:py_helloworld",
         "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
     ],
     size = "small",
