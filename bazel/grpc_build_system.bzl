@@ -28,12 +28,6 @@ load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 # The set of pollers to test against if a test exercises polling
 POLLERS = ["epollex", "epoll1", "poll"]
 
-def is_msvc():
-    return select({
-        "//:windows_msvc": True,
-        "//conditions:default": False,
-    })
-
 def if_not_windows(a):
     return select({
         "//:windows": [],
@@ -157,7 +151,6 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
     args = {
-        "name": name,
         "srcs": srcs,
         "args": args,
         "data": data,
@@ -172,8 +165,17 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         # Only run targets with pollers for non-MSVC
         # Only run targets without pollers for MSVC
         native.cc_test(
+            name = name,
             testonly = True,
-            tags = tags if is_msvc() else ["manual"],
+            tags = [
+                "manual",
+                "no_windows",
+            ],
+            **args
+        )
+        native.cc_test(
+            name = name + "_windows",
+            testonly = True,
             **args
         )
         for poller in POLLERS:
@@ -189,7 +191,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
                     poller,
                     "$(location %s)" % name,
                 ] + args["args"],
-                tags = (tags + ["no_windows"]) if is_msvc() else tags,
+                tags = (tags + ["no_windows"]),
                 exec_compatible_with = exec_compatible_with,
             )
     else:

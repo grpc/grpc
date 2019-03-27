@@ -15,7 +15,7 @@
 
 """Generates the appropriate build.json data for all the end2end tests."""
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "is_msvc")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library")
 
 POLLERS = ["epollex", "epoll1", "poll"]
 
