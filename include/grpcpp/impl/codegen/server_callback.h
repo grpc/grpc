@@ -40,13 +40,8 @@ namespace internal {
 class ServerReactor {
  public:
   virtual ~ServerReactor() = default;
-
-  /// Notifies the application that all operations associated with this RPC
-  /// have completed.
-  virtual void OnDone() {}
-
-  /// Notifies the application that this RPC has been cancelled.
-  virtual void OnCancel() {}
+  virtual void OnDone() = 0;
+  virtual void OnCancel() = 0;
 };
 
 }  // namespace internal
@@ -276,6 +271,16 @@ class ServerBidiReactor : public internal::ServerReactor {
   ///               will succeed.
   virtual void OnWriteDone(bool ok) {}
 
+  /// Notifies the application that all operations associated with this RPC
+  /// have completed. This is an override (from the internal base class) but not
+  /// final, so derived classes should override it if they want to take action.
+  void OnDone() override {}
+
+  /// Notifies the application that this RPC has been cancelled. This is an
+  /// override (from the internal base class) but not final, so derived classes
+  /// should override it if they want to take action.
+  void OnCancel() override {}
+
  private:
   friend class ServerCallbackReaderWriter<Request, Response>;
   void BindStream(ServerCallbackReaderWriter<Request, Response>* stream) {
@@ -307,6 +312,8 @@ class ServerReadReactor : public internal::ServerReactor {
   /// The following notifications are exactly like ServerBidiReactor.
   virtual void OnSendInitialMetadataDone(bool ok) {}
   virtual void OnReadDone(bool ok) {}
+  void OnDone() override {}
+  void OnCancel() override {}
 
  private:
   friend class ServerCallbackReader<Request>;
@@ -346,6 +353,8 @@ class ServerWriteReactor : public internal::ServerReactor {
   /// The following notifications are exactly like ServerBidiReactor.
   virtual void OnSendInitialMetadataDone(bool ok) {}
   virtual void OnWriteDone(bool ok) {}
+  void OnDone() override {}
+  void OnCancel() override {}
 
  private:
   friend class ServerCallbackWriter<Response>;
