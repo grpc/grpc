@@ -73,7 +73,8 @@ RUN apt-get update && apt-get install -y \
 
 # Use cmake 3.6 from jessie-backports
 RUN echo "deb http://archive.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
-RUN apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -t jessie-backports -y cmake && apt-get clean
+RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf
+RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
 
 RUN mkdir /var/local/jenkins
 
