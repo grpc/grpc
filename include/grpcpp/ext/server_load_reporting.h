@@ -25,11 +25,15 @@ namespace grpc {
 namespace load_reporter {
 namespace experimental {
 
-typedef ::grpc_impl::load_reporter::experimental::LoadReportingServiceServerBuilderOption LoadReportingServiceServerBuilderOption;
+typedef ::grpc_impl::load_reporter::experimental::
+    LoadReportingServiceServerBuilderOption
+        LoadReportingServiceServerBuilderOption;
 
 static inline void AddLoadReportingCost(grpc::ServerContext* ctx,
-                          const grpc::string& cost_name, double cost_value) {
-  ::grpc_impl::load_reporter::experimental::AddLoadReportingCost(ctx, cost_name, cost_value);
+                                        const grpc::string& cost_name,
+                                        double cost_value) {
+  ::grpc_impl::load_reporter::experimental::AddLoadReportingCost(ctx, cost_name,
+                                                                 cost_value);
 }
 
 }  // namespace experimental

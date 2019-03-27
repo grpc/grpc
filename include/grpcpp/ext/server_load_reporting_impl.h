@@ -34,7 +34,8 @@ namespace experimental {
 // enable the feature, please make sure the binary builds with the
 // grpcpp_server_load_reporting library and set this option in the
 // ServerBuilder.
-class LoadReportingServiceServerBuilderOption : public grpc::ServerBuilderOption {
+class LoadReportingServiceServerBuilderOption
+    : public grpc::ServerBuilderOption {
  public:
   void UpdateArguments(::grpc::ChannelArguments* args) override;
   void UpdatePlugins(std::vector<std::unique_ptr<::grpc::ServerBuilderPlugin>>*
@@ -48,6 +49,6 @@ void AddLoadReportingCost(grpc::ServerContext* ctx,
 
 }  // namespace experimental
 }  // namespace load_reporter
-}  // namespace grpc
+}  // namespace grpc_impl
 
 #endif  // GRPCPP_EXT_SERVER_LOAD_REPORTING_IMPL_H
