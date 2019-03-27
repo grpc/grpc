@@ -30,6 +30,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -51,7 +52,7 @@ typedef struct grpc_stream grpc_stream;
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_stream_refcount;
 
 typedef struct grpc_stream_refcount {
-  gpr_refcount refs;
+  grpc_core::RefCount refs;
   grpc_closure destroy;
 #ifndef NDEBUG
   const char* object_type;
@@ -63,18 +64,44 @@ typedef struct grpc_stream_refcount {
 void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
                           grpc_iomgr_cb_func cb, void* cb_arg,
                           const char* object_type);
-void grpc_stream_ref(grpc_stream_refcount* refcount, const char* reason);
-void grpc_stream_unref(grpc_stream_refcount* refcount, const char* reason);
 #define GRPC_STREAM_REF_INIT(rc, ir, cb, cb_arg, objtype) \
   grpc_stream_ref_init(rc, ir, cb, cb_arg, objtype)
 #else
 void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
                           grpc_iomgr_cb_func cb, void* cb_arg);
-void grpc_stream_ref(grpc_stream_refcount* refcount);
-void grpc_stream_unref(grpc_stream_refcount* refcount);
 #define GRPC_STREAM_REF_INIT(rc, ir, cb, cb_arg, objtype) \
   grpc_stream_ref_init(rc, ir, cb, cb_arg)
 #endif
+
+#ifndef NDEBUG
+inline void grpc_stream_ref(grpc_stream_refcount* refcount,
+                            const char* reason) {
+  if (grpc_trace_stream_refcount.enabled()) {
+    gpr_log(GPR_DEBUG, "%s %p:%p REF %s", refcount->object_type, refcount,
+            refcount->destroy.cb_arg, reason);
+  }
+#else
+inline void grpc_stream_ref(grpc_stream_refcount* refcount) {
+#endif
+  refcount->refs.RefNonZero();
+}
+
+void grpc_stream_destroy(grpc_stream_refcount* refcount);
+
+#ifndef NDEBUG
+inline void grpc_stream_unref(grpc_stream_refcount* refcount,
+                              const char* reason) {
+  if (grpc_trace_stream_refcount.enabled()) {
+    gpr_log(GPR_DEBUG, "%s %p:%p UNREF %s", refcount->object_type, refcount,
+            refcount->destroy.cb_arg, reason);
+  }
+#else
+inline void grpc_stream_unref(grpc_stream_refcount* refcount) {
+#endif
+  if (refcount->refs.Unref()) {
+    grpc_stream_destroy(refcount);
+  }
+}
 
 /* Wrap a buffer that is owned by some stream object into a slice that shares
    the same refcount */
