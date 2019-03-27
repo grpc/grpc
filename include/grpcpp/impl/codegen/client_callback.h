@@ -157,28 +157,69 @@ class ClientCallbackWriter {
   }
 };
 
-// The user must implement this reactor interface with reactions to each event
-// type that gets called by the library. An empty reaction is provided by
-// default
+// The following classes are the reactor interfaces that are to be implemented
+// by the user. They are passed in to the library as an argument to a call on a
+// stub (either a codegen-ed call or a generic call). The streaming RPC is
+// activated by calling StartCall, possibly after initiating StartRead,
+// StartWrite, or AddHold operations on the streaming object. Note that none of
+// the classes are pure; all reactions have a default empty reaction so that the
+// user class only needs to override those classes that it cares about.
+
+/// \a ClientBidiReactor is the interface for a bidirectional streaming RPC.
 template <class Request, class Response>
 class ClientBidiReactor {
  public:
   virtual ~ClientBidiReactor() {}
-  virtual void OnDone(const Status& s) {}
-  virtual void OnReadInitialMetadataDone(bool ok) {}
-  virtual void OnReadDone(bool ok) {}
-  virtual void OnWriteDone(bool ok) {}
-  virtual void OnWritesDoneDone(bool ok) {}
 
+  /// Activate the RPC and initiate any reads or writes that have been Start'ed
+  /// before this call. All streaming RPCs issued by the client MUST have
+  /// StartCall invoked on them (even if they are canceled) as this call is the
+  /// activation of their lifecycle.
   void StartCall() { stream_->StartCall(); }
+
+  /// Initiate a read operation (or post it for later initiation if StartCall
+  /// has not yet been invoked).
+  ///
+  /// \param[out] resp Where to eventually store the read message. Valid when
+  ///                  the library calls OnReadDone
   void StartRead(Response* resp) { stream_->Read(resp); }
+
+  /// Initiate a write operation (or post it for later initiation if StartCall
+  /// has not yet been invoked).
+  ///
+  /// \param[in] req The message to be written. The library takes temporary
+  ///                ownership until OnWriteDone, at which point the application
+  ///                regains ownership of msg.
   void StartWrite(const Request* req) { StartWrite(req, WriteOptions()); }
+
+  /// Initiate/post a write operation with specified options.
+  ///
+  /// \param[in] req The message to be written. The library takes temporary
+  ///                ownership until OnWriteDone, at which point the application
+  ///                regains ownership of msg.
+  /// \param[in] options The WriteOptions to use for writing this message
   void StartWrite(const Request* req, WriteOptions options) {
     stream_->Write(req, std::move(options));
   }
+
+  /// Initiate/post a write operation with specified options and an indication
+  /// that this is the last write (like StartWrite and StartWritesDone, merged).
+  /// Note that calling this means that no more calls to StartWrite,
+  /// StartWriteLast, or StartWritesDone are allowed.
+  ///
+  /// \param[in] req The message to be written. The library takes temporary
+  ///                ownership until OnWriteDone, at which point the application
+  ///                regains ownership of msg.
+  /// \param[in] options The WriteOptions to use for writing this message
   void StartWriteLast(const Request* req, WriteOptions options) {
     StartWrite(req, std::move(options.set_last_message()));
   }
+
+  /// Indicate that the RPC will have no more write operations. This can only be
+  /// issued once for a given RPC. This is not required or allowed if
+  /// StartWriteLast is used since that already has the same implication.
+  /// Note that calling this means that no more calls to StartWrite,
+  /// StartWriteLast, or StartWritesDone are allowed.
   void StartWritesDone() { stream_->WritesDone(); }
 
   /// Holds are needed if (and only if) this stream has operations that take
@@ -196,13 +237,50 @@ class ClientBidiReactor {
   /// AddHold or AddMultipleHolds before StartCall.  If there is going to be,
   /// for example, a read-flow and a write-flow taking place outside the
   /// reactions, then call AddMultipleHolds(2) before StartCall. When the
-  /// application knows that it won't issue any more Read operations (such as
+  /// application knows that it won't issue any more read operations (such as
   /// when a read comes back as not ok), it should issue a RemoveHold(). It
   /// should also call RemoveHold() again after it does StartWriteLast or
-  /// StartWritesDone that indicates that there will be no more Write ops.
+  /// StartWritesDone that indicates that there will be no more write ops.
+  /// The number of RemoveHold calls must match the total number of AddHold
+  /// calls plus the number of holds added by AddMultipleHolds.
   void AddHold() { AddMultipleHolds(1); }
   void AddMultipleHolds(int holds) { stream_->AddHold(holds); }
   void RemoveHold() { stream_->RemoveHold(); }
+
+  /// Notifies the application that all operations associated with this RPC
+  /// have completed and provides the RPC status outcome.
+  ///
+  /// \param[in] s The status outcome of this RPC
+  virtual void OnDone(const Status& s) {}
+
+  /// Notifies the application that a read of initial metadata from the
+  /// server is done. If the application chooses not to implement this method,
+  /// it can assume that the initial metadata has been read before the first
+  /// call of OnReadDone or OnDone.
+  ///
+  /// \param[in] ok Was the initial metadata read successfully? If false, no
+  ///               further read-side operation will succeed.
+  virtual void OnReadInitialMetadataDone(bool ok) {}
+
+  /// Notifies the application that a StartRead operation completed.
+  ///
+  /// \param[in] ok Was it successful? If false, no further read-side operation
+  ///               will succeed.
+  virtual void OnReadDone(bool ok) {}
+
+  /// Notifies the application that a StartWrite operation completed.
+  ///
+  /// \param[in] ok Was it successful? If false, no further write-side operation
+  ///               will succeed.
+  virtual void OnWriteDone(bool ok) {}
+
+  /// Notifies the application that a StartWritesDone operation completed. Note
+  /// that this is only used on explicit StartWritesDone operations and not for
+  /// those that are implicitly invoked as part of a StartWriteLast.
+  ///
+  /// \param[in] ok Was it successful? If false, the application will later see
+  ///               the failure reflected as a bad status in OnDone.
+  virtual void OnWritesDoneDone(bool ok) {}
 
  private:
   friend class ClientCallbackReaderWriter<Request, Response>;
@@ -212,13 +290,12 @@ class ClientBidiReactor {
   ClientCallbackReaderWriter<Request, Response>* stream_;
 };
 
+/// \a ClientReadReactor is the interface for a server-streaming RPC.
+/// All public methods behave as in ClientBidiReactor.
 template <class Response>
 class ClientReadReactor {
  public:
   virtual ~ClientReadReactor() {}
-  virtual void OnDone(const Status& s) {}
-  virtual void OnReadInitialMetadataDone(bool ok) {}
-  virtual void OnReadDone(bool ok) {}
 
   void StartCall() { reader_->StartCall(); }
   void StartRead(Response* resp) { reader_->Read(resp); }
@@ -227,20 +304,22 @@ class ClientReadReactor {
   void AddMultipleHolds(int holds) { reader_->AddHold(holds); }
   void RemoveHold() { reader_->RemoveHold(); }
 
+  virtual void OnDone(const Status& s) {}
+  virtual void OnReadInitialMetadataDone(bool ok) {}
+  virtual void OnReadDone(bool ok) {}
+
  private:
   friend class ClientCallbackReader<Response>;
   void BindReader(ClientCallbackReader<Response>* reader) { reader_ = reader; }
   ClientCallbackReader<Response>* reader_;
 };
 
+/// \a ClientWriteReactor is the interface for a client-streaming RPC.
+/// All public methods behave as in ClientBidiReactor.
 template <class Request>
 class ClientWriteReactor {
  public:
   virtual ~ClientWriteReactor() {}
-  virtual void OnDone(const Status& s) {}
-  virtual void OnReadInitialMetadataDone(bool ok) {}
-  virtual void OnWriteDone(bool ok) {}
-  virtual void OnWritesDoneDone(bool ok) {}
 
   void StartCall() { writer_->StartCall(); }
   void StartWrite(const Request* req) { StartWrite(req, WriteOptions()); }
@@ -255,6 +334,11 @@ class ClientWriteReactor {
   void AddHold() { AddMultipleHolds(1); }
   void AddMultipleHolds(int holds) { writer_->AddHold(holds); }
   void RemoveHold() { writer_->RemoveHold(); }
+
+  virtual void OnDone(const Status& s) {}
+  virtual void OnReadInitialMetadataDone(bool ok) {}
+  virtual void OnWriteDone(bool ok) {}
+  virtual void OnWritesDoneDone(bool ok) {}
 
  private:
   friend class ClientCallbackWriter<Request>;

@@ -94,23 +94,24 @@ TEST_F(MapTest, EmplaceAndFindWithUniquePtrKey) {
 
 // Test insertion of Payload
 TEST_F(MapTest, InsertAndFind) {
-  Map<int, Payload> test_map;
+  Map<const char*, Payload, StringLess> test_map;
   for (int i = 0; i < 5; i++) {
-    test_map.insert(MakePair(std::forward<int>(i), Payload(i)));
+    test_map.insert(Pair<const char*, Payload>(kKeys[i], Payload(i)));
   }
   for (int i = 0; i < 5; i++) {
-    EXPECT_EQ(i, test_map.find(i)->second.data());
+    EXPECT_EQ(i, test_map.find(kKeys[i])->second.data());
   }
 }
 
 // Test insertion of Payload Unique Ptrs
 TEST_F(MapTest, InsertAndFindWithUniquePtrValue) {
-  Map<int, UniquePtr<Payload>> test_map;
+  Map<const char*, UniquePtr<Payload>, StringLess> test_map;
   for (int i = 0; i < 5; i++) {
-    test_map.insert(MakePair(std::forward<int>(i), MakeUnique<Payload>(i)));
+    test_map.insert(Pair<const char*, UniquePtr<Payload>>(
+        kKeys[i], MakeUnique<Payload>(i)));
   }
   for (int i = 0; i < 5; i++) {
-    EXPECT_EQ(i, test_map.find(i)->second->data());
+    EXPECT_EQ(i, test_map.find(kKeys[i])->second->data());
   }
 }
 
@@ -154,7 +155,7 @@ TEST_F(MapTest, Erase) {
     test_map.emplace(kKeys[i], Payload(i));
   }
   EXPECT_EQ(test_map.size(), static_cast<size_t>(5));
-  test_map.erase(kKeys[3]);  // Remove "hij"
+  EXPECT_EQ(test_map.erase(kKeys[3]), static_cast<size_t>(1));  // Remove "hij"
   for (int i = 0; i < 5; i++) {
     if (i == 3) {  // "hij" should not be present
       EXPECT_TRUE(test_map.find(kKeys[i]) == test_map.end());
@@ -362,6 +363,32 @@ TEST_F(MapTest, EraseUsingIterator) {
   EXPECT_EQ(count, 5);
   EXPECT_TRUE(test_map.empty());
 }
+
+// Random ops on a Map with Integer key of Payload value,
+// tests default comparator
+TEST_F(MapTest, RandomOpsWithIntKey) {
+  Map<int, Payload> test_map;
+  for (int i = 0; i < 5; i++) {
+    test_map.emplace(i, Payload(i));
+  }
+  for (int i = 0; i < 5; i++) {
+    EXPECT_EQ(i, test_map.find(i)->second.data());
+  }
+  for (int i = 0; i < 5; i++) {
+    test_map[i] = Payload(i + 10);
+  }
+  for (int i = 0; i < 5; i++) {
+    EXPECT_EQ(i + 10, test_map[i].data());
+  }
+  EXPECT_EQ(test_map.erase(3), static_cast<size_t>(1));
+  EXPECT_TRUE(test_map.find(3) == test_map.end());
+  EXPECT_FALSE(test_map.empty());
+  EXPECT_EQ(test_map.size(), static_cast<size_t>(4));
+  test_map.clear();
+  EXPECT_EQ(test_map.size(), static_cast<size_t>(0));
+  EXPECT_TRUE(test_map.empty());
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 

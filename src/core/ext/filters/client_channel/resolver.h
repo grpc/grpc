@@ -23,8 +23,11 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/iomgr.h"
 
@@ -46,6 +49,23 @@ namespace grpc_core {
 /// combiner passed to the constructor.
 class Resolver : public InternallyRefCounted<Resolver> {
  public:
+  /// Results returned by the resolver.
+  struct Result {
+    ServerAddressList addresses;
+    RefCountedPtr<ServiceConfig> service_config;
+    grpc_error* service_config_error = GRPC_ERROR_NONE;
+    const grpc_channel_args* args = nullptr;
+
+    // TODO(roth): Remove everything below once grpc_error and
+    // grpc_channel_args are convert to copyable and movable C++ objects.
+    Result() = default;
+    ~Result();
+    Result(const Result& other);
+    Result(Result&& other);
+    Result& operator=(const Result& other);
+    Result& operator=(Result&& other);
+  };
+
   /// A proxy object used by the resolver to return results to the
   /// client channel.
   class ResultHandler {
@@ -53,17 +73,16 @@ class Resolver : public InternallyRefCounted<Resolver> {
     virtual ~ResultHandler() {}
 
     /// Returns a result to the channel.
-    /// The list of addresses will be in GRPC_ARG_SERVER_ADDRESS_LIST.
-    /// The service config (if any) will be in GRPC_ARG_SERVICE_CONFIG.
-    /// Takes ownership of \a result.
-    // TODO(roth): Change this API so that addresses and service config are
-    // passed explicitly instead of being in channel args.
-    virtual void ReturnResult(const grpc_channel_args* result) GRPC_ABSTRACT;
+    /// Takes ownership of \a result.args.
+    virtual void ReturnResult(Result result) GRPC_ABSTRACT;  // NOLINT
 
     /// Returns a transient error to the channel.
     /// If the resolver does not set the GRPC_ERROR_INT_GRPC_STATUS
     /// attribute on the error, calls will be failed with status UNKNOWN.
     virtual void ReturnError(grpc_error* error) GRPC_ABSTRACT;
+
+    // TODO(yashkt): As part of the service config error handling
+    // changes, add a method to parse the service config JSON string.
 
     GRPC_ABSTRACT_BASE_CLASS
   };

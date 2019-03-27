@@ -34,6 +34,7 @@
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
@@ -45,7 +46,6 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/transport/service_config.h"
 
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER 1.6
@@ -299,28 +299,21 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     return;
   }
   if (r->addresses_ != nullptr) {
-    static const char* args_to_remove[1];
-    size_t num_args_to_remove = 0;
-    grpc_arg args_to_add[2];
-    size_t num_args_to_add = 0;
-    args_to_add[num_args_to_add++] =
-        CreateServerAddressListChannelArg(r->addresses_.get());
-    char* service_config_string = nullptr;
+    Result result;
+    result.addresses = std::move(*r->addresses_);
     if (r->service_config_json_ != nullptr) {
-      service_config_string = ChooseServiceConfig(r->service_config_json_);
+      char* service_config_string =
+          ChooseServiceConfig(r->service_config_json_);
       gpr_free(r->service_config_json_);
       if (service_config_string != nullptr) {
         GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
                              r, service_config_string);
-        args_to_remove[num_args_to_remove++] = GRPC_ARG_SERVICE_CONFIG;
-        args_to_add[num_args_to_add++] = grpc_channel_arg_string_create(
-            (char*)GRPC_ARG_SERVICE_CONFIG, service_config_string);
+        result.service_config = ServiceConfig::Create(service_config_string);
       }
+      gpr_free(service_config_string);
     }
-    r->result_handler()->ReturnResult(grpc_channel_args_copy_and_add_and_remove(
-        r->channel_args_, args_to_remove, num_args_to_remove, args_to_add,
-        num_args_to_add));
-    gpr_free(service_config_string);
+    result.args = grpc_channel_args_copy(r->channel_args_);
+    r->result_handler()->ReturnResult(std::move(result));
     r->addresses_.reset();
     // Reset backoff state so that we start from the beginning when the
     // next request gets triggered.
