@@ -176,11 +176,12 @@ def grpc_deps():
     if "bazel_toolchains" not in native.existing_rules():
         http_archive(
             name = "bazel_toolchains",
-            strip_prefix = "bazel-toolchains-68350603967ef8923b02d9644e505c75a11cad4f",
+            strip_prefix = "bazel-toolchains-cddc376d428ada2927ad359211c3e356bd9c9fbb",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/68350603967ef8923b02d9644e505c75a11cad4f.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/cddc376d428ada2927ad359211c3e356bd9c9fbb.tar.gz",
+                "https://github.com/bazelbuild/bazel-toolchains/archive/cddc376d428ada2927ad359211c3e356bd9c9fbb.tar.gz",
             ],
-            sha256 = "47eab1412df2df0de26cf9d017954302d2dd93b324646b24706a8c5f19dd27df",
+            sha256 = "67335b3563d9b67dc2550b8f27cc689b64fadac491e69ce78763d9ba894cc5cc",
         )
 
     if "bazel_skylib" not in native.existing_rules():
