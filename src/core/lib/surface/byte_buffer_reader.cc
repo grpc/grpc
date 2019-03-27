@@ -91,6 +91,23 @@ void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader* reader) {
   }
 }
 
+int grpc_byte_buffer_reader_peek(grpc_byte_buffer_reader* reader,
+                                 grpc_slice** slice) {
+  switch (reader->buffer_in->type) {
+    case GRPC_BB_RAW: {
+      grpc_slice_buffer* slice_buffer;
+      slice_buffer = &reader->buffer_out->data.raw.slice_buffer;
+      if (reader->current.index < slice_buffer->count) {
+        *slice = &slice_buffer->slices[reader->current.index];
+        reader->current.index += 1;
+        return 1;
+      }
+      break;
+    }
+  }
+  return 0;
+}
+
 int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
                                  grpc_slice* slice) {
   switch (reader->buffer_in->type) {

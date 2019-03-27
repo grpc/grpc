@@ -13,6 +13,7 @@ API Reference
    grpc_channelz
    grpc_health_checking
    grpc_reflection
+   grpc_status
    grpc_testing
    glossary
 

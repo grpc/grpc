@@ -38,14 +38,15 @@ extern const upb_msglayout envoy_api_v2_IncrementalDiscoveryRequest_msginit;
 extern const upb_msglayout envoy_api_v2_IncrementalDiscoveryRequest_InitialResourceVersionsEntry_msginit;
 extern const upb_msglayout envoy_api_v2_IncrementalDiscoveryResponse_msginit;
 extern const upb_msglayout envoy_api_v2_Resource_msginit;
-struct google_protobuf_Any;
 struct envoy_api_v2_core_Node;
+struct google_protobuf_Any;
 struct google_rpc_Status;
-extern const upb_msglayout google_protobuf_Any_msginit;
 extern const upb_msglayout envoy_api_v2_core_Node_msginit;
+extern const upb_msglayout google_protobuf_Any_msginit;
 extern const upb_msglayout google_rpc_Status_msginit;
 
 /* Enums */
+
 
 /* envoy.api.v2.DiscoveryRequest */
 

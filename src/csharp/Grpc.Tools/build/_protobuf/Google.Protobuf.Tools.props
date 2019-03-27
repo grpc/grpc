@@ -15,10 +15,10 @@
   <!-- NET SDK projects only: include proto files by default. Other project
        types are not setting or using $(EnableDefaultItems).
        Note that MSBuild evaluates all ItemGroups and their conditions in the
-       final pass over the build script, so properties like EnableDefaultProtoBufItems
+       final pass over the build script, so properties like EnableDefaultProtobufItems
        here can be changed later in the project. -->
   <ItemGroup Condition=" '$(Protobuf_ProjectSupported)' == 'true' ">
-    <ProtoBuf Include="**/*.proto"
-              Condition=" '$(EnableDefaultItems)' == 'true' and '$(EnableDefaultProtoBufItems)' == 'true' " />
+    <Protobuf Include="**/*.proto"
+              Condition=" '$(EnableDefaultItems)' == 'true' and '$(EnableDefaultProtobufItems)' == 'true' " />
   </ItemGroup>
 </Project>

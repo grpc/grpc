@@ -31,7 +31,7 @@ namespace Grpc.Tools
     {
         // On output dependency lists.
         public static string Source = "Source";
-        // On ProtoBuf items.
+        // On Protobuf items.
         public static string ProtoRoot = "ProtoRoot";
         public static string OutputDir = "OutputDir";
         public static string GrpcServices = "GrpcServices";

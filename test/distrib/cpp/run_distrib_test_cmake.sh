@@ -24,7 +24,7 @@ apt-get install -t jessie-backports -y libssl-dev
 # Install c-ares
 cd third_party/cares/cares
 git fetch origin
-git checkout cares-1_13_0
+git checkout cares-1_15_0
 mkdir -p cmake/build
 cd cmake/build
 cmake -DCMAKE_BUILD_TYPE=Release ../..

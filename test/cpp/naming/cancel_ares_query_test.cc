@@ -160,14 +160,27 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
   }
 }
 
-void CheckResolverResultAssertFailureLocked(void* arg, grpc_error* error) {
-  EXPECT_NE(error, GRPC_ERROR_NONE);
-  ArgsStruct* args = static_cast<ArgsStruct*>(arg);
-  gpr_atm_rel_store(&args->done_atm, 1);
-  gpr_mu_lock(args->mu);
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
-  gpr_mu_unlock(args->mu);
-}
+class AssertFailureResultHandler : public grpc_core::Resolver::ResultHandler {
+ public:
+  explicit AssertFailureResultHandler(ArgsStruct* args) : args_(args) {}
+
+  ~AssertFailureResultHandler() override {
+    gpr_atm_rel_store(&args_->done_atm, 1);
+    gpr_mu_lock(args_->mu);
+    GRPC_LOG_IF_ERROR("pollset_kick",
+                      grpc_pollset_kick(args_->pollset, nullptr));
+    gpr_mu_unlock(args_->mu);
+  }
+
+  void ReturnResult(grpc_core::Resolver::Result result) override {
+    GPR_ASSERT(false);
+  }
+
+  void ReturnError(grpc_error* error) override { GPR_ASSERT(false); }
+
+ private:
+  ArgsStruct* args_;
+};
 
 void TestCancelActiveDNSQuery(ArgsStruct* args) {
   int fake_dns_port = grpc_pick_unused_port_or_die();
@@ -180,13 +193,11 @@ void TestCancelActiveDNSQuery(ArgsStruct* args) {
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       grpc_core::ResolverRegistry::CreateResolver(
-          client_target, nullptr, args->pollset_set, args->lock);
+          client_target, nullptr, args->pollset_set, args->lock,
+          grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler>(
+              grpc_core::New<AssertFailureResultHandler>(args)));
   gpr_free(client_target);
-  grpc_closure on_resolver_result_changed;
-  GRPC_CLOSURE_INIT(&on_resolver_result_changed,
-                    CheckResolverResultAssertFailureLocked, (void*)args,
-                    grpc_combiner_scheduler(args->lock));
-  resolver->NextLocked(&args->channel_args, &on_resolver_result_changed);
+  resolver->StartLocked();
   // Without resetting and causing resolver shutdown, the
   // PollPollsetUntilRequestDone call should never finish.
   resolver.reset();
