@@ -92,6 +92,8 @@ class CoreCodegenInterface {
       grpc_byte_buffer_reader* reader) = 0;
   virtual int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
                                            grpc_slice* slice) = 0;
+  virtual int grpc_byte_buffer_reader_peek(grpc_byte_buffer_reader* reader,
+                                           grpc_slice** slice) = 0;
 
   virtual grpc_byte_buffer* grpc_raw_byte_buffer_create(grpc_slice* slice,
                                                         size_t nslices) = 0;

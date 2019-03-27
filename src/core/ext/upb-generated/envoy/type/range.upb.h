@@ -29,6 +29,7 @@ extern const upb_msglayout envoy_type_DoubleRange_msginit;
 
 /* Enums */
 
+
 /* envoy.type.Int64Range */
 
 UPB_INLINE envoy_type_Int64Range *envoy_type_Int64Range_new(upb_arena *arena) {

@@ -85,13 +85,23 @@ class AsyncGenericService final {
 
 namespace experimental {
 
+/// \a ServerGenericBidiReactor is the reactor class for bidi streaming RPCs
+/// invoked on a CallbackGenericService. The API difference relative to
+/// ServerBidiReactor is that the argument to OnStarted is a
+/// GenericServerContext rather than a ServerContext. All other reaction and
+/// operation initiation APIs are the same as ServerBidiReactor.
 class ServerGenericBidiReactor
     : public ServerBidiReactor<ByteBuffer, ByteBuffer> {
  public:
+  /// Similar to ServerBidiReactor::OnStarted except for argument type.
+  ///
+  /// \param[in] context The context object associated with this RPC.
+  virtual void OnStarted(GenericServerContext* context) {}
+
+ private:
   void OnStarted(ServerContext* ctx) final {
     OnStarted(static_cast<GenericServerContext*>(ctx));
   }
-  virtual void OnStarted(GenericServerContext* ctx) {}
 };
 
 }  // namespace experimental
@@ -108,10 +118,18 @@ class UnimplementedGenericBidiReactor
 }  // namespace internal
 
 namespace experimental {
+
+/// \a CallbackGenericService is the base class for generic services implemented
+/// using the callback API and registered through the ServerBuilder using
+/// RegisterCallbackGenericService.
 class CallbackGenericService {
  public:
   CallbackGenericService() {}
   virtual ~CallbackGenericService() {}
+
+  /// The "method handler" for the generic API. This function should be
+  /// overridden to return a ServerGenericBidiReactor that implements the
+  /// application-level interface for this RPC.
   virtual ServerGenericBidiReactor* CreateReactor() {
     return new internal::UnimplementedGenericBidiReactor;
   }
