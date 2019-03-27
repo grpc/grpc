@@ -23,17 +23,147 @@
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
+#include <string.h>
 
-inline const grpc_slice& grpc_slice_ref_internal(const grpc_slice& slice) {
+#include "src/core/lib/gpr/murmur_hash.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/transport/static_metadata.h"
+
+extern uint32_t static_metadata_hash_values[GRPC_STATIC_MDSTR_COUNT];
+extern uint32_t g_hash_seed;
+namespace grpc_core {
+
+class SliceRefcount {
+ public:
+  enum class Type { STATIC, INTERNED, REGULAR };
+  typedef void (*DestroyerFn)(void*);
+
+  SliceRefcount() = default;
+  SliceRefcount(SliceRefcount::Type type, RefCount* ref,
+                DestroyerFn destroyer_fn, void* destroyer_arg,
+                grpc_slice_refcount* sub)
+      : ref_(ref),
+        ref_type_(type),
+        sub_refcount_(sub),
+        dest_fn_(destroyer_fn),
+        destroy_fn_arg_(destroyer_arg) {}
+  // Initializer for static refcounts.
+  SliceRefcount(grpc_slice_refcount* sub, Type type)
+      : ref_type_(type), sub_refcount_(sub) {}
+
+  Type getType() const { return ref_type_; }
+
+  int Eq(const grpc_slice& a, const grpc_slice& b);
+
+  uint32_t Hash(const grpc_slice& slice);
+  void Ref() {
+    if (!ref_) return;
+    ref_->RefNonZero();
+  }
+  void Unref() {
+    if (!ref_) return;
+    if (ref_->Unref()) {
+      dest_fn_(destroy_fn_arg_);
+    }
+  }
+
+  bool Validate() const { return ref_ != nullptr; }
+
+ private:
+  friend struct ::grpc_slice_refcount;
+
+  RefCount* ref_ = nullptr;
+  const Type ref_type_ = Type::REGULAR;
+  grpc_slice_refcount* sub_refcount_ = nullptr;
+  DestroyerFn dest_fn_ = nullptr;
+  void* destroy_fn_arg_ = nullptr;
+};
+
+}  // namespace grpc_core
+
+struct grpc_slice_refcount {
+  grpc_slice_refcount() { impl_.sub_refcount_ = this; }
+  grpc_slice_refcount(grpc_core::SliceRefcount::Type type,
+                      grpc_core::RefCount* ref,
+                      grpc_core::SliceRefcount::DestroyerFn destroyer_fn,
+                      void* destroyer_arg, grpc_slice_refcount* sub)
+      : impl_(type, ref, destroyer_fn, destroyer_arg, sub) {}
+  grpc_slice_refcount(grpc_slice_refcount* sub,
+                      grpc_core::SliceRefcount::Type type)
+      : impl_(sub, type) {}
+
+  grpc_slice_refcount* sub_refcount() const { return impl_.sub_refcount_; }
+
+  grpc_core::SliceRefcount impl_;
+};
+
+namespace grpc_core {
+
+struct InternedSliceRefcount {
+  static void Destroy(void* arg) {
+    static_cast<InternedSliceRefcount*>(arg)->DestroyInstance();
+  }
+
+  InternedSliceRefcount(size_t length, uint32_t hash,
+                        InternedSliceRefcount* bucket_next)
+      : base(grpc_core::SliceRefcount::Type::INTERNED, &refcnt, Destroy, this,
+             &sub),
+        sub(grpc_core::SliceRefcount::Type::REGULAR, &refcnt, Destroy, this,
+            &sub),
+        length(length),
+        hash(hash),
+        bucket_next(bucket_next) {}
+
+  void DestroyInstance();
+
+  grpc_slice_refcount base;
+  grpc_slice_refcount sub;
+  const size_t length;
+  RefCount refcnt;
+  const uint32_t hash;
+  InternedSliceRefcount* bucket_next;
+};
+
+inline int SliceRefcount::Eq(const grpc_slice& a, const grpc_slice& b) {
+  switch (ref_type_) {
+    case Type::STATIC:
+      return GRPC_STATIC_METADATA_INDEX(a) == GRPC_STATIC_METADATA_INDEX(b);
+    case Type::INTERNED:
+      return a.refcount == b.refcount;
+    case Type::REGULAR:
+      break;
+  }
+  if (GRPC_SLICE_LENGTH(a) != GRPC_SLICE_LENGTH(b)) return false;
+  if (GRPC_SLICE_LENGTH(a) == 0) return true;
+  return 0 == memcmp(GRPC_SLICE_START_PTR(a), GRPC_SLICE_START_PTR(b),
+                     GRPC_SLICE_LENGTH(a));
+}
+
+inline uint32_t SliceRefcount::Hash(const grpc_slice& slice) {
+  switch (ref_type_) {
+    case Type::STATIC:
+      return ::static_metadata_hash_values[GRPC_STATIC_METADATA_INDEX(slice)];
+    case Type::INTERNED:
+      return reinterpret_cast<InternedSliceRefcount*>(slice.refcount)->hash;
+    case Type::REGULAR:
+      break;
+  }
+  return gpr_murmur_hash3(GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice),
+                          g_hash_seed);
+}
+
+}  // namespace grpc_core
+
+inline grpc_slice grpc_slice_ref_internal(const grpc_slice& slice) {
   if (slice.refcount) {
-    slice.refcount->vtable->ref(slice.refcount);
+    slice.refcount->impl_.Ref();
   }
   return slice;
 }
 
 inline void grpc_slice_unref_internal(const grpc_slice& slice) {
   if (slice.refcount) {
-    slice.refcount->vtable->unref(slice.refcount);
+    slice.refcount->impl_.Unref();
   }
 }
 

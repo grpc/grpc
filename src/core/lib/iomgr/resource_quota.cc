@@ -32,6 +32,7 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 grpc_core::TraceFlag grpc_resource_quota_trace(false, "resource_quota");
 
@@ -430,41 +431,42 @@ static bool rq_reclaim(grpc_resource_quota* resource_quota, bool destructive) {
  * ru_slice: a slice implementation that is backed by a grpc_resource_user
  */
 
-typedef struct {
-  grpc_slice_refcount base;
-  gpr_refcount refs;
-  grpc_resource_user* resource_user;
-  size_t size;
-} ru_slice_refcount;
+namespace grpc_core {
 
-static void ru_slice_ref(void* p) {
-  ru_slice_refcount* rc = static_cast<ru_slice_refcount*>(p);
-  gpr_ref(&rc->refs);
-}
-
-static void ru_slice_unref(void* p) {
-  ru_slice_refcount* rc = static_cast<ru_slice_refcount*>(p);
-  if (gpr_unref(&rc->refs)) {
+class RuSliceRefcount {
+ public:
+  static void Destroy(void* p) {
+    auto* rc = static_cast<RuSliceRefcount*>(p);
     grpc_resource_user_free(rc->resource_user, rc->size);
     gpr_free(rc);
   }
-}
+  RuSliceRefcount(grpc_resource_user* resource_user, size_t size)
+      : base(grpc_core::SliceRefcount::Type::REGULAR, &refs, Destroy, this,
+             &base),
+        resource_user(resource_user),
+        size(size) {
+    // Nothing to do here.
+  }
 
-static const grpc_slice_refcount_vtable ru_slice_vtable = {
-    ru_slice_ref, ru_slice_unref, grpc_slice_default_eq_impl,
-    grpc_slice_default_hash_impl};
+  grpc_slice_refcount* base_refcount() { return &base; }
+
+ private:
+  grpc_slice_refcount base;
+  RefCount refs;
+  grpc_resource_user* resource_user;
+  size_t size;
+};
+
+}  // namespace grpc_core
 
 static grpc_slice ru_slice_create(grpc_resource_user* resource_user,
                                   size_t size) {
-  ru_slice_refcount* rc = static_cast<ru_slice_refcount*>(
-      gpr_malloc(sizeof(ru_slice_refcount) + size));
-  rc->base.vtable = &ru_slice_vtable;
-  rc->base.sub_refcount = &rc->base;
-  gpr_ref_init(&rc->refs, 1);
-  rc->resource_user = resource_user;
-  rc->size = size;
+  auto* rc = static_cast<grpc_core::RuSliceRefcount*>(
+      gpr_malloc(sizeof(grpc_core::RuSliceRefcount) + size));
+  new (rc) grpc_core::RuSliceRefcount(resource_user, size);
   grpc_slice slice;
-  slice.refcount = &rc->base;
+
+  slice.refcount = rc->base_refcount();
   slice.data.refcounted.bytes = reinterpret_cast<uint8_t*>(rc + 1);
   slice.data.refcounted.length = size;
   return slice;
