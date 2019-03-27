@@ -118,6 +118,8 @@ grpc_channel_args* grpc_channel_args_copy(const grpc_channel_args* src) {
 
 grpc_channel_args* grpc_channel_args_union(const grpc_channel_args* a,
                                            const grpc_channel_args* b) {
+  if (a == nullptr) return grpc_channel_args_copy(b);
+  if (b == nullptr) return grpc_channel_args_copy(a);
   const size_t max_out = (a->num_args + b->num_args);
   grpc_arg* uniques =
       static_cast<grpc_arg*>(gpr_malloc(sizeof(*uniques) * max_out));

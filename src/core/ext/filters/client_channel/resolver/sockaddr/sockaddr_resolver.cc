@@ -44,35 +44,21 @@ namespace {
 
 class SockaddrResolver : public Resolver {
  public:
-  /// Takes ownership of \a addresses.
-  SockaddrResolver(const ResolverArgs& args,
-                   UniquePtr<ServerAddressList> addresses);
+  SockaddrResolver(ServerAddressList addresses, ResolverArgs args);
+  ~SockaddrResolver() override;
 
-  void NextLocked(grpc_channel_args** result,
-                  grpc_closure* on_complete) override;
+  void StartLocked() override;
 
-  void ShutdownLocked() override;
+  void ShutdownLocked() override {}
 
  private:
-  virtual ~SockaddrResolver();
-
-  void MaybeFinishNextLocked();
-
-  /// the addresses that we've "resolved"
-  UniquePtr<ServerAddressList> addresses_;
-  /// channel args
-  grpc_channel_args* channel_args_ = nullptr;
-  /// have we published?
-  bool published_ = false;
-  /// pending next completion, or NULL
-  grpc_closure* next_completion_ = nullptr;
-  /// target result address for next completion
-  grpc_channel_args** target_result_ = nullptr;
+  ServerAddressList addresses_;
+  const grpc_channel_args* channel_args_ = nullptr;
 };
 
-SockaddrResolver::SockaddrResolver(const ResolverArgs& args,
-                                   UniquePtr<ServerAddressList> addresses)
-    : Resolver(args.combiner),
+SockaddrResolver::SockaddrResolver(ServerAddressList addresses,
+                                   ResolverArgs args)
+    : Resolver(args.combiner, std::move(args.result_handler)),
       addresses_(std::move(addresses)),
       channel_args_(grpc_channel_args_copy(args.args)) {}
 
@@ -80,31 +66,13 @@ SockaddrResolver::~SockaddrResolver() {
   grpc_channel_args_destroy(channel_args_);
 }
 
-void SockaddrResolver::NextLocked(grpc_channel_args** target_result,
-                                  grpc_closure* on_complete) {
-  GPR_ASSERT(!next_completion_);
-  next_completion_ = on_complete;
-  target_result_ = target_result;
-  MaybeFinishNextLocked();
-}
-
-void SockaddrResolver::ShutdownLocked() {
-  if (next_completion_ != nullptr) {
-    *target_result_ = nullptr;
-    GRPC_CLOSURE_SCHED(next_completion_, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                             "Resolver Shutdown"));
-    next_completion_ = nullptr;
-  }
-}
-
-void SockaddrResolver::MaybeFinishNextLocked() {
-  if (next_completion_ != nullptr && !published_) {
-    published_ = true;
-    grpc_arg arg = CreateServerAddressListChannelArg(addresses_.get());
-    *target_result_ = grpc_channel_args_copy_and_add(channel_args_, &arg, 1);
-    GRPC_CLOSURE_SCHED(next_completion_, GRPC_ERROR_NONE);
-    next_completion_ = nullptr;
-  }
+void SockaddrResolver::StartLocked() {
+  Result result;
+  result.addresses = std::move(addresses_);
+  // TODO(roth): Use std::move() once channel args is converted to C++.
+  result.args = channel_args_;
+  channel_args_ = nullptr;
+  result_handler()->ReturnResult(std::move(result));
 }
 
 //
@@ -114,12 +82,12 @@ void SockaddrResolver::MaybeFinishNextLocked() {
 void DoNothing(void* ignored) {}
 
 OrphanablePtr<Resolver> CreateSockaddrResolver(
-    const ResolverArgs& args,
+    ResolverArgs args,
     bool parse(const grpc_uri* uri, grpc_resolved_address* dst)) {
   if (0 != strcmp(args.uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority-based URIs not supported by the %s scheme",
             args.uri->scheme);
-    return OrphanablePtr<Resolver>(nullptr);
+    return nullptr;
   }
   // Construct addresses.
   grpc_slice path_slice =
@@ -127,7 +95,7 @@ OrphanablePtr<Resolver> CreateSockaddrResolver(
   grpc_slice_buffer path_parts;
   grpc_slice_buffer_init(&path_parts);
   grpc_slice_split(path_slice, ",", &path_parts);
-  auto addresses = MakeUnique<ServerAddressList>();
+  ServerAddressList addresses;
   bool errors_found = false;
   for (size_t i = 0; i < path_parts.count; i++) {
     grpc_uri ith_uri = *args.uri;
@@ -135,10 +103,10 @@ OrphanablePtr<Resolver> CreateSockaddrResolver(
     ith_uri.path = part_str.get();
     grpc_resolved_address addr;
     if (!parse(&ith_uri, &addr)) {
-      errors_found = true; /* GPR_TRUE */
+      errors_found = true;
       break;
     }
-    addresses->emplace_back(addr, nullptr /* args */);
+    addresses.emplace_back(addr, nullptr /* args */);
   }
   grpc_slice_buffer_destroy_internal(&path_parts);
   grpc_slice_unref_internal(path_slice);
@@ -147,14 +115,13 @@ OrphanablePtr<Resolver> CreateSockaddrResolver(
   }
   // Instantiate resolver.
   return OrphanablePtr<Resolver>(
-      New<SockaddrResolver>(args, std::move(addresses)));
+      New<SockaddrResolver>(std::move(addresses), std::move(args)));
 }
 
 class IPv4ResolverFactory : public ResolverFactory {
  public:
-  OrphanablePtr<Resolver> CreateResolver(
-      const ResolverArgs& args) const override {
-    return CreateSockaddrResolver(args, grpc_parse_ipv4);
+  OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
+    return CreateSockaddrResolver(std::move(args), grpc_parse_ipv4);
   }
 
   const char* scheme() const override { return "ipv4"; }
@@ -162,9 +129,8 @@ class IPv4ResolverFactory : public ResolverFactory {
 
 class IPv6ResolverFactory : public ResolverFactory {
  public:
-  OrphanablePtr<Resolver> CreateResolver(
-      const ResolverArgs& args) const override {
-    return CreateSockaddrResolver(args, grpc_parse_ipv6);
+  OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
+    return CreateSockaddrResolver(std::move(args), grpc_parse_ipv6);
   }
 
   const char* scheme() const override { return "ipv6"; }
@@ -173,9 +139,8 @@ class IPv6ResolverFactory : public ResolverFactory {
 #ifdef GRPC_HAVE_UNIX_SOCKET
 class UnixResolverFactory : public ResolverFactory {
  public:
-  OrphanablePtr<Resolver> CreateResolver(
-      const ResolverArgs& args) const override {
-    return CreateSockaddrResolver(args, grpc_parse_unix);
+  OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
+    return CreateSockaddrResolver(std::move(args), grpc_parse_unix);
   }
 
   UniquePtr<char> GetDefaultAuthority(grpc_uri* uri) const override {

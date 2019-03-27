@@ -1,6 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\Grpc.Core\Version.csproj.include" />
   <Import Project="..\Grpc.Core\Common.csproj.include" />
 
   <PropertyGroup>
@@ -19,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\Grpc.Core\Version.cs" />
+    <Compile Include="..\Grpc.Core.Api\Version.cs" />
   </ItemGroup>
 
 </Project>

@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		5E143B892069D72200715A6E /* CFStreamClientTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5E143B882069D72200715A6E /* CFStreamClientTests.mm */; };
-		5E143B8C206B5F9F00715A6E /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 5E143B8A2069D72700715A6E /* Info.plist */; };
 		5E143B8E206C5B9A00715A6E /* CFStreamEndpointTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5E143B8D206C5B9A00715A6E /* CFStreamEndpointTests.mm */; };
 		604EA96D9CD477A8EA411BDF /* libPods-CFStreamTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = AFFA154D492751CEAC05D591 /* libPods-CFStreamTests.a */; };
 /* End PBXBuildFile section */
@@ -82,7 +81,6 @@
 				4EBA55D3E23FC6C84596E3D5 /* [CP] Check Pods Manifest.lock */,
 				5E143B752069D67300715A6E /* Sources */,
 				5E143B762069D67300715A6E /* Frameworks */,
-				5E143B772069D67300715A6E /* Resources */,
 			);
 			buildRules = (
 			);
@@ -125,17 +123,6 @@
 			);
 		};
 /* End PBXProject section */
-
-/* Begin PBXResourcesBuildPhase section */
-		5E143B772069D67300715A6E /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				5E143B8C206B5F9F00715A6E /* Info.plist in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		4EBA55D3E23FC6C84596E3D5 /* [CP] Check Pods Manifest.lock */ = {

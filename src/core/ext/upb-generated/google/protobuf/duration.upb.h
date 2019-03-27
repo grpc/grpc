@@ -26,6 +26,7 @@ extern const upb_msglayout google_protobuf_Duration_msginit;
 
 /* Enums */
 
+
 /* google.protobuf.Duration */
 
 UPB_INLINE google_protobuf_Duration *google_protobuf_Duration_new(upb_arena *arena) {
