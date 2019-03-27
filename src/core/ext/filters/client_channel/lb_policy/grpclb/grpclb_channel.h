@@ -23,6 +23,8 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/ext/filters/client_channel/server_address.h"
+
 /// Makes any necessary modifications to \a args for use in the grpclb
 /// balancer channel.
 ///
@@ -30,7 +32,7 @@
 ///
 /// Caller takes ownership of the returned args.
 grpc_channel_args* grpc_lb_policy_grpclb_modify_lb_channel_args(
-    grpc_channel_args* args);
+    const grpc_core::ServerAddressList& addresses, grpc_channel_args* args);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CHANNEL_H \
         */

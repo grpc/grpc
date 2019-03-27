@@ -36,6 +36,7 @@
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -538,28 +539,21 @@ class GrpclbEnd2endTest : public ::testing::Test {
   void SetNextResolution(const std::vector<AddressData>& address_data,
                          const char* service_config_json = nullptr) {
     grpc_core::ExecCtx exec_ctx;
-    grpc_core::ServerAddressList addresses =
-        CreateLbAddressesFromAddressDataList(address_data);
-    std::vector<grpc_arg> args = {
-        CreateServerAddressListChannelArg(&addresses),
-    };
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateLbAddressesFromAddressDataList(address_data);
     if (service_config_json != nullptr) {
-      args.push_back(grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
-          const_cast<char*>(service_config_json)));
+      result.service_config =
+          grpc_core::ServiceConfig::Create(service_config_json);
     }
-    grpc_channel_args fake_result = {args.size(), args.data()};
-    response_generator_->SetResponse(&fake_result);
+    response_generator_->SetResponse(std::move(result));
   }
 
   void SetNextReresolutionResponse(
       const std::vector<AddressData>& address_data) {
     grpc_core::ExecCtx exec_ctx;
-    grpc_core::ServerAddressList addresses =
-        CreateLbAddressesFromAddressDataList(address_data);
-    grpc_arg fake_addresses = CreateServerAddressListChannelArg(&addresses);
-    grpc_channel_args fake_result = {1, &fake_addresses};
-    response_generator_->SetReresolutionResponse(&fake_result);
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateLbAddressesFromAddressDataList(address_data);
+    response_generator_->SetReresolutionResponse(std::move(result));
   }
 
   const std::vector<int> GetBackendPorts(size_t start_index = 0,
