@@ -87,6 +87,16 @@ namespace Grpc.Tools
 
             // Hope we are not building on ARM under Xamarin!
             Cpu = Environment.Is64BitOperatingSystem ? CpuKind.X64 : CpuKind.X86;
+
+            // See https://github.com/grpc/grpc/issues/18543
+            // Problem: Is64BitOperatingSystem returns "true" inside a 32-bit docker container.
+            // Workaround: Mono is 64-bit by default on linux, so we get around
+            // this by assuming 32-bit mono linux process means
+            // we should invoke 32-bit version of protoc.
+            if (Os == OsKind.Linux && !Environment.Is64BitProcess)
+            {
+                Cpu = CpuKind.X86;
+            }
 #endif
         }
     };
