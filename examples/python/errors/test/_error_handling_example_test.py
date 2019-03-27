@@ -13,6 +13,14 @@
 # limitations under the License.
 """Tests of the error handling example."""
 
+# NOTE(lidiz) This module only exists in Bazel BUILD file, for more details
+# please refer to comments in the "bazel_namespace_package_hack" module.
+try:
+    from tests import bazel_namespace_package_hack
+    bazel_namespace_package_hack.sys_path_to_site_dir_hack()
+except ImportError:
+    pass
+
 import unittest
 import logging
 
@@ -21,14 +29,6 @@ import grpc
 from examples.protos import helloworld_pb2_grpc
 from examples.python.errors import client as error_handling_client
 from examples.python.errors import server as error_handling_server
-
-# NOTE(lidiz) This module only exists in Bazel BUILD file, for more details
-# please refer to comments in the "bazel_namespace_package_hack" module.
-try:
-    from tests import bazel_namespace_package_hack
-    bazel_namespace_package_hack.sys_path_to_site_dir_hack()
-except ImportError:
-    pass
 
 
 class ErrorHandlingExampleTest(unittest.TestCase):
