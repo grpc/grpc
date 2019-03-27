@@ -116,9 +116,9 @@ class GlobalSubchannelPool::Sweeper : public InternallyRefCounted<Sweeper> {
   GlobalSubchannelPool* subchannel_pool_;
   grpc_closure sweep_unused_subchannels_;
   grpc_millis sweep_interval_ms_ = kDefaultSweepIntervalMs;
+  gpr_mu mu_;  // Protect the data members below.
   grpc_timer next_sweep_timer_;
   bool shutdown_ = false;
-  gpr_mu mu_;
 };
 
 GlobalSubchannelPool::GlobalSubchannelPool() {
@@ -214,6 +214,7 @@ Subchannel* GlobalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
         }
       }
       if (c != nullptr) {
+        c->set_subchannel_pool(Ref());
         grpc_pollset_set_add_pollset_set(c->pollset_set(), pollset_set_);
       }
       grpc_avl_unref(new_map, nullptr);
