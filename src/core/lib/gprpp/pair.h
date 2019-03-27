@@ -28,13 +28,11 @@ template <class T1, class T2>
 using Pair = std::pair<T1, T2>;
 
 template <class T1, class T2>
-inline Pair<T1, T2> MakePair(T1&& u, T2&& v) {
-  return std::make_pair<T1, T2>(std::forward<T1>(u), std::forward<T2>(v));
-}
-
-template <class T1, class T2>
-inline Pair<T1, T2> MakePair(const T1& u, const T2& v) {
-  return std::make_pair<T1, T2>(u, v);
+inline Pair<typename std::decay<T1>::type, typename std::decay<T2>::type>
+MakePair(T1&& u, T2&& v) {
+  typedef typename std::decay<T1>::type V1;
+  typedef typename std::decay<T2>::type V2;
+  return std::make_pair<V1, V2>(std::forward<T1>(u), std::forward<T2>(v));
 }
 }  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_GPRPP_PAIR_H */

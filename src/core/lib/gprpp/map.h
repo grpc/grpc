@@ -45,69 +45,12 @@ class MapTest;
 // Alternative map implementation for grpc_core
 template <class Key, class T, class Compare = std::less<Key>>
 class Map {
-  struct Entry;
-
  public:
   typedef Key key_type;
   typedef T mapped_type;
   typedef Pair<key_type, mapped_type> value_type;
   typedef Compare key_compare;
-
-  class iterator : public std::iterator<std::input_iterator_tag, value_type,
-                                        int32_t, value_type*, value_type&> {
-   public:
-    iterator(iterator&& other) : curr_(other.curr_), map_(other.map_) {
-      other.curr_ = nullptr;
-      other.map_ = nullptr;
-    }
-    iterator(const iterator& iter) : curr_(iter.curr_), map_(iter.map_) {}
-    bool operator==(const iterator& rhs) const { return (curr_ == rhs.curr_); }
-    bool operator!=(const iterator& rhs) const { return (curr_ != rhs.curr_); }
-
-    iterator& operator++() {
-      curr_ = map_->InOrderSuccessor(curr_);
-      return *this;
-    }
-
-    iterator& operator++(int e) {
-      curr_ = map_->InOrderSuccessor(curr_);
-      return *this;
-    }
-
-    iterator& operator=(iterator&& other) {
-      if (this != &other) {
-        this->curr_ = other.curr_;
-        this->map_ = other.map_;
-        other.curr_ = nullptr;
-        other.map_ = nullptr;
-      }
-      return *this;
-    }
-
-    iterator& operator=(const iterator& other) {
-      if (this != &other) {
-        this->curr_ = other.curr_;
-        this->map_ = other.map_;
-      }
-      return *this;
-    }
-
-    // operator*()
-    value_type& operator*() { return curr_->pair; }
-    const value_type& operator*() const { return curr_->pair; }
-
-    // operator->()
-    value_type* operator->() { return &curr_->pair; }
-    value_type const* operator->() const { return &curr_->pair; }
-
-   private:
-    using GrpcMap = typename ::grpc_core::Map<Key, T, Compare>;
-    using GrpcMapEntry = typename ::grpc_core::Map<Key, T, Compare>::Entry;
-    iterator(GrpcMap* map, GrpcMapEntry* curr) : curr_(curr), map_(map) {}
-    GrpcMapEntry* curr_;
-    GrpcMap* map_;
-    friend class Map<key_type, mapped_type, Compare>;
-  };
+  class iterator;
 
   ~Map() { clear(); }
 
@@ -153,11 +96,15 @@ class Map {
   // TODO(mhaidry): Modify erase to use the iterator location
   // to create an efficient erase method
   iterator erase(iterator iter) {
+    if (iter == end()) return iter;
     key_type& del_key = iter->first;
     iter++;
     root_ = RemoveRecursive(root_, del_key);
+    size_--;
     return iter;
   }
+
+  size_t size() { return size_; }
 
   Pair<iterator, bool> insert(value_type&& pair) {
     return emplace(std::forward<value_type>(pair));
@@ -176,9 +123,9 @@ class Map {
       root_ = p.second;
       ret = p.first;
       insertion = true;
+      size_++;
     }
-    return MakePair<iterator, bool>(std::move(ret),
-                                    std::forward<bool>(insertion));
+    return MakePair(std::forward<iterator>(ret), std::forward<bool>(insertion));
   }
 
   bool empty() const { return root_ == nullptr; }
@@ -199,7 +146,6 @@ class Map {
 
  private:
   struct Entry {
-   public:
     explicit Entry(value_type&& pair) : pair(std::forward<value_type>(pair)) {}
     value_type pair;
     Entry* left = nullptr;
@@ -307,6 +253,9 @@ class Map {
     return root;
   }
 
+  // Returns a pair with the first value being an iterator pointing to the
+  // inserted entry and the second value being the new root of the subtree
+  // after a rebalance
   Pair<iterator, Entry*> InsertRecursive(Entry* root, value_type&& p) {
     if (root == nullptr) {
       Entry* e = New<Entry>(std::forward<value_type>(p));
@@ -376,7 +325,55 @@ class Map {
   }
 
   Entry* root_ = nullptr;
+  size_t size_ = 0;
   friend class testing::MapTest;
+};
+
+template <class Key, class T, class Compare>
+class Map<Key, T, Compare>::iterator
+    : public std::iterator<std::input_iterator_tag, Pair<Key, T>, int32_t,
+                           Pair<Key, T>*, Pair<Key, T>&> {
+ public:
+  typedef Key key_type;
+  typedef T mapped_type;
+  typedef Pair<key_type, mapped_type> value_type;
+  iterator(const iterator& iter) : curr_(iter.curr_), map_(iter.map_) {}
+  bool operator==(const iterator& rhs) const { return (curr_ == rhs.curr_); }
+  bool operator!=(const iterator& rhs) const { return (curr_ != rhs.curr_); }
+
+  iterator& operator++() {
+    curr_ = map_->InOrderSuccessor(curr_);
+    return *this;
+  }
+
+  iterator& operator++(int e) {
+    curr_ = map_->InOrderSuccessor(curr_);
+    return *this;
+  }
+
+  iterator& operator=(const iterator& other) {
+    if (this != &other) {
+      this->curr_ = other.curr_;
+      this->map_ = other.map_;
+    }
+    return *this;
+  }
+
+  // operator*()
+  value_type& operator*() { return curr_->pair; }
+  const value_type& operator*() const { return curr_->pair; }
+
+  // operator->()
+  value_type* operator->() { return &curr_->pair; }
+  value_type const* operator->() const { return &curr_->pair; }
+
+ private:
+  using GrpcMap = typename ::grpc_core::Map<Key, T, Compare>;
+  using GrpcMapEntry = typename ::grpc_core::Map<Key, T, Compare>::Entry;
+  iterator(GrpcMap* map, GrpcMapEntry* curr) : curr_(curr), map_(map) {}
+  GrpcMapEntry* curr_;
+  GrpcMap* map_;
+  friend class Map<key_type, mapped_type, Compare>;
 };
 }  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_GPRPP_MAP_H */
