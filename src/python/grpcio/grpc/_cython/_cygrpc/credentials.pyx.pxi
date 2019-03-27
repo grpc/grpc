@@ -17,8 +17,6 @@ cimport cpython
 import grpc
 import threading
 
-from libc.stdint cimport uintptr_t
-
 
 def _spawn_callback_in_thread(cb_func, args):
   ForkManagedThread(target=cb_func, args=args).start()

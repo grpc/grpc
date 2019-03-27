@@ -96,6 +96,7 @@ extern const upb_msglayout google_protobuf_Timestamp_msginit;
 
 /* Enums */
 
+
 /* validate.FieldRules */
 
 UPB_INLINE validate_FieldRules *validate_FieldRules_new(upb_arena *arena) {
