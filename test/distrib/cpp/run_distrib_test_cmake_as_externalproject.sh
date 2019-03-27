@@ -17,8 +17,8 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
-echo "deb [check-valid-until=no] http://archive.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
-apt-get update
+echo "deb http://archive.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
+apt-get -o Acquire::Check-Valid-Until=false update
 apt-get install -t jessie-backports -y libssl-dev
 
 # To increase the confidence that gRPC installation works without depending on

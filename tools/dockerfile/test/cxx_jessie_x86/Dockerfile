@@ -79,8 +79,8 @@ RUN mkdir /var/local/jenkins
 # Use cmake 3.6 from jessie-backports
 # should only be used for images based on debian jessie.
 
-RUN echo "deb [check-valid-until=no] http://archive.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
-RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
+RUN echo "deb http://archive.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
+RUN apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -t jessie-backports -y cmake && apt-get clean
 
 
 # Install gcc-4.8 and other relevant items
