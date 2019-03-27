@@ -13,7 +13,17 @@
 # limitations under the License.
 
 cimport libc.time
-from libc.stdint cimport intptr_t, uint8_t, int32_t, uint32_t, int64_t
+
+ctypedef          ssize_t   intptr_t
+ctypedef          size_t    uintptr_t
+ctypedef   signed char      int8_t
+ctypedef   signed short     int16_t
+ctypedef   signed int       int32_t
+ctypedef   signed long long int64_t
+ctypedef unsigned char      uint8_t
+ctypedef unsigned short     uint16_t
+ctypedef unsigned int       uint32_t
+ctypedef unsigned long long uint64_t
 
 
 cdef extern from "grpc/support/alloc.h":

@@ -41,18 +41,18 @@ extern const upb_msglayout envoy_api_v2_core_HealthCheck_TcpHealthCheck_msginit;
 extern const upb_msglayout envoy_api_v2_core_HealthCheck_RedisHealthCheck_msginit;
 extern const upb_msglayout envoy_api_v2_core_HealthCheck_GrpcHealthCheck_msginit;
 extern const upb_msglayout envoy_api_v2_core_HealthCheck_CustomHealthCheck_msginit;
+struct envoy_api_v2_core_HeaderValueOption;
 struct google_protobuf_Any;
-struct google_protobuf_Struct;
-struct google_protobuf_UInt32Value;
 struct google_protobuf_BoolValue;
 struct google_protobuf_Duration;
-struct envoy_api_v2_core_HeaderValueOption;
+struct google_protobuf_Struct;
+struct google_protobuf_UInt32Value;
+extern const upb_msglayout envoy_api_v2_core_HeaderValueOption_msginit;
 extern const upb_msglayout google_protobuf_Any_msginit;
-extern const upb_msglayout google_protobuf_Struct_msginit;
-extern const upb_msglayout google_protobuf_UInt32Value_msginit;
 extern const upb_msglayout google_protobuf_BoolValue_msginit;
 extern const upb_msglayout google_protobuf_Duration_msginit;
-extern const upb_msglayout envoy_api_v2_core_HeaderValueOption_msginit;
+extern const upb_msglayout google_protobuf_Struct_msginit;
+extern const upb_msglayout google_protobuf_UInt32Value_msginit;
 
 /* Enums */
 
@@ -63,6 +63,7 @@ typedef enum {
   envoy_api_v2_core_DRAINING = 3,
   envoy_api_v2_core_TIMEOUT = 4
 } envoy_api_v2_core_HealthStatus;
+
 
 /* envoy.api.v2.core.HealthCheck */
 

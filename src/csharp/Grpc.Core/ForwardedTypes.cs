@@ -51,5 +51,6 @@ using Grpc.Core.Utils;
 [assembly:TypeForwardedToAttribute(typeof(ServiceBinderBase))]
 [assembly:TypeForwardedToAttribute(typeof(Status))]
 [assembly:TypeForwardedToAttribute(typeof(StatusCode))]
+[assembly:TypeForwardedToAttribute(typeof(VersionInfo))]
 [assembly:TypeForwardedToAttribute(typeof(WriteOptions))]
 [assembly:TypeForwardedToAttribute(typeof(WriteFlags))]

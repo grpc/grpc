@@ -26,6 +26,7 @@ extern const upb_msglayout google_protobuf_Timestamp_msginit;
 
 /* Enums */
 
+
 /* google.protobuf.Timestamp */
 
 UPB_INLINE google_protobuf_Timestamp *google_protobuf_Timestamp_new(upb_arena *arena) {

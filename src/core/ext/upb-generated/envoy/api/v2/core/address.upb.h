@@ -38,12 +38,12 @@ extern const upb_msglayout envoy_api_v2_core_TcpKeepalive_msginit;
 extern const upb_msglayout envoy_api_v2_core_BindConfig_msginit;
 extern const upb_msglayout envoy_api_v2_core_Address_msginit;
 extern const upb_msglayout envoy_api_v2_core_CidrRange_msginit;
-struct google_protobuf_UInt32Value;
-struct google_protobuf_BoolValue;
 struct envoy_api_v2_core_SocketOption;
-extern const upb_msglayout google_protobuf_UInt32Value_msginit;
-extern const upb_msglayout google_protobuf_BoolValue_msginit;
+struct google_protobuf_BoolValue;
+struct google_protobuf_UInt32Value;
 extern const upb_msglayout envoy_api_v2_core_SocketOption_msginit;
+extern const upb_msglayout google_protobuf_BoolValue_msginit;
+extern const upb_msglayout google_protobuf_UInt32Value_msginit;
 
 /* Enums */
 
@@ -51,6 +51,7 @@ typedef enum {
   envoy_api_v2_core_SocketAddress_TCP = 0,
   envoy_api_v2_core_SocketAddress_UDP = 1
 } envoy_api_v2_core_SocketAddress_Protocol;
+
 
 /* envoy.api.v2.core.Pipe */
 
@@ -92,7 +93,7 @@ typedef enum {
 } envoy_api_v2_core_SocketAddress_port_specifier_oneofcases;
 UPB_INLINE envoy_api_v2_core_SocketAddress_port_specifier_oneofcases envoy_api_v2_core_SocketAddress_port_specifier_case(const envoy_api_v2_core_SocketAddress* msg) { return UPB_FIELD_AT(msg, int, UPB_SIZE(36, 64)); }
 
-UPB_INLINE envoy_api_v2_core_SocketAddress_Protocol envoy_api_v2_core_SocketAddress_protocol(const envoy_api_v2_core_SocketAddress *msg) { return UPB_FIELD_AT(msg, envoy_api_v2_core_SocketAddress_Protocol, UPB_SIZE(0, 0)); }
+UPB_INLINE int32_t envoy_api_v2_core_SocketAddress_protocol(const envoy_api_v2_core_SocketAddress *msg) { return UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)); }
 UPB_INLINE upb_strview envoy_api_v2_core_SocketAddress_address(const envoy_api_v2_core_SocketAddress *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(12, 16)); }
 UPB_INLINE bool envoy_api_v2_core_SocketAddress_has_port_value(const envoy_api_v2_core_SocketAddress *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(36, 64), 3); }
 UPB_INLINE uint32_t envoy_api_v2_core_SocketAddress_port_value(const envoy_api_v2_core_SocketAddress *msg) { return UPB_READ_ONEOF(msg, uint32_t, UPB_SIZE(28, 48), UPB_SIZE(36, 64), 3, 0); }
@@ -101,8 +102,8 @@ UPB_INLINE upb_strview envoy_api_v2_core_SocketAddress_named_port(const envoy_ap
 UPB_INLINE upb_strview envoy_api_v2_core_SocketAddress_resolver_name(const envoy_api_v2_core_SocketAddress *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(20, 32)); }
 UPB_INLINE bool envoy_api_v2_core_SocketAddress_ipv4_compat(const envoy_api_v2_core_SocketAddress *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(8, 8)); }
 
-UPB_INLINE void envoy_api_v2_core_SocketAddress_set_protocol(envoy_api_v2_core_SocketAddress *msg, envoy_api_v2_core_SocketAddress_Protocol value) {
-  UPB_FIELD_AT(msg, envoy_api_v2_core_SocketAddress_Protocol, UPB_SIZE(0, 0)) = value;
+UPB_INLINE void envoy_api_v2_core_SocketAddress_set_protocol(envoy_api_v2_core_SocketAddress *msg, int32_t value) {
+  UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)) = value;
 }
 UPB_INLINE void envoy_api_v2_core_SocketAddress_set_address(envoy_api_v2_core_SocketAddress *msg, upb_strview value) {
   UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(12, 16)) = value;

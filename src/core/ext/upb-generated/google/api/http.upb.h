@@ -32,6 +32,7 @@ extern const upb_msglayout google_api_CustomHttpPattern_msginit;
 
 /* Enums */
 
+
 /* google.api.Http */
 
 UPB_INLINE google_api_Http *google_api_Http_new(upb_arena *arena) {
