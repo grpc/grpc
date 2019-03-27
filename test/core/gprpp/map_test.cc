@@ -48,7 +48,7 @@ inline UniquePtr<char> CopyString(const char* string) {
   return UniquePtr<char>(gpr_strdup(string));
 }
 
-static const char* const kKeys[] = {"abc", "efg", "hij", "klm", "xyz"};
+static constexpr char kKeys[5][4] = {"abc", "efg", "hij", "klm", "xyz"};
 
 class MapTest : public ::testing::Test {
  public:

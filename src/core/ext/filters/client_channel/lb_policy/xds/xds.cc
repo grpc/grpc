@@ -1419,7 +1419,8 @@ void XdsLb::LocalityMap::LocalityEntry::UpdateLocked(
   // Construct update args.
   UpdateArgs update_args;
   update_args.addresses = ProcessServerlist(serverlist);
-  update_args.config = child_policy_config->Ref();
+  update_args.config =
+      child_policy_config == nullptr ? nullptr : child_policy_config->Ref();
   update_args.args = CreateChildPolicyArgsLocked(args_in);
 
   // If the child policy name changes, we need to create a new child
