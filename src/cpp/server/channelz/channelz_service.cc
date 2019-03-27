@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/string_view.h"
 #include "src/cpp/server/channelz/channelz_service.h"
 
 #include <grpc/grpc.h>
