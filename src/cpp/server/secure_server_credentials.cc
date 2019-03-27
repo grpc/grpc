@@ -93,7 +93,7 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
      status.error_message().c_str());
 }
 
-} // namespace grpc
+}  // namespace grpc
 
 namespace grpc_impl {
 

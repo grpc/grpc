@@ -62,7 +62,8 @@ static inline std::shared_ptr<ServerCredentials> InsecureServerCredentials() {
 
 namespace experimental {
 
-typedef ::grpc_impl::experimental::AltsServerCredentialsOptions AltsServerCredentialsOptions;
+typedef ::grpc_impl::experimental::AltsServerCredentialsOptions
+    AltsServerCredentialsOptions;
 
 static inline std::shared_ptr<ServerCredentials> AltsServerCredentials(
     const AltsServerCredentialsOptions& options) {

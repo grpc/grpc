@@ -96,9 +96,10 @@ class ServerBuilder {
   /// number bound to the \a grpc::Server for the corresponding endpoint after
   /// it is successfully bound by BuildAndStart(), 0 otherwise. AddListeningPort
   /// does not modify this pointer.
-  ServerBuilder& AddListeningPort(const grpc::string& addr_uri,
-                                  std::shared_ptr<grpc_impl::ServerCredentials> creds,
-                                  int* selected_port = nullptr);
+  ServerBuilder& AddListeningPort(
+      const grpc::string& addr_uri,
+      std::shared_ptr<grpc_impl::ServerCredentials> creds,
+      int* selected_port = nullptr);
 
   /// Add a completion queue for handling asynchronous services.
   ///

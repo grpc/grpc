@@ -30,7 +30,7 @@
 namespace grpc_impl {
 
 class SecureServerCredentials;
-} // namespace grpc_impl
+}  // namespace grpc_impl
 
 namespace grpc {
 
@@ -56,7 +56,7 @@ class AuthMetadataProcessorAyncWrapper final {
   std::shared_ptr<AuthMetadataProcessor> processor_;
 };
 
-} // namespace grpc
+}  // namespace grpc
 
 namespace grpc_impl {
 
@@ -79,7 +79,5 @@ class SecureServerCredentials final : public ServerCredentials {
 };
 
 }  // namespace grpc_impl
-
-
 
 #endif  // GRPC_INTERNAL_CPP_SERVER_SECURE_SERVER_CREDENTIALS_H

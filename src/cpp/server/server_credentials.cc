@@ -22,4 +22,4 @@ namespace grpc_impl {
 
 ServerCredentials::~ServerCredentials() {}
 
-}  // namespace grpc
+}  // namespace grpc_impl

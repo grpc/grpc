@@ -32,7 +32,7 @@ namespace grpc {
 
 class Server;
 struct SslServerCredentialsOptions;
-} // namespace grpc
+}  // namespace grpc
 namespace grpc_impl {
 
 /// Wrapper around \a grpc_server_credentials, a way to authenticate a server.
