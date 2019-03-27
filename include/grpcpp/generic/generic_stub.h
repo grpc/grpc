@@ -29,7 +29,6 @@
 
 namespace grpc {
 
-class CompletionQueue;
 typedef ClientAsyncReaderWriter<ByteBuffer, ByteBuffer>
     GenericClientAsyncReaderWriter;
 typedef ClientAsyncResponseReader<ByteBuffer> GenericClientAsyncResponseReader;

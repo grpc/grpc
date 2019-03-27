@@ -41,6 +41,10 @@ struct grpc_metadata;
 struct grpc_call;
 struct census_context;
 
+namespace grpc_impl {
+class CompletionQueue;
+}
+
 namespace grpc {
 class ClientContext;
 class GenericServerContext;
@@ -86,6 +90,9 @@ class ErrorMethodHandler;
 class Call;
 class ServerReactor;
 }  // namespace internal
+
+class Server;
+class ServerInterface;
 
 namespace testing {
 class InteropServerContextInspector;
@@ -351,7 +358,7 @@ class ServerContext {
 
   gpr_timespec deadline_;
   grpc_call* call_;
-  CompletionQueue* cq_;
+  ::grpc_impl::CompletionQueue* cq_;
   bool sent_initial_metadata_;
   mutable std::shared_ptr<const AuthContext> auth_context_;
   mutable internal::MetadataMap client_metadata_;
