@@ -183,8 +183,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }
   }
 
-  grpc_channel_args* BuildFakeResults(const std::vector<int>& ports) {
-    grpc_core::ServerAddressList addresses;
+  grpc_core::Resolver::Result BuildFakeResults(const std::vector<int>& ports) {
+    grpc_core::Resolver::Result result;
     for (const int& port : ports) {
       char* lb_uri_str;
       gpr_asprintf(&lb_uri_str, "ipv4:127.0.0.1:%d", port);
@@ -192,29 +192,22 @@ class ClientLbEnd2endTest : public ::testing::Test {
       GPR_ASSERT(lb_uri != nullptr);
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(lb_uri, &address));
-      addresses.emplace_back(address.addr, address.len, nullptr /* args */);
+      result.addresses.emplace_back(address.addr, address.len,
+                                    nullptr /* args */);
       grpc_uri_destroy(lb_uri);
       gpr_free(lb_uri_str);
     }
-    const grpc_arg fake_addresses =
-        CreateServerAddressListChannelArg(&addresses);
-    grpc_channel_args* fake_results =
-        grpc_channel_args_copy_and_add(nullptr, &fake_addresses, 1);
-    return fake_results;
+    return result;
   }
 
   void SetNextResolution(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
-    grpc_channel_args* fake_results = BuildFakeResults(ports);
-    response_generator_->SetResponse(fake_results);
-    grpc_channel_args_destroy(fake_results);
+    response_generator_->SetResponse(BuildFakeResults(ports));
   }
 
   void SetNextResolutionUponError(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
-    grpc_channel_args* fake_results = BuildFakeResults(ports);
-    response_generator_->SetReresolutionResponse(fake_results);
-    grpc_channel_args_destroy(fake_results);
+    response_generator_->SetReresolutionResponse(BuildFakeResults(ports));
   }
 
   void SetFailureOnReresolution() {

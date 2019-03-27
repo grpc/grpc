@@ -95,6 +95,22 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
     tag_ = tag;
   }
 
+  void SetCancelCallback(std::function<void()> callback) {
+    std::lock_guard<std::mutex> lock(mu_);
+
+    if (finalized_ && (cancelled_ != 0)) {
+      callback();
+      return;
+    }
+
+    cancel_callback_ = std::move(callback);
+  }
+
+  void ClearCancelCallback() {
+    std::lock_guard<std::mutex> g(mu_);
+    cancel_callback_ = nullptr;
+  }
+
   void set_core_cq_tag(void* core_cq_tag) { core_cq_tag_ = core_cq_tag; }
 
   void* core_cq_tag() override { return core_cq_tag_; }
@@ -141,6 +157,7 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
   std::mutex mu_;
   bool finalized_;
   int cancelled_;  // This is an int (not bool) because it is passed to core
+  std::function<void()> cancel_callback_;
   bool done_intercepting_;
   internal::InterceptorBatchMethodsImpl interceptor_methods_;
 };
@@ -191,11 +208,17 @@ bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
   // Decide whether to call the cancel callback before releasing the lock
   bool call_cancel = (cancelled_ != 0);
 
+  // If it's a unary cancel callback, call it under the lock so that it doesn't
+  // race with ClearCancelCallback
+  if (cancel_callback_) {
+    cancel_callback_();
+  }
+
   // Release the lock since we are going to be calling a callback and
   // interceptors now
   lock.unlock();
 
-  if (call_cancel && (reactor_ != nullptr)) {
+  if (call_cancel && reactor_ != nullptr) {
     reactor_->OnCancel();
   }
 
@@ -313,6 +336,14 @@ void ServerContext::TryCancel() const {
   if (err != GRPC_CALL_OK) {
     gpr_log(GPR_ERROR, "TryCancel failed with: %d", err);
   }
+}
+
+void ServerContext::SetCancelCallback(std::function<void()> callback) {
+  completion_op_->SetCancelCallback(std::move(callback));
+}
+
+void ServerContext::ClearCancelCallback() {
+  completion_op_->ClearCancelCallback();
 }
 
 bool ServerContext::IsCancelled() const {

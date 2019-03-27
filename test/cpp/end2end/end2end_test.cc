@@ -1381,6 +1381,80 @@ TEST_P(End2endTest, ExpectErrorTest) {
   }
 }
 
+TEST_P(End2endTest, DelayedRpcEarlyCanceledUsingCancelCallback) {
+  MAYBE_SKIP_TEST;
+  // This test case is only relevant with callback server.
+  // Additionally, using interceptors makes this test subject to
+  // timing-dependent failures if the interceptors take too long to run.
+  if (!GetParam().callback_server || GetParam().use_interceptors) {
+    return;
+  }
+
+  ResetStub();
+  ClientContext context;
+  context.AddMetadata(kServerUseCancelCallback,
+                      grpc::to_string(MAYBE_USE_CALLBACK_EARLY_CANCEL));
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+  request.mutable_param()->set_skip_cancelled_check(true);
+  context.TryCancel();
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
+}
+
+TEST_P(End2endTest, DelayedRpcLateCanceledUsingCancelCallback) {
+  MAYBE_SKIP_TEST;
+  // This test case is only relevant with callback server.
+  // Additionally, using interceptors makes this test subject to
+  // timing-dependent failures if the interceptors take too long to run.
+  if (!GetParam().callback_server || GetParam().use_interceptors) {
+    return;
+  }
+
+  ResetStub();
+  ClientContext context;
+  context.AddMetadata(kServerUseCancelCallback,
+                      grpc::to_string(MAYBE_USE_CALLBACK_LATE_CANCEL));
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+  request.mutable_param()->set_skip_cancelled_check(true);
+  // Let server sleep for 80 ms first to give the cancellation a chance.
+  // This is split into 40 ms to start the cancel and 40 ms extra time for
+  // it to make it to the server, to make it highly probable that the server
+  // RPC would have already started by the time the cancellation is sent
+  // and the server-side gets enough time to react to it.
+  request.mutable_param()->set_server_sleep_us(80 * 1000);
+
+  std::thread echo_thread{[this, &context, &request, &response] {
+    Status s = stub_->Echo(&context, request, &response);
+    EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
+  }};
+  std::this_thread::sleep_for(std::chrono::microseconds(40000));
+  context.TryCancel();
+  echo_thread.join();
+}
+
+TEST_P(End2endTest, DelayedRpcNonCanceledUsingCancelCallback) {
+  MAYBE_SKIP_TEST;
+  if (!GetParam().callback_server) {
+    return;
+  }
+
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+
+  ClientContext context;
+  context.AddMetadata(kServerUseCancelCallback,
+                      grpc::to_string(MAYBE_USE_CALLBACK_NO_CANCEL));
+
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_TRUE(s.ok());
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Test with and without a proxy.
 class ProxyEnd2endTest : public End2endTest {
@@ -2015,7 +2089,7 @@ INSTANTIATE_TEST_CASE_P(
 
 INSTANTIATE_TEST_CASE_P(
     ProxyEnd2end, ProxyEnd2endTest,
-    ::testing::ValuesIn(CreateTestScenarios(true, true, true, true, false)));
+    ::testing::ValuesIn(CreateTestScenarios(true, true, true, true, true)));
 
 INSTANTIATE_TEST_CASE_P(
     SecureEnd2end, SecureEnd2endTest,
@@ -2023,7 +2097,7 @@ INSTANTIATE_TEST_CASE_P(
 
 INSTANTIATE_TEST_CASE_P(
     ResourceQuotaEnd2end, ResourceQuotaEnd2endTest,
-    ::testing::ValuesIn(CreateTestScenarios(false, true, true, true, false)));
+    ::testing::ValuesIn(CreateTestScenarios(false, true, true, true, true)));
 
 }  // namespace
 }  // namespace testing

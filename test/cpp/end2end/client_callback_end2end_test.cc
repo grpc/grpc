@@ -79,7 +79,10 @@ class TestScenario {
 static std::ostream& operator<<(std::ostream& out,
                                 const TestScenario& scenario) {
   return out << "TestScenario{callback_server="
-             << (scenario.callback_server ? "true" : "false") << "}";
+             << (scenario.callback_server ? "true" : "false") << ",protocol="
+             << (scenario.protocol == Protocol::INPROC ? "INPROC" : "TCP")
+             << ",intercept=" << (scenario.use_interceptors ? "true" : "false")
+             << ",creds=" << scenario.credentials_type << "}";
 }
 
 void TestScenario::Log() const {
@@ -1115,6 +1118,82 @@ TEST_P(ClientCallbackEnd2endTest, UnimplementedRpc) {
   while (!done) {
     cv.wait(l);
   }
+}
+
+TEST_P(ClientCallbackEnd2endTest,
+       ResponseStreamExtraReactionFlowReadsUntilDone) {
+  MAYBE_SKIP_TEST;
+  ResetStub();
+  class ReadAllIncomingDataClient
+      : public grpc::experimental::ClientReadReactor<EchoResponse> {
+   public:
+    ReadAllIncomingDataClient(grpc::testing::EchoTestService::Stub* stub) {
+      request_.set_message("Hello client ");
+      stub->experimental_async()->ResponseStream(&context_, &request_, this);
+    }
+    bool WaitForReadDone() {
+      std::unique_lock<std::mutex> l(mu_);
+      while (!read_done_) {
+        read_cv_.wait(l);
+      }
+      read_done_ = false;
+      return read_ok_;
+    }
+    void Await() {
+      std::unique_lock<std::mutex> l(mu_);
+      while (!done_) {
+        done_cv_.wait(l);
+      }
+    }
+    const Status& status() {
+      std::unique_lock<std::mutex> l(mu_);
+      return status_;
+    }
+
+   private:
+    void OnReadDone(bool ok) override {
+      std::unique_lock<std::mutex> l(mu_);
+      read_ok_ = ok;
+      read_done_ = true;
+      read_cv_.notify_one();
+    }
+    void OnDone(const Status& s) override {
+      std::unique_lock<std::mutex> l(mu_);
+      done_ = true;
+      status_ = s;
+      done_cv_.notify_one();
+    }
+
+    EchoRequest request_;
+    EchoResponse response_;
+    ClientContext context_;
+    bool read_ok_ = false;
+    bool read_done_ = false;
+    std::mutex mu_;
+    std::condition_variable read_cv_;
+    std::condition_variable done_cv_;
+    bool done_ = false;
+    Status status_;
+  } client{stub_.get()};
+
+  int reads_complete = 0;
+  client.AddHold();
+  client.StartCall();
+
+  EchoResponse response;
+  bool read_ok = true;
+  while (read_ok) {
+    client.StartRead(&response);
+    read_ok = client.WaitForReadDone();
+    if (read_ok) {
+      ++reads_complete;
+    }
+  }
+  client.RemoveHold();
+  client.Await();
+
+  EXPECT_EQ(kServerDefaultResponseStreamsToSend, reads_complete);
+  EXPECT_EQ(client.status().error_code(), grpc::StatusCode::OK);
 }
 
 std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {

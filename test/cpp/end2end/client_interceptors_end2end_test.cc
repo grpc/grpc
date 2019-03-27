@@ -894,9 +894,7 @@ TEST_F(ClientGlobalInterceptorEnd2endTest, DummyGlobalInterceptor) {
   MakeCall(channel);
   // Make sure all 20 dummy interceptors were run with the global interceptor
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 21);
-  // Reset the global interceptor. This is again 'safe' because there are no
-  // other ongoing gRPC operations
-  experimental::RegisterGlobalClientInterceptorFactory(nullptr);
+  experimental::TestOnlyResetGlobalClientInterceptorFactory();
 }
 
 TEST_F(ClientGlobalInterceptorEnd2endTest, LoggingGlobalInterceptor) {
@@ -920,9 +918,7 @@ TEST_F(ClientGlobalInterceptorEnd2endTest, LoggingGlobalInterceptor) {
   MakeCall(channel);
   // Make sure all 20 dummy interceptors were run
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
-  // Reset the global interceptor. This is again 'safe' because there are no
-  // other ongoing gRPC operations
-  experimental::RegisterGlobalClientInterceptorFactory(nullptr);
+  experimental::TestOnlyResetGlobalClientInterceptorFactory();
 }
 
 TEST_F(ClientGlobalInterceptorEnd2endTest, HijackingGlobalInterceptor) {
@@ -946,9 +942,7 @@ TEST_F(ClientGlobalInterceptorEnd2endTest, HijackingGlobalInterceptor) {
   MakeCall(channel);
   // Make sure all 20 dummy interceptors were run
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
-  // Reset the global interceptor. This is again 'safe' because there are no
-  // other ongoing gRPC operations
-  experimental::RegisterGlobalClientInterceptorFactory(nullptr);
+  experimental::TestOnlyResetGlobalClientInterceptorFactory();
 }
 
 }  // namespace
