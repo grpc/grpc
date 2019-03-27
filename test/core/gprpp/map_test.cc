@@ -148,6 +148,17 @@ TEST_F(MapTest, BracketOperatorWithUniquePtrValue) {
   }
 }
 
+// Test bracket operators with unique pointer to payload
+TEST_F(MapTest, BracketOperatorWithUniquePtrKey) {
+  Map<UniquePtr<char>, Payload, StringLess> test_map;
+  for (int i = 0; i < 5; i++) {
+    test_map[CopyString(kKeys[i])] = Payload(i);
+  }
+  for (int i = 0; i < 5; i++) {
+    EXPECT_EQ(i, test_map[CopyString(kKeys[i])].data());
+  }
+}
+
 // Test removal of a single value
 TEST_F(MapTest, Erase) {
   Map<const char*, Payload, StringLess> test_map;
