@@ -237,6 +237,10 @@ class ServerBuilder {
       builder_->interceptor_creators_ = std::move(interceptor_creators);
     }
 
+    /// Register a generic service that uses the callback API.
+    /// Matches requests with any :authority
+    /// This is mostly useful for writing generic gRPC Proxies where the exact
+    /// serialization format is unknown
     ServerBuilder& RegisterCallbackGenericService(
         grpc::experimental::CallbackGenericService* service);
 

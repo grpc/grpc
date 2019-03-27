@@ -38,6 +38,7 @@
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/deadline/deadline_filter.h"
 #include "src/core/lib/backoff/backoff.h"
@@ -59,7 +60,6 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/service_config.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_metadata.h"
 
@@ -83,8 +83,8 @@ class ResolvingLoadBalancingPolicy::ResolverResultHandler
     }
   }
 
-  void ReturnResult(const grpc_channel_args* result) override {
-    parent_->OnResolverResultChangedLocked(result);
+  void ReturnResult(Resolver::Result result) override {
+    parent_->OnResolverResultChangedLocked(std::move(result));
   }
 
   void ReturnError(grpc_error* error) override {
@@ -342,7 +342,7 @@ void ResolvingLoadBalancingPolicy::OnResolverError(grpc_error* error) {
 
 void ResolvingLoadBalancingPolicy::CreateOrUpdateLbPolicyLocked(
     const char* lb_policy_name, RefCountedPtr<Config> lb_policy_config,
-    const grpc_channel_args& args, TraceStringVector* trace_strings) {
+    Resolver::Result result, TraceStringVector* trace_strings) {
   // If the child policy name changes, we need to create a new child
   // policy.  When this happens, we leave child_policy_ as-is and store
   // the new child policy in pending_child_policy_.  Once the new child
@@ -410,7 +410,8 @@ void ResolvingLoadBalancingPolicy::CreateOrUpdateLbPolicyLocked(
       gpr_log(GPR_INFO, "resolving_lb=%p: Creating new %schild policy %s", this,
               lb_policy_ == nullptr ? "" : "pending ", lb_policy_name);
     }
-    auto new_policy = CreateLbPolicyLocked(lb_policy_name, args, trace_strings);
+    auto new_policy =
+        CreateLbPolicyLocked(lb_policy_name, *result.args, trace_strings);
     auto& lb_policy = lb_policy_ == nullptr ? lb_policy_ : pending_lb_policy_;
     {
       MutexLock lock(&lb_policy_mu_);
@@ -431,7 +432,13 @@ void ResolvingLoadBalancingPolicy::CreateOrUpdateLbPolicyLocked(
             policy_to_update == pending_lb_policy_.get() ? "pending " : "",
             policy_to_update);
   }
-  policy_to_update->UpdateLocked(args, std::move(lb_policy_config));
+  UpdateArgs update_args;
+  update_args.addresses = std::move(result.addresses);
+  update_args.config = std::move(lb_policy_config);
+  // TODO(roth): Once channel args is converted to C++, use std::move() here.
+  update_args.args = result.args;
+  result.args = nullptr;
+  policy_to_update->UpdateLocked(std::move(update_args));
 }
 
 // Creates a new LB policy.
@@ -479,12 +486,7 @@ ResolvingLoadBalancingPolicy::CreateLbPolicyLocked(
 }
 
 void ResolvingLoadBalancingPolicy::MaybeAddTraceMessagesForAddressChangesLocked(
-    const grpc_channel_args& resolver_result,
-    TraceStringVector* trace_strings) {
-  const ServerAddressList* addresses =
-      FindServerAddressListChannelArg(&resolver_result);
-  const bool resolution_contains_addresses =
-      addresses != nullptr && addresses->size() > 0;
+    bool resolution_contains_addresses, TraceStringVector* trace_strings) {
   if (!resolution_contains_addresses &&
       previous_resolution_contained_addresses_) {
     trace_strings->push_back(gpr_strdup("Address list became empty"));
@@ -517,14 +519,11 @@ void ResolvingLoadBalancingPolicy::ConcatenateAndAddChannelTraceLocked(
 }
 
 void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
-    const grpc_channel_args* result) {
+    Resolver::Result result) {
   // Handle race conditions.
-  if (resolver_ == nullptr) {
-    grpc_channel_args_destroy(result);
-    return;
-  }
+  if (resolver_ == nullptr) return;
   if (tracer_->enabled()) {
-    gpr_log(GPR_INFO, "resolving_lb=%p: got resolver result %p", this, result);
+    gpr_log(GPR_INFO, "resolving_lb=%p: got resolver result", this);
   }
   // We only want to trace the address resolution in the follow cases:
   // (a) Address resolution resulted in service config change.
@@ -534,15 +533,16 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   //     non-zero to zero.
   // (d) Address resolution that causes a new LB policy to be created.
   //
-  // we track a list of strings to eventually be concatenated and traced.
+  // We track a list of strings to eventually be concatenated and traced.
   TraceStringVector trace_strings;
-  // Parse the resolver result.
+  const bool resolution_contains_addresses = result.addresses.size() > 0;
+  // Process the resolver result.
   const char* lb_policy_name = nullptr;
   RefCountedPtr<Config> lb_policy_config;
   bool service_config_changed = false;
   if (process_resolver_result_ != nullptr) {
     service_config_changed =
-        process_resolver_result_(process_resolver_result_user_data_, *result,
+        process_resolver_result_(process_resolver_result_user_data_, &result,
                                  &lb_policy_name, &lb_policy_config);
   } else {
     lb_policy_name = child_policy_name_.get();
@@ -551,7 +551,7 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   GPR_ASSERT(lb_policy_name != nullptr);
   // Create or update LB policy, as needed.
   CreateOrUpdateLbPolicyLocked(lb_policy_name, std::move(lb_policy_config),
-                               *result, &trace_strings);
+                               std::move(result), &trace_strings);
   // Add channel trace event.
   if (channelz_node() != nullptr) {
     if (service_config_changed) {
@@ -559,11 +559,10 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
       // config in the trace, at the risk of bloating the trace logs.
       trace_strings.push_back(gpr_strdup("Service config changed"));
     }
-    MaybeAddTraceMessagesForAddressChangesLocked(*result, &trace_strings);
+    MaybeAddTraceMessagesForAddressChangesLocked(resolution_contains_addresses,
+                                                 &trace_strings);
     ConcatenateAndAddChannelTraceLocked(&trace_strings);
   }
-  // Clean up.
-  grpc_channel_args_destroy(result);
 }
 
 }  // namespace grpc_core

@@ -73,10 +73,15 @@ class GenericStub final {
    public:
     explicit experimental_type(GenericStub* stub) : stub_(stub) {}
 
+    /// Setup and start a unary call to a named method \a method using
+    /// \a context and specifying the \a request and \a response buffers.
     void UnaryCall(ClientContext* context, const grpc::string& method,
                    const ByteBuffer* request, ByteBuffer* response,
                    std::function<void(Status)> on_completion);
 
+    /// Setup a call to a named method \a method using \a context and tied to
+    /// \a reactor . Like any other bidi streaming RPC, it will not be activated
+    /// until StartCall is invoked on its reactor.
     void PrepareBidiStreamingCall(
         ClientContext* context, const grpc::string& method,
         experimental::ClientBidiReactor<ByteBuffer, ByteBuffer>* reactor);
