@@ -27,6 +27,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/murmur_hash.h"
+#include "src/core/lib/gprpp/mutex_lock.h"
 #include "src/core/lib/iomgr/iomgr_internal.h" /* for iomgr_abort_on_leaks() */
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -39,14 +40,7 @@
 #define TABLE_IDX(hash, capacity) (((hash) >> LOG2_SHARD_COUNT) % (capacity))
 #define SHARD_IDX(hash) ((hash) & ((1 << LOG2_SHARD_COUNT) - 1))
 
-typedef struct interned_slice_refcount {
-  grpc_slice_refcount base;
-  grpc_slice_refcount sub;
-  size_t length;
-  gpr_atm refcnt;
-  uint32_t hash;
-  struct interned_slice_refcount* bucket_next;
-} interned_slice_refcount;
+typedef grpc_core::InternedSliceRefcount interned_slice_refcount;
 
 typedef struct slice_shard {
   gpr_mu mu;
@@ -56,7 +50,7 @@ typedef struct slice_shard {
 } slice_shard;
 
 /* hash seed: decided at initialization time */
-static uint32_t g_hash_seed;
+uint32_t g_hash_seed;
 static int g_forced_hash_seed = 0;
 
 static slice_shard g_shards[SHARD_COUNT];
@@ -69,62 +63,27 @@ typedef struct {
 static static_metadata_hash_ent
     static_metadata_hash[4 * GRPC_STATIC_MDSTR_COUNT];
 static uint32_t max_static_metadata_hash_probe;
-static uint32_t static_metadata_hash_values[GRPC_STATIC_MDSTR_COUNT];
+uint32_t static_metadata_hash_values[GRPC_STATIC_MDSTR_COUNT];
 
-static void interned_slice_ref(void* p) {
-  interned_slice_refcount* s = static_cast<interned_slice_refcount*>(p);
-  GPR_ASSERT(gpr_atm_no_barrier_fetch_add(&s->refcnt, 1) > 0);
-}
+namespace grpc_core {
 
-static void interned_slice_destroy(interned_slice_refcount* s) {
-  slice_shard* shard = &g_shards[SHARD_IDX(s->hash)];
-  gpr_mu_lock(&shard->mu);
-  GPR_ASSERT(0 == gpr_atm_no_barrier_load(&s->refcnt));
+void InternedSliceRefcount::DestroyInstance() {
+  slice_shard* shard = &g_shards[SHARD_IDX(this->hash)];
+  MutexLock lock(&shard->mu);
+  // TODO(arjunroy) Really need this method
+  // GPR_ASSERT(0 == gpr_atm_no_barrier_load(&this->refcnt));
   interned_slice_refcount** prev_next;
   interned_slice_refcount* cur;
-  for (prev_next = &shard->strs[TABLE_IDX(s->hash, shard->capacity)],
+  for (prev_next = &shard->strs[TABLE_IDX(this->hash, shard->capacity)],
       cur = *prev_next;
-       cur != s; prev_next = &cur->bucket_next, cur = cur->bucket_next)
+       cur != this; prev_next = &cur->bucket_next, cur = cur->bucket_next)
     ;
   *prev_next = cur->bucket_next;
   shard->count--;
-  gpr_free(s);
-  gpr_mu_unlock(&shard->mu);
+  gpr_free(this);
 }
 
-static void interned_slice_unref(void* p) {
-  interned_slice_refcount* s = static_cast<interned_slice_refcount*>(p);
-  if (1 == gpr_atm_full_fetch_add(&s->refcnt, -1)) {
-    interned_slice_destroy(s);
-  }
-}
-
-static void interned_slice_sub_ref(void* p) {
-  interned_slice_ref((static_cast<char*>(p)) -
-                     offsetof(interned_slice_refcount, sub));
-}
-
-static void interned_slice_sub_unref(void* p) {
-  interned_slice_unref((static_cast<char*>(p)) -
-                       offsetof(interned_slice_refcount, sub));
-}
-
-static uint32_t interned_slice_hash(grpc_slice slice) {
-  interned_slice_refcount* s =
-      reinterpret_cast<interned_slice_refcount*>(slice.refcount);
-  return s->hash;
-}
-
-static int interned_slice_eq(grpc_slice a, grpc_slice b) {
-  return a.refcount == b.refcount;
-}
-
-static const grpc_slice_refcount_vtable interned_slice_vtable = {
-    interned_slice_ref, interned_slice_unref, interned_slice_eq,
-    interned_slice_hash};
-static const grpc_slice_refcount_vtable interned_slice_sub_vtable = {
-    interned_slice_sub_ref, interned_slice_sub_unref,
-    grpc_slice_default_eq_impl, grpc_slice_default_hash_impl};
+}  // namespace grpc_core
 
 static void grow_shard(slice_shard* shard) {
   GPR_TIMER_SCOPE("grow_strtab", 0);
@@ -173,7 +132,7 @@ int grpc_static_slice_eq(grpc_slice a, grpc_slice b) {
 
 uint32_t grpc_slice_hash(grpc_slice s) {
   return s.refcount == nullptr ? grpc_slice_default_hash_impl(s)
-                               : s.refcount->vtable->hash(s);
+                               : s.refcount->impl_.Hash(s);
 }
 
 grpc_slice grpc_slice_maybe_static_intern(grpc_slice slice,
@@ -197,8 +156,10 @@ grpc_slice grpc_slice_maybe_static_intern(grpc_slice slice,
 }
 
 bool grpc_slice_is_interned(const grpc_slice& slice) {
-  return (slice.refcount && slice.refcount->vtable == &interned_slice_vtable) ||
-         GRPC_IS_STATIC_METADATA_STRING(slice);
+  using grpc_core::SliceRefcount;
+  return (slice.refcount &&
+          (slice.refcount->impl_.getType() == SliceRefcount::Type::INTERNED ||
+           GRPC_IS_STATIC_METADATA_STRING(slice)));
 }
 
 grpc_slice grpc_slice_intern(grpc_slice slice) {
@@ -208,6 +169,7 @@ grpc_slice grpc_slice_intern(grpc_slice slice) {
   }
 
   uint32_t hash = grpc_slice_hash(slice);
+
   for (uint32_t i = 0; i <= max_static_metadata_hash_probe; i++) {
     static_metadata_hash_ent ent =
         static_metadata_hash[(hash + i) % GPR_ARRAY_SIZE(static_metadata_hash)];
@@ -226,14 +188,7 @@ grpc_slice grpc_slice_intern(grpc_slice slice) {
   size_t idx = TABLE_IDX(hash, shard->capacity);
   for (s = shard->strs[idx]; s; s = s->bucket_next) {
     if (s->hash == hash && grpc_slice_eq(slice, materialize(s))) {
-      if (gpr_atm_no_barrier_fetch_add(&s->refcnt, 1) == 0) {
-        /* If we get here, we've added a ref to something that was about to
-         * die - drop it immediately.
-         * The *only* possible path here (given the shard mutex) should be to
-         * drop from one ref back to zero - assert that with a CAS */
-        GPR_ASSERT(gpr_atm_rel_cas(&s->refcnt, 1, 0));
-        /* and treat this as if we were never here... sshhh */
-      } else {
+      if (s->refcnt.RefIfNonZero()) {
         gpr_mu_unlock(&shard->mu);
         return materialize(s);
       }
@@ -244,25 +199,17 @@ grpc_slice grpc_slice_intern(grpc_slice slice) {
   /* string data goes after the internal_string header */
   s = static_cast<interned_slice_refcount*>(
       gpr_malloc(sizeof(*s) + GRPC_SLICE_LENGTH(slice)));
-  gpr_atm_rel_store(&s->refcnt, 1);
-  s->length = GRPC_SLICE_LENGTH(slice);
-  s->hash = hash;
-  s->base.vtable = &interned_slice_vtable;
-  s->base.sub_refcount = &s->sub;
-  s->sub.vtable = &interned_slice_sub_vtable;
-  s->sub.sub_refcount = &s->sub;
-  s->bucket_next = shard->strs[idx];
-  shard->strs[idx] = s;
+
+  new (s) grpc_core::InternedSliceRefcount(GRPC_SLICE_LENGTH(slice), hash,
+                                           shard->strs[idx]);
   memcpy(s + 1, GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice));
-
+  shard->strs[idx] = s;
   shard->count++;
-
   if (shard->count > shard->capacity * 2) {
     grow_shard(shard);
   }
 
   gpr_mu_unlock(&shard->mu);
-
   return materialize(s);
 }
 
