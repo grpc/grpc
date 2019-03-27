@@ -26,6 +26,10 @@ using Grpc.Core.Utils;
 
 // TODO(jtattermusch): move types needed for implementing a client
 
+// TODO: problematic areas: 
+// - CallOptions depends on CallCredentials (publicly) and on CallFlags (internally) & CallOptions is a struct
+// - internal method CallOptions.Normalize() uses internal method propagationToken.AsImplOrNull()
+
 [assembly:TypeForwardedToAttribute(typeof(GrpcPreconditions))]
 [assembly:TypeForwardedToAttribute(typeof(AsyncClientStreamingCall<,>))]
 [assembly:TypeForwardedToAttribute(typeof(AsyncDuplexStreamingCall<,>))]
