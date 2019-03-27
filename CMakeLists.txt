@@ -1109,7 +1109,6 @@ add_library(grpc
   src/core/lib/transport/metadata.cc
   src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
-  src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/status_metadata.cc
@@ -1245,6 +1244,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolving_lb_policy.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/server_address.cc
+  src/core/ext/filters/client_channel/service_config.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
@@ -1535,7 +1535,6 @@ add_library(grpc_cronet
   src/core/lib/transport/metadata.cc
   src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
-  src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/status_metadata.cc
@@ -1599,6 +1598,7 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/resolving_lb_policy.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/server_address.cc
+  src/core/ext/filters/client_channel/service_config.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
@@ -1946,7 +1946,6 @@ add_library(grpc_test_util
   src/core/lib/transport/metadata.cc
   src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
-  src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/status_metadata.cc
@@ -1978,6 +1977,7 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/resolving_lb_policy.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/server_address.cc
+  src/core/ext/filters/client_channel/service_config.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
@@ -2270,7 +2270,6 @@ add_library(grpc_test_util_unsecure
   src/core/lib/transport/metadata.cc
   src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
-  src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/status_metadata.cc
@@ -2302,6 +2301,7 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/resolving_lb_policy.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/server_address.cc
+  src/core/ext/filters/client_channel/service_config.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
@@ -2570,7 +2570,6 @@ add_library(grpc_unsecure
   src/core/lib/transport/metadata.cc
   src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
-  src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/status_metadata.cc
@@ -2637,6 +2636,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/resolving_lb_policy.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/server_address.cc
+  src/core/ext/filters/client_channel/service_config.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
@@ -3238,6 +3238,7 @@ target_link_libraries(grpc++_core_stats
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 endif (gRPC_BUILD_CODEGEN)
@@ -3456,7 +3457,6 @@ add_library(grpc++_cronet
   src/core/lib/transport/metadata.cc
   src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
-  src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/status_metadata.cc
@@ -3493,6 +3493,7 @@ add_library(grpc++_cronet
   src/core/ext/filters/client_channel/resolving_lb_policy.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/server_address.cc
+  src/core/ext/filters/client_channel/service_config.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
@@ -3892,6 +3893,7 @@ target_link_libraries(grpc++_proto_reflection_desc_db
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 foreach(_hdr
@@ -4014,6 +4016,7 @@ target_include_directories(grpc++_test_config
 target_link_libraries(grpc++_test_config
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 
@@ -4111,6 +4114,7 @@ target_link_libraries(grpc++_test_util
   grpc++
   grpc_test_util
   grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 foreach(_hdr
@@ -4306,6 +4310,7 @@ target_link_libraries(grpc++_test_util_unsecure
   grpc++_unsecure
   grpc_test_util_unsecure
   grpc_unsecure
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 foreach(_hdr
@@ -4834,6 +4839,7 @@ target_link_libraries(grpc_cli_libs
   grpc++_proto_reflection_desc_db
   grpc++
   grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 foreach(_hdr
@@ -5044,6 +5050,7 @@ target_link_libraries(http2_client_main
   grpc++
   grpc
   grpc++_test_config
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 endif (gRPC_BUILD_CODEGEN)
@@ -5100,6 +5107,7 @@ target_link_libraries(interop_client_helper
   grpc++
   grpc
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 endif (gRPC_BUILD_CODEGEN)
@@ -5173,6 +5181,7 @@ target_link_libraries(interop_client_main
   grpc
   gpr
   grpc++_test_config
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 endif (gRPC_BUILD_CODEGEN)
@@ -5221,6 +5230,7 @@ target_link_libraries(interop_server_helper
   grpc++
   grpc
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 
@@ -5292,6 +5302,7 @@ target_link_libraries(interop_server_lib
   grpc
   gpr
   grpc++_test_config
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 endif (gRPC_BUILD_CODEGEN)
@@ -5336,6 +5347,7 @@ target_link_libraries(interop_server_main
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   interop_server_lib
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 
@@ -5445,6 +5457,7 @@ target_link_libraries(qps
   grpc++_core_stats
   grpc++
   grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 endif (gRPC_BUILD_CODEGEN)

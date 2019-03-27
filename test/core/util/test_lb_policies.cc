@@ -64,9 +64,8 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   ~ForwardingLoadBalancingPolicy() override = default;
 
-  void UpdateLocked(const grpc_channel_args& args,
-                    RefCountedPtr<Config> lb_config) override {
-    delegate_->UpdateLocked(args, std::move(lb_config));
+  void UpdateLocked(UpdateArgs args) override {
+    delegate_->UpdateLocked(std::move(args));
   }
 
   void ExitIdleLocked() override { delegate_->ExitIdleLocked(); }
@@ -121,7 +120,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
           cb_(cb),
           user_data_(user_data) {}
 
-    PickResult Pick(PickState* pick, grpc_error** error) override {
+    PickResult Pick(PickArgs* pick, grpc_error** error) override {
       PickResult result = delegate_picker_->Pick(pick, error);
       if (result == PICK_COMPLETE && pick->connected_subchannel != nullptr) {
         New<TrailingMetadataHandler>(pick, cb_, user_data_);  // deletes itself
@@ -171,7 +170,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
 
   class TrailingMetadataHandler {
    public:
-    TrailingMetadataHandler(PickState* pick,
+    TrailingMetadataHandler(PickArgs* pick,
                             InterceptRecvTrailingMetadataCallback cb,
                             void* user_data)
         : cb_(cb), user_data_(user_data) {
