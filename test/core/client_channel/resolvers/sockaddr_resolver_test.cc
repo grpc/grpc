@@ -32,9 +32,7 @@ static grpc_combiner* g_combiner;
 
 class ResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
-  void ReturnResult(const grpc_channel_args* args) override {
-    grpc_channel_args_destroy(args);
-  }
+  void ReturnResult(grpc_core::Resolver::Result result) override {}
 
   void ReturnError(grpc_error* error) override { GRPC_ERROR_UNREF(error); }
 };

@@ -162,8 +162,8 @@ def grpc_deps():
         http_archive(
             name = "com_github_cares_cares",
             build_file = "@com_github_grpc_grpc//third_party:cares/cares.BUILD",
-            strip_prefix = "c-ares-3be1924221e1326df520f8498d704a5c4c8d0cce",
-            url = "https://github.com/c-ares/c-ares/archive/3be1924221e1326df520f8498d704a5c4c8d0cce.tar.gz",
+            strip_prefix = "c-ares-e982924acee7f7313b4baa4ee5ec000c5e373c30",
+            url = "https://github.com/c-ares/c-ares/archive/e982924acee7f7313b4baa4ee5ec000c5e373c30.tar.gz",
         )
 
     if "com_google_absl" not in native.existing_rules():
