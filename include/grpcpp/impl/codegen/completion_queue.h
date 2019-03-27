@@ -44,7 +44,7 @@ struct grpc_completion_queue;
 namespace grpc_impl {
 
 class Server;
-} // namespace grpc_impl
+}  // namespace grpc_impl
 namespace grpc {
 
 template <class R>

@@ -38,7 +38,7 @@ struct grpc_resource_quota;
 namespace grpc_impl {
 
 class Server;
-} // namespace grpc_impl
+}  // namespace grpc_impl
 namespace grpc {
 
 class AsyncGenericService;

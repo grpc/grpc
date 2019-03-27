@@ -47,7 +47,7 @@ class HealthCheckServiceInterface;
 class ServerContext;
 class ServerInitializer;
 
-} // namespace grpc
+}  // namespace grpc
 
 namespace grpc_impl {
 
@@ -103,7 +103,8 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   }
 
   /// Establish a channel for in-process communication
-  std::shared_ptr<grpc::Channel> InProcessChannel(const grpc::ChannelArguments& args);
+  std::shared_ptr<grpc::Channel> InProcessChannel(
+      const grpc::ChannelArguments& args);
 
   /// NOTE: class experimental_type is not part of the public API of this class.
   /// TODO(yashykt): Integrate into public API when this is no longer
@@ -116,8 +117,8 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
     /// interceptors
     std::shared_ptr<grpc::Channel> InProcessChannelWithInterceptors(
         const grpc::ChannelArguments& args,
-        std::vector<
-            std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
+        std::vector<std::unique_ptr<
+            grpc::experimental::ClientInterceptorFactoryInterface>>
             interceptor_creators);
 
    private:
@@ -132,7 +133,8 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
  protected:
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the Server instance.
-  bool RegisterService(const grpc::string* host, grpc::Service* service) override;
+  bool RegisterService(const grpc::string* host,
+                       grpc::Service* service) override;
 
   /// Try binding the server to the given \a addr endpoint
   /// (port, and optionally including IP address to bind to).
@@ -175,15 +177,16 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   ///
   /// \param sync_cq_timeout_msec The timeout to use when calling AsyncNext() on
   /// server completion queues passed via sync_server_cqs param.
-  Server(int max_message_size, grpc::ChannelArguments* args,
-         std::shared_ptr<std::vector<std::unique_ptr<grpc::ServerCompletionQueue>>>
-             sync_server_cqs,
-         int min_pollers, int max_pollers, int sync_cq_timeout_msec,
-         grpc_resource_quota* server_rq = nullptr,
-         std::vector<
-             std::unique_ptr<grpc::experimental::ServerInterceptorFactoryInterface>>
-             interceptor_creators = std::vector<std::unique_ptr<
-                 grpc::experimental::ServerInterceptorFactoryInterface>>());
+  Server(
+      int max_message_size, grpc::ChannelArguments* args,
+      std::shared_ptr<std::vector<std::unique_ptr<grpc::ServerCompletionQueue>>>
+          sync_server_cqs,
+      int min_pollers, int max_pollers, int sync_cq_timeout_msec,
+      grpc_resource_quota* server_rq = nullptr,
+      std::vector<std::unique_ptr<
+          grpc::experimental::ServerInterceptorFactoryInterface>>
+          interceptor_creators = std::vector<std::unique_ptr<
+              grpc::experimental::ServerInterceptorFactoryInterface>>());
 
   /// Start the server.
   ///
@@ -196,7 +199,8 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   grpc_server* server() override { return server_; }
 
  private:
-  std::vector<std::unique_ptr<grpc::experimental::ServerInterceptorFactoryInterface>>*
+  std::vector<
+      std::unique_ptr<grpc::experimental::ServerInterceptorFactoryInterface>>*
   interceptor_creators() override {
     return &interceptor_creators_;
   }
@@ -268,7 +272,8 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   // is satisfied by declaring interceptor_creators_ before
   // health_check_service_. (C++ mandates that member objects be destroyed in
   // the reverse order of initialization.)
-  std::vector<std::unique_ptr<grpc::experimental::ServerInterceptorFactoryInterface>>
+  std::vector<
+      std::unique_ptr<grpc::experimental::ServerInterceptorFactoryInterface>>
       interceptor_creators_;
 
   const int max_receive_message_size_;
@@ -332,7 +337,8 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
 
   // When appropriate, use a default callback generic service to handle
   // unimplemented methods
-  std::unique_ptr<grpc::experimental::CallbackGenericService> unimplemented_service_;
+  std::unique_ptr<grpc::experimental::CallbackGenericService>
+      unimplemented_service_;
 
   // A special handler for resource exhausted in sync case
   std::unique_ptr<grpc::internal::MethodHandler> resource_exhausted_handler_;

@@ -31,7 +31,7 @@ struct grpc_server;
 namespace grpc_impl {
 
 class Server;
-} // namespace grpc_impl
+}  // namespace grpc_impl
 namespace grpc {
 
 /// Wrapper around \a grpc_server_credentials, a way to authenticate a server.
