@@ -63,27 +63,13 @@ class Map {
 
   size_t size() { return size_; }
 
+  template <class... Args>
+  Pair<iterator, bool> emplace(Args&&... args);
   Pair<iterator, bool> insert(value_type&& pair) {
     return emplace(std::forward<value_type>(pair));
   }
 
   Pair<iterator, bool> insert(const value_type& pair) { return emplace(pair); }
-
-  template <class... Args>
-  Pair<iterator, bool> emplace(Args&&... args) {
-    Pair<key_type, mapped_type> pair(std::forward<Args>(args)...);
-    iterator ret = find(pair.first);
-    bool insertion = false;
-    if (ret == end()) {
-      Pair<iterator, Entry*> p =
-          InsertRecursive(root_, std::forward<value_type>(pair));
-      root_ = p.second;
-      ret = p.first;
-      insertion = true;
-      size_++;
-    }
-    return MakePair(ret, insertion);
-  }
 
   bool empty() const { return root_ == nullptr; }
 
@@ -125,10 +111,9 @@ class Map {
   // after a rebalance
   Pair<iterator, Entry*> InsertRecursive(Entry* root, value_type&& p);
   static Entry* RemoveRecursive(Entry* root, const key_type& k);
-  /* Return 0 if lhs = rhs
-   *        1 if lhs > rhs
-   *       -1 if lhs < rhs
-   */
+  // Return 0 if lhs = rhs
+  //        1 if lhs > rhs
+  //       -1 if lhs < rhs
   static int CompareKeys(const Key& lhs, const Key& rhs);
 
   Entry* root_ = nullptr;
@@ -216,6 +201,24 @@ typename Map<Key, T, Compare>::iterator Map<Key, T, Compare>::find(
     }
   }
   return end();
+}
+
+template <class Key, class T, class Compare>
+template <class... Args>
+typename ::grpc_core::Pair<typename Map<Key, T, Compare>::iterator, bool>
+Map<Key, T, Compare>::emplace(Args&&... args) {
+  Pair<key_type, mapped_type> pair(std::forward<Args>(args)...);
+  iterator ret = find(pair.first);
+  bool insertion = false;
+  if (ret == end()) {
+    Pair<iterator, Entry*> p =
+        InsertRecursive(root_, std::forward<value_type>(pair));
+    root_ = p.second;
+    ret = p.first;
+    insertion = true;
+    size_++;
+  }
+  return MakePair(ret, insertion);
 }
 
 template <class Key, class T, class Compare>
@@ -409,7 +412,7 @@ typename Map<Key, T, Compare>::Entry* Map<Key, T, Compare>::RemoveRecursive(
 
 template <class Key, class T, class Compare>
 int Map<Key, T, Compare>::CompareKeys(const key_type& lhs,
-                                             const key_type& rhs) {
+                                      const key_type& rhs) {
   key_compare compare;
   bool left_comparison = compare(lhs, rhs);
   bool right_comparison = compare(rhs, lhs);
