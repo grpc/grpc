@@ -352,7 +352,7 @@ typename Map<Key, T, Compare>::iterator Map<Key, T, Compare>::erase(
 
 template <class Key, class T, class Compare>
 typename Map<Key, T, Compare>::Entry* Map<Key, T, Compare>::InOrderSuccessor(
-    const Map<Key, T, Compare>::Entry* e) const {
+    const typename Map<Key, T, Compare>::Entry* e) const {
   if (e->right != nullptr) {
     return GetMinEntry(e->right);
   }
@@ -375,10 +375,10 @@ typename Map<Key, T, Compare>::Entry* Map<Key, T, Compare>::InOrderSuccessor(
 // inserted entry and the second value being the new root of the subtree
 // after a rebalance
 template <class Key, class T, class Compare>
-Pair<typename Map<Key, T, Compare>::iterator,
-     typename Map<Key, T, Compare>::Entry*>
-Map<Key, T, Compare>::InsertRecursive(Map<Key, T, Compare>::Entry* root,
-                                      value_type&& p) {
+typename ::grpc_core::Pair<typename Map<Key, T, Compare>::iterator,
+                           typename Map<Key, T, Compare>::Entry*>
+Map<Key, T, Compare>::InsertRecursive(
+    typename Map<Key, T, Compare>::Entry* root, value_type&& p) {
   if (root == nullptr) {
     Entry* e = New<Entry>(std::forward<value_type>(p));
     return MakePair(iterator(this, e), e);
