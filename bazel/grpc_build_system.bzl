@@ -173,11 +173,6 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             ],
             **args
         )
-        native.cc_test(
-            name = name + "_windows",
-            testonly = True,
-            **args
-        )
         for poller in POLLERS:
             native.sh_test(
                 name = name + "@poller=" + poller,
