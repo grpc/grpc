@@ -96,7 +96,7 @@ TEST_F(MapTest, EmplaceAndFindWithUniquePtrKey) {
 TEST_F(MapTest, InsertAndFind) {
   Map<const char*, Payload, StringLess> test_map;
   for (int i = 0; i < 5; i++) {
-    test_map.insert(Pair<const char*, Payload>(kKeys[i], Payload(i)));
+    test_map.insert(MakePair(kKeys[i], Payload(i)));
   }
   for (int i = 0; i < 5; i++) {
     EXPECT_EQ(i, test_map.find(kKeys[i])->second.data());
@@ -107,8 +107,7 @@ TEST_F(MapTest, InsertAndFind) {
 TEST_F(MapTest, InsertAndFindWithUniquePtrValue) {
   Map<const char*, UniquePtr<Payload>, StringLess> test_map;
   for (int i = 0; i < 5; i++) {
-    test_map.insert(Pair<const char*, UniquePtr<Payload>>(
-        kKeys[i], MakeUnique<Payload>(i)));
+    test_map.insert(MakePair(kKeys[i], MakeUnique<Payload>(i)));
   }
   for (int i = 0; i < 5; i++) {
     EXPECT_EQ(i, test_map.find(kKeys[i])->second->data());
@@ -165,7 +164,7 @@ TEST_F(MapTest, Erase) {
   for (int i = 0; i < 5; i++) {
     test_map.emplace(kKeys[i], Payload(i));
   }
-  EXPECT_EQ(test_map.size(), static_cast<size_t>(5));
+  EXPECT_EQ(test_map.size(), 5UL);
   EXPECT_EQ(test_map.erase(kKeys[3]), static_cast<size_t>(1));  // Remove "hij"
   for (int i = 0; i < 5; i++) {
     if (i == 3) {  // "hij" should not be present
@@ -174,7 +173,7 @@ TEST_F(MapTest, Erase) {
       EXPECT_EQ(i, test_map.find(kKeys[i])->second.data());
     }
   }
-  EXPECT_EQ(test_map.size(), static_cast<size_t>(4));
+  EXPECT_EQ(test_map.size(), 4UL);
 }
 
 // Test removal of a single value with unique ptr to payload
@@ -183,7 +182,7 @@ TEST_F(MapTest, EraseWithUniquePtrValue) {
   for (int i = 0; i < 5; i++) {
     test_map.emplace(kKeys[i], MakeUnique<Payload>(i));
   }
-  EXPECT_EQ(test_map.size(), static_cast<size_t>(5));
+  EXPECT_EQ(test_map.size(), 5UL);
   test_map.erase(kKeys[3]);  // Remove "hij"
   for (int i = 0; i < 5; i++) {
     if (i == 3) {  // "hij" should not be present
@@ -192,7 +191,7 @@ TEST_F(MapTest, EraseWithUniquePtrValue) {
       EXPECT_EQ(i, test_map.find(kKeys[i])->second->data());
     }
   }
-  EXPECT_EQ(test_map.size(), static_cast<size_t>(4));
+  EXPECT_EQ(test_map.size(), 4UL);
 }
 
 // Test removal of a single value
@@ -201,7 +200,7 @@ TEST_F(MapTest, EraseWithUniquePtrKey) {
   for (int i = 0; i < 5; i++) {
     test_map.emplace(CopyString(kKeys[i]), Payload(i));
   }
-  EXPECT_EQ(test_map.size(), static_cast<size_t>(5));
+  EXPECT_EQ(test_map.size(), 5UL);
   test_map.erase(CopyString(kKeys[3]));  // Remove "hij"
   for (int i = 0; i < 5; i++) {
     if (i == 3) {  // "hij" should not be present
@@ -210,7 +209,7 @@ TEST_F(MapTest, EraseWithUniquePtrKey) {
       EXPECT_EQ(i, test_map.find(CopyString(kKeys[i]))->second.data());
     }
   }
-  EXPECT_EQ(test_map.size(), static_cast<size_t>(4));
+  EXPECT_EQ(test_map.size(), 4UL);
 }
 
 // Test clear
@@ -219,10 +218,10 @@ TEST_F(MapTest, SizeAndClear) {
   for (int i = 0; i < 5; i++) {
     test_map.emplace(kKeys[i], Payload(i));
   }
-  EXPECT_EQ(test_map.size(), static_cast<size_t>(5));
+  EXPECT_EQ(test_map.size(), 5UL);
   EXPECT_FALSE(test_map.empty());
   test_map.clear();
-  EXPECT_EQ(test_map.size(), static_cast<size_t>(0));
+  EXPECT_EQ(test_map.size(), 0UL);
   EXPECT_TRUE(test_map.empty());
 }
 
@@ -232,10 +231,10 @@ TEST_F(MapTest, SizeAndClearWithUniquePtrValue) {
   for (int i = 0; i < 5; i++) {
     test_map.emplace(kKeys[i], MakeUnique<Payload>(i));
   }
-  EXPECT_EQ(test_map.size(), static_cast<size_t>(5));
+  EXPECT_EQ(test_map.size(), 5UL);
   EXPECT_FALSE(test_map.empty());
   test_map.clear();
-  EXPECT_EQ(test_map.size(), static_cast<size_t>(0));
+  EXPECT_EQ(test_map.size(), 0UL);
   EXPECT_TRUE(test_map.empty());
 }
 
@@ -245,10 +244,10 @@ TEST_F(MapTest, SizeAndClearWithUniquePtrKey) {
   for (int i = 0; i < 5; i++) {
     test_map.emplace(CopyString(kKeys[i]), Payload(i));
   }
-  EXPECT_EQ(test_map.size(), static_cast<size_t>(5));
+  EXPECT_EQ(test_map.size(), 5UL);
   EXPECT_FALSE(test_map.empty());
   test_map.clear();
-  EXPECT_EQ(test_map.size(), static_cast<size_t>(0));
+  EXPECT_EQ(test_map.size(), 0UL);
   EXPECT_TRUE(test_map.empty());
 }
 
@@ -394,9 +393,9 @@ TEST_F(MapTest, RandomOpsWithIntKey) {
   EXPECT_EQ(test_map.erase(3), static_cast<size_t>(1));
   EXPECT_TRUE(test_map.find(3) == test_map.end());
   EXPECT_FALSE(test_map.empty());
-  EXPECT_EQ(test_map.size(), static_cast<size_t>(4));
+  EXPECT_EQ(test_map.size(), 4UL);
   test_map.clear();
-  EXPECT_EQ(test_map.size(), static_cast<size_t>(0));
+  EXPECT_EQ(test_map.size(), 0UL);
   EXPECT_TRUE(test_map.empty());
 }
 

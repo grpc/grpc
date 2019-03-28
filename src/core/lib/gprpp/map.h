@@ -54,57 +54,12 @@ class Map {
 
   ~Map() { clear(); }
 
-  T& operator[](key_type&& key) {
-    auto iter = find(key);
-    if (iter == end()) {
-      return emplace(std::forward<key_type>(key), T()).first->second;
-    }
-    return iter->second;
-  }
-
-  T& operator[](const key_type& key) {
-    auto iter = find(key);
-    if (iter == end()) {
-      return emplace(key, T()).first->second;
-    }
-    return iter->second;
-  }
-
-  iterator find(const key_type& k) {
-    Entry* iter = root_;
-    while (iter != nullptr) {
-      int comp = CompareKeys(iter->pair.first, k);
-      if (comp == 0) {
-        return iterator(this, iter);
-      } else if (comp < 0) {
-        iter = iter->right;
-      } else {
-        iter = iter->left;
-      }
-    }
-    return end();
-  }
-
-  size_t erase(const key_type& key) {
-    iterator it = find(key);
-    if (it == end()) return 0;
-    erase(it);
-    return 1;
-  }
-
+  T& operator[](key_type&& key);
+  T& operator[](const key_type& key);
+  iterator find(const key_type& k);
+  size_t erase(const key_type& key);
   // Removes the current entry and points to the next one
-  // TODO(mhaidry): Modify erase to use the iterator location
-  // TODO(mhaidry): Modify code for signature parity with std::map
-  // to create an efficient erase method
-  template <class Iterable>
-  iterator erase(Iterable iter) {
-    if (iter == end()) return iter;
-    key_type& del_key = iter->first;
-    iter++;
-    root_ = RemoveRecursive(root_, del_key);
-    size_--;
-    return iter;
-  }
+  iterator erase(iterator iter);
 
   size_t size() { return size_; }
 
@@ -127,7 +82,7 @@ class Map {
       insertion = true;
       size_++;
     }
-    return MakePair(std::forward<iterator>(ret), std::forward<bool>(insertion));
+    return MakePair(ret, insertion);
   }
 
   bool empty() const { return root_ == nullptr; }
@@ -168,24 +123,7 @@ class Map {
     return e;
   }
 
-  Entry* InOrderSuccessor(const Entry* e) const {
-    if (e->right != nullptr) {
-      return GetMinEntry(e->right);
-    }
-    Entry* successor = nullptr;
-    Entry* iter = root_;
-    while (iter != nullptr) {
-      int comp = CompareKeys(iter->pair.first, e->pair.first);
-      if (comp > 0) {
-        successor = iter;
-        iter = iter->left;
-      } else if (comp < 0) {
-        iter = iter->right;
-      } else
-        break;
-    }
-    return successor;
-  }
+  Entry* InOrderSuccessor(const Entry* e) const;
 
   static Entry* RotateLeft(Entry* e) {
     Entry* rightChild = e->right;
@@ -258,29 +196,7 @@ class Map {
   // Returns a pair with the first value being an iterator pointing to the
   // inserted entry and the second value being the new root of the subtree
   // after a rebalance
-  Pair<iterator, Entry*> InsertRecursive(Entry* root, value_type&& p) {
-    if (root == nullptr) {
-      Entry* e = New<Entry>(std::forward<value_type>(p));
-      return MakePair(iterator(this, e), std::forward<Entry*>(e));
-    }
-    int comp = CompareKeys(root->pair.first, p.first);
-    if (comp > 0) {
-      Pair<iterator, Entry*> ret =
-          InsertRecursive(root->left, std::forward<value_type>(p));
-      root->left = ret.second;
-      ret.second = RebalanceTreeAfterInsertion(root, ret.first->first);
-      return ret;
-    } else if (comp < 0) {
-      Pair<iterator, Entry*> ret =
-          InsertRecursive(root->right, std::forward<value_type>(p));
-      root->right = ret.second;
-      ret.second = RebalanceTreeAfterInsertion(root, ret.first->first);
-      return ret;
-    } else {
-      root->pair = std::move(p);
-      return MakePair(iterator(this, root), std::forward<Entry*>(root));
-    }
-  }
+  Pair<iterator, Entry*> InsertRecursive(Entry* root, value_type&& p);
 
   static Entry* RemoveRecursive(Entry* root, const key_type& k) {
     if (root == nullptr) return root;
@@ -377,5 +293,113 @@ class Map<Key, T, Compare>::iterator
   GrpcMap* map_;
   friend class Map<key_type, mapped_type, Compare>;
 };
+
+template <class Key, class T, class Compare>
+T& Map<Key, T, Compare>::operator[](key_type&& key) {
+  auto iter = find(key);
+  if (iter == end()) {
+    return emplace(std::forward<key_type>(key), T()).first->second;
+  }
+  return iter->second;
+}
+
+template <class Key, class T, class Compare>
+T& Map<Key, T, Compare>::operator[](const key_type& key) {
+  auto iter = find(key);
+  if (iter == end()) {
+    return emplace(key, T()).first->second;
+  }
+  return iter->second;
+}
+
+template <class Key, class T, class Compare>
+typename Map<Key, T, Compare>::iterator Map<Key, T, Compare>::find(
+    const key_type& k) {
+  Entry* iter = root_;
+  while (iter != nullptr) {
+    int comp = CompareKeys(iter->pair.first, k);
+    if (comp == 0) {
+      return iterator(this, iter);
+    } else if (comp < 0) {
+      iter = iter->right;
+    } else {
+      iter = iter->left;
+    }
+  }
+  return end();
+}
+
+template <class Key, class T, class Compare>
+size_t Map<Key, T, Compare>::erase(const key_type& key) {
+  iterator it = find(key);
+  if (it == end()) return 0;
+  erase(it);
+  return 1;
+}
+
+// TODO(mhaidry): Modify erase to use the iterator location
+// to create an efficient erase method
+template <class Key, class T, class Compare>
+typename Map<Key, T, Compare>::iterator Map<Key, T, Compare>::erase(
+    iterator iter) {
+  if (iter == end()) return iter;
+  key_type& del_key = iter->first;
+  iter++;
+  root_ = RemoveRecursive(root_, del_key);
+  size_--;
+  return iter;
+}
+
+template <class Key, class T, class Compare>
+typename Map<Key, T, Compare>::Entry* Map<Key, T, Compare>::InOrderSuccessor(
+    const Map<Key, T, Compare>::Entry* e) const {
+  if (e->right != nullptr) {
+    return GetMinEntry(e->right);
+  }
+  Entry* successor = nullptr;
+  Entry* iter = root_;
+  while (iter != nullptr) {
+    int comp = CompareKeys(iter->pair.first, e->pair.first);
+    if (comp > 0) {
+      successor = iter;
+      iter = iter->left;
+    } else if (comp < 0) {
+      iter = iter->right;
+    } else
+      break;
+  }
+  return successor;
+}
+
+// Returns a pair with the first value being an iterator pointing to the
+// inserted entry and the second value being the new root of the subtree
+// after a rebalance
+template <class Key, class T, class Compare>
+Pair<typename Map<Key, T, Compare>::iterator,
+     typename Map<Key, T, Compare>::Entry*>
+Map<Key, T, Compare>::InsertRecursive(Map<Key, T, Compare>::Entry* root,
+                                      value_type&& p) {
+  if (root == nullptr) {
+    Entry* e = New<Entry>(std::forward<value_type>(p));
+    return MakePair(iterator(this, e), e);
+  }
+  int comp = CompareKeys(root->pair.first, p.first);
+  if (comp > 0) {
+    Pair<iterator, Entry*> ret =
+        InsertRecursive(root->left, std::forward<value_type>(p));
+    root->left = ret.second;
+    ret.second = RebalanceTreeAfterInsertion(root, ret.first->first);
+    return ret;
+  } else if (comp < 0) {
+    Pair<iterator, Entry*> ret =
+        InsertRecursive(root->right, std::forward<value_type>(p));
+    root->right = ret.second;
+    ret.second = RebalanceTreeAfterInsertion(root, ret.first->first);
+    return ret;
+  } else {
+    root->pair = std::move(p);
+    return MakePair(iterator(this, root), root);
+  }
+}
 }  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_GPRPP_MAP_H */
