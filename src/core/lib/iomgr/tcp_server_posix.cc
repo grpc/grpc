@@ -225,6 +225,7 @@ static void on_read(void* arg, grpc_error* err) {
       if (getsockname(fd, reinterpret_cast<struct sockaddr*>(addr.addr),
                       &(addr.len)) < 0) {
         gpr_log(GPR_ERROR, "Failed getsockname: %s", strerror(errno));
+        close(fd);
         goto error;
       }
     }
