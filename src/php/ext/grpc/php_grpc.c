@@ -180,7 +180,7 @@ void postfork_child() {
   grpc_php_shutdown_completion_queue(TSRMLS_C);
 
   // clean-up grpc_core
-  grpc_shutdown();
+  grpc_shutdown_blocking();
   if (grpc_is_initialized() > 0) {
     zend_throw_exception(spl_ce_UnexpectedValueException,
                          "Oops, failed to shutdown gRPC Core after fork()",
