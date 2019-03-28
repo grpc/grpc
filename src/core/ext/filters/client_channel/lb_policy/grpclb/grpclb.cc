@@ -234,12 +234,19 @@ class GrpcLb : public LoadBalancingPolicy {
 
     // Returns the LB token to use for a drop, or null if the call
     // should not be dropped.
-    // Intended to be called from picker, so calls will be externally
-    // synchronized.
+    //
+    // Note: This is called from the picker, so it will be invoked in
+    // the channel's data plane combiner, NOT the control plane
+    // combiner.  It should not be accessed by any other part of the LB
+    // policy.
     const char* ShouldDrop();
 
    private:
     grpc_grpclb_serverlist* serverlist_;
+
+    // Guarded by the channel's data plane combiner, NOT the control
+    // plane combiner.  It should not be accessed by anything but the
+    // picker via the ShouldDrop() method.
     size_t drop_index_ = 0;
   };
 
