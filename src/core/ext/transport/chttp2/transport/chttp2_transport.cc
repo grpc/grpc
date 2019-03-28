@@ -1268,7 +1268,9 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
   if (closure->next_data.scratch < CLOSURE_BARRIER_FIRST_REF_BIT) {
     if ((t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE) ||
         !(closure->next_data.scratch & CLOSURE_BARRIER_MAY_COVER_WRITE)) {
-      GRPC_CLOSURE_RUN(closure, closure->error_data.error);
+      // Using GRPC_CLOSURE_SCHED instead of GRPC_CLOSURE_RUN to avoid running
+      // closures earlier than when it is safe to do so.
+      GRPC_CLOSURE_SCHED(closure, closure->error_data.error);
     } else {
       grpc_closure_list_append(&t->run_after_write, closure,
                                closure->error_data.error);

@@ -23,10 +23,9 @@
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/lib/iomgr/combiner.h"
 
-grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(
-    false, "lb_policy_refcount");
-
 namespace grpc_core {
+
+DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(false, "lb_policy_refcount");
 
 //
 // LoadBalancingPolicy
@@ -90,6 +89,44 @@ grpc_json* LoadBalancingPolicy::ParseLoadBalancingConfig(
 }
 
 //
+// LoadBalancingPolicy::UpdateArgs
+//
+
+LoadBalancingPolicy::UpdateArgs::UpdateArgs(const UpdateArgs& other) {
+  addresses = other.addresses;
+  config = other.config;
+  args = grpc_channel_args_copy(other.args);
+}
+
+LoadBalancingPolicy::UpdateArgs::UpdateArgs(UpdateArgs&& other) {
+  addresses = std::move(other.addresses);
+  config = std::move(other.config);
+  // TODO(roth): Use std::move() once channel args is converted to C++.
+  args = other.args;
+  other.args = nullptr;
+}
+
+LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
+    const UpdateArgs& other) {
+  addresses = other.addresses;
+  config = other.config;
+  grpc_channel_args_destroy(args);
+  args = grpc_channel_args_copy(other.args);
+  return *this;
+}
+
+LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
+    UpdateArgs&& other) {
+  addresses = std::move(other.addresses);
+  config = std::move(other.config);
+  // TODO(roth): Use std::move() once channel args is converted to C++.
+  grpc_channel_args_destroy(args);
+  args = other.args;
+  other.args = nullptr;
+  return *this;
+}
+
+//
 // LoadBalancingPolicy::QueuePicker
 //
 
@@ -103,10 +140,9 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
   //    the time this function returns, the pick will already have
   //    been processed, and we'll be trying to re-process the same
   //    pick again, leading to a crash.
-  // 2. In a subsequent PR, we will split the data plane and control
-  //    plane synchronization into separate combiners, at which
-  //    point this will need to hop from the data plane combiner into
-  //    the control plane combiner.
+  // 2. We are currently running in the data plane combiner, but we
+  //    need to bounce into the control plane combiner to call
+  //    ExitIdleLocked().
   if (!exit_idle_called_) {
     exit_idle_called_ = true;
     parent_->Ref().release();  // ref held by closure.

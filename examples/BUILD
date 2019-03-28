@@ -16,7 +16,9 @@ licenses(["notice"])  # 3-clause BSD
 
 package(default_visibility = ["//visibility:public"])
 
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
+load("@org_pubref_rules_protobuf//python:rules.bzl", "py_proto_library")
 
 grpc_proto_library(
     name = "auth_sample",
@@ -41,6 +43,13 @@ grpc_proto_library(
 grpc_proto_library(
     name = "keyvaluestore",
     srcs = ["protos/keyvaluestore.proto"],
+)
+
+py_proto_library(
+    name = "py_helloworld",
+    protos = ["protos/helloworld.proto"],
+    with_grpc = True,
+    deps = [requirement('protobuf'),],
 )
 
 cc_binary(
