@@ -94,8 +94,10 @@ class Map {
 
   // Removes the current entry and points to the next one
   // TODO(mhaidry): Modify erase to use the iterator location
+  // TODO(mhaidry): Modify code for signature parity with std::map
   // to create an efficient erase method
-  iterator erase(iterator iter) {
+  template <class Iterable>
+  iterator erase(Iterable iter) {
     if (iter == end()) return iter;
     key_type& del_key = iter->first;
     iter++;
