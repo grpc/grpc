@@ -2091,6 +2091,15 @@ grpc::string GetMockPrologue(grpc_generator::File* file,
 
     printer->Print(vars, "#include \"$filename_base$$message_header_ext$\"\n");
     printer->Print(vars, "#include \"$filename_base$$service_header_ext$\"\n");
+    if (params.include_import_headers) {
+      const std::vector<grpc::string> import_names = file->GetImportNames();
+      for (const auto& import_name : import_names) {
+        const grpc::string include_name =
+            ImportInludeFromProtoName(import_name);
+        printer->Print(vars, include_name.c_str());
+      }
+      printer->PrintRaw("\n");
+    }
     printer->Print(vars, file->additional_headers().c_str());
     printer->Print(vars, "\n");
   }
