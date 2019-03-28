@@ -114,6 +114,7 @@ static void plugin_md_request_metadata_ready(void* request,
                                              grpc_status_code status,
                                              const char* error_details) {
   /* called from application code */
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx(GRPC_EXEC_CTX_FLAG_IS_FINISHED |
                               GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP);
   grpc_plugin_credentials::pending_request* r =

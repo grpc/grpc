@@ -48,6 +48,8 @@ def _resolver_test_cases(resolver_component_data):
             ('expected_chosen_service_config',
              (test_case['expected_chosen_service_config'] or '')),
             ('expected_lb_policy', (test_case['expected_lb_policy'] or '')),
+            ('enable_srv_queries', test_case['enable_srv_queries']),
+            ('enable_txt_queries', test_case['enable_txt_queries']),
         ],
     })
   return out

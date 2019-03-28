@@ -112,7 +112,7 @@ bool grpc_gcp_rpc_protocol_versions_encode(
  * The method returns true on success and false otherwise.
  */
 bool grpc_gcp_rpc_protocol_versions_decode(
-    grpc_slice slice, grpc_gcp_rpc_protocol_versions* versions);
+    const grpc_slice& slice, grpc_gcp_rpc_protocol_versions* versions);
 
 /**
  * This method performs a deep copy operation on rpc protocol versions

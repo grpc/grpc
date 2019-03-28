@@ -41,7 +41,7 @@
 namespace grpc_core {
 namespace channelz {
 
-ChannelTrace::TraceEvent::TraceEvent(Severity severity, grpc_slice data,
+ChannelTrace::TraceEvent::TraceEvent(Severity severity, const grpc_slice& data,
                                      RefCountedPtr<BaseNode> referenced_entity)
     : severity_(severity),
       data_(data),
@@ -51,7 +51,7 @@ ChannelTrace::TraceEvent::TraceEvent(Severity severity, grpc_slice data,
       referenced_entity_(std::move(referenced_entity)),
       memory_usage_(sizeof(TraceEvent) + grpc_slice_memory_usage(data)) {}
 
-ChannelTrace::TraceEvent::TraceEvent(Severity severity, grpc_slice data)
+ChannelTrace::TraceEvent::TraceEvent(Severity severity, const grpc_slice& data)
     : severity_(severity),
       data_(data),
       timestamp_(grpc_millis_to_timespec(grpc_core::ExecCtx::Get()->Now(),
@@ -107,7 +107,7 @@ void ChannelTrace::AddTraceEventHelper(TraceEvent* new_trace_event) {
   }
 }
 
-void ChannelTrace::AddTraceEvent(Severity severity, grpc_slice data) {
+void ChannelTrace::AddTraceEvent(Severity severity, const grpc_slice& data) {
   if (max_event_memory_ == 0) {
     grpc_slice_unref_internal(data);
     return;  // tracing is disabled if max_event_memory_ == 0
@@ -116,7 +116,7 @@ void ChannelTrace::AddTraceEvent(Severity severity, grpc_slice data) {
 }
 
 void ChannelTrace::AddTraceEventWithReference(
-    Severity severity, grpc_slice data,
+    Severity severity, const grpc_slice& data,
     RefCountedPtr<BaseNode> referenced_entity) {
   if (max_event_memory_ == 0) {
     grpc_slice_unref_internal(data);

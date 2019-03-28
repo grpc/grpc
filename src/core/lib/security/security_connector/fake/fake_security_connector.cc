@@ -26,6 +26,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
@@ -53,8 +55,11 @@ class grpc_fake_channel_security_connector final
         target_(gpr_strdup(target)),
         expected_targets_(
             gpr_strdup(grpc_fake_transport_get_expected_targets(args))),
-        is_lb_channel_(grpc_core::FindTargetAuthorityTableInArgs(args) !=
-                       nullptr) {
+        is_lb_channel_(
+            grpc_channel_args_find(
+                args, GRPC_ARG_ADDRESS_IS_XDS_LOAD_BALANCER) != nullptr ||
+            grpc_channel_args_find(
+                args, GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER) != nullptr) {
     const grpc_arg* target_name_override_arg =
         grpc_channel_args_find(args, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
     if (target_name_override_arg != nullptr) {
@@ -92,11 +97,9 @@ class grpc_fake_channel_security_connector final
   }
 
   void add_handshakers(grpc_pollset_set* interested_parties,
-                       grpc_handshake_manager* handshake_mgr) override {
-    grpc_handshake_manager_add(
-        handshake_mgr,
-        grpc_security_handshaker_create(
-            tsi_create_fake_handshaker(/*is_client=*/true), this));
+                       grpc_core::HandshakeManager* handshake_mgr) override {
+    handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(
+        tsi_create_fake_handshaker(/*is_client=*/true), this));
   }
 
   bool check_call_host(const char* host, grpc_auth_context* auth_context,
@@ -273,11 +276,9 @@ class grpc_fake_server_security_connector
   }
 
   void add_handshakers(grpc_pollset_set* interested_parties,
-                       grpc_handshake_manager* handshake_mgr) override {
-    grpc_handshake_manager_add(
-        handshake_mgr,
-        grpc_security_handshaker_create(
-            tsi_create_fake_handshaker(/*=is_client*/ false), this));
+                       grpc_core::HandshakeManager* handshake_mgr) override {
+    handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(
+        tsi_create_fake_handshaker(/*=is_client*/ false), this));
   }
 
   int cmp(const grpc_security_connector* other) const override {

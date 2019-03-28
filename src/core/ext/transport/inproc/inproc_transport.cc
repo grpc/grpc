@@ -64,6 +64,8 @@ struct shared_mu {
     gpr_ref_init(&refs, 2);
   }
 
+  ~shared_mu() { gpr_mu_destroy(&mu); }
+
   gpr_mu mu;
   gpr_refcount refs;
 };
@@ -83,6 +85,7 @@ struct inproc_transport {
   ~inproc_transport() {
     grpc_connectivity_state_destroy(&connectivity);
     if (gpr_unref(&mu->refs)) {
+      mu->~shared_mu();
       gpr_free(mu);
     }
   }
@@ -1029,6 +1032,11 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
     }
   } else {
     if (error != GRPC_ERROR_NONE) {
+      // Consume any send message that was sent here but that we are not pushing
+      // to the other side
+      if (op->send_message) {
+        op->payload->send_message.send_message.reset();
+      }
       // Schedule op's closures that we didn't push to op state machine
       if (op->recv_initial_metadata) {
         if (op->payload->recv_initial_metadata.trailing_metadata_available !=

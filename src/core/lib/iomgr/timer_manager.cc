@@ -105,6 +105,14 @@ void grpc_timer_manager_tick() {
 }
 
 static void run_some_timers() {
+  // In the case of timers, the ExecCtx for the thread is declared
+  // in the timer thread itself, but this is the point where we
+  // could start seeing application-level callbacks. No need to
+  // create a new ExecCtx, though, since there already is one and it is
+  // flushed (but not destructed) in this function itself
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx(
+      GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
+
   // if there's something to execute...
   gpr_mu_lock(&g_mu);
   // remove a waiter from the pool, and start another thread if necessary

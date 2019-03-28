@@ -52,44 +52,20 @@
                           privateKey:(NSString *)privateKey
                            certChain:(NSString *)certChain
                                error:(NSError **)errorPtr {
-  static NSData *defaultRootsASCII;
-  static NSError *defaultRootsError;
   static dispatch_once_t loading;
   dispatch_once(&loading, ^{
     NSString *defaultPath = @"gRPCCertificates.bundle/roots";  // .pem
     // Do not use NSBundle.mainBundle, as it's nil for tests of library projects.
     NSBundle *bundle = [NSBundle bundleForClass:[self class]];
     NSString *path = [bundle pathForResource:defaultPath ofType:@"pem"];
-    NSError *error;
-    // Files in PEM format can have non-ASCII characters in their comments (e.g. for the name of the
-    // issuer). Load them as UTF8 and produce an ASCII equivalent.
-    NSString *contentInUTF8 =
-        [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&error];
-    if (contentInUTF8 == nil) {
-      defaultRootsError = error;
-      return;
-    }
-    defaultRootsASCII = [self nullTerminatedDataWithString:contentInUTF8];
+    setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR,
+           [path cStringUsingEncoding:NSUTF8StringEncoding], 1);
   });
 
-  NSData *rootsASCII;
+  NSData *rootsASCII = nil;
+  // if rootCerts is not provided, gRPC will use its own default certs
   if (rootCerts != nil) {
     rootsASCII = [self nullTerminatedDataWithString:rootCerts];
-  } else {
-    if (defaultRootsASCII == nil) {
-      if (errorPtr) {
-        *errorPtr = defaultRootsError;
-      }
-      NSAssert(
-          defaultRootsASCII, NSObjectNotAvailableException,
-          @"Could not read gRPCCertificates.bundle/roots.pem. This file, "
-           "with the root certificates, is needed to establish secure (TLS) connections. "
-           "Because the file is distributed with the gRPC library, this error is usually a sign "
-           "that the library wasn't configured correctly for your project. Error: %@",
-          defaultRootsError);
-      return nil;
-    }
-    rootsASCII = defaultRootsASCII;
   }
 
   grpc_channel_credentials *creds = NULL;

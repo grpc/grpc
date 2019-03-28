@@ -112,7 +112,7 @@ TEST_F(ChannelzRegistryTest, NullIfNotPresentTest) {
 }
 
 TEST_F(ChannelzRegistryTest, TestCompaction) {
-  const int kLoopIterations = 100;
+  const int kLoopIterations = 300;
   // These channels that will stay in the registry for the duration of the test.
   std::vector<UniquePtr<BaseNode>> even_channels;
   even_channels.reserve(kLoopIterations);

@@ -103,10 +103,11 @@
     s.preserve_paths = plugin
 
     # Restrict the protoc version to the one supported by this plugin.
-    s.dependency '!ProtoCompiler', '3.6.0'
+    s.dependency '!ProtoCompiler', '3.6.1'
     # For the Protobuf dependency not to complain:
     s.ios.deployment_target = '7.0'
     s.osx.deployment_target = '10.9'
+    s.tvos.deployment_target = '10.0'
     # Restrict the gRPC runtime version to the one supported by this plugin.
     s.dependency 'gRPC-ProtoRPC', v
 

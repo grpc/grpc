@@ -92,7 +92,7 @@ class DummyEndpoint : public grpc_endpoint {
   }
 
   static void read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                   grpc_closure* cb) {
+                   grpc_closure* cb, bool urgent) {
     static_cast<DummyEndpoint*>(ep)->QueueRead(slices, cb);
   }
 
@@ -100,8 +100,6 @@ class DummyEndpoint : public grpc_endpoint {
                     grpc_closure* cb, void* arg) {
     GRPC_CLOSURE_SCHED(cb, GRPC_ERROR_NONE);
   }
-
-  static grpc_workqueue* get_workqueue(grpc_endpoint* ep) { return nullptr; }
 
   static void add_to_pollset(grpc_endpoint* ep, grpc_pollset* pollset) {}
 

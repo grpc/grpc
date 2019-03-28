@@ -27,7 +27,10 @@
 #include <grpc/slice_buffer.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 
 /* --- Util. --- */
@@ -35,6 +38,23 @@
 /* --- URL schemes. --- */
 #define GRPC_SSL_URL_SCHEME "https"
 
+/* Check ALPN information returned from SSL handshakes. */
+grpc_error* grpc_ssl_check_alpn(const tsi_peer* peer);
+
+/* Check peer name information returned from SSL handshakes. */
+grpc_error* grpc_ssl_check_peer_name(const char* peer_name,
+                                     const tsi_peer* peer);
+/* Compare targer_name information extracted from SSL security connectors. */
+bool grpc_ssl_cmp_target_name(const char* target_name,
+                              const char* other_target_name,
+                              const char* overridden_target_name,
+                              const char* other_overridden_target_name);
+/* Check the host that will be set for a call is acceptable.*/
+bool grpc_ssl_check_call_host(const char* host, const char* target_name,
+                              const char* overridden_target_name,
+                              grpc_auth_context* auth_context,
+                              grpc_closure* on_call_host_checked,
+                              grpc_error** error);
 /* Return HTTP2-compliant cipher suites that gRPC accepts by default. */
 const char* grpc_get_ssl_cipher_suites(void);
 
@@ -46,6 +66,18 @@ grpc_get_tsi_client_certificate_request_type(
 
 /* Return an array of strings containing alpn protocols. */
 const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols);
+
+/* Initialize TSI SSL server/client handshaker factory. */
+grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
+    tsi_ssl_pem_key_cert_pair* key_cert_pair, const char* pem_root_certs,
+    tsi_ssl_session_cache* ssl_session_cache,
+    tsi_ssl_client_handshaker_factory** handshaker_factory);
+
+grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
+    tsi_ssl_pem_key_cert_pair* key_cert_pairs, size_t num_key_cert_pairs,
+    const char* pem_root_certs,
+    grpc_ssl_client_certificate_request_type client_certificate_request,
+    tsi_ssl_server_handshaker_factory** handshaker_factory);
 
 /* Exposed for testing only. */
 grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
@@ -87,6 +119,39 @@ class DefaultSslRootStore {
 
   // Default PEM root certificates.
   static grpc_slice default_pem_root_certs_;
+};
+
+class PemKeyCertPair {
+ public:
+  // Construct from the C struct.  We steal its members and then immediately
+  // free it.
+  explicit PemKeyCertPair(grpc_ssl_pem_key_cert_pair* pair)
+      : private_key_(const_cast<char*>(pair->private_key)),
+        cert_chain_(const_cast<char*>(pair->cert_chain)) {
+    gpr_free(pair);
+  }
+
+  // Movable.
+  PemKeyCertPair(PemKeyCertPair&& other) {
+    private_key_ = std::move(other.private_key_);
+    cert_chain_ = std::move(other.cert_chain_);
+  }
+  PemKeyCertPair& operator=(PemKeyCertPair&& other) {
+    private_key_ = std::move(other.private_key_);
+    cert_chain_ = std::move(other.cert_chain_);
+    return *this;
+  }
+
+  // Not copyable.
+  PemKeyCertPair(const PemKeyCertPair&) = delete;
+  PemKeyCertPair& operator=(const PemKeyCertPair&) = delete;
+
+  char* private_key() const { return private_key_.get(); }
+  char* cert_chain() const { return cert_chain_.get(); }
+
+ private:
+  grpc_core::UniquePtr<char> private_key_;
+  grpc_core::UniquePtr<char> cert_chain_;
 };
 
 }  // namespace grpc_core

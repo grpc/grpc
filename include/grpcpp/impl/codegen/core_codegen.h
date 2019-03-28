@@ -42,6 +42,7 @@ class CoreCodegen final : public CoreCodegenInterface {
       void* reserved) override;
   grpc_completion_queue* grpc_completion_queue_create_for_pluck(
       void* reserved) override;
+  void grpc_completion_queue_shutdown(grpc_completion_queue* cq) override;
   void grpc_completion_queue_destroy(grpc_completion_queue* cq) override;
   grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq, void* tag,
                                          gpr_timespec deadline,
@@ -84,6 +85,8 @@ class CoreCodegen final : public CoreCodegenInterface {
       grpc_byte_buffer_reader* reader) override;
   int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
                                    grpc_slice* slice) override;
+  int grpc_byte_buffer_reader_peek(grpc_byte_buffer_reader* reader,
+                                   grpc_slice** slice) override;
 
   grpc_byte_buffer* grpc_raw_byte_buffer_create(grpc_slice* slice,
                                                 size_t nslices) override;

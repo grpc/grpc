@@ -60,7 +60,7 @@ typedef enum {
 
 #define GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS 60
 
-#define GRPC_COMPUTE_ENGINE_METADATA_HOST "metadata.google.internal"
+#define GRPC_COMPUTE_ENGINE_METADATA_HOST "metadata.google.internal."
 #define GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH \
   "/computeMetadata/v1/instance/service-accounts/default/token"
 
@@ -121,6 +121,14 @@ struct grpc_channel_credentials
   duplicate_without_call_credentials() {
     // By default we just increment the refcount.
     return Ref();
+  }
+
+  // Allows credentials to optionally modify a parent channel's args.
+  // By default, leave channel args as is. The callee takes ownership
+  // of the passed-in channel args, and the caller takes ownership
+  // of the returned channel args.
+  virtual grpc_channel_args* update_arguments(grpc_channel_args* args) {
+    return args;
   }
 
   const char* type() const { return type_; }

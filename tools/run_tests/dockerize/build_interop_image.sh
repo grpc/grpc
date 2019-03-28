@@ -64,6 +64,14 @@ else
   echo "WARNING: grpc-node not found, it won't be mounted to the docker container."
 fi
 
+echo "GRPC_DOTNET_ROOT: ${GRPC_DOTNET_ROOT:=$(cd ../grpc-dotnet && pwd)}"
+if [ -n "$GRPC_DOTNET_ROOT" ]
+then
+  MOUNT_ARGS+=" -v $GRPC_DOTNET_ROOT:/var/local/jenkins/grpc-dotnet:ro"
+else
+  echo "WARNING: grpc-dotnet not found, it won't be mounted to the docker container."
+fi
+
 # Mount service account dir if available.
 # If service_directory does not contain the service account JSON file,
 # some of the tests will fail.
@@ -89,9 +97,6 @@ else
   # Make sure docker image has been built. Should be instantaneous if so.
   docker build -t "$BASE_IMAGE" --force-rm=true "tools/dockerfile/interoptest/$BASE_NAME" || exit $?
 fi
-
-# Create a local branch so the child Docker script won't complain
-git branch -f jenkins-docker
 
 CONTAINER_NAME="build_${BASE_NAME}_$(uuidgen)"
 

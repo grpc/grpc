@@ -32,7 +32,7 @@ TEST_DIRS=(
 )
 
 VIRTUALENV=python_pylint_venv
-python3 -m virtualenv $VIRTUALENV
+python3 -m virtualenv $VIRTUALENV -p $(which python3)
 
 PYTHON=$VIRTUALENV/bin/python
 
@@ -47,5 +47,11 @@ done
 for dir in "${TEST_DIRS[@]}"; do
   $PYTHON -m pylint --rcfile=.pylintrc-tests -rn "$dir" || EXIT=1
 done
+
+find examples/python \
+  -iname "*.py" \
+  -not -name "*_pb2.py" \
+  -not -name "*_pb2_grpc.py" \
+  | xargs $PYTHON -m pylint --rcfile=.pylintrc-examples -rn
 
 exit $EXIT

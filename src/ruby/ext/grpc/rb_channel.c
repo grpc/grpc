@@ -143,14 +143,12 @@ static void* channel_safe_destroy_without_gil(void* arg) {
   return NULL;
 }
 
-/* Destroys Channel instances. */
-static void grpc_rb_channel_free(void* p) {
+static void grpc_rb_channel_free_internal(void* p) {
   grpc_rb_channel* ch = NULL;
   if (p == NULL) {
     return;
   };
   ch = (grpc_rb_channel*)p;
-
   if (ch->bg_wrapped != NULL) {
     /* assumption made here: it's ok to directly gpr_mu_lock the global
      * connection polling mutex because we're in a finalizer,
@@ -159,8 +157,13 @@ static void grpc_rb_channel_free(void* p) {
     grpc_rb_channel_safe_destroy(ch->bg_wrapped);
     ch->bg_wrapped = NULL;
   }
-
   xfree(p);
+}
+
+/* Destroys Channel instances. */
+static void grpc_rb_channel_free(void* p) {
+  grpc_rb_channel_free_internal(p);
+  grpc_ruby_shutdown();
 }
 
 /* Protects the mark object from GC */
@@ -189,6 +192,7 @@ static rb_data_type_t grpc_channel_data_type = {"grpc_channel",
 
 /* Allocates grpc_rb_channel instances. */
 static VALUE grpc_rb_channel_alloc(VALUE cls) {
+  grpc_ruby_init();
   grpc_rb_channel* wrapper = ALLOC(grpc_rb_channel);
   wrapper->bg_wrapped = NULL;
   wrapper->credentials = Qnil;
@@ -216,7 +220,6 @@ static VALUE grpc_rb_channel_init(int argc, VALUE* argv, VALUE self) {
   int stop_waiting_for_thread_start = 0;
   MEMZERO(&args, grpc_channel_args, 1);
 
-  grpc_ruby_once_init();
   grpc_ruby_fork_guard();
   rb_thread_call_without_gvl(
       wait_until_channel_polling_thread_started_no_gil,
@@ -682,9 +685,10 @@ static VALUE run_poll_channels_loop(VALUE arg) {
   gpr_log(
       GPR_DEBUG,
       "GRPC_RUBY: run_poll_channels_loop - create connection polling thread");
+  grpc_ruby_init();
   rb_thread_call_without_gvl(run_poll_channels_loop_no_gil, NULL,
                              run_poll_channels_loop_unblocking_func, NULL);
-
+  grpc_ruby_shutdown();
   return Qnil;
 }
 

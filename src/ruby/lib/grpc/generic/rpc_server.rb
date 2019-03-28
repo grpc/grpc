@@ -217,7 +217,7 @@ module GRPC
     def initialize(pool_size: DEFAULT_POOL_SIZE,
                    max_waiting_requests: DEFAULT_MAX_WAITING_REQUESTS,
                    poll_period: DEFAULT_POLL_PERIOD,
-                   pool_keep_alive: GRPC::RpcServer::DEFAULT_POOL_SIZE,
+                   pool_keep_alive: Pool::DEFAULT_KEEP_ALIVE,
                    connect_md_proc: nil,
                    server_args: {},
                    interceptors: [])

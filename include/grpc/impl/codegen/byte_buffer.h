@@ -73,6 +73,19 @@ GRPCAPI void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader* reader);
 GRPCAPI int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
                                          grpc_slice* slice);
 
+/** EXPERIMENTAL API - This function may be removed and changed, in the future.
+ *
+ * Updates \a slice with the next piece of data from from \a reader and returns
+ * 1. Returns 0 at the end of the stream. Caller is responsible for making sure
+ * the slice pointer remains valid when accessed.
+ *
+ * NOTE: Do not use this function unless the caller can guarantee that the
+ *       underlying grpc_byte_buffer outlasts the use of the slice. This is only
+ *       safe when the underlying grpc_byte_buffer remains immutable while slice
+ *       is being accessed. */
+GRPCAPI int grpc_byte_buffer_reader_peek(grpc_byte_buffer_reader* reader,
+                                         grpc_slice** slice);
+
 /** Merge all data from \a reader into single slice */
 GRPCAPI grpc_slice
 grpc_byte_buffer_reader_readall(grpc_byte_buffer_reader* reader);

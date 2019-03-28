@@ -219,10 +219,29 @@ class InterceptorBatchMethodsImpl
   // Alternatively, RunInterceptors(std::function<void(void)> f) can be used.
   void SetCallOpSetInterface(CallOpSetInterface* ops) { ops_ = ops; }
 
-  // Returns true if no interceptors are run. This should be used only by
-  // subclasses of CallOpSetInterface. SetCall and SetCallOpSetInterface should
-  // have been called before this. After all the interceptors are done running,
-  // either ContinueFillOpsAfterInterception or
+  // SetCall should have been called before this.
+  // Returns true if the interceptors list is empty
+  bool InterceptorsListEmpty() {
+    auto* client_rpc_info = call_->client_rpc_info();
+    if (client_rpc_info != nullptr) {
+      if (client_rpc_info->interceptors_.size() == 0) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+
+    auto* server_rpc_info = call_->server_rpc_info();
+    if (server_rpc_info == nullptr ||
+        server_rpc_info->interceptors_.size() == 0) {
+      return true;
+    }
+    return false;
+  }
+
+  // This should be used only by subclasses of CallOpSetInterface. SetCall and
+  // SetCallOpSetInterface should have been called before this. After all the
+  // interceptors are done running, either ContinueFillOpsAfterInterception or
   // ContinueFinalizeOpsAfterInterception will be called. Note that neither of
   // them is invoked if there were no interceptors registered.
   bool RunInterceptors() {
@@ -384,7 +403,6 @@ class InterceptorBatchMethodsImpl
   grpc_status_code* code_ = nullptr;
   grpc::string* error_details_ = nullptr;
   grpc::string* error_message_ = nullptr;
-  Status send_status_;
 
   std::multimap<grpc::string, grpc::string>* send_trailing_metadata_ = nullptr;
 

@@ -31,7 +31,7 @@ class LoadBalancingPolicyFactory {
  public:
   /// Returns a new LB policy instance.
   virtual OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-      const LoadBalancingPolicy::Args& args) const GRPC_ABSTRACT;
+      LoadBalancingPolicy::Args) const GRPC_ABSTRACT;
 
   /// Returns the LB policy name that this factory provides.
   /// Caller does NOT take ownership of result.

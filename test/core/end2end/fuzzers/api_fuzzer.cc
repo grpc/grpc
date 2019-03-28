@@ -706,7 +706,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_timer_manager_set_threading(false);
   {
     grpc_core::ExecCtx exec_ctx;
-    grpc_executor_set_threading(false);
+    grpc_core::Executor::SetThreadingAll(false);
   }
   grpc_set_resolver_impl(&fuzzer_resolver);
   grpc_dns_lookup_ares_locked = my_dns_lookup_ares_locked;
@@ -1200,6 +1200,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
   grpc_resource_quota_unref(g_resource_quota);
 
-  grpc_shutdown();
+  grpc_shutdown_blocking();
   return 0;
 }

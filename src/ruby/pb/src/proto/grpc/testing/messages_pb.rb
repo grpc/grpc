@@ -4,62 +4,64 @@
 require 'google/protobuf'
 
 Google::Protobuf::DescriptorPool.generated_pool.build do
-  add_message "grpc.testing.BoolValue" do
-    optional :value, :bool, 1
-  end
-  add_message "grpc.testing.Payload" do
-    optional :type, :enum, 1, "grpc.testing.PayloadType"
-    optional :body, :bytes, 2
-  end
-  add_message "grpc.testing.EchoStatus" do
-    optional :code, :int32, 1
-    optional :message, :string, 2
-  end
-  add_message "grpc.testing.SimpleRequest" do
-    optional :response_type, :enum, 1, "grpc.testing.PayloadType"
-    optional :response_size, :int32, 2
-    optional :payload, :message, 3, "grpc.testing.Payload"
-    optional :fill_username, :bool, 4
-    optional :fill_oauth_scope, :bool, 5
-    optional :response_compressed, :message, 6, "grpc.testing.BoolValue"
-    optional :response_status, :message, 7, "grpc.testing.EchoStatus"
-    optional :expect_compressed, :message, 8, "grpc.testing.BoolValue"
-  end
-  add_message "grpc.testing.SimpleResponse" do
-    optional :payload, :message, 1, "grpc.testing.Payload"
-    optional :username, :string, 2
-    optional :oauth_scope, :string, 3
-  end
-  add_message "grpc.testing.StreamingInputCallRequest" do
-    optional :payload, :message, 1, "grpc.testing.Payload"
-    optional :expect_compressed, :message, 2, "grpc.testing.BoolValue"
-  end
-  add_message "grpc.testing.StreamingInputCallResponse" do
-    optional :aggregated_payload_size, :int32, 1
-  end
-  add_message "grpc.testing.ResponseParameters" do
-    optional :size, :int32, 1
-    optional :interval_us, :int32, 2
-    optional :compressed, :message, 3, "grpc.testing.BoolValue"
-  end
-  add_message "grpc.testing.StreamingOutputCallRequest" do
-    optional :response_type, :enum, 1, "grpc.testing.PayloadType"
-    repeated :response_parameters, :message, 2, "grpc.testing.ResponseParameters"
-    optional :payload, :message, 3, "grpc.testing.Payload"
-    optional :response_status, :message, 7, "grpc.testing.EchoStatus"
-  end
-  add_message "grpc.testing.StreamingOutputCallResponse" do
-    optional :payload, :message, 1, "grpc.testing.Payload"
-  end
-  add_message "grpc.testing.ReconnectParams" do
-    optional :max_reconnect_backoff_ms, :int32, 1
-  end
-  add_message "grpc.testing.ReconnectInfo" do
-    optional :passed, :bool, 1
-    repeated :backoff_ms, :int32, 2
-  end
-  add_enum "grpc.testing.PayloadType" do
-    value :COMPRESSABLE, 0
+  add_file("src/proto/grpc/testing/messages.proto", :syntax => :proto3) do
+    add_message "grpc.testing.BoolValue" do
+      optional :value, :bool, 1
+    end
+    add_message "grpc.testing.Payload" do
+      optional :type, :enum, 1, "grpc.testing.PayloadType"
+      optional :body, :bytes, 2
+    end
+    add_message "grpc.testing.EchoStatus" do
+      optional :code, :int32, 1
+      optional :message, :string, 2
+    end
+    add_message "grpc.testing.SimpleRequest" do
+      optional :response_type, :enum, 1, "grpc.testing.PayloadType"
+      optional :response_size, :int32, 2
+      optional :payload, :message, 3, "grpc.testing.Payload"
+      optional :fill_username, :bool, 4
+      optional :fill_oauth_scope, :bool, 5
+      optional :response_compressed, :message, 6, "grpc.testing.BoolValue"
+      optional :response_status, :message, 7, "grpc.testing.EchoStatus"
+      optional :expect_compressed, :message, 8, "grpc.testing.BoolValue"
+    end
+    add_message "grpc.testing.SimpleResponse" do
+      optional :payload, :message, 1, "grpc.testing.Payload"
+      optional :username, :string, 2
+      optional :oauth_scope, :string, 3
+    end
+    add_message "grpc.testing.StreamingInputCallRequest" do
+      optional :payload, :message, 1, "grpc.testing.Payload"
+      optional :expect_compressed, :message, 2, "grpc.testing.BoolValue"
+    end
+    add_message "grpc.testing.StreamingInputCallResponse" do
+      optional :aggregated_payload_size, :int32, 1
+    end
+    add_message "grpc.testing.ResponseParameters" do
+      optional :size, :int32, 1
+      optional :interval_us, :int32, 2
+      optional :compressed, :message, 3, "grpc.testing.BoolValue"
+    end
+    add_message "grpc.testing.StreamingOutputCallRequest" do
+      optional :response_type, :enum, 1, "grpc.testing.PayloadType"
+      repeated :response_parameters, :message, 2, "grpc.testing.ResponseParameters"
+      optional :payload, :message, 3, "grpc.testing.Payload"
+      optional :response_status, :message, 7, "grpc.testing.EchoStatus"
+    end
+    add_message "grpc.testing.StreamingOutputCallResponse" do
+      optional :payload, :message, 1, "grpc.testing.Payload"
+    end
+    add_message "grpc.testing.ReconnectParams" do
+      optional :max_reconnect_backoff_ms, :int32, 1
+    end
+    add_message "grpc.testing.ReconnectInfo" do
+      optional :passed, :bool, 1
+      repeated :backoff_ms, :int32, 2
+    end
+    add_enum "grpc.testing.PayloadType" do
+      value :COMPRESSABLE, 0
+    end
   end
 end
 

@@ -3,7 +3,7 @@
 This directory contains scripts that facilitate building and running gRPC interoperability tests for combinations of language/runtimes (known as matrix).
 
 The setup builds gRPC docker images for each language/runtime and upload it to Google Container Registry (GCR). These images, encapsulating gRPC stack
-from specific releases/tag, are used to test version compatiblity between gRPC release versions.
+from specific releases/tag, are used to test version compatibility between gRPC release versions.
 
 ## Step-by-step instructions for adding a GCR image for a new release for compatibility test
 We have continuous nightly test setup to test gRPC backward compatibility between old clients and latest server.  When a gRPC developer creates a new gRPC release, s/he is also responsible to add the just-released gRPC client to the nightly test.  The steps are:

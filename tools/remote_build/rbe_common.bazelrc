@@ -1,3 +1,4 @@
+#@IgnoreInspection BashAddShebang
 # Copyright 2018 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -42,6 +43,10 @@ build --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 build --define GRPC_PORT_ISOLATED_RUNTIME=1
 # without verbose gRPC logs the test outputs are not very useful
 test --test_env=GRPC_VERBOSITY=debug
+
+# Default test timeouts for all RBE tests (sanitizers override these values)
+# TODO(jtattermusch): revisit the non-standard test timeout values
+build --test_timeout=300,450,1200,3600
 
 # address sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific

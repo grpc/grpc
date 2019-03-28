@@ -14,6 +14,7 @@
 """gRPC's Python API."""
 
 import abc
+import contextlib
 import enum
 import logging
 import sys
@@ -281,7 +282,7 @@ class Status(six.with_metaclass(abc.ABCMeta)):
 
     Attributes:
       code: A StatusCode object to be sent to the client.
-      details: An ASCII-encodable string to be sent to the client upon
+      details: A UTF-8-encodable string to be sent to the client upon
         termination of the RPC.
       trailing_metadata: The trailing :term:`metadata` in the RPC.
     """
@@ -1130,7 +1131,7 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         Args:
           code: A StatusCode object to be sent to the client.
             It must not be StatusCode.OK.
-          details: An ASCII-encodable string to be sent to the client upon
+          details: A UTF-8-encodable string to be sent to the client upon
             termination of the RPC.
 
         Raises:
@@ -1178,7 +1179,7 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         no details to transmit.
 
         Args:
-          details: An ASCII-encodable string to be sent to the client upon
+          details: A UTF-8-encodable string to be sent to the client upon
             termination of the RPC.
         """
         raise NotImplementedError()
@@ -1777,6 +1778,14 @@ def server(thread_pool,
                                  if interceptors is None else interceptors, ()
                                  if options is None else options,
                                  maximum_concurrent_rpcs)
+
+
+@contextlib.contextmanager
+def _create_servicer_context(rpc_event, state, request_deserializer):
+    from grpc import _server  # pylint: disable=cyclic-import
+    context = _server._Context(rpc_event, state, request_deserializer)
+    yield context
+    context._finalize_state()  # pylint: disable=protected-access
 
 
 ###################################  __all__  #################################

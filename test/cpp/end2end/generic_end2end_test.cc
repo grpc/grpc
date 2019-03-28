@@ -17,6 +17,7 @@
  */
 
 #include <memory>
+#include <thread>
 
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
@@ -219,10 +220,11 @@ TEST_F(GenericEnd2endTest, SequentialUnaryRpcs) {
     // Use the same cq as server so that events can be polled in time.
     std::unique_ptr<GenericClientAsyncResponseReader> call =
         generic_stub_->PrepareUnaryCall(&cli_ctx, kMethodName,
-                                        *cli_send_buffer.get(), srv_cq_.get());
+                                        *cli_send_buffer.get(), &cli_cq_);
     call->StartCall();
     ByteBuffer cli_recv_buffer;
     call->Finish(&cli_recv_buffer, &recv_status, tag(1));
+    std::thread client_check([this] { client_ok(1); });
 
     generic_service_.RequestCall(&srv_ctx, &stream, srv_cq_.get(),
                                  srv_cq_.get(), tag(4));
@@ -246,7 +248,7 @@ TEST_F(GenericEnd2endTest, SequentialUnaryRpcs) {
     stream.Finish(Status::OK, tag(7));
     server_ok(7);
 
-    verify_ok(srv_cq_.get(), 1, true);
+    client_check.join();
     EXPECT_TRUE(ParseFromByteBuffer(&cli_recv_buffer, &recv_response));
     EXPECT_EQ(send_response.message(), recv_response.message());
     EXPECT_TRUE(recv_status.ok());

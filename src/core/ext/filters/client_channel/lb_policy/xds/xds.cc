@@ -26,14 +26,13 @@
 /// channel that uses pick_first to select from the list of balancer
 /// addresses.
 ///
-/// The first time the xDS policy gets a request for a pick or to exit the idle
-/// state, \a StartPickingLocked() is called. This method is responsible for
-/// instantiating the internal *streaming* call to the LB server (whichever
-/// address pick_first chose). The call will be complete when either the
-/// balancer sends status or when we cancel the call (e.g., because we are
-/// shutting down). In needed, we retry the call. If we received at least one
-/// valid message from the server, a new call attempt will be made immediately;
-/// otherwise, we apply back-off delays between attempts.
+/// When we get our initial update, we instantiate the internal *streaming*
+/// call to the LB server (whichever address pick_first chose). The call
+/// will be complete when either the balancer sends status or when we cancel
+/// the call (e.g., because we are shutting down). In needed, we retry the
+/// call. If we received at least one valid message from the server, a new
+/// call attempt will be made immediately; otherwise, we apply back-off
+/// delays between attempts.
 ///
 /// We maintain an internal child policy (round_robin) instance for distributing
 /// requests across backends.  Whenever we receive a new serverlist from
@@ -70,7 +69,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h"
@@ -80,7 +78,7 @@
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/filters/client_channel/subchannel_index.h"
+#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -119,199 +117,226 @@ constexpr char kXds[] = "xds_experimental";
 
 class XdsLb : public LoadBalancingPolicy {
  public:
-  explicit XdsLb(const Args& args);
+  explicit XdsLb(Args args);
 
   const char* name() const override { return kXds; }
 
-  void UpdateLocked(const grpc_channel_args& args,
-                    grpc_json* lb_config) override;
-  bool PickLocked(PickState* pick, grpc_error** error) override;
-  void CancelPickLocked(PickState* pick, grpc_error* error) override;
-  void CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
-                                 uint32_t initial_metadata_flags_eq,
-                                 grpc_error* error) override;
-  void NotifyOnStateChangeLocked(grpc_connectivity_state* state,
-                                 grpc_closure* closure) override;
-  grpc_connectivity_state CheckConnectivityLocked(
-      grpc_error** connectivity_error) override;
-  void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
-  void ExitIdleLocked() override;
+  void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
   void FillChildRefsForChannelz(
       channelz::ChildRefsList* child_subchannels,
       channelz::ChildRefsList* child_channels) override;
 
  private:
-  /// Linked list of pending pick requests. It stores all information needed to
-  /// eventually call pick() on them. They mainly stay pending waiting for the
-  /// child policy to be created.
-  ///
-  /// Note that when a pick is sent to the child policy, we inject our own
-  /// on_complete callback, so that we can intercept the result before
-  /// invoking the original on_complete callback.  This allows us to set the
-  /// LB token metadata and add client_stats to the call context.
-  /// See \a pending_pick_complete() for details.
-  struct PendingPick {
-    // The xds lb instance that created the wrapping. This instance is not
-    // owned; reference counts are untouched. It's used only for logging
-    // purposes.
-    XdsLb* xdslb_policy;
-    // The original pick.
-    PickState* pick;
-    // Our on_complete closure and the original one.
-    grpc_closure on_complete;
-    grpc_closure* original_on_complete;
-    // Stats for client-side load reporting.
-    RefCountedPtr<XdsLbClientStats> client_stats;
-    // Next pending pick.
-    PendingPick* next = nullptr;
-  };
-
-  /// Contains a call to the LB server and all the data related to the call.
-  class BalancerCallState : public InternallyRefCounted<BalancerCallState> {
+  /// Contains a channel to the LB server and all the data related to the
+  /// channel.
+  class BalancerChannelState
+      : public InternallyRefCounted<BalancerChannelState> {
    public:
-    explicit BalancerCallState(
-        RefCountedPtr<LoadBalancingPolicy> parent_xdslb_policy);
+    /// Contains a call to the LB server and all the data related to the call.
+    class BalancerCallState : public InternallyRefCounted<BalancerCallState> {
+     public:
+      explicit BalancerCallState(RefCountedPtr<BalancerChannelState> lb_chand);
 
-    // It's the caller's responsibility to ensure that Orphan() is called from
-    // inside the combiner.
+      // It's the caller's responsibility to ensure that Orphan() is called from
+      // inside the combiner.
+      void Orphan() override;
+
+      void StartQuery();
+
+      RefCountedPtr<XdsLbClientStats> client_stats() const {
+        return client_stats_;
+      }
+
+      bool seen_initial_response() const { return seen_initial_response_; }
+
+     private:
+      // So Delete() can access our private dtor.
+      template <typename T>
+      friend void grpc_core::Delete(T*);
+
+      ~BalancerCallState();
+
+      XdsLb* xdslb_policy() const { return lb_chand_->xdslb_policy_.get(); }
+
+      bool IsCurrentCallOnChannel() const {
+        return this == lb_chand_->lb_calld_.get();
+      }
+
+      void ScheduleNextClientLoadReportLocked();
+      void SendClientLoadReportLocked();
+
+      static bool LoadReportCountersAreZero(xds_grpclb_request* request);
+
+      static void MaybeSendClientLoadReportLocked(void* arg, grpc_error* error);
+      static void OnInitialRequestSentLocked(void* arg, grpc_error* error);
+      static void OnBalancerMessageReceivedLocked(void* arg, grpc_error* error);
+      static void OnBalancerStatusReceivedLocked(void* arg, grpc_error* error);
+
+      // The owning LB channel.
+      RefCountedPtr<BalancerChannelState> lb_chand_;
+
+      // The streaming call to the LB server. Always non-NULL.
+      grpc_call* lb_call_ = nullptr;
+
+      // recv_initial_metadata
+      grpc_metadata_array lb_initial_metadata_recv_;
+
+      // send_message
+      grpc_byte_buffer* send_message_payload_ = nullptr;
+      grpc_closure lb_on_initial_request_sent_;
+
+      // recv_message
+      grpc_byte_buffer* recv_message_payload_ = nullptr;
+      grpc_closure lb_on_balancer_message_received_;
+      bool seen_initial_response_ = false;
+
+      // recv_trailing_metadata
+      grpc_closure lb_on_balancer_status_received_;
+      grpc_metadata_array lb_trailing_metadata_recv_;
+      grpc_status_code lb_call_status_;
+      grpc_slice lb_call_status_details_;
+
+      // The stats for client-side load reporting associated with this LB call.
+      // Created after the first serverlist is received.
+      RefCountedPtr<XdsLbClientStats> client_stats_;
+      grpc_millis client_stats_report_interval_ = 0;
+      grpc_timer client_load_report_timer_;
+      bool client_load_report_timer_callback_pending_ = false;
+      bool last_client_load_report_counters_were_zero_ = false;
+      bool client_load_report_is_due_ = false;
+      // The closure used for either the load report timer or the callback for
+      // completion of sending the load report.
+      grpc_closure client_load_report_closure_;
+    };
+
+    BalancerChannelState(const char* balancer_name,
+                         const grpc_channel_args& args,
+                         RefCountedPtr<XdsLb> parent_xdslb_policy);
+    ~BalancerChannelState();
+
     void Orphan() override;
 
-    void StartQuery();
+    grpc_channel* channel() const { return channel_; }
+    BalancerCallState* lb_calld() const { return lb_calld_.get(); }
 
-    XdsLbClientStats* client_stats() const { return client_stats_.get(); }
+    bool IsCurrentChannel() const {
+      return this == xdslb_policy_->lb_chand_.get();
+    }
+    bool IsPendingChannel() const {
+      return this == xdslb_policy_->pending_lb_chand_.get();
+    }
+    bool HasActiveCall() const { return lb_calld_ != nullptr; }
 
-    bool seen_initial_response() const { return seen_initial_response_; }
+    void StartCallRetryTimerLocked();
+    static void OnCallRetryTimerLocked(void* arg, grpc_error* error);
+    void StartCallLocked();
 
    private:
-    // So Delete() can access our private dtor.
-    template <typename T>
-    friend void grpc_core::Delete(T*);
-
-    ~BalancerCallState();
-
-    XdsLb* xdslb_policy() const {
-      return static_cast<XdsLb*>(xdslb_policy_.get());
-    }
-
-    void ScheduleNextClientLoadReportLocked();
-    void SendClientLoadReportLocked();
-
-    static bool LoadReportCountersAreZero(xds_grpclb_request* request);
-
-    static void MaybeSendClientLoadReportLocked(void* arg, grpc_error* error);
-    static void OnInitialRequestSentLocked(void* arg, grpc_error* error);
-    static void OnBalancerMessageReceivedLocked(void* arg, grpc_error* error);
-    static void OnBalancerStatusReceivedLocked(void* arg, grpc_error* error);
-
     // The owning LB policy.
-    RefCountedPtr<LoadBalancingPolicy> xdslb_policy_;
+    RefCountedPtr<XdsLb> xdslb_policy_;
 
-    // The streaming call to the LB server. Always non-NULL.
-    grpc_call* lb_call_ = nullptr;
+    // The channel and its status.
+    grpc_channel* channel_;
+    bool shutting_down_ = false;
 
-    // recv_initial_metadata
-    grpc_metadata_array lb_initial_metadata_recv_;
+    // The data associated with the current LB call. It holds a ref to this LB
+    // channel. It's instantiated every time we query for backends. It's reset
+    // whenever the current LB call is no longer needed (e.g., the LB policy is
+    // shutting down, or the LB call has ended). A non-NULL lb_calld_ always
+    // contains a non-NULL lb_call_.
+    OrphanablePtr<BalancerCallState> lb_calld_;
+    BackOff lb_call_backoff_;
+    grpc_timer lb_call_retry_timer_;
+    grpc_closure lb_on_call_retry_;
+    bool retry_timer_callback_pending_ = false;
+  };
 
-    // send_message
-    grpc_byte_buffer* send_message_payload_ = nullptr;
-    grpc_closure lb_on_initial_request_sent_;
+  class Picker : public SubchannelPicker {
+   public:
+    Picker(UniquePtr<SubchannelPicker> child_picker,
+           RefCountedPtr<XdsLbClientStats> client_stats)
+        : child_picker_(std::move(child_picker)),
+          client_stats_(std::move(client_stats)) {}
 
-    // recv_message
-    grpc_byte_buffer* recv_message_payload_ = nullptr;
-    grpc_closure lb_on_balancer_message_received_;
-    bool seen_initial_response_ = false;
+    PickResult Pick(PickArgs* pick, grpc_error** error) override;
 
-    // recv_trailing_metadata
-    grpc_closure lb_on_balancer_status_received_;
-    grpc_metadata_array lb_trailing_metadata_recv_;
-    grpc_status_code lb_call_status_;
-    grpc_slice lb_call_status_details_;
-
-    // The stats for client-side load reporting associated with this LB call.
-    // Created after the first serverlist is received.
+   private:
+    UniquePtr<SubchannelPicker> child_picker_;
     RefCountedPtr<XdsLbClientStats> client_stats_;
-    grpc_millis client_stats_report_interval_ = 0;
-    grpc_timer client_load_report_timer_;
-    bool client_load_report_timer_callback_pending_ = false;
-    bool last_client_load_report_counters_were_zero_ = false;
-    bool client_load_report_is_due_ = false;
-    // The closure used for either the load report timer or the callback for
-    // completion of sending the load report.
-    grpc_closure client_load_report_closure_;
+  };
+
+  class Helper : public ChannelControlHelper {
+   public:
+    explicit Helper(RefCountedPtr<XdsLb> parent) : parent_(std::move(parent)) {}
+
+    Subchannel* CreateSubchannel(const grpc_channel_args& args) override;
+    grpc_channel* CreateChannel(const char* target,
+                                const grpc_channel_args& args) override;
+    void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
+                     UniquePtr<SubchannelPicker> picker) override;
+    void RequestReresolution() override;
+
+    void set_child(LoadBalancingPolicy* child) { child_ = child; }
+
+   private:
+    bool CalledByPendingChild() const;
+    bool CalledByCurrentChild() const;
+
+    RefCountedPtr<XdsLb> parent_;
+    LoadBalancingPolicy* child_ = nullptr;
   };
 
   ~XdsLb();
 
   void ShutdownLocked() override;
 
-  // Helper function used in ctor and UpdateLocked().
-  void ProcessChannelArgsLocked(const grpc_channel_args& args);
+  // Helper function used in UpdateLocked().
+  void ProcessAddressesAndChannelArgsLocked(const ServerAddressList& addresses,
+                                            const grpc_channel_args& args);
 
-  // Methods for dealing with the balancer channel and call.
-  void StartPickingLocked();
-  void StartBalancerCallLocked();
+  // Parses the xds config given the JSON node of the first child of XdsConfig.
+  // If parsing succeeds, updates \a balancer_name, and updates \a
+  // child_policy_config_ and \a fallback_policy_config_ if they are also
+  // found. Does nothing upon failure.
+  void ParseLbConfig(Config* xds_config);
+
+  BalancerChannelState* LatestLbChannel() const {
+    return pending_lb_chand_ != nullptr ? pending_lb_chand_.get()
+                                        : lb_chand_.get();
+  }
+
+  // Callback to enter fallback mode.
   static void OnFallbackTimerLocked(void* arg, grpc_error* error);
-  void StartBalancerCallRetryTimerLocked();
-  static void OnBalancerCallRetryTimerLocked(void* arg, grpc_error* error);
-  static void OnBalancerChannelConnectivityChangedLocked(void* arg,
-                                                         grpc_error* error);
-
-  // Pending pick methods.
-  static void PendingPickCleanup(PendingPick* pp);
-  PendingPick* PendingPickCreate(PickState* pick);
-  void AddPendingPick(PendingPick* pp);
-  static void OnPendingPickComplete(void* arg, grpc_error* error);
 
   // Methods for dealing with the child policy.
   void CreateOrUpdateChildPolicyLocked();
   grpc_channel_args* CreateChildPolicyArgsLocked();
-  void CreateChildPolicyLocked(const Args& args);
-  bool PickFromChildPolicyLocked(bool force_async, PendingPick* pp,
-                                 grpc_error** error);
-  void UpdateConnectivityStateFromChildPolicyLocked(
-      grpc_error* child_state_error);
-  static void OnChildPolicyConnectivityChangedLocked(void* arg,
-                                                     grpc_error* error);
-  static void OnChildPolicyRequestReresolutionLocked(void* arg,
-                                                     grpc_error* error);
+  OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
+      const char* name, const grpc_channel_args* args);
 
   // Who the client is trying to communicate with.
   const char* server_name_ = nullptr;
+
+  // Name of the balancer to connect to.
+  UniquePtr<char> balancer_name_;
 
   // Current channel args from the resolver.
   grpc_channel_args* args_ = nullptr;
 
   // Internal state.
-  bool started_picking_ = false;
   bool shutting_down_ = false;
-  grpc_connectivity_state_tracker state_tracker_;
 
   // The channel for communicating with the LB server.
-  grpc_channel* lb_channel_ = nullptr;
+  OrphanablePtr<BalancerChannelState> lb_chand_;
+  OrphanablePtr<BalancerChannelState> pending_lb_chand_;
   // Mutex to protect the channel to the LB server. This is used when
   // processing a channelz request.
-  gpr_mu lb_channel_mu_;
-  grpc_connectivity_state lb_channel_connectivity_;
-  grpc_closure lb_channel_on_connectivity_changed_;
-  // Are we already watching the LB channel's connectivity?
-  bool watching_lb_channel_ = false;
-  // Response generator to inject address updates into lb_channel_.
-  RefCountedPtr<FakeResolverResponseGenerator> response_generator_;
+  // TODO(juanlishen): Replace this with atomic.
+  gpr_mu lb_chand_mu_;
 
-  // The data associated with the current LB call. It holds a ref to this LB
-  // policy. It's initialized every time we query for backends. It's reset to
-  // NULL whenever the current LB call is no longer needed (e.g., the LB policy
-  // is shutting down, or the LB call has ended). A non-NULL lb_calld_ always
-  // contains a non-NULL lb_call_.
-  OrphanablePtr<BalancerCallState> lb_calld_;
   // Timeout in milliseconds for the LB call. 0 means no deadline.
   int lb_call_timeout_ms_ = 0;
-  // Balancer call retry state.
-  BackOff lb_call_backoff_;
-  bool retry_timer_callback_pending_ = false;
-  grpc_timer lb_call_retry_timer_;
-  grpc_closure lb_on_call_retry_;
 
   // The deserialized response from the balancer. May be nullptr until one
   // such response has arrived.
@@ -319,6 +344,7 @@ class XdsLb : public LoadBalancingPolicy {
 
   // Timeout in milliseconds for before using fallback backend addresses.
   // 0 means not using fallback.
+  RefCountedPtr<Config> fallback_policy_config_;
   int lb_fallback_timeout_ms_ = 0;
   // The backend addresses from the resolver.
   UniquePtr<ServerAddressList> fallback_backend_addresses_;
@@ -327,15 +353,129 @@ class XdsLb : public LoadBalancingPolicy {
   grpc_timer lb_fallback_timer_;
   grpc_closure lb_on_fallback_;
 
-  // Pending picks that are waiting on the xDS policy's connectivity.
-  PendingPick* pending_picks_ = nullptr;
-
   // The policy to use for the backends.
+  RefCountedPtr<Config> child_policy_config_;
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
-  grpc_connectivity_state child_connectivity_state_;
-  grpc_closure on_child_connectivity_changed_;
-  grpc_closure on_child_request_reresolution_;
+  OrphanablePtr<LoadBalancingPolicy> pending_child_policy_;
+  // Lock held when modifying the value of child_policy_ or
+  // pending_child_policy_.
+  gpr_mu child_policy_mu_;
 };
+
+//
+// XdsLb::Picker
+//
+
+XdsLb::PickResult XdsLb::Picker::Pick(PickArgs* pick, grpc_error** error) {
+  // TODO(roth): Add support for drop handling.
+  // Forward pick to child policy.
+  PickResult result = child_picker_->Pick(pick, error);
+  // If pick succeeded, add client stats.
+  if (result == PickResult::PICK_COMPLETE &&
+      pick->connected_subchannel != nullptr && client_stats_ != nullptr) {
+    // TODO(roth): Add support for client stats.
+  }
+  return result;
+}
+
+//
+// XdsLb::Helper
+//
+
+bool XdsLb::Helper::CalledByPendingChild() const {
+  GPR_ASSERT(child_ != nullptr);
+  return child_ == parent_->pending_child_policy_.get();
+}
+
+bool XdsLb::Helper::CalledByCurrentChild() const {
+  GPR_ASSERT(child_ != nullptr);
+  return child_ == parent_->child_policy_.get();
+}
+
+Subchannel* XdsLb::Helper::CreateSubchannel(const grpc_channel_args& args) {
+  if (parent_->shutting_down_ ||
+      (!CalledByPendingChild() && !CalledByCurrentChild())) {
+    return nullptr;
+  }
+  return parent_->channel_control_helper()->CreateSubchannel(args);
+}
+
+grpc_channel* XdsLb::Helper::CreateChannel(const char* target,
+                                           const grpc_channel_args& args) {
+  if (parent_->shutting_down_ ||
+      (!CalledByPendingChild() && !CalledByCurrentChild())) {
+    return nullptr;
+  }
+  return parent_->channel_control_helper()->CreateChannel(target, args);
+}
+
+void XdsLb::Helper::UpdateState(grpc_connectivity_state state,
+                                grpc_error* state_error,
+                                UniquePtr<SubchannelPicker> picker) {
+  if (parent_->shutting_down_) {
+    GRPC_ERROR_UNREF(state_error);
+    return;
+  }
+  // If this request is from the pending child policy, ignore it until
+  // it reports READY, at which point we swap it into place.
+  if (CalledByPendingChild()) {
+    if (grpc_lb_xds_trace.enabled()) {
+      gpr_log(GPR_INFO,
+              "[xdslb %p helper %p] pending child policy %p reports state=%s",
+              parent_.get(), this, parent_->pending_child_policy_.get(),
+              grpc_connectivity_state_name(state));
+    }
+    if (state != GRPC_CHANNEL_READY) {
+      GRPC_ERROR_UNREF(state_error);
+      return;
+    }
+    grpc_pollset_set_del_pollset_set(
+        parent_->child_policy_->interested_parties(),
+        parent_->interested_parties());
+    MutexLock lock(&parent_->child_policy_mu_);
+    parent_->child_policy_ = std::move(parent_->pending_child_policy_);
+  } else if (!CalledByCurrentChild()) {
+    // This request is from an outdated child, so ignore it.
+    GRPC_ERROR_UNREF(state_error);
+    return;
+  }
+  // TODO(juanlishen): When in fallback mode, pass the child picker
+  // through without wrapping it.  (Or maybe use a different helper for
+  // the fallback policy?)
+  GPR_ASSERT(parent_->lb_chand_ != nullptr);
+  RefCountedPtr<XdsLbClientStats> client_stats =
+      parent_->lb_chand_->lb_calld() == nullptr
+          ? nullptr
+          : parent_->lb_chand_->lb_calld()->client_stats();
+  parent_->channel_control_helper()->UpdateState(
+      state, state_error,
+      UniquePtr<SubchannelPicker>(
+          New<Picker>(std::move(picker), std::move(client_stats))));
+}
+
+void XdsLb::Helper::RequestReresolution() {
+  if (parent_->shutting_down_) return;
+  // If there is a pending child policy, ignore re-resolution requests
+  // from the current child policy (or any outdated child).
+  if (parent_->pending_child_policy_ != nullptr && !CalledByPendingChild()) {
+    return;
+  }
+  if (grpc_lb_xds_trace.enabled()) {
+    gpr_log(GPR_INFO,
+            "[xdslb %p] Re-resolution requested from the internal RR policy "
+            "(%p).",
+            parent_.get(), parent_->child_policy_.get());
+  }
+  GPR_ASSERT(parent_->lb_chand_ != nullptr);
+  // If we are talking to a balancer, we expect to get updated addresses
+  // from the balancer, so we can ignore the re-resolution request from
+  // the child policy. Otherwise, pass the re-resolution request up to the
+  // channel.
+  if (parent_->lb_chand_->lb_calld() == nullptr ||
+      !parent_->lb_chand_->lb_calld()->seen_initial_response()) {
+    parent_->channel_control_helper()->RequestReresolution();
+  }
+}
 
 //
 // serverlist parsing code
@@ -399,28 +539,111 @@ void ParseServer(const xds_grpclb_server* server, grpc_resolved_address* addr) {
 }
 
 // Returns addresses extracted from \a serverlist.
-UniquePtr<ServerAddressList> ProcessServerlist(
-    const xds_grpclb_serverlist* serverlist) {
-  auto addresses = MakeUnique<ServerAddressList>();
+ServerAddressList ProcessServerlist(const xds_grpclb_serverlist* serverlist) {
+  ServerAddressList addresses;
   for (size_t i = 0; i < serverlist->num_servers; ++i) {
     const xds_grpclb_server* server = serverlist->servers[i];
     if (!IsServerValid(serverlist->servers[i], i, false)) continue;
     grpc_resolved_address addr;
     ParseServer(server, &addr);
-    addresses->emplace_back(addr, nullptr);
+    addresses.emplace_back(addr, nullptr);
   }
   return addresses;
 }
 
 //
-// XdsLb::BalancerCallState
+// XdsLb::BalancerChannelState
 //
 
-XdsLb::BalancerCallState::BalancerCallState(
-    RefCountedPtr<LoadBalancingPolicy> parent_xdslb_policy)
+XdsLb::BalancerChannelState::BalancerChannelState(
+    const char* balancer_name, const grpc_channel_args& args,
+    grpc_core::RefCountedPtr<grpc_core::XdsLb> parent_xdslb_policy)
+    : InternallyRefCounted<BalancerChannelState>(&grpc_lb_xds_trace),
+      xdslb_policy_(std::move(parent_xdslb_policy)),
+      lb_call_backoff_(
+          BackOff::Options()
+              .set_initial_backoff(GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS *
+                                   1000)
+              .set_multiplier(GRPC_XDS_RECONNECT_BACKOFF_MULTIPLIER)
+              .set_jitter(GRPC_XDS_RECONNECT_JITTER)
+              .set_max_backoff(GRPC_XDS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)) {
+  channel_ = xdslb_policy_->channel_control_helper()->CreateChannel(
+      balancer_name, args);
+  GPR_ASSERT(channel_ != nullptr);
+  StartCallLocked();
+}
+
+XdsLb::BalancerChannelState::~BalancerChannelState() {
+  grpc_channel_destroy(channel_);
+}
+
+void XdsLb::BalancerChannelState::Orphan() {
+  shutting_down_ = true;
+  lb_calld_.reset();
+  if (retry_timer_callback_pending_) grpc_timer_cancel(&lb_call_retry_timer_);
+  Unref(DEBUG_LOCATION, "lb_channel_orphaned");
+}
+
+void XdsLb::BalancerChannelState::StartCallRetryTimerLocked() {
+  grpc_millis next_try = lb_call_backoff_.NextAttemptTime();
+  if (grpc_lb_xds_trace.enabled()) {
+    gpr_log(GPR_INFO,
+            "[xdslb %p] Failed to connect to LB server (lb_chand: %p)...",
+            xdslb_policy_.get(), this);
+    grpc_millis timeout = next_try - ExecCtx::Get()->Now();
+    if (timeout > 0) {
+      gpr_log(GPR_INFO, "[xdslb %p] ... retry_timer_active in %" PRId64 "ms.",
+              xdslb_policy_.get(), timeout);
+    } else {
+      gpr_log(GPR_INFO, "[xdslb %p] ... retry_timer_active immediately.",
+              xdslb_policy_.get());
+    }
+  }
+  Ref(DEBUG_LOCATION, "on_balancer_call_retry_timer").release();
+  GRPC_CLOSURE_INIT(&lb_on_call_retry_, &OnCallRetryTimerLocked, this,
+                    grpc_combiner_scheduler(xdslb_policy_->combiner()));
+  grpc_timer_init(&lb_call_retry_timer_, next_try, &lb_on_call_retry_);
+  retry_timer_callback_pending_ = true;
+}
+
+void XdsLb::BalancerChannelState::OnCallRetryTimerLocked(void* arg,
+                                                         grpc_error* error) {
+  BalancerChannelState* lb_chand = static_cast<BalancerChannelState*>(arg);
+  lb_chand->retry_timer_callback_pending_ = false;
+  if (!lb_chand->shutting_down_ && error == GRPC_ERROR_NONE &&
+      lb_chand->lb_calld_ == nullptr) {
+    if (grpc_lb_xds_trace.enabled()) {
+      gpr_log(GPR_INFO,
+              "[xdslb %p] Restarting call to LB server (lb_chand: %p)",
+              lb_chand->xdslb_policy_.get(), lb_chand);
+    }
+    lb_chand->StartCallLocked();
+  }
+  lb_chand->Unref(DEBUG_LOCATION, "on_balancer_call_retry_timer");
+}
+
+void XdsLb::BalancerChannelState::StartCallLocked() {
+  if (shutting_down_) return;
+  GPR_ASSERT(channel_ != nullptr);
+  GPR_ASSERT(lb_calld_ == nullptr);
+  lb_calld_ = MakeOrphanable<BalancerCallState>(Ref());
+  if (grpc_lb_xds_trace.enabled()) {
+    gpr_log(GPR_INFO,
+            "[xdslb %p] Query for backends (lb_chand: %p, lb_calld: %p)",
+            xdslb_policy_.get(), this, lb_calld_.get());
+  }
+  lb_calld_->StartQuery();
+}
+
+//
+// XdsLb::BalancerChannelState::BalancerCallState
+//
+
+XdsLb::BalancerChannelState::BalancerCallState::BalancerCallState(
+    RefCountedPtr<BalancerChannelState> lb_chand)
     : InternallyRefCounted<BalancerCallState>(&grpc_lb_xds_trace),
-      xdslb_policy_(std::move(parent_xdslb_policy)) {
-  GPR_ASSERT(xdslb_policy_ != nullptr);
+      lb_chand_(std::move(lb_chand)) {
+  GPR_ASSERT(xdslb_policy() != nullptr);
   GPR_ASSERT(!xdslb_policy()->shutting_down_);
   // Init the LB call. Note that the LB call will progress every time there's
   // activity in xdslb_policy_->interested_parties(), which is comprised of
@@ -432,8 +655,8 @@ XdsLb::BalancerCallState::BalancerCallState(
           ? GRPC_MILLIS_INF_FUTURE
           : ExecCtx::Get()->Now() + xdslb_policy()->lb_call_timeout_ms_;
   lb_call_ = grpc_channel_create_pollset_set_call(
-      xdslb_policy()->lb_channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
-      xdslb_policy_->interested_parties(),
+      lb_chand_->channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
+      xdslb_policy()->interested_parties(),
       GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V1_DOT_LOADBALANCER_SLASH_BALANCELOAD,
       nullptr, deadline, nullptr);
   // Init the LB call request payload.
@@ -457,7 +680,7 @@ XdsLb::BalancerCallState::BalancerCallState(
                     grpc_combiner_scheduler(xdslb_policy()->combiner()));
 }
 
-XdsLb::BalancerCallState::~BalancerCallState() {
+XdsLb::BalancerChannelState::BalancerCallState::~BalancerCallState() {
   GPR_ASSERT(lb_call_ != nullptr);
   grpc_call_unref(lb_call_);
   grpc_metadata_array_destroy(&lb_initial_metadata_recv_);
@@ -467,7 +690,7 @@ XdsLb::BalancerCallState::~BalancerCallState() {
   grpc_slice_unref_internal(lb_call_status_details_);
 }
 
-void XdsLb::BalancerCallState::Orphan() {
+void XdsLb::BalancerChannelState::BalancerCallState::Orphan() {
   GPR_ASSERT(lb_call_ != nullptr);
   // If we are here because xdslb_policy wants to cancel the call,
   // lb_on_balancer_status_received_ will complete the cancellation and clean
@@ -482,11 +705,11 @@ void XdsLb::BalancerCallState::Orphan() {
   // in lb_on_balancer_status_received_ instead of here.
 }
 
-void XdsLb::BalancerCallState::StartQuery() {
+void XdsLb::BalancerChannelState::BalancerCallState::StartQuery() {
   GPR_ASSERT(lb_call_ != nullptr);
   if (grpc_lb_xds_trace.enabled()) {
     gpr_log(GPR_INFO, "[xdslb %p] Starting LB call (lb_calld: %p, lb_call: %p)",
-            xdslb_policy_.get(), this, lb_call_);
+            xdslb_policy(), this, lb_call_);
   }
   // Create the ops.
   grpc_call_error call_error;
@@ -554,7 +777,8 @@ void XdsLb::BalancerCallState::StartQuery() {
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
-void XdsLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
+void XdsLb::BalancerChannelState::BalancerCallState::
+    ScheduleNextClientLoadReportLocked() {
   const grpc_millis next_client_load_report_time =
       ExecCtx::Get()->Now() + client_stats_report_interval_;
   GRPC_CLOSURE_INIT(&client_load_report_closure_,
@@ -565,12 +789,11 @@ void XdsLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
   client_load_report_timer_callback_pending_ = true;
 }
 
-void XdsLb::BalancerCallState::MaybeSendClientLoadReportLocked(
-    void* arg, grpc_error* error) {
+void XdsLb::BalancerChannelState::BalancerCallState::
+    MaybeSendClientLoadReportLocked(void* arg, grpc_error* error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  XdsLb* xdslb_policy = lb_calld->xdslb_policy();
   lb_calld->client_load_report_timer_callback_pending_ = false;
-  if (error != GRPC_ERROR_NONE || lb_calld != xdslb_policy->lb_calld_.get()) {
+  if (error != GRPC_ERROR_NONE || !lb_calld->IsCurrentCallOnChannel()) {
     lb_calld->Unref(DEBUG_LOCATION, "client_load_report");
     return;
   }
@@ -584,7 +807,7 @@ void XdsLb::BalancerCallState::MaybeSendClientLoadReportLocked(
   }
 }
 
-bool XdsLb::BalancerCallState::LoadReportCountersAreZero(
+bool XdsLb::BalancerChannelState::BalancerCallState::LoadReportCountersAreZero(
     xds_grpclb_request* request) {
   XdsLbClientStats::DroppedCallCounts* drop_entries =
       static_cast<XdsLbClientStats::DroppedCallCounts*>(
@@ -598,7 +821,8 @@ bool XdsLb::BalancerCallState::LoadReportCountersAreZero(
 }
 
 // TODO(vpowar): Use LRS to send the client Load Report.
-void XdsLb::BalancerCallState::SendClientLoadReportLocked() {
+void XdsLb::BalancerChannelState::BalancerCallState::
+    SendClientLoadReportLocked() {
   // Construct message payload.
   GPR_ASSERT(send_message_payload_ == nullptr);
   xds_grpclb_request* request =
@@ -619,27 +843,27 @@ void XdsLb::BalancerCallState::SendClientLoadReportLocked() {
   xds_grpclb_request_destroy(request);
 }
 
-void XdsLb::BalancerCallState::OnInitialRequestSentLocked(void* arg,
-                                                          grpc_error* error) {
+void XdsLb::BalancerChannelState::BalancerCallState::OnInitialRequestSentLocked(
+    void* arg, grpc_error* error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   grpc_byte_buffer_destroy(lb_calld->send_message_payload_);
   lb_calld->send_message_payload_ = nullptr;
   // If we attempted to send a client load report before the initial request was
   // sent (and this lb_calld is still in use), send the load report now.
   if (lb_calld->client_load_report_is_due_ &&
-      lb_calld == lb_calld->xdslb_policy()->lb_calld_.get()) {
+      lb_calld->IsCurrentCallOnChannel()) {
     lb_calld->SendClientLoadReportLocked();
     lb_calld->client_load_report_is_due_ = false;
   }
   lb_calld->Unref(DEBUG_LOCATION, "on_initial_request_sent");
 }
 
-void XdsLb::BalancerCallState::OnBalancerMessageReceivedLocked(
-    void* arg, grpc_error* error) {
+void XdsLb::BalancerChannelState::BalancerCallState::
+    OnBalancerMessageReceivedLocked(void* arg, grpc_error* error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   XdsLb* xdslb_policy = lb_calld->xdslb_policy();
   // Empty payload means the LB call was cancelled.
-  if (lb_calld != xdslb_policy->lb_calld_.get() ||
+  if (!lb_calld->IsCurrentCallOnChannel() ||
       lb_calld->recv_message_payload_ == nullptr) {
     lb_calld->Unref(DEBUG_LOCATION, "on_message_received");
     return;
@@ -657,20 +881,25 @@ void XdsLb::BalancerCallState::OnBalancerMessageReceivedLocked(
           nullptr) {
     // Have NOT seen initial response, look for initial response.
     if (initial_response->has_client_stats_report_interval) {
-      lb_calld->client_stats_report_interval_ = GPR_MAX(
-          GPR_MS_PER_SEC, xds_grpclb_duration_to_millis(
-                              &initial_response->client_stats_report_interval));
-      if (grpc_lb_xds_trace.enabled()) {
+      const grpc_millis interval = xds_grpclb_duration_to_millis(
+          &initial_response->client_stats_report_interval);
+      if (interval > 0) {
+        lb_calld->client_stats_report_interval_ =
+            GPR_MAX(GPR_MS_PER_SEC, interval);
+      }
+    }
+    if (grpc_lb_xds_trace.enabled()) {
+      if (lb_calld->client_stats_report_interval_ != 0) {
         gpr_log(GPR_INFO,
                 "[xdslb %p] Received initial LB response message; "
                 "client load reporting interval = %" PRId64 " milliseconds",
                 xdslb_policy, lb_calld->client_stats_report_interval_);
+      } else {
+        gpr_log(GPR_INFO,
+                "[xdslb %p] Received initial LB response message; client load "
+                "reporting NOT enabled",
+                xdslb_policy);
       }
-    } else if (grpc_lb_xds_trace.enabled()) {
-      gpr_log(GPR_INFO,
-              "[xdslb %p] Received initial LB response message; client load "
-              "reporting NOT enabled",
-              xdslb_policy);
     }
     xds_grpclb_initial_response_destroy(initial_response);
     lb_calld->seen_initial_response_ = true;
@@ -693,12 +922,28 @@ void XdsLb::BalancerCallState::OnBalancerMessageReceivedLocked(
       }
     }
     /* update serverlist */
+    // TODO(juanlishen): Don't ingore empty serverlist.
     if (serverlist->num_servers > 0) {
+      // Pending LB channel receives a serverlist; promote it.
+      // Note that this call can't be on a discarded pending channel, because
+      // such channels don't have any current call but we have checked this call
+      // is a current call.
+      if (!lb_calld->lb_chand_->IsCurrentChannel()) {
+        if (grpc_lb_xds_trace.enabled()) {
+          gpr_log(GPR_INFO,
+                  "[xdslb %p] Promoting pending LB channel %p to replace "
+                  "current LB channel %p",
+                  xdslb_policy, lb_calld->lb_chand_.get(),
+                  lb_calld->xdslb_policy()->lb_chand_.get());
+        }
+        lb_calld->xdslb_policy()->lb_chand_ =
+            std::move(lb_calld->xdslb_policy()->pending_lb_chand_);
+      }
       // Start sending client load report only after we start using the
       // serverlist returned from the current LB call.
       if (lb_calld->client_stats_report_interval_ > 0 &&
           lb_calld->client_stats_ == nullptr) {
-        lb_calld->client_stats_.reset(New<XdsLbClientStats>());
+        lb_calld->client_stats_ = MakeRefCounted<XdsLbClientStats>();
         // TODO(roth): We currently track this ref manually.  Once the
         // ClosureRef API is ready, we should pass the RefCountedPtr<> along
         // with the callback.
@@ -766,37 +1011,53 @@ void XdsLb::BalancerCallState::OnBalancerMessageReceivedLocked(
   }
 }
 
-void XdsLb::BalancerCallState::OnBalancerStatusReceivedLocked(
-    void* arg, grpc_error* error) {
+void XdsLb::BalancerChannelState::BalancerCallState::
+    OnBalancerStatusReceivedLocked(void* arg, grpc_error* error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   XdsLb* xdslb_policy = lb_calld->xdslb_policy();
+  BalancerChannelState* lb_chand = lb_calld->lb_chand_.get();
   GPR_ASSERT(lb_calld->lb_call_ != nullptr);
   if (grpc_lb_xds_trace.enabled()) {
     char* status_details =
         grpc_slice_to_c_string(lb_calld->lb_call_status_details_);
     gpr_log(GPR_INFO,
             "[xdslb %p] Status from LB server received. Status = %d, details "
-            "= '%s', (lb_calld: %p, lb_call: %p), error '%s'",
-            xdslb_policy, lb_calld->lb_call_status_, status_details, lb_calld,
-            lb_calld->lb_call_, grpc_error_string(error));
+            "= '%s', (lb_chand: %p, lb_calld: %p, lb_call: %p), error '%s'",
+            xdslb_policy, lb_calld->lb_call_status_, status_details, lb_chand,
+            lb_calld, lb_calld->lb_call_, grpc_error_string(error));
     gpr_free(status_details);
   }
-  xdslb_policy->TryReresolutionLocked(&grpc_lb_xds_trace, GRPC_ERROR_NONE);
-  // If this lb_calld is still in use, this call ended because of a failure so
-  // we want to retry connecting. Otherwise, we have deliberately ended this
-  // call and no further action is required.
-  if (lb_calld == xdslb_policy->lb_calld_.get()) {
-    xdslb_policy->lb_calld_.reset();
+  // Ignore status from a stale call.
+  if (lb_calld->IsCurrentCallOnChannel()) {
+    // Because this call is the current one on the channel, the channel can't
+    // have been swapped out; otherwise, the call should have been reset.
+    GPR_ASSERT(lb_chand->IsCurrentChannel() || lb_chand->IsPendingChannel());
     GPR_ASSERT(!xdslb_policy->shutting_down_);
-    if (lb_calld->seen_initial_response_) {
-      // If we lose connection to the LB server, reset the backoff and restart
-      // the LB call immediately.
-      xdslb_policy->lb_call_backoff_.Reset();
-      xdslb_policy->StartBalancerCallLocked();
+    if (lb_chand != xdslb_policy->LatestLbChannel()) {
+      // This channel must be the current one and there is a pending one. Swap
+      // in the pending one and we are done.
+      if (grpc_lb_xds_trace.enabled()) {
+        gpr_log(GPR_INFO,
+                "[xdslb %p] Promoting pending LB channel %p to replace "
+                "current LB channel %p",
+                xdslb_policy, lb_calld->lb_chand_.get(),
+                lb_calld->xdslb_policy()->lb_chand_.get());
+      }
+      xdslb_policy->lb_chand_ = std::move(xdslb_policy->pending_lb_chand_);
     } else {
-      // If this LB call fails establishing any connection to the LB server,
-      // retry later.
-      xdslb_policy->StartBalancerCallRetryTimerLocked();
+      // This channel is the most recently created one. Try to restart the call
+      // and reresolve.
+      lb_chand->lb_calld_.reset();
+      if (lb_calld->seen_initial_response_) {
+        // If we lost connection to the LB server, reset the backoff and restart
+        // the LB call immediately.
+        lb_chand->lb_call_backoff_.Reset();
+        lb_chand->StartCallLocked();
+      } else {
+        // If we failed to connect to the LB server, retry later.
+        lb_chand->StartCallRetryTimerLocked();
+      }
+      xdslb_policy->channel_control_helper()->RequestReresolution();
     }
   }
   lb_calld->Unref(DEBUG_LOCATION, "lb_call_ended");
@@ -806,53 +1067,20 @@ void XdsLb::BalancerCallState::OnBalancerStatusReceivedLocked(
 // helper code for creating balancer channel
 //
 
-UniquePtr<ServerAddressList> ExtractBalancerAddresses(
-    const ServerAddressList& addresses) {
-  auto balancer_addresses = MakeUnique<ServerAddressList>();
-  for (size_t i = 0; i < addresses.size(); ++i) {
-    if (addresses[i].IsBalancer()) {
-      balancer_addresses->emplace_back(addresses[i]);
-    }
-  }
-  return balancer_addresses;
-}
-
-/* Returns the channel args for the LB channel, used to create a bidirectional
- * stream for the reception of load balancing updates.
- *
- * Inputs:
- *   - \a addresses: corresponding to the balancers.
- *   - \a response_generator: in order to propagate updates from the resolver
- *   above the grpclb policy.
- *   - \a args: other args inherited from the xds policy. */
-grpc_channel_args* BuildBalancerChannelArgs(
-    const ServerAddressList& addresses,
-    FakeResolverResponseGenerator* response_generator,
-    const grpc_channel_args* args) {
-  UniquePtr<ServerAddressList> balancer_addresses =
-      ExtractBalancerAddresses(addresses);
-  // Channel args to remove.
+// Returns the channel args for the LB channel, used to create a bidirectional
+// stream for the reception of load balancing updates.
+grpc_channel_args* BuildBalancerChannelArgs(const grpc_channel_args* args) {
   static const char* args_to_remove[] = {
       // LB policy name, since we want to use the default (pick_first) in
       // the LB channel.
       GRPC_ARG_LB_POLICY_NAME,
+      // The service config that contains the LB config. We don't want to
+      // recursively use xds in the LB channel.
+      GRPC_ARG_SERVICE_CONFIG,
       // The channel arg for the server URI, since that will be different for
       // the LB channel than for the parent channel.  The client channel
       // factory will re-add this arg with the right value.
       GRPC_ARG_SERVER_URI,
-      // The resolved addresses, which will be generated by the name resolver
-      // used in the LB channel.  Note that the LB channel will use the fake
-      // resolver, so this won't actually generate a query to DNS (or some
-      // other name service).  However, the addresses returned by the fake
-      // resolver will have is_balancer=false, whereas our own addresses have
-      // is_balancer=true.  We need the LB channel to return addresses with
-      // is_balancer=false so that it does not wind up recursively using the
-      // xds LB policy, as per the special case logic in client_channel.c.
-      GRPC_ARG_SERVER_ADDRESS_LIST,
-      // The fake resolver response generator, because we are replacing it
-      // with the one from the xds policy, used to propagate updates to
-      // the LB channel.
-      GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
       // The LB channel should use the authority indicated by the target
       // authority table (see \a grpc_lb_policy_xds_modify_lb_channel_args),
       // as opposed to the authority from the parent channel.
@@ -864,14 +1092,6 @@ grpc_channel_args* BuildBalancerChannelArgs(
   };
   // Channel args to add.
   const grpc_arg args_to_add[] = {
-      // New server address list.
-      // Note that we pass these in both when creating the LB channel
-      // and via the fake resolver.  The latter is what actually gets used.
-      CreateServerAddressListChannelArg(balancer_addresses.get()),
-      // The fake resolver response generator, which we use to inject
-      // address updates into the LB channel.
-      grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
-          response_generator),
       // A channel arg indicating the target is a xds load balancer.
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_ADDRESS_IS_XDS_LOAD_BALANCER), 1),
@@ -892,30 +1112,9 @@ grpc_channel_args* BuildBalancerChannelArgs(
 // ctor and dtor
 //
 
-// TODO(vishalpowar): Use lb_config in args to configure LB policy.
-XdsLb::XdsLb(const LoadBalancingPolicy::Args& args)
-    : LoadBalancingPolicy(args),
-      response_generator_(MakeRefCounted<FakeResolverResponseGenerator>()),
-      lb_call_backoff_(
-          BackOff::Options()
-              .set_initial_backoff(GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS *
-                                   1000)
-              .set_multiplier(GRPC_XDS_RECONNECT_BACKOFF_MULTIPLIER)
-              .set_jitter(GRPC_XDS_RECONNECT_JITTER)
-              .set_max_backoff(GRPC_XDS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)) {
-  // Initialization.
-  gpr_mu_init(&lb_channel_mu_);
-  grpc_subchannel_index_ref();
-  GRPC_CLOSURE_INIT(&lb_channel_on_connectivity_changed_,
-                    &XdsLb::OnBalancerChannelConnectivityChangedLocked, this,
-                    grpc_combiner_scheduler(args.combiner));
-  GRPC_CLOSURE_INIT(&on_child_connectivity_changed_,
-                    &XdsLb::OnChildPolicyConnectivityChangedLocked, this,
-                    grpc_combiner_scheduler(args.combiner));
-  GRPC_CLOSURE_INIT(&on_child_request_reresolution_,
-                    &XdsLb::OnChildPolicyRequestReresolutionLocked, this,
-                    grpc_combiner_scheduler(args.combiner));
-  grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE, "xds");
+XdsLb::XdsLb(Args args) : LoadBalancingPolicy(std::move(args)) {
+  gpr_mu_init(&lb_chand_mu_);
+  gpr_mu_init(&child_policy_mu_);
   // Record server name.
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
   const char* server_uri = grpc_channel_arg_get_string(arg);
@@ -936,228 +1135,103 @@ XdsLb::XdsLb(const LoadBalancingPolicy::Args& args)
   arg = grpc_channel_args_find(args.args, GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS);
   lb_fallback_timeout_ms_ = grpc_channel_arg_get_integer(
       arg, {GRPC_XDS_DEFAULT_FALLBACK_TIMEOUT_MS, 0, INT_MAX});
-  // Process channel args.
-  ProcessChannelArgsLocked(*args.args);
 }
 
 XdsLb::~XdsLb() {
-  GPR_ASSERT(pending_picks_ == nullptr);
-  gpr_mu_destroy(&lb_channel_mu_);
+  gpr_mu_destroy(&lb_chand_mu_);
   gpr_free((void*)server_name_);
   grpc_channel_args_destroy(args_);
-  grpc_connectivity_state_destroy(&state_tracker_);
   if (serverlist_ != nullptr) {
     xds_grpclb_destroy_serverlist(serverlist_);
   }
-  grpc_subchannel_index_unref();
+  gpr_mu_destroy(&child_policy_mu_);
 }
 
 void XdsLb::ShutdownLocked() {
-  grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown");
   shutting_down_ = true;
-  lb_calld_.reset();
-  if (retry_timer_callback_pending_) {
-    grpc_timer_cancel(&lb_call_retry_timer_);
-  }
   if (fallback_timer_callback_pending_) {
     grpc_timer_cancel(&lb_fallback_timer_);
   }
-  child_policy_.reset();
-  TryReresolutionLocked(&grpc_lb_xds_trace, GRPC_ERROR_CANCELLED);
+  if (child_policy_ != nullptr) {
+    grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
+                                     interested_parties());
+  }
+  if (pending_child_policy_ != nullptr) {
+    grpc_pollset_set_del_pollset_set(
+        pending_child_policy_->interested_parties(), interested_parties());
+  }
+  {
+    MutexLock lock(&child_policy_mu_);
+    child_policy_.reset();
+    pending_child_policy_.reset();
+  }
   // We destroy the LB channel here instead of in our destructor because
   // destroying the channel triggers a last callback to
   // OnBalancerChannelConnectivityChangedLocked(), and we need to be
   // alive when that callback is invoked.
-  if (lb_channel_ != nullptr) {
-    gpr_mu_lock(&lb_channel_mu_);
-    grpc_channel_destroy(lb_channel_);
-    lb_channel_ = nullptr;
-    gpr_mu_unlock(&lb_channel_mu_);
+  {
+    MutexLock lock(&lb_chand_mu_);
+    lb_chand_.reset();
+    pending_lb_chand_.reset();
   }
-  grpc_connectivity_state_set(&state_tracker_, GRPC_CHANNEL_SHUTDOWN,
-                              GRPC_ERROR_REF(error), "xds_shutdown");
-  // Clear pending picks.
-  PendingPick* pp;
-  while ((pp = pending_picks_) != nullptr) {
-    pending_picks_ = pp->next;
-    pp->pick->connected_subchannel.reset();
-    // Note: pp is deleted in this callback.
-    GRPC_CLOSURE_SCHED(&pp->on_complete, GRPC_ERROR_REF(error));
-  }
-  GRPC_ERROR_UNREF(error);
 }
 
 //
 // public methods
 //
 
-void XdsLb::HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) {
-  PendingPick* pp;
-  while ((pp = pending_picks_) != nullptr) {
-    pending_picks_ = pp->next;
-    pp->pick->on_complete = pp->original_on_complete;
-    grpc_error* error = GRPC_ERROR_NONE;
-    if (new_policy->PickLocked(pp->pick, &error)) {
-      // Synchronous return; schedule closure.
-      GRPC_CLOSURE_SCHED(pp->pick->on_complete, error);
-    }
-    Delete(pp);
-  }
-}
-
-// Cancel a specific pending pick.
-//
-// A pick progresses as follows:
-// - If there's a child policy available, it'll be handed over to child policy
-//   (in CreateChildPolicyLocked()). From that point onwards, it'll be the
-//   child policy's responsibility. For cancellations, that implies the pick
-//   needs to be also cancelled by the child policy instance.
-// - Otherwise, without a child policy instance, picks stay pending at this
-//   policy's level (xds), inside the pending_picks_ list. To cancel these,
-//   we invoke the completion closure and set the pick's connected
-//   subchannel to nullptr right here.
-void XdsLb::CancelPickLocked(PickState* pick, grpc_error* error) {
-  PendingPick* pp = pending_picks_;
-  pending_picks_ = nullptr;
-  while (pp != nullptr) {
-    PendingPick* next = pp->next;
-    if (pp->pick == pick) {
-      pick->connected_subchannel.reset();
-      // Note: pp is deleted in this callback.
-      GRPC_CLOSURE_SCHED(&pp->on_complete,
-                         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Pick Cancelled", &error, 1));
-    } else {
-      pp->next = pending_picks_;
-      pending_picks_ = pp;
-    }
-    pp = next;
-  }
-  if (child_policy_ != nullptr) {
-    child_policy_->CancelPickLocked(pick, GRPC_ERROR_REF(error));
-  }
-  GRPC_ERROR_UNREF(error);
-}
-
-// Cancel all pending picks.
-//
-// A pick progresses as follows:
-// - If there's a child policy available, it'll be handed over to child policy
-//   (in CreateChildPolicyLocked()). From that point onwards, it'll be the
-//   child policy's responsibility. For cancellations, that implies the pick
-//   needs to be also cancelled by the child policy instance.
-// - Otherwise, without a child policy instance, picks stay pending at this
-//   policy's level (xds), inside the pending_picks_ list. To cancel these,
-//   we invoke the completion closure and set the pick's connected
-//   subchannel to nullptr right here.
-void XdsLb::CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
-                                      uint32_t initial_metadata_flags_eq,
-                                      grpc_error* error) {
-  PendingPick* pp = pending_picks_;
-  pending_picks_ = nullptr;
-  while (pp != nullptr) {
-    PendingPick* next = pp->next;
-    if ((*pp->pick->initial_metadata_flags & initial_metadata_flags_mask) ==
-        initial_metadata_flags_eq) {
-      // Note: pp is deleted in this callback.
-      GRPC_CLOSURE_SCHED(&pp->on_complete,
-                         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Pick Cancelled", &error, 1));
-    } else {
-      pp->next = pending_picks_;
-      pending_picks_ = pp;
-    }
-    pp = next;
-  }
-  if (child_policy_ != nullptr) {
-    child_policy_->CancelMatchingPicksLocked(initial_metadata_flags_mask,
-                                             initial_metadata_flags_eq,
-                                             GRPC_ERROR_REF(error));
-  }
-  GRPC_ERROR_UNREF(error);
-}
-
-void XdsLb::ExitIdleLocked() {
-  if (!started_picking_) {
-    StartPickingLocked();
-  }
-}
-
 void XdsLb::ResetBackoffLocked() {
-  if (lb_channel_ != nullptr) {
-    grpc_channel_reset_connect_backoff(lb_channel_);
+  if (lb_chand_ != nullptr) {
+    grpc_channel_reset_connect_backoff(lb_chand_->channel());
+  }
+  if (pending_lb_chand_ != nullptr) {
+    grpc_channel_reset_connect_backoff(pending_lb_chand_->channel());
   }
   if (child_policy_ != nullptr) {
     child_policy_->ResetBackoffLocked();
   }
-}
-
-bool XdsLb::PickLocked(PickState* pick, grpc_error** error) {
-  PendingPick* pp = PendingPickCreate(pick);
-  bool pick_done = false;
-  if (child_policy_ != nullptr) {
-    if (grpc_lb_xds_trace.enabled()) {
-      gpr_log(GPR_INFO, "[xdslb %p] about to PICK from policy %p", this,
-              child_policy_.get());
-    }
-    pick_done = PickFromChildPolicyLocked(false /* force_async */, pp, error);
-  } else {  // child_policy_ == NULL
-    if (pick->on_complete == nullptr) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "No pick result available but synchronous result required.");
-      pick_done = true;
-    } else {
-      if (grpc_lb_xds_trace.enabled()) {
-        gpr_log(GPR_INFO,
-                "[xdslb %p] No child policy. Adding to xds's pending picks",
-                this);
-      }
-      AddPendingPick(pp);
-      if (!started_picking_) {
-        StartPickingLocked();
-      }
-      pick_done = false;
-    }
+  if (pending_child_policy_ != nullptr) {
+    pending_child_policy_->ResetBackoffLocked();
   }
-  return pick_done;
 }
 
 void XdsLb::FillChildRefsForChannelz(channelz::ChildRefsList* child_subchannels,
                                      channelz::ChildRefsList* child_channels) {
-  // delegate to the child_policy_ to fill the children subchannels.
-  child_policy_->FillChildRefsForChannelz(child_subchannels, child_channels);
-  MutexLock lock(&lb_channel_mu_);
-  if (lb_channel_ != nullptr) {
+  {
+    // Delegate to the child_policy_ to fill the children subchannels.
+    // This must be done holding child_policy_mu_, since this method does not
+    // run in the combiner.
+    MutexLock lock(&child_policy_mu_);
+    if (child_policy_ != nullptr) {
+      child_policy_->FillChildRefsForChannelz(child_subchannels,
+                                              child_channels);
+    }
+    if (pending_child_policy_ != nullptr) {
+      pending_child_policy_->FillChildRefsForChannelz(child_subchannels,
+                                                      child_channels);
+    }
+  }
+  MutexLock lock(&lb_chand_mu_);
+  if (lb_chand_ != nullptr) {
     grpc_core::channelz::ChannelNode* channel_node =
-        grpc_channel_get_channelz_node(lb_channel_);
+        grpc_channel_get_channelz_node(lb_chand_->channel());
+    if (channel_node != nullptr) {
+      child_channels->push_back(channel_node->uuid());
+    }
+  }
+  if (pending_lb_chand_ != nullptr) {
+    grpc_core::channelz::ChannelNode* channel_node =
+        grpc_channel_get_channelz_node(pending_lb_chand_->channel());
     if (channel_node != nullptr) {
       child_channels->push_back(channel_node->uuid());
     }
   }
 }
 
-grpc_connectivity_state XdsLb::CheckConnectivityLocked(
-    grpc_error** connectivity_error) {
-  return grpc_connectivity_state_get(&state_tracker_, connectivity_error);
-}
-
-void XdsLb::NotifyOnStateChangeLocked(grpc_connectivity_state* current,
-                                      grpc_closure* closure) {
-  grpc_connectivity_state_notify_on_state_change(&state_tracker_, current,
-                                                 closure);
-}
-
-void XdsLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
-  const ServerAddressList* addresses = FindServerAddressListChannelArg(&args);
-  if (addresses == nullptr) {
-    // Ignore this update.
-    gpr_log(GPR_ERROR,
-            "[xdslb %p] No valid LB addresses channel arg in update, ignoring.",
-            this);
-    return;
-  }
+void XdsLb::ProcessAddressesAndChannelArgsLocked(
+    const ServerAddressList& addresses, const grpc_channel_args& args) {
   // Update fallback address list.
-  fallback_backend_addresses_ = ExtractBackendAddresses(*addresses);
+  fallback_backend_addresses_ = ExtractBackendAddresses(addresses);
   // Make sure that GRPC_ARG_LB_POLICY_NAME is set in channel args,
   // since we use this to trigger the client_load_reporting filter.
   static const char* args_to_remove[] = {GRPC_ARG_LB_POLICY_NAME};
@@ -1167,93 +1241,100 @@ void XdsLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
   args_ = grpc_channel_args_copy_and_add_and_remove(
       &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &new_arg, 1);
   // Construct args for balancer channel.
-  grpc_channel_args* lb_channel_args =
-      BuildBalancerChannelArgs(*addresses, response_generator_.get(), &args);
-  // Create balancer channel if needed.
-  if (lb_channel_ == nullptr) {
-    char* uri_str;
-    gpr_asprintf(&uri_str, "fake:///%s", server_name_);
-    gpr_mu_lock(&lb_channel_mu_);
-    lb_channel_ = grpc_client_channel_factory_create_channel(
-        client_channel_factory(), uri_str,
-        GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, lb_channel_args);
-    gpr_mu_unlock(&lb_channel_mu_);
-    GPR_ASSERT(lb_channel_ != nullptr);
-    gpr_free(uri_str);
+  grpc_channel_args* lb_channel_args = BuildBalancerChannelArgs(&args);
+  // Create an LB channel if we don't have one yet or the balancer name has
+  // changed from the last received one.
+  bool create_lb_channel = lb_chand_ == nullptr;
+  if (lb_chand_ != nullptr) {
+    UniquePtr<char> last_balancer_name(
+        grpc_channel_get_target(LatestLbChannel()->channel()));
+    create_lb_channel =
+        strcmp(last_balancer_name.get(), balancer_name_.get()) != 0;
   }
-  // Propagate updates to the LB channel (pick_first) through the fake
-  // resolver.
-  response_generator_->SetResponse(lb_channel_args);
+  if (create_lb_channel) {
+    OrphanablePtr<BalancerChannelState> lb_chand =
+        MakeOrphanable<BalancerChannelState>(balancer_name_.get(),
+                                             *lb_channel_args, Ref());
+    if (lb_chand_ == nullptr || !lb_chand_->HasActiveCall()) {
+      GPR_ASSERT(pending_lb_chand_ == nullptr);
+      // If we do not have a working LB channel yet, use the newly created one.
+      lb_chand_ = std::move(lb_chand);
+    } else {
+      // Otherwise, wait until the new LB channel to be ready to swap it in.
+      pending_lb_chand_ = std::move(lb_chand);
+    }
+  }
   grpc_channel_args_destroy(lb_channel_args);
 }
 
-// TODO(vishalpowar): Use lb_config to configure LB policy.
-void XdsLb::UpdateLocked(const grpc_channel_args& args, grpc_json* lb_config) {
-  ProcessChannelArgsLocked(args);
+void XdsLb::ParseLbConfig(Config* xds_config) {
+  const grpc_json* xds_config_json = xds_config->config();
+  const char* balancer_name = nullptr;
+  grpc_json* child_policy = nullptr;
+  grpc_json* fallback_policy = nullptr;
+  for (const grpc_json* field = xds_config_json; field != nullptr;
+       field = field->next) {
+    if (field->key == nullptr) return;
+    if (strcmp(field->key, "balancerName") == 0) {
+      if (balancer_name != nullptr) return;  // Duplicate.
+      if (field->type != GRPC_JSON_STRING) return;
+      balancer_name = field->value;
+    } else if (strcmp(field->key, "childPolicy") == 0) {
+      if (child_policy != nullptr) return;  // Duplicate.
+      child_policy = ParseLoadBalancingConfig(field);
+    } else if (strcmp(field->key, "fallbackPolicy") == 0) {
+      if (fallback_policy != nullptr) return;  // Duplicate.
+      fallback_policy = ParseLoadBalancingConfig(field);
+    }
+  }
+  if (balancer_name == nullptr) return;  // Required field.
+  balancer_name_ = UniquePtr<char>(gpr_strdup(balancer_name));
+  if (child_policy != nullptr) {
+    child_policy_config_ =
+        MakeRefCounted<Config>(child_policy, xds_config->service_config());
+  }
+  if (fallback_policy != nullptr) {
+    fallback_policy_config_ =
+        MakeRefCounted<Config>(fallback_policy, xds_config->service_config());
+  }
+}
+
+void XdsLb::UpdateLocked(UpdateArgs args) {
+  const bool is_initial_update = lb_chand_ == nullptr;
+  ParseLbConfig(args.config.get());
+  // TODO(juanlishen): Pass fallback policy config update after fallback policy
+  // is added.
+  if (balancer_name_ == nullptr) {
+    gpr_log(GPR_ERROR, "[xdslb %p] LB config parsing fails.", this);
+    return;
+  }
+  ProcessAddressesAndChannelArgsLocked(args.addresses, *args.args);
   // Update the existing child policy.
   // Note: We have disabled fallback mode in the code, so this child policy must
   // have been created from a serverlist.
   // TODO(vpowar): Handle the fallback_address changes when we add support for
   // fallback in xDS.
   if (child_policy_ != nullptr) CreateOrUpdateChildPolicyLocked();
-  // Start watching the LB channel connectivity for connection, if not
-  // already doing so.
-  if (!watching_lb_channel_) {
-    lb_channel_connectivity_ = grpc_channel_check_connectivity_state(
-        lb_channel_, true /* try to connect */);
-    grpc_channel_element* client_channel_elem = grpc_channel_stack_last_element(
-        grpc_channel_get_channel_stack(lb_channel_));
-    GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-    watching_lb_channel_ = true;
-    // TODO(roth): We currently track this ref manually.  Once the
-    // ClosureRef API is ready, we should pass the RefCountedPtr<> along
-    // with the callback.
-    auto self = Ref(DEBUG_LOCATION, "watch_lb_channel_connectivity");
-    self.release();
-    grpc_client_channel_watch_connectivity_state(
-        client_channel_elem,
-        grpc_polling_entity_create_from_pollset_set(interested_parties()),
-        &lb_channel_connectivity_, &lb_channel_on_connectivity_changed_,
-        nullptr);
+  // If this is the initial update, start the fallback timer.
+  if (is_initial_update) {
+    if (lb_fallback_timeout_ms_ > 0 && serverlist_ == nullptr &&
+        !fallback_timer_callback_pending_) {
+      grpc_millis deadline = ExecCtx::Get()->Now() + lb_fallback_timeout_ms_;
+      Ref(DEBUG_LOCATION, "on_fallback_timer").release();  // Held by closure
+      GRPC_CLOSURE_INIT(&lb_on_fallback_, &XdsLb::OnFallbackTimerLocked, this,
+                        grpc_combiner_scheduler(combiner()));
+      fallback_timer_callback_pending_ = true;
+      grpc_timer_init(&lb_fallback_timer_, deadline, &lb_on_fallback_);
+      // TODO(juanlishen): Monitor the connectivity state of the balancer
+      // channel.  If the channel reports TRANSIENT_FAILURE before the
+      // fallback timeout expires, go into fallback mode early.
+    }
   }
 }
 
 //
 // code for balancer channel and call
 //
-
-void XdsLb::StartPickingLocked() {
-  // Start a timer to fall back.
-  if (lb_fallback_timeout_ms_ > 0 && serverlist_ == nullptr &&
-      !fallback_timer_callback_pending_) {
-    grpc_millis deadline = ExecCtx::Get()->Now() + lb_fallback_timeout_ms_;
-    // TODO(roth): We currently track this ref manually.  Once the
-    // ClosureRef API is ready, we should pass the RefCountedPtr<> along
-    // with the callback.
-    auto self = Ref(DEBUG_LOCATION, "on_fallback_timer");
-    self.release();
-    GRPC_CLOSURE_INIT(&lb_on_fallback_, &XdsLb::OnFallbackTimerLocked, this,
-                      grpc_combiner_scheduler(combiner()));
-    fallback_timer_callback_pending_ = true;
-    grpc_timer_init(&lb_fallback_timer_, deadline, &lb_on_fallback_);
-  }
-  started_picking_ = true;
-  StartBalancerCallLocked();
-}
-
-void XdsLb::StartBalancerCallLocked() {
-  GPR_ASSERT(lb_channel_ != nullptr);
-  if (shutting_down_) return;
-  // Init the LB call data.
-  GPR_ASSERT(lb_calld_ == nullptr);
-  lb_calld_ = MakeOrphanable<BalancerCallState>(Ref());
-  if (grpc_lb_xds_trace.enabled()) {
-    gpr_log(GPR_INFO,
-            "[xdslb %p] Query for backends (lb_channel: %p, lb_calld: %p)",
-            this, lb_channel_, lb_calld_.get());
-  }
-  lb_calld_->StartQuery();
-}
 
 void XdsLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
   XdsLb* xdslb_policy = static_cast<XdsLb*>(arg);
@@ -1271,365 +1352,164 @@ void XdsLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
   xdslb_policy->Unref(DEBUG_LOCATION, "on_fallback_timer");
 }
 
-void XdsLb::StartBalancerCallRetryTimerLocked() {
-  grpc_millis next_try = lb_call_backoff_.NextAttemptTime();
-  if (grpc_lb_xds_trace.enabled()) {
-    gpr_log(GPR_INFO, "[xdslb %p] Connection to LB server lost...", this);
-    grpc_millis timeout = next_try - ExecCtx::Get()->Now();
-    if (timeout > 0) {
-      gpr_log(GPR_INFO, "[xdslb %p] ... retry_timer_active in %" PRId64 "ms.",
-              this, timeout);
-    } else {
-      gpr_log(GPR_INFO, "[xdslb %p] ... retry_timer_active immediately.", this);
-    }
-  }
-  // TODO(roth): We currently track this ref manually.  Once the
-  // ClosureRef API is ready, we should pass the RefCountedPtr<> along
-  // with the callback.
-  auto self = Ref(DEBUG_LOCATION, "on_balancer_call_retry_timer");
-  self.release();
-  GRPC_CLOSURE_INIT(&lb_on_call_retry_, &XdsLb::OnBalancerCallRetryTimerLocked,
-                    this, grpc_combiner_scheduler(combiner()));
-  retry_timer_callback_pending_ = true;
-  grpc_timer_init(&lb_call_retry_timer_, next_try, &lb_on_call_retry_);
-}
-
-void XdsLb::OnBalancerCallRetryTimerLocked(void* arg, grpc_error* error) {
-  XdsLb* xdslb_policy = static_cast<XdsLb*>(arg);
-  xdslb_policy->retry_timer_callback_pending_ = false;
-  if (!xdslb_policy->shutting_down_ && error == GRPC_ERROR_NONE &&
-      xdslb_policy->lb_calld_ == nullptr) {
-    if (grpc_lb_xds_trace.enabled()) {
-      gpr_log(GPR_INFO, "[xdslb %p] Restarting call to LB server",
-              xdslb_policy);
-    }
-    xdslb_policy->StartBalancerCallLocked();
-  }
-  xdslb_policy->Unref(DEBUG_LOCATION, "on_balancer_call_retry_timer");
-}
-
-// Invoked as part of the update process. It continues watching the LB channel
-// until it shuts down or becomes READY. It's invoked even if the LB channel
-// stayed READY throughout the update (for example if the update is identical).
-void XdsLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
-                                                       grpc_error* error) {
-  XdsLb* xdslb_policy = static_cast<XdsLb*>(arg);
-  if (xdslb_policy->shutting_down_) goto done;
-  // Re-initialize the lb_call. This should also take care of updating the
-  // child policy. Note that the current child policy, if any, will
-  // stay in effect until an update from the new lb_call is received.
-  switch (xdslb_policy->lb_channel_connectivity_) {
-    case GRPC_CHANNEL_CONNECTING:
-    case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-      // Keep watching the LB channel.
-      grpc_channel_element* client_channel_elem =
-          grpc_channel_stack_last_element(
-              grpc_channel_get_channel_stack(xdslb_policy->lb_channel_));
-      GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-      grpc_client_channel_watch_connectivity_state(
-          client_channel_elem,
-          grpc_polling_entity_create_from_pollset_set(
-              xdslb_policy->interested_parties()),
-          &xdslb_policy->lb_channel_connectivity_,
-          &xdslb_policy->lb_channel_on_connectivity_changed_, nullptr);
-      break;
-    }
-      // The LB channel may be IDLE because it's shut down before the update.
-      // Restart the LB call to kick the LB channel into gear.
-    case GRPC_CHANNEL_IDLE:
-    case GRPC_CHANNEL_READY:
-      xdslb_policy->lb_calld_.reset();
-      if (xdslb_policy->started_picking_) {
-        if (xdslb_policy->retry_timer_callback_pending_) {
-          grpc_timer_cancel(&xdslb_policy->lb_call_retry_timer_);
-        }
-        xdslb_policy->lb_call_backoff_.Reset();
-        xdslb_policy->StartBalancerCallLocked();
-      }
-      // Fall through.
-    case GRPC_CHANNEL_SHUTDOWN:
-    done:
-      xdslb_policy->watching_lb_channel_ = false;
-      xdslb_policy->Unref(DEBUG_LOCATION,
-                          "watch_lb_channel_connectivity_cb_shutdown");
-  }
-}
-
-//
-// PendingPick
-//
-
-// Destroy function used when embedding client stats in call context.
-void DestroyClientStats(void* arg) {
-  static_cast<XdsLbClientStats*>(arg)->Unref();
-}
-
-void XdsLb::PendingPickCleanup(PendingPick* pp) {
-  // If connected_subchannel is nullptr, no pick has been made by the
-  // child policy (e.g., all addresses failed to connect).
-  if (pp->pick->connected_subchannel != nullptr) {
-    // Pass on client stats via context. Passes ownership of the reference.
-    if (pp->client_stats != nullptr) {
-      pp->pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].value =
-          pp->client_stats.release();
-      pp->pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].destroy =
-          DestroyClientStats;
-    }
-  } else {
-    pp->client_stats.reset();
-  }
-}
-
-/* The \a on_complete closure passed as part of the pick requires keeping a
- * reference to its associated child policy instance. We wrap this closure in
- * order to unref the child policy instance upon its invocation */
-void XdsLb::OnPendingPickComplete(void* arg, grpc_error* error) {
-  PendingPick* pp = static_cast<PendingPick*>(arg);
-  PendingPickCleanup(pp);
-  GRPC_CLOSURE_SCHED(pp->original_on_complete, GRPC_ERROR_REF(error));
-  Delete(pp);
-}
-
-XdsLb::PendingPick* XdsLb::PendingPickCreate(PickState* pick) {
-  PendingPick* pp = New<PendingPick>();
-  pp->xdslb_policy = this;
-  pp->pick = pick;
-  GRPC_CLOSURE_INIT(&pp->on_complete, &XdsLb::OnPendingPickComplete, pp,
-                    grpc_schedule_on_exec_ctx);
-  pp->original_on_complete = pick->on_complete;
-  pick->on_complete = &pp->on_complete;
-  return pp;
-}
-
-void XdsLb::AddPendingPick(PendingPick* pp) {
-  pp->next = pending_picks_;
-  pending_picks_ = pp;
-}
-
 //
 // code for interacting with the child policy
 //
 
-// Performs a pick over \a child_policy_. Given that a pick can return
-// immediately (ignoring its completion callback), we need to perform the
-// cleanups this callback would otherwise be responsible for.
-// If \a force_async is true, then we will manually schedule the
-// completion callback even if the pick is available immediately.
-bool XdsLb::PickFromChildPolicyLocked(bool force_async, PendingPick* pp,
-                                      grpc_error** error) {
-  // Set client_stats.
-  if (lb_calld_ != nullptr && lb_calld_->client_stats() != nullptr) {
-    pp->client_stats = lb_calld_->client_stats()->Ref();
-  }
-  // Pick via the child policy.
-  bool pick_done = child_policy_->PickLocked(pp->pick, error);
-  if (pick_done) {
-    PendingPickCleanup(pp);
-    if (force_async) {
-      GRPC_CLOSURE_SCHED(pp->original_on_complete, *error);
-      *error = GRPC_ERROR_NONE;
-      pick_done = false;
-    }
-    Delete(pp);
-  }
-  // else, the pending pick will be registered and taken care of by the
-  // pending pick list inside the child policy.  Eventually,
-  // OnPendingPickComplete() will be called, which will (among other
-  // things) add the LB token to the call's initial metadata.
-  return pick_done;
-}
-
-void XdsLb::CreateChildPolicyLocked(const Args& args) {
-  GPR_ASSERT(child_policy_ == nullptr);
-  child_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-      "round_robin", args);
-  if (GPR_UNLIKELY(child_policy_ == nullptr)) {
-    gpr_log(GPR_ERROR, "[xdslb %p] Failure creating a child policy", this);
-    return;
-  }
-  // TODO(roth): We currently track this ref manually.  Once the new
-  // ClosureRef API is done, pass the RefCountedPtr<> along with the closure.
-  auto self = Ref(DEBUG_LOCATION, "on_child_reresolution_requested");
-  self.release();
-  child_policy_->SetReresolutionClosureLocked(&on_child_request_reresolution_);
-  grpc_error* child_state_error = nullptr;
-  child_connectivity_state_ =
-      child_policy_->CheckConnectivityLocked(&child_state_error);
-  // Connectivity state is a function of the child policy updated/created.
-  UpdateConnectivityStateFromChildPolicyLocked(child_state_error);
-  // Add the xDS's interested_parties pollset_set to that of the newly created
-  // child policy. This will make the child policy progress upon activity on
-  // xDS LB, which in turn is tied to the application's call.
-  grpc_pollset_set_add_pollset_set(child_policy_->interested_parties(),
-                                   interested_parties());
-  // Subscribe to changes to the connectivity of the new child policy.
-  // TODO(roth): We currently track this ref manually.  Once the new
-  // ClosureRef API is done, pass the RefCountedPtr<> along with the closure.
-  self = Ref(DEBUG_LOCATION, "on_child_connectivity_changed");
-  self.release();
-  child_policy_->NotifyOnStateChangeLocked(&child_connectivity_state_,
-                                           &on_child_connectivity_changed_);
-  child_policy_->ExitIdleLocked();
-  // Send pending picks to child policy.
-  PendingPick* pp;
-  while ((pp = pending_picks_)) {
-    pending_picks_ = pp->next;
-    if (grpc_lb_xds_trace.enabled()) {
-      gpr_log(
-          GPR_INFO,
-          "[xdslb %p] Pending pick about to (async) PICK from child policy %p",
-          this, child_policy_.get());
-    }
-    grpc_error* error = GRPC_ERROR_NONE;
-    PickFromChildPolicyLocked(true /* force_async */, pp, &error);
-  }
-}
-
 grpc_channel_args* XdsLb::CreateChildPolicyArgsLocked() {
-  bool is_backend_from_grpclb_load_balancer = false;
-  // This should never be invoked if we do not have serverlist_, as fallback
-  // mode is disabled for xDS plugin.
-  GPR_ASSERT(serverlist_ != nullptr);
-  GPR_ASSERT(serverlist_->num_servers > 0);
-  UniquePtr<ServerAddressList> addresses = ProcessServerlist(serverlist_);
-  GPR_ASSERT(addresses != nullptr);
-  is_backend_from_grpclb_load_balancer = true;
-  // Replace the server address list in the channel args that we pass down to
-  // the subchannel.
-  static const char* keys_to_remove[] = {GRPC_ARG_SERVER_ADDRESS_LIST};
   const grpc_arg args_to_add[] = {
-      CreateServerAddressListChannelArg(addresses.get()),
       // A channel arg indicating if the target is a backend inferred from a
       // grpclb load balancer.
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_ADDRESS_IS_BACKEND_FROM_XDS_LOAD_BALANCER),
-          is_backend_from_grpclb_load_balancer),
+          1),
+      // Inhibit client-side health checking, since the balancer does
+      // this for us.
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1),
   };
-  grpc_channel_args* args = grpc_channel_args_copy_and_add_and_remove(
-      args_, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), args_to_add,
-      GPR_ARRAY_SIZE(args_to_add));
-  return args;
+  return grpc_channel_args_copy_and_add(args_, args_to_add,
+                                        GPR_ARRAY_SIZE(args_to_add));
+}
+
+OrphanablePtr<LoadBalancingPolicy> XdsLb::CreateChildPolicyLocked(
+    const char* name, const grpc_channel_args* args) {
+  Helper* helper = New<Helper>(Ref());
+  LoadBalancingPolicy::Args lb_policy_args;
+  lb_policy_args.combiner = combiner();
+  lb_policy_args.args = args;
+  lb_policy_args.channel_control_helper =
+      UniquePtr<ChannelControlHelper>(helper);
+  OrphanablePtr<LoadBalancingPolicy> lb_policy =
+      LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
+          name, std::move(lb_policy_args));
+  if (GPR_UNLIKELY(lb_policy == nullptr)) {
+    gpr_log(GPR_ERROR, "[xdslb %p] Failure creating child policy %s", this,
+            name);
+    return nullptr;
+  }
+  helper->set_child(lb_policy.get());
+  if (grpc_lb_xds_trace.enabled()) {
+    gpr_log(GPR_INFO, "[xdslb %p] Created new child policy %s (%p)", this, name,
+            lb_policy.get());
+  }
+  // Add the xDS's interested_parties pollset_set to that of the newly created
+  // child policy. This will make the child policy progress upon activity on xDS
+  // LB, which in turn is tied to the application's call.
+  grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
+                                   interested_parties());
+  return lb_policy;
 }
 
 void XdsLb::CreateOrUpdateChildPolicyLocked() {
   if (shutting_down_) return;
-  grpc_channel_args* args = CreateChildPolicyArgsLocked();
-  GPR_ASSERT(args != nullptr);
-  if (child_policy_ != nullptr) {
+  // This should never be invoked if we do not have serverlist_, as fallback
+  // mode is disabled for xDS plugin.
+  // TODO(juanlishen): Change this as part of implementing fallback mode.
+  GPR_ASSERT(serverlist_ != nullptr);
+  GPR_ASSERT(serverlist_->num_servers > 0);
+  // Construct update args.
+  UpdateArgs update_args;
+  update_args.addresses = ProcessServerlist(serverlist_);
+  update_args.config = child_policy_config_;
+  update_args.args = CreateChildPolicyArgsLocked();
+  // If the child policy name changes, we need to create a new child
+  // policy.  When this happens, we leave child_policy_ as-is and store
+  // the new child policy in pending_child_policy_.  Once the new child
+  // policy transitions into state READY, we swap it into child_policy_,
+  // replacing the original child policy.  So pending_child_policy_ is
+  // non-null only between when we apply an update that changes the child
+  // policy name and when the new child reports state READY.
+  //
+  // Updates can arrive at any point during this transition.  We always
+  // apply updates relative to the most recently created child policy,
+  // even if the most recent one is still in pending_child_policy_.  This
+  // is true both when applying the updates to an existing child policy
+  // and when determining whether we need to create a new policy.
+  //
+  // As a result of this, there are several cases to consider here:
+  //
+  // 1. We have no existing child policy (i.e., we have started up but
+  //    have not yet received a serverlist from the balancer or gone
+  //    into fallback mode; in this case, both child_policy_ and
+  //    pending_child_policy_ are null).  In this case, we create a
+  //    new child policy and store it in child_policy_.
+  //
+  // 2. We have an existing child policy and have no pending child policy
+  //    from a previous update (i.e., either there has not been a
+  //    previous update that changed the policy name, or we have already
+  //    finished swapping in the new policy; in this case, child_policy_
+  //    is non-null but pending_child_policy_ is null).  In this case:
+  //    a. If child_policy_->name() equals child_policy_name, then we
+  //       update the existing child policy.
+  //    b. If child_policy_->name() does not equal child_policy_name,
+  //       we create a new policy.  The policy will be stored in
+  //       pending_child_policy_ and will later be swapped into
+  //       child_policy_ by the helper when the new child transitions
+  //       into state READY.
+  //
+  // 3. We have an existing child policy and have a pending child policy
+  //    from a previous update (i.e., a previous update set
+  //    pending_child_policy_ as per case 2b above and that policy has
+  //    not yet transitioned into state READY and been swapped into
+  //    child_policy_; in this case, both child_policy_ and
+  //    pending_child_policy_ are non-null).  In this case:
+  //    a. If pending_child_policy_->name() equals child_policy_name,
+  //       then we update the existing pending child policy.
+  //    b. If pending_child_policy->name() does not equal
+  //       child_policy_name, then we create a new policy.  The new
+  //       policy is stored in pending_child_policy_ (replacing the one
+  //       that was there before, which will be immediately shut down)
+  //       and will later be swapped into child_policy_ by the helper
+  //       when the new child transitions into state READY.
+  // TODO(juanlishen): If the child policy is not configured via service config,
+  // use whatever algorithm is specified by the balancer.
+  const char* child_policy_name = child_policy_config_ == nullptr
+                                      ? "round_robin"
+                                      : child_policy_config_->name();
+  const bool create_policy =
+      // case 1
+      child_policy_ == nullptr ||
+      // case 2b
+      (pending_child_policy_ == nullptr &&
+       strcmp(child_policy_->name(), child_policy_name) != 0) ||
+      // case 3b
+      (pending_child_policy_ != nullptr &&
+       strcmp(pending_child_policy_->name(), child_policy_name) != 0);
+  LoadBalancingPolicy* policy_to_update = nullptr;
+  if (create_policy) {
+    // Cases 1, 2b, and 3b: create a new child policy.
+    // If child_policy_ is null, we set it (case 1), else we set
+    // pending_child_policy_ (cases 2b and 3b).
     if (grpc_lb_xds_trace.enabled()) {
-      gpr_log(GPR_INFO, "[xdslb %p] Updating the child policy %p", this,
-              child_policy_.get());
+      gpr_log(GPR_INFO, "[xdslb %p] Creating new %schild policy %s", this,
+              child_policy_ == nullptr ? "" : "pending ", child_policy_name);
     }
-    // TODO(vishalpowar): Pass the correct LB config.
-    child_policy_->UpdateLocked(*args, nullptr);
+    auto new_policy =
+        CreateChildPolicyLocked(child_policy_name, update_args.args);
+    auto& lb_policy =
+        child_policy_ == nullptr ? child_policy_ : pending_child_policy_;
+    {
+      MutexLock lock(&child_policy_mu_);
+      lb_policy = std::move(new_policy);
+    }
+    policy_to_update = lb_policy.get();
   } else {
-    LoadBalancingPolicy::Args lb_policy_args;
-    lb_policy_args.combiner = combiner();
-    lb_policy_args.client_channel_factory = client_channel_factory();
-    lb_policy_args.args = args;
-    CreateChildPolicyLocked(lb_policy_args);
-    if (grpc_lb_xds_trace.enabled()) {
-      gpr_log(GPR_INFO, "[xdslb %p] Created a new child policy %p", this,
-              child_policy_.get());
-    }
+    // Cases 2a and 3a: update an existing policy.
+    // If we have a pending child policy, send the update to the pending
+    // policy (case 3a), else send it to the current policy (case 2a).
+    policy_to_update = pending_child_policy_ != nullptr
+                           ? pending_child_policy_.get()
+                           : child_policy_.get();
   }
-  grpc_channel_args_destroy(args);
-}
-
-void XdsLb::OnChildPolicyRequestReresolutionLocked(void* arg,
-                                                   grpc_error* error) {
-  XdsLb* xdslb_policy = static_cast<XdsLb*>(arg);
-  if (xdslb_policy->shutting_down_ || error != GRPC_ERROR_NONE) {
-    xdslb_policy->Unref(DEBUG_LOCATION, "on_child_reresolution_requested");
-    return;
-  }
+  GPR_ASSERT(policy_to_update != nullptr);
+  // Update the policy.
   if (grpc_lb_xds_trace.enabled()) {
-    gpr_log(GPR_INFO,
-            "[xdslb %p] Re-resolution requested from child policy "
-            "(%p).",
-            xdslb_policy, xdslb_policy->child_policy_.get());
+    gpr_log(GPR_INFO, "[xdslb %p] Updating %schild policy %p", this,
+            policy_to_update == pending_child_policy_.get() ? "pending " : "",
+            policy_to_update);
   }
-  // If we are talking to a balancer, we expect to get updated addresses form
-  // the balancer, so we can ignore the re-resolution request from the child
-  // policy.
-  // Otherwise, handle the re-resolution request using the xds policy's
-  // original re-resolution closure.
-  if (xdslb_policy->lb_calld_ == nullptr ||
-      !xdslb_policy->lb_calld_->seen_initial_response()) {
-    xdslb_policy->TryReresolutionLocked(&grpc_lb_xds_trace, GRPC_ERROR_NONE);
-  }
-  // Give back the wrapper closure to the child policy.
-  xdslb_policy->child_policy_->SetReresolutionClosureLocked(
-      &xdslb_policy->on_child_request_reresolution_);
-}
-
-void XdsLb::UpdateConnectivityStateFromChildPolicyLocked(
-    grpc_error* child_state_error) {
-  const grpc_connectivity_state curr_glb_state =
-      grpc_connectivity_state_check(&state_tracker_);
-  /* The new connectivity status is a function of the previous one and the new
-   * input coming from the status of the child policy.
-   *
-   *  current state (xds's)
-   *  |
-   *  v  || I  |  C  |  R  |  TF  |  SD  |  <- new state (child policy's)
-   *  ===++====+=====+=====+======+======+
-   *   I || I  |  C  |  R  | [I]  | [I]  |
-   *  ---++----+-----+-----+------+------+
-   *   C || I  |  C  |  R  | [C]  | [C]  |
-   *  ---++----+-----+-----+------+------+
-   *   R || I  |  C  |  R  | [R]  | [R]  |
-   *  ---++----+-----+-----+------+------+
-   *  TF || I  |  C  |  R  | [TF] | [TF] |
-   *  ---++----+-----+-----+------+------+
-   *  SD || NA |  NA |  NA |  NA  |  NA  | (*)
-   *  ---++----+-----+-----+------+------+
-   *
-   * A [STATE] indicates that the old child policy is kept. In those cases,
-   * STATE is the current state of xds, which is left untouched.
-   *
-   *  In summary, if the new state is TRANSIENT_FAILURE or SHUTDOWN, stick to
-   *  the previous child policy instance.
-   *
-   *  Note that the status is never updated to SHUTDOWN as a result of calling
-   *  this function. Only glb_shutdown() has the power to set that state.
-   *
-   *  (*) This function mustn't be called during shutting down. */
-  GPR_ASSERT(curr_glb_state != GRPC_CHANNEL_SHUTDOWN);
-  switch (child_connectivity_state_) {
-    case GRPC_CHANNEL_TRANSIENT_FAILURE:
-    case GRPC_CHANNEL_SHUTDOWN:
-      GPR_ASSERT(child_state_error != GRPC_ERROR_NONE);
-      break;
-    case GRPC_CHANNEL_IDLE:
-    case GRPC_CHANNEL_CONNECTING:
-    case GRPC_CHANNEL_READY:
-      GPR_ASSERT(child_state_error == GRPC_ERROR_NONE);
-  }
-  if (grpc_lb_xds_trace.enabled()) {
-    gpr_log(GPR_INFO,
-            "[xdslb %p] Setting xds's state to %s from child policy %p state.",
-            this, grpc_connectivity_state_name(child_connectivity_state_),
-            child_policy_.get());
-  }
-  grpc_connectivity_state_set(&state_tracker_, child_connectivity_state_,
-                              child_state_error,
-                              "update_lb_connectivity_status_locked");
-}
-
-void XdsLb::OnChildPolicyConnectivityChangedLocked(void* arg,
-                                                   grpc_error* error) {
-  XdsLb* xdslb_policy = static_cast<XdsLb*>(arg);
-  if (xdslb_policy->shutting_down_) {
-    xdslb_policy->Unref(DEBUG_LOCATION, "on_child_connectivity_changed");
-    return;
-  }
-  xdslb_policy->UpdateConnectivityStateFromChildPolicyLocked(
-      GRPC_ERROR_REF(error));
-  // Resubscribe. Reuse the "on_child_connectivity_changed" ref.
-  xdslb_policy->child_policy_->NotifyOnStateChangeLocked(
-      &xdslb_policy->child_connectivity_state_,
-      &xdslb_policy->on_child_connectivity_changed_);
+  policy_to_update->UpdateLocked(std::move(update_args));
 }
 
 //
@@ -1639,20 +1519,8 @@ void XdsLb::OnChildPolicyConnectivityChangedLocked(void* arg,
 class XdsFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-      const LoadBalancingPolicy::Args& args) const override {
-    /* Count the number of gRPC-LB addresses. There must be at least one. */
-    const ServerAddressList* addresses =
-        FindServerAddressListChannelArg(args.args);
-    if (addresses == nullptr) return nullptr;
-    bool found_balancer_address = false;
-    for (size_t i = 0; i < addresses->size(); ++i) {
-      if ((*addresses)[i].IsBalancer()) {
-        found_balancer_address = true;
-        break;
-      }
-    }
-    if (!found_balancer_address) return nullptr;
-    return OrphanablePtr<LoadBalancingPolicy>(New<XdsLb>(args));
+      LoadBalancingPolicy::Args args) const override {
+    return OrphanablePtr<LoadBalancingPolicy>(New<XdsLb>(std::move(args)));
   }
 
   const char* name() const override { return kXds; }

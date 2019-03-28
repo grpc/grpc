@@ -39,8 +39,10 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   grpc_core::ResolverArgs args;
   args.uri = uri;
   args.combiner = g_combiner;
+  args.result_handler =
+      grpc_core::MakeUnique<grpc_core::Resolver::ResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
-      factory->CreateResolver(args);
+      factory->CreateResolver(std::move(args));
   GPR_ASSERT(resolver != nullptr);
   grpc_uri_destroy(uri);
 }
@@ -55,8 +57,10 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   grpc_core::ResolverArgs args;
   args.uri = uri;
   args.combiner = g_combiner;
+  args.result_handler =
+      grpc_core::MakeUnique<grpc_core::Resolver::ResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
-      factory->CreateResolver(args);
+      factory->CreateResolver(std::move(args));
   GPR_ASSERT(resolver == nullptr);
   grpc_uri_destroy(uri);
 }
@@ -75,7 +79,7 @@ int main(int argc, char** argv) {
   test_succeeds(dns, "dns:www.google.com");
   test_succeeds(dns, "dns:///www.google.com");
   char* resolver_env = gpr_getenv("GRPC_DNS_RESOLVER");
-  if (resolver_env == nullptr || gpr_stricmp(resolver_env, "native") == 0) {
+  if (resolver_env != nullptr && gpr_stricmp(resolver_env, "native") == 0) {
     test_fails(dns, "dns://8.8.8.8/8.8.8.8:8888");
   } else {
     test_succeeds(dns, "dns://8.8.8.8/8.8.8.8:8888");

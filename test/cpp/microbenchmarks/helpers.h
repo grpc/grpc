@@ -39,13 +39,7 @@ class Library {
   grpc_resource_quota* rq() { return rq_; }
 
  private:
-  Library() {
-#ifdef GPR_LOW_LEVEL_COUNTERS
-    grpc_memory_counters_init();
-#endif
-    init_lib_.init();
-    rq_ = grpc_resource_quota_create("bm");
-  }
+  Library();
 
   ~Library() { init_lib_.shutdown(); }
 

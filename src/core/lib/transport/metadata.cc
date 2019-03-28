@@ -71,6 +71,12 @@ grpc_core::DebugOnlyTraceFlag grpc_trace_metadata(false, "metadata");
 
 typedef void (*destroy_user_data_func)(void* user_data);
 
+struct UserData {
+  gpr_mu mu_user_data;
+  gpr_atm destroy_user_data;
+  gpr_atm user_data;
+};
+
 /* Shadow structure for grpc_mdelem_data for interned elements */
 typedef struct interned_metadata {
   /* must be byte compatible with grpc_mdelem_data */
@@ -80,9 +86,7 @@ typedef struct interned_metadata {
   /* private only data */
   gpr_atm refcnt;
 
-  gpr_mu mu_user_data;
-  gpr_atm destroy_user_data;
-  gpr_atm user_data;
+  UserData user_data;
 
   struct interned_metadata* bucket_next;
 } interned_metadata;
@@ -95,6 +99,8 @@ typedef struct allocated_metadata {
 
   /* private only data */
   gpr_atm refcnt;
+
+  UserData user_data;
 } allocated_metadata;
 
 typedef struct mdtab_shard {
@@ -178,16 +184,17 @@ static void gc_mdtab(mdtab_shard* shard) {
   for (i = 0; i < shard->capacity; i++) {
     prev_next = &shard->elems[i];
     for (md = shard->elems[i]; md; md = next) {
-      void* user_data = (void*)gpr_atm_no_barrier_load(&md->user_data);
+      void* user_data =
+          (void*)gpr_atm_no_barrier_load(&md->user_data.user_data);
       next = md->bucket_next;
       if (gpr_atm_acq_load(&md->refcnt) == 0) {
         grpc_slice_unref_internal(md->key);
         grpc_slice_unref_internal(md->value);
-        if (md->user_data) {
+        if (md->user_data.user_data) {
           ((destroy_user_data_func)gpr_atm_no_barrier_load(
-              &md->destroy_user_data))(user_data);
+              &md->user_data.destroy_user_data))(user_data);
         }
-        gpr_mu_destroy(&md->mu_user_data);
+        gpr_mu_destroy(&md->user_data.mu_user_data);
         gpr_free(md);
         *prev_next = next;
         num_freed++;
@@ -251,6 +258,9 @@ grpc_mdelem grpc_mdelem_create(
     allocated->key = grpc_slice_ref_internal(key);
     allocated->value = grpc_slice_ref_internal(value);
     gpr_atm_rel_store(&allocated->refcnt, 1);
+    allocated->user_data.user_data = 0;
+    allocated->user_data.destroy_user_data = 0;
+    gpr_mu_init(&allocated->user_data.mu_user_data);
 #ifndef NDEBUG
     if (grpc_trace_metadata.enabled()) {
       char* key_str = grpc_slice_to_c_string(allocated->key);
@@ -299,11 +309,11 @@ grpc_mdelem grpc_mdelem_create(
   gpr_atm_rel_store(&md->refcnt, 1);
   md->key = grpc_slice_ref_internal(key);
   md->value = grpc_slice_ref_internal(value);
-  md->user_data = 0;
-  md->destroy_user_data = 0;
+  md->user_data.user_data = 0;
+  md->user_data.destroy_user_data = 0;
   md->bucket_next = shard->elems[idx];
   shard->elems[idx] = md;
-  gpr_mu_init(&md->mu_user_data);
+  gpr_mu_init(&md->user_data.mu_user_data);
 #ifndef NDEBUG
   if (grpc_trace_metadata.enabled()) {
     char* key_str = grpc_slice_to_c_string(md->key);
@@ -450,6 +460,13 @@ void grpc_mdelem_unref(grpc_mdelem gmd DEBUG_ARGS) {
       if (1 == prev_refcount) {
         grpc_slice_unref_internal(md->key);
         grpc_slice_unref_internal(md->value);
+        if (md->user_data.user_data) {
+          destroy_user_data_func destroy_user_data =
+              (destroy_user_data_func)gpr_atm_no_barrier_load(
+                  &md->user_data.destroy_user_data);
+          destroy_user_data((void*)md->user_data.user_data);
+        }
+        gpr_mu_destroy(&md->user_data.mu_user_data);
         gpr_free(md);
       }
       break;
@@ -457,58 +474,74 @@ void grpc_mdelem_unref(grpc_mdelem gmd DEBUG_ARGS) {
   }
 }
 
+static void* get_user_data(UserData* user_data, void (*destroy_func)(void*)) {
+  if (gpr_atm_acq_load(&user_data->destroy_user_data) ==
+      (gpr_atm)destroy_func) {
+    return (void*)gpr_atm_no_barrier_load(&user_data->user_data);
+  } else {
+    return nullptr;
+  }
+}
+
 void* grpc_mdelem_get_user_data(grpc_mdelem md, void (*destroy_func)(void*)) {
   switch (GRPC_MDELEM_STORAGE(md)) {
     case GRPC_MDELEM_STORAGE_EXTERNAL:
-    case GRPC_MDELEM_STORAGE_ALLOCATED:
       return nullptr;
     case GRPC_MDELEM_STORAGE_STATIC:
       return (void*)grpc_static_mdelem_user_data[GRPC_MDELEM_DATA(md) -
                                                  grpc_static_mdelem_table];
+    case GRPC_MDELEM_STORAGE_ALLOCATED: {
+      allocated_metadata* am =
+          reinterpret_cast<allocated_metadata*>(GRPC_MDELEM_DATA(md));
+      return get_user_data(&am->user_data, destroy_func);
+    }
     case GRPC_MDELEM_STORAGE_INTERNED: {
       interned_metadata* im =
           reinterpret_cast<interned_metadata*> GRPC_MDELEM_DATA(md);
-      void* result;
-      if (gpr_atm_acq_load(&im->destroy_user_data) == (gpr_atm)destroy_func) {
-        return (void*)gpr_atm_no_barrier_load(&im->user_data);
-      } else {
-        return nullptr;
-      }
-      return result;
+      return get_user_data(&im->user_data, destroy_func);
     }
   }
   GPR_UNREACHABLE_CODE(return nullptr);
+}
+
+static void* set_user_data(UserData* ud, void (*destroy_func)(void*),
+                           void* user_data) {
+  GPR_ASSERT((user_data == nullptr) == (destroy_func == nullptr));
+  gpr_mu_lock(&ud->mu_user_data);
+  if (gpr_atm_no_barrier_load(&ud->destroy_user_data)) {
+    /* user data can only be set once */
+    gpr_mu_unlock(&ud->mu_user_data);
+    if (destroy_func != nullptr) {
+      destroy_func(user_data);
+    }
+    return (void*)gpr_atm_no_barrier_load(&ud->user_data);
+  }
+  gpr_atm_no_barrier_store(&ud->user_data, (gpr_atm)user_data);
+  gpr_atm_rel_store(&ud->destroy_user_data, (gpr_atm)destroy_func);
+  gpr_mu_unlock(&ud->mu_user_data);
+  return user_data;
 }
 
 void* grpc_mdelem_set_user_data(grpc_mdelem md, void (*destroy_func)(void*),
                                 void* user_data) {
   switch (GRPC_MDELEM_STORAGE(md)) {
     case GRPC_MDELEM_STORAGE_EXTERNAL:
-    case GRPC_MDELEM_STORAGE_ALLOCATED:
       destroy_func(user_data);
       return nullptr;
     case GRPC_MDELEM_STORAGE_STATIC:
       destroy_func(user_data);
       return (void*)grpc_static_mdelem_user_data[GRPC_MDELEM_DATA(md) -
                                                  grpc_static_mdelem_table];
+    case GRPC_MDELEM_STORAGE_ALLOCATED: {
+      allocated_metadata* am =
+          reinterpret_cast<allocated_metadata*>(GRPC_MDELEM_DATA(md));
+      return set_user_data(&am->user_data, destroy_func, user_data);
+    }
     case GRPC_MDELEM_STORAGE_INTERNED: {
       interned_metadata* im =
           reinterpret_cast<interned_metadata*> GRPC_MDELEM_DATA(md);
       GPR_ASSERT(!is_mdelem_static(md));
-      GPR_ASSERT((user_data == nullptr) == (destroy_func == nullptr));
-      gpr_mu_lock(&im->mu_user_data);
-      if (gpr_atm_no_barrier_load(&im->destroy_user_data)) {
-        /* user data can only be set once */
-        gpr_mu_unlock(&im->mu_user_data);
-        if (destroy_func != nullptr) {
-          destroy_func(user_data);
-        }
-        return (void*)gpr_atm_no_barrier_load(&im->user_data);
-      }
-      gpr_atm_no_barrier_store(&im->user_data, (gpr_atm)user_data);
-      gpr_atm_rel_store(&im->destroy_user_data, (gpr_atm)destroy_func);
-      gpr_mu_unlock(&im->mu_user_data);
-      return user_data;
+      return set_user_data(&im->user_data, destroy_func, user_data);
     }
   }
   GPR_UNREACHABLE_CODE(return nullptr);

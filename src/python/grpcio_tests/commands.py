@@ -111,6 +111,8 @@ class TestGevent(setuptools.Command):
     """Command to run tests w/gevent."""
 
     BANNED_TESTS = (
+        # Fork support is not compatible with gevent
+        'fork._fork_interop_test.ForkInteropTest',
         # These tests send a lot of RPCs and are really slow on gevent.  They will
         # eventually succeed, but need to dig into performance issues.
         'unit._cython._no_messages_server_completion_queue_per_call_test.Test.test_rpcs',
@@ -133,7 +135,8 @@ class TestGevent(setuptools.Command):
         # This test will stuck while running higher version of gevent
         'unit._auth_context_test.AuthContextTest.testSessionResumption',
         # TODO(https://github.com/grpc/grpc/issues/15411) enable these tests
-        'unit._metadata_flags_test',
+        'unit._channel_ready_future_test.ChannelReadyFutureTest.test_immediately_connectable_channel_connectivity',
+        "unit._cython._channel_test.ChannelTest.test_single_channel_lonely_connectivity",
         'unit._exit_test.ExitTest.test_in_flight_unary_unary_call',
         'unit._exit_test.ExitTest.test_in_flight_unary_stream_call',
         'unit._exit_test.ExitTest.test_in_flight_stream_unary_call',
@@ -141,11 +144,14 @@ class TestGevent(setuptools.Command):
         'unit._exit_test.ExitTest.test_in_flight_partial_unary_stream_call',
         'unit._exit_test.ExitTest.test_in_flight_partial_stream_unary_call',
         'unit._exit_test.ExitTest.test_in_flight_partial_stream_stream_call',
+        'unit._metadata_flags_test',
         'health_check._health_servicer_test.HealthServicerTest.test_cancelled_watch_removed_from_watch_list',
         # TODO(https://github.com/grpc/grpc/issues/17330) enable these three tests
         'channelz._channelz_servicer_test.ChannelzServicerTest.test_many_subchannels',
         'channelz._channelz_servicer_test.ChannelzServicerTest.test_many_subchannels_and_sockets',
-        'channelz._channelz_servicer_test.ChannelzServicerTest.test_streaming_rpc'
+        'channelz._channelz_servicer_test.ChannelzServicerTest.test_streaming_rpc',
+        # TODO(https://github.com/grpc/grpc/issues/15411) enable this test
+        'unit._cython._channel_test.ChannelTest.test_negative_deadline_connectivity'
     )
     description = 'run tests with gevent.  Assumes grpc/gevent are installed'
     user_options = []

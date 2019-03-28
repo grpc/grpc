@@ -49,53 +49,41 @@
  * to the security_handshaker). This test is meant to protect code relying on
  * this functionality that lives outside of this repo. */
 
-static void readahead_handshaker_destroy(grpc_handshaker* handshaker) {
-  gpr_free(handshaker);
-}
+namespace grpc_core {
 
-static void readahead_handshaker_shutdown(grpc_handshaker* handshaker,
-                                          grpc_error* error) {}
+class ReadAheadHandshaker : public Handshaker {
+ public:
+  virtual ~ReadAheadHandshaker() {}
+  const char* name() const override { return "read_ahead"; }
+  void Shutdown(grpc_error* why) override {}
+  void DoHandshake(grpc_tcp_server_acceptor* acceptor,
+                   grpc_closure* on_handshake_done,
+                   HandshakerArgs* args) override {
+    grpc_endpoint_read(args->endpoint, args->read_buffer, on_handshake_done,
+                       /*urgent=*/false);
+  }
+};
 
-static void readahead_handshaker_do_handshake(
-    grpc_handshaker* handshaker, grpc_tcp_server_acceptor* acceptor,
-    grpc_closure* on_handshake_done, grpc_handshaker_args* args) {
-  grpc_endpoint_read(args->endpoint, args->read_buffer, on_handshake_done);
-}
+class ReadAheadHandshakerFactory : public HandshakerFactory {
+ public:
+  void AddHandshakers(const grpc_channel_args* args,
+                      grpc_pollset_set* interested_parties,
+                      HandshakeManager* handshake_mgr) override {
+    handshake_mgr->Add(MakeRefCounted<ReadAheadHandshaker>());
+  }
+  ~ReadAheadHandshakerFactory() override = default;
+};
 
-const grpc_handshaker_vtable readahead_handshaker_vtable = {
-    readahead_handshaker_destroy, readahead_handshaker_shutdown,
-    readahead_handshaker_do_handshake, "read_ahead"};
-
-static grpc_handshaker* readahead_handshaker_create() {
-  grpc_handshaker* h =
-      static_cast<grpc_handshaker*>(gpr_zalloc(sizeof(grpc_handshaker)));
-  grpc_handshaker_init(&readahead_handshaker_vtable, h);
-  return h;
-}
-
-static void readahead_handshaker_factory_add_handshakers(
-    grpc_handshaker_factory* hf, const grpc_channel_args* args,
-    grpc_pollset_set* interested_parties,
-    grpc_handshake_manager* handshake_mgr) {
-  grpc_handshake_manager_add(handshake_mgr, readahead_handshaker_create());
-}
-
-static void readahead_handshaker_factory_destroy(
-    grpc_handshaker_factory* handshaker_factory) {}
-
-static const grpc_handshaker_factory_vtable
-    readahead_handshaker_factory_vtable = {
-        readahead_handshaker_factory_add_handshakers,
-        readahead_handshaker_factory_destroy};
+}  // namespace grpc_core
 
 int main(int argc, char* argv[]) {
-  grpc_handshaker_factory readahead_handshaker_factory = {
-      &readahead_handshaker_factory_vtable};
+  using namespace grpc_core;
   grpc_init();
-  grpc_handshaker_factory_register(true /* at_start */, HANDSHAKER_SERVER,
-                                   &readahead_handshaker_factory);
+  HandshakerRegistry::RegisterHandshakerFactory(
+      true /* at_start */, HANDSHAKER_SERVER,
+      UniquePtr<HandshakerFactory>(New<ReadAheadHandshakerFactory>()));
   const char* full_alpn_list[] = {"grpc-exp", "h2"};
   GPR_ASSERT(server_ssl_test(full_alpn_list, 2, "grpc-exp"));
-  grpc_shutdown();
+  grpc_shutdown_blocking();
   return 0;
 }

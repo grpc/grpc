@@ -65,7 +65,10 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
     gpr_mu_init(&mu_);
     gpr_cv_init(&cv_);
   }
-  ~ShutdownCallback() {}
+  ~ShutdownCallback() {
+    gpr_mu_destroy(&mu_);
+    gpr_cv_destroy(&cv_);
+  }
   static void StaticRun(grpc_experimental_completion_queue_functor* cb,
                         int ok) {
     auto* callback = static_cast<ShutdownCallback*>(cb);

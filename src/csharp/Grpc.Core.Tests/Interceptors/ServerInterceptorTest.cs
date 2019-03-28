@@ -78,6 +78,53 @@ namespace Grpc.Core.Interceptors.Tests
         }
 
         [Test]
+        public void UserStateVisibleToAllInterceptors()
+        {
+            object key1 = new object();
+            object value1 = new object();
+            const string key2 = "Interceptor #2";
+            const string value2 = "Important state";
+
+            var interceptor1 = new ServerCallContextInterceptor(ctx => {
+                // state starts off empty
+                Assert.AreEqual(0, ctx.UserState.Count);
+
+                ctx.UserState.Add(key1, value1);
+            });
+
+            var interceptor2 = new ServerCallContextInterceptor(ctx => {
+                // second interceptor can see state set by the first
+                bool found = ctx.UserState.TryGetValue(key1, out object storedValue1);
+                Assert.IsTrue(found);
+                Assert.AreEqual(value1, storedValue1);
+
+                ctx.UserState.Add(key2, value2);
+            });
+
+            var helper = new MockServiceHelper(Host);
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) => {
+                // call handler can see all the state
+                bool found = context.UserState.TryGetValue(key1, out object storedValue1);
+                Assert.IsTrue(found);
+                Assert.AreEqual(value1, storedValue1);
+
+                found = context.UserState.TryGetValue(key2, out object storedValue2);
+                Assert.IsTrue(found);
+                Assert.AreEqual(value2, storedValue2);
+
+                return Task.FromResult("PASS");
+            });
+            helper.ServiceDefinition = helper.ServiceDefinition
+                .Intercept(interceptor2)
+                .Intercept(interceptor1);
+
+            var server = helper.GetServer();
+            server.Start();
+            var channel = helper.GetChannel();
+            Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), ""));
+        }
+
+        [Test]
         public void CheckNullInterceptorRegistrationFails()
         {
             var helper = new MockServiceHelper(Host);

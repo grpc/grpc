@@ -304,14 +304,3 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
-
-grpc_cc_test(
-    name = "wakeup_fd_cv_test",
-    srcs = ["wakeup_fd_cv_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)

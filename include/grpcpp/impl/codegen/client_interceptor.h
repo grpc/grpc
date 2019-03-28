@@ -76,7 +76,7 @@ class ClientRpcInfo {
     UNKNOWN  // UNKNOWN is not API and will be removed later
   };
 
-  ~ClientRpcInfo(){};
+  ~ClientRpcInfo() {}
 
   // Delete copy constructor but allow default move constructor
   ClientRpcInfo(const ClientRpcInfo&) = delete;
@@ -172,16 +172,15 @@ class ClientRpcInfo {
 // PLEASE DO NOT USE THIS. ALWAYS PREFER PER CHANNEL INTERCEPTORS OVER A GLOBAL
 // INTERCEPTOR. IF USAGE IS ABSOLUTELY NECESSARY, PLEASE READ THE SAFETY NOTES.
 // Registers a global client interceptor factory object, which is used for all
-// RPCs made in this process.  If the argument is nullptr, the global
-// interceptor factory is deregistered. The application is responsible for
-// maintaining the life of the object while gRPC operations are in progress. It
-// is unsafe to try to register/deregister if any gRPC operation is in progress.
-// For safety, it is in the best interests of the developer to register the
-// global interceptor factory once at the start of the process before any gRPC
-// operations have begun. Deregistration is optional since gRPC does not
-// maintain any references to the object.
+// RPCs made in this process. The application is responsible for maintaining the
+// life of the object while gRPC operations are in progress. The global
+// interceptor factory should only be registered once at the start of the
+// process before any gRPC operations have begun.
 void RegisterGlobalClientInterceptorFactory(
     ClientInterceptorFactoryInterface* factory);
+
+// For testing purposes only
+void TestOnlyResetGlobalClientInterceptorFactory();
 
 }  // namespace experimental
 }  // namespace grpc

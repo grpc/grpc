@@ -49,6 +49,10 @@ namespace testing {
 class ServerBuilderPluginTest;
 }  // namespace testing
 
+namespace experimental {
+class CallbackGenericService;
+}  // namespace experimental
+
 /// A builder class for the creation and startup of \a grpc::Server instances.
 class ServerBuilder {
  public:
@@ -227,6 +231,13 @@ class ServerBuilder {
       builder_->interceptor_creators_ = std::move(interceptor_creators);
     }
 
+    /// Register a generic service that uses the callback API.
+    /// Matches requests with any :authority
+    /// This is mostly useful for writing generic gRPC Proxies where the exact
+    /// serialization format is unknown
+    ServerBuilder& RegisterCallbackGenericService(
+        experimental::CallbackGenericService* service);
+
    private:
     ServerBuilder* builder_;
   };
@@ -311,7 +322,8 @@ class ServerBuilder {
   std::shared_ptr<ServerCredentials> creds_;
   std::vector<std::unique_ptr<ServerBuilderPlugin>> plugins_;
   grpc_resource_quota* resource_quota_;
-  AsyncGenericService* generic_service_;
+  AsyncGenericService* generic_service_{nullptr};
+  experimental::CallbackGenericService* callback_generic_service_{nullptr};
   struct {
     bool is_set;
     grpc_compression_level level;

@@ -78,6 +78,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_init);
   printf("%lx", (unsigned long) grpc_shutdown);
   printf("%lx", (unsigned long) grpc_is_initialized);
+  printf("%lx", (unsigned long) grpc_shutdown_blocking);
   printf("%lx", (unsigned long) grpc_version_string);
   printf("%lx", (unsigned long) grpc_g_stands_for);
   printf("%lx", (unsigned long) grpc_completion_queue_factory_lookup);
@@ -191,6 +192,15 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_alts_server_credentials_create);
   printf("%lx", (unsigned long) grpc_local_credentials_create);
   printf("%lx", (unsigned long) grpc_local_server_credentials_create);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_create);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_cert_request_type);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_key_materials_config);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_credential_reload_config);
+  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_server_authorization_check_config);
+  printf("%lx", (unsigned long) grpc_tls_key_materials_config_create);
+  printf("%lx", (unsigned long) grpc_tls_key_materials_config_set_key_materials);
+  printf("%lx", (unsigned long) grpc_tls_credential_reload_config_create);
+  printf("%lx", (unsigned long) grpc_tls_server_authorization_check_config_create);
   printf("%lx", (unsigned long) grpc_raw_byte_buffer_create);
   printf("%lx", (unsigned long) grpc_raw_compressed_byte_buffer_create);
   printf("%lx", (unsigned long) grpc_byte_buffer_copy);
@@ -199,6 +209,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_byte_buffer_reader_init);
   printf("%lx", (unsigned long) grpc_byte_buffer_reader_destroy);
   printf("%lx", (unsigned long) grpc_byte_buffer_reader_next);
+  printf("%lx", (unsigned long) grpc_byte_buffer_reader_peek);
   printf("%lx", (unsigned long) grpc_byte_buffer_reader_readall);
   printf("%lx", (unsigned long) grpc_raw_byte_buffer_from_reader);
   printf("%lx", (unsigned long) gpr_log_severity_string);
