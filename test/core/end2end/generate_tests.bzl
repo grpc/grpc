@@ -457,16 +457,6 @@ def grpc_end2end_nosec_tests():
                 continue
             if topt.secure:
                 continue
-            native.sh_test(
-                name = "%s_nosec_test@%s" % (f, t),
-                data = [":%s_nosec_test" % f],
-                srcs = ["end2end_test.sh"],
-                args = [
-                    "$(location %s_nosec_test)" % f,
-                    t,
-                ],
-                tags = ["no_windows"],
-            )
             for poller in POLLERS:
                 native.sh_test(
                     name = "%s_nosec_test@%s@poller=%s" % (f, t, poller),
