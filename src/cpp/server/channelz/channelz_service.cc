@@ -29,7 +29,7 @@ grpc::protobuf::util::Status ParseJson(
   grpc::protobuf::json::JsonParseOptions options;
   options.case_insensitive_enum_parsing = true;
   return grpc::protobuf::json::JsonStringToMessage(
-      json_str, response, options);
+      json_str, message, options);
 }
 
 Status ChannelzService::GetTopChannels(
