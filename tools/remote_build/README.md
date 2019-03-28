@@ -12,7 +12,7 @@ and tests run by Kokoro CI.
 
 - See [Installing Bazel](https://docs.bazel.build/versions/master/install.html) for instructions how to install bazel on your system.
 
-- Setup application default credentials for running remote builds by following [RBE Credentials Setup](https://cloud.google.com/remote-build-execution/docs/getting-started#set_credentials)
+- Setup application default credentials for running remote builds by following ["Set credentials" section.](https://cloud.google.com/remote-build-execution/docs/set-up/first-remote-build)
 
 
 ## Running remote build manually from dev workstation
