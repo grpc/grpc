@@ -49,5 +49,8 @@ py_test(
         "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
     ],
     size = "small",
-    imports = ["../../../src/python/grpcio_status",],
+    imports = [
+        "../../../src/python/grpcio_status",
+        "../../../src/python/grpcio_tests",
+    ],
 )
