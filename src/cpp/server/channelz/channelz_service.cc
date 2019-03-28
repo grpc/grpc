@@ -18,7 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/strings/string_view.h"
 #include "src/cpp/server/channelz/channelz_service.h"
 
 #include <grpc/grpc.h>
@@ -26,7 +25,7 @@
 
 namespace grpc {
 grpc::protobuf::util::Status ParseJson(
-    absl::string_view json_str, grpc::protobuf::Message* message) {
+    const char* json_str, grpc::protobuf::Message* message) {
   grpc::protobuf::json::JsonParseOptions options;
   options.case_insensitive_enum_parsing = true;
   return grpc::protobuf::json::JsonStringToMessage(
