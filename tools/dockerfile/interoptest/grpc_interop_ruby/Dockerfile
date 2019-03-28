@@ -13,6 +13,8 @@
 # limitations under the License.
 
 FROM debian:jessie
+RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
+
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
@@ -68,7 +70,8 @@ RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 t
 # Ruby dependencies
 
 # Install rvm
-RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
+RUN apt-get update && apt-get install -y gnupg2
+RUN gpg2 --keyserver hkp://pool.sks-keyservers.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
 RUN \curl -sSL https://get.rvm.io | bash -s stable
 
 # Install Ruby 2.5

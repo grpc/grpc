@@ -13,6 +13,7 @@
 # limitations under the License.
 
 FROM debian:jessie
+RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
 
 # Install packages needed for gRPC and protobuf
 RUN apt-get update && apt-get install -y \
@@ -31,6 +32,7 @@ RUN apt-get update && apt-get install -y golang && apt-get clean
 
 RUN echo "deb http://archive.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
 RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf
+RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
 RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
 
 CMD ["bash"]
