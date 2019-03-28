@@ -245,6 +245,9 @@ grpc_cc_test(
     size = "large",
     deps = [
         ":end2end_test_lib",
+        # DO NOT REMOVE THE grpc++ dependence below since the internal build
+        # system uses it to specialize targets
+        "//:grpc++",
     ],
 )
 
@@ -401,6 +404,7 @@ grpc_cc_test(
     name = "client_lb_end2end_test",
     srcs = ["client_lb_end2end_test.cc"],
     external_deps = [
+        "gmock",
         "gtest",
     ],
     deps = [
@@ -633,6 +637,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "thread_stress_test",
+    timeout = "long",
     srcs = ["thread_stress_test.cc"],
     external_deps = [
         "gtest",

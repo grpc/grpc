@@ -402,6 +402,11 @@ bool grpc_is_any_background_poller_thread(void) {
   return g_event_engine->is_any_background_poller_thread();
 }
 
+bool grpc_add_closure_to_background_poller(grpc_closure* closure,
+                                           grpc_error* error) {
+  return g_event_engine->add_closure_to_background_poller(closure, error);
+}
+
 void grpc_shutdown_background_closure(void) {
   g_event_engine->shutdown_background_closure();
 }

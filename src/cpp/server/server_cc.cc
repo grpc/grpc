@@ -1004,6 +1004,14 @@ void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
     RegisterService(nullptr, default_health_check_service_impl);
   }
 
+  // If this server uses callback methods, then create a callback generic
+  // service to handle any unimplemented methods using the default reactor
+  // creator
+  if (!callback_reqs_to_start_.empty() && !has_callback_generic_service_) {
+    unimplemented_service_.reset(new experimental::CallbackGenericService);
+    RegisterCallbackGenericService(unimplemented_service_.get());
+  }
+
   grpc_server_start(server_);
 
   if (!has_async_generic_service_ && !has_callback_generic_service_) {

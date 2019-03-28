@@ -29,7 +29,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.1'
+  s.add_dependency 'google-protobuf', '~> 3.7'
   s.add_dependency 'googleapis-common-protos-types', '~> 1.0.0'
 
   s.add_development_dependency 'bundler',            '~> 1.9'
@@ -223,6 +223,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/credentials/plugin/plugin_credentials.h )
   s.files += %w( src/core/lib/security/credentials/ssl/ssl_credentials.h )
   s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h )
+  s.files += %w( src/core/lib/security/credentials/tls/spiffe_credentials.h )
   s.files += %w( src/core/lib/security/security_connector/alts/alts_security_connector.h )
   s.files += %w( src/core/lib/security/security_connector/fake/fake_security_connector.h )
   s.files += %w( src/core/lib/security/security_connector/load_system_roots.h )
@@ -231,6 +232,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/security_connector/security_connector.h )
   s.files += %w( src/core/lib/security/security_connector/ssl/ssl_security_connector.h )
   s.files += %w( src/core/lib/security/security_connector/ssl_utils.h )
+  s.files += %w( src/core/lib/security/security_connector/tls/spiffe_security_connector.h )
   s.files += %w( src/core/lib/security/transport/auth_filters.h )
   s.files += %w( src/core/lib/security/transport/secure_endpoint.h )
   s.files += %w( src/core/lib/security/transport/security_handshaker.h )
@@ -293,6 +295,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/resolving_lb_policy.h )
   s.files += %w( src/core/ext/filters/client_channel/retry_throttle.h )
   s.files += %w( src/core/ext/filters/client_channel/server_address.h )
+  s.files += %w( src/core/ext/filters/client_channel/service_config.h )
   s.files += %w( src/core/ext/filters/client_channel/subchannel.h )
   s.files += %w( src/core/ext/filters/client_channel/subchannel_pool_interface.h )
   s.files += %w( src/core/ext/filters/deadline/deadline_filter.h )
@@ -435,7 +438,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/metadata.h )
   s.files += %w( src/core/lib/transport/metadata_batch.h )
   s.files += %w( src/core/lib/transport/pid_controller.h )
-  s.files += %w( src/core/lib/transport/service_config.h )
   s.files += %w( src/core/lib/transport/static_metadata.h )
   s.files += %w( src/core/lib/transport/status_conversion.h )
   s.files += %w( src/core/lib/transport/status_metadata.h )
@@ -606,7 +608,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/metadata.cc )
   s.files += %w( src/core/lib/transport/metadata_batch.cc )
   s.files += %w( src/core/lib/transport/pid_controller.cc )
-  s.files += %w( src/core/lib/transport/service_config.cc )
   s.files += %w( src/core/lib/transport/static_metadata.cc )
   s.files += %w( src/core/lib/transport/status_conversion.cc )
   s.files += %w( src/core/lib/transport/status_metadata.cc )
@@ -662,6 +663,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/credentials/plugin/plugin_credentials.cc )
   s.files += %w( src/core/lib/security/credentials/ssl/ssl_credentials.cc )
   s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc )
+  s.files += %w( src/core/lib/security/credentials/tls/spiffe_credentials.cc )
   s.files += %w( src/core/lib/security/security_connector/alts/alts_security_connector.cc )
   s.files += %w( src/core/lib/security/security_connector/fake/fake_security_connector.cc )
   s.files += %w( src/core/lib/security/security_connector/load_system_roots_fallback.cc )
@@ -670,6 +672,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/security_connector/security_connector.cc )
   s.files += %w( src/core/lib/security/security_connector/ssl/ssl_security_connector.cc )
   s.files += %w( src/core/lib/security/security_connector/ssl_utils.cc )
+  s.files += %w( src/core/lib/security/security_connector/tls/spiffe_security_connector.cc )
   s.files += %w( src/core/lib/security/transport/client_auth_filter.cc )
   s.files += %w( src/core/lib/security/transport/secure_endpoint.cc )
   s.files += %w( src/core/lib/security/transport/security_handshaker.cc )
@@ -740,6 +743,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/resolving_lb_policy.cc )
   s.files += %w( src/core/ext/filters/client_channel/retry_throttle.cc )
   s.files += %w( src/core/ext/filters/client_channel/server_address.cc )
+  s.files += %w( src/core/ext/filters/client_channel/service_config.cc )
   s.files += %w( src/core/ext/filters/client_channel/subchannel.cc )
   s.files += %w( src/core/ext/filters/client_channel/subchannel_pool_interface.cc )
   s.files += %w( src/core/ext/filters/deadline/deadline_filter.cc )
@@ -1262,6 +1266,7 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/cares/cares/ares_setup.h )
   s.files += %w( third_party/cares/cares/ares_strcasecmp.h )
   s.files += %w( third_party/cares/cares/ares_strdup.h )
+  s.files += %w( third_party/cares/cares/ares_strsplit.h )
   s.files += %w( third_party/cares/cares/ares_version.h )
   s.files += %w( third_party/cares/cares/bitncmp.h )
   s.files += %w( third_party/cares/cares/config-win32.h )
@@ -1313,6 +1318,7 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/cares/cares/ares_strcasecmp.c )
   s.files += %w( third_party/cares/cares/ares_strdup.c )
   s.files += %w( third_party/cares/cares/ares_strerror.c )
+  s.files += %w( third_party/cares/cares/ares_strsplit.c )
   s.files += %w( third_party/cares/cares/ares_timeout.c )
   s.files += %w( third_party/cares/cares/ares_version.c )
   s.files += %w( third_party/cares/cares/ares_writev.c )

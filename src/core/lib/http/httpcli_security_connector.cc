@@ -59,7 +59,6 @@ class grpc_httpcli_ssl_channel_security_connector final
   tsi_result InitHandshakerFactory(const char* pem_root_certs,
                                    const tsi_ssl_root_certs_store* root_store) {
     tsi_ssl_client_handshaker_options options;
-    memset(&options, 0, sizeof(options));
     options.pem_root_certs = pem_root_certs;
     options.root_store = root_store;
     return tsi_create_ssl_client_handshaker_factory_with_options(

@@ -31,25 +31,23 @@ bool squelch = true;
 bool leak_check = true;
 
 static void test(const uint8_t* data, size_t size, const uint8_t* dict) {
+  grpc_core::testing::LeakDetector leak_detector(true);
   grpc_init();
-  {
-    grpc_core::testing::LeakDetector leak_detector(true);
-    grpc_slice input = grpc_slice_from_copied_buffer(
-        reinterpret_cast<const char*>(data), size);
-    grpc_slice output = grpc_percent_encode_slice(input, dict);
-    grpc_slice decoded_output;
-    // encoder must always produce decodable output
-    GPR_ASSERT(grpc_strict_percent_decode_slice(output, dict, &decoded_output));
-    grpc_slice permissive_decoded_output =
-        grpc_permissive_percent_decode_slice(output);
-    // and decoded output must always match the input
-    GPR_ASSERT(grpc_slice_eq(input, decoded_output));
-    GPR_ASSERT(grpc_slice_eq(input, permissive_decoded_output));
-    grpc_slice_unref(input);
-    grpc_slice_unref(output);
-    grpc_slice_unref(decoded_output);
-    grpc_slice_unref(permissive_decoded_output);
-  }
+  grpc_slice input =
+      grpc_slice_from_copied_buffer(reinterpret_cast<const char*>(data), size);
+  grpc_slice output = grpc_percent_encode_slice(input, dict);
+  grpc_slice decoded_output;
+  // encoder must always produce decodable output
+  GPR_ASSERT(grpc_strict_percent_decode_slice(output, dict, &decoded_output));
+  grpc_slice permissive_decoded_output =
+      grpc_permissive_percent_decode_slice(output);
+  // and decoded output must always match the input
+  GPR_ASSERT(grpc_slice_eq(input, decoded_output));
+  GPR_ASSERT(grpc_slice_eq(input, permissive_decoded_output));
+  grpc_slice_unref(input);
+  grpc_slice_unref(output);
+  grpc_slice_unref(decoded_output);
+  grpc_slice_unref(permissive_decoded_output);
   grpc_shutdown_blocking();
 }
 

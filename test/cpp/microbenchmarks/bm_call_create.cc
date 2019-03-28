@@ -533,15 +533,15 @@ static void BM_IsolatedFilter(benchmark::State& state) {
   grpc_slice method = grpc_slice_from_static_string("/foo/bar");
   grpc_call_final_info final_info;
   TestOp test_op_data;
-  grpc_call_element_args call_args;
-  call_args.call_stack = call_stack;
-  call_args.server_transport_data = nullptr;
-  call_args.context = nullptr;
-  call_args.path = method;
-  call_args.start_time = start_time;
-  call_args.deadline = deadline;
   const int kArenaSize = 4096;
-  call_args.arena = gpr_arena_create(kArenaSize);
+  grpc_call_element_args call_args{call_stack,
+                                   nullptr,
+                                   nullptr,
+                                   method,
+                                   start_time,
+                                   deadline,
+                                   gpr_arena_create(kArenaSize),
+                                   nullptr};
   while (state.KeepRunning()) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     GRPC_ERROR_UNREF(

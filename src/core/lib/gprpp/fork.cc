@@ -160,8 +160,6 @@ void Fork::GlobalInit() {
   if (!override_enabled_) {
 #ifdef GRPC_ENABLE_FORK_SUPPORT
     support_enabled_ = true;
-#else
-    support_enabled_ = false;
 #endif
     bool env_var_set = false;
     char* env = gpr_getenv("GRPC_ENABLE_FORK_SUPPORT");
