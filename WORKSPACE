@@ -67,7 +67,7 @@ rbe_autoconfig(
 load("@bazel_toolchains//rules:environments.bzl", "clang_env")
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 
-# Create sanitizer (msan, ubsan) toolchain configuration for remote execution.
+# Create msan toolchain configuration for remote execution.
 rbe_autoconfig(
     name = "rbe_msan",
     env = dicts.add(
