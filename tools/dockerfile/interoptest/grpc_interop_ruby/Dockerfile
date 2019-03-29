@@ -80,7 +80,7 @@ RUN /bin/bash -l -c "rvm use --default ruby-2.5"
 RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
 RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.5' >> ~/.bashrc"
-RUN /bin/bash -l -c "gem install bundler --no-document"
+RUN /bin/bash -l -c "gem install bundler --no-document -v 1.9"
 
 
 RUN mkdir /var/local/jenkins
