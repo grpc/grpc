@@ -24,7 +24,8 @@
 namespace grpc {
 namespace reflection {
 
-typedef ::grpc_impl::reflection::ProtoServerReflectionPlugin ProtoServerReflectionPlugin;
+typedef ::grpc_impl::reflection::ProtoServerReflectionPlugin
+    ProtoServerReflectionPlugin;
 
 static inline void InitProtoReflectionServerBuilderPlugin() {
   ::grpc_impl::reflection::InitProtoReflectionServerBuilderPlugin();

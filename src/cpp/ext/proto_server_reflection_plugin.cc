@@ -79,4 +79,4 @@ struct StaticProtoReflectionPluginInitializer {
 } static_proto_reflection_plugin_initializer;
 
 }  // namespace reflection
-}  // namespace grpc
+}  // namespace grpc_impl
