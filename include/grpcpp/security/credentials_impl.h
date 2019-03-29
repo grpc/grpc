@@ -282,4 +282,4 @@ std::shared_ptr<ChannelCredentials> LocalCredentials(
 }  // namespace experimental
 }  // namespace grpc_impl
 
-#endif  // GRPCPP_SECURITY_CREDENTIALS_H
+#endif  // GRPCPP_SECURITY_CREDENTIALS_IMPL_H
