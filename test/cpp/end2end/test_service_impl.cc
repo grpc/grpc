@@ -143,7 +143,6 @@ void LoopUntilCancelled(Alarm* alarm, ServerContext* context,
 
 Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
                              EchoResponse* response) {
-  gpr_log(GPR_DEBUG, "Request message was %s", request->message().c_str());
   // A bit of sleep to make sure that short deadline tests fail
   if (request->has_param() && request->param().server_sleep_us() > 0) {
     gpr_sleep_until(
