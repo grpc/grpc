@@ -16,21 +16,26 @@
  *
  */
 
-#ifndef GRPCPP_EXT_CHANNELZ_SERVICE_PLUGIN_H
-#define GRPCPP_EXT_CHANNELZ_SERVICE_PLUGIN_H
+#ifndef GRPCPP_EXT_CHANNELZ_SERVICE_PLUGIN_IMPL_H
+#define GRPCPP_EXT_CHANNELZ_SERVICE_PLUGIN_IMPL_H
 
-#include <grpcpp/ext/channelz_service_plugin_impl.h>
+#include <grpc/support/port_platform.h>
 
-namespace grpc {
+#include <grpcpp/impl/server_builder_plugin.h>
+#include <grpcpp/impl/server_initializer.h>
+#include <grpcpp/support/config.h>
+
+namespace grpc_impl {
 namespace channelz {
 namespace experimental {
 
-static inline void InitChannelzService() {
-  ::grpc_impl::channelz::experimental::InitChannelzService();
-}
+/// Add channelz server plugin to \a ServerBuilder. This function should
+/// be called at static initialization time. This service is experimental
+/// for now. Track progress in https://github.com/grpc/grpc/issues/15988.
+void InitChannelzService();
 
 }  // namespace experimental
 }  // namespace channelz
-}  // namespace grpc
+}  // namespace grpc_impl
 
-#endif  // GRPCPP_EXT_CHANNELZ_SERVICE_PLUGIN_H
+#endif  // GRPCPP_EXT_CHANNELZ_SERVICE_PLUGIN_IMPL_H
