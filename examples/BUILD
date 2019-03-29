@@ -56,56 +56,110 @@ cc_binary(
     name = "greeter_client",
     srcs = ["cpp/helloworld/greeter_client.cc"],
     defines = ["BAZEL_BUILD"],
-    deps = [":helloworld", "//:grpc++"],
+    deps = [
+        ":helloworld",
+        "//:grpc++",
+    ],
+)
+
+cc_binary(
+    name = "greeter_async_client",
+    srcs = ["cpp/helloworld/greeter_async_client.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":helloworld",
+        "//:grpc++",
+    ],
+)
+
+cc_binary(
+    name = "greeter_async_client2",
+    srcs = ["cpp/helloworld/greeter_async_client2.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":helloworld",
+        "//:grpc++",
+    ],
 )
 
 cc_binary(
     name = "greeter_server",
     srcs = ["cpp/helloworld/greeter_server.cc"],
     defines = ["BAZEL_BUILD"],
-    deps = [":helloworld", "//:grpc++"],
+    deps = [
+        ":helloworld",
+        "//:grpc++",
+    ],
+)
+
+cc_binary(
+    name = "greeter_async_server",
+    srcs = ["cpp/helloworld/greeter_async_server.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":helloworld",
+        "//:grpc++",
+    ],
 )
 
 cc_binary(
     name = "metadata_client",
     srcs = ["cpp/metadata/greeter_client.cc"],
     defines = ["BAZEL_BUILD"],
-    deps = [":helloworld", "//:grpc++"],
+    deps = [
+        ":helloworld",
+        "//:grpc++",
+    ],
 )
 
 cc_binary(
     name = "metadata_server",
     srcs = ["cpp/metadata/greeter_server.cc"],
     defines = ["BAZEL_BUILD"],
-    deps = [":helloworld", "//:grpc++"],
+    deps = [
+        ":helloworld",
+        "//:grpc++",
+    ],
 )
 
 cc_binary(
     name = "lb_client",
     srcs = ["cpp/load_balancing/greeter_client.cc"],
     defines = ["BAZEL_BUILD"],
-    deps = [":helloworld", "//:grpc++"],
+    deps = [
+        ":helloworld",
+        "//:grpc++",
+    ],
 )
 
 cc_binary(
     name = "lb_server",
     srcs = ["cpp/load_balancing/greeter_server.cc"],
     defines = ["BAZEL_BUILD"],
-    deps = [":helloworld", "//:grpc++"],
+    deps = [
+        ":helloworld",
+        "//:grpc++",
+    ],
 )
 
 cc_binary(
     name = "compression_client",
     srcs = ["cpp/compression/greeter_client.cc"],
     defines = ["BAZEL_BUILD"],
-    deps = [":helloworld", "//:grpc++"],
+    deps = [
+        ":helloworld",
+        "//:grpc++",
+    ],
 )
 
 cc_binary(
     name = "compression_server",
     srcs = ["cpp/compression/greeter_server.cc"],
     defines = ["BAZEL_BUILD"],
-    deps = [":helloworld", "//:grpc++"],
+    deps = [
+        ":helloworld",
+        "//:grpc++",
+    ],
 )
 
 cc_binary(
@@ -113,12 +167,48 @@ cc_binary(
     srcs = ["cpp/keyvaluestore/caching_interceptor.h",
             "cpp/keyvaluestore/client.cc"],    
     defines = ["BAZEL_BUILD"],
-    deps = [":keyvaluestore", "//:grpc++"],
+    deps = [
+        ":keyvaluestore",
+        "//:grpc++",
+    ],
 )
 
 cc_binary(
     name = "keyvaluestore_server",
     srcs = ["cpp/keyvaluestore/server.cc"],
     defines = ["BAZEL_BUILD"],
-    deps = [":keyvaluestore", "//:grpc++"],
+    deps = [
+        ":keyvaluestore",
+        "//:grpc++",
+    ],
+)
+
+cc_binary(
+    name = "route_guide_client",
+    srcs = [
+        "cpp/route_guide/helper.cc",
+        "cpp/route_guide/helper.h",
+        "cpp/route_guide/route_guide_client.cc",
+    ],
+    data = ["cpp/route_guide/route_guide_db.json"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":route_guide",
+        "//:grpc++",
+    ],
+)
+
+cc_binary(
+    name = "route_guide_server",
+    srcs = [
+        "cpp/route_guide/helper.cc",
+        "cpp/route_guide/helper.h",
+        "cpp/route_guide/route_guide_server.cc",
+    ],
+    data = ["cpp/route_guide/route_guide_db.json"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":route_guide",
+        "//:grpc++",
+    ],
 )
