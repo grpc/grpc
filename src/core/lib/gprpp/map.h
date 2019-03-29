@@ -65,8 +65,9 @@ class Map {
 
   template <class... Args>
   Pair<iterator, bool> emplace(Args&&... args);
+
   Pair<iterator, bool> insert(value_type&& pair) {
-    return emplace(std::forward<value_type>(pair));
+    return emplace(std::move(pair));
   }
 
   Pair<iterator, bool> insert(const value_type& pair) { return emplace(pair); }
@@ -88,8 +89,9 @@ class Map {
   iterator end() { return iterator(this, nullptr); }
 
  private:
+  friend class testing::MapTest;
   struct Entry {
-    explicit Entry(value_type&& pair) : pair(std::forward<value_type>(pair)) {}
+    explicit Entry(value_type&& pair) : pair(std::move(pair)) {}
     value_type pair;
     Entry* left = nullptr;
     Entry* right = nullptr;
@@ -118,7 +120,6 @@ class Map {
 
   Entry* root_ = nullptr;
   size_t size_ = 0;
-  friend class testing::MapTest;
 };
 
 template <class Key, class T, class Compare>
@@ -160,11 +161,11 @@ class Map<Key, T, Compare>::iterator
   value_type const* operator->() const { return &curr_->pair; }
 
  private:
-  using GrpcMap = typename ::grpc_core::Map<Key, T, Compare>;
-  using GrpcMapEntry = typename ::grpc_core::Map<Key, T, Compare>::Entry;
-  iterator(GrpcMap* map, GrpcMapEntry* curr) : curr_(curr), map_(map) {}
-  GrpcMapEntry* curr_;
-  GrpcMap* map_;
+  iterator(typename ::grpc_core::Map<Key, T, Compare>* map,
+           typename ::grpc_core::Map<Key, T, Compare>::Entry* curr)
+      : curr_(curr), map_(map) {}
+  typename ::grpc_core::Map<Key, T, Compare>::Entry* curr_;
+  typename ::grpc_core::Map<Key, T, Compare>* map_;
   friend class Map<key_type, mapped_type, Compare>;
 };
 
@@ -172,7 +173,7 @@ template <class Key, class T, class Compare>
 T& Map<Key, T, Compare>::operator[](key_type&& key) {
   auto iter = find(key);
   if (iter == end()) {
-    return emplace(std::forward<key_type>(key), T()).first->second;
+    return emplace(std::move(key), T()).first->second;
   }
   return iter->second;
 }
@@ -211,8 +212,7 @@ Map<Key, T, Compare>::emplace(Args&&... args) {
   iterator ret = find(pair.first);
   bool insertion = false;
   if (ret == end()) {
-    Pair<iterator, Entry*> p =
-        InsertRecursive(root_, std::forward<value_type>(pair));
+    Pair<iterator, Entry*> p = InsertRecursive(root_, std::move(pair));
     root_ = p.second;
     ret = p.first;
     insertion = true;
@@ -272,19 +272,17 @@ typename ::grpc_core::Pair<typename Map<Key, T, Compare>::iterator,
 Map<Key, T, Compare>::InsertRecursive(
     typename Map<Key, T, Compare>::Entry* root, value_type&& p) {
   if (root == nullptr) {
-    Entry* e = New<Entry>(std::forward<value_type>(p));
+    Entry* e = New<Entry>(std::move(p));
     return MakePair(iterator(this, e), e);
   }
   int comp = CompareKeys(root->pair.first, p.first);
   if (comp > 0) {
-    Pair<iterator, Entry*> ret =
-        InsertRecursive(root->left, std::forward<value_type>(p));
+    Pair<iterator, Entry*> ret = InsertRecursive(root->left, std::move(p));
     root->left = ret.second;
     ret.second = RebalanceTreeAfterInsertion(root, ret.first->first);
     return ret;
   } else if (comp < 0) {
-    Pair<iterator, Entry*> ret =
-        InsertRecursive(root->right, std::forward<value_type>(p));
+    Pair<iterator, Entry*> ret = InsertRecursive(root->right, std::move(p));
     root->right = ret.second;
     ret.second = RebalanceTreeAfterInsertion(root, ret.first->first);
     return ret;

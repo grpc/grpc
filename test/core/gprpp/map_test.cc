@@ -48,7 +48,7 @@ inline UniquePtr<char> CopyString(const char* string) {
   return UniquePtr<char>(gpr_strdup(string));
 }
 
-static constexpr const char kKeys[][4] = {"abc", "efg", "hij", "klm", "xyz"};
+static constexpr char kKeys[][4] = {"abc", "efg", "hij", "klm", "xyz"};
 
 class MapTest : public ::testing::Test {
  public:
@@ -165,7 +165,7 @@ TEST_F(MapTest, Erase) {
     test_map.emplace(kKeys[i], Payload(i));
   }
   EXPECT_EQ(test_map.size(), 5UL);
-  EXPECT_EQ(test_map.erase(kKeys[3]), static_cast<size_t>(1));  // Remove "hij"
+  EXPECT_EQ(test_map.erase(kKeys[3]), 1UL);  // Remove "hij"
   for (int i = 0; i < 5; i++) {
     if (i == 3) {  // "hij" should not be present
       EXPECT_TRUE(test_map.find(kKeys[i]) == test_map.end());
@@ -390,7 +390,7 @@ TEST_F(MapTest, RandomOpsWithIntKey) {
   for (int i = 0; i < 5; i++) {
     EXPECT_EQ(i + 10, test_map[i].data());
   }
-  EXPECT_EQ(test_map.erase(3), static_cast<size_t>(1));
+  EXPECT_EQ(test_map.erase(3), 1UL);
   EXPECT_TRUE(test_map.find(3) == test_map.end());
   EXPECT_FALSE(test_map.empty());
   EXPECT_EQ(test_map.size(), 4UL);
