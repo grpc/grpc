@@ -127,9 +127,6 @@ class Map<Key, T, Compare>::iterator
     : public std::iterator<std::input_iterator_tag, Pair<Key, T>, int32_t,
                            Pair<Key, T>*, Pair<Key, T>&> {
  public:
-  typedef Key key_type;
-  typedef T mapped_type;
-  typedef Pair<key_type, mapped_type> value_type;
   iterator(const iterator& iter) : curr_(iter.curr_), map_(iter.map_) {}
   bool operator==(const iterator& rhs) const { return (curr_ == rhs.curr_); }
   bool operator!=(const iterator& rhs) const { return (curr_ != rhs.curr_); }
@@ -139,7 +136,7 @@ class Map<Key, T, Compare>::iterator
     return *this;
   }
 
-  iterator& operator++(int e) {
+  iterator& operator++(int) {
     curr_ = map_->InOrderSuccessor(curr_);
     return *this;
   }
@@ -161,12 +158,11 @@ class Map<Key, T, Compare>::iterator
   value_type const* operator->() const { return &curr_->pair; }
 
  private:
-  iterator(typename ::grpc_core::Map<Key, T, Compare>* map,
-           typename ::grpc_core::Map<Key, T, Compare>::Entry* curr)
-      : curr_(curr), map_(map) {}
-  typename ::grpc_core::Map<Key, T, Compare>::Entry* curr_;
-  typename ::grpc_core::Map<Key, T, Compare>* map_;
   friend class Map<key_type, mapped_type, Compare>;
+  using GrpcMap = typename ::grpc_core::Map<Key, T, Compare>;
+  iterator(GrpcMap* map, Entry* curr) : curr_(curr), map_(map) {}
+  Entry* curr_;
+  GrpcMap* map_;
 };
 
 template <class Key, class T, class Compare>
