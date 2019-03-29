@@ -163,7 +163,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     }
     if uses_polling:
         # Only run targets with pollers for non-MSVC
-        # Only run targets without pollers for MSVC
+        # TODO(yfen): Enable MSVC for poller-enabled targets without pollers
         native.cc_test(
             name = name,
             testonly = True,
