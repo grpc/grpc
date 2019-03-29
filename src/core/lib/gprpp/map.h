@@ -240,7 +240,7 @@ typename Map<Key, T, Compare>::iterator Map<Key, T, Compare>::erase(
 
 template <class Key, class T, class Compare>
 typename Map<Key, T, Compare>::Entry* Map<Key, T, Compare>::InOrderSuccessor(
-    const typename Map<Key, T, Compare>::Entry* e) const {
+    const Entry* e) const {
   if (e->right != nullptr) {
     return GetMinEntry(e->right);
   }
@@ -265,8 +265,7 @@ typename Map<Key, T, Compare>::Entry* Map<Key, T, Compare>::InOrderSuccessor(
 template <class Key, class T, class Compare>
 typename ::grpc_core::Pair<typename Map<Key, T, Compare>::iterator,
                            typename Map<Key, T, Compare>::Entry*>
-Map<Key, T, Compare>::InsertRecursive(
-    typename Map<Key, T, Compare>::Entry* root, value_type&& p) {
+Map<Key, T, Compare>::InsertRecursive(Entry* root, value_type&& p) {
   if (root == nullptr) {
     Entry* e = New<Entry>(std::move(p));
     return MakePair(iterator(this, e), e);
@@ -290,7 +289,7 @@ Map<Key, T, Compare>::InsertRecursive(
 
 template <class Key, class T, class Compare>
 typename Map<Key, T, Compare>::Entry* Map<Key, T, Compare>::GetMinEntry(
-    typename Map<Key, T, Compare>::Entry* e) {
+    Entry* e) {
   if (e != nullptr) {
     while (e->left != nullptr) {
       e = e->left;
@@ -301,7 +300,7 @@ typename Map<Key, T, Compare>::Entry* Map<Key, T, Compare>::GetMinEntry(
 
 template <class Key, class T, class Compare>
 typename Map<Key, T, Compare>::Entry* Map<Key, T, Compare>::RotateLeft(
-    typename Map<Key, T, Compare>::Entry* e) {
+    Entry* e) {
   Entry* rightChild = e->right;
   Entry* rightLeftChild = rightChild->left;
   rightChild->left = e;
@@ -314,7 +313,7 @@ typename Map<Key, T, Compare>::Entry* Map<Key, T, Compare>::RotateLeft(
 
 template <class Key, class T, class Compare>
 typename Map<Key, T, Compare>::Entry* Map<Key, T, Compare>::RotateRight(
-    typename Map<Key, T, Compare>::Entry* e) {
+    Entry* e) {
   Entry* leftChild = e->left;
   Entry* leftRightChild = leftChild->right;
   leftChild->right = e;
@@ -327,8 +326,8 @@ typename Map<Key, T, Compare>::Entry* Map<Key, T, Compare>::RotateRight(
 
 template <class Key, class T, class Compare>
 typename Map<Key, T, Compare>::Entry*
-Map<Key, T, Compare>::RebalanceTreeAfterInsertion(
-    typename Map<Key, T, Compare>::Entry* root, const key_type& k) {
+Map<Key, T, Compare>::RebalanceTreeAfterInsertion(Entry* root,
+                                                  const key_type& k) {
   root->height = 1 + GPR_MAX(EntryHeight(root->left), EntryHeight(root->right));
   int32_t heightDifference = EntryHeight(root->left) - EntryHeight(root->right);
   if (heightDifference > 1 && CompareKeys(root->left->pair.first, k) > 0) {
@@ -350,8 +349,7 @@ Map<Key, T, Compare>::RebalanceTreeAfterInsertion(
 
 template <class Key, class T, class Compare>
 typename Map<Key, T, Compare>::Entry*
-Map<Key, T, Compare>::RebalanceTreeAfterDeletion(
-    typename Map<Key, T, Compare>::Entry* root) {
+Map<Key, T, Compare>::RebalanceTreeAfterDeletion(Entry* root) {
   root->height = 1 + GPR_MAX(EntryHeight(root->left), EntryHeight(root->right));
   int32_t heightDifference = EntryHeight(root->left) - EntryHeight(root->right);
   if (heightDifference > 1) {
@@ -375,7 +373,7 @@ Map<Key, T, Compare>::RebalanceTreeAfterDeletion(
 
 template <class Key, class T, class Compare>
 typename Map<Key, T, Compare>::Entry* Map<Key, T, Compare>::RemoveRecursive(
-    typename Map<Key, T, Compare>::Entry* root, const key_type& k) {
+    Entry* root, const key_type& k) {
   if (root == nullptr) return root;
   int comp = CompareKeys(root->pair.first, k);
   if (comp > 0) {
