@@ -194,8 +194,10 @@ filegroups:
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/fork.h
   - src/core/lib/gprpp/manual_constructor.h
+  - src/core/lib/gprpp/map.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mutex_lock.h
+  - src/core/lib/gprpp/pair.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/profiling/timers.h
   uses:
@@ -4735,6 +4737,22 @@ targets:
   - grpc
   - gpr
   - grpc++_test_config
+- name: grpc_core_map_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/gprpp/map_tester.h
+  src:
+  - test/core/gprpp/map_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  uses:
+  - grpc++_test
+  uses_polling: false
 - name: grpc_cpp_plugin
   build: protoc
   language: c++
