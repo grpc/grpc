@@ -136,9 +136,10 @@ class Map<Key, T, Compare>::iterator
     return *this;
   }
 
-  iterator& operator++(int) {
+  iterator operator++(int) {
+    Entry* prev = curr_;
     curr_ = map_->InOrderSuccessor(curr_);
-    return *this;
+    return iterator(map_, prev);
   }
 
   iterator& operator=(const iterator& other) {
@@ -158,7 +159,7 @@ class Map<Key, T, Compare>::iterator
   value_type const* operator->() const { return &curr_->pair; }
 
  private:
-  friend class Map<key_type, mapped_type, Compare>;
+  friend class Map<key_type, mapped_type, key_compare>;
   using GrpcMap = typename ::grpc_core::Map<Key, T, Compare>;
   iterator(GrpcMap* map, Entry* curr) : curr_(curr), map_(map) {}
   Entry* curr_;
