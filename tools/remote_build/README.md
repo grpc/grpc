@@ -12,7 +12,7 @@ and tests run by Kokoro CI.
 
 - See [Installing Bazel](https://docs.bazel.build/versions/master/install.html) for instructions how to install bazel on your system.
 
-- Setup application default credentials for running remote builds by following [RBE Credentials Setup](https://cloud.google.com/remote-build-execution/docs/getting-started#set_credentials)
+- Setup application default credentials for running remote builds by following ["Set credentials" section.](https://cloud.google.com/remote-build-execution/docs/set-up/first-remote-build)
 
 
 ## Running remote build manually from dev workstation
@@ -27,6 +27,12 @@ Sanitizer runs (asan, msan, tsan, ubsan):
 ```
 # manual run of bazel tests remotely on Foundry with given sanitizer
 bazel --bazelrc=tools/remote_build/manual.bazelrc test --config=asan //test/...
+```
+
+Run on Windows MSVC:
+```
+# local manual run only for C++ targets (RBE to be supported)
+bazel --bazelrc=tools/remote_build/windows.bazelrc test //test/cpp/...
 ```
 
 Available command line options can be found in
