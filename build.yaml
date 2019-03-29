@@ -1714,6 +1714,7 @@ libs:
   public_headers:
   - include/grpc++/support/error_details.h
   - include/grpcpp/support/error_details.h
+  - include/grpcpp/support/error_details_impl.h
   src:
   - src/proto/grpc/status/status.proto
   - src/cpp/util/error_details.cc
