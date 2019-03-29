@@ -16,7 +16,7 @@
  *
  */
 
-#ifndef GRPCPP_SUPPORT_ERROR_DETAILS__IMPL_H
+#ifndef GRPCPP_SUPPORT_ERROR_DETAILS_IMPL_H
 #define GRPCPP_SUPPORT_ERROR_DETAILS_IMPL_H
 
 #include <grpcpp/support/status.h>
