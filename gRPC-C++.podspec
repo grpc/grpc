@@ -115,6 +115,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/server_builder.h',
                       'include/grpcpp/server_context.h',
                       'include/grpcpp/server_posix.h',
+                      'include/grpcpp/server_posix_impl.h',
                       'include/grpcpp/support/async_stream.h',
                       'include/grpcpp/support/async_unary_call.h',
                       'include/grpcpp/support/byte_buffer.h',
