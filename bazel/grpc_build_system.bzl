@@ -49,6 +49,7 @@ def _get_external_deps(external_deps):
         elif dep == "cares":
             ret += select({
                 "//:grpc_no_ares": [],
+                "//:grpc_no_ares_platform": [],
                 "//conditions:default": ["//external:cares"],
             })
         else:
@@ -95,6 +96,7 @@ def grpc_cc_library(
         srcs = srcs,
         defines = select({
                       "//:grpc_no_ares": ["GRPC_ARES=0"],
+                      "//:grpc_no_ares_platform": ["GRPC_ARES=0"],
                       "//conditions:default": [],
                   }) +
                   select({

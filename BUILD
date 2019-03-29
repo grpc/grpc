@@ -38,6 +38,24 @@ config_setting(
     values = {"define": "grpc_no_ares=true"},
 )
 
+# Prefer constraints/platforms to defines/configs, according to Bazel roadmap.
+constraint_setting(name = "grpc_ares_support")
+
+constraint_value(
+    name = "supports_ares",
+    constraint_setting = ":grpc_ares_support",
+)
+
+constraint_value(
+    name = "no_ares",
+    constraint_setting = ":grpc_ares_support",
+)
+
+platform(
+    name = "grpc_no_ares_platform",
+    constraint_values = [":no_ares"],
+)
+
 config_setting(
     name = "grpc_allow_exceptions",
     values = {"define": "GRPC_ALLOW_EXCEPTIONS=1"},
