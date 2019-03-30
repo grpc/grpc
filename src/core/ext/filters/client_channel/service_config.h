@@ -54,6 +54,15 @@
 
 namespace grpc_core {
 
+/// This is the base class that all service config parsers MUST use to store
+/// parsed service config data.
+class ServiceConfigParsedObject {
+ public:
+  virtual ~ServiceConfigParsedObject() = default;
+
+  GRPC_ABSTRACT_BASE_CLASS;
+};
+
 class ServiceConfig : public RefCounted<ServiceConfig> {
  public:
   /// Creates a new service config from parsing \a json_string.
@@ -96,6 +105,26 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   static RefCountedPtr<T> MethodConfigTableLookup(
       const SliceHashTable<RefCountedPtr<T>>& table, const grpc_slice& path);
 
+  /// Retrieves the parsed object at index \a index.
+  ServiceConfigParsedObject* GetParsedServiceConfigObject(int index) {
+    GPR_DEBUG_ASSERT(index < registered_parsers_count);
+    return parsed_service_config_objects[index].get();
+  }
+
+  typedef UniquePtr<ServiceConfigParsedObject> (*ServiceConfigParser)(
+      const char* service_config_json);
+
+  /// Globally register a service config parser. On successful registration, it
+  /// returns the index at which the parser was registered. On failure, -1 is
+  /// returned. Each new service config update will go through all the
+  /// registered parser. Each parser is responsible for reading the service
+  /// config json and returning a parsed object. This parsed object can later be
+  /// retrieved using the same index that was returned at registration time.
+  static int RegisterParser(ServiceConfigParser func) {
+    registered_parsers[registered_parsers_count] = func;
+    return registered_parsers_count++;
+  }
+
  private:
   // So New() can call our private ctor.
   template <typename T, typename... Args>
@@ -120,9 +149,16 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
       grpc_json* json, CreateValue<T> create_value,
       typename SliceHashTable<RefCountedPtr<T>>::Entry* entries, size_t* idx);
 
+  static constexpr int kMaxParsers = 32;
+  static int registered_parsers_count;
+  static ServiceConfigParser registered_parsers[kMaxParsers];
+
   UniquePtr<char> service_config_json_;
   UniquePtr<char> json_string_;  // Underlying storage for json_tree.
   grpc_json* json_tree_;
+
+  InlinedVector<UniquePtr<ServiceConfigParsedObject>, kMaxParsers>
+      parsed_service_config_objects;
 };
 
 //
