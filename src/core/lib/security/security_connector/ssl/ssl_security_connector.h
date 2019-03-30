@@ -29,6 +29,8 @@
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 
+void grpc_ssl_security_connector_init();
+
 typedef struct {
   tsi_ssl_pem_key_cert_pair* pem_key_cert_pair;
   char* pem_root_certs;

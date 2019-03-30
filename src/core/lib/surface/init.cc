@@ -53,6 +53,7 @@
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport_impl.h"
+#include "src/core/lib/security/security_connector/ssl/ssl_security_connector.h"
 
 /* (generated) built in registry of plugins */
 extern void grpc_register_built_in_plugins(void);
@@ -159,6 +160,7 @@ void grpc_init(void) {
     /* no more changes to channel init pipelines */
     grpc_channel_init_finalize();
     grpc_iomgr_start();
+    grpc_ssl_security_connector_init();
   }
 
   GRPC_API_TRACE("grpc_init(void)", 0, ());
