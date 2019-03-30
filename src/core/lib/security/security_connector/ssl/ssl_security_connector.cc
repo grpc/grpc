@@ -39,22 +39,30 @@
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
+#include "src/core/lib/gpr/env.h"
+
+#ifndef TSI_OPENSSL_ALPN_SUPPORT
+#define TSI_OPENSSL_ALPN_SUPPORT 1
+#endif
 
 namespace {
 grpc_error* ssl_check_peer(
     const char* peer_name, const tsi_peer* peer,
-    grpc_core::RefCountedPtr<grpc_auth_context>* auth_context) {
+    grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
+    bool _alpn_disabled) {
 #if TSI_OPENSSL_ALPN_SUPPORT
-  /* Check the ALPN if ALPN is supported. */
-  const tsi_peer_property* p =
+  if(!_alpn_disabled) {
+    /* Check the ALPN if ALPN is supported. */
+    const tsi_peer_property* p =
       tsi_peer_get_property_by_name(peer, TSI_SSL_ALPN_SELECTED_PROTOCOL);
-  if (p == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Cannot check peer: missing selected ALPN property.");
-  }
-  if (!grpc_chttp2_is_alpn_version_supported(p->value.data, p->value.length)) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Cannot check peer: invalid ALPN value.");
+    if (p == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Cannot check peer: missing selected ALPN property.");
+    }
+    if (!grpc_chttp2_is_alpn_version_supported(p->value.data, p->value.length)) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Cannot check peer: invalid ALPN value.");
+    }
   }
 #endif /* TSI_OPENSSL_ALPN_SUPPORT */
   /* Check the peer name if specified. */
@@ -87,6 +95,17 @@ class grpc_ssl_channel_security_connector final
     char* port;
     gpr_split_host_port(target_name, &target_name_, &port);
     gpr_free(port);
+    alpn_disabled_init("GRPC_ALPN_DISABLED");
+  }
+
+  void alpn_disabled_init(const char* env_var) {
+    char* e = gpr_getenv(env_var);
+    if (e != nullptr) {
+      if(e[0] == '1') {
+        _alpn_disabled = true;
+      }
+      gpr_free(e);
+    }
   }
 
   ~grpc_ssl_channel_security_connector() override {
@@ -150,7 +169,7 @@ class grpc_ssl_channel_security_connector final
     const char* target_name = overridden_target_name_ != nullptr
                                   ? overridden_target_name_
                                   : target_name_;
-    grpc_error* error = ssl_check_peer(target_name, &peer, auth_context);
+    grpc_error* error = ssl_check_peer(target_name, &peer, auth_context, _alpn_disabled);
     if (error == GRPC_ERROR_NONE &&
         verify_options_->verify_peer_callback != nullptr) {
       const tsi_peer_property* p =
@@ -224,6 +243,7 @@ class grpc_ssl_channel_security_connector final
   char* target_name_;
   char* overridden_target_name_;
   const verify_peer_options* verify_options_;
+  bool _alpn_disabled;
 };
 
 class grpc_ssl_server_security_connector
@@ -306,7 +326,7 @@ class grpc_ssl_server_security_connector
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
-    grpc_error* error = ssl_check_peer(nullptr, &peer, auth_context);
+    grpc_error* error = ssl_check_peer(nullptr, &peer, auth_context, false);
     tsi_peer_destruct(&peer);
     GRPC_CLOSURE_SCHED(on_peer_checked, error);
   }
