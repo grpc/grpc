@@ -39,22 +39,46 @@
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
+#include "src/core/lib/gpr/env.h"
+
+#ifndef TSI_OPENSSL_ALPN_SUPPORT
+#define TSI_OPENSSL_ALPN_SUPPORT 1
+#endif
+
+namespace grpc_core {
+namespace {
+bool _alpn_disabled = false;
+
+void alpn_disabled_init(const char* env_var) {
+  char* e = gpr_getenv(env_var);
+  if (e != nullptr) {
+    if(e[0] == '1') {
+      _alpn_disabled = true;
+    }
+    gpr_free(e);
+  }
+}
+
+}
+} // namespace grpc_core
 
 namespace {
 grpc_error* ssl_check_peer(
     const char* peer_name, const tsi_peer* peer,
     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context) {
 #if TSI_OPENSSL_ALPN_SUPPORT
-  /* Check the ALPN if ALPN is supported. */
-  const tsi_peer_property* p =
+  if(!grpc_core::_alpn_disabled) {
+    /* Check the ALPN if ALPN is supported. */
+    const tsi_peer_property* p =
       tsi_peer_get_property_by_name(peer, TSI_SSL_ALPN_SELECTED_PROTOCOL);
-  if (p == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Cannot check peer: missing selected ALPN property.");
-  }
-  if (!grpc_chttp2_is_alpn_version_supported(p->value.data, p->value.length)) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Cannot check peer: invalid ALPN value.");
+    if (p == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Cannot check peer: missing selected ALPN property.");
+    }
+    if (!grpc_chttp2_is_alpn_version_supported(p->value.data, p->value.length)) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Cannot check peer: invalid ALPN value.");
+    }
   }
 #endif /* TSI_OPENSSL_ALPN_SUPPORT */
   /* Check the peer name if specified. */
@@ -459,3 +483,8 @@ grpc_ssl_server_security_connector_create(
   }
   return c;
 }
+
+void grpc_ssl_security_connector_init() {
+  grpc_core::alpn_disabled_init("GRPC_ALPN_DISABLED");
+}
+
