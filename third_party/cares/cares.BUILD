@@ -144,6 +144,7 @@ cc_library(
         "ares_strdup.h",
         "ares_strsplit.h",
         "ares_version.h",
+        "ares_writev.h",
         "bitncmp.h",
         "config-win32.h",
         "nameser.h",
