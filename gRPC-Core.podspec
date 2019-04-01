@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.20.0-dev'
+  version = '1.21.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -208,8 +208,10 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/atomic.h',
                       'src/core/lib/gprpp/fork.h',
                       'src/core/lib/gprpp/manual_constructor.h',
+                      'src/core/lib/gprpp/map.h',
                       'src/core/lib/gprpp/memory.h',
                       'src/core/lib/gprpp/mutex_lock.h',
+                      'src/core/lib/gprpp/pair.h',
                       'src/core/lib/gprpp/thd.h',
                       'src/core/lib/profiling/timers.h',
                       'src/core/lib/gpr/alloc.cc',
@@ -877,8 +879,10 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/atomic.h',
                               'src/core/lib/gprpp/fork.h',
                               'src/core/lib/gprpp/manual_constructor.h',
+                              'src/core/lib/gprpp/map.h',
                               'src/core/lib/gprpp/memory.h',
                               'src/core/lib/gprpp/mutex_lock.h',
+                              'src/core/lib/gprpp/pair.h',
                               'src/core/lib/gprpp/thd.h',
                               'src/core/lib/profiling/timers.h',
                               'src/core/ext/transport/chttp2/transport/bin_decoder.h',
