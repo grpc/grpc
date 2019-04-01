@@ -31,6 +31,7 @@
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -157,7 +158,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
   grpc_pollset_set* interested_parties_;  // Do not own.
   RefCountedPtr<channelz::SubchannelNode> channelz_node_;
 
-  gpr_mu mu_;
+  Mutex mu_;
   grpc_connectivity_state state_ = GRPC_CHANNEL_CONNECTING;
   grpc_error* error_ = GRPC_ERROR_NONE;
   grpc_connectivity_state* notify_state_ = nullptr;

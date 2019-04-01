@@ -987,6 +987,7 @@ include/grpcpp/impl/codegen/status.h \
 include/grpcpp/impl/codegen/status_code_enum.h \
 include/grpcpp/impl/codegen/string_ref.h \
 include/grpcpp/impl/codegen/stub_options.h \
+include/grpcpp/impl/codegen/sync.h \
 include/grpcpp/impl/codegen/sync_stream.h \
 include/grpcpp/impl/codegen/time.h \
 include/grpcpp/impl/grpc_library.h \

@@ -41,7 +41,7 @@ DefaultHealthCheckService::DefaultHealthCheckService() {
 
 void DefaultHealthCheckService::SetServingStatus(
     const grpc::string& service_name, bool serving) {
-  std::unique_lock<std::mutex> lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   if (shutdown_) {
     // Set to NOT_SERVING in case service_name is not in the map.
     serving = false;
@@ -51,7 +51,7 @@ void DefaultHealthCheckService::SetServingStatus(
 
 void DefaultHealthCheckService::SetServingStatus(bool serving) {
   const ServingStatus status = serving ? SERVING : NOT_SERVING;
-  std::unique_lock<std::mutex> lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   if (shutdown_) {
     return;
   }
@@ -62,7 +62,7 @@ void DefaultHealthCheckService::SetServingStatus(bool serving) {
 }
 
 void DefaultHealthCheckService::Shutdown() {
-  std::unique_lock<std::mutex> lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   if (shutdown_) {
     return;
   }
@@ -76,7 +76,7 @@ void DefaultHealthCheckService::Shutdown() {
 DefaultHealthCheckService::ServingStatus
 DefaultHealthCheckService::GetServingStatus(
     const grpc::string& service_name) const {
-  std::lock_guard<std::mutex> lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   auto it = services_map_.find(service_name);
   if (it == services_map_.end()) {
     return NOT_FOUND;
@@ -88,7 +88,7 @@ DefaultHealthCheckService::GetServingStatus(
 void DefaultHealthCheckService::RegisterCallHandler(
     const grpc::string& service_name,
     std::shared_ptr<HealthCheckServiceImpl::CallHandler> handler) {
-  std::unique_lock<std::mutex> lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   ServiceData& service_data = services_map_[service_name];
   service_data.AddCallHandler(handler /* copies ref */);
   HealthCheckServiceImpl::CallHandler* h = handler.get();
@@ -98,7 +98,7 @@ void DefaultHealthCheckService::RegisterCallHandler(
 void DefaultHealthCheckService::UnregisterCallHandler(
     const grpc::string& service_name,
     const std::shared_ptr<HealthCheckServiceImpl::CallHandler>& handler) {
-  std::unique_lock<std::mutex> lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   auto it = services_map_.find(service_name);
   if (it == services_map_.end()) return;
   ServiceData& service_data = it->second;
@@ -166,7 +166,7 @@ DefaultHealthCheckService::HealthCheckServiceImpl::~HealthCheckServiceImpl() {
   // We will reach here after the server starts shutting down.
   shutdown_ = true;
   {
-    std::unique_lock<std::mutex> lock(cq_shutdown_mu_);
+    grpc_core::MutexLock lock(&cq_shutdown_mu_);
     cq_->Shutdown();
   }
   thread_->Join();
@@ -266,7 +266,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::
       std::make_shared<CheckCallHandler>(cq, database, service);
   CheckCallHandler* handler = static_cast<CheckCallHandler*>(self.get());
   {
-    std::unique_lock<std::mutex> lock(service->cq_shutdown_mu_);
+    grpc_core::MutexLock lock(&service->cq_shutdown_mu_);
     if (service->shutdown_) return;
     // Request a Check() call.
     handler->next_ =
@@ -311,7 +311,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::
   }
   // Send response.
   {
-    std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
+    grpc_core::MutexLock lock(&service_->cq_shutdown_mu_);
     if (!service_->shutdown_) {
       next_ =
           CallableTag(std::bind(&CheckCallHandler::OnFinishDone, this,
@@ -347,7 +347,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
       std::make_shared<WatchCallHandler>(cq, database, service);
   WatchCallHandler* handler = static_cast<WatchCallHandler*>(self.get());
   {
-    std::unique_lock<std::mutex> lock(service->cq_shutdown_mu_);
+    grpc_core::MutexLock lock(&service->cq_shutdown_mu_);
     if (service->shutdown_) return;
     // Request AsyncNotifyWhenDone().
     handler->on_done_notified_ =
@@ -402,7 +402,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
     SendHealth(std::shared_ptr<CallHandler> self, ServingStatus status) {
-  std::unique_lock<std::mutex> lock(send_mu_);
+  grpc_core::MutexLock lock(&send_mu_);
   // If there's already a send in flight, cache the new status, and
   // we'll start a new send for it when the one in flight completes.
   if (send_in_flight_) {
@@ -420,7 +420,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
   ByteBuffer response;
   bool success = service_->EncodeResponse(status, &response);
   // Grab shutdown lock and send response.
-  std::unique_lock<std::mutex> cq_lock(service_->cq_shutdown_mu_);
+  grpc_core::MutexLock cq_lock(&service_->cq_shutdown_mu_);
   if (service_->shutdown_) {
     SendFinishLocked(std::move(self), Status::CANCELLED);
     return;
@@ -442,7 +442,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
     SendFinish(std::move(self), Status::CANCELLED);
     return;
   }
-  std::unique_lock<std::mutex> lock(send_mu_);
+  grpc_core::MutexLock lock(&send_mu_);
   send_in_flight_ = false;
   // If we got a new status since we started the last send, start a
   // new send for it.
@@ -456,7 +456,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
 void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
     SendFinish(std::shared_ptr<CallHandler> self, const Status& status) {
   if (finish_called_) return;
-  std::unique_lock<std::mutex> cq_lock(service_->cq_shutdown_mu_);
+  grpc_core::MutexLock cq_lock(&service_->cq_shutdown_mu_);
   if (service_->shutdown_) return;
   SendFinishLocked(std::move(self), status);
 }
