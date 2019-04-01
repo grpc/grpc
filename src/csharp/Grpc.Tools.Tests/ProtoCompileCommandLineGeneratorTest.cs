@@ -175,5 +175,86 @@ namespace Grpc.Tools.Tests
             Assert.That(_task.LastResponseFile,
                         Does.Contain("--csharp_out=" + expect));
         }
+
+        [TestCase(
+            "../Protos/greet.proto(19) : warning in column=5 : warning : When enum name is stripped and label is PascalCased (Zero) this value label conflicts with Zero.",
+            "../Protos/greet.proto",
+            19,
+            5,
+            "warning : When enum name is stripped and label is PascalCased (Zero) this value label conflicts with Zero.")]
+        [TestCase(
+            "../Protos/greet.proto: warning: Import google/protobuf/empty.proto but not used.",
+            "../Protos/greet.proto",
+            0,
+            0,
+            "Import google/protobuf/empty.proto but not used.")]
+        [TestCase("../Protos/greet.proto(14) : error in column=10: \"name\" is already defined in \"Greet.HelloRequest\".", null, 0, 0, null)]
+        [TestCase("../Protos/greet.proto: Import \"google / protobuf / empty.proto\" was listed twice.", null, 0, 0, null)]
+        public void WarningsParsed(string stderr, string file, int line, int col, string message)
+        {
+            _task.StdErrMessages.Add(stderr);
+
+            _mockEngine
+                .Setup(me => me.LogWarningEvent(It.IsAny<BuildWarningEventArgs>()))
+                .Callback((BuildWarningEventArgs e) => {
+                    if (file != null)
+                    {
+                        Assert.AreEqual(file, e.File);
+                        Assert.AreEqual(line, e.LineNumber);
+                        Assert.AreEqual(col, e.ColumnNumber);
+                        Assert.AreEqual(message, e.Message);
+                    }
+                    else
+                    {
+                        Assert.Fail($"Error logged by build engine:\n{e.Message}");
+                    }
+                });
+
+            bool result = _task.Execute();
+            Assert.IsFalse(result);
+        }
+
+        [TestCase(
+            "../Protos/greet.proto(14) : error in column=10: \"name\" is already defined in \"Greet.HelloRequest\".",
+            "../Protos/greet.proto",
+            14,
+            10,
+            "\"name\" is already defined in \"Greet.HelloRequest\".")]
+        [TestCase(
+            "../Protos/greet.proto: Import \"google / protobuf / empty.proto\" was listed twice.",
+            "../Protos/greet.proto",
+            0,
+            0,
+            "Import \"google / protobuf / empty.proto\" was listed twice.")]
+        [TestCase("../Protos/greet.proto(19) : warning in column=5 : warning : When enum name is stripped and label is PascalCased (Zero) this value label conflicts with Zero.", null, 0, 0, null)]
+        [TestCase("../Protos/greet.proto: warning: Import google/protobuf/empty.proto but not used.", null, 0, 0, null)]
+        public void ErrorsParsed(string stderr, string file, int line, int col, string message)
+        {
+            _task.StdErrMessages.Add(stderr);
+
+            _mockEngine
+                .Setup(me => me.LogErrorEvent(It.IsAny<BuildErrorEventArgs>()))
+                .Callback((BuildErrorEventArgs e) => {
+                    if (file != null)
+                    {
+                        Assert.AreEqual(file, e.File);
+                        Assert.AreEqual(line, e.LineNumber);
+                        Assert.AreEqual(col, e.ColumnNumber);
+                        Assert.AreEqual(message, e.Message);
+                    }
+                    else
+                    {
+                        // Ignore expected error
+                        // "protoc/protoc.exe" existed with code -1.
+                        if (!e.Message.EndsWith("exited with code -1."))
+                        {
+                            Assert.Fail($"Error logged by build engine:\n{e.Message}");
+                        }
+                    }
+                });
+
+            bool result = _task.Execute();
+            Assert.IsFalse(result);
+        }
     };
 }

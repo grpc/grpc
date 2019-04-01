@@ -39,7 +39,7 @@ namespace Grpc.Core
         /// </summary>
         /// <param name="peerIdentityPropertyName">Peer identity property name.</param>
         /// <param name="properties">Multimap of auth properties by name.</param>
-        internal AuthContext(string peerIdentityPropertyName, Dictionary<string, List<AuthProperty>> properties)
+        public AuthContext(string peerIdentityPropertyName, Dictionary<string, List<AuthProperty>> properties)
         {
             this.peerIdentityPropertyName = peerIdentityPropertyName;
             this.properties = GrpcPreconditions.CheckNotNull(properties);

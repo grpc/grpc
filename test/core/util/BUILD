@@ -76,16 +76,16 @@ grpc_cc_library(
         "tracer_util.h",
         "trickle_endpoint.h",
     ],
+    data = [
+        "lsan_suppressions.txt",
+        "tsan_suppressions.txt",
+        "ubsan_suppressions.txt",
+    ],
     language = "C++",
     deps = [
         ":grpc_debugger_macros",
         "//:gpr",
         "//:grpc_common",
-    ],
-    data = [
-        "lsan_suppressions.txt",
-        "tsan_suppressions.txt",
-        "ubsan_suppressions.txt",
     ],
 )
 

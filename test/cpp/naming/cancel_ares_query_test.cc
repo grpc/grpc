@@ -172,7 +172,7 @@ class AssertFailureResultHandler : public grpc_core::Resolver::ResultHandler {
     gpr_mu_unlock(args_->mu);
   }
 
-  void ReturnResult(const grpc_channel_args* args) override {
+  void ReturnResult(grpc_core::Resolver::Result result) override {
     GPR_ASSERT(false);
   }
 

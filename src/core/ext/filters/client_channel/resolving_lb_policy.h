@@ -65,8 +65,8 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   // lb_policy_name and lb_policy_config to point to the right data.
   // Returns true if the service config has changed since the last result.
   typedef bool (*ProcessResolverResultCallback)(
-      void* user_data, const grpc_channel_args& args,
-      const char** lb_policy_name, RefCountedPtr<Config>* lb_policy_config);
+      void* user_data, Resolver::Result* result, const char** lb_policy_name,
+      RefCountedPtr<Config>* lb_policy_config);
   // If error is set when this returns, then construction failed, and
   // the caller may not use the new object.
   ResolvingLoadBalancingPolicy(
@@ -79,8 +79,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   // No-op -- should never get updates from the channel.
   // TODO(roth): Need to support updating child LB policy's config for xds
   // use case.
-  void UpdateLocked(const grpc_channel_args& args,
-                    RefCountedPtr<Config> lb_config) override {}
+  void UpdateLocked(UpdateArgs args) override {}
 
   void ExitIdleLocked() override;
 
@@ -105,17 +104,16 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   void OnResolverError(grpc_error* error);
   void CreateOrUpdateLbPolicyLocked(const char* lb_policy_name,
                                     RefCountedPtr<Config> lb_policy_config,
-                                    const grpc_channel_args& args,
+                                    Resolver::Result result,
                                     TraceStringVector* trace_strings);
   OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(
       const char* lb_policy_name, const grpc_channel_args& args,
       TraceStringVector* trace_strings);
   void MaybeAddTraceMessagesForAddressChangesLocked(
-      const grpc_channel_args& resolver_result,
-      TraceStringVector* trace_strings);
+      bool resolution_contains_addresses, TraceStringVector* trace_strings);
   void ConcatenateAndAddChannelTraceLocked(
       TraceStringVector* trace_strings) const;
-  void OnResolverResultChangedLocked(const grpc_channel_args* result);
+  void OnResolverResultChangedLocked(Resolver::Result result);
 
   // Passed in from caller at construction time.
   TraceFlag* tracer_;

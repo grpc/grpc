@@ -25,6 +25,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "include/grpc++/grpc++.h"
+#include "include/grpcpp/opencensus.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/stats/testing/test_utils.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"

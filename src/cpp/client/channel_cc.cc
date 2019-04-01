@@ -18,8 +18,6 @@
 
 #include <grpcpp/channel.h>
 
-#include <chrono>
-#include <condition_variable>
 #include <cstring>
 #include <memory>
 #include <mutex>
@@ -41,12 +39,7 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
-#include <grpcpp/support/time.h>
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/surface/completion_queue.h"
 
 namespace grpc {
