@@ -948,11 +948,11 @@ static void grpcsharp_verify_peer_destroy_handler(void* userdata) {
                              NULL, NULL);
 }
 
-static int grpcsharp_verify_peer_handler(const char* target_host,
-                                         const char* target_pem,
+static int grpcsharp_verify_peer_handler(const char* target_name,
+                                         const char* peer_pem,
                                          void* userdata) {
-  return native_callback_dispatcher(userdata, (void*)target_host,
-                             (void*)target_pem, (void*)0, NULL,
+  return native_callback_dispatcher(userdata, (void*)target_name,
+                             (void*)peer_pem, (void*)0, NULL,
                              NULL, NULL);
 }
 

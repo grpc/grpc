@@ -27,22 +27,22 @@ namespace Grpc.Core
         /// <summary>
         /// Initializes a new instance of the <see cref="T:Grpc.Core.VerifyPeerContext"/> class.
         /// </summary>
-        /// <param name="targetHost">string containing the host name of the peer.</param>
-        /// <param name="targetPem">string containing PEM encoded certificate of the peer.</param>
-        internal VerifyPeerContext(string targetHost, string targetPem)
+        /// <param name="targetName">The target name of the peer.</param>
+        /// <param name="peerPem">The PEM encoded certificate of the peer.</param>
+        internal VerifyPeerContext(string targetName, string peerPem)
         {
-            this.TargetHost = targetHost;
-            this.TargetPem = targetPem;
+            this.TargetName = targetName;
+            this.PeerPem = peerPem;
         }
 
         /// <summary>
-        /// String containing the host name of the peer.
+        /// The target name of the peer.
         /// </summary>
-        public string TargetHost { get; }
+        public string TargetName { get; }
 
         /// <summary>
-        /// string containing PEM encoded certificate of the peer.
+        /// The PEM encoded certificate of the peer.
         /// </summary>
-        public string TargetPem { get; }
+        public string PeerPem { get; }
     }
 }

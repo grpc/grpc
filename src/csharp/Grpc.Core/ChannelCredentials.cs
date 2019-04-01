@@ -226,7 +226,7 @@ namespace Grpc.Core
                 return VerifyPeerCallbackHandler(arg0, arg1, arg2 != IntPtr.Zero);
             }
 
-            private int VerifyPeerCallbackHandler(IntPtr host, IntPtr pem, bool isDestroy)
+            private int VerifyPeerCallbackHandler(IntPtr targetName, IntPtr peerPem, bool isDestroy)
             {
                 if (isDestroy)
                 {
@@ -236,7 +236,7 @@ namespace Grpc.Core
 
                 try
                 {
-                    var context = new VerifyPeerContext(Marshal.PtrToStringAnsi(host), Marshal.PtrToStringAnsi(pem));
+                    var context = new VerifyPeerContext(Marshal.PtrToStringAnsi(targetName), Marshal.PtrToStringAnsi(peerPem));
 
                     return this.verifyPeerCallback(context) ? 0 : 1;
                 }
