@@ -140,9 +140,10 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
   //    the time this function returns, the pick will already have
   //    been processed, and we'll be trying to re-process the same
   //    pick again, leading to a crash.
-  // 2. We are currently running in the data plane combiner, but we
-  //    need to bounce into the control plane combiner to call
-  //    ExitIdleLocked().
+  // 2. In a subsequent PR, we will split the data plane and control
+  //    plane synchronization into separate combiners, at which
+  //    point this will need to hop from the data plane combiner into
+  //    the control plane combiner.
   if (!exit_idle_called_) {
     exit_idle_called_ = true;
     parent_->Ref().release();  // ref held by closure.

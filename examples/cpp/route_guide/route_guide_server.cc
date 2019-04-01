@@ -29,7 +29,11 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/security/server_credentials.h>
 #include "helper.h"
+#ifdef BAZEL_BUILD
+#include "examples/protos/route_guide.grpc.pb.h"
+#else
 #include "route_guide.grpc.pb.h"
+#endif
 
 using grpc::Server;
 using grpc::ServerBuilder;

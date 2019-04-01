@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.20.0-dev
+PROJECT_NUMBER         = 1.21.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -931,11 +931,13 @@ include/grpcpp/client_context.h \
 include/grpcpp/completion_queue.h \
 include/grpcpp/create_channel.h \
 include/grpcpp/create_channel_posix.h \
+include/grpcpp/create_channel_posix_impl.h \
 include/grpcpp/ext/health_check_service_server_builder_option.h \
 include/grpcpp/generic/async_generic_service.h \
 include/grpcpp/generic/generic_stub.h \
 include/grpcpp/grpcpp.h \
 include/grpcpp/health_check_service_interface.h \
+include/grpcpp/health_check_service_interface_impl.h \
 include/grpcpp/impl/call.h \
 include/grpcpp/impl/channel_argument_option.h \
 include/grpcpp/impl/client_unary_call.h \
@@ -991,10 +993,13 @@ include/grpcpp/impl/rpc_method.h \
 include/grpcpp/impl/rpc_service_method.h \
 include/grpcpp/impl/serialization_traits.h \
 include/grpcpp/impl/server_builder_option.h \
+include/grpcpp/impl/server_builder_option_impl.h \
 include/grpcpp/impl/server_builder_plugin.h \
 include/grpcpp/impl/server_initializer.h \
+include/grpcpp/impl/server_initializer_impl.h \
 include/grpcpp/impl/service_type.h \
 include/grpcpp/resource_quota.h \
+include/grpcpp/resource_quota_impl.h \
 include/grpcpp/security/auth_context.h \
 include/grpcpp/security/auth_metadata_processor.h \
 include/grpcpp/security/credentials.h \
@@ -1003,6 +1008,7 @@ include/grpcpp/server.h \
 include/grpcpp/server_builder.h \
 include/grpcpp/server_context.h \
 include/grpcpp/server_posix.h \
+include/grpcpp/server_posix_impl.h \
 include/grpcpp/support/async_stream.h \
 include/grpcpp/support/async_unary_call.h \
 include/grpcpp/support/byte_buffer.h \

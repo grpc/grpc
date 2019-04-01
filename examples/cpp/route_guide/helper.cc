@@ -23,7 +23,11 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#ifdef BAZEL_BUILD
+#include "examples/protos/route_guide.grpc.pb.h"
+#else
 #include "route_guide.grpc.pb.h"
+#endif
 
 namespace routeguide {
 
@@ -35,13 +39,16 @@ std::string GetDbFileContent(int argc, char** argv) {
     size_t start_position = argv_1.find(arg_str);
     if (start_position != std::string::npos) {
       start_position += arg_str.size();
-      if (argv_1[start_position] == ' ' ||
-          argv_1[start_position] == '=') {
+      if (argv_1[start_position] == ' ' || argv_1[start_position] == '=') {
         db_path = argv_1.substr(start_position + 1);
       }
     }
   } else {
+#ifdef BAZEL_BUILD
+    db_path = "cpp/route_guide/route_guide_db.json";
+#else
     db_path = "route_guide_db.json";
+#endif
   }
   std::ifstream db_file(db_path);
   if (!db_file.is_open()) {
@@ -60,17 +67,13 @@ class Parser {
  public:
   explicit Parser(const std::string& db) : db_(db) {
     // Remove all spaces.
-    db_.erase(
-        std::remove_if(db_.begin(), db_.end(), isspace),
-        db_.end());
+    db_.erase(std::remove_if(db_.begin(), db_.end(), isspace), db_.end());
     if (!Match("[")) {
       SetFailedAndReturnFalse();
     }
   }
 
-  bool Finished() {
-    return current_ >= db_.size();
-  }
+  bool Finished() { return current_ >= db_.size(); }
 
   bool TryParseOne(Feature* feature) {
     if (failed_ || Finished() || !Match("{")) {
@@ -96,7 +99,7 @@ class Parser {
     if (current_ == db_.size()) {
       return SetFailedAndReturnFalse();
     }
-    feature->set_name(db_.substr(name_start, current_-name_start-1));
+    feature->set_name(db_.substr(name_start, current_ - name_start - 1));
     if (!Match("},")) {
       if (db_[current_ - 1] == ']' && current_ == db_.size()) {
         return true;
@@ -107,7 +110,6 @@ class Parser {
   }
 
  private:
-
   bool SetFailedAndReturnFalse() {
     failed_ = true;
     return false;
@@ -121,7 +123,8 @@ class Parser {
 
   void ReadLong(long* l) {
     size_t start = current_;
-    while (current_ != db_.size() && db_[current_] != ',' && db_[current_] != '}') {
+    while (current_ != db_.size() && db_[current_] != ',' &&
+           db_[current_] != '}') {
       current_++;
     }
     // It will throw an exception if fails.
@@ -154,10 +157,8 @@ void ParseDb(const std::string& db, std::vector<Feature>* feature_list) {
       break;
     }
   }
-  std::cout << "DB parsed, loaded " << feature_list->size()
-            << " features." << std::endl;
+  std::cout << "DB parsed, loaded " << feature_list->size() << " features."
+            << std::endl;
 }
 
-
 }  // namespace routeguide
-

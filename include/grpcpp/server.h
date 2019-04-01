@@ -28,6 +28,7 @@
 #include <grpc/compression.h>
 #include <grpc/support/atm.h>
 #include <grpcpp/completion_queue.h>
+#include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
@@ -40,12 +41,14 @@
 
 struct grpc_server;
 
+namespace grpc_impl {
+
+class ServerInitializer;
+}
 namespace grpc {
 
 class AsyncGenericService;
-class HealthCheckServiceInterface;
 class ServerContext;
-class ServerInitializer;
 
 /// Represents a gRPC server.
 ///
@@ -199,7 +202,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
 
   friend class AsyncGenericService;
   friend class ServerBuilder;
-  friend class ServerInitializer;
+  friend class grpc_impl::ServerInitializer;
 
   class SyncRequest;
   class CallbackRequestBase;
@@ -257,7 +260,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
 
   CompletionQueue* CallbackCQ() override;
 
-  ServerInitializer* initializer();
+  grpc_impl::ServerInitializer* initializer();
 
   // A vector of interceptor factory objects.
   // This should be destroyed after health_check_service_ and this requirement
@@ -321,7 +324,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   // Pointer to the wrapped grpc_server.
   grpc_server* server_;
 
-  std::unique_ptr<ServerInitializer> server_initializer_;
+  std::unique_ptr<grpc_impl::ServerInitializer> server_initializer_;
 
   std::unique_ptr<HealthCheckServiceInterface> health_check_service_;
   bool health_check_service_disabled_;
