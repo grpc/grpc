@@ -29,6 +29,11 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
+namespace grpc_impl {
+
+class ResourceQuota;
+}
+
 namespace grpc {
 
 static std::vector<std::unique_ptr<ServerBuilderPlugin> (*)()>*
@@ -164,7 +169,7 @@ ServerBuilder& ServerBuilder::SetDefaultCompressionAlgorithm(
 }
 
 ServerBuilder& ServerBuilder::SetResourceQuota(
-    const grpc::ResourceQuota& resource_quota) {
+    const grpc_impl::ResourceQuota& resource_quota) {
   if (resource_quota_ != nullptr) {
     grpc_resource_quota_unref(resource_quota_);
   }
@@ -309,7 +314,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       sync_server_settings_.cq_timeout_msec, resource_quota_,
       std::move(interceptor_creators_)));
 
-  ServerInitializer* initializer = server->initializer();
+  grpc_impl::ServerInitializer* initializer = server->initializer();
 
   // Register all the completion queues with the server. i.e
   //  1. sync_server_cqs: internal completion queues created IF this is a sync
