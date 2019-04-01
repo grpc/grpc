@@ -25,6 +25,9 @@ namespace TestGrpcPackage
     {
         public static void Main(string[] args)
         {
+            // test codegen works
+            var reply = new Testcodegen.HelloReply();
+
             // This code doesn't do much but makes sure the native extension is loaded
             // which is what we are testing here.
             Channel c = new Channel("127.0.0.1:1000", ChannelCredentials.Insecure);

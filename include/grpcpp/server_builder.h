@@ -38,11 +38,12 @@ struct grpc_resource_quota;
 namespace grpc_impl {
 
 class ServerCredentials;
+class ResourceQuota;
 }
+
 namespace grpc {
 
 class AsyncGenericService;
-class ResourceQuota;
 class CompletionQueue;
 class Server;
 class ServerCompletionQueue;
@@ -190,7 +191,8 @@ class ServerBuilder {
       grpc_compression_algorithm algorithm);
 
   /// Set the attached buffer pool for this server
-  ServerBuilder& SetResourceQuota(const ResourceQuota& resource_quota);
+  ServerBuilder& SetResourceQuota(
+      const ::grpc_impl::ResourceQuota& resource_quota);
 
   ServerBuilder& SetOption(std::unique_ptr<ServerBuilderOption> option);
 
