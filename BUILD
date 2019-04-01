@@ -366,10 +366,10 @@ grpc_cc_library(
         "gpr",
         "grpc",
         "grpc++_base",
-        "grpc_cfstream",
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
         "grpc++_codegen_proto",
+        "grpc_cfstream",
     ],
 )
 
@@ -2327,34 +2327,34 @@ grpc_cc_library(
     name = "envoy_ads_upb",
     srcs = [
         "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/cds.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/cds.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/eds.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c",
         "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c",
     ],
     hdrs = [
         "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/cds.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/cds.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h",
         "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h",
     ],
-    language = "c++",
     external_deps = [
         "upb_lib",
     ],
+    language = "c++",
     deps = [
         ":envoy_core_upb",
         ":envoy_type_upb",
         ":google_api_upb",
         ":proto_gen_validate_upb",
-    ]
+    ],
 )
 
 grpc_cc_library(
@@ -2375,10 +2375,11 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h",
     ],
-    language = "c++",
     external_deps = [
         "upb_lib",
     ],
+    language = "c++",
+    tags = ["no_windows"],
     deps = [
         ":envoy_type_upb",
         ":google_api_upb",
@@ -2397,15 +2398,21 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/type/percent.upb.h",
         "src/core/ext/upb-generated/envoy/type/range.upb.h",
     ],
-    language = "c++",
     external_deps = [
         "upb_lib",
     ],
+    language = "c++",
+    tags = ["no_windows"],
     deps = [
         ":google_api_upb",
+<<<<<<< HEAD
         ":proto_gen_validate_upb"
     ],
     tags = ["no_windows"],
+=======
+        ":proto_gen_validate_upb",
+    ],
+>>>>>>> master
 )
 
 grpc_cc_library(
@@ -2418,14 +2425,18 @@ grpc_cc_library(
         "src/core/ext/upb-generated/gogoproto/gogo.upb.h",
         "src/core/ext/upb-generated/validate/validate.upb.h",
     ],
-    language = "c++",
     external_deps = [
         "upb_lib",
     ],
+    language = "c++",
+    tags = ["no_windows"],
     deps = [
         ":google_api_upb",
     ],
+<<<<<<< HEAD
     tags = ["no_windows"],
+=======
+>>>>>>> master
 )
 
 grpc_cc_library(
@@ -2454,10 +2465,13 @@ grpc_cc_library(
         "src/core/ext/upb-generated/google/protobuf/wrappers.upb.h",
         "src/core/ext/upb-generated/google/rpc/status.upb.h",
     ],
-    language = "c++",
     external_deps = [
         "upb_lib",
     ],
+<<<<<<< HEAD
+=======
+    language = "c++",
+>>>>>>> master
     tags = ["no_windows"],
 )
 
