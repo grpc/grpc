@@ -21,6 +21,7 @@
     "Grpc.Core.Tests.ChannelOptionsTest",
     "Grpc.Core.Tests.ChannelTest",
     "Grpc.Core.Tests.ClientServerTest",
+    "Grpc.Core.Tests.ClientServerWriteOptionsTest",
     "Grpc.Core.Tests.CompressionTest",
     "Grpc.Core.Tests.ContextPropagationTest",
     "Grpc.Core.Tests.ContextualMarshallerTest",
