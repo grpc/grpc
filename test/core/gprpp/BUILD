@@ -39,6 +39,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "grpc_core_map_test",
+    srcs = ["map_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr_base",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "memory_test",
     srcs = ["memory_test.cc"],
     external_deps = [

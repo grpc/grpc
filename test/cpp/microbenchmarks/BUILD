@@ -45,6 +45,7 @@ grpc_cc_library(
         "//test/core/util:grpc_test_util_unsecure",
         "//test/cpp/util:test_config",
     ],
+    tags = ["no_windows"],
 )
 
 grpc_cc_binary(
@@ -52,6 +53,7 @@ grpc_cc_binary(
     testonly = 1,
     srcs = ["bm_closure.cc"],
     deps = [":helpers"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_binary(
@@ -59,6 +61,7 @@ grpc_cc_binary(
     testonly = 1,
     srcs = ["bm_alarm.cc"],
     deps = [":helpers"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_binary(
@@ -66,6 +69,7 @@ grpc_cc_binary(
     testonly = 1,
     srcs = ["bm_arena.cc"],
     deps = [":helpers"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_binary(
@@ -73,6 +77,7 @@ grpc_cc_binary(
     testonly = 1,
     srcs = ["bm_byte_buffer.cc"],
     deps = [":helpers"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_binary(
@@ -80,6 +85,7 @@ grpc_cc_binary(
     testonly = 1,
     srcs = ["bm_channel.cc"],
     deps = [":helpers"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_binary(
@@ -87,6 +93,7 @@ grpc_cc_binary(
     testonly = 1,
     srcs = ["bm_call_create.cc"],
     deps = [":helpers"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_binary(
@@ -94,6 +101,7 @@ grpc_cc_binary(
     testonly = 1,
     srcs = ["bm_cq.cc"],
     deps = [":helpers"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_binary(
@@ -101,6 +109,7 @@ grpc_cc_binary(
     testonly = 1,
     srcs = ["bm_cq_multiple_threads.cc"],
     deps = [":helpers"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_binary(
@@ -108,6 +117,7 @@ grpc_cc_binary(
     testonly = 1,
     srcs = ["bm_error.cc"],
     deps = [":helpers"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_library(
@@ -117,6 +127,7 @@ grpc_cc_library(
         "fullstack_streaming_ping_pong.h",
     ],
     deps = [":helpers"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_binary(
@@ -126,6 +137,7 @@ grpc_cc_binary(
         "bm_fullstack_streaming_ping_pong.cc",
     ],
     deps = [":fullstack_streaming_ping_pong_h"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_library(
@@ -144,6 +156,7 @@ grpc_cc_binary(
         "bm_fullstack_streaming_pump.cc",
     ],
     deps = [":fullstack_streaming_pump_h"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_binary(
@@ -151,6 +164,7 @@ grpc_cc_binary(
     testonly = 1,
     srcs = ["bm_fullstack_trickle.cc"],
     deps = [":helpers"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_library(
@@ -169,6 +183,7 @@ grpc_cc_binary(
         "bm_fullstack_unary_ping_pong.cc",
     ],
     deps = [":fullstack_unary_ping_pong_h"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_binary(
@@ -176,6 +191,7 @@ grpc_cc_binary(
     testonly = 1,
     srcs = ["bm_metadata.cc"],
     deps = [":helpers"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_binary(
@@ -183,6 +199,7 @@ grpc_cc_binary(
     testonly = 1,
     srcs = ["bm_chttp2_hpack.cc"],
     deps = [":helpers"],
+    tags = ["no_windows"],
 )
 
 grpc_cc_binary(
@@ -202,4 +219,5 @@ grpc_cc_binary(
     testonly = 1,
     srcs = ["bm_timer.cc"],
     deps = [":helpers"],
+    tags = ["no_windows"],
 )
