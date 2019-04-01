@@ -369,7 +369,6 @@ grpc_cc_library(
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
         "grpc++_codegen_proto",
-        "grpc_cfstream",
     ],
 )
 
