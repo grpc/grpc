@@ -943,19 +943,15 @@ grpcsharp_override_default_ssl_roots(const char* pem_root_certs) {
 }
 
 static void grpcsharp_verify_peer_destroy_handler(void* userdata) {
-  native_callback_dispatcher(userdata, NULL,
-                             NULL, (void*)1, NULL,
-                             NULL, NULL);
+  native_callback_dispatcher(userdata, NULL, NULL, (void*)1, NULL, NULL, NULL);
 }
 
 static int grpcsharp_verify_peer_handler(const char* target_name,
-                                         const char* peer_pem,
-                                         void* userdata) {
+                                         const char* peer_pem, void* userdata) {
   return native_callback_dispatcher(userdata, (void*)target_name,
-                             (void*)peer_pem, (void*)0, NULL,
-                             NULL, NULL);
+                                    (void*)peer_pem, (void*)0, NULL, NULL,
+                                    NULL);
 }
-
 
 GPR_EXPORT grpc_channel_credentials* GPR_CALLTYPE
 grpcsharp_ssl_credentials_create(const char* pem_root_certs,
@@ -966,10 +962,8 @@ grpcsharp_ssl_credentials_create(const char* pem_root_certs,
   verify_peer_options verify_options;
   verify_peer_options* p_verify_options = NULL;
   if (verify_peer_callback_tag != NULL) {
-    verify_options.verify_peer_callback_userdata =
-            verify_peer_callback_tag;
-    verify_options.verify_peer_destruct =
-            grpcsharp_verify_peer_destroy_handler;
+    verify_options.verify_peer_callback_userdata = verify_peer_callback_tag;
+    verify_options.verify_peer_destruct = grpcsharp_verify_peer_destroy_handler;
     verify_options.verify_peer_callback = grpcsharp_verify_peer_handler;
     p_verify_options = &verify_options;
   }
