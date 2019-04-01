@@ -460,8 +460,8 @@ Q = @
 endif
 
 CORE_VERSION = 7.0.0
-CPP_VERSION = 1.20.0-dev
-CSHARP_VERSION = 1.20.0-dev
+CPP_VERSION = 1.21.0-dev
+CSHARP_VERSION = 1.21.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -1209,6 +1209,7 @@ generic_end2end_test: $(BINDIR)/$(CONFIG)/generic_end2end_test
 golden_file_test: $(BINDIR)/$(CONFIG)/golden_file_test
 grpc_alts_credentials_options_test: $(BINDIR)/$(CONFIG)/grpc_alts_credentials_options_test
 grpc_cli: $(BINDIR)/$(CONFIG)/grpc_cli
+grpc_core_map_test: $(BINDIR)/$(CONFIG)/grpc_core_map_test
 grpc_cpp_plugin: $(BINDIR)/$(CONFIG)/grpc_cpp_plugin
 grpc_csharp_plugin: $(BINDIR)/$(CONFIG)/grpc_csharp_plugin
 grpc_linux_system_roots_test: $(BINDIR)/$(CONFIG)/grpc_linux_system_roots_test
@@ -1680,6 +1681,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/golden_file_test \
   $(BINDIR)/$(CONFIG)/grpc_alts_credentials_options_test \
   $(BINDIR)/$(CONFIG)/grpc_cli \
+  $(BINDIR)/$(CONFIG)/grpc_core_map_test \
   $(BINDIR)/$(CONFIG)/grpc_linux_system_roots_test \
   $(BINDIR)/$(CONFIG)/grpc_tool_test \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
@@ -1821,6 +1823,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/golden_file_test \
   $(BINDIR)/$(CONFIG)/grpc_alts_credentials_options_test \
   $(BINDIR)/$(CONFIG)/grpc_cli \
+  $(BINDIR)/$(CONFIG)/grpc_core_map_test \
   $(BINDIR)/$(CONFIG)/grpc_linux_system_roots_test \
   $(BINDIR)/$(CONFIG)/grpc_tool_test \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
@@ -2311,6 +2314,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/golden_file_test || ( echo test golden_file_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_alts_credentials_options_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_alts_credentials_options_test || ( echo test grpc_alts_credentials_options_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpc_core_map_test"
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_core_map_test || ( echo test grpc_core_map_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_linux_system_roots_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_linux_system_roots_test || ( echo test grpc_linux_system_roots_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_tool_test"
@@ -5333,6 +5338,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/generic/generic_stub.h \
     include/grpcpp/grpcpp.h \
     include/grpcpp/health_check_service_interface.h \
+    include/grpcpp/health_check_service_interface_impl.h \
     include/grpcpp/impl/call.h \
     include/grpcpp/impl/channel_argument_option.h \
     include/grpcpp/impl/client_unary_call.h \
@@ -5346,8 +5352,10 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/server_builder_option_impl.h \
     include/grpcpp/impl/server_builder_plugin.h \
     include/grpcpp/impl/server_initializer.h \
+    include/grpcpp/impl/server_initializer_impl.h \
     include/grpcpp/impl/service_type.h \
     include/grpcpp/resource_quota.h \
+    include/grpcpp/resource_quota_impl.h \
     include/grpcpp/security/auth_context.h \
     include/grpcpp/security/auth_metadata_processor.h \
     include/grpcpp/security/credentials.h \
@@ -5356,6 +5364,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/server_builder.h \
     include/grpcpp/server_context.h \
     include/grpcpp/server_posix.h \
+    include/grpcpp/server_posix_impl.h \
     include/grpcpp/support/async_stream.h \
     include/grpcpp/support/async_unary_call.h \
     include/grpcpp/support/byte_buffer.h \
@@ -5934,6 +5943,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/generic/generic_stub.h \
     include/grpcpp/grpcpp.h \
     include/grpcpp/health_check_service_interface.h \
+    include/grpcpp/health_check_service_interface_impl.h \
     include/grpcpp/impl/call.h \
     include/grpcpp/impl/channel_argument_option.h \
     include/grpcpp/impl/client_unary_call.h \
@@ -5947,8 +5957,10 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/server_builder_option_impl.h \
     include/grpcpp/impl/server_builder_plugin.h \
     include/grpcpp/impl/server_initializer.h \
+    include/grpcpp/impl/server_initializer_impl.h \
     include/grpcpp/impl/service_type.h \
     include/grpcpp/resource_quota.h \
+    include/grpcpp/resource_quota_impl.h \
     include/grpcpp/security/auth_context.h \
     include/grpcpp/security/auth_metadata_processor.h \
     include/grpcpp/security/credentials.h \
@@ -5957,6 +5969,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/server_builder.h \
     include/grpcpp/server_context.h \
     include/grpcpp/server_posix.h \
+    include/grpcpp/server_posix_impl.h \
     include/grpcpp/support/async_stream.h \
     include/grpcpp/support/async_unary_call.h \
     include/grpcpp/support/byte_buffer.h \
@@ -6849,6 +6862,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/generic/generic_stub.h \
     include/grpcpp/grpcpp.h \
     include/grpcpp/health_check_service_interface.h \
+    include/grpcpp/health_check_service_interface_impl.h \
     include/grpcpp/impl/call.h \
     include/grpcpp/impl/channel_argument_option.h \
     include/grpcpp/impl/client_unary_call.h \
@@ -6862,8 +6876,10 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/server_builder_option_impl.h \
     include/grpcpp/impl/server_builder_plugin.h \
     include/grpcpp/impl/server_initializer.h \
+    include/grpcpp/impl/server_initializer_impl.h \
     include/grpcpp/impl/service_type.h \
     include/grpcpp/resource_quota.h \
+    include/grpcpp/resource_quota_impl.h \
     include/grpcpp/security/auth_context.h \
     include/grpcpp/security/auth_metadata_processor.h \
     include/grpcpp/security/credentials.h \
@@ -6872,6 +6888,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/server_builder.h \
     include/grpcpp/server_context.h \
     include/grpcpp/server_posix.h \
+    include/grpcpp/server_posix_impl.h \
     include/grpcpp/support/async_stream.h \
     include/grpcpp/support/async_unary_call.h \
     include/grpcpp/support/byte_buffer.h \
@@ -16425,6 +16442,49 @@ deps_grpc_cli: $(GRPC_CLI_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(GRPC_CLI_OBJS:.o=.dep)
+endif
+endif
+
+
+GRPC_CORE_MAP_TEST_SRC = \
+    test/core/gprpp/map_test.cc \
+
+GRPC_CORE_MAP_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_CORE_MAP_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/grpc_core_map_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/grpc_core_map_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/grpc_core_map_test: $(PROTOBUF_DEP) $(GRPC_CORE_MAP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(GRPC_CORE_MAP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/grpc_core_map_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/map_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_grpc_core_map_test: $(GRPC_CORE_MAP_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GRPC_CORE_MAP_TEST_OBJS:.o=.dep)
 endif
 endif
 

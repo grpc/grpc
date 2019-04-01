@@ -74,11 +74,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "godric"
+g_stands_for = "gandalf"
 
 core_version = "7.0.0"
 
-version = "1.20.0-dev"
+version = "1.21.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -192,8 +192,8 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpc++/impl/service_type.h",
     "include/grpc++/impl/sync_cxx11.h",
     "include/grpc++/impl/sync_no_cxx11.h",
-    "include/grpc++/resource_quota.h",
     "include/grpc++/security/auth_context.h",
+    "include/grpc++/resource_quota.h",
     "include/grpc++/security/auth_metadata_processor.h",
     "include/grpc++/security/credentials.h",
     "include/grpc++/security/server_credentials.h",
@@ -226,6 +226,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/generic/generic_stub.h",
     "include/grpcpp/grpcpp.h",
     "include/grpcpp/health_check_service_interface.h",
+    "include/grpcpp/health_check_service_interface_impl.h",
     "include/grpcpp/impl/call.h",
     "include/grpcpp/impl/channel_argument_option.h",
     "include/grpcpp/impl/client_unary_call.h",
@@ -239,10 +240,12 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/server_builder_option_impl.h",
     "include/grpcpp/impl/server_builder_plugin.h",
     "include/grpcpp/impl/server_initializer.h",
+    "include/grpcpp/impl/server_initializer_impl.h",
     "include/grpcpp/impl/service_type.h",
     "include/grpcpp/impl/sync_cxx11.h",
     "include/grpcpp/impl/sync_no_cxx11.h",
     "include/grpcpp/resource_quota.h",
+    "include/grpcpp/resource_quota_impl.h",
     "include/grpcpp/security/auth_context.h",
     "include/grpcpp/security/auth_metadata_processor.h",
     "include/grpcpp/security/credentials.h",
@@ -581,8 +584,10 @@ grpc_cc_library(
         "src/core/lib/gprpp/abstract.h",
         "src/core/lib/gprpp/fork.h",
         "src/core/lib/gprpp/manual_constructor.h",
+        "src/core/lib/gprpp/map.h",
         "src/core/lib/gprpp/memory.h",
         "src/core/lib/gprpp/mutex_lock.h",
+        "src/core/lib/gprpp/pair.h",
         "src/core/lib/gprpp/thd.h",
         "src/core/lib/profiling/timers.h",
     ],

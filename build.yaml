@@ -13,8 +13,8 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 7.0.0
-  g_stands_for: godric
-  version: 1.20.0-dev
+  g_stands_for: gandalf
+  version: 1.21.0-dev
 filegroups:
 - name: alts_proto
   headers:
@@ -194,8 +194,10 @@ filegroups:
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/fork.h
   - src/core/lib/gprpp/manual_constructor.h
+  - src/core/lib/gprpp/map.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mutex_lock.h
+  - src/core/lib/gprpp/pair.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/profiling/timers.h
   uses:
@@ -1351,6 +1353,7 @@ filegroups:
   - include/grpcpp/generic/generic_stub.h
   - include/grpcpp/grpcpp.h
   - include/grpcpp/health_check_service_interface.h
+  - include/grpcpp/health_check_service_interface_impl.h
   - include/grpcpp/impl/call.h
   - include/grpcpp/impl/channel_argument_option.h
   - include/grpcpp/impl/client_unary_call.h
@@ -1364,8 +1367,10 @@ filegroups:
   - include/grpcpp/impl/server_builder_option_impl.h
   - include/grpcpp/impl/server_builder_plugin.h
   - include/grpcpp/impl/server_initializer.h
+  - include/grpcpp/impl/server_initializer_impl.h
   - include/grpcpp/impl/service_type.h
   - include/grpcpp/resource_quota.h
+  - include/grpcpp/resource_quota_impl.h
   - include/grpcpp/security/auth_context.h
   - include/grpcpp/security/auth_metadata_processor.h
   - include/grpcpp/security/credentials.h
@@ -1374,6 +1379,7 @@ filegroups:
   - include/grpcpp/server_builder.h
   - include/grpcpp/server_context.h
   - include/grpcpp/server_posix.h
+  - include/grpcpp/server_posix_impl.h
   - include/grpcpp/support/async_stream.h
   - include/grpcpp/support/async_unary_call.h
   - include/grpcpp/support/byte_buffer.h
@@ -4739,6 +4745,22 @@ targets:
   - grpc
   - gpr
   - grpc++_test_config
+- name: grpc_core_map_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/gprpp/map_tester.h
+  src:
+  - test/core/gprpp/map_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  uses:
+  - grpc++_test
+  uses_polling: false
 - name: grpc_cpp_plugin
   build: protoc
   language: c++
