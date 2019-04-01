@@ -106,6 +106,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/server_builder_option_impl.h',
                       'include/grpcpp/impl/server_builder_plugin.h',
                       'include/grpcpp/impl/server_initializer.h',
+                      'include/grpcpp/impl/server_initializer_impl.h',
                       'include/grpcpp/impl/service_type.h',
                       'include/grpcpp/resource_quota.h',
                       'include/grpcpp/resource_quota_impl.h',
