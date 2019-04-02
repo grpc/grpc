@@ -127,7 +127,7 @@ class ExternalConnectivityWatcher {
   ~ExternalConnectivityWatcher();
 
  private:
-  static void OnExternalWatchCompleteLocked(void* arg, grpc_error* error);
+  static void OnWatchCompleteLocked(void* arg, grpc_error* error);
   static void WatchConnectivityStateLocked(void* arg, grpc_error* ignored);
 
   channel_data* chand_;
@@ -314,8 +314,8 @@ ExternalConnectivityWatcher::~ExternalConnectivityWatcher() {
   GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack, "ExternalConnectivityWatcher");
 }
 
-void ExternalConnectivityWatcher::OnExternalWatchCompleteLocked(
-    void* arg, grpc_error* error) {
+void ExternalConnectivityWatcher::OnWatchCompleteLocked(void* arg,
+                                                        grpc_error* error) {
   ExternalConnectivityWatcher* self =
       static_cast<ExternalConnectivityWatcher*>(arg);
   grpc_closure* on_complete = self->on_complete_;
@@ -346,7 +346,7 @@ void ExternalConnectivityWatcher::WatchConnectivityStateLocked(
   // This assumes that the closure is scheduled on the ExecCtx scheduler
   // and that GRPC_CLOSURE_RUN would run the closure immediately.
   GRPC_CLOSURE_RUN(self->watcher_timer_init_, GRPC_ERROR_NONE);
-  GRPC_CLOSURE_INIT(&self->my_closure_, OnExternalWatchCompleteLocked, self,
+  GRPC_CLOSURE_INIT(&self->my_closure_, OnWatchCompleteLocked, self,
                     grpc_combiner_scheduler(self->chand_->combiner));
   grpc_connectivity_state_notify_on_state_change(
       &self->chand_->state_tracker, self->state_, &self->my_closure_);
