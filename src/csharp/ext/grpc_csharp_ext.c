@@ -960,25 +960,29 @@ grpcsharp_ssl_credentials_create(const char* pem_root_certs,
                                  void* verify_peer_callback_tag) {
   grpc_ssl_pem_key_cert_pair key_cert_pair;
   verify_peer_options verify_options;
-  verify_peer_options* p_verify_options = NULL;
-  if (verify_peer_callback_tag != NULL) {
-    verify_options.verify_peer_callback_userdata = verify_peer_callback_tag;
-    verify_options.verify_peer_destruct = grpcsharp_verify_peer_destroy_handler;
-    verify_options.verify_peer_callback = grpcsharp_verify_peer_handler;
-    p_verify_options = &verify_options;
-  }
+  grpc_ssl_pem_key_cert_pair* key_cert_pair_ptr = NULL;
+  verify_peer_options* verify_options_ptr = NULL;
 
   if (key_cert_pair_cert_chain || key_cert_pair_private_key) {
+    memset(&key_cert_pair, 0, sizeof(key_cert_pair));
     key_cert_pair.cert_chain = key_cert_pair_cert_chain;
     key_cert_pair.private_key = key_cert_pair_private_key;
-    return grpc_ssl_credentials_create(pem_root_certs, &key_cert_pair,
-                                       p_verify_options, NULL);
+    key_cert_pair_ptr = &key_cert_pair;
   } else {
     GPR_ASSERT(!key_cert_pair_cert_chain);
     GPR_ASSERT(!key_cert_pair_private_key);
-    return grpc_ssl_credentials_create(pem_root_certs, NULL, p_verify_options,
-                                       NULL);
   }
+
+  if (verify_peer_callback_tag != NULL) {
+    memset(&verify_options, 0, sizeof(verify_peer_options));
+    verify_options.verify_peer_callback_userdata = verify_peer_callback_tag;
+    verify_options.verify_peer_destruct = grpcsharp_verify_peer_destroy_handler;
+    verify_options.verify_peer_callback = grpcsharp_verify_peer_handler;
+    verify_options_ptr = &verify_options;
+  }
+
+  return grpc_ssl_credentials_create(pem_root_certs, key_cert_pair_ptr,
+                                     verify_options_ptr, NULL);
 }
 
 GPR_EXPORT void GPR_CALLTYPE
