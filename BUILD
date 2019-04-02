@@ -313,7 +313,6 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
     standalone = True,
     deps = [
-        "grpc_cfstream",
         "grpc_common",
         "grpc_lb_policy_grpclb_secure",
         "grpc_lb_policy_xds_secure",
@@ -370,7 +369,6 @@ grpc_cc_library(
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
         "grpc++_codegen_proto",
-        "grpc_cfstream",
     ],
 )
 
@@ -733,12 +731,15 @@ grpc_cc_library(
         "src/core/lib/http/parser.cc",
         "src/core/lib/iomgr/buffer_list.cc",
         "src/core/lib/iomgr/call_combiner.cc",
+        "src/core/lib/iomgr/cfstream_handle.cc",
         "src/core/lib/iomgr/combiner.cc",
         "src/core/lib/iomgr/endpoint.cc",
+        "src/core/lib/iomgr/endpoint_cfstream.cc",
         "src/core/lib/iomgr/endpoint_pair_posix.cc",
         "src/core/lib/iomgr/endpoint_pair_uv.cc",
         "src/core/lib/iomgr/endpoint_pair_windows.cc",
         "src/core/lib/iomgr/error.cc",
+        "src/core/lib/iomgr/error_cfstream.cc",
         "src/core/lib/iomgr/ev_epoll1_linux.cc",
         "src/core/lib/iomgr/ev_epollex_linux.cc",
         "src/core/lib/iomgr/ev_poll_posix.cc",
@@ -759,6 +760,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/iomgr_custom.cc",
         "src/core/lib/iomgr/iomgr_internal.cc",
         "src/core/lib/iomgr/iomgr_posix.cc",
+        "src/core/lib/iomgr/iomgr_posix_cfstream.cc",
         "src/core/lib/iomgr/iomgr_windows.cc",
         "src/core/lib/iomgr/is_epollexclusive_available.cc",
         "src/core/lib/iomgr/load_file.cc",
@@ -785,6 +787,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/socket_utils_windows.cc",
         "src/core/lib/iomgr/socket_windows.cc",
         "src/core/lib/iomgr/tcp_client.cc",
+        "src/core/lib/iomgr/tcp_client_cfstream.cc",
         "src/core/lib/iomgr/tcp_client_custom.cc",
         "src/core/lib/iomgr/tcp_client_posix.cc",
         "src/core/lib/iomgr/tcp_client_windows.cc",
@@ -884,12 +887,15 @@ grpc_cc_library(
         "src/core/lib/iomgr/block_annotate.h",
         "src/core/lib/iomgr/buffer_list.h",
         "src/core/lib/iomgr/call_combiner.h",
+        "src/core/lib/iomgr/cfstream_handle.h",
         "src/core/lib/iomgr/closure.h",
         "src/core/lib/iomgr/combiner.h",
         "src/core/lib/iomgr/dynamic_annotations.h",
         "src/core/lib/iomgr/endpoint.h",
+        "src/core/lib/iomgr/endpoint_cfstream.h",
         "src/core/lib/iomgr/endpoint_pair.h",
         "src/core/lib/iomgr/error.h",
+        "src/core/lib/iomgr/error_cfstream.h",
         "src/core/lib/iomgr/error_internal.h",
         "src/core/lib/iomgr/ev_epoll1_linux.h",
         "src/core/lib/iomgr/ev_epollex_linux.h",
@@ -1041,27 +1047,6 @@ grpc_cc_library(
         "grpc_transport_inproc",
         "grpc_workaround_cronet_compression_filter",
         "grpc_server_backward_compatibility",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_cfstream",
-    srcs = [
-        "src/core/lib/iomgr/cfstream_handle.cc",
-        "src/core/lib/iomgr/endpoint_cfstream.cc",
-        "src/core/lib/iomgr/error_cfstream.cc",
-        "src/core/lib/iomgr/iomgr_posix_cfstream.cc",
-        "src/core/lib/iomgr/tcp_client_cfstream.cc",
-    ],
-    hdrs = [
-        "src/core/lib/iomgr/cfstream_handle.h",
-        "src/core/lib/iomgr/endpoint_cfstream.h",
-        "src/core/lib/iomgr/error_cfstream.h",
-    ],
-    use_cfstream = True,
-    deps = [
-        ":gpr_base",
-        ":grpc_base",
     ],
 )
 
