@@ -58,12 +58,12 @@
 #define INTERNAL_REF_BITS 16
 #define STRONG_REF_MASK (~(gpr_atm)((1 << INTERNAL_REF_BITS) - 1))
 
-// Backoff parameters.
-#define GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS 1
-#define GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER 1.6
-#define GRPC_SUBCHANNEL_RECONNECT_MIN_TIMEOUT_SECONDS 20
-#define GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS 120
-#define GRPC_SUBCHANNEL_RECONNECT_JITTER 0.2
+// Backoff parameters for subchannel reconnection.
+#define DEFAULT_INITIAL_RECONNECT_BACKOFF_MS 1000
+#define RECONNECT_BACKOFF_MULTIPLIER 1.6
+#define RECONNECT_BACKOFF_JITTER 0.2
+#define DEFAULT_MAX_RECONNECT_BACKOFF_MS 120000
+#define DEFAULT_MIN_CONNECT_TIMEOUT_MS 20000
 
 // Conversion between subchannel call and call stack.
 #define SUBCHANNEL_CALL_TO_CALL_STACK(call) \
@@ -485,12 +485,9 @@ namespace {
 
 BackOff::Options ParseArgsForBackoffValues(
     const grpc_channel_args* args, grpc_millis* min_connect_timeout_ms) {
-  grpc_millis initial_backoff_ms =
-      GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS * 1000;
-  *min_connect_timeout_ms =
-      GRPC_SUBCHANNEL_RECONNECT_MIN_TIMEOUT_SECONDS * 1000;
-  grpc_millis max_backoff_ms =
-      GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS * 1000;
+  grpc_millis initial_backoff_ms = DEFAULT_INITIAL_RECONNECT_BACKOFF_MS;
+  *min_connect_timeout_ms = DEFAULT_MIN_CONNECT_TIMEOUT_MS;
+  grpc_millis max_backoff_ms = DEFAULT_MAX_RECONNECT_BACKOFF_MS;
   bool fixed_reconnect_backoff = false;
   if (args != nullptr) {
     for (size_t i = 0; i < args->num_args; i++) {
@@ -503,6 +500,8 @@ BackOff::Options ParseArgsForBackoffValues(
                 {static_cast<int>(initial_backoff_ms), 100, INT_MAX});
       } else if (0 ==
                  strcmp(args->args[i].key, GRPC_ARG_MIN_RECONNECT_BACKOFF_MS)) {
+        // TODO(juanlishen): Consider rename GRPC_ARG_MIN_RECONNECT_BACKOFF_MS
+        // to GRPC_ARG_MIN_CONNECT_TIMEOUT_MS.
         fixed_reconnect_backoff = false;
         *min_connect_timeout_ms = grpc_channel_arg_get_integer(
             &args->args[i],
@@ -523,11 +522,9 @@ BackOff::Options ParseArgsForBackoffValues(
   }
   return BackOff::Options()
       .set_initial_backoff(initial_backoff_ms)
-      .set_multiplier(fixed_reconnect_backoff
-                          ? 1.0
-                          : GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER)
-      .set_jitter(fixed_reconnect_backoff ? 0.0
-                                          : GRPC_SUBCHANNEL_RECONNECT_JITTER)
+      .set_multiplier(fixed_reconnect_backoff ? 1.0
+                                              : RECONNECT_BACKOFF_MULTIPLIER)
+      .set_jitter(fixed_reconnect_backoff ? 0.0 : RECONNECT_BACKOFF_JITTER)
       .set_max_backoff(max_backoff_ms);
 }
 

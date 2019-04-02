@@ -6,12 +6,13 @@ not retry immediately (to avoid flooding the network or the server with
 requests) and instead do some form of exponential backoff.
 
 We have several parameters:
- 1. INITIAL_BACKOFF (how long to wait after the first failure before retrying)
+ 1. INITIAL_BACKOFF (how long to wait after the first failure before retrying): configurable via
+ `GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS`.
  1. MULTIPLIER (factor with which to multiply backoff after a failed retry)
  1. JITTER (by how much to randomize backoffs).
- 1. MAX_BACKOFF (upper bound on backoff)
+ 1. MAX_BACKOFF (upper bound on backoff): configurable via `GRPC_ARG_MAX_RECONNECT_BACKOFF_MS`.
  1. MIN_CONNECT_TIMEOUT (minimum time we're willing to give a connection to
-    complete)
+    complete): configurable via `GRPC_ARG_MIN_RECONNECT_BACKOFF_MS`.
 
 ## Proposed Backoff Algorithm
 
