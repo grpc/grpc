@@ -50,8 +50,7 @@ class PickFirst : public LoadBalancingPolicy {
 
   const char* name() const override { return kPickFirst; }
 
-  void UpdateLocked(const grpc_channel_args& args,
-                    RefCountedPtr<Config> lb_config) override;
+  void UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
   void FillChildRefsForChannelz(channelz::ChildRefsList* child_subchannels,
@@ -189,8 +188,14 @@ void PickFirst::ShutdownLocked() {
 void PickFirst::ExitIdleLocked() {
   if (idle_) {
     idle_ = false;
-    if (subchannel_list_ != nullptr &&
-        subchannel_list_->num_subchannels() > 0) {
+    if (subchannel_list_ == nullptr ||
+        subchannel_list_->num_subchannels() == 0) {
+      grpc_error* error =
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("No addresses to connect to");
+      channel_control_helper()->UpdateState(
+          GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(error),
+          UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(error)));
+    } else {
       subchannel_list_->subchannel(0)
           ->CheckConnectivityStateAndStartWatchingLocked();
     }
@@ -238,48 +243,35 @@ void PickFirst::UpdateChildRefsLocked() {
   child_subchannels_ = std::move(cs);
 }
 
-void PickFirst::UpdateLocked(const grpc_channel_args& args,
-                             RefCountedPtr<Config> lb_config) {
+void PickFirst::UpdateLocked(UpdateArgs args) {
   AutoChildRefsUpdater guard(this);
-  const ServerAddressList* addresses = FindServerAddressListChannelArg(&args);
-  if (addresses == nullptr) {
-    if (subchannel_list_ == nullptr) {
-      // If we don't have a current subchannel list, go into TRANSIENT FAILURE.
-      grpc_error* error =
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing update in args");
-      channel_control_helper()->UpdateState(
-          GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(error),
-          UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(error)));
-    } else {
-      // otherwise, keep using the current subchannel list (ignore this update).
-      gpr_log(GPR_ERROR,
-              "No valid LB addresses channel arg for Pick First %p update, "
-              "ignoring.",
-              this);
-    }
-    return;
-  }
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO,
             "Pick First %p received update with %" PRIuPTR " addresses", this,
-            addresses->size());
+            args.addresses.size());
   }
   grpc_arg new_arg = grpc_channel_arg_integer_create(
       const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1);
   grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_add(&args, &new_arg, 1);
+      grpc_channel_args_copy_and_add(args.args, &new_arg, 1);
   auto subchannel_list = MakeOrphanable<PickFirstSubchannelList>(
-      this, &grpc_lb_pick_first_trace, *addresses, combiner(), *new_args);
+      this, &grpc_lb_pick_first_trace, args.addresses, combiner(), *new_args);
   grpc_channel_args_destroy(new_args);
   if (subchannel_list->num_subchannels() == 0) {
     // Empty update or no valid subchannels. Unsubscribe from all current
-    // subchannels and put the channel in TRANSIENT_FAILURE.
+    // subchannels.
     subchannel_list_ = std::move(subchannel_list);  // Empty list.
     selected_ = nullptr;
-    grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update");
-    channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(error),
-        UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(error)));
+    // If not idle, put the channel in TRANSIENT_FAILURE.
+    // (If we are idle, then this will happen in ExitIdleLocked() if we
+    // haven't gotten a non-empty update by the time the application tries
+    // to start a new call.)
+    if (!idle_) {
+      grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update");
+      channel_control_helper()->UpdateState(
+          GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(error),
+          UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(error)));
+    }
     return;
   }
   // If one of the subchannels in the new list is already in state

@@ -239,17 +239,13 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
   gpr_event_set(&args->ev, (void*)1);
 }
 
-void CheckServiceConfigResultLocked(const grpc_channel_args* channel_args,
+void CheckServiceConfigResultLocked(const char* service_config_json,
                                     ArgsStruct* args) {
-  const grpc_arg* service_config_arg =
-      grpc_channel_args_find(channel_args, GRPC_ARG_SERVICE_CONFIG);
   if (args->expected_service_config_string != "") {
-    GPR_ASSERT(service_config_arg != nullptr);
-    GPR_ASSERT(service_config_arg->type == GRPC_ARG_STRING);
-    EXPECT_EQ(service_config_arg->value.string,
-              args->expected_service_config_string);
+    GPR_ASSERT(service_config_json != nullptr);
+    EXPECT_EQ(service_config_json, args->expected_service_config_string);
   } else {
-    GPR_ASSERT(service_config_arg == nullptr);
+    GPR_ASSERT(service_config_json == nullptr);
   }
 }
 
@@ -404,14 +400,13 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
 
   explicit ResultHandler(ArgsStruct* args) : args_(args) {}
 
-  void ReturnResult(const grpc_channel_args* result) override {
+  void ReturnResult(grpc_core::Resolver::Result result) override {
     CheckResult(result);
     gpr_atm_rel_store(&args_->done_atm, 1);
     gpr_mu_lock(args_->mu);
     GRPC_LOG_IF_ERROR("pollset_kick",
                       grpc_pollset_kick(args_->pollset, nullptr));
     gpr_mu_unlock(args_->mu);
-    grpc_channel_args_destroy(result);
   }
 
   void ReturnError(grpc_error* error) override {
@@ -419,7 +414,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     GPR_ASSERT(false);
   }
 
-  virtual void CheckResult(const grpc_channel_args* channel_args) {}
+  virtual void CheckResult(const grpc_core::Resolver::Result& result) {}
 
  protected:
   ArgsStruct* args_struct() const { return args_; }
@@ -438,16 +433,14 @@ class CheckingResultHandler : public ResultHandler {
 
   explicit CheckingResultHandler(ArgsStruct* args) : ResultHandler(args) {}
 
-  void CheckResult(const grpc_channel_args* channel_args) override {
+  void CheckResult(const grpc_core::Resolver::Result& result) override {
     ArgsStruct* args = args_struct();
-    grpc_core::ServerAddressList* addresses =
-        grpc_core::FindServerAddressListChannelArg(channel_args);
     gpr_log(GPR_INFO, "num addrs found: %" PRIdPTR ". expected %" PRIdPTR,
-            addresses->size(), args->expected_addrs.size());
-    GPR_ASSERT(addresses->size() == args->expected_addrs.size());
+            result.addresses.size(), args->expected_addrs.size());
+    GPR_ASSERT(result.addresses.size() == args->expected_addrs.size());
     std::vector<GrpcLBAddress> found_lb_addrs;
-    for (size_t i = 0; i < addresses->size(); i++) {
-      grpc_core::ServerAddress& addr = (*addresses)[i];
+    for (size_t i = 0; i < result.addresses.size(); i++) {
+      const grpc_core::ServerAddress& addr = result.addresses[i];
       char* str;
       grpc_sockaddr_to_string(&str, &addr.address(), 1 /* normalize */);
       gpr_log(GPR_INFO, "%s", str);
@@ -464,9 +457,13 @@ class CheckingResultHandler : public ResultHandler {
     }
     EXPECT_THAT(args->expected_addrs,
                 UnorderedElementsAreArray(found_lb_addrs));
-    CheckServiceConfigResultLocked(channel_args, args);
+    const char* service_config_json =
+        result.service_config == nullptr
+            ? nullptr
+            : result.service_config->service_config_json();
+    CheckServiceConfigResultLocked(service_config_json, args);
     if (args->expected_service_config_string == "") {
-      CheckLBPolicyResultLocked(channel_args, args);
+      CheckLBPolicyResultLocked(result.args, args);
     }
   }
 };

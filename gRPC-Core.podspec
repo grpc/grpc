@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.20.0-dev'
+  version = '1.21.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -208,8 +208,10 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/atomic.h',
                       'src/core/lib/gprpp/fork.h',
                       'src/core/lib/gprpp/manual_constructor.h',
+                      'src/core/lib/gprpp/map.h',
                       'src/core/lib/gprpp/memory.h',
                       'src/core/lib/gprpp/mutex_lock.h',
+                      'src/core/lib/gprpp/pair.h',
                       'src/core/lib/gprpp/thd.h',
                       'src/core/lib/profiling/timers.h',
                       'src/core/lib/gpr/alloc.cc',
@@ -361,6 +363,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolving_lb_policy.h',
                       'src/core/ext/filters/client_channel/retry_throttle.h',
                       'src/core/ext/filters/client_channel/server_address.h',
+                      'src/core/ext/filters/client_channel/service_config.h',
                       'src/core/ext/filters/client_channel/subchannel.h',
                       'src/core/ext/filters/client_channel/subchannel_pool_interface.h',
                       'src/core/ext/filters/deadline/deadline_filter.h',
@@ -503,7 +506,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/metadata.h',
                       'src/core/lib/transport/metadata_batch.h',
                       'src/core/lib/transport/pid_controller.h',
-                      'src/core/lib/transport/service_config.h',
                       'src/core/lib/transport/static_metadata.h',
                       'src/core/lib/transport/status_conversion.h',
                       'src/core/lib/transport/status_metadata.h',
@@ -674,7 +676,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/metadata.cc',
                       'src/core/lib/transport/metadata_batch.cc',
                       'src/core/lib/transport/pid_controller.cc',
-                      'src/core/lib/transport/service_config.cc',
                       'src/core/lib/transport/static_metadata.cc',
                       'src/core/lib/transport/status_conversion.cc',
                       'src/core/lib/transport/status_metadata.cc',
@@ -807,6 +808,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolving_lb_policy.cc',
                       'src/core/ext/filters/client_channel/retry_throttle.cc',
                       'src/core/ext/filters/client_channel/server_address.cc',
+                      'src/core/ext/filters/client_channel/service_config.cc',
                       'src/core/ext/filters/client_channel/subchannel.cc',
                       'src/core/ext/filters/client_channel/subchannel_pool_interface.cc',
                       'src/core/ext/filters/deadline/deadline_filter.cc',
@@ -855,7 +857,15 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/http/client_authority_filter.cc',
                       'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc',
                       'src/core/ext/filters/workarounds/workaround_utils.cc',
-                      'src/core/plugin_registry/grpc_plugin_registry.cc'
+                      'src/core/plugin_registry/grpc_plugin_registry.cc',
+                      'src/core/lib/iomgr/cfstream_handle.cc',
+                      'src/core/lib/iomgr/endpoint_cfstream.cc',
+                      'src/core/lib/iomgr/error_cfstream.cc',
+                      'src/core/lib/iomgr/iomgr_posix_cfstream.cc',
+                      'src/core/lib/iomgr/tcp_client_cfstream.cc',
+                      'src/core/lib/iomgr/cfstream_handle.h',
+                      'src/core/lib/iomgr/endpoint_cfstream.h',
+                      'src/core/lib/iomgr/error_cfstream.h'
 
     ss.private_header_files = 'src/core/lib/gpr/alloc.h',
                               'src/core/lib/gpr/arena.h',
@@ -877,8 +887,10 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/atomic.h',
                               'src/core/lib/gprpp/fork.h',
                               'src/core/lib/gprpp/manual_constructor.h',
+                              'src/core/lib/gprpp/map.h',
                               'src/core/lib/gprpp/memory.h',
                               'src/core/lib/gprpp/mutex_lock.h',
+                              'src/core/lib/gprpp/pair.h',
                               'src/core/lib/gprpp/thd.h',
                               'src/core/lib/profiling/timers.h',
                               'src/core/ext/transport/chttp2/transport/bin_decoder.h',
@@ -991,6 +1003,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/resolving_lb_policy.h',
                               'src/core/ext/filters/client_channel/retry_throttle.h',
                               'src/core/ext/filters/client_channel/server_address.h',
+                              'src/core/ext/filters/client_channel/service_config.h',
                               'src/core/ext/filters/client_channel/subchannel.h',
                               'src/core/ext/filters/client_channel/subchannel_pool_interface.h',
                               'src/core/ext/filters/deadline/deadline_filter.h',
@@ -1133,7 +1146,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/metadata.h',
                               'src/core/lib/transport/metadata_batch.h',
                               'src/core/lib/transport/pid_controller.h',
-                              'src/core/lib/transport/service_config.h',
                               'src/core/lib/transport/static_metadata.h',
                               'src/core/lib/transport/status_conversion.h',
                               'src/core/lib/transport/status_metadata.h',
@@ -1160,26 +1172,15 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/message_size/message_size_filter.h',
                               'src/core/ext/filters/http/client_authority_filter.h',
                               'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h',
-                              'src/core/ext/filters/workarounds/workaround_utils.h'
-  end
-
-  s.subspec 'CFStream-Implementation' do |ss|
-    ss.header_mappings_dir = '.'
-    ss.dependency "#{s.name}/Implementation", version
-    ss.pod_target_xcconfig = {
-      'GCC_PREPROCESSOR_DEFINITIONS' => 'GRPC_CFSTREAM=1'
-    }
-    ss.source_files = 'src/core/lib/iomgr/cfstream_handle.cc',
-                      'src/core/lib/iomgr/endpoint_cfstream.cc',
-                      'src/core/lib/iomgr/error_cfstream.cc',
-                      'src/core/lib/iomgr/iomgr_posix_cfstream.cc',
-                      'src/core/lib/iomgr/tcp_client_cfstream.cc',
-                      'src/core/lib/iomgr/cfstream_handle.h',
-                      'src/core/lib/iomgr/endpoint_cfstream.h',
-                      'src/core/lib/iomgr/error_cfstream.h'
-    ss.private_header_files = 'src/core/lib/iomgr/cfstream_handle.h',
+                              'src/core/ext/filters/workarounds/workaround_utils.h',
+                              'src/core/lib/iomgr/cfstream_handle.h',
                               'src/core/lib/iomgr/endpoint_cfstream.h',
                               'src/core/lib/iomgr/error_cfstream.h'
+  end
+
+  # CFStream is now default. Leaving this subspec only for compatibility purpose.
+  s.subspec 'CFStream-Implementation' do |ss|
+    ss.dependency "#{s.name}/Implementation", version
   end
 
   s.subspec 'Cronet-Interface' do |ss|
@@ -1235,7 +1236,6 @@ Pod::Spec.new do |s|
                       'test/core/util/port_isolated_runtime_environment.cc',
                       'test/core/util/port_server_client.cc',
                       'test/core/util/slice_splitter.cc',
-                      'test/core/util/subprocess_posix.cc',
                       'test/core/util/subprocess_windows.cc',
                       'test/core/util/test_config.cc',
                       'test/core/util/test_lb_policies.cc',

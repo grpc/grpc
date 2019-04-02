@@ -63,7 +63,7 @@ namespace Grpc.Core.Internal
             catch (Exception e)
             {
                 // eat the exception, we must not throw when inside callback from native code.
-                Logger.Error(e, "Caught exception inside callback from native callback.");
+                Logger.Error(e, "Caught exception inside callback from native code.");
                 return 0;
             }
         }

@@ -22,4 +22,4 @@ cd "$(dirname "$0")"
 
 DEV_DATETIME_SUFFIX=$(date -u "+%Y%m%d%H%M")
 # expand the -dev suffix to contain current timestamp
-sed -ibak "s/-dev<\/GrpcCsharpVersion>/-dev${DEV_DATETIME_SUFFIX}<\/GrpcCsharpVersion>/" Grpc.Core/Version.csproj.include
+sed -ibak "s/-dev<\/GrpcCsharpVersion>/-dev${DEV_DATETIME_SUFFIX}<\/GrpcCsharpVersion>/" build/dependencies.props
