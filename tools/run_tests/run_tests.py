@@ -58,6 +58,7 @@ os.chdir(_ROOT)
 
 _FORCE_ENVIRON_FOR_WRAPPERS = {
     'GRPC_VERBOSITY': 'DEBUG',
+    'GRPC_TRACE': 'api,cares_resolver,cares_address_sorting',
 }
 
 _POLLING_STRATEGIES = {
@@ -105,7 +106,7 @@ def platform_string():
     return jobset.platform_string()
 
 
-_DEFAULT_TIMEOUT_SECONDS = 5 * 60
+_DEFAULT_TIMEOUT_SECONDS = 10 * 60
 _PRE_BUILD_STEP_TIMEOUT_SECONDS = 10 * 60
 
 

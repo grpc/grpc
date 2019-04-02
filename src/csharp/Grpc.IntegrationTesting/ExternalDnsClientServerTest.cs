@@ -42,8 +42,8 @@ namespace Grpc.IntegrationTesting
         Channel channel;
         TestService.TestServiceClient client;
 
-        [OneTimeSetUp]
-        public void Init()
+        //[OneTimeSetUp]
+        public void MyInit()
         {
             // Disable SO_REUSEPORT to prevent https://github.com/grpc/grpc/issues/10755
             server = new Server(new[] { new ChannelOption(ChannelOptions.SoReuseport, 0) })
@@ -58,17 +58,41 @@ namespace Grpc.IntegrationTesting
             client = new TestService.TestServiceClient(channel);
         }
 
-        [OneTimeTearDown]
-        public void Cleanup()
+        //[OneTimeTearDown]
+        public void MyCleanup()
         {
             channel.ShutdownAsync().Wait();
             server.ShutdownAsync().Wait();
         }
 
+	public void RunTest() {
+            MyInit();
+            RunTest();
+	    MyCleanup();
+	}
+
         [Test]
-        public void EmptyUnary()
+        public void EmptyUnary1()
         {
-            InteropClient.RunEmptyUnary(client);
+            RunTest();
+        }
+
+        [Test]
+        public void EmptyUnary2()
+        {
+            RunTest();
+        }
+
+        [Test]
+        public void EmptyUnary3()
+        {
+            RunTest();
+        }
+
+        [Test]
+        public void EmptyUnary4()
+        {
+            RunTest();
         }
     }
 }
