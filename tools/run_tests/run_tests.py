@@ -972,7 +972,7 @@ class CSharpLanguage(object):
                     cmdline = runtime_cmd + [assembly_file,
                                              '--test=%s' % test] + nunit_args
                     if test == 'Grpc.IntegrationTesting.ExternalDnsClientServerTest':
-                      for i in xrange(0, 100):
+                      for i in xrange(0, 400):
                         specs.append(
                             self.config.job_spec(
                                 cmdline,
