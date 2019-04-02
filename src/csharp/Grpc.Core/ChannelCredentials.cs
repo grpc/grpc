@@ -109,8 +109,12 @@ namespace Grpc.Core
     /// <summary>
     /// Callback invoked with the expected targetHost and the peer's certificate.
     /// If false is returned by this callback then it is treated as a
-    /// verification failure. Invocation of the callback is blocking, so any
+    /// verification failure and the attempted connection will fail.
+    /// Invocation of the callback is blocking, so any
     /// implementation should be light-weight.
+    /// Note that the callback can potentially be invoked multiple times,
+    /// concurrently from different threads (e.g. when multiple connections
+    /// are being created for the same credentials).
     /// </summary>
     /// <param name="context">The <see cref="T:Grpc.Core.VerifyPeerContext"/> associated with the callback</param>
     /// <returns>true if verification succeeded, false otherwise.</returns>
