@@ -624,9 +624,8 @@ static int verify_jwt_signature(EVP_PKEY* key, const char* alg,
     gpr_log(GPR_ERROR, "EVP_DigestVerifyUpdate failed.");
     goto end;
   }
-  if (EVP_DigestVerifyFinal(
-          md_ctx, const_cast<uint8_t*>(GRPC_SLICE_START_PTR(signature)),
-          GRPC_SLICE_LENGTH(signature)) != 1) {
+  if (EVP_DigestVerifyFinal(md_ctx, GRPC_SLICE_START_PTR(signature),
+                            GRPC_SLICE_LENGTH(signature)) != 1) {
     gpr_log(GPR_ERROR, "JWT signature verification failed.");
     goto end;
   }
