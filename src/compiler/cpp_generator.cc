@@ -117,6 +117,13 @@ grpc::string GetHeaderPrologue(grpc_generator::File* file,
   return output;
 }
 
+// Convert from "a/b/c.proto" to "#include \"a/b/c$message_header_ext$\"\n"
+grpc::string ImportInludeFromProtoName(const grpc::string& proto_name) {
+  return grpc::string("#include \"") +
+         proto_name.substr(0, proto_name.size() - 6) +
+         grpc::string("$message_header_ext$\"\n");
+}
+
 grpc::string GetHeaderIncludes(grpc_generator::File* file,
                                const Parameters& params) {
   grpc::string output;
@@ -153,6 +160,20 @@ grpc::string GetHeaderIncludes(grpc_generator::File* file,
     printer->Print(vars, "class ServerCompletionQueue;\n");
     printer->Print(vars, "class ServerContext;\n");
     printer->Print(vars, "}  // namespace grpc\n\n");
+
+    vars["message_header_ext"] = params.message_header_extension.empty()
+                                     ? kCppGeneratorMessageHeaderExt
+                                     : params.message_header_extension;
+
+    if (params.include_import_headers) {
+      const std::vector<grpc::string> import_names = file->GetImportNames();
+      for (const auto& import_name : import_names) {
+        const grpc::string include_name =
+            ImportInludeFromProtoName(import_name);
+        printer->Print(vars, include_name.c_str());
+      }
+      printer->PrintRaw("\n");
+    }
 
     if (!file->package().empty()) {
       std::vector<grpc::string> parts = file->package_parts();
@@ -1584,13 +1605,6 @@ grpc::string GetSourcePrologue(grpc_generator::File* file,
   return output;
 }
 
-// Convert from "a/b/c.proto" to "#include \"a/b/c$message_header_ext$\"\n"
-grpc::string ImportInludeFromProtoName(const grpc::string& proto_name) {
-  return grpc::string("#include \"") +
-         proto_name.substr(0, proto_name.size() - 6) +
-         grpc::string("$message_header_ext$\"\n");
-}
-
 grpc::string GetSourceIncludes(grpc_generator::File* file,
                                const Parameters& params) {
   grpc::string output;
@@ -1598,20 +1612,6 @@ grpc::string GetSourceIncludes(grpc_generator::File* file,
     // Scope the output stream so it closes and finalizes output to the string.
     auto printer = file->CreatePrinter(&output);
     std::map<grpc::string, grpc::string> vars;
-    vars["message_header_ext"] = params.message_header_extension.empty()
-                                     ? kCppGeneratorMessageHeaderExt
-                                     : params.message_header_extension;
-
-    if (params.include_import_headers) {
-      const std::vector<grpc::string> import_names = file->GetImportNames();
-      for (const auto& import_name : import_names) {
-        const grpc::string include_name =
-            ImportInludeFromProtoName(import_name);
-        printer->Print(vars, include_name.c_str());
-      }
-      printer->PrintRaw("\n");
-    }
-
     static const char* headers_strs[] = {
         "functional",
         "grpcpp/impl/codegen/async_stream.h",
