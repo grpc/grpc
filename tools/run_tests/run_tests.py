@@ -971,11 +971,19 @@ class CSharpLanguage(object):
                 for test in tests_by_assembly[assembly]:
                     cmdline = runtime_cmd + [assembly_file,
                                              '--test=%s' % test] + nunit_args
-                    specs.append(
-                        self.config.job_spec(
-                            cmdline,
-                            shortname='csharp.%s' % test,
-                            environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+                    if test == 'Grpc.IntegrationTesting.ExternalDnsClientServerTest':
+                      for i in xrange(0, 100):
+                        specs.append(
+                            self.config.job_spec(
+                                cmdline,
+                                shortname='csharp.%s.%s' % (test, i),
+                                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+                    else:
+                      specs.append(
+                          self.config.job_spec(
+                              cmdline,
+                              shortname='csharp.%s' % test,
+                              environ=_FORCE_ENVIRON_FOR_WRAPPERS))
             else:
                 # For C# test coverage, run all tests from the same assembly at once
                 # using OpenCover.Console (only works on Windows).
