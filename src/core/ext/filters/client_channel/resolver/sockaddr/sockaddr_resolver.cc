@@ -44,8 +44,7 @@ namespace {
 
 class SockaddrResolver : public Resolver {
  public:
-  /// Takes ownership of \a addresses.
-  explicit SockaddrResolver(ResolverArgs args);
+  SockaddrResolver(ServerAddressList addresses, ResolverArgs args);
   ~SockaddrResolver() override;
 
   void StartLocked() override;
@@ -53,21 +52,27 @@ class SockaddrResolver : public Resolver {
   void ShutdownLocked() override {}
 
  private:
-  /// channel args
+  ServerAddressList addresses_;
   const grpc_channel_args* channel_args_ = nullptr;
 };
 
-SockaddrResolver::SockaddrResolver(ResolverArgs args)
+SockaddrResolver::SockaddrResolver(ServerAddressList addresses,
+                                   ResolverArgs args)
     : Resolver(args.combiner, std::move(args.result_handler)),
-      channel_args_(args.args) {}
+      addresses_(std::move(addresses)),
+      channel_args_(grpc_channel_args_copy(args.args)) {}
 
 SockaddrResolver::~SockaddrResolver() {
   grpc_channel_args_destroy(channel_args_);
 }
 
 void SockaddrResolver::StartLocked() {
-  result_handler()->ReturnResult(channel_args_);
+  Result result;
+  result.addresses = std::move(addresses_);
+  // TODO(roth): Use std::move() once channel args is converted to C++.
+  result.args = channel_args_;
   channel_args_ = nullptr;
+  result_handler()->ReturnResult(std::move(result));
 }
 
 //
@@ -82,7 +87,7 @@ OrphanablePtr<Resolver> CreateSockaddrResolver(
   if (0 != strcmp(args.uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority-based URIs not supported by the %s scheme",
             args.uri->scheme);
-    return OrphanablePtr<Resolver>(nullptr);
+    return nullptr;
   }
   // Construct addresses.
   grpc_slice path_slice =
@@ -108,12 +113,9 @@ OrphanablePtr<Resolver> CreateSockaddrResolver(
   if (errors_found) {
     return OrphanablePtr<Resolver>(nullptr);
   }
-  // Add addresses to channel args.
-  // Note: SockaddrResolver takes ownership of channel args.
-  grpc_arg arg = CreateServerAddressListChannelArg(&addresses);
-  args.args = grpc_channel_args_copy_and_add(args.args, &arg, 1);
   // Instantiate resolver.
-  return OrphanablePtr<Resolver>(New<SockaddrResolver>(std::move(args)));
+  return OrphanablePtr<Resolver>(
+      New<SockaddrResolver>(std::move(addresses), std::move(args)));
 }
 
 class IPv4ResolverFactory : public ResolverFactory {

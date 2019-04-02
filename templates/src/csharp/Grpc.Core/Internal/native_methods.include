@@ -44,7 +44,7 @@ native_method_signatures = [
     'void grpcsharp_channel_args_set_integer(ChannelArgsSafeHandle args, UIntPtr index, string key, int value)',
     'void grpcsharp_channel_args_destroy(IntPtr args)',
     'void grpcsharp_override_default_ssl_roots(string pemRootCerts)',
-    'ChannelCredentialsSafeHandle grpcsharp_ssl_credentials_create(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey)',
+    'ChannelCredentialsSafeHandle grpcsharp_ssl_credentials_create(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey, IntPtr verifyPeerCallbackTag)',
     'ChannelCredentialsSafeHandle grpcsharp_composite_channel_credentials_create(ChannelCredentialsSafeHandle channelCreds, CallCredentialsSafeHandle callCreds)',
     'void grpcsharp_channel_credentials_release(IntPtr credentials)',
     'ChannelSafeHandle grpcsharp_insecure_channel_create(string target, ChannelArgsSafeHandle channelArgs)',
