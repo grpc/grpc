@@ -41,6 +41,7 @@
 #include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/ext/filters/client_channel/resolving_lb_policy.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
+#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/deadline/deadline_filter.h"
 #include "src/core/lib/backoff/backoff.h"
@@ -62,7 +63,6 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/service_config.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_metadata.h"
 
@@ -187,12 +187,14 @@ class ChannelData {
 
       int size() const;
       ExternalConnectivityWatcher* Lookup(grpc_closure* on_complete) const;
-      void Append(ExternalConnectivityWatcher* watcher);
-      void Remove(ExternalConnectivityWatcher* watcher);
+      void Add(ExternalConnectivityWatcher* watcher);
+      void Remove(const ExternalConnectivityWatcher* watcher);
 
      private:
-      // head_ is guarded by its own mutex, since the size of the list needs
-      // to be grabbed immediately without polling on a CQ.
+      // head_ is guarded by a mutex, since the size() method needs to
+      // iterate over the list, and it's called from the C-core API
+      // function grpc_channel_num_external_connectivity_watchers(), which
+      // is synchronous and therefore cannot run in the combiner.
       mutable gpr_mu mu_;
       ExternalConnectivityWatcher* head_ = nullptr;
     };
@@ -205,7 +207,7 @@ class ChannelData {
     ~ExternalConnectivityWatcher();
 
    private:
-    static void OnExternalWatchCompleteLocked(void* arg, grpc_error* error);
+    static void OnWatchCompleteLocked(void* arg, grpc_error* error);
     static void WatchConnectivityStateLocked(void* arg, grpc_error* ignored);
 
     ChannelData* chand_;
@@ -221,7 +223,7 @@ class ChannelData {
   ~ChannelData();
 
   static bool ProcessResolverResultLocked(
-      void* arg, const grpc_channel_args& args, const char** lb_policy_name,
+      void* arg, Resolver::Result* args, const char** lb_policy_name,
       RefCountedPtr<LoadBalancingPolicy::Config>* lb_policy_config);
 
   grpc_error* DoPingLocked(grpc_transport_op* op);
@@ -413,9 +415,9 @@ ChannelData::ExternalConnectivityWatcher::WatcherList::Lookup(
   return w;
 }
 
-void ChannelData::ExternalConnectivityWatcher::WatcherList::Append(
+void ChannelData::ExternalConnectivityWatcher::WatcherList::Add(
     ExternalConnectivityWatcher* watcher) {
-  GPR_ASSERT(!Lookup(watcher->on_complete_));
+  GPR_ASSERT(Lookup(watcher->on_complete_) == nullptr);
   MutexLock lock(&mu_);
   GPR_ASSERT(watcher->next_ == nullptr);
   watcher->next_ = head_;
@@ -423,7 +425,7 @@ void ChannelData::ExternalConnectivityWatcher::WatcherList::Append(
 }
 
 void ChannelData::ExternalConnectivityWatcher::WatcherList::Remove(
-    ExternalConnectivityWatcher* watcher) {
+    const ExternalConnectivityWatcher* watcher) {
   MutexLock lock(&mu_);
   if (watcher == head_) {
     head_ = watcher->next_;
@@ -467,7 +469,7 @@ ChannelData::ExternalConnectivityWatcher::~ExternalConnectivityWatcher() {
                            "ExternalConnectivityWatcher");
 }
 
-void ChannelData::ExternalConnectivityWatcher::OnExternalWatchCompleteLocked(
+void ChannelData::ExternalConnectivityWatcher::OnWatchCompleteLocked(
     void* arg, grpc_error* error) {
   ExternalConnectivityWatcher* self =
       static_cast<ExternalConnectivityWatcher*>(arg);
@@ -488,7 +490,6 @@ void ChannelData::ExternalConnectivityWatcher::WatchConnectivityStateLocked(
         self->chand_->external_connectivity_watcher_list_.Lookup(
             self->on_complete_);
     if (found != nullptr) {
-      GPR_ASSERT(found->on_complete_ == self->on_complete_);
       grpc_connectivity_state_notify_on_state_change(
           &found->chand_->state_tracker_, nullptr, &found->my_closure_);
     }
@@ -496,11 +497,11 @@ void ChannelData::ExternalConnectivityWatcher::WatchConnectivityStateLocked(
     return;
   }
   // New watcher.
-  self->chand_->external_connectivity_watcher_list_.Append(self);
+  self->chand_->external_connectivity_watcher_list_.Add(self);
   // This assumes that the closure is scheduled on the ExecCtx scheduler
   // and that GRPC_CLOSURE_RUN would run the closure immediately.
   GRPC_CLOSURE_RUN(self->watcher_timer_init_, GRPC_ERROR_NONE);
-  GRPC_CLOSURE_INIT(&self->my_closure_, OnExternalWatchCompleteLocked, self,
+  GRPC_CLOSURE_INIT(&self->my_closure_, OnWatchCompleteLocked, self,
                     grpc_combiner_scheduler(self->chand_->combiner_));
   grpc_connectivity_state_notify_on_state_change(
       &self->chand_->state_tracker_, self->state_, &self->my_closure_);
@@ -701,10 +702,10 @@ ChannelData::~ChannelData() {
 // Synchronous callback from ResolvingLoadBalancingPolicy to process a
 // resolver result update.
 bool ChannelData::ProcessResolverResultLocked(
-    void* arg, const grpc_channel_args& args, const char** lb_policy_name,
+    void* arg, Resolver::Result* result, const char** lb_policy_name,
     RefCountedPtr<LoadBalancingPolicy::Config>* lb_policy_config) {
   ChannelData* chand = static_cast<ChannelData*>(arg);
-  ProcessedResolverResult resolver_result(args, chand->enable_retries_);
+  ProcessedResolverResult resolver_result(result, chand->enable_retries_);
   UniquePtr<char> service_config_json = resolver_result.service_config_json();
   if (grpc_client_channel_routing_trace.enabled()) {
     gpr_log(GPR_INFO, "chand=%p: resolver returned service config: \"%s\"",

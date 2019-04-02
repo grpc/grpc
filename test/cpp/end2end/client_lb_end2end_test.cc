@@ -183,8 +183,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }
   }
 
-  grpc_channel_args* BuildFakeResults(const std::vector<int>& ports) {
-    grpc_core::ServerAddressList addresses;
+  grpc_core::Resolver::Result BuildFakeResults(const std::vector<int>& ports) {
+    grpc_core::Resolver::Result result;
     for (const int& port : ports) {
       char* lb_uri_str;
       gpr_asprintf(&lb_uri_str, "ipv4:127.0.0.1:%d", port);
@@ -192,29 +192,22 @@ class ClientLbEnd2endTest : public ::testing::Test {
       GPR_ASSERT(lb_uri != nullptr);
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(lb_uri, &address));
-      addresses.emplace_back(address.addr, address.len, nullptr /* args */);
+      result.addresses.emplace_back(address.addr, address.len,
+                                    nullptr /* args */);
       grpc_uri_destroy(lb_uri);
       gpr_free(lb_uri_str);
     }
-    const grpc_arg fake_addresses =
-        CreateServerAddressListChannelArg(&addresses);
-    grpc_channel_args* fake_results =
-        grpc_channel_args_copy_and_add(nullptr, &fake_addresses, 1);
-    return fake_results;
+    return result;
   }
 
   void SetNextResolution(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
-    grpc_channel_args* fake_results = BuildFakeResults(ports);
-    response_generator_->SetResponse(fake_results);
-    grpc_channel_args_destroy(fake_results);
+    response_generator_->SetResponse(BuildFakeResults(ports));
   }
 
   void SetNextResolutionUponError(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
-    grpc_channel_args* fake_results = BuildFakeResults(ports);
-    response_generator_->SetReresolutionResponse(fake_results);
-    grpc_channel_args_destroy(fake_results);
+    response_generator_->SetReresolutionResponse(BuildFakeResults(ports));
   }
 
   void SetFailureOnReresolution() {
@@ -945,6 +938,32 @@ TEST_F(ClientLbEnd2endTest, PickFirstPendingUpdateAndSelectedSubchannelFails) {
   // second server.
   WaitForChannelReady(channel.get());
   WaitForServer(stub, 1, DEBUG_LOCATION, true /* ignore_failure */);
+}
+
+TEST_F(ClientLbEnd2endTest, PickFirstStaysIdleUponEmptyUpdate) {
+  // Start server, send RPC, and make sure channel is READY.
+  const int kNumServers = 1;
+  StartServers(kNumServers);
+  auto channel = BuildChannel("");  // pick_first is the default.
+  auto stub = BuildStub(channel);
+  SetNextResolution(GetServersPorts());
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
+  // Stop server.  Channel should go into state IDLE.
+  servers_[0]->Shutdown();
+  EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_IDLE);
+  // Now send resolver update that includes no addresses.  Channel
+  // should stay in state IDLE.
+  SetNextResolution({});
+  EXPECT_FALSE(channel->WaitForStateChange(
+      GRPC_CHANNEL_IDLE, grpc_timeout_seconds_to_deadline(3)));
+  // Now bring the backend back up and send a non-empty resolver update,
+  // and then try to send an RPC.  Channel should go back into state READY.
+  StartServer(0);
+  SetNextResolution(GetServersPorts());
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
 }
 
 TEST_F(ClientLbEnd2endTest, RoundRobin) {

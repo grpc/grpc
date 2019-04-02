@@ -335,7 +335,7 @@ class GoLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION + _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+        return _SKIP_COMPRESSION
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -887,7 +887,7 @@ def cloud_to_prod_jobspec(language,
             '--custom_credentials_type=google_default_credentials'
         ]
     elif transport_security == 'compute_engine_channel_creds' and str(
-            language) in ['java', 'javaokhttp']:
+            language) in ['go', 'java', 'javaokhttp']:
         transport_security_options = [
             '--custom_credentials_type=compute_engine_channel_creds'
         ]
@@ -1465,7 +1465,7 @@ try:
                                     transport_security=
                                     'google_default_credentials')
                                 jobs.append(google_default_creds_test_job)
-                            if str(language) in ['java', 'javaokhttp']:
+                            if str(language) in ['go', 'java', 'javaokhttp']:
                                 compute_engine_channel_creds_test_job = cloud_to_prod_jobspec(
                                     language,
                                     test_case,

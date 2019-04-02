@@ -23,10 +23,9 @@
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/lib/iomgr/combiner.h"
 
-grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(
-    false, "lb_policy_refcount");
-
 namespace grpc_core {
+
+DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(false, "lb_policy_refcount");
 
 //
 // LoadBalancingPolicy
@@ -87,6 +86,44 @@ grpc_json* LoadBalancingPolicy::ParseLoadBalancingConfig(
     }
   }
   return nullptr;
+}
+
+//
+// LoadBalancingPolicy::UpdateArgs
+//
+
+LoadBalancingPolicy::UpdateArgs::UpdateArgs(const UpdateArgs& other) {
+  addresses = other.addresses;
+  config = other.config;
+  args = grpc_channel_args_copy(other.args);
+}
+
+LoadBalancingPolicy::UpdateArgs::UpdateArgs(UpdateArgs&& other) {
+  addresses = std::move(other.addresses);
+  config = std::move(other.config);
+  // TODO(roth): Use std::move() once channel args is converted to C++.
+  args = other.args;
+  other.args = nullptr;
+}
+
+LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
+    const UpdateArgs& other) {
+  addresses = other.addresses;
+  config = other.config;
+  grpc_channel_args_destroy(args);
+  args = grpc_channel_args_copy(other.args);
+  return *this;
+}
+
+LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
+    UpdateArgs&& other) {
+  addresses = std::move(other.addresses);
+  config = std::move(other.config);
+  // TODO(roth): Use std::move() once channel args is converted to C++.
+  grpc_channel_args_destroy(args);
+  args = other.args;
+  other.args = nullptr;
+  return *this;
 }
 
 //
