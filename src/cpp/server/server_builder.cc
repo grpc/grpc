@@ -29,11 +29,6 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
-namespace grpc_impl {
-
-class ResourceQuota;
-}
-
 namespace grpc {
 
 static std::vector<std::unique_ptr<ServerBuilderPlugin> (*)()>*
@@ -169,7 +164,7 @@ ServerBuilder& ServerBuilder::SetDefaultCompressionAlgorithm(
 }
 
 ServerBuilder& ServerBuilder::SetResourceQuota(
-    const grpc_impl::ResourceQuota& resource_quota) {
+    const grpc::ResourceQuota& resource_quota) {
   if (resource_quota_ != nullptr) {
     grpc_resource_quota_unref(resource_quota_);
   }
