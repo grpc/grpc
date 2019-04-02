@@ -107,12 +107,14 @@ class ExternalConnectivityWatcher {
 
     int size() const;
     ExternalConnectivityWatcher* Lookup(grpc_closure* on_complete) const;
-    void Append(ExternalConnectivityWatcher* watcher);
-    void Remove(ExternalConnectivityWatcher* watcher);
+    void Add(ExternalConnectivityWatcher* watcher);
+    void Remove(const ExternalConnectivityWatcher* watcher);
 
    private:
-    // head_ is guarded by its own mutex, since the size of the list needs
-    // to be grabbed immediately without polling on a CQ.
+    // head_ is guarded by a mutex, since the size() method needs to
+    // iterate over the list, and it's called from the C-core API
+    // function grpc_channel_num_external_connectivity_watchers(), which
+    // is synchronous and therefore cannot run in the combiner.
     mutable gpr_mu mu_;
     ExternalConnectivityWatcher* head_ = nullptr;
   };
@@ -260,9 +262,9 @@ ExternalConnectivityWatcher* ExternalConnectivityWatcher::WatcherList::Lookup(
   return w;
 }
 
-void ExternalConnectivityWatcher::WatcherList::Append(
+void ExternalConnectivityWatcher::WatcherList::Add(
     ExternalConnectivityWatcher* watcher) {
-  GPR_ASSERT(!Lookup(watcher->on_complete_));
+  GPR_ASSERT(Lookup(watcher->on_complete_) == nullptr);
   MutexLock lock(&mu_);
   GPR_ASSERT(watcher->next_ == nullptr);
   watcher->next_ = head_;
@@ -270,7 +272,7 @@ void ExternalConnectivityWatcher::WatcherList::Append(
 }
 
 void ExternalConnectivityWatcher::WatcherList::Remove(
-    ExternalConnectivityWatcher* watcher) {
+    const ExternalConnectivityWatcher* watcher) {
   MutexLock lock(&mu_);
   if (watcher == head_) {
     head_ = watcher->next_;
@@ -333,7 +335,6 @@ void ExternalConnectivityWatcher::WatchConnectivityStateLocked(
         self->chand_->external_connectivity_watcher_list->Lookup(
             self->on_complete_);
     if (found != nullptr) {
-      GPR_ASSERT(found->on_complete_ == self->on_complete_);
       grpc_connectivity_state_notify_on_state_change(
           &found->chand_->state_tracker, nullptr, &found->my_closure_);
     }
@@ -341,7 +342,7 @@ void ExternalConnectivityWatcher::WatchConnectivityStateLocked(
     return;
   }
   // New watcher.
-  self->chand_->external_connectivity_watcher_list->Append(self);
+  self->chand_->external_connectivity_watcher_list->Add(self);
   // This assumes that the closure is scheduled on the ExecCtx scheduler
   // and that GRPC_CLOSURE_RUN would run the closure immediately.
   GRPC_CLOSURE_RUN(self->watcher_timer_init_, GRPC_ERROR_NONE);
