@@ -937,6 +937,7 @@ include/grpcpp/generic/async_generic_service.h \
 include/grpcpp/generic/generic_stub.h \
 include/grpcpp/grpcpp.h \
 include/grpcpp/health_check_service_interface.h \
+include/grpcpp/health_check_service_interface_impl.h \
 include/grpcpp/impl/call.h \
 include/grpcpp/impl/channel_argument_option.h \
 include/grpcpp/impl/client_unary_call.h \
@@ -995,8 +996,10 @@ include/grpcpp/impl/server_builder_option.h \
 include/grpcpp/impl/server_builder_option_impl.h \
 include/grpcpp/impl/server_builder_plugin.h \
 include/grpcpp/impl/server_initializer.h \
+include/grpcpp/impl/server_initializer_impl.h \
 include/grpcpp/impl/service_type.h \
 include/grpcpp/resource_quota.h \
+include/grpcpp/resource_quota_impl.h \
 include/grpcpp/security/auth_context.h \
 include/grpcpp/security/auth_metadata_processor.h \
 include/grpcpp/security/credentials.h \
