@@ -790,8 +790,8 @@ void ChannelData::StartTransportOpLocked(void* arg, grpc_error* ignored) {
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
     grpc_error* error = GRPC_ERROR_NONE;
     GPR_ASSERT(chand->disconnect_error_.CompareExchangeStrong(
-        &error, op->disconnect_with_error, grpc_core::MemoryOrder::ACQ_REL,
-        grpc_core::MemoryOrder::ACQUIRE));
+        &error, op->disconnect_with_error, MemoryOrder::ACQ_REL,
+        MemoryOrder::ACQUIRE));
     grpc_pollset_set_del_pollset_set(
         chand->resolving_lb_policy_->interested_parties(),
         chand->interested_parties_);
@@ -861,7 +861,6 @@ void ChannelData::RemoveQueuedPick(QueuedPick* to_remove,
       return;
     }
   }
-  GPR_UNREACHABLE_CODE(return );
 }
 
 void ChannelData::TryToConnectLocked(void* arg, grpc_error* error_ignored) {
