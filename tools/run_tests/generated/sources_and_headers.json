@@ -6606,6 +6606,7 @@
     "headers": [
       "include/grpc++/support/error_details.h", 
       "include/grpcpp/support/error_details.h", 
+      "include/grpcpp/support/error_details_impl.h", 
       "src/proto/grpc/status/status.grpc.pb.h", 
       "src/proto/grpc/status/status.pb.h", 
       "src/proto/grpc/status/status_mock.grpc.pb.h"
@@ -6616,6 +6617,7 @@
     "src": [
       "include/grpc++/support/error_details.h", 
       "include/grpcpp/support/error_details.h", 
+      "include/grpcpp/support/error_details_impl.h", 
       "src/cpp/util/error_details.cc"
     ], 
     "third_party": false, 
