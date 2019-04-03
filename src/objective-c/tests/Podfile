@@ -17,6 +17,9 @@ GRPC_LOCAL_SRC = '../../..'
   InteropTestsMultipleChannels
   InteropTestsCallOptions
   UnitTests
+  InteropTestsRemoteCFStream
+  InteropTestsLocalSSLCFStream
+  InteropTestsLocalCleartextCFStream
   APIv2Tests
 ).each do |target_name|
   target target_name do
@@ -37,27 +40,6 @@ GRPC_LOCAL_SRC = '../../..'
       pod 'gRPC-Core/Cronet-Implementation', :path => GRPC_LOCAL_SRC
       pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
     end
-  end
-end
-
-%w(
-  InteropTestsRemoteCFStream
-  InteropTestsLocalSSLCFStream
-  InteropTestsLocalCleartextCFStream
-).each do |target_name|
-  target target_name do
-    pod 'Protobuf', :path => "#{GRPC_LOCAL_SRC}/third_party/protobuf", :inhibit_warnings => true
-
-    pod '!ProtoCompiler',            :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
-    pod '!ProtoCompiler-gRPCPlugin', :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
-
-    pod 'BoringSSL-GRPC',                 :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
-
-    pod 'gRPC/CFStream',             :path => GRPC_LOCAL_SRC
-    pod 'gRPC-Core/CFStream-Implementation',       :path => GRPC_LOCAL_SRC
-    pod 'gRPC-RxLibrary', :path => GRPC_LOCAL_SRC
-    pod 'gRPC-ProtoRPC',  :path => GRPC_LOCAL_SRC, :inhibit_warnings => true
-    pod 'RemoteTest', :path => "RemoteTestClient", :inhibit_warnings => true
   end
 end
 
@@ -127,11 +109,7 @@ post_install do |installer|
         # GPR_UNREACHABLE_CODE causes "Control may reach end of non-void
         # function" warning
         config.build_settings['GCC_WARN_ABOUT_RETURN_TYPE'] = 'NO'
-        if target.name.include?('CFStream')
-          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_CFSTREAM=1'
-        else
-          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_CRONET_WITH_PACKET_COALESCING=1'
-        end
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_CRONET_WITH_PACKET_COALESCING=1'
       end
     end
 
