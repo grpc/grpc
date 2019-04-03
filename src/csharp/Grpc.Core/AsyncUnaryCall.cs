@@ -85,6 +85,16 @@ namespace Grpc.Core
         {
             return responseAsync.GetAwaiter();
         }
+        
+        /// <summary>
+        /// Configures an awaiter used to await this object.
+        /// </summary>
+        /// <param name="continueOnCapturedContext">true to attempt to marshal the continuation back to the original context captured;
+        /// otherwise, false.</param>
+        public ConfiguredTaskAwaitable ConfigureAwait(bool continueOnCapturedContext)
+        {
+            return responseAsync.ConfigureAwait(continueOnCapturedContext);
+        }
 
         /// <summary>
         /// Gets the call status if the call has already finished.
