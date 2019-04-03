@@ -91,6 +91,8 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
     grpc_error* PullSliceFromRecvMessage();
     void DoneReadingRecvMessage(grpc_error* error);
 
+    static void AfterCallStackDestruction(void* arg, grpc_error* error);
+
     RefCountedPtr<HealthCheckClient> health_check_client_;
     grpc_polling_entity pollent_;
 
@@ -132,6 +134,9 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
     grpc_metadata_batch recv_trailing_metadata_;
     grpc_transport_stream_stats collect_stats_;
     grpc_closure recv_trailing_metadata_ready_;
+
+    // Closure for call stack destruction.
+    grpc_closure after_call_stack_destruction_;
   };
 
   void StartCall();

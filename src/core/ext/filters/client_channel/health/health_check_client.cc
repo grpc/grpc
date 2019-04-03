@@ -295,9 +295,6 @@ HealthCheckClient::CallState::~CallState() {
     gpr_log(GPR_INFO, "HealthCheckClient %p: destroying CallState %p",
             health_check_client_.get(), this);
   }
-  // The subchannel call is in the arena, so reset the pointer before we destroy
-  // the arena.
-  call_.reset();
   for (size_t i = 0; i < GRPC_CONTEXT_COUNT; i++) {
     if (context_[i].destroy != nullptr) {
       context_[i].destroy(context_[i].value);
@@ -439,12 +436,22 @@ void HealthCheckClient::CallState::StartBatch(
                            GRPC_ERROR_NONE, "start_subchannel_batch");
 }
 
+void HealthCheckClient::CallState::AfterCallStackDestruction(
+    void *arg, grpc_error* error) {
+  HealthCheckClient::CallState* self =
+      static_cast<HealthCheckClient::CallState*>(arg);
+  self->Unref(DEBUG_LOCATION, "cancel");
+}
+
 void HealthCheckClient::CallState::OnCancelComplete(void* arg,
                                                     grpc_error* error) {
   HealthCheckClient::CallState* self =
       static_cast<HealthCheckClient::CallState*>(arg);
   GRPC_CALL_COMBINER_STOP(&self->call_combiner_, "health_cancel");
-  self->Unref(DEBUG_LOCATION, "cancel");
+  GRPC_CLOSURE_INIT(&self->after_call_stack_destruction_,
+                    AfterCallStackDestruction, self, grpc_schedule_on_exec_ctx);
+  self->call_->SetAfterCallStackDestroy(&self->after_call_stack_destruction_);
+  self->call_.reset();
 }
 
 void HealthCheckClient::CallState::StartCancel(void* arg, grpc_error* error) {
