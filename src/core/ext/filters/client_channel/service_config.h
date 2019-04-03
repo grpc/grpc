@@ -136,7 +136,6 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   const grpc_core::InlinedVector<UniquePtr<ServiceConfigParsedObject>,
                                  kMaxParsers>*
   GetMethodServiceConfigObjectsVector(const grpc_slice& path) {
-    // auto parsed_service_config_objects[index].get();
     const auto* value = parsed_method_service_config_objects_table->Get(path);
     // If we didn't find a match for the path, try looking for a wildcard
     // entry (i.e., change "/service/method" to "/service/*").
