@@ -34,6 +34,8 @@
 namespace grpc_core {
 
 int ServiceConfig::registered_parsers_count = 0;
+UniquePtr<ServiceConfigParser>
+    ServiceConfig::registered_parsers[ServiceConfig::kMaxParsers];
 
 RefCountedPtr<ServiceConfig> ServiceConfig::Create(const char* json) {
   UniquePtr<char> service_config_json(gpr_strdup(json));
