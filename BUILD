@@ -249,6 +249,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/resource_quota_impl.h",
     "include/grpcpp/security/auth_context.h",
     "include/grpcpp/security/auth_metadata_processor.h",
+    "include/grpcpp/security/auth_metadata_processor_impl.h",
     "include/grpcpp/security/credentials.h",
     "include/grpcpp/security/server_credentials.h",
     "include/grpcpp/server.h",
