@@ -169,15 +169,22 @@ class ServerCallbackReaderWriter {
 
 // The following classes are the reactor interfaces that are to be implemented
 // by the user, returned as the result of the method handler for a callback
-// method, and activated by the call to OnStarted. Note that none of the classes
-// are pure; all reactions have a default empty reaction so that the user class
-// only needs to override those classes that it cares about.
+// method, and activated by the call to OnStarted. The library guarantees that
+// OnStarted will be called for any reactor that has been created using a
+// method handler registered on a service. No operation initiation method may be
+// called until after the call to OnStarted.
+// Note that none of the classes are pure; all reactions have a default empty
+// reaction so that the user class only needs to override those classes that it
+// cares about.
 
 /// \a ServerBidiReactor is the interface for a bidirectional streaming RPC.
 template <class Request, class Response>
 class ServerBidiReactor : public internal::ServerReactor {
  public:
   ~ServerBidiReactor() = default;
+
+  /// Do NOT call any operation initiation method (names that start with Start)
+  /// until after the library has called OnStarted on this object.
 
   /// Send any initial metadata stored in the RPC context. If not invoked,
   /// any initial metadata will be passed along with the first Write or the
@@ -245,7 +252,8 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// \param[in] s The status outcome of this RPC
   void Finish(Status s) { stream_->Finish(std::move(s)); }
 
-  /// Notify the application that a streaming RPC has started
+  /// Notify the application that a streaming RPC has started and that it is now
+  /// ok to call any operation initation method.
   ///
   /// \param[in] context The context object now associated with this RPC
   virtual void OnStarted(ServerContext* context) {}

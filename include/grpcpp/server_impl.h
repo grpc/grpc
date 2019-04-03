@@ -43,13 +43,14 @@ struct grpc_server;
 namespace grpc {
 
 class AsyncGenericService;
-class HealthCheckServiceInterface;
 class ServerContext;
-class ServerInitializer;
 
 }  // namespace grpc
 
 namespace grpc_impl {
+
+class HealthCheckServiceInterface;
+class ServerInitializer;
 
 /// Represents a gRPC server.
 ///
@@ -98,7 +99,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   grpc_server* c_server();
 
   /// Returns the health check service.
-  grpc::HealthCheckServiceInterface* GetHealthCheckService() const {
+  grpc_impl::HealthCheckServiceInterface* GetHealthCheckService() const {
     return health_check_service_.get();
   }
 
@@ -207,7 +208,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
 
   friend class grpc::AsyncGenericService;
   friend class grpc::ServerBuilder;
-  friend class grpc::ServerInitializer;
+  friend class grpc_impl::ServerInitializer;
 
   class SyncRequest;
   class CallbackRequestBase;
@@ -265,7 +266,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
 
   grpc::CompletionQueue* CallbackCQ() override;
 
-  grpc::ServerInitializer* initializer();
+  grpc_impl::ServerInitializer* initializer();
 
   // A vector of interceptor factory objects.
   // This should be destroyed after health_check_service_ and this requirement
@@ -330,9 +331,9 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   // Pointer to the wrapped grpc_server.
   grpc_server* server_;
 
-  std::unique_ptr<grpc::ServerInitializer> server_initializer_;
+  std::unique_ptr<grpc_impl::ServerInitializer> server_initializer_;
 
-  std::unique_ptr<grpc::HealthCheckServiceInterface> health_check_service_;
+  std::unique_ptr<grpc_impl::HealthCheckServiceInterface> health_check_service_;
   bool health_check_service_disabled_;
 
   // When appropriate, use a default callback generic service to handle
