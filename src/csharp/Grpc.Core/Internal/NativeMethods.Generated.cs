@@ -482,7 +482,7 @@ namespace Grpc.Core.Internal
             public delegate void grpcsharp_channel_args_set_integer_delegate(ChannelArgsSafeHandle args, UIntPtr index, string key, int value);
             public delegate void grpcsharp_channel_args_destroy_delegate(IntPtr args);
             public delegate void grpcsharp_override_default_ssl_roots_delegate(string pemRootCerts);
-            public delegate ChannelCredentialsSafeHandle grpcsharp_ssl_credentials_create_delegate(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey);
+            public delegate ChannelCredentialsSafeHandle grpcsharp_ssl_credentials_create_delegate(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey, IntPtr verifyPeerCallbackTag);
             public delegate ChannelCredentialsSafeHandle grpcsharp_composite_channel_credentials_create_delegate(ChannelCredentialsSafeHandle channelCreds, CallCredentialsSafeHandle callCreds);
             public delegate void grpcsharp_channel_credentials_release_delegate(IntPtr credentials);
             public delegate ChannelSafeHandle grpcsharp_insecure_channel_create_delegate(string target, ChannelArgsSafeHandle channelArgs);
@@ -676,7 +676,7 @@ namespace Grpc.Core.Internal
             public static extern void grpcsharp_override_default_ssl_roots(string pemRootCerts);
             
             [DllImport(ImportName)]
-            public static extern ChannelCredentialsSafeHandle grpcsharp_ssl_credentials_create(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey);
+            public static extern ChannelCredentialsSafeHandle grpcsharp_ssl_credentials_create(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey, IntPtr verifyPeerCallbackTag);
             
             [DllImport(ImportName)]
             public static extern ChannelCredentialsSafeHandle grpcsharp_composite_channel_credentials_create(ChannelCredentialsSafeHandle channelCreds, CallCredentialsSafeHandle callCreds);
@@ -972,7 +972,7 @@ namespace Grpc.Core.Internal
             public static extern void grpcsharp_override_default_ssl_roots(string pemRootCerts);
             
             [DllImport(ImportName)]
-            public static extern ChannelCredentialsSafeHandle grpcsharp_ssl_credentials_create(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey);
+            public static extern ChannelCredentialsSafeHandle grpcsharp_ssl_credentials_create(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey, IntPtr verifyPeerCallbackTag);
             
             [DllImport(ImportName)]
             public static extern ChannelCredentialsSafeHandle grpcsharp_composite_channel_credentials_create(ChannelCredentialsSafeHandle channelCreds, CallCredentialsSafeHandle callCreds);

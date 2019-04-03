@@ -164,7 +164,7 @@ ServerBuilder& ServerBuilder::SetDefaultCompressionAlgorithm(
 }
 
 ServerBuilder& ServerBuilder::SetResourceQuota(
-    const grpc::ResourceQuota& resource_quota) {
+    const grpc_impl::ResourceQuota& resource_quota) {
   if (resource_quota_ != nullptr) {
     grpc_resource_quota_unref(resource_quota_);
   }
@@ -310,7 +310,7 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
       sync_server_settings_.cq_timeout_msec, resource_quota_,
       std::move(interceptor_creators_)));
 
-  grpc::ServerInitializer* initializer = server->initializer();
+  grpc_impl::ServerInitializer* initializer = server->initializer();
 
   // Register all the completion queues with the server. i.e
   //  1. sync_server_cqs: internal completion queues created IF this is a sync

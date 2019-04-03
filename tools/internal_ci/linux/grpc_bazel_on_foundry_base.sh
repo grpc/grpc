@@ -23,7 +23,7 @@ cp ${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json ${KOKORO_KEYSTORE_DIR}/4321
 
 # Download bazel
 temp_dir="$(mktemp -d)"
-wget -q https://github.com/bazelbuild/bazel/releases/download/0.20.0/bazel-0.20.0-linux-x86_64 -O "${temp_dir}/bazel"
+wget -q https://github.com/bazelbuild/bazel/releases/download/0.22.0/bazel-0.22.0-linux-x86_64 -O "${temp_dir}/bazel"
 chmod 755 "${temp_dir}/bazel"
 export PATH="${temp_dir}:${PATH}"
 # This should show ${temp_dir}/bazel
