@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,36 +19,11 @@
 #ifndef GRPCPP_IMPL_SERVER_INITIALIZER_H
 #define GRPCPP_IMPL_SERVER_INITIALIZER_H
 
-#include <memory>
-#include <vector>
-
-#include <grpcpp/server.h>
+#include <grpcpp/impl/server_initializer_impl.h>
 
 namespace grpc {
 
-class Server;
-class Service;
-
-class ServerInitializer {
- public:
-  ServerInitializer(Server* server) : server_(server) {}
-
-  bool RegisterService(std::shared_ptr<Service> service) {
-    if (!server_->RegisterService(nullptr, service.get())) {
-      return false;
-    }
-    default_services_.push_back(service);
-    return true;
-  }
-
-  const std::vector<grpc::string>* GetServiceList() {
-    return &server_->services_;
-  }
-
- private:
-  Server* server_;
-  std::vector<std::shared_ptr<Service> > default_services_;
-};
+typedef ::grpc_impl::ServerInitializer ServerInitializer;
 
 }  // namespace grpc
 

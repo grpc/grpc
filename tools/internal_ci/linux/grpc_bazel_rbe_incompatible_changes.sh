@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_testing/grpc_version.py.template`!!!
+set -ex
 
-VERSION = '1.21.0.dev0'
+# TODO(jtattermusch): use the latest version of bazel
+
+# Use --all_incompatible_changes to give an early warning about future
+# bazel incompatibilities.
+EXTRA_FLAGS="--config=opt --cache_test_results=no --all_incompatible_changes"
+github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh "${EXTRA_FLAGS}"

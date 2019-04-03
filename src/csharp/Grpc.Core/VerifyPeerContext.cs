@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015 gRPC authors.
+// Copyright 2019 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,25 +19,30 @@
 namespace Grpc.Core
 {
     /// <summary>
-    /// Provides info about current version of gRPC.
-    /// See https://codingforsmarties.wordpress.com/2016/01/21/how-to-version-assemblies-destined-for-nuget/
-    /// for rationale about assembly versioning.
+    /// Verification context for VerifyPeerCallback.
+    /// Note: experimental API that can change or be removed without any prior notice.
     /// </summary>
-    public static class VersionInfo
+    public class VerifyPeerContext
     {
         /// <summary>
-        /// Current <c>AssemblyVersion</c> attribute of gRPC C# assemblies
+        /// Initializes a new instance of the <see cref="T:Grpc.Core.VerifyPeerContext"/> class.
         /// </summary>
-        public const string CurrentAssemblyVersion = "1.0.0.0";
+        /// <param name="targetName">The target name of the peer.</param>
+        /// <param name="peerPem">The PEM encoded certificate of the peer.</param>
+        internal VerifyPeerContext(string targetName, string peerPem)
+        {
+            this.TargetName = targetName;
+            this.PeerPem = peerPem;
+        }
 
         /// <summary>
-        /// Current <c>AssemblyFileVersion</c> of gRPC C# assemblies
+        /// The target name of the peer.
         /// </summary>
-        public const string CurrentAssemblyFileVersion = "1.21.0.0";
+        public string TargetName { get; }
 
         /// <summary>
-        /// Current version of gRPC C#
+        /// The PEM encoded certificate of the peer.
         /// </summary>
-        public const string CurrentVersion = "1.21.0-dev";
+        public string PeerPem { get; }
     }
 }

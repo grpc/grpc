@@ -193,6 +193,7 @@
 #define GPR_PLATFORM_STRING "ios"
 #define GPR_CPU_IPHONE 1
 #define GPR_PTHREAD_TLS 1
+#define GRPC_CFSTREAM 1
 /* the c-ares resolver isnt safe to enable on iOS */
 #define GRPC_ARES 0
 #else /* TARGET_OS_IPHONE */
@@ -235,7 +236,6 @@
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
-/* TODO(mxyan): Remove when CFStream becomes default */
 #ifndef GRPC_CFSTREAM
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
 #endif

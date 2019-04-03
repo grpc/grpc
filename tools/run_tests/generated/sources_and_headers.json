@@ -3717,6 +3717,27 @@
   }, 
   {
     "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/gprpp/map_tester.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc_core_map_test", 
+    "src": [
+      "test/core/gprpp/map_test.cc", 
+      "test/core/gprpp/map_tester.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
       "grpc_plugin_support"
     ], 
     "headers": [], 
@@ -7988,8 +8009,10 @@
       "src/core/lib/gprpp/atomic.h", 
       "src/core/lib/gprpp/fork.h", 
       "src/core/lib/gprpp/manual_constructor.h", 
+      "src/core/lib/gprpp/map.h", 
       "src/core/lib/gprpp/memory.h", 
       "src/core/lib/gprpp/mutex_lock.h", 
+      "src/core/lib/gprpp/pair.h", 
       "src/core/lib/gprpp/thd.h", 
       "src/core/lib/profiling/timers.h"
     ], 
@@ -8034,8 +8057,10 @@
       "src/core/lib/gprpp/atomic.h", 
       "src/core/lib/gprpp/fork.h", 
       "src/core/lib/gprpp/manual_constructor.h", 
+      "src/core/lib/gprpp/map.h", 
       "src/core/lib/gprpp/memory.h", 
       "src/core/lib/gprpp/mutex_lock.h", 
+      "src/core/lib/gprpp/pair.h", 
       "src/core/lib/gprpp/thd.h", 
       "src/core/lib/profiling/timers.h"
     ], 
@@ -10073,6 +10098,7 @@
       "include/grpcpp/generic/generic_stub.h", 
       "include/grpcpp/grpcpp.h", 
       "include/grpcpp/health_check_service_interface.h", 
+      "include/grpcpp/health_check_service_interface_impl.h", 
       "include/grpcpp/impl/call.h", 
       "include/grpcpp/impl/channel_argument_option.h", 
       "include/grpcpp/impl/client_unary_call.h", 
@@ -10086,8 +10112,10 @@
       "include/grpcpp/impl/server_builder_option_impl.h", 
       "include/grpcpp/impl/server_builder_plugin.h", 
       "include/grpcpp/impl/server_initializer.h", 
+      "include/grpcpp/impl/server_initializer_impl.h", 
       "include/grpcpp/impl/service_type.h", 
       "include/grpcpp/resource_quota.h", 
+      "include/grpcpp/resource_quota_impl.h", 
       "include/grpcpp/security/auth_context.h", 
       "include/grpcpp/security/auth_metadata_processor.h", 
       "include/grpcpp/security/credentials.h", 
@@ -10096,6 +10124,7 @@
       "include/grpcpp/server_builder.h", 
       "include/grpcpp/server_context.h", 
       "include/grpcpp/server_posix.h", 
+      "include/grpcpp/server_posix_impl.h", 
       "include/grpcpp/support/async_stream.h", 
       "include/grpcpp/support/async_unary_call.h", 
       "include/grpcpp/support/byte_buffer.h", 
@@ -10184,6 +10213,7 @@
       "include/grpcpp/generic/generic_stub.h", 
       "include/grpcpp/grpcpp.h", 
       "include/grpcpp/health_check_service_interface.h", 
+      "include/grpcpp/health_check_service_interface_impl.h", 
       "include/grpcpp/impl/call.h", 
       "include/grpcpp/impl/channel_argument_option.h", 
       "include/grpcpp/impl/client_unary_call.h", 
@@ -10197,8 +10227,10 @@
       "include/grpcpp/impl/server_builder_option_impl.h", 
       "include/grpcpp/impl/server_builder_plugin.h", 
       "include/grpcpp/impl/server_initializer.h", 
+      "include/grpcpp/impl/server_initializer_impl.h", 
       "include/grpcpp/impl/service_type.h", 
       "include/grpcpp/resource_quota.h", 
+      "include/grpcpp/resource_quota_impl.h", 
       "include/grpcpp/security/auth_context.h", 
       "include/grpcpp/security/auth_metadata_processor.h", 
       "include/grpcpp/security/credentials.h", 
@@ -10207,6 +10239,7 @@
       "include/grpcpp/server_builder.h", 
       "include/grpcpp/server_context.h", 
       "include/grpcpp/server_posix.h", 
+      "include/grpcpp/server_posix_impl.h", 
       "include/grpcpp/support/async_stream.h", 
       "include/grpcpp/support/async_unary_call.h", 
       "include/grpcpp/support/byte_buffer.h", 
