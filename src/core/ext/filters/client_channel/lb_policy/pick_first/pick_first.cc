@@ -251,7 +251,12 @@ void PickFirst::CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
 
 void PickFirst::StartPickingLocked() {
   started_picking_ = true;
-  if (subchannel_list_ != nullptr && subchannel_list_->num_subchannels() > 0) {
+  if (subchannel_list_ == nullptr || subchannel_list_->num_subchannels() == 0) {
+    grpc_connectivity_state_set(
+        &state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("No addresses to connect to"),
+        "pf_no_subchannels");
+  } else {
     subchannel_list_->subchannel(0)
         ->CheckConnectivityStateAndStartWatchingLocked();
   }
@@ -369,13 +374,19 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args,
   grpc_channel_args_destroy(new_args);
   if (subchannel_list->num_subchannels() == 0) {
     // Empty update or no valid subchannels. Unsubscribe from all current
-    // subchannels and put the channel in TRANSIENT_FAILURE.
-    grpc_connectivity_state_set(
-        &state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
-        "pf_update_empty");
+    // subchannels.
     subchannel_list_ = std::move(subchannel_list);  // Empty list.
     selected_ = nullptr;
+    // If started picking, put the channel in TRANSIENT_FAILURE.
+    // (If we haven't started picking, then this will happen in ExitIdleLocked()
+    // if we haven't gotten a non-empty update by the time the application tries
+    // to start a new call.)
+    if (started_picking_) {
+      grpc_connectivity_state_set(
+          &state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
+          "pf_update_empty");
+    }
     return;
   }
   // If one of the subchannels in the new list is already in state

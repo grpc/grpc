@@ -870,6 +870,32 @@ TEST_F(ClientLbEnd2endTest, PickFirstIdleOnDisconnect) {
   servers_.clear();
 }
 
+TEST_F(ClientLbEnd2endTest, PickFirstStaysIdleUponEmptyUpdate) {
+  // Start server, send RPC, and make sure channel is READY.
+  const int kNumServers = 1;
+  StartServers(kNumServers);
+  auto channel = BuildChannel("");  // pick_first is the default.
+  auto stub = BuildStub(channel);
+  SetNextResolution(GetServersPorts());
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
+  // Stop server.  Channel should go into state IDLE.
+  servers_[0]->Shutdown();
+  EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_IDLE);
+  // Now send resolver update that includes no addresses.  Channel
+  // should stay in state IDLE.
+  SetNextResolution({});
+  EXPECT_FALSE(channel->WaitForStateChange(
+      GRPC_CHANNEL_IDLE, grpc_timeout_seconds_to_deadline(3)));
+  // Now bring the backend back up and send a non-empty resolver update,
+  // and then try to send an RPC.  Channel should go back into state READY.
+  StartServer(0);
+  SetNextResolution(GetServersPorts());
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
+}
+
 TEST_F(ClientLbEnd2endTest, RoundRobin) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
