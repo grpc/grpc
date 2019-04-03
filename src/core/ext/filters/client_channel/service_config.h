@@ -56,7 +56,7 @@ namespace grpc_core {
 
 /// This is the base class that all service config parsers MUST use to store
 /// parsed service config data.
-class ServiceConfigParsedObject {
+class ServiceConfigParsedObject : public RefCounted<ServiceConfigParsedObject> {
  public:
   virtual ~ServiceConfigParsedObject() = default;
 
@@ -68,17 +68,33 @@ class ServiceConfigParser {
  public:
   virtual ~ServiceConfigParser() = default;
 
-  virtual UniquePtr<ServiceConfigParsedObject> ParseGlobalParams(
-      const grpc_json* json) {
+  virtual RefCountedPtr<ServiceConfigParsedObject> ParseGlobalParams(
+      const grpc_json* json, bool* success) {
+    if (success != nullptr) {
+      *success = true;
+    }
     return nullptr;
   }
 
-  virtual UniquePtr<ServiceConfigParsedObject> ParsePerMethodParams(
-      const grpc_json* json) {
+  virtual RefCountedPtr<ServiceConfigParsedObject> ParsePerMethodParams(
+      const grpc_json* json, bool* success) {
+    if (success != nullptr) {
+      *success = true;
+    }
     return nullptr;
   }
+
+  static constexpr int kMaxParsers = 32;
 
   GRPC_ABSTRACT_BASE_CLASS;
+};
+
+class ServiceConfigObjectsVector
+    : public RefCounted<ServiceConfigObjectsVector> {
+ public:
+  grpc_core::InlinedVector<RefCountedPtr<ServiceConfigParsedObject>,
+                           ServiceConfigParser::kMaxParsers>
+      vector;
 };
 
 class ServiceConfig : public RefCounted<ServiceConfig> {
@@ -129,12 +145,9 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
     return parsed_global_service_config_objects[index].get();
   }
 
-  static constexpr int kMaxParsers = 32;
-
   /// Retrieves the vector of method service config objects for a given path \a
   /// path.
-  const grpc_core::InlinedVector<UniquePtr<ServiceConfigParsedObject>,
-                                 kMaxParsers>*
+  const RefCountedPtr<ServiceConfigObjectsVector>*
   GetMethodServiceConfigObjectsVector(const grpc_slice& path) {
     const auto* value = parsed_method_service_config_objects_table->Get(path);
     // If we didn't find a match for the path, try looking for a wildcard
@@ -169,7 +182,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   }
 
   static void ResetServiceConfigParsers() {
-    for (auto i = 0; i < kMaxParsers; i++) {
+    for (auto i = 0; i < ServiceConfigParser::kMaxParsers; i++) {
       registered_parsers[i].reset(nullptr);
     }
     registered_parsers_count = 0;
@@ -182,7 +195,11 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
   // Takes ownership of \a json_tree.
   ServiceConfig(UniquePtr<char> service_config_json,
-                UniquePtr<char> json_string, grpc_json* json_tree);
+                UniquePtr<char> json_string, grpc_json* json_tree,
+                bool* success);
+
+  void ParseGlobalParams(const grpc_json* json_tree, bool* success);
+  void ParsePerMethodParams(const grpc_json* json_tree, bool* success);
 
   // Returns the number of names specified in the method config \a json.
   static int CountNamesInMethodConfig(grpc_json* json);
@@ -199,17 +216,23 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
       grpc_json* json, CreateValue<T> create_value,
       typename SliceHashTable<RefCountedPtr<T>>::Entry* entries, size_t* idx);
 
+  static bool ParseJsonMethodConfigToServiceConfigObjectsTable(
+      const grpc_json* json,
+      SliceHashTable<RefCountedPtr<ServiceConfigObjectsVector>>::Entry* entries,
+      size_t* idx);
+
   static int registered_parsers_count;
-  static UniquePtr<ServiceConfigParser> registered_parsers[kMaxParsers];
+  static UniquePtr<ServiceConfigParser>
+      registered_parsers[ServiceConfigParser::kMaxParsers];
 
   UniquePtr<char> service_config_json_;
   UniquePtr<char> json_string_;  // Underlying storage for json_tree.
   grpc_json* json_tree_;
 
-  InlinedVector<UniquePtr<ServiceConfigParsedObject>, kMaxParsers>
+  InlinedVector<RefCountedPtr<ServiceConfigParsedObject>,
+                ServiceConfigParser::kMaxParsers>
       parsed_global_service_config_objects;
-  RefCountedPtr<SliceHashTable<
-      InlinedVector<UniquePtr<ServiceConfigParsedObject>, kMaxParsers>>>
+  RefCountedPtr<SliceHashTable<RefCountedPtr<ServiceConfigObjectsVector>>>
       parsed_method_service_config_objects_table;
 };
 
