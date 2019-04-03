@@ -45,6 +45,8 @@ namespace Grpc.IntegrationTesting
         [OneTimeSetUp]
         public void Init()
         {
+            Environment.SetEnvironmentVariable("GRPC_TRACE", "api,http,cares_resolver,cares_address_sorting");
+            Environment.SetEnvironmentVariable("GRPC_VERBOSITY", "DEBUG");
             // Disable SO_REUSEPORT to prevent https://github.com/grpc/grpc/issues/10755
             server = new Server(new[] { new ChannelOption(ChannelOptions.SoReuseport, 0) })
             {
