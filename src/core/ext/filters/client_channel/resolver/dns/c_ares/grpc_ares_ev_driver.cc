@@ -261,13 +261,15 @@ static void on_ares_backup_poll_alarm_locked(void* arg, grpc_error* error) {
       }
       fdn = fdn->next;
     }
+    if (!driver->shutting_down) {
+      grpc_millis next_ares_backup_poll_alarm =
+          calculate_next_ares_backup_poll_alarm_ms(driver);
+      grpc_ares_ev_driver_ref(driver);
+      grpc_timer_init(&driver->ares_backup_poll_alarm,
+                      next_ares_backup_poll_alarm,
+                      &driver->on_ares_backup_poll_alarm_locked);
+    }
     grpc_ares_notify_on_event_locked(driver);
-    grpc_millis next_ares_backup_poll_alarm =
-        calculate_next_ares_backup_poll_alarm_ms(driver);
-    grpc_ares_ev_driver_ref(driver);
-    grpc_timer_init(&driver->ares_backup_poll_alarm,
-                    next_ares_backup_poll_alarm,
-                    &driver->on_ares_backup_poll_alarm_locked);
   }
   grpc_ares_ev_driver_unref(driver);
 }
