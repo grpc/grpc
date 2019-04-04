@@ -13,6 +13,8 @@
 # limitations under the License.
 
 FROM debian:jessie
+RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
+
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \

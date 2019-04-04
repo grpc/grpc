@@ -13,8 +13,8 @@
  <date>2018-01-19</date>
  <time>16:06:07</time>
  <version>
-  <release>1.20.0dev</release>
-  <api>1.20.0dev</api>
+  <release>1.21.0dev</release>
+  <api>1.21.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -107,8 +107,10 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/atomic.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/fork.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/manual_constructor.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/map.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/memory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/mutex_lock.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/pair.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.cc" role="src" />

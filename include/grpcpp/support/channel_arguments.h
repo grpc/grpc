@@ -21,6 +21,11 @@
 
 #include <grpcpp/support/channel_arguments_impl.h>
 
+namespace grpc_impl {
+
+class ResourceQuota;
+}
+
 namespace grpc {
 
 typedef ::grpc_impl::ChannelArguments ChannelArguments;

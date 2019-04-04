@@ -66,6 +66,8 @@ PHP_RINIT_FUNCTION(grpc);
 */
 ZEND_BEGIN_MODULE_GLOBALS(grpc)
   zend_bool initialized;
+  zend_bool enable_fork_support;
+  char *poll_strategy;
 ZEND_END_MODULE_GLOBALS(grpc)
 
 /* In every utility function you add that needs to use variables

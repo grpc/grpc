@@ -107,7 +107,7 @@ static bool encode_drops(pb_ostream_t* stream, const pb_field_t* field,
   return true;
 }
 
-grpc_grpclb_request* grpc_grpclb_load_report_request_create_locked(
+grpc_grpclb_request* grpc_grpclb_load_report_request_create(
     grpc_core::GrpcLbClientStats* client_stats) {
   grpc_grpclb_request* req = static_cast<grpc_grpclb_request*>(
       gpr_zalloc(sizeof(grpc_grpclb_request)));
@@ -122,7 +122,7 @@ grpc_grpclb_request* grpc_grpclb_load_report_request_create_locked(
   req->client_stats.calls_finished_with_drop.funcs.encode = encode_drops;
   grpc_core::UniquePtr<grpc_core::GrpcLbClientStats::DroppedCallCounts>
       drop_counts;
-  client_stats->GetLocked(
+  client_stats->Get(
       &req->client_stats.num_calls_started,
       &req->client_stats.num_calls_finished,
       &req->client_stats.num_calls_finished_with_client_failed_to_send,

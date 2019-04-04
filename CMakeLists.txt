@@ -24,7 +24,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.20.0-dev")
+set(PACKAGE_VERSION   "1.21.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -631,6 +631,7 @@ add_dependencies(buildtests_cxx generic_end2end_test)
 add_dependencies(buildtests_cxx golden_file_test)
 add_dependencies(buildtests_cxx grpc_alts_credentials_options_test)
 add_dependencies(buildtests_cxx grpc_cli)
+add_dependencies(buildtests_cxx grpc_core_map_test)
 add_dependencies(buildtests_cxx grpc_linux_system_roots_test)
 add_dependencies(buildtests_cxx grpc_tool_test)
 add_dependencies(buildtests_cxx grpclb_api_test)
@@ -2999,12 +3000,16 @@ foreach(_hdr
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
   include/grpcpp/create_channel.h
+  include/grpcpp/create_channel_impl.h
   include/grpcpp/create_channel_posix.h
+  include/grpcpp/create_channel_posix_impl.h
   include/grpcpp/ext/health_check_service_server_builder_option.h
   include/grpcpp/generic/async_generic_service.h
   include/grpcpp/generic/generic_stub.h
+  include/grpcpp/generic/generic_stub_impl.h
   include/grpcpp/grpcpp.h
   include/grpcpp/health_check_service_interface.h
+  include/grpcpp/health_check_service_interface_impl.h
   include/grpcpp/impl/call.h
   include/grpcpp/impl/channel_argument_option.h
   include/grpcpp/impl/client_unary_call.h
@@ -3015,18 +3020,24 @@ foreach(_hdr
   include/grpcpp/impl/rpc_service_method.h
   include/grpcpp/impl/serialization_traits.h
   include/grpcpp/impl/server_builder_option.h
+  include/grpcpp/impl/server_builder_option_impl.h
   include/grpcpp/impl/server_builder_plugin.h
   include/grpcpp/impl/server_initializer.h
+  include/grpcpp/impl/server_initializer_impl.h
   include/grpcpp/impl/service_type.h
   include/grpcpp/resource_quota.h
+  include/grpcpp/resource_quota_impl.h
   include/grpcpp/security/auth_context.h
   include/grpcpp/security/auth_metadata_processor.h
+  include/grpcpp/security/auth_metadata_processor_impl.h
   include/grpcpp/security/credentials.h
   include/grpcpp/security/server_credentials.h
+  include/grpcpp/security/server_credentials_impl.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_context.h
   include/grpcpp/server_posix.h
+  include/grpcpp/server_posix_impl.h
   include/grpcpp/support/async_stream.h
   include/grpcpp/support/async_unary_call.h
   include/grpcpp/support/byte_buffer.h
@@ -3590,12 +3601,16 @@ foreach(_hdr
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
   include/grpcpp/create_channel.h
+  include/grpcpp/create_channel_impl.h
   include/grpcpp/create_channel_posix.h
+  include/grpcpp/create_channel_posix_impl.h
   include/grpcpp/ext/health_check_service_server_builder_option.h
   include/grpcpp/generic/async_generic_service.h
   include/grpcpp/generic/generic_stub.h
+  include/grpcpp/generic/generic_stub_impl.h
   include/grpcpp/grpcpp.h
   include/grpcpp/health_check_service_interface.h
+  include/grpcpp/health_check_service_interface_impl.h
   include/grpcpp/impl/call.h
   include/grpcpp/impl/channel_argument_option.h
   include/grpcpp/impl/client_unary_call.h
@@ -3606,18 +3621,24 @@ foreach(_hdr
   include/grpcpp/impl/rpc_service_method.h
   include/grpcpp/impl/serialization_traits.h
   include/grpcpp/impl/server_builder_option.h
+  include/grpcpp/impl/server_builder_option_impl.h
   include/grpcpp/impl/server_builder_plugin.h
   include/grpcpp/impl/server_initializer.h
+  include/grpcpp/impl/server_initializer_impl.h
   include/grpcpp/impl/service_type.h
   include/grpcpp/resource_quota.h
+  include/grpcpp/resource_quota_impl.h
   include/grpcpp/security/auth_context.h
   include/grpcpp/security/auth_metadata_processor.h
+  include/grpcpp/security/auth_metadata_processor_impl.h
   include/grpcpp/security/credentials.h
   include/grpcpp/security/server_credentials.h
+  include/grpcpp/security/server_credentials_impl.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_context.h
   include/grpcpp/server_posix.h
+  include/grpcpp/server_posix_impl.h
   include/grpcpp/support/async_stream.h
   include/grpcpp/support/async_unary_call.h
   include/grpcpp/support/byte_buffer.h
@@ -3825,6 +3846,7 @@ target_link_libraries(grpc++_error_details
 foreach(_hdr
   include/grpc++/support/error_details.h
   include/grpcpp/support/error_details.h
+  include/grpcpp/support/error_details_impl.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -3958,6 +3980,7 @@ target_link_libraries(grpc++_reflection
 foreach(_hdr
   include/grpc++/ext/proto_server_reflection_plugin.h
   include/grpcpp/ext/proto_server_reflection_plugin.h
+  include/grpcpp/ext/proto_server_reflection_plugin_impl.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -4553,12 +4576,16 @@ foreach(_hdr
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
   include/grpcpp/create_channel.h
+  include/grpcpp/create_channel_impl.h
   include/grpcpp/create_channel_posix.h
+  include/grpcpp/create_channel_posix_impl.h
   include/grpcpp/ext/health_check_service_server_builder_option.h
   include/grpcpp/generic/async_generic_service.h
   include/grpcpp/generic/generic_stub.h
+  include/grpcpp/generic/generic_stub_impl.h
   include/grpcpp/grpcpp.h
   include/grpcpp/health_check_service_interface.h
+  include/grpcpp/health_check_service_interface_impl.h
   include/grpcpp/impl/call.h
   include/grpcpp/impl/channel_argument_option.h
   include/grpcpp/impl/client_unary_call.h
@@ -4569,18 +4596,24 @@ foreach(_hdr
   include/grpcpp/impl/rpc_service_method.h
   include/grpcpp/impl/serialization_traits.h
   include/grpcpp/impl/server_builder_option.h
+  include/grpcpp/impl/server_builder_option_impl.h
   include/grpcpp/impl/server_builder_plugin.h
   include/grpcpp/impl/server_initializer.h
+  include/grpcpp/impl/server_initializer_impl.h
   include/grpcpp/impl/service_type.h
   include/grpcpp/resource_quota.h
+  include/grpcpp/resource_quota_impl.h
   include/grpcpp/security/auth_context.h
   include/grpcpp/security/auth_metadata_processor.h
+  include/grpcpp/security/auth_metadata_processor_impl.h
   include/grpcpp/security/credentials.h
   include/grpcpp/security/server_credentials.h
+  include/grpcpp/security/server_credentials_impl.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_context.h
   include/grpcpp/server_posix.h
+  include/grpcpp/server_posix_impl.h
   include/grpcpp/support/async_stream.h
   include/grpcpp/support/async_unary_call.h
   include/grpcpp/support/byte_buffer.h
@@ -4965,6 +4998,7 @@ target_link_libraries(grpcpp_channelz
 
 foreach(_hdr
   include/grpcpp/ext/channelz_service_plugin.h
+  include/grpcpp/ext/channelz_service_plugin_impl.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -13451,6 +13485,45 @@ target_link_libraries(grpc_cli
   grpc
   gpr
   grpc++_test_config
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(grpc_core_map_test
+  test/core/gprpp/map_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(grpc_core_map_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(grpc_core_map_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc++
+  grpc
+  gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
