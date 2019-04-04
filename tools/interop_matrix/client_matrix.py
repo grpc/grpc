@@ -99,6 +99,7 @@ LANG_RELEASE_MATRIX = {
         ('v1.16.0', ReleaseInfo()),
         ('v1.17.1', ReleaseInfo()),
         ('v1.18.0', ReleaseInfo()),
+        ('v1.19.0', ReleaseInfo()),
     ]),
     'go':
     OrderedDict([
@@ -164,6 +165,7 @@ LANG_RELEASE_MATRIX = {
         ('v1.16.0', ReleaseInfo(testcases_file='python__v1.11.1')),
         ('v1.17.1', ReleaseInfo(testcases_file='python__v1.11.1')),
         ('v1.18.0', ReleaseInfo()),
+        ('v1.19.0', ReleaseInfo()),
     ]),
     'node':
     OrderedDict([
@@ -210,6 +212,9 @@ LANG_RELEASE_MATRIX = {
          ReleaseInfo(patch=[
              'tools/dockerfile/interoptest/grpc_interop_ruby/build_interop.sh',
          ])),
+        # TODO: https://github.com/grpc/grpc/issues/18262.
+        # If you are not encountering the error in above issue
+        # go ahead and upload the docker image for new releases.
     ]),
     'php':
     OrderedDict([
@@ -231,6 +236,8 @@ LANG_RELEASE_MATRIX = {
         ('v1.16.0', ReleaseInfo()),
         ('v1.17.1', ReleaseInfo()),
         ('v1.18.0', ReleaseInfo()),
+        # TODO:https://github.com/grpc/grpc/issues/18264
+        # Error in above issues needs to be resolved.
     ]),
     'csharp':
     OrderedDict([
@@ -258,5 +265,6 @@ LANG_RELEASE_MATRIX = {
         ('v1.16.0', ReleaseInfo(testcases_file='csharp__v1.3.9')),
         ('v1.17.1', ReleaseInfo(testcases_file='csharp__v1.3.9')),
         ('v1.18.0', ReleaseInfo()),
+        ('v1.19.0', ReleaseInfo()),
     ]),
 }
