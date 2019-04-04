@@ -39,7 +39,7 @@ namespace grpc_impl {
 
 class Server;
 class ResourceQuota;
-} // namespace grpc_impl
+}  // namespace grpc_impl
 namespace grpc {
 
 class AsyncGenericService;
