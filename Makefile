@@ -5331,6 +5331,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
     include/grpcpp/create_channel.h \
+    include/grpcpp/create_channel_impl.h \
     include/grpcpp/create_channel_posix.h \
     include/grpcpp/create_channel_posix_impl.h \
     include/grpcpp/ext/health_check_service_server_builder_option.h \
@@ -5358,6 +5359,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/resource_quota_impl.h \
     include/grpcpp/security/auth_context.h \
     include/grpcpp/security/auth_metadata_processor.h \
+    include/grpcpp/security/auth_metadata_processor_impl.h \
     include/grpcpp/security/credentials.h \
     include/grpcpp/security/server_credentials.h \
     include/grpcpp/server.h \
@@ -5936,6 +5938,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
     include/grpcpp/create_channel.h \
+    include/grpcpp/create_channel_impl.h \
     include/grpcpp/create_channel_posix.h \
     include/grpcpp/create_channel_posix_impl.h \
     include/grpcpp/ext/health_check_service_server_builder_option.h \
@@ -5963,6 +5966,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/resource_quota_impl.h \
     include/grpcpp/security/auth_context.h \
     include/grpcpp/security/auth_metadata_processor.h \
+    include/grpcpp/security/auth_metadata_processor_impl.h \
     include/grpcpp/security/credentials.h \
     include/grpcpp/security/server_credentials.h \
     include/grpcpp/server.h \
@@ -6183,6 +6187,7 @@ LIBGRPC++_ERROR_DETAILS_SRC = \
 PUBLIC_HEADERS_CXX += \
     include/grpc++/support/error_details.h \
     include/grpcpp/support/error_details.h \
+    include/grpcpp/support/error_details_impl.h \
 
 LIBGRPC++_ERROR_DETAILS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_ERROR_DETAILS_SRC))))
 
@@ -6854,6 +6859,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
     include/grpcpp/create_channel.h \
+    include/grpcpp/create_channel_impl.h \
     include/grpcpp/create_channel_posix.h \
     include/grpcpp/create_channel_posix_impl.h \
     include/grpcpp/ext/health_check_service_server_builder_option.h \
@@ -6881,6 +6887,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/resource_quota_impl.h \
     include/grpcpp/security/auth_context.h \
     include/grpcpp/security/auth_metadata_processor.h \
+    include/grpcpp/security/auth_metadata_processor_impl.h \
     include/grpcpp/security/credentials.h \
     include/grpcpp/security/server_credentials.h \
     include/grpcpp/server.h \

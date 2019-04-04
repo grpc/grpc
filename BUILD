@@ -219,6 +219,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/client_context.h",
     "include/grpcpp/completion_queue.h",
     "include/grpcpp/create_channel.h",
+    "include/grpcpp/create_channel_impl.h",
     "include/grpcpp/create_channel_posix.h",
     "include/grpcpp/create_channel_posix_impl.h",
     "include/grpcpp/ext/health_check_service_server_builder_option.h",
@@ -248,6 +249,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/resource_quota_impl.h",
     "include/grpcpp/security/auth_context.h",
     "include/grpcpp/security/auth_metadata_processor.h",
+    "include/grpcpp/security/auth_metadata_processor_impl.h",
     "include/grpcpp/security/credentials.h",
     "include/grpcpp/security/server_credentials.h",
     "include/grpcpp/security/server_credentials_impl.h",
@@ -400,6 +402,7 @@ grpc_cc_library(
     hdrs = [
         "include/grpc++/support/error_details.h",
         "include/grpcpp/support/error_details.h",
+        "include/grpcpp/support/error_details_impl.h",
     ],
     language = "c++",
     standalone = True,
@@ -1470,6 +1473,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = [
         "include/grpcpp/ext/server_load_reporting.h",
+        "include/grpcpp/ext/server_load_reporting_impl.h",
     ],
     deps = [
         "lb_server_load_reporting_filter",
