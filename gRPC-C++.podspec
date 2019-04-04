@@ -117,6 +117,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/security/auth_metadata_processor_impl.h',
                       'include/grpcpp/security/credentials.h',
                       'include/grpcpp/security/server_credentials.h',
+                      'include/grpcpp/security/server_credentials_impl.h',
                       'include/grpcpp/server.h',
                       'include/grpcpp/server_builder.h',
                       'include/grpcpp/server_context.h',
