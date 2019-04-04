@@ -287,7 +287,6 @@ HealthCheckClient::CallState::CallState(
                                   ->GetInitialCallSizeEstimate(0))),
       payload_(context_) {
   grpc_call_combiner_init(&call_combiner_);
-  gpr_atm_rel_store(&seen_response_, static_cast<gpr_atm>(0));
 }
 
 HealthCheckClient::CallState::~CallState() {
@@ -295,9 +294,6 @@ HealthCheckClient::CallState::~CallState() {
     gpr_log(GPR_INFO, "HealthCheckClient %p: destroying CallState %p",
             health_check_client_.get(), this);
   }
-  // The subchannel call is in the arena, so reset the pointer before we destroy
-  // the arena.
-  call_.reset();
   for (size_t i = 0; i < GRPC_CONTEXT_COUNT; i++) {
     if (context_[i].destroy != nullptr) {
       context_[i].destroy(context_[i].value);
@@ -436,12 +432,22 @@ void HealthCheckClient::CallState::StartBatch(
                            GRPC_ERROR_NONE, "start_subchannel_batch");
 }
 
+void HealthCheckClient::CallState::AfterCallStackDestruction(
+    void* arg, grpc_error* error) {
+  HealthCheckClient::CallState* self =
+      static_cast<HealthCheckClient::CallState*>(arg);
+  self->Unref(DEBUG_LOCATION, "cancel");
+}
+
 void HealthCheckClient::CallState::OnCancelComplete(void* arg,
                                                     grpc_error* error) {
   HealthCheckClient::CallState* self =
       static_cast<HealthCheckClient::CallState*>(arg);
   GRPC_CALL_COMBINER_STOP(&self->call_combiner_, "health_cancel");
-  self->Unref(DEBUG_LOCATION, "cancel");
+  GRPC_CLOSURE_INIT(&self->after_call_stack_destruction_,
+                    AfterCallStackDestruction, self, grpc_schedule_on_exec_ctx);
+  self->call_->SetAfterCallStackDestroy(&self->after_call_stack_destruction_);
+  self->call_.reset();
 }
 
 void HealthCheckClient::CallState::StartCancel(void* arg, grpc_error* error) {
@@ -455,7 +461,9 @@ void HealthCheckClient::CallState::StartCancel(void* arg, grpc_error* error) {
 }
 
 void HealthCheckClient::CallState::Cancel() {
-  if (call_ != nullptr) {
+  bool expected = false;
+  if (cancelled_.CompareExchangeStrong(&expected, true, MemoryOrder::ACQ_REL,
+                                       MemoryOrder::ACQUIRE)) {
     Ref(DEBUG_LOCATION, "cancel").release();
     GRPC_CALL_COMBINER_START(
         &call_combiner_,
@@ -498,7 +506,7 @@ void HealthCheckClient::CallState::DoneReadingRecvMessage(grpc_error* error) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("backend unhealthy");
   }
   health_check_client_->SetHealthStatus(state, error);
-  gpr_atm_rel_store(&seen_response_, static_cast<gpr_atm>(1));
+  seen_response_.Store(true, MemoryOrder::RELEASE);
   grpc_slice_buffer_destroy_internal(&recv_message_buffer_);
   // Start another recv_message batch.
   // This re-uses the ref we're holding.
@@ -631,7 +639,7 @@ void HealthCheckClient::CallState::CallEnded(bool retry) {
     health_check_client_->call_state_.reset();
     if (retry) {
       GPR_ASSERT(!health_check_client_->shutting_down_);
-      if (static_cast<bool>(gpr_atm_acq_load(&seen_response_))) {
+      if (seen_response_.Load(MemoryOrder::ACQUIRE)) {
         // If the call fails after we've gotten a successful response, reset
         // the backoff and restart the call immediately.
         health_check_client_->retry_backoff_.Reset();
