@@ -27,7 +27,7 @@ namespace grpc_impl {
 
 class ServerBuilder;
 class ServerInitializer;
-}
+}  // namespace grpc_impl
 namespace grpc {
 
 class ChannelArguments;
