@@ -107,6 +107,9 @@ if (MSVC)
   add_definitions(/wd4267)
   # TODO(jtattermusch): needed to build boringssl with VS2017, revisit later
   add_definitions(/wd4987 /wd4774 /wd4819 /wd4996 /wd4619)
+elseif (WIN32)  
+  #set default value of _WIN32_WINNT to allow MinGW gcc compilation to pass
+  add_definitions(-D_WIN32_WINNT=0x600)
 endif()
 
 if (gRPC_USE_PROTO_LITE)
