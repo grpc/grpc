@@ -34,7 +34,7 @@
 namespace grpc_core {
 
 int ServiceConfig::registered_parsers_count = 0;
-UniquePtr<ServiceConfigParser>
+ServiceConfigParser
     ServiceConfig::registered_parsers[ServiceConfigParser::kMaxParsers];
 
 RefCountedPtr<ServiceConfig> ServiceConfig::Create(const char* json) {
@@ -85,7 +85,7 @@ void ServiceConfig::ParseGlobalParams(const grpc_json* json_tree,
   GPR_DEBUG_ASSERT(json_tree_->key == nullptr);
   for (auto i = 0; i < registered_parsers_count; i++) {
     auto parsed_obj =
-        registered_parsers[i]->ParseGlobalParams(json_tree, success);
+        registered_parsers[i].ParseGlobalParams(json_tree, success);
     if (!*success) {
       return;
     }
@@ -102,7 +102,7 @@ bool ServiceConfig::ParseJsonMethodConfigToServiceConfigObjectsTable(
   for (auto i = 0; i < registered_parsers_count; i++) {
     bool success;
     auto parsed_obj =
-        registered_parsers[i]->ParsePerMethodParams(json, &success);
+        registered_parsers[i].ParsePerMethodParams(json, &success);
     if (!success) {
       return false;
     }

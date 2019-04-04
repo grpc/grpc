@@ -176,17 +176,12 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   /// registered parser. Each parser is responsible for reading the service
   /// config json and returning a parsed object. This parsed object can later be
   /// retrieved using the same index that was returned at registration time.
-  static int RegisterParser(UniquePtr<ServiceConfigParser> func) {
-    registered_parsers[registered_parsers_count] = std::move(func);
+  static int RegisterParser(const ServiceConfigParser& parser) {
+    registered_parsers[registered_parsers_count] = parser;
     return registered_parsers_count++;
   }
 
-  static void ResetServiceConfigParsers() {
-    for (auto i = 0; i < ServiceConfigParser::kMaxParsers; i++) {
-      registered_parsers[i].reset(nullptr);
-    }
-    registered_parsers_count = 0;
-  }
+  static void ResetServiceConfigParsers() { registered_parsers_count = 0; }
 
  private:
   // So New() can call our private ctor.
@@ -222,7 +217,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
       size_t* idx);
 
   static int registered_parsers_count;
-  static UniquePtr<ServiceConfigParser>
+  static ServiceConfigParser
       registered_parsers[ServiceConfigParser::kMaxParsers];
 
   UniquePtr<char> service_config_json_;
