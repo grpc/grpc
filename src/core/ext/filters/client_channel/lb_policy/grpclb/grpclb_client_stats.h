@@ -41,20 +41,19 @@ class GrpcLbClientStats : public RefCounted<GrpcLbClientStats> {
 
   typedef InlinedVector<DropTokenCount, 10> DroppedCallCounts;
 
-  GrpcLbClientStats() {}
+  GrpcLbClientStats() { gpr_mu_init(&drop_count_mu_); }
+  ~GrpcLbClientStats() { gpr_mu_destroy(&drop_count_mu_); }
 
   void AddCallStarted();
   void AddCallFinished(bool finished_with_client_failed_to_send,
                        bool finished_known_received);
 
-  // This method is not thread-safe; caller must synchronize.
-  void AddCallDroppedLocked(const char* token);
+  void AddCallDropped(const char* token);
 
-  // This method is not thread-safe; caller must synchronize.
-  void GetLocked(int64_t* num_calls_started, int64_t* num_calls_finished,
-                 int64_t* num_calls_finished_with_client_failed_to_send,
-                 int64_t* num_calls_finished_known_received,
-                 UniquePtr<DroppedCallCounts>* drop_token_counts);
+  void Get(int64_t* num_calls_started, int64_t* num_calls_finished,
+           int64_t* num_calls_finished_with_client_failed_to_send,
+           int64_t* num_calls_finished_known_received,
+           UniquePtr<DroppedCallCounts>* drop_token_counts);
 
   // A destruction function to use as the user_data key when attaching
   // client stats to a grpc_mdelem.
@@ -63,13 +62,12 @@ class GrpcLbClientStats : public RefCounted<GrpcLbClientStats> {
   }
 
  private:
-  // This field must only be accessed via *_locked() methods.
-  UniquePtr<DroppedCallCounts> drop_token_counts_;
-  // These fields may be accessed from multiple threads at a time.
   gpr_atm num_calls_started_ = 0;
   gpr_atm num_calls_finished_ = 0;
   gpr_atm num_calls_finished_with_client_failed_to_send_ = 0;
   gpr_atm num_calls_finished_known_received_ = 0;
+  gpr_mu drop_count_mu_;  // Guards drop_token_counts_.
+  UniquePtr<DroppedCallCounts> drop_token_counts_;
 };
 
 }  // namespace grpc_core
