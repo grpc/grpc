@@ -308,7 +308,8 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
       if (service_config_string != nullptr) {
         GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
                              r, service_config_string);
-        result.service_config = ServiceConfig::Create(service_config_string);
+        result.service_config =
+            ServiceConfig::Create(service_config_string, nullptr);
       }
       gpr_free(service_config_string);
     }

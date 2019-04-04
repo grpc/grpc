@@ -320,7 +320,7 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
   const char* service_config_str = grpc_channel_arg_get_string(channel_arg);
   if (service_config_str != nullptr) {
     grpc_core::RefCountedPtr<grpc_core::ServiceConfig> service_config =
-        grpc_core::ServiceConfig::Create(service_config_str);
+        grpc_core::ServiceConfig::Create(service_config_str, nullptr);
     if (service_config != nullptr) {
       chand->method_limit_table = service_config->CreateMethodConfigTable(
           grpc_core::MessageSizeLimits::CreateFromJson);

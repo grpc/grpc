@@ -25,6 +25,7 @@
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_hash_table.h"
 
@@ -56,11 +57,9 @@ namespace grpc_core {
 
 /// This is the base class that all service config parsers MUST use to store
 /// parsed service config data.
-class ServiceConfigParsedObject : public RefCounted<ServiceConfigParsedObject> {
+class ServiceConfigParsedObject {
  public:
   virtual ~ServiceConfigParsedObject() = default;
-
-  GRPC_ABSTRACT_BASE_CLASS;
 };
 
 /// This is the base class that all service config parsers should derive from.
@@ -68,40 +67,31 @@ class ServiceConfigParser {
  public:
   virtual ~ServiceConfigParser() = default;
 
-  virtual RefCountedPtr<ServiceConfigParsedObject> ParseGlobalParams(
-      const grpc_json* json, bool* success) {
-    if (success != nullptr) {
-      *success = true;
+  virtual UniquePtr<ServiceConfigParsedObject> ParseGlobalParams(
+      const grpc_json* json, grpc_error** error) {
+    if (error != nullptr) {
+      *error = GRPC_ERROR_NONE;
     }
     return nullptr;
   }
 
-  virtual RefCountedPtr<ServiceConfigParsedObject> ParsePerMethodParams(
-      const grpc_json* json, bool* success) {
-    if (success != nullptr) {
-      *success = true;
+  virtual UniquePtr<ServiceConfigParsedObject> ParsePerMethodParams(
+      const grpc_json* json, grpc_error** error) {
+    if (error != nullptr) {
+      *error = GRPC_ERROR_NONE;
     }
     return nullptr;
   }
 
   static constexpr int kMaxParsers = 32;
-
-  GRPC_ABSTRACT_BASE_CLASS;
-};
-
-class ServiceConfigObjectsVector
-    : public RefCounted<ServiceConfigObjectsVector> {
- public:
-  grpc_core::InlinedVector<RefCountedPtr<ServiceConfigParsedObject>,
-                           ServiceConfigParser::kMaxParsers>
-      vector;
 };
 
 class ServiceConfig : public RefCounted<ServiceConfig> {
  public:
   /// Creates a new service config from parsing \a json_string.
   /// Returns null on parse error.
-  static RefCountedPtr<ServiceConfig> Create(const char* json);
+  static RefCountedPtr<ServiceConfig> Create(const char* json,
+                                             grpc_error** error);
 
   ~ServiceConfig();
 
@@ -141,34 +131,19 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
   /// Retrieves the parsed global service config object at index \a index.
   ServiceConfigParsedObject* GetParsedGlobalServiceConfigObject(int index) {
-    GPR_DEBUG_ASSERT(index < registered_parsers_count_);
+    GPR_DEBUG_ASSERT(
+        index < static_cast<int>(parsed_global_service_config_objects_.size()));
     return parsed_global_service_config_objects_[index].get();
   }
 
+  static constexpr int kMaxParsers = 32;
+  typedef InlinedVector<UniquePtr<ServiceConfigParsedObject>, kMaxParsers>
+      ServiceConfigObjectsVector;
+
   /// Retrieves the vector of method service config objects for a given path \a
   /// path.
-  const RefCountedPtr<ServiceConfigObjectsVector>*
-  GetMethodServiceConfigObjectsVector(const grpc_slice& path) {
-    const auto* value = parsed_method_service_config_objects_table_->Get(path);
-    // If we didn't find a match for the path, try looking for a wildcard
-    // entry (i.e., change "/service/method" to "/service/*").
-    if (value == nullptr) {
-      char* path_str = grpc_slice_to_c_string(path);
-      const char* sep = strrchr(path_str, '/') + 1;
-      const size_t len = (size_t)(sep - path_str);
-      char* buf = (char*)gpr_malloc(len + 2);  // '*' and NUL
-      memcpy(buf, path_str, len);
-      buf[len] = '*';
-      buf[len + 1] = '\0';
-      grpc_slice wildcard_path = grpc_slice_from_copied_string(buf);
-      gpr_free(buf);
-      value = parsed_method_service_config_objects_table_->Get(wildcard_path);
-      grpc_slice_unref_internal(wildcard_path);
-      gpr_free(path_str);
-      if (value == nullptr) return nullptr;
-    }
-    return value;
-  }
+  const ServiceConfigObjectsVector* const* GetMethodServiceConfigObjectsVector(
+      const grpc_slice& path);
 
   /// Globally register a service config parser. On successful registration, it
   /// returns the index at which the parser was registered. On failure, -1 is
@@ -177,12 +152,22 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   /// config json and returning a parsed object. This parsed object can later be
   /// retrieved using the same index that was returned at registration time.
   static int RegisterParser(const ServiceConfigParser& parser) {
-    registered_parsers_[registered_parsers_count_] = parser;
-    return registered_parsers_count_++;
+    registered_parsers_->push_back(parser);
+    return registered_parsers_->size() - 1;
   }
 
-  /// Should be called on initialization and shutdown.
-  static void ResetServiceConfigParsers() { registered_parsers_count_ = 0; }
+  typedef InlinedVector<ServiceConfigParser, kMaxParsers>
+      ServiceConfigParserList;
+
+  static void Init() {
+    GPR_ASSERT(registered_parsers_ == nullptr);
+    registered_parsers_ = New<ServiceConfigParserList>();
+  }
+
+  static void Shutdown() {
+    Delete(registered_parsers_);
+    registered_parsers_ = nullptr;
+  }
 
  private:
   // So New() can call our private ctor.
@@ -192,11 +177,11 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   // Takes ownership of \a json_tree.
   ServiceConfig(UniquePtr<char> service_config_json,
                 UniquePtr<char> json_string, grpc_json* json_tree,
-                bool* success);
+                grpc_error** error);
 
   // Helper functions to parse the service config
-  void ParseGlobalParams(const grpc_json* json_tree, bool* success);
-  void ParsePerMethodParams(const grpc_json* json_tree, bool* success);
+  grpc_error* ParseGlobalParams(const grpc_json* json_tree);
+  grpc_error* ParsePerMethodParams(const grpc_json* json_tree);
 
   // Returns the number of names specified in the method config \a json.
   static int CountNamesInMethodConfig(grpc_json* json);
@@ -213,24 +198,23 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
       grpc_json* json, CreateValue<T> create_value,
       typename SliceHashTable<RefCountedPtr<T>>::Entry* entries, size_t* idx);
 
-  static bool ParseJsonMethodConfigToServiceConfigObjectsTable(
+  grpc_error* ParseJsonMethodConfigToServiceConfigObjectsTable(
       const grpc_json* json,
-      SliceHashTable<RefCountedPtr<ServiceConfigObjectsVector>>::Entry* entries,
+      SliceHashTable<const ServiceConfigObjectsVector*>::Entry* entries,
       size_t* idx);
 
-  static int registered_parsers_count_;
-  static ServiceConfigParser
-      registered_parsers_[ServiceConfigParser::kMaxParsers];
+  static ServiceConfigParserList* registered_parsers_;
 
   UniquePtr<char> service_config_json_;
   UniquePtr<char> json_string_;  // Underlying storage for json_tree.
   grpc_json* json_tree_;
 
-  InlinedVector<RefCountedPtr<ServiceConfigParsedObject>,
-                ServiceConfigParser::kMaxParsers>
+  InlinedVector<UniquePtr<ServiceConfigParsedObject>, kMaxParsers>
       parsed_global_service_config_objects_;
-  RefCountedPtr<SliceHashTable<RefCountedPtr<ServiceConfigObjectsVector>>>
+  RefCountedPtr<SliceHashTable<const ServiceConfigObjectsVector*>>
       parsed_method_service_config_objects_table_;
+  InlinedVector<UniquePtr<ServiceConfigObjectsVector>, kMaxParsers>
+      service_config_objects_vectors_storage_;
 };
 
 //
