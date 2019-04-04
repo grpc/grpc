@@ -78,7 +78,7 @@ g_stands_for = "godric"
 
 core_version = "7.0.0"
 
-version = "1.20.0-pre1"
+version = "1.20.0-pre2"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
