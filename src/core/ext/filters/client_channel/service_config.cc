@@ -33,9 +33,9 @@
 
 namespace grpc_core {
 
-int ServiceConfig::registered_parsers_count = 0;
+int ServiceConfig::registered_parsers_count_ = 0;
 ServiceConfigParser
-    ServiceConfig::registered_parsers[ServiceConfigParser::kMaxParsers];
+    ServiceConfig::registered_parsers_[ServiceConfigParser::kMaxParsers];
 
 RefCountedPtr<ServiceConfig> ServiceConfig::Create(const char* json) {
   UniquePtr<char> service_config_json(gpr_strdup(json));
@@ -50,7 +50,6 @@ RefCountedPtr<ServiceConfig> ServiceConfig::Create(const char* json) {
       std::move(service_config_json), std::move(json_string), json_tree,
       &success);
 
-  // return return_value;
   return success ? return_value : nullptr;
 }
 
@@ -62,18 +61,15 @@ ServiceConfig::ServiceConfig(UniquePtr<char> service_config_json,
       json_tree_(json_tree) {
   GPR_DEBUG_ASSERT(success != nullptr);
   if (json_tree->type != GRPC_JSON_OBJECT || json_tree->key != nullptr) {
-    gpr_log(GPR_ERROR, "error");
     *success = false;
     return;
   }
   ParseGlobalParams(json_tree, success);
   if (!*success) {
-    gpr_log(GPR_ERROR, "global error");
     return;
   }
   ParsePerMethodParams(json_tree, success);
   if (!*success) {
-    gpr_log(GPR_ERROR, "local error");
     return;
   }
 }
@@ -83,13 +79,13 @@ void ServiceConfig::ParseGlobalParams(const grpc_json* json_tree,
   GPR_DEBUG_ASSERT(success != nullptr);
   GPR_DEBUG_ASSERT(json_tree_->type == GRPC_JSON_OBJECT);
   GPR_DEBUG_ASSERT(json_tree_->key == nullptr);
-  for (auto i = 0; i < registered_parsers_count; i++) {
+  for (auto i = 0; i < registered_parsers_count_; i++) {
     auto parsed_obj =
-        registered_parsers[i].ParseGlobalParams(json_tree, success);
+        registered_parsers_[i].ParseGlobalParams(json_tree, success);
     if (!*success) {
       return;
     }
-    parsed_global_service_config_objects.push_back(parsed_obj);
+    parsed_global_service_config_objects_.push_back(parsed_obj);
   }
   *success = true;
 }
@@ -99,10 +95,10 @@ bool ServiceConfig::ParseJsonMethodConfigToServiceConfigObjectsTable(
     SliceHashTable<RefCountedPtr<ServiceConfigObjectsVector>>::Entry* entries,
     size_t* idx) {
   auto objs_vector = MakeRefCounted<ServiceConfigObjectsVector>();
-  for (auto i = 0; i < registered_parsers_count; i++) {
+  for (auto i = 0; i < registered_parsers_count_; i++) {
     bool success;
     auto parsed_obj =
-        registered_parsers[i].ParsePerMethodParams(json, &success);
+        registered_parsers_[i].ParsePerMethodParams(json, &success);
     if (!success) {
       return false;
     }
@@ -187,7 +183,7 @@ void ServiceConfig::ParsePerMethodParams(const grpc_json* json_tree,
     }
   }
   if (entries != nullptr) {
-    parsed_method_service_config_objects_table =
+    parsed_method_service_config_objects_table_ =
         SliceHashTable<RefCountedPtr<ServiceConfigObjectsVector>>::Create(
             num_entries, entries, nullptr);
     gpr_free(entries);
