@@ -349,7 +349,6 @@ void HealthCheckClient::CallState::StartCall() {
     return;
   }
   // Initialize payload and batch.
-  memset(&batch_, 0, sizeof(batch_));
   payload_.context = context_;
   batch_.payload = &payload_;
   // on_complete callback takes ref, handled manually.
@@ -401,8 +400,6 @@ void HealthCheckClient::CallState::StartCall() {
   // Start batch.
   StartBatch(&batch_);
   // Initialize recv_trailing_metadata batch.
-  memset(&recv_trailing_metadata_batch_, 0,
-         sizeof(recv_trailing_metadata_batch_));
   recv_trailing_metadata_batch_.payload = &payload_;
   // Add recv_trailing_metadata op.
   grpc_metadata_batch_init(&recv_trailing_metadata_);
@@ -507,7 +504,6 @@ void HealthCheckClient::CallState::DoneReadingRecvMessage(grpc_error* error) {
   // This re-uses the ref we're holding.
   // Note: Can't just reuse batch_ here, since we don't know that all
   // callbacks from the original batch have completed yet.
-  memset(&recv_message_batch_, 0, sizeof(recv_message_batch_));
   recv_message_batch_.payload = &payload_;
   payload_.recv_message.recv_message = &recv_message_;
   payload_.recv_message.recv_message_ready = GRPC_CLOSURE_INIT(
