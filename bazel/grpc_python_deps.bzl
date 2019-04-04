@@ -11,5 +11,6 @@ def grpc_python_deps():
         pip_install()
         py_proto_repositories()
     else:
-        print("Building python gRPC with bazel 23.0+ is disabled pending resolution of https://github.com/grpc/grpc/issues/18256.")
+        print("Building Python gRPC with bazel 23.0+ is disabled pending " +
+              "resolution of https://github.com/grpc/grpc/issues/18256.")
 
