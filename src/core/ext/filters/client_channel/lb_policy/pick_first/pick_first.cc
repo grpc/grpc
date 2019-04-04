@@ -186,6 +186,7 @@ void PickFirst::ShutdownLocked() {
 }
 
 void PickFirst::ExitIdleLocked() {
+  if (shutdown_) return;
   if (idle_) {
     idle_ = false;
     if (subchannel_list_ == nullptr ||
