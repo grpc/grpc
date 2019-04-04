@@ -25,10 +25,6 @@
 
 #include "src/cpp/client/create_channel_internal.h"
 
-namespace grpc {
-
-class ChannelArguments;
-}
 namespace grpc_impl {
 std::shared_ptr<grpc::Channel> CreateChannel(
     const grpc::string& target,

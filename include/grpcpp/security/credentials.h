@@ -35,7 +35,6 @@ struct grpc_call;
 
 namespace grpc {
 class CallCredentials;
-class ChannelArguments;
 class ChannelCredentials;
 }  // namespace grpc
 namespace grpc_impl {

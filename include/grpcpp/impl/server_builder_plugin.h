@@ -26,10 +26,10 @@
 namespace grpc_impl {
 
 class ChannelArguments;
-class ServerBuilder;
 class ServerInitializer;
 }  // namespace grpc_impl
 namespace grpc {
+class ServerBuilder;
 
 /// This interface is meant for internal usage only. Implementations of this
 /// interface should add themselves to a \a ServerBuilder instance through the

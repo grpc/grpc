@@ -24,6 +24,7 @@
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpcpp/resource_quota.h>
 #include <grpcpp/support/config.h>
 
 namespace grpc {
@@ -31,7 +32,6 @@ namespace testing {
 class ChannelArgumentsTest;
 }  // namespace testing
 
-class ResourceQuota;
 class SecureChannelCredentials;
 }  // namespace grpc
 
