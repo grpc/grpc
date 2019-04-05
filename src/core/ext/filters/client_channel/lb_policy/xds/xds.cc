@@ -2011,7 +2011,10 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
   // At this point, child_ must be the current child policy.
   if (state == GRPC_CHANNEL_READY) entry_->parent_->MaybeExitFallbackMode();
   // If we are in fallback mode, ignore update request from the child policy.
-  if (entry_->parent_->fallback_policy_ != nullptr) return;
+  if (entry_->parent_->fallback_policy_ != nullptr) {
+    GRPC_ERROR_UNREF(state_error);
+    return;
+  }
   GPR_ASSERT(entry_->parent_->lb_chand_ != nullptr);
   RefCountedPtr<XdsLbClientStats> client_stats =
       entry_->parent_->lb_chand_->lb_calld() == nullptr
