@@ -167,7 +167,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   /// A proxy object used by the LB policy to communicate with the client
   /// channel.
-  // TODO(juanlishen): Consider adding a mid-layer subclass that help handle
+  // TODO(juanlishen): Consider adding a mid-layer subclass that helps handle
   // things like swapping in pending policy when it's ready. Currently, we are
   // duplicating the logic in many subclasses.
   class ChannelControlHelper {

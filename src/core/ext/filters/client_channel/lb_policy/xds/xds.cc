@@ -405,12 +405,12 @@ class XdsLb : public LoadBalancingPolicy {
   }
 
   // Methods for dealing with fallback state.
+  static void OnFallbackTimerLocked(void* arg, grpc_error* error);
+  void MaybeExitFallbackMode();
+  void UpdateFallbackPolicyLocked();
   grpc_channel_args* CreateFallbackPolicyArgsLocked();
   OrphanablePtr<LoadBalancingPolicy> CreateFallbackPolicyLocked(
       const char* name, const grpc_channel_args* args);
-  void UpdateFallbackPolicyLocked();
-  void MaybeExitFallbackMode();
-  static void OnFallbackTimerLocked(void* arg, grpc_error* error);
 
   // Who the client is trying to communicate with.
   const char* server_name_ = nullptr;
@@ -435,14 +435,13 @@ class XdsLb : public LoadBalancingPolicy {
   // Timeout in milliseconds for the LB call. 0 means no deadline.
   int lb_call_timeout_ms_ = 0;
 
-  // Whether the checks for fallback at startup are all pending. There are
+  // Whether the checks for fallback at startup are ALL pending. There are
   // several cases where this can be reset:
   // 1. The fallback timer fires, we enter fallback mode.
-  // FIXME
-  // 2. Before the fallback timer fires, the child policy becomes READY, we use
-  // the child policy.
-  // 3. Before the fallback timer fires, the LB channel becomes
+  // 2. Before the fallback timer fires, the LB channel becomes
   // TRANSIENT_FAILURE or the LB call fails, we enter fallback mode.
+  // 3. Before the fallback timer fires, any child policy in the locality map
+  // becomes READY, we use that child policy.
   bool fallback_at_startup_checks_pending_ = false;
   // Timeout in milliseconds for before using fallback backend addresses.
   // 0 means not using fallback.
@@ -1484,9 +1483,7 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
                              args_, this);
   // Update the existing fallback policy. The fallback policy config and/or the
   // fallback addresses may be new.
-  if (fallback_policy_ != nullptr) {
-    UpdateFallbackPolicyLocked();
-  }
+  if (fallback_policy_ != nullptr) UpdateFallbackPolicyLocked();
   // If this is the initial update, start the fallback-at-startup checks.
   if (is_initial_update) {
     grpc_millis deadline = ExecCtx::Get()->Now() + lb_fallback_timeout_ms_;
