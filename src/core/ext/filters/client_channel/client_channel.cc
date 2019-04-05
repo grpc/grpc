@@ -137,7 +137,7 @@ class ChannelData {
 
   // Note: Does NOT return a new ref.
   grpc_error* disconnect_error() const {
-    return disconnect_error_.Load(grpc_core::MemoryOrder::ACQUIRE);
+    return disconnect_error_.Load(MemoryOrder::ACQUIRE);
   }
 
   grpc_combiner* data_plane_combiner() const { return data_plane_combiner_; }
@@ -543,7 +543,7 @@ class ChannelData::ClientChannelControlHelper
       grpc_connectivity_state state, grpc_error* state_error,
       UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
     grpc_error* disconnect_error =
-        chand_->disconnect_error_.Load(grpc_core::MemoryOrder::ACQUIRE);
+        chand_->disconnect_error_.Load(MemoryOrder::ACQUIRE);
     if (grpc_client_channel_routing_trace.enabled()) {
       const char* extra = disconnect_error == GRPC_ERROR_NONE
                               ? ""
@@ -592,7 +592,7 @@ bool GetEnableRetries(const grpc_channel_args* args) {
       grpc_channel_args_find(args, GRPC_ARG_ENABLE_RETRIES), true);
 }
 
-bool GetMaxPerRpcRetryBufferSize(const grpc_channel_args* args) {
+size_t GetMaxPerRpcRetryBufferSize(const grpc_channel_args* args) {
   return static_cast<size_t>(grpc_channel_arg_get_integer(
       grpc_channel_args_find(args, GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE),
       {DEFAULT_PER_RPC_RETRY_BUFFER_SIZE, 0, INT_MAX}));
@@ -603,9 +603,9 @@ RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
   const bool use_local_subchannel_pool = grpc_channel_arg_get_bool(
       grpc_channel_args_find(args, GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL), false);
   if (use_local_subchannel_pool) {
-    return grpc_core::MakeRefCounted<grpc_core::LocalSubchannelPool>();
+    return MakeRefCounted<LocalSubchannelPool>();
   }
-  return grpc_core::GlobalSubchannelPool::instance();
+  return GlobalSubchannelPool::instance();
 }
 
 ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
@@ -694,7 +694,7 @@ ChannelData::~ChannelData() {
   grpc_pollset_set_destroy(interested_parties_);
   GRPC_COMBINER_UNREF(data_plane_combiner_, "client_channel");
   GRPC_COMBINER_UNREF(combiner_, "client_channel");
-  GRPC_ERROR_UNREF(disconnect_error_.Load(grpc_core::MemoryOrder::RELAXED));
+  GRPC_ERROR_UNREF(disconnect_error_.Load(MemoryOrder::RELAXED));
   grpc_connectivity_state_destroy(&state_tracker_);
   gpr_mu_destroy(&info_mu_);
 }
@@ -864,7 +864,7 @@ void ChannelData::RemoveQueuedPick(QueuedPick* to_remove,
 }
 
 void ChannelData::TryToConnectLocked(void* arg, grpc_error* error_ignored) {
-  auto* chand = static_cast<grpc_core::ChannelData*>(arg);
+  auto* chand = static_cast<ChannelData*>(arg);
   chand->resolving_lb_policy_->ExitIdleLocked();
   GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_, "TryToConnect");
 }
