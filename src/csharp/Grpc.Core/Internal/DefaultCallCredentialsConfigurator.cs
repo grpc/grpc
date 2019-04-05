@@ -18,39 +18,38 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-
-using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// Credentials that allow composing multiple credentials objects into one <see cref="CallCredentials"/> object.
+    /// Creates native call credential objects from instances of <c>CallCredentials</c>.
     /// </summary>
-    internal sealed class CompositeCallCredentials : CallCredentials
+    internal class DefaultCallCredentialsConfigurator : CallCredentialsConfiguratorBase
     {
-        readonly List<CallCredentials> credentials;
+        CallCredentialsSafeHandle nativeCredentials;
 
-        /// <summary>
-        /// Initializes a new instance of <c>CompositeCallCredentials</c> class.
-        /// The resulting credentials object will be composite of all the credentials specified as parameters.
-        /// </summary>
-        /// <param name="credentials">credentials to compose</param>
-        public CompositeCallCredentials(params CallCredentials[] credentials)
+        public CallCredentialsSafeHandle NativeCredentials => nativeCredentials;
+
+        public override void SetAsyncAuthInterceptorCredentials(object state, AsyncAuthInterceptor interceptor)
         {
-            GrpcPreconditions.CheckArgument(credentials.Length >= 2, "Composite credentials object can only be created from 2 or more credentials.");
-            this.credentials = new List<CallCredentials>(credentials);
+            GrpcPreconditions.CheckState(nativeCredentials == null);
+
+            var plugin = new NativeMetadataCredentialsPlugin(interceptor);
+            nativeCredentials = plugin.Credentials;
         }
 
-        internal override CallCredentialsSafeHandle ToNativeCredentials()
+        public override void SetCompositeCredentials(object state, IReadOnlyList<CallCredentials> credentials)
         {
-            return ToNativeRecursive(0);
+            GrpcPreconditions.CheckState(nativeCredentials == null);
+
+            GrpcPreconditions.CheckArgument(credentials.Count >= 2);
+            nativeCredentials = CompositeToNativeRecursive(credentials, 0);
         }
 
         // Recursive descent makes managing lifetime of intermediate CredentialSafeHandle instances easier.
         // In practice, we won't usually see composites from more than two credentials anyway.
-        private CallCredentialsSafeHandle ToNativeRecursive(int startIndex)
+        private CallCredentialsSafeHandle CompositeToNativeRecursive(IReadOnlyList<CallCredentials> credentials, int startIndex)
         {
             if (startIndex == credentials.Count - 1)
             {
@@ -58,7 +57,7 @@ namespace Grpc.Core.Internal
             }
 
             using (var cred1 = credentials[startIndex].ToNativeCredentials())
-            using (var cred2 = ToNativeRecursive(startIndex + 1))
+            using (var cred2 = CompositeToNativeRecursive(credentials, startIndex + 1))
             {
                 var nativeComposite = CallCredentialsSafeHandle.CreateComposite(cred1, cred2);
                 if (nativeComposite.IsInvalid)
@@ -67,6 +66,20 @@ namespace Grpc.Core.Internal
                 }
                 return nativeComposite;
             }
+        }
+    }
+
+    internal static class CallCredentialsExtensions
+    {
+        /// <summary>
+        /// Creates native object for the credentials.
+        /// </summary>
+        /// <returns>The native credentials.</returns>
+        public static CallCredentialsSafeHandle ToNativeCredentials(this CallCredentials credentials)
+        {
+            var configurator = new DefaultCallCredentialsConfigurator();
+            credentials.InternalPopulateConfiguration(configurator, credentials);
+            return configurator.NativeCredentials;
         }
     }
 }

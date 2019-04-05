@@ -16,9 +16,8 @@
 
 #endregion
 
-using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Collections.ObjectModel;
 
 using Grpc.Core.Internal;
 using Grpc.Core.Utils;
@@ -38,7 +37,7 @@ namespace Grpc.Core
         /// <returns>The new <c>CompositeCallCredentials</c></returns>
         public static CallCredentials Compose(params CallCredentials[] credentials)
         {
-            return new CompositeCallCredentials(credentials);
+            return new CompositeCallCredentialsConfiguration(credentials);
         }
 
         /// <summary>
@@ -48,13 +47,44 @@ namespace Grpc.Core
         /// <param name="interceptor">authentication interceptor</param>
         public static CallCredentials FromInterceptor(AsyncAuthInterceptor interceptor)
         {
-            return new MetadataCredentials(interceptor);
+            return new AsyncAuthInterceptorCredentialsConfiguration(interceptor);
         }
 
         /// <summary>
-        /// Creates native object for the credentials.
+        /// Populates this call credential instances.
+        /// You never need to invoke this, part of internal implementation.
         /// </summary>
-        /// <returns>The native credentials.</returns>
-        internal abstract CallCredentialsSafeHandle ToNativeCredentials();
+        public abstract void InternalPopulateConfiguration(CallCredentialsConfiguratorBase configurator, object state);
+
+        private class CompositeCallCredentialsConfiguration : CallCredentials
+        {
+            readonly IReadOnlyList<CallCredentials> credentials;
+
+            public CompositeCallCredentialsConfiguration(CallCredentials[] credentials)
+            {
+                GrpcPreconditions.CheckArgument(credentials.Length >= 2, "Composite credentials object can only be created from 2 or more credentials.");
+                this.credentials = new List<CallCredentials>(credentials).AsReadOnly();
+            }
+
+            public override void InternalPopulateConfiguration(CallCredentialsConfiguratorBase configurator, object state)
+            {
+                configurator.SetCompositeCredentials(state, credentials);
+            }
+        }
+
+        internal class AsyncAuthInterceptorCredentialsConfiguration : CallCredentials
+        {
+            readonly AsyncAuthInterceptor interceptor;
+
+            public AsyncAuthInterceptorCredentialsConfiguration(AsyncAuthInterceptor interceptor)
+            {
+                this.interceptor = GrpcPreconditions.CheckNotNull(interceptor);
+            }
+
+            public override void InternalPopulateConfiguration(CallCredentialsConfiguratorBase configurator, object state)
+            {
+                configurator.SetAsyncAuthInterceptorCredentials(state, interceptor);
+            }
+        }
     }
 }
