@@ -211,7 +211,7 @@ class BalancerServiceImpl : public BalancerService {
     gpr_log(GPR_INFO, "LB[%p]: BalanceLoad", this);
     {
       std::unique_lock<std::mutex> lock(mu_);
-      if (shutdown_) goto done;
+      if (serverlist_done_) goto done;
     }
     {
       // Balancer shouldn't receive the call credentials metadata.
@@ -292,16 +292,11 @@ class BalancerServiceImpl : public BalancerService {
     std::lock_guard<std::mutex> lock(mu_);
     serverlist_done_ = false;
     load_report_ready_ = false;
-    shutdown_ = false;
     responses_and_delays_.clear();
     client_stats_.Reset();
   }
 
   void Shutdown() {
-    {
-      std::unique_lock<std::mutex> lock(mu_);
-      shutdown_ = true;
-    }
     NotifyDoneWithServerlists();
     gpr_log(GPR_INFO, "LB[%p]: shut down", this);
   }
@@ -366,7 +361,6 @@ class BalancerServiceImpl : public BalancerService {
   std::condition_variable serverlist_cond_;
   bool serverlist_done_ = false;
   ClientStats client_stats_;
-  bool shutdown_;
 };
 
 class GrpclbEnd2endTest : public ::testing::Test {
@@ -835,7 +829,6 @@ TEST_F(SingleBalancerTest, SwapChildPolicy) {
     EXPECT_EQ(backends_[i]->service_.request_count(), 0UL);
   }
   // Send new resolution that removes child policy from service config.
-  gpr_log(GPR_INFO, "Sending empty service config");
   SetNextResolutionAllBalancers("{}");
   WaitForAllBackends();
   CheckRpcSendOk(kNumRpcs, 1000 /* timeout_ms */, true /* wait_for_ready */);
@@ -1373,7 +1366,7 @@ class UpdatesTest : public GrpclbEnd2endTest {
   UpdatesTest() : GrpclbEnd2endTest(4, 3, 0) {}
 };
 
-TEST_F(UpdatesTest, UpdateBalancers) {
+TEST_F(UpdatesTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   SetNextResolutionAllBalancers();
   const std::vector<int> first_backend{GetBackendPorts()[0]};
   const std::vector<int> second_backend{GetBackendPorts()[1]};
@@ -1393,9 +1386,6 @@ TEST_F(UpdatesTest, UpdateBalancers) {
   // All 10 requests should have gone to the first backend.
   EXPECT_EQ(10U, backends_[0]->service_.request_count());
 
-  balancers_[0]->service_.NotifyDoneWithServerlists();
-  balancers_[1]->service_.NotifyDoneWithServerlists();
-  balancers_[2]->service_.NotifyDoneWithServerlists();
   // Balancer 0 got a single request.
   EXPECT_EQ(1U, balancers_[0]->service_.request_count());
   // and sent a single response.
@@ -1411,25 +1401,21 @@ TEST_F(UpdatesTest, UpdateBalancers) {
   SetNextResolution(addresses);
   gpr_log(GPR_INFO, "========= UPDATE 1 DONE ==========");
 
-  // Wait until update has been processed, as signaled by the second backend
-  // receiving a request.
   EXPECT_EQ(0U, backends_[1]->service_.request_count());
-  WaitForBackend(1);
+  gpr_timespec deadline = gpr_time_add(
+      gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(10000, GPR_TIMESPAN));
+  // Send 10 seconds worth of RPCs
+  do {
+    CheckRpcSendOk();
+  } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
+  // The current LB call is still working, so grpclb continued using it to the
+  // first balancer, which doesn't assign the second backend.
+  EXPECT_EQ(0U, backends_[1]->service_.request_count());
 
-  backends_[1]->service_.ResetCounters();
-  gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
-  CheckRpcSendOk(10);
-  gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
-  // All 10 requests should have gone to the second backend.
-  EXPECT_EQ(10U, backends_[1]->service_.request_count());
-
-  balancers_[0]->service_.NotifyDoneWithServerlists();
-  balancers_[1]->service_.NotifyDoneWithServerlists();
-  balancers_[2]->service_.NotifyDoneWithServerlists();
   EXPECT_EQ(1U, balancers_[0]->service_.request_count());
   EXPECT_EQ(1U, balancers_[0]->service_.response_count());
-  EXPECT_EQ(1U, balancers_[1]->service_.request_count());
-  EXPECT_EQ(1U, balancers_[1]->service_.response_count());
+  EXPECT_EQ(0U, balancers_[1]->service_.request_count());
+  EXPECT_EQ(0U, balancers_[1]->service_.response_count());
   EXPECT_EQ(0U, balancers_[2]->service_.request_count());
   EXPECT_EQ(0U, balancers_[2]->service_.response_count());
 }
@@ -1540,9 +1526,6 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
   EXPECT_EQ(20U, backends_[0]->service_.request_count());
   EXPECT_EQ(0U, backends_[1]->service_.request_count());
 
-  balancers_[0]->service_.NotifyDoneWithServerlists();
-  balancers_[1]->service_.NotifyDoneWithServerlists();
-  balancers_[2]->service_.NotifyDoneWithServerlists();
   // Balancer 0 got a single request.
   EXPECT_EQ(1U, balancers_[0]->service_.request_count());
   // and sent a single response.
@@ -1572,9 +1555,6 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
   // All 10 requests should have gone to the second backend.
   EXPECT_EQ(10U, backends_[1]->service_.request_count());
 
-  balancers_[0]->service_.NotifyDoneWithServerlists();
-  balancers_[1]->service_.NotifyDoneWithServerlists();
-  balancers_[2]->service_.NotifyDoneWithServerlists();
   EXPECT_EQ(1U, balancers_[0]->service_.request_count());
   EXPECT_EQ(1U, balancers_[0]->service_.response_count());
   // The second balancer, published as part of the first update, may end up
