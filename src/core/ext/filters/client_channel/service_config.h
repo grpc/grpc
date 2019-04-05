@@ -185,8 +185,9 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   static int CountNamesInMethodConfig(grpc_json* json);
 
   // Returns a path string for the JSON name object specified by \a json.
-  // Returns null on error.
-  static UniquePtr<char> ParseJsonMethodName(grpc_json* json);
+  // Returns null on error, and stores error in \a error.
+  static UniquePtr<char> ParseJsonMethodName(grpc_json* json,
+                                             grpc_error** error);
 
   // Parses the method config from \a json.  Adds an entry to \a entries for
   // each name found, incrementing \a idx for each entry added.
@@ -209,8 +210,13 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
   InlinedVector<UniquePtr<ServiceConfigParsedObject>, kNumPreallocatedParsers>
       parsed_global_service_config_objects_;
+  // A map from the method name to the service config objects vector. Note that
+  // we are using a raw pointer and not a unique pointer so that we can use the
+  // same vector for multiple names.
   RefCountedPtr<SliceHashTable<const ServiceConfigObjectsVector*>>
       parsed_method_service_config_objects_table_;
+  // Storage for all the vectors that are being used in
+  // parsed_method_service_config_objects_table_.
   InlinedVector<UniquePtr<ServiceConfigObjectsVector>, 32>
       service_config_objects_vectors_storage_;
 };
@@ -247,7 +253,10 @@ bool ServiceConfig::ParseJsonMethodConfig(
     if (strcmp(child->key, "name") == 0) {
       if (child->type != GRPC_JSON_ARRAY) return false;
       for (grpc_json* name = child->child; name != nullptr; name = name->next) {
-        UniquePtr<char> path = ParseJsonMethodName(name);
+        grpc_error* error = GRPC_ERROR_NONE;
+        UniquePtr<char> path = ParseJsonMethodName(name, &error);
+        // We are not reporting the error here.
+        GRPC_ERROR_UNREF(error);
         if (path == nullptr) return false;
         paths.push_back(std::move(path));
       }

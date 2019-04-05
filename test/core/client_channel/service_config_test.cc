@@ -46,14 +46,14 @@ class TestParser1 : public ServiceConfigParser {
          field = field->next) {
       if (strcmp(field->key, "global_param") == 0) {
         if (field->type != GRPC_JSON_NUMBER) {
-          *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "global_param value type should be a number");
+          *error =
+              GRPC_ERROR_CREATE_FROM_STATIC_STRING(InvalidTypeErrorMessage());
           return nullptr;
         }
         int value = gpr_parse_nonnegative_int(field->value);
         if (value == -1) {
-          *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "global_param value type should be non-negative");
+          *error =
+              GRPC_ERROR_CREATE_FROM_STATIC_STRING(InvalidValueErrorMessage());
           return nullptr;
         }
         return UniquePtr<ServiceConfigParsedObject>(
@@ -61,6 +61,14 @@ class TestParser1 : public ServiceConfigParser {
       }
     }
     return nullptr;
+  }
+
+  static const char* InvalidTypeErrorMessage() {
+    return "global_param value type should be a number";
+  }
+
+  static const char* InvalidValueErrorMessage() {
+    return "global_param value type should be non-negative";
   }
 };
 
@@ -76,14 +84,14 @@ class TestParser2 : public ServiceConfigParser {
       }
       if (strcmp(field->key, "method_param") == 0) {
         if (field->type != GRPC_JSON_NUMBER) {
-          *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "method_param value type should be a number");
+          *error =
+              GRPC_ERROR_CREATE_FROM_STATIC_STRING(InvalidTypeErrorMessage());
           return nullptr;
         }
         int value = gpr_parse_nonnegative_int(field->value);
         if (value == -1) {
-          *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "method_param value type should be non-negative");
+          *error =
+              GRPC_ERROR_CREATE_FROM_STATIC_STRING(InvalidValueErrorMessage());
           return nullptr;
         }
         return UniquePtr<ServiceConfigParsedObject>(
@@ -91,6 +99,14 @@ class TestParser2 : public ServiceConfigParser {
       }
     }
     return nullptr;
+  }
+
+  static const char* InvalidTypeErrorMessage() {
+    return "method_param value type should be a number";
+  }
+
+  static const char* InvalidValueErrorMessage() {
+    return "method_param value type should be non-negative";
   }
 };
 
@@ -110,7 +126,10 @@ TEST_F(ServiceConfigTest, ErrorCheck1) {
   const char* test_json = "";
   grpc_error* error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(test_json, &error);
+  gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
   EXPECT_TRUE(error != GRPC_ERROR_NONE);
+  EXPECT_TRUE(strstr(grpc_error_string(error),
+                     "failed to parse JSON for service config") != nullptr);
 }
 
 TEST_F(ServiceConfigTest, BasicTest1) {
@@ -126,6 +145,7 @@ TEST_F(ServiceConfigTest, ErrorNoNames) {
   auto svc_cfg = ServiceConfig::Create(test_json, &error);
   gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
   EXPECT_TRUE(error != GRPC_ERROR_NONE);
+  EXPECT_TRUE(strstr(grpc_error_string(error), "No names found") != nullptr);
 }
 
 TEST_F(ServiceConfigTest, ErrorNoNamesWithMultipleMethodConfigs) {
@@ -135,6 +155,7 @@ TEST_F(ServiceConfigTest, ErrorNoNamesWithMultipleMethodConfigs) {
   auto svc_cfg = ServiceConfig::Create(test_json, &error);
   gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
   EXPECT_TRUE(error != GRPC_ERROR_NONE);
+  EXPECT_TRUE(strstr(grpc_error_string(error), "No names found") != nullptr);
 }
 
 TEST_F(ServiceConfigTest, ValidMethodConfig) {
@@ -171,6 +192,8 @@ TEST_F(ServiceConfigTest, Parser1ErrorInvalidType) {
   auto svc_cfg = ServiceConfig::Create(test_json, &error);
   gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
   EXPECT_TRUE(error != GRPC_ERROR_NONE);
+  EXPECT_TRUE(strstr(grpc_error_string(error),
+                     TestParser1::InvalidTypeErrorMessage()) != nullptr);
 }
 
 TEST_F(ServiceConfigTest, Parser1ErrorInvalidValue) {
@@ -179,6 +202,8 @@ TEST_F(ServiceConfigTest, Parser1ErrorInvalidValue) {
   auto svc_cfg = ServiceConfig::Create(test_json, &error);
   gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
   EXPECT_TRUE(error != GRPC_ERROR_NONE);
+  EXPECT_TRUE(strstr(grpc_error_string(error),
+                     TestParser1::InvalidValueErrorMessage()) != nullptr);
 }
 
 TEST_F(ServiceConfigTest, Parser2BasicTest) {
@@ -188,6 +213,12 @@ TEST_F(ServiceConfigTest, Parser2BasicTest) {
   grpc_error* error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(test_json, &error);
   EXPECT_TRUE(error == GRPC_ERROR_NONE);
+  const auto* const* vector_ptr = svc_cfg->GetMethodServiceConfigObjectsVector(
+      grpc_slice_from_static_string("/TestServ/TestMethod"));
+  ASSERT_TRUE(vector_ptr != nullptr);
+  const auto* vector = *vector_ptr;
+  auto parsed_object = ((*vector)[1]).get();
+  EXPECT_TRUE(static_cast<TestParsedObject1*>(parsed_object)->value() == 5);
 }
 
 TEST_F(ServiceConfigTest, Parser2ErrorInvalidType) {
@@ -197,6 +228,8 @@ TEST_F(ServiceConfigTest, Parser2ErrorInvalidType) {
   grpc_error* error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(test_json, &error);
   EXPECT_TRUE(error != GRPC_ERROR_NONE);
+  EXPECT_TRUE(strstr(grpc_error_string(error),
+                     TestParser2::InvalidTypeErrorMessage()) != nullptr);
 }
 
 TEST_F(ServiceConfigTest, Parser2ErrorInvalidValue) {
@@ -206,6 +239,8 @@ TEST_F(ServiceConfigTest, Parser2ErrorInvalidValue) {
   grpc_error* error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(test_json, &error);
   EXPECT_TRUE(error != GRPC_ERROR_NONE);
+  EXPECT_TRUE(strstr(grpc_error_string(error),
+                     TestParser2::InvalidValueErrorMessage()) != nullptr);
 }
 
 }  // namespace testing
