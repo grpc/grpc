@@ -72,14 +72,12 @@ class ServiceConfigParser {
   virtual UniquePtr<ServiceConfigParsedObject> ParseGlobalParams(
       const grpc_json* json, grpc_error** error) {
     GPR_DEBUG_ASSERT(error != nullptr);
-    *error = GRPC_ERROR_NONE;
     return nullptr;
   }
 
   virtual UniquePtr<ServiceConfigParsedObject> ParsePerMethodParams(
       const grpc_json* json, grpc_error** error) {
     GPR_DEBUG_ASSERT(error != nullptr);
-    *error = GRPC_ERROR_NONE;
     return nullptr;
   }
 
@@ -152,7 +150,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   /// registered parser. Each parser is responsible for reading the service
   /// config json and returning a parsed object. This parsed object can later be
   /// retrieved using the same index that was returned at registration time.
-  static int RegisterParser(ServiceConfigParser parser) {
+  static int RegisterParser(UniquePtr<ServiceConfigParser> parser) {
     registered_parsers_->push_back(std::move(parser));
     return registered_parsers_->size() - 1;
   }
@@ -168,7 +166,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   }
 
  private:
-  typedef InlinedVector<ServiceConfigParser, kNumPreallocatedParsers>
+  typedef InlinedVector<UniquePtr<ServiceConfigParser>, kNumPreallocatedParsers>
       ServiceConfigParserList;
   // So New() can call our private ctor.
   template <typename T, typename... Args>

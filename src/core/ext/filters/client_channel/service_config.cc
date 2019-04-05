@@ -87,7 +87,7 @@ grpc_error* ServiceConfig::ParseGlobalParams(const grpc_json* json_tree) {
   for (size_t i = 0; i < registered_parsers_->size(); i++) {
     grpc_error* parser_error = GRPC_ERROR_NONE;
     auto parsed_obj =
-        (*registered_parsers_)[i].ParseGlobalParams(json_tree, &parser_error);
+        (*registered_parsers_)[i]->ParseGlobalParams(json_tree, &parser_error);
     error = grpc_error_add_child(error, parser_error);
     parsed_global_service_config_objects_.push_back(std::move(parsed_obj));
   }
@@ -103,7 +103,7 @@ grpc_error* ServiceConfig::ParseJsonMethodConfigToServiceConfigObjectsTable(
   for (size_t i = 0; i < registered_parsers_->size(); i++) {
     grpc_error* parser_error = GRPC_ERROR_NONE;
     auto parsed_obj =
-        (*registered_parsers_)[i].ParsePerMethodParams(json, &error);
+        (*registered_parsers_)[i]->ParsePerMethodParams(json, &error);
     error = grpc_error_add_child(error, parser_error);
     objs_vector->push_back(std::move(parsed_obj));
   }

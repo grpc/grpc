@@ -5441,6 +5441,19 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - gpr
+- name: service_config_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/client_channel/service_config_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  uses:
+  - grpc++_test
 - name: shutdown_test
   gtest: true
   build: test
