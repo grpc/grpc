@@ -5337,6 +5337,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/ext/health_check_service_server_builder_option.h \
     include/grpcpp/generic/async_generic_service.h \
     include/grpcpp/generic/generic_stub.h \
+    include/grpcpp/generic/generic_stub_impl.h \
     include/grpcpp/grpcpp.h \
     include/grpcpp/health_check_service_interface.h \
     include/grpcpp/health_check_service_interface_impl.h \
@@ -5362,6 +5363,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/security/auth_metadata_processor_impl.h \
     include/grpcpp/security/credentials.h \
     include/grpcpp/security/server_credentials.h \
+    include/grpcpp/security/server_credentials_impl.h \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
     include/grpcpp/server_context.h \
@@ -5944,6 +5946,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/ext/health_check_service_server_builder_option.h \
     include/grpcpp/generic/async_generic_service.h \
     include/grpcpp/generic/generic_stub.h \
+    include/grpcpp/generic/generic_stub_impl.h \
     include/grpcpp/grpcpp.h \
     include/grpcpp/health_check_service_interface.h \
     include/grpcpp/health_check_service_interface_impl.h \
@@ -5969,6 +5972,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/security/auth_metadata_processor_impl.h \
     include/grpcpp/security/credentials.h \
     include/grpcpp/security/server_credentials.h \
+    include/grpcpp/security/server_credentials_impl.h \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
     include/grpcpp/server_context.h \
@@ -6866,6 +6870,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/ext/health_check_service_server_builder_option.h \
     include/grpcpp/generic/async_generic_service.h \
     include/grpcpp/generic/generic_stub.h \
+    include/grpcpp/generic/generic_stub_impl.h \
     include/grpcpp/grpcpp.h \
     include/grpcpp/health_check_service_interface.h \
     include/grpcpp/health_check_service_interface_impl.h \
@@ -6891,6 +6896,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/security/auth_metadata_processor_impl.h \
     include/grpcpp/security/credentials.h \
     include/grpcpp/security/server_credentials.h \
+    include/grpcpp/security/server_credentials_impl.h \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
     include/grpcpp/server_context.h \

@@ -1016,20 +1016,13 @@ TEST_F(SingleBalancerTest, BackendsRestart) {
   ScheduleResponseForBalancer(
       0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
       0);
-  // Make sure that trying to connect works without a call.
-  channel_->GetState(true /* try_to_connect */);
   WaitForAllBackends();
-  balancers_[0]->service_.NotifyDoneWithServerlists();
-  // The balancer got a single request.
-  EXPECT_EQ(1U, balancers_[0]->service_.request_count());
-  // and sent a single response.
-  EXPECT_EQ(1U, balancers_[0]->service_.response_count());
   // Stop backends.  RPCs should fail.
   ShutdownAllBackends();
   CheckRpcSendFailure();
   // Restart all backends.  RPCs should start succeeding again.
   StartAllBackends();
-  CheckRpcSendOk(1 /* times */, 1000 /* timeout_ms */,
+  CheckRpcSendOk(1 /* times */, 2000 /* timeout_ms */,
                  true /* wait_for_ready */);
 }
 

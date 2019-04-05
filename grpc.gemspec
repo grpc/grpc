@@ -30,7 +30,7 @@ Gem::Specification.new do |s|
   s.platform      = Gem::Platform::RUBY
 
   s.add_dependency 'google-protobuf', '~> 3.7'
-  s.add_dependency 'googleapis-common-protos-types', '~> 1.0.0'
+  s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
   s.add_development_dependency 'bundler',            '~> 1.9'
   s.add_development_dependency 'facter',             '~> 2.4'

@@ -62,7 +62,7 @@ class CFStreamTest : public ::testing::Test {
   CFStreamTest()
       : server_host_("grpctest"),
         interface_("lo0"),
-        ipv4_address_("127.0.0.2"),
+        ipv4_address_("10.0.0.1"),
         kRequestMessage_("🖖") {}
 
   void DNSUp() {
