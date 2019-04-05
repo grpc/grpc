@@ -23,15 +23,15 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  # version = '1.20.0-pre2'
-  version = '0.0.8-pre2'
+  # version = '1.20.0-pre3'
+  version = '0.0.8-pre3'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  grpc_version = '1.20.0-pre2'
+  grpc_version = '1.20.0-pre3'
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
