@@ -1008,6 +1008,20 @@ TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerChannelFails) {
                  /* wait_for_ready */ false);
 }
 
+TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerCallFails) {
+  const int kFallbackTimeoutMs = 10000 * grpc_test_slowdown_factor();
+  ResetStub(kFallbackTimeoutMs);
+  // Return an unreachable balancer and one fallback backend.
+  SetNextResolution({backends_[0]->port_}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannel({grpc_pick_unused_port_or_die()});
+  // Balancer drops call without sending a serverlist.
+  balancers_[0]->service_.NotifyDoneWithServerlists();
+  // Send RPC with deadline less than the fallback timeout and make sure it
+  // succeeds.
+  CheckRpcSendOk(/* times */ 1, /* timeout_ms */ 1000,
+                 /* wait_for_ready */ false);
+}
+
 TEST_F(SingleBalancerTest, BackendsRestart) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
