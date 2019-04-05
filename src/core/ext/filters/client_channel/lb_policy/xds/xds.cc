@@ -301,7 +301,7 @@ class XdsLb : public LoadBalancingPolicy {
         Subchannel* CreateSubchannel(const grpc_channel_args& args) override;
         grpc_channel* CreateChannel(const char* target,
                                     const grpc_channel_args& args) override;
-        void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
+        void UpdateState(grpc_connectivity_state state,
                          UniquePtr<SubchannelPicker> picker) override;
         void RequestReresolution() override;
         void set_child(LoadBalancingPolicy* child) { child_ = child; }
@@ -1565,6 +1565,7 @@ void XdsLb::LocalityMap::LocalityEntry::Orphan() {
 //
 // LocalityEntry::Helper implementation
 //
+
 bool XdsLb::LocalityMap::LocalityEntry::Helper::CalledByPendingChild() const {
   GPR_ASSERT(child_ != nullptr);
   return child_ == entry_->pending_child_policy_.get();
@@ -1594,12 +1595,8 @@ grpc_channel* XdsLb::LocalityMap::LocalityEntry::Helper::CreateChannel(
 }
 
 void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
-    grpc_connectivity_state state, grpc_error* state_error,
-    UniquePtr<SubchannelPicker> picker) {
-  if (entry_->parent_->shutting_down_) {
-    GRPC_ERROR_UNREF(state_error);
-    return;
-  }
+    grpc_connectivity_state state, UniquePtr<SubchannelPicker> picker) {
+  if (entry_->parent_->shutting_down_) return;
   // If this request is from the pending child policy, ignore it until
   // it reports READY, at which point we swap it into place.
   if (CalledByPendingChild()) {
@@ -1609,10 +1606,7 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
               entry_->parent_.get(), this, entry_->pending_child_policy_.get(),
               grpc_connectivity_state_name(state));
     }
-    if (state != GRPC_CHANNEL_READY) {
-      GRPC_ERROR_UNREF(state_error);
-      return;
-    }
+    if (state != GRPC_CHANNEL_READY) return;
     grpc_pollset_set_del_pollset_set(
         entry_->child_policy_->interested_parties(),
         entry_->parent_->interested_parties());
@@ -1620,7 +1614,6 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
     entry_->child_policy_ = std::move(entry_->pending_child_policy_);
   } else if (!CalledByCurrentChild()) {
     // This request is from an outdated child, so ignore it.
-    GRPC_ERROR_UNREF(state_error);
     return;
   }
   // TODO(juanlishen): When in fallback mode, pass the child picker
@@ -1632,9 +1625,8 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
           ? nullptr
           : entry_->parent_->lb_chand_->lb_calld()->client_stats();
   entry_->parent_->channel_control_helper()->UpdateState(
-      state, state_error,
-      UniquePtr<SubchannelPicker>(
-          New<Picker>(std::move(picker), std::move(client_stats))));
+      state, UniquePtr<SubchannelPicker>(
+                 New<Picker>(std::move(picker), std::move(client_stats))));
 }
 
 void XdsLb::LocalityMap::LocalityEntry::Helper::RequestReresolution() {

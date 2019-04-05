@@ -227,13 +227,11 @@ namespace {
 class ConnectivityStateAndPickerSetter {
  public:
   ConnectivityStateAndPickerSetter(
-      channel_data* chand, grpc_connectivity_state state,
-      grpc_error* state_error, const char* reason,
+      channel_data* chand, grpc_connectivity_state state, const char* reason,
       UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker)
       : chand_(chand), picker_(std::move(picker)) {
     // Update connectivity state here, while holding control plane combiner.
-    grpc_connectivity_state_set(&chand->state_tracker, state, state_error,
-                                reason);
+    grpc_connectivity_state_set(&chand->state_tracker, state, reason);
     if (chand->channelz_node != nullptr) {
       chand->channelz_node->AddTraceEvent(
           channelz::ChannelTrace::Severity::Info,
@@ -456,7 +454,7 @@ class ClientChannelControlHelper
   }
 
   void UpdateState(
-      grpc_connectivity_state state, grpc_error* state_error,
+      grpc_connectivity_state state,
       UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
     grpc_error* disconnect_error =
         chand_->disconnect_error.Load(grpc_core::MemoryOrder::ACQUIRE);
@@ -464,17 +462,14 @@ class ClientChannelControlHelper
       const char* extra = disconnect_error == GRPC_ERROR_NONE
                               ? ""
                               : " (ignoring -- channel shutting down)";
-      gpr_log(GPR_INFO, "chand=%p: update: state=%s error=%s picker=%p%s",
-              chand_, grpc_connectivity_state_name(state),
-              grpc_error_string(state_error), picker.get(), extra);
+      gpr_log(GPR_INFO, "chand=%p: update: state=%s picker=%p%s", chand_,
+              grpc_connectivity_state_name(state), picker.get(), extra);
     }
     // Do update only if not shutting down.
     if (disconnect_error == GRPC_ERROR_NONE) {
       // Will delete itself.
-      New<ConnectivityStateAndPickerSetter>(chand_, state, state_error,
-                                            "helper", std::move(picker));
-    } else {
-      GRPC_ERROR_UNREF(state_error);
+      New<ConnectivityStateAndPickerSetter>(chand_, state, "helper",
+                                            std::move(picker));
     }
   }
 
@@ -524,16 +519,12 @@ static bool process_resolver_result_locked(
 }
 
 static grpc_error* do_ping_locked(channel_data* chand, grpc_transport_op* op) {
-  grpc_error* error = GRPC_ERROR_NONE;
-  grpc_connectivity_state state =
-      grpc_connectivity_state_get(&chand->state_tracker, &error);
-  if (state != GRPC_CHANNEL_READY) {
-    grpc_error* new_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-        "channel not connected", &error, 1);
-    GRPC_ERROR_UNREF(error);
-    return new_error;
+  if (grpc_connectivity_state_check(&chand->state_tracker) !=
+      GRPC_CHANNEL_READY) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING( "channel not connected");
   }
   LoadBalancingPolicy::PickArgs pick;
+  grpc_error* error = GRPC_ERROR_NONE;
   chand->picker->Pick(&pick, &error);
   if (pick.connected_subchannel != nullptr) {
     pick.connected_subchannel->Ping(op->send_ping.on_initiate,
@@ -587,8 +578,7 @@ static void start_transport_op_locked(void* arg, grpc_error* error_ignored) {
     chand->resolving_lb_policy.reset();
     // Will delete itself.
     grpc_core::New<grpc_core::ConnectivityStateAndPickerSetter>(
-        chand, GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(op->disconnect_with_error),
-        "shutdown from API",
+        chand, GRPC_CHANNEL_SHUTDOWN, "shutdown from API",
         grpc_core::UniquePtr<LoadBalancingPolicy::SubchannelPicker>(
             grpc_core::New<LoadBalancingPolicy::TransientFailurePicker>(
                 GRPC_ERROR_REF(op->disconnect_with_error))));
