@@ -208,6 +208,10 @@ class BalancerServiceImpl : public BalancerService {
     // TODO(juanlishen): Clean up the scoping.
     gpr_log(GPR_INFO, "LB[%p]: BalanceLoad", this);
     {
+      std::unique_lock<std::mutex> lock(mu_);
+      if (serverlist_done_) goto done;
+    }
+    {
       // Balancer shouldn't receive the call credentials metadata.
       EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
                 context->client_metadata().end());
