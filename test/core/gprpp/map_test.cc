@@ -399,6 +399,45 @@ TEST_F(MapTest, RandomOpsWithIntKey) {
   EXPECT_TRUE(test_map.empty());
 }
 
+// Test a map with contiguous non overlapping ranges as keys
+TEST_F(MapTest, RangeMapForwardInsertion) {
+  Map<Pair<double, double>, Payload, RangeLess> test_map;
+  double start = 0, end;
+  for (int i = 0; i < 5; i++) {
+    end = start + .3;
+    test_map.emplace(MakePair(start, end), Payload(i));
+    start = end;
+  }
+  double key = .1;
+  for (int i = 0; i < 5; i++) {
+    // A range with a single key should overlap with the range containing it
+    // and find should return that particular item
+    EXPECT_EQ(i, test_map.find(MakePair(key, key))->second.data());
+    key += .3;
+  }
+}
+
+// Test look up of random keys from the range map
+TEST_F(MapTest, RangeMapRandomLookups) {
+  Map<Pair<double, double>, Payload, RangeLess> test_map;
+  double start = 2, end;
+  for (int i = 4; i >= 0; i--) {
+    end = start + .5;
+    test_map.emplace(MakePair(start, end), Payload(i));
+    start = start - .5;
+  }
+  double key = .1;
+  for (int i = 0; i < 5; i++) {
+    EXPECT_EQ(i, test_map.find(MakePair(key, key))->second.data());
+    key += .5;
+  }
+  for (int i = 0; i < 5; i++) {
+    double random = ((double)rand()) / (double)RAND_MAX;
+    double key = random * 2.5;
+    EXPECT_FALSE(test_map.end() == test_map.find(MakePair(key, key)));
+  }
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 

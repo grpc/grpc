@@ -259,18 +259,35 @@ class XdsLb : public LoadBalancingPolicy {
     bool retry_timer_callback_pending_ = false;
   };
 
-  class Picker : public SubchannelPicker {
+  class PickerRef : public InternallyRefCounted<PickerRef> {
    public:
-    Picker(UniquePtr<SubchannelPicker> child_picker,
-           RefCountedPtr<XdsLbClientStats> client_stats)
-        : child_picker_(std::move(child_picker)),
-          client_stats_(std::move(client_stats)) {}
-
-    PickResult Pick(PickArgs* pick, grpc_error** error) override;
+    PickerRef(UniquePtr<SubchannelPicker> picker)
+        : picker_(std::move(picker)) {}
+    void Orphan() override { Unref(); }
+    PickResult Pick(PickArgs* pick, grpc_error** error) {
+      return picker_->Pick(pick, error);
+    }
 
    private:
-    UniquePtr<SubchannelPicker> child_picker_;
+    UniquePtr<SubchannelPicker> picker_;
+  };
+
+  class Picker : public SubchannelPicker {
+   public:
+    Picker(RefCountedPtr<XdsLbClientStats> client_stats)
+        : client_stats_(std::move(client_stats)) {}
+
+    PickResult Pick(PickArgs* pick, grpc_error** error) override;
+    void AddPicker(double start, double end,
+                   RefCountedPtr<PickerRef> picker_ref) {
+      map_.emplace(MakePair(start, end), std::move(picker_ref));
+      map_end_ = GPR_MAX(map_end_, end);
+    }
+
+   private:
     RefCountedPtr<XdsLbClientStats> client_stats_;
+    Map<Pair<double, double>, RefCountedPtr<PickerRef>, RangeLess> map_;
+    double map_end_ = 0;  // End value of the last range value in picker map
   };
 
   class LocalityMap {
@@ -325,6 +342,11 @@ class XdsLb : public LoadBalancingPolicy {
       // pending_child_policy_.
       gpr_mu child_policy_mu_;
       RefCountedPtr<XdsLb> parent_;
+      RefCountedPtr<PickerRef> picker_ref_;
+      grpc_connectivity_state connectivity_state_;
+      // TODO(mhaidry) : Remove this default value once have logic to gather
+      // locality weights
+      double locality_weight_ = .3;
     };
 
     LocalityMap() { gpr_mu_init(&child_refs_mu_); }
@@ -426,11 +448,13 @@ class XdsLb : public LoadBalancingPolicy {
 //
 // XdsLb::Picker
 //
-
 XdsLb::PickResult XdsLb::Picker::Pick(PickArgs* pick, grpc_error** error) {
   // TODO(roth): Add support for drop handling.
-  // Forward pick to child policy.
-  PickResult result = child_picker_->Pick(pick, error);
+  double random = ((double)rand()) / (double)RAND_MAX;
+  double key = random * map_end_;
+  // Forward pick to child policy. find() matches the key pair with the range
+  // of the locality that the key falls within
+  PickResult result = map_.find(MakePair(key, key))->second->Pick(pick, error);
   // If pick succeeded, add client stats.
   if (result == PickResult::PICK_COMPLETE &&
       pick->connected_subchannel != nullptr && client_stats_ != nullptr) {
@@ -1631,10 +1655,39 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
       entry_->parent_->lb_chand_->lb_calld() == nullptr
           ? nullptr
           : entry_->parent_->lb_chand_->lb_calld()->client_stats();
-  entry_->parent_->channel_control_helper()->UpdateState(
-      state, state_error,
-      UniquePtr<SubchannelPicker>(
-          New<Picker>(std::move(picker), std::move(client_stats))));
+  entry_->picker_ref_ = MakeRefCounted<PickerRef>(std::move(picker));
+  entry_->connectivity_state_ = state;
+  UniquePtr<Picker> new_picker(New<Picker>(std::move(client_stats)));
+  double start = 0, end;
+  size_t num_ready = 0, num_connecting = 0, num_transient_failures = 0;
+  auto& locality_map = this->entry_->parent_->locality_map_.map_;
+  for (auto iter = locality_map.begin(); iter != locality_map.end(); ++iter) {
+    int connectivity_state = iter->second->connectivity_state_;
+    if (connectivity_state == GRPC_CHANNEL_READY) {
+      end = start + entry_->locality_weight_;
+      new_picker->AddPicker(start, end, entry_->picker_ref_);
+      num_ready++;
+      start = end;
+    } else if (connectivity_state == GRPC_CHANNEL_CONNECTING) {
+      num_connecting++;
+    } else if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      num_transient_failures++;
+    }
+  }
+  if (num_ready > 0) {
+    entry_->parent_->channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_READY, GRPC_ERROR_NONE,
+        UniquePtr<LoadBalancingPolicy::SubchannelPicker>(new_picker.release()));
+  } else if (num_connecting > 0) {
+    entry_->parent_->channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_CONNECTING, GRPC_ERROR_NONE,
+        UniquePtr<SubchannelPicker>(New<QueuePicker>(this->entry_->parent_)));
+  } else if (num_transient_failures == locality_map.size()) {
+    entry_->parent_->channel_control_helper()->UpdateState(
+        state, GRPC_ERROR_REF(state_error),
+        UniquePtr<SubchannelPicker>(
+            New<TransientFailurePicker>(GRPC_ERROR_REF(state_error))));
+  }
 }
 
 void XdsLb::LocalityMap::LocalityEntry::Helper::RequestReresolution() {
