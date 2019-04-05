@@ -3036,6 +3036,7 @@ foreach(_hdr
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_context.h
+  include/grpcpp/server_impl.h
   include/grpcpp/server_posix.h
   include/grpcpp/server_posix_impl.h
   include/grpcpp/support/async_stream.h
@@ -3637,6 +3638,7 @@ foreach(_hdr
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_context.h
+  include/grpcpp/server_impl.h
   include/grpcpp/server_posix.h
   include/grpcpp/server_posix_impl.h
   include/grpcpp/support/async_stream.h
@@ -4612,6 +4614,7 @@ foreach(_hdr
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_context.h
+  include/grpcpp/server_impl.h
   include/grpcpp/server_posix.h
   include/grpcpp/server_posix_impl.h
   include/grpcpp/support/async_stream.h
