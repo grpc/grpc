@@ -2347,6 +2347,7 @@ grpc_cc_library(
         ":google_api_upb",
         ":proto_gen_validate_upb",
     ],
+    tags = ["no_windows"],
 )
 
 grpc_cc_library(
