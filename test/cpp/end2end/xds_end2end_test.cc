@@ -209,7 +209,7 @@ class BalancerServiceImpl : public BalancerService {
     gpr_log(GPR_INFO, "LB[%p]: BalanceLoad", this);
     {
       std::unique_lock<std::mutex> lock(mu_);
-      if (shutdown_) goto done;
+      if (serverlist_done_) goto done;
     }
     {
       // Balancer shouldn't receive the call credentials metadata.
