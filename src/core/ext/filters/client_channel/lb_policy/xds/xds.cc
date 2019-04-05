@@ -410,7 +410,6 @@ class XdsLb : public LoadBalancingPolicy {
       const char* name, const grpc_channel_args* args);
   void UpdateFallbackPolicyLocked();
   void MaybeExitFallbackMode();
-  void MaybeEnterFallbackModeAfterStartup();
   static void OnFallbackTimerLocked(void* arg, grpc_error* error);
 
   // Who the client is trying to communicate with.
@@ -1230,9 +1229,6 @@ void XdsLb::BalancerChannelState::BalancerCallState::
         grpc_timer_cancel(&xdslb_policy->lb_fallback_timer_);
         lb_chand->CancelConnectivityWatchLocked();
         xdslb_policy->UpdateFallbackPolicyLocked();
-      } else {
-        // This handles the fallback-after-startup case.
-        xdslb_policy->MaybeEnterFallbackModeAfterStartup();
       }
     }
   }
@@ -1293,6 +1289,7 @@ XdsLb::XdsLb(Args args)
       locality_map_(),
       locality_serverlist_() {
   gpr_mu_init(&lb_chand_mu_);
+  gpr_mu_init(&fallback_policy_mu_);
   // Record server name.
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
   const char* server_uri = grpc_channel_arg_get_string(arg);
@@ -1807,11 +1804,6 @@ void XdsLb::LocalityMap::LocalityEntry::UpdateLocked(
     LoadBalancingPolicy::Config* child_policy_config,
     const grpc_channel_args* args_in) {
   if (parent_->shutting_down_) return;
-  // This should never be invoked if we do not have serverlist_, as fallback
-  // mode is disabled for xDS plugin.
-  // TODO(juanlishen): Change this as part of implementing fallback mode.
-  GPR_ASSERT(serverlist != nullptr);
-  GPR_ASSERT(serverlist->num_servers > 0);
   // Construct update args.
   UpdateArgs update_args;
   update_args.addresses = ProcessServerlist(serverlist);
