@@ -526,7 +526,7 @@ class XdsEnd2endTest : public ::testing::Test {
     if (service_config_json != nullptr) {
       grpc_error* error = GRPC_ERROR_NONE;
       result.service_config =
-          grpc_core::ServiceConfig::Create(service_config_json);
+          grpc_core::ServiceConfig::Create(service_config_json, &error);
       GRPC_ERROR_UNREF(error);
     }
     grpc_arg arg = grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
@@ -559,7 +559,7 @@ class XdsEnd2endTest : public ::testing::Test {
     if (service_config_json != nullptr) {
       grpc_error* error = GRPC_ERROR_NONE;
       result.service_config =
-          grpc_core::ServiceConfig::Create(service_config_json);
+          grpc_core::ServiceConfig::Create(service_config_json, &error);
       GRPC_ERROR_UNREF(error);
     }
     if (lb_channel_response_generator == nullptr) {
