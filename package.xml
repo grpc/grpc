@@ -188,6 +188,34 @@
     <file baseinstalldir="/" name="include/grpc/status.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/workaround_list.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/census.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/cds.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/eds.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/annotations.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/http.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/any.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/descriptor.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/duration.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/empty.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/struct.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/timestamp.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/wrappers.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/rpc/status.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/gogoproto/gogo.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/validate/validate.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/percent.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/range.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_decoder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_encoder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_transport.h" role="src" />
@@ -623,6 +651,34 @@
     <file baseinstalldir="/" name="src/core/lib/transport/transport_op_string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/uri/uri_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/cds.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/eds.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/annotations.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/http.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/any.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/descriptor.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/duration.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/empty.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/struct.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/timestamp.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/wrappers.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/rpc/status.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/gogoproto/gogo.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/validate/validate.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/percent.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/range.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_decoder.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_encoder.cc" role="src" />

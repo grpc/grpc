@@ -6376,7 +6376,8 @@
       "grpc_transport_chttp2_server_insecure", 
       "grpc_transport_chttp2_server_secure", 
       "grpc_transport_inproc", 
-      "grpc_workaround_cronet_compression_filter"
+      "grpc_workaround_cronet_compression_filter", 
+      "upb"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -6393,7 +6394,8 @@
       "gpr", 
       "grpc_base", 
       "grpc_transport_chttp2_client_secure", 
-      "grpc_transport_cronet_client_secure"
+      "grpc_transport_cronet_client_secure", 
+      "upb"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -6409,7 +6411,8 @@
     "deps": [
       "gpr", 
       "grpc", 
-      "grpc_test_util_base"
+      "grpc_test_util_base", 
+      "upb"
     ], 
     "headers": [
       "test/core/end2end/data/ssl_test_data.h", 
@@ -6434,7 +6437,8 @@
     "deps": [
       "gpr", 
       "grpc_test_util_base", 
-      "grpc_unsecure"
+      "grpc_unsecure", 
+      "upb"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -6465,7 +6469,8 @@
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_server_insecure", 
       "grpc_transport_inproc", 
-      "grpc_workaround_cronet_compression_filter"
+      "grpc_workaround_cronet_compression_filter", 
+      "upb"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -6584,7 +6589,8 @@
       "grpc++_codegen_base_src", 
       "grpc_cronet", 
       "grpc_transport_chttp2_client_insecure", 
-      "grpc_transport_chttp2_server_insecure"
+      "grpc_transport_chttp2_server_insecure", 
+      "upb"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -7780,7 +7786,8 @@
       "grpc_shadow_boringssl", 
       "grpc_transport_chttp2_client_insecure", 
       "tsi", 
-      "tsi_interface"
+      "tsi_interface", 
+      "upb"
     ], 
     "headers": [
       "src/core/tsi/alts/crypt/gsec.h", 
@@ -7847,7 +7854,8 @@
       "gpr", 
       "grpc_base", 
       "nanopb", 
-      "tsi_interface"
+      "tsi_interface", 
+      "upb"
     ], 
     "headers": [
       "include/grpc/grpc_security.h", 
@@ -7887,7 +7895,8 @@
   {
     "deps": [
       "gpr", 
-      "grpc_base"
+      "grpc_base", 
+      "upb"
     ], 
     "headers": [
       "include/grpc/census.h"
@@ -7915,6 +7924,149 @@
     "src": [
       "test/core/util/cmdline.cc", 
       "test/core/util/cmdline.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "envoy_core_upb", 
+      "envoy_type_upb", 
+      "google_api_upb", 
+      "proto_gen_validate_upb", 
+      "upb"
+    ], 
+    "headers": [
+      "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/cds.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h", 
+      "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "envoy_ads_upb", 
+    "src": [
+      "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/cds.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/cds.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/eds.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h", 
+      "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c", 
+      "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "envoy_type_upb", 
+      "google_api_upb", 
+      "proto_gen_validate_upb", 
+      "upb"
+    ], 
+    "headers": [
+      "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "envoy_core_upb", 
+    "src": [
+      "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "google_api_upb", 
+      "proto_gen_validate_upb", 
+      "upb"
+    ], 
+    "headers": [
+      "src/core/ext/upb-generated/envoy/type/percent.upb.h", 
+      "src/core/ext/upb-generated/envoy/type/range.upb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "envoy_type_upb", 
+    "src": [
+      "src/core/ext/upb-generated/envoy/type/percent.upb.c", 
+      "src/core/ext/upb-generated/envoy/type/percent.upb.h", 
+      "src/core/ext/upb-generated/envoy/type/range.upb.c", 
+      "src/core/ext/upb-generated/envoy/type/range.upb.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "upb"
+    ], 
+    "headers": [
+      "src/core/ext/upb-generated/google/api/annotations.upb.h", 
+      "src/core/ext/upb-generated/google/api/http.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/any.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/descriptor.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/duration.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/empty.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/struct.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/timestamp.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/wrappers.upb.h", 
+      "src/core/ext/upb-generated/google/rpc/status.upb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "google_api_upb", 
+    "src": [
+      "src/core/ext/upb-generated/google/api/annotations.upb.c", 
+      "src/core/ext/upb-generated/google/api/annotations.upb.h", 
+      "src/core/ext/upb-generated/google/api/http.upb.c", 
+      "src/core/ext/upb-generated/google/api/http.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/any.upb.c", 
+      "src/core/ext/upb-generated/google/protobuf/any.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/descriptor.upb.c", 
+      "src/core/ext/upb-generated/google/protobuf/descriptor.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/duration.upb.c", 
+      "src/core/ext/upb-generated/google/protobuf/duration.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/empty.upb.c", 
+      "src/core/ext/upb-generated/google/protobuf/empty.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/struct.upb.c", 
+      "src/core/ext/upb-generated/google/protobuf/struct.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/timestamp.upb.c", 
+      "src/core/ext/upb-generated/google/protobuf/timestamp.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/wrappers.upb.c", 
+      "src/core/ext/upb-generated/google/protobuf/wrappers.upb.h", 
+      "src/core/ext/upb-generated/google/rpc/status.upb.c", 
+      "src/core/ext/upb-generated/google/rpc/status.upb.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -8143,10 +8295,12 @@
   }, 
   {
     "deps": [
+      "envoy_ads_upb", 
       "gpr", 
       "grpc_base_headers", 
       "grpc_codegen", 
-      "grpc_trace"
+      "grpc_trace", 
+      "upb"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -8646,7 +8800,8 @@
   {
     "deps": [
       "gpr", 
-      "grpc_base"
+      "grpc_base", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/http/client_authority_filter.h"
@@ -8666,7 +8821,8 @@
       "gpr", 
       "grpc_base", 
       "grpc_deadline_filter", 
-      "health_proto"
+      "health_proto", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/backup_poller.h", 
@@ -8789,7 +8945,8 @@
   {
     "deps": [
       "gpr", 
-      "grpc_base"
+      "grpc_base", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/deadline/deadline_filter.h"
@@ -8807,7 +8964,8 @@
   {
     "deps": [
       "gpr", 
-      "grpc_base"
+      "grpc_base", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/http/client/http_client_filter.h", 
@@ -8836,7 +8994,8 @@
       "grpc_client_channel", 
       "grpc_resolver_fake", 
       "grpclb_proto", 
-      "nanopb"
+      "nanopb", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h", 
@@ -8871,7 +9030,8 @@
       "grpc_resolver_fake", 
       "grpc_secure", 
       "grpclb_proto", 
-      "nanopb"
+      "nanopb", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h", 
@@ -8903,7 +9063,8 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
-      "grpc_lb_subchannel_list"
+      "grpc_lb_subchannel_list", 
+      "upb"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -8920,7 +9081,8 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
-      "grpc_lb_subchannel_list"
+      "grpc_lb_subchannel_list", 
+      "upb"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -8939,7 +9101,8 @@
       "grpc_client_channel", 
       "grpc_resolver_fake", 
       "grpclb_proto", 
-      "nanopb"
+      "nanopb", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/lb_policy/xds/xds.h", 
@@ -8971,7 +9134,8 @@
       "grpc_resolver_fake", 
       "grpc_secure", 
       "grpclb_proto", 
-      "nanopb"
+      "nanopb", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/lb_policy/xds/xds.h", 
@@ -8999,7 +9163,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_channel"
+      "grpc_client_channel", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
@@ -9016,7 +9181,8 @@
   {
     "deps": [
       "gpr", 
-      "grpc_base"
+      "grpc_base", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/max_age/max_age_filter.h"
@@ -9034,7 +9200,8 @@
   {
     "deps": [
       "gpr", 
-      "grpc_base"
+      "grpc_base", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/message_size/message_size_filter.h"
@@ -9053,7 +9220,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_channel"
+      "grpc_client_channel", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h", 
@@ -9081,7 +9249,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_channel"
+      "grpc_client_channel", 
+      "upb"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -9097,7 +9266,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_channel"
+      "grpc_client_channel", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
@@ -9116,7 +9286,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_channel"
+      "grpc_client_channel", 
+      "upb"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -9135,7 +9306,8 @@
       "grpc_base", 
       "grpc_shadow_boringssl", 
       "grpc_transport_chttp2_alpn", 
-      "tsi"
+      "tsi", 
+      "upb"
     ], 
     "headers": [
       "include/grpc/grpc_security.h", 
@@ -9254,7 +9426,8 @@
   {
     "deps": [
       "gpr", 
-      "grpc_base"
+      "grpc_base", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/workarounds/workaround_utils.h"
@@ -9289,7 +9462,8 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
-      "grpc_transport_chttp2"
+      "grpc_transport_chttp2", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h", 
@@ -9406,7 +9580,8 @@
       "gpr", 
       "grpc_base", 
       "grpc_http_filters", 
-      "grpc_transport_chttp2_alpn"
+      "grpc_transport_chttp2_alpn", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/transport/chttp2/transport/bin_decoder.h", 
@@ -9505,7 +9680,8 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
-      "grpc_transport_chttp2"
+      "grpc_transport_chttp2", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/transport/chttp2/client/authority.h", 
@@ -9529,7 +9705,8 @@
       "grpc_base", 
       "grpc_client_channel", 
       "grpc_transport_chttp2", 
-      "grpc_transport_chttp2_client_connector"
+      "grpc_transport_chttp2_client_connector", 
+      "upb"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -9549,7 +9726,8 @@
       "grpc_client_channel", 
       "grpc_secure", 
       "grpc_transport_chttp2", 
-      "grpc_transport_chttp2_client_connector"
+      "grpc_transport_chttp2_client_connector", 
+      "upb"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -9565,7 +9743,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_transport_chttp2"
+      "grpc_transport_chttp2", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/transport/chttp2/server/chttp2_server.h"
@@ -9585,7 +9764,8 @@
       "gpr", 
       "grpc_base", 
       "grpc_transport_chttp2", 
-      "grpc_transport_chttp2_server"
+      "grpc_transport_chttp2_server", 
+      "upb"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -9604,7 +9784,8 @@
       "grpc_base", 
       "grpc_secure", 
       "grpc_transport_chttp2", 
-      "grpc_transport_chttp2_server"
+      "grpc_transport_chttp2_server", 
+      "upb"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -9648,7 +9829,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_transport_inproc_headers"
+      "grpc_transport_inproc_headers", 
+      "upb"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -9682,7 +9864,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_server_backward_compatibility"
+      "grpc_server_backward_compatibility", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h"
@@ -9766,6 +9949,27 @@
   }, 
   {
     "deps": [
+      "google_api_upb", 
+      "upb"
+    ], 
+    "headers": [
+      "src/core/ext/upb-generated/gogoproto/gogo.upb.h", 
+      "src/core/ext/upb-generated/validate/validate.upb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "proto_gen_validate_upb", 
+    "src": [
+      "src/core/ext/upb-generated/gogoproto/gogo.upb.c", 
+      "src/core/ext/upb-generated/gogoproto/gogo.upb.h", 
+      "src/core/ext/upb-generated/validate/validate.upb.c", 
+      "src/core/ext/upb-generated/validate/validate.upb.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
       "grpc"
     ], 
     "headers": [
@@ -9787,7 +9991,8 @@
       "grpc_base", 
       "grpc_shadow_boringssl", 
       "grpc_trace", 
-      "tsi_interface"
+      "tsi_interface", 
+      "upb"
     ], 
     "headers": [
       "src/core/tsi/fake_transport_security.h", 
