@@ -1313,6 +1313,7 @@ XdsLb::XdsLb(Args args)
 
 XdsLb::~XdsLb() {
   gpr_mu_destroy(&lb_chand_mu_);
+  gpr_mu_destroy(&fallback_policy_mu_);
   gpr_free((void*)server_name_);
   grpc_channel_args_destroy(args_);
   locality_serverlist_.clear();
@@ -2010,6 +2011,7 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
   // At this point, child_ must be the current child policy.
   if (state == GRPC_CHANNEL_READY) entry_->parent_->MaybeExitFallbackMode();
   // If we are in fallback mode, ignore update request from the child policy.
+  // TODO(juanlishen): Add a test to verify this behavior.
   if (entry_->parent_->fallback_policy_ != nullptr) return;
   GPR_ASSERT(entry_->parent_->lb_chand_ != nullptr);
   RefCountedPtr<XdsLbClientStats> client_stats =
