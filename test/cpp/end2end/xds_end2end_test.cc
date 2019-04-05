@@ -1022,6 +1022,38 @@ TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerCallFails) {
                  /* wait_for_ready */ false);
 }
 
+TEST_F(SingleBalancerTest, FallbackModeIsExitedAfterChildRready) {
+  // Return an unreachable balancer and one fallback backend.
+  SetNextResolution({backends_[0]->port_}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannel({grpc_pick_unused_port_or_die()});
+  // Enter fallback mode because the LB channel fails to connect.
+  WaitForBackend(0);
+  // Return a new balancer that sends a dead backend.
+  ShutdownBackend(1);
+  ScheduleResponseForBalancer(
+      0,
+      BalancerServiceImpl::BuildResponseForBackends({backends_[1]->port_}, {}),
+      0);
+  SetNextResolutionForLbChannelAllBalancers();
+  // The state (TRANSIENT_FAILURE) update from the child policy will be ignored
+  // because we are still in fallback mode.
+  gpr_timespec deadline = gpr_time_add(
+      gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(5000, GPR_TIMESPAN));
+  // Send 5 seconds worth of RPCs.
+  do {
+    CheckRpcSendOk();
+  } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
+  // After the backend is restarted, the child policy will eventually be READY,
+  // and we will exit fallback mode.
+  StartBackend(1);
+  WaitForBackend(1);
+  // We have exited fallback mode, so calls will go to the child policy
+  // exclusively.
+  CheckRpcSendOk(100);
+  EXPECT_EQ(0U, backends_[0]->service_.request_count());
+  EXPECT_EQ(100U, backends_[1]->service_.request_count());
+}
+
 TEST_F(SingleBalancerTest, BackendsRestart) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
