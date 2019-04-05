@@ -22,63 +22,75 @@
 #include <grpcpp/impl/rpc_method.h>
 #include <grpcpp/support/client_callback.h>
 
-namespace grpc {
+namespace grpc_impl {
 
 namespace {
-std::unique_ptr<GenericClientAsyncReaderWriter> CallInternal(
-    ChannelInterface* channel, ClientContext* context,
-    const grpc::string& method, CompletionQueue* cq, bool start, void* tag) {
-  return std::unique_ptr<GenericClientAsyncReaderWriter>(
-      internal::ClientAsyncReaderWriterFactory<ByteBuffer, ByteBuffer>::Create(
-          channel, cq,
-          internal::RpcMethod(method.c_str(),
-                              internal::RpcMethod::BIDI_STREAMING),
-          context, start, tag));
+std::unique_ptr<grpc::GenericClientAsyncReaderWriter> CallInternal(
+    grpc::ChannelInterface* channel, grpc::ClientContext* context,
+    const grpc::string& method, grpc::CompletionQueue* cq, bool start,
+    void* tag) {
+  return std::unique_ptr<grpc::GenericClientAsyncReaderWriter>(
+      grpc::internal::ClientAsyncReaderWriterFactory<grpc::ByteBuffer,
+                                                     grpc::ByteBuffer>::
+          Create(channel, cq,
+                 grpc::internal::RpcMethod(
+                     method.c_str(), grpc::internal::RpcMethod::BIDI_STREAMING),
+                 context, start, tag));
 }
 
 }  // namespace
 
 // begin a call to a named method
-std::unique_ptr<GenericClientAsyncReaderWriter> GenericStub::Call(
-    ClientContext* context, const grpc::string& method, CompletionQueue* cq,
-    void* tag) {
+std::unique_ptr<grpc::GenericClientAsyncReaderWriter> GenericStub::Call(
+    grpc::ClientContext* context, const grpc::string& method,
+    grpc::CompletionQueue* cq, void* tag) {
   return CallInternal(channel_.get(), context, method, cq, true, tag);
 }
 
 // setup a call to a named method
-std::unique_ptr<GenericClientAsyncReaderWriter> GenericStub::PrepareCall(
-    ClientContext* context, const grpc::string& method, CompletionQueue* cq) {
+std::unique_ptr<grpc::GenericClientAsyncReaderWriter> GenericStub::PrepareCall(
+    grpc::ClientContext* context, const grpc::string& method,
+    grpc::CompletionQueue* cq) {
   return CallInternal(channel_.get(), context, method, cq, false, nullptr);
 }
 
 // setup a unary call to a named method
-std::unique_ptr<GenericClientAsyncResponseReader> GenericStub::PrepareUnaryCall(
-    ClientContext* context, const grpc::string& method,
-    const ByteBuffer& request, CompletionQueue* cq) {
-  return std::unique_ptr<GenericClientAsyncResponseReader>(
-      internal::ClientAsyncResponseReaderFactory<ByteBuffer>::Create(
-          channel_.get(), cq,
-          internal::RpcMethod(method.c_str(), internal::RpcMethod::NORMAL_RPC),
-          context, request, false));
+std::unique_ptr<grpc::GenericClientAsyncResponseReader>
+GenericStub::PrepareUnaryCall(grpc::ClientContext* context,
+                              const grpc::string& method,
+                              const grpc::ByteBuffer& request,
+                              grpc::CompletionQueue* cq) {
+  return std::unique_ptr<grpc::GenericClientAsyncResponseReader>(
+      grpc::internal::ClientAsyncResponseReaderFactory<
+          grpc::ByteBuffer>::Create(channel_.get(), cq,
+                                    grpc::internal::RpcMethod(
+                                        method.c_str(),
+                                        grpc::internal::RpcMethod::NORMAL_RPC),
+                                    context, request, false));
 }
 
 void GenericStub::experimental_type::UnaryCall(
-    ClientContext* context, const grpc::string& method,
-    const ByteBuffer* request, ByteBuffer* response,
-    std::function<void(Status)> on_completion) {
-  internal::CallbackUnaryCall(
+    grpc::ClientContext* context, const grpc::string& method,
+    const grpc::ByteBuffer* request, grpc::ByteBuffer* response,
+    std::function<void(grpc::Status)> on_completion) {
+  grpc::internal::CallbackUnaryCall(
       stub_->channel_.get(),
-      internal::RpcMethod(method.c_str(), internal::RpcMethod::NORMAL_RPC),
+      grpc::internal::RpcMethod(method.c_str(),
+                                grpc::internal::RpcMethod::NORMAL_RPC),
       context, request, response, std::move(on_completion));
 }
 
 void GenericStub::experimental_type::PrepareBidiStreamingCall(
-    ClientContext* context, const grpc::string& method,
-    experimental::ClientBidiReactor<ByteBuffer, ByteBuffer>* reactor) {
-  internal::ClientCallbackReaderWriterFactory<ByteBuffer, ByteBuffer>::Create(
-      stub_->channel_.get(),
-      internal::RpcMethod(method.c_str(), internal::RpcMethod::BIDI_STREAMING),
-      context, reactor);
+    grpc::ClientContext* context, const grpc::string& method,
+    grpc::experimental::ClientBidiReactor<grpc::ByteBuffer, grpc::ByteBuffer>*
+        reactor) {
+  grpc::internal::ClientCallbackReaderWriterFactory<
+      grpc::ByteBuffer,
+      grpc::ByteBuffer>::Create(stub_->channel_.get(),
+                                grpc::internal::RpcMethod(
+                                    method.c_str(),
+                                    grpc::internal::RpcMethod::BIDI_STREAMING),
+                                context, reactor);
 }
 
-}  // namespace grpc
+}  // namespace grpc_impl

@@ -70,6 +70,10 @@ static void PrintAllComments(const DescriptorType* desc, Printer* printer) {
     }
     printer->Print("\n");
   }
+  printer->Print(" *\n");
+  printer->Print(
+      " * This method belongs to a set of APIs that have been deprecated. Using"
+      " the v2 API is recommended.\n");
   printer->Print(" */\n");
 }
 
@@ -278,6 +282,13 @@ void PrintMethodImplementations(Printer* printer,
   map< ::grpc::string, ::grpc::string> vars = {
       {"service_class", ServiceClassName(service)}};
 
+  printer.Print(vars,
+                "/**\n"
+                " * The methods in this protocol belong to a set of old APIs "
+                "that have been deprecated. They do not\n"
+                " * recognize call options provided in the initializer. Using "
+                "the v2 protocol is recommended.\n"
+                " */\n");
   printer.Print(vars, "@protocol $service_class$ <NSObject>\n\n");
   for (int i = 0; i < service->method_count(); i++) {
     PrintMethodDeclarations(&printer, service->method(i));
@@ -329,10 +340,13 @@ void PrintMethodImplementations(Printer* printer,
       "callOptions:(GRPCCallOptions "
       "*_Nullable)callOptions"
       " NS_DESIGNATED_INITIALIZER;\n");
-  printer.Print("- (instancetype)initWithHost:(NSString *)host;\n");
   printer.Print(
       "+ (instancetype)serviceWithHost:(NSString *)host "
       "callOptions:(GRPCCallOptions *_Nullable)callOptions;\n");
+  printer.Print(
+      "// The following methods belong to a set of old APIs that have been "
+      "deprecated.\n");
+  printer.Print("- (instancetype)initWithHost:(NSString *)host;\n");
   printer.Print("+ (instancetype)serviceWithHost:(NSString *)host;\n");
   printer.Print("@end\n");
 

@@ -558,7 +558,7 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs* pick, grpc_error** error) {
     // subchannel call (and therefore no client_load_reporting filter)
     // for dropped calls.
     if (client_stats_ != nullptr) {
-      client_stats_->AddCallDroppedLocked(drop_token);
+      client_stats_->AddCallDropped(drop_token);
     }
     return PICK_COMPLETE;
   }
@@ -917,7 +917,7 @@ void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
   // Construct message payload.
   GPR_ASSERT(send_message_payload_ == nullptr);
   grpc_grpclb_request* request =
-      grpc_grpclb_load_report_request_create_locked(client_stats_.get());
+      grpc_grpclb_load_report_request_create(client_stats_.get());
   // Skip client load report if the counters were all zero in the last
   // report and they are still zero in this one.
   if (LoadReportCountersAreZero(request)) {

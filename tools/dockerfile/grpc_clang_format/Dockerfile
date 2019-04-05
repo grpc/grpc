@@ -13,6 +13,8 @@
 # limitations under the License.
 
 FROM debian:jessie
+RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
+
 
 RUN apt-get update && apt-get -y install wget xz-utils
 RUN wget http://releases.llvm.org/5.0.0/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz

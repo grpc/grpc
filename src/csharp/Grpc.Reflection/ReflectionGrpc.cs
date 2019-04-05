@@ -46,6 +46,7 @@ namespace Grpc.Reflection.V1Alpha {
     }
 
     /// <summary>Base class for server-side implementations of ServerReflection</summary>
+    [grpc::BindServiceMethod(typeof(ServerReflection), "BindService")]
     public abstract partial class ServerReflectionBase
     {
       /// <summary>
