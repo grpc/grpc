@@ -74,6 +74,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of BenchmarkService</summary>
+    [grpc::BindServiceMethod(typeof(BenchmarkService), "BindService")]
     public abstract partial class BenchmarkServiceBase
     {
       /// <summary>
