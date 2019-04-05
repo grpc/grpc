@@ -208,67 +208,74 @@ class BalancerServiceImpl : public BalancerService {
             client_load_reporting_interval_seconds) {}
 
   Status BalanceLoad(ServerContext* context, Stream* stream) override {
-    // Balancer shouldn't receive the call credentials metadata.
-    EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
-              context->client_metadata().end());
     gpr_log(GPR_INFO, "LB[%p]: BalanceLoad", this);
-    LoadBalanceRequest request;
-    std::vector<ResponseDelayPair> responses_and_delays;
-
-    if (!stream->Read(&request)) {
-      goto done;
-    }
-    IncreaseRequestCount();
-    gpr_log(GPR_INFO, "LB[%p]: received initial message '%s'", this,
-            request.DebugString().c_str());
-
-    // TODO(juanlishen): Initial response should always be the first response.
-    if (client_load_reporting_interval_seconds_ > 0) {
-      LoadBalanceResponse initial_response;
-      initial_response.mutable_initial_response()
-          ->mutable_client_stats_report_interval()
-          ->set_seconds(client_load_reporting_interval_seconds_);
-      stream->Write(initial_response);
-    }
-
     {
       std::unique_lock<std::mutex> lock(mu_);
-      responses_and_delays = responses_and_delays_;
-    }
-    for (const auto& response_and_delay : responses_and_delays) {
-      SendResponse(stream, response_and_delay.first, response_and_delay.second);
+      if (shutdown_) goto done;
     }
     {
-      std::unique_lock<std::mutex> lock(mu_);
-      serverlist_cond_.wait(lock, [this] { return serverlist_done_; });
-    }
+      // Balancer shouldn't receive the call credentials metadata.
+      EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
+                context->client_metadata().end());
+      LoadBalanceRequest request;
+      std::vector<ResponseDelayPair> responses_and_delays;
 
-    if (client_load_reporting_interval_seconds_ > 0) {
-      request.Clear();
-      if (stream->Read(&request)) {
-        gpr_log(GPR_INFO, "LB[%p]: received client load report message '%s'",
-                this, request.DebugString().c_str());
-        GPR_ASSERT(request.has_client_stats());
-        // We need to acquire the lock here in order to prevent the notify_one
-        // below from firing before its corresponding wait is executed.
-        std::lock_guard<std::mutex> lock(mu_);
-        client_stats_.num_calls_started +=
-            request.client_stats().num_calls_started();
-        client_stats_.num_calls_finished +=
-            request.client_stats().num_calls_finished();
-        client_stats_.num_calls_finished_with_client_failed_to_send +=
-            request.client_stats()
-                .num_calls_finished_with_client_failed_to_send();
-        client_stats_.num_calls_finished_known_received +=
-            request.client_stats().num_calls_finished_known_received();
-        for (const auto& drop_token_count :
-             request.client_stats().calls_finished_with_drop()) {
-          client_stats_
-              .drop_token_counts[drop_token_count.load_balance_token()] +=
-              drop_token_count.num_calls();
+      if (!stream->Read(&request)) {
+        goto done;
+      }
+      IncreaseRequestCount();
+      gpr_log(GPR_INFO, "LB[%p]: received initial message '%s'", this,
+              request.DebugString().c_str());
+
+      // TODO(juanlishen): Initial response should always be the first response.
+      if (client_load_reporting_interval_seconds_ > 0) {
+        LoadBalanceResponse initial_response;
+        initial_response.mutable_initial_response()
+            ->mutable_client_stats_report_interval()
+            ->set_seconds(client_load_reporting_interval_seconds_);
+        stream->Write(initial_response);
+      }
+
+      {
+        std::unique_lock<std::mutex> lock(mu_);
+        responses_and_delays = responses_and_delays_;
+      }
+      for (const auto& response_and_delay : responses_and_delays) {
+        SendResponse(stream, response_and_delay.first,
+                     response_and_delay.second);
+      }
+      {
+        std::unique_lock<std::mutex> lock(mu_);
+        serverlist_cond_.wait(lock, [this] { return serverlist_done_; });
+      }
+
+      if (client_load_reporting_interval_seconds_ > 0) {
+        request.Clear();
+        if (stream->Read(&request)) {
+          gpr_log(GPR_INFO, "LB[%p]: received client load report message '%s'",
+                  this, request.DebugString().c_str());
+          GPR_ASSERT(request.has_client_stats());
+          // We need to acquire the lock here in order to prevent the notify_one
+          // below from firing before its corresponding wait is executed.
+          std::lock_guard<std::mutex> lock(mu_);
+          client_stats_.num_calls_started +=
+              request.client_stats().num_calls_started();
+          client_stats_.num_calls_finished +=
+              request.client_stats().num_calls_finished();
+          client_stats_.num_calls_finished_with_client_failed_to_send +=
+              request.client_stats()
+                  .num_calls_finished_with_client_failed_to_send();
+          client_stats_.num_calls_finished_known_received +=
+              request.client_stats().num_calls_finished_known_received();
+          for (const auto& drop_token_count :
+               request.client_stats().calls_finished_with_drop()) {
+            client_stats_
+                .drop_token_counts[drop_token_count.load_balance_token()] +=
+                drop_token_count.num_calls();
+          }
+          load_report_ready_ = true;
+          load_report_cond_.notify_one();
         }
-        load_report_ready_ = true;
-        load_report_cond_.notify_one();
       }
     }
   done:
@@ -285,11 +292,16 @@ class BalancerServiceImpl : public BalancerService {
     std::lock_guard<std::mutex> lock(mu_);
     serverlist_done_ = false;
     load_report_ready_ = false;
+    shutdown_ = false;
     responses_and_delays_.clear();
     client_stats_.Reset();
   }
 
   void Shutdown() {
+    {
+      std::unique_lock<std::mutex> lock(mu_);
+      shutdown_ = true;
+    }
     NotifyDoneWithServerlists();
     gpr_log(GPR_INFO, "LB[%p]: shut down", this);
   }
@@ -354,6 +366,7 @@ class BalancerServiceImpl : public BalancerService {
   std::condition_variable serverlist_cond_;
   bool serverlist_done_ = false;
   ClientStats client_stats_;
+  bool shutdown_;
 };
 
 class GrpclbEnd2endTest : public ::testing::Test {
@@ -822,6 +835,7 @@ TEST_F(SingleBalancerTest, SwapChildPolicy) {
     EXPECT_EQ(backends_[i]->service_.request_count(), 0UL);
   }
   // Send new resolution that removes child policy from service config.
+  gpr_log(GPR_INFO, "Sending empty service config");
   SetNextResolutionAllBalancers("{}");
   WaitForAllBackends();
   CheckRpcSendOk(kNumRpcs, 1000 /* timeout_ms */, true /* wait_for_ready */);
