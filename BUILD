@@ -2454,3 +2454,11 @@ grpc_cc_library(
 )
 
 grpc_generate_one_off_targets()
+
+filegroup(
+    name = "root_certificates",
+    srcs = [
+        "etc/roots.pem",
+    ],
+    visibility = ["//visibility:public"],
+)
