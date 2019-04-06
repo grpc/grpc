@@ -28,6 +28,7 @@
       <ProtoRoot Condition="'%(Protobuf.ProtoRoot)' == '' " />
       <CompileOutputs Condition="'%(Protobuf.CompileOutputs)' == ''">True</CompileOutputs>
       <OutputDir Condition="'%(Protobuf.OutputDir)' == '' ">$(Protobuf_OutputPath)</OutputDir>
+      <Generator Condition=" '$(DisableProtobufDesignTimeBuild)' != 'true' " >MSBuild:Compile</Generator>
     </Protobuf>
   </ItemDefinitionGroup>
 
@@ -46,11 +47,6 @@
 
     <!-- Remove Protobuf items from None -->
     <None Remove="@(Protobuf)" />
-
-    <!-- Add Generator attribute to trigger Protobuf compilation -->
-    <Protobuf Update="@(Protobuf)" >
-      <Generator>MSBuild:Compile</Generator>
-    </Protobuf>
   </ItemGroup>
 
   <PropertyGroup>
