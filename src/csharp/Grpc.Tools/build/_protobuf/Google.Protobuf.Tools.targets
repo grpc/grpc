@@ -38,6 +38,21 @@
     <AvailableItemName Include="Protobuf" />
   </ItemGroup>
 
+  <!-- Design Time Build integration for Visual Studio -->
+  <ItemGroup Condition=" '$(DisableProtobufDesignTimeBuild)' != 'true' " >
+    <!-- Add Protobuf items to Content if they are not added yet -->
+    <UnaddedProtobufContent Include="@(Protobuf)" Exclude="@(Content)" />
+    <Content Include="@(UnaddedProtobufContent)" />
+
+    <!-- Remove Protobuf items from None -->
+    <None Remove="@(Protobuf)" />
+
+    <!-- Add Generator attribute to trigger Protobuf compilation -->
+    <Protobuf Update="@(Protobuf)" >
+      <Generator>MSBuild:Compile</Generator>
+    </Protobuf>
+  </ItemGroup>
+
   <PropertyGroup>
     <!-- NET SDK: by default, do not include proto files in the directory.
          Current Microsoft's recommendation is against globbing:
