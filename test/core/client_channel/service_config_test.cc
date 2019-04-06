@@ -16,6 +16,8 @@
  *
  */
 
+#include <regex>
+
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
@@ -110,6 +112,28 @@ class TestParser2 : public ServiceConfigParser {
   }
 };
 
+// This parser always adds errors
+class ErrorParser : public ServiceConfigParser {
+ public:
+  UniquePtr<ServiceConfigParsedObject> ParsePerMethodParams(
+      const grpc_json* json, grpc_error** error) override {
+    GPR_DEBUG_ASSERT(error != nullptr);
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(MethodError());
+    return nullptr;
+  }
+
+  UniquePtr<ServiceConfigParsedObject> ParseGlobalParams(
+      const grpc_json* json, grpc_error** error) override {
+    GPR_DEBUG_ASSERT(error != nullptr);
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(GlobalError());
+    return nullptr;
+  }
+
+  static const char* MethodError() { return "ErrorParser : methodError"; }
+
+  static const char* GlobalError() { return "ErrorParser : globalError"; }
+};
+
 class ServiceConfigTest : public ::testing::Test {
  protected:
   void SetUp() override {
@@ -127,7 +151,7 @@ TEST_F(ServiceConfigTest, ErrorCheck1) {
   grpc_error* error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(test_json, &error);
   gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
-  EXPECT_TRUE(error != GRPC_ERROR_NONE);
+  ASSERT_TRUE(error != GRPC_ERROR_NONE);
   EXPECT_TRUE(strstr(grpc_error_string(error),
                      "failed to parse JSON for service config") != nullptr);
 }
@@ -144,7 +168,7 @@ TEST_F(ServiceConfigTest, ErrorNoNames) {
   grpc_error* error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(test_json, &error);
   gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
-  EXPECT_TRUE(error != GRPC_ERROR_NONE);
+  ASSERT_TRUE(error != GRPC_ERROR_NONE);
   EXPECT_TRUE(strstr(grpc_error_string(error), "No names found") != nullptr);
 }
 
@@ -154,7 +178,7 @@ TEST_F(ServiceConfigTest, ErrorNoNamesWithMultipleMethodConfigs) {
   grpc_error* error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(test_json, &error);
   gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
-  EXPECT_TRUE(error != GRPC_ERROR_NONE);
+  ASSERT_TRUE(error != GRPC_ERROR_NONE);
   EXPECT_TRUE(strstr(grpc_error_string(error), "No names found") != nullptr);
 }
 
@@ -170,7 +194,7 @@ TEST_F(ServiceConfigTest, Parser1BasicTest1) {
   const char* test_json = "{\"global_param\":5}";
   grpc_error* error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(test_json, &error);
-  EXPECT_TRUE(error == GRPC_ERROR_NONE);
+  ASSERT_TRUE(error == GRPC_ERROR_NONE);
   EXPECT_TRUE((static_cast<TestParsedObject1*>(
                    svc_cfg->GetParsedGlobalServiceConfigObject(0)))
                   ->value() == 5);
@@ -180,7 +204,7 @@ TEST_F(ServiceConfigTest, Parser1BasicTest2) {
   const char* test_json = "{\"global_param\":1000}";
   grpc_error* error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(test_json, &error);
-  EXPECT_TRUE(error == GRPC_ERROR_NONE);
+  ASSERT_TRUE(error == GRPC_ERROR_NONE);
   EXPECT_TRUE((static_cast<TestParsedObject1*>(
                    svc_cfg->GetParsedGlobalServiceConfigObject(0)))
                   ->value() == 1000);
@@ -191,9 +215,14 @@ TEST_F(ServiceConfigTest, Parser1ErrorInvalidType) {
   grpc_error* error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(test_json, &error);
   gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
-  EXPECT_TRUE(error != GRPC_ERROR_NONE);
-  EXPECT_TRUE(strstr(grpc_error_string(error),
-                     TestParser1::InvalidTypeErrorMessage()) != nullptr);
+  ASSERT_TRUE(error != GRPC_ERROR_NONE);
+  std::regex e(std::string("(Service config parsing "
+                           "error)(.*)(referenced_errors)(.*)(Global "
+                           "Params)(.*)(referenced_errors)()(.*)") +
+               TestParser1::InvalidTypeErrorMessage());
+  std::smatch match;
+  std::string s(grpc_error_string(error));
+  EXPECT_TRUE(std::regex_search(s, match, e));
 }
 
 TEST_F(ServiceConfigTest, Parser1ErrorInvalidValue) {
@@ -201,9 +230,14 @@ TEST_F(ServiceConfigTest, Parser1ErrorInvalidValue) {
   grpc_error* error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(test_json, &error);
   gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
-  EXPECT_TRUE(error != GRPC_ERROR_NONE);
-  EXPECT_TRUE(strstr(grpc_error_string(error),
-                     TestParser1::InvalidValueErrorMessage()) != nullptr);
+  ASSERT_TRUE(error != GRPC_ERROR_NONE);
+  std::regex e(std::string("(Service config parsing "
+                           "error)(.*)(referenced_errors)(.*)(Global "
+                           "Params)(.*)(referenced_errors)()(.*)") +
+               TestParser1::InvalidValueErrorMessage());
+  std::smatch match;
+  std::string s(grpc_error_string(error));
+  EXPECT_TRUE(std::regex_search(s, match, e));
 }
 
 TEST_F(ServiceConfigTest, Parser2BasicTest) {
@@ -212,10 +246,10 @@ TEST_F(ServiceConfigTest, Parser2BasicTest) {
       "\"method_param\":5}]}";
   grpc_error* error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(test_json, &error);
-  EXPECT_TRUE(error == GRPC_ERROR_NONE);
+  ASSERT_TRUE(error == GRPC_ERROR_NONE);
   const auto* const* vector_ptr = svc_cfg->GetMethodServiceConfigObjectsVector(
       grpc_slice_from_static_string("/TestServ/TestMethod"));
-  ASSERT_TRUE(vector_ptr != nullptr);
+  EXPECT_TRUE(vector_ptr != nullptr);
   const auto* vector = *vector_ptr;
   auto parsed_object = ((*vector)[1]).get();
   EXPECT_TRUE(static_cast<TestParsedObject1*>(parsed_object)->value() == 5);
@@ -227,9 +261,16 @@ TEST_F(ServiceConfigTest, Parser2ErrorInvalidType) {
       "\"method_param\":\"5\"}]}";
   grpc_error* error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(test_json, &error);
-  EXPECT_TRUE(error != GRPC_ERROR_NONE);
-  EXPECT_TRUE(strstr(grpc_error_string(error),
-                     TestParser2::InvalidTypeErrorMessage()) != nullptr);
+  ASSERT_TRUE(error != GRPC_ERROR_NONE);
+  gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
+  std::regex e(std::string("(Service config parsing "
+                           "error)(.*)(referenced_errors\":\\[)(.*)(Method "
+                           "Params)(.*)(referenced_errors)()(.*)(methodConfig)("
+                           ".*)(referenced_errors)(.*)") +
+               TestParser2::InvalidTypeErrorMessage());
+  std::smatch match;
+  std::string s(grpc_error_string(error));
+  EXPECT_TRUE(std::regex_search(s, match, e));
 }
 
 TEST_F(ServiceConfigTest, Parser2ErrorInvalidValue) {
@@ -238,9 +279,68 @@ TEST_F(ServiceConfigTest, Parser2ErrorInvalidValue) {
       "\"method_param\":-5}]}";
   grpc_error* error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(test_json, &error);
-  EXPECT_TRUE(error != GRPC_ERROR_NONE);
-  EXPECT_TRUE(strstr(grpc_error_string(error),
-                     TestParser2::InvalidValueErrorMessage()) != nullptr);
+  ASSERT_TRUE(error != GRPC_ERROR_NONE);
+  gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
+  std::regex e(std::string("(Service config parsing "
+                           "error)(.*)(referenced_errors\":\\[)(.*)(Method "
+                           "Params)(.*)(referenced_errors)()(.*)(methodConfig)("
+                           ".*)(referenced_errors)(.*)") +
+               TestParser2::InvalidValueErrorMessage());
+  std::smatch match;
+  std::string s(grpc_error_string(error));
+  EXPECT_TRUE(std::regex_search(s, match, e));
+}
+
+// Test parsing with ErrorParsers which always add errors
+class ErroredParsersScopingTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    ServiceConfig::Shutdown();
+    ServiceConfig::Init();
+    EXPECT_TRUE(ServiceConfig::RegisterParser(
+                    UniquePtr<ServiceConfigParser>(New<ErrorParser>())) == 0);
+    EXPECT_TRUE(ServiceConfig::RegisterParser(
+                    UniquePtr<ServiceConfigParser>(New<ErrorParser>())) == 1);
+  }
+};
+
+TEST_F(ErroredParsersScopingTest, GlobalParams) {
+  const char* test_json = "{}";
+  grpc_error* error = GRPC_ERROR_NONE;
+  auto svc_cfg = ServiceConfig::Create(test_json, &error);
+  ASSERT_TRUE(error != GRPC_ERROR_NONE);
+  gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
+  std::regex e(std::string("(Service config parsing "
+                           "error)(.*)(referenced_errors\":\\[)(.*)(Global "
+                           "Params)(.*)(referenced_errors)()(.*)") +
+               ErrorParser::GlobalError() + std::string("(.*)") +
+               ErrorParser::GlobalError());
+  std::smatch match;
+  std::string s(grpc_error_string(error));
+  EXPECT_TRUE(std::regex_search(s, match, e));
+}
+
+TEST_F(ErroredParsersScopingTest, MethodParams) {
+  const char* test_json = "{\"methodConfig\": [{}]}";
+  grpc_error* error = GRPC_ERROR_NONE;
+  auto svc_cfg = ServiceConfig::Create(test_json, &error);
+  ASSERT_TRUE(error != GRPC_ERROR_NONE);
+  gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
+  std::regex e(
+      std::string("(Service config parsing "
+                  "error)(.*)(referenced_errors\":\\[)(.*)(Global "
+                  "Params)(.*)(referenced_errors)()(.*)") +
+      ErrorParser::GlobalError() + std::string("(.*)") +
+      ErrorParser::GlobalError() +
+      std::string("(.*)(Method "
+                  "Params)(.*)(referenced_errors)(.*)(field:methodConfig "
+                  "error:No names "
+                  "found)(.*)(methodConfig)(.*)(referenced_errors)(.*)") +
+      ErrorParser::MethodError() + std::string("(.*)") +
+      ErrorParser::MethodError() + std::string("(.*)(No names specified)"));
+  std::smatch match;
+  std::string s(grpc_error_string(error));
+  EXPECT_TRUE(std::regex_search(s, match, e));
 }
 
 }  // namespace testing

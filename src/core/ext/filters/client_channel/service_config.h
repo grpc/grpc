@@ -150,24 +150,13 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   /// registered parser. Each parser is responsible for reading the service
   /// config json and returning a parsed object. This parsed object can later be
   /// retrieved using the same index that was returned at registration time.
-  static int RegisterParser(UniquePtr<ServiceConfigParser> parser) {
-    registered_parsers_->push_back(std::move(parser));
-    return registered_parsers_->size() - 1;
-  }
+  static int RegisterParser(UniquePtr<ServiceConfigParser> parser);
 
-  static void Init() {
-    GPR_ASSERT(registered_parsers_ == nullptr);
-    registered_parsers_ = New<ServiceConfigParserList>();
-  }
+  static void Init();
 
-  static void Shutdown() {
-    Delete(registered_parsers_);
-    registered_parsers_ = nullptr;
-  }
+  static void Shutdown();
 
  private:
-  typedef InlinedVector<UniquePtr<ServiceConfigParser>, kNumPreallocatedParsers>
-      ServiceConfigParserList;
   // So New() can call our private ctor.
   template <typename T, typename... Args>
   friend T* New(Args&&... args);
@@ -201,8 +190,6 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
       const grpc_json* json,
       SliceHashTable<const ServiceConfigObjectsVector*>::Entry* entries,
       size_t* idx);
-
-  static ServiceConfigParserList* registered_parsers_;
 
   UniquePtr<char> service_config_json_;
   UniquePtr<char> json_string_;  // Underlying storage for json_tree.
