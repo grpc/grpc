@@ -3035,6 +3035,7 @@ foreach(_hdr
   include/grpcpp/security/server_credentials_impl.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
+  include/grpcpp/server_builder_impl.h
   include/grpcpp/server_context.h
   include/grpcpp/server_posix.h
   include/grpcpp/server_posix_impl.h
@@ -3636,6 +3637,7 @@ foreach(_hdr
   include/grpcpp/security/server_credentials_impl.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
+  include/grpcpp/server_builder_impl.h
   include/grpcpp/server_context.h
   include/grpcpp/server_posix.h
   include/grpcpp/server_posix_impl.h
@@ -4611,6 +4613,7 @@ foreach(_hdr
   include/grpcpp/security/server_credentials_impl.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
+  include/grpcpp/server_builder_impl.h
   include/grpcpp/server_context.h
   include/grpcpp/server_posix.h
   include/grpcpp/server_posix_impl.h
