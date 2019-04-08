@@ -254,7 +254,7 @@ class ServerBidiReactor : public internal::ServerReactor {
 
   /// Notify the application that a streaming RPC has started and that it is now
   /// ok to call any operation initiation method. An RPC is considered started
-  /// after the server has received all initial metadata from the client, which 
+  /// after the server has received all initial metadata from the client, which
   /// is a result of the client calling StartCall().
   ///
   /// \param[in] context The context object now associated with this RPC
