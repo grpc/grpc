@@ -31,7 +31,7 @@
 namespace grpc_impl {
 class Channel;
 class ServerCredentials;
-} // namespace grpc_impl
+}  // namespace grpc_impl
 namespace grpc {
 
 class AsyncGenericService;
