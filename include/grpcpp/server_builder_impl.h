@@ -31,8 +31,8 @@
 #include <grpcpp/impl/codegen/server_interceptor.h>
 #include <grpcpp/impl/server_builder_option.h>
 #include <grpcpp/impl/server_builder_plugin.h>
-#include <grpcpp/support/config.h>
 #include <grpcpp/server.h>
+#include <grpcpp/support/config.h>
 
 struct grpc_resource_quota;
 
