@@ -207,7 +207,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   }
 
   friend class grpc::AsyncGenericService;
-  friend class grpc::ServerBuilder;
+  friend class grpc_impl::ServerBuilder;
   friend class grpc_impl::ServerInitializer;
 
   class SyncRequest;

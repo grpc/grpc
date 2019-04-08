@@ -51,7 +51,7 @@ class ServerCredentials {
   /// Tries to bind \a server to the given \a addr (eg, localhost:1234,
   /// 192.168.1.1:31416, [::1]:27182, etc.)
   ///
-  /// \return bound port number on sucess, 0 on failure.
+  /// \return bound port number on success, 0 on failure.
   // TODO(dgq): the "port" part seems to be a misnomer.
   virtual int AddPortToServer(const grpc::string& addr,
                               grpc_server* server) = 0;

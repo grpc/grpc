@@ -44,6 +44,7 @@ struct grpc_completion_queue;
 namespace grpc_impl {
 
 class Server;
+class ServerBuilder;
 }  // namespace grpc_impl
 namespace grpc {
 
@@ -66,7 +67,6 @@ class Channel;
 class ChannelInterface;
 class ClientContext;
 class CompletionQueue;
-class ServerBuilder;
 class ServerContext;
 class ServerInterface;
 
@@ -408,7 +408,7 @@ class ServerCompletionQueue : public CompletionQueue {
         polling_type_(polling_type) {}
 
   grpc_cq_polling_type polling_type_;
-  friend class ServerBuilder;
+  friend class grpc_impl::ServerBuilder;
   friend class grpc_impl::Server;
 };
 
