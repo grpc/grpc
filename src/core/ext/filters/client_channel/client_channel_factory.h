@@ -24,51 +24,32 @@
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/ext/filters/client_channel/subchannel.h"
-#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/gprpp/abstract.h"
 
-// Channel arg key for client channel factory.
-#define GRPC_ARG_CLIENT_CHANNEL_FACTORY "grpc.client_channel_factory"
+namespace grpc_core {
 
-typedef struct grpc_client_channel_factory grpc_client_channel_factory;
-typedef struct grpc_client_channel_factory_vtable
-    grpc_client_channel_factory_vtable;
+class ClientChannelFactory {
+ public:
+  virtual ~ClientChannelFactory() = default;
 
-typedef enum {
-  GRPC_CLIENT_CHANNEL_TYPE_REGULAR, /** for the user-level regular calls */
-  GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, /** for communication with a load
-                                              balancing service */
-} grpc_client_channel_type;
+  // Creates a subchannel with the specified args.
+  virtual Subchannel* CreateSubchannel(const grpc_channel_args* args)
+      GRPC_ABSTRACT;
 
-/** Constructor for new configured channels.
-    Creating decorators around this type is encouraged to adapt behavior. */
-struct grpc_client_channel_factory {
-  const grpc_client_channel_factory_vtable* vtable;
+  // Creates a channel for the specified target with the specified args.
+  virtual grpc_channel* CreateChannel(
+      const char* target, const grpc_channel_args* args) GRPC_ABSTRACT;
+
+  // Returns a channel arg containing the specified factory.
+  static grpc_arg CreateChannelArg(ClientChannelFactory* factory);
+
+  // Returns the factory from args, or null if not found.
+  static ClientChannelFactory* GetFromChannelArgs(
+      const grpc_channel_args* args);
+
+  GRPC_ABSTRACT_BASE_CLASS
 };
 
-struct grpc_client_channel_factory_vtable {
-  void (*ref)(grpc_client_channel_factory* factory);
-  void (*unref)(grpc_client_channel_factory* factory);
-  grpc_core::Subchannel* (*create_subchannel)(
-      grpc_client_channel_factory* factory, const grpc_channel_args* args);
-  grpc_channel* (*create_client_channel)(grpc_client_channel_factory* factory,
-                                         const char* target,
-                                         grpc_client_channel_type type,
-                                         const grpc_channel_args* args);
-};
-
-void grpc_client_channel_factory_ref(grpc_client_channel_factory* factory);
-void grpc_client_channel_factory_unref(grpc_client_channel_factory* factory);
-
-/** Create a new grpc_subchannel */
-grpc_core::Subchannel* grpc_client_channel_factory_create_subchannel(
-    grpc_client_channel_factory* factory, const grpc_channel_args* args);
-
-/** Create a new grpc_channel */
-grpc_channel* grpc_client_channel_factory_create_channel(
-    grpc_client_channel_factory* factory, const char* target,
-    grpc_client_channel_type type, const grpc_channel_args* args);
-
-grpc_arg grpc_client_channel_factory_create_channel_arg(
-    grpc_client_channel_factory* factory);
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_FACTORY_H */

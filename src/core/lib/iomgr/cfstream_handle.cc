@@ -29,6 +29,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error_cfstream.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
@@ -54,6 +55,8 @@ void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
                                   void* client_callback_info) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
+  grpc_error* error;
+  CFErrorRef stream_error;
   CFStreamHandle* handle = static_cast<CFStreamHandle*>(client_callback_info);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CFStream ReadCallback (%p, %p, %lu, %p)", handle,
@@ -68,8 +71,15 @@ void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
       handle->read_event_.SetReady();
       break;
     case kCFStreamEventErrorOccurred:
-      handle->open_event_.SetReady();
-      handle->read_event_.SetReady();
+      stream_error = CFReadStreamCopyError(stream);
+      error = grpc_error_set_int(
+          GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "read error"),
+          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+      CFRelease(stream_error);
+      handle->open_event_.SetShutdown(GRPC_ERROR_REF(error));
+      handle->write_event_.SetShutdown(GRPC_ERROR_REF(error));
+      handle->read_event_.SetShutdown(GRPC_ERROR_REF(error));
+      GRPC_ERROR_UNREF(error);
       break;
     default:
       GPR_UNREACHABLE_CODE(return );
@@ -80,6 +90,8 @@ void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
                                    void* clientCallBackInfo) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
+  grpc_error* error;
+  CFErrorRef stream_error;
   CFStreamHandle* handle = static_cast<CFStreamHandle*>(clientCallBackInfo);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CFStream WriteCallback (%p, %p, %lu, %p)", handle,
@@ -94,8 +106,15 @@ void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
       handle->write_event_.SetReady();
       break;
     case kCFStreamEventErrorOccurred:
-      handle->open_event_.SetReady();
-      handle->write_event_.SetReady();
+      stream_error = CFWriteStreamCopyError(stream);
+      error = grpc_error_set_int(
+          GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "write error"),
+          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+      CFRelease(stream_error);
+      handle->open_event_.SetShutdown(GRPC_ERROR_REF(error));
+      handle->write_event_.SetShutdown(GRPC_ERROR_REF(error));
+      handle->read_event_.SetShutdown(GRPC_ERROR_REF(error));
+      GRPC_ERROR_UNREF(error);
       break;
     default:
       GPR_UNREACHABLE_CODE(return );
@@ -172,5 +191,12 @@ void CFStreamHandle::Unref(const char* file, int line, const char* reason) {
     delete this;
   }
 }
+
+#else
+
+/* Creating a dummy function so that the grpc_cfstream library will be
+ * non-empty.
+ */
+void CFStreamDummy() {}
 
 #endif

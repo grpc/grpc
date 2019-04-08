@@ -29,6 +29,7 @@
 #include <grpc/support/atm.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/completion_queue.h>
+#include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
@@ -41,12 +42,14 @@
 
 struct grpc_server;
 
+namespace grpc_impl {
+
+class ServerInitializer;
+}
 namespace grpc {
 
 class AsyncGenericService;
-class HealthCheckServiceInterface;
 class ServerContext;
-class ServerInitializer;
 
 /// Represents a gRPC server.
 ///
@@ -199,10 +202,12 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   }
 
   friend class AsyncGenericService;
-  friend class ServerBuilder;
-  friend class ServerInitializer;
+  friend class grpc_impl::ServerBuilder;
+  friend class grpc_impl::ServerInitializer;
 
   class SyncRequest;
+  class CallbackRequestBase;
+  template <class ServerContextType>
   class CallbackRequest;
   class UnimplementedAsyncRequest;
   class UnimplementedAsyncResponse;
@@ -217,6 +222,34 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// service. The service must exist for the lifetime of the Server instance.
   void RegisterAsyncGenericService(AsyncGenericService* service) override;
 
+  /// NOTE: class experimental_registration_type is not part of the public API
+  /// of this class
+  /// TODO(vjpai): Move these contents to the public API of Server when
+  ///              they are no longer experimental
+  class experimental_registration_type final
+      : public experimental_registration_interface {
+   public:
+    explicit experimental_registration_type(Server* server) : server_(server) {}
+    void RegisterCallbackGenericService(
+        experimental::CallbackGenericService* service) override {
+      server_->RegisterCallbackGenericService(service);
+    }
+
+   private:
+    Server* server_;
+  };
+
+  /// TODO(vjpai): Mark this override when experimental type above is deleted
+  void RegisterCallbackGenericService(
+      experimental::CallbackGenericService* service);
+
+  /// NOTE: The function experimental_registration() is not stable public API.
+  /// It is a view to the experimental components of this class. It may be
+  /// changed or removed at any time.
+  experimental_registration_interface* experimental_registration() override {
+    return &experimental_registration_;
+  }
+
   void PerformOpsOnCall(internal::CallOpSetInterface* ops,
                         internal::Call* call) override;
 
@@ -228,7 +261,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
 
   CompletionQueue* CallbackCQ() override;
 
-  ServerInitializer* initializer();
+  grpc_impl::ServerInitializer* initializer();
 
   // A vector of interceptor factory objects.
   // This should be destroyed after health_check_service_ and this requirement
@@ -258,7 +291,11 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   std::vector<gpr_atm> callback_unmatched_reqs_count_;
 
   // List of callback requests to start when server actually starts.
-  std::list<CallbackRequest*> callback_reqs_to_start_;
+  std::list<CallbackRequestBase*> callback_reqs_to_start_;
+
+  // For registering experimental callback generic service; remove when that
+  // method longer experimental
+  experimental_registration_type experimental_registration_{this};
 
   // Server status
   std::mutex mu_;
@@ -282,18 +319,26 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   std::shared_ptr<GlobalCallbacks> global_callbacks_;
 
   std::vector<grpc::string> services_;
-  bool has_generic_service_;
+  bool has_async_generic_service_{false};
+  bool has_callback_generic_service_{false};
 
   // Pointer to the wrapped grpc_server.
   grpc_server* server_;
 
-  std::unique_ptr<ServerInitializer> server_initializer_;
+  std::unique_ptr<grpc_impl::ServerInitializer> server_initializer_;
 
   std::unique_ptr<HealthCheckServiceInterface> health_check_service_;
   bool health_check_service_disabled_;
 
+  // When appropriate, use a default callback generic service to handle
+  // unimplemented methods
+  std::unique_ptr<experimental::CallbackGenericService> unimplemented_service_;
+
   // A special handler for resource exhausted in sync case
   std::unique_ptr<internal::MethodHandler> resource_exhausted_handler_;
+
+  // Handler for callback generic service, if any
+  std::unique_ptr<internal::MethodHandler> generic_handler_;
 
   // callback_cq_ references the callbackable completion queue associated
   // with this server (if any). It is set on the first call to CallbackCQ().

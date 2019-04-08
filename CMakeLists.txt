@@ -24,7 +24,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.20.0-dev")
+set(PACKAGE_VERSION   "1.21.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -437,9 +437,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c udp_server_test)
 endif()
 add_dependencies(buildtests_c uri_parser_test)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-add_dependencies(buildtests_c wakeup_fd_cv_test)
-endif()
 add_dependencies(buildtests_c public_headers_must_be_c89)
 add_dependencies(buildtests_c badreq_bad_client_test)
 add_dependencies(buildtests_c connection_prefix_bad_client_test)
@@ -485,6 +482,7 @@ add_dependencies(buildtests_c h2_proxy_test)
 add_dependencies(buildtests_c h2_sockpair_test)
 add_dependencies(buildtests_c h2_sockpair+trace_test)
 add_dependencies(buildtests_c h2_sockpair_1byte_test)
+add_dependencies(buildtests_c h2_spiffe_test)
 add_dependencies(buildtests_c h2_ssl_test)
 add_dependencies(buildtests_c h2_ssl_proxy_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -633,6 +631,7 @@ add_dependencies(buildtests_cxx generic_end2end_test)
 add_dependencies(buildtests_cxx golden_file_test)
 add_dependencies(buildtests_cxx grpc_alts_credentials_options_test)
 add_dependencies(buildtests_cxx grpc_cli)
+add_dependencies(buildtests_cxx grpc_core_map_test)
 add_dependencies(buildtests_cxx grpc_linux_system_roots_test)
 add_dependencies(buildtests_cxx grpc_tool_test)
 add_dependencies(buildtests_cxx grpclb_api_test)
@@ -720,6 +719,7 @@ add_dependencies(buildtests_cxx transport_security_common_api_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx writes_per_rpc_test)
 endif()
+add_dependencies(buildtests_cxx xds_end2end_test)
 add_dependencies(buildtests_cxx resolver_component_test_unsecure)
 add_dependencies(buildtests_cxx resolver_component_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -1071,7 +1071,6 @@ add_library(grpc
   src/core/lib/iomgr/udp_server.cc
   src/core/lib/iomgr/unix_sockets_posix.cc
   src/core/lib/iomgr/unix_sockets_posix_noop.cc
-  src/core/lib/iomgr/wakeup_fd_cv.cc
   src/core/lib/iomgr/wakeup_fd_eventfd.cc
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
@@ -1111,7 +1110,6 @@ add_library(grpc
   src/core/lib/transport/metadata.cc
   src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
-  src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/status_metadata.cc
@@ -1167,6 +1165,7 @@ add_library(grpc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
   src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
+  src/core/lib/security/credentials/tls/spiffe_credentials.cc
   src/core/lib/security/security_connector/alts/alts_security_connector.cc
   src/core/lib/security/security_connector/fake/fake_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
@@ -1175,6 +1174,7 @@ add_library(grpc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
   src/core/lib/security/security_connector/ssl_utils.cc
+  src/core/lib/security/security_connector/tls/spiffe_security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
@@ -1245,6 +1245,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolving_lb_policy.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/server_address.cc
+  src/core/ext/filters/client_channel/service_config.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
@@ -1496,7 +1497,6 @@ add_library(grpc_cronet
   src/core/lib/iomgr/udp_server.cc
   src/core/lib/iomgr/unix_sockets_posix.cc
   src/core/lib/iomgr/unix_sockets_posix_noop.cc
-  src/core/lib/iomgr/wakeup_fd_cv.cc
   src/core/lib/iomgr/wakeup_fd_eventfd.cc
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
@@ -1536,7 +1536,6 @@ add_library(grpc_cronet
   src/core/lib/transport/metadata.cc
   src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
-  src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/status_metadata.cc
@@ -1600,6 +1599,7 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/resolving_lb_policy.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/server_address.cc
+  src/core/ext/filters/client_channel/service_config.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
@@ -1625,6 +1625,7 @@ add_library(grpc_cronet
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
   src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
+  src/core/lib/security/credentials/tls/spiffe_credentials.cc
   src/core/lib/security/security_connector/alts/alts_security_connector.cc
   src/core/lib/security/security_connector/fake/fake_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
@@ -1633,6 +1634,7 @@ add_library(grpc_cronet
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
   src/core/lib/security/security_connector/ssl_utils.cc
+  src/core/lib/security/security_connector/tls/spiffe_security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
@@ -1906,7 +1908,6 @@ add_library(grpc_test_util
   src/core/lib/iomgr/udp_server.cc
   src/core/lib/iomgr/unix_sockets_posix.cc
   src/core/lib/iomgr/unix_sockets_posix_noop.cc
-  src/core/lib/iomgr/wakeup_fd_cv.cc
   src/core/lib/iomgr/wakeup_fd_eventfd.cc
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
@@ -1946,7 +1947,6 @@ add_library(grpc_test_util
   src/core/lib/transport/metadata.cc
   src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
-  src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/status_metadata.cc
@@ -1978,6 +1978,7 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/resolving_lb_policy.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/server_address.cc
+  src/core/ext/filters/client_channel/service_config.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
@@ -2231,7 +2232,6 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/udp_server.cc
   src/core/lib/iomgr/unix_sockets_posix.cc
   src/core/lib/iomgr/unix_sockets_posix_noop.cc
-  src/core/lib/iomgr/wakeup_fd_cv.cc
   src/core/lib/iomgr/wakeup_fd_eventfd.cc
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
@@ -2271,7 +2271,6 @@ add_library(grpc_test_util_unsecure
   src/core/lib/transport/metadata.cc
   src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
-  src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/status_metadata.cc
@@ -2303,6 +2302,7 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/resolving_lb_policy.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/server_address.cc
+  src/core/ext/filters/client_channel/service_config.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
@@ -2532,7 +2532,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/udp_server.cc
   src/core/lib/iomgr/unix_sockets_posix.cc
   src/core/lib/iomgr/unix_sockets_posix_noop.cc
-  src/core/lib/iomgr/wakeup_fd_cv.cc
   src/core/lib/iomgr/wakeup_fd_eventfd.cc
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
@@ -2572,7 +2571,6 @@ add_library(grpc_unsecure
   src/core/lib/transport/metadata.cc
   src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
-  src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/status_metadata.cc
@@ -2639,6 +2637,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/resolving_lb_policy.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/server_address.cc
+  src/core/ext/filters/client_channel/service_config.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
@@ -3002,12 +3001,16 @@ foreach(_hdr
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
   include/grpcpp/create_channel.h
+  include/grpcpp/create_channel_impl.h
   include/grpcpp/create_channel_posix.h
+  include/grpcpp/create_channel_posix_impl.h
   include/grpcpp/ext/health_check_service_server_builder_option.h
   include/grpcpp/generic/async_generic_service.h
   include/grpcpp/generic/generic_stub.h
+  include/grpcpp/generic/generic_stub_impl.h
   include/grpcpp/grpcpp.h
   include/grpcpp/health_check_service_interface.h
+  include/grpcpp/health_check_service_interface_impl.h
   include/grpcpp/impl/call.h
   include/grpcpp/impl/channel_argument_option.h
   include/grpcpp/impl/client_unary_call.h
@@ -3018,18 +3021,25 @@ foreach(_hdr
   include/grpcpp/impl/rpc_service_method.h
   include/grpcpp/impl/serialization_traits.h
   include/grpcpp/impl/server_builder_option.h
+  include/grpcpp/impl/server_builder_option_impl.h
   include/grpcpp/impl/server_builder_plugin.h
   include/grpcpp/impl/server_initializer.h
+  include/grpcpp/impl/server_initializer_impl.h
   include/grpcpp/impl/service_type.h
   include/grpcpp/resource_quota.h
+  include/grpcpp/resource_quota_impl.h
   include/grpcpp/security/auth_context.h
   include/grpcpp/security/auth_metadata_processor.h
+  include/grpcpp/security/auth_metadata_processor_impl.h
   include/grpcpp/security/credentials.h
   include/grpcpp/security/server_credentials.h
+  include/grpcpp/security/server_credentials_impl.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
+  include/grpcpp/server_builder_impl.h
   include/grpcpp/server_context.h
   include/grpcpp/server_posix.h
+  include/grpcpp/server_posix_impl.h
   include/grpcpp/support/async_stream.h
   include/grpcpp/support/async_unary_call.h
   include/grpcpp/support/byte_buffer.h
@@ -3241,6 +3251,7 @@ target_link_libraries(grpc++_core_stats
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 endif (gRPC_BUILD_CODEGEN)
@@ -3420,7 +3431,6 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/udp_server.cc
   src/core/lib/iomgr/unix_sockets_posix.cc
   src/core/lib/iomgr/unix_sockets_posix_noop.cc
-  src/core/lib/iomgr/wakeup_fd_cv.cc
   src/core/lib/iomgr/wakeup_fd_eventfd.cc
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
@@ -3460,7 +3470,6 @@ add_library(grpc++_cronet
   src/core/lib/transport/metadata.cc
   src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/pid_controller.cc
-  src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/status_metadata.cc
@@ -3497,6 +3506,7 @@ add_library(grpc++_cronet
   src/core/ext/filters/client_channel/resolving_lb_policy.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/server_address.cc
+  src/core/ext/filters/client_channel/service_config.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
@@ -3594,12 +3604,16 @@ foreach(_hdr
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
   include/grpcpp/create_channel.h
+  include/grpcpp/create_channel_impl.h
   include/grpcpp/create_channel_posix.h
+  include/grpcpp/create_channel_posix_impl.h
   include/grpcpp/ext/health_check_service_server_builder_option.h
   include/grpcpp/generic/async_generic_service.h
   include/grpcpp/generic/generic_stub.h
+  include/grpcpp/generic/generic_stub_impl.h
   include/grpcpp/grpcpp.h
   include/grpcpp/health_check_service_interface.h
+  include/grpcpp/health_check_service_interface_impl.h
   include/grpcpp/impl/call.h
   include/grpcpp/impl/channel_argument_option.h
   include/grpcpp/impl/client_unary_call.h
@@ -3610,18 +3624,25 @@ foreach(_hdr
   include/grpcpp/impl/rpc_service_method.h
   include/grpcpp/impl/serialization_traits.h
   include/grpcpp/impl/server_builder_option.h
+  include/grpcpp/impl/server_builder_option_impl.h
   include/grpcpp/impl/server_builder_plugin.h
   include/grpcpp/impl/server_initializer.h
+  include/grpcpp/impl/server_initializer_impl.h
   include/grpcpp/impl/service_type.h
   include/grpcpp/resource_quota.h
+  include/grpcpp/resource_quota_impl.h
   include/grpcpp/security/auth_context.h
   include/grpcpp/security/auth_metadata_processor.h
+  include/grpcpp/security/auth_metadata_processor_impl.h
   include/grpcpp/security/credentials.h
   include/grpcpp/security/server_credentials.h
+  include/grpcpp/security/server_credentials_impl.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
+  include/grpcpp/server_builder_impl.h
   include/grpcpp/server_context.h
   include/grpcpp/server_posix.h
+  include/grpcpp/server_posix_impl.h
   include/grpcpp/support/async_stream.h
   include/grpcpp/support/async_unary_call.h
   include/grpcpp/support/byte_buffer.h
@@ -3829,6 +3850,7 @@ target_link_libraries(grpc++_error_details
 foreach(_hdr
   include/grpc++/support/error_details.h
   include/grpcpp/support/error_details.h
+  include/grpcpp/support/error_details_impl.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -3838,6 +3860,7 @@ foreach(_hdr
 endforeach()
 endif (gRPC_BUILD_CODEGEN)
 
+if (gRPC_BUILD_CODEGEN)
 
 if (gRPC_INSTALL)
   install(TARGETS grpc++_error_details EXPORT gRPCTargets
@@ -3847,6 +3870,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CODEGEN)
 if (gRPC_BUILD_TESTS)
 
 if (gRPC_BUILD_CODEGEN)
@@ -3895,6 +3919,7 @@ target_link_libraries(grpc++_proto_reflection_desc_db
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 foreach(_hdr
@@ -3959,6 +3984,7 @@ target_link_libraries(grpc++_reflection
 foreach(_hdr
   include/grpc++/ext/proto_server_reflection_plugin.h
   include/grpcpp/ext/proto_server_reflection_plugin.h
+  include/grpcpp/ext/proto_server_reflection_plugin_impl.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -3968,6 +3994,7 @@ foreach(_hdr
 endforeach()
 endif (gRPC_BUILD_CODEGEN)
 
+if (gRPC_BUILD_CODEGEN)
 
 if (gRPC_INSTALL)
   install(TARGETS grpc++_reflection EXPORT gRPCTargets
@@ -3977,6 +4004,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CODEGEN)
 if (gRPC_BUILD_TESTS)
 
 add_library(grpc++_test_config
@@ -4015,6 +4043,7 @@ target_include_directories(grpc++_test_config
 target_link_libraries(grpc++_test_config
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 
@@ -4112,6 +4141,7 @@ target_link_libraries(grpc++_test_util
   grpc++
   grpc_test_util
   grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 foreach(_hdr
@@ -4307,6 +4337,7 @@ target_link_libraries(grpc++_test_util_unsecure
   grpc++_unsecure
   grpc_test_util_unsecure
   grpc_unsecure
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 foreach(_hdr
@@ -4550,12 +4581,16 @@ foreach(_hdr
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
   include/grpcpp/create_channel.h
+  include/grpcpp/create_channel_impl.h
   include/grpcpp/create_channel_posix.h
+  include/grpcpp/create_channel_posix_impl.h
   include/grpcpp/ext/health_check_service_server_builder_option.h
   include/grpcpp/generic/async_generic_service.h
   include/grpcpp/generic/generic_stub.h
+  include/grpcpp/generic/generic_stub_impl.h
   include/grpcpp/grpcpp.h
   include/grpcpp/health_check_service_interface.h
+  include/grpcpp/health_check_service_interface_impl.h
   include/grpcpp/impl/call.h
   include/grpcpp/impl/channel_argument_option.h
   include/grpcpp/impl/client_unary_call.h
@@ -4566,18 +4601,25 @@ foreach(_hdr
   include/grpcpp/impl/rpc_service_method.h
   include/grpcpp/impl/serialization_traits.h
   include/grpcpp/impl/server_builder_option.h
+  include/grpcpp/impl/server_builder_option_impl.h
   include/grpcpp/impl/server_builder_plugin.h
   include/grpcpp/impl/server_initializer.h
+  include/grpcpp/impl/server_initializer_impl.h
   include/grpcpp/impl/service_type.h
   include/grpcpp/resource_quota.h
+  include/grpcpp/resource_quota_impl.h
   include/grpcpp/security/auth_context.h
   include/grpcpp/security/auth_metadata_processor.h
+  include/grpcpp/security/auth_metadata_processor_impl.h
   include/grpcpp/security/credentials.h
   include/grpcpp/security/server_credentials.h
+  include/grpcpp/security/server_credentials_impl.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
+  include/grpcpp/server_builder_impl.h
   include/grpcpp/server_context.h
   include/grpcpp/server_posix.h
+  include/grpcpp/server_posix_impl.h
   include/grpcpp/support/async_stream.h
   include/grpcpp/support/async_unary_call.h
   include/grpcpp/support/byte_buffer.h
@@ -4836,6 +4878,7 @@ target_link_libraries(grpc_cli_libs
   grpc++_proto_reflection_desc_db
   grpc++
   grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 foreach(_hdr
@@ -4961,6 +5004,7 @@ target_link_libraries(grpcpp_channelz
 
 foreach(_hdr
   include/grpcpp/ext/channelz_service_plugin.h
+  include/grpcpp/ext/channelz_service_plugin_impl.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -4970,6 +5014,7 @@ foreach(_hdr
 endforeach()
 endif (gRPC_BUILD_CODEGEN)
 
+if (gRPC_BUILD_CODEGEN)
 
 if (gRPC_INSTALL)
   install(TARGETS grpcpp_channelz EXPORT gRPCTargets
@@ -4979,6 +5024,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CODEGEN)
 if (gRPC_BUILD_TESTS)
 
 if (gRPC_BUILD_CODEGEN)
@@ -5044,6 +5090,7 @@ target_link_libraries(http2_client_main
   grpc++
   grpc
   grpc++_test_config
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 endif (gRPC_BUILD_CODEGEN)
@@ -5100,6 +5147,7 @@ target_link_libraries(interop_client_helper
   grpc++
   grpc
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 endif (gRPC_BUILD_CODEGEN)
@@ -5173,6 +5221,7 @@ target_link_libraries(interop_client_main
   grpc
   gpr
   grpc++_test_config
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 endif (gRPC_BUILD_CODEGEN)
@@ -5221,6 +5270,7 @@ target_link_libraries(interop_server_helper
   grpc++
   grpc
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 
@@ -5292,6 +5342,7 @@ target_link_libraries(interop_server_lib
   grpc
   gpr
   grpc++_test_config
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 endif (gRPC_BUILD_CODEGEN)
@@ -5336,6 +5387,7 @@ target_link_libraries(interop_server_main
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   interop_server_lib
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 
@@ -5445,6 +5497,7 @@ target_link_libraries(qps
   grpc++_core_stats
   grpc++
   grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 endif (gRPC_BUILD_CODEGEN)
@@ -5503,6 +5556,58 @@ if (gRPC_INSTALL)
 endif()
 
 endif (gRPC_BUILD_CSHARP_EXT)
+if (gRPC_BUILD_TESTS)
+
+add_library(upb
+  third_party/upb/google/protobuf/descriptor.upb.c
+  third_party/upb/upb/decode.c
+  third_party/upb/upb/def.c
+  third_party/upb/upb/encode.c
+  third_party/upb/upb/handlers.c
+  third_party/upb/upb/msg.c
+  third_party/upb/upb/msgfactory.c
+  third_party/upb/upb/sink.c
+  third_party/upb/upb/table.c
+  third_party/upb/upb/upb.c
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(upb PROPERTIES COMPILE_PDB_NAME "upb"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+
+target_include_directories(upb
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+)
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(upb PROPERTIES LINKER_LANGUAGE C)
+    # only use the flags for C++ source files
+    target_compile_options(upb PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+target_link_libraries(upb
+  ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_library(bad_client_test
@@ -5619,6 +5724,7 @@ add_library(end2end_tests
   test/core/end2end/tests/empty_batch.cc
   test/core/end2end/tests/filter_call_init_fails.cc
   test/core/end2end/tests/filter_causes_close.cc
+  test/core/end2end/tests/filter_context.cc
   test/core/end2end/tests/filter_latency.cc
   test/core/end2end/tests/filter_status_code.cc
   test/core/end2end/tests/graceful_server_shutdown.cc
@@ -5742,6 +5848,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/empty_batch.cc
   test/core/end2end/tests/filter_call_init_fails.cc
   test/core/end2end/tests/filter_causes_close.cc
+  test/core/end2end/tests/filter_context.cc
   test/core/end2end/tests/filter_latency.cc
   test/core/end2end/tests/filter_status_code.cc
   test/core/end2end/tests/graceful_server_shutdown.cc
@@ -10453,42 +10560,6 @@ target_link_libraries(uri_parser_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-add_executable(wakeup_fd_cv_test
-  test/core/iomgr/wakeup_fd_cv_test.cc
-)
-
-
-target_include_directories(wakeup_fd_cv_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-)
-
-target_link_libraries(wakeup_fd_cv_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr
-)
-
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(wakeup_fd_cv_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(wakeup_fd_cv_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
-
-endif()
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
 
 add_executable(alarm_test
   test/cpp/common/alarm_test.cc
@@ -13425,6 +13496,45 @@ target_link_libraries(grpc_cli
 
 
 endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(grpc_core_map_test
+  test/core/gprpp/map_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(grpc_core_map_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(grpc_core_map_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc++
+  grpc
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_CODEGEN)
 
 add_executable(grpc_cpp_plugin
@@ -16233,6 +16343,53 @@ endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(xds_end2end_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.h
+  test/cpp/end2end/xds_end2end_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/lb/v1/load_balancer.proto
+)
+
+target_include_directories(xds_end2end_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(xds_end2end_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(public_headers_must_be_c89
   test/core/surface/public_headers_must_be_c89.c
 )
@@ -17404,6 +17561,41 @@ target_link_libraries(h2_sockpair_1byte_test
   if (_gRPC_CORE_NOSTDCXX_FLAGS)
     set_target_properties(h2_sockpair_1byte_test PROPERTIES LINKER_LANGUAGE C)
     target_compile_options(h2_sockpair_1byte_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(h2_spiffe_test
+  test/core/end2end/fixtures/h2_spiffe.cc
+)
+
+
+target_include_directories(h2_spiffe_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+)
+
+target_link_libraries(h2_spiffe_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  end2end_tests
+  grpc_test_util
+  grpc
+  gpr
+)
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_spiffe_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_spiffe_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
   endif()
 
 endif (gRPC_BUILD_TESTS)

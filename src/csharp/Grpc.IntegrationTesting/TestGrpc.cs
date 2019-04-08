@@ -4,13 +4,13 @@
 // </auto-generated>
 // Original file comments:
 // Copyright 2015-2016 gRPC authors.
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -105,6 +105,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of TestService</summary>
+    [grpc::BindServiceMethod(typeof(TestService), "BindService")]
     public abstract partial class TestServiceBase
     {
       /// <summary>
@@ -580,6 +581,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of UnimplementedService</summary>
+    [grpc::BindServiceMethod(typeof(UnimplementedService), "BindService")]
     public abstract partial class UnimplementedServiceBase
     {
       /// <summary>
@@ -719,6 +721,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of ReconnectService</summary>
+    [grpc::BindServiceMethod(typeof(ReconnectService), "BindService")]
     public abstract partial class ReconnectServiceBase
     {
       public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.Empty> Start(global::Grpc.Testing.ReconnectParams request, grpc::ServerCallContext context)

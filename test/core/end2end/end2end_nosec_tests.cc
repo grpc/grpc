@@ -70,6 +70,8 @@ extern void filter_call_init_fails(grpc_end2end_test_config config);
 extern void filter_call_init_fails_pre_init(void);
 extern void filter_causes_close(grpc_end2end_test_config config);
 extern void filter_causes_close_pre_init(void);
+extern void filter_context(grpc_end2end_test_config config);
+extern void filter_context_pre_init(void);
 extern void filter_latency(grpc_end2end_test_config config);
 extern void filter_latency_pre_init(void);
 extern void filter_status_code(grpc_end2end_test_config config);
@@ -207,6 +209,7 @@ void grpc_end2end_tests_pre_init(void) {
   empty_batch_pre_init();
   filter_call_init_fails_pre_init();
   filter_causes_close_pre_init();
+  filter_context_pre_init();
   filter_latency_pre_init();
   filter_status_code_pre_init();
   graceful_server_shutdown_pre_init();
@@ -292,6 +295,7 @@ void grpc_end2end_tests(int argc, char **argv,
     empty_batch(config);
     filter_call_init_fails(config);
     filter_causes_close(config);
+    filter_context(config);
     filter_latency(config);
     filter_status_code(config);
     graceful_server_shutdown(config);
@@ -430,6 +434,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("filter_causes_close", argv[i])) {
       filter_causes_close(config);
+      continue;
+    }
+    if (0 == strcmp("filter_context", argv[i])) {
+      filter_context(config);
       continue;
     }
     if (0 == strcmp("filter_latency", argv[i])) {

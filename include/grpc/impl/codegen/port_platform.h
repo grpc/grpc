@@ -193,6 +193,7 @@
 #define GPR_PLATFORM_STRING "ios"
 #define GPR_CPU_IPHONE 1
 #define GPR_PTHREAD_TLS 1
+#define GRPC_CFSTREAM 1
 /* the c-ares resolver isnt safe to enable on iOS */
 #define GRPC_ARES 0
 #else /* TARGET_OS_IPHONE */
@@ -235,7 +236,6 @@
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
-/* TODO(mxyan): Remove when CFStream becomes default */
 #ifndef GRPC_CFSTREAM
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
 #endif
@@ -359,6 +359,26 @@
 #else /* _LP64 */
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
+#elif defined(__Fuchsia__)
+#define GPR_FUCHSIA 1
+#define GPR_ARCH_64 1
+#define GPR_PLATFORM_STRING "fuchsia"
+#include <features.h>
+// Specifying musl libc affects wrap_memcpy.c. It causes memmove() to be
+// invoked.
+#define GPR_MUSL_LIBC_COMPAT 1
+#define GPR_CPU_POSIX 1
+#define GPR_GCC_ATOMIC 1
+#define GPR_PTHREAD_TLS 1
+#define GPR_POSIX_LOG 1
+#define GPR_POSIX_SYNC 1
+#define GPR_POSIX_ENV 1
+#define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_SUBPROCESS 1
+#define GPR_POSIX_SYNC 1
+#define GPR_POSIX_STRING 1
+#define GPR_POSIX_TIME 1
+#define GPR_GETPID_IN_UNISTD_H 1
 #else
 #error "Could not auto-detect platform"
 #endif

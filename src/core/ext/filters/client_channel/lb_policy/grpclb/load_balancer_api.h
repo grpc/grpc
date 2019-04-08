@@ -43,7 +43,7 @@ typedef struct {
 
 /** Create a request for a gRPC LB service under \a lb_service_name */
 grpc_grpclb_request* grpc_grpclb_request_create(const char* lb_service_name);
-grpc_grpclb_request* grpc_grpclb_load_report_request_create_locked(
+grpc_grpclb_request* grpc_grpclb_load_report_request_create(
     grpc_core::GrpcLbClientStats* client_stats);
 
 /** Protocol Buffers v3-encode \a request */
@@ -55,11 +55,11 @@ void grpc_grpclb_request_destroy(grpc_grpclb_request* request);
 /** Parse (ie, decode) the bytes in \a encoded_grpc_grpclb_response as a \a
  * grpc_grpclb_initial_response */
 grpc_grpclb_initial_response* grpc_grpclb_initial_response_parse(
-    grpc_slice encoded_grpc_grpclb_response);
+    const grpc_slice& encoded_grpc_grpclb_response);
 
 /** Parse the list of servers from an encoded \a grpc_grpclb_response */
 grpc_grpclb_serverlist* grpc_grpclb_response_parse_serverlist(
-    grpc_slice encoded_grpc_grpclb_response);
+    const grpc_slice& encoded_grpc_grpclb_response);
 
 /** Return a copy of \a sl. The caller is responsible for calling \a
  * grpc_grpclb_destroy_serverlist on the returned copy. */

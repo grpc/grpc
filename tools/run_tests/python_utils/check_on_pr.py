@@ -29,8 +29,8 @@ _GITHUB_APP_ID = 22338
 _INSTALLATION_ID = 519109
 
 _ACCESS_TOKEN_CACHE = None
-_ACCESS_TOKEN_FETCH_RETRIES = 5
-_ACCESS_TOKEN_FETCH_RETRIES_INTERVAL_S = 1
+_ACCESS_TOKEN_FETCH_RETRIES = 6
+_ACCESS_TOKEN_FETCH_RETRIES_INTERVAL_S = 15
 
 
 def _jwt_token():
@@ -76,7 +76,7 @@ def _access_token():
                     time.sleep(_ACCESS_TOKEN_FETCH_RETRIES_INTERVAL_S)
         else:
             print("error: Unable to fetch access token, exiting...")
-            sys.exit(1)
+            sys.exit(0)
 
     return _ACCESS_TOKEN_CACHE['token']
 

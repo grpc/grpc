@@ -125,6 +125,20 @@ void ServerTryCancelNonblocking(ServerContext* context) {
   gpr_log(GPR_INFO, "Server called TryCancel() to cancel the request");
 }
 
+void LoopUntilCancelled(Alarm* alarm, ServerContext* context,
+                        experimental::ServerCallbackRpcController* controller,
+                        int loop_delay_us) {
+  if (!context->IsCancelled()) {
+    alarm->experimental().Set(
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                     gpr_time_from_micros(loop_delay_us, GPR_TIMESPAN)),
+        [alarm, context, controller, loop_delay_us](bool) {
+          LoopUntilCancelled(alarm, context, controller, loop_delay_us);
+        });
+  } else {
+    controller->Finish(Status::CANCELLED);
+  }
+}
 }  // namespace
 
 Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
@@ -236,6 +250,25 @@ Status TestServiceImpl::CheckClientInitialMetadata(ServerContext* context,
 void CallbackTestServiceImpl::Echo(
     ServerContext* context, const EchoRequest* request, EchoResponse* response,
     experimental::ServerCallbackRpcController* controller) {
+  CancelState* cancel_state = new CancelState;
+  int server_use_cancel_callback =
+      GetIntValueFromMetadata(kServerUseCancelCallback,
+                              context->client_metadata(), DO_NOT_USE_CALLBACK);
+  if (server_use_cancel_callback != DO_NOT_USE_CALLBACK) {
+    controller->SetCancelCallback([cancel_state] {
+      EXPECT_FALSE(cancel_state->callback_invoked.exchange(
+          true, std::memory_order_relaxed));
+    });
+    if (server_use_cancel_callback == MAYBE_USE_CALLBACK_EARLY_CANCEL) {
+      EXPECT_TRUE(context->IsCancelled());
+      EXPECT_TRUE(
+          cancel_state->callback_invoked.load(std::memory_order_relaxed));
+    } else {
+      EXPECT_FALSE(context->IsCancelled());
+      EXPECT_FALSE(
+          cancel_state->callback_invoked.load(std::memory_order_relaxed));
+    }
+  }
   // A bit of sleep to make sure that short deadline tests fail
   if (request->has_param() && request->param().server_sleep_us() > 0) {
     // Set an alarm for that much time
@@ -243,11 +276,11 @@ void CallbackTestServiceImpl::Echo(
         gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                      gpr_time_from_micros(request->param().server_sleep_us(),
                                           GPR_TIMESPAN)),
-        [this, context, request, response, controller](bool) {
-          EchoNonDelayed(context, request, response, controller);
+        [this, context, request, response, controller, cancel_state](bool) {
+          EchoNonDelayed(context, request, response, controller, cancel_state);
         });
   } else {
-    EchoNonDelayed(context, request, response, controller);
+    EchoNonDelayed(context, request, response, controller, cancel_state);
   }
 }
 
@@ -266,7 +299,26 @@ void CallbackTestServiceImpl::CheckClientInitialMetadata(
 
 void CallbackTestServiceImpl::EchoNonDelayed(
     ServerContext* context, const EchoRequest* request, EchoResponse* response,
-    experimental::ServerCallbackRpcController* controller) {
+    experimental::ServerCallbackRpcController* controller,
+    CancelState* cancel_state) {
+  int server_use_cancel_callback =
+      GetIntValueFromMetadata(kServerUseCancelCallback,
+                              context->client_metadata(), DO_NOT_USE_CALLBACK);
+
+  // Safe to clear cancel callback even if it wasn't set
+  controller->ClearCancelCallback();
+  if (server_use_cancel_callback == MAYBE_USE_CALLBACK_EARLY_CANCEL ||
+      server_use_cancel_callback == MAYBE_USE_CALLBACK_LATE_CANCEL) {
+    EXPECT_TRUE(context->IsCancelled());
+    EXPECT_TRUE(cancel_state->callback_invoked.load(std::memory_order_relaxed));
+    delete cancel_state;
+    controller->Finish(Status::CANCELLED);
+    return;
+  }
+
+  EXPECT_FALSE(cancel_state->callback_invoked.load(std::memory_order_relaxed));
+  delete cancel_state;
+
   if (request->has_param() && request->param().server_die()) {
     gpr_log(GPR_ERROR, "The request should not reach application handler.");
     GPR_ASSERT(0);
@@ -288,20 +340,11 @@ void CallbackTestServiceImpl::EchoNonDelayed(
     EXPECT_FALSE(context->IsCancelled());
     context->TryCancel();
     gpr_log(GPR_INFO, "Server called TryCancel() to cancel the request");
-    // Now wait until it's really canceled
 
-    std::function<void(bool)> recurrence = [this, context, controller,
-                                            &recurrence](bool) {
-      if (!context->IsCancelled()) {
-        alarm_.experimental().Set(
-            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                         gpr_time_from_micros(1000, GPR_TIMESPAN)),
-            recurrence);
-      } else {
-        controller->Finish(Status::CANCELLED);
-      }
-    };
-    recurrence(true);
+    if (server_use_cancel_callback == DO_NOT_USE_CALLBACK) {
+      // Now wait until it's really canceled
+      LoopUntilCancelled(&alarm_, context, controller, 1000);
+    }
     return;
   }
 
@@ -316,20 +359,11 @@ void CallbackTestServiceImpl::EchoNonDelayed(
       std::unique_lock<std::mutex> lock(mu_);
       signal_client_ = true;
     }
-    std::function<void(bool)> recurrence = [this, context, request, controller,
-                                            &recurrence](bool) {
-      if (!context->IsCancelled()) {
-        alarm_.experimental().Set(
-            gpr_time_add(
-                gpr_now(GPR_CLOCK_REALTIME),
-                gpr_time_from_micros(request->param().client_cancel_after_us(),
-                                     GPR_TIMESPAN)),
-            recurrence);
-      } else {
-        controller->Finish(Status::CANCELLED);
-      }
-    };
-    recurrence(true);
+    if (server_use_cancel_callback == DO_NOT_USE_CALLBACK) {
+      // Now wait until it's really canceled
+      LoopUntilCancelled(&alarm_, context, controller,
+                         request->param().client_cancel_after_us());
+    }
     return;
   } else if (request->has_param() &&
              request->param().server_cancel_after_us()) {

@@ -192,7 +192,7 @@ static void tcp_read_allocation_done(void* tcpp, grpc_error* error) {
 }
 
 static void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
-                          grpc_closure* cb) {
+                          grpc_closure* cb, bool urgent) {
   custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)ep;
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   GPR_ASSERT(tcp->read_cb == nullptr);

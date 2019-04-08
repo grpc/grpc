@@ -13,9 +13,9 @@
   </ItemGroup>
 
   <ItemDefinitionGroup Condition=" '$(Protobuf_ProjectSupported)' == 'true' and '$(Language)' == 'C#' ">
-    <ProtoBuf>
-      <GrpcServices Condition=" '%(ProtoBuf.GrpcServices)' == '' ">Both</GrpcServices>
-    </ProtoBuf>
+    <Protobuf>
+      <GrpcServices Condition=" '%(Protobuf.GrpcServices)' == '' ">Both</GrpcServices>
+    </Protobuf>
   </ItemDefinitionGroup>
 
   <!-- This target is invoked in a C# project, or can be called in a customized project. -->

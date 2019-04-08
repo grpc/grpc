@@ -1,0 +1,3 @@
+# TODO(yfen): Merge with rbe_common.bazelrc and enable Windows RBE
+build --test_tag_filters=-no_windows
+build --build_tag_filters=-no_windows

@@ -16,15 +16,23 @@
 # Builds Java interop server and client in a base image.
 set -e
 
-mkdir -p /var/local/git
-git clone --recursive --depth 1 /var/local/jenkins/grpc-java /var/local/git/grpc-java
+cp -r /var/local/jenkins/grpc-java /tmp/grpc-java
 
 # copy service account keys if available
 cp -r /var/local/jenkins/service_account $HOME || true
 
-cd /var/local/git/grpc-java
-
+pushd /tmp/grpc-java
 ./gradlew :grpc-interop-testing:installDist -PskipCodegen=true
+
+mkdir -p /var/local/git/grpc-java/
+cp -r --parents -t /var/local/git/grpc-java/ ${'\\'}
+    interop-testing/build/install/ ${'\\'}
+    run-test-client.sh ${'\\'}
+    run-test-server.sh
+
+popd
+rm -r /tmp/grpc-java
+rm -r "$HOME/.gradle"
 
 # enable extra java logging
 mkdir -p /var/local/grpc_java_logging

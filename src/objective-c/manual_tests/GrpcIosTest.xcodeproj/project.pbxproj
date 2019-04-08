@@ -12,7 +12,18 @@
 		5EDA909C220DF1B00046D27A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 5EDA9096220DF1B00046D27A /* main.m */; };
 		5EDA909E220DF1B00046D27A /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 5EDA9098220DF1B00046D27A /* Main.storyboard */; };
 		5EDA909F220DF1B00046D27A /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 5EDA9099220DF1B00046D27A /* AppDelegate.m */; };
+		B0C18CA7222DEF140002B502 /* GrpcIosTestUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = B0C18CA6222DEF140002B502 /* GrpcIosTestUITests.m */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B0C18CA9222DEF140002B502 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5EDA9073220DF0BC0046D27A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5EDA907A220DF0BC0046D27A;
+			remoteInfo = GrpcIosTest;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		1D22EC48A487B02F76135EA3 /* libPods-GrpcIosTest.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-GrpcIosTest.a"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -24,6 +35,9 @@
 		5EDA9099220DF1B00046D27A /* AppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = SOURCE_ROOT; };
 		7C9FAFB11727DCA50888C1B8 /* Pods-GrpcIosTest.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GrpcIosTest.debug.xcconfig"; path = "Pods/Target Support Files/Pods-GrpcIosTest/Pods-GrpcIosTest.debug.xcconfig"; sourceTree = "<group>"; };
 		A4E7CA72304A7B43FE8A5BC7 /* Pods-GrpcIosTest.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GrpcIosTest.release.xcconfig"; path = "Pods/Target Support Files/Pods-GrpcIosTest/Pods-GrpcIosTest.release.xcconfig"; sourceTree = "<group>"; };
+		B0C18CA4222DEF140002B502 /* GrpcIosTestUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GrpcIosTestUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B0C18CA6222DEF140002B502 /* GrpcIosTestUITests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GrpcIosTestUITests.m; sourceTree = "<group>"; };
+		B0C18CA8222DEF140002B502 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -32,6 +46,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				4E1314BB1DA3DC6ECCEB96AB /* libPods-GrpcIosTest.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B0C18CA1222DEF140002B502 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -55,6 +76,7 @@
 				5EDA9096220DF1B00046D27A /* main.m */,
 				5EDA9098220DF1B00046D27A /* Main.storyboard */,
 				5EDA9094220DF1B00046D27A /* ViewController.m */,
+				B0C18CA5222DEF140002B502 /* GrpcIosTestUITests */,
 				5EDA907C220DF0BC0046D27A /* Products */,
 				2B8131AC634883AFEC02557C /* Pods */,
 				E73D92116C1C328622A8C77F /* Frameworks */,
@@ -65,8 +87,18 @@
 			isa = PBXGroup;
 			children = (
 				5EDA907B220DF0BC0046D27A /* GrpcIosTest.app */,
+				B0C18CA4222DEF140002B502 /* GrpcIosTestUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		B0C18CA5222DEF140002B502 /* GrpcIosTestUITests */ = {
+			isa = PBXGroup;
+			children = (
+				B0C18CA6222DEF140002B502 /* GrpcIosTestUITests.m */,
+				B0C18CA8222DEF140002B502 /* Info.plist */,
+			);
+			path = GrpcIosTestUITests;
 			sourceTree = "<group>";
 		};
 		E73D92116C1C328622A8C77F /* Frameworks */ = {
@@ -99,6 +131,24 @@
 			productReference = 5EDA907B220DF0BC0046D27A /* GrpcIosTest.app */;
 			productType = "com.apple.product-type.application";
 		};
+		B0C18CA3222DEF140002B502 /* GrpcIosTestUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B0C18CAD222DEF140002B502 /* Build configuration list for PBXNativeTarget "GrpcIosTestUITests" */;
+			buildPhases = (
+				B0C18CA0222DEF140002B502 /* Sources */,
+				B0C18CA1222DEF140002B502 /* Frameworks */,
+				B0C18CA2222DEF140002B502 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B0C18CAA222DEF140002B502 /* PBXTargetDependency */,
+			);
+			name = GrpcIosTestUITests;
+			productName = GrpcIosTestUITests;
+			productReference = B0C18CA4222DEF140002B502 /* GrpcIosTestUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -110,6 +160,10 @@
 				TargetAttributes = {
 					5EDA907A220DF0BC0046D27A = {
 						CreatedOnToolsVersion = 10.0;
+					};
+					B0C18CA3222DEF140002B502 = {
+						CreatedOnToolsVersion = 10.0;
+						TestTargetID = 5EDA907A220DF0BC0046D27A;
 					};
 				};
 			};
@@ -127,6 +181,7 @@
 			projectRoot = "";
 			targets = (
 				5EDA907A220DF0BC0046D27A /* GrpcIosTest */,
+				B0C18CA3222DEF140002B502 /* GrpcIosTestUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -137,6 +192,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				5EDA909E220DF1B00046D27A /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B0C18CA2222DEF140002B502 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -200,7 +262,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B0C18CA0222DEF140002B502 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B0C18CA7222DEF140002B502 /* GrpcIosTestUITests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B0C18CAA222DEF140002B502 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5EDA907A220DF0BC0046D27A /* GrpcIosTest */;
+			targetProxy = B0C18CA9222DEF140002B502 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		5EDA908F220DF0BD0046D27A /* Debug */ = {
@@ -321,7 +399,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Manual;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = EQHXZ8M8AV;
 				INFOPLIST_FILE = Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -330,7 +408,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = io.grpc.GrpcIosTest;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "";
+				PROVISIONING_PROFILE_SPECIFIER = "Google Development";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -341,7 +419,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Manual;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = EQHXZ8M8AV;
 				INFOPLIST_FILE = Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -350,8 +428,48 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = io.grpc.GrpcIosTest;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "";
+				PROVISIONING_PROFILE_SPECIFIER = "Google Development";
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		B0C18CAB222DEF140002B502 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = EQHXZ8M8AV;
+				INFOPLIST_FILE = GrpcIosTestUITests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.google.GrpcIosTestUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "";
+				PROVISIONING_PROFILE_SPECIFIER = "Google Development";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = GrpcIosTest;
+			};
+			name = Debug;
+		};
+		B0C18CAC222DEF140002B502 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = EQHXZ8M8AV;
+				INFOPLIST_FILE = GrpcIosTestUITests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.google.GrpcIosTestUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "";
+				PROVISIONING_PROFILE_SPECIFIER = "Google Development";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = GrpcIosTest;
 			};
 			name = Release;
 		};
@@ -372,6 +490,15 @@
 			buildConfigurations = (
 				5EDA9092220DF0BD0046D27A /* Debug */,
 				5EDA9093220DF0BD0046D27A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B0C18CAD222DEF140002B502 /* Build configuration list for PBXNativeTarget "GrpcIosTestUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B0C18CAB222DEF140002B502 /* Debug */,
+				B0C18CAC222DEF140002B502 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

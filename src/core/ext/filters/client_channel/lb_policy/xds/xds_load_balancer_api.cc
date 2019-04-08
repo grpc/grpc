@@ -161,10 +161,10 @@ void xds_grpclb_request_destroy(xds_grpclb_request* request) {
 
 typedef grpc_lb_v1_LoadBalanceResponse xds_grpclb_response;
 xds_grpclb_initial_response* xds_grpclb_initial_response_parse(
-    grpc_slice encoded_xds_grpclb_response) {
-  pb_istream_t stream =
-      pb_istream_from_buffer(GRPC_SLICE_START_PTR(encoded_xds_grpclb_response),
-                             GRPC_SLICE_LENGTH(encoded_xds_grpclb_response));
+    const grpc_slice& encoded_xds_grpclb_response) {
+  pb_istream_t stream = pb_istream_from_buffer(
+      const_cast<uint8_t*>(GRPC_SLICE_START_PTR(encoded_xds_grpclb_response)),
+      GRPC_SLICE_LENGTH(encoded_xds_grpclb_response));
   xds_grpclb_response res;
   memset(&res, 0, sizeof(xds_grpclb_response));
   if (GPR_UNLIKELY(
@@ -185,10 +185,10 @@ xds_grpclb_initial_response* xds_grpclb_initial_response_parse(
 }
 
 xds_grpclb_serverlist* xds_grpclb_response_parse_serverlist(
-    grpc_slice encoded_xds_grpclb_response) {
-  pb_istream_t stream =
-      pb_istream_from_buffer(GRPC_SLICE_START_PTR(encoded_xds_grpclb_response),
-                             GRPC_SLICE_LENGTH(encoded_xds_grpclb_response));
+    const grpc_slice& encoded_xds_grpclb_response) {
+  pb_istream_t stream = pb_istream_from_buffer(
+      const_cast<uint8_t*>(GRPC_SLICE_START_PTR(encoded_xds_grpclb_response)),
+      GRPC_SLICE_LENGTH(encoded_xds_grpclb_response));
   pb_istream_t stream_at_start = stream;
   xds_grpclb_serverlist* sl = static_cast<xds_grpclb_serverlist*>(
       gpr_zalloc(sizeof(xds_grpclb_serverlist)));

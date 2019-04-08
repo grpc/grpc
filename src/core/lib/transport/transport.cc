@@ -29,6 +29,7 @@
 
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -243,25 +244,26 @@ void grpc_transport_stream_op_batch_finish_with_failure(
   GRPC_ERROR_UNREF(error);
 }
 
-typedef struct {
+struct made_transport_op {
   grpc_closure outer_on_complete;
-  grpc_closure* inner_on_complete;
+  grpc_closure* inner_on_complete = nullptr;
   grpc_transport_op op;
-} made_transport_op;
+  made_transport_op() {
+    memset(&outer_on_complete, 0, sizeof(outer_on_complete));
+  }
+};
 
 static void destroy_made_transport_op(void* arg, grpc_error* error) {
   made_transport_op* op = static_cast<made_transport_op*>(arg);
   GRPC_CLOSURE_SCHED(op->inner_on_complete, GRPC_ERROR_REF(error));
-  gpr_free(op);
+  grpc_core::Delete<made_transport_op>(op);
 }
 
 grpc_transport_op* grpc_make_transport_op(grpc_closure* on_complete) {
-  made_transport_op* op =
-      static_cast<made_transport_op*>(gpr_malloc(sizeof(*op)));
+  made_transport_op* op = grpc_core::New<made_transport_op>();
   GRPC_CLOSURE_INIT(&op->outer_on_complete, destroy_made_transport_op, op,
                     grpc_schedule_on_exec_ctx);
   op->inner_on_complete = on_complete;
-  memset(&op->op, 0, sizeof(op->op));
   op->op.on_consumed = &op->outer_on_complete;
   return &op->op;
 }
