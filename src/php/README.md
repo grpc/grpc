@@ -100,7 +100,7 @@ $ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
 ```sh
 $ cd grpc
 $ git submodule update --init
-$ make
+$ CXXFLAGS="-DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1" make
 $ sudo make install
 ```
 
