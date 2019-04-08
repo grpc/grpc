@@ -1,14 +1,12 @@
-# TODO(yfen): Merge with rbe_common.bazelrc and enable Windows RBE
-
 startup --host_jvm_args=-Dbazel.DigestFunction=SHA256
 
 build --remote_cache=remotebuildexecution.googleapis.com
 build --remote_executor=remotebuildexecution.googleapis.com
 build --tls_enabled=true
 
-build --host_crosstool_top=//third_party/toolchains/bazel_0.23.2:toolchain
-build --crosstool_top=//third_party/toolchains/bazel_0.23.2:toolchain
-build --extra_toolchains=//third_party/toolchains/bazel_0.23.2:cc-toolchain-x64_windows
+build --host_crosstool_top=//third_party/toolchains/bazel_0.23.2_rbe_windows:toolchain
+build --crosstool_top=//third_party/toolchains/bazel_0.23.2_rbe_windows:toolchain
+build --extra_toolchains=//third_party/toolchains/bazel_0.23.2_rbe_windows:cc-toolchain-x64_windows
 # Use custom execution platforms defined in third_party/toolchains
 build --extra_execution_platforms=//third_party/toolchains:rbe_windows
 build --host_platform=//third_party/toolchains:rbe_windows
