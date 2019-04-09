@@ -51,6 +51,7 @@
 #include <grpcpp/impl/codegen/slice.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/string_ref.h>
+#include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/codegen/time.h>
 
 struct census_context;
@@ -462,7 +463,7 @@ class ClientContext {
   bool idempotent_;
   bool cacheable_;
   std::shared_ptr<::grpc_impl::Channel> channel_;
-  std::mutex mu_;
+  grpc::internal::Mutex mu_;
   grpc_call* call_;
   bool call_canceled_;
   gpr_timespec deadline_;

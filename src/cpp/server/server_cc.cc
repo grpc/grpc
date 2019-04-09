@@ -561,9 +561,9 @@ class Server::CallbackRequest final : public Server::CallbackRequestBase {
 
     // The counter of outstanding requests must be decremented
     // under a lock in case it causes the server shutdown.
-    std::lock_guard<std::mutex> l(server_->callback_reqs_mu_);
+    grpc::internal::MutexLock l(&server_->callback_reqs_mu_);
     if (--server_->callback_reqs_outstanding_ == 0) {
-      server_->callback_reqs_done_cv_.notify_one();
+      server_->callback_reqs_done_cv_.Signal();
     }
   }
 
@@ -992,12 +992,12 @@ Server::Server(
 
 Server::~Server() {
   {
-    std::unique_lock<std::mutex> lock(mu_);
+    grpc::internal::ReleasableMutexLock lock(&mu_);
     if (callback_cq_ != nullptr) {
       callback_cq_->Shutdown();
     }
     if (started_ && !shutdown_) {
-      lock.unlock();
+      lock.Unlock();
       Shutdown();
     } else if (!started_) {
       // Shutdown the completion queues
@@ -1233,7 +1233,7 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
 }
 
 void Server::ShutdownInternal(gpr_timespec deadline) {
-  std::unique_lock<std::mutex> lock(mu_);
+  grpc::internal::MutexLock lock(&mu_);
   if (shutdown_) {
     return;
   }
@@ -1284,9 +1284,9 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
   // will report a failure, indicating a shutdown and again we won't end
   // up incrementing the counter.
   {
-    std::unique_lock<std::mutex> cblock(callback_reqs_mu_);
-    callback_reqs_done_cv_.wait(
-        cblock, [this] { return callback_reqs_outstanding_ == 0; });
+    grpc::internal::MutexLock cblock(&callback_reqs_mu_);
+    callback_reqs_done_cv_.WaitUntil(
+        &callback_reqs_mu_, [this] { return callback_reqs_outstanding_ == 0; });
   }
 
   // Drain the shutdown queue (if the previous call to AsyncNext() timed out
@@ -1296,13 +1296,13 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
   }
 
   shutdown_notified_ = true;
-  shutdown_cv_.notify_all();
+  shutdown_cv_.Broadcast();
 }
 
 void Server::Wait() {
-  std::unique_lock<std::mutex> lock(mu_);
+  grpc::internal::MutexLock lock(&mu_);
   while (started_ && !shutdown_notified_) {
-    shutdown_cv_.wait(lock);
+    shutdown_cv_.Wait(&mu_);
   }
 }
 
@@ -1342,7 +1342,7 @@ grpc::ServerInitializer* Server::initializer() {
 grpc::CompletionQueue* Server::CallbackCQ() {
   // TODO(vjpai): Consider using a single global CQ for the default CQ
   // if there is no explicit per-server CQ registered
-  std::lock_guard<std::mutex> l(mu_);
+  grpc::internal::MutexLock l(&mu_);
   if (callback_cq_ == nullptr) {
     auto* shutdown_callback = new grpc::ShutdownCallback;
     callback_cq_ = new grpc::CompletionQueue(grpc_completion_queue_attributes{

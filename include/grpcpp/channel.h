@@ -30,5 +30,4 @@ void ChannelResetConnectionBackoff(Channel* channel);
 }  // namespace experimental
 
 }  // namespace grpc
-
 #endif  // GRPCPP_CHANNEL_H
