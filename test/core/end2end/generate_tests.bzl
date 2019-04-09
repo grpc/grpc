@@ -385,6 +385,7 @@ def grpc_end2end_tests():
             ":proxy",
             ":local_util",
         ],
+        tags = ["no_windows"],
     )
 
     for f, fopt in END2END_FIXTURES.items():
@@ -398,6 +399,7 @@ def grpc_end2end_tests():
                 "//:grpc",
                 "//:gpr",
             ],
+            tags = ["no_windows"],
         )
         for t, topt in END2END_TESTS.items():
             #print(_compatible(fopt, topt), f, t, fopt, topt)
@@ -413,6 +415,7 @@ def grpc_end2end_tests():
                         t,
                         poller,
                     ],
+                    tags = ["no_windows"],
                 )
 
 def grpc_end2end_nosec_tests():
@@ -435,6 +438,7 @@ def grpc_end2end_nosec_tests():
             ":proxy",
             ":local_util",
         ],
+        tags = ["no_windows"],
     )
 
     for f, fopt in END2END_NOSEC_FIXTURES.items():
@@ -450,6 +454,7 @@ def grpc_end2end_nosec_tests():
                 "//:grpc_unsecure",
                 "//:gpr",
             ],
+            tags = ["no_windows"],
         )
         for t, topt in END2END_TESTS.items():
             #print(_compatible(fopt, topt), f, t, fopt, topt)

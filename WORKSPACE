@@ -11,10 +11,12 @@ grpc_test_only_deps()
 register_execution_platforms(
     "//third_party/toolchains:rbe_ubuntu1604",
     "//third_party/toolchains:rbe_ubuntu1604_large",
+    "//third_party/toolchains:rbe_windows",
 )
 
 register_toolchains(
     "//third_party/toolchains:cc-toolchain-clang-x86_64-default",
+    "//third_party/toolchains/bazel_0.23.2_rbe_windows:cc-toolchain-x64_windows",
 )
 
 # TODO(https://github.com/grpc/grpc/issues/18331): Move off of this dependency.
