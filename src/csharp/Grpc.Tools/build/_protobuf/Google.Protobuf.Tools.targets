@@ -28,7 +28,7 @@
       <ProtoRoot Condition="'%(Protobuf.ProtoRoot)' == '' " />
       <CompileOutputs Condition="'%(Protobuf.CompileOutputs)' == ''">True</CompileOutputs>
       <OutputDir Condition="'%(Protobuf.OutputDir)' == '' ">$(Protobuf_OutputPath)</OutputDir>
-      <Generator Condition=" '$(DisableProtobufDesignTimeBuild)' != 'true' " >MSBuild:Compile</Generator>
+      <Generator Condition="'%(Protobuf.Generator)' == '' and '$(DisableProtobufDesignTimeBuild)' != 'true' " >MSBuild:Compile</Generator>
     </Protobuf>
   </ItemDefinitionGroup>
 
