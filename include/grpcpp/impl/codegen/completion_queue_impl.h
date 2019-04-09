@@ -45,7 +45,7 @@ namespace grpc_impl {
 
 class Server;
 class ServerBuilder;
-} // namespace grpc_impl
+}  // namespace grpc_impl
 namespace grpc {
 class Channel;
 

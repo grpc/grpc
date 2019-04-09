@@ -32,7 +32,7 @@ namespace grpc_impl {
 class CompletionQueue;
 class ServerCompletionQueue;
 class ServerCredentials;
-}
+}  // namespace grpc_impl
 namespace grpc {
 
 class AsyncGenericService;
