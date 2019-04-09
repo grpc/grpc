@@ -253,7 +253,9 @@ class ServerBidiReactor : public internal::ServerReactor {
   void Finish(Status s) { stream_->Finish(std::move(s)); }
 
   /// Notify the application that a streaming RPC has started and that it is now
-  /// ok to call any operation initation method.
+  /// ok to call any operation initiation method. An RPC is considered started
+  /// after the server has received all initial metadata from the client, which
+  /// is a result of the client calling StartCall().
   ///
   /// \param[in] context The context object now associated with this RPC
   virtual void OnStarted(ServerContext* context) {}
