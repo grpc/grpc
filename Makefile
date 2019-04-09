@@ -5516,6 +5516,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/stub_options.h \
     include/grpcpp/impl/codegen/sync_stream.h \
     include/grpcpp/impl/codegen/time.h \
+    include/grpcpp/impl/codegen/sync.h \
     include/grpc++/impl/codegen/proto_utils.h \
     include/grpcpp/impl/codegen/proto_buffer_reader.h \
     include/grpcpp/impl/codegen/proto_buffer_writer.h \
@@ -6126,6 +6127,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/stub_options.h \
     include/grpcpp/impl/codegen/sync_stream.h \
     include/grpcpp/impl/codegen/time.h \
+    include/grpcpp/impl/codegen/sync.h \
     include/grpc/census.h \
 
 LIBGRPC++_CRONET_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_CRONET_SRC))))
@@ -6552,6 +6554,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
+    include/grpcpp/impl/codegen/sync.h \
     include/grpc++/impl/codegen/proto_utils.h \
     include/grpcpp/impl/codegen/proto_buffer_reader.h \
     include/grpcpp/impl/codegen/proto_buffer_writer.h \
@@ -6719,6 +6722,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
+    include/grpcpp/impl/codegen/sync.h \
     include/grpc++/impl/codegen/proto_utils.h \
     include/grpcpp/impl/codegen/proto_buffer_reader.h \
     include/grpcpp/impl/codegen/proto_buffer_writer.h \
@@ -7051,6 +7055,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/stub_options.h \
     include/grpcpp/impl/codegen/sync_stream.h \
     include/grpcpp/impl/codegen/time.h \
+    include/grpcpp/impl/codegen/sync.h \
 
 LIBGRPC++_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_UNSECURE_SRC))))
 
