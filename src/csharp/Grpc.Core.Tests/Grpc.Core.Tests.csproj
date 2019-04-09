@@ -25,6 +25,10 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
+    <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="2.1.0" />
+  </ItemGroup>
+
   <ItemGroup>
     <Compile Include="..\Grpc.Core.Api\Version.cs" />
   </ItemGroup>
