@@ -33,6 +33,7 @@
 #include <grpcpp/support/time.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/surface/call.h"
 
 namespace grpc {
@@ -96,7 +97,7 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
   }
 
   void SetCancelCallback(std::function<void()> callback) {
-    std::lock_guard<std::mutex> lock(mu_);
+    grpc_core::MutexLock lock(&mu_);
 
     if (finalized_ && (cancelled_ != 0)) {
       callback();
@@ -107,7 +108,7 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
   }
 
   void ClearCancelCallback() {
-    std::lock_guard<std::mutex> g(mu_);
+    grpc_core::MutexLock g(&mu_);
     cancel_callback_ = nullptr;
   }
 
@@ -144,7 +145,7 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
 
  private:
   bool CheckCancelledNoPluck() {
-    std::lock_guard<std::mutex> g(mu_);
+    grpc_core::MutexLock lock(&mu_);
     return finalized_ ? (cancelled_ != 0) : false;
   }
 
@@ -154,7 +155,7 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
   void* tag_;
   void* core_cq_tag_;
   grpc_core::RefCount refs_;
-  std::mutex mu_;
+  grpc_core::Mutex mu_;
   bool finalized_;
   int cancelled_;  // This is an int (not bool) because it is passed to core
   std::function<void()> cancel_callback_;
@@ -186,7 +187,7 @@ void ServerContext::CompletionOp::FillOps(internal::Call* call) {
 
 bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
   bool ret = false;
-  std::unique_lock<std::mutex> lock(mu_);
+  grpc_core::ReleasableMutexLock lock(&mu_);
   if (done_intercepting_) {
     /* We are done intercepting. */
     if (has_tag_) {
@@ -216,12 +217,11 @@ bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
 
   // Release the lock since we are going to be calling a callback and
   // interceptors now
-  lock.unlock();
+  lock.Unlock();
 
   if (call_cancel && reactor_ != nullptr) {
     reactor_->OnCancel();
   }
-
   /* Add interception point and run through interceptors */
   interceptor_methods_.AddInterceptionHookPoint(
       experimental::InterceptionHookPoints::POST_RECV_CLOSE);
