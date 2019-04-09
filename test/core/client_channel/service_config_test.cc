@@ -154,6 +154,7 @@ TEST_F(ServiceConfigTest, ErrorCheck1) {
   ASSERT_TRUE(error != GRPC_ERROR_NONE);
   EXPECT_TRUE(strstr(grpc_error_string(error),
                      "failed to parse JSON for service config") != nullptr);
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(ServiceConfigTest, BasicTest1) {
@@ -170,6 +171,7 @@ TEST_F(ServiceConfigTest, ErrorNoNames) {
   gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
   ASSERT_TRUE(error != GRPC_ERROR_NONE);
   EXPECT_TRUE(strstr(grpc_error_string(error), "No names found") != nullptr);
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(ServiceConfigTest, ErrorNoNamesWithMultipleMethodConfigs) {
@@ -180,6 +182,7 @@ TEST_F(ServiceConfigTest, ErrorNoNamesWithMultipleMethodConfigs) {
   gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
   ASSERT_TRUE(error != GRPC_ERROR_NONE);
   EXPECT_TRUE(strstr(grpc_error_string(error), "No names found") != nullptr);
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(ServiceConfigTest, ValidMethodConfig) {
@@ -223,6 +226,7 @@ TEST_F(ServiceConfigTest, Parser1ErrorInvalidType) {
   std::smatch match;
   std::string s(grpc_error_string(error));
   EXPECT_TRUE(std::regex_search(s, match, e));
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(ServiceConfigTest, Parser1ErrorInvalidValue) {
@@ -238,6 +242,7 @@ TEST_F(ServiceConfigTest, Parser1ErrorInvalidValue) {
   std::smatch match;
   std::string s(grpc_error_string(error));
   EXPECT_TRUE(std::regex_search(s, match, e));
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(ServiceConfigTest, Parser2BasicTest) {
@@ -271,6 +276,7 @@ TEST_F(ServiceConfigTest, Parser2ErrorInvalidType) {
   std::smatch match;
   std::string s(grpc_error_string(error));
   EXPECT_TRUE(std::regex_search(s, match, e));
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(ServiceConfigTest, Parser2ErrorInvalidValue) {
@@ -289,6 +295,7 @@ TEST_F(ServiceConfigTest, Parser2ErrorInvalidValue) {
   std::smatch match;
   std::string s(grpc_error_string(error));
   EXPECT_TRUE(std::regex_search(s, match, e));
+  GRPC_ERROR_UNREF(error);
 }
 
 // Test parsing with ErrorParsers which always add errors
@@ -318,6 +325,7 @@ TEST_F(ErroredParsersScopingTest, GlobalParams) {
   std::smatch match;
   std::string s(grpc_error_string(error));
   EXPECT_TRUE(std::regex_search(s, match, e));
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(ErroredParsersScopingTest, MethodParams) {
@@ -341,6 +349,7 @@ TEST_F(ErroredParsersScopingTest, MethodParams) {
   std::smatch match;
   std::string s(grpc_error_string(error));
   EXPECT_TRUE(std::regex_search(s, match, e));
+  GRPC_ERROR_UNREF(error);
 }
 
 }  // namespace testing

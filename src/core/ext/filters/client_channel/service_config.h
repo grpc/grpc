@@ -150,7 +150,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   /// registered parser. Each parser is responsible for reading the service
   /// config json and returning a parsed object. This parsed object can later be
   /// retrieved using the same index that was returned at registration time.
-  static int RegisterParser(UniquePtr<ServiceConfigParser> parser);
+  static size_t RegisterParser(UniquePtr<ServiceConfigParser> parser);
 
   static void Init();
 

@@ -342,7 +342,7 @@ ServiceConfig::GetMethodServiceConfigObjectsVector(const grpc_slice& path) {
   return value;
 }
 
-int ServiceConfig::RegisterParser(UniquePtr<ServiceConfigParser> parser) {
+size_t ServiceConfig::RegisterParser(UniquePtr<ServiceConfigParser> parser) {
   registered_parsers->push_back(std::move(parser));
   return registered_parsers->size() - 1;
 }
