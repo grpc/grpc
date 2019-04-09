@@ -27,7 +27,7 @@
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/mutex_lock.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -154,13 +154,12 @@ class PickFirst : public LoadBalancingPolicy {
 
   /// Lock and data used to capture snapshots of this channels child
   /// channels and subchannels. This data is consumed by channelz.
-  gpr_mu child_refs_mu_;
+  Mutex child_refs_mu_;
   channelz::ChildRefsList child_subchannels_;
   channelz::ChildRefsList child_channels_;
 };
 
 PickFirst::PickFirst(Args args) : LoadBalancingPolicy(std::move(args)) {
-  gpr_mu_init(&child_refs_mu_);
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO, "Pick First %p created.", this);
   }
@@ -170,7 +169,6 @@ PickFirst::~PickFirst() {
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO, "Destroying Pick First %p", this);
   }
-  gpr_mu_destroy(&child_refs_mu_);
   GPR_ASSERT(subchannel_list_ == nullptr);
   GPR_ASSERT(latest_pending_subchannel_list_ == nullptr);
 }
@@ -186,6 +184,7 @@ void PickFirst::ShutdownLocked() {
 }
 
 void PickFirst::ExitIdleLocked() {
+  if (shutdown_) return;
   if (idle_) {
     idle_ = false;
     if (subchannel_list_ == nullptr ||

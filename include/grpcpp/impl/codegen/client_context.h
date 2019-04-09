@@ -51,14 +51,19 @@
 #include <grpcpp/impl/codegen/slice.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/string_ref.h>
+#include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/codegen/time.h>
 
 struct census_context;
 struct grpc_call;
 
-namespace grpc {
+namespace grpc_impl {
 
 class Channel;
+}
+
+namespace grpc {
+
 class ChannelInterface;
 class CompletionQueue;
 class CallCredentials;
@@ -391,7 +396,7 @@ class ClientContext {
   friend class ::grpc::testing::InteropClientContextInspector;
   friend class ::grpc::internal::CallOpClientRecvStatus;
   friend class ::grpc::internal::CallOpRecvInitialMetadata;
-  friend class Channel;
+  friend class ::grpc_impl::Channel;
   template <class R>
   friend class ::grpc::ClientReader;
   template <class W>
@@ -423,7 +428,8 @@ class ClientContext {
   }
 
   grpc_call* call() const { return call_; }
-  void set_call(grpc_call* call, const std::shared_ptr<Channel>& channel);
+  void set_call(grpc_call* call,
+                const std::shared_ptr<::grpc_impl::Channel>& channel);
 
   experimental::ClientRpcInfo* set_client_rpc_info(
       const char* method, internal::RpcMethod::RpcType type,
@@ -456,8 +462,8 @@ class ClientContext {
   bool wait_for_ready_explicitly_set_;
   bool idempotent_;
   bool cacheable_;
-  std::shared_ptr<Channel> channel_;
-  std::mutex mu_;
+  std::shared_ptr<::grpc_impl::Channel> channel_;
+  grpc::internal::Mutex mu_;
   grpc_call* call_;
   bool call_canceled_;
   gpr_timespec deadline_;

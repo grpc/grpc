@@ -1262,6 +1262,7 @@ server_crash_test_client: $(BINDIR)/$(CONFIG)/server_crash_test_client
 server_early_return_test: $(BINDIR)/$(CONFIG)/server_early_return_test
 server_interceptors_end2end_test: $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test
 server_request_call_test: $(BINDIR)/$(CONFIG)/server_request_call_test
+service_config_test: $(BINDIR)/$(CONFIG)/service_config_test
 shutdown_test: $(BINDIR)/$(CONFIG)/shutdown_test
 slice_hash_table_test: $(BINDIR)/$(CONFIG)/slice_hash_table_test
 slice_weak_hash_table_test: $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test
@@ -1727,6 +1728,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/server_early_return_test \
   $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test \
   $(BINDIR)/$(CONFIG)/server_request_call_test \
+  $(BINDIR)/$(CONFIG)/service_config_test \
   $(BINDIR)/$(CONFIG)/shutdown_test \
   $(BINDIR)/$(CONFIG)/slice_hash_table_test \
   $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test \
@@ -1869,6 +1871,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/server_early_return_test \
   $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test \
   $(BINDIR)/$(CONFIG)/server_request_call_test \
+  $(BINDIR)/$(CONFIG)/service_config_test \
   $(BINDIR)/$(CONFIG)/shutdown_test \
   $(BINDIR)/$(CONFIG)/slice_hash_table_test \
   $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test \
@@ -2382,6 +2385,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test || ( echo test server_interceptors_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_request_call_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_request_call_test || ( echo test server_request_call_test failed ; exit 1 )
+	$(E) "[RUN]     Testing service_config_test"
+	$(Q) $(BINDIR)/$(CONFIG)/service_config_test || ( echo test service_config_test failed ; exit 1 )
 	$(E) "[RUN]     Testing shutdown_test"
 	$(Q) $(BINDIR)/$(CONFIG)/shutdown_test || ( echo test shutdown_test failed ; exit 1 )
 	$(E) "[RUN]     Testing slice_hash_table_test"
@@ -5328,14 +5333,17 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/alarm.h \
     include/grpcpp/alarm_impl.h \
     include/grpcpp/channel.h \
+    include/grpcpp/channel_impl.h \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
     include/grpcpp/create_channel.h \
+    include/grpcpp/create_channel_impl.h \
     include/grpcpp/create_channel_posix.h \
     include/grpcpp/create_channel_posix_impl.h \
     include/grpcpp/ext/health_check_service_server_builder_option.h \
     include/grpcpp/generic/async_generic_service.h \
     include/grpcpp/generic/generic_stub.h \
+    include/grpcpp/generic/generic_stub_impl.h \
     include/grpcpp/grpcpp.h \
     include/grpcpp/health_check_service_interface.h \
     include/grpcpp/health_check_service_interface_impl.h \
@@ -5358,11 +5366,15 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/resource_quota_impl.h \
     include/grpcpp/security/auth_context.h \
     include/grpcpp/security/auth_metadata_processor.h \
+    include/grpcpp/security/auth_metadata_processor_impl.h \
     include/grpcpp/security/credentials.h \
     include/grpcpp/security/server_credentials.h \
+    include/grpcpp/security/server_credentials_impl.h \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
+    include/grpcpp/server_builder_impl.h \
     include/grpcpp/server_context.h \
+    include/grpcpp/server_impl.h \
     include/grpcpp/server_posix.h \
     include/grpcpp/server_posix_impl.h \
     include/grpcpp/support/async_stream.h \
@@ -5506,6 +5518,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/stub_options.h \
     include/grpcpp/impl/codegen/sync_stream.h \
     include/grpcpp/impl/codegen/time.h \
+    include/grpcpp/impl/codegen/sync.h \
     include/grpc++/impl/codegen/proto_utils.h \
     include/grpcpp/impl/codegen/proto_buffer_reader.h \
     include/grpcpp/impl/codegen/proto_buffer_writer.h \
@@ -5933,14 +5946,17 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/alarm.h \
     include/grpcpp/alarm_impl.h \
     include/grpcpp/channel.h \
+    include/grpcpp/channel_impl.h \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
     include/grpcpp/create_channel.h \
+    include/grpcpp/create_channel_impl.h \
     include/grpcpp/create_channel_posix.h \
     include/grpcpp/create_channel_posix_impl.h \
     include/grpcpp/ext/health_check_service_server_builder_option.h \
     include/grpcpp/generic/async_generic_service.h \
     include/grpcpp/generic/generic_stub.h \
+    include/grpcpp/generic/generic_stub_impl.h \
     include/grpcpp/grpcpp.h \
     include/grpcpp/health_check_service_interface.h \
     include/grpcpp/health_check_service_interface_impl.h \
@@ -5963,11 +5979,15 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/resource_quota_impl.h \
     include/grpcpp/security/auth_context.h \
     include/grpcpp/security/auth_metadata_processor.h \
+    include/grpcpp/security/auth_metadata_processor_impl.h \
     include/grpcpp/security/credentials.h \
     include/grpcpp/security/server_credentials.h \
+    include/grpcpp/security/server_credentials_impl.h \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
+    include/grpcpp/server_builder_impl.h \
     include/grpcpp/server_context.h \
+    include/grpcpp/server_impl.h \
     include/grpcpp/server_posix.h \
     include/grpcpp/server_posix_impl.h \
     include/grpcpp/support/async_stream.h \
@@ -6111,6 +6131,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/stub_options.h \
     include/grpcpp/impl/codegen/sync_stream.h \
     include/grpcpp/impl/codegen/time.h \
+    include/grpcpp/impl/codegen/sync.h \
     include/grpc/census.h \
 
 LIBGRPC++_CRONET_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_CRONET_SRC))))
@@ -6183,6 +6204,7 @@ LIBGRPC++_ERROR_DETAILS_SRC = \
 PUBLIC_HEADERS_CXX += \
     include/grpc++/support/error_details.h \
     include/grpcpp/support/error_details.h \
+    include/grpcpp/support/error_details_impl.h \
 
 LIBGRPC++_ERROR_DETAILS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_ERROR_DETAILS_SRC))))
 
@@ -6309,6 +6331,7 @@ LIBGRPC++_REFLECTION_SRC = \
 PUBLIC_HEADERS_CXX += \
     include/grpc++/ext/proto_server_reflection_plugin.h \
     include/grpcpp/ext/proto_server_reflection_plugin.h \
+    include/grpcpp/ext/proto_server_reflection_plugin_impl.h \
 
 LIBGRPC++_REFLECTION_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_REFLECTION_SRC))))
 
@@ -6535,6 +6558,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
+    include/grpcpp/impl/codegen/sync.h \
     include/grpc++/impl/codegen/proto_utils.h \
     include/grpcpp/impl/codegen/proto_buffer_reader.h \
     include/grpcpp/impl/codegen/proto_buffer_writer.h \
@@ -6702,6 +6726,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
+    include/grpcpp/impl/codegen/sync.h \
     include/grpc++/impl/codegen/proto_utils.h \
     include/grpcpp/impl/codegen/proto_buffer_reader.h \
     include/grpcpp/impl/codegen/proto_buffer_writer.h \
@@ -6851,14 +6876,17 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/alarm.h \
     include/grpcpp/alarm_impl.h \
     include/grpcpp/channel.h \
+    include/grpcpp/channel_impl.h \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
     include/grpcpp/create_channel.h \
+    include/grpcpp/create_channel_impl.h \
     include/grpcpp/create_channel_posix.h \
     include/grpcpp/create_channel_posix_impl.h \
     include/grpcpp/ext/health_check_service_server_builder_option.h \
     include/grpcpp/generic/async_generic_service.h \
     include/grpcpp/generic/generic_stub.h \
+    include/grpcpp/generic/generic_stub_impl.h \
     include/grpcpp/grpcpp.h \
     include/grpcpp/health_check_service_interface.h \
     include/grpcpp/health_check_service_interface_impl.h \
@@ -6881,11 +6909,15 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/resource_quota_impl.h \
     include/grpcpp/security/auth_context.h \
     include/grpcpp/security/auth_metadata_processor.h \
+    include/grpcpp/security/auth_metadata_processor_impl.h \
     include/grpcpp/security/credentials.h \
     include/grpcpp/security/server_credentials.h \
+    include/grpcpp/security/server_credentials_impl.h \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
+    include/grpcpp/server_builder_impl.h \
     include/grpcpp/server_context.h \
+    include/grpcpp/server_impl.h \
     include/grpcpp/server_posix.h \
     include/grpcpp/server_posix_impl.h \
     include/grpcpp/support/async_stream.h \
@@ -7029,6 +7061,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/stub_options.h \
     include/grpcpp/impl/codegen/sync_stream.h \
     include/grpcpp/impl/codegen/time.h \
+    include/grpcpp/impl/codegen/sync.h \
 
 LIBGRPC++_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_UNSECURE_SRC))))
 
@@ -18666,6 +18699,49 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 $(OBJDIR)/$(CONFIG)/test/cpp/server/server_request_call_test.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc
+
+
+SERVICE_CONFIG_TEST_SRC = \
+    test/core/client_channel/service_config_test.cc \
+
+SERVICE_CONFIG_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVICE_CONFIG_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/service_config_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/service_config_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/service_config_test: $(PROTOBUF_DEP) $(SERVICE_CONFIG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(SERVICE_CONFIG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/service_config_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/client_channel/service_config_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_service_config_test: $(SERVICE_CONFIG_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SERVICE_CONFIG_TEST_OBJS:.o=.dep)
+endif
+endif
 
 
 SHUTDOWN_TEST_SRC = \

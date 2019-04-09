@@ -216,14 +216,17 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/alarm.h",
     "include/grpcpp/alarm_impl.h",
     "include/grpcpp/channel.h",
+    "include/grpcpp/channel_impl.h",
     "include/grpcpp/client_context.h",
     "include/grpcpp/completion_queue.h",
     "include/grpcpp/create_channel.h",
+    "include/grpcpp/create_channel_impl.h",
     "include/grpcpp/create_channel_posix.h",
     "include/grpcpp/create_channel_posix_impl.h",
     "include/grpcpp/ext/health_check_service_server_builder_option.h",
     "include/grpcpp/generic/async_generic_service.h",
     "include/grpcpp/generic/generic_stub.h",
+    "include/grpcpp/generic/generic_stub_impl.h",
     "include/grpcpp/grpcpp.h",
     "include/grpcpp/health_check_service_interface.h",
     "include/grpcpp/health_check_service_interface_impl.h",
@@ -248,10 +251,14 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/resource_quota_impl.h",
     "include/grpcpp/security/auth_context.h",
     "include/grpcpp/security/auth_metadata_processor.h",
+    "include/grpcpp/security/auth_metadata_processor_impl.h",
     "include/grpcpp/security/credentials.h",
     "include/grpcpp/security/server_credentials.h",
+    "include/grpcpp/security/server_credentials_impl.h",
     "include/grpcpp/server.h",
+    "include/grpcpp/server_impl.h",
     "include/grpcpp/server_builder.h",
+    "include/grpcpp/server_builder_impl.h",
     "include/grpcpp/server_context.h",
     "include/grpcpp/server_posix.h",
     "include/grpcpp/server_posix_impl.h",
@@ -399,6 +406,7 @@ grpc_cc_library(
     hdrs = [
         "include/grpc++/support/error_details.h",
         "include/grpcpp/support/error_details.h",
+        "include/grpcpp/support/error_details_impl.h",
     ],
     language = "c++",
     standalone = True,
@@ -520,6 +528,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc++_internal_hdrs_only",
+    hdrs = [
+        "include/grpcpp/impl/codegen/sync.h",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_codegen",
+    ],
+)
+
+grpc_cc_library(
     name = "gpr_base",
     srcs = [
         "src/core/lib/gpr/alloc.cc",
@@ -584,8 +603,8 @@ grpc_cc_library(
         "src/core/lib/gprpp/manual_constructor.h",
         "src/core/lib/gprpp/map.h",
         "src/core/lib/gprpp/memory.h",
-        "src/core/lib/gprpp/mutex_lock.h",
         "src/core/lib/gprpp/pair.h",
+        "src/core/lib/gprpp/sync.h",
         "src/core/lib/gprpp/thd.h",
         "src/core/lib/profiling/timers.h",
     ],
@@ -1469,6 +1488,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = [
         "include/grpcpp/ext/server_load_reporting.h",
+        "include/grpcpp/ext/server_load_reporting_impl.h",
     ],
     deps = [
         "lb_server_load_reporting_filter",
@@ -2138,6 +2158,7 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/time.h",
     ],
     deps = [
+        "grpc++_internal_hdrs_only",
         "grpc_codegen",
     ],
 )
@@ -2193,6 +2214,7 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpc++/ext/proto_server_reflection_plugin.h",
         "include/grpcpp/ext/proto_server_reflection_plugin.h",
+        "include/grpcpp/ext/proto_server_reflection_plugin_impl.h",
     ],
     deps = [
         ":grpc++",
@@ -2340,6 +2362,7 @@ grpc_cc_library(
         ":google_api_upb",
         ":proto_gen_validate_upb",
     ],
+    tags = ["no_windows"],
 )
 
 grpc_cc_library(
@@ -2447,3 +2470,11 @@ grpc_cc_library(
 )
 
 grpc_generate_one_off_targets()
+
+filegroup(
+    name = "root_certificates",
+    srcs = [
+        "etc/roots.pem",
+    ],
+    visibility = ["//visibility:public"],
+)

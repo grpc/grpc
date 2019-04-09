@@ -41,6 +41,12 @@
 
 struct grpc_completion_queue;
 
+namespace grpc_impl {
+
+class Channel;
+class Server;
+class ServerBuilder;
+}  // namespace grpc_impl
 namespace grpc {
 
 template <class R>
@@ -58,12 +64,9 @@ template <class W, class R>
 class ServerReaderWriterBody;
 }  // namespace internal
 
-class Channel;
 class ChannelInterface;
 class ClientContext;
 class CompletionQueue;
-class Server;
-class ServerBuilder;
 class ServerContext;
 class ServerInterface;
 
@@ -271,14 +274,14 @@ class CompletionQueue : private GrpcLibraryCodegen {
   friend class ::grpc::internal::TemplatedBidiStreamingHandler;
   template <StatusCode code>
   friend class ::grpc::internal::ErrorMethodHandler;
-  friend class ::grpc::Server;
+  friend class ::grpc_impl::Server;
   friend class ::grpc::ServerContext;
   friend class ::grpc::ServerInterface;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;
 
   // Friends that need access to constructor for callback CQ
-  friend class ::grpc::Channel;
+  friend class ::grpc_impl::Channel;
 
   // For access to Register/CompleteAvalanching
   template <class Op1, class Op2, class Op3, class Op4, class Op5, class Op6>
@@ -405,8 +408,8 @@ class ServerCompletionQueue : public CompletionQueue {
         polling_type_(polling_type) {}
 
   grpc_cq_polling_type polling_type_;
-  friend class ServerBuilder;
-  friend class Server;
+  friend class grpc_impl::ServerBuilder;
+  friend class grpc_impl::Server;
 };
 
 }  // namespace grpc

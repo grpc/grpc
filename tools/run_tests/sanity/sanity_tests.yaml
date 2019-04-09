@@ -10,6 +10,7 @@
 - script: tools/run_tests/sanity/check_tracer_sanity.py
 - script: tools/run_tests/sanity/core_banned_functions.py
 - script: tools/run_tests/sanity/core_untyped_structs.sh
+- script: tools/run_tests/sanity/cpp_banned_constructs.sh
 - script: tools/run_tests/sanity/check_deprecated_grpc++.py
 - script: tools/run_tests/sanity/check_port_platform.py
 - script: tools/buildgen/generate_projects.sh -j 3
