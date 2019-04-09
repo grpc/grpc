@@ -154,8 +154,8 @@ grpc_error* ServiceConfig::ParseJsonMethodConfigToServiceConfigObjectsTable(
           error_list.push_back(parse_error);
         } else {
           GPR_DEBUG_ASSERT(parse_error == GRPC_ERROR_NONE);
+          paths.push_back(std::move(path));
         }
-        paths.push_back(std::move(path));
       }
     }
   }
@@ -216,7 +216,8 @@ grpc_error* ServiceConfig::ParsePerMethodParams(const grpc_json* json_tree) {
           error_list.push_back(error);
         }
       }
-      GPR_DEBUG_ASSERT(num_entries == idx);
+      // idx might not be equal to num_entries due to parsing errors
+      num_entries = idx;
       break;
     }
   }
