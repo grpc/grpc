@@ -36,7 +36,6 @@ class ServerCredentials;
 namespace grpc {
 
 class AsyncGenericService;
-class Channel;
 class GenericServerContext;
 class ServerContext;
 class Service;

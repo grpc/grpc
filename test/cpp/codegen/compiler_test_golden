@@ -41,12 +41,12 @@
 #include <grpcpp/impl/codegen/sync_stream.h>
 
 namespace grpc_impl {
+class Channel;
 class CompletionQueue;
 class ServerCompletionQueue;
 }  // namespace grpc_impl
 
 namespace grpc {
-class Channel;
 class ServerContext;
 }  // namespace grpc
 

@@ -1,4 +1,5 @@
-# Copyright 2016 gRPC authors.
+#!/bin/sh
+# Copyright 2019 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,26 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+set -e
 
-grpc_package(
-    name = "test/core/network_benchmarks",
-    features = [
-        "-layering_check",
-        "-parse_headers",
-    ],
-)
+cd "$(dirname "$0")/../../.."
 
-licenses(["notice"])  # Apache v2
+#
+# Prevent the use of synchronization and threading constructs from std:: since
+# the code should be using grpc_core::Mutex, grpc::internal::Mutex,
+# grpc_core::Thread, etc.
+#
 
-grpc_cc_binary(
-    name = "low_level_ping_pong",
-    srcs = ["low_level_ping_pong.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-    tags = ["no_windows"],
-)
+egrep -Irn \
+    'std::(mutex|condition_variable|lock_guard|unique_lock|thread)' \
+    include/grpc include/grpcpp src/core src/cpp | diff - /dev/null
+

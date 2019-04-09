@@ -28,13 +28,13 @@
 #include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
+#include <grpcpp/impl/codegen/sync.h>
 
 struct grpc_channel;
 
 namespace grpc_impl {
 
 class CompletionQueue;
-
 namespace experimental {
 /// Resets the channel's connection backoff.
 /// TODO(roth): Once we see whether this proves useful, either create a gRFC
@@ -99,7 +99,7 @@ class Channel final : public ::grpc::ChannelInterface,
   grpc_channel* const c_channel_;  // owned
 
   // mu_ protects callback_cq_ (the per-channel callbackable completion queue)
-  std::mutex mu_;
+  grpc::internal::Mutex mu_;
 
   // callback_cq_ references the callbackable completion queue associated
   // with this channel (if any). It is set on the first call to CallbackCQ().
