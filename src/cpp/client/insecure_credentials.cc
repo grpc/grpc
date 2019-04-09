@@ -31,7 +31,7 @@ namespace grpc_impl {
 namespace {
 class InsecureChannelCredentialsImpl final : public ChannelCredentials {
  public:
-  std::shared_ptr<grpc::Channel> CreateChannelImpl(
+  std::shared_ptr<grpc::Channel> CreateChannel(
       const grpc::string& target, const grpc::ChannelArguments& args) override {
     return CreateChannelWithInterceptors(
         target, args,

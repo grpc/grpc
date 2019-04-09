@@ -22,7 +22,6 @@
 #include <grpcpp/security/credentials_impl.h>
 
 namespace grpc {
-class Channel;
 
 typedef ::grpc_impl::ChannelCredentials ChannelCredentials;
 typedef ::grpc_impl::CallCredentials CallCredentials;

@@ -34,23 +34,23 @@ struct grpc_call;
 
 namespace grpc {
 class ChannelArguments;
-class Channel;
 }  // namespace grpc
 
 namespace grpc_impl {
 
+class Channel;
 class ChannelCredentials;
 class CallCredentials;
 class SecureCallCredentials;
 class SecureChannelCredentials;
 
-std::shared_ptr<grpc::Channel> CreateCustomChannelImpl(
+std::shared_ptr<Channel> CreateCustomChannel(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds,
     const grpc::ChannelArguments& args);
 
 namespace experimental {
-std::shared_ptr<grpc::Channel> CreateCustomChannelWithInterceptors(
+std::shared_ptr<Channel> CreateCustomChannelWithInterceptors(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds,
     const grpc::ChannelArguments& args,
@@ -78,12 +78,12 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
   virtual SecureChannelCredentials* AsSecureCredentials() = 0;
 
  private:
-  friend std::shared_ptr<grpc::Channel> CreateCustomChannelImpl(
+  friend std::shared_ptr<Channel> CreateCustomChannel(
       const grpc::string& target,
       const std::shared_ptr<ChannelCredentials>& creds,
       const grpc::ChannelArguments& args);
 
-  friend std::shared_ptr<grpc::Channel>
+  friend std::shared_ptr<Channel>
   grpc_impl::experimental::CreateCustomChannelWithInterceptors(
       const grpc::string& target,
       const std::shared_ptr<ChannelCredentials>& creds,
@@ -92,12 +92,12 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
           grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators);
 
-  virtual std::shared_ptr<grpc::Channel> CreateChannelImpl(
+  virtual std::shared_ptr<Channel> CreateChannel(
       const grpc::string& target, const grpc::ChannelArguments& args) = 0;
 
   // This function should have been a pure virtual function, but it is
   // implemented as a virtual function so that it does not break API.
-  virtual std::shared_ptr<grpc::Channel> CreateChannelWithInterceptors(
+  virtual std::shared_ptr<Channel> CreateChannelWithInterceptors(
       const grpc::string& target, const grpc::ChannelArguments& args,
       std::vector<std::unique_ptr<
           grpc::experimental::ClientInterceptorFactoryInterface>>

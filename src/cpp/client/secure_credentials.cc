@@ -34,7 +34,7 @@ SecureChannelCredentials::SecureChannelCredentials(
   g_gli_initializer.summon();
 }
 
-std::shared_ptr<grpc::Channel> SecureChannelCredentials::CreateChannelImpl(
+std::shared_ptr<grpc::Channel> SecureChannelCredentials::CreateChannel(
     const grpc::string& target, const grpc::ChannelArguments& args) {
   return CreateChannelWithInterceptors(
       target, args,
