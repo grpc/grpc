@@ -41,7 +41,13 @@
 
 struct grpc_completion_queue;
 
+namespace grpc_impl {
+
+class Server;
+class ServerBuilder;
+} // namespace grpc_impl
 namespace grpc {
+class Channel;
 
 template <class R>
 class ClientReader;
@@ -60,8 +66,6 @@ class ServerReaderWriterBody;
 
 class ChannelInterface;
 class ClientContext;
-class Server;
-class ServerBuilder;
 class ServerContext;
 class ServerInterface;
 
@@ -91,7 +95,6 @@ extern CoreCodegenInterface* g_core_codegen_interface;
 }  // namespace grpc
 
 namespace grpc_impl {
-class Channel;
 
 /// A thin wrapper around \ref grpc_completion_queue (see \ref
 /// src/core/lib/surface/completion_queue.h).
@@ -274,14 +277,14 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   friend class ::grpc::internal::TemplatedBidiStreamingHandler;
   template <::grpc::StatusCode code>
   friend class ::grpc::internal::ErrorMethodHandler;
-  friend class ::grpc::Server;
+  friend class ::grpc_impl::Server;
   friend class ::grpc::ServerContext;
   friend class ::grpc::ServerInterface;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;
 
   // Friends that need access to constructor for callback CQ
-  friend class ::grpc_impl::Channel;
+  friend class ::grpc::Channel;
 
   // For access to Register/CompleteAvalanching
   template <class Op1, class Op2, class Op3, class Op4, class Op5, class Op6>
@@ -410,8 +413,8 @@ class ServerCompletionQueue : public CompletionQueue {
         polling_type_(polling_type) {}
 
   grpc_cq_polling_type polling_type_;
-  friend class ::grpc::ServerBuilder;
-  friend class ::grpc::Server;
+  friend class ::grpc_impl::ServerBuilder;
+  friend class ::grpc_impl::Server;
 };
 
 }  // namespace grpc_impl

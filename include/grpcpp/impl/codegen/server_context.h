@@ -48,7 +48,6 @@ class Server;
 namespace grpc {
 class ClientContext;
 class GenericServerContext;
-class CompletionQueue;
 class ServerInterface;
 template <class W, class R>
 class ServerAsyncReader;
