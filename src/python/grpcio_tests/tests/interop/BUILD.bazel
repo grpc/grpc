@@ -29,17 +29,20 @@ py_library(
     srcs = ["methods.py"],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
         "//src/proto/grpc/testing:py_empty_proto",
         "//src/proto/grpc/testing:py_messages_proto",
         "//src/proto/grpc/testing:py_test_proto",
         requirement('google-auth'),
         requirement('requests'),
-        requirement('enum34'),
         requirement('urllib3'),
         requirement('chardet'),
         requirement('certifi'),
         requirement('idna'),
-    ],
+    ] + select({
+        "//conditions:default": [requirement('enum34'),],
+        "//:python3": [],
+    }),
     imports=["../../",],
 )
 

@@ -36,6 +36,10 @@
 #include "src/core/tsi/transport_security.h"
 #include "test/core/util/test_config.h"
 
+#ifndef TSI_OPENSSL_ALPN_SUPPORT
+#define TSI_OPENSSL_ALPN_SUPPORT 1
+#endif
+
 static int check_transport_security_type(const grpc_auth_context* ctx) {
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       ctx, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);
@@ -432,6 +436,43 @@ static void test_default_ssl_roots(void) {
   gpr_free(roots_env_var_file_path);
 }
 
+static void test_peer_alpn_check(void) {
+#if TSI_OPENSSL_ALPN_SUPPORT
+  tsi_peer peer;
+  const char* alpn = "grpc";
+  const char* wrong_alpn = "wrong";
+  // peer does not have a TSI_SSL_ALPN_SELECTED_PROTOCOL property.
+  GPR_ASSERT(tsi_construct_peer(1, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property("wrong peer property name",
+                                                alpn, strlen(alpn),
+                                                &peer.properties[0]) == TSI_OK);
+  grpc_error* error = grpc_ssl_check_alpn(&peer);
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  tsi_peer_destruct(&peer);
+  GRPC_ERROR_UNREF(error);
+  // peer has a TSI_SSL_ALPN_SELECTED_PROTOCOL property but with an incorrect
+  // property value.
+  GPR_ASSERT(tsi_construct_peer(1, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL,
+                                                wrong_alpn, strlen(wrong_alpn),
+                                                &peer.properties[0]) == TSI_OK);
+  error = grpc_ssl_check_alpn(&peer);
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  tsi_peer_destruct(&peer);
+  GRPC_ERROR_UNREF(error);
+  // peer has a TSI_SSL_ALPN_SELECTED_PROTOCOL property with a correct property
+  // value.
+  GPR_ASSERT(tsi_construct_peer(1, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL,
+                                                alpn, strlen(alpn),
+                                                &peer.properties[0]) == TSI_OK);
+  GPR_ASSERT(grpc_ssl_check_alpn(&peer) == GRPC_ERROR_NONE);
+  tsi_peer_destruct(&peer);
+#else
+  GPR_ASSERT(grpc_ssl_check_alpn(nullptr) == GRPC_ERROR_NONE);
+#endif
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
@@ -443,7 +484,7 @@ int main(int argc, char** argv) {
   test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context();
   test_ipv6_address_san();
   test_default_ssl_roots();
-
+  test_peer_alpn_check();
   grpc_shutdown();
   return 0;
 }

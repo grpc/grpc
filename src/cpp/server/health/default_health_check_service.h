@@ -31,6 +31,7 @@
 #include <grpcpp/impl/codegen/service_type.h>
 #include <grpcpp/support/byte_buffer.h>
 
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 
 namespace grpc {
@@ -197,7 +198,7 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
       GenericServerAsyncWriter stream_;
       ServerContext ctx_;
 
-      std::mutex send_mu_;
+      grpc_core::Mutex send_mu_;
       bool send_in_flight_ = false;               // Guarded by mu_.
       ServingStatus pending_status_ = NOT_FOUND;  // Guarded by mu_.
 
@@ -226,7 +227,7 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
 
     // To synchronize the operations related to shutdown state of cq_, so that
     // we don't enqueue new tags into cq_ after it is already shut down.
-    std::mutex cq_shutdown_mu_;
+    grpc_core::Mutex cq_shutdown_mu_;
     std::atomic_bool shutdown_{false};
     std::unique_ptr<::grpc_core::Thread> thread_;
   };
@@ -273,7 +274,7 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
       const grpc::string& service_name,
       const std::shared_ptr<HealthCheckServiceImpl::CallHandler>& handler);
 
-  mutable std::mutex mu_;
+  mutable grpc_core::Mutex mu_;
   bool shutdown_ = false;                             // Guarded by mu_.
   std::map<grpc::string, ServiceData> services_map_;  // Guarded by mu_.
   std::unique_ptr<HealthCheckServiceImpl> impl_;

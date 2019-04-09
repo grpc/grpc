@@ -23,7 +23,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  # version = '1.20.0-dev'
+  # version = '1.21.0-dev'
   version = '0.0.8-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
@@ -31,7 +31,7 @@ Pod::Spec.new do |s|
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  grpc_version = '1.20.0-dev'
+  grpc_version = '1.21.0-dev'
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
@@ -82,16 +82,19 @@ Pod::Spec.new do |s|
     ss.source_files = 'include/grpcpp/alarm.h',
                       'include/grpcpp/alarm_impl.h',
                       'include/grpcpp/channel.h',
-                      'include/grpcpp/channel_impl.h',
                       'include/grpcpp/client_context.h',
                       'include/grpcpp/completion_queue.h',
                       'include/grpcpp/create_channel.h',
+                      'include/grpcpp/create_channel_impl.h',
                       'include/grpcpp/create_channel_posix.h',
+                      'include/grpcpp/create_channel_posix_impl.h',
                       'include/grpcpp/ext/health_check_service_server_builder_option.h',
                       'include/grpcpp/generic/async_generic_service.h',
                       'include/grpcpp/generic/generic_stub.h',
+                      'include/grpcpp/generic/generic_stub_impl.h',
                       'include/grpcpp/grpcpp.h',
                       'include/grpcpp/health_check_service_interface.h',
+                      'include/grpcpp/health_check_service_interface_impl.h',
                       'include/grpcpp/impl/call.h',
                       'include/grpcpp/impl/channel_argument_option.h',
                       'include/grpcpp/impl/client_unary_call.h',
@@ -102,18 +105,26 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/rpc_service_method.h',
                       'include/grpcpp/impl/serialization_traits.h',
                       'include/grpcpp/impl/server_builder_option.h',
+                      'include/grpcpp/impl/server_builder_option_impl.h',
                       'include/grpcpp/impl/server_builder_plugin.h',
                       'include/grpcpp/impl/server_initializer.h',
+                      'include/grpcpp/impl/server_initializer_impl.h',
                       'include/grpcpp/impl/service_type.h',
                       'include/grpcpp/resource_quota.h',
+                      'include/grpcpp/resource_quota_impl.h',
                       'include/grpcpp/security/auth_context.h',
                       'include/grpcpp/security/auth_metadata_processor.h',
+                      'include/grpcpp/security/auth_metadata_processor_impl.h',
                       'include/grpcpp/security/credentials.h',
                       'include/grpcpp/security/server_credentials.h',
+                      'include/grpcpp/security/server_credentials_impl.h',
                       'include/grpcpp/server.h',
                       'include/grpcpp/server_builder.h',
+                      'include/grpcpp/server_builder_impl.h',
                       'include/grpcpp/server_context.h',
+                      'include/grpcpp/server_impl.h',
                       'include/grpcpp/server_posix.h',
+                      'include/grpcpp/server_posix_impl.h',
                       'include/grpcpp/support/async_stream.h',
                       'include/grpcpp/support/async_unary_call.h',
                       'include/grpcpp/support/byte_buffer.h',
@@ -174,7 +185,8 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/string_ref.h',
                       'include/grpcpp/impl/codegen/stub_options.h',
                       'include/grpcpp/impl/codegen/sync_stream.h',
-                      'include/grpcpp/impl/codegen/time.h'
+                      'include/grpcpp/impl/codegen/time.h',
+                      'include/grpcpp/impl/codegen/sync.h'
   end
 
   s.subspec 'Implementation' do |ss|
@@ -253,12 +265,12 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/useful.h',
                       'src/core/lib/gprpp/abstract.h',
                       'src/core/lib/gprpp/atomic.h',
-                      'src/core/lib/gprpp/atomic_with_atm.h',
-                      'src/core/lib/gprpp/atomic_with_std.h',
                       'src/core/lib/gprpp/fork.h',
                       'src/core/lib/gprpp/manual_constructor.h',
+                      'src/core/lib/gprpp/map.h',
                       'src/core/lib/gprpp/memory.h',
-                      'src/core/lib/gprpp/mutex_lock.h',
+                      'src/core/lib/gprpp/pair.h',
+                      'src/core/lib/gprpp/sync.h',
                       'src/core/lib/gprpp/thd.h',
                       'src/core/lib/profiling/timers.h',
                       'src/core/ext/transport/chttp2/transport/bin_decoder.h',
@@ -303,6 +315,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/plugin/plugin_credentials.h',
                       'src/core/lib/security/credentials/ssl/ssl_credentials.h',
                       'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h',
+                      'src/core/lib/security/credentials/tls/spiffe_credentials.h',
                       'src/core/lib/security/security_connector/alts/alts_security_connector.h',
                       'src/core/lib/security/security_connector/fake/fake_security_connector.h',
                       'src/core/lib/security/security_connector/load_system_roots.h',
@@ -311,6 +324,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/security_connector/security_connector.h',
                       'src/core/lib/security/security_connector/ssl/ssl_security_connector.h',
                       'src/core/lib/security/security_connector/ssl_utils.h',
+                      'src/core/lib/security/security_connector/tls/spiffe_security_connector.h',
                       'src/core/lib/security/transport/auth_filters.h',
                       'src/core/lib/security/transport/secure_endpoint.h',
                       'src/core/lib/security/transport/security_handshaker.h',
@@ -369,6 +383,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolving_lb_policy.h',
                       'src/core/ext/filters/client_channel/retry_throttle.h',
                       'src/core/ext/filters/client_channel/server_address.h',
+                      'src/core/ext/filters/client_channel/service_config.h',
                       'src/core/ext/filters/client_channel/subchannel.h',
                       'src/core/ext/filters/client_channel/subchannel_pool_interface.h',
                       'src/core/ext/filters/deadline/deadline_filter.h',
@@ -478,7 +493,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/timer_manager.h',
                       'src/core/lib/iomgr/udp_server.h',
                       'src/core/lib/iomgr/unix_sockets_posix.h',
-                      'src/core/lib/iomgr/wakeup_fd_cv.h',
                       'src/core/lib/iomgr/wakeup_fd_pipe.h',
                       'src/core/lib/iomgr/wakeup_fd_posix.h',
                       'src/core/lib/json/json.h',
@@ -512,7 +526,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/metadata.h',
                       'src/core/lib/transport/metadata_batch.h',
                       'src/core/lib/transport/pid_controller.h',
-                      'src/core/lib/transport/service_config.h',
                       'src/core/lib/transport/static_metadata.h',
                       'src/core/lib/transport/status_conversion.h',
                       'src/core/lib/transport/status_metadata.h',
@@ -569,12 +582,12 @@ Pod::Spec.new do |s|
                               'src/core/lib/gpr/useful.h',
                               'src/core/lib/gprpp/abstract.h',
                               'src/core/lib/gprpp/atomic.h',
-                              'src/core/lib/gprpp/atomic_with_atm.h',
-                              'src/core/lib/gprpp/atomic_with_std.h',
                               'src/core/lib/gprpp/fork.h',
                               'src/core/lib/gprpp/manual_constructor.h',
+                              'src/core/lib/gprpp/map.h',
                               'src/core/lib/gprpp/memory.h',
-                              'src/core/lib/gprpp/mutex_lock.h',
+                              'src/core/lib/gprpp/pair.h',
+                              'src/core/lib/gprpp/sync.h',
                               'src/core/lib/gprpp/thd.h',
                               'src/core/lib/profiling/timers.h',
                               'src/core/lib/avl/avl.h',
@@ -672,7 +685,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/timer_manager.h',
                               'src/core/lib/iomgr/udp_server.h',
                               'src/core/lib/iomgr/unix_sockets_posix.h',
-                              'src/core/lib/iomgr/wakeup_fd_cv.h',
                               'src/core/lib/iomgr/wakeup_fd_pipe.h',
                               'src/core/lib/iomgr/wakeup_fd_posix.h',
                               'src/core/lib/json/json.h',
@@ -706,7 +718,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/metadata.h',
                               'src/core/lib/transport/metadata_batch.h',
                               'src/core/lib/transport/pid_controller.h',
-                              'src/core/lib/transport/service_config.h',
                               'src/core/lib/transport/static_metadata.h',
                               'src/core/lib/transport/status_conversion.h',
                               'src/core/lib/transport/status_metadata.h',

@@ -26,13 +26,13 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/surface/channel_init.h"
-#include "src/core/lib/transport/service_config.h"
 
 typedef struct {
   int max_send_size;
@@ -319,7 +319,7 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
       grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVICE_CONFIG);
   const char* service_config_str = grpc_channel_arg_get_string(channel_arg);
   if (service_config_str != nullptr) {
-    grpc_core::UniquePtr<grpc_core::ServiceConfig> service_config =
+    grpc_core::RefCountedPtr<grpc_core::ServiceConfig> service_config =
         grpc_core::ServiceConfig::Create(service_config_str);
     if (service_config != nullptr) {
       chand->method_limit_table = service_config->CreateMethodConfigTable(

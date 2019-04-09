@@ -95,6 +95,8 @@ static const grpc_event_engine_vtable* init_engine_vtable(bool) {
   g_vtable.pollset_work = pollset_work;
   g_vtable.pollset_kick = pollset_kick;
   g_vtable.is_any_background_poller_thread = [] { return false; };
+  g_vtable.add_closure_to_background_poller =
+      [](grpc_closure* closure, grpc_error* error) { return false; };
   g_vtable.shutdown_background_closure = [] {};
   g_vtable.shutdown_engine = [] {};
 

@@ -25,7 +25,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -52,7 +51,7 @@ unsigned gpr_cpu_num_cores(void) {
 
 static void delete_thread_id(void* value) {
   if (value) {
-    gpr_free(value);
+    free(value);
   }
 }
 
@@ -71,7 +70,10 @@ unsigned gpr_cpu_current_cpu(void) {
   unsigned int* thread_id =
       static_cast<unsigned int*>(pthread_getspecific(thread_id_key));
   if (thread_id == nullptr) {
-    thread_id = static_cast<unsigned int*>(gpr_malloc(sizeof(unsigned int)));
+    // Note we cannot use gpr_malloc here because this allocation can happen in
+    // a main thread and will only be free'd when the main thread exits, which
+    // will cause our internal memory counters to believe it is a leak.
+    thread_id = static_cast<unsigned int*>(malloc(sizeof(unsigned int)));
     pthread_setspecific(thread_id_key, thread_id);
   }
 

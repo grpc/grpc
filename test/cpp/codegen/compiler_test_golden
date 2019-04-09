@@ -41,12 +41,12 @@
 #include <grpcpp/impl/codegen/sync_stream.h>
 
 namespace grpc_impl {
-class Channel;
 class CompletionQueue;
 class ServerCompletionQueue;
 }  // namespace grpc_impl
 
 namespace grpc {
+class Channel;
 class ServerContext;
 }  // namespace grpc
 
@@ -116,6 +116,7 @@ class ServiceA final {
       virtual ~experimental_async_interface() {}
       // MethodA1 leading comment 1
       virtual void MethodA1(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void MethodA1(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::testing::Response* response, std::function<void(::grpc::Status)>) = 0;
       // MethodA1 trailing comment 1
       // MethodA2 detached leading comment 1
       //
@@ -185,6 +186,7 @@ class ServiceA final {
       public StubInterface::experimental_async_interface {
      public:
       void MethodA1(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, std::function<void(::grpc::Status)>) override;
+      void MethodA1(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::testing::Response* response, std::function<void(::grpc::Status)>) override;
       void MethodA2(::grpc::ClientContext* context, ::grpc::testing::Response* response, ::grpc::experimental::ClientWriteReactor< ::grpc::testing::Request>* reactor) override;
       void MethodA3(::grpc::ClientContext* context, ::grpc::testing::Request* request, ::grpc::experimental::ClientReadReactor< ::grpc::testing::Response>* reactor) override;
       void MethodA4(::grpc::ClientContext* context, ::grpc::experimental::ClientBidiReactor< ::grpc::testing::Request,::grpc::testing::Response>* reactor) override;
@@ -717,6 +719,7 @@ class ServiceB final {
       virtual ~experimental_async_interface() {}
       // MethodB1 leading comment 1
       virtual void MethodB1(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void MethodB1(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::testing::Response* response, std::function<void(::grpc::Status)>) = 0;
       // MethodB1 trailing comment 1
     };
     virtual class experimental_async_interface* experimental_async() { return nullptr; }
@@ -738,6 +741,7 @@ class ServiceB final {
       public StubInterface::experimental_async_interface {
      public:
       void MethodB1(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, std::function<void(::grpc::Status)>) override;
+      void MethodB1(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::testing::Response* response, std::function<void(::grpc::Status)>) override;
      private:
       friend class Stub;
       explicit experimental_async(Stub* stub): stub_(stub) { }

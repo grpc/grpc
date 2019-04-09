@@ -19,4 +19,5 @@
 - 1.17 'g' stands for ['gizmo'](https://github.com/grpc/grpc/tree/v1.17.x)
 - 1.18 'g' stands for ['goose'](https://github.com/grpc/grpc/tree/v1.18.x)
 - 1.19 'g' stands for ['gold'](https://github.com/grpc/grpc/tree/v1.19.x)
-- 1.20 'g' stands for ['godric'](https://github.com/grpc/grpc/tree/master)
+- 1.20 'g' stands for ['godric'](https://github.com/grpc/grpc/tree/v1.20.x)
+- 1.21 'g' stands for ['gandalf'](https://github.com/grpc/grpc/tree/master)

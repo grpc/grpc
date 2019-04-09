@@ -1,20 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\Grpc.Core\Version.csproj.include" />
   <Import Project="..\Grpc.Core\Common.csproj.include" />
 
   <PropertyGroup>
-    <Copyright>Copyright 2015, Google Inc.</Copyright>
-    <AssemblyTitle>gRPC C# Auth</AssemblyTitle>
-    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
-    <Authors>Google Inc.</Authors>
-    <TargetFrameworks>net45;netstandard1.5</TargetFrameworks>
-    <DefineConstants>$(DefineConstants);SIGNED</DefineConstants>
-    <AssemblyName>Grpc.Auth</AssemblyName>
-    <PackageId>Grpc.Auth</PackageId>
-    <PackageTags>gRPC RPC Protocol HTTP/2 Auth OAuth2</PackageTags>
+    <Authors>The gRPC Authors</Authors>
+    <Copyright>Copyright 2015 The gRPC Authors</Copyright>
+    <Description>gRPC C# Authentication Library</Description>
+    <PackageIconUrl>https://github.com/grpc/grpc.github.io/raw/master/img/grpc_square_reverse_4x.png</PackageIconUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageTags>gRPC RPC HTTP/2 Auth OAuth2</PackageTags>
+    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;netstandard1.5;netstandard2.0</TargetFrameworks>
+    <DefineConstants>$(DefineConstants);SIGNED</DefineConstants>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
@@ -22,7 +23,7 @@
   <Import Project="..\Grpc.Core\SourceLink.csproj.include" />
 
   <ItemGroup>
-    <Compile Include="..\Grpc.Core\Version.cs" />
+    <Compile Include="..\Grpc.Core.Api\Version.cs" />
   </ItemGroup>
 
   <ItemGroup>

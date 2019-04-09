@@ -47,9 +47,6 @@
 using grpc_core::ServerAddress;
 using grpc_core::ServerAddressList;
 
-static gpr_once g_basic_init = GPR_ONCE_INIT;
-static gpr_mu g_init_mu;
-
 grpc_core::TraceFlag grpc_trace_cares_address_sorting(false,
                                                       "cares_address_sorting");
 
@@ -70,9 +67,7 @@ struct grpc_ares_request {
   /** number of ongoing queries */
   size_t pending_queries;
 
-  /** is there at least one successful query, set in on_done_cb */
-  bool success;
-  /** the errors explaining the request failure, set in on_done_cb */
+  /** the errors explaining query failures, appended to in query callbacks */
   grpc_error* error;
 };
 
@@ -88,8 +83,6 @@ typedef struct grpc_ares_hostbyname_request {
   /** is it a grpclb address */
   bool is_balancer;
 } grpc_ares_hostbyname_request;
-
-static void do_basic_init(void) { gpr_mu_init(&g_init_mu); }
 
 static void log_address_sorting_list(const ServerAddressList& addresses,
                                      const char* input_output_str) {
@@ -150,6 +143,10 @@ void grpc_ares_complete_request_locked(grpc_ares_request* r) {
   ServerAddressList* addresses = r->addresses_out->get();
   if (addresses != nullptr) {
     grpc_cares_wrapper_address_sorting_sort(addresses);
+    GRPC_ERROR_UNREF(r->error);
+    r->error = GRPC_ERROR_NONE;
+    // TODO(apolcyn): allow c-ares to return a service config
+    // with no addresses along side it
   }
   GRPC_CLOSURE_SCHED(r->on_done, r->error);
 }
@@ -180,9 +177,9 @@ static void on_hostbyname_done_locked(void* arg, int status, int timeouts,
       static_cast<grpc_ares_hostbyname_request*>(arg);
   grpc_ares_request* r = hr->parent_request;
   if (status == ARES_SUCCESS) {
-    GRPC_ERROR_UNREF(r->error);
-    r->error = GRPC_ERROR_NONE;
-    r->success = true;
+    GRPC_CARES_TRACE_LOG(
+        "request:%p on_hostbyname_done_locked host=%s ARES_SUCCESS", r,
+        hr->host);
     if (*r->addresses_out == nullptr) {
       *r->addresses_out = grpc_core::MakeUnique<ServerAddressList>();
     }
@@ -234,17 +231,15 @@ static void on_hostbyname_done_locked(void* arg, int status, int timeouts,
         }
       }
     }
-  } else if (!r->success) {
+  } else {
     char* error_msg;
     gpr_asprintf(&error_msg, "C-ares status is not ARES_SUCCESS: %s",
                  ares_strerror(status));
+    GRPC_CARES_TRACE_LOG("request:%p on_hostbyname_done_locked host=%s %s", r,
+                         hr->host, error_msg);
     grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
     gpr_free(error_msg);
-    if (r->error == GRPC_ERROR_NONE) {
-      r->error = error;
-    } else {
-      r->error = grpc_error_add_child(error, r->error);
-    }
+    r->error = grpc_error_add_child(error, r->error);
   }
   destroy_hostbyname_request_locked(hr);
 }
@@ -252,9 +247,8 @@ static void on_hostbyname_done_locked(void* arg, int status, int timeouts,
 static void on_srv_query_done_locked(void* arg, int status, int timeouts,
                                      unsigned char* abuf, int alen) {
   grpc_ares_request* r = static_cast<grpc_ares_request*>(arg);
-  GRPC_CARES_TRACE_LOG("request:%p on_query_srv_done_locked", r);
   if (status == ARES_SUCCESS) {
-    GRPC_CARES_TRACE_LOG("request:%p on_query_srv_done_locked ARES_SUCCESS", r);
+    GRPC_CARES_TRACE_LOG("request:%p on_srv_query_done_locked ARES_SUCCESS", r);
     struct ares_srv_reply* reply;
     const int parse_status = ares_parse_srv_reply(abuf, alen, &reply);
     if (parse_status == ARES_SUCCESS) {
@@ -278,17 +272,15 @@ static void on_srv_query_done_locked(void* arg, int status, int timeouts,
     if (reply != nullptr) {
       ares_free_data(reply);
     }
-  } else if (!r->success) {
+  } else {
     char* error_msg;
     gpr_asprintf(&error_msg, "C-ares status is not ARES_SUCCESS: %s",
                  ares_strerror(status));
+    GRPC_CARES_TRACE_LOG("request:%p on_srv_query_done_locked %s", r,
+                         error_msg);
     grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
     gpr_free(error_msg);
-    if (r->error == GRPC_ERROR_NONE) {
-      r->error = error;
-    } else {
-      r->error = grpc_error_add_child(error, r->error);
-    }
+    r->error = grpc_error_add_child(error, r->error);
   }
   grpc_ares_request_unref_locked(r);
 }
@@ -299,12 +291,12 @@ static void on_txt_done_locked(void* arg, int status, int timeouts,
                                unsigned char* buf, int len) {
   char* error_msg;
   grpc_ares_request* r = static_cast<grpc_ares_request*>(arg);
-  GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked", r);
   const size_t prefix_len = sizeof(g_service_config_attribute_prefix) - 1;
   struct ares_txt_ext* result = nullptr;
   struct ares_txt_ext* reply = nullptr;
   grpc_error* error = GRPC_ERROR_NONE;
   if (status != ARES_SUCCESS) goto fail;
+  GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked ARES_SUCCESS", r);
   status = ares_parse_txt_reply_ext(buf, len, &reply);
   if (status != ARES_SUCCESS) goto fail;
   // Find service config in TXT record.
@@ -342,12 +334,9 @@ fail:
   gpr_asprintf(&error_msg, "C-ares TXT lookup status is not ARES_SUCCESS: %s",
                ares_strerror(status));
   error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
+  GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked %s", r, error_msg);
   gpr_free(error_msg);
-  if (r->error == GRPC_ERROR_NONE) {
-    r->error = error;
-  } else {
-    r->error = grpc_error_add_child(error, r->error);
-  }
+  r->error = grpc_error_add_child(error, r->error);
 done:
   grpc_ares_request_unref_locked(r);
 }
@@ -539,7 +528,6 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
   r->on_done = on_done;
   r->addresses_out = addrs;
   r->service_config_json_out = service_config_json;
-  r->success = false;
   r->error = GRPC_ERROR_NONE;
   r->pending_queries = 0;
   GRPC_CARES_TRACE_LOG(
@@ -588,12 +576,12 @@ static void grpc_cancel_ares_request_locked_impl(grpc_ares_request* r) {
 void (*grpc_cancel_ares_request_locked)(grpc_ares_request* r) =
     grpc_cancel_ares_request_locked_impl;
 
+// ares_library_init and ares_library_cleanup are currently no-op except under
+// Windows. Calling them may cause race conditions when other parts of the
+// binary calls these functions concurrently.
+#ifdef GPR_WINDOWS
 grpc_error* grpc_ares_init(void) {
-  gpr_once_init(&g_basic_init, do_basic_init);
-  gpr_mu_lock(&g_init_mu);
   int status = ares_library_init(ARES_LIB_INIT_ALL);
-  gpr_mu_unlock(&g_init_mu);
-
   if (status != ARES_SUCCESS) {
     char* error_msg;
     gpr_asprintf(&error_msg, "ares_library_init failed: %s",
@@ -605,11 +593,11 @@ grpc_error* grpc_ares_init(void) {
   return GRPC_ERROR_NONE;
 }
 
-void grpc_ares_cleanup(void) {
-  gpr_mu_lock(&g_init_mu);
-  ares_library_cleanup();
-  gpr_mu_unlock(&g_init_mu);
-}
+void grpc_ares_cleanup(void) { ares_library_cleanup(); }
+#else
+grpc_error* grpc_ares_init(void) { return GRPC_ERROR_NONE; }
+void grpc_ares_cleanup(void) {}
+#endif  // GPR_WINDOWS
 
 /*
  * grpc_resolve_address_ares related structs and functions

@@ -38,7 +38,7 @@ namespace Grpc.Tools
         /// files actually produced by the compiler.
         /// </summary>
         [Required]
-        public ITaskItem[] ProtoBuf { get; set; }
+        public ITaskItem[] Protobuf { get; set; }
 
         /// <summary>
         /// Output items per each potential output. We do not look at existing
@@ -68,7 +68,7 @@ namespace Grpc.Tools
             // Get language-specific possible output. The generator expects certain
             // metadata be set on the proto item.
             var possible = new List<ITaskItem>();
-            foreach (var proto in ProtoBuf)
+            foreach (var proto in Protobuf)
             {
                 var outputs = generator.GetPossibleOutputs(proto);
                 foreach (string output in outputs)

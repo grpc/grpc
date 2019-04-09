@@ -283,7 +283,7 @@ grpc_error* SecurityHandshaker::OnHandshakeNextDoneLocked(
   if (result == TSI_INCOMPLETE_DATA) {
     GPR_ASSERT(bytes_to_send_size == 0);
     grpc_endpoint_read(args_->endpoint, args_->read_buffer,
-                       &on_handshake_data_received_from_peer_);
+                       &on_handshake_data_received_from_peer_, /*urgent=*/true);
     return error;
   }
   if (result != TSI_OK) {
@@ -306,7 +306,7 @@ grpc_error* SecurityHandshaker::OnHandshakeNextDoneLocked(
   } else if (handshaker_result == nullptr) {
     // There is nothing to send, but need to read from peer.
     grpc_endpoint_read(args_->endpoint, args_->read_buffer,
-                       &on_handshake_data_received_from_peer_);
+                       &on_handshake_data_received_from_peer_, /*urgent=*/true);
   } else {
     // Handshake has finished, check peer and so on.
     error = CheckPeerLocked();
@@ -382,7 +382,8 @@ void SecurityHandshaker::OnHandshakeDataSentToPeerFn(void* arg,
   // We may be done.
   if (h->handshaker_result_ == nullptr) {
     grpc_endpoint_read(h->args_->endpoint, h->args_->read_buffer,
-                       &h->on_handshake_data_received_from_peer_);
+                       &h->on_handshake_data_received_from_peer_,
+                       /*urgent=*/true);
   } else {
     error = h->CheckPeerLocked();
     if (error != GRPC_ERROR_NONE) {

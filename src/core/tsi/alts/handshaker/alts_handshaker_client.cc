@@ -363,7 +363,7 @@ static tsi_result handshaker_client_next(alts_handshaker_client* c,
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
   grpc_slice_unref_internal(client->recv_bytes);
-  client->recv_bytes = grpc_slice_ref(*bytes_received);
+  client->recv_bytes = grpc_slice_ref_internal(*bytes_received);
   grpc_byte_buffer* buffer = get_serialized_next(bytes_received);
   if (buffer == nullptr) {
     gpr_log(GPR_ERROR, "get_serialized_next() failed");
@@ -406,7 +406,7 @@ static const alts_handshaker_client_vtable vtable = {
 alts_handshaker_client* alts_grpc_handshaker_client_create(
     alts_tsi_handshaker* handshaker, grpc_channel* channel,
     const char* handshaker_service_url, grpc_pollset_set* interested_parties,
-    grpc_alts_credentials_options* options, grpc_slice target_name,
+    grpc_alts_credentials_options* options, const grpc_slice& target_name,
     grpc_iomgr_cb_func grpc_cb, tsi_handshaker_on_next_done_cb cb,
     void* user_data, alts_handshaker_client_vtable* vtable_for_testing,
     bool is_client) {
@@ -487,7 +487,7 @@ void alts_handshaker_client_set_recv_bytes_for_testing(
   GPR_ASSERT(c != nullptr);
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
-  client->recv_bytes = grpc_slice_ref(*recv_bytes);
+  client->recv_bytes = grpc_slice_ref_internal(*recv_bytes);
 }
 
 void alts_handshaker_client_set_fields_for_testing(

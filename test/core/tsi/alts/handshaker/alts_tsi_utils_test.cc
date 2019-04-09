@@ -51,7 +51,7 @@ static void deserialize_response_test() {
   GPR_ASSERT(grpc_gcp_handshaker_resp_equals(resp, decoded_resp));
   grpc_byte_buffer_destroy(buffer);
 
-  /* Invalid serializaiton. */
+  /* Invalid serialization. */
   grpc_slice bad_slice =
       grpc_slice_split_head(&slice, GRPC_SLICE_LENGTH(slice) - 1);
   buffer = grpc_raw_byte_buffer_create(&bad_slice, 1 /* number of slices */);

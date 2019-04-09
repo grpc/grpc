@@ -1,20 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\Grpc.Core\Version.csproj.include" />
   <Import Project="..\Grpc.Core\Common.csproj.include" />
 
   <PropertyGroup>
-    <Copyright>Copyright 2017, Google Inc.</Copyright>
-    <AssemblyTitle>gRPC C# Core Testing</AssemblyTitle>
-    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
-    <Authors>Google Inc.</Authors>
-    <TargetFrameworks>net45;netstandard1.5</TargetFrameworks>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <AssemblyName>Grpc.Core.Testing</AssemblyName>
-    <PackageId>Grpc.Core.Testing</PackageId>
-    <PackageTags>gRPC test testing</PackageTags>
+    <Authors>The gRPC Authors</Authors>
+    <Description>Miscellaneous code for testing Grpc.Core</Description>
+    <Copyright>Copyright 2017 The gRPC Authors</Copyright>
+    <PackageIconUrl>https://github.com/grpc/grpc.github.io/raw/master/img/grpc_square_reverse_4x.png</PackageIconUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageTags>gRPC test testing</PackageTags>
+    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;netstandard1.5;netstandard2.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
@@ -22,7 +22,7 @@
   <Import Project="..\Grpc.Core\SourceLink.csproj.include" />
 
   <ItemGroup>
-    <Compile Include="..\Grpc.Core\Version.cs" />
+    <Compile Include="..\Grpc.Core.Api\Version.cs" />
   </ItemGroup>
 
   <ItemGroup>

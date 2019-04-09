@@ -193,6 +193,7 @@
 #define GPR_PLATFORM_STRING "ios"
 #define GPR_CPU_IPHONE 1
 #define GPR_PTHREAD_TLS 1
+#define GRPC_CFSTREAM 1
 /* the c-ares resolver isnt safe to enable on iOS */
 #define GRPC_ARES 0
 #else /* TARGET_OS_IPHONE */
@@ -235,7 +236,6 @@
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
-/* TODO(mxyan): Remove when CFStream becomes default */
 #ifndef GRPC_CFSTREAM
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
 #endif
@@ -359,6 +359,26 @@
 #else /* _LP64 */
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
+#elif defined(__Fuchsia__)
+#define GPR_FUCHSIA 1
+#define GPR_ARCH_64 1
+#define GPR_PLATFORM_STRING "fuchsia"
+#include <features.h>
+// Specifying musl libc affects wrap_memcpy.c. It causes memmove() to be
+// invoked.
+#define GPR_MUSL_LIBC_COMPAT 1
+#define GPR_CPU_POSIX 1
+#define GPR_GCC_ATOMIC 1
+#define GPR_PTHREAD_TLS 1
+#define GPR_POSIX_LOG 1
+#define GPR_POSIX_SYNC 1
+#define GPR_POSIX_ENV 1
+#define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_SUBPROCESS 1
+#define GPR_POSIX_SYNC 1
+#define GPR_POSIX_STRING 1
+#define GPR_POSIX_TIME 1
+#define GPR_GETPID_IN_UNISTD_H 1
 #else
 #error "Could not auto-detect platform"
 #endif
@@ -534,6 +554,14 @@ typedef unsigned __int64 uint64_t;
 #endif
 #endif /* GPR_HAS_ATTRIBUTE */
 
+#ifndef GPR_HAS_FEATURE
+#ifdef __has_feature
+#define GPR_HAS_FEATURE(a) __has_feature(a)
+#else
+#define GPR_HAS_FEATURE(a) 0
+#endif
+#endif /* GPR_HAS_FEATURE */
+
 #ifndef GPR_ATTRIBUTE_NOINLINE
 #if GPR_HAS_ATTRIBUTE(noinline) || (defined(__GNUC__) && !defined(__clang__))
 #define GPR_ATTRIBUTE_NOINLINE __attribute__((noinline))
@@ -556,11 +584,9 @@ typedef unsigned __int64 uint64_t;
 #endif /* GPR_ATTRIBUTE_WEAK */
 
 #ifndef GPR_ATTRIBUTE_NO_TSAN /* (1) */
-#if defined(__has_feature)
-#if __has_feature(thread_sanitizer)
+#if GPR_HAS_FEATURE(thread_sanitizer)
 #define GPR_ATTRIBUTE_NO_TSAN __attribute__((no_sanitize("thread")))
-#endif                        /* __has_feature(thread_sanitizer) */
-#endif                        /* defined(__has_feature) */
+#endif                        /* GPR_HAS_FEATURE */
 #ifndef GPR_ATTRIBUTE_NO_TSAN /* (2) */
 #define GPR_ATTRIBUTE_NO_TSAN
 #endif /* GPR_ATTRIBUTE_NO_TSAN (2) */
@@ -569,10 +595,15 @@ typedef unsigned __int64 uint64_t;
 /* GRPC_TSAN_ENABLED will be defined, when compiled with thread sanitizer. */
 #if defined(__SANITIZE_THREAD__)
 #define GRPC_TSAN_ENABLED
-#elif defined(__has_feature)
-#if __has_feature(thread_sanitizer)
+#elif GPR_HAS_FEATURE(thread_sanitizer)
 #define GRPC_TSAN_ENABLED
 #endif
+
+/* GRPC_ASAN_ENABLED will be defined, when compiled with address sanitizer. */
+#if defined(__SANITIZE_ADDRESS__)
+#define GRPC_ASAN_ENABLED
+#elif GPR_HAS_FEATURE(address_sanitizer)
+#define GRPC_ASAN_ENABLED
 #endif
 
 /* GRPC_ALLOW_EXCEPTIONS should be 0 or 1 if exceptions are allowed or not */

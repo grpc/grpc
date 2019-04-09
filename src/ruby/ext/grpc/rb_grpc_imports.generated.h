@@ -92,6 +92,9 @@ extern grpc_shutdown_type grpc_shutdown_import;
 typedef int(*grpc_is_initialized_type)(void);
 extern grpc_is_initialized_type grpc_is_initialized_import;
 #define grpc_is_initialized grpc_is_initialized_import
+typedef void(*grpc_shutdown_blocking_type)(void);
+extern grpc_shutdown_blocking_type grpc_shutdown_blocking_import;
+#define grpc_shutdown_blocking grpc_shutdown_blocking_import
 typedef const char*(*grpc_version_string_type)(void);
 extern grpc_version_string_type grpc_version_string_import;
 #define grpc_version_string grpc_version_string_import
@@ -488,6 +491,9 @@ extern grpc_byte_buffer_reader_destroy_type grpc_byte_buffer_reader_destroy_impo
 typedef int(*grpc_byte_buffer_reader_next_type)(grpc_byte_buffer_reader* reader, grpc_slice* slice);
 extern grpc_byte_buffer_reader_next_type grpc_byte_buffer_reader_next_import;
 #define grpc_byte_buffer_reader_next grpc_byte_buffer_reader_next_import
+typedef int(*grpc_byte_buffer_reader_peek_type)(grpc_byte_buffer_reader* reader, grpc_slice** slice);
+extern grpc_byte_buffer_reader_peek_type grpc_byte_buffer_reader_peek_import;
+#define grpc_byte_buffer_reader_peek grpc_byte_buffer_reader_peek_import
 typedef grpc_slice(*grpc_byte_buffer_reader_readall_type)(grpc_byte_buffer_reader* reader);
 extern grpc_byte_buffer_reader_readall_type grpc_byte_buffer_reader_readall_import;
 #define grpc_byte_buffer_reader_readall grpc_byte_buffer_reader_readall_import

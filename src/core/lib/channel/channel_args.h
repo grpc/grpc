@@ -56,6 +56,9 @@ grpc_channel_args* grpc_channel_args_union(const grpc_channel_args* a,
 
 /** Destroy arguments created by \a grpc_channel_args_copy */
 void grpc_channel_args_destroy(grpc_channel_args* a);
+inline void grpc_channel_args_destroy(const grpc_channel_args* a) {
+  grpc_channel_args_destroy(const_cast<grpc_channel_args*>(a));
+}
 
 /** Returns the compression algorithm set in \a a. */
 grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(

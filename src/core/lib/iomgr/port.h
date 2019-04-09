@@ -60,6 +60,9 @@
 #define GRPC_HAVE_IP_PKTINFO 1
 #define GRPC_HAVE_MSG_NOSIGNAL 1
 #define GRPC_HAVE_UNIX_SOCKET 1
+/* Linux has TCP_INQ support since 4.18, but it is safe to set
+   the socket option on older kernels. */
+#define GRPC_HAVE_TCP_INQ 1
 #ifdef LINUX_VERSION_CODE
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
 #define GRPC_LINUX_ERRQUEUE 1
@@ -167,6 +170,22 @@
 #define GRPC_POSIX_SOCKET 1
 #define GRPC_POSIX_SOCKETUTILS 1
 #define GRPC_POSIX_WAKEUP_FD 1
+#elif defined(GPR_FUCHSIA)
+#define GRPC_HAVE_IFADDRS 1
+#define GRPC_HAVE_IPV6_RECVPKTINFO 1
+#define GRPC_HAVE_IP_PKTINFO 1
+// Zircon does not support the MSG_NOSIGNAL flag since it doesn't support
+// signals.
+#undef GRPC_HAVE_MSG_NOSIGNAL
+#define GRPC_HAVE_UNIX_SOCKET 1
+#define GRPC_POSIX_WAKEUP_FD 1
+// TODO(rudominer) Check that this does something we want.
+#define GRPC_POSIX_NO_SPECIAL_WAKEUP_FD 1
+#define GRPC_POSIX_SOCKET 1
+#define GRPC_POSIX_SOCKETADDR 1
+// TODO(rudominer) Check this does something we want.
+#define GRPC_POSIX_SOCKETUTILS 1
+#define GRPC_TIMER_USE_GENERIC 1
 #elif !defined(GPR_NO_AUTODETECT_PLATFORM)
 #error "Platform not recognized"
 #endif
