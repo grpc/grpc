@@ -65,7 +65,6 @@ class Channel;
 namespace grpc {
 
 class ChannelInterface;
-class CompletionQueue;
 class CallCredentials;
 class ClientContext;
 
