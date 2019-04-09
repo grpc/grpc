@@ -91,14 +91,13 @@ static grpc_error* enable_loopback_fast_path(SOCKET sock) {
 static grpc_error* enable_socket_low_latency(SOCKET sock) {
   int status;
   BOOL param = TRUE;
-  status = ::setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, 
+  status = ::setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
                         reinterpret_cast<char*>(&param), sizeof(param));
   if (status == SOCKET_ERROR) {
     status = WSAGetLastError();
   }
-  return status == 0
-             ? GRPC_ERROR_NONE
-             : GRPC_WSA_ERROR(status, "setsockopt(TCP_NODELAY)");
+  return status == 0 ? GRPC_ERROR_NONE
+                     : GRPC_WSA_ERROR(status, "setsockopt(TCP_NODELAY)");
 }
 
 grpc_error* grpc_tcp_prepare_socket(SOCKET sock) {
