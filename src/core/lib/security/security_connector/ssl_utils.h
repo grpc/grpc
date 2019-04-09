@@ -27,13 +27,18 @@
 #include <grpc/slice_buffer.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 
 /* --- Util. --- */
 
 /* --- URL schemes. --- */
 #define GRPC_SSL_URL_SCHEME "https"
+
+/* Check ALPN information returned from SSL handshakes. */
+grpc_error* grpc_ssl_check_alpn(const tsi_peer* peer);
 
 /* Return HTTP2-compliant cipher suites that gRPC accepts by default. */
 const char* grpc_get_ssl_cipher_suites(void);

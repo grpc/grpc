@@ -112,6 +112,23 @@ grpc_get_tsi_client_certificate_request_type(
   }
 }
 
+grpc_error* grpc_ssl_check_alpn(const tsi_peer* peer) {
+#if TSI_OPENSSL_ALPN_SUPPORT
+  /* Check the ALPN if ALPN is supported. */
+  const tsi_peer_property* p =
+      tsi_peer_get_property_by_name(peer, TSI_SSL_ALPN_SELECTED_PROTOCOL);
+  if (p == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Cannot check peer: missing selected ALPN property.");
+  }
+  if (!grpc_chttp2_is_alpn_version_supported(p->value.data, p->value.length)) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Cannot check peer: invalid ALPN value.");
+  }
+#endif /* TSI_OPENSSL_ALPN_SUPPORT */
+  return GRPC_ERROR_NONE;
+}
+
 const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols) {
   GPR_ASSERT(num_alpn_protocols != nullptr);
   *num_alpn_protocols = grpc_chttp2_num_alpn_versions();
