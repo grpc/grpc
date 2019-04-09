@@ -37,7 +37,7 @@ namespace Grpc.Core
         /// <returns>The new <c>CompositeCallCredentials</c></returns>
         public static CallCredentials Compose(params CallCredentials[] credentials)
         {
-            return new CompositeCallCredentialsConfiguration(credentials);
+            return new CompositeCallCredentials(credentials);
         }
 
         /// <summary>
@@ -47,7 +47,7 @@ namespace Grpc.Core
         /// <param name="interceptor">authentication interceptor</param>
         public static CallCredentials FromInterceptor(AsyncAuthInterceptor interceptor)
         {
-            return new AsyncAuthInterceptorCredentialsConfiguration(interceptor);
+            return new AsyncAuthInterceptorCredentials(interceptor);
         }
 
         /// <summary>
@@ -56,11 +56,11 @@ namespace Grpc.Core
         /// </summary>
         public abstract void InternalPopulateConfiguration(CallCredentialsConfiguratorBase configurator, object state);
 
-        private class CompositeCallCredentialsConfiguration : CallCredentials
+        private class CompositeCallCredentials : CallCredentials
         {
             readonly IReadOnlyList<CallCredentials> credentials;
 
-            public CompositeCallCredentialsConfiguration(CallCredentials[] credentials)
+            public CompositeCallCredentials(CallCredentials[] credentials)
             {
                 GrpcPreconditions.CheckArgument(credentials.Length >= 2, "Composite credentials object can only be created from 2 or more credentials.");
                 this.credentials = new List<CallCredentials>(credentials).AsReadOnly();
@@ -72,11 +72,11 @@ namespace Grpc.Core
             }
         }
 
-        internal class AsyncAuthInterceptorCredentialsConfiguration : CallCredentials
+        private class AsyncAuthInterceptorCredentials : CallCredentials
         {
             readonly AsyncAuthInterceptor interceptor;
 
-            public AsyncAuthInterceptorCredentialsConfiguration(AsyncAuthInterceptor interceptor)
+            public AsyncAuthInterceptorCredentials(AsyncAuthInterceptor interceptor)
             {
                 this.interceptor = GrpcPreconditions.CheckNotNull(interceptor);
             }
