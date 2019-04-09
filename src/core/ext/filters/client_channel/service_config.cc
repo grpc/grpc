@@ -69,9 +69,8 @@ RefCountedPtr<ServiceConfig> ServiceConfig::Create(const char* json,
         "failed to parse JSON for service config");
     return nullptr;
   }
-  auto return_value = MakeRefCounted<ServiceConfig>(
+  return MakeRefCounted<ServiceConfig>(
       std::move(service_config_json), std::move(json_string), json_tree, error);
-  return *error == GRPC_ERROR_NONE ? return_value : nullptr;
 }
 
 ServiceConfig::ServiceConfig(UniquePtr<char> service_config_json,
