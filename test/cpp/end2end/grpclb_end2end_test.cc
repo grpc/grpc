@@ -550,8 +550,10 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_core::Resolver::Result result;
     result.addresses = CreateLbAddressesFromAddressDataList(address_data);
     if (service_config_json != nullptr) {
+      grpc_error* error = GRPC_ERROR_NONE;
       result.service_config =
-          grpc_core::ServiceConfig::Create(service_config_json);
+          grpc_core::ServiceConfig::Create(service_config_json, &error);
+      GRPC_ERROR_UNREF(error);
     }
     response_generator_->SetResponse(std::move(result));
   }
