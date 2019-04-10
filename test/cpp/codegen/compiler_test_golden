@@ -42,11 +42,11 @@
 
 namespace grpc_impl {
 class Channel;
-class CompletionQueue;
-class ServerCompletionQueue;
 }  // namespace grpc_impl
 
 namespace grpc {
+class CompletionQueue;
+class ServerCompletionQueue;
 class ServerContext;
 }  // namespace grpc
 
