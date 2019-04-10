@@ -281,13 +281,14 @@ class XdsLb : public LoadBalancingPolicy {
     void AddPicker(double start, double end,
                    RefCountedPtr<PickerRef> picker_ref) {
       map_.emplace(MakePair(start, end), std::move(picker_ref));
-      map_end_ = GPR_MAX(map_end_, end);
+      total_range_end_ = GPR_MAX(total_range_end_, end);
     }
 
    private:
     RefCountedPtr<XdsLbClientStats> client_stats_;
     Map<Pair<double, double>, RefCountedPtr<PickerRef>, RangeLess> map_;
-    double map_end_ = 0;  // End value of the last range value in picker map
+    double total_range_end_ =
+        0;  // End value of the last range value in picker map
   };
 
   class LocalityMap {
@@ -362,6 +363,8 @@ class XdsLb : public LoadBalancingPolicy {
 
    private:
     void PruneLocalities(const LocalityList& locality_list);
+    // TODO(mhaidry) : Add support for multiple maps of localities
+    // with different priorities
     Map<UniquePtr<char>, OrphanablePtr<LocalityEntry>, StringLess> map_;
     // Lock held while filling child refs for all localities
     // inside the map
@@ -443,16 +446,24 @@ class XdsLb : public LoadBalancingPolicy {
   // TODO(mhaidry) : Add a pending locality map that may be swapped with the
   // the current one when new localities in the pending map are ready
   // to accept connections
+  // TODO(mhaidry) : Do we need to maintain an explicit consolidated picker
+  // state or do we always determine this during update state?
 };
 
 //
 // XdsLb::Picker
 //
+
+// The picker will use a stateless weighting algorithm to pick the locality to
+// use for each request.
 XdsLb::PickResult XdsLb::Picker::Pick(PickArgs* pick, grpc_error** error) {
   // TODO(roth): Add support for drop handling.
+  // TODO(mhaidry) : Add support for locality priorities
+  // Generate a random number between 0 and the total weight
   double random = ((double)rand()) / (double)RAND_MAX;
-  double key = random * map_end_;
-  // Forward pick to child policy. find() matches the key pair with the range
+  double key = random * total_range_end_;
+  // Forward pick to whichever locality maps to the range in which the
+  // random number falls in. find() matches the key pair with the range
   // of the locality that the key falls within
   PickResult result = map_.find(MakePair(key, key))->second->Pick(pick, error);
   // If pick succeeded, add client stats.
@@ -1655,36 +1666,63 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
       entry_->parent_->lb_chand_->lb_calld() == nullptr
           ? nullptr
           : entry_->parent_->lb_chand_->lb_calld()->client_stats();
+
+  // Cache the picker and its state in the entry
   entry_->picker_ref_ = MakeRefCounted<PickerRef>(std::move(picker));
   entry_->connectivity_state_ = state;
+  // Construct a new xds picker which maintains a map of all locality pickers
+  // that are ready. Each locality is represented by a portion of the range
+  // proportional to its weight, such that the total range is the sum of the
+  // weights of all localities
   UniquePtr<Picker> new_picker(New<Picker>(std::move(client_stats)));
   double start = 0, end;
-  size_t num_ready = 0, num_connecting = 0, num_transient_failures = 0;
+  size_t num_ready = 0, num_connecting = 0, num_idle = 0;
+  size_t num_transient_failures = 0;
   auto& locality_map = this->entry_->parent_->locality_map_.map_;
   for (auto iter = locality_map.begin(); iter != locality_map.end(); ++iter) {
-    int connectivity_state = iter->second->connectivity_state_;
-    if (connectivity_state == GRPC_CHANNEL_READY) {
-      end = start + entry_->locality_weight_;
-      new_picker->AddPicker(start, end, entry_->picker_ref_);
-      num_ready++;
-      start = end;
-    } else if (connectivity_state == GRPC_CHANNEL_CONNECTING) {
-      num_connecting++;
-    } else if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      num_transient_failures++;
+    grpc_connectivity_state connectivity_state =
+        iter->second->connectivity_state_;
+    switch (connectivity_state) {
+      case GRPC_CHANNEL_READY: {
+        end = start + iter->second->locality_weight_;
+        new_picker->AddPicker(start, end, iter->second->picker_ref_);
+        num_ready++;
+        start = end;
+        break;
+      }
+      case GRPC_CHANNEL_CONNECTING: {
+        num_connecting++;
+        break;
+      }
+      case GRPC_CHANNEL_IDLE: {
+        num_idle++;
+        break;
+      }
+      case GRPC_CHANNEL_TRANSIENT_FAILURE: {
+        num_transient_failures++;
+        break;
+      }
+      default: {
+        gpr_log(GPR_ERROR, "Invalid locality connectivity state - %d",
+                connectivity_state);
+      }
     }
   }
+  // Pass on the constructed xds picker if it has any ready pickers in their map
+  // otherwise pass a QueuePicker if any of the locality pickers are in a
+  // connecting or idle state, finally return a transient failure picker if all
+  // locality pickers are in transient failure
   if (num_ready > 0) {
     entry_->parent_->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_READY, GRPC_ERROR_NONE,
         UniquePtr<LoadBalancingPolicy::SubchannelPicker>(new_picker.release()));
-  } else if (num_connecting > 0) {
+  } else if (num_connecting > 0 || num_idle > 0) {
     entry_->parent_->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, GRPC_ERROR_NONE,
         UniquePtr<SubchannelPicker>(New<QueuePicker>(this->entry_->parent_)));
   } else if (num_transient_failures == locality_map.size()) {
     entry_->parent_->channel_control_helper()->UpdateState(
-        state, GRPC_ERROR_REF(state_error),
+        state, state_error,
         UniquePtr<SubchannelPicker>(
             New<TransientFailurePicker>(GRPC_ERROR_REF(state_error))));
   }
