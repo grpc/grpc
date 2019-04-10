@@ -30,6 +30,7 @@ using Grpc.Core.Utils;
 [assembly:TypeForwardedToAttribute(typeof(AsyncServerStreamingCall<>))]
 [assembly:TypeForwardedToAttribute(typeof(AsyncUnaryCall<>))]
 [assembly:TypeForwardedToAttribute(typeof(AuthContext))]
+[assembly:TypeForwardedToAttribute(typeof(AsyncAuthInterceptor))]
 [assembly:TypeForwardedToAttribute(typeof(AuthInterceptorContext))]
 [assembly: TypeForwardedToAttribute(typeof(CallCredentials))]
 [assembly: TypeForwardedToAttribute(typeof(CallFlags))]
