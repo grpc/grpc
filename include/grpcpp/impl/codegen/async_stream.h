@@ -659,7 +659,7 @@ class ServerAsyncReaderInterface
   /// some failure occurred when trying to do so.
   ///
   /// gRPC doesn't take ownership or a reference to \a msg or \a status, so it
-  /// is safe to to deallocate once Finish returns.
+  /// is safe to deallocate once Finish returns.
   ///
   /// \param[in] tag Tag identifying this request.
   /// \param[in] status To be sent to the client as the result of this call.
@@ -733,7 +733,7 @@ class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
   /// Note: \a msg is not sent if \a status has a non-OK code.
   ///
   /// gRPC doesn't take ownership or a reference to \a msg and \a status, so it
-  /// is safe to to deallocate once Finish returns.
+  /// is safe to deallocate once Finish returns.
   void Finish(const W& msg, const Status& status, void* tag) override {
     finish_ops_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
@@ -828,7 +828,7 @@ class ServerAsyncWriterInterface
   /// in a single step.
   ///
   /// gRPC doesn't take ownership or a reference to \a msg and \a status, so it
-  /// is safe to to deallocate once WriteAndFinish returns.
+  /// is safe to deallocate once WriteAndFinish returns.
   ///
   /// \param[in] msg The message to be written.
   /// \param[in] options The WriteOptions to be used to write this message.
@@ -895,7 +895,7 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
   /// Note: \a status must have an OK code.
   ///
   /// gRPC doesn't take ownership or a reference to \a msg and \a status, so it
-  /// is safe to to deallocate once WriteAndFinish returns.
+  /// is safe to deallocate once WriteAndFinish returns.
   void WriteAndFinish(const W& msg, WriteOptions options, const Status& status,
                       void* tag) override {
     write_ops_.set_output_tag(tag);
@@ -991,7 +991,7 @@ class ServerAsyncReaderWriterInterface
   /// single step.
   ///
   /// gRPC doesn't take ownership or a reference to \a msg and \a status, so it
-  /// is safe to to deallocate once WriteAndFinish returns.
+  /// is safe to deallocate once WriteAndFinish returns.
   ///
   /// \param[in] msg The message to be written.
   /// \param[in] options The WriteOptions to be used to write this message.
@@ -1066,7 +1066,7 @@ class ServerAsyncReaderWriter final
   /// Note: \a status must have an OK code.
   //
   /// gRPC doesn't take ownership or a reference to \a msg and \a status, so it
-  /// is safe to to deallocate once WriteAndFinish returns.
+  /// is safe to deallocate once WriteAndFinish returns.
   void WriteAndFinish(const W& msg, WriteOptions options, const Status& status,
                       void* tag) override {
     write_ops_.set_output_tag(tag);
