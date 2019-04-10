@@ -54,10 +54,12 @@
                                error:(NSError **)errorPtr {
   static dispatch_once_t loading;
   dispatch_once(&loading, ^{
-    NSString *defaultPath = @"gRPCCertificates.bundle/roots";  // .pem
+    NSString *rootsPEM = @"roots";
+    NSString *resourceBundlePath = @"gRPCCertificates.bundle";  // .pem
     // Do not use NSBundle.mainBundle, as it's nil for tests of library projects.
     NSBundle *bundle = [NSBundle bundleForClass:[self class]];
-    NSString *path = [bundle pathForResource:defaultPath ofType:@"pem"];
+    NSBundle *resourceBundle = [NSBundle bundleWithURL:[[bundle resourceURL] URLByAppendingPathComponent:resourceBundlePath]];
+    NSString *path = [resourceBundle pathForResource:rootsPEM ofType:@"pem"];
     setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR,
            [path cStringUsingEncoding:NSUTF8StringEncoding], 1);
   });
