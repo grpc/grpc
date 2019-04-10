@@ -34,7 +34,6 @@ struct grpc_channel;
 
 namespace grpc_impl {
 
-class CompletionQueue;
 namespace experimental {
 /// Resets the channel's connection backoff.
 /// TODO(roth): Once we see whether this proves useful, either create a gRFC
@@ -78,22 +77,22 @@ class Channel final : public ::grpc::ChannelInterface,
 
   ::grpc::internal::Call CreateCall(const ::grpc::internal::RpcMethod& method,
                                     ::grpc::ClientContext* context,
-                                    CompletionQueue* cq) override;
+                                    ::grpc::CompletionQueue* cq) override;
   void PerformOpsOnCall(::grpc::internal::CallOpSetInterface* ops,
                         ::grpc::internal::Call* call) override;
   void* RegisterMethod(const char* method) override;
 
   void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
-                               gpr_timespec deadline, CompletionQueue* cq,
-                               void* tag) override;
+                               gpr_timespec deadline,
+                               ::grpc::CompletionQueue* cq, void* tag) override;
   bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
                               gpr_timespec deadline) override;
 
-  CompletionQueue* CallbackCQ() override;
+  ::grpc::CompletionQueue* CallbackCQ() override;
 
   ::grpc::internal::Call CreateCallInternal(
       const ::grpc::internal::RpcMethod& method, ::grpc::ClientContext* context,
-      CompletionQueue* cq, size_t interceptor_pos) override;
+      ::grpc::CompletionQueue* cq, size_t interceptor_pos) override;
 
   const grpc::string host_;
   grpc_channel* const c_channel_;  // owned
@@ -105,7 +104,7 @@ class Channel final : public ::grpc::ChannelInterface,
   // with this channel (if any). It is set on the first call to CallbackCQ().
   // It is _not owned_ by the channel; ownership belongs with its internal
   // shutdown callback tag (invoked when the CQ is fully shutdown).
-  CompletionQueue* callback_cq_ = nullptr;
+  ::grpc::CompletionQueue* callback_cq_ = nullptr;
 
   std::vector<
       std::unique_ptr<::grpc::experimental::ClientInterceptorFactoryInterface>>
