@@ -17,13 +17,6 @@ register_toolchains(
     "//third_party/toolchains:cc-toolchain-clang-x86_64-default",
 )
 
-# TODO(https://github.com/grpc/grpc/issues/18331): Move off of this dependency.
-git_repository(
-    name = "org_pubref_rules_protobuf",
-    remote = "https://github.com/ghostwriternr/rules_protobuf",
-    tag = "v0.8.2.1-alpha",
-)
-
 git_repository(
     name = "io_bazel_rules_python",
     commit = "8b5d0683a7d878b28fffe464779c8a53659fc645",
