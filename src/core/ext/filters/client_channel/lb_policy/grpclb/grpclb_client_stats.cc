@@ -25,7 +25,7 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/mutex_lock.h"
 
 namespace grpc_core {
 

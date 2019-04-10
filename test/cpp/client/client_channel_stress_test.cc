@@ -31,7 +31,6 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
-#include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
@@ -169,24 +168,24 @@ class ClientChannelStressTest {
     explicit ServerThread(const grpc::string& type,
                           const grpc::string& server_host, T* service)
         : type_(type), service_(service) {
-      grpc::internal::Mutex mu;
+      std::mutex mu;
       // We need to acquire the lock here in order to prevent the notify_one
       // by ServerThread::Start from firing before the wait below is hit.
-      grpc::internal::MutexLock lock(&mu);
+      std::unique_lock<std::mutex> lock(mu);
       port_ = grpc_pick_unused_port_or_die();
       gpr_log(GPR_INFO, "starting %s server on port %d", type_.c_str(), port_);
-      grpc::internal::CondVar cond;
+      std::condition_variable cond;
       thread_.reset(new std::thread(
           std::bind(&ServerThread::Start, this, server_host, &mu, &cond)));
-      cond.Wait(&mu);
+      cond.wait(lock);
       gpr_log(GPR_INFO, "%s server startup complete", type_.c_str());
     }
 
-    void Start(const grpc::string& server_host, grpc::internal::Mutex* mu,
-               grpc::internal::CondVar* cond) {
+    void Start(const grpc::string& server_host, std::mutex* mu,
+               std::condition_variable* cond) {
       // We need to acquire the lock here in order to prevent the notify_one
       // below from firing before its corresponding wait is executed.
-      grpc::internal::MutexLock lock(mu);
+      std::lock_guard<std::mutex> lock(*mu);
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
@@ -194,7 +193,7 @@ class ClientChannelStressTest {
                                InsecureServerCredentials());
       builder.RegisterService(service_);
       server_ = builder.BuildAndStart();
-      cond->Signal();
+      cond->notify_one();
     }
 
     void Shutdown() {

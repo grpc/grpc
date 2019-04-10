@@ -987,7 +987,6 @@ include/grpcpp/impl/codegen/status.h \
 include/grpcpp/impl/codegen/status_code_enum.h \
 include/grpcpp/impl/codegen/string_ref.h \
 include/grpcpp/impl/codegen/stub_options.h \
-include/grpcpp/impl/codegen/sync.h \
 include/grpcpp/impl/codegen/sync_stream.h \
 include/grpcpp/impl/codegen/time.h \
 include/grpcpp/impl/grpc_library.h \
@@ -1013,7 +1012,6 @@ include/grpcpp/server.h \
 include/grpcpp/server_builder.h \
 include/grpcpp/server_builder_impl.h \
 include/grpcpp/server_context.h \
-include/grpcpp/server_impl.h \
 include/grpcpp/server_posix.h \
 include/grpcpp/server_posix_impl.h \
 include/grpcpp/support/async_stream.h \

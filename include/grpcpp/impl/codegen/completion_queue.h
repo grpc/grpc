@@ -43,9 +43,8 @@ struct grpc_completion_queue;
 
 namespace grpc_impl {
 
-class Server;
 class ServerBuilder;
-}  // namespace grpc_impl
+}
 namespace grpc {
 
 template <class R>
@@ -67,6 +66,7 @@ class Channel;
 class ChannelInterface;
 class ClientContext;
 class CompletionQueue;
+class Server;
 class ServerContext;
 class ServerInterface;
 
@@ -274,7 +274,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   friend class ::grpc::internal::TemplatedBidiStreamingHandler;
   template <StatusCode code>
   friend class ::grpc::internal::ErrorMethodHandler;
-  friend class ::grpc_impl::Server;
+  friend class ::grpc::Server;
   friend class ::grpc::ServerContext;
   friend class ::grpc::ServerInterface;
   template <class InputMessage, class OutputMessage>
@@ -408,8 +408,8 @@ class ServerCompletionQueue : public CompletionQueue {
         polling_type_(polling_type) {}
 
   grpc_cq_polling_type polling_type_;
-  friend class grpc_impl::ServerBuilder;
-  friend class grpc_impl::Server;
+  friend class ::grpc_impl::ServerBuilder;
+  friend class Server;
 };
 
 }  // namespace grpc

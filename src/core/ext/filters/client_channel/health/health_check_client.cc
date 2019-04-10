@@ -27,7 +27,7 @@
 #include "pb_encode.h"
 #include "src/core/ext/filters/client_channel/health/health.pb.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/mutex_lock.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/status_metadata.h"
@@ -69,6 +69,7 @@ HealthCheckClient::HealthCheckClient(
   }
   GRPC_CLOSURE_INIT(&retry_timer_callback_, OnRetryTimer, this,
                     grpc_schedule_on_exec_ctx);
+  gpr_mu_init(&mu_);
   StartCall();
 }
 
@@ -77,6 +78,7 @@ HealthCheckClient::~HealthCheckClient() {
     gpr_log(GPR_INFO, "destroying HealthCheckClient %p", this);
   }
   GRPC_ERROR_UNREF(error_);
+  gpr_mu_destroy(&mu_);
 }
 
 void HealthCheckClient::NotifyOnHealthChange(grpc_connectivity_state* state,

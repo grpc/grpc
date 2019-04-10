@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2019 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,27 @@
  *
  */
 
-#ifndef GRPCPP_SERVER_BUILDER_H
-#define GRPCPP_SERVER_BUILDER_H
+#ifndef GRPC_CORE_LIB_GPRPP_MUTEX_LOCK_H
+#define GRPC_CORE_LIB_GPRPP_MUTEX_LOCK_H
 
-#include <grpcpp/server_builder_impl.h>
+#include <grpc/support/port_platform.h>
 
-namespace grpc_impl {
+#include <grpc/support/sync.h>
 
-class ServerCredentials;
-class ResourceQuota;
-}  // namespace grpc_impl
+namespace grpc_core {
 
-namespace grpc {
+class MutexLock {
+ public:
+  explicit MutexLock(gpr_mu* mu) : mu_(mu) { gpr_mu_lock(mu); }
+  ~MutexLock() { gpr_mu_unlock(mu_); }
 
-typedef ::grpc_impl::ServerBuilder ServerBuilder;
+  MutexLock(const MutexLock&) = delete;
+  MutexLock& operator=(const MutexLock&) = delete;
 
-}  // namespace grpc
+ private:
+  gpr_mu* const mu_;
+};
 
-#endif  // GRPCPP_SERVER_BUILDER_H
+}  // namespace grpc_core
+
+#endif /* GRPC_CORE_LIB_GPRPP_MUTEX_LOCK_H */

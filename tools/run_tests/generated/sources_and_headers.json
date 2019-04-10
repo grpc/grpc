@@ -8033,8 +8033,8 @@
       "src/core/lib/gprpp/manual_constructor.h", 
       "src/core/lib/gprpp/map.h", 
       "src/core/lib/gprpp/memory.h", 
+      "src/core/lib/gprpp/mutex_lock.h", 
       "src/core/lib/gprpp/pair.h", 
-      "src/core/lib/gprpp/sync.h", 
       "src/core/lib/gprpp/thd.h", 
       "src/core/lib/profiling/timers.h"
     ], 
@@ -8081,8 +8081,8 @@
       "src/core/lib/gprpp/manual_constructor.h", 
       "src/core/lib/gprpp/map.h", 
       "src/core/lib/gprpp/memory.h", 
+      "src/core/lib/gprpp/mutex_lock.h", 
       "src/core/lib/gprpp/pair.h", 
-      "src/core/lib/gprpp/sync.h", 
       "src/core/lib/gprpp/thd.h", 
       "src/core/lib/profiling/timers.h"
     ], 
@@ -9860,7 +9860,6 @@
   }, 
   {
     "deps": [
-      "grpc++_internal_hdrs_only", 
       "grpc_codegen"
     ], 
     "headers": [
@@ -10057,7 +10056,6 @@
       "gpr", 
       "gpr_base_headers", 
       "grpc++_codegen_base", 
-      "grpc++_internal_hdrs_only", 
       "grpc_base_headers", 
       "grpc_transport_inproc_headers", 
       "health_proto", 
@@ -10152,7 +10150,6 @@
       "include/grpcpp/server_builder.h", 
       "include/grpcpp/server_builder_impl.h", 
       "include/grpcpp/server_context.h", 
-      "include/grpcpp/server_impl.h", 
       "include/grpcpp/server_posix.h", 
       "include/grpcpp/server_posix_impl.h", 
       "include/grpcpp/support/async_stream.h", 
@@ -10273,7 +10270,6 @@
       "include/grpcpp/server_builder.h", 
       "include/grpcpp/server_builder_impl.h", 
       "include/grpcpp/server_context.h", 
-      "include/grpcpp/server_impl.h", 
       "include/grpcpp/server_posix.h", 
       "include/grpcpp/server_posix_impl.h", 
       "include/grpcpp/support/async_stream.h", 
@@ -10350,20 +10346,6 @@
     "src": [
       "include/grpc++/impl/codegen/config_protobuf.h", 
       "include/grpcpp/impl/codegen/config_protobuf.h"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
-    "deps": [], 
-    "headers": [
-      "include/grpcpp/impl/codegen/sync.h"
-    ], 
-    "is_filegroup": true, 
-    "language": "c++", 
-    "name": "grpc++_internal_hdrs_only", 
-    "src": [
-      "include/grpcpp/impl/codegen/sync.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
