@@ -177,7 +177,7 @@ struct op_and_state {
   bool done = false;
   struct stream_obj* s; /* Pointer back to the stream object */
   /* next op_and_state in the linked list */
-  struct op_and_state* next;
+  struct op_and_state* next = nullptr;
 };
 
 struct op_storage {
@@ -324,7 +324,7 @@ static grpc_error* make_error_with_desc(int error_code, const char* desc) {
 
 inline op_and_state::op_and_state(stream_obj* s,
                                   const grpc_transport_stream_op_batch& op)
-    : op(op), state(s->arena), s(s), next(s->storage.head) {}
+    : op(op), state(s->arena), s(s) {}
 
 /*
   Add a new stream op to op storage.
@@ -339,6 +339,7 @@ static void add_to_storage(struct stream_obj* s,
   // TODO (mxyan): check if this is indeed necessary.
   new_op->done = false;
   gpr_mu_lock(&s->mu);
+  new_op->next = storage->head;
   storage->head = new_op;
   storage->num_pending_ops++;
   if (op->send_message) {
