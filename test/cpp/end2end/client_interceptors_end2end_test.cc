@@ -611,6 +611,18 @@ TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorLoggingTest) {
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
 }
 
+TEST_F(ClientInterceptorsEnd2endTest,
+       LameChannelClientInterceptorHijackingTest) {
+  ChannelArguments args;
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      creators;
+  creators.push_back(std::unique_ptr<HijackingInterceptorFactory>(
+      new HijackingInterceptorFactory()));
+  auto channel = experimental::CreateCustomChannelWithInterceptors(
+      server_address_, nullptr, args, std::move(creators));
+  MakeCall(channel);
+}
+
 TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorHijackingTest) {
   ChannelArguments args;
   DummyInterceptor::Reset();
