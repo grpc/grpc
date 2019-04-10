@@ -22,6 +22,7 @@ namespace Grpc.Core
 {
     /// <summary>
     /// Base class for objects that can consume configuration from <c>CallCredentials</c> objects.
+    /// Note: experimental API that can change or be removed without any prior notice.
     /// </summary>
     public abstract class CallCredentialsConfiguratorBase
     {
