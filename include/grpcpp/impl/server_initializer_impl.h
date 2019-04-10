@@ -26,10 +26,10 @@
 
 namespace grpc {
 
+class Server;
 class Service;
 }  // namespace grpc
 namespace grpc_impl {
-class Server;
 
 class ServerInitializer {
  public:

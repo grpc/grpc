@@ -1099,7 +1099,7 @@ class ServerAsyncReaderWriter final
   }
 
  private:
-  friend class ::grpc_impl::Server;
+  friend class ::grpc::Server;
 
   void BindCall(::grpc::internal::Call* call) override { call_ = *call; }
 

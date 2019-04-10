@@ -26,13 +26,10 @@
 #include <grpcpp/impl/codegen/server_interface.h>
 #include <grpcpp/impl/codegen/status.h>
 
-namespace grpc_impl {
-
-class Server;
-}  // namespace grpc_impl
 namespace grpc {
 
 class CompletionQueue;
+class Server;
 class ServerInterface;
 class ServerCompletionQueue;
 class ServerContext;
@@ -231,7 +228,7 @@ class Service {
   }
 
  private:
-  friend class grpc_impl::Server;
+  friend class Server;
   friend class ServerInterface;
   ServerInterface* server_;
   std::vector<std::unique_ptr<internal::RpcServiceMethod>> methods_;
