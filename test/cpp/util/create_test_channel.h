@@ -24,12 +24,8 @@
 #include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/security/credentials.h>
 
-namespace grpc_impl {
-
-class Channel;
-}
-
 namespace grpc {
+class Channel;
 
 namespace testing {
 
@@ -37,35 +33,35 @@ typedef enum { INSECURE = 0, TLS, ALTS } transport_security;
 
 }  // namespace testing
 
-std::shared_ptr<::grpc_impl::Channel> CreateTestChannel(
+std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, testing::transport_security security_type);
 
-std::shared_ptr<::grpc_impl::Channel> CreateTestChannel(
+std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
     testing::transport_security security_type, bool use_prod_roots);
 
-std::shared_ptr<::grpc_impl::Channel> CreateTestChannel(
+std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
     testing::transport_security security_type, bool use_prod_roots,
     const std::shared_ptr<CallCredentials>& creds);
 
-std::shared_ptr<::grpc_impl::Channel> CreateTestChannel(
+std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
     testing::transport_security security_type, bool use_prod_roots,
     const std::shared_ptr<CallCredentials>& creds,
     const ChannelArguments& args);
 
-std::shared_ptr<::grpc_impl::Channel> CreateTestChannel(
+std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& cred_type,
     const grpc::string& override_hostname, bool use_prod_roots,
     const std::shared_ptr<CallCredentials>& creds,
     const ChannelArguments& args);
 
-std::shared_ptr<::grpc_impl::Channel> CreateTestChannel(
+std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& credential_type,
     const std::shared_ptr<CallCredentials>& creds);
 
-std::shared_ptr<::grpc_impl::Channel> CreateTestChannel(
+std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
     testing::transport_security security_type, bool use_prod_roots,
     const std::shared_ptr<CallCredentials>& creds,
@@ -73,7 +69,7 @@ std::shared_ptr<::grpc_impl::Channel> CreateTestChannel(
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
 
-std::shared_ptr<::grpc_impl::Channel> CreateTestChannel(
+std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
     testing::transport_security security_type, bool use_prod_roots,
     const std::shared_ptr<CallCredentials>& creds, const ChannelArguments& args,
@@ -81,7 +77,7 @@ std::shared_ptr<::grpc_impl::Channel> CreateTestChannel(
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
 
-std::shared_ptr<::grpc_impl::Channel> CreateTestChannel(
+std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& cred_type,
     const grpc::string& override_hostname, bool use_prod_roots,
     const std::shared_ptr<CallCredentials>& creds, const ChannelArguments& args,
@@ -89,7 +85,7 @@ std::shared_ptr<::grpc_impl::Channel> CreateTestChannel(
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
 
-std::shared_ptr<::grpc_impl::Channel> CreateTestChannel(
+std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& credential_type,
     const std::shared_ptr<CallCredentials>& creds,
     std::vector<
