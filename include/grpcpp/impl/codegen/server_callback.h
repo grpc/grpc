@@ -37,11 +37,43 @@ namespace grpc {
 // Declare base class of all reactors as internal
 namespace internal {
 
+// Forward declarations
+template <class Request, class Response>
+class CallbackClientStreamingHandler;
+template <class Request, class Response>
+class CallbackServerStreamingHandler;
+template <class Request, class Response>
+class CallbackBidiHandler;
+
 class ServerReactor {
  public:
   virtual ~ServerReactor() = default;
   virtual void OnDone() = 0;
   virtual void OnCancel() = 0;
+
+ private:
+  friend class ::grpc::ServerContext;
+  template <class Request, class Response>
+  friend class CallbackClientStreamingHandler;
+  template <class Request, class Response>
+  friend class CallbackServerStreamingHandler;
+  template <class Request, class Response>
+  friend class CallbackBidiHandler;
+
+  // The ServerReactor is responsible for tracking when it is safe to call
+  // OnCancel. This function should not be called until after OnStarted is done
+  // and the RPC has completed with a cancellation. This is tracked by counting
+  // how many of these conditions have been met and calling OnCancel when none
+  // remain unmet.
+
+  void MaybeCallOnCancel() {
+    if (on_cancel_conditions_remaining_.fetch_sub(
+            1, std::memory_order_acq_rel) == 1) {
+      OnCancel();
+    }
+  }
+
+  std::atomic_int on_cancel_conditions_remaining_{2};
 };
 
 }  // namespace internal
@@ -590,6 +622,8 @@ class CallbackClientStreamingHandler : public MethodHandler {
 
     reader->BindReactor(reactor);
     reactor->OnStarted(param.server_context, reader->response());
+    // The earliest that OnCancel can be called is after OnStarted is done.
+    reactor->MaybeCallOnCancel();
     reader->MaybeDone();
   }
 
@@ -732,6 +766,8 @@ class CallbackServerStreamingHandler : public MethodHandler {
                                  std::move(param.call_requester), reactor);
     writer->BindReactor(reactor);
     reactor->OnStarted(param.server_context, writer->request());
+    // The earliest that OnCancel can be called is after OnStarted is done.
+    reactor->MaybeCallOnCancel();
     writer->MaybeDone();
   }
 
@@ -908,6 +944,8 @@ class CallbackBidiHandler : public MethodHandler {
 
     stream->BindReactor(reactor);
     reactor->OnStarted(param.server_context);
+    // The earliest that OnCancel can be called is after OnStarted is done.
+    reactor->MaybeCallOnCancel();
     stream->MaybeDone();
   }
 
