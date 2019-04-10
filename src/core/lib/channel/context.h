@@ -35,6 +35,8 @@ typedef enum {
   /// Reserved for traffic_class_context.
   GRPC_CONTEXT_TRAFFIC,
 
+  GRPC_SERVICE_CONFIG,
+
   GRPC_CONTEXT_COUNT
 } grpc_context_index;
 

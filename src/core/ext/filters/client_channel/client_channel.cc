@@ -170,6 +170,7 @@ struct client_channel_channel_data {
   bool received_service_config_data;
   grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
   grpc_core::RefCountedPtr<ClientChannelMethodParamsTable> method_params_table;
+  grpc_core::RefCountedPtr<grpc_core::ServiceConfig> service_config;
 
   //
   // Fields used in the control plane.  Protected by combiner.
@@ -276,10 +277,12 @@ class ServiceConfigSetter {
   ServiceConfigSetter(
       channel_data* chand,
       RefCountedPtr<ServerRetryThrottleData> retry_throttle_data,
-      RefCountedPtr<ClientChannelMethodParamsTable> method_params_table)
+      RefCountedPtr<ClientChannelMethodParamsTable> method_params_table,
+      RefCountedPtr<ServiceConfig> service_config)
       : chand_(chand),
         retry_throttle_data_(std::move(retry_throttle_data)),
-        method_params_table_(std::move(method_params_table)) {
+        method_params_table_(std::move(method_params_table)),
+        service_config_(std::move(service_config)) {
     GRPC_CHANNEL_STACK_REF(chand->owning_stack, "ServiceConfigSetter");
     GRPC_CLOSURE_INIT(&closure_, SetServiceConfigData, this,
                       grpc_combiner_scheduler(chand->data_plane_combiner));
@@ -294,6 +297,7 @@ class ServiceConfigSetter {
     chand->received_service_config_data = true;
     chand->retry_throttle_data = std::move(self->retry_throttle_data_);
     chand->method_params_table = std::move(self->method_params_table_);
+    chand->service_config = std::move(self->service_config_);
     // Apply service config to queued picks.
     for (QueuedPick* pick = chand->queued_picks; pick != nullptr;
          pick = pick->next) {
@@ -307,6 +311,7 @@ class ServiceConfigSetter {
   channel_data* chand_;
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
   RefCountedPtr<ClientChannelMethodParamsTable> method_params_table_;
+  RefCountedPtr<ServiceConfig> service_config_;
   grpc_closure closure_;
 };
 
@@ -505,7 +510,7 @@ static bool process_resolver_result_locked(
   // plane combiner.  Destroys itself when done.
   grpc_core::New<grpc_core::ServiceConfigSetter>(
       chand, resolver_result.retry_throttle_data(),
-      resolver_result.method_params_table());
+      resolver_result.method_params_table(), resolver_result.service_config());
   // Swap out the data used by cc_get_channel_info().
   gpr_mu_lock(&chand->info_mu);
   chand->info_lb_policy_name = resolver_result.lb_policy_name();
@@ -970,6 +975,7 @@ struct call_data {
 
   grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
   grpc_core::RefCountedPtr<ClientChannelMethodParams> method_params;
+  grpc_core::RefCountedPtr<grpc_core::ServiceConfig> service_config;
 
   grpc_core::RefCountedPtr<grpc_core::SubchannelCall> subchannel_call;
 
@@ -2812,6 +2818,10 @@ static void apply_service_config_to_call_locked(grpc_call_element* elem) {
   if (grpc_client_channel_routing_trace.enabled()) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: applying service config to call",
             chand, calld);
+  }
+  if(chand->service_config != nullptr) {
+    calld->service_config = chand->service_config;
+    calld->call_context[GRPC_SERVICE_CONFIG].value = &calld->service_config;
   }
   if (chand->retry_throttle_data != nullptr) {
     calld->retry_throttle_data = chand->retry_throttle_data->Ref();

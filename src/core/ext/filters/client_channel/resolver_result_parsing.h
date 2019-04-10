@@ -64,6 +64,7 @@ class ProcessedResolverResult {
   RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config() {
     return std::move(lb_policy_config_);
   }
+  RefCountedPtr<ServiceConfig> service_config() { return service_config_; }
 
  private:
   // Finds the service config; extracts LB config and (maybe) retry throttle
