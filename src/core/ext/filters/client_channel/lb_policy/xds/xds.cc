@@ -279,7 +279,7 @@ class XdsLb : public LoadBalancingPolicy {
 
     PickResult Pick(PickArgs* pick, grpc_error** error) override;
     void AddPicker(const double end, RefCountedPtr<PickerRef> picker_ref) {
-      picker_vec_.push_back(MakePair(end, std::move(picker_ref)));
+      locality_pickers_.push_back(MakePair(end, std::move(picker_ref)));
       total_range_end_ = GPR_MAX(total_range_end_, end);
     }
 
@@ -287,7 +287,7 @@ class XdsLb : public LoadBalancingPolicy {
     PickResult PickFromLocality(const double key, PickArgs* pick,
                                 grpc_error** error);
     RefCountedPtr<XdsLbClientStats> client_stats_;
-    InlinedVector<Pair<double, RefCountedPtr<PickerRef>>, 1> picker_vec_;
+    InlinedVector<Pair<double, RefCountedPtr<PickerRef>>, 1> locality_pickers_;
     double total_range_end_ =
         0;  // End value of the last range value in picker map
   };
@@ -477,25 +477,22 @@ XdsLb::PickResult XdsLb::Picker::Pick(PickArgs* pick, grpc_error** error) {
 XdsLb::PickResult XdsLb::Picker::PickFromLocality(const double key,
                                                   PickArgs* pick,
                                                   grpc_error** error) {
-  size_t mid = 0, start_index = 0, end_index = picker_vec_.size() - 1,
+  size_t mid = 0, start_index = 0, end_index = locality_pickers_.size() - 1,
          index = 0;
   while (end_index > start_index) {
     mid = (start_index + end_index) / 2;
-    if (picker_vec_[mid].first > key) {
+    if (locality_pickers_[mid].first > key) {
       end_index = mid;
-    } else if (picker_vec_[mid].first < key) {
+    } else if (locality_pickers_[mid].first < key) {
       start_index = mid + 1;
     } else {
+      index = mid + 1;
       break;
     }
   }
-  if (picker_vec_[mid].first < key) {
-    index = mid + 1;
-  } else {
-    index = mid;
-  }
-  GPR_ASSERT(picker_vec_[index].first > key);
-  return picker_vec_[index].second->Pick(pick, error);
+  if (index == 0) index = start_index;
+  GPR_ASSERT(locality_pickers_[index].first > key);
+  return locality_pickers_[index].second->Pick(pick, error);
 }
 
 //
@@ -1699,7 +1696,7 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
   // proportional to its weight, such that the total range is the sum of the
   // weights of all localities
   UniquePtr<Picker> new_picker(New<Picker>(std::move(client_stats)));
-  double start = 0;
+  double end = 0;
   size_t num_ready = 0, num_connecting = 0, num_idle = 0,
          num_transient_failures = 0;
   auto& locality_map = this->entry_->parent_->locality_map_.map_;
@@ -1708,10 +1705,9 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
         iter->second->connectivity_state_;
     switch (connectivity_state) {
       case GRPC_CHANNEL_READY: {
-        const double end = start + iter->second->locality_weight_;
+        end = end + iter->second->locality_weight_;
         new_picker->AddPicker(end, iter->second->picker_ref_);
         num_ready++;
-        start = end;
         break;
       }
       case GRPC_CHANNEL_CONNECTING: {
