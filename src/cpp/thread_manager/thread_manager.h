@@ -26,6 +26,7 @@
 
 #include <grpcpp/support/config.h>
 
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 
@@ -140,10 +141,10 @@ class ThreadManager {
 
   // Protects shutdown_, num_pollers_, num_threads_ and
   // max_active_threads_sofar_
-  std::mutex mu_;
+  grpc_core::Mutex mu_;
 
   bool shutdown_;
-  std::condition_variable shutdown_cv_;
+  grpc_core::CondVar shutdown_cv_;
 
   // The resource user object to use when requesting quota to create threads
   //
@@ -169,7 +170,7 @@ class ThreadManager {
   // ever set so far
   int max_active_threads_sofar_;
 
-  std::mutex list_mu_;
+  grpc_core::Mutex list_mu_;
   std::list<WorkerThread*> completed_threads_;
 };
 

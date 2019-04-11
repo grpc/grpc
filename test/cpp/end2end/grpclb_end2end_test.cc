@@ -30,6 +30,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
@@ -85,32 +86,32 @@ template <typename ServiceType>
 class CountedService : public ServiceType {
  public:
   size_t request_count() {
-    std::unique_lock<std::mutex> lock(mu_);
+    grpc::internal::MutexLock lock(&mu_);
     return request_count_;
   }
 
   size_t response_count() {
-    std::unique_lock<std::mutex> lock(mu_);
+    grpc::internal::MutexLock lock(&mu_);
     return response_count_;
   }
 
   void IncreaseResponseCount() {
-    std::unique_lock<std::mutex> lock(mu_);
+    grpc::internal::MutexLock lock(&mu_);
     ++response_count_;
   }
   void IncreaseRequestCount() {
-    std::unique_lock<std::mutex> lock(mu_);
+    grpc::internal::MutexLock lock(&mu_);
     ++request_count_;
   }
 
   void ResetCounters() {
-    std::unique_lock<std::mutex> lock(mu_);
+    grpc::internal::MutexLock lock(&mu_);
     request_count_ = 0;
     response_count_ = 0;
   }
 
  protected:
-  std::mutex mu_;
+  grpc::internal::Mutex mu_;
 
  private:
   size_t request_count_ = 0;
@@ -148,18 +149,18 @@ class BackendServiceImpl : public BackendService {
   void Shutdown() {}
 
   std::set<grpc::string> clients() {
-    std::unique_lock<std::mutex> lock(clients_mu_);
+    grpc::internal::MutexLock lock(&clients_mu_);
     return clients_;
   }
 
  private:
   void AddClient(const grpc::string& client) {
-    std::unique_lock<std::mutex> lock(clients_mu_);
+    grpc::internal::MutexLock lock(&clients_mu_);
     clients_.insert(client);
   }
 
-  std::mutex mu_;
-  std::mutex clients_mu_;
+  grpc::internal::Mutex mu_;
+  grpc::internal::Mutex clients_mu_;
   std::set<grpc::string> clients_;
 };
 
@@ -208,67 +209,74 @@ class BalancerServiceImpl : public BalancerService {
             client_load_reporting_interval_seconds) {}
 
   Status BalanceLoad(ServerContext* context, Stream* stream) override {
-    // Balancer shouldn't receive the call credentials metadata.
-    EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
-              context->client_metadata().end());
     gpr_log(GPR_INFO, "LB[%p]: BalanceLoad", this);
-    LoadBalanceRequest request;
-    std::vector<ResponseDelayPair> responses_and_delays;
-
-    if (!stream->Read(&request)) {
-      goto done;
-    }
-    IncreaseRequestCount();
-    gpr_log(GPR_INFO, "LB[%p]: received initial message '%s'", this,
-            request.DebugString().c_str());
-
-    // TODO(juanlishen): Initial response should always be the first response.
-    if (client_load_reporting_interval_seconds_ > 0) {
-      LoadBalanceResponse initial_response;
-      initial_response.mutable_initial_response()
-          ->mutable_client_stats_report_interval()
-          ->set_seconds(client_load_reporting_interval_seconds_);
-      stream->Write(initial_response);
-    }
-
     {
-      std::unique_lock<std::mutex> lock(mu_);
-      responses_and_delays = responses_and_delays_;
-    }
-    for (const auto& response_and_delay : responses_and_delays) {
-      SendResponse(stream, response_and_delay.first, response_and_delay.second);
+      grpc::internal::MutexLock lock(&mu_);
+      if (serverlist_done_) goto done;
     }
     {
-      std::unique_lock<std::mutex> lock(mu_);
-      serverlist_cond_.wait(lock, [this] { return serverlist_done_; });
-    }
+      // Balancer shouldn't receive the call credentials metadata.
+      EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
+                context->client_metadata().end());
+      LoadBalanceRequest request;
+      std::vector<ResponseDelayPair> responses_and_delays;
 
-    if (client_load_reporting_interval_seconds_ > 0) {
-      request.Clear();
-      if (stream->Read(&request)) {
-        gpr_log(GPR_INFO, "LB[%p]: received client load report message '%s'",
-                this, request.DebugString().c_str());
-        GPR_ASSERT(request.has_client_stats());
-        // We need to acquire the lock here in order to prevent the notify_one
-        // below from firing before its corresponding wait is executed.
-        std::lock_guard<std::mutex> lock(mu_);
-        client_stats_.num_calls_started +=
-            request.client_stats().num_calls_started();
-        client_stats_.num_calls_finished +=
-            request.client_stats().num_calls_finished();
-        client_stats_.num_calls_finished_with_client_failed_to_send +=
-            request.client_stats()
-                .num_calls_finished_with_client_failed_to_send();
-        client_stats_.num_calls_finished_known_received +=
-            request.client_stats().num_calls_finished_known_received();
-        for (const auto& drop_token_count :
-             request.client_stats().calls_finished_with_drop()) {
-          client_stats_
-              .drop_token_counts[drop_token_count.load_balance_token()] +=
-              drop_token_count.num_calls();
+      if (!stream->Read(&request)) {
+        goto done;
+      }
+      IncreaseRequestCount();
+      gpr_log(GPR_INFO, "LB[%p]: received initial message '%s'", this,
+              request.DebugString().c_str());
+
+      // TODO(juanlishen): Initial response should always be the first response.
+      if (client_load_reporting_interval_seconds_ > 0) {
+        LoadBalanceResponse initial_response;
+        initial_response.mutable_initial_response()
+            ->mutable_client_stats_report_interval()
+            ->set_seconds(client_load_reporting_interval_seconds_);
+        stream->Write(initial_response);
+      }
+
+      {
+        grpc::internal::MutexLock lock(&mu_);
+        responses_and_delays = responses_and_delays_;
+      }
+      for (const auto& response_and_delay : responses_and_delays) {
+        SendResponse(stream, response_and_delay.first,
+                     response_and_delay.second);
+      }
+      {
+        grpc::internal::MutexLock lock(&mu_);
+        serverlist_cond_.WaitUntil(&mu_, [this] { return serverlist_done_; });
+      }
+
+      if (client_load_reporting_interval_seconds_ > 0) {
+        request.Clear();
+        if (stream->Read(&request)) {
+          gpr_log(GPR_INFO, "LB[%p]: received client load report message '%s'",
+                  this, request.DebugString().c_str());
+          GPR_ASSERT(request.has_client_stats());
+          // We need to acquire the lock here in order to prevent the notify_one
+          // below from firing before its corresponding wait is executed.
+          grpc::internal::MutexLock lock(&mu_);
+          client_stats_.num_calls_started +=
+              request.client_stats().num_calls_started();
+          client_stats_.num_calls_finished +=
+              request.client_stats().num_calls_finished();
+          client_stats_.num_calls_finished_with_client_failed_to_send +=
+              request.client_stats()
+                  .num_calls_finished_with_client_failed_to_send();
+          client_stats_.num_calls_finished_known_received +=
+              request.client_stats().num_calls_finished_known_received();
+          for (const auto& drop_token_count :
+               request.client_stats().calls_finished_with_drop()) {
+            client_stats_
+                .drop_token_counts[drop_token_count.load_balance_token()] +=
+                drop_token_count.num_calls();
+          }
+          load_report_ready_ = true;
+          load_report_cond_.Signal();
         }
-        load_report_ready_ = true;
-        load_report_cond_.notify_one();
       }
     }
   done:
@@ -277,12 +285,12 @@ class BalancerServiceImpl : public BalancerService {
   }
 
   void add_response(const LoadBalanceResponse& response, int send_after_ms) {
-    std::unique_lock<std::mutex> lock(mu_);
+    grpc::internal::MutexLock lock(&mu_);
     responses_and_delays_.push_back(std::make_pair(response, send_after_ms));
   }
 
   void Start() {
-    std::lock_guard<std::mutex> lock(mu_);
+    grpc::internal::MutexLock lock(&mu_);
     serverlist_done_ = false;
     load_report_ready_ = false;
     responses_and_delays_.clear();
@@ -319,17 +327,17 @@ class BalancerServiceImpl : public BalancerService {
   }
 
   const ClientStats& WaitForLoadReport() {
-    std::unique_lock<std::mutex> lock(mu_);
-    load_report_cond_.wait(lock, [this] { return load_report_ready_; });
+    grpc::internal::MutexLock lock(&mu_);
+    load_report_cond_.WaitUntil(&mu_, [this] { return load_report_ready_; });
     load_report_ready_ = false;
     return client_stats_;
   }
 
   void NotifyDoneWithServerlists() {
-    std::lock_guard<std::mutex> lock(mu_);
+    grpc::internal::MutexLock lock(&mu_);
     if (!serverlist_done_) {
       serverlist_done_ = true;
-      serverlist_cond_.notify_all();
+      serverlist_cond_.Broadcast();
     }
   }
 
@@ -348,10 +356,10 @@ class BalancerServiceImpl : public BalancerService {
 
   const int client_load_reporting_interval_seconds_;
   std::vector<ResponseDelayPair> responses_and_delays_;
-  std::mutex mu_;
-  std::condition_variable load_report_cond_;
+  grpc::internal::Mutex mu_;
+  grpc::internal::CondVar load_report_cond_;
   bool load_report_ready_ = false;
-  std::condition_variable serverlist_cond_;
+  grpc::internal::CondVar serverlist_cond_;
   bool serverlist_done_ = false;
   ClientStats client_stats_;
 };
@@ -542,8 +550,10 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_core::Resolver::Result result;
     result.addresses = CreateLbAddressesFromAddressDataList(address_data);
     if (service_config_json != nullptr) {
+      grpc_error* error = GRPC_ERROR_NONE;
       result.service_config =
-          grpc_core::ServiceConfig::Create(service_config_json);
+          grpc_core::ServiceConfig::Create(service_config_json, &error);
+      GRPC_ERROR_UNREF(error);
     }
     response_generator_->SetResponse(std::move(result));
   }
@@ -615,22 +625,22 @@ class GrpclbEnd2endTest : public ::testing::Test {
       GPR_ASSERT(!running_);
       running_ = true;
       service_.Start();
-      std::mutex mu;
+      grpc::internal::Mutex mu;
       // We need to acquire the lock here in order to prevent the notify_one
       // by ServerThread::Serve from firing before the wait below is hit.
-      std::unique_lock<std::mutex> lock(mu);
-      std::condition_variable cond;
+      grpc::internal::MutexLock lock(&mu);
+      grpc::internal::CondVar cond;
       thread_.reset(new std::thread(
           std::bind(&ServerThread::Serve, this, server_host, &mu, &cond)));
-      cond.wait(lock);
+      cond.Wait(&mu);
       gpr_log(GPR_INFO, "%s server startup complete", type_.c_str());
     }
 
-    void Serve(const grpc::string& server_host, std::mutex* mu,
-               std::condition_variable* cond) {
+    void Serve(const grpc::string& server_host, grpc::internal::Mutex* mu,
+               grpc::internal::CondVar* cond) {
       // We need to acquire the lock here in order to prevent the notify_one
       // below from firing before its corresponding wait is executed.
-      std::lock_guard<std::mutex> lock(*mu);
+      grpc::internal::MutexLock lock(mu);
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
@@ -639,7 +649,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
       builder.AddListeningPort(server_address.str(), creds);
       builder.RegisterService(&service_);
       server_ = builder.BuildAndStart();
-      cond->notify_one();
+      cond->Signal();
     }
 
     void Shutdown() {
@@ -1359,7 +1369,7 @@ class UpdatesTest : public GrpclbEnd2endTest {
   UpdatesTest() : GrpclbEnd2endTest(4, 3, 0) {}
 };
 
-TEST_F(UpdatesTest, UpdateBalancers) {
+TEST_F(UpdatesTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   SetNextResolutionAllBalancers();
   const std::vector<int> first_backend{GetBackendPorts()[0]};
   const std::vector<int> second_backend{GetBackendPorts()[1]};
@@ -1379,9 +1389,6 @@ TEST_F(UpdatesTest, UpdateBalancers) {
   // All 10 requests should have gone to the first backend.
   EXPECT_EQ(10U, backends_[0]->service_.request_count());
 
-  balancers_[0]->service_.NotifyDoneWithServerlists();
-  balancers_[1]->service_.NotifyDoneWithServerlists();
-  balancers_[2]->service_.NotifyDoneWithServerlists();
   // Balancer 0 got a single request.
   EXPECT_EQ(1U, balancers_[0]->service_.request_count());
   // and sent a single response.
@@ -1397,25 +1404,21 @@ TEST_F(UpdatesTest, UpdateBalancers) {
   SetNextResolution(addresses);
   gpr_log(GPR_INFO, "========= UPDATE 1 DONE ==========");
 
-  // Wait until update has been processed, as signaled by the second backend
-  // receiving a request.
   EXPECT_EQ(0U, backends_[1]->service_.request_count());
-  WaitForBackend(1);
+  gpr_timespec deadline = gpr_time_add(
+      gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(10000, GPR_TIMESPAN));
+  // Send 10 seconds worth of RPCs
+  do {
+    CheckRpcSendOk();
+  } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
+  // The current LB call is still working, so grpclb continued using it to the
+  // first balancer, which doesn't assign the second backend.
+  EXPECT_EQ(0U, backends_[1]->service_.request_count());
 
-  backends_[1]->service_.ResetCounters();
-  gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
-  CheckRpcSendOk(10);
-  gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
-  // All 10 requests should have gone to the second backend.
-  EXPECT_EQ(10U, backends_[1]->service_.request_count());
-
-  balancers_[0]->service_.NotifyDoneWithServerlists();
-  balancers_[1]->service_.NotifyDoneWithServerlists();
-  balancers_[2]->service_.NotifyDoneWithServerlists();
   EXPECT_EQ(1U, balancers_[0]->service_.request_count());
   EXPECT_EQ(1U, balancers_[0]->service_.response_count());
-  EXPECT_EQ(1U, balancers_[1]->service_.request_count());
-  EXPECT_EQ(1U, balancers_[1]->service_.response_count());
+  EXPECT_EQ(0U, balancers_[1]->service_.request_count());
+  EXPECT_EQ(0U, balancers_[1]->service_.response_count());
   EXPECT_EQ(0U, balancers_[2]->service_.request_count());
   EXPECT_EQ(0U, balancers_[2]->service_.response_count());
 }
@@ -1526,9 +1529,6 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
   EXPECT_EQ(20U, backends_[0]->service_.request_count());
   EXPECT_EQ(0U, backends_[1]->service_.request_count());
 
-  balancers_[0]->service_.NotifyDoneWithServerlists();
-  balancers_[1]->service_.NotifyDoneWithServerlists();
-  balancers_[2]->service_.NotifyDoneWithServerlists();
   // Balancer 0 got a single request.
   EXPECT_EQ(1U, balancers_[0]->service_.request_count());
   // and sent a single response.
@@ -1558,9 +1558,6 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
   // All 10 requests should have gone to the second backend.
   EXPECT_EQ(10U, backends_[1]->service_.request_count());
 
-  balancers_[0]->service_.NotifyDoneWithServerlists();
-  balancers_[1]->service_.NotifyDoneWithServerlists();
-  balancers_[2]->service_.NotifyDoneWithServerlists();
   EXPECT_EQ(1U, balancers_[0]->service_.request_count());
   EXPECT_EQ(1U, balancers_[0]->service_.response_count());
   // The second balancer, published as part of the first update, may end up

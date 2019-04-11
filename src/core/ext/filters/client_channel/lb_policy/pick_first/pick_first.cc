@@ -27,7 +27,7 @@
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/mutex_lock.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -154,13 +154,12 @@ class PickFirst : public LoadBalancingPolicy {
 
   /// Lock and data used to capture snapshots of this channels child
   /// channels and subchannels. This data is consumed by channelz.
-  gpr_mu child_refs_mu_;
+  Mutex child_refs_mu_;
   channelz::ChildRefsList child_subchannels_;
   channelz::ChildRefsList child_channels_;
 };
 
 PickFirst::PickFirst(Args args) : LoadBalancingPolicy(std::move(args)) {
-  gpr_mu_init(&child_refs_mu_);
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO, "Pick First %p created.", this);
   }
@@ -170,7 +169,6 @@ PickFirst::~PickFirst() {
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO, "Destroying Pick First %p", this);
   }
-  gpr_mu_destroy(&child_refs_mu_);
   GPR_ASSERT(subchannel_list_ == nullptr);
   GPR_ASSERT(latest_pending_subchannel_list_ == nullptr);
 }
@@ -186,10 +184,17 @@ void PickFirst::ShutdownLocked() {
 }
 
 void PickFirst::ExitIdleLocked() {
+  if (shutdown_) return;
   if (idle_) {
     idle_ = false;
-    if (subchannel_list_ != nullptr &&
-        subchannel_list_->num_subchannels() > 0) {
+    if (subchannel_list_ == nullptr ||
+        subchannel_list_->num_subchannels() == 0) {
+      grpc_error* error =
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("No addresses to connect to");
+      channel_control_helper()->UpdateState(
+          GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(error),
+          UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(error)));
+    } else {
       subchannel_list_->subchannel(0)
           ->CheckConnectivityStateAndStartWatchingLocked();
     }
@@ -253,13 +258,19 @@ void PickFirst::UpdateLocked(UpdateArgs args) {
   grpc_channel_args_destroy(new_args);
   if (subchannel_list->num_subchannels() == 0) {
     // Empty update or no valid subchannels. Unsubscribe from all current
-    // subchannels and put the channel in TRANSIENT_FAILURE.
+    // subchannels.
     subchannel_list_ = std::move(subchannel_list);  // Empty list.
     selected_ = nullptr;
-    grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update");
-    channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(error),
-        UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(error)));
+    // If not idle, put the channel in TRANSIENT_FAILURE.
+    // (If we are idle, then this will happen in ExitIdleLocked() if we
+    // haven't gotten a non-empty update by the time the application tries
+    // to start a new call.)
+    if (!idle_) {
+      grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update");
+      channel_control_helper()->UpdateState(
+          GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(error),
+          UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(error)));
+    }
     return;
   }
   // If one of the subchannels in the new list is already in state

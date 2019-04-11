@@ -19,6 +19,7 @@
 #import <XCTest/XCTest.h>
 
 NSTimeInterval const kWaitTime = 30;
+int const kNumIterations = 1;
 
 @interface GrpcIosTestUITests : XCTestCase
 @end
@@ -32,16 +33,27 @@ NSTimeInterval const kWaitTime = 30;
   self.continueAfterFailure = NO;
   [[[XCUIApplication alloc] init] launch];
   testApp = [[XCUIApplication alloc] initWithBundleIdentifier:@"io.grpc.GrpcIosTest"];
+  [testApp activate];
+  // Reset RPC counter
+  [self pressButton:@"Reset counter"];
+
   settingsApp = [[XCUIApplication alloc] initWithBundleIdentifier:@"com.apple.Preferences"];
   [settingsApp activate];
+  [NSThread sleepForTimeInterval:1];
   // Go back to the first page of Settings.
   XCUIElement *backButton = settingsApp.navigationBars.buttons.firstMatch;
-  while (backButton.exists) {
+  while (backButton.exists && backButton.isHittable) {
+    NSLog(@"Tapping back button");
     [backButton tap];
   }
   XCTAssert([settingsApp.navigationBars[@"Settings"] waitForExistenceWithTimeout:kWaitTime]);
+  NSLog(@"Turning off airplane mode");
   // Turn off airplane mode
   [self setAirplaneMode:NO];
+
+  // Turn on wifi
+  NSLog(@"Turning on wifi");
+  [self setWifi:YES];
 }
 
 - (void)tearDown {
@@ -49,14 +61,25 @@ NSTimeInterval const kWaitTime = 30;
 
 - (void)doUnaryCall {
   [testApp activate];
-  [testApp.buttons[@"Unary call"] tap];
+  [self pressButton:@"Unary call"];
 }
 
-- (void)doStreamingCall {
+- (void)do10UnaryCalls {
   [testApp activate];
-  [testApp.buttons[@"Start streaming call"] tap];
-  [testApp.buttons[@"Send Message"] tap];
-  [testApp.buttons[@"Stop streaming call"] tap];
+  [self pressButton:@"10 Unary calls"];
+}
+
+- (void)pressButton:(NSString *)name {
+  // Wait for button to be visible
+  while (![testApp.buttons[name] exists] || ![testApp.buttons[name] isHittable]) {
+    [NSThread sleepForTimeInterval:1];
+  }
+  // Wait until all events in run loop have been processed
+  while (CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.1, true) == kCFRunLoopRunHandledSource)
+    ;
+
+  NSLog(@"Pressing button: %@", name);
+  [testApp.buttons[name] tap];
 }
 
 - (void)expectCallSuccess {
@@ -71,41 +94,81 @@ NSTimeInterval const kWaitTime = 30;
   [settingsApp activate];
   XCUIElement *mySwitch = settingsApp.tables.element.cells.switches[@"Airplane Mode"];
   BOOL from = [(NSString *)mySwitch.value boolValue];
+  NSLog(@"Setting airplane from: %d to: %d", from, to);
   if (from != to) {
     [mySwitch tap];
-    // wait for gRPC to detect the change
-    sleep(10);
+    // wait for network change to finish
+    [NSThread sleepForTimeInterval:5];
   }
   XCTAssert([(NSString *)mySwitch.value boolValue] == to);
 }
+- (void)setWifi:(BOOL)to {
+  [settingsApp activate];
+  [settingsApp.tables.element.cells.staticTexts[@"Wi-Fi"] tap];
+  XCUIElement *wifiSwitch = settingsApp.tables.cells.switches[@"Wi-Fi"];
+  BOOL from = [(NSString *)wifiSwitch.value boolValue];
+  NSLog(@"Setting wifi from: %d to: %d", from, to);
+  if (from != to) {
+    [wifiSwitch tap];
+    // wait for wifi networks to be detected
+    [NSThread sleepForTimeInterval:10];
+  }
+  // Go back to the first page of Settings.
+  XCUIElement *backButton = settingsApp.navigationBars.buttons.firstMatch;
+  [backButton tap];
+}
 
-- (void)testBackgroundBeforeUnaryCall {
+- (void)typeText:(NSString *)text inApp:(XCUIApplication *)app {
+  [app typeText:text];
+  // Wait until all events in run loop have been processed
+  while (CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.1, true) == kCFRunLoopRunHandledSource)
+    ;
+}
+
+- (int)getRandomNumberBetween:(int)min max:(int)max {
+  return min + arc4random_uniform((max - min + 1));
+}
+
+- (void)testBackgroundBeforeCall {
+  NSLog(@"%s", __func__);
   // Open test app
   [testApp activate];
-
   // Send test app to background
   [XCUIDevice.sharedDevice pressButton:XCUIDeviceButtonHome];
-  sleep(5);
+
+  // Wait a bit
+  int sleepTime = [self getRandomNumberBetween:5 max:10];
+  NSLog(@"Sleeping for %d seconds", sleepTime);
+  [NSThread sleepForTimeInterval:sleepTime];
 
   // Bring test app to foreground and make a unary call. Call should succeed
   [self doUnaryCall];
   [self expectCallSuccess];
 }
 
-- (void)testBackgroundBeforeStreamingCall {
-  // Open test app
+- (void)testBackgroundDuringStreamingCall {
+  NSLog(@"%s", __func__);
+  // Open test app and start a streaming call
   [testApp activate];
+  [self pressButton:@"Start streaming call"];
 
   // Send test app to background
   [XCUIDevice.sharedDevice pressButton:XCUIDeviceButtonHome];
-  sleep(5);
+
+  // Wait a bit
+  int sleepTime = [self getRandomNumberBetween:5 max:10];
+  NSLog(@"Sleeping for %d seconds", sleepTime);
+  [NSThread sleepForTimeInterval:sleepTime];
 
   // Bring test app to foreground and make a streaming call. Call should succeed.
-  [self doStreamingCall];
+  [testApp activate];
+  [self pressButton:@"Send Message"];
+  [self pressButton:@"Stop streaming call"];
   [self expectCallSuccess];
 }
 
-- (void)testUnaryCallAfterNetworkFlap {
+- (void)testCallAfterNetworkFlap {
+  NSLog(@"%s", __func__);
   // Open test app and make a unary call. Channel to server should be open after this.
   [self doUnaryCall];
   [self expectCallSuccess];
@@ -119,26 +182,16 @@ NSTimeInterval const kWaitTime = 30;
   [self expectCallSuccess];
 }
 
-- (void)testStreamingCallAfterNetworkFlap {
-  // Open test app and make a unary call. Channel to server should be open after this.
-  [self doUnaryCall];
-  [self expectCallSuccess];
-
-  // Toggle airplane mode on and off
-  [self setAirplaneMode:YES];
-  [self setAirplaneMode:NO];
-
-  [self doStreamingCall];
-  [self expectCallSuccess];
-}
-
-- (void)testUnaryCallWhileNetworkDown {
+- (void)testCallWhileNetworkDown {
+  NSLog(@"%s", __func__);
   // Open test app and make a unary call. Channel to server should be open after this.
   [self doUnaryCall];
   [self expectCallSuccess];
 
   // Turn on airplane mode
   [self setAirplaneMode:YES];
+  // Turn off wifi
+  [self setWifi:NO];
 
   // Unary call should fail
   [self doUnaryCall];
@@ -146,29 +199,133 @@ NSTimeInterval const kWaitTime = 30;
 
   // Turn off airplane mode
   [self setAirplaneMode:NO];
+  // Turn on wifi
+  [self setWifi:YES];
 
   // Unary call should succeed
   [self doUnaryCall];
   [self expectCallSuccess];
 }
 
-- (void)testStreamingCallWhileNetworkDown {
+- (void)testSwitchApp {
+  NSLog(@"%s", __func__);
   // Open test app and make a unary call. Channel to server should be open after this.
   [self doUnaryCall];
   [self expectCallSuccess];
 
-  // Turn on airplane mode
-  [self setAirplaneMode:YES];
+  // Send test app to background
+  [XCUIDevice.sharedDevice pressButton:XCUIDeviceButtonHome];
 
-  // Streaming call should fail
-  [self doStreamingCall];
-  [self expectCallFailed];
+  // Open safari and goto a URL
+  XCUIApplication *safari =
+      [[XCUIApplication alloc] initWithBundleIdentifier:@"com.apple.mobilesafari"];
+  [safari activate];
+  // Ensure that safari is running in the foreground
+  XCTAssert([safari waitForState:XCUIApplicationStateRunningForeground timeout:5]);
+  // Move cursor to address bar
+  [safari.buttons[@"URL"] tap];
+  // Wait for keyboard to appear
+  [NSThread sleepForTimeInterval:2];
+  // Enter URL
+  [self typeText:@"http://maps.google.com" inApp:safari];
+  // Presses return key
+  [self typeText:@"\n" inApp:safari];
+  // Wait a bit
+  int sleepTime = [self getRandomNumberBetween:5 max:10];
+  NSLog(@"Sleeping for %d seconds", sleepTime);
+  [NSThread sleepForTimeInterval:sleepTime];
 
-  // Turn off airplane mode
-  [self setAirplaneMode:NO];
-
-  // Unary call should succeed
-  [self doStreamingCall];
+  // Make another unary call
+  [self doUnaryCall];
   [self expectCallSuccess];
 }
+
+- (void)testNetworkFlapDuringStreamingCall {
+  NSLog(@"%s", __func__);
+  // Open test app and make a unary call. Channel to server should be open after this.
+  [self doUnaryCall];
+  [self expectCallSuccess];
+  // Start streaming call and send a message
+  [self pressButton:@"Start streaming call"];
+  [self pressButton:@"Send Message"];
+
+  // Toggle network on and off
+  [self setAirplaneMode:YES];
+  [self setWifi:NO];
+  [self setAirplaneMode:NO];
+  [self setWifi:YES];
+
+  [testApp activate];
+  // We expect the call to have failed because the network flapped
+  [self expectCallFailed];
+}
+
+- (void)testConcurrentCalls {
+  NSLog(@"%s", __func__);
+
+  // Press button to start 10 unary calls
+  [self do10UnaryCalls];
+
+  // Toggle airplane mode on and off
+  [self setAirplaneMode:YES];
+  [self setAirplaneMode:NO];
+
+  // 10 calls should have completed
+  [testApp activate];
+  XCTAssert([testApp.staticTexts[@"Calls completed: 10"] waitForExistenceWithTimeout:kWaitTime]);
+}
+
+- (void)invokeTest {
+  for (int i = 0; i < kNumIterations; i++) {
+    [super invokeTest];
+  }
+}
+
+- (void)testUnaryCallTurnOffWifi {
+  NSLog(@"%s", __func__);
+  // Open test app and make a unary call. Channel to server should be open after this.
+  [self doUnaryCall];
+  [self expectCallSuccess];
+
+  // Turn off wifi
+  [self setWifi:NO];
+
+  // Phone should switch to cellular connection, call should succeed
+  [self doUnaryCall];
+  [self expectCallSuccess];
+
+  // Turn on wifi
+  [self setWifi:YES];
+
+  // Call should succeed after turning wifi back on
+  [self doUnaryCall];
+  [self expectCallSuccess];
+}
+
+- (void)testStreamingCallTurnOffWifi {
+  NSLog(@"%s", __func__);
+  // Open test app and make a unary call. Channel to server should be open after this.
+  [self doUnaryCall];
+  [self expectCallSuccess];
+
+  // Start streaming call and send a message
+  [self pressButton:@"Start streaming call"];
+  [self pressButton:@"Send Message"];
+
+  // Turn off wifi
+  [self setWifi:NO];
+
+  // Phone should switch to cellular connection, this results in the call failing
+  [testApp activate];
+  [self pressButton:@"Stop streaming call"];
+  [self expectCallFailed];
+
+  // Turn on wifi
+  [self setWifi:YES];
+
+  // Call should succeed after turning wifi back on
+  [self doUnaryCall];
+  [self expectCallSuccess];
+}
+
 @end

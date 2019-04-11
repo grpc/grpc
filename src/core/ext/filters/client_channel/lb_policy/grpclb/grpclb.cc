@@ -88,7 +88,6 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/mutex_lock.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -234,12 +233,19 @@ class GrpcLb : public LoadBalancingPolicy {
 
     // Returns the LB token to use for a drop, or null if the call
     // should not be dropped.
-    // Intended to be called from picker, so calls will be externally
-    // synchronized.
+    //
+    // Note: This is called from the picker, so it will be invoked in
+    // the channel's data plane combiner, NOT the control plane
+    // combiner.  It should not be accessed by any other part of the LB
+    // policy.
     const char* ShouldDrop();
 
    private:
     grpc_grpclb_serverlist* serverlist_;
+
+    // Guarded by the channel's data plane combiner, NOT the control
+    // plane combiner.  It should not be accessed by anything but the
+    // picker via the ShouldDrop() method.
     size_t drop_index_ = 0;
   };
 
@@ -551,7 +557,7 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs* pick, grpc_error** error) {
     // subchannel call (and therefore no client_load_reporting filter)
     // for dropped calls.
     if (client_stats_ != nullptr) {
-      client_stats_->AddCallDroppedLocked(drop_token);
+      client_stats_->AddCallDropped(drop_token);
     }
     return PICK_COMPLETE;
   }
@@ -910,7 +916,7 @@ void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
   // Construct message payload.
   GPR_ASSERT(send_message_payload_ == nullptr);
   grpc_grpclb_request* request =
-      grpc_grpclb_load_report_request_create_locked(client_stats_.get());
+      grpc_grpclb_load_report_request_create(client_stats_.get());
   // Skip client load report if the counters were all zero in the last
   // report and they are still zero in this one.
   if (LoadReportCountersAreZero(request)) {

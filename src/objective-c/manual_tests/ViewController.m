@@ -27,33 +27,36 @@ NSString *const kRemoteHost = @"grpc-test.sandbox.googleapis.com";
 const int32_t kMessageSize = 100;
 
 @interface ViewController : UIViewController<GRPCProtoResponseHandler>
-@property(strong, nonatomic) UILabel *fromLabel;
+@property(strong, nonatomic) UILabel *callStatusLabel;
+@property(strong, nonatomic) UILabel *callCountLabel;
 @end
 
 @implementation ViewController {
   RMTTestService *_service;
   dispatch_queue_t _dispatchQueue;
   GRPCStreamingProtoCall *_call;
+  int _calls_completed;
 }
 - (instancetype)init {
   self = [super init];
+  _calls_completed = 0;
   return self;
 }
 
 - (void)viewDidLoad {
   [super viewDidLoad];
   _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
-  _fromLabel = [[UILabel alloc] initWithFrame:CGRectMake(100, 500, 200, 20)];
-  _fromLabel.textColor = [UIColor blueColor];
-  _fromLabel.backgroundColor = [UIColor whiteColor];
-  [self.view addSubview:_fromLabel];
+  _callStatusLabel = (UILabel *)[self.view viewWithTag:1];
+  _callCountLabel = (UILabel *)[self.view viewWithTag:2];
 }
 
-- (IBAction)tapUnaryCall:(id)sender {
+- (void)startUnaryCall {
   if (_service == nil) {
     _service = [RMTTestService serviceWithHost:kRemoteHost];
   }
-  self->_fromLabel.text = @"";
+  dispatch_async(dispatch_get_main_queue(), ^{
+    self->_callStatusLabel.text = @"";
+  });
 
   // Set up request proto message
   RMTSimpleRequest *request = [RMTSimpleRequest message];
@@ -63,14 +66,43 @@ const int32_t kMessageSize = 100;
 
   GRPCUnaryProtoCall *call =
       [_service unaryCallWithMessage:request responseHandler:self callOptions:nil];
+
   [call start];
 }
 
+- (IBAction)tapUnaryCall:(id)sender {
+  NSLog(@"In tapUnaryCall");
+  [self startUnaryCall];
+}
+
+- (IBAction)tap10UnaryCalls:(id)sender {
+  NSLog(@"In tap10UnaryCalls");
+  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^(void) {
+    // Background thread
+    for (int i = 0; i < 10; ++i) {
+      [self startUnaryCall];
+      [NSThread sleepForTimeInterval:0.5];
+    }
+  });
+}
+
+- (IBAction)resetCounter:(id)sender {
+  _calls_completed = 0;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    self->_callCountLabel.text =
+        [NSString stringWithFormat:@"Calls completed: %d", self->_calls_completed];
+    self->_callStatusLabel.text = @"";
+  });
+}
+
 - (IBAction)tapStreamingCallStart:(id)sender {
+  NSLog(@"In tapStreamingCallStart");
   if (_service == nil) {
     _service = [RMTTestService serviceWithHost:kRemoteHost];
   }
-  self->_fromLabel.text = @"";
+  dispatch_async(dispatch_get_main_queue(), ^{
+    self->_callStatusLabel.text = @"";
+  });
 
   // Set up request proto message
   RMTStreamingOutputCallRequest *request = RMTStreamingOutputCallRequest.message;
@@ -83,10 +115,10 @@ const int32_t kMessageSize = 100;
   [call start];
   _call = call;
   // display something to confirm the tester the call is started
-  NSLog(@"Started streaming call");
 }
 
 - (IBAction)tapStreamingCallSend:(id)sender {
+  NSLog(@"In tapStreamingCallSend");
   if (_call == nil) return;
 
   RMTStreamingOutputCallRequest *request = RMTStreamingOutputCallRequest.message;
@@ -99,6 +131,7 @@ const int32_t kMessageSize = 100;
 }
 
 - (IBAction)tapStreamingCallStop:(id)sender {
+  NSLog(@"In tapStreamingCallStop");
   if (_call == nil) return;
 
   [_call finish];
@@ -118,13 +151,18 @@ const int32_t kMessageSize = 100;
   NSLog(@"Recv trailing metadata: %@, error: %@", trailingMetadata, error);
   if (error == nil) {
     dispatch_async(dispatch_get_main_queue(), ^{
-      self->_fromLabel.text = @"Call done";
+      self->_callStatusLabel.text = @"Call done";
     });
   } else {
     dispatch_async(dispatch_get_main_queue(), ^{
-      self->_fromLabel.text = @"Call failed";
+      self->_callStatusLabel.text = @"Call failed";
     });
   }
+  ++_calls_completed;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    self->_callCountLabel.text =
+        [NSString stringWithFormat:@"Calls completed: %d", self->_calls_completed];
+  });
 }
 
 - (dispatch_queue_t)dispatchQueue {

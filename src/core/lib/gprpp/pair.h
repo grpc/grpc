@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2018 gRPC authors.
+ * Copyright 2017 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,23 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_GPRPP_MUTEX_LOCK_H
-#define GRPC_CORE_LIB_GPRPP_MUTEX_LOCK_H
+#ifndef GRPC_CORE_LIB_GPRPP_PAIR_H
+#define GRPC_CORE_LIB_GPRPP_PAIR_H
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/sync.h>
+#include <utility>
 
 namespace grpc_core {
+template <class T1, class T2>
+using Pair = std::pair<T1, T2>;
 
-class MutexLock {
- public:
-  explicit MutexLock(gpr_mu* mu) : mu_(mu) { gpr_mu_lock(mu); }
-  ~MutexLock() { gpr_mu_unlock(mu_); }
-
-  MutexLock(const MutexLock&) = delete;
-  MutexLock& operator=(const MutexLock&) = delete;
-
- private:
-  gpr_mu* const mu_;
-};
-
+template <class T1, class T2>
+inline Pair<typename std::decay<T1>::type, typename std::decay<T2>::type>
+MakePair(T1&& u, T2&& v) {
+  typedef typename std::decay<T1>::type V1;
+  typedef typename std::decay<T2>::type V2;
+  return Pair<V1, V2>(std::forward<T1>(u), std::forward<T2>(v));
+}
 }  // namespace grpc_core
-
-#endif /* GRPC_CORE_LIB_GPRPP_MUTEX_LOCK_H */
+#endif /* GRPC_CORE_LIB_GPRPP_PAIR_H */

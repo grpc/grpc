@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.20.0-dev'
+  version = '1.21.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -208,8 +208,10 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/atomic.h',
                       'src/core/lib/gprpp/fork.h',
                       'src/core/lib/gprpp/manual_constructor.h',
+                      'src/core/lib/gprpp/map.h',
                       'src/core/lib/gprpp/memory.h',
-                      'src/core/lib/gprpp/mutex_lock.h',
+                      'src/core/lib/gprpp/pair.h',
+                      'src/core/lib/gprpp/sync.h',
                       'src/core/lib/gprpp/thd.h',
                       'src/core/lib/profiling/timers.h',
                       'src/core/lib/gpr/alloc.cc',
@@ -855,7 +857,15 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/http/client_authority_filter.cc',
                       'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc',
                       'src/core/ext/filters/workarounds/workaround_utils.cc',
-                      'src/core/plugin_registry/grpc_plugin_registry.cc'
+                      'src/core/plugin_registry/grpc_plugin_registry.cc',
+                      'src/core/lib/iomgr/cfstream_handle.cc',
+                      'src/core/lib/iomgr/endpoint_cfstream.cc',
+                      'src/core/lib/iomgr/error_cfstream.cc',
+                      'src/core/lib/iomgr/iomgr_posix_cfstream.cc',
+                      'src/core/lib/iomgr/tcp_client_cfstream.cc',
+                      'src/core/lib/iomgr/cfstream_handle.h',
+                      'src/core/lib/iomgr/endpoint_cfstream.h',
+                      'src/core/lib/iomgr/error_cfstream.h'
 
     ss.private_header_files = 'src/core/lib/gpr/alloc.h',
                               'src/core/lib/gpr/arena.h',
@@ -877,8 +887,10 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/atomic.h',
                               'src/core/lib/gprpp/fork.h',
                               'src/core/lib/gprpp/manual_constructor.h',
+                              'src/core/lib/gprpp/map.h',
                               'src/core/lib/gprpp/memory.h',
-                              'src/core/lib/gprpp/mutex_lock.h',
+                              'src/core/lib/gprpp/pair.h',
+                              'src/core/lib/gprpp/sync.h',
                               'src/core/lib/gprpp/thd.h',
                               'src/core/lib/profiling/timers.h',
                               'src/core/ext/transport/chttp2/transport/bin_decoder.h',
@@ -1160,26 +1172,15 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/message_size/message_size_filter.h',
                               'src/core/ext/filters/http/client_authority_filter.h',
                               'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h',
-                              'src/core/ext/filters/workarounds/workaround_utils.h'
-  end
-
-  s.subspec 'CFStream-Implementation' do |ss|
-    ss.header_mappings_dir = '.'
-    ss.dependency "#{s.name}/Implementation", version
-    ss.pod_target_xcconfig = {
-      'GCC_PREPROCESSOR_DEFINITIONS' => 'GRPC_CFSTREAM=1'
-    }
-    ss.source_files = 'src/core/lib/iomgr/cfstream_handle.cc',
-                      'src/core/lib/iomgr/endpoint_cfstream.cc',
-                      'src/core/lib/iomgr/error_cfstream.cc',
-                      'src/core/lib/iomgr/iomgr_posix_cfstream.cc',
-                      'src/core/lib/iomgr/tcp_client_cfstream.cc',
-                      'src/core/lib/iomgr/cfstream_handle.h',
-                      'src/core/lib/iomgr/endpoint_cfstream.h',
-                      'src/core/lib/iomgr/error_cfstream.h'
-    ss.private_header_files = 'src/core/lib/iomgr/cfstream_handle.h',
+                              'src/core/ext/filters/workarounds/workaround_utils.h',
+                              'src/core/lib/iomgr/cfstream_handle.h',
                               'src/core/lib/iomgr/endpoint_cfstream.h',
                               'src/core/lib/iomgr/error_cfstream.h'
+  end
+
+  # CFStream is now default. Leaving this subspec only for compatibility purpose.
+  s.subspec 'CFStream-Implementation' do |ss|
+    ss.dependency "#{s.name}/Implementation", version
   end
 
   s.subspec 'Cronet-Interface' do |ss|

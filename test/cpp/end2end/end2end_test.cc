@@ -1420,18 +1420,18 @@ TEST_P(End2endTest, DelayedRpcLateCanceledUsingCancelCallback) {
   EchoResponse response;
   request.set_message("Hello");
   request.mutable_param()->set_skip_cancelled_check(true);
-  // Let server sleep for 80 ms first to give the cancellation a chance.
-  // This is split into 40 ms to start the cancel and 40 ms extra time for
+  // Let server sleep for 200 ms first to give the cancellation a chance.
+  // This is split into 100 ms to start the cancel and 100 ms extra time for
   // it to make it to the server, to make it highly probable that the server
   // RPC would have already started by the time the cancellation is sent
   // and the server-side gets enough time to react to it.
-  request.mutable_param()->set_server_sleep_us(80 * 1000);
+  request.mutable_param()->set_server_sleep_us(200000);
 
   std::thread echo_thread{[this, &context, &request, &response] {
     Status s = stub_->Echo(&context, request, &response);
     EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
   }};
-  std::this_thread::sleep_for(std::chrono::microseconds(40000));
+  std::this_thread::sleep_for(std::chrono::microseconds(100000));
   context.TryCancel();
   echo_thread.join();
 }

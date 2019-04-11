@@ -16,6 +16,37 @@ licenses(["notice"])  # Apache v2
 
 package(default_visibility = ["//visibility:public"])
 
+alias(
+    name = "rbe_windows",
+    actual = ":rbe_windows_1803",
+)
+
+# RBE Windows
+platform(
+    name = "rbe_windows_1803",
+    constraint_values = [
+        "@bazel_tools//platforms:x86_64",
+        "@bazel_tools//platforms:windows",
+        "@bazel_tools//tools/cpp:msvc",
+    ],
+    remote_execution_properties = """
+        properties: {
+          name: "container-image"
+          value:"docker://gcr.io/grpc-testing/rbe_windows_toolchain@sha256:689b177e4a157c431c7077d19d043de27922c37de835031f29c9093b8d5c6370"
+        }
+        properties: {
+          name: "gceMachineType"  # Small machines for majority of tests.
+          value: "n1-highmem-2"
+        }
+        properties:{
+            name: "OSFamily"
+            value: "Windows"
+        }
+
+        """,
+)
+
+# RBE Ubuntu16_04 r346485
 platform(
     name = "rbe_ubuntu1604",
     parents = ["@rbe_default//config:platform"],

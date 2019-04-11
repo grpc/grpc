@@ -901,6 +901,21 @@ grpcsharp_server_request_call(grpc_server* server, grpc_completion_queue* cq,
                                   &(ctx->request_metadata), cq, cq, ctx);
 }
 
+/* Native callback dispatcher */
+
+typedef int(GPR_CALLTYPE* grpcsharp_native_callback_dispatcher_func)(
+    void* tag, void* arg0, void* arg1, void* arg2, void* arg3, void* arg4,
+    void* arg5);
+
+static grpcsharp_native_callback_dispatcher_func native_callback_dispatcher =
+    NULL;
+
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_native_callback_dispatcher_init(
+    grpcsharp_native_callback_dispatcher_func func) {
+  GPR_ASSERT(func);
+  native_callback_dispatcher = func;
+}
+
 /* Security */
 
 static char* default_pem_root_certs = NULL;
@@ -927,21 +942,47 @@ grpcsharp_override_default_ssl_roots(const char* pem_root_certs) {
   grpc_set_ssl_roots_override_callback(override_ssl_roots_handler);
 }
 
+static void grpcsharp_verify_peer_destroy_handler(void* userdata) {
+  native_callback_dispatcher(userdata, NULL, NULL, (void*)1, NULL, NULL, NULL);
+}
+
+static int grpcsharp_verify_peer_handler(const char* target_name,
+                                         const char* peer_pem, void* userdata) {
+  return native_callback_dispatcher(userdata, (void*)target_name,
+                                    (void*)peer_pem, (void*)0, NULL, NULL,
+                                    NULL);
+}
+
 GPR_EXPORT grpc_channel_credentials* GPR_CALLTYPE
 grpcsharp_ssl_credentials_create(const char* pem_root_certs,
                                  const char* key_cert_pair_cert_chain,
-                                 const char* key_cert_pair_private_key) {
+                                 const char* key_cert_pair_private_key,
+                                 void* verify_peer_callback_tag) {
   grpc_ssl_pem_key_cert_pair key_cert_pair;
+  verify_peer_options verify_options;
+  grpc_ssl_pem_key_cert_pair* key_cert_pair_ptr = NULL;
+  verify_peer_options* verify_options_ptr = NULL;
+
   if (key_cert_pair_cert_chain || key_cert_pair_private_key) {
+    memset(&key_cert_pair, 0, sizeof(key_cert_pair));
     key_cert_pair.cert_chain = key_cert_pair_cert_chain;
     key_cert_pair.private_key = key_cert_pair_private_key;
-    return grpc_ssl_credentials_create(pem_root_certs, &key_cert_pair, NULL,
-                                       NULL);
+    key_cert_pair_ptr = &key_cert_pair;
   } else {
     GPR_ASSERT(!key_cert_pair_cert_chain);
     GPR_ASSERT(!key_cert_pair_private_key);
-    return grpc_ssl_credentials_create(pem_root_certs, NULL, NULL, NULL);
   }
+
+  if (verify_peer_callback_tag != NULL) {
+    memset(&verify_options, 0, sizeof(verify_peer_options));
+    verify_options.verify_peer_callback_userdata = verify_peer_callback_tag;
+    verify_options.verify_peer_destruct = grpcsharp_verify_peer_destroy_handler;
+    verify_options.verify_peer_callback = grpcsharp_verify_peer_handler;
+    verify_options_ptr = &verify_options;
+  }
+
+  return grpc_ssl_credentials_create(pem_root_certs, key_cert_pair_ptr,
+                                     verify_options_ptr, NULL);
 }
 
 GPR_EXPORT void GPR_CALLTYPE
@@ -1008,21 +1049,6 @@ GPR_EXPORT grpc_call_credentials* GPR_CALLTYPE
 grpcsharp_composite_call_credentials_create(grpc_call_credentials* creds1,
                                             grpc_call_credentials* creds2) {
   return grpc_composite_call_credentials_create(creds1, creds2, NULL);
-}
-
-/* Native callback dispatcher */
-
-typedef int(GPR_CALLTYPE* grpcsharp_native_callback_dispatcher_func)(
-    void* tag, void* arg0, void* arg1, void* arg2, void* arg3, void* arg4,
-    void* arg5);
-
-static grpcsharp_native_callback_dispatcher_func native_callback_dispatcher =
-    NULL;
-
-GPR_EXPORT void GPR_CALLTYPE grpcsharp_native_callback_dispatcher_init(
-    grpcsharp_native_callback_dispatcher_func func) {
-  GPR_ASSERT(func);
-  native_callback_dispatcher = func;
 }
 
 /* Metadata credentials plugin */
