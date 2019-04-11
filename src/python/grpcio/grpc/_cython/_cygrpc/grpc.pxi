@@ -140,8 +140,7 @@ cdef extern from "grpc/grpc.h":
   const char *GRPC_ARG_SECONDARY_USER_AGENT_STRING
   const char *GRPC_SSL_TARGET_NAME_OVERRIDE_ARG
   const char *GRPC_SSL_SESSION_CACHE_ARG
-  const char *_GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM \
-    "GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM"
+  const char *GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM
   const char *GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL
   const char *GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET
 
@@ -619,8 +618,3 @@ cdef extern from "grpc/compression.h":
   int grpc_compression_options_is_algorithm_enabled(
       const grpc_compression_options *opts,
       grpc_compression_algorithm algorithm) nogil
-
-cdef extern from "grpc/impl/codegen/compression_types.h":
-
-  const char *_GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY \
-    "GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY"
