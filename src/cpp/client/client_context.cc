@@ -25,7 +25,6 @@
 #include <grpc/support/string_util.h>
 
 #include <grpcpp/impl/codegen/interceptor_common.h>
-#include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
@@ -85,7 +84,7 @@ void ClientContext::AddMetadata(const grpc::string& meta_key,
 
 void ClientContext::set_call(grpc_call* call,
                              const std::shared_ptr<Channel>& channel) {
-  grpc::internal::MutexLock lock(&mu_);
+  std::unique_lock<std::mutex> lock(mu_);
   GPR_ASSERT(call_ == nullptr);
   call_ = call;
   channel_ = channel;
@@ -115,7 +114,7 @@ void ClientContext::set_compression_algorithm(
 }
 
 void ClientContext::TryCancel() {
-  grpc::internal::MutexLock lock(&mu_);
+  std::unique_lock<std::mutex> lock(mu_);
   if (call_) {
     SendCancelToInterceptors();
     grpc_call_cancel(call_, nullptr);

@@ -62,7 +62,7 @@ ThreadManager::ThreadManager(const char* name,
 
 ThreadManager::~ThreadManager() {
   {
-    grpc_core::MutexLock lock(&mu_);
+    std::lock_guard<std::mutex> lock(mu_);
     GPR_ASSERT(num_threads_ == 0);
   }
 
@@ -72,38 +72,38 @@ ThreadManager::~ThreadManager() {
 }
 
 void ThreadManager::Wait() {
-  grpc_core::MutexLock lock(&mu_);
+  std::unique_lock<std::mutex> lock(mu_);
   while (num_threads_ != 0) {
-    shutdown_cv_.Wait(&mu_);
+    shutdown_cv_.wait(lock);
   }
 }
 
 void ThreadManager::Shutdown() {
-  grpc_core::MutexLock lock(&mu_);
+  std::lock_guard<std::mutex> lock(mu_);
   shutdown_ = true;
 }
 
 bool ThreadManager::IsShutdown() {
-  grpc_core::MutexLock lock(&mu_);
+  std::lock_guard<std::mutex> lock(mu_);
   return shutdown_;
 }
 
 int ThreadManager::GetMaxActiveThreadsSoFar() {
-  grpc_core::MutexLock list_lock(&list_mu_);
+  std::lock_guard<std::mutex> list_lock(list_mu_);
   return max_active_threads_sofar_;
 }
 
 void ThreadManager::MarkAsCompleted(WorkerThread* thd) {
   {
-    grpc_core::MutexLock list_lock(&list_mu_);
+    std::lock_guard<std::mutex> list_lock(list_mu_);
     completed_threads_.push_back(thd);
   }
 
   {
-    grpc_core::MutexLock lock(&mu_);
+    std::lock_guard<std::mutex> lock(mu_);
     num_threads_--;
     if (num_threads_ == 0) {
-      shutdown_cv_.Signal();
+      shutdown_cv_.notify_one();
     }
   }
 
@@ -116,7 +116,7 @@ void ThreadManager::CleanupCompletedThreads() {
   {
     // swap out the completed threads list: allows other threads to clean up
     // more quickly
-    grpc_core::MutexLock lock(&list_mu_);
+    std::unique_lock<std::mutex> lock(list_mu_);
     completed_threads.swap(completed_threads_);
   }
   for (auto thd : completed_threads) delete thd;
@@ -132,7 +132,7 @@ void ThreadManager::Initialize() {
   }
 
   {
-    grpc_core::MutexLock lock(&mu_);
+    std::unique_lock<std::mutex> lock(mu_);
     num_pollers_ = min_pollers_;
     num_threads_ = min_pollers_;
     max_active_threads_sofar_ = min_pollers_;
@@ -149,7 +149,7 @@ void ThreadManager::MainWorkLoop() {
     bool ok;
     WorkStatus work_status = PollForWork(&tag, &ok);
 
-    grpc_core::ReleasableMutexLock lock(&mu_);
+    std::unique_lock<std::mutex> lock(mu_);
     // Reduce the number of pollers by 1 and check what happened with the poll
     num_pollers_--;
     bool done = false;
@@ -176,30 +176,30 @@ void ThreadManager::MainWorkLoop() {
               max_active_threads_sofar_ = num_threads_;
             }
             // Drop lock before spawning thread to avoid contention
-            lock.Unlock();
+            lock.unlock();
             new WorkerThread(this);
           } else if (num_pollers_ > 0) {
             // There is still at least some thread polling, so we can go on
             // even though we are below the number of pollers that we would
             // like to have (min_pollers_)
-            lock.Unlock();
+            lock.unlock();
           } else {
             // There are no pollers to spare and we couldn't allocate
             // a new thread, so resources are exhausted!
-            lock.Unlock();
+            lock.unlock();
             resource_exhausted = true;
           }
         } else {
           // There are a sufficient number of pollers available so we can do
           // the work and continue polling with our existing poller threads
-          lock.Unlock();
+          lock.unlock();
         }
         // Lock is always released at this point - do the application work
         // or return resource exhausted if there is new work but we couldn't
         // get a thread in which to do it.
         DoWork(tag, ok, !resource_exhausted);
         // Take the lock again to check post conditions
-        lock.Lock();
+        lock.lock();
         // If we're shutdown, we should finish at this point.
         if (shutdown_) done = true;
         break;

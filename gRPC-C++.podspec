@@ -183,8 +183,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/string_ref.h',
                       'include/grpcpp/impl/codegen/stub_options.h',
                       'include/grpcpp/impl/codegen/sync_stream.h',
-                      'include/grpcpp/impl/codegen/time.h',
-                      'include/grpcpp/impl/codegen/sync.h'
+                      'include/grpcpp/impl/codegen/time.h'
   end
 
   s.subspec 'Implementation' do |ss|
@@ -267,8 +266,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/manual_constructor.h',
                       'src/core/lib/gprpp/map.h',
                       'src/core/lib/gprpp/memory.h',
+                      'src/core/lib/gprpp/mutex_lock.h',
                       'src/core/lib/gprpp/pair.h',
-                      'src/core/lib/gprpp/sync.h',
                       'src/core/lib/gprpp/thd.h',
                       'src/core/lib/profiling/timers.h',
                       'src/core/ext/transport/chttp2/transport/bin_decoder.h',
@@ -584,8 +583,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/manual_constructor.h',
                               'src/core/lib/gprpp/map.h',
                               'src/core/lib/gprpp/memory.h',
+                              'src/core/lib/gprpp/mutex_lock.h',
                               'src/core/lib/gprpp/pair.h',
-                              'src/core/lib/gprpp/sync.h',
                               'src/core/lib/gprpp/thd.h',
                               'src/core/lib/profiling/timers.h',
                               'src/core/lib/avl/avl.h',

@@ -27,7 +27,6 @@
 
 #include <grpcpp/support/config.h>
 
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
@@ -51,9 +50,9 @@ class DynamicThreadPool final : public ThreadPoolInterface {
     grpc_core::Thread thd_;
     void ThreadFunc();
   };
-  grpc_core::Mutex mu_;
-  grpc_core::CondVar cv_;
-  grpc_core::CondVar shutdown_cv_;
+  std::mutex mu_;
+  std::condition_variable cv_;
+  std::condition_variable shutdown_cv_;
   bool shutdown_;
   std::queue<std::function<void()>> callbacks_;
   int reserve_threads_;

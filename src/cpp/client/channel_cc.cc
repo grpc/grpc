@@ -232,7 +232,7 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
 CompletionQueue* Channel::CallbackCQ() {
   // TODO(vjpai): Consider using a single global CQ for the default CQ
   // if there is no explicit per-channel CQ registered
-  grpc::internal::MutexLock l(&mu_);
+  std::lock_guard<std::mutex> l(mu_);
   if (callback_cq_ == nullptr) {
     auto* shutdown_callback = new ShutdownCallback;
     callback_cq_ = new CompletionQueue(grpc_completion_queue_attributes{
