@@ -278,15 +278,16 @@ class XdsLb : public LoadBalancingPolicy {
         : client_stats_(std::move(client_stats)) {}
 
     PickResult Pick(PickArgs* pick, grpc_error** error) override;
-    void AddPicker(double start, double end,
-                   RefCountedPtr<PickerRef> picker_ref) {
-      map_.emplace(MakePair(start, end), std::move(picker_ref));
+    void AddPicker(const double end, RefCountedPtr<PickerRef> picker_ref) {
+      picker_vec_.push_back(MakePair(end, std::move(picker_ref)));
       total_range_end_ = GPR_MAX(total_range_end_, end);
     }
 
    private:
+    PickResult PickFromLocality(const double key, PickArgs* pick,
+                                grpc_error** error);
     RefCountedPtr<XdsLbClientStats> client_stats_;
-    Map<Pair<double, double>, RefCountedPtr<PickerRef>, RangeLess> map_;
+    InlinedVector<Pair<double, RefCountedPtr<PickerRef>>, 1> picker_vec_;
     double total_range_end_ =
         0;  // End value of the last range value in picker map
   };
@@ -460,18 +461,41 @@ XdsLb::PickResult XdsLb::Picker::Pick(PickArgs* pick, grpc_error** error) {
   // TODO(roth): Add support for drop handling.
   // TODO(mhaidry) : Add support for locality priorities
   // Generate a random number between 0 and the total weight
-  double random = ((double)rand()) / (double)RAND_MAX;
-  double key = random * total_range_end_;
+  const double key = (rand() * total_range_end_) / RAND_MAX;
   // Forward pick to whichever locality maps to the range in which the
-  // random number falls in. find() matches the key pair with the range
-  // of the locality that the key falls within
-  PickResult result = map_.find(MakePair(key, key))->second->Pick(pick, error);
+  // random number falls in.
+  PickResult result = PickFromLocality(key, pick, error);
   // If pick succeeded, add client stats.
   if (result == PickResult::PICK_COMPLETE &&
       pick->connected_subchannel != nullptr && client_stats_ != nullptr) {
     // TODO(roth): Add support for client stats.
   }
   return result;
+}
+
+// Calls the picker of the locality that the key falls within
+XdsLb::PickResult XdsLb::Picker::PickFromLocality(const double key,
+                                                  PickArgs* pick,
+                                                  grpc_error** error) {
+  size_t mid = 0, start_index = 0, end_index = picker_vec_.size() - 1,
+         index = 0;
+  while (end_index > start_index) {
+    mid = (start_index + end_index) / 2;
+    if (picker_vec_[mid].first > key) {
+      end_index = mid;
+    } else if (picker_vec_[mid].first < key) {
+      start_index = mid + 1;
+    } else {
+      break;
+    }
+  }
+  if (picker_vec_[mid].first < key) {
+    index = mid + 1;
+  } else {
+    index = mid;
+  }
+  GPR_ASSERT(picker_vec_[index].first > key);
+  return picker_vec_[index].second->Pick(pick, error);
 }
 
 //
@@ -1675,17 +1699,17 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
   // proportional to its weight, such that the total range is the sum of the
   // weights of all localities
   UniquePtr<Picker> new_picker(New<Picker>(std::move(client_stats)));
-  double start = 0, end;
-  size_t num_ready = 0, num_connecting = 0, num_idle = 0;
-  size_t num_transient_failures = 0;
+  double start = 0;
+  size_t num_ready = 0, num_connecting = 0, num_idle = 0,
+         num_transient_failures = 0;
   auto& locality_map = this->entry_->parent_->locality_map_.map_;
   for (auto iter = locality_map.begin(); iter != locality_map.end(); ++iter) {
     grpc_connectivity_state connectivity_state =
         iter->second->connectivity_state_;
     switch (connectivity_state) {
       case GRPC_CHANNEL_READY: {
-        end = start + iter->second->locality_weight_;
-        new_picker->AddPicker(start, end, iter->second->picker_ref_);
+        const double end = start + iter->second->locality_weight_;
+        new_picker->AddPicker(end, iter->second->picker_ref_);
         num_ready++;
         start = end;
         break;
@@ -1720,7 +1744,8 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
     entry_->parent_->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, GRPC_ERROR_NONE,
         UniquePtr<SubchannelPicker>(New<QueuePicker>(this->entry_->parent_)));
-  } else if (num_transient_failures == locality_map.size()) {
+  } else {
+    GPR_ASSERT(num_transient_failures == locality_map.size());
     entry_->parent_->channel_control_helper()->UpdateState(
         state, state_error,
         UniquePtr<SubchannelPicker>(

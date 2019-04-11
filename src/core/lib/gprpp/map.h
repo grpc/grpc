@@ -38,13 +38,6 @@ struct StringLess {
   }
 };
 
-struct RangeLess {
-  bool operator()(const Pair<double, double>& k1,
-                  const Pair<double, double>& k2) {
-    return k1.second <= k2.first;
-  }
-};
-
 namespace testing {
 class MapTest;
 }
