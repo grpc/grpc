@@ -1,0 +1,11 @@
+--- include/grpcpp/impl/codegen/client_context.h
++++ include/grpcpp/impl/codegen/client_context.h
+@@ -461,7 +466,7 @@ class ClientContext {
+   bool wait_for_ready_explicitly_set_;
+   bool idempotent_;
+   bool cacheable_;
+-  std::shared_ptr<Channel> channel_;
++  std::shared_ptr<::grpc_impl::Channel> channel_;
+   std::mutex mu_;
+   grpc_call* call_;
+   bool call_canceled_;
