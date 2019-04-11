@@ -771,6 +771,9 @@ const char *kCFStreamVarName = "grpc_cfstream";
   @synchronized(self) {
     _pendingReceiveNextMessages += numberOfMessages;
 
+    if (_state != GRXWriterStateStarted || !_callOptions.enableFlowControl) {
+      return;
+    }
     [self maybeStartNextRead];
   }
 }
