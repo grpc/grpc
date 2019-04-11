@@ -28,14 +28,13 @@
 #include <grpcpp/support/config.h>
 
 namespace grpc_impl {
-
 /// Create a new \a Channel pointing to \a target.
 ///
 /// \param target The URI of the endpoint to connect to.
 /// \param creds Credentials to use for the created channel. If it does not
 /// hold an object or is invalid, a lame channel (one on which all operations
 /// fail) is returned.
-std::shared_ptr<grpc::Channel> CreateChannel(
+std::shared_ptr<::grpc::Channel> CreateChannel(
     const grpc::string& target,
     const std::shared_ptr<grpc::ChannelCredentials>& creds);
 
@@ -49,7 +48,7 @@ std::shared_ptr<grpc::Channel> CreateChannel(
 /// hold an object or is invalid, a lame channel (one on which all operations
 /// fail) is returned.
 /// \param args Options for channel creation.
-std::shared_ptr<grpc::Channel> CreateCustomChannel(
+std::shared_ptr<::grpc::Channel> CreateCustomChannel(
     const grpc::string& target,
     const std::shared_ptr<grpc::ChannelCredentials>& creds,
     const grpc::ChannelArguments& args);
@@ -66,7 +65,7 @@ namespace experimental {
 /// hold an object or is invalid, a lame channel (one on which all operations
 /// fail) is returned.
 /// \param args Options for channel creation.
-std::shared_ptr<grpc::Channel> CreateCustomChannelWithInterceptors(
+std::shared_ptr<::grpc::Channel> CreateCustomChannelWithInterceptors(
     const grpc::string& target,
     const std::shared_ptr<grpc::ChannelCredentials>& creds,
     const grpc::ChannelArguments& args,

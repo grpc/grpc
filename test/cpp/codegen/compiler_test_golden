@@ -40,10 +40,12 @@
 #include <grpcpp/impl/codegen/stub_options.h>
 #include <grpcpp/impl/codegen/sync_stream.h>
 
-namespace grpc {
+namespace grpc_impl {
 class CompletionQueue;
-class Channel;
 class ServerCompletionQueue;
+}  // namespace grpc_impl
+namespace grpc {
+class Channel;
 class ServerContext;
 }  // namespace grpc
 

@@ -28,10 +28,8 @@
 
 namespace grpc {
 
-class CompletionQueue;
 class Server;
 class ServerInterface;
-class ServerCompletionQueue;
 class ServerContext;
 
 namespace internal {

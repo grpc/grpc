@@ -24,10 +24,13 @@
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/time.h>
 
+namespace grpc_impl {
+class CompletionQueue;
+}
+
 namespace grpc {
 class ChannelInterface;
 class ClientContext;
-class CompletionQueue;
 
 template <class R>
 class ClientReader;
@@ -73,7 +76,7 @@ class ChannelInterface {
   /// deadline expires. \a GetState needs to called to get the current state.
   template <typename T>
   void NotifyOnStateChange(grpc_connectivity_state last_observed, T deadline,
-                           CompletionQueue* cq, void* tag) {
+                           ::grpc_impl::CompletionQueue* cq, void* tag) {
     TimePoint<T> deadline_tp(deadline);
     NotifyOnStateChangeImpl(last_observed, deadline_tp.raw_time(), cq, tag);
   }
@@ -125,13 +128,14 @@ class ChannelInterface {
   friend class ::grpc::internal::InterceptedChannel;
   virtual internal::Call CreateCall(const internal::RpcMethod& method,
                                     ClientContext* context,
-                                    CompletionQueue* cq) = 0;
+                                    ::grpc_impl::CompletionQueue* cq) = 0;
   virtual void PerformOpsOnCall(internal::CallOpSetInterface* ops,
                                 internal::Call* call) = 0;
   virtual void* RegisterMethod(const char* method) = 0;
   virtual void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
                                        gpr_timespec deadline,
-                                       CompletionQueue* cq, void* tag) = 0;
+                                       ::grpc_impl::CompletionQueue* cq,
+                                       void* tag) = 0;
   virtual bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
                                       gpr_timespec deadline) = 0;
 
@@ -144,7 +148,7 @@ class ChannelInterface {
   // change (even though this is private and non-API)
   virtual internal::Call CreateCallInternal(const internal::RpcMethod& method,
                                             ClientContext* context,
-                                            CompletionQueue* cq,
+                                            ::grpc_impl::CompletionQueue* cq,
                                             size_t interceptor_pos) {
     return internal::Call();
   }
@@ -157,7 +161,7 @@ class ChannelInterface {
   // Returns nullptr (rather than being pure) since this is a post-1.0 method
   // and adding a new pure method to an interface would be a breaking change
   // (even though this is private and non-API)
-  virtual CompletionQueue* CallbackCQ() { return nullptr; }
+  virtual ::grpc_impl::CompletionQueue* CallbackCQ() { return nullptr; }
 };
 }  // namespace grpc
 

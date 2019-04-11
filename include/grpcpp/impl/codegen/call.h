@@ -21,9 +21,11 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/impl/codegen/call_hook.h>
 
-namespace grpc {
+namespace grpc_impl {
 class CompletionQueue;
+}
 
+namespace grpc {
 namespace experimental {
 class ClientRpcInfo;
 class ServerRpcInfo;
@@ -41,13 +43,13 @@ class Call final {
         call_(nullptr),
         max_receive_message_size_(-1) {}
   /** call is owned by the caller */
-  Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq)
+  Call(grpc_call* call, CallHook* call_hook, ::grpc_impl::CompletionQueue* cq)
       : call_hook_(call_hook),
         cq_(cq),
         call_(call),
         max_receive_message_size_(-1) {}
 
-  Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq,
+  Call(grpc_call* call, CallHook* call_hook, ::grpc_impl::CompletionQueue* cq,
        experimental::ClientRpcInfo* rpc_info)
       : call_hook_(call_hook),
         cq_(cq),
@@ -55,7 +57,7 @@ class Call final {
         max_receive_message_size_(-1),
         client_rpc_info_(rpc_info) {}
 
-  Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq,
+  Call(grpc_call* call, CallHook* call_hook, ::grpc_impl::CompletionQueue* cq,
        int max_receive_message_size, experimental::ServerRpcInfo* rpc_info)
       : call_hook_(call_hook),
         cq_(cq),
@@ -68,7 +70,7 @@ class Call final {
   }
 
   grpc_call* call() const { return call_; }
-  CompletionQueue* cq() const { return cq_; }
+  ::grpc_impl::CompletionQueue* cq() const { return cq_; }
 
   int max_receive_message_size() const { return max_receive_message_size_; }
 
@@ -82,7 +84,7 @@ class Call final {
 
  private:
   CallHook* call_hook_;
-  CompletionQueue* cq_;
+  ::grpc_impl::CompletionQueue* cq_;
   grpc_call* call_;
   int max_receive_message_size_;
   experimental::ClientRpcInfo* client_rpc_info_ = nullptr;
