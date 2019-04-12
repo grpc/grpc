@@ -21,6 +21,7 @@
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
+#include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/gpr/string.h"
 #include "test/core/util/port.h"
@@ -201,6 +202,9 @@ TEST_F(ServiceConfigTest, Parser1BasicTest1) {
   EXPECT_TRUE((static_cast<TestParsedObject1*>(
                    svc_cfg->GetParsedGlobalServiceConfigObject(0)))
                   ->value() == 5);
+  EXPECT_TRUE(svc_cfg->GetMethodServiceConfigObjectsVector(
+                  grpc_slice_from_static_string("/TestServ/TestMethod")) ==
+              nullptr);
 }
 
 TEST_F(ServiceConfigTest, Parser1BasicTest2) {
@@ -252,11 +256,10 @@ TEST_F(ServiceConfigTest, Parser2BasicTest) {
   grpc_error* error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(test_json, &error);
   ASSERT_TRUE(error == GRPC_ERROR_NONE);
-  const auto* const* vector_ptr = svc_cfg->GetMethodServiceConfigObjectsVector(
+  const auto* vector_ptr = svc_cfg->GetMethodServiceConfigObjectsVector(
       grpc_slice_from_static_string("/TestServ/TestMethod"));
   EXPECT_TRUE(vector_ptr != nullptr);
-  const auto* vector = *vector_ptr;
-  auto parsed_object = ((*vector)[1]).get();
+  auto parsed_object = ((*vector_ptr)[1]).get();
   EXPECT_TRUE(static_cast<TestParsedObject1*>(parsed_object)->value() == 5);
 }
 
@@ -350,6 +353,58 @@ TEST_F(ErroredParsersScopingTest, MethodParams) {
   std::string s(grpc_error_string(error));
   EXPECT_TRUE(std::regex_search(s, match, e));
   GRPC_ERROR_UNREF(error);
+}
+
+class ClientChannelParserTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    ServiceConfig::Shutdown();
+    ServiceConfig::Init();
+    EXPECT_TRUE(
+        ServiceConfig::RegisterParser(UniquePtr<ServiceConfigParser>(
+            New<grpc_core::internal::ClientChannelServiceConfigParser>())) ==
+        0);
+  }
+};
+
+TEST_F(ClientChannelParserTest, ValidLoadBalancingConfig1) {
+  const char* test_json = "{\"loadBalancingConfig\": [{\"pick_first\":{}}]}";
+  grpc_error* error = GRPC_ERROR_NONE;
+  auto svc_cfg = ServiceConfig::Create(test_json, &error);
+  ASSERT_TRUE(error == GRPC_ERROR_NONE);
+  const auto* parsed_object =
+      static_cast<grpc_core::internal::ClientChannelGlobalParsedObject*>(
+          svc_cfg->GetParsedGlobalServiceConfigObject(0));
+  const auto* lb_config = parsed_object->parsed_lb_config();
+  EXPECT_TRUE(strcmp(lb_config->name(), "pick_first") == 0);
+}
+
+TEST_F(ClientChannelParserTest, ValidLoadBalancingConfig2) {
+  const char* test_json =
+      "{\"loadBalancingConfig\": [{\"round_robin\":{}}, {}]}";
+  grpc_error* error = GRPC_ERROR_NONE;
+  auto svc_cfg = ServiceConfig::Create(test_json, &error);
+  ASSERT_TRUE(error == GRPC_ERROR_NONE);
+  const auto* parsed_object =
+      static_cast<grpc_core::internal::ClientChannelGlobalParsedObject*>(
+          svc_cfg->GetParsedGlobalServiceConfigObject(0));
+  const auto* lb_config = parsed_object->parsed_lb_config();
+  EXPECT_TRUE(strcmp(lb_config->name(), "round_robin") == 0);
+}
+
+TEST_F(ClientChannelParserTest, ValidLoadBalancingConfig3) {
+  const char* test_json =
+      "{\"loadBalancingConfig\": "
+      "[{\"grpclb\":{\"childPolicy\":[{\"pick_first\":{}}]}}]}";
+  grpc_error* error = GRPC_ERROR_NONE;
+  auto svc_cfg = ServiceConfig::Create(test_json, &error);
+  gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
+  ASSERT_TRUE(error == GRPC_ERROR_NONE);
+  const auto* parsed_object =
+      static_cast<grpc_core::internal::ClientChannelGlobalParsedObject*>(
+          svc_cfg->GetParsedGlobalServiceConfigObject(0));
+  const auto* lb_config = parsed_object->parsed_lb_config();
+  EXPECT_TRUE(strcmp(lb_config->name(), "grpclb") == 0);
 }
 
 }  // namespace testing

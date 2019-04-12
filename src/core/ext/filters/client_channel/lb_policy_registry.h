@@ -51,6 +51,9 @@ class LoadBalancingPolicyRegistry {
   /// Returns true if the LB policy factory specified by \a name exists in this
   /// registry.
   static bool LoadBalancingPolicyExists(const char* name);
+
+  static UniquePtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
+      const grpc_json* json, grpc_error** error);
 };
 
 }  // namespace grpc_core

@@ -99,4 +99,28 @@ bool LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(const char* name) {
   return g_state->GetLoadBalancingPolicyFactory(name) != nullptr;
 }
 
+UniquePtr<ParsedLoadBalancingConfig>
+LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(const grpc_json* json,
+                                                      grpc_error** error) {
+  GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+  GPR_ASSERT(g_state != nullptr);
+  const grpc_json* policy =
+      LoadBalancingPolicy::ParseLoadBalancingConfig(json, error);
+  if (policy == nullptr) {
+    return nullptr;
+  } else {
+    GPR_DEBUG_ASSERT(*error == GRPC_ERROR_NONE);
+    // Find factory.
+    LoadBalancingPolicyFactory* factory =
+        g_state->GetLoadBalancingPolicyFactory(policy->key);
+    if (factory == nullptr) {
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:loadBalancingConfig entry:Factory not found to create policy");
+      return nullptr;
+    }
+    // Parse load balancing config via factory.
+    return factory->ParseLoadBalancingConfig(policy, error);
+  }
+}
+
 }  // namespace grpc_core

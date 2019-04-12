@@ -63,28 +63,50 @@ void LoadBalancingPolicy::ShutdownAndUnrefLocked(void* arg,
 }
 
 grpc_json* LoadBalancingPolicy::ParseLoadBalancingConfig(
-    const grpc_json* lb_config_array) {
+    const grpc_json* lb_config_array, grpc_error** error) {
+  GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   if (lb_config_array == nullptr || lb_config_array->type != GRPC_JSON_ARRAY) {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "field:loadBalancingConfig error:type should be array");
     return nullptr;
   }
   // Find the first LB policy that this client supports.
   for (const grpc_json* lb_config = lb_config_array->child;
        lb_config != nullptr; lb_config = lb_config->next) {
-    if (lb_config->type != GRPC_JSON_OBJECT) return nullptr;
+    if (lb_config->type != GRPC_JSON_OBJECT) {
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:loadBalancingConfig error:child entry should be of type "
+          "object");
+      return nullptr;
+    }
     grpc_json* policy = nullptr;
     for (grpc_json* field = lb_config->child; field != nullptr;
          field = field->next) {
-      if (field->key == nullptr || field->type != GRPC_JSON_OBJECT)
+      if (field->key == nullptr || field->type != GRPC_JSON_OBJECT) {
+        *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:loadBalancingConfig error:child entry should be of type "
+            "object");
         return nullptr;
-      if (policy != nullptr) return nullptr;  // Violate "oneof" type.
+      }
+      if (policy != nullptr) {
+        *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:loadBalancingConfig error:oneOf violation");
+        return nullptr;
+      }  // Violate "oneof" type.
       policy = field;
     }
-    if (policy == nullptr) return nullptr;
+    if (policy == nullptr) {
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:loadBalancingConfig error:no policy found in child entry");
+      return nullptr;
+    }
     // If we support this policy, then select it.
     if (LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(policy->key)) {
       return policy;
     }
   }
+  *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "field:loadBalancingConfig error:No known policy");
   return nullptr;
 }
 

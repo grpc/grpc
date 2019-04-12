@@ -66,8 +66,7 @@
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_metadata.h"
 
-using grpc_core::internal::ClientChannelMethodParams;
-using grpc_core::internal::ClientChannelMethodParamsTable;
+using grpc_core::internal::ClientChannelMethodParsedObject;
 using grpc_core::internal::ProcessedResolverResult;
 using grpc_core::internal::ServerRetryThrottleData;
 
@@ -169,7 +168,6 @@ struct client_channel_channel_data {
   // Data from service config.
   bool received_service_config_data;
   grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
-  grpc_core::RefCountedPtr<ClientChannelMethodParamsTable> method_params_table;
   grpc_core::RefCountedPtr<grpc_core::ServiceConfig> service_config;
 
   //
@@ -277,11 +275,9 @@ class ServiceConfigSetter {
   ServiceConfigSetter(
       channel_data* chand,
       RefCountedPtr<ServerRetryThrottleData> retry_throttle_data,
-      RefCountedPtr<ClientChannelMethodParamsTable> method_params_table,
       RefCountedPtr<ServiceConfig> service_config)
       : chand_(chand),
         retry_throttle_data_(std::move(retry_throttle_data)),
-        method_params_table_(std::move(method_params_table)),
         service_config_(std::move(service_config)) {
     GRPC_CHANNEL_STACK_REF(chand->owning_stack, "ServiceConfigSetter");
     GRPC_CLOSURE_INIT(&closure_, SetServiceConfigData, this,
@@ -296,7 +292,6 @@ class ServiceConfigSetter {
     // Update channel state.
     chand->received_service_config_data = true;
     chand->retry_throttle_data = std::move(self->retry_throttle_data_);
-    chand->method_params_table = std::move(self->method_params_table_);
     chand->service_config = std::move(self->service_config_);
     // Apply service config to queued picks.
     for (QueuedPick* pick = chand->queued_picks; pick != nullptr;
@@ -310,7 +305,6 @@ class ServiceConfigSetter {
 
   channel_data* chand_;
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
-  RefCountedPtr<ClientChannelMethodParamsTable> method_params_table_;
   RefCountedPtr<ServiceConfig> service_config_;
   grpc_closure closure_;
 };
@@ -497,20 +491,19 @@ class ClientChannelControlHelper
 // result update.
 static bool process_resolver_result_locked(
     void* arg, grpc_core::Resolver::Result* result, const char** lb_policy_name,
-    grpc_core::RefCountedPtr<LoadBalancingPolicy::Config>* lb_policy_config) {
+    const grpc_core::ParsedLoadBalancingConfig** lb_policy_config) {
   channel_data* chand = static_cast<channel_data*>(arg);
   ProcessedResolverResult resolver_result(result, chand->enable_retries);
-  grpc_core::UniquePtr<char> service_config_json =
-      resolver_result.service_config_json();
+  const char* service_config_json = resolver_result.service_config_json();
   if (grpc_client_channel_routing_trace.enabled()) {
     gpr_log(GPR_INFO, "chand=%p: resolver returned service config: \"%s\"",
-            chand, service_config_json.get());
+            chand, service_config_json);
   }
   // Create service config setter to update channel state in the data
   // plane combiner.  Destroys itself when done.
   grpc_core::New<grpc_core::ServiceConfigSetter>(
       chand, resolver_result.retry_throttle_data(),
-      resolver_result.method_params_table(), resolver_result.service_config());
+      resolver_result.service_config());
   // Swap out the data used by cc_get_channel_info().
   gpr_mu_lock(&chand->info_mu);
   chand->info_lb_policy_name = resolver_result.lb_policy_name();
@@ -518,9 +511,8 @@ static bool process_resolver_result_locked(
       ((service_config_json == nullptr) !=
        (chand->info_service_config_json == nullptr)) ||
       (service_config_json != nullptr &&
-       strcmp(service_config_json.get(),
-              chand->info_service_config_json.get()) != 0);
-  chand->info_service_config_json = std::move(service_config_json);
+       strcmp(service_config_json, chand->info_service_config_json.get()) != 0);
+  chand->info_service_config_json.reset(gpr_strdup(service_config_json));
   gpr_mu_unlock(&chand->info_mu);
   // Return results.
   *lb_policy_name = chand->info_lb_policy_name.get();
@@ -749,7 +741,7 @@ static void cc_destroy_channel_elem(grpc_channel_element* elem) {
   chand->info_lb_policy_name.reset();
   chand->info_service_config_json.reset();
   chand->retry_throttle_data.reset();
-  chand->method_params_table.reset();
+  chand->service_config.reset();
   grpc_client_channel_stop_backup_polling(chand->interested_parties);
   grpc_pollset_set_destroy(chand->interested_parties);
   GRPC_COMBINER_UNREF(chand->data_plane_combiner, "client_channel");
@@ -974,8 +966,8 @@ struct call_data {
   grpc_call_context_element* call_context;
 
   grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
-  grpc_core::RefCountedPtr<ClientChannelMethodParams> method_params;
   grpc_core::RefCountedPtr<grpc_core::ServiceConfig> service_config;
+  ClientChannelMethodParsedObject* method_params = nullptr;
 
   grpc_core::RefCountedPtr<grpc_core::SubchannelCall> subchannel_call;
 
@@ -1474,8 +1466,7 @@ static void do_retry(grpc_call_element* elem,
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   GPR_ASSERT(calld->method_params != nullptr);
-  const ClientChannelMethodParams::RetryPolicy* retry_policy =
-      calld->method_params->retry_policy();
+  const auto* retry_policy = calld->method_params->retry_policy();
   GPR_ASSERT(retry_policy != nullptr);
   // Reset subchannel call and connected subchannel.
   calld->subchannel_call.reset();
@@ -1520,8 +1511,7 @@ static bool maybe_retry(grpc_call_element* elem,
   call_data* calld = static_cast<call_data*>(elem->call_data);
   // Get retry policy.
   if (calld->method_params == nullptr) return false;
-  const ClientChannelMethodParams::RetryPolicy* retry_policy =
-      calld->method_params->retry_policy();
+  const auto* retry_policy = calld->method_params->retry_policy();
   if (retry_policy == nullptr) return false;
   // If we've already dispatched a retry from this call, return true.
   // This catches the case where the batch has multiple callbacks
@@ -2819,46 +2809,50 @@ static void apply_service_config_to_call_locked(grpc_call_element* elem) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: applying service config to call",
             chand, calld);
   }
-  if(chand->service_config != nullptr) {
+  if (chand->service_config != nullptr) {
     calld->service_config = chand->service_config;
     calld->call_context[GRPC_SERVICE_CONFIG].value = &calld->service_config;
+    const auto* method_params_vector_ptr =
+        chand->service_config->GetMethodServiceConfigObjectsVector(calld->path);
+    if (method_params_vector_ptr != nullptr) {
+      calld->method_params = static_cast<ClientChannelMethodParsedObject*>(
+          ((*method_params_vector_ptr)
+               [grpc_core::internal::ClientChannelServiceConfigParser::
+                    client_channel_service_config_parser_index()])
+              .get());
+      calld->call_context[GRPC_SERVICE_CONFIG_METHOD_PARAMS].value =
+          const_cast<grpc_core::ServiceConfig::ServiceConfigObjectsVector*>(
+              method_params_vector_ptr);
+    }
   }
   if (chand->retry_throttle_data != nullptr) {
     calld->retry_throttle_data = chand->retry_throttle_data->Ref();
   }
-  if (chand->method_params_table != nullptr) {
-    calld->method_params = grpc_core::ServiceConfig::MethodConfigTableLookup(
-        *chand->method_params_table, calld->path);
-    if (calld->method_params != nullptr) {
-      // If the deadline from the service config is shorter than the one
-      // from the client API, reset the deadline timer.
-      if (chand->deadline_checking_enabled &&
-          calld->method_params->timeout() != 0) {
-        const grpc_millis per_method_deadline =
-            grpc_timespec_to_millis_round_up(calld->call_start_time) +
-            calld->method_params->timeout();
-        if (per_method_deadline < calld->deadline) {
-          calld->deadline = per_method_deadline;
-          grpc_deadline_state_reset(elem, calld->deadline);
-        }
+  if (calld->method_params != nullptr) {
+    // If the deadline from the service config is shorter than the one
+    // from the client API, reset the deadline timer.
+    if (chand->deadline_checking_enabled &&
+        calld->method_params->timeout() != 0) {
+      const grpc_millis per_method_deadline =
+          grpc_timespec_to_millis_round_up(calld->call_start_time) +
+          calld->method_params->timeout();
+      if (per_method_deadline < calld->deadline) {
+        calld->deadline = per_method_deadline;
+        grpc_deadline_state_reset(elem, calld->deadline);
       }
-      // If the service config set wait_for_ready and the application
-      // did not explicitly set it, use the value from the service config.
-      uint32_t* send_initial_metadata_flags =
-          &calld->pending_batches[0]
-               .batch->payload->send_initial_metadata
-               .send_initial_metadata_flags;
-      if (GPR_UNLIKELY(
-              calld->method_params->wait_for_ready() !=
-                  ClientChannelMethodParams::WAIT_FOR_READY_UNSET &&
-              !(*send_initial_metadata_flags &
-                GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET))) {
-        if (calld->method_params->wait_for_ready() ==
-            ClientChannelMethodParams::WAIT_FOR_READY_TRUE) {
-          *send_initial_metadata_flags |= GRPC_INITIAL_METADATA_WAIT_FOR_READY;
-        } else {
-          *send_initial_metadata_flags &= ~GRPC_INITIAL_METADATA_WAIT_FOR_READY;
-        }
+    }
+    // If the service config set wait_for_ready and the application
+    // did not explicitly set it, use the value from the service config.
+    uint32_t* send_initial_metadata_flags =
+        &calld->pending_batches[0]
+             .batch->payload->send_initial_metadata.send_initial_metadata_flags;
+    if (calld->method_params->wait_for_ready().has_value() &&
+        !(*send_initial_metadata_flags &
+          GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET)) {
+      if (calld->method_params->wait_for_ready().value()) {
+        *send_initial_metadata_flags |= GRPC_INITIAL_METADATA_WAIT_FOR_READY;
+      } else {
+        *send_initial_metadata_flags &= ~GRPC_INITIAL_METADATA_WAIT_FOR_READY;
       }
     }
   }

@@ -134,8 +134,11 @@ grpc_error* ServiceConfig::ParseJsonMethodConfigToServiceConfigObjectsTable(
     }
     objs_vector->push_back(std::move(parsed_obj));
   }
-  const auto* vector_ptr = objs_vector.get();
   service_config_objects_vectors_storage_.push_back(std::move(objs_vector));
+  const auto* vector_ptr =
+      service_config_objects_vectors_storage_
+          [service_config_objects_vectors_storage_.size() - 1]
+              .get();
   // Construct list of paths.
   InlinedVector<UniquePtr<char>, 10> paths;
   for (grpc_json* child = json->child; child != nullptr; child = child->next) {
@@ -231,23 +234,6 @@ grpc_error* ServiceConfig::ParsePerMethodParams(const grpc_json* json_tree) {
 
 ServiceConfig::~ServiceConfig() { grpc_json_destroy(json_tree_); }
 
-const char* ServiceConfig::GetLoadBalancingPolicyName() const {
-  if (json_tree_->type != GRPC_JSON_OBJECT || json_tree_->key != nullptr) {
-    return nullptr;
-  }
-  const char* lb_policy_name = nullptr;
-  for (grpc_json* field = json_tree_->child; field != nullptr;
-       field = field->next) {
-    if (field->key == nullptr) return nullptr;
-    if (strcmp(field->key, "loadBalancingPolicy") == 0) {
-      if (lb_policy_name != nullptr) return nullptr;  // Duplicate.
-      if (field->type != GRPC_JSON_STRING) return nullptr;
-      lb_policy_name = field->value;
-    }
-  }
-  return lb_policy_name;
-}
-
 int ServiceConfig::CountNamesInMethodConfig(grpc_json* json) {
   int num_names = 0;
   for (grpc_json* field = json->child; field != nullptr; field = field->next) {
@@ -319,8 +305,11 @@ UniquePtr<char> ServiceConfig::ParseJsonMethodName(grpc_json* json,
   return UniquePtr<char>(path);
 }
 
-const ServiceConfig::ServiceConfigObjectsVector* const*
+const ServiceConfig::ServiceConfigObjectsVector*
 ServiceConfig::GetMethodServiceConfigObjectsVector(const grpc_slice& path) {
+  if (parsed_method_service_config_objects_table_.get() == nullptr) {
+    return nullptr;
+  }
   const auto* value = parsed_method_service_config_objects_table_->Get(path);
   // If we didn't find a match for the path, try looking for a wildcard
   // entry (i.e., change "/service/method" to "/service/*").
@@ -339,7 +328,7 @@ ServiceConfig::GetMethodServiceConfigObjectsVector(const grpc_slice& path) {
     gpr_free(path_str);
     if (value == nullptr) return nullptr;
   }
-  return value;
+  return *value;
 }
 
 size_t ServiceConfig::RegisterParser(UniquePtr<ServiceConfigParser> parser) {

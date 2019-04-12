@@ -36,6 +36,8 @@ extern grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount;
 
 namespace grpc_core {
 
+class ParsedLoadBalancingConfig;
+
 /// Interface for load balancing policies.
 ///
 /// The following concepts are used here:
@@ -194,30 +196,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     GRPC_ABSTRACT_BASE_CLASS
   };
 
-  /// Configuration for an LB policy instance.
-  // TODO(roth): Find a better JSON representation for this API.
-  class Config : public RefCounted<Config> {
-   public:
-    Config(const grpc_json* lb_config,
-           RefCountedPtr<ServiceConfig> service_config)
-        : json_(lb_config), service_config_(std::move(service_config)) {}
-
-    const char* name() const { return json_->key; }
-    const grpc_json* config() const { return json_->child; }
-    RefCountedPtr<ServiceConfig> service_config() const {
-      return service_config_;
-    }
-
-   private:
-    const grpc_json* json_;
-    RefCountedPtr<ServiceConfig> service_config_;
-  };
-
   /// Data passed to the UpdateLocked() method when new addresses and
   /// config are available.
   struct UpdateArgs {
     ServerAddressList addresses;
-    RefCountedPtr<Config> config;
+    const ParsedLoadBalancingConfig* config = nullptr;
     const grpc_channel_args* args = nullptr;
 
     // TODO(roth): Remove everything below once channel args is
@@ -290,7 +273,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   /// Returns the JSON node of policy (with both policy name and config content)
   /// given the JSON node of a LoadBalancingConfig array.
-  static grpc_json* ParseLoadBalancingConfig(const grpc_json* lb_config_array);
+  static grpc_json* ParseLoadBalancingConfig(const grpc_json* lb_config_array,
+                                             grpc_error** error);
 
   // A picker that returns PICK_QUEUE for all picks.
   // Also calls the parent LB policy's ExitIdleLocked() method when the

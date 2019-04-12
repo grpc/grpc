@@ -107,11 +107,6 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   template <typename T>
   void ParseGlobalParams(ProcessJson<T> process_json, T* arg) const;
 
-  /// Gets the LB policy name from \a service_config.
-  /// Returns NULL if no LB policy name was specified.
-  /// Caller does NOT take ownership.
-  const char* GetLoadBalancingPolicyName() const;
-
   /// Creates a method config table based on the data in \a json.
   /// The table's keys are request paths.  The table's value type is
   /// returned by \a create_value(), based on data parsed from the JSON tree.
@@ -141,7 +136,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
   /// Retrieves the vector of method service config objects for a given path \a
   /// path.
-  const ServiceConfigObjectsVector* const* GetMethodServiceConfigObjectsVector(
+  const ServiceConfigObjectsVector* GetMethodServiceConfigObjectsVector(
       const grpc_slice& path);
 
   /// Globally register a service config parser. On successful registration, it

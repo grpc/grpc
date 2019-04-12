@@ -26,6 +26,9 @@ namespace grpc_core {
 template <typename T>
 class Optional {
  public:
+  Optional() = default;
+
+  Optional(bool set, T value) : set_(set), value_(value) {}
   void set(const T& val) {
     value_ = val;
     set_ = true;
@@ -38,8 +41,8 @@ class Optional {
   T value() const { return value_; }
 
  private:
-  T value_;
   bool set_ = false;
+  T value_;
 };
 
 } /* namespace grpc_core */

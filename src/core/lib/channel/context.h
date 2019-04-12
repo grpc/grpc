@@ -37,6 +37,8 @@ typedef enum {
 
   GRPC_SERVICE_CONFIG,
 
+  GRPC_SERVICE_CONFIG_METHOD_PARAMS,
+
   GRPC_CONTEXT_COUNT
 } grpc_context_index;
 
