@@ -24,12 +24,9 @@ cp -r /var/local/jenkins/service_account $HOME || true
 
 cd /var/local/git/grpc-dotnet
 
-# If needed, update dotnet SDK and put it on path
+# Update dotnet SDK and put it on path
 ./build/get-dotnet.sh
-if [ -f $HOME/.dotnet/dotnet ]
-then
-  ln -s $HOME/.dotnet/dotnet /usr/local/bin/dotnet
-fi
+source ./activate.sh
 
 ./build/get-grpc.sh
 
