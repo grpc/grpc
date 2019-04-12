@@ -20,7 +20,9 @@
 
 #include <grpc/status.h>
 
+#ifdef GRPC_COMPILE_WITH_CRONET
 #import <Cronet/Cronet.h>
+#endif
 #import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+Cronet.h>
 #import <GRPCClient/GRPCCall+Tests.h>
@@ -753,7 +755,7 @@ BOOL isRemoteInteropTest(NSString *host) {
                      [GRPCCall closeOpenConnections];
 #pragma clang diagnostic pop
 
-                     [_service
+                     [self->_service
                          emptyCallWithRequest:request
                                       handler:^(GPBEmpty *response, NSError *error) {
                                         XCTAssertNil(
