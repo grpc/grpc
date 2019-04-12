@@ -32,10 +32,9 @@ extern const upb_msglayout envoy_service_discovery_v2_AdsDummy_msginit;
 UPB_INLINE envoy_service_discovery_v2_AdsDummy *envoy_service_discovery_v2_AdsDummy_new(upb_arena *arena) {
   return (envoy_service_discovery_v2_AdsDummy *)upb_msg_new(&envoy_service_discovery_v2_AdsDummy_msginit, arena);
 }
-UPB_INLINE envoy_service_discovery_v2_AdsDummy *envoy_service_discovery_v2_AdsDummy_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
+UPB_INLINE envoy_service_discovery_v2_AdsDummy *envoy_service_discovery_v2_AdsDummy_parsenew(upb_strview buf, upb_arena *arena) {
   envoy_service_discovery_v2_AdsDummy *ret = envoy_service_discovery_v2_AdsDummy_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_service_discovery_v2_AdsDummy_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, ret, &envoy_service_discovery_v2_AdsDummy_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_service_discovery_v2_AdsDummy_serialize(const envoy_service_discovery_v2_AdsDummy *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_service_discovery_v2_AdsDummy_msginit, arena, len);

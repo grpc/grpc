@@ -36,10 +36,9 @@ extern const upb_msglayout google_protobuf_UInt32Value_msginit;
 UPB_INLINE envoy_api_v2_cluster_OutlierDetection *envoy_api_v2_cluster_OutlierDetection_new(upb_arena *arena) {
   return (envoy_api_v2_cluster_OutlierDetection *)upb_msg_new(&envoy_api_v2_cluster_OutlierDetection_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_cluster_OutlierDetection *envoy_api_v2_cluster_OutlierDetection_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
+UPB_INLINE envoy_api_v2_cluster_OutlierDetection *envoy_api_v2_cluster_OutlierDetection_parsenew(upb_strview buf, upb_arena *arena) {
   envoy_api_v2_cluster_OutlierDetection *ret = envoy_api_v2_cluster_OutlierDetection_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_cluster_OutlierDetection_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, ret, &envoy_api_v2_cluster_OutlierDetection_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_cluster_OutlierDetection_serialize(const envoy_api_v2_cluster_OutlierDetection *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_cluster_OutlierDetection_msginit, arena, len);
