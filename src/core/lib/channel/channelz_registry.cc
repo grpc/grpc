@@ -23,7 +23,7 @@
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/mutex_lock.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

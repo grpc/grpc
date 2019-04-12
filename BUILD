@@ -526,17 +526,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc++_internal_hdrs_only",
-    hdrs = [
-        "include/grpcpp/impl/codegen/sync.h",
-    ],
-    language = "c++",
-    deps = [
-        "gpr_codegen",
-    ],
-)
-
-grpc_cc_library(
     name = "gpr_base",
     srcs = [
         "src/core/lib/gpr/alloc.cc",
@@ -601,8 +590,8 @@ grpc_cc_library(
         "src/core/lib/gprpp/manual_constructor.h",
         "src/core/lib/gprpp/map.h",
         "src/core/lib/gprpp/memory.h",
+        "src/core/lib/gprpp/mutex_lock.h",
         "src/core/lib/gprpp/pair.h",
-        "src/core/lib/gprpp/sync.h",
         "src/core/lib/gprpp/thd.h",
         "src/core/lib/profiling/timers.h",
     ],
@@ -2156,7 +2145,6 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/time.h",
     ],
     deps = [
-        "grpc++_internal_hdrs_only",
         "grpc_codegen",
     ],
 )
