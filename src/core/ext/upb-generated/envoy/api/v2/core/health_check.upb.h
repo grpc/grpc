@@ -70,9 +70,10 @@ typedef enum {
 UPB_INLINE envoy_api_v2_core_HealthCheck *envoy_api_v2_core_HealthCheck_new(upb_arena *arena) {
   return (envoy_api_v2_core_HealthCheck *)upb_msg_new(&envoy_api_v2_core_HealthCheck_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_core_HealthCheck *envoy_api_v2_core_HealthCheck_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_core_HealthCheck *envoy_api_v2_core_HealthCheck_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_core_HealthCheck *ret = envoy_api_v2_core_HealthCheck_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_core_HealthCheck_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_HealthCheck_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_HealthCheck_serialize(const envoy_api_v2_core_HealthCheck *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_HealthCheck_msginit, arena, len);
@@ -83,7 +84,7 @@ typedef enum {
   envoy_api_v2_core_HealthCheck_health_checker_tcp_health_check = 9,
   envoy_api_v2_core_HealthCheck_health_checker_grpc_health_check = 11,
   envoy_api_v2_core_HealthCheck_health_checker_custom_health_check = 13,
-  envoy_api_v2_core_HealthCheck_health_checker_NOT_SET = 0,
+  envoy_api_v2_core_HealthCheck_health_checker_NOT_SET = 0
 } envoy_api_v2_core_HealthCheck_health_checker_oneofcases;
 UPB_INLINE envoy_api_v2_core_HealthCheck_health_checker_oneofcases envoy_api_v2_core_HealthCheck_health_checker_case(const envoy_api_v2_core_HealthCheck* msg) { return UPB_FIELD_AT(msg, int, UPB_SIZE(60, 120)); }
 
@@ -302,9 +303,10 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_set_interval_jitter_percent(envoy_
 UPB_INLINE envoy_api_v2_core_HealthCheck_Payload *envoy_api_v2_core_HealthCheck_Payload_new(upb_arena *arena) {
   return (envoy_api_v2_core_HealthCheck_Payload *)upb_msg_new(&envoy_api_v2_core_HealthCheck_Payload_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_core_HealthCheck_Payload *envoy_api_v2_core_HealthCheck_Payload_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_core_HealthCheck_Payload *envoy_api_v2_core_HealthCheck_Payload_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_core_HealthCheck_Payload *ret = envoy_api_v2_core_HealthCheck_Payload_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_core_HealthCheck_Payload_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_HealthCheck_Payload_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_HealthCheck_Payload_serialize(const envoy_api_v2_core_HealthCheck_Payload *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_HealthCheck_Payload_msginit, arena, len);
@@ -313,7 +315,7 @@ UPB_INLINE char *envoy_api_v2_core_HealthCheck_Payload_serialize(const envoy_api
 typedef enum {
   envoy_api_v2_core_HealthCheck_Payload_payload_text = 1,
   envoy_api_v2_core_HealthCheck_Payload_payload_binary = 2,
-  envoy_api_v2_core_HealthCheck_Payload_payload_NOT_SET = 0,
+  envoy_api_v2_core_HealthCheck_Payload_payload_NOT_SET = 0
 } envoy_api_v2_core_HealthCheck_Payload_payload_oneofcases;
 UPB_INLINE envoy_api_v2_core_HealthCheck_Payload_payload_oneofcases envoy_api_v2_core_HealthCheck_Payload_payload_case(const envoy_api_v2_core_HealthCheck_Payload* msg) { return UPB_FIELD_AT(msg, int, UPB_SIZE(8, 16)); }
 
@@ -335,9 +337,10 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_Payload_set_binary(envoy_api_v2_co
 UPB_INLINE envoy_api_v2_core_HealthCheck_HttpHealthCheck *envoy_api_v2_core_HealthCheck_HttpHealthCheck_new(upb_arena *arena) {
   return (envoy_api_v2_core_HealthCheck_HttpHealthCheck *)upb_msg_new(&envoy_api_v2_core_HealthCheck_HttpHealthCheck_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_core_HealthCheck_HttpHealthCheck *envoy_api_v2_core_HealthCheck_HttpHealthCheck_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_core_HealthCheck_HttpHealthCheck *envoy_api_v2_core_HealthCheck_HttpHealthCheck_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_core_HealthCheck_HttpHealthCheck *ret = envoy_api_v2_core_HealthCheck_HttpHealthCheck_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_core_HealthCheck_HttpHealthCheck_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_HealthCheck_HttpHealthCheck_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_HealthCheck_HttpHealthCheck_serialize(const envoy_api_v2_core_HealthCheck_HttpHealthCheck *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_HealthCheck_HttpHealthCheck_msginit, arena, len);
@@ -418,9 +421,10 @@ UPB_INLINE bool envoy_api_v2_core_HealthCheck_HttpHealthCheck_add_request_header
 UPB_INLINE envoy_api_v2_core_HealthCheck_TcpHealthCheck *envoy_api_v2_core_HealthCheck_TcpHealthCheck_new(upb_arena *arena) {
   return (envoy_api_v2_core_HealthCheck_TcpHealthCheck *)upb_msg_new(&envoy_api_v2_core_HealthCheck_TcpHealthCheck_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_core_HealthCheck_TcpHealthCheck *envoy_api_v2_core_HealthCheck_TcpHealthCheck_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_core_HealthCheck_TcpHealthCheck *envoy_api_v2_core_HealthCheck_TcpHealthCheck_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_core_HealthCheck_TcpHealthCheck *ret = envoy_api_v2_core_HealthCheck_TcpHealthCheck_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_core_HealthCheck_TcpHealthCheck_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_HealthCheck_TcpHealthCheck_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_HealthCheck_TcpHealthCheck_serialize(const envoy_api_v2_core_HealthCheck_TcpHealthCheck *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_HealthCheck_TcpHealthCheck_msginit, arena, len);
@@ -461,9 +465,10 @@ UPB_INLINE struct envoy_api_v2_core_HealthCheck_Payload* envoy_api_v2_core_Healt
 UPB_INLINE envoy_api_v2_core_HealthCheck_RedisHealthCheck *envoy_api_v2_core_HealthCheck_RedisHealthCheck_new(upb_arena *arena) {
   return (envoy_api_v2_core_HealthCheck_RedisHealthCheck *)upb_msg_new(&envoy_api_v2_core_HealthCheck_RedisHealthCheck_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_core_HealthCheck_RedisHealthCheck *envoy_api_v2_core_HealthCheck_RedisHealthCheck_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_core_HealthCheck_RedisHealthCheck *envoy_api_v2_core_HealthCheck_RedisHealthCheck_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_core_HealthCheck_RedisHealthCheck *ret = envoy_api_v2_core_HealthCheck_RedisHealthCheck_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_core_HealthCheck_RedisHealthCheck_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_HealthCheck_RedisHealthCheck_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_HealthCheck_RedisHealthCheck_serialize(const envoy_api_v2_core_HealthCheck_RedisHealthCheck *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_HealthCheck_RedisHealthCheck_msginit, arena, len);
@@ -481,9 +486,10 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_RedisHealthCheck_set_key(envoy_api
 UPB_INLINE envoy_api_v2_core_HealthCheck_GrpcHealthCheck *envoy_api_v2_core_HealthCheck_GrpcHealthCheck_new(upb_arena *arena) {
   return (envoy_api_v2_core_HealthCheck_GrpcHealthCheck *)upb_msg_new(&envoy_api_v2_core_HealthCheck_GrpcHealthCheck_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_core_HealthCheck_GrpcHealthCheck *envoy_api_v2_core_HealthCheck_GrpcHealthCheck_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_core_HealthCheck_GrpcHealthCheck *envoy_api_v2_core_HealthCheck_GrpcHealthCheck_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_core_HealthCheck_GrpcHealthCheck *ret = envoy_api_v2_core_HealthCheck_GrpcHealthCheck_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_core_HealthCheck_GrpcHealthCheck_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_HealthCheck_GrpcHealthCheck_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_HealthCheck_GrpcHealthCheck_serialize(const envoy_api_v2_core_HealthCheck_GrpcHealthCheck *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_HealthCheck_GrpcHealthCheck_msginit, arena, len);
@@ -501,9 +507,10 @@ UPB_INLINE void envoy_api_v2_core_HealthCheck_GrpcHealthCheck_set_service_name(e
 UPB_INLINE envoy_api_v2_core_HealthCheck_CustomHealthCheck *envoy_api_v2_core_HealthCheck_CustomHealthCheck_new(upb_arena *arena) {
   return (envoy_api_v2_core_HealthCheck_CustomHealthCheck *)upb_msg_new(&envoy_api_v2_core_HealthCheck_CustomHealthCheck_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_core_HealthCheck_CustomHealthCheck *envoy_api_v2_core_HealthCheck_CustomHealthCheck_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_core_HealthCheck_CustomHealthCheck *envoy_api_v2_core_HealthCheck_CustomHealthCheck_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_core_HealthCheck_CustomHealthCheck *ret = envoy_api_v2_core_HealthCheck_CustomHealthCheck_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_core_HealthCheck_CustomHealthCheck_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_HealthCheck_CustomHealthCheck_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_HealthCheck_CustomHealthCheck_serialize(const envoy_api_v2_core_HealthCheck_CustomHealthCheck *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_HealthCheck_CustomHealthCheck_msginit, arena, len);
@@ -512,7 +519,7 @@ UPB_INLINE char *envoy_api_v2_core_HealthCheck_CustomHealthCheck_serialize(const
 typedef enum {
   envoy_api_v2_core_HealthCheck_CustomHealthCheck_config_type_config = 2,
   envoy_api_v2_core_HealthCheck_CustomHealthCheck_config_type_typed_config = 3,
-  envoy_api_v2_core_HealthCheck_CustomHealthCheck_config_type_NOT_SET = 0,
+  envoy_api_v2_core_HealthCheck_CustomHealthCheck_config_type_NOT_SET = 0
 } envoy_api_v2_core_HealthCheck_CustomHealthCheck_config_type_oneofcases;
 UPB_INLINE envoy_api_v2_core_HealthCheck_CustomHealthCheck_config_type_oneofcases envoy_api_v2_core_HealthCheck_CustomHealthCheck_config_type_case(const envoy_api_v2_core_HealthCheck_CustomHealthCheck* msg) { return UPB_FIELD_AT(msg, int, UPB_SIZE(12, 24)); }
 
