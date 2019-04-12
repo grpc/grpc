@@ -133,6 +133,7 @@ grpc_cc_library(
         ":grpc_test_util",
         "//:grpc",
     ],
+    tags = ["no_windows"],
 )
 
 grpc_cc_test(

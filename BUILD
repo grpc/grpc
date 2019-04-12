@@ -256,6 +256,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/security/server_credentials_impl.h",
     "include/grpcpp/server.h",
     "include/grpcpp/server_builder.h",
+    "include/grpcpp/server_builder_impl.h",
     "include/grpcpp/server_context.h",
     "include/grpcpp/server_posix.h",
     "include/grpcpp/server_posix_impl.h",
@@ -525,6 +526,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc++_internal_hdrs_only",
+    hdrs = [
+        "include/grpcpp/impl/codegen/sync.h",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_codegen",
+    ],
+)
+
+grpc_cc_library(
     name = "gpr_base",
     srcs = [
         "src/core/lib/gpr/alloc.cc",
@@ -589,8 +601,8 @@ grpc_cc_library(
         "src/core/lib/gprpp/manual_constructor.h",
         "src/core/lib/gprpp/map.h",
         "src/core/lib/gprpp/memory.h",
-        "src/core/lib/gprpp/mutex_lock.h",
         "src/core/lib/gprpp/pair.h",
+        "src/core/lib/gprpp/sync.h",
         "src/core/lib/gprpp/thd.h",
         "src/core/lib/profiling/timers.h",
     ],
@@ -2144,6 +2156,7 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/time.h",
     ],
     deps = [
+        "grpc++_internal_hdrs_only",
         "grpc_codegen",
     ],
 )
@@ -2316,6 +2329,27 @@ grpc_cc_library(
 
 #TODO: Get this into build.yaml once we start using it.
 grpc_cc_library(
+    name = "envoy_lrs_upb",
+    srcs = [
+        "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c",
+        "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h",
+        "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h",
+    ],
+    language = "c++",
+    external_deps = [
+        "upb_lib",
+    ],
+    deps = [
+        ":envoy_core_upb",
+        ":google_api_upb",
+        ":proto_gen_validate_upb",
+    ]
+)
+
+grpc_cc_library(
     name = "envoy_ads_upb",
     srcs = [
         "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c",
@@ -2347,6 +2381,7 @@ grpc_cc_library(
         ":google_api_upb",
         ":proto_gen_validate_upb",
     ],
+    tags = ["no_windows"],
 )
 
 grpc_cc_library(
@@ -2454,3 +2489,11 @@ grpc_cc_library(
 )
 
 grpc_generate_one_off_targets()
+
+filegroup(
+    name = "root_certificates",
+    srcs = [
+        "etc/roots.pem",
+    ],
+    visibility = ["//visibility:public"],
+)
