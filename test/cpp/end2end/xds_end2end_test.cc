@@ -77,12 +77,12 @@
 
 using std::chrono::system_clock;
 
-//using grpc::lb::v1::LoadBalanceRequest;
-//using grpc::lb::v1::LoadBalanceResponse;
-//using grpc::lb::v1::LoadBalancer;
-using ::envoy::service::discovery::v2::grpc::AggregatedDiscoveryService;
+// using grpc::lb::v1::LoadBalanceRequest;
+// using grpc::lb::v1::LoadBalanceResponse;
+// using grpc::lb::v1::LoadBalancer;
 using ::envoy::api::v2::DiscoveryRequest;
 using ::envoy::api::v2::DiscoveryResponse;
+using ::envoy::service::discovery::v2::grpc::AggregatedDiscoveryService;
 
 namespace grpc {
 namespace testing {
@@ -212,12 +212,12 @@ class BalancerServiceImpl : public BalancerService {
       : client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds) {}
 
-  Status StreamAggregatedResources(ServerContext* context, Stream* stream) override {
+  Status StreamAggregatedResources(ServerContext* context,
+                                   Stream* stream) override {
     // TODO(juanlishen): Clean up the scoping.
     gpr_log(GPR_INFO, "LB[%p]: ADS starts", this);
     DiscoveryRequest request;
-    while ()
-    {
+    while () {
       grpc::internal::MutexLock lock(&mu_);
       if (serverlist_done_) goto done;
     }

@@ -23,43 +23,57 @@
 
 #include <grpc/slice_buffer.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h"
+#include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h"
 #include "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h"
 #include "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h"
-#include "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h"
 #include "src/core/ext/upb-generated/google/protobuf/struct.upb.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h"
+#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "third_party/upb/upb/upb.h"
-#include "src/core/lib/gprpp/map.h"
 
 #define XDS_SERVICE_NAME_MAX_LENGTH 128
 
 namespace grpc_core {
 
-
-//typedef grpc_lb_v1_Server_ip_address_t xds_grpclb_ip_address;
-//typedef grpc_lb_v1_LoadBalanceRequest xds_grpclb_request;
-//typedef grpc_lb_v1_InitialLoadBalanceResponse xds_grpclb_initial_response;
-//typedef grpc_lb_v1_Server xds_grpclb_server;
-//typedef google_protobuf_Duration xds_grpclb_duration;
-//typedef google_protobuf_Timestamp xds_grpclb_timestamp;
-
+// typedef grpc_lb_v1_Server_ip_address_t xds_grpclb_ip_address;
+// typedef grpc_lb_v1_LoadBalanceRequest xds_grpclb_request;
+// typedef grpc_lb_v1_InitialLoadBalanceResponse xds_grpclb_initial_response;
+// typedef grpc_lb_v1_Server xds_grpclb_server;
+// typedef google_protobuf_Duration xds_grpclb_duration;
+// typedef google_protobuf_Timestamp xds_grpclb_timestamp;
 
 using XdsDiscoveryRequest = envoy_api_v2_DiscoveryRequest;
 using XdsDiscoveryResponse = envoy_api_v2_DiscoveryResponse;
-using XdsLocality = envoy_api_v2_endpoint_LocalityLbEndpoints;
-using XdsLocalities = InlinedVector<Pair<UniquePtr<char >, XdsLocality*>, 1>;
+using XdsClusterLoadAssignment = envoy_api_v2_ClusterLoadAssignment;
+using XdsLocalityLbEndpoints = envoy_api_v2_endpoint_LocalityLbEndpoints;
+using XdsLocalityLbEndpointsList =
+    InlinedVector<Pair<UniquePtr<char>, XdsLocalityLbEndpoints*>, 1>;
+using XdsLocality = envoy_api_v2_core_Locality;
+using XdsLbEndpoint = envoy_api_v2_endpoint_LbEndpoint;
 using XdsEndpoint = envoy_api_v2_endpoint_Endpoint;
 using XdsNode = envoy_api_v2_core_Node;
 using XdsStruct = google_protobuf_Struct;
 using XdsFieldsEntry = google_protobuf_Struct_FieldsEntry;
 using XdsValue = google_protobuf_Value;
 
- // Creates a request to gRPC LB querying \a service_name.
- XdsDiscoveryRequest* XdsRequestCreate(const char* service_name);
- XdsDiscoveryResponse* XdsResponseDecode(const grpc_slice& encoded_response);
- XdsLocalities XdsLocalitiesFromResponse(const XdsDiscoveryResponse* response);
+struct LocalityUpdateArgs {
+  UniquePtr<char> locality_name;
+  ServerAddressList addresses;
+  uint32_t lb_weight;
+  uint32_t priority;
+};
 
+struct LoadUpdateArgs {
+  InlinedVector<LocalityUpdateArgs, 1> localities;
+  uint32_t drop_per_million;
+};
+
+// Creates a request to gRPC LB querying \a service_name.
+XdsDiscoveryRequest* XdsRequestCreate(const char* service_name);
+XdsDiscoveryResponse* XdsResponseDecode(const grpc_slice& encoded_response);
+LoadUpdateArgs XdsLocalitiesFromResponse(const XdsDiscoveryResponse* response);
 
 typedef struct {
   xds_grpclb_server** servers;
@@ -108,7 +122,7 @@ grpc_millis xds_grpclb_duration_to_millis(xds_grpclb_duration* duration_pb);
 
 /** Destroy \a initial_response */
 void xds_grpclb_initial_response_destroy(xds_grpclb_initial_response* response);
-}
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_LOAD_BALANCER_API_H \
         */
