@@ -1802,6 +1802,11 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
   policy_to_update->UpdateLocked(std::move(update_args));
 }
 
+class ParsedGrpcLbConfig : public ParsedLoadBalancingConfig {
+ public:
+  const char* name() const override { return kGrpclb; }
+};
+
 //
 // factory
 //
@@ -1814,6 +1819,13 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
   }
 
   const char* name() const override { return kGrpclb; }
+
+  UniquePtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
+      const grpc_json* json) const override {
+    GPR_DEBUG_ASSERT(json != nullptr);
+    GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
+    return UniquePtr<ParsedLoadBalancingConfig>(New<ParsedGrpcLbConfig>());
+  }
 };
 
 }  // namespace

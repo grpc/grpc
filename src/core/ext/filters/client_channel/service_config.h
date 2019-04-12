@@ -156,6 +156,10 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
   static void Shutdown();
 
+  template <size_t N>
+  static grpc_error* CreateErrorFromVector(
+      const char* desc, InlinedVector<grpc_error*, N>* error_list);
+
  private:
   // So New() can call our private ctor.
   template <typename T, typename... Args>

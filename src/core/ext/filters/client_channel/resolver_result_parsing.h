@@ -22,10 +22,12 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
+#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/gprpp/optional.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"  // for grpc_millis
@@ -40,6 +42,72 @@ class ClientChannelMethodParams;
 // A table mapping from a method name to its method parameters.
 typedef SliceHashTable<RefCountedPtr<ClientChannelMethodParams>>
     ClientChannelMethodParamsTable;
+
+class ClientChannelGlobalParsedObject : public ServiceConfigParsedObject {
+ public:
+  struct RetryThrottling {
+    int max_milli_tokens = 0;
+    int milli_token_ratio = 0;
+  };
+
+  ClientChannelGlobalParsedObject(
+      UniquePtr<ParsedLoadBalancingConfig> parsed_lb_config,
+      const grpc_core::Optional<RetryThrottling>& retry_throttling)
+      : parsed_lb_config_(std::move(parsed_lb_config)),
+        retry_throttling_(retry_throttling) {}
+
+  grpc_core::Optional<RetryThrottling> retry_throttling() {
+    return retry_throttling_;
+  }
+
+  ParsedLoadBalancingConfig* parsed_lb_config() {
+    return parsed_lb_config_.get();
+  }
+
+ private:
+  UniquePtr<ParsedLoadBalancingConfig> parsed_lb_config_;
+  grpc_core::Optional<RetryThrottling> retry_throttling_;
+};
+
+class ClientChannelMethodParsedObject : public ServiceConfigParsedObject {
+ public:
+  struct RetryPolicy {
+    int max_attempts = 0;
+    grpc_millis initial_backoff = 0;
+    grpc_millis max_backoff = 0;
+    float backoff_multiplier = 0;
+    StatusCodeSet retryable_status_codes;
+  };
+
+  ClientChannelMethodParsedObject(grpc_millis timeout,
+                                  const Optional<bool>& wait_for_ready,
+                                  UniquePtr<RetryPolicy> retry_policy)
+      : timeout_(timeout),
+        wait_for_ready_(wait_for_ready),
+        retry_policy_(std::move(retry_policy)) {}
+
+  grpc_millis timeout() const { return timeout_; }
+
+  Optional<bool> wait_for_ready() const { return wait_for_ready_; }
+
+  RetryPolicy* retry_policy() const { return retry_policy_.get(); }
+
+ private:
+  grpc_millis timeout_ = 0;
+  Optional<bool> wait_for_ready_;
+  UniquePtr<RetryPolicy> retry_policy_;
+};
+
+class ClientChannelServiceConfigParser : public ServiceConfigParser {
+ public:
+  UniquePtr<ServiceConfigParsedObject> ParseGlobalParams(
+      const grpc_json* json, grpc_error** error) override;
+
+  UniquePtr<ServiceConfigParsedObject> ParsePerMethodParams(
+      const grpc_json* json, grpc_error** error) override;
+};
+
+void RegisterClientChannelServiceConfigParser();
 
 // A container of processed fields from the resolver result. Simplifies the
 // usage of resolver result.

@@ -2819,9 +2819,16 @@ static void apply_service_config_to_call_locked(grpc_call_element* elem) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: applying service config to call",
             chand, calld);
   }
-  if(chand->service_config != nullptr) {
+  if (chand->service_config != nullptr) {
     calld->service_config = chand->service_config;
     calld->call_context[GRPC_SERVICE_CONFIG].value = &calld->service_config;
+    const auto* const* method_params_vector =
+        chand->service_config->GetMethodServiceConfigObjectsVector(calld->path);
+    if (method_params_vector != nullptr) {
+      calld->call_context[GRPC_SERVICE_CONFIG_METHOD_PARAMS].value =
+          const_cast<grpc_core::ServiceConfig::ServiceConfigObjectsVector*>(
+              *method_params_vector);
+    }
   }
   if (chand->retry_throttle_data != nullptr) {
     calld->retry_throttle_data = chand->retry_throttle_data->Ref();

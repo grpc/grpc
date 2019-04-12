@@ -531,6 +531,11 @@ void PickFirst::PickFirstSubchannelData::
   }
 }
 
+class ParsedPickFirstConfig : public ParsedLoadBalancingConfig {
+ public:
+  const char* name() const override { return kPickFirst; }
+};
+
 //
 // factory
 //
@@ -543,6 +548,13 @@ class PickFirstFactory : public LoadBalancingPolicyFactory {
   }
 
   const char* name() const override { return kPickFirst; }
+
+  UniquePtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
+      const grpc_json* json) const override {
+    GPR_DEBUG_ASSERT(json != nullptr);
+    GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
+    return UniquePtr<ParsedLoadBalancingConfig>(New<ParsedPickFirstConfig>());
+  }
 };
 
 }  // namespace

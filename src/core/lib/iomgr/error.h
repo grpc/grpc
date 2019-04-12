@@ -30,6 +30,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/inlined_vector.h"
 
 /// Opaque representation of an error.
 /// See https://github.com/grpc/grpc/blob/master/doc/core/grpc-error.md for a
@@ -164,6 +165,12 @@ grpc_error* grpc_error_create(const char* file, int line,
 #define GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(desc, errs, count)  \
   grpc_error_create(__FILE__, __LINE__, grpc_slice_from_copied_string(desc), \
                     errs, count)
+
+// Consumes all the errors in the vector and forms a referencing error from
+// them. If the vector is empty, return GRPC_ERROR_NONE.
+template <size_t N>
+grpc_error* grpc_error_create_from_vector(
+    const char* desc, grpc_core::InlinedVector<grpc_error*, N>* error_list);
 
 #ifndef NDEBUG
 grpc_error* grpc_error_do_ref(grpc_error* err, const char* file, int line);

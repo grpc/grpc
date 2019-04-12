@@ -99,4 +99,15 @@ bool LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(const char* name) {
   return g_state->GetLoadBalancingPolicyFactory(name) != nullptr;
 }
 
+UniquePtr<ParsedLoadBalancingConfig>
+LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(const grpc_json* json) {
+  GPR_ASSERT(g_state != nullptr);
+  // Find factory.
+  LoadBalancingPolicyFactory* factory =
+      g_state->GetLoadBalancingPolicyFactory(json->key);
+  if (factory == nullptr) return nullptr;  // Specified name not found.
+  // Parse load balancing config via factory.
+  return factory->ParseLoadBalancingConfig(json);
+}
+
 }  // namespace grpc_core

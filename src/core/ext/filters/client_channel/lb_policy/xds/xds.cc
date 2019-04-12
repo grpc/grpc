@@ -1654,6 +1654,11 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::RequestReresolution() {
   }
 }
 
+class ParsedXdsConfig : public ParsedLoadBalancingConfig {
+ public:
+  const char* name() const override { return kXds; }
+};
+
 //
 // factory
 //
@@ -1666,6 +1671,13 @@ class XdsFactory : public LoadBalancingPolicyFactory {
   }
 
   const char* name() const override { return kXds; }
+
+  UniquePtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
+      const grpc_json* json) const override {
+    GPR_DEBUG_ASSERT(json != nullptr);
+    GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
+    return UniquePtr<ParsedLoadBalancingConfig>(New<ParsedXdsConfig>());
+  }
 };
 
 }  // namespace

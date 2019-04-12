@@ -367,6 +367,22 @@ grpc_error* grpc_error_create(const char* file, int line,
   return err;
 }
 
+template <size_t N>
+grpc_error* grpc_error_create_from_vector(
+    const char* desc, grpc_core::InlinedVector<grpc_error*, N>* error_list) {
+  grpc_error* error = GRPC_ERROR_NONE;
+  if (error_list->size() != 0) {
+    error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+        desc, error_list->data(), error_list->size());
+    // Remove refs to all errors in error_list.
+    for (size_t i = 0; i < error_list->size(); i++) {
+      GRPC_ERROR_UNREF((*error_list)[i]);
+    }
+    error_list->clear();
+  }
+  return error;
+}
+
 static void ref_strs(grpc_error* err) {
   for (size_t i = 0; i < GRPC_ERROR_STR_MAX; ++i) {
     uint8_t slot = err->strs[i];
