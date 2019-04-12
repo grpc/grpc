@@ -144,8 +144,9 @@ static const NSTimeInterval kInvertedTimeout = 2;
       [[GRPCProtoMethod alloc] initWithPackage:kPackage service:kService method:@"EmptyCall"];
   kUnaryCallMethod =
       [[GRPCProtoMethod alloc] initWithPackage:kPackage service:kService method:@"UnaryCall"];
-  kOutputStreamingCallMethod =
-      [[GRPCProtoMethod alloc] initWithPackage:kPackage service:kService method:@"StreamingOutputCall"];
+  kOutputStreamingCallMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
+                                                                service:kService
+                                                                 method:@"StreamingOutputCall"];
   kFullDuplexCallMethod =
       [[GRPCProtoMethod alloc] initWithPackage:kPackage service:kService method:@"FullDuplexCall"];
 }
@@ -616,30 +617,29 @@ static const NSTimeInterval kInvertedTimeout = 2;
   request.payload.body = [NSMutableData dataWithLength:kSimpleDataLength];
 
   GRPCRequestOptions *callRequest =
-  [[GRPCRequestOptions alloc] initWithHost:(NSString *)kHostAddress
-                                      path:kFullDuplexCallMethod.HTTPPath
-                                    safety:GRPCCallSafetyDefault];
+      [[GRPCRequestOptions alloc] initWithHost:(NSString *)kHostAddress
+                                          path:kFullDuplexCallMethod.HTTPPath
+                                        safety:GRPCCallSafetyDefault];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   options.transportType = GRPCTransportTypeInsecure;
   options.enableFlowControl = YES;
   __block NSUInteger messageId = 0;
   __block GRPCCall2 *call = [[GRPCCall2 alloc]
-                     initWithRequestOptions:callRequest
-                     responseHandler:[[ClientTestsBlockCallbacks alloc]
-                                      initWithInitialMetadataCallback:nil
-                                      messageCallback:^(NSData *message) {
-                                        if (messageId <= 1) {
-                                          [expectPassedMessage fulfill];
-                                        } else {
-                                          [expectBlockedMessage fulfill];
-                                        }
-                                        messageId++;
-                                      }
-                                      closeCallback:nil
-                                      writeDataCallback:^{
-                                        [expectWriteTwice fulfill];
-                                      }]
-                     callOptions:options];
+      initWithRequestOptions:callRequest
+             responseHandler:[[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+                                 messageCallback:^(NSData *message) {
+                                   if (messageId <= 1) {
+                                     [expectPassedMessage fulfill];
+                                   } else {
+                                     [expectBlockedMessage fulfill];
+                                   }
+                                   messageId++;
+                                 }
+                                 closeCallback:nil
+                                 writeDataCallback:^{
+                                   [expectWriteTwice fulfill];
+                                 }]
+                 callOptions:options];
 
   [call receiveNextMessages:2];
   [call start];
@@ -669,16 +669,15 @@ static const NSTimeInterval kInvertedTimeout = 2;
   __block BOOL closed = NO;
   GRPCCall2 *call = [[GRPCCall2 alloc]
       initWithRequestOptions:callRequest
-             responseHandler:[[ClientTestsBlockCallbacks alloc]
-                                 initWithInitialMetadataCallback:nil
-                                                 messageCallback:^(NSData *message) {
-                                                   [expectPassedMessage fulfill];
-                                                   XCTAssertFalse(closed);
-                                                 }
-                              closeCallback:^(NSDictionary *ttrailers, NSError *error) {
-                                closed = YES;
-                                [expectPassedClose fulfill];
-                              }]
+             responseHandler:[[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+                                 messageCallback:^(NSData *message) {
+                                   [expectPassedMessage fulfill];
+                                   XCTAssertFalse(closed);
+                                 }
+                                 closeCallback:^(NSDictionary *ttrailers, NSError *error) {
+                                   closed = YES;
+                                   [expectPassedClose fulfill];
+                                 }]
                  callOptions:options];
 
   [call receiveNextMessages:1];
