@@ -198,7 +198,7 @@ xcodebuild \
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
-    -scheme InteropTestsMac \
+    -scheme MacTests \
     -destination platform=macOS \
     HOST_PORT_LOCALSSL=localhost:5051 \
     HOST_PORT_LOCAL=localhost:5050 \

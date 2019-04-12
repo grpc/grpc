@@ -43,7 +43,7 @@ GRPC_LOCAL_SRC = '../../..'
   end
 end
 
-target 'InteropTestsMac' do
+target 'MacTests' do
   platform :osx, '10.13'
   pod 'Protobuf', :path => "#{GRPC_LOCAL_SRC}/third_party/protobuf", :inhibit_warnings => true
 

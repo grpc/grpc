@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "B0BB3EF6225E795F008DA580"
-               BuildableName = "InteropTestsMac.xctest"
-               BlueprintName = "InteropTestsMac"
+               BuildableName = "MacTests.xctest"
+               BlueprintName = "MacTests"
                ReferencedContainer = "container:Tests.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -33,8 +33,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "B0BB3EF6225E795F008DA580"
-               BuildableName = "InteropTestsMac.xctest"
-               BlueprintName = "InteropTestsMac"
+               BuildableName = "MacTests.xctest"
+               BlueprintName = "MacTests"
                ReferencedContainer = "container:Tests.xcodeproj">
             </BuildableReference>
             <SkippedTests>
@@ -61,8 +61,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B0BB3EF6225E795F008DA580"
-            BuildableName = "InteropTestsMac.xctest"
-            BlueprintName = "InteropTestsMac"
+            BuildableName = "MacTests.xctest"
+            BlueprintName = "MacTests"
             ReferencedContainer = "container:Tests.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -79,8 +79,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B0BB3EF6225E795F008DA580"
-            BuildableName = "InteropTestsMac.xctest"
-            BlueprintName = "InteropTestsMac"
+            BuildableName = "MacTests.xctest"
+            BlueprintName = "MacTests"
             ReferencedContainer = "container:Tests.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
