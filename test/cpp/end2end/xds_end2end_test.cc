@@ -49,6 +49,11 @@
 
 #include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+//#include "src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h"
+#include "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h"
+
+//#include "third_party/data-plane-api/envoy/api/v2/core/address.proto.h"
+//#include "third_party/data-plane-api/envoy/api/v2/eds.grpc.pb.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -72,9 +77,12 @@
 
 using std::chrono::system_clock;
 
-using grpc::lb::v1::LoadBalanceRequest;
-using grpc::lb::v1::LoadBalanceResponse;
-using grpc::lb::v1::LoadBalancer;
+//using grpc::lb::v1::LoadBalanceRequest;
+//using grpc::lb::v1::LoadBalanceResponse;
+//using grpc::lb::v1::LoadBalancer;
+using ::envoy::service::discovery::v2::grpc::AggregatedDiscoveryService;
+using ::envoy::api::v2::DiscoveryRequest;
+using ::envoy::api::v2::DiscoveryResponse;
 
 namespace grpc {
 namespace testing {
@@ -117,7 +125,7 @@ class CountedService : public ServiceType {
 };
 
 using BackendService = CountedService<TestServiceImpl>;
-using BalancerService = CountedService<LoadBalancer::Service>;
+using BalancerService = CountedService<AggregatedDiscoveryService::Service>;
 
 const char g_kCallCredsMdKey[] = "Balancer should not ...";
 const char g_kCallCredsMdValue[] = "... receive me";
@@ -197,16 +205,18 @@ struct ClientStats {
 
 class BalancerServiceImpl : public BalancerService {
  public:
-  using Stream = ServerReaderWriter<LoadBalanceResponse, LoadBalanceRequest>;
+  using Stream = ServerReaderWriter<DiscoveryResponse, DiscoveryRequest>;
   using ResponseDelayPair = std::pair<LoadBalanceResponse, int>;
 
   explicit BalancerServiceImpl(int client_load_reporting_interval_seconds)
       : client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds) {}
 
-  Status BalanceLoad(ServerContext* context, Stream* stream) override {
+  Status StreamAggregatedResources(ServerContext* context, Stream* stream) override {
     // TODO(juanlishen): Clean up the scoping.
-    gpr_log(GPR_INFO, "LB[%p]: BalanceLoad", this);
+    gpr_log(GPR_INFO, "LB[%p]: ADS starts", this);
+    DiscoveryRequest request;
+    while ()
     {
       grpc::internal::MutexLock lock(&mu_);
       if (serverlist_done_) goto done;

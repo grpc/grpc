@@ -375,7 +375,7 @@ class XdsLb : public LoadBalancingPolicy {
   static void OnFallbackTimerLocked(void* arg, grpc_error* error);
 
   // Who the client is trying to communicate with.
-  const char* server_name_ = nullptr;
+  const char* service_name_ = nullptr;
 
   // Name of the balancer to connect to.
   UniquePtr<char> balancer_name_;
@@ -605,8 +605,8 @@ XdsLb::BalancerChannelState::BalancerCallState::BalancerCallState(
   // Init the LB call. Note that the LB call will progress every time there's
   // activity in xdslb_policy_->interested_parties(), which is comprised of
   // the polling entities from client_channel.
-  GPR_ASSERT(xdslb_policy()->server_name_ != nullptr);
-  GPR_ASSERT(xdslb_policy()->server_name_[0] != '\0');
+  GPR_ASSERT(xdslb_policy()->service_name_ != nullptr);
+  GPR_ASSERT(xdslb_policy()->service_name_[0] != '\0');
   const grpc_millis deadline =
       xdslb_policy()->lb_call_timeout_ms_ == 0
           ? GRPC_MILLIS_INF_FUTURE
@@ -617,9 +617,9 @@ XdsLb::BalancerChannelState::BalancerCallState::BalancerCallState(
       GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V1_DOT_LOADBALANCER_SLASH_BALANCELOAD,
       nullptr, deadline, nullptr);
   // Init the LB call request payload.
-  xds_grpclb_request* request =
-      xds_grpclb_request_create(xdslb_policy()->server_name_);
-  grpc_slice request_payload_slice = xds_grpclb_request_encode(request);
+  XdsDiscoveryRequest* request =
+      XdsRequestCreate(xdslb_policy()->service_name_);
+  grpc_slice request_payload_slice = XdsRequestEncode(request);
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
@@ -1091,11 +1091,11 @@ XdsLb::XdsLb(Args args)
   GPR_ASSERT(server_uri != nullptr);
   grpc_uri* uri = grpc_uri_parse(server_uri, true);
   GPR_ASSERT(uri->path[0] != '\0');
-  server_name_ = gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path);
+  service_name_ = gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path);
   if (grpc_lb_xds_trace.enabled()) {
     gpr_log(GPR_INFO,
             "[xdslb %p] Will use '%s' as the server name for LB request.", this,
-            server_name_);
+            service_name_);
   }
   grpc_uri_destroy(uri);
   // Record LB call timeout.
@@ -1108,7 +1108,12 @@ XdsLb::XdsLb(Args args)
 }
 
 XdsLb::~XdsLb() {
+<<<<<<< Updated upstream
   gpr_free((void*)server_name_);
+=======
+  gpr_mu_destroy(&lb_chand_mu_);
+  gpr_free((void*)service_name_);
+>>>>>>> Stashed changes
   grpc_channel_args_destroy(args_);
   locality_serverlist_.clear();
 }

@@ -453,6 +453,7 @@ grpc_cc_test(
     ],
     deps = [
         ":test_service_impl",
+        "//:envoy_ads_upb",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
