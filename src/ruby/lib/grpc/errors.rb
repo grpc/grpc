@@ -13,6 +13,7 @@
 # limitations under the License.
 
 require_relative './grpc'
+require_relative './google_rpc_status_utils'
 
 # GRPC contains the General RPC module.
 module GRPC
@@ -47,7 +48,20 @@ module GRPC
     #
     # @return [Status] with the same code and details
     def to_status
-      Struct::Status.new(code, details, @metadata)
+      Struct::Status.new(code, details, metadata)
+    end
+
+    # Converts the exception to a deserialized Google::Rpc::Status proto.
+    # Returns nil if the `grpc-status-details-bin` trailer could not be
+    # converted to a {Google::Rpc::Status} due to the server not providing
+    # the necessary trailers.
+    #
+    # Raises an error if the server did provide the necessary trailers
+    # but they fail to deserialize into a {Google::Rpc::Status} protobuf.
+    #
+    # @return [Google::Rpc::Status] with the same code and details
+    def to_rpc_status
+      GoogleRpcStatusUtils.extract_google_rpc_status to_status
     end
 
     def self.new_status_exception(code, details = 'unknown cause',
