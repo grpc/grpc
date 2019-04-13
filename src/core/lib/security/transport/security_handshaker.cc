@@ -317,6 +317,9 @@ grpc_error* SecurityHandshaker::OnHandshakeNextDoneLocked(
 void SecurityHandshaker::OnHandshakeNextDoneGrpcWrapper(
     tsi_result result, void* user_data, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
+  // This callback may be invoked by TSI in a non-grpc thread, so it's safe to
+  // create our own exec_ctx here.
+  grpc_core::ExecCtx exec_ctx;
   RefCountedPtr<SecurityHandshaker> h(
       static_cast<SecurityHandshaker*>(user_data));
   MutexLock lock(&h->mu_);
