@@ -208,6 +208,10 @@ class BalancerServiceImpl : public BalancerService {
     // TODO(juanlishen): Clean up the scoping.
     gpr_log(GPR_INFO, "LB[%p]: BalanceLoad", this);
     {
+      std::unique_lock<std::mutex> lock(mu_);
+      if (serverlist_done_) goto done;
+    }
+    {
       // Balancer shouldn't receive the call credentials metadata.
       EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
                 context->client_metadata().end());
@@ -524,8 +528,10 @@ class XdsEnd2endTest : public ::testing::Test {
     grpc_core::Resolver::Result result;
     result.addresses = CreateLbAddressesFromPortList(ports);
     if (service_config_json != nullptr) {
+      grpc_error* error = GRPC_ERROR_NONE;
       result.service_config =
-          grpc_core::ServiceConfig::Create(service_config_json);
+          grpc_core::ServiceConfig::Create(service_config_json, &error);
+      GRPC_ERROR_UNREF(error);
     }
     grpc_arg arg = grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
         lb_channel_response_generator == nullptr
@@ -555,8 +561,10 @@ class XdsEnd2endTest : public ::testing::Test {
     grpc_core::Resolver::Result result;
     result.addresses = CreateLbAddressesFromPortList(ports);
     if (service_config_json != nullptr) {
+      grpc_error* error = GRPC_ERROR_NONE;
       result.service_config =
-          grpc_core::ServiceConfig::Create(service_config_json);
+          grpc_core::ServiceConfig::Create(service_config_json, &error);
+      GRPC_ERROR_UNREF(error);
     }
     if (lb_channel_response_generator == nullptr) {
       lb_channel_response_generator = lb_channel_response_generator_.get();
@@ -860,25 +868,16 @@ TEST_F(SingleBalancerTest, AllServersUnreachableFailFast) {
 TEST_F(SingleBalancerTest, BackendsRestart) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
-  const size_t kNumRpcsPerAddress = 100;
   ScheduleResponseForBalancer(
       0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
       0);
-  // Make sure that trying to connect works without a call.
-  channel_->GetState(true /* try_to_connect */);
-  // Send kNumRpcsPerAddress RPCs per server.
-  CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
-  balancers_[0]->service_.NotifyDoneWithServerlists();
-  // The balancer got a single request.
-  EXPECT_EQ(1U, balancers_[0]->service_.request_count());
-  // and sent a single response.
-  EXPECT_EQ(1U, balancers_[0]->service_.response_count());
+  WaitForAllBackends();
   // Stop backends.  RPCs should fail.
   ShutdownAllBackends();
   CheckRpcSendFailure();
   // Restart all backends.  RPCs should start succeeding again.
   StartAllBackends();
-  CheckRpcSendOk(1 /* times */, 1000 /* timeout_ms */,
+  CheckRpcSendOk(1 /* times */, 2000 /* timeout_ms */,
                  true /* wait_for_ready */);
 }
 

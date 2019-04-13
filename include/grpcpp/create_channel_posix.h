@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,46 +19,34 @@
 #ifndef GRPCPP_CREATE_CHANNEL_POSIX_H
 #define GRPCPP_CREATE_CHANNEL_POSIX_H
 
-#include <memory>
-
-#include <grpc/support/port_platform.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/create_channel_posix_impl.h>
 
 namespace grpc {
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
-/// Create a new \a Channel communicating over the given file descriptor.
-///
-/// \param target The name of the target.
-/// \param fd The file descriptor representing a socket.
-std::shared_ptr<Channel> CreateInsecureChannelFromFd(const grpc::string& target,
-                                                     int fd);
+static inline std::shared_ptr<Channel> CreateInsecureChannelFromFd(
+    const grpc::string& target, int fd) {
+  return ::grpc_impl::CreateInsecureChannelFromFd(target, fd);
+}
 
-/// Create a new \a Channel communicating over given file descriptor with custom
-/// channel arguments.
-///
-/// \param target The name of the target.
-/// \param fd The file descriptor representing a socket.
-/// \param args Options for channel creation.
-std::shared_ptr<Channel> CreateCustomInsecureChannelFromFd(
-    const grpc::string& target, int fd, const ChannelArguments& args);
+static inline std::shared_ptr<Channel> CreateCustomInsecureChannelFromFd(
+    const grpc::string& target, int fd, const ChannelArguments& args) {
+  return ::grpc_impl::CreateCustomInsecureChannelFromFd(target, fd, args);
+}
 
 namespace experimental {
 
-/// Create a new \a Channel communicating over given file descriptor with custom
-/// channel arguments.
-///
-/// \param target The name of the target.
-/// \param fd The file descriptor representing a socket.
-/// \param args Options for channel creation.
-/// \param interceptor_creators Vector of interceptor factory objects.
-std::shared_ptr<Channel> CreateCustomInsecureChannelWithInterceptorsFromFd(
+static inline std::shared_ptr<Channel>
+CreateCustomInsecureChannelWithInterceptorsFromFd(
     const grpc::string& target, int fd, const ChannelArguments& args,
     std::unique_ptr<std::vector<
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
-        interceptor_creators);
+        interceptor_creators) {
+  return ::grpc_impl::experimental::
+      CreateCustomInsecureChannelWithInterceptorsFromFd(
+          target, fd, args, std::move(interceptor_creators));
+}
 
 }  // namespace experimental
 

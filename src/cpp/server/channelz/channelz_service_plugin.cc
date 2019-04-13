@@ -67,13 +67,21 @@ CreateChannelzServicePlugin() {
       new ChannelzServicePlugin());
 }
 
+}  // namespace experimental
+}  // namespace channelz
+}  // namespace grpc
+namespace grpc_impl {
+namespace channelz {
+namespace experimental {
+
 void InitChannelzService() {
   static bool already_here = false;
   if (already_here) return;
   already_here = true;
-  ::grpc::ServerBuilder::InternalAddPluginFactory(&CreateChannelzServicePlugin);
+  ::grpc::ServerBuilder::InternalAddPluginFactory(
+      &grpc::channelz::experimental::CreateChannelzServicePlugin);
 }
 
 }  // namespace experimental
 }  // namespace channelz
-}  // namespace grpc
+}  // namespace grpc_impl

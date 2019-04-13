@@ -23,10 +23,13 @@
 
 #include <grpcpp/support/config.h>
 
-namespace grpc {
+namespace grpc_impl {
 
 class ServerBuilder;
 class ServerInitializer;
+}  // namespace grpc_impl
+namespace grpc {
+
 class ChannelArguments;
 
 /// This interface is meant for internal usage only. Implementations of this
@@ -40,14 +43,14 @@ class ServerBuilderPlugin {
   /// UpdateServerBuilder will be called at an early stage in
   /// ServerBuilder::BuildAndStart(), right after the ServerBuilderOptions have
   /// done their updates.
-  virtual void UpdateServerBuilder(ServerBuilder* builder) {}
+  virtual void UpdateServerBuilder(grpc_impl::ServerBuilder* builder) {}
 
   /// InitServer will be called in ServerBuilder::BuildAndStart(), after the
   /// Server instance is created.
-  virtual void InitServer(ServerInitializer* si) = 0;
+  virtual void InitServer(grpc_impl::ServerInitializer* si) = 0;
 
   /// Finish will be called at the end of ServerBuilder::BuildAndStart().
-  virtual void Finish(ServerInitializer* si) = 0;
+  virtual void Finish(grpc_impl::ServerInitializer* si) = 0;
 
   /// ChangeArguments is an interface that can be used in
   /// ServerBuilderOption::UpdatePlugins

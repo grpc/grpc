@@ -209,7 +209,11 @@ bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
   bool call_cancel = (cancelled_ != 0);
 
   // If it's a unary cancel callback, call it under the lock so that it doesn't
-  // race with ClearCancelCallback
+  // race with ClearCancelCallback. Although we don't normally call callbacks
+  // under a lock, this is a special case since the user needs a guarantee that
+  // the callback won't issue or run after ClearCancelCallback has returned.
+  // This requirement imposes certain restrictions on the callback, documented
+  // in the API comments of SetCancelCallback.
   if (cancel_callback_) {
     cancel_callback_();
   }
@@ -219,7 +223,7 @@ bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
   lock.unlock();
 
   if (call_cancel && reactor_ != nullptr) {
-    reactor_->OnCancel();
+    reactor_->MaybeCallOnCancel();
   }
 
   /* Add interception point and run through interceptors */
