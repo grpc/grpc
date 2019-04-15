@@ -514,6 +514,6 @@ def intercept_channel(channel, *interceptors):
                             'grpc.UnaryUnaryClientInterceptor or '
                             'grpc.UnaryStreamClientInterceptor or '
                             'grpc.StreamUnaryClientInterceptor or '
-                            'grpc.StreamStreamClientInterceptor or ')
+                            'grpc.StreamStreamClientInterceptor')
         channel = _Channel(channel, interceptor)
     return channel
