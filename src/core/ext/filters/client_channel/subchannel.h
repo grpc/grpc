@@ -207,8 +207,7 @@ class Subchannel {
   channelz::SubchannelNode* channelz_node();
 
   // Polls the current connectivity state of the subchannel.
-  grpc_connectivity_state CheckConnectivity(grpc_error** error,
-                                            bool inhibit_health_checking);
+  grpc_connectivity_state CheckConnectivity(bool inhibit_health_checking);
 
   // When the connectivity state of the subchannel changes from \a *state,
   // invokes \a notify and updates \a *state with the new state.
@@ -241,7 +240,7 @@ class Subchannel {
 
   // Sets the subchannel's connectivity state to \a state.
   void SetConnectivityStateLocked(grpc_connectivity_state state,
-                                  grpc_error* error, const char* reason);
+                                  const char* reason);
 
   // Methods for connection.
   void MaybeStartConnectingLocked();
