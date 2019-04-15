@@ -521,7 +521,7 @@ static bool process_resolver_result_locked(
 static grpc_error* do_ping_locked(channel_data* chand, grpc_transport_op* op) {
   if (grpc_connectivity_state_check(&chand->state_tracker) !=
       GRPC_CHANNEL_READY) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING( "channel not connected");
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("channel not connected");
   }
   LoadBalancingPolicy::PickArgs pick;
   grpc_error* error = GRPC_ERROR_NONE;
