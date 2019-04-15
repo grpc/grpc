@@ -2952,7 +2952,7 @@ static void start_pick_locked(void* arg, grpc_error* error) {
                          nullptr /* server_pushback_md */)) {
           grpc_error* new_error =
               GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                  "Failed to create subchannel", &error, 1);
+                  "Failed to pick subchannel", &error, 1);
           GRPC_ERROR_UNREF(error);
           GRPC_CLOSURE_SCHED(&calld->pick_closure, new_error);
         }
