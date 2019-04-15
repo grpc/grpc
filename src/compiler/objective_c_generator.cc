@@ -50,7 +50,8 @@ void PrintProtoRpcDeclarationAsPragma(
 }
 
 template <typename DescriptorType>
-static void PrintAllComments(const DescriptorType* desc, Printer* printer) {
+static void PrintAllComments(const DescriptorType* desc, Printer* printer,
+                             bool deprecated = false) {
   std::vector<grpc::string> comments;
   grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_LEADING_DETACHED,
                              &comments);
@@ -70,17 +71,20 @@ static void PrintAllComments(const DescriptorType* desc, Printer* printer) {
     }
     printer->Print("\n");
   }
-  printer->Print(" *\n");
-  printer->Print(
-      " * This method belongs to a set of APIs that have been deprecated. Using"
-      " the v2 API is recommended.\n");
+  if (deprecated) {
+    printer->Print(" *\n");
+    printer->Print(
+        " * This method belongs to a set of APIs that have been deprecated. "
+        "Using"
+        " the v2 API is recommended.\n");
+  }
   printer->Print(" */\n");
 }
 
 void PrintMethodSignature(Printer* printer, const MethodDescriptor* method,
                           const map< ::grpc::string, ::grpc::string>& vars) {
   // Print comment
-  PrintAllComments(method, printer);
+  PrintAllComments(method, printer, true);
 
   printer->Print(vars, "- ($return_type$)$method_name$With");
   if (method->client_streaming()) {
