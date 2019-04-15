@@ -114,7 +114,8 @@ namespace Grpc.Core
         /// <summary>
         /// The service is currently unavailable.  This is a most likely a
         /// transient condition and may be corrected by retrying with
-        /// a backoff.
+        /// a backoff. Note that it is not always safe to retry
+        /// non-idempotent operations.
         /// </summary>
         Unavailable = 14,
 
