@@ -76,7 +76,7 @@ VALID_CONFIG_opt = 1
 CC_opt = $(DEFAULT_CC)
 CXX_opt = $(DEFAULT_CXX)
 LD_opt = $(DEFAULT_CC)
-LDXX_opt = $(DEFAULT_CXX)
+LDXX_opt = $(DEFAULT_CXX) 
 CPPFLAGS_opt = -O2 -Wframe-larger-than=16384
 DEFINES_opt = NDEBUG
 
@@ -240,7 +240,8 @@ prefix ?= /usr/local
 
 PROTOC ?= protoc
 DTRACE ?= dtrace
-CONFIG ?= opt
+CONFIG ?= dbg
+
 # Doing X ?= Y is the same as:
 # ifeq ($(origin X), undefined)
 #  X = Y

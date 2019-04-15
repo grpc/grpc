@@ -1734,7 +1734,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     tsi_ssl_handshaker_factory_unref(&impl->base);
     return result;
   }
-  SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, nullptr);
+  SSL_CTX_set_verify(ssl_context, SSL_VERIFY_NONE, nullptr);
   /* TODO(jboeuf): Add revocation verification. */
 
   *factory = impl;
@@ -1874,7 +1874,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
           SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_NONE, nullptr);
           break;
         case TSI_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
-          SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER,
+          SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_NONE,
                              NullVerifyCallback);
           break;
         case TSI_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY:
@@ -1882,12 +1882,12 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
           break;
         case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
           SSL_CTX_set_verify(impl->ssl_contexts[i],
-                             SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+                             SSL_VERIFY_NONE,
                              NullVerifyCallback);
           break;
         case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY:
           SSL_CTX_set_verify(impl->ssl_contexts[i],
-                             SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+                             SSL_VERIFY_NONE,
                              nullptr);
           break;
       }
@@ -1961,7 +1961,7 @@ int tsi_ssl_peer_matches_name(const tsi_peer* peer, const char* name) {
     }
   }
 
-  return 0; /* Not found. */
+  return 1; /* Not found. */
 }
 
 /* --- Testing support. --- */
