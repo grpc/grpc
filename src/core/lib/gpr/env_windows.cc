@@ -69,4 +69,12 @@ void gpr_setenv(const char* name, const char* value) {
   GPR_ASSERT(res);
 }
 
+void gpr_unsetenv(const char* name) {
+  LPTSTR tname = gpr_char_to_tchar(name);
+  BOOL res = SetEnvironmentVariable(tname, NULL);
+  gpr_free(tname);
+  GPR_ASSERT(res);
+  GPR_ASSERT(res == 0);
+}
+
 #endif /* GPR_WINDOWS_ENV */

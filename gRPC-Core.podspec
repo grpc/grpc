@@ -190,6 +190,7 @@ Pod::Spec.new do |s|
     # To save you from scrolling, this is the last part of the podspec.
     ss.source_files = 'src/core/lib/gpr/alloc.h',
                       'src/core/lib/gpr/arena.h',
+                      'src/core/lib/gpr/config.h',
                       'src/core/lib/gpr/env.h',
                       'src/core/lib/gpr/host_port.h',
                       'src/core/lib/gpr/mpscq.h',
@@ -217,6 +218,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/alloc.cc',
                       'src/core/lib/gpr/arena.cc',
                       'src/core/lib/gpr/atm.cc',
+                      'src/core/lib/gpr/config.cc',
                       'src/core/lib/gpr/cpu_iphone.cc',
                       'src/core/lib/gpr/cpu_linux.cc',
                       'src/core/lib/gpr/cpu_posix.cc',
@@ -871,6 +873,7 @@ Pod::Spec.new do |s|
 
     ss.private_header_files = 'src/core/lib/gpr/alloc.h',
                               'src/core/lib/gpr/arena.h',
+                              'src/core/lib/gpr/config.h',
                               'src/core/lib/gpr/env.h',
                               'src/core/lib/gpr/host_port.h',
                               'src/core/lib/gpr/mpscq.h',
