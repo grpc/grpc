@@ -121,10 +121,7 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
 
   void UpdateState(grpc_connectivity_state state,
                    UniquePtr<SubchannelPicker> picker) override {
-    if (parent_->resolver_ == nullptr) {
-      // shutting down.
-      return;
-    }
+    if (parent_->resolver_ == nullptr) return;  // Shutting down.
     // If this request is from the pending child policy, ignore it until
     // it reports READY, at which point we swap it into place.
     if (CalledByPendingChild()) {
