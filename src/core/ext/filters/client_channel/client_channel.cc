@@ -74,7 +74,7 @@ using grpc_core::internal::ServerRetryThrottleData;
 using grpc_core::LoadBalancingPolicy;
 
 //
-// Client channel implementation
+// Client channel filter
 //
 
 // By default, we buffer 256 KiB per RPC for retries.
@@ -787,7 +787,9 @@ void ChannelData::StartTransportOpLocked(void* arg, grpc_error* ignored) {
   }
   // Reset backoff.
   if (op->reset_connect_backoff) {
-    chand->resolving_lb_policy_->ResetBackoffLocked();
+    if (chand->resolving_lb_policy_ != nullptr) {
+      chand->resolving_lb_policy_->ResetBackoffLocked();
+    }
   }
   // Disconnect.
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
@@ -868,7 +870,9 @@ void ChannelData::RemoveQueuedPick(QueuedPick* to_remove,
 
 void ChannelData::TryToConnectLocked(void* arg, grpc_error* error_ignored) {
   auto* chand = static_cast<ChannelData*>(arg);
-  chand->resolving_lb_policy_->ExitIdleLocked();
+  if (chand->resolving_lb_policy_ != nullptr) {
+    chand->resolving_lb_policy_->ExitIdleLocked();
+  }
   GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_, "TryToConnect");
 }
 
@@ -1057,7 +1061,7 @@ struct pending_batch {
     for initial metadata before trying to create a call object,
     and handling cancellation gracefully. */
 struct call_data {
-  call_data(grpc_call_element* elem, const grpc_core::ChannelData& chand,
+  call_data(grpc_call_element* elem, const ChannelData& chand,
             const grpc_call_element_args& args)
       : deadline_state(elem, args.call_stack, args.call_combiner,
                        GPR_LIKELY(chand.deadline_checking_enabled())
@@ -1109,7 +1113,7 @@ struct call_data {
   // Set when we get a cancel_stream op.
   grpc_error* cancel_error = GRPC_ERROR_NONE;
 
-  grpc_core::ChannelData::QueuedPick pick;
+  ChannelData::QueuedPick pick;
   bool pick_queued = false;
   bool service_config_applied = false;
   grpc_core::QueuedPickCanceller* pick_canceller = nullptr;
@@ -3215,21 +3219,21 @@ static void cc_set_pollset_or_pollset_set(grpc_call_element* elem,
 
 const grpc_channel_filter grpc_client_channel_filter = {
     cc_start_transport_stream_op_batch,
-    grpc_core::ChannelData::StartTransportOp,
+    ChannelData::StartTransportOp,
     sizeof(call_data),
     cc_init_call_elem,
     cc_set_pollset_or_pollset_set,
     cc_destroy_call_elem,
-    sizeof(grpc_core::ChannelData),
-    grpc_core::ChannelData::Init,
-    grpc_core::ChannelData::Destroy,
-    grpc_core::ChannelData::GetChannelInfo,
+    sizeof(ChannelData),
+    ChannelData::Init,
+    ChannelData::Destroy,
+    ChannelData::GetChannelInfo,
     "client-channel",
 };
 
 void grpc_client_channel_set_channelz_node(
     grpc_channel_element* elem, grpc_core::channelz::ClientChannelNode* node) {
-  auto* chand = static_cast<grpc_core::ChannelData*>(elem->channel_data);
+  auto* chand = static_cast<ChannelData*>(elem->channel_data);
   chand->set_channelz_node(node);
 }
 
@@ -3237,19 +3241,19 @@ void grpc_client_channel_populate_child_refs(
     grpc_channel_element* elem,
     grpc_core::channelz::ChildRefsList* child_subchannels,
     grpc_core::channelz::ChildRefsList* child_channels) {
-  auto* chand = static_cast<grpc_core::ChannelData*>(elem->channel_data);
+  auto* chand = static_cast<ChannelData*>(elem->channel_data);
   chand->FillChildRefsForChannelz(child_subchannels, child_channels);
 }
 
 grpc_connectivity_state grpc_client_channel_check_connectivity_state(
     grpc_channel_element* elem, int try_to_connect) {
-  auto* chand = static_cast<grpc_core::ChannelData*>(elem->channel_data);
+  auto* chand = static_cast<ChannelData*>(elem->channel_data);
   return chand->CheckConnectivityState(try_to_connect);
 }
 
 int grpc_client_channel_num_external_connectivity_watchers(
     grpc_channel_element* elem) {
-  auto* chand = static_cast<grpc_core::ChannelData*>(elem->channel_data);
+  auto* chand = static_cast<ChannelData*>(elem->channel_data);
   return chand->NumExternalConnectivityWatchers();
 }
 
@@ -3257,7 +3261,7 @@ void grpc_client_channel_watch_connectivity_state(
     grpc_channel_element* elem, grpc_polling_entity pollent,
     grpc_connectivity_state* state, grpc_closure* closure,
     grpc_closure* watcher_timer_init) {
-  auto* chand = static_cast<grpc_core::ChannelData*>(elem->channel_data);
+  auto* chand = static_cast<ChannelData*>(elem->channel_data);
   return chand->AddExternalConnectivityWatcher(pollent, state, closure,
                                                watcher_timer_init);
 }
