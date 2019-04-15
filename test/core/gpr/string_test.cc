@@ -294,6 +294,22 @@ static void test_is_true(void) {
   GPR_ASSERT(false == gpr_is_true("0"));
 }
 
+static void test_parse_bool_value(void) {
+  LOG_TEST_NAME("test_parse_bool_value");
+
+  bool ret;
+  GPR_ASSERT(true == gpr_parse_bool_value("truE", &ret) && true == ret);
+  GPR_ASSERT(true == gpr_parse_bool_value("falsE", &ret) && false == ret);
+  GPR_ASSERT(true == gpr_parse_bool_value("1", &ret) && true == ret);
+  GPR_ASSERT(true == gpr_parse_bool_value("0", &ret) && false == ret);
+  GPR_ASSERT(true == gpr_parse_bool_value("Yes", &ret) && true == ret);
+  GPR_ASSERT(true == gpr_parse_bool_value("No", &ret) && false == ret);
+  GPR_ASSERT(true == gpr_parse_bool_value("Y", &ret) && true == ret);
+  GPR_ASSERT(true == gpr_parse_bool_value("N", &ret) && false == ret);
+  GPR_ASSERT(false == gpr_parse_bool_value(nullptr, &ret));
+  GPR_ASSERT(false == gpr_parse_bool_value("", &ret));
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   test_strdup();
@@ -308,5 +324,6 @@ int main(int argc, char** argv) {
   test_stricmp();
   test_memrchr();
   test_is_true();
+  test_parse_bool_value();
   return 0;
 }
