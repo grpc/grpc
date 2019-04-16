@@ -604,8 +604,6 @@ class CallbackUnaryHandler : public MethodHandler {
       ctx_->BeginCompletionOp(call, [this](bool) { MaybeDone(); }, nullptr);
     }
 
-    ~ServerCallbackRpcControllerImpl() {}
-
     const RequestType* request() { return allocator_info_->request; }
     ResponseType* response() { return allocator_info_->response; }
 
@@ -613,7 +611,6 @@ class CallbackUnaryHandler : public MethodHandler {
       if (--callbacks_outstanding_ == 0) {
         grpc_call* call = call_.call();
         auto call_requester = std::move(call_requester_);
-        this->~ServerCallbackRpcControllerImpl();  // explicitly call destructor
         if (allocator_ != nullptr) {
           allocator_->DeallocateMessages(allocator_info_);
         } else {
@@ -624,6 +621,7 @@ class CallbackUnaryHandler : public MethodHandler {
             allocator_info_->response->~ResponseType();
           }
         }
+        this->~ServerCallbackRpcControllerImpl();  // explicitly call destructor
         g_core_codegen_interface->grpc_call_unref(call);
         call_requester();
       }
