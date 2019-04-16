@@ -191,6 +191,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
                                 callSafety:_requestOptions.safety
                             requestsWriter:_pipe
                                callOptions:_callOptions];
+    [_call setResponseDispatchQueue:_dispatchQueue];
     if (_callOptions.initialMetadata) {
       [_call.requestHeaders addEntriesFromDictionary:_callOptions.initialMetadata];
     }
