@@ -108,7 +108,7 @@ def grpc_deps():
 
     native.bind(
         name = "data-plane-api-eds",
-        actual = "@com_github_envoyproxy_dataplaneapi//envoy/api/v2:eds",
+        actual = "@envoy_api//envoy/api/v2:eds",
     )
 
     if "boringssl" not in native.existing_rules():
@@ -211,9 +211,9 @@ def grpc_deps():
             url = "https://github.com/google/upb/archive/ed9faae0993704b033c594b072d65e1bf19207fa.tar.gz",
         )
 
-    if "com_github_envoyproxy_dataplaneapi" not in native.existing_rules():
+    if "envoy_api" not in native.existing_rules():
         http_archive(
-            name = "com_github_envoyproxy_dataplaneapi",
+            name = "envoy_api",
             strip_prefix = "data-plane-api-35f6d31f6db891186b08cd3830cdbbf77a362ea3",
             url = "https://github.com/envoyproxy/data-plane-api/archive/35f6d31f6db891186b08cd3830cdbbf77a362ea3.tar.gz",
         )

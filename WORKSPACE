@@ -52,3 +52,15 @@ http_archive(
 load("//bazel:grpc_python_deps.bzl", "grpc_python_deps")
 
 grpc_python_deps()
+
+http_archive(
+    name = "io_bazel_rules_go",
+    urls = ["https://github.com/bazelbuild/rules_go/releases/download/0.17.1/rules_go-0.17.1.tar.gz"],
+    sha256 = "6776d68ebb897625dead17ae510eac3d5f6342367327875210df44dbe2aeeb19",
+)
+
+load("@io_bazel_rules_go//go/private:repositories.bzl", "go_rules_dependencies")
+go_rules_dependencies()
+
+load("@envoy_api//bazel:repositories.bzl", "api_dependencies")
+api_dependencies()
