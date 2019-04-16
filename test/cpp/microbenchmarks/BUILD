@@ -39,85 +39,85 @@ grpc_cc_library(
     external_deps = [
         "benchmark",
     ],
+    tags = ["no_windows"],
     deps = [
         "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util_unsecure",
         "//test/cpp/util:test_config",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_binary(
     name = "bm_closure",
     testonly = 1,
     srcs = ["bm_closure.cc"],
-    deps = [":helpers"],
     tags = ["no_windows"],
+    deps = [":helpers"],
 )
 
 grpc_cc_binary(
     name = "bm_alarm",
     testonly = 1,
     srcs = ["bm_alarm.cc"],
-    deps = [":helpers"],
     tags = ["no_windows"],
+    deps = [":helpers"],
 )
 
 grpc_cc_binary(
     name = "bm_arena",
     testonly = 1,
     srcs = ["bm_arena.cc"],
-    deps = [":helpers"],
     tags = ["no_windows"],
+    deps = [":helpers"],
 )
 
 grpc_cc_binary(
     name = "bm_byte_buffer",
     testonly = 1,
     srcs = ["bm_byte_buffer.cc"],
-    deps = [":helpers"],
     tags = ["no_windows"],
+    deps = [":helpers"],
 )
 
 grpc_cc_binary(
     name = "bm_channel",
     testonly = 1,
     srcs = ["bm_channel.cc"],
-    deps = [":helpers"],
     tags = ["no_windows"],
+    deps = [":helpers"],
 )
 
 grpc_cc_binary(
     name = "bm_call_create",
     testonly = 1,
     srcs = ["bm_call_create.cc"],
-    deps = [":helpers"],
     tags = ["no_windows"],
+    deps = [":helpers"],
 )
 
 grpc_cc_binary(
     name = "bm_cq",
     testonly = 1,
     srcs = ["bm_cq.cc"],
-    deps = [":helpers"],
     tags = ["no_windows"],
+    deps = [":helpers"],
 )
 
 grpc_cc_binary(
     name = "bm_cq_multiple_threads",
     testonly = 1,
     srcs = ["bm_cq_multiple_threads.cc"],
-    deps = [":helpers"],
     tags = ["no_windows"],
+    deps = [":helpers"],
 )
 
 grpc_cc_binary(
     name = "bm_error",
     testonly = 1,
     srcs = ["bm_error.cc"],
-    deps = [":helpers"],
     tags = ["no_windows"],
+    deps = [":helpers"],
 )
 
 grpc_cc_library(
@@ -126,8 +126,8 @@ grpc_cc_library(
     hdrs = [
         "fullstack_streaming_ping_pong.h",
     ],
-    deps = [":helpers"],
     tags = ["no_windows"],
+    deps = [":helpers"],
 )
 
 grpc_cc_binary(
@@ -136,8 +136,8 @@ grpc_cc_binary(
     srcs = [
         "bm_fullstack_streaming_ping_pong.cc",
     ],
-    deps = [":fullstack_streaming_ping_pong_h"],
     tags = ["no_windows"],
+    deps = [":fullstack_streaming_ping_pong_h"],
 )
 
 grpc_cc_library(
@@ -155,16 +155,16 @@ grpc_cc_binary(
     srcs = [
         "bm_fullstack_streaming_pump.cc",
     ],
-    deps = [":fullstack_streaming_pump_h"],
     tags = ["no_windows"],
+    deps = [":fullstack_streaming_pump_h"],
 )
 
 grpc_cc_binary(
     name = "bm_fullstack_trickle",
     testonly = 1,
     srcs = ["bm_fullstack_trickle.cc"],
-    deps = [":helpers"],
     tags = ["no_windows"],
+    deps = [":helpers"],
 )
 
 grpc_cc_library(
@@ -182,24 +182,24 @@ grpc_cc_binary(
     srcs = [
         "bm_fullstack_unary_ping_pong.cc",
     ],
-    deps = [":fullstack_unary_ping_pong_h"],
     tags = ["no_windows"],
+    deps = [":fullstack_unary_ping_pong_h"],
 )
 
 grpc_cc_binary(
     name = "bm_metadata",
     testonly = 1,
     srcs = ["bm_metadata.cc"],
-    deps = [":helpers"],
     tags = ["no_windows"],
+    deps = [":helpers"],
 )
 
 grpc_cc_binary(
     name = "bm_chttp2_hpack",
     testonly = 1,
     srcs = ["bm_chttp2_hpack.cc"],
-    deps = [":helpers"],
     tags = ["no_windows"],
+    deps = [":helpers"],
 )
 
 grpc_cc_binary(
@@ -218,6 +218,66 @@ grpc_cc_binary(
     name = "bm_timer",
     testonly = 1,
     srcs = ["bm_timer.cc"],
-    deps = [":helpers"],
     tags = ["no_windows"],
+    deps = [":helpers"],
+)
+
+# Added libraries and binaries for callback microbenchmark
+grpc_cc_library(
+    name = "callback_test_service",
+    testonly = True,
+    srcs = ["callback_test_service.cc"],
+    hdrs = ["callback_test_service.h"],
+    deps = [
+        "//third_party/grpc/src/proto/grpc/testing:echo_proto",
+        "//third_party/grpc/test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "callback_unary_ping_pong_h",
+    testonly = 1,
+    hdrs = [
+        "callback_unary_ping_pong.h",
+    ],
+    deps = [
+        ":callback_test_service",
+        ":helpers",
+    ],
+)
+
+grpc_cc_binary(
+    name = "bm_callback_unary_ping_pong",
+    testonly = 1,
+    srcs = [
+        "bm_callback_unary_ping_pong.cc",
+    ],
+    deps = [
+        ":callback_unary_ping_pong_h",
+        "//third_party/grpc:grpc++",
+    ],
+)
+
+grpc_cc_library(
+    name = "callback_streaming_ping_pong_h",
+    testonly = 1,
+    hdrs = [
+        "callback_streaming_ping_pong.h",
+    ],
+    deps = [
+        ":callback_test_service",
+        ":helpers",
+    ],
+)
+
+grpc_cc_binary(
+    name = "bm_callback_streaming_ping_pong",
+    testonly = 1,
+    srcs = [
+        "bm_callback_streaming_ping_pong.cc",
+    ],
+    deps = [
+        ":callback_streaming_ping_pong_h",
+        "//third_party/grpc:grpc++",
+    ],
 )
