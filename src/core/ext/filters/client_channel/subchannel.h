@@ -29,6 +29,7 @@
 #include "src/core/lib/gpr/arena.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -263,7 +264,7 @@ class Subchannel {
   // pollset_set tracking who's interested in a connection being setup.
   grpc_pollset_set* pollset_set_;
   // Protects the other members.
-  gpr_mu mu_;
+  Mutex mu_;
   // Refcount
   //    - lower INTERNAL_REF_BITS bits are for internal references:
   //      these do not keep the subchannel open.

@@ -3187,6 +3187,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/stub_options.h
   include/grpcpp/impl/codegen/sync_stream.h
   include/grpcpp/impl/codegen/time.h
+  include/grpcpp/impl/codegen/sync.h
   include/grpc++/impl/codegen/proto_utils.h
   include/grpcpp/impl/codegen/proto_buffer_reader.h
   include/grpcpp/impl/codegen/proto_buffer_writer.h
@@ -3790,6 +3791,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/stub_options.h
   include/grpcpp/impl/codegen/sync_stream.h
   include/grpcpp/impl/codegen/time.h
+  include/grpcpp/impl/codegen/sync.h
   include/grpc/census.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -4244,6 +4246,7 @@ foreach(_hdr
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
+  include/grpcpp/impl/codegen/sync.h
   include/grpc++/impl/codegen/proto_utils.h
   include/grpcpp/impl/codegen/proto_buffer_reader.h
   include/grpcpp/impl/codegen/proto_buffer_writer.h
@@ -4440,6 +4443,7 @@ foreach(_hdr
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
+  include/grpcpp/impl/codegen/sync.h
   include/grpc++/impl/codegen/proto_utils.h
   include/grpcpp/impl/codegen/proto_buffer_reader.h
   include/grpcpp/impl/codegen/proto_buffer_writer.h
@@ -4766,6 +4770,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/stub_options.h
   include/grpcpp/impl/codegen/sync_stream.h
   include/grpcpp/impl/codegen/time.h
+  include/grpcpp/impl/codegen/sync.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
