@@ -441,15 +441,13 @@ class RuSliceRefcount {
     gpr_free(rc);
   }
   RuSliceRefcount(grpc_resource_user* resource_user, size_t size)
-      : base_(grpc_core::SliceRefcount::Type::REGULAR, &refs_, Destroy, this,
-             &base_),
+      : base_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this,
+              &base_),
         resource_user_(resource_user),
         size_(size) {
     // Nothing to do here.
   }
-  ~RuSliceRefcount() {
-    grpc_resource_user_free(resource_user_, size_);
-  }
+  ~RuSliceRefcount() { grpc_resource_user_free(resource_user_, size_); }
 
   grpc_slice_refcount* base_refcount() { return &base_; }
 

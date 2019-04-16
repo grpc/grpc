@@ -101,11 +101,9 @@ class NewSliceRefcount {
   }
 
   NewSliceRefcount(void (*destroy)(void*), void* user_data)
-      : rc_(SliceRefcount::Type::REGULAR, &refs_, Destroy, this, &rc_),
+      : rc_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this, &rc_),
         user_destroy_(destroy),
-        user_data_(user_data) {
-    // Nothing to do here.
-  }
+        user_data_(user_data) {}
 
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
@@ -151,12 +149,10 @@ class NewWithLenSliceRefcount {
 
   NewWithLenSliceRefcount(void (*destroy)(void*, size_t), void* user_data,
                           size_t user_length)
-      : rc_(SliceRefcount::Type::REGULAR, &refs_, Destroy, this, &rc_),
+      : rc_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this, &rc_),
         user_data_(user_data),
         user_length_(user_length),
-        user_destroy_(destroy) {
-    // Nothing to do here.
-  }
+        user_destroy_(destroy) {}
 
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
@@ -202,14 +198,14 @@ class MallocRefCount {
  public:
   static void Destroy(void* arg) {
     MallocRefCount* r = static_cast<MallocRefCount*>(arg);
+    r->~MallocRefCount();
     gpr_free(r);
   }
 
   MallocRefCount()
-      : base_(grpc_core::SliceRefcount::Type::REGULAR, &refs_, Destroy, this,
-             &base_) {
-    // Nothing to do here.
-  }
+      : base_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this,
+              &base_) {}
+  ~MallocRefCount() = default;
 
   grpc_slice_refcount* base_refcount() { return &base_; }
 
@@ -298,7 +294,7 @@ grpc_slice grpc_slice_sub(grpc_slice source, size_t begin, size_t end) {
   } else {
     subset = grpc_slice_sub_no_ref(source, begin, end);
     /* Bump the refcount */
-    subset.refcount->impl.Ref();
+    subset.refcount->Ref();
   }
   return subset;
 }
@@ -342,7 +338,7 @@ grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice* source, size_t split,
           tail.refcount = source->refcount->sub_refcount();
           source->refcount = source->refcount->sub_refcount();
           /* Bump the refcount */
-          tail.refcount->impl.Ref();
+          tail.refcount->Ref();
           break;
       }
       /* Point into the source array */
@@ -387,7 +383,7 @@ grpc_slice grpc_slice_split_head(grpc_slice* source, size_t split) {
     /* Build the result */
     head.refcount = source->refcount->sub_refcount();
     /* Bump the refcount */
-    head.refcount->impl.Ref();
+    head.refcount->Ref();
     /* Point into the source array */
     head.data.refcounted.bytes = source->data.refcounted.bytes;
     head.data.refcounted.length = split;
@@ -408,8 +404,8 @@ int grpc_slice_default_eq_impl(grpc_slice a, grpc_slice b) {
 
 int grpc_slice_eq(grpc_slice a, grpc_slice b) {
   if (a.refcount && b.refcount &&
-      a.refcount->impl.GetType() == b.refcount->impl.GetType()) {
-    return a.refcount->impl.Eq(a, b);
+      a.refcount->GetType() == b.refcount->GetType()) {
+    return a.refcount->Eq(a, b);
   }
   return grpc_slice_default_eq_impl(a, b);
 }

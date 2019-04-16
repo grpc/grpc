@@ -41,7 +41,6 @@
 #define SHARD_IDX(hash) ((hash) & ((1 << LOG2_SHARD_COUNT) - 1))
 
 using grpc_core::InternedSliceRefcount;
-using grpc_core::SliceRefcount;
 
 typedef struct slice_shard {
   gpr_mu mu;
@@ -130,7 +129,7 @@ int grpc_static_slice_eq(grpc_slice a, grpc_slice b) {
 
 uint32_t grpc_slice_hash(grpc_slice s) {
   return s.refcount == nullptr ? grpc_slice_default_hash_impl(s)
-                               : s.refcount->impl.Hash(s);
+                               : s.refcount->Hash(s);
 }
 
 grpc_slice grpc_slice_maybe_static_intern(grpc_slice slice,
@@ -155,7 +154,7 @@ grpc_slice grpc_slice_maybe_static_intern(grpc_slice slice,
 
 bool grpc_slice_is_interned(const grpc_slice& slice) {
   return (slice.refcount &&
-          (slice.refcount->impl.GetType() == SliceRefcount::Type::INTERNED ||
+          (slice.refcount->GetType() == grpc_slice_refcount::Type::INTERNED ||
            GRPC_IS_STATIC_METADATA_STRING(slice)));
 }
 
@@ -259,8 +258,7 @@ void grpc_slice_intern_shutdown(void) {
       gpr_log(GPR_DEBUG, "WARNING: %" PRIuPTR " metadata strings were leaked",
               shard->count);
       for (size_t j = 0; j < shard->capacity; j++) {
-        for (InternedSliceRefcount* s = shard->strs[j]; s;
-             s = s->bucket_next) {
+        for (InternedSliceRefcount* s = shard->strs[j]; s; s = s->bucket_next) {
           char* text =
               grpc_dump_slice(materialize(s), GPR_DUMP_HEX | GPR_DUMP_ASCII);
           gpr_log(GPR_DEBUG, "LEAKED: %s", text);
