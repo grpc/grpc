@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>grpc &#8212; gRPC Python 1.19.0 documentation</title>
+    <title>grpc &#8212; gRPC Python 1.20.0 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -31,7 +31,7 @@
 
 
 
-<p class="blurb">1.19.0</p>
+<p class="blurb">1.20.0</p>
 
 
 
@@ -45,6 +45,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../grpc_channelz.html">gRPC Channelz</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../grpc_health_checking.html">gRPC Health Checking</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../grpc_reflection.html">gRPC Reflection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grpc_status.html">gRPC Status</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../grpc_testing.html">gRPC Testing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../glossary.html">Glossary</a></li>
 </ul>
@@ -103,6 +104,7 @@
 <span class="sd">&quot;&quot;&quot;gRPC&#39;s Python API.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">contextlib</span>
 <span class="kn">import</span> <span class="nn">enum</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">sys</span>
@@ -370,7 +372,7 @@
 
 <span class="sd">    Attributes:</span>
 <span class="sd">      code: A StatusCode object to be sent to the client.</span>
-<span class="sd">      details: An ASCII-encodable string to be sent to the client upon</span>
+<span class="sd">      details: A UTF-8-encodable string to be sent to the client upon</span>
 <span class="sd">        termination of the RPC.</span>
 <span class="sd">      trailing_metadata: The trailing :term:`metadata` in the RPC.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1219,7 +1221,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">          code: A StatusCode object to be sent to the client.</span>
 <span class="sd">            It must not be StatusCode.OK.</span>
-<span class="sd">          details: An ASCII-encodable string to be sent to the client upon</span>
+<span class="sd">          details: A UTF-8-encodable string to be sent to the client upon</span>
 <span class="sd">            termination of the RPC.</span>
 
 <span class="sd">        Raises:</span>
@@ -1267,7 +1269,7 @@
 <span class="sd">        no details to transmit.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">          details: An ASCII-encodable string to be sent to the client upon</span>
+<span class="sd">          details: A UTF-8-encodable string to be sent to the client upon</span>
 <span class="sd">            termination of the RPC.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
@@ -1866,6 +1868,14 @@
                                  <span class="k">if</span> <span class="n">interceptors</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">interceptors</span><span class="p">,</span> <span class="p">()</span>
                                  <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span>
                                  <span class="n">maximum_concurrent_rpcs</span><span class="p">)</span></div>
+
+
+<span class="nd">@contextlib</span><span class="o">.</span><span class="n">contextmanager</span>
+<span class="k">def</span> <span class="nf">_create_servicer_context</span><span class="p">(</span><span class="n">rpc_event</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_server</span>  <span class="c1"># pylint: disable=cyclic-import</span>
+    <span class="n">context</span> <span class="o">=</span> <span class="n">_server</span><span class="o">.</span><span class="n">_Context</span><span class="p">(</span><span class="n">rpc_event</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">)</span>
+    <span class="k">yield</span> <span class="n">context</span>
+    <span class="n">context</span><span class="o">.</span><span class="n">_finalize_state</span><span class="p">()</span>  <span class="c1"># pylint: disable=protected-access</span>
 
 
 <span class="c1">###################################  __all__  #################################</span>
