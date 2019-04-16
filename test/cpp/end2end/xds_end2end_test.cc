@@ -47,13 +47,14 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
-#include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
+//#include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
+//#include "src/proto/grpc/testing/echo.grpc.pb.h"
 //#include "src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h"
-#include "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h"
+//#include "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h"
 
 //#include "third_party/data-plane-api/envoy/api/v2/core/address.proto.h"
-//#include "third_party/data-plane-api/envoy/api/v2/eds.grpc.pb.h"
+#include "third_party/data-plane-api/envoy/api/v2/eds.grpc.pb.h"
+
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -82,7 +83,8 @@ using std::chrono::system_clock;
 // using grpc::lb::v1::LoadBalancer;
 using ::envoy::api::v2::DiscoveryRequest;
 using ::envoy::api::v2::DiscoveryResponse;
-using ::envoy::service::discovery::v2::grpc::AggregatedDiscoveryService;
+using ::envoy::api::v2::ClusterLoadAssignment;
+using ::envoy::service::discovery::v2::grpc::EndpointDiscoveryService;
 
 namespace grpc {
 namespace testing {
@@ -125,7 +127,7 @@ class CountedService : public ServiceType {
 };
 
 using BackendService = CountedService<TestServiceImpl>;
-using BalancerService = CountedService<AggregatedDiscoveryService::Service>;
+using BalancerService = CountedService<EndpointDiscoveryService::Service>;
 
 const char g_kCallCredsMdKey[] = "Balancer should not ...";
 const char g_kCallCredsMdValue[] = "... receive me";
@@ -212,12 +214,11 @@ class BalancerServiceImpl : public BalancerService {
       : client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds) {}
 
-  Status StreamAggregatedResources(ServerContext* context,
+  Status StreamEndpoints(ServerContext* context,
                                    Stream* stream) override {
     // TODO(juanlishen): Clean up the scoping.
-    gpr_log(GPR_INFO, "LB[%p]: ADS starts", this);
-    DiscoveryRequest request;
-    while () {
+    gpr_log(GPR_INFO, "LB[%p]: EDS starts", this);
+    {
       grpc::internal::MutexLock lock(&mu_);
       if (serverlist_done_) goto done;
     }
@@ -225,24 +226,14 @@ class BalancerServiceImpl : public BalancerService {
       // Balancer shouldn't receive the call credentials metadata.
       EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
                 context->client_metadata().end());
-      LoadBalanceRequest request;
+      DiscoveryRequest request;
       std::vector<ResponseDelayPair> responses_and_delays;
-
       if (!stream->Read(&request)) {
         goto done;
       }
       IncreaseRequestCount();
       gpr_log(GPR_INFO, "LB[%p]: received initial message '%s'", this,
               request.DebugString().c_str());
-
-      {
-        LoadBalanceResponse initial_response;
-        initial_response.mutable_initial_response()
-            ->mutable_client_stats_report_interval()
-            ->set_seconds(client_load_reporting_interval_seconds_);
-        stream->Write(initial_response);
-      }
-
       {
         grpc::internal::MutexLock lock(&mu_);
         responses_and_delays = responses_and_delays_;
@@ -255,35 +246,7 @@ class BalancerServiceImpl : public BalancerService {
         grpc::internal::MutexLock lock(&mu_);
         serverlist_cond_.WaitUntil(&mu_, [this] { return serverlist_done_; });
       }
-
-      if (client_load_reporting_interval_seconds_ > 0) {
-        request.Clear();
-        if (stream->Read(&request)) {
-          gpr_log(GPR_INFO, "LB[%p]: received client load report message '%s'",
-                  this, request.DebugString().c_str());
-          GPR_ASSERT(request.has_client_stats());
-          // We need to acquire the lock here in order to prevent the notify_one
-          // below from firing before its corresponding wait is executed.
-          grpc::internal::MutexLock lock(&mu_);
-          client_stats_.num_calls_started +=
-              request.client_stats().num_calls_started();
-          client_stats_.num_calls_finished +=
-              request.client_stats().num_calls_finished();
-          client_stats_.num_calls_finished_with_client_failed_to_send +=
-              request.client_stats()
-                  .num_calls_finished_with_client_failed_to_send();
-          client_stats_.num_calls_finished_known_received +=
-              request.client_stats().num_calls_finished_known_received();
-          for (const auto& drop_token_count :
-               request.client_stats().calls_finished_with_drop()) {
-            client_stats_
-                .drop_token_counts[drop_token_count.load_balance_token()] +=
-                drop_token_count.num_calls();
-          }
-          load_report_ready_ = true;
-          load_report_cond_.Signal();
-        }
-      }
+      // TODO(juanlishen): Use LRS to receive load report.
     }
   done:
     gpr_log(GPR_INFO, "LB[%p]: done", this);
@@ -299,39 +262,32 @@ class BalancerServiceImpl : public BalancerService {
     grpc::internal::MutexLock lock(&mu_);
     NotifyDoneWithServerlistsLocked();
     responses_and_delays_.clear();
-    client_stats_.Reset();
     gpr_log(GPR_INFO, "LB[%p]: shut down", this);
   }
 
-  static LoadBalanceResponse BuildResponseForBackends(
-      const std::vector<int>& backend_ports,
-      const std::map<grpc::string, size_t>& drop_token_counts) {
-    LoadBalanceResponse response;
-    for (const auto& drop_token_count : drop_token_counts) {
-      for (size_t i = 0; i < drop_token_count.second; ++i) {
-        auto* server = response.mutable_server_list()->add_servers();
-        server->set_drop(true);
-        server->set_load_balance_token(drop_token_count.first);
-      }
-    }
+  static DiscoveryResponse BuildResponseForBackends(
+      const std::vector<int>& backend_ports) {
+    ClusterLoadAssignment assignment;
+    assignment.set_cluster_name("service name");
+    auto* endpoints = assignment.add_endpoints();
+    auto* locality = endpoints->mutable_locality();
+    locality->set_region("region name");
     for (const int& backend_port : backend_ports) {
-      auto* server = response.mutable_server_list()->add_servers();
-      server->set_ip_address(Ip4ToPackedString("127.0.0.1"));
-      server->set_port(backend_port);
+      auto* lb_endpoints = endpoints->add_lb_endpoints();
+      auto* endpoint = lb_endpoints->mutable_endpoint();
+      auto* address = endpoint->mutable_address();
+      auto* socket_address = address->mutable_socket_address();
+      socket_address->set_address(Ip4ToPackedString("127.0.0.1"));
+      socket_address->set_port_value(backend_port);
       static int token_count = 0;
       char* token;
       gpr_asprintf(&token, "token%03d", ++token_count);
       server->set_load_balance_token(token);
       gpr_free(token);
     }
+    DiscoveryResponse response;
+    response.add_resources()->PackFrom(assignment);
     return response;
-  }
-
-  const ClientStats& WaitForLoadReport() {
-    grpc::internal::MutexLock lock(&mu_);
-    load_report_cond_.WaitUntil(&mu_, [this] { return load_report_ready_; });
-    load_report_ready_ = false;
-    return client_stats_;
   }
 
   void NotifyDoneWithServerlists() {
@@ -359,14 +315,10 @@ class BalancerServiceImpl : public BalancerService {
     stream->Write(response);
   }
 
-  const int client_load_reporting_interval_seconds_;
   std::vector<ResponseDelayPair> responses_and_delays_;
   grpc::internal::Mutex mu_;
-  grpc::internal::CondVar load_report_cond_;
-  bool load_report_ready_ = false;
   grpc::internal::CondVar serverlist_cond_;
   bool serverlist_done_ = false;
-  ClientStats client_stats_;
 };
 
 class XdsEnd2endTest : public ::testing::Test {
@@ -452,9 +404,7 @@ class XdsEnd2endTest : public ::testing::Test {
 
   ClientStats WaitForLoadReports() {
     ClientStats client_stats;
-    for (auto& balancer : balancers_) {
-      client_stats += balancer->service_.WaitForLoadReport();
-    }
+    // TODO(juanlishen): Wait in LRS.
     return client_stats;
   }
 

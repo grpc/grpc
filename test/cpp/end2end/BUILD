@@ -464,6 +464,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
+        "//third_party/data-plane-api/envoy/api/v2:eds",
     ],
 )
 
