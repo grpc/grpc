@@ -280,8 +280,8 @@ HealthCheckClient::CallState::CallState(
     : InternallyRefCounted<CallState>(&grpc_health_check_client_trace),
       health_check_client_(std::move(health_check_client)),
       pollent_(grpc_polling_entity_create_from_pollset_set(interested_parties)),
-      arena_(gpr_arena_create(health_check_client_->connected_subchannel_
-                                  ->GetInitialCallSizeEstimate(0))),
+      arena_(Arena::Create(health_check_client_->connected_subchannel_
+                               ->GetInitialCallSizeEstimate(0))),
       payload_(context_) {}
 
 HealthCheckClient::CallState::~CallState() {
@@ -302,7 +302,7 @@ HealthCheckClient::CallState::~CallState() {
   // need to take a ref of the call stack to guarantee closure liveness.
   call_combiner_.SetNotifyOnCancel(nullptr);
   ExecCtx::Get()->Flush();
-  gpr_arena_destroy(arena_);
+  arena_->Destroy();
 }
 
 void HealthCheckClient::CallState::Orphan() {
