@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>gRPC Health Checking &#8212; gRPC Python 1.19.0 documentation</title>
+    <title>gRPC Health Checking &#8212; gRPC Python 1.20.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -33,7 +33,7 @@
 
 
 
-<p class="blurb">1.19.0</p>
+<p class="blurb">1.20.0</p>
 
 
 
@@ -50,6 +50,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="grpc_reflection.html">gRPC Reflection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grpc_status.html">gRPC Status</a></li>
 <li class="toctree-l1"><a class="reference internal" href="grpc_testing.html">gRPC Testing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
 </ul>
@@ -97,8 +98,18 @@
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="grpc_health.v1.health.HealthServicer">
-<em class="property">class </em><code class="descclassname">grpc_health.v1.health.</code><code class="descname">HealthServicer</code><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">grpc_health.v1.health.</code><code class="descname">HealthServicer</code><span class="sig-paren">(</span><em>experimental_non_blocking=True</em>, <em>experimental_thread_pool=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Servicer handling RPCs for service statuses.</p>
+<dl class="method">
+<dt id="grpc_health.v1.health.HealthServicer.enter_graceful_shutdown">
+<code class="descname">enter_graceful_shutdown</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer.enter_graceful_shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer.enter_graceful_shutdown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Permanently sets the status of all services to NOT_SERVING.</p>
+<p>This should be invoked when the server is entering a graceful shutdown
+period. After this method is invoked, future attempts to set the status
+of a service will be ignored.</p>
+<p>This is an EXPERIMENTAL API.</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="grpc_health.v1.health.HealthServicer.set">
 <code class="descname">set</code><span class="sig-paren">(</span><em>service</em>, <em>status</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer.set"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer.set" title="Permalink to this definition">¶</a></dt>

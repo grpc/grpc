@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Index &#8212; gRPC Python 1.19.0 documentation</title>
+    <title>Index &#8212; gRPC Python 1.20.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -32,7 +32,7 @@
 
 
 
-<p class="blurb">1.19.0</p>
+<p class="blurb">1.20.0</p>
 
 
 
@@ -46,6 +46,7 @@
 <li class="toctree-l1"><a class="reference internal" href="grpc_channelz.html">gRPC Channelz</a></li>
 <li class="toctree-l1"><a class="reference internal" href="grpc_health_checking.html">gRPC Health Checking</a></li>
 <li class="toctree-l1"><a class="reference internal" href="grpc_reflection.html">gRPC Reflection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grpc_status.html">gRPC Status</a></li>
 <li class="toctree-l1"><a class="reference internal" href="grpc_testing.html">gRPC Testing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
 </ul>
@@ -266,6 +267,8 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="grpc_health_checking.html#grpc_health.v1.health.HealthServicer.enter_graceful_shutdown">enter_graceful_shutdown() (grpc_health.v1.health.HealthServicer method)</a>
+</li>
       <li><a href="grpc.html#grpc.Future.exception">exception() (grpc.Future method)</a>
 </li>
   </ul></td>
@@ -276,16 +279,18 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grpc.html#grpc.StatusCode.FAILED_PRECONDITION">FAILED_PRECONDITION (grpc.StatusCode attribute)</a>
 </li>
+      <li><a href="grpc_status.html#grpc_status.rpc_status.from_call">from_call() (in module grpc_status.rpc_status)</a>
+</li>
       <li><a href="grpc.html#grpc.Future">Future (class in grpc)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grpc.html#grpc.StreamUnaryMultiCallable.future">future() (grpc.StreamUnaryMultiCallable method)</a>
 
       <ul>
         <li><a href="grpc.html#grpc.UnaryUnaryMultiCallable.future">(grpc.UnaryUnaryMultiCallable method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grpc.html#grpc.FutureCancelledError">FutureCancelledError</a>
 </li>
       <li><a href="grpc.html#grpc.FutureTimeoutError">FutureTimeoutError</a>
@@ -300,11 +305,13 @@
 </li>
       <li><a href="grpc.html#module-grpc">grpc (module)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grpc_channelz.html#module-grpc_channelz.v1.channelz">grpc_channelz.v1.channelz (module)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grpc_reflection.html#module-grpc_reflection.v1alpha.reflection">grpc_reflection.v1alpha.reflection (module)</a>
+</li>
+      <li><a href="grpc_status.html#module-grpc_status.rpc_status">grpc_status.rpc_status (module)</a>
 </li>
       <li><a href="grpc_testing.html#module-grpc_testing">grpc_testing (module)</a>
 </li>
@@ -647,6 +654,8 @@
       <li><a href="grpc.html#grpc.RpcContext.time_remaining">time_remaining() (grpc.RpcContext method)</a>
 </li>
       <li><a href="grpc.html#grpc.ClientCallDetails.timeout">timeout (grpc.ClientCallDetails attribute)</a>
+</li>
+      <li><a href="grpc_status.html#grpc_status.rpc_status.to_status">to_status() (in module grpc_status.rpc_status)</a>
 </li>
       <li><a href="grpc.html#grpc.Future.traceback">traceback() (grpc.Future method)</a>
 </li>
