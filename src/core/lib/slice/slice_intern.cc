@@ -198,7 +198,8 @@ grpc_slice grpc_slice_intern(grpc_slice slice) {
 
   new (s) grpc_core::InternedSliceRefcount(GRPC_SLICE_LENGTH(slice), hash,
                                            shard->strs[idx]);
-  memcpy(s + 1, GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice));
+  memcpy(reinterpret_cast<char*>(s + 1), GRPC_SLICE_START_PTR(slice),
+         GRPC_SLICE_LENGTH(slice));
   shard->strs[idx] = s;
   shard->count++;
   if (shard->count > shard->capacity * 2) {
