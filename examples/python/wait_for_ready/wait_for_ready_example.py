@@ -16,6 +16,7 @@
 from __future__ import print_function
 import logging
 from concurrent import futures
+from contextlib import contextmanager
 import socket
 import threading
 
@@ -30,11 +31,13 @@ _LOGGER.setLevel(logging.INFO)
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
+@contextmanager
 def get_free_loopback_tcp_port():
-    tcp = socket.socket(socket.AF_INET6)
-    tcp.bind(('', 0))
-    address_tuple = tcp.getsockname()
-    return tcp, "[::1]:%s" % (address_tuple[1])
+    tcp_socket = socket.socket(socket.AF_INET6)
+    tcp_socket.bind(('', 0))
+    address_tuple = tcp_socket.getsockname()
+    yield "[::1]:%s" % (address_tuple[1])
+    tcp_socket.close()
 
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
@@ -69,31 +72,30 @@ def process(stub, wait_for_ready=None):
 
 def main():
     # Pick a random free port
-    tcp, server_address = get_free_loopback_tcp_port()
+    with get_free_loopback_tcp_port() as server_address:
 
-    # Register connectivity event to notify main thread
-    transient_failure_event = threading.Event()
+        # Register connectivity event to notify main thread
+        transient_failure_event = threading.Event()
 
-    def wait_for_transient_failure(channel_connectivity):
-        if channel_connectivity == grpc.ChannelConnectivity.TRANSIENT_FAILURE:
-            transient_failure_event.set()
+        def wait_for_transient_failure(channel_connectivity):
+            if channel_connectivity == grpc.ChannelConnectivity.TRANSIENT_FAILURE:
+                transient_failure_event.set()
 
-    # Create gRPC channel
-    channel = grpc.insecure_channel(server_address)
-    channel.subscribe(wait_for_transient_failure)
-    stub = helloworld_pb2_grpc.GreeterStub(channel)
+        # Create gRPC channel
+        channel = grpc.insecure_channel(server_address)
+        channel.subscribe(wait_for_transient_failure)
+        stub = helloworld_pb2_grpc.GreeterStub(channel)
 
-    # Fire an RPC without wait_for_ready
-    thread_disabled_wait_for_ready = threading.Thread(
-        target=process, args=(stub, False))
-    thread_disabled_wait_for_ready.start()
-    # Fire an RPC with wait_for_ready
-    thread_enabled_wait_for_ready = threading.Thread(
-        target=process, args=(stub, True))
-    thread_enabled_wait_for_ready.start()
+        # Fire an RPC without wait_for_ready
+        thread_disabled_wait_for_ready = threading.Thread(
+            target=process, args=(stub, False))
+        thread_disabled_wait_for_ready.start()
+        # Fire an RPC with wait_for_ready
+        thread_enabled_wait_for_ready = threading.Thread(
+            target=process, args=(stub, True))
+        thread_enabled_wait_for_ready.start()
 
     # Wait for the channel entering TRANSIENT FAILURE state.
-    tcp.close()
     transient_failure_event.wait()
     server = create_server(server_address)
     server.start()

@@ -1,6 +1,6 @@
 # gRPC Python Example for Wait-for-ready
 
-The default behavior of an RPC will fail instantly if the server is not ready yet. This example demonstrates how to change that behavior.
+The default behavior of an RPC is to fail instantly if the server is not ready yet. This example demonstrates how to change that behavior.
 
 
 ### Definition of 'wait-for-ready' semantics
