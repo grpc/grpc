@@ -823,9 +823,10 @@ def auth_options(language,
 
     if not service_account_key_file:
         # this file path only works inside docker
-        service_account_key_file = '/root/service_account/GrpcTesting-726eb1347f15.json'
+        service_account_key_file = '/root/service_account/grpc-testing-ebe7c1ac7381.json'
     oauth_scope_arg = '--oauth_scope=https://www.googleapis.com/auth/xapi.zoo'
     key_file_arg = '--service_account_key_file=%s' % service_account_key_file
+    # default compute engine credentials associated with the testing VMs in "grpc-testing" cloud project
     default_account_arg = '--default_service_account=830293263384-compute@developer.gserviceaccount.com'
 
     if test_case in ['jwt_token_creds', 'per_rpc_creds', 'oauth2_auth_token']:
