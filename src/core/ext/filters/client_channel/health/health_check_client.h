@@ -27,7 +27,7 @@
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/backoff/backoff.h"
-#include "src/core/lib/gpr/arena.h"
+#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -97,7 +97,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
     RefCountedPtr<HealthCheckClient> health_check_client_;
     grpc_polling_entity pollent_;
 
-    gpr_arena* arena_;
+    Arena* arena_;
     grpc_core::CallCombiner call_combiner_;
     grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 

@@ -24,7 +24,7 @@
 #include <stddef.h>
 
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/gpr/arena.h"
+#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -358,7 +358,8 @@ size_t grpc_transport_stream_size(grpc_transport* transport);
                    supplied from the accept_stream callback function */
 int grpc_transport_init_stream(grpc_transport* transport, grpc_stream* stream,
                                grpc_stream_refcount* refcount,
-                               const void* server_data, gpr_arena* arena);
+                               const void* server_data,
+                               grpc_core::Arena* arena);
 
 void grpc_transport_set_pops(grpc_transport* transport, grpc_stream* stream,
                              grpc_polling_entity* pollent);
