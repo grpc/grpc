@@ -17,6 +17,8 @@ syntax = "proto3";
 
 package grpc.testing;
 
+option cc_enable_arenas = true;
+
 // Message to be echoed back serialized in trailer.
 message DebugInfo {
   repeated string stack_entries = 1;
