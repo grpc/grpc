@@ -106,6 +106,11 @@ def grpc_deps():
         actual = "@io_opencensus_cpp//opencensus/stats:test_utils",
     )
 
+    native.bind(
+        name = "data-plane-api-eds",
+        actual = "@com_github_envoyproxy_dataplaneapi//envoy/api/v2:eds",
+    )
+
     if "boringssl" not in native.existing_rules():
         http_archive(
             name = "boringssl",
@@ -204,6 +209,13 @@ def grpc_deps():
             name = "upb",
             strip_prefix = "upb-ed9faae0993704b033c594b072d65e1bf19207fa",
             url = "https://github.com/google/upb/archive/ed9faae0993704b033c594b072d65e1bf19207fa.tar.gz",
+        )
+
+    if "com_github_envoyproxy_dataplaneapi" not in native.existing_rules():
+        http_archive(
+            name = "com_github_envoyproxy_dataplaneapi",
+            strip_prefix = "data-plane-api-35f6d31f6db891186b08cd3830cdbbf77a362ea3",
+            url = "https://github.com/envoyproxy/data-plane-api/archive/35f6d31f6db891186b08cd3830cdbbf77a362ea3.tar.gz",
         )
 
 # TODO: move some dependencies from "grpc_deps" here?
