@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/impl/codegen/log.h>
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h"
 
 #include <grpc/support/alloc.h>
@@ -29,74 +30,115 @@ namespace {
 constexpr char kEdsTypeUrl[] =
     "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
 constexpr char kEndpointRequired[] = "endpointRequired";
-upb_alloc* g_arena = nullptr;
-
-void InitArena() { g_arena = upb_arena_new(); }
-
-upb_alloc* arena() {
-  static gpr_once once = GPR_ONCE_INIT;
-  gpr_once_init(&once, InitArena);
-  return g_arena;
-}
 
 }  // namespace
 
-XdsDiscoveryRequest* XdsRequestCreate(const char* service_name) {
-  XdsDiscoveryRequest* request = envoy_api_v2_DiscoveryRequest_new(arena());
-  XdsNode* node = envoy_api_v2_DiscoveryRequest_mutable_node(request, arena());
-  XdsStruct* metadata = envoy_api_v2_core_Node_mutable_metadata(node, arena());
-  XdsFieldsEntry* field = google_protobuf_Struct_add_fields(metadata, arena());
+grpc_slice XdsRequestCreateAndEncode(const char* service_name) {
+  upb::Arena arena;
+  // Create a request.
+  XdsDiscoveryRequest* request = envoy_api_v2_DiscoveryRequest_new(arena.ptr());
+  XdsNode* node =
+      envoy_api_v2_DiscoveryRequest_mutable_node(request, arena.ptr());
+  XdsStruct* metadata =
+      envoy_api_v2_core_Node_mutable_metadata(node, arena.ptr());
+  XdsFieldsEntry* field =
+      google_protobuf_Struct_add_fields(metadata, arena.ptr());
   google_protobuf_Struct_FieldsEntry_set_key(
       field, upb_strview_make(kEndpointRequired, strlen(kEndpointRequired)));
   XdsValue* value =
-      google_protobuf_Struct_FieldsEntry_mutable_value(field, arena());
+      google_protobuf_Struct_FieldsEntry_mutable_value(field, arena.ptr());
   google_protobuf_Value_set_bool_value(true);
   envoy_api_v2_DiscoveryRequest_add_resource_names(request, service_name,
-                                                   arena());
+                                                   arena.ptr());
   envoy_api_v2_DiscoveryRequest_set_type_url(
       request, upb_strview_make(kEdsTypeUrl, strlen(kEdsTypeUrl)));
-  return request;
+  // Encode the request.
+  size_t output_length;
+  char* output = envoy_api_v2_DiscoveryRequest_serialize(request, arena.ptr(),
+                                                         &output_length);
+  return grpc_slice_from_copied_buffer(output, output_length);
 }
 
-grpc_resolved_address ServerAddressParse(const XdsLbEndpoint* lb_endpoint) {
+namespace {
+void ServerAddressParseAndAppend(const XdsLbEndpoint* lb_endpoint,
+                                 ServerAddressList* list) {
+  // Find the ip:port.
+  const XdsEndpoint* endpoint =
+      envoy_api_v2_endpoint_LbEndpoint_endpoint(lb_endpoint);
+  const XdsAddress* address = envoy_api_v2_endpoint_Endpoint_address(endpoint);
+  const XdsSocketAddress* socket_address =
+      envoy_api_v2_core_Address_socket_address(address);
+  upb_strview address_str =
+      envoy_api_v2_core_SocketAddress_address(socket_address);
+  uint32_t port = envoy_api_v2_core_SocketAddress_port_value(socket_address);
+  if (GPR_UNLIKELY(port >> 16) != 0) {
+    gpr_log(GPR_ERROR, "Invalid port '%d'. Ignoring.", port);
+    return;
+  }
+  // FIXME: validate length of ip.
+  // Populate grpc_resolved_address.
   grpc_resolved_address addr;
+  memset(&addr, 0, sizeof(addr));
+  const uint16_t netorder_port = grpc_htons(static_cast<uint16_t>(port));
   // FIXME
-  return addr;
+  list->emplace_back(addr, nullptr);
 }
 
-LocalityUpdateArgs LocalityParse(const XdsLocalityLbEndpoints* locality) {
-  LocalityUpdateArgs update_args;
+XdsLocalityUpdateArgs LocalityParse(
+    const XdsLocalityLbEndpoints* locality_lb_endpoints) {
+  XdsLocalityUpdateArgs update_args;
+  update_args.serverlist = MakeUnique<ServerAddressList>();
   // Parse locality_name.
-  // FIXME: correct locality name.
-  upb_strview locality_name = envoy_api_v2_core_Locality_sub_zone(locality);
-  char* buf = static_cast<char*>(malloc(locality_name.size + 1));
-  memcpy(buf, locality_name.data, locality_name.size);
-  buf[locality_name.size] = '\0';
+  const XdsLocality* locality =
+      envoy_api_v2_endpoint_LocalityLbEndpoints_locality(locality_lb_endpoints);
+  upb_strview region = envoy_api_v2_core_Locality_region(locality);
+  upb_strview zone = envoy_api_v2_core_Locality_zone(locality);
+  upb_strview sub_zone = envoy_api_v2_core_Locality_sub_zone(locality);
+  size_t size = region.size + zone.size + sub_zone.size + 1;
+  char* buf = static_cast<char*>(malloc(size));
+  char* pos = buf;
+  memcpy(pos, region.data, region.size);
+  pos += region.size;
+  memcpy(pos, zone.data, zone.size);
+  pos += zone.size;
+  memcpy(pos, sub_zone.data, sub_zone.size);
+  buf[size] = '\0';
   update_args.locality_name = UniquePtr<char>(buf);
   // Parse the addresses.
-  size_t size;
   XdsLbEndpoint** lb_endpoints =
-      envoy_api_v2_endpoint_LocalityLbEndpoints_lb_endpoints(locality, &size);
+      envoy_api_v2_endpoint_LocalityLbEndpoints_lb_endpoints(
+          locality_lb_endpoints, &size);
   for (size_t i = 0; i < size; ++i) {
-    update_args.addresses.emplace_back(ServerAddressParse(lb_endpoints[i]),
-                                       nullptr);
+    ServerAddressParseAndAppend(lb_endpoints[i], update_args.serverlist.get());
   }
   // Parse the lb_weight and priority.
   const google_protobuf_UInt32Value* lb_weight =
-      envoy_api_v2_endpoint_LbEndpoint_load_balancing_weight(locality);
+      envoy_api_v2_endpoint_LocalityLbEndpoints_load_balancing_weight(
+          locality_lb_endpoints);
   update_args.lb_weight = google_protobuf_UInt32Value_value(lb_weight);
   update_args.priority =
-      envoy_api_v2_endpoint_LocalityLbEndpoints_priority(locality);
+      envoy_api_v2_endpoint_LocalityLbEndpoints_priority(locality_lb_endpoints);
+  return update_args;
 }
+}  // namespace
 
-LoadUpdateArgs XdsLocalitiesFromResponse(const XdsDiscoveryResponse* response) {
-  LoadUpdateArgs update_args;
+UniquePtr<XdsLoadUpdateArgs> XdsResponseDecodeAndParse(
+    const grpc_slice& encoded_response) {
+  upb::Arena arena;
+  // Decode the response.
+  const XdsDiscoveryResponse* response =
+      envoy_api_v2_DiscoveryResponse_parsenew(
+          upb_strview_make(GRPC_SLICE_START_PTR(encoded_response),
+                           GRPC_SLICE_LENGTH(encoded_response)),
+          arena.ptr());
+  // Parse the response.
+  if (response == nullptr) return nullptr;
   // Check the type_url of the response.
   upb_strview type_url = envoy_api_v2_DiscoveryResponse_type_url(response);
   upb_strview expected_type_url = upb_strview_makez(kEdsTypeUrl);
   if (!upb_strview_eql(type_url, expected_type_url)) {
     gpr_log(GPR_WARNING, "Resource is not EDS");
-    return update_args;
+    return nullptr;
   }
   // Get the resources from the response.
   size_t size;
@@ -104,78 +146,28 @@ LoadUpdateArgs XdsLocalitiesFromResponse(const XdsDiscoveryResponse* response) {
       envoy_api_v2_DiscoveryResponse_resources(response, &size);
   if (size < 1) {
     gpr_log(GPR_WARNING, "EDS response contains 0 resource.");
-    return update_args;
+    return nullptr;
   }
   // Check the type_url of the resource.
   type_url = google_protobuf_Any_type_url(resources[0]);
   if (!upb_strview_eql(type_url, expected_type_url)) {
     gpr_log(GPR_WARNING, "Resource is not EDS");
-    return update_args;
+    return nullptr;
   }
   // Get the cluster_load_assignment.
+  auto update_args = MakeUnique<XdsLoadUpdateArgs>();
   upb_strview encoded_cluster_load_assignment =
       google_protobuf_Any_value(resources[0]);
   XdsClusterLoadAssignment* cluster_load_assignment =
       envoy_api_v2_ClusterLoadAssignment_parsenew(
-          encoded_cluster_load_assignment, arena());
+          encoded_cluster_load_assignment, arena.ptr());
   const XdsLocalityLbEndpoints** endpoints =
       envoy_api_v2_ClusterLoadAssignment_endpoints(cluster_load_assignment,
                                                    &size);
   for (size_t i = 0; i < size; ++i) {
-    update_args.localities.push_back(LocalityParse(endpoints[i]));
+    update_args->localities.push_back(LocalityParse(endpoints[i]));
   }
   return update_args;
-}
-
-grpc_slice XdsRequestEncode(const XdsDiscoveryRequest* request) {
-  size_t output_length;
-  char* output =
-      envoy_api_v2_DiscoveryRequest_serialize(request, arena(), &output_length);
-  return grpc_slice_from_static_buffer(output, output_length);
-}
-
-XdsDiscoveryResponse* XdsResponseDecode(const grpc_slice& encoded_response) {
-  return envoy_api_v2_DiscoveryResponse_parsenew(
-      upb_strview_make(GRPC_SLICE_START_PTR(encoded_response),
-                       GRPC_SLICE_LENGTH(encoded_response)),
-      arena());
-}
-
-/* invoked once for every Server in ServerList */
-static bool count_serverlist(pb_istream_t* stream, const pb_field_t* field,
-                             void** arg) {
-  xds_grpclb_serverlist* sl = static_cast<xds_grpclb_serverlist*>(*arg);
-  xds_grpclb_server server;
-  if (GPR_UNLIKELY(!pb_decode(stream, grpc_lb_v1_Server_fields, &server))) {
-    gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(stream));
-    return false;
-  }
-  ++sl->num_servers;
-  return true;
-}
-
-typedef struct decode_serverlist_arg {
-  /* The decoding callback is invoked once per server in serverlist. Remember
-   * which index of the serverlist are we currently decoding */
-  size_t decoding_idx;
-  /* The decoded serverlist */
-  xds_grpclb_serverlist* serverlist;
-} decode_serverlist_arg;
-
-/* invoked once for every Server in ServerList */
-static bool decode_serverlist(pb_istream_t* stream, const pb_field_t* field,
-                              void** arg) {
-  decode_serverlist_arg* dec_arg = static_cast<decode_serverlist_arg*>(*arg);
-  GPR_ASSERT(dec_arg->serverlist->num_servers >= dec_arg->decoding_idx);
-  xds_grpclb_server* server =
-      static_cast<xds_grpclb_server*>(gpr_zalloc(sizeof(xds_grpclb_server)));
-  if (GPR_UNLIKELY(!pb_decode(stream, grpc_lb_v1_Server_fields, server))) {
-    gpr_free(server);
-    gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(stream));
-    return false;
-  }
-  dec_arg->serverlist->servers[dec_arg->decoding_idx++] = server;
-  return true;
 }
 
 static void populate_timestamp(gpr_timespec timestamp,
@@ -246,153 +238,6 @@ void xds_grpclb_request_destroy(xds_grpclb_request* request) {
     grpc_core::Delete(drop_entries);
   }
   gpr_free(request);
-}
-
-typedef grpc_lb_v1_LoadBalanceResponse xds_grpclb_response;
-xds_grpclb_initial_response* xds_grpclb_initial_response_parse(
-    const grpc_slice& encoded_xds_grpclb_response) {
-  pb_istream_t stream = pb_istream_from_buffer(
-      const_cast<uint8_t*>(GRPC_SLICE_START_PTR(encoded_xds_grpclb_response)),
-      GRPC_SLICE_LENGTH(encoded_xds_grpclb_response));
-  xds_grpclb_response res;
-  memset(&res, 0, sizeof(xds_grpclb_response));
-  if (GPR_UNLIKELY(
-          !pb_decode(&stream, grpc_lb_v1_LoadBalanceResponse_fields, &res))) {
-    gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
-    return nullptr;
-  }
-
-  if (!res.has_initial_response) return nullptr;
-
-  xds_grpclb_initial_response* initial_res =
-      static_cast<xds_grpclb_initial_response*>(
-          gpr_malloc(sizeof(xds_grpclb_initial_response)));
-  memcpy(initial_res, &res.initial_response,
-         sizeof(xds_grpclb_initial_response));
-
-  return initial_res;
-}
-
-xds_grpclb_serverlist* xds_grpclb_response_parse_serverlist(
-    const grpc_slice& encoded_xds_grpclb_response) {
-  pb_istream_t stream = pb_istream_from_buffer(
-      const_cast<uint8_t*>(GRPC_SLICE_START_PTR(encoded_xds_grpclb_response)),
-      GRPC_SLICE_LENGTH(encoded_xds_grpclb_response));
-  pb_istream_t stream_at_start = stream;
-  xds_grpclb_serverlist* sl = static_cast<xds_grpclb_serverlist*>(
-      gpr_zalloc(sizeof(xds_grpclb_serverlist)));
-  xds_grpclb_response res;
-  memset(&res, 0, sizeof(xds_grpclb_response));
-  // First pass: count number of servers.
-  res.server_list.servers.funcs.decode = count_serverlist;
-  res.server_list.servers.arg = sl;
-  bool status = pb_decode(&stream, grpc_lb_v1_LoadBalanceResponse_fields, &res);
-  if (GPR_UNLIKELY(!status)) {
-    gpr_free(sl);
-    gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
-    return nullptr;
-  }
-  // Second pass: populate servers.
-  if (sl->num_servers > 0) {
-    sl->servers = static_cast<xds_grpclb_server**>(
-        gpr_zalloc(sizeof(xds_grpclb_server*) * sl->num_servers));
-    decode_serverlist_arg decode_arg;
-    memset(&decode_arg, 0, sizeof(decode_arg));
-    decode_arg.serverlist = sl;
-    res.server_list.servers.funcs.decode = decode_serverlist;
-    res.server_list.servers.arg = &decode_arg;
-    status = pb_decode(&stream_at_start, grpc_lb_v1_LoadBalanceResponse_fields,
-                       &res);
-    if (GPR_UNLIKELY(!status)) {
-      xds_grpclb_destroy_serverlist(sl);
-      gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
-      return nullptr;
-    }
-  }
-  return sl;
-}
-
-void xds_grpclb_destroy_serverlist(xds_grpclb_serverlist* serverlist) {
-  if (serverlist == nullptr) {
-    return;
-  }
-  for (size_t i = 0; i < serverlist->num_servers; i++) {
-    gpr_free(serverlist->servers[i]);
-  }
-  gpr_free(serverlist->servers);
-  gpr_free(serverlist);
-}
-
-xds_grpclb_serverlist* xds_grpclb_serverlist_copy(
-    const xds_grpclb_serverlist* sl) {
-  xds_grpclb_serverlist* copy = static_cast<xds_grpclb_serverlist*>(
-      gpr_zalloc(sizeof(xds_grpclb_serverlist)));
-  copy->num_servers = sl->num_servers;
-  copy->servers = static_cast<xds_grpclb_server**>(
-      gpr_malloc(sizeof(xds_grpclb_server*) * sl->num_servers));
-  for (size_t i = 0; i < sl->num_servers; i++) {
-    copy->servers[i] =
-        static_cast<xds_grpclb_server*>(gpr_malloc(sizeof(xds_grpclb_server)));
-    memcpy(copy->servers[i], sl->servers[i], sizeof(xds_grpclb_server));
-  }
-  return copy;
-}
-
-bool xds_grpclb_serverlist_equals(const xds_grpclb_serverlist* lhs,
-                                  const xds_grpclb_serverlist* rhs) {
-  if (lhs == nullptr || rhs == nullptr) {
-    return false;
-  }
-  if (lhs->num_servers != rhs->num_servers) {
-    return false;
-  }
-  for (size_t i = 0; i < lhs->num_servers; i++) {
-    if (!xds_grpclb_server_equals(lhs->servers[i], rhs->servers[i])) {
-      return false;
-    }
-  }
-  return true;
-}
-
-bool xds_grpclb_server_equals(const xds_grpclb_server* lhs,
-                              const xds_grpclb_server* rhs) {
-  return memcmp(lhs, rhs, sizeof(xds_grpclb_server)) == 0;
-}
-
-int xds_grpclb_duration_compare(const xds_grpclb_duration* lhs,
-                                const xds_grpclb_duration* rhs) {
-  GPR_ASSERT(lhs && rhs);
-  if (lhs->has_seconds && rhs->has_seconds) {
-    if (lhs->seconds < rhs->seconds) return -1;
-    if (lhs->seconds > rhs->seconds) return 1;
-  } else if (lhs->has_seconds) {
-    return 1;
-  } else if (rhs->has_seconds) {
-    return -1;
-  }
-
-  GPR_ASSERT(lhs->seconds == rhs->seconds);
-  if (lhs->has_nanos && rhs->has_nanos) {
-    if (lhs->nanos < rhs->nanos) return -1;
-    if (lhs->nanos > rhs->nanos) return 1;
-  } else if (lhs->has_nanos) {
-    return 1;
-  } else if (rhs->has_nanos) {
-    return -1;
-  }
-
-  return 0;
-}
-
-grpc_millis xds_grpclb_duration_to_millis(xds_grpclb_duration* duration_pb) {
-  return static_cast<grpc_millis>(
-      (duration_pb->has_seconds ? duration_pb->seconds : 0) * GPR_MS_PER_SEC +
-      (duration_pb->has_nanos ? duration_pb->nanos : 0) / GPR_NS_PER_MS);
-}
-
-void xds_grpclb_initial_response_destroy(
-    xds_grpclb_initial_response* response) {
-  gpr_free(response);
 }
 
 }  // namespace grpc_core

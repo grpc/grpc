@@ -196,6 +196,7 @@ class XdsLb : public LoadBalancingPolicy {
       // recv_message
       grpc_byte_buffer* recv_message_payload_ = nullptr;
       grpc_closure lb_on_balancer_message_received_;
+      // FIXME: rename
       bool seen_initial_response_ = false;
 
       // recv_trailing_metadata
@@ -281,7 +282,7 @@ class XdsLb : public LoadBalancingPolicy {
           : parent_(std::move(parent)) {}
       ~LocalityEntry() = default;
 
-      void UpdateLocked(xds_grpclb_serverlist* serverlist,
+      void UpdateLocked(ServerAddressList* serverlist,
                         LoadBalancingPolicy::Config* child_policy_config,
                         const grpc_channel_args* args);
       void ShutdownLocked();
@@ -342,14 +343,11 @@ class XdsLb : public LoadBalancingPolicy {
   };
 
   struct LocalityServerlistEntry {
-    ~LocalityServerlistEntry() {
-      gpr_free(locality_name);
-      xds_grpclb_destroy_serverlist(serverlist);
-    }
+    ~LocalityServerlistEntry() { gpr_free(locality_name); }
     char* locality_name;
     // The deserialized response from the balancer. May be nullptr until one
     // such response has arrived.
-    xds_grpclb_serverlist* serverlist;
+    UniquePtr<ServerAddressList> serverlist;
   };
 
   ~XdsLb();
@@ -448,64 +446,6 @@ UniquePtr<ServerAddressList> ExtractBackendAddresses(
     }
   }
   return backend_addresses;
-}
-
-bool IsServerValid(const xds_grpclb_server* server, size_t idx, bool log) {
-  if (server->drop) return false;
-  const xds_grpclb_ip_address* ip = &server->ip_address;
-  if (GPR_UNLIKELY(server->port >> 16 != 0)) {
-    if (log) {
-      gpr_log(GPR_ERROR,
-              "Invalid port '%d' at index %lu of serverlist. Ignoring.",
-              server->port, (unsigned long)idx);
-    }
-    return false;
-  }
-  if (GPR_UNLIKELY(ip->size != 4 && ip->size != 16)) {
-    if (log) {
-      gpr_log(GPR_ERROR,
-              "Expected IP to be 4 or 16 bytes, got %d at index %lu of "
-              "serverlist. Ignoring",
-              ip->size, (unsigned long)idx);
-    }
-    return false;
-  }
-  return true;
-}
-
-void ParseServer(const xds_grpclb_server* server, grpc_resolved_address* addr) {
-  memset(addr, 0, sizeof(*addr));
-  if (server->drop) return;
-  const uint16_t netorder_port = grpc_htons((uint16_t)server->port);
-  /* the addresses are given in binary format (a in(6)_addr struct) in
-   * server->ip_address.bytes. */
-  const xds_grpclb_ip_address* ip = &server->ip_address;
-  if (ip->size == 4) {
-    addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
-    grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(&addr->addr);
-    addr4->sin_family = GRPC_AF_INET;
-    memcpy(&addr4->sin_addr, ip->bytes, ip->size);
-    addr4->sin_port = netorder_port;
-  } else if (ip->size == 16) {
-    addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
-    grpc_sockaddr_in6* addr6 = (grpc_sockaddr_in6*)&addr->addr;
-    addr6->sin6_family = GRPC_AF_INET6;
-    memcpy(&addr6->sin6_addr, ip->bytes, ip->size);
-    addr6->sin6_port = netorder_port;
-  }
-}
-
-// Returns addresses extracted from \a serverlist.
-ServerAddressList ProcessServerlist(const xds_grpclb_serverlist* serverlist) {
-  ServerAddressList addresses;
-  for (size_t i = 0; i < serverlist->num_servers; ++i) {
-    const xds_grpclb_server* server = serverlist->servers[i];
-    if (!IsServerValid(serverlist->servers[i], i, false)) continue;
-    grpc_resolved_address addr;
-    ParseServer(server, &addr);
-    addresses.emplace_back(addr, nullptr);
-  }
-  return addresses;
 }
 
 //
@@ -617,13 +557,11 @@ XdsLb::BalancerChannelState::BalancerCallState::BalancerCallState(
       GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V1_DOT_LOADBALANCER_SLASH_BALANCELOAD,
       nullptr, deadline, nullptr);
   // Init the LB call request payload.
-  XdsDiscoveryRequest* request =
-      XdsRequestCreate(xdslb_policy()->service_name_);
-  grpc_slice request_payload_slice = XdsRequestEncode(request);
+  grpc_slice request_payload_slice =
+      XdsRequestCreateAndEncode(xdslb_policy()->service_name_);
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
-  xds_grpclb_request_destroy(request);
   // Init other data associated with the LB call.
   grpc_metadata_array_init(&lb_initial_metadata_recv_);
   grpc_metadata_array_init(&lb_trailing_metadata_recv_);
@@ -825,159 +763,123 @@ void XdsLb::BalancerChannelState::BalancerCallState::
     lb_calld->Unref(DEBUG_LOCATION, "on_message_received");
     return;
   }
+  // Read the response.
   grpc_byte_buffer_reader bbr;
   grpc_byte_buffer_reader_init(&bbr, lb_calld->recv_message_payload_);
   grpc_slice response_slice = grpc_byte_buffer_reader_readall(&bbr);
   grpc_byte_buffer_reader_destroy(&bbr);
   grpc_byte_buffer_destroy(lb_calld->recv_message_payload_);
   lb_calld->recv_message_payload_ = nullptr;
-  xds_grpclb_initial_response* initial_response;
-  xds_grpclb_serverlist* serverlist;
-  if (!lb_calld->seen_initial_response_ &&
-      (initial_response = xds_grpclb_initial_response_parse(response_slice)) !=
-          nullptr) {
-    // Have NOT seen initial response, look for initial response.
-    if (initial_response->has_client_stats_report_interval) {
-      const grpc_millis interval = xds_grpclb_duration_to_millis(
-          &initial_response->client_stats_report_interval);
-      if (interval > 0) {
-        lb_calld->client_stats_report_interval_ =
-            GPR_MAX(GPR_MS_PER_SEC, interval);
-      }
-    }
-    if (grpc_lb_xds_trace.enabled()) {
-      if (lb_calld->client_stats_report_interval_ != 0) {
-        gpr_log(GPR_INFO,
-                "[xdslb %p] Received initial LB response message; "
-                "client load reporting interval = %" PRId64 " milliseconds",
-                xdslb_policy, lb_calld->client_stats_report_interval_);
-      } else {
-        gpr_log(GPR_INFO,
-                "[xdslb %p] Received initial LB response message; client load "
-                "reporting NOT enabled",
-                xdslb_policy);
-      }
-    }
-    xds_grpclb_initial_response_destroy(initial_response);
-    lb_calld->seen_initial_response_ = true;
-  } else if ((serverlist = xds_grpclb_response_parse_serverlist(
-                  response_slice)) != nullptr) {
-    // Have seen initial response, look for serverlist.
-    GPR_ASSERT(lb_calld->lb_call_ != nullptr);
-    if (grpc_lb_xds_trace.enabled()) {
-      gpr_log(GPR_INFO,
-              "[xdslb %p] Serverlist with %" PRIuPTR " servers received",
-              xdslb_policy, serverlist->num_servers);
-      for (size_t i = 0; i < serverlist->num_servers; ++i) {
-        grpc_resolved_address addr;
-        ParseServer(serverlist->servers[i], &addr);
-        char* ipport;
-        grpc_sockaddr_to_string(&ipport, &addr, false);
-        gpr_log(GPR_INFO, "[xdslb %p] Serverlist[%" PRIuPTR "]: %s",
-                xdslb_policy, i, ipport);
-        gpr_free(ipport);
-      }
-    }
-    /* update serverlist */
-    // TODO(juanlishen): Don't ingore empty serverlist.
-    if (serverlist->num_servers > 0) {
-      // Pending LB channel receives a serverlist; promote it.
-      // Note that this call can't be on a discarded pending channel, because
-      // such channels don't have any current call but we have checked this call
-      // is a current call.
-      if (!lb_calld->lb_chand_->IsCurrentChannel()) {
-        if (grpc_lb_xds_trace.enabled()) {
-          gpr_log(GPR_INFO,
-                  "[xdslb %p] Promoting pending LB channel %p to replace "
-                  "current LB channel %p",
-                  xdslb_policy, lb_calld->lb_chand_.get(),
-                  lb_calld->xdslb_policy()->lb_chand_.get());
-        }
-        lb_calld->xdslb_policy()->lb_chand_ =
-            std::move(lb_calld->xdslb_policy()->pending_lb_chand_);
-      }
-      // Start sending client load report only after we start using the
-      // serverlist returned from the current LB call.
-      if (lb_calld->client_stats_report_interval_ > 0 &&
-          lb_calld->client_stats_ == nullptr) {
-        lb_calld->client_stats_ = MakeRefCounted<XdsLbClientStats>();
-        // TODO(roth): We currently track this ref manually.  Once the
-        // ClosureRef API is ready, we should pass the RefCountedPtr<> along
-        // with the callback.
-        auto self = lb_calld->Ref(DEBUG_LOCATION, "client_load_report");
-        self.release();
-        lb_calld->ScheduleNextClientLoadReportLocked();
-      }
-      if (!xdslb_policy->locality_serverlist_.empty() &&
-          xds_grpclb_serverlist_equals(
-              xdslb_policy->locality_serverlist_[0]->serverlist, serverlist)) {
-        if (grpc_lb_xds_trace.enabled()) {
-          gpr_log(GPR_INFO,
-                  "[xdslb %p] Incoming server list identical to current, "
-                  "ignoring.",
-                  xdslb_policy);
-        }
-        xds_grpclb_destroy_serverlist(serverlist);
-      } else { /* new serverlist */
-        if (!xdslb_policy->locality_serverlist_.empty()) {
-          /* dispose of the old serverlist */
-          xds_grpclb_destroy_serverlist(
-              xdslb_policy->locality_serverlist_[0]->serverlist);
-        } else {
-          /* or dispose of the fallback */
-          xdslb_policy->fallback_backend_addresses_.reset();
-          if (xdslb_policy->fallback_timer_callback_pending_) {
-            grpc_timer_cancel(&xdslb_policy->lb_fallback_timer_);
-          }
-          /* Initialize locality serverlist, currently the list only handles
-           * one child */
-          xdslb_policy->locality_serverlist_.emplace_back(
-              MakeUnique<LocalityServerlistEntry>());
-          xdslb_policy->locality_serverlist_[0]->locality_name =
-              static_cast<char*>(gpr_strdup(kDefaultLocalityName));
-        }
-        // and update the copy in the XdsLb instance. This
-        // serverlist instance will be destroyed either upon the next
-        // update or when the XdsLb instance is destroyed.
-        xdslb_policy->locality_serverlist_[0]->serverlist = serverlist;
-        xdslb_policy->locality_map_.UpdateLocked(
-            xdslb_policy->locality_serverlist_,
-            xdslb_policy->child_policy_config_.get(), xdslb_policy->args_,
-            xdslb_policy);
-      }
-    } else {
-      if (grpc_lb_xds_trace.enabled()) {
-        gpr_log(GPR_INFO, "[xdslb %p] Received empty server list, ignoring.",
-                xdslb_policy);
-      }
-      xds_grpclb_destroy_serverlist(serverlist);
-    }
-  } else {
-    // No valid initial response or serverlist found.
+  // Parse the response.
+  UniquePtr<XdsLoadUpdateArgs> update_args = XdsResponseDecodeAndParse(response_slice);
+  if (update_args == nullptr) {
     char* response_slice_str =
         grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
     gpr_log(GPR_ERROR,
-            "[xdslb %p] Invalid LB response received: '%s'. Ignoring.",
+            "[xdslb %p] Invalid EDS response received: '%s'. Ignoring.",
             xdslb_policy, response_slice_str);
     gpr_free(response_slice_str);
+    goto done;
   }
+  if (grpc_lb_xds_trace.enabled()) {
+    gpr_log(GPR_INFO,
+            "[xdslb %p] EDS response with %" PRIuPTR " localities received",
+            xdslb_policy, update_args->localities.size());
+    for (size_t i = 0; i < update_args->localities.size(); ++i) {
+      const XdsLocalityUpdateArgs& locality = update_args->localities[i];
+      gpr_log(GPR_INFO,
+              "[xdslb %p] Locality %" PRIuPTR " contains %" PRIuPTR
+              " server addresses",
+              xdslb_policy, i, locality.serverlist.size());
+      for (size_t j = 0; j < locality.serverlist.size(); ++i) {
+        char* ipport;
+        grpc_sockaddr_to_string(&ipport, &locality.serverlist[j].address(),
+                                false);
+        gpr_log(GPR_INFO,
+                "[xdslb %p] Locality %" PRIuPTR ", server address %" PRIuPTR
+                ": %s",
+                xdslb_policy, i, j, ipport);
+        gpr_free(ipport);
+      }
+    }
+  }
+  // Pending LB channel receives a serverlist; promote it.
+  // Note that this call can't be on a discarded pending channel, because
+  // such channels don't have any current call but we have checked this call
+  // is a current call.
+  if (!lb_calld->lb_chand_->IsCurrentChannel()) {
+    if (grpc_lb_xds_trace.enabled()) {
+      gpr_log(GPR_INFO,
+              "[xdslb %p] Promoting pending LB channel %p to replace "
+              "current LB channel %p",
+              xdslb_policy, lb_calld->lb_chand_.get(),
+              lb_calld->xdslb_policy()->lb_chand_.get());
+    }
+    lb_calld->xdslb_policy()->lb_chand_ =
+        std::move(lb_calld->xdslb_policy()->pending_lb_chand_);
+  }
+  // Start sending client load report only after we start using the
+  // serverlist returned from the current LB call.
+  if (lb_calld->client_stats_report_interval_ > 0 &&
+      lb_calld->client_stats_ == nullptr) {
+    lb_calld->client_stats_ = MakeRefCounted<XdsLbClientStats>();
+    lb_calld->Ref(DEBUG_LOCATION, "client_load_report").release();
+    lb_calld->ScheduleNextClientLoadReportLocked();
+  }
+  // Ignore indentical update.
+  if (!xdslb_policy->locality_serverlist_.empty() &&
+      ServerAddressListEqual(
+          xdslb_policy->locality_serverlist_[0]->serverlist.get(),
+          update_args->localities[0].serverlist.get())) {
+    if (grpc_lb_xds_trace.enabled()) {
+      gpr_log(GPR_INFO,
+              "[xdslb %p] Incoming server list identical to current, "
+              "ignoring.",
+              xdslb_policy);
+    }
+    goto done;
+  }
+  // Accept the serverlist.
+  if (xdslb_policy->locality_serverlist_.empty()) {
+    /* or dispose of the fallback */
+    xdslb_policy->fallback_backend_addresses_.reset();
+    if (xdslb_policy->fallback_timer_callback_pending_) {
+      grpc_timer_cancel(&xdslb_policy->lb_fallback_timer_);
+    }
+    /* Initialize locality serverlist, currently the list only handles
+     * one child */
+    xdslb_policy->locality_serverlist_.emplace_back(
+        MakeUnique<LocalityServerlistEntry>());
+    xdslb_policy->locality_serverlist_[0]->locality_name =
+        gpr_strdup(kDefaultLocalityName);
+  }
+  // and update the copy in the XdsLb instance. This
+  // serverlist instance will be destroyed either upon the next
+  // update or when the XdsLb instance is destroyed.
+  xdslb_policy->locality_serverlist_[0]->serverlist =
+      std::move(update_args->localities[0].serverlist);
+  xdslb_policy->locality_map_.UpdateLocked(
+      xdslb_policy->locality_serverlist_,
+      xdslb_policy->child_policy_config_.get(), xdslb_policy->args_,
+      xdslb_policy);
+done:
   grpc_slice_unref_internal(response_slice);
-  if (!xdslb_policy->shutting_down_) {
-    // Keep listening for serverlist updates.
-    grpc_op op;
-    memset(&op, 0, sizeof(op));
-    op.op = GRPC_OP_RECV_MESSAGE;
-    op.data.recv_message.recv_message = &lb_calld->recv_message_payload_;
-    op.flags = 0;
-    op.reserved = nullptr;
-    // Reuse the "OnBalancerMessageReceivedLocked" ref taken in StartQuery().
-    const grpc_call_error call_error = grpc_call_start_batch_and_execute(
-        lb_calld->lb_call_, &op, 1,
-        &lb_calld->lb_on_balancer_message_received_);
-    GPR_ASSERT(GRPC_CALL_OK == call_error);
-  } else {
+  if (xdslb_policy->shutting_down_) {
     lb_calld->Unref(DEBUG_LOCATION, "on_message_received+xds_shutdown");
+    return;
   }
+  // Keep listening for serverlist updates.
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_RECV_MESSAGE;
+  op.data.recv_message.recv_message = &lb_calld->recv_message_payload_;
+  op.flags = 0;
+  op.reserved = nullptr;
+  GPR_ASSERT(lb_calld->lb_call_ != nullptr);
+  // Reuse the "OnBalancerMessageReceivedLocked" ref taken in StartQuery().
+  const grpc_call_error call_error = grpc_call_start_batch_and_execute(
+      lb_calld->lb_call_, &op, 1, &lb_calld->lb_on_balancer_message_received_);
+  GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
 void XdsLb::BalancerChannelState::BalancerCallState::
@@ -1108,12 +1010,7 @@ XdsLb::XdsLb(Args args)
 }
 
 XdsLb::~XdsLb() {
-<<<<<<< Updated upstream
-  gpr_free((void*)server_name_);
-=======
-  gpr_mu_destroy(&lb_chand_mu_);
   gpr_free((void*)service_name_);
->>>>>>> Stashed changes
   grpc_channel_args_destroy(args_);
   locality_serverlist_.clear();
 }
@@ -1327,8 +1224,10 @@ void XdsLb::LocalityMap::UpdateLocked(
       iter = map_.emplace(std::move(locality_name), std::move(new_entry)).first;
     }
     // Don't create new child policies if not directed to
-    xds_grpclb_serverlist* serverlist =
-        parent->locality_serverlist_[i]->serverlist;
+    // Keep a copy of serverlist in locality_serverlist_ so that we can
+    // compare it with the future ones.
+    ServerAddressList* serverlist =
+        parent->locality_serverlist_[i]->serverlist.get();
     iter->second->UpdateLocked(serverlist, child_policy_config, args);
   }
   PruneLocalities(locality_serverlist);
@@ -1405,7 +1304,7 @@ XdsLb::LocalityMap::LocalityEntry::CreateChildPolicyLocked(
 }
 
 void XdsLb::LocalityMap::LocalityEntry::UpdateLocked(
-    xds_grpclb_serverlist* serverlist,
+    ServerAddressList* serverlist,
     LoadBalancingPolicy::Config* child_policy_config,
     const grpc_channel_args* args_in) {
   if (parent_->shutting_down_) return;
@@ -1413,10 +1312,10 @@ void XdsLb::LocalityMap::LocalityEntry::UpdateLocked(
   // mode is disabled for xDS plugin.
   // TODO(juanlishen): Change this as part of implementing fallback mode.
   GPR_ASSERT(serverlist != nullptr);
-  GPR_ASSERT(serverlist->num_servers > 0);
+  GPR_ASSERT(!serverlist->empty());
   // Construct update args.
   UpdateArgs update_args;
-  update_args.addresses = ProcessServerlist(serverlist);
+  update_args.addresses = *serverlist;
   update_args.config =
       child_policy_config == nullptr ? nullptr : child_policy_config->Ref();
   update_args.args = CreateChildPolicyArgsLocked(args_in);

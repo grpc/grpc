@@ -52,4 +52,14 @@ bool ServerAddress::IsBalancer() const {
       grpc_channel_args_find(args_, GRPC_ARG_ADDRESS_IS_BALANCER), false);
 }
 
+bool ServerAddressListEqual(const ServerAddressList* a,
+                            const ServerAddressList* b) {
+  if (a == nullptr || b == nullptr) return false;
+  if (a->size() != b->size()) return false;
+  for (size_t i = 0; i < a->size(); ++i) {
+    if ((*a)[i].Cmp((*b)[i]) != 0) return false;
+  }
+  return true;
+}
+
 }  // namespace grpc_core
