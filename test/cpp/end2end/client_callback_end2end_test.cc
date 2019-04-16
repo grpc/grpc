@@ -374,6 +374,34 @@ TEST_P(ClientCallbackEnd2endTest, SimpleRpc) {
   SendRpcs(1, false);
 }
 
+TEST_P(ClientCallbackEnd2endTest, SimpleRpcUnderLock) {
+  MAYBE_SKIP_TEST;
+  ResetStub();
+  std::mutex mu;
+  std::condition_variable cv;
+  bool done;
+  EchoRequest request;
+  request.set_message("Hello locked world.");
+  EchoResponse response;
+  ClientContext cli_ctx;
+  {
+    std::lock_guard<std::mutex> l(mu);
+    stub_->experimental_async()->Echo(
+        &cli_ctx, &request, &response,
+        [&mu, &cv, &done, &request, &response](Status s) {
+          std::lock_guard<std::mutex> l(mu);
+          EXPECT_TRUE(s.ok());
+          EXPECT_EQ(request.message(), response.message());
+          done = true;
+          cv.notify_one();
+        });
+  }
+  std::unique_lock<std::mutex> l(mu);
+  while (!done) {
+    cv.wait(l);
+  }
+}
+
 TEST_P(ClientCallbackEnd2endTest, SequentialRpcs) {
   MAYBE_SKIP_TEST;
   ResetStub();
