@@ -41,6 +41,9 @@
                <Test
                   Identifier = "InteropTests">
                </Test>
+               <Test
+                  Identifier = "StressTests">
+               </Test>
             </SkippedTests>
          </TestableReference>
       </Testables>
