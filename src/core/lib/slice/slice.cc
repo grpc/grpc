@@ -101,23 +101,23 @@ class NewSliceRefcount {
   }
 
   NewSliceRefcount(void (*destroy)(void*), void* user_data)
-      : rc(SliceRefcount::Type::REGULAR, &refs, Destroy, this, &rc),
-        user_destroy(destroy),
-        user_data(user_data) {
+      : rc_(SliceRefcount::Type::REGULAR, &refs_, Destroy, this, &rc_),
+        user_destroy_(destroy),
+        user_data_(user_data) {
     // Nothing to do here.
   }
 
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
-  grpc_slice_refcount* base_refcount() { return &rc; }
+  grpc_slice_refcount* base_refcount() { return &rc_; }
 
  private:
-  ~NewSliceRefcount() { user_destroy(user_data); }
+  ~NewSliceRefcount() { user_destroy_(user_data_); }
 
-  grpc_slice_refcount rc;
-  RefCount refs;
-  void (*user_destroy)(void*);
-  void* user_data;
+  grpc_slice_refcount rc_;
+  RefCount refs_;
+  void (*user_destroy_)(void*);
+  void* user_data_;
 };
 
 }  // namespace grpc_core
@@ -151,25 +151,25 @@ class NewWithLenSliceRefcount {
 
   NewWithLenSliceRefcount(void (*destroy)(void*, size_t), void* user_data,
                           size_t user_length)
-      : rc(SliceRefcount::Type::REGULAR, &refs, Destroy, this, &rc),
-        user_data(user_data),
-        user_length(user_length),
-        user_destroy(destroy) {
+      : rc_(SliceRefcount::Type::REGULAR, &refs_, Destroy, this, &rc_),
+        user_data_(user_data),
+        user_length_(user_length),
+        user_destroy_(destroy) {
     // Nothing to do here.
   }
 
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
-  grpc_slice_refcount* base_refcount() { return &rc; }
+  grpc_slice_refcount* base_refcount() { return &rc_; }
 
  private:
-  ~NewWithLenSliceRefcount() { user_destroy(user_data, user_length); }
+  ~NewWithLenSliceRefcount() { user_destroy_(user_data_, user_length_); }
 
-  grpc_slice_refcount rc;
-  RefCount refs;
-  void* user_data;
-  size_t user_length;
-  void (*user_destroy)(void*, size_t);
+  grpc_slice_refcount rc_;
+  RefCount refs_;
+  void* user_data_;
+  size_t user_length_;
+  void (*user_destroy_)(void*, size_t);
 };
 
 }  // namespace grpc_core
@@ -206,16 +206,16 @@ class MallocRefCount {
   }
 
   MallocRefCount()
-      : base(grpc_core::SliceRefcount::Type::REGULAR, &refs, Destroy, this,
-             &base) {
+      : base_(grpc_core::SliceRefcount::Type::REGULAR, &refs_, Destroy, this,
+             &base_) {
     // Nothing to do here.
   }
 
-  grpc_slice_refcount* base_refcount() { return &base; }
+  grpc_slice_refcount* base_refcount() { return &base_; }
 
  private:
-  grpc_slice_refcount base;
-  grpc_core::RefCount refs;
+  grpc_slice_refcount base_;
+  grpc_core::RefCount refs_;
 };
 
 }  // namespace
@@ -298,7 +298,7 @@ grpc_slice grpc_slice_sub(grpc_slice source, size_t begin, size_t end) {
   } else {
     subset = grpc_slice_sub_no_ref(source, begin, end);
     /* Bump the refcount */
-    subset.refcount->impl_.Ref();
+    subset.refcount->impl.Ref();
   }
   return subset;
 }
@@ -342,7 +342,7 @@ grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice* source, size_t split,
           tail.refcount = source->refcount->sub_refcount();
           source->refcount = source->refcount->sub_refcount();
           /* Bump the refcount */
-          tail.refcount->impl_.Ref();
+          tail.refcount->impl.Ref();
           break;
       }
       /* Point into the source array */
@@ -387,7 +387,7 @@ grpc_slice grpc_slice_split_head(grpc_slice* source, size_t split) {
     /* Build the result */
     head.refcount = source->refcount->sub_refcount();
     /* Bump the refcount */
-    head.refcount->impl_.Ref();
+    head.refcount->impl.Ref();
     /* Point into the source array */
     head.data.refcounted.bytes = source->data.refcounted.bytes;
     head.data.refcounted.length = split;
@@ -408,8 +408,8 @@ int grpc_slice_default_eq_impl(grpc_slice a, grpc_slice b) {
 
 int grpc_slice_eq(grpc_slice a, grpc_slice b) {
   if (a.refcount && b.refcount &&
-      a.refcount->impl_.getType() == b.refcount->impl_.getType()) {
-    return a.refcount->impl_.Eq(a, b);
+      a.refcount->impl.GetType() == b.refcount->impl.GetType()) {
+    return a.refcount->impl.Eq(a, b);
   }
   return grpc_slice_default_eq_impl(a, b);
 }

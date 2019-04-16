@@ -437,24 +437,27 @@ class RuSliceRefcount {
  public:
   static void Destroy(void* p) {
     auto* rc = static_cast<RuSliceRefcount*>(p);
-    grpc_resource_user_free(rc->resource_user, rc->size);
+    rc->~RuSliceRefcount();
     gpr_free(rc);
   }
   RuSliceRefcount(grpc_resource_user* resource_user, size_t size)
-      : base(grpc_core::SliceRefcount::Type::REGULAR, &refs, Destroy, this,
-             &base),
-        resource_user(resource_user),
-        size(size) {
+      : base_(grpc_core::SliceRefcount::Type::REGULAR, &refs_, Destroy, this,
+             &base_),
+        resource_user_(resource_user),
+        size_(size) {
     // Nothing to do here.
   }
+  ~RuSliceRefcount() {
+    grpc_resource_user_free(resource_user_, size_);
+  }
 
-  grpc_slice_refcount* base_refcount() { return &base; }
+  grpc_slice_refcount* base_refcount() { return &base_; }
 
  private:
-  grpc_slice_refcount base;
-  RefCount refs;
-  grpc_resource_user* resource_user;
-  size_t size;
+  grpc_slice_refcount base_;
+  RefCount refs_;
+  grpc_resource_user* resource_user_;
+  size_t size_;
 };
 
 }  // namespace grpc_core
