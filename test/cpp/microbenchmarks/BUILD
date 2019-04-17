@@ -229,8 +229,8 @@ grpc_cc_library(
     srcs = ["callback_test_service.cc"],
     hdrs = ["callback_test_service.h"],
     deps = [
-        "//third_party/grpc/src/proto/grpc/testing:echo_proto",
-        "//third_party/grpc/test/cpp/util:test_util",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/cpp/util:test_util",
     ],
 )
 
@@ -254,7 +254,7 @@ grpc_cc_binary(
     ],
     deps = [
         ":callback_unary_ping_pong_h",
-        "//third_party/grpc:grpc++",
+        "//:grpc++",
     ],
 )
 
@@ -278,6 +278,6 @@ grpc_cc_binary(
     ],
     deps = [
         ":callback_streaming_ping_pong_h",
-        "//third_party/grpc:grpc++",
+        "//:grpc++",
     ],
 )
