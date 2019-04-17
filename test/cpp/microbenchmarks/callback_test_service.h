@@ -2,6 +2,7 @@
 #define TEST_CPP_CALLBACKMICROBENCHMARKS_CALLBACK_TEST_SERVICE_H
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include <sstream>
 
 namespace grpc {
 namespace testing {
