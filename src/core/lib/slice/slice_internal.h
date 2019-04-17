@@ -158,7 +158,7 @@ struct grpc_slice_refcount {
  private:
   grpc_core::RefCount* ref_ = nullptr;
   const Type ref_type_ = Type::REGULAR;
-  grpc_slice_refcount* sub_refcount_ = nullptr;
+  grpc_slice_refcount* sub_refcount_ = this;
   DestroyerFn dest_fn_ = nullptr;
   void* destroy_fn_arg_ = nullptr;
 };
