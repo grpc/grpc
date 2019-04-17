@@ -33,7 +33,7 @@
 #include "src/core/lib/gprpp/memory.h"
 
 namespace {
-enum class ArenaAlignment { MaxRequired, CacheLine };
+enum class ArenaAlignment { MAX_REQUIRED, CACHE_LINE };
 
 enum init_strategy {
   NO_INIT,        // Do not initialize the arena blocks.
@@ -63,10 +63,10 @@ template <ArenaAlignment align>
 static void* gpr_arena_alloc_maybe_init(size_t size) {
   void* mem;
   switch (align) {
-    case ArenaAlignment::CacheLine:
+    case ArenaAlignment::CACHE_LINE:
       mem = gpr_malloc_aligned(size, GPR_CACHELINE_SIZE);
       break;
-    case ArenaAlignment::MaxRequired:
+    case ArenaAlignment::MAX_REQUIRED:
       mem = gpr_malloc_aligned(size, GPR_MAX_ALIGNMENT);
       break;
   }
@@ -116,7 +116,7 @@ void* gpr_arena_alloc(gpr_arena* arena, size_t size) {
   arena->ptrs =
       (void**)gpr_realloc(arena->ptrs, sizeof(void*) * (arena->num_ptrs + 1));
   void* retval = arena->ptrs[arena->num_ptrs++] =
-      gpr_arena_alloc_maybe_init<ArenaAlignment::MaxRequired>(size);
+      gpr_arena_alloc_maybe_init<ArenaAlignment::MAX_REQUIRED>(size);
   gpr_mu_unlock(&arena->mu);
   return retval;
 }
@@ -131,7 +131,7 @@ void* gpr_arena_alloc(gpr_arena* arena, size_t size) {
 
 gpr_arena* gpr_arena_create(size_t initial_size) {
   initial_size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(initial_size);
-  return new (gpr_arena_alloc_maybe_init<ArenaAlignment::CacheLine>(
+  return new (gpr_arena_alloc_maybe_init<ArenaAlignment::CACHE_LINE>(
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(gpr_arena)) + initial_size))
       gpr_arena(initial_size);
 }
@@ -149,8 +149,8 @@ void* gpr_arena::AllocZone(size_t size) {
   // wasted. This overflowing and wasting is uncommon because of our arena
   // sizing historesis (that is, most calls should have a large enough initial
   // zone and will not need to grow the arena).
-  zone* z = new (gpr_arena_alloc_maybe_init<ArenaAlignment::MaxRequired>(
-      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(zone)) + size)) zone();
+  Zone* z = new (gpr_arena_alloc_maybe_init<ArenaAlignment::MAX_REQUIRED>(
+      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Zone)) + size)) Zone();
   {
     while (arena_growth_spinlock.test_and_set(std::memory_order_acquire)) {
       ;
@@ -160,7 +160,7 @@ void* gpr_arena::AllocZone(size_t size) {
     arena_growth_spinlock.clear(std::memory_order_release);
   }
   return reinterpret_cast<char*>(z) +
-         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(zone));
+         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Zone));
 }
 
 #endif  // SIMPLE_ARENA_FOR_DEBUGGING

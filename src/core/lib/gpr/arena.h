@@ -57,17 +57,17 @@ void* gpr_arena_alloc(gpr_arena* arena, size_t size);
 
 #else  // SIMPLE_ARENA_FOR_DEBUGGING
 
-typedef struct zone {
-  zone* prev;
-} zone;
-
 struct gpr_arena {
+  struct Zone {
+   Zone* prev;
+  };
+
   gpr_arena(size_t initial_size) : initial_zone_size(initial_size) {}
   ~gpr_arena() {
-    zone* z = last_zone;
+    Zone* z = last_zone;
     while (z) {
-      zone* prev_z = z->prev;
-      z->~zone();
+      Zone* prev_z = z->prev;
+      z->~Zone();
       gpr_free_aligned(z);
       z = prev_z;
     }
@@ -91,11 +91,11 @@ struct gpr_arena {
   void* AllocZone(size_t size);
 
   // Keep track of the total used size. We use this in our call sizing
-  // historesis.
+  // hysteresis.
   gpr_atm total_used = 0;
   size_t initial_zone_size;
   std::atomic_flag arena_growth_spinlock = ATOMIC_FLAG_INIT;
-  zone* last_zone = nullptr;
+  Zone* last_zone = nullptr;
 };
 
 // Allocate \a size bytes from the arena
