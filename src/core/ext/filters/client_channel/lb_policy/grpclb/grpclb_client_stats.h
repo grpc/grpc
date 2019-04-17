@@ -26,6 +26,7 @@
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {
 
@@ -40,9 +41,6 @@ class GrpcLbClientStats : public RefCounted<GrpcLbClientStats> {
   };
 
   typedef InlinedVector<DropTokenCount, 10> DroppedCallCounts;
-
-  GrpcLbClientStats() { gpr_mu_init(&drop_count_mu_); }
-  ~GrpcLbClientStats() { gpr_mu_destroy(&drop_count_mu_); }
 
   void AddCallStarted();
   void AddCallFinished(bool finished_with_client_failed_to_send,
@@ -66,7 +64,7 @@ class GrpcLbClientStats : public RefCounted<GrpcLbClientStats> {
   gpr_atm num_calls_finished_ = 0;
   gpr_atm num_calls_finished_with_client_failed_to_send_ = 0;
   gpr_atm num_calls_finished_known_received_ = 0;
-  gpr_mu drop_count_mu_;  // Guards drop_token_counts_.
+  Mutex drop_count_mu_;  // Guards drop_token_counts_.
   UniquePtr<DroppedCallCounts> drop_token_counts_;
 };
 

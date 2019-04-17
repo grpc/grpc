@@ -89,9 +89,9 @@
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/mutex_lock.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -298,10 +298,8 @@ class XdsLb : public LoadBalancingPolicy {
     class LocalityEntry : public InternallyRefCounted<LocalityEntry> {
      public:
       LocalityEntry(RefCountedPtr<XdsLb> parent, uint32_t locality_weight)
-          : parent_(std::move(parent)), locality_weight_(locality_weight) {
-        gpr_mu_init(&child_policy_mu_);
-      }
-      ~LocalityEntry() { gpr_mu_destroy(&child_policy_mu_); }
+          : parent_(std::move(parent)), locality_weight_(locality_weight) {}
+      ~LocalityEntry() = default;
 
       void UpdateLocked(xds_grpclb_serverlist* serverlist,
                         LoadBalancingPolicy::Config* child_policy_config,
@@ -343,7 +341,7 @@ class XdsLb : public LoadBalancingPolicy {
       OrphanablePtr<LoadBalancingPolicy> pending_child_policy_;
       // Lock held when modifying the value of child_policy_ or
       // pending_child_policy_.
-      gpr_mu child_policy_mu_;
+      Mutex child_policy_mu_;
       RefCountedPtr<XdsLb> parent_;
       RefCountedPtr<PickerRef> picker_ref_;
       grpc_connectivity_state connectivity_state_;
@@ -351,9 +349,6 @@ class XdsLb : public LoadBalancingPolicy {
       // locality weights
       uint32_t locality_weight_;
     };
-
-    LocalityMap() { gpr_mu_init(&child_refs_mu_); }
-    ~LocalityMap() { gpr_mu_destroy(&child_refs_mu_); }
 
     void UpdateLocked(const LocalityList& locality_list,
                       LoadBalancingPolicy::Config* child_policy_config,
@@ -370,7 +365,7 @@ class XdsLb : public LoadBalancingPolicy {
     Map<UniquePtr<char>, OrphanablePtr<LocalityEntry>, StringLess> map_;
     // Lock held while filling child refs for all localities
     // inside the map
-    gpr_mu child_refs_mu_;
+    Mutex child_refs_mu_;
   };
 
   struct LocalityServerlistEntry {
@@ -425,7 +420,7 @@ class XdsLb : public LoadBalancingPolicy {
   // Mutex to protect the channel to the LB server. This is used when
   // processing a channelz request.
   // TODO(juanlishen): Replace this with atomic.
-  gpr_mu lb_chand_mu_;
+  Mutex lb_chand_mu_;
 
   // Timeout in milliseconds for the LB call. 0 means no deadline.
   int lb_call_timeout_ms_ = 0;
@@ -1150,7 +1145,6 @@ XdsLb::XdsLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
       locality_map_(),
       locality_serverlist_() {
-  gpr_mu_init(&lb_chand_mu_);
   // Record server name.
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
   const char* server_uri = grpc_channel_arg_get_string(arg);
@@ -1174,7 +1168,6 @@ XdsLb::XdsLb(Args args)
 }
 
 XdsLb::~XdsLb() {
-  gpr_mu_destroy(&lb_chand_mu_);
   gpr_free((void*)server_name_);
   grpc_channel_args_destroy(args_);
   locality_serverlist_.clear();
