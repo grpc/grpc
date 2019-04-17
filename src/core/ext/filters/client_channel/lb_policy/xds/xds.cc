@@ -274,6 +274,10 @@ class XdsLb : public LoadBalancingPolicy {
 
   class Picker : public SubchannelPicker {
    public:
+    // Maintains a weighted list of pickers from each locality that is in ready
+    // state. The first element in the pair represents the end of a range
+    // proportional to the locality's weight. The start of the range is the
+    // previous value in the vector and is 0 for the first element.
     using PickerList =
         InlinedVector<Pair<uint32_t, RefCountedPtr<PickerRef>>, 1>;
     Picker(PickerList pickers, RefCountedPtr<XdsLbClientStats> client_stats)
@@ -286,10 +290,6 @@ class XdsLb : public LoadBalancingPolicy {
     PickResult PickFromLocality(const uint32_t key, PickArgs* pick,
                                 grpc_error** error);
     RefCountedPtr<XdsLbClientStats> client_stats_;
-    // Maintains a weighted list of pickers from each locality that is in ready
-    // state. The first element in the pair represents the end of a range
-    // proportional to the locality's weight. The start of the range is the
-    // previous value in the vector and is 0 for the first element.
     PickerList pickers_;
   };
 
@@ -1696,7 +1696,7 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
     switch (connectivity_state) {
       case GRPC_CHANNEL_READY: {
         end += entry->locality_weight_;
-        pickers.push_back(MakePair(end, entry->picker_ref_->Ref()));
+        pickers.push_back(MakePair(end, entry->picker_ref_));
         break;
       }
       case GRPC_CHANNEL_CONNECTING: {
