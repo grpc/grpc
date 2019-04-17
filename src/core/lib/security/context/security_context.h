@@ -28,7 +28,9 @@
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount;
 
-struct gpr_arena;
+namespace grpc_core {
+  class Arena;
+}  // namespace grpc_core
 
 /* --- grpc_auth_context ---
 
@@ -121,7 +123,7 @@ struct grpc_client_security_context {
 };
 
 grpc_client_security_context* grpc_client_security_context_create(
-    gpr_arena* arena, grpc_call_credentials* creds);
+    grpc_core::Arena* arena, grpc_call_credentials* creds);
 void grpc_client_security_context_destroy(void* ctx);
 
 /* --- grpc_server_security_context ---
@@ -137,7 +139,7 @@ struct grpc_server_security_context {
 };
 
 grpc_server_security_context* grpc_server_security_context_create(
-    gpr_arena* arena);
+    grpc_core::Arena* arena);
 void grpc_server_security_context_destroy(void* ctx);
 
 /* --- Channel args for auth context --- */

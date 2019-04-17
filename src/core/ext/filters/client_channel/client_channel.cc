@@ -1483,8 +1483,8 @@ void CallData::MaybeCacheSendOpsForBatch(PendingBatch* pending) {
     GPR_ASSERT(send_initial_metadata_storage_ == nullptr);
     grpc_metadata_batch* send_initial_metadata =
         batch->payload->send_initial_metadata.send_initial_metadata;
-    send_initial_metadata_storage_ = (grpc_linked_mdelem*)gpr_arena_alloc(
-        arena_, sizeof(grpc_linked_mdelem) * send_initial_metadata->list.count);
+    send_initial_metadata_storage_ = (grpc_linked_mdelem*)arena_->Alloc(
+        sizeof(grpc_linked_mdelem) * send_initial_metadata->list.count);
     grpc_metadata_batch_copy(send_initial_metadata, &send_initial_metadata_,
                              send_initial_metadata_storage_);
     send_initial_metadata_flags_ =
@@ -1494,7 +1494,7 @@ void CallData::MaybeCacheSendOpsForBatch(PendingBatch* pending) {
   // Set up cache for send_message ops.
   if (batch->send_message) {
     ByteStreamCache* cache = static_cast<ByteStreamCache*>(
-        gpr_arena_alloc(arena_, sizeof(ByteStreamCache)));
+        arena_->Alloc(sizeof(ByteStreamCache)));
     new (cache)
         ByteStreamCache(std::move(batch->payload->send_message.send_message));
     send_messages_.push_back(cache);
@@ -1505,8 +1505,7 @@ void CallData::MaybeCacheSendOpsForBatch(PendingBatch* pending) {
     GPR_ASSERT(send_trailing_metadata_storage_ == nullptr);
     grpc_metadata_batch* send_trailing_metadata =
         batch->payload->send_trailing_metadata.send_trailing_metadata;
-    send_trailing_metadata_storage_ = (grpc_linked_mdelem*)gpr_arena_alloc(
-        arena_,
+    send_trailing_metadata_storage_ = (grpc_linked_mdelem*)arena_->Alloc(
         sizeof(grpc_linked_mdelem) * send_trailing_metadata->list.count);
     grpc_metadata_batch_copy(send_trailing_metadata, &send_trailing_metadata_,
                              send_trailing_metadata_storage_);
@@ -2590,7 +2589,7 @@ void CallData::AddRetriableSendInitialMetadataOp(
   // If we've already completed one or more attempts, add the
   // grpc-retry-attempts header.
   retry_state->send_initial_metadata_storage = static_cast<grpc_linked_mdelem*>(
-      gpr_arena_alloc(arena_, sizeof(grpc_linked_mdelem) *
+      arena_->Alloc(sizeof(grpc_linked_mdelem) *
                                   (send_initial_metadata_.list.count +
                                    (num_attempts_completed_ > 0))));
   grpc_metadata_batch_copy(&send_initial_metadata_,
@@ -2651,8 +2650,7 @@ void CallData::AddRetriableSendTrailingMetadataOp(
   // the filters in the subchannel stack may modify this batch, and we don't
   // want those modifications to be passed forward to subsequent attempts.
   retry_state->send_trailing_metadata_storage =
-      static_cast<grpc_linked_mdelem*>(gpr_arena_alloc(
-          arena_,
+      static_cast<grpc_linked_mdelem*>(arena_->Alloc(
           sizeof(grpc_linked_mdelem) * send_trailing_metadata_.list.count));
   grpc_metadata_batch_copy(&send_trailing_metadata_,
                            &retry_state->send_trailing_metadata,

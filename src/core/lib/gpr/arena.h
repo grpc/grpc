@@ -27,80 +27,74 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <atomic>
+#include <new>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gpr/alloc.h"
+#include "src/core/lib/gpr/spinlock.h"
+#include "src/core/lib/gprpp/atomic.h"
 
 #include <stddef.h>
 
-typedef struct gpr_arena gpr_arena;
+namespace grpc_core {
 
-// Create an arena, with \a initial_size bytes in the first allocated buffer
-gpr_arena* gpr_arena_create(size_t initial_size);
-// Destroy an arena, returning the total number of bytes allocated
-size_t gpr_arena_destroy(gpr_arena* arena);
+// TODO(arjunroy): This and arena.cc should live in lib/gprpp instead.
+class Arena {
+ public:
+  static Arena* Create(size_t initial_size);
+  size_t Destroy();
 
-// Uncomment this to use a simple arena that simply allocates the
-// requested amount of memory for each call to gpr_arena_alloc().  This
-// effectively eliminates the efficiency gain of using an arena, but it
-// may be useful for debugging purposes.
-//#define SIMPLE_ARENA_FOR_DEBUGGING
-#ifdef SIMPLE_ARENA_FOR_DEBUGGING
-
-void* gpr_arena_alloc(gpr_arena* arena, size_t size);
-
-#else  // SIMPLE_ARENA_FOR_DEBUGGING
-
-struct gpr_arena {
-  struct Zone {
-   Zone* prev;
-  };
-
-  gpr_arena(size_t initial_size) : initial_zone_size(initial_size) {}
-  ~gpr_arena() {
-    Zone* z = last_zone;
-    while (z) {
-      Zone* prev_z = z->prev;
-      z->~Zone();
-      gpr_free_aligned(z);
-      z = prev_z;
-    }
-  }
   void* Alloc(size_t size) {
+    static constexpr size_t base_size =
+      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Arena));
     size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(size);
-    size_t begin = gpr_atm_no_barrier_fetch_add(&total_used, size);
-    if (begin + size <= initial_zone_size) {
-      return reinterpret_cast<char*>(this) +
-             GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(gpr_arena)) + begin;
+    size_t begin = total_used_.FetchAdd(size, MemoryOrder::RELAXED);
+    if (begin + size <= initial_zone_size_) {
+      return reinterpret_cast<char*>(this) + base_size + begin;
     } else {
       return AllocZone(size);
     }
   }
-  size_t Used() const {
-    const gpr_atm size = gpr_atm_no_barrier_load(&total_used);
-    return static_cast<size_t>(size);
-  }
-
  private:
+  struct Zone {
+    Zone* prev;
+  };
+
+  explicit Arena(size_t initial_size) : initial_zone_size_(initial_size) {}
+  ~Arena();
+
   void* AllocZone(size_t size);
 
   // Keep track of the total used size. We use this in our call sizing
   // hysteresis.
-  gpr_atm total_used = 0;
-  size_t initial_zone_size;
-  std::atomic_flag arena_growth_spinlock = ATOMIC_FLAG_INIT;
-  Zone* last_zone = nullptr;
+  Atomic<size_t> total_used_;
+  size_t initial_zone_size_;
+  gpr_spinlock arena_growth_spinlock_ = GPR_SPINLOCK_STATIC_INITIALIZER;
+  // If the initial arena allocation wasn't enough, we allocate additional zones
+  // in a reverse linked list. Each additional zone consists of (1) a pointer to
+  // the zone added before this zone (null if this is the first additional zone)
+  // and (2) the allocated memory. The arena itself maintains a pointer to the
+  // last zone; the zone list is reverse-walked during arena destruction only.
+  Zone* last_zone_ = nullptr;
 };
 
+}  // namespace grpc_core
+
+typedef class grpc_core::Arena gpr_arena;
+
+// Create an arena, with \a initial_size bytes in the first allocated buffer
+inline gpr_arena* gpr_arena_create(size_t initial_size) {
+  return grpc_core::Arena::Create(initial_size);
+}
+// Destroy an arena, returning the total number of bytes allocated
+inline size_t gpr_arena_destroy(gpr_arena* arena) {
+  return arena->Destroy();
+}
 // Allocate \a size bytes from the arena
 inline void* gpr_arena_alloc(gpr_arena* arena, size_t size) {
   return arena->Alloc(size);
 }
-
-#endif  // SIMPLE_ARENA_FOR_DEBUGGING
 
 #endif /* GRPC_CORE_LIB_GPR_ARENA_H */
