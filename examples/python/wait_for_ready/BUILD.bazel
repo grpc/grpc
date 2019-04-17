@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,17 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 
-cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline) except *
+py_library(
+    name = "wait_for_ready_example",
+    testonly = 1,
+    srcs = ["wait_for_ready_example.py"],
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        "//examples:py_helloworld",
+    ],
+)
 
-
-cdef _interpret_event(grpc_event c_event)
-
-
-cdef class CompletionQueue:
-
-  cdef grpc_completion_queue *c_completion_queue
-  cdef bint is_shutting_down
-  cdef bint is_shutdown
-
-  cdef _interpret_event(self, grpc_event c_event)
+py_test(
+    name = "test/_wait_for_ready_example_test",
+    srcs = ["test/_wait_for_ready_example_test.py"],
+    deps = [":wait_for_ready_example",],
+    size = "small",
+)

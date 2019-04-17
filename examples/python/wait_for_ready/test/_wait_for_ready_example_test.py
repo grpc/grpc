@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,18 +11,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Tests of the wait-for-ready example."""
+
+import unittest
+import logging
+
+from examples.python.wait_for_ready import wait_for_ready_example
 
 
-cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline) except *
+class WaitForReadyExampleTest(unittest.TestCase):
+
+    def test_wait_for_ready_example(self):
+        wait_for_ready_example.main()
+        # No unhandled exception raised, no deadlock, test passed!
 
 
-cdef _interpret_event(grpc_event c_event)
-
-
-cdef class CompletionQueue:
-
-  cdef grpc_completion_queue *c_completion_queue
-  cdef bint is_shutting_down
-  cdef bint is_shutdown
-
-  cdef _interpret_event(self, grpc_event c_event)
+if __name__ == '__main__':
+    logging.basicConfig()
+    unittest.main(verbosity=2)
