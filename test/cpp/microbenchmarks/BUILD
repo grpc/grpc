@@ -222,7 +222,7 @@ grpc_cc_binary(
     deps = [":helpers"],
 )
 
-# Added libraries and binaries for callback microbenchmark
+# Added libraries and binaries for callback microbenchmarks
 grpc_cc_library(
     name = "callback_test_service",
     testonly = True,
@@ -252,6 +252,7 @@ grpc_cc_binary(
     srcs = [
         "bm_callback_unary_ping_pong.cc",
     ],
+    tags = ["no_windows"],
     deps = [
         ":callback_unary_ping_pong_h",
         "//:grpc++",
@@ -276,6 +277,7 @@ grpc_cc_binary(
     srcs = [
         "bm_callback_streaming_ping_pong.cc",
     ],
+    tags = ["no_windows"],
     deps = [
         ":callback_streaming_ping_pong_h",
         "//:grpc++",
