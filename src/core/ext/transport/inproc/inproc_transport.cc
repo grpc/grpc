@@ -120,7 +120,7 @@ struct inproc_transport {
 
 struct inproc_stream {
   inproc_stream(inproc_transport* t, grpc_stream_refcount* refcount,
-                const void* server_data, gpr_arena* arena)
+                const void* server_data, grpc_core::Arena* arena)
       : t(t), refs(refcount), arena(arena) {
     // Ref this stream right now for ctor and list.
     ref("inproc_init_stream:init");
@@ -250,7 +250,7 @@ struct inproc_stream {
   grpc_stream_refcount* refs;
   grpc_closure* closure_at_destroy = nullptr;
 
-  gpr_arena* arena;
+  grpc_core::Arena* arena;
 
   grpc_transport_stream_op_batch* send_message_op = nullptr;
   grpc_transport_stream_op_batch* send_trailing_md_op = nullptr;
@@ -310,7 +310,7 @@ grpc_error* fill_in_metadata(inproc_stream* s,
   for (grpc_linked_mdelem* elem = metadata->list.head;
        (elem != nullptr) && (error == GRPC_ERROR_NONE); elem = elem->next) {
     grpc_linked_mdelem* nelem = static_cast<grpc_linked_mdelem*>(
-        gpr_arena_alloc(s->arena, sizeof(*nelem)));
+        s->arena->Alloc(sizeof(*nelem)));
     nelem->md =
         grpc_mdelem_from_slices(grpc_slice_intern(GRPC_MDKEY(elem->md)),
                                 grpc_slice_intern(GRPC_MDVALUE(elem->md)));
@@ -322,7 +322,7 @@ grpc_error* fill_in_metadata(inproc_stream* s,
 
 int init_stream(grpc_transport* gt, grpc_stream* gs,
                 grpc_stream_refcount* refcount, const void* server_data,
-                gpr_arena* arena) {
+                grpc_core::Arena* arena) {
   INPROC_LOG(GPR_INFO, "init_stream %p %p %p", gt, gs, server_data);
   inproc_transport* t = reinterpret_cast<inproc_transport*>(gt);
   new (gs) inproc_stream(t, refcount, server_data, arena);
@@ -437,12 +437,12 @@ void fail_helper_locked(inproc_stream* s, grpc_error* error) {
       grpc_metadata_batch fake_md;
       grpc_metadata_batch_init(&fake_md);
       grpc_linked_mdelem* path_md = static_cast<grpc_linked_mdelem*>(
-          gpr_arena_alloc(s->arena, sizeof(*path_md)));
+          s->arena->Alloc(sizeof(*path_md)));
       path_md->md = grpc_mdelem_from_slices(g_fake_path_key, g_fake_path_value);
       GPR_ASSERT(grpc_metadata_batch_link_tail(&fake_md, path_md) ==
                  GRPC_ERROR_NONE);
       grpc_linked_mdelem* auth_md = static_cast<grpc_linked_mdelem*>(
-          gpr_arena_alloc(s->arena, sizeof(*auth_md)));
+          s->arena->Alloc(sizeof(*auth_md)));
       auth_md->md = grpc_mdelem_from_slices(g_fake_auth_key, g_fake_auth_value);
       GPR_ASSERT(grpc_metadata_batch_link_tail(&fake_md, auth_md) ==
                  GRPC_ERROR_NONE);
