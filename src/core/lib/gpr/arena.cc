@@ -111,7 +111,7 @@ void* gpr_arena::AllocZone(size_t size) {
     arena_growth_spinlock.clear(std::memory_order_release);
   }
   return reinterpret_cast<char*>(z) +
-         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(zone));
+         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Zone));
 }
 
 #endif  // SIMPLE_ARENA_FOR_DEBUGGING
