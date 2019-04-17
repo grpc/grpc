@@ -17,9 +17,7 @@
  */
 
 #include "src/core/lib/gprpp/map.h"
-
 #include <gtest/gtest.h>
-
 #include "include/grpc/support/string_util.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/memory.h"

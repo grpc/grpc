@@ -1744,7 +1744,6 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
         state, UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(error)));
   }
 }
-}  // namespace
 
 void XdsLb::LocalityMap::LocalityEntry::Helper::RequestReresolution() {
   if (entry_->parent_->shutting_down_) return;
@@ -1783,6 +1782,8 @@ class XdsFactory : public LoadBalancingPolicyFactory {
 
   const char* name() const override { return kXds; }
 };
+
+}  // namespace
 
 }  // namespace grpc_core
 
