@@ -1395,8 +1395,8 @@ void grpc_core::XdsLb::LocalityMap::ShutdownLocked() {
 }
 
 void grpc_core::XdsLb::LocalityMap::ResetBackoffLocked() {
-  for (auto iter = map_.begin(); iter != map_.end(); iter++) {
-    iter->second->ResetBackoffLocked();
+  for (auto& p : map_) {
+    p.second->ResetBackoffLocked();
   }
 }
 
@@ -1404,8 +1404,8 @@ void grpc_core::XdsLb::LocalityMap::FillChildRefsForChannelz(
     channelz::ChildRefsList* child_subchannels,
     channelz::ChildRefsList* child_channels) {
   MutexLock lock(&child_refs_mu_);
-  for (auto iter = map_.begin(); iter != map_.end(); iter++) {
-    iter->second->FillChildRefsForChannelz(child_subchannels, child_channels);
+  for (auto& p : map_) {
+    p.second->FillChildRefsForChannelz(child_subchannels, child_channels);
   }
 }
 
@@ -1690,8 +1690,8 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
   size_t num_transient_failures = 0;
   auto& locality_map = this->entry_->parent_->locality_map_.map_;
   Picker::PickerList pickers;
-  for (auto& iter : locality_map) {
-    const LocalityEntry* entry = iter.second.get();
+  for (auto& p : locality_map) {
+    const LocalityEntry* entry = p.second.get();
     grpc_connectivity_state connectivity_state = entry->connectivity_state_;
     switch (connectivity_state) {
       case GRPC_CHANNEL_READY: {
