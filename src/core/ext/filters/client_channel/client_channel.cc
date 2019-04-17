@@ -1186,9 +1186,9 @@ static void maybe_cache_send_ops_for_batch(call_data* calld,
     GPR_ASSERT(calld->send_initial_metadata_storage == nullptr);
     grpc_metadata_batch* send_initial_metadata =
         batch->payload->send_initial_metadata.send_initial_metadata;
-    calld->send_initial_metadata_storage = (grpc_linked_mdelem*)
-        calld->arena->Alloc(
-        sizeof(grpc_linked_mdelem) * send_initial_metadata->list.count);
+    calld->send_initial_metadata_storage =
+        (grpc_linked_mdelem*)calld->arena->Alloc(
+            sizeof(grpc_linked_mdelem) * send_initial_metadata->list.count);
     grpc_metadata_batch_copy(send_initial_metadata,
                              &calld->send_initial_metadata,
                              calld->send_initial_metadata_storage);
@@ -1212,7 +1212,7 @@ static void maybe_cache_send_ops_for_batch(call_data* calld,
     grpc_metadata_batch* send_trailing_metadata =
         batch->payload->send_trailing_metadata.send_trailing_metadata;
     calld->send_trailing_metadata_storage =
-        (grpc_linked_mdelem*) calld->arena->Alloc(
+        (grpc_linked_mdelem*)calld->arena->Alloc(
             sizeof(grpc_linked_mdelem) * send_trailing_metadata->list.count);
     grpc_metadata_batch_copy(send_trailing_metadata,
                              &calld->send_trailing_metadata,
@@ -2389,11 +2389,10 @@ static void add_retriable_send_initial_metadata_op(
   //
   // If we've already completed one or more attempts, add the
   // grpc-retry-attempts header.
-  retry_state->send_initial_metadata_storage =
-      static_cast<grpc_linked_mdelem*>(
-          calld->arena->Alloc(sizeof(grpc_linked_mdelem) *
-                            (calld->send_initial_metadata.list.count +
-                             (calld->num_attempts_completed > 0))));
+  retry_state->send_initial_metadata_storage = static_cast<grpc_linked_mdelem*>(
+      calld->arena->Alloc(sizeof(grpc_linked_mdelem) *
+                          (calld->send_initial_metadata.list.count +
+                           (calld->num_attempts_completed > 0))));
   grpc_metadata_batch_copy(&calld->send_initial_metadata,
                            &retry_state->send_initial_metadata,
                            retry_state->send_initial_metadata_storage);
@@ -2458,7 +2457,7 @@ static void add_retriable_send_trailing_metadata_op(
   retry_state->send_trailing_metadata_storage =
       static_cast<grpc_linked_mdelem*>(
           calld->arena->Alloc(sizeof(grpc_linked_mdelem) *
-                            calld->send_trailing_metadata.list.count));
+                              calld->send_trailing_metadata.list.count));
   grpc_metadata_batch_copy(&calld->send_trailing_metadata,
                            &retry_state->send_trailing_metadata,
                            retry_state->send_trailing_metadata_storage);
