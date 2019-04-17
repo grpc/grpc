@@ -29,7 +29,7 @@
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount;
 
 namespace grpc_core {
-  class Arena;
+class Arena;
 }  // namespace grpc_core
 
 /* --- grpc_auth_context ---

@@ -48,7 +48,7 @@ class Arena {
 
   void* Alloc(size_t size) {
     static constexpr size_t base_size =
-      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Arena));
+        GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Arena));
     size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(size);
     size_t begin = total_used_.FetchAdd(size, MemoryOrder::RELAXED);
     if (begin + size <= initial_zone_size_) {
@@ -57,6 +57,7 @@ class Arena {
       return AllocZone(size);
     }
   }
+
  private:
   struct Zone {
     Zone* prev;
@@ -89,9 +90,7 @@ inline gpr_arena* gpr_arena_create(size_t initial_size) {
   return grpc_core::Arena::Create(initial_size);
 }
 // Destroy an arena, returning the total number of bytes allocated
-inline size_t gpr_arena_destroy(gpr_arena* arena) {
-  return arena->Destroy();
-}
+inline size_t gpr_arena_destroy(gpr_arena* arena) { return arena->Destroy(); }
 // Allocate \a size bytes from the arena
 inline void* gpr_arena_alloc(gpr_arena* arena, size_t size) {
   return arena->Alloc(size);

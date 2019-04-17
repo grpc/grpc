@@ -309,8 +309,8 @@ grpc_error* fill_in_metadata(inproc_stream* s,
   grpc_error* error = GRPC_ERROR_NONE;
   for (grpc_linked_mdelem* elem = metadata->list.head;
        (elem != nullptr) && (error == GRPC_ERROR_NONE); elem = elem->next) {
-    grpc_linked_mdelem* nelem = static_cast<grpc_linked_mdelem*>(
-        s->arena->Alloc(sizeof(*nelem)));
+    grpc_linked_mdelem* nelem =
+        static_cast<grpc_linked_mdelem*>(s->arena->Alloc(sizeof(*nelem)));
     nelem->md =
         grpc_mdelem_from_slices(grpc_slice_intern(GRPC_MDKEY(elem->md)),
                                 grpc_slice_intern(GRPC_MDVALUE(elem->md)));
@@ -436,13 +436,13 @@ void fail_helper_locked(inproc_stream* s, grpc_error* error) {
       // since it expects that as well as no error yet
       grpc_metadata_batch fake_md;
       grpc_metadata_batch_init(&fake_md);
-      grpc_linked_mdelem* path_md = static_cast<grpc_linked_mdelem*>(
-          s->arena->Alloc(sizeof(*path_md)));
+      grpc_linked_mdelem* path_md =
+          static_cast<grpc_linked_mdelem*>(s->arena->Alloc(sizeof(*path_md)));
       path_md->md = grpc_mdelem_from_slices(g_fake_path_key, g_fake_path_value);
       GPR_ASSERT(grpc_metadata_batch_link_tail(&fake_md, path_md) ==
                  GRPC_ERROR_NONE);
-      grpc_linked_mdelem* auth_md = static_cast<grpc_linked_mdelem*>(
-          s->arena->Alloc(sizeof(*auth_md)));
+      grpc_linked_mdelem* auth_md =
+          static_cast<grpc_linked_mdelem*>(s->arena->Alloc(sizeof(*auth_md)));
       auth_md->md = grpc_mdelem_from_slices(g_fake_auth_key, g_fake_auth_value);
       GPR_ASSERT(grpc_metadata_batch_link_tail(&fake_md, auth_md) ==
                  GRPC_ERROR_NONE);
