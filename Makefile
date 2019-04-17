@@ -478,11 +478,11 @@ LDFLAGS += $(EXTRA_LDFLAGS)
 DEFINES += $(EXTRA_DEFINES)
 LDLIBS += $(EXTRA_LDLIBS)
 
-HOST_CPPFLAGS = $(CPPFLAGS)
-HOST_CFLAGS = $(CFLAGS)
-HOST_CXXFLAGS = $(CXXFLAGS)
-HOST_LDFLAGS = $(LDFLAGS)
-HOST_LDLIBS = $(LDLIBS)
+HOST_CPPFLAGS += $(CPPFLAGS)
+HOST_CFLAGS += $(CFLAGS)
+HOST_CXXFLAGS += $(CXXFLAGS)
+HOST_LDFLAGS += $(LDFLAGS)
+HOST_LDLIBS += $(LDLIBS)
 
 # These are automatically computed variables.
 # There shouldn't be any need to change anything from now on.
@@ -1262,6 +1262,7 @@ server_crash_test_client: $(BINDIR)/$(CONFIG)/server_crash_test_client
 server_early_return_test: $(BINDIR)/$(CONFIG)/server_early_return_test
 server_interceptors_end2end_test: $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test
 server_request_call_test: $(BINDIR)/$(CONFIG)/server_request_call_test
+service_config_test: $(BINDIR)/$(CONFIG)/service_config_test
 shutdown_test: $(BINDIR)/$(CONFIG)/shutdown_test
 slice_hash_table_test: $(BINDIR)/$(CONFIG)/slice_hash_table_test
 slice_weak_hash_table_test: $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test
@@ -1315,6 +1316,7 @@ h2_sockpair+trace_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_test
 h2_sockpair_1byte_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_test
 h2_spiffe_test: $(BINDIR)/$(CONFIG)/h2_spiffe_test
 h2_ssl_test: $(BINDIR)/$(CONFIG)/h2_ssl_test
+h2_ssl_cred_reload_test: $(BINDIR)/$(CONFIG)/h2_ssl_cred_reload_test
 h2_ssl_proxy_test: $(BINDIR)/$(CONFIG)/h2_ssl_proxy_test
 h2_uds_test: $(BINDIR)/$(CONFIG)/h2_uds_test
 inproc_test: $(BINDIR)/$(CONFIG)/inproc_test
@@ -1578,6 +1580,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_test \
   $(BINDIR)/$(CONFIG)/h2_spiffe_test \
   $(BINDIR)/$(CONFIG)/h2_ssl_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cred_reload_test \
   $(BINDIR)/$(CONFIG)/h2_ssl_proxy_test \
   $(BINDIR)/$(CONFIG)/h2_uds_test \
   $(BINDIR)/$(CONFIG)/inproc_test \
@@ -1727,6 +1730,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/server_early_return_test \
   $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test \
   $(BINDIR)/$(CONFIG)/server_request_call_test \
+  $(BINDIR)/$(CONFIG)/service_config_test \
   $(BINDIR)/$(CONFIG)/shutdown_test \
   $(BINDIR)/$(CONFIG)/slice_hash_table_test \
   $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test \
@@ -1869,6 +1873,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/server_early_return_test \
   $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test \
   $(BINDIR)/$(CONFIG)/server_request_call_test \
+  $(BINDIR)/$(CONFIG)/service_config_test \
   $(BINDIR)/$(CONFIG)/shutdown_test \
   $(BINDIR)/$(CONFIG)/slice_hash_table_test \
   $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test \
@@ -2382,6 +2387,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test || ( echo test server_interceptors_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_request_call_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_request_call_test || ( echo test server_request_call_test failed ; exit 1 )
+	$(E) "[RUN]     Testing service_config_test"
+	$(Q) $(BINDIR)/$(CONFIG)/service_config_test || ( echo test service_config_test failed ; exit 1 )
 	$(E) "[RUN]     Testing shutdown_test"
 	$(Q) $(BINDIR)/$(CONFIG)/shutdown_test || ( echo test shutdown_test failed ; exit 1 )
 	$(E) "[RUN]     Testing slice_hash_table_test"
@@ -3432,6 +3439,7 @@ LIBGRPC_SRC = \
     src/core/lib/channel/handshaker_registry.cc \
     src/core/lib/channel/status_util.cc \
     src/core/lib/compression/compression.cc \
+    src/core/lib/compression/compression_args.cc \
     src/core/lib/compression/compression_internal.cc \
     src/core/lib/compression/message_compress.cc \
     src/core/lib/compression/stream_compression.cc \
@@ -3852,6 +3860,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/channel/handshaker_registry.cc \
     src/core/lib/channel/status_util.cc \
     src/core/lib/compression/compression.cc \
+    src/core/lib/compression/compression_args.cc \
     src/core/lib/compression/compression_internal.cc \
     src/core/lib/compression/message_compress.cc \
     src/core/lib/compression/stream_compression.cc \
@@ -4256,6 +4265,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/channel/handshaker_registry.cc \
     src/core/lib/channel/status_util.cc \
     src/core/lib/compression/compression.cc \
+    src/core/lib/compression/compression_args.cc \
     src/core/lib/compression/compression_internal.cc \
     src/core/lib/compression/message_compress.cc \
     src/core/lib/compression/stream_compression.cc \
@@ -4567,6 +4577,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/channel/handshaker_registry.cc \
     src/core/lib/channel/status_util.cc \
     src/core/lib/compression/compression.cc \
+    src/core/lib/compression/compression_args.cc \
     src/core/lib/compression/compression_internal.cc \
     src/core/lib/compression/message_compress.cc \
     src/core/lib/compression/stream_compression.cc \
@@ -4841,6 +4852,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/channel/handshaker_registry.cc \
     src/core/lib/channel/status_util.cc \
     src/core/lib/compression/compression.cc \
+    src/core/lib/compression/compression_args.cc \
     src/core/lib/compression/compression_internal.cc \
     src/core/lib/compression/message_compress.cc \
     src/core/lib/compression/stream_compression.cc \
@@ -5366,6 +5378,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/security/server_credentials_impl.h \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
+    include/grpcpp/server_builder_impl.h \
     include/grpcpp/server_context.h \
     include/grpcpp/server_posix.h \
     include/grpcpp/server_posix_impl.h \
@@ -5714,6 +5727,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/channel/handshaker_registry.cc \
     src/core/lib/channel/status_util.cc \
     src/core/lib/compression/compression.cc \
+    src/core/lib/compression/compression_args.cc \
     src/core/lib/compression/compression_internal.cc \
     src/core/lib/compression/message_compress.cc \
     src/core/lib/compression/stream_compression.cc \
@@ -5975,6 +5989,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/security/server_credentials_impl.h \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
+    include/grpcpp/server_builder_impl.h \
     include/grpcpp/server_context.h \
     include/grpcpp/server_posix.h \
     include/grpcpp/server_posix_impl.h \
@@ -6899,6 +6914,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/security/server_credentials_impl.h \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
+    include/grpcpp/server_builder_impl.h \
     include/grpcpp/server_context.h \
     include/grpcpp/server_posix.h \
     include/grpcpp/server_posix_impl.h \
@@ -18682,6 +18698,49 @@ endif
 $(OBJDIR)/$(CONFIG)/test/cpp/server/server_request_call_test.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc
 
 
+SERVICE_CONFIG_TEST_SRC = \
+    test/core/client_channel/service_config_test.cc \
+
+SERVICE_CONFIG_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVICE_CONFIG_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/service_config_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/service_config_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/service_config_test: $(PROTOBUF_DEP) $(SERVICE_CONFIG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(SERVICE_CONFIG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/service_config_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/client_channel/service_config_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_service_config_test: $(SERVICE_CONFIG_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SERVICE_CONFIG_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 SHUTDOWN_TEST_SRC = \
     test/cpp/end2end/shutdown_test.cc \
 
@@ -20606,6 +20665,38 @@ deps_h2_ssl_test: $(H2_SSL_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(H2_SSL_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+H2_SSL_CRED_RELOAD_TEST_SRC = \
+    test/core/end2end/fixtures/h2_ssl_cred_reload.cc \
+
+H2_SSL_CRED_RELOAD_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CRED_RELOAD_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cred_reload_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_ssl_cred_reload_test: $(H2_SSL_CRED_RELOAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_SSL_CRED_RELOAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_cred_reload_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_ssl_cred_reload.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_ssl_cred_reload_test: $(H2_SSL_CRED_RELOAD_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SSL_CRED_RELOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 

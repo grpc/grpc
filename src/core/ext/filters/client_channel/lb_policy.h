@@ -185,7 +185,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Sets the connectivity state and returns a new picker to be used
     /// by the client channel.
     virtual void UpdateState(grpc_connectivity_state state,
-                             grpc_error* state_error,
                              UniquePtr<SubchannelPicker>) GRPC_ABSTRACT;
 
     /// Requests that the resolver re-resolve.

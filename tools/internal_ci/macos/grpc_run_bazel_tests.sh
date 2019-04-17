@@ -18,6 +18,13 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
+# Download bazel
+temp_dir="$(mktemp -d)"
+wget -q https://github.com/bazelbuild/bazel/releases/download/0.23.2/bazel-0.23.2-darwin-x86_64 -O "${temp_dir}/bazel"
+chmod 755 "${temp_dir}/bazel"
+export PATH="${temp_dir}:${PATH}"
+# This should show ${temp_dir}/bazel
+which bazel
 
 ./tools/run_tests/start_port_server.py
 

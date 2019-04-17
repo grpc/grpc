@@ -26,9 +26,15 @@ cd /var/local/git/grpc-dotnet
 
 # If needed, update dotnet SDK and put it on path
 ./build/get-dotnet.sh
-if [ -f $HOME/.dotnet/dotnet ]
+# Normally we would source ./activate.sh
+# to add dotnet to PATH, but that would only
+# work for the build and not for a subsequent
+# dotnet run from a different shell,
+# so we create a symlink instead.
+# TODO(jtattermusch): Come up with a cleaner solution.
+if [ -f $(pwd)/.dotnet/dotnet ]
 then
-  ln -s $HOME/.dotnet/dotnet /usr/local/bin/dotnet
+  ln -s $(pwd)/.dotnet/dotnet /usr/local/bin/dotnet
 fi
 
 ./build/get-grpc.sh
