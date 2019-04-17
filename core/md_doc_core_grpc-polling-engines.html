@@ -85,13 +85,11 @@ $(function() {
 <li>**<code>epollex</code>** (default but requires kernel version &gt;= 4.5),</li>
 <li><code>epoll1</code> (If <code>epollex</code> is not available and glibc version &gt;= 2.9)</li>
 <li><code>poll</code> (If kernel does not have epoll support)</li>
-<li><code>poll-cv</code> (If explicitly configured)</li>
 </ul>
 </li>
-<li>Mac: **<code>poll</code>** (default), <code>poll-cv</code> (If explicitly configured)</li>
+<li>Mac: **<code>poll</code>** (default)</li>
 <li>Windows: (no name)</li>
 <li>One-off polling engines:<ul>
-<li>AppEngine platform: **<code>poll-cv</code>** (default)</li>
 <li>NodeJS : <code>libuv</code> polling engine implementation (requires different compile <code>#define</code>s)</li>
 </ul>
 </li>
@@ -255,7 +253,7 @@ $(function() {
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:01 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

@@ -34,5 +34,6 @@ var searchData=
   ['create_5fauth_5fcontext_2eh',['create_auth_context.h',['../grpc_09_09_2impl_2codegen_2create__auth__context_8h.html',1,'(Global Namespace)'],['../grpcpp_2impl_2codegen_2create__auth__context_8h.html',1,'(Global Namespace)']]],
   ['create_5fchannel_2eh',['create_channel.h',['../grpc_09_09_2create__channel_8h.html',1,'(Global Namespace)'],['../grpcpp_2create__channel_8h.html',1,'(Global Namespace)']]],
   ['create_5fchannel_5fposix_2eh',['create_channel_posix.h',['../grpc_09_09_2create__channel__posix_8h.html',1,'(Global Namespace)'],['../grpcpp_2create__channel__posix_8h.html',1,'(Global Namespace)']]],
+  ['create_5fchannel_5fposix_5fimpl_2eh',['create_channel_posix_impl.h',['../create__channel__posix__impl_8h.html',1,'']]],
   ['credentials_2eh',['credentials.h',['../grpc_09_09_2security_2credentials_8h.html',1,'(Global Namespace)'],['../grpcpp_2security_2credentials_8h.html',1,'(Global Namespace)']]]
 ];

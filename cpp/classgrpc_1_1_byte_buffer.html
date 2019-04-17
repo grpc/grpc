@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.19.0</span>
+   &#160;<span id="projectnumber">1.20.0</span>
    </div>
   </td>
  </tr>
@@ -90,9 +90,9 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a67fdf624e23dbd80d84e3e85e1d5b176"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aeb5dd0045ed262de06481465326bd64a"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#aeb5dd0045ed262de06481465326bd64a">~ByteBuffer</a> ()</td></tr>
 <tr class="separator:aeb5dd0045ed262de06481465326bd64a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac17487e1e411f469d653e3c44c873e6d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#ac17487e1e411f469d653e3c44c873e6d">operator=</a> (const <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> &amp;)</td></tr>
-<tr class="memdesc:ac17487e1e411f469d653e3c44c873e6d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper of core function grpc_byte_buffer_copy .  <a href="#ac17487e1e411f469d653e3c44c873e6d">More...</a><br /></td></tr>
-<tr class="separator:ac17487e1e411f469d653e3c44c873e6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af17d560be1e61f773138ac8763206b8e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#af17d560be1e61f773138ac8763206b8e">operator=</a> (const <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> &amp;buf)</td></tr>
+<tr class="memdesc:af17d560be1e61f773138ac8763206b8e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper of core function grpc_byte_buffer_copy .  <a href="#af17d560be1e61f773138ac8763206b8e">More...</a><br /></td></tr>
+<tr class="separator:af17d560be1e61f773138ac8763206b8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abe7615cdbd14996a7e82fc84e373a365"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#abe7615cdbd14996a7e82fc84e373a365">Dump</a> (std::vector&lt; <a class="el" href="classgrpc_1_1_slice.html">Slice</a> &gt; *slices) const</td></tr>
 <tr class="memdesc:abe7615cdbd14996a7e82fc84e373a365"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dump (read) the buffer contents into <em>slices</em>.  <a href="#abe7615cdbd14996a7e82fc84e373a365">More...</a><br /></td></tr>
 <tr class="separator:abe7615cdbd14996a7e82fc84e373a365"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -232,6 +232,9 @@ Friends</h2></td></tr>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
           <td class="memname">grpc::ByteBuffer::ByteBuffer </td>
@@ -241,6 +244,11 @@ Friends</h2></td></tr>
           <td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 <p>Constuct a byte buffer by referencing elements of existing buffer <em>buf</em>. </p>
@@ -376,20 +384,28 @@ Friends</h2></td></tr>
 
 </div>
 </div>
-<a id="ac17487e1e411f469d653e3c44c873e6d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac17487e1e411f469d653e3c44c873e6d">&#9670;&nbsp;</a></span>operator=()</h2>
+<a id="af17d560be1e61f773138ac8763206b8e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af17d560be1e61f773138ac8763206b8e">&#9670;&nbsp;</a></span>operator=()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a>&amp; grpc::ByteBuffer::operator= </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> &amp;&#160;</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramname"><em>buf</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 <p>Wrapper of core function grpc_byte_buffer_copy . </p>
@@ -856,7 +872,7 @@ template&lt;class ServiceType , class RequestType , class ResponseType &gt; </di
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:02 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

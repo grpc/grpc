@@ -96,7 +96,7 @@ $(function() {
 </li>
 <li><code>ipv6:address[:port][,address[:port],...]</code> &ndash; IPv6 addresses<ul>
 <li>Can specify multiple comma-delimited addresses of the form <code>address[:port]</code>:<ul>
-<li><code>address</code> is the IPv6 address to use. To use with a <code>port</code> the <code>address</code> must enclosed in literal square brakets (<code>[</code> and <code>]</code>). Example: <code>ipv6:[2607:f8b0:400e:c00::ef]:443</code> or <code>ipv6:[::]:1234</code></li>
+<li><code>address</code> is the IPv6 address to use. To use with a <code>port</code> the <code>address</code> must enclosed in literal square brackets (<code>[</code> and <code>]</code>). Example: <code>ipv6:[2607:f8b0:400e:c00::ef]:443</code> or <code>ipv6:[::]:1234</code></li>
 <li><code>port</code> is the port to use. If not specified, 443 is used.</li>
 </ul>
 </li>
@@ -108,19 +108,14 @@ $(function() {
 <p>The gRPC client library will use the specified scheme to pick the right resolver plugin and pass it the fully qualified name string.</p>
 <p>Resolvers should be able to contact the authority and get a resolution that they return back to the gRPC client library. The returned contents include:</p>
 <ul>
-<li>A list of resolved addresses, each of which has three attributes:<ul>
-<li>The address itself, including both IP address and port.</li>
-<li>A boolean indicating whether the address is a backend address (i.e., the address to use to contact the server directly) or a balancer address (for cases where <a class="el" href="load-balancing_8md.html">external load balancing</a> is in use).</li>
-<li>The name of the balancer, if the address is a balancer address. This will be used to perform peer authorization.</li>
-</ul>
-</li>
+<li>A list of resolved addresses (both IP address and port). Each address may have a set of arbitrary attributes (key/value pairs) associated with it, which can be used to communicate information from the resolver to the <a class="el" href="load-balancing_8md.html">load balancing</a> policy.</li>
 <li>A <a class="el" href="service__config_8md.html">service config</a>.</li>
 </ul>
 <p>The plugin API allows the resolvers to continuously watch an endpoint and return updated resolutions as needed. </p>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:01 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

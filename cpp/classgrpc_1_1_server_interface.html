@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.19.0</span>
+   &#160;<span id="projectnumber">1.20.0</span>
    </div>
   </td>
  </tr>
@@ -79,6 +79,9 @@ $(function() {
 Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html">BaseAsyncRequest</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1experimental__registration__interface.html">experimental_registration_interface</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">NOTE: class <a class="el" href="classgrpc_1_1_server_interface_1_1experimental__registration__interface.html" title="NOTE: class experimental_registration_interface is not part of the public API of this class TODO(vjpa...">experimental_registration_interface</a> is not part of the public API of this class TODO(vjpai): Move these contents to public API when no longer experimental.  <a href="classgrpc_1_1_server_interface_1_1experimental__registration__interface.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_generic_async_request.html">GenericAsyncRequest</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_no_payload_async_request.html">NoPayloadAsyncRequest</a></td></tr>
@@ -115,6 +118,9 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:adaddf784fcb65fca743b04e1803f72ae"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#adaddf784fcb65fca743b04e1803f72ae">RegisterAsyncGenericService</a> (<a class="el" href="classgrpc_1_1_async_generic_service.html">AsyncGenericService</a> *service)=0</td></tr>
 <tr class="memdesc:adaddf784fcb65fca743b04e1803f72ae"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register a generic service.  <a href="#adaddf784fcb65fca743b04e1803f72ae">More...</a><br /></td></tr>
 <tr class="separator:adaddf784fcb65fca743b04e1803f72ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4c80fc106b3e6ef41cfca7d8ab8eda43"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc_1_1_server_interface_1_1experimental__registration__interface.html">experimental_registration_interface</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#a4c80fc106b3e6ef41cfca7d8ab8eda43">experimental_registration</a> ()</td></tr>
+<tr class="memdesc:a4c80fc106b3e6ef41cfca7d8ab8eda43"><td class="mdescLeft">&#160;</td><td class="mdescRight">NOTE: The function <a class="el" href="classgrpc_1_1_server_interface.html#a4c80fc106b3e6ef41cfca7d8ab8eda43" title="NOTE: The function experimental_registration() is not stable public API. ">experimental_registration()</a> is not stable public API.  <a href="#a4c80fc106b3e6ef41cfca7d8ab8eda43">More...</a><br /></td></tr>
+<tr class="separator:a4c80fc106b3e6ef41cfca7d8ab8eda43"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae3716834f7d4aec1883e36e99c9c5123"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#ae3716834f7d4aec1883e36e99c9c5123">AddListeningPort</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;addr, <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> *creds)=0</td></tr>
 <tr class="memdesc:ae3716834f7d4aec1883e36e99c9c5123"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tries to bind <em>server</em> to the given <em>addr</em>.  <a href="#ae3716834f7d4aec1883e36e99c9c5123">More...</a><br /></td></tr>
 <tr class="separator:ae3716834f7d4aec1883e36e99c9c5123"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -215,6 +221,34 @@ Friends</h2></td></tr>
 <dl class="section warning"><dt>Warning</dt><dd>It's an error to call this method on an already started server. </dd></dl>
 
 <p>Implemented in <a class="el" href="classgrpc_1_1_server.html#a8b8678faf043eaecc0fda4ebf526d5db">grpc::Server</a>.</p>
+
+</div>
+</div>
+<a id="a4c80fc106b3e6ef41cfca7d8ab8eda43"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4c80fc106b3e6ef41cfca7d8ab8eda43">&#9670;&nbsp;</a></span>experimental_registration()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual <a class="el" href="classgrpc_1_1_server_interface_1_1experimental__registration__interface.html">experimental_registration_interface</a>* grpc::ServerInterface::experimental_registration </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>NOTE: The function <a class="el" href="classgrpc_1_1_server_interface.html#a4c80fc106b3e6ef41cfca7d8ab8eda43" title="NOTE: The function experimental_registration() is not stable public API. ">experimental_registration()</a> is not stable public API. </p>
+<p>It is a view to the experimental components of this class. It may be changed or removed at any time. May not be abstract since this is a post-1.0 API addition </p>
 
 </div>
 </div>
@@ -762,7 +796,7 @@ template&lt;class T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:02 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

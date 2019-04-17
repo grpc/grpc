@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.19.0</span>
+   &#160;<span id="projectnumber">1.20.0</span>
    </div>
   </td>
  </tr>
@@ -230,9 +230,6 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A builder class for the creation and startup of <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">grpc::Server</a></em> instances.  <a href="classgrpc_1_1_server_builder.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_option.html">ServerBuilderOption</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Interface to pass an option to a <em><a class="el" href="classgrpc_1_1_server_builder.html" title="A builder class for the creation and startup of grpc::Server instances. ">ServerBuilder</a></em>.  <a href="classgrpc_1_1_server_builder_option.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_plugin.html">ServerBuilderPlugin</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">This interface is meant for internal usage only.  <a href="classgrpc_1_1_server_builder_plugin.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -325,6 +322,8 @@ Typedefs</h2></td></tr>
 <tr class="separator:ab04a87625da3bf85cdaf5e7856b00203"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a61e9fd24c9d1cea5eaaabc58525d0e"><td class="memItemLeft" align="right" valign="top">typedef std::pair&lt; <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>, <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a3a61e9fd24c9d1cea5eaaabc58525d0e">AuthProperty</a></td></tr>
 <tr class="separator:a3a61e9fd24c9d1cea5eaaabc58525d0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7e2f3f7805afa04cec33030abd070bd8"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="classgrpc__impl_1_1_server_builder_option.html">grpc_impl::ServerBuilderOption</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a7e2f3f7805afa04cec33030abd070bd8">ServerBuilderOption</a></td></tr>
+<tr class="separator:a7e2f3f7805afa04cec33030abd070bd8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
 Enumerations</h2></td></tr>
@@ -372,9 +371,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ac6cb56443dd770ee50262a69abdb0b40"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ac6cb56443dd770ee50262a69abdb0b40">DefaultHealthCheckServiceEnabled</a> ()</td></tr>
 <tr class="memdesc:ac6cb56443dd770ee50262a69abdb0b40"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns whether the default health checking service is enabled.  <a href="#ac6cb56443dd770ee50262a69abdb0b40">More...</a><br /></td></tr>
 <tr class="separator:ac6cb56443dd770ee50262a69abdb0b40"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a983ffd386cf23748febdda5044b68cb1"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_server_builder_option.html">ServerBuilderOption</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a983ffd386cf23748febdda5044b68cb1">MakeChannelArgumentOption</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;name, const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;value)</td></tr>
+<tr class="memitem:a983ffd386cf23748febdda5044b68cb1"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="namespacegrpc.html#a7e2f3f7805afa04cec33030abd070bd8">ServerBuilderOption</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a983ffd386cf23748febdda5044b68cb1">MakeChannelArgumentOption</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;name, const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;value)</td></tr>
 <tr class="separator:a983ffd386cf23748febdda5044b68cb1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afb308dc55d176f32000bb02296dee630"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_server_builder_option.html">ServerBuilderOption</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#afb308dc55d176f32000bb02296dee630">MakeChannelArgumentOption</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;name, int value)</td></tr>
+<tr class="memitem:afb308dc55d176f32000bb02296dee630"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="namespacegrpc.html#a7e2f3f7805afa04cec33030abd070bd8">ServerBuilderOption</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#afb308dc55d176f32000bb02296dee630">MakeChannelArgumentOption</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;name, int value)</td></tr>
 <tr class="separator:afb308dc55d176f32000bb02296dee630"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a15df427a035a58013d9db2f432ebda33"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; const <a class="el" href="classgrpc_1_1_auth_context.html">AuthContext</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a15df427a035a58013d9db2f432ebda33">CreateAuthContext</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call)</td></tr>
 <tr class="separator:a15df427a035a58013d9db2f432ebda33"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -581,6 +580,20 @@ Variables</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">typedef <a class="el" href="classgrpc_1_1_server_async_writer.html">ServerAsyncWriter</a>&lt;<a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a>&gt; <a class="el" href="namespacegrpc.html#a881afd211852397742952ee4058e0f8b">grpc::GenericServerAsyncWriter</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a7e2f3f7805afa04cec33030abd070bd8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7e2f3f7805afa04cec33030abd070bd8">&#9670;&nbsp;</a></span>ServerBuilderOption</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef ::<a class="el" href="classgrpc__impl_1_1_server_builder_option.html">grpc_impl::ServerBuilderOption</a> <a class="el" href="namespacegrpc.html#a7e2f3f7805afa04cec33030abd070bd8">grpc::ServerBuilderOption</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -1116,7 +1129,7 @@ template&lt;class ProtoBufferWriter , class T &gt; </div>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">std::unique_ptr&lt;<a class="el" href="classgrpc_1_1_server_builder_option.html">ServerBuilderOption</a>&gt; grpc::MakeChannelArgumentOption </td>
+          <td class="memname">std::unique_ptr&lt;<a class="el" href="namespacegrpc.html#a7e2f3f7805afa04cec33030abd070bd8">ServerBuilderOption</a>&gt; grpc::MakeChannelArgumentOption </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;&#160;</td>
           <td class="paramname"><em>name</em>, </td>
@@ -1144,7 +1157,7 @@ template&lt;class ProtoBufferWriter , class T &gt; </div>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">std::unique_ptr&lt;<a class="el" href="classgrpc_1_1_server_builder_option.html">ServerBuilderOption</a>&gt; grpc::MakeChannelArgumentOption </td>
+          <td class="memname">std::unique_ptr&lt;<a class="el" href="namespacegrpc.html#a7e2f3f7805afa04cec33030abd070bd8">ServerBuilderOption</a>&gt; grpc::MakeChannelArgumentOption </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;&#160;</td>
           <td class="paramname"><em>name</em>, </td>
@@ -1783,7 +1796,7 @@ template&lt;class ProtoBufferWriter , class T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:02 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

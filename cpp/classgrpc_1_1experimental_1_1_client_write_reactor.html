@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.19.0</span>
+   &#160;<span id="projectnumber">1.20.0</span>
    </div>
   </td>
  </tr>
@@ -71,20 +71,15 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 
+<p><em><a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html" title="ClientWriteReactor is the interface for a client-streaming RPC. ">ClientWriteReactor</a></em> is the interface for a client-streaming RPC.  
+ <a href="classgrpc_1_1experimental_1_1_client_write_reactor.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="impl_2codegen_2client__callback_8h_source.html">client_callback.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a1ea0a520c94bd612f94b498d2761c5cf"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html#a1ea0a520c94bd612f94b498d2761c5cf">~ClientWriteReactor</a> ()</td></tr>
 <tr class="separator:a1ea0a520c94bd612f94b498d2761c5cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad239a8eaffdd44fdecdeb70450595300"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html#ad239a8eaffdd44fdecdeb70450595300">OnDone</a> (const <a class="el" href="classgrpc_1_1_status.html">Status</a> &amp;s)</td></tr>
-<tr class="separator:ad239a8eaffdd44fdecdeb70450595300"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2c084a6e9d6e448364608763f18c51bc"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html#a2c084a6e9d6e448364608763f18c51bc">OnReadInitialMetadataDone</a> (bool ok)</td></tr>
-<tr class="separator:a2c084a6e9d6e448364608763f18c51bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9c35e2291c6c61f60cfef7909b831138"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html#a9c35e2291c6c61f60cfef7909b831138">OnWriteDone</a> (bool ok)</td></tr>
-<tr class="separator:a9c35e2291c6c61f60cfef7909b831138"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a84a16462302df37501b0af0a39bada67"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html#a84a16462302df37501b0af0a39bada67">OnWritesDoneDone</a> (bool ok)</td></tr>
-<tr class="separator:a84a16462302df37501b0af0a39bada67"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad30bc39d239bb82e67374cb19845b9ee"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html#ad30bc39d239bb82e67374cb19845b9ee">StartCall</a> ()</td></tr>
 <tr class="separator:ad30bc39d239bb82e67374cb19845b9ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afe9e094681ad2f58633c2ebe927b0f80"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html#afe9e094681ad2f58633c2ebe927b0f80">StartWrite</a> (const Request *req)</td></tr>
@@ -95,13 +90,33 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a256646bb2c5584b1a8ad55217ef515e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6c6530e17157efc345c98dd590e7a0b8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html#a6c6530e17157efc345c98dd590e7a0b8">StartWritesDone</a> ()</td></tr>
 <tr class="separator:a6c6530e17157efc345c98dd590e7a0b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aec27c703a28f361782dba48d17a3b153"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html#aec27c703a28f361782dba48d17a3b153">AddHold</a> ()</td></tr>
+<tr class="separator:aec27c703a28f361782dba48d17a3b153"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a832c7f9234fc868491ac408f431c58a9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html#a832c7f9234fc868491ac408f431c58a9">AddMultipleHolds</a> (int holds)</td></tr>
+<tr class="separator:a832c7f9234fc868491ac408f431c58a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa428f215ede8a02f70788686fcabe4d7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html#aa428f215ede8a02f70788686fcabe4d7">RemoveHold</a> ()</td></tr>
+<tr class="separator:aa428f215ede8a02f70788686fcabe4d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad239a8eaffdd44fdecdeb70450595300"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html#ad239a8eaffdd44fdecdeb70450595300">OnDone</a> (const <a class="el" href="classgrpc_1_1_status.html">Status</a> &amp;s)</td></tr>
+<tr class="separator:ad239a8eaffdd44fdecdeb70450595300"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2c084a6e9d6e448364608763f18c51bc"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html#a2c084a6e9d6e448364608763f18c51bc">OnReadInitialMetadataDone</a> (bool ok)</td></tr>
+<tr class="separator:a2c084a6e9d6e448364608763f18c51bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9c35e2291c6c61f60cfef7909b831138"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html#a9c35e2291c6c61f60cfef7909b831138">OnWriteDone</a> (bool ok)</td></tr>
+<tr class="separator:a9c35e2291c6c61f60cfef7909b831138"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a84a16462302df37501b0af0a39bada67"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html#a84a16462302df37501b0af0a39bada67">OnWritesDoneDone</a> (bool ok)</td></tr>
+<tr class="separator:a84a16462302df37501b0af0a39bada67"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
 <tr class="memitem:aa7ddcd53bb3de499d89826c71d0149a3"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html#aa7ddcd53bb3de499d89826c71d0149a3">ClientCallbackWriter&lt; Request &gt;</a></td></tr>
 <tr class="separator:aa7ddcd53bb3de499d89826c71d0149a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><h3>template&lt;class Request&gt;<br />
+class grpc::experimental::ClientWriteReactor&lt; Request &gt;</h3>
+
+<p><em><a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html" title="ClientWriteReactor is the interface for a client-streaming RPC. ">ClientWriteReactor</a></em> is the interface for a client-streaming RPC. </p>
+<p>All public methods behave as in <a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html" title="ClientBidiReactor is the interface for a bidirectional streaming RPC. ">ClientBidiReactor</a>. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a1ea0a520c94bd612f94b498d2761c5cf"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a1ea0a520c94bd612f94b498d2761c5cf">&#9670;&nbsp;</a></span>~ClientWriteReactor()</h2>
 
@@ -130,6 +145,61 @@ template&lt;class Request&gt; </div>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="aec27c703a28f361782dba48d17a3b153"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aec27c703a28f361782dba48d17a3b153">&#9670;&nbsp;</a></span>AddHold()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Request&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html">grpc::experimental::ClientWriteReactor</a>&lt; Request &gt;::AddHold </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a832c7f9234fc868491ac408f431c58a9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a832c7f9234fc868491ac408f431c58a9">&#9670;&nbsp;</a></span>AddMultipleHolds()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Request&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html">grpc::experimental::ClientWriteReactor</a>&lt; Request &gt;::AddMultipleHolds </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>holds</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="ad239a8eaffdd44fdecdeb70450595300"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad239a8eaffdd44fdecdeb70450595300">&#9670;&nbsp;</a></span>OnDone()</h2>
 
@@ -236,6 +306,33 @@ template&lt;class Request&gt; </div>
   </td>
   <td class="mlabels-right">
 <span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="aa428f215ede8a02f70788686fcabe4d7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa428f215ede8a02f70788686fcabe4d7">&#9670;&nbsp;</a></span>RemoveHold()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Request&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html">grpc::experimental::ClientWriteReactor</a>&lt; Request &gt;::RemoveHold </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -431,7 +528,7 @@ template&lt;class Request&gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:02 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

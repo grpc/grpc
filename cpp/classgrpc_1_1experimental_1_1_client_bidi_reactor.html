@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.19.0</span>
+   &#160;<span id="projectnumber">1.20.0</span>
    </div>
   </td>
  </tr>
@@ -71,41 +71,67 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 
+<p><em><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html" title="ClientBidiReactor is the interface for a bidirectional streaming RPC. ">ClientBidiReactor</a></em> is the interface for a bidirectional streaming RPC.  
+ <a href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="impl_2codegen_2client__callback_8h_source.html">client_callback.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:aa36eebc9feef2e4201c432f12d0da4f3"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#aa36eebc9feef2e4201c432f12d0da4f3">~ClientBidiReactor</a> ()</td></tr>
 <tr class="separator:aa36eebc9feef2e4201c432f12d0da4f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a99104bc1e2c21e285feb3431d3cc2189"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#a99104bc1e2c21e285feb3431d3cc2189">OnDone</a> (const <a class="el" href="classgrpc_1_1_status.html">Status</a> &amp;s)</td></tr>
-<tr class="separator:a99104bc1e2c21e285feb3431d3cc2189"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa69cb6b78b3b6f87eafad6dcb9836a49"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#aa69cb6b78b3b6f87eafad6dcb9836a49">OnReadInitialMetadataDone</a> (bool ok)</td></tr>
-<tr class="separator:aa69cb6b78b3b6f87eafad6dcb9836a49"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a75daa223bb4f38c5fadf523d026a2cf9"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#a75daa223bb4f38c5fadf523d026a2cf9">OnReadDone</a> (bool ok)</td></tr>
-<tr class="separator:a75daa223bb4f38c5fadf523d026a2cf9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9e2cf6247bc640e7c02cd36b049ae71e"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#a9e2cf6247bc640e7c02cd36b049ae71e">OnWriteDone</a> (bool ok)</td></tr>
-<tr class="separator:a9e2cf6247bc640e7c02cd36b049ae71e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aceee1087afca9397c07017e1b8a79ee0"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#aceee1087afca9397c07017e1b8a79ee0">OnWritesDoneDone</a> (bool ok)</td></tr>
-<tr class="separator:aceee1087afca9397c07017e1b8a79ee0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3eca586289f9b4020a7fb67d3c3b3ae7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#a3eca586289f9b4020a7fb67d3c3b3ae7">StartCall</a> ()</td></tr>
+<tr class="memdesc:a3eca586289f9b4020a7fb67d3c3b3ae7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Activate the RPC and initiate any reads or writes that have been Start'ed before this call.  <a href="#a3eca586289f9b4020a7fb67d3c3b3ae7">More...</a><br /></td></tr>
 <tr class="separator:a3eca586289f9b4020a7fb67d3c3b3ae7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a666e0c0ff30021ba2e7849b20cbca8bc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#a666e0c0ff30021ba2e7849b20cbca8bc">StartRead</a> (Response *resp)</td></tr>
+<tr class="memdesc:a666e0c0ff30021ba2e7849b20cbca8bc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initiate a read operation (or post it for later initiation if StartCall has not yet been invoked).  <a href="#a666e0c0ff30021ba2e7849b20cbca8bc">More...</a><br /></td></tr>
 <tr class="separator:a666e0c0ff30021ba2e7849b20cbca8bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2d89138d920262adc87680a64346d220"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#a2d89138d920262adc87680a64346d220">StartWrite</a> (const Request *req)</td></tr>
+<tr class="memdesc:a2d89138d920262adc87680a64346d220"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initiate a write operation (or post it for later initiation if StartCall has not yet been invoked).  <a href="#a2d89138d920262adc87680a64346d220">More...</a><br /></td></tr>
 <tr class="separator:a2d89138d920262adc87680a64346d220"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae66d15a840686c9d78afb049915f3422"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#ae66d15a840686c9d78afb049915f3422">StartWrite</a> (const Request *req, <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> options)</td></tr>
+<tr class="memdesc:ae66d15a840686c9d78afb049915f3422"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initiate/post a write operation with specified options.  <a href="#ae66d15a840686c9d78afb049915f3422">More...</a><br /></td></tr>
 <tr class="separator:ae66d15a840686c9d78afb049915f3422"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac3ab866ac48739092e6741910752fbf2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#ac3ab866ac48739092e6741910752fbf2">StartWriteLast</a> (const Request *req, <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> options)</td></tr>
+<tr class="memdesc:ac3ab866ac48739092e6741910752fbf2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initiate/post a write operation with specified options and an indication that this is the last write (like StartWrite and StartWritesDone, merged).  <a href="#ac3ab866ac48739092e6741910752fbf2">More...</a><br /></td></tr>
 <tr class="separator:ac3ab866ac48739092e6741910752fbf2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1a4c575cd25e2ff102be9fe890e29d75"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#a1a4c575cd25e2ff102be9fe890e29d75">StartWritesDone</a> ()</td></tr>
+<tr class="memdesc:a1a4c575cd25e2ff102be9fe890e29d75"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indicate that the RPC will have no more write operations.  <a href="#a1a4c575cd25e2ff102be9fe890e29d75">More...</a><br /></td></tr>
 <tr class="separator:a1a4c575cd25e2ff102be9fe890e29d75"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa9a0fe5ae3e4ac8a19e7b29f150fe48f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#aa9a0fe5ae3e4ac8a19e7b29f150fe48f">AddHold</a> ()</td></tr>
+<tr class="memdesc:aa9a0fe5ae3e4ac8a19e7b29f150fe48f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Holds are needed if (and only if) this stream has operations that take place on it after StartCall but from outside one of the reactions (OnReadDone, etc).  <a href="#aa9a0fe5ae3e4ac8a19e7b29f150fe48f">More...</a><br /></td></tr>
+<tr class="separator:aa9a0fe5ae3e4ac8a19e7b29f150fe48f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8f792bf01a668910c394cd48dd4f9f42"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#a8f792bf01a668910c394cd48dd4f9f42">AddMultipleHolds</a> (int holds)</td></tr>
+<tr class="separator:a8f792bf01a668910c394cd48dd4f9f42"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1d5b28aa3951b0e7c8d20f221f5bf680"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#a1d5b28aa3951b0e7c8d20f221f5bf680">RemoveHold</a> ()</td></tr>
+<tr class="separator:a1d5b28aa3951b0e7c8d20f221f5bf680"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a99104bc1e2c21e285feb3431d3cc2189"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#a99104bc1e2c21e285feb3431d3cc2189">OnDone</a> (const <a class="el" href="classgrpc_1_1_status.html">Status</a> &amp;s)</td></tr>
+<tr class="memdesc:a99104bc1e2c21e285feb3431d3cc2189"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that all operations associated with this RPC have completed and provides the RPC status outcome.  <a href="#a99104bc1e2c21e285feb3431d3cc2189">More...</a><br /></td></tr>
+<tr class="separator:a99104bc1e2c21e285feb3431d3cc2189"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa69cb6b78b3b6f87eafad6dcb9836a49"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#aa69cb6b78b3b6f87eafad6dcb9836a49">OnReadInitialMetadataDone</a> (bool ok)</td></tr>
+<tr class="memdesc:aa69cb6b78b3b6f87eafad6dcb9836a49"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that a read of initial metadata from the server is done.  <a href="#aa69cb6b78b3b6f87eafad6dcb9836a49">More...</a><br /></td></tr>
+<tr class="separator:aa69cb6b78b3b6f87eafad6dcb9836a49"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a75daa223bb4f38c5fadf523d026a2cf9"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#a75daa223bb4f38c5fadf523d026a2cf9">OnReadDone</a> (bool ok)</td></tr>
+<tr class="memdesc:a75daa223bb4f38c5fadf523d026a2cf9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that a StartRead operation completed.  <a href="#a75daa223bb4f38c5fadf523d026a2cf9">More...</a><br /></td></tr>
+<tr class="separator:a75daa223bb4f38c5fadf523d026a2cf9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9e2cf6247bc640e7c02cd36b049ae71e"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#a9e2cf6247bc640e7c02cd36b049ae71e">OnWriteDone</a> (bool ok)</td></tr>
+<tr class="memdesc:a9e2cf6247bc640e7c02cd36b049ae71e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that a StartWrite operation completed.  <a href="#a9e2cf6247bc640e7c02cd36b049ae71e">More...</a><br /></td></tr>
+<tr class="separator:a9e2cf6247bc640e7c02cd36b049ae71e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aceee1087afca9397c07017e1b8a79ee0"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#aceee1087afca9397c07017e1b8a79ee0">OnWritesDoneDone</a> (bool ok)</td></tr>
+<tr class="memdesc:aceee1087afca9397c07017e1b8a79ee0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that a StartWritesDone operation completed.  <a href="#aceee1087afca9397c07017e1b8a79ee0">More...</a><br /></td></tr>
+<tr class="separator:aceee1087afca9397c07017e1b8a79ee0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
 <tr class="memitem:a9e889e5582a185bc4aee78b7abaf8108"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#a9e889e5582a185bc4aee78b7abaf8108">ClientCallbackReaderWriter&lt; Request, Response &gt;</a></td></tr>
 <tr class="separator:a9e889e5582a185bc4aee78b7abaf8108"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><h3>template&lt;class Request, class Response&gt;<br />
+class grpc::experimental::ClientBidiReactor&lt; Request, Response &gt;</h3>
+
+<p><em><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html" title="ClientBidiReactor is the interface for a bidirectional streaming RPC. ">ClientBidiReactor</a></em> is the interface for a bidirectional streaming RPC. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="aa36eebc9feef2e4201c432f12d0da4f3"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa36eebc9feef2e4201c432f12d0da4f3">&#9670;&nbsp;</a></span>~ClientBidiReactor()</h2>
 
@@ -134,6 +160,66 @@ template&lt;class Request, class Response&gt; </div>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="aa9a0fe5ae3e4ac8a19e7b29f150fe48f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa9a0fe5ae3e4ac8a19e7b29f150fe48f">&#9670;&nbsp;</a></span>AddHold()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Request, class Response&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html">grpc::experimental::ClientBidiReactor</a>&lt; Request, Response &gt;::AddHold </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Holds are needed if (and only if) this stream has operations that take place on it after StartCall but from outside one of the reactions (OnReadDone, etc). </p>
+<p>This is <em>not</em> a common use of the streaming API.</p>
+<p>Holds must be added before calling StartCall. If a stream still has a hold in place, its resources will not be destroyed even if the status has already come in from the wire and there are currently no active callbacks outstanding. Similarly, the stream will not call OnDone if there are still holds on it.</p>
+<p>For example, if a StartRead or StartWrite operation is going to be initiated from elsewhere in the application, the application should call AddHold or AddMultipleHolds before StartCall. If there is going to be, for example, a read-flow and a write-flow taking place outside the reactions, then call AddMultipleHolds(2) before StartCall. When the application knows that it won't issue any more read operations (such as when a read comes back as not ok), it should issue a <a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#a1d5b28aa3951b0e7c8d20f221f5bf680">RemoveHold()</a>. It should also call <a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#a1d5b28aa3951b0e7c8d20f221f5bf680">RemoveHold()</a> again after it does StartWriteLast or StartWritesDone that indicates that there will be no more write ops. The number of RemoveHold calls must match the total number of AddHold calls plus the number of holds added by AddMultipleHolds. </p>
+
+</div>
+</div>
+<a id="a8f792bf01a668910c394cd48dd4f9f42"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8f792bf01a668910c394cd48dd4f9f42">&#9670;&nbsp;</a></span>AddMultipleHolds()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Request, class Response&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html">grpc::experimental::ClientBidiReactor</a>&lt; Request, Response &gt;::AddMultipleHolds </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>holds</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a99104bc1e2c21e285feb3431d3cc2189"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a99104bc1e2c21e285feb3431d3cc2189">&#9670;&nbsp;</a></span>OnDone()</h2>
 
@@ -159,6 +245,14 @@ template&lt;class Request, class Response&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Notifies the application that all operations associated with this RPC have completed and provides the RPC status outcome. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">s</td><td>The status outcome of this RPC </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
@@ -188,6 +282,14 @@ template&lt;class Request, class Response&gt; </div>
 </table>
 </div><div class="memdoc">
 
+<p>Notifies the application that a StartRead operation completed. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">ok</td><td>Was it successful? If false, no further read-side operation will succeed. </td></tr>
+  </table>
+  </dd>
+</dl>
+
 </div>
 </div>
 <a id="aa69cb6b78b3b6f87eafad6dcb9836a49"></a>
@@ -215,6 +317,15 @@ template&lt;class Request, class Response&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Notifies the application that a read of initial metadata from the server is done. </p>
+<p>If the application chooses not to implement this method, it can assume that the initial metadata has been read before the first call of OnReadDone or OnDone.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">ok</td><td>Was the initial metadata read successfully? If false, no further read-side operation will succeed. </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
@@ -244,6 +355,14 @@ template&lt;class Request, class Response&gt; </div>
 </table>
 </div><div class="memdoc">
 
+<p>Notifies the application that a StartWrite operation completed. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">ok</td><td>Was it successful? If false, no further write-side operation will succeed. </td></tr>
+  </table>
+  </dd>
+</dl>
+
 </div>
 </div>
 <a id="aceee1087afca9397c07017e1b8a79ee0"></a>
@@ -268,6 +387,42 @@ template&lt;class Request, class Response&gt; </div>
   </td>
   <td class="mlabels-right">
 <span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Notifies the application that a StartWritesDone operation completed. </p>
+<p>Note that this is only used on explicit StartWritesDone operations and not for those that are implicitly invoked as part of a StartWriteLast.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">ok</td><td>Was it successful? If false, the application will later see the failure reflected as a bad status in OnDone. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a1d5b28aa3951b0e7c8d20f221f5bf680"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1d5b28aa3951b0e7c8d20f221f5bf680">&#9670;&nbsp;</a></span>RemoveHold()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Request, class Response&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html">grpc::experimental::ClientBidiReactor</a>&lt; Request, Response &gt;::RemoveHold </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -299,6 +454,9 @@ template&lt;class Request, class Response&gt; </div>
 </table>
 </div><div class="memdoc">
 
+<p>Activate the RPC and initiate any reads or writes that have been Start'ed before this call. </p>
+<p>All streaming RPCs issued by the client MUST have StartCall invoked on them (even if they are canceled) as this call is the activation of their lifecycle. </p>
+
 </div>
 </div>
 <a id="a666e0c0ff30021ba2e7849b20cbca8bc"></a>
@@ -327,6 +485,14 @@ template&lt;class Request, class Response&gt; </div>
 </table>
 </div><div class="memdoc">
 
+<p>Initiate a read operation (or post it for later initiation if StartCall has not yet been invoked). </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[out]</td><td class="paramname">resp</td><td>Where to eventually store the read message. Valid when the library calls OnReadDone </td></tr>
+  </table>
+  </dd>
+</dl>
+
 </div>
 </div>
 <a id="a2d89138d920262adc87680a64346d220"></a>
@@ -354,6 +520,14 @@ template&lt;class Request, class Response&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Initiate a write operation (or post it for later initiation if StartCall has not yet been invoked). </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">req</td><td>The message to be written. The library takes temporary ownership until OnWriteDone, at which point the application regains ownership of msg. </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
@@ -393,6 +567,15 @@ template&lt;class Request, class Response&gt; </div>
 </table>
 </div><div class="memdoc">
 
+<p>Initiate/post a write operation with specified options. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">req</td><td>The message to be written. The library takes temporary ownership until OnWriteDone, at which point the application regains ownership of msg. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">options</td><td>The <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options. ">WriteOptions</a> to use for writing this message </td></tr>
+  </table>
+  </dd>
+</dl>
+
 </div>
 </div>
 <a id="ac3ab866ac48739092e6741910752fbf2"></a>
@@ -431,6 +614,16 @@ template&lt;class Request, class Response&gt; </div>
 </table>
 </div><div class="memdoc">
 
+<p>Initiate/post a write operation with specified options and an indication that this is the last write (like StartWrite and StartWritesDone, merged). </p>
+<p>Note that calling this means that no more calls to StartWrite, StartWriteLast, or StartWritesDone are allowed.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">req</td><td>The message to be written. The library takes temporary ownership until OnWriteDone, at which point the application regains ownership of msg. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">options</td><td>The <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options. ">WriteOptions</a> to use for writing this message </td></tr>
+  </table>
+  </dd>
+</dl>
+
 </div>
 </div>
 <a id="a1a4c575cd25e2ff102be9fe890e29d75"></a>
@@ -457,6 +650,9 @@ template&lt;class Request, class Response&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Indicate that the RPC will have no more write operations. </p>
+<p>This can only be issued once for a given RPC. This is not required or allowed if StartWriteLast is used since that already has the same implication. Note that calling this means that no more calls to StartWrite, StartWriteLast, or StartWritesDone are allowed. </p>
 
 </div>
 </div>
@@ -491,7 +687,7 @@ template&lt;class Request, class Response&gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:02 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

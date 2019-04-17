@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.19.0</span>
+   &#160;<span id="projectnumber">1.20.0</span>
    </div>
   </td>
  </tr>
@@ -75,37 +75,50 @@ $(function() {
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:abe4707f376aa720eb850d4e60df146a1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_unimplemented_bidi_reactor.html#abe4707f376aa720eb850d4e60df146a1">OnDone</a> () override</td></tr>
+<tr class="memdesc:abe4707f376aa720eb850d4e60df146a1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that all operations associated with this RPC have completed.  <a href="#abe4707f376aa720eb850d4e60df146a1">More...</a><br /></td></tr>
 <tr class="separator:abe4707f376aa720eb850d4e60df146a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af572470d4b273f3fef55121eb168eda4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_unimplemented_bidi_reactor.html#af572470d4b273f3fef55121eb168eda4">OnStarted</a> (<a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *) override</td></tr>
+<tr class="memdesc:af572470d4b273f3fef55121eb168eda4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notify the application that a streaming RPC has started and that it is now ok to call any operation initation method.  <a href="#af572470d4b273f3fef55121eb168eda4">More...</a><br /></td></tr>
 <tr class="separator:af572470d4b273f3fef55121eb168eda4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html">grpc::experimental::ServerBidiReactor&lt; Request, Response &gt;</a></td></tr>
 <tr class="memitem:a424d740873ee87335f3798e3223a7c88 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a424d740873ee87335f3798e3223a7c88">~ServerBidiReactor</a> ()=default</td></tr>
 <tr class="separator:a424d740873ee87335f3798e3223a7c88 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad2d647cd1871657391dabb9e958ef03d inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#ad2d647cd1871657391dabb9e958ef03d">StartSendInitialMetadata</a> ()</td></tr>
+<tr class="memdesc:ad2d647cd1871657391dabb9e958ef03d inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="mdescLeft">&#160;</td><td class="mdescRight">Do NOT call any operation initiation method (names that start with Start) until after the library has called OnStarted on this object.  <a href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#ad2d647cd1871657391dabb9e958ef03d">More...</a><br /></td></tr>
+<tr class="separator:ad2d647cd1871657391dabb9e958ef03d inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa56f6d4af5becad467ab27470ae174b3 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#aa56f6d4af5becad467ab27470ae174b3">StartRead</a> (Request *req)</td></tr>
+<tr class="memdesc:aa56f6d4af5becad467ab27470ae174b3 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initiate a read operation.  <a href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#aa56f6d4af5becad467ab27470ae174b3">More...</a><br /></td></tr>
+<tr class="separator:aa56f6d4af5becad467ab27470ae174b3 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5e91c5c74a44b38e995356a72723efad inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a5e91c5c74a44b38e995356a72723efad">StartWrite</a> (const Response *resp)</td></tr>
+<tr class="memdesc:a5e91c5c74a44b38e995356a72723efad inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initiate a write operation.  <a href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a5e91c5c74a44b38e995356a72723efad">More...</a><br /></td></tr>
+<tr class="separator:a5e91c5c74a44b38e995356a72723efad inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3e68d544a23d6a1ab9bbdd6e96a6b761 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a3e68d544a23d6a1ab9bbdd6e96a6b761">StartWrite</a> (const Response *resp, <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> options)</td></tr>
+<tr class="memdesc:a3e68d544a23d6a1ab9bbdd6e96a6b761 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initiate a write operation with specified options.  <a href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a3e68d544a23d6a1ab9bbdd6e96a6b761">More...</a><br /></td></tr>
+<tr class="separator:a3e68d544a23d6a1ab9bbdd6e96a6b761 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0d5c7b019c18852ae7339108be71c0f3 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a0d5c7b019c18852ae7339108be71c0f3">StartWriteAndFinish</a> (const Response *resp, <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> options, <a class="el" href="classgrpc_1_1_status.html">Status</a> s)</td></tr>
+<tr class="memdesc:a0d5c7b019c18852ae7339108be71c0f3 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initiate a write operation with specified options and final RPC <a class="el" href="classgrpc_1_1_status.html" title="Did it work? If it didn&#39;t, why? ">Status</a>, which also causes any trailing metadata for this RPC to be sent out.  <a href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a0d5c7b019c18852ae7339108be71c0f3">More...</a><br /></td></tr>
+<tr class="separator:a0d5c7b019c18852ae7339108be71c0f3 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9e82ea7dc98381f77e5fb5fa7fe7c944 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a9e82ea7dc98381f77e5fb5fa7fe7c944">StartWriteLast</a> (const Response *resp, <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> options)</td></tr>
+<tr class="memdesc:a9e82ea7dc98381f77e5fb5fa7fe7c944 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inform system of a planned write operation with specified options, but allow the library to schedule the actual write coalesced with the writing of trailing metadata (which takes place on a Finish call).  <a href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a9e82ea7dc98381f77e5fb5fa7fe7c944">More...</a><br /></td></tr>
+<tr class="separator:a9e82ea7dc98381f77e5fb5fa7fe7c944 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa069b33a6b2adc4c84bfdd4d9ffd3693 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#aa069b33a6b2adc4c84bfdd4d9ffd3693">Finish</a> (<a class="el" href="classgrpc_1_1_status.html">Status</a> s)</td></tr>
+<tr class="memdesc:aa069b33a6b2adc4c84bfdd4d9ffd3693 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indicate that the stream is to be finished and the trailing metadata and RPC status are to be sent.  <a href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#aa069b33a6b2adc4c84bfdd4d9ffd3693">More...</a><br /></td></tr>
+<tr class="separator:aa069b33a6b2adc4c84bfdd4d9ffd3693 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa3791b138e593af207127c22fc9f549f inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#aa3791b138e593af207127c22fc9f549f">OnSendInitialMetadataDone</a> (bool ok)</td></tr>
+<tr class="memdesc:aa3791b138e593af207127c22fc9f549f inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that an explicit StartSendInitialMetadata operation completed.  <a href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#aa3791b138e593af207127c22fc9f549f">More...</a><br /></td></tr>
 <tr class="separator:aa3791b138e593af207127c22fc9f549f inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a4af9f390574521e8c0c461b8976c51 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a3a4af9f390574521e8c0c461b8976c51">OnReadDone</a> (bool ok)</td></tr>
+<tr class="memdesc:a3a4af9f390574521e8c0c461b8976c51 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that a StartRead operation completed.  <a href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a3a4af9f390574521e8c0c461b8976c51">More...</a><br /></td></tr>
 <tr class="separator:a3a4af9f390574521e8c0c461b8976c51 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab057d0696e874e8061495e9aa22edabf inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#ab057d0696e874e8061495e9aa22edabf">OnWriteDone</a> (bool ok)</td></tr>
+<tr class="memdesc:ab057d0696e874e8061495e9aa22edabf inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that a StartWrite (or StartWriteLast) operation completed.  <a href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#ab057d0696e874e8061495e9aa22edabf">More...</a><br /></td></tr>
 <tr class="separator:ab057d0696e874e8061495e9aa22edabf inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad2d647cd1871657391dabb9e958ef03d inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#ad2d647cd1871657391dabb9e958ef03d">StartSendInitialMetadata</a> ()</td></tr>
-<tr class="separator:ad2d647cd1871657391dabb9e958ef03d inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7859342cfac832581e314f62fa2f1eff inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a7859342cfac832581e314f62fa2f1eff">StartRead</a> (Request *msg)</td></tr>
-<tr class="separator:a7859342cfac832581e314f62fa2f1eff inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abacf6c587465521ecab3bf229dece370 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#abacf6c587465521ecab3bf229dece370">StartWrite</a> (const Response *msg)</td></tr>
-<tr class="separator:abacf6c587465521ecab3bf229dece370 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeaffec1d01b6c74f8387f1d607f23aca inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#aeaffec1d01b6c74f8387f1d607f23aca">StartWrite</a> (const Response *msg, <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> options)</td></tr>
-<tr class="separator:aeaffec1d01b6c74f8387f1d607f23aca inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a549a2964e906ba456bc5be1fce35d312 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a549a2964e906ba456bc5be1fce35d312">StartWriteAndFinish</a> (const Response *msg, <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> options, <a class="el" href="classgrpc_1_1_status.html">Status</a> s)</td></tr>
-<tr class="separator:a549a2964e906ba456bc5be1fce35d312 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a49972b6742f5417e096149fa594edf3a inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a49972b6742f5417e096149fa594edf3a">StartWriteLast</a> (const Response *msg, <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> options)</td></tr>
-<tr class="separator:a49972b6742f5417e096149fa594edf3a inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa069b33a6b2adc4c84bfdd4d9ffd3693 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#aa069b33a6b2adc4c84bfdd4d9ffd3693">Finish</a> (<a class="el" href="classgrpc_1_1_status.html">Status</a> s)</td></tr>
-<tr class="separator:aa069b33a6b2adc4c84bfdd4d9ffd3693 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6d3c953395f093336958d0009daac717 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a6d3c953395f093336958d0009daac717">OnCancel</a> () override</td></tr>
+<tr class="memdesc:a6d3c953395f093336958d0009daac717 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that this RPC has been cancelled.  <a href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a6d3c953395f093336958d0009daac717">More...</a><br /></td></tr>
+<tr class="separator:a6d3c953395f093336958d0009daac717 inherit pub_methods_classgrpc_1_1experimental_1_1_server_bidi_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1internal_1_1_server_reactor"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1internal_1_1_server_reactor')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1internal_1_1_server_reactor.html">grpc::internal::ServerReactor</a></td></tr>
 <tr class="memitem:ac1fad8a93bd91539593f9c8c293d82c7 inherit pub_methods_classgrpc_1_1internal_1_1_server_reactor"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_server_reactor.html#ac1fad8a93bd91539593f9c8c293d82c7">~ServerReactor</a> ()=default</td></tr>
 <tr class="separator:ac1fad8a93bd91539593f9c8c293d82c7 inherit pub_methods_classgrpc_1_1internal_1_1_server_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6ce844545a0940a06fd212e09653766e inherit pub_methods_classgrpc_1_1internal_1_1_server_reactor"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_server_reactor.html#a6ce844545a0940a06fd212e09653766e">OnCancel</a> ()</td></tr>
-<tr class="separator:a6ce844545a0940a06fd212e09653766e inherit pub_methods_classgrpc_1_1internal_1_1_server_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a id="abe4707f376aa720eb850d4e60df146a1"></a>
@@ -133,7 +146,10 @@ template&lt;class Request , class Response &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Reimplemented from <a class="el" href="classgrpc_1_1internal_1_1_server_reactor.html#a377a148f200732409b747cd0c8a5edd2">grpc::internal::ServerReactor</a>.</p>
+<p>Notifies the application that all operations associated with this RPC have completed. </p>
+<p>This is an override (from the internal base class) but not final, so derived classes should override it if they want to take action. </p>
+
+<p>Reimplemented from <a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a20d4c89be766d0ee2ac99c5b5201517e">grpc::experimental::ServerBidiReactor&lt; Request, Response &gt;</a>.</p>
 
 </div>
 </div>
@@ -152,7 +168,7 @@ template&lt;class Request , class Response &gt; </div>
           <td class="memname">void <a class="el" href="classgrpc_1_1internal_1_1_unimplemented_bidi_reactor.html">grpc::internal::UnimplementedBidiReactor</a>&lt; Request, Response &gt;::OnStarted </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *&#160;</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramname"><em>context</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -163,7 +179,15 @@ template&lt;class Request , class Response &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Reimplemented from <a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a038d9ba812a8ed8040db617bf7151256">grpc::experimental::ServerBidiReactor&lt; Request, Response &gt;</a>.</p>
+<p>Notify the application that a streaming RPC has started and that it is now ok to call any operation initation method. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">context</td><td>The context object now associated with this RPC </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Reimplemented from <a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a2a3d2a6d7085e921848aa0bdb000a047">grpc::experimental::ServerBidiReactor&lt; Request, Response &gt;</a>.</p>
 
 </div>
 </div>
@@ -173,7 +197,7 @@ template&lt;class Request , class Response &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:02 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

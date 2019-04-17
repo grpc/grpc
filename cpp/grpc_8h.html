@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.19.0</span>
+   &#160;<span id="projectnumber">1.20.0</span>
    </div>
   </td>
  </tr>
@@ -119,6 +119,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a0ea297b71413c4fe9ad668c425bb094a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a0ea297b71413c4fe9ad668c425bb094a">grpc_is_initialized</a> (void)</td></tr>
 <tr class="memdesc:a0ea297b71413c4fe9ad668c425bb094a"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL.  <a href="#a0ea297b71413c4fe9ad668c425bb094a">More...</a><br /></td></tr>
 <tr class="separator:a0ea297b71413c4fe9ad668c425bb094a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aceedc7178f15ebef5f518ca180938a20"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#aceedc7178f15ebef5f518ca180938a20">grpc_shutdown_blocking</a> (void)</td></tr>
+<tr class="memdesc:aceedc7178f15ebef5f518ca180938a20"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL.  <a href="#aceedc7178f15ebef5f518ca180938a20">More...</a><br /></td></tr>
+<tr class="separator:aceedc7178f15ebef5f518ca180938a20"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8bf40c680565d2d3b29b85e8a9e661f3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a8bf40c680565d2d3b29b85e8a9e661f3">grpc_version_string</a> (void)</td></tr>
 <tr class="memdesc:a8bf40c680565d2d3b29b85e8a9e661f3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a string representing the current version of grpc.  <a href="#a8bf40c680565d2d3b29b85e8a9e661f3">More...</a><br /></td></tr>
 <tr class="separator:a8bf40c680565d2d3b29b85e8a9e661f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -219,7 +222,7 @@ Functions</h2></td></tr>
 <tr class="memdesc:ada3c794f1c02477b0d71b12026dd0333"><td class="mdescLeft">&#160;</td><td class="mdescRight">Error handling for grpc_call Most grpc_call functions return a grpc_error.  <a href="#ada3c794f1c02477b0d71b12026dd0333">More...</a><br /></td></tr>
 <tr class="separator:ada3c794f1c02477b0d71b12026dd0333"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5c09d334ae49404386cc0b13559dbb4d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785b">grpc_call_error</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a5c09d334ae49404386cc0b13559dbb4d">grpc_call_cancel_with_status</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call, <a class="el" href="grpc_2impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a> status, const char *description, void *reserved)</td></tr>
-<tr class="memdesc:a5c09d334ae49404386cc0b13559dbb4d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called by clients to cancel an RPC on the server.  <a href="#a5c09d334ae49404386cc0b13559dbb4d">More...</a><br /></td></tr>
+<tr class="memdesc:a5c09d334ae49404386cc0b13559dbb4d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cancel an RPC.  <a href="#a5c09d334ae49404386cc0b13559dbb4d">More...</a><br /></td></tr>
 <tr class="separator:a5c09d334ae49404386cc0b13559dbb4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a37a3bcb24b22addd01a9d0881c5a438c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a37a3bcb24b22addd01a9d0881c5a438c">grpc_call_ref</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call)</td></tr>
 <tr class="memdesc:a37a3bcb24b22addd01a9d0881c5a438c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Ref a call.  <a href="#a37a3bcb24b22addd01a9d0881c5a438c">More...</a><br /></td></tr>
@@ -404,7 +407,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Error handling for grpc_call Most grpc_call functions return a grpc_error. </p>
-<p>If the error is not GRPC_OK then the operation failed due to some unsatisfied precondition. If a grpc_call fails, it's guaranteed that no change to the call state has been made. Called by clients to cancel an RPC on the server. Can be called multiple times, from any thread. THREAD-SAFETY grpc_call_cancel and grpc_call_cancel_with_status are thread-safe, and can be called at any point before grpc_call_unref is called. </p>
+<p>If the error is not GRPC_OK then the operation failed due to some unsatisfied precondition. If a grpc_call fails, it's guaranteed that no change to the call state has been made. Cancel an RPC. Can be called multiple times, from any thread. THREAD-SAFETY grpc_call_cancel and grpc_call_cancel_with_status are thread-safe, and can be called at any point before grpc_call_unref is called. </p>
 
 </div>
 </div>
@@ -446,7 +449,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Called by clients to cancel an RPC on the server. </p>
+<p>Cancel an RPC. </p>
 <p>Can be called multiple times, from any thread. If a status has not been received for the call, set it to the status code and description passed in. Importantly, this function does not send status nor description to the remote endpoint. Note that <em>description</em> doesn't need be a static string. It doesn't need to be alive after the call to grpc_call_cancel_with_status completes. </p>
 
 </div>
@@ -2355,7 +2358,28 @@ Functions</h2></td></tr>
 
 <p>Shut down the grpc library. </p>
 <p>Before it's called, there should haven been a matching invocation to <a class="el" href="grpc_8h.html#a573aed8e200997856a227c7eb798a185" title="Initialize the grpc library. ">grpc_init()</a>.</p>
-<p>No memory is used by grpc after this call returns, nor are any instructions executing within the grpc library. Prior to calling, all application owned grpc objects must have been destroyed. </p>
+<p>The last call to grpc_shutdown will initiate cleaning up of grpc library internals, which can happen in another thread. Once the clean-up is done, no memory is used by grpc, nor are any instructions executing within the grpc library. Prior to calling, all application owned grpc objects must have been destroyed. </p>
+
+</div>
+</div>
+<a id="aceedc7178f15ebef5f518ca180938a20"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aceedc7178f15ebef5f518ca180938a20">&#9670;&nbsp;</a></span>grpc_shutdown_blocking()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_shutdown_blocking </td>
+          <td>(</td>
+          <td class="paramtype">void&#160;</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>EXPERIMENTAL. </p>
+<p>Blocking shut down grpc library. This is only for wrapped language to use now. </p>
 
 </div>
 </div>
@@ -2414,7 +2438,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:02 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

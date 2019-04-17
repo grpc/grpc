@@ -77,8 +77,8 @@ Data Fields</h2></td></tr>
 <tr class="separator:a77029657f0b1b653fe3694a05b3272dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a49f838e2bc8533b18d77e9e31a34033b"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__tls__server__authorization__check__arg.html#a49f838e2bc8533b18d77e9e31a34033b">cb_user_data</a></td></tr>
 <tr class="separator:a49f838e2bc8533b18d77e9e31a34033b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4b78f22c65e8a5a796063c3a31742f5d"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__tls__server__authorization__check__arg.html#a4b78f22c65e8a5a796063c3a31742f5d">result</a></td></tr>
-<tr class="separator:a4b78f22c65e8a5a796063c3a31742f5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4b61309fca075f7d93d3a4325728bb7f"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__tls__server__authorization__check__arg.html#a4b61309fca075f7d93d3a4325728bb7f">success</a></td></tr>
+<tr class="separator:a4b61309fca075f7d93d3a4325728bb7f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5ea427a08f7acada51d9ace358f8529b"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__tls__server__authorization__check__arg.html#a5ea427a08f7acada51d9ace358f8529b">target_name</a></td></tr>
 <tr class="separator:a5ea427a08f7acada51d9ace358f8529b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa33742301cfcf0e968360da852d7bcc0"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__tls__server__authorization__check__arg.html#aa33742301cfcf0e968360da852d7bcc0">peer_cert</a></td></tr>
@@ -90,7 +90,7 @@ Data Fields</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A struct containing all information necessary to schedule/cancel a server authorization check request. </p>
-<p>cb and cb_user_data represent a gRPC-provided callback and an argument passed to it. result will store the result of server authorization check. target_name is the name of an endpoint the channel is connecting to and certificate represents a complete certificate chain including both signing and leaf certificates. status and error_details contain information about errors occurred when a server authorization check request is scheduled/cancelled. It is used for experimental purpose for now and subject to change. </p>
+<p>cb and cb_user_data represent a gRPC-provided callback and an argument passed to it. success will store the result of server authorization check. That is, if success returns a non-zero value, it means the authorization check passes and if returning zero, it means the check fails. target_name is the name of an endpoint the channel is connecting to and certificate represents a complete certificate chain including both signing and leaf certificates. status and error_details contain information about errors occurred when a server authorization check request is scheduled/cancelled. It is used for experimental purpose for now and subject to change. </p>
 </div><h2 class="groupheader">Field Documentation</h2>
 <a id="a77029657f0b1b653fe3694a05b3272dc"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a77029657f0b1b653fe3694a05b3272dc">&#9670;&nbsp;</a></span>cb</h2>
@@ -148,20 +148,6 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a id="a4b78f22c65e8a5a796063c3a31742f5d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4b78f22c65e8a5a796063c3a31742f5d">&#9670;&nbsp;</a></span>result</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int grpc_tls_server_authorization_check_arg::result</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a id="ad5947a871b4a54e5562d4419f7dafc56"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad5947a871b4a54e5562d4419f7dafc56">&#9670;&nbsp;</a></span>status</h2>
 
@@ -170,6 +156,20 @@ Data Fields</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a> grpc_tls_server_authorization_check_arg::status</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a4b61309fca075f7d93d3a4325728bb7f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4b61309fca075f7d93d3a4325728bb7f">&#9670;&nbsp;</a></span>success</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int grpc_tls_server_authorization_check_arg::success</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -196,7 +196,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:01 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

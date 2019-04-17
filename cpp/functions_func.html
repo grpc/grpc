@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.19.0</span>
+   &#160;<span id="projectnumber">1.20.0</span>
    </div>
   </td>
  </tr>
@@ -68,6 +68,17 @@ $(function() {
 <li>AddCompletionQueue()
 : <a class="el" href="classgrpc_1_1_server_builder.html#a960d55977e1aef56fd7b582037a01bbd">grpc::ServerBuilder</a>
 </li>
+<li>AddHold()
+: <a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#aa9a0fe5ae3e4ac8a19e7b29f150fe48f">grpc::experimental::ClientBidiReactor&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_client_callback_reader.html#abb5fc18e98048624b4bb9438b73fcda6">grpc::experimental::ClientCallbackReader&lt; Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_client_callback_reader_writer.html#aba1d8d8552c52cbeef8a84e19fe54e8d">grpc::experimental::ClientCallbackReaderWriter&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_client_callback_writer.html#ac6c53741ed1c5d7dfd65514ba0daecf6">grpc::experimental::ClientCallbackWriter&lt; Request &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_client_read_reactor.html#a24805e22467417956f8ecdefb1b673f7">grpc::experimental::ClientReadReactor&lt; Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html#aec27c703a28f361782dba48d17a3b153">grpc::experimental::ClientWriteReactor&lt; Request &gt;</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_impl.html#a1e5c08e86f7aa2717971577fc9caef09">grpc::internal::ClientCallbackReaderImpl&lt; Response &gt;</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#a0722f420d776e8ac43689cd314cc40b1">grpc::internal::ClientCallbackReaderWriterImpl&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html#ac6b5cf2fb003d800107aa3fbd48b4df9">grpc::internal::ClientCallbackWriterImpl&lt; Request &gt;</a>
+</li>
 <li>AddInitialMetadata()
 : <a class="el" href="classgrpc_1_1_server_context.html#ae3371f0adf8521c7097eee437fc4ca4f">grpc::ServerContext</a>
 </li>
@@ -84,6 +95,11 @@ $(function() {
 </li>
 <li>AddMethod()
 : <a class="el" href="classgrpc_1_1_service.html#abec1b426feba1f6f619d9fb11aca6aae">grpc::Service</a>
+</li>
+<li>AddMultipleHolds()
+: <a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#a8f792bf01a668910c394cd48dd4f9f42">grpc::experimental::ClientBidiReactor&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_client_read_reactor.html#af6b4918150a9fd027e4bd0e40143a76d">grpc::experimental::ClientReadReactor&lt; Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html#a832c7f9234fc868491ac408f431c58a9">grpc::experimental::ClientWriteReactor&lt; Request &gt;</a>
 </li>
 <li>AddOp()
 : <a class="el" href="classgrpc_1_1internal_1_1_call_no_op.html#a51eab70032336202abb423ac048b1ff3">grpc::internal::CallNoOp&lt; I &gt;</a>
@@ -106,7 +122,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_server_context.html#ac30e12c4ee3ca008522b24157f4f886c">grpc::ServerContext</a>
 </li>
 <li>Alarm()
-: <a class="el" href="classgrpc__impl_1_1_alarm.html#aec1e4de4038eaac76c5cf29db1ec6b58">grpc_impl::Alarm</a>
+: <a class="el" href="classgrpc__impl_1_1_alarm.html#a7af4a0f577608f5ddd208cc7b85b500b">grpc_impl::Alarm</a>
 </li>
 <li>AllowNoMessage()
 : <a class="el" href="classgrpc_1_1internal_1_1_call_op_generic_recv_message.html#ad49da2fc6860e1ce453a55268035582f">grpc::internal::CallOpGenericRecvMessage</a>
@@ -142,13 +158,13 @@ $(function() {
 , <a class="el" href="classgrpc_1_1_server_context.html#a4fab4435aac1be0a92e246507e4167ce">grpc::ServerContext</a>
 </li>
 <li>AuthPropertyIterator()
-: <a class="el" href="classgrpc_1_1_auth_property_iterator.html#a2885e02ba1b9caad818a1bcdf648d949">grpc::AuthPropertyIterator</a>
+: <a class="el" href="classgrpc_1_1_auth_property_iterator.html#aee44bb7255a99611cf490532b7e110d5">grpc::AuthPropertyIterator</a>
 </li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:02 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

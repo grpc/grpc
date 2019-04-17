@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.19.0</span>
+   &#160;<span id="projectnumber">1.20.0</span>
    </div>
   </td>
  </tr>
@@ -80,6 +80,11 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a9babb0b7e6943ea6477d684cd1261ddc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aae47dc9b51d25654f3bc5bf36e91c91d"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_callback_rpc_controller.html#aae47dc9b51d25654f3bc5bf36e91c91d">SendInitialMetadata</a> (std::function&lt; void(bool)&gt;)=0</td></tr>
 <tr class="separator:aae47dc9b51d25654f3bc5bf36e91c91d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9940a869da7f30cdae6dbe47bcbad53d"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_callback_rpc_controller.html#a9940a869da7f30cdae6dbe47bcbad53d">SetCancelCallback</a> (std::function&lt; void()&gt; callback)=0</td></tr>
+<tr class="memdesc:a9940a869da7f30cdae6dbe47bcbad53d"><td class="mdescLeft">&#160;</td><td class="mdescRight">SetCancelCallback passes in a callback to be called when the RPC is canceled for whatever reason (streaming calls have OnCancel instead).  <a href="#a9940a869da7f30cdae6dbe47bcbad53d">More...</a><br /></td></tr>
+<tr class="separator:a9940a869da7f30cdae6dbe47bcbad53d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a89949141e05b78997dc86c4e33962621"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_callback_rpc_controller.html#a89949141e05b78997dc86c4e33962621">ClearCancelCallback</a> ()=0</td></tr>
+<tr class="separator:a89949141e05b78997dc86c4e33962621"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a54d215fbfdcc98abf4a871bdb5262e2c"></a>
@@ -108,6 +113,31 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a89949141e05b78997dc86c4e33962621"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a89949141e05b78997dc86c4e33962621">&#9670;&nbsp;</a></span>ClearCancelCallback()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void grpc::experimental::ServerCallbackRpcController::ClearCancelCallback </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a9babb0b7e6943ea6477d684cd1261ddc"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a9babb0b7e6943ea6477d684cd1261ddc">&#9670;&nbsp;</a></span>Finish()</h2>
 
@@ -160,13 +190,47 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a9940a869da7f30cdae6dbe47bcbad53d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9940a869da7f30cdae6dbe47bcbad53d">&#9670;&nbsp;</a></span>SetCancelCallback()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void grpc::experimental::ServerCallbackRpcController::SetCancelCallback </td>
+          <td>(</td>
+          <td class="paramtype">std::function&lt; void()&gt;&#160;</td>
+          <td class="paramname"><em>callback</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>SetCancelCallback passes in a callback to be called when the RPC is canceled for whatever reason (streaming calls have OnCancel instead). </p>
+<p>This is an advanced and uncommon use with several important restrictions. This function may not be called more than once on the same RPC.</p>
+<p>If code calls SetCancelCallback on an RPC, it must also call ClearCancelCallback before calling Finish on the RPC controller. That method makes sure that no cancellation callback is executed for this RPC beyond the point of its return. ClearCancelCallback may be called even if SetCancelCallback was not called for this RPC, and it may be called multiple times. It <em>must</em> be called if SetCancelCallback was called for this RPC.</p>
+<p>The callback should generally be lightweight and nonblocking and primarily concerned with clearing application state related to the RPC or causing operations (such as cancellations) to happen on dependent RPCs.</p>
+<p>If the RPC is already canceled at the time that SetCancelCallback is called, the callback is invoked immediately.</p>
+<p>The cancellation callback may be executed concurrently with the method handler that invokes it but will certainly not issue or execute after the return of ClearCancelCallback. If ClearCancelCallback is invoked while the callback is already executing, the callback will complete its execution before ClearCancelCallback takes effect.</p>
+<p>To preserve the orderings described above, the callback may be called under a lock that is also used for ClearCancelCallback and <a class="el" href="classgrpc_1_1_server_context.html#acea4ed6d22ccf89185194310935e2966" title="IsCancelled is always safe to call when using sync or callback API. ">ServerContext::IsCancelled</a>, so the callback CANNOT call either of those operations on this RPC or any other function that causes those operations to be called before the callback completes. </p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/grpcpp/impl/codegen/<a class="el" href="impl_2codegen_2server__callback_8h_source.html">server_callback.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:02 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>
