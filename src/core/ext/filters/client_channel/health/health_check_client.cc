@@ -281,8 +281,9 @@ HealthCheckClient::CallState::CallState(
     : InternallyRefCounted<CallState>(&grpc_health_check_client_trace),
       health_check_client_(std::move(health_check_client)),
       pollent_(grpc_polling_entity_create_from_pollset_set(interested_parties)),
-      arena_(grpc_core::Arena::Create(health_check_client_
-        ->connected_subchannel_->GetInitialCallSizeEstimate(0))),
+      arena_(
+          grpc_core::Arena::Create(health_check_client_->connected_subchannel_
+                                       ->GetInitialCallSizeEstimate(0))),
       payload_(context_) {
   grpc_call_combiner_init(&call_combiner_);
 }

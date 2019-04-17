@@ -331,7 +331,8 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   GRPC_STATS_INC_CALL_INITIAL_SIZE(initial_size);
   grpc_core::Arena* arena = grpc_core::Arena::Create(initial_size);
   call = new (arena->Alloc(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)) +
-                 channel_stack->call_stack_size))  grpc_call(arena, *args);
+                           channel_stack->call_stack_size))
+      grpc_call(arena, *args);
   *out_call = call;
   grpc_slice path = grpc_empty_slice();
   if (call->is_client) {
@@ -363,8 +364,8 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   bool immediately_cancel = false;
 
   if (args->parent != nullptr) {
-    call->child = new (arena->Alloc(sizeof(child_call)))
-        child_call(args->parent);
+    call->child =
+        new (arena->Alloc(sizeof(child_call))) child_call(args->parent);
 
     GRPC_CALL_INTERNAL_REF(args->parent, "child");
     GPR_ASSERT(call->is_client);
@@ -1129,8 +1130,7 @@ static batch_control* reuse_or_allocate_batch_control(grpc_call* call,
     bctl->~batch_control();
     bctl->op = {};
   } else {
-    bctl = new (call->arena->Alloc(sizeof(*bctl)))
-        batch_control();
+    bctl = new (call->arena->Alloc(sizeof(*bctl))) batch_control();
     *pslot = bctl;
   }
   bctl->call = call;
