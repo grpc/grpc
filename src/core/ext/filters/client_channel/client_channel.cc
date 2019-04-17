@@ -1089,7 +1089,7 @@ struct call_data {
   grpc_slice path;  // Request path.
   gpr_timespec call_start_time;
   grpc_millis deadline;
-  gpr_arena* arena;
+  grpc_core::Arena* arena;
   grpc_call_stack* owning_call;
   grpc_call_combiner* call_combiner;
   grpc_call_context_element* call_context;
@@ -1186,8 +1186,8 @@ static void maybe_cache_send_ops_for_batch(call_data* calld,
     GPR_ASSERT(calld->send_initial_metadata_storage == nullptr);
     grpc_metadata_batch* send_initial_metadata =
         batch->payload->send_initial_metadata.send_initial_metadata;
-    calld->send_initial_metadata_storage = (grpc_linked_mdelem*)gpr_arena_alloc(
-        calld->arena,
+    calld->send_initial_metadata_storage = (grpc_linked_mdelem*)
+        calld->arena->Alloc(
         sizeof(grpc_linked_mdelem) * send_initial_metadata->list.count);
     grpc_metadata_batch_copy(send_initial_metadata,
                              &calld->send_initial_metadata,
@@ -1200,7 +1200,7 @@ static void maybe_cache_send_ops_for_batch(call_data* calld,
   if (batch->send_message) {
     grpc_core::ByteStreamCache* cache =
         static_cast<grpc_core::ByteStreamCache*>(
-            gpr_arena_alloc(calld->arena, sizeof(grpc_core::ByteStreamCache)));
+            calld->arena->Alloc(sizeof(grpc_core::ByteStreamCache)));
     new (cache) grpc_core::ByteStreamCache(
         std::move(batch->payload->send_message.send_message));
     calld->send_messages.push_back(cache);
@@ -1212,8 +1212,7 @@ static void maybe_cache_send_ops_for_batch(call_data* calld,
     grpc_metadata_batch* send_trailing_metadata =
         batch->payload->send_trailing_metadata.send_trailing_metadata;
     calld->send_trailing_metadata_storage =
-        (grpc_linked_mdelem*)gpr_arena_alloc(
-            calld->arena,
+        (grpc_linked_mdelem*) calld->arena->Alloc(
             sizeof(grpc_linked_mdelem) * send_trailing_metadata->list.count);
     grpc_metadata_batch_copy(send_trailing_metadata,
                              &calld->send_trailing_metadata,
@@ -1796,7 +1795,7 @@ static subchannel_batch_data* batch_data_create(grpc_call_element* elem,
                                                 bool set_on_complete) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   subchannel_batch_data* batch_data =
-      new (gpr_arena_alloc(calld->arena, sizeof(*batch_data)))
+      new (calld->arena->Alloc(sizeof(*batch_data)))
           subchannel_batch_data(elem, calld, refcount, set_on_complete);
   return batch_data;
 }
@@ -2391,8 +2390,8 @@ static void add_retriable_send_initial_metadata_op(
   // If we've already completed one or more attempts, add the
   // grpc-retry-attempts header.
   retry_state->send_initial_metadata_storage =
-      static_cast<grpc_linked_mdelem*>(gpr_arena_alloc(
-          calld->arena, sizeof(grpc_linked_mdelem) *
+      static_cast<grpc_linked_mdelem*>(
+          calld->arena->Alloc(sizeof(grpc_linked_mdelem) *
                             (calld->send_initial_metadata.list.count +
                              (calld->num_attempts_completed > 0))));
   grpc_metadata_batch_copy(&calld->send_initial_metadata,
@@ -2457,8 +2456,8 @@ static void add_retriable_send_trailing_metadata_op(
   // the filters in the subchannel stack may modify this batch, and we don't
   // want those modifications to be passed forward to subsequent attempts.
   retry_state->send_trailing_metadata_storage =
-      static_cast<grpc_linked_mdelem*>(gpr_arena_alloc(
-          calld->arena, sizeof(grpc_linked_mdelem) *
+      static_cast<grpc_linked_mdelem*>(
+          calld->arena->Alloc(sizeof(grpc_linked_mdelem) *
                             calld->send_trailing_metadata.list.count));
   grpc_metadata_batch_copy(&calld->send_trailing_metadata,
                            &retry_state->send_trailing_metadata,
