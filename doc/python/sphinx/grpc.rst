@@ -172,3 +172,9 @@ Future Interfaces
 .. autoexception:: FutureTimeoutError
 .. autoexception:: FutureCancelledError
 .. autoclass:: Future
+
+
+Compression
+^^^^^^^^^^^
+
+.. autoclass:: Compression

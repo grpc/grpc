@@ -22,10 +22,6 @@
   <Import Project="..\Grpc.Core\SourceLink.csproj.include" />
 
   <ItemGroup>
-    <Compile Include="..\Grpc.Core.Api\Version.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="System.Interactive.Async" Version="3.2.0" />
   </ItemGroup>
 

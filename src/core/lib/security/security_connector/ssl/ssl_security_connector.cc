@@ -44,24 +44,15 @@ namespace {
 grpc_error* ssl_check_peer(
     const char* peer_name, const tsi_peer* peer,
     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context) {
-#if TSI_OPENSSL_ALPN_SUPPORT
-  /* Check the ALPN if ALPN is supported. */
-  const tsi_peer_property* p =
-      tsi_peer_get_property_by_name(peer, TSI_SSL_ALPN_SELECTED_PROTOCOL);
-  if (p == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Cannot check peer: missing selected ALPN property.");
+  grpc_error* error = grpc_ssl_check_alpn(peer);
+  if (error != GRPC_ERROR_NONE) {
+    return error;
   }
-  if (!grpc_chttp2_is_alpn_version_supported(p->value.data, p->value.length)) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Cannot check peer: invalid ALPN value.");
-  }
-#endif /* TSI_OPENSSL_ALPN_SUPPORT */
   /* Check the peer name if specified. */
   if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
     char* msg;
     gpr_asprintf(&msg, "Peer name %s is not in peer certificate", peer_name);
-    grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     return error;
   }
@@ -323,7 +314,6 @@ class grpc_ssl_server_security_connector
   bool try_fetch_ssl_server_credentials() {
     grpc_ssl_server_certificate_config* certificate_config = nullptr;
     bool status;
-
     if (!has_cert_config_fetcher()) return false;
 
     grpc_ssl_server_credentials* server_creds =
@@ -383,7 +373,9 @@ class grpc_ssl_server_security_connector
     options.num_alpn_protocols = static_cast<uint16_t>(num_alpn_protocols);
     tsi_result result = tsi_create_ssl_server_handshaker_factory_with_options(
         &options, &new_handshaker_factory);
-    gpr_free((void*)options.pem_key_cert_pairs);
+    grpc_tsi_ssl_pem_key_cert_pairs_destroy(
+        const_cast<tsi_ssl_pem_key_cert_pair*>(options.pem_key_cert_pairs),
+        options.num_key_cert_pairs);
     gpr_free((void*)alpn_protocol_strings);
 
     if (result != TSI_OK) {

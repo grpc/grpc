@@ -29,6 +29,7 @@
 #include "src/core/lib/gpr/arena.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -219,8 +220,7 @@ class Subchannel {
   }
 
   // Polls the current connectivity state of the subchannel.
-  grpc_connectivity_state CheckConnectivity(grpc_error** error,
-                                            bool inhibit_health_checking);
+  grpc_connectivity_state CheckConnectivity(bool inhibit_health_checking);
 
   // When the connectivity state of the subchannel changes from \a *state,
   // invokes \a notify and updates \a *state with the new state.
@@ -253,7 +253,7 @@ class Subchannel {
 
   // Sets the subchannel's connectivity state to \a state.
   void SetConnectivityStateLocked(grpc_connectivity_state state,
-                                  grpc_error* error, const char* reason);
+                                  const char* reason);
 
   // Methods for connection.
   void MaybeStartConnectingLocked();
@@ -276,7 +276,7 @@ class Subchannel {
   // pollset_set tracking who's interested in a connection being setup.
   grpc_pollset_set* pollset_set_;
   // Protects the other members.
-  gpr_mu mu_;
+  Mutex mu_;
   // Refcount
   //    - lower INTERNAL_REF_BITS bits are for internal references:
   //      these do not keep the subchannel open.

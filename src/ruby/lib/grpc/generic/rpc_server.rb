@@ -202,7 +202,7 @@ module GRPC
     # forcing an abrupt exit to each thread.
     #
     # * connect_md_proc:
-    # when non-nil is a proc for determining metadata to to send back the client
+    # when non-nil is a proc for determining metadata to send back the client
     # on receiving an invocation req.  The proc signature is:
     #   {key: val, ..} func(method_name, {key: val, ...})
     #

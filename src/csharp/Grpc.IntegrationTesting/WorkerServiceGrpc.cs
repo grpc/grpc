@@ -72,6 +72,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of WorkerService</summary>
+    [grpc::BindServiceMethod(typeof(WorkerService), "BindService")]
     public abstract partial class WorkerServiceBase
     {
       /// <summary>

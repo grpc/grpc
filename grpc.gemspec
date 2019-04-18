@@ -30,7 +30,7 @@ Gem::Specification.new do |s|
   s.platform      = Gem::Platform::RUBY
 
   s.add_dependency 'google-protobuf', '~> 3.7'
-  s.add_dependency 'googleapis-common-protos-types', '~> 1.0.0'
+  s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
   s.add_development_dependency 'bundler',            '~> 1.9'
   s.add_development_dependency 'facter',             '~> 2.4'
@@ -102,8 +102,10 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/atomic.h )
   s.files += %w( src/core/lib/gprpp/fork.h )
   s.files += %w( src/core/lib/gprpp/manual_constructor.h )
+  s.files += %w( src/core/lib/gprpp/map.h )
   s.files += %w( src/core/lib/gprpp/memory.h )
-  s.files += %w( src/core/lib/gprpp/mutex_lock.h )
+  s.files += %w( src/core/lib/gprpp/pair.h )
+  s.files += %w( src/core/lib/gprpp/sync.h )
   s.files += %w( src/core/lib/gprpp/thd.h )
   s.files += %w( src/core/lib/profiling/timers.h )
   s.files += %w( src/core/lib/gpr/alloc.cc )
@@ -325,6 +327,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/channel/handshaker_registry.h )
   s.files += %w( src/core/lib/channel/status_util.h )
   s.files += %w( src/core/lib/compression/algorithm_metadata.h )
+  s.files += %w( src/core/lib/compression/compression_args.h )
   s.files += %w( src/core/lib/compression/compression_internal.h )
   s.files += %w( src/core/lib/compression/message_compress.h )
   s.files += %w( src/core/lib/compression/stream_compression.h )
@@ -479,6 +482,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/channel/handshaker_registry.cc )
   s.files += %w( src/core/lib/channel/status_util.cc )
   s.files += %w( src/core/lib/compression/compression.cc )
+  s.files += %w( src/core/lib/compression/compression_args.cc )
   s.files += %w( src/core/lib/compression/compression_internal.cc )
   s.files += %w( src/core/lib/compression/message_compress.cc )
   s.files += %w( src/core/lib/compression/stream_compression.cc )

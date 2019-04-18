@@ -28,6 +28,7 @@
 #include <grpc/compression.h>
 #include <grpc/support/atm.h>
 #include <grpcpp/completion_queue.h>
+#include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
@@ -40,12 +41,14 @@
 
 struct grpc_server;
 
+namespace grpc_impl {
+
+class ServerInitializer;
+}
 namespace grpc {
 
 class AsyncGenericService;
-class HealthCheckServiceInterface;
 class ServerContext;
-class ServerInitializer;
 
 /// Represents a gRPC server.
 ///
@@ -198,8 +201,8 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   }
 
   friend class AsyncGenericService;
-  friend class ServerBuilder;
-  friend class ServerInitializer;
+  friend class grpc_impl::ServerBuilder;
+  friend class grpc_impl::ServerInitializer;
 
   class SyncRequest;
   class CallbackRequestBase;
@@ -257,7 +260,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
 
   CompletionQueue* CallbackCQ() override;
 
-  ServerInitializer* initializer();
+  grpc_impl::ServerInitializer* initializer();
 
   // A vector of interceptor factory objects.
   // This should be destroyed after health_check_service_ and this requirement
@@ -294,12 +297,12 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   experimental_registration_type experimental_registration_{this};
 
   // Server status
-  std::mutex mu_;
+  grpc::internal::Mutex mu_;
   bool started_;
   bool shutdown_;
   bool shutdown_notified_;  // Was notify called on the shutdown_cv_
 
-  std::condition_variable shutdown_cv_;
+  grpc::internal::CondVar shutdown_cv_;
 
   // It is ok (but not required) to nest callback_reqs_mu_ under mu_ .
   // Incrementing callback_reqs_outstanding_ is ok without a lock but it must be
@@ -308,8 +311,8 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   // during periods of increasing load; the decrement happens only when memory
   // is maxed out, during server shutdown, or (possibly in a future version)
   // during decreasing load, so it is less performance-critical.
-  std::mutex callback_reqs_mu_;
-  std::condition_variable callback_reqs_done_cv_;
+  grpc::internal::Mutex callback_reqs_mu_;
+  grpc::internal::CondVar callback_reqs_done_cv_;
   std::atomic_int callback_reqs_outstanding_{0};
 
   std::shared_ptr<GlobalCallbacks> global_callbacks_;
@@ -321,7 +324,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   // Pointer to the wrapped grpc_server.
   grpc_server* server_;
 
-  std::unique_ptr<ServerInitializer> server_initializer_;
+  std::unique_ptr<grpc_impl::ServerInitializer> server_initializer_;
 
   std::unique_ptr<HealthCheckServiceInterface> health_check_service_;
   bool health_check_service_disabled_;

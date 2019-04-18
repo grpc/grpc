@@ -28,6 +28,10 @@
 #include <grpcpp/impl/codegen/rpc_service_method.h>
 #include <grpcpp/impl/codegen/server_context.h>
 
+namespace grpc_impl {
+
+class ServerCredentials;
+}
 namespace grpc {
 
 class AsyncGenericService;
@@ -35,7 +39,6 @@ class Channel;
 class GenericServerContext;
 class ServerCompletionQueue;
 class ServerContext;
-class ServerCredentials;
 class Service;
 
 extern CoreCodegenInterface* g_core_codegen_interface;
@@ -150,7 +153,7 @@ class ServerInterface : public internal::CallHook {
   ///
   /// \warning It's an error to call this method on an already started server.
   virtual int AddListeningPort(const grpc::string& addr,
-                               ServerCredentials* creds) = 0;
+                               grpc_impl::ServerCredentials* creds) = 0;
 
   /// Start the server.
   ///

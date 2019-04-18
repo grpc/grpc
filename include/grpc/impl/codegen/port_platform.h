@@ -115,6 +115,7 @@
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
+#define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
@@ -144,6 +145,7 @@
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
+#define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
 #elif defined(__linux__)
@@ -170,6 +172,7 @@
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
+#define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
@@ -193,6 +196,7 @@
 #define GPR_PLATFORM_STRING "ios"
 #define GPR_CPU_IPHONE 1
 #define GPR_PTHREAD_TLS 1
+#define GRPC_CFSTREAM 1
 /* the c-ares resolver isnt safe to enable on iOS */
 #define GRPC_ARES 0
 #else /* TARGET_OS_IPHONE */
@@ -234,8 +238,8 @@
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
+#define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
-/* TODO(mxyan): Remove when CFStream becomes default */
 #ifndef GRPC_CFSTREAM
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
 #endif
@@ -260,6 +264,7 @@
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
+#define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
 #ifdef _LP64
@@ -283,6 +288,7 @@
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
+#define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
 #ifdef _LP64
@@ -303,6 +309,7 @@
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
+#define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
@@ -325,6 +332,7 @@
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
+#define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
@@ -353,6 +361,7 @@
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
+#define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
@@ -378,6 +387,7 @@
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_TIME 1
+#define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #else
 #error "Could not auto-detect platform"

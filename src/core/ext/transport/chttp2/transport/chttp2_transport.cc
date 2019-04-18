@@ -119,7 +119,7 @@ static void maybe_start_some_streams(grpc_chttp2_transport* t);
 
 static void connectivity_state_set(grpc_chttp2_transport* t,
                                    grpc_connectivity_state state,
-                                   grpc_error* error, const char* reason);
+                                   const char* reason);
 
 static void benign_reclaimer_locked(void* t, grpc_error* error);
 static void destructive_reclaimer_locked(void* t, grpc_error* error);
@@ -592,8 +592,7 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     }
     GPR_ASSERT(error != GRPC_ERROR_NONE);
     t->closed_with_error = GRPC_ERROR_REF(error);
-    connectivity_state_set(t, GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(error),
-                           "close_transport");
+    connectivity_state_set(t, GRPC_CHANNEL_SHUTDOWN, "close_transport");
     if (t->ping_state.is_delayed_ping_timer_set) {
       grpc_timer_cancel(&t->ping_state.delayed_ping_timer);
     }
@@ -645,17 +644,22 @@ void grpc_chttp2_stream_unref(grpc_chttp2_stream* s) {
 }
 #endif
 
+grpc_chttp2_stream::Reffer::Reffer(grpc_chttp2_stream* s) {
+  /* We reserve one 'active stream' that's dropped when the stream is
+     read-closed. The others are for Chttp2IncomingByteStreams that are
+     actively reading */
+  GRPC_CHTTP2_STREAM_REF(s, "chttp2");
+  GRPC_CHTTP2_REF_TRANSPORT(s->t, "stream");
+}
+
 grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
                                        grpc_stream_refcount* refcount,
                                        const void* server_data,
                                        gpr_arena* arena)
-    : t(t), refcount(refcount), metadata_buffer{{arena}, {arena}} {
-  /* We reserve one 'active stream' that's dropped when the stream is
-     read-closed. The others are for Chttp2IncomingByteStreams that are
-     actively reading */
-  GRPC_CHTTP2_STREAM_REF(this, "chttp2");
-  GRPC_CHTTP2_REF_TRANSPORT(t, "stream");
-
+    : t(t),
+      refcount(refcount),
+      reffer(this),
+      metadata_buffer{{arena}, {arena}} {
   if (server_data) {
     id = static_cast<uint32_t>((uintptr_t)server_data);
     *t->accepting_stream = this;
@@ -1166,8 +1170,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
 
   /* lie: use transient failure from the transport to indicate goaway has been
    * received */
-  connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE,
-                         GRPC_ERROR_REF(t->goaway_error), "got_goaway");
+  connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE, "got_goaway");
 }
 
 static void maybe_start_some_streams(grpc_chttp2_transport* t) {
@@ -1189,10 +1192,8 @@ static void maybe_start_some_streams(grpc_chttp2_transport* t) {
     t->next_stream_id += 2;
 
     if (t->next_stream_id >= MAX_CLIENT_STREAM_ID) {
-      connectivity_state_set(
-          t, GRPC_CHANNEL_TRANSIENT_FAILURE,
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Stream IDs exhausted"),
-          "no_more_stream_ids");
+      connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE,
+                             "no_more_stream_ids");
     }
 
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
@@ -2598,6 +2599,9 @@ static void start_bdp_ping_locked(void* tp, grpc_error* error) {
     gpr_log(GPR_INFO, "%s: Start BDP ping err=%s", t->peer_string,
             grpc_error_string(error));
   }
+  if (error != GRPC_ERROR_NONE || t->closed_with_error != GRPC_ERROR_NONE) {
+    return;
+  }
   /* Reset the keepalive ping timer */
   if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_WAITING) {
     grpc_timer_cancel(&t->keepalive_ping_timer);
@@ -2611,7 +2615,7 @@ static void finish_bdp_ping_locked(void* tp, grpc_error* error) {
     gpr_log(GPR_INFO, "%s: Complete BDP ping err=%s", t->peer_string,
             grpc_error_string(error));
   }
-  if (error != GRPC_ERROR_NONE) {
+  if (error != GRPC_ERROR_NONE || t->closed_with_error != GRPC_ERROR_NONE) {
     GRPC_CHTTP2_UNREF_TRANSPORT(t, "bdp_ping");
     return;
   }
@@ -2796,9 +2800,9 @@ static void keepalive_watchdog_fired_locked(void* arg, grpc_error* error) {
 
 static void connectivity_state_set(grpc_chttp2_transport* t,
                                    grpc_connectivity_state state,
-                                   grpc_error* error, const char* reason) {
+                                   const char* reason) {
   GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "set connectivity_state=%d", state));
-  grpc_connectivity_state_set(&t->channel_callback.state_tracker, state, error,
+  grpc_connectivity_state_set(&t->channel_callback.state_tracker, state,
                               reason);
 }
 

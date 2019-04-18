@@ -152,13 +152,3 @@ some configuration as environment variables that can be set.
 * grpc_cfstream
   set to 1 to turn on CFStream experiment. With this experiment gRPC uses CFStream API to make TCP
   connections. The option is only available on iOS platform and when macro GRPC_CFSTREAM is defined.
-
-* GRPC_ARENA_INIT_STRATEGY
-  Selects the initialization strategy for blocks allocated in the arena. Valid
-  values are:
-  - no_init (default): Do not initialize the arena block.
-  - zero_init: Initialize the arena blocks with 0.
-  - non_zero_init: Initialize the arena blocks with a non-zero value.
-
-  NOTE: This environment variable is experimental and will be removed. Thus, it
-        should not be relied upon.

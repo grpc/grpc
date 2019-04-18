@@ -37,11 +37,43 @@ namespace grpc {
 // Declare base class of all reactors as internal
 namespace internal {
 
+// Forward declarations
+template <class Request, class Response>
+class CallbackClientStreamingHandler;
+template <class Request, class Response>
+class CallbackServerStreamingHandler;
+template <class Request, class Response>
+class CallbackBidiHandler;
+
 class ServerReactor {
  public:
   virtual ~ServerReactor() = default;
   virtual void OnDone() = 0;
   virtual void OnCancel() = 0;
+
+ private:
+  friend class ::grpc::ServerContext;
+  template <class Request, class Response>
+  friend class CallbackClientStreamingHandler;
+  template <class Request, class Response>
+  friend class CallbackServerStreamingHandler;
+  template <class Request, class Response>
+  friend class CallbackBidiHandler;
+
+  // The ServerReactor is responsible for tracking when it is safe to call
+  // OnCancel. This function should not be called until after OnStarted is done
+  // and the RPC has completed with a cancellation. This is tracked by counting
+  // how many of these conditions have been met and calling OnCancel when none
+  // remain unmet.
+
+  void MaybeCallOnCancel() {
+    if (on_cancel_conditions_remaining_.fetch_sub(
+            1, std::memory_order_acq_rel) == 1) {
+      OnCancel();
+    }
+  }
+
+  std::atomic_int on_cancel_conditions_remaining_{2};
 };
 
 }  // namespace internal
@@ -169,15 +201,22 @@ class ServerCallbackReaderWriter {
 
 // The following classes are the reactor interfaces that are to be implemented
 // by the user, returned as the result of the method handler for a callback
-// method, and activated by the call to OnStarted. Note that none of the classes
-// are pure; all reactions have a default empty reaction so that the user class
-// only needs to override those classes that it cares about.
+// method, and activated by the call to OnStarted. The library guarantees that
+// OnStarted will be called for any reactor that has been created using a
+// method handler registered on a service. No operation initiation method may be
+// called until after the call to OnStarted.
+// Note that none of the classes are pure; all reactions have a default empty
+// reaction so that the user class only needs to override those classes that it
+// cares about.
 
 /// \a ServerBidiReactor is the interface for a bidirectional streaming RPC.
 template <class Request, class Response>
 class ServerBidiReactor : public internal::ServerReactor {
  public:
   ~ServerBidiReactor() = default;
+
+  /// Do NOT call any operation initiation method (names that start with Start)
+  /// until after the library has called OnStarted on this object.
 
   /// Send any initial metadata stored in the RPC context. If not invoked,
   /// any initial metadata will be passed along with the first Write or the
@@ -245,7 +284,10 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// \param[in] s The status outcome of this RPC
   void Finish(Status s) { stream_->Finish(std::move(s)); }
 
-  /// Notify the application that a streaming RPC has started
+  /// Notify the application that a streaming RPC has started and that it is now
+  /// ok to call any operation initiation method. An RPC is considered started
+  /// after the server has received all initial metadata from the client, which
+  /// is a result of the client calling StartCall().
   ///
   /// \param[in] context The context object now associated with this RPC
   virtual void OnStarted(ServerContext* context) {}
@@ -580,6 +622,8 @@ class CallbackClientStreamingHandler : public MethodHandler {
 
     reader->BindReactor(reactor);
     reactor->OnStarted(param.server_context, reader->response());
+    // The earliest that OnCancel can be called is after OnStarted is done.
+    reactor->MaybeCallOnCancel();
     reader->MaybeDone();
   }
 
@@ -722,6 +766,8 @@ class CallbackServerStreamingHandler : public MethodHandler {
                                  std::move(param.call_requester), reactor);
     writer->BindReactor(reactor);
     reactor->OnStarted(param.server_context, writer->request());
+    // The earliest that OnCancel can be called is after OnStarted is done.
+    reactor->MaybeCallOnCancel();
     writer->MaybeDone();
   }
 
@@ -898,6 +944,8 @@ class CallbackBidiHandler : public MethodHandler {
 
     stream->BindReactor(reactor);
     reactor->OnStarted(param.server_context);
+    // The earliest that OnCancel can be called is after OnStarted is done.
+    reactor->MaybeCallOnCancel();
     stream->MaybeDone();
   }
 

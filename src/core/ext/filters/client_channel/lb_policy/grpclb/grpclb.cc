@@ -88,7 +88,6 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/mutex_lock.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -234,12 +233,19 @@ class GrpcLb : public LoadBalancingPolicy {
 
     // Returns the LB token to use for a drop, or null if the call
     // should not be dropped.
-    // Intended to be called from picker, so calls will be externally
-    // synchronized.
+    //
+    // Note: This is called from the picker, so it will be invoked in
+    // the channel's data plane combiner, NOT the control plane
+    // combiner.  It should not be accessed by any other part of the LB
+    // policy.
     const char* ShouldDrop();
 
    private:
     grpc_grpclb_serverlist* serverlist_;
+
+    // Guarded by the channel's data plane combiner, NOT the control
+    // plane combiner.  It should not be accessed by anything but the
+    // picker via the ShouldDrop() method.
     size_t drop_index_ = 0;
   };
 
@@ -275,7 +281,7 @@ class GrpcLb : public LoadBalancingPolicy {
     Subchannel* CreateSubchannel(const grpc_channel_args& args) override;
     grpc_channel* CreateChannel(const char* target,
                                 const grpc_channel_args& args) override;
-    void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
+    void UpdateState(grpc_connectivity_state state,
                      UniquePtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
 
@@ -551,7 +557,7 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs* pick, grpc_error** error) {
     // subchannel call (and therefore no client_load_reporting filter)
     // for dropped calls.
     if (client_stats_ != nullptr) {
-      client_stats_->AddCallDroppedLocked(drop_token);
+      client_stats_->AddCallDropped(drop_token);
     }
     return PICK_COMPLETE;
   }
@@ -615,12 +621,8 @@ grpc_channel* GrpcLb::Helper::CreateChannel(const char* target,
 }
 
 void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
-                                 grpc_error* state_error,
                                  UniquePtr<SubchannelPicker> picker) {
-  if (parent_->shutting_down_) {
-    GRPC_ERROR_UNREF(state_error);
-    return;
-  }
+  if (parent_->shutting_down_) return;
   // If this request is from the pending child policy, ignore it until
   // it reports READY, at which point we swap it into place.
   if (CalledByPendingChild()) {
@@ -630,10 +632,7 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
               parent_.get(), this, parent_->pending_child_policy_.get(),
               grpc_connectivity_state_name(state));
     }
-    if (state != GRPC_CHANNEL_READY) {
-      GRPC_ERROR_UNREF(state_error);
-      return;
-    }
+    if (state != GRPC_CHANNEL_READY) return;
     grpc_pollset_set_del_pollset_set(
         parent_->child_policy_->interested_parties(),
         parent_->interested_parties());
@@ -641,7 +640,6 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
     parent_->child_policy_ = std::move(parent_->pending_child_policy_);
   } else if (!CalledByCurrentChild()) {
     // This request is from an outdated child, so ignore it.
-    GRPC_ERROR_UNREF(state_error);
     return;
   }
   // Record whether child policy reports READY.
@@ -676,8 +674,7 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
               parent_.get(), this, grpc_connectivity_state_name(state),
               picker.get());
     }
-    parent_->channel_control_helper()->UpdateState(state, state_error,
-                                                   std::move(picker));
+    parent_->channel_control_helper()->UpdateState(state, std::move(picker));
     return;
   }
   // Cases 2 and 3a: wrap picker from the child in our own picker.
@@ -692,10 +689,9 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
     client_stats = parent_->lb_calld_->client_stats()->Ref();
   }
   parent_->channel_control_helper()->UpdateState(
-      state, state_error,
-      UniquePtr<SubchannelPicker>(
-          New<Picker>(parent_.get(), parent_->serverlist_, std::move(picker),
-                      std::move(client_stats))));
+      state, UniquePtr<SubchannelPicker>(
+                 New<Picker>(parent_.get(), parent_->serverlist_,
+                             std::move(picker), std::move(client_stats))));
 }
 
 void GrpcLb::Helper::RequestReresolution() {
@@ -910,7 +906,7 @@ void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
   // Construct message payload.
   GPR_ASSERT(send_message_payload_ == nullptr);
   grpc_grpclb_request* request =
-      grpc_grpclb_load_report_request_create_locked(client_stats_.get());
+      grpc_grpclb_load_report_request_create(client_stats_.get());
   // Skip client load report if the counters were all zero in the last
   // report and they are still zero in this one.
   if (LoadReportCountersAreZero(request)) {

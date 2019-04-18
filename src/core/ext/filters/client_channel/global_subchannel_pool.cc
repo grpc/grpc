@@ -20,11 +20,12 @@
 
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 
+#include <grpcpp/impl/codegen/sync.h>
+
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/mutex_lock.h"
 
 constexpr grpc_millis kDefaultSweepIntervalMs = 1000;
 

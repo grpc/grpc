@@ -135,7 +135,7 @@ Code at `src/core/lib/iomgr/ev_epollex_posix.cc`
   - The same FD can be in multiple `Pollable`s (even if one of the `Pollable`s is of type PO_FD)
   - There cannot be two `Pollable`s of type PO_FD for the same fd
 
-- Why do we need `Pollable` of type PO_FD and PO_EMTPY ?
+- Why do we need `Pollable` of type PO_FD and PO_EMPTY ?
   - The main reason is the Sync client API
     - We create one new completion queue per call. If we didn’t have PO_EMPTY and PO_FD type pollables, then every call on a given channel will effectively have to create a `Pollable` and hence an epollset. This is because every completion queue automatically creates a pollset and the channel fd will have to be put in that pollset. This clearly requires an epollset to put that fd. Creating an epollset per call (even if we delete the epollset once the call is completed) would mean a lot of sys calls to create/delete epoll fds. This is clearly not a good idea.
     - With these new types of `Pollable`s, all pollsets (corresponding to the new per-call completion queue) will initially point to PO_EMPTY global epollset. Then once the channel fd is added to the pollset, the pollset will point to the `Pollable` of type PO_FD containing just that fd (i.e it will reuse the existing `Pollable`). This way, the epoll fd creation/deletion churn is avoided.

@@ -29,7 +29,11 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/security/server_credentials.h>
 #include "helper.h"
+#ifdef BAZEL_BUILD
+#include "examples/protos/route_guide.grpc.pb.h"
+#else
 #include "route_guide.grpc.pb.h"
+#endif
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -147,24 +151,25 @@ class RouteGuideImpl final : public RouteGuide::Service {
 
   Status RouteChat(ServerContext* context,
                    ServerReaderWriter<RouteNote, RouteNote>* stream) override {
-    std::vector<RouteNote> received_notes;
     RouteNote note;
     while (stream->Read(&note)) {
-      for (const RouteNote& n : received_notes) {
+      std::unique_lock<std::mutex> lock(mu_);
+      for (const RouteNote& n : received_notes_) {
         if (n.location().latitude() == note.location().latitude() &&
             n.location().longitude() == note.location().longitude()) {
           stream->Write(n);
         }
       }
-      received_notes.push_back(note);
+      received_notes_.push_back(note);
     }
 
     return Status::OK;
   }
 
  private:
-
   std::vector<Feature> feature_list_;
+  std::mutex mu_;
+  std::vector<RouteNote> received_notes_;
 };
 
 void RunServer(const std::string& db_path) {
