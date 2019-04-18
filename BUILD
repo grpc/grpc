@@ -1130,7 +1130,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc++_codegen_base",
         "grpc_base",
         "grpc_client_authority_filter",
         "grpc_deadline_filter",
