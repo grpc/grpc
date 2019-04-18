@@ -22,12 +22,13 @@
 // Tracks the total memory allocated against it, so that future arenas can
 // pre-allocate the right amount of memory
 
-#ifndef GRPC_CORE_LIB_GPR_ARENA_H
-#define GRPC_CORE_LIB_GPR_ARENA_H
+#ifndef GRPC_CORE_LIB_GPRPP_ARENA_H
+#define GRPC_CORE_LIB_GPRPP_ARENA_H
 
 #include <grpc/support/port_platform.h>
 
 #include <new>
+#include <utility>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>
@@ -103,4 +104,4 @@ inline void* gpr_arena_alloc(gpr_arena* arena, size_t size) {
   return arena->Alloc(size);
 }
 
-#endif /* GRPC_CORE_LIB_GPR_ARENA_H */
+#endif /* GRPC_CORE_LIB_GPRPP_ARENA_H */
