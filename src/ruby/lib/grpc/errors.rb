@@ -51,17 +51,20 @@ module GRPC
       Struct::Status.new(code, details, metadata)
     end
 
-    # Converts the exception to a deserialized Google::Rpc::Status proto.
-    # Returns nil if the `grpc-status-details-bin` trailer could not be
+    # Converts the exception to a deserialized {Google::Rpc::Status} object.
+    # Returns `nil` if the `grpc-status-details-bin` trailer could not be
     # converted to a {Google::Rpc::Status} due to the server not providing
     # the necessary trailers.
     #
-    # Raises an error if the server did provide the necessary trailers
-    # but they fail to deserialize into a {Google::Rpc::Status} protobuf.
-    #
-    # @return [Google::Rpc::Status] with the same code and details
+    # @return [Google::Rpc::Status, nil]
     def to_rpc_status
-      GoogleRpcStatusUtils.extract_google_rpc_status to_status
+      status = to_status
+
+      return if status.nil?
+
+      GoogleRpcStatusUtils.extract_google_rpc_status(status)
+    rescue
+      nil
     end
 
     def self.new_status_exception(code, details = 'unknown cause',
