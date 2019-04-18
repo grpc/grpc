@@ -21,16 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount;
-
-namespace grpc_core {
-class Arena;
-}  // namespace grpc_core
 
 /* --- grpc_auth_context ---
 

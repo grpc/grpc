@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gpr/arena.h"
+#include "src/core/lib/gprpp/arena.h"
 
 #include <string.h>
 #include <new>
@@ -58,8 +58,12 @@ Arena* Arena::Create(size_t initial_size) {
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Arena));
   initial_size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(initial_size);
   size_t alloc_size = base_size + initial_size;
-  return new (gpr_arena_malloc<GPR_CACHELINE_SIZE>(alloc_size))
-      Arena(initial_size);
+  static constexpr size_t alignment =
+      (GPR_CACHELINE_SIZE > GPR_MAX_ALIGNMENT &&
+       GPR_CACHELINE_SIZE % GPR_MAX_ALIGNMENT == 0)
+          ? GPR_CACHELINE_SIZE
+          : GPR_MAX_ALIGNMENT;
+  return new (gpr_arena_malloc<alignment>(alloc_size)) Arena(initial_size);
 }
 
 size_t Arena::Destroy() {
@@ -73,7 +77,7 @@ void* Arena::AllocZone(size_t size) {
   // If the allocation isn't able to end in the initial zone, create a new
   // zone for this allocation, and any unused space in the initial zone is
   // wasted. This overflowing and wasting is uncommon because of our arena
-  // sizing historesis (that is, most calls should have a large enough initial
+  // sizing hysteresis (that is, most calls should have a large enough initial
   // zone and will not need to grow the arena).
   static constexpr size_t zone_base_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Zone));

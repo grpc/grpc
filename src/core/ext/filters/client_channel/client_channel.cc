@@ -1198,10 +1198,7 @@ static void maybe_cache_send_ops_for_batch(call_data* calld,
   }
   // Set up cache for send_message ops.
   if (batch->send_message) {
-    grpc_core::ByteStreamCache* cache =
-        static_cast<grpc_core::ByteStreamCache*>(
-            calld->arena->Alloc(sizeof(grpc_core::ByteStreamCache)));
-    new (cache) grpc_core::ByteStreamCache(
+    auto* cache = calld->arena->New<grpc_core::ByteStreamCache>(
         std::move(batch->payload->send_message.send_message));
     calld->send_messages.push_back(cache);
   }
@@ -1794,10 +1791,8 @@ static subchannel_batch_data* batch_data_create(grpc_call_element* elem,
                                                 int refcount,
                                                 bool set_on_complete) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  subchannel_batch_data* batch_data =
-      new (calld->arena->Alloc(sizeof(*batch_data)))
-          subchannel_batch_data(elem, calld, refcount, set_on_complete);
-  return batch_data;
+  return calld->arena->New<subchannel_batch_data>(elem, calld, refcount,
+                                                  set_on_complete);
 }
 
 static void batch_data_unref(subchannel_batch_data* batch_data) {
