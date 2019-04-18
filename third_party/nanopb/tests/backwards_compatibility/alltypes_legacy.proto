@@ -1,0 +1,110 @@
+syntax = "proto2";
+
+message SubMessage {
+    required string substuff1 = 1 [default = "1"];
+    required int32 substuff2 = 2 [default = 2];
+    optional fixed32 substuff3 = 3 [default = 3];
+}
+
+message EmptyMessage {
+
+}
+
+enum HugeEnum {
+    Negative = -2147483647; /* protoc doesn't accept -2147483648 here */
+    Positive =  2147483647;
+}
+
+message Limits {
+    required int32      int32_min  =  1 [default = 2147483647];
+    required int32      int32_max  =  2 [default = -2147483647];
+    required uint32     uint32_min =  3 [default = 4294967295];
+    required uint32     uint32_max =  4 [default = 0];
+    required int64      int64_min  =  5 [default = 9223372036854775807];
+    required int64      int64_max  =  6 [default = -9223372036854775807];
+    required uint64     uint64_min =  7 [default = 18446744073709551615];
+    required uint64     uint64_max =  8 [default = 0];
+    required HugeEnum   enum_min   =  9 [default = Positive];
+    required HugeEnum   enum_max   = 10 [default = Negative];
+}
+
+enum MyEnum {
+    Zero = 0;
+    First = 1;
+    Second = 2;
+    Truth = 42;
+}
+
+message AllTypes {
+    required int32      req_int32   = 1;
+    required int64      req_int64   = 2;
+    required uint32     req_uint32  = 3;
+    required uint64     req_uint64  = 4;
+    required sint32     req_sint32  = 5;
+    required sint64     req_sint64  = 6;
+    required bool       req_bool    = 7;
+    
+    required fixed32    req_fixed32 = 8;
+    required sfixed32   req_sfixed32= 9;
+    required float      req_float   = 10;
+    
+    required fixed64    req_fixed64 = 11;
+    required sfixed64   req_sfixed64= 12;
+    required double     req_double  = 13;
+    
+    required string     req_string  = 14;
+    required bytes      req_bytes   = 15;
+    required SubMessage req_submsg  = 16;
+    required MyEnum     req_enum    = 17;
+    
+    
+    repeated int32      rep_int32   = 21 [packed = true];
+    repeated int64      rep_int64   = 22 [packed = true];
+    repeated uint32     rep_uint32  = 23 [packed = true];
+    repeated uint64     rep_uint64  = 24 [packed = true];
+    repeated sint32     rep_sint32  = 25 [packed = true];
+    repeated sint64     rep_sint64  = 26 [packed = true];
+    repeated bool       rep_bool    = 27 [packed = true];
+    
+    repeated fixed32    rep_fixed32 = 28 [packed = true];
+    repeated sfixed32   rep_sfixed32= 29 [packed = true];
+    repeated float      rep_float   = 30 [packed = true];
+    
+    repeated fixed64    rep_fixed64 = 31 [packed = true];
+    repeated sfixed64   rep_sfixed64= 32 [packed = true];
+    repeated double     rep_double  = 33 [packed = true];
+    
+    repeated string     rep_string  = 34;
+    repeated bytes      rep_bytes   = 35;
+    repeated SubMessage rep_submsg  = 36;
+    repeated MyEnum     rep_enum    = 37 [packed = true];
+    
+    optional int32      opt_int32   = 41 [default = 4041];
+    optional int64      opt_int64   = 42 [default = 4042];
+    optional uint32     opt_uint32  = 43 [default = 4043];
+    optional uint64     opt_uint64  = 44 [default = 4044];
+    optional sint32     opt_sint32  = 45 [default = 4045];
+    optional sint64     opt_sint64  = 46 [default = 4046];
+    optional bool       opt_bool    = 47 [default = false];
+    
+    optional fixed32    opt_fixed32 = 48 [default = 4048];
+    optional sfixed32   opt_sfixed32= 49 [default = 4049];
+    optional float      opt_float   = 50 [default = 4050];
+    
+    optional fixed64    opt_fixed64 = 51 [default = 4051];
+    optional sfixed64   opt_sfixed64= 52 [default = 4052];
+    optional double     opt_double  = 53 [default = 4053];
+    
+    optional string     opt_string  = 54 [default = "4054"];
+    optional bytes      opt_bytes   = 55 [default = "4055"];
+    optional SubMessage opt_submsg  = 56;
+    optional MyEnum     opt_enum    = 57 [default = Second];
+
+    // Just to make sure that the size of the fields has been calculated
+    // properly, i.e. otherwise a bug in last field might not be detected.
+    required int32      end = 99;
+
+
+    extensions 200 to 255;
+}
+

@@ -1,0 +1,7 @@
+define SubMessage_size \s* 88
+define OneOfMessage_size \s* 113
+define topMessage_size \s* 70
+define MyMessage1_size \s* 46
+define MyMessage2_size \s* 8
+define MyMessage3_size \s* 5
+define MyMessage4_size \s* 18

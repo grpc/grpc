@@ -1,0 +1,7 @@
+# Test that a .proto file without any messages compiles fine.
+
+Import("env")
+
+env.NanopbProto("no_messages")
+env.Object('no_messages.pb.c')
+

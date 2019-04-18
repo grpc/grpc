@@ -1,0 +1,43 @@
+# Run a fuzz test to verify robustness against corrupted/malicious data.
+
+Import("env", "malloc_env")
+
+def set_pkgname(src, dst, pkgname):
+    data = open(str(src)).read()
+    placeholder = '// package name placeholder'
+    assert placeholder in data
+    data = data.replace(placeholder, 'package %s;' % pkgname)
+    open(str(dst), 'w').write(data)
+
+# We want both pointer and static versions of the AllTypes message
+# Prefix them with package name.
+env.Command("alltypes_static.proto", "#alltypes/alltypes.proto",
+            lambda target, source, env: set_pkgname(source[0], target[0], 'alltypes_static'))
+env.Command("alltypes_pointer.proto", "#alltypes/alltypes.proto",
+            lambda target, source, env: set_pkgname(source[0], target[0], 'alltypes_pointer'))
+
+p1 = env.NanopbProto(["alltypes_pointer", "alltypes_pointer.options"])
+p2 = env.NanopbProto(["alltypes_static", "alltypes_static.options"])
+fuzz = malloc_env.Program(["fuzztest.c",
+                    "alltypes_pointer.pb.c",
+                    "alltypes_static.pb.c",
+                    "$COMMON/pb_encode_with_malloc.o",
+                    "$COMMON/pb_decode_with_malloc.o",
+                    "$COMMON/pb_common_with_malloc.o",
+                    "$COMMON/malloc_wrappers.o"])
+
+env.RunTest(fuzz)
+
+fuzzstub = malloc_env.Program(["fuzzstub.c",
+                    "alltypes_pointer.pb.c",
+                    "alltypes_static.pb.c",
+                    "$COMMON/pb_encode_with_malloc.o",
+                    "$COMMON/pb_decode_with_malloc.o",
+                    "$COMMON/pb_common_with_malloc.o",
+                    "$COMMON/malloc_wrappers.o"])
+
+generate_message = malloc_env.Program(["generate_message.c",
+                    "alltypes_static.pb.c",
+                    "$COMMON/pb_encode.o",
+                    "$COMMON/pb_common.o"])
+

@@ -1,0 +1,44 @@
+/*
+ *
+ * Copyright 2018 gRPC authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+#include <grpcpp/impl/codegen/client_interceptor.h>
+
+namespace grpc {
+
+namespace internal {
+experimental::ClientInterceptorFactoryInterface*
+    g_global_client_interceptor_factory = nullptr;
+}
+
+namespace experimental {
+void RegisterGlobalClientInterceptorFactory(
+    ClientInterceptorFactoryInterface* factory) {
+  if (internal::g_global_client_interceptor_factory != nullptr) {
+    GPR_ASSERT(false &&
+               "It is illegal to call RegisterGlobalClientInterceptorFactory "
+               "multiple times.");
+  }
+  internal::g_global_client_interceptor_factory = factory;
+}
+
+// For testing purposes only.
+void TestOnlyResetGlobalClientInterceptorFactory() {
+  internal::g_global_client_interceptor_factory = nullptr;
+}
+}  // namespace experimental
+}  // namespace grpc

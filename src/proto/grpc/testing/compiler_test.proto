@@ -1,0 +1,71 @@
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// File detached comment 1
+
+// File detached comment 2
+
+// File leading comment 1
+syntax = "proto3";
+
+// Ignored detached comment
+// The comments in this file are not meant for readability
+// but rather to test to make sure that the code generator
+// properly preserves comments on files, services, and RPCs
+
+// Ignored package leading comment
+package grpc.testing;
+
+message Request {
+}
+message Response {
+}
+
+// ServiceA detached comment 1
+
+// ServiceA detached comment 2
+
+// ServiceA leading comment 1
+service ServiceA {
+  // MethodA1 leading comment 1
+  rpc MethodA1(Request) returns (Response);  // MethodA1 trailing comment 1
+
+  // MethodA2 detached leading comment 1
+
+  // Method A2 leading comment 1
+  // Method A2 leading comment 2
+  rpc MethodA2(stream Request) returns (Response);
+  // MethodA2 trailing comment 1
+
+  // Method A3 leading comment 1
+  rpc MethodA3(Request) returns (stream Response);
+  // Method A3 trailing comment 1
+
+  // Method A4 leading comment 1
+  rpc MethodA4(stream Request) returns (stream Response);
+  // Method A4 trailing comment 1
+}
+// Ignored ServiceA trailing comment 1
+
+// ServiceB leading comment 1
+service ServiceB {
+  // ServiceB trailing comment 1
+
+  // MethodB1 leading comment 1
+  rpc MethodB1(Request) returns (Response);
+  // MethodB1 trailing comment 1
+}
+// Ignored ServiceB trailing comment 2
+
+// Ignored file trailing comment

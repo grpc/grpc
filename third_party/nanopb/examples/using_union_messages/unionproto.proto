@@ -1,0 +1,32 @@
+// This is an example of how to handle 'union' style messages
+// with nanopb, without allocating memory for all the message types.
+//
+// There is no official type in Protocol Buffers for describing unions,
+// but they are commonly implemented by filling out exactly one of
+// several optional fields.
+
+syntax = "proto2";
+
+message MsgType1
+{
+    required int32 value = 1;
+}
+
+message MsgType2
+{
+    required bool value = 1;
+}
+
+message MsgType3
+{
+    required int32 value1 = 1;
+    required int32 value2 = 2;
+}
+
+message UnionMessage
+{
+    optional MsgType1 msg1 = 1;
+    optional MsgType2 msg2 = 2;
+    optional MsgType3 msg3 = 3;
+}
+

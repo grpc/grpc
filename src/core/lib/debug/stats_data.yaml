@@ -1,0 +1,300 @@
+# Copyright 2017 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Stats data declaration
+# use tools / codegen / core / gen_stats_data.py to turn this into stats_data.h
+
+# overall
+- counter: client_calls_created
+  doc: Number of client side calls created by this process
+- counter: server_calls_created
+  doc: Number of server side calls created by this process
+- histogram: call_initial_size
+  max: 262144
+  buckets: 64
+  doc: Initial size of the grpc_call arena created at call start
+- counter: cqs_created
+  doc: Number of completion queues created
+- counter: client_channels_created
+  doc: Number of client channels created
+- counter: client_subchannels_created
+  doc: Number of client subchannels created
+- counter: server_channels_created
+  doc: Number of server channels created
+# polling
+- counter: syscall_poll
+  doc: Number of polling syscalls (epoll_wait, poll, etc) made by this process
+- counter: syscall_wait
+  doc: Number of sleeping syscalls made by this process
+- histogram: poll_events_returned
+  max: 1024
+  buckets: 128
+  doc: How many events are called for each syscall_poll
+- counter: pollset_kick
+  doc: How many polling wakeups were performed by the process
+       (only valid for epoll1 right now)
+- counter: pollset_kicked_without_poller
+  doc: How many times was a polling wakeup requested without an active poller
+       (only valid for epoll1 right now)
+- counter: pollset_kicked_again
+  doc: How many times was the same polling worker awoken repeatedly before
+       waking up
+       (only valid for epoll1 right now)
+- counter: pollset_kick_wakeup_fd
+  doc: How many times was an eventfd used as the wakeup vector for a polling
+       wakeup
+       (only valid for epoll1 right now)
+- counter: pollset_kick_wakeup_cv
+  doc: How many times was a condition variable used as the wakeup vector for a
+       polling wakeup
+       (only valid for epoll1 right now)
+- counter: pollset_kick_own_thread
+  doc: How many times could a polling wakeup be satisfied by keeping the waking
+       thread awake?
+       (only valid for epoll1 right now)
+# polling
+- counter: syscall_epoll_ctl
+  doc: Number of epoll_ctl calls made (only valid for epollex right now)
+- counter: pollset_fd_cache_hits
+  doc: Number of epoll_ctl calls skipped because the fd was cached as
+       already being added.  (only valid for epollex right now)
+# stats system
+- counter: histogram_slow_lookups
+  doc: Number of times histogram increments went through the slow
+       (binary search) path
+# tcp
+- counter: syscall_write
+  doc: Number of write syscalls (or equivalent - eg sendmsg) made by this process
+- counter: syscall_read
+  doc: Number of read syscalls (or equivalent - eg recvmsg) made by this process
+- histogram: tcp_write_size
+  max: 16777216 # 16 meg max write tracked
+  buckets: 64
+  doc: Number of bytes offered to each syscall_write
+- histogram: tcp_write_iov_size
+  max: 1024
+  buckets: 64
+  doc: Number of byte segments offered to each syscall_write
+- histogram: tcp_read_size
+  max: 16777216
+  buckets: 64
+  doc: Number of bytes received by each syscall_read
+- histogram: tcp_read_offer
+  max: 16777216
+  buckets: 64
+  doc: Number of bytes offered to each syscall_read
+- histogram: tcp_read_offer_iov_size
+  max: 1024
+  buckets: 64
+  doc: Number of byte segments offered to each syscall_read
+- counter: tcp_backup_pollers_created
+  doc: Number of times a backup poller has been created (this can be expensive)
+- counter: tcp_backup_poller_polls
+  doc: Number of polls performed on the backup poller
+# chttp2
+- counter: http2_op_batches
+  doc: Number of batches received by HTTP2 transport
+- counter: http2_op_cancel
+  doc: Number of cancelations received by HTTP2 transport
+- counter: http2_op_send_initial_metadata
+  doc: Number of batches containing send initial metadata
+- counter: http2_op_send_message
+  doc: Number of batches containing send message
+- counter: http2_op_send_trailing_metadata
+  doc: Number of batches containing send trailing metadata
+- counter: http2_op_recv_initial_metadata
+  doc: Number of batches containing receive initial metadata
+- counter: http2_op_recv_message
+  doc: Number of batches containing receive message
+- counter: http2_op_recv_trailing_metadata
+  doc: Number of batches containing receive trailing metadata
+- histogram: http2_send_message_size
+  max: 16777216
+  buckets: 64
+  doc: Size of messages received by HTTP2 transport
+- histogram: http2_send_initial_metadata_per_write
+  max: 1024
+  buckets: 64
+  doc: Number of streams initiated written per TCP write
+- histogram: http2_send_message_per_write
+  max: 1024
+  buckets: 64
+  doc: Number of streams whose payload was written per TCP write
+- histogram: http2_send_trailing_metadata_per_write
+  max: 1024
+  buckets: 64
+  doc: Number of streams terminated per TCP write
+- histogram: http2_send_flowctl_per_write
+  max: 1024
+  buckets: 64
+  doc: Number of flow control updates written per TCP write
+- counter: http2_settings_writes
+  doc: Number of settings frames sent
+- counter: http2_pings_sent
+  doc: Number of HTTP2 pings sent by process
+- counter: http2_writes_begun
+  doc: Number of HTTP2 writes initiated
+- counter: http2_writes_offloaded
+  doc: Number of HTTP2 writes offloaded to the executor from application threads
+- counter: http2_writes_continued
+  doc: Number of HTTP2 writes that finished seeing more data needed to be
+       written
+- counter: http2_partial_writes
+  doc: Number of HTTP2 writes that were made knowing there was still more data
+       to be written (we cap maximum write size to syscall_write)
+- counter: http2_initiate_write_due_to_initial_write
+  doc: Number of HTTP2 writes initiated due to 'initial_write'
+- counter: http2_initiate_write_due_to_start_new_stream
+  doc: Number of HTTP2 writes initiated due to 'start_new_stream'
+- counter: http2_initiate_write_due_to_send_message
+  doc: Number of HTTP2 writes initiated due to 'send_message'
+- counter: http2_initiate_write_due_to_send_initial_metadata
+  doc: Number of HTTP2 writes initiated due to 'send_initial_metadata'
+- counter: http2_initiate_write_due_to_send_trailing_metadata
+  doc: Number of HTTP2 writes initiated due to 'send_trailing_metadata'
+- counter: http2_initiate_write_due_to_retry_send_ping
+  doc: Number of HTTP2 writes initiated due to 'retry_send_ping'
+- counter: http2_initiate_write_due_to_continue_pings
+  doc: Number of HTTP2 writes initiated due to 'continue_pings'
+- counter: http2_initiate_write_due_to_goaway_sent
+  doc: Number of HTTP2 writes initiated due to 'goaway_sent'
+- counter: http2_initiate_write_due_to_rst_stream
+  doc: Number of HTTP2 writes initiated due to 'rst_stream'
+- counter: http2_initiate_write_due_to_close_from_api
+  doc: Number of HTTP2 writes initiated due to 'close_from_api'
+- counter: http2_initiate_write_due_to_stream_flow_control
+  doc: Number of HTTP2 writes initiated due to 'stream_flow_control'
+- counter: http2_initiate_write_due_to_transport_flow_control
+  doc: Number of HTTP2 writes initiated due to 'transport_flow_control'
+- counter: http2_initiate_write_due_to_send_settings
+  doc: Number of HTTP2 writes initiated due to 'send_settings'
+- counter: http2_initiate_write_due_to_bdp_estimator_ping
+  doc: Number of HTTP2 writes initiated due to 'bdp_estimator_ping'
+- counter: http2_initiate_write_due_to_flow_control_unstalled_by_setting
+  doc: Number of HTTP2 writes initiated due to 'flow_control_unstalled_by_setting'
+- counter: http2_initiate_write_due_to_flow_control_unstalled_by_update
+  doc: Number of HTTP2 writes initiated due to 'flow_control_unstalled_by_update'
+- counter: http2_initiate_write_due_to_application_ping
+  doc: Number of HTTP2 writes initiated due to 'application_ping'
+- counter: http2_initiate_write_due_to_keepalive_ping
+  doc: Number of HTTP2 writes initiated due to 'keepalive_ping'
+- counter: http2_initiate_write_due_to_transport_flow_control_unstalled
+  doc: Number of HTTP2 writes initiated due to 'transport_flow_control_unstalled'
+- counter: http2_initiate_write_due_to_ping_response
+  doc: Number of HTTP2 writes initiated due to 'ping_response'
+- counter: http2_initiate_write_due_to_force_rst_stream
+  doc: Number of HTTP2 writes initiated due to 'force_rst_stream'
+- counter: http2_spurious_writes_begun
+  doc: Number of HTTP2 writes initiated with nothing to write
+- counter: hpack_recv_indexed
+  doc: Number of HPACK indexed fields received
+- counter: hpack_recv_lithdr_incidx
+  doc: Number of HPACK literal headers received with incremental indexing
+- counter: hpack_recv_lithdr_incidx_v
+  doc: Number of HPACK literal headers received with incremental indexing and literal keys
+- counter: hpack_recv_lithdr_notidx
+  doc: Number of HPACK literal headers received with no indexing
+- counter: hpack_recv_lithdr_notidx_v
+  doc: Number of HPACK literal headers received with no indexing and literal keys
+- counter: hpack_recv_lithdr_nvridx
+  doc: Number of HPACK literal headers received with never-indexing
+- counter: hpack_recv_lithdr_nvridx_v
+  doc: Number of HPACK literal headers received with never-indexing and literal keys
+- counter: hpack_recv_uncompressed
+  doc: Number of uncompressed strings received in metadata
+- counter: hpack_recv_huffman
+  doc: Number of huffman encoded strings received in metadata
+- counter: hpack_recv_binary
+  doc: Number of binary strings received in metadata
+- counter: hpack_recv_binary_base64
+  doc: Number of binary strings received encoded in base64 in metadata
+- counter: hpack_send_indexed
+  doc: Number of HPACK indexed fields sent
+- counter: hpack_send_lithdr_incidx
+  doc: Number of HPACK literal headers sent with incremental indexing
+- counter: hpack_send_lithdr_incidx_v
+  doc: Number of HPACK literal headers sent with incremental indexing and literal keys
+- counter: hpack_send_lithdr_notidx
+  doc: Number of HPACK literal headers sent with no indexing
+- counter: hpack_send_lithdr_notidx_v
+  doc: Number of HPACK literal headers sent with no indexing and literal keys
+- counter: hpack_send_lithdr_nvridx
+  doc: Number of HPACK literal headers sent with never-indexing
+- counter: hpack_send_lithdr_nvridx_v
+  doc: Number of HPACK literal headers sent with never-indexing and literal keys
+- counter: hpack_send_uncompressed
+  doc: Number of uncompressed strings sent in metadata
+- counter: hpack_send_huffman
+  doc: Number of huffman encoded strings sent in metadata
+- counter: hpack_send_binary
+  doc: Number of binary strings received in metadata
+- counter: hpack_send_binary_base64
+  doc: Number of binary strings received encoded in base64 in metadata
+# combiner locks
+- counter: combiner_locks_initiated
+  doc: Number of combiner lock entries by process
+       (first items queued to a combiner)
+- counter: combiner_locks_scheduled_items
+  doc: Number of items scheduled against combiner locks
+- counter: combiner_locks_scheduled_final_items
+  doc: Number of final items scheduled against combiner locks
+- counter: combiner_locks_offloaded
+  doc: Number of combiner locks offloaded to different threads
+# call combiner locks
+- counter: call_combiner_locks_initiated
+  doc: Number of call combiner lock entries by process
+       (first items queued to a call combiner)
+- counter: call_combiner_locks_scheduled_items
+  doc: Number of items scheduled against call combiner locks
+- counter: call_combiner_set_notify_on_cancel
+  doc: Number of times a cancellation callback was set on a call combiner
+- counter: call_combiner_cancelled
+  doc: Number of times a call combiner was cancelled
+# executor
+- counter: executor_scheduled_short_items
+  doc: Number of finite runtime closures scheduled against the executor
+       (gRPC thread pool)
+- counter: executor_scheduled_long_items
+  doc: Number of potentially infinite runtime closures scheduled against the
+       executor (gRPC thread pool)
+- counter: executor_scheduled_to_self
+  doc: Number of closures scheduled by the executor to the executor
+- counter: executor_wakeup_initiated
+  doc: Number of thread wakeups initiated within the executor
+- counter: executor_queue_drained
+  doc: Number of times an executor queue was drained
+- counter: executor_push_retries
+  doc: Number of times we raced and were forced to retry pushing a closure to
+       the executor
+# server
+- counter: server_requested_calls
+  doc: How many calls were requested (not necessarily received) by the server
+- histogram: server_cqs_checked
+  buckets: 8
+  max: 64
+  doc: How many completion queues were checked looking for a CQ that had
+       requested the incoming call
+- counter: server_slowpath_requests_queued
+  doc: How many times was the server slow path taken (indicates too few
+       outstanding requests)
+# cq
+- counter: cq_ev_queue_trylock_failures
+  doc: Number of lock (trylock) acquisition failures on completion queue event
+       queue. High value here indicates high contention on completion queues
+- counter: cq_ev_queue_trylock_successes
+  doc: Number of lock (trylock) acquisition successes on completion queue event
+       queue.
+- counter: cq_ev_queue_transient_pop_failures
+  doc: Number of times NULL was popped out of completion queue's event queue
+       even though the event queue was not empty

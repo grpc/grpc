@@ -1,0 +1,7 @@
+syntax = "proto2";
+
+message DummyMessage {
+    required string foo = 1;
+    required string bar = 2;
+}
+

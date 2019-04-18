@@ -1,0 +1,10 @@
+<StyleCopSettings Version="105">
+  <SourceFileList>
+    <SourceFile>Math.cs</SourceFile>
+    <Settings>
+    <GlobalSettings>
+      <BooleanProperty Name="RulesEnabledByDefault">False</BooleanProperty>
+    </GlobalSettings>
+    </Settings>
+  </SourceFileList>
+</StyleCopSettings>

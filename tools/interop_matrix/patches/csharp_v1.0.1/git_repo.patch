@@ -1,0 +1,81 @@
+diff --git a/third_party/boringssl b/third_party/boringssl
+index c880e42ba1..70ef9596bb 160000
+--- a/third_party/boringssl
++++ b/third_party/boringssl
+@@ -1 +1 @@
+-Subproject commit c880e42ba1c8032d4cdde2aba0541d8a9d9fa2e9
++Subproject commit 70ef9596bbcc11353b9bb8d4e91478694dd21439
+diff --git a/third_party/gflags b/third_party/gflags
+index 05b155ff59..30dbc81fb5 160000
+--- a/third_party/gflags
++++ b/third_party/gflags
+@@ -1 +1 @@
+-Subproject commit 05b155ff59114735ec8cd089f669c4c3d8f59029
++Subproject commit 30dbc81fb5ffdc98ea9b14b1918bfe4e8779b26e
+diff --git a/third_party/googletest b/third_party/googletest
+index c99458533a..ec44c6c167 160000
+--- a/third_party/googletest
++++ b/third_party/googletest
+@@ -1 +1 @@
+-Subproject commit c99458533a9b4c743ed51537e25989ea55944908
++Subproject commit ec44c6c1675c25b9827aacd08c02433cccde7780
+diff --git a/third_party/protobuf b/third_party/protobuf
+index 1a58673508..b5fbb742af 160000
+--- a/third_party/protobuf
++++ b/third_party/protobuf
+@@ -1 +1 @@
+-Subproject commit 1a586735085e817b1f52e53feec92ce418049f69
++Subproject commit b5fbb742af122b565925987e65c08957739976a7
+diff --git a/third_party/zlib b/third_party/zlib
+index 5089329162..cacf7f1d4e 160000
+--- a/third_party/zlib
++++ b/third_party/zlib
+@@ -1 +1 @@
+-Subproject commit 50893291621658f355bc5b4d450a8d06a563053d
++Subproject commit cacf7f1d4e3d44d871b605da3b647f07d718623f
+diff --git a/tools/dockerfile/interoptest/grpc_interop_csharp/Dockerfile b/tools/dockerfile/interoptest/grpc_interop_csharp/Dockerfile
+index da1d2c645e..f405994293 100644
+--- a/tools/dockerfile/interoptest/grpc_interop_csharp/Dockerfile
++++ b/tools/dockerfile/interoptest/grpc_interop_csharp/Dockerfile
+@@ -67,11 +67,10 @@ RUN apt-get update && apt-get install -y time && apt-get clean
+ # C# dependencies
+ 
+ # Update to a newer version of mono
+-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+-RUN echo "deb http://download.mono-project.com/repo/debian wheezy main" | tee /etc/apt/sources.list.d/mono-xamarin.list
++RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
++RUN echo "deb http://download.mono-project.com/repo/debian wheezy/snapshots/4.6 main" | tee /etc/apt/sources.list.d/official.list
+ RUN echo "deb http://download.mono-project.com/repo/debian wheezy-apache24-compat main" | tee -a /etc/apt/sources.list.d/mono-xamarin.list
+ RUN echo "deb http://download.mono-project.com/repo/debian wheezy-libjpeg62-compat main" | tee -a /etc/apt/sources.list.d/mono-xamarin.list
+-RUN echo "deb http://download.mono-project.com/repo/debian wheezy-libtiff-compat main" | tee -a /etc/apt/sources.list.d/mono-xamarin.list
+ 
+ # Install dependencies
+ RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y \
+diff --git a/tools/dockerfile/interoptest/grpc_interop_csharpcoreclr/Dockerfile b/tools/dockerfile/interoptest/grpc_interop_csharpcoreclr/Dockerfile
+index 65f67d3650..26223753ed 100644
+--- a/tools/dockerfile/interoptest/grpc_interop_csharpcoreclr/Dockerfile
++++ b/tools/dockerfile/interoptest/grpc_interop_csharpcoreclr/Dockerfile
+@@ -82,11 +82,10 @@ RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2
+ # C# dependencies
+ 
+ # Update to a newer version of mono
+-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+-RUN echo "deb http://download.mono-project.com/repo/debian wheezy main" | tee /etc/apt/sources.list.d/mono-xamarin.list
++RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
++RUN echo "deb http://download.mono-project.com/repo/debian jessie main" | tee /etc/apt/sources.list.d/mono-official.list
+ RUN echo "deb http://download.mono-project.com/repo/debian wheezy-apache24-compat main" | tee -a /etc/apt/sources.list.d/mono-xamarin.list
+ RUN echo "deb http://download.mono-project.com/repo/debian wheezy-libjpeg62-compat main" | tee -a /etc/apt/sources.list.d/mono-xamarin.list
+-RUN echo "deb http://download.mono-project.com/repo/debian wheezy-libtiff-compat main" | tee -a /etc/apt/sources.list.d/mono-xamarin.list
+ 
+ # Install dependencies
+ RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y \
+@@ -99,7 +98,8 @@ RUN nuget update -self
+ 
+ # Install dotnet SDK based on https://www.microsoft.com/net/core#debian
+ RUN apt-get update && apt-get install -y curl libunwind8 gettext
+-RUN curl -sSL -o dotnet.tar.gz https://go.microsoft.com/fwlink/?LinkID=809130
++# https://github.com/dotnet/core/blob/master/release-notes/download-archives/1.0.1-preview2-download.md
++RUN curl -sSL -o dotnet.tar.gz https://go.microsoft.com/fwlink/?LinkID=827530
+ RUN mkdir -p /opt/dotnet && tar zxf dotnet.tar.gz -C /opt/dotnet
+ RUN ln -s /opt/dotnet/dotnet /usr/local/bin
+ 

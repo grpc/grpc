@@ -1,0 +1,8 @@
+message TestMessage {
+    required uint32 id = 1;
+    required bytes payload = 2;
+}
+message EncapsulatedMessage {
+    required uint32 id = 1;
+    required TestMessage test = 2;
+}

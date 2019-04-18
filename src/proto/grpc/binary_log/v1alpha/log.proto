@@ -1,0 +1,93 @@
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package grpc.binary_log.v1alpha;
+
+enum Direction {
+  SERVER_SEND = 0;
+  SERVER_RECV = 1;
+  CLIENT_SEND = 2;
+  CLIENT_RECV = 3;
+}
+
+message KeyValuePair {
+  string key = 1;
+  string value = 2;
+}
+
+// Any sort of metadata that may be sent in either direction during a call
+message Metadata {
+  // Cryptographically unique identifier, generated on the client and sent
+  // to the server.
+  uint64 rpc_id = 1;
+  // Timestamp of logging the metadata
+  google.protobuf.Timestamp timestamp = 2;
+  Direction direction = 3;
+  // The actual metadata that is being sent
+  repeated KeyValuePair metadata = 4;
+
+  // Initial metadata sent by the client to initiate a request
+  message ClientInitialMetadata {
+    // The full method name that is being called
+    string method_name = 1;
+    // The call's deadline
+    google.protobuf.Timestamp deadline = 2;
+    // The address of the connected peer
+    string peer = 3;
+  }
+
+  // Arbitrary key/value pairs specified by the user that are not sent over
+  // the network but are nonetheless useful to log
+  message UserData {
+  }
+
+  // Initial metadata response sent by the server after accepting the request
+  message ServerInitialMetadata {
+  }
+
+  // Status sent by the server when closing the call on the server side
+  message ServerStatus {
+    // The status code
+    uint32 code = 1;
+    // The status details
+    string details = 2;
+  }
+
+  oneof kind {
+    ClientInitialMetadata client_initial_metadata = 5;
+    UserData user_data = 6;
+    ServerInitialMetadata server_initial_metadata = 7;
+    ServerStatus server_status = 8;
+  }
+}
+
+// A message that is sent during a call
+message Message {
+  // Cryptographically unique identifier, generated on the client and sent
+  // to the server.
+  uint64 rpc_id = 1;
+  // The sequence number of the message. Messages sent by the client and by the
+  // server should have independently incrementing sequence numbers.
+  uint32 sequence_number = 2;
+  Direction direction = 3;
+  // The length of the complete message.
+  uint32 length = 4;
+  // The contents of the message. May be a prefix instead of the complete
+  // message.
+  bytes data = 5;
+}

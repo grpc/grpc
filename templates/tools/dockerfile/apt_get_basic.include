@@ -1,0 +1,34 @@
+# Install Git and basic packages.
+RUN apt-get update && apt-get install -y ${'\\'}
+  autoconf ${'\\'}
+  autotools-dev ${'\\'}
+  build-essential ${'\\'}
+  bzip2 ${'\\'}
+  ccache ${'\\'}
+  curl ${'\\'}
+  dnsutils ${'\\'}
+  gcc ${'\\'}
+  gcc-multilib ${'\\'}
+  git ${'\\'}
+  golang ${'\\'}
+  gyp ${'\\'}
+  lcov ${'\\'}
+  libc6 ${'\\'}
+  libc6-dbg ${'\\'}
+  libc6-dev ${'\\'}
+  libgtest-dev ${'\\'}
+  libtool ${'\\'}
+  make ${'\\'}
+  perl ${'\\'}
+  strace ${'\\'}
+  python-dev ${'\\'}
+  python-setuptools ${'\\'}
+  python-yaml ${'\\'}
+  telnet ${'\\'}
+  unzip ${'\\'}
+  wget ${'\\'}
+  zip && apt-get clean
+
+#================
+# Build profiling
+RUN apt-get update && apt-get install -y time && apt-get clean

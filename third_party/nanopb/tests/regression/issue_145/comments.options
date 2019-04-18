@@ -1,0 +1,6 @@
+/* Block comment */
+# Line comment
+// Line comment
+DummyMessage.foo /* Block comment */ max_size:5
+DummyMessage.bar max_size:16 # Line comment ###
+

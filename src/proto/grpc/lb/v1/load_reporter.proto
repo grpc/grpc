@@ -1,0 +1,184 @@
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package grpc.lb.v1;
+
+import "google/protobuf/duration.proto";
+
+// The LoadReporter service.
+service LoadReporter {
+  // Report load from server to lb.
+  rpc ReportLoad(stream LoadReportRequest)
+    returns (stream LoadReportResponse) {
+  };
+}
+
+message LoadReportRequest {
+  // This message should be sent on the first request to the gRPC server.
+  InitialLoadReportRequest initial_request = 1;
+}
+
+message InitialLoadReportRequest {
+  // The hostname this load reporter client is requesting load for.
+  string load_balanced_hostname = 1;
+
+  // Additional information to disambiguate orphaned load: load that should have
+  // gone to this load reporter client, but was not able to be sent since the
+  // load reporter client has disconnected. load_key is sent in orphaned load
+  // reports; see Load.load_key.
+  bytes load_key = 2;
+
+  // This interval defines how often the server should send load reports to
+  // the load balancer.
+  google.protobuf.Duration load_report_interval = 3;
+}
+
+message LoadReportResponse {
+  // This message should be sent on the first response to the load balancer.
+  InitialLoadReportResponse initial_response = 1;
+
+  // Reports server-wide statistics for load balancing.
+  // This should be reported with every response.
+  LoadBalancingFeedback load_balancing_feedback = 2;
+
+  // A load report for each <tag, user_id> tuple. This could be considered to be
+  // a multimap indexed by <tag, user_id>. It is not strictly necessary to
+  // aggregate all entries into one entry per <tag, user_id> tuple, although it
+  // is preferred to do so.
+  repeated Load load = 3;
+}
+
+message InitialLoadReportResponse {
+  // Initial response returns the Load balancer ID. This must be plain text
+  // (printable ASCII).
+  string load_balancer_id = 1;
+
+  enum ImplementationIdentifier {
+    IMPL_UNSPECIFIED = 0;
+    CPP = 1;   // Standard Google C++ implementation.
+    JAVA = 2;  // Standard Google Java implementation.
+    GO = 3;    // Standard Google Go implementation.
+  }
+  // Optional identifier of this implementation of the load reporting server.
+  ImplementationIdentifier implementation_id = 2;
+
+  // Optional server_version should be a value that is modified (and
+  // monotonically increased) when changes are made to the server
+  // implementation.
+  int64 server_version = 3;
+}
+
+message LoadBalancingFeedback {
+  // Reports the current utilization of the server (typical range [0.0 - 1.0]).
+  float server_utilization = 1;
+
+  // The total rate of calls handled by this server (including errors).
+  float calls_per_second = 2;
+
+  // The total rate of error responses sent by this server.
+  float errors_per_second = 3;
+}
+
+message Load {
+  // The (plain text) tag used by the calls covered by this load report. The
+  // tag is that part of the load balancer token after removing the load
+  // balancer id. Empty is equivalent to non-existent tag.
+  string load_balance_tag = 1;
+
+  // The user identity authenticated by the calls covered by this load
+  // report. Empty is equivalent to no known user_id.
+  string user_id = 3;
+
+  // IP address of the client that sent these requests, serialized in
+  // network-byte-order. It may either be an IPv4 or IPv6 address.
+  bytes client_ip_address = 15;
+
+  // The number of calls started (since the last report) with the given tag and
+  // user_id.
+  int64 num_calls_started = 4;
+
+  // Indicates whether this load report is an in-progress load report in which
+  // num_calls_in_progress is the only valid entry. If in_progress_report is not
+  // set, num_calls_in_progress will be ignored. If in_progress_report is set,
+  // fields other than num_calls_in_progress and orphaned_load will be ignored.
+  // TODO(juanlishen): A Load is either an in_progress_report or not. We should
+  // make this explicit in hierarchy. From the log, I see in_progress_report_
+  // has a random num_calls_in_progress_ when not set, which might lead to bug
+  // when the balancer process the load report.
+  oneof in_progress_report {
+    // The number of calls in progress (instantaneously) per load balancer id.
+    int64 num_calls_in_progress = 5;
+  }
+
+  // The following values are counts or totals of call statistics that finished
+  // with the given tag and user_id.
+  int64 num_calls_finished_without_error = 6;  // Calls with status OK.
+  int64 num_calls_finished_with_error = 7;  // Calls with status non-OK.
+  // Calls that finished with a status that maps to HTTP 5XX (see
+  // googleapis/google/rpc/code.proto). Note that this is a subset of
+  // num_calls_finished_with_error.
+  int64 num_calls_finished_with_server_error = 16;
+
+  // Totals are from calls that with _and_ without error.
+  int64 total_bytes_sent = 8;
+  int64 total_bytes_received = 9;
+  google.protobuf.Duration total_latency = 10;
+
+  // Optional metrics reported for the call(s). Requires that metric_name is
+  // unique.
+  repeated CallMetricData metric_data = 11;
+
+  // The following two fields are used for reporting orphaned load: load that
+  // could not be reported to the originating balancer either since the balancer
+  // is no longer connected or because the frontend sent an invalid token. These
+  // fields must not be set with normal (unorphaned) load reports.
+  oneof orphaned_load {
+    // Load_key is the load_key from the initial_request from the originating
+    // balancer.
+    bytes load_key = 12 [deprecated=true];
+
+    // If true then this load report is for calls that had an invalid token; the
+    // user is probably abusing the gRPC protocol.
+    // TODO(yankaiz): Rename load_key_unknown.
+    bool load_key_unknown = 13;
+
+    // load_key and balancer_id are included in order to identify orphaned load
+    // from different origins.
+    OrphanedLoadIdentifier orphaned_load_identifier = 14;
+  }
+
+  reserved 2;
+}
+
+message CallMetricData {
+  // Name of the metric; may be empty.
+  string metric_name = 1;
+
+  // Number of calls that finished and included this metric.
+  int64 num_calls_finished_with_metric = 2;
+
+  // Sum of metric values across all calls that finished with this metric.
+  double total_metric_value = 3;
+}
+
+message OrphanedLoadIdentifier {
+  // The load_key from the initial_request from the originating balancer.
+  bytes load_key = 1;
+
+  // The unique ID generated by LoadReporter to identify balancers. Here it
+  // distinguishes orphaned load with a same load_key.
+  string load_balancer_id = 2;
+}

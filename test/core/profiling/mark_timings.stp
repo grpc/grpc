@@ -1,0 +1,40 @@
+/* This script requires a command line argument, to be used in the "process"
+ * probe definition.
+ *
+ * For a statically build binary, that'd be the name of the binary itself.
+ * For dynamically built ones, point to the location of the libgrpc.so being
+ * used. */
+
+global starts, times, times_per_tag
+
+probe process(@1).mark("timing_ns_begin") {
+  starts[$arg1, tid()] = gettimeofday_ns();
+}
+
+probe process(@1).mark("timing_ns_end") {
+  tag = $arg1
+  t = gettimeofday_ns();
+  if (s = starts[tag, tid()]) {
+     times[tag, tid()] <<< t-s;
+     delete starts[tag, tid()];
+  }
+}
+
+probe end {
+  printf("%15s %9s %10s %10s %10s %10s\n", "tag", "tid", "count",
+    "min(ns)", "avg(ns)", "max(ns)");
+  foreach ([tag+, tid] in times) {
+    printf("%15X %9d %10d %10d %10d %10d\n", tag, tid, @count(times[tag, tid]),
+          @min(times[tag, tid]), @avg(times[tag, tid]), @max(times[tag, tid]));
+  }
+
+  printf("Per tag average of averages\n");
+  foreach ([tag+, tid] in times) {
+    times_per_tag[tag] <<< @avg(times[tag, tid]);
+  }
+  printf("%15s %10s %10s\n", "tag", "count", "avg(ns)");
+  foreach ([tag+] in times_per_tag) {
+    printf("%15X %10d %10d\n", tag, @count(times_per_tag[tag]),
+                                    @avg(times_per_tag[tag]));
+  }
+}

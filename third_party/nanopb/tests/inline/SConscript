@@ -1,0 +1,16 @@
+# Test that inlined bytes fields work.
+
+Import("env")
+
+env.NanopbProto("inline")
+env.Object("inline.pb.c")
+
+env.Match(["inline.pb.h", "inline.expected"])
+
+p = env.Program(["inline_unittests.c",
+                 "inline.pb.c",
+                 "$COMMON/pb_encode.o",
+                 "$COMMON/pb_decode.o",
+                 "$COMMON/pb_common.o"])
+
+env.RunTest(p)

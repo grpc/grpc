@@ -1,0 +1,42 @@
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package grpc.testing;
+
+option objc_class_prefix = "AUTH";
+
+// Unary request.
+message Request {
+  // Whether Response should include username.
+  bool fill_username = 4;
+
+  // Whether Response should include OAuth scope.
+  bool fill_oauth_scope = 5;
+}
+
+// Unary response, as configured by the request.
+message Response {
+  // The user the request came from, for verifying authentication was
+  // successful.
+  string username = 2;
+  // OAuth scope.
+  string oauth_scope = 3;
+}
+
+service TestService {
+  // One request followed by one response.
+  rpc UnaryCall(Request) returns (Response);
+}

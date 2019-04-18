@@ -1,0 +1,12 @@
+# Regression test for Issue 118: Short enum names in imported proto files are not honoured
+
+Import("env")
+env = env.Clone()
+env.Append(PROTOCPATH = "#regression/issue_118")
+
+env.NanopbProto("enumdef")
+env.Object('enumdef.pb.c')
+
+env.NanopbProto(["enumuse", "enumdef.proto"])
+env.Object('enumuse.pb.c')
+

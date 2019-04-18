@@ -1,0 +1,26 @@
+# Simulate io errors when encoding and decoding
+
+Import("env", "malloc_env")
+
+c = Copy("$TARGET", "$SOURCE")
+env.Command("alltypes.proto", "#alltypes/alltypes.proto", c)
+env.Command("io_errors.c", "#io_errors/io_errors.c", c)
+
+env.NanopbProto(["alltypes", "alltypes.options"])
+
+ioerr = env.Program(["io_errors.c", "alltypes.pb.c",
+                     "$COMMON/pb_encode_with_malloc.o",
+                     "$COMMON/pb_decode_with_malloc.o",
+                     "$COMMON/pb_common_with_malloc.o",
+                     "$COMMON/malloc_wrappers.o"])
+
+# Run tests under valgrind if available
+valgrind = env.WhereIs('valgrind')
+kwargs = {}
+if valgrind:
+    kwargs['COMMAND'] = valgrind
+    kwargs['ARGS'] = ["-q", "--error-exitcode=99", ioerr[0].abspath]
+
+env.RunTest("io_errors.output", [ioerr, "$BUILD/alltypes/encode_alltypes.output"], **kwargs)
+
+

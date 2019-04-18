@@ -1,0 +1,70 @@
+git:
+  depth: 1
+language: objective-c
+osx_image: xcode7.3
+env:
+  global:
+    - CONFIG=opt
+    - TEST=objc
+    - JOBS=1
+  matrix:
+    - SCHEME="RxLibraryUnitTests"
+      WORKSPACE="Tests.xcworkspace" TEST_PATH="src/objective-c/tests" BUILD_ONLY="false"
+      INTEROP_SERVER="false"
+    - SCHEME="InteropTestsLocalSSL"
+      WORKSPACE="Tests.xcworkspace" TEST_PATH="src/objective-c/tests" BUILD_ONLY="false"
+      INTEROP_SERVER="true"
+    - SCHEME="InteropTestsLocalCleartext"
+      WORKSPACE="Tests.xcworkspace" TEST_PATH="src/objective-c/tests"  BUILD_ONLY="false"
+      INTEROP_SERVER="true"
+    # TODO(jcanizales): Make tests an app project (instead of library), so the following will work.
+    # - SCHEME="InteropTestsRemote"
+    #   WORKSPACE="Tests.xcworkspace" TEST_PATH="src/objective-c/tests" BUILD_ONLY="false"
+    #   INTEROP_SERVER="true"
+    - SCHEME="HelloWorld"
+      WORKSPACE="HelloWorld.xcworkspace" TEST_PATH="examples/objective-c/helloworld"
+      BUILD_ONLY="true" INTEROP_SERVER="false"
+    - SCHEME="RouteGuideClient"
+      WORKSPACE="RouteGuideClient.xcworkspace" TEST_PATH="examples/objective-c/route_guide"
+      BUILD_ONLY="true" INTEROP_SERVER="false"
+    - SCHEME="AuthSample"
+      WORKSPACE="AuthSample.xcworkspace" TEST_PATH="examples/objective-c/auth_sample"
+      BUILD_ONLY="true" INTEROP_SERVER="false"
+    - SCHEME="Sample"
+      WORKSPACE="Sample.xcworkspace" TEST_PATH="src/objective-c/examples/Sample" BUILD_ONLY="true"
+      INTEROP_SERVER="false"
+    - SCHEME="Sample"
+      WORKSPACE="Sample.xcworkspace" TEST_PATH="src/objective-c/examples/Sample" BUILD_ONLY="true"
+      INTEROP_SERVER="false" FRAMEWORKS="YES"
+    - SCHEME="SwiftSample"
+      WORKSPACE="SwiftSample.xcworkspace" TEST_PATH="src/objective-c/examples/SwiftSample"
+      BUILD_ONLY="true" INTEROP_SERVER="false"
+before_install:
+  # Until Travis upgrades from Cocoapods 0.39, we need to do it here.
+  - pod --version
+  - gem uninstall cocoapods -a
+  - gem install cocoapods -v '1.0.1'
+  - pod --version
+  # Recent pods aren't found if we don't explicitly update Cocoapods' repo.
+  - pod repo update
+  - brew install gflags
+install:
+  - pushd $TEST_PATH
+  - pod install
+  - popd
+before_script:
+  - if [ "${INTEROP_SERVER}" = "true" ]; then
+      make interop_server;
+      (bins/$CONFIG/interop_server --port=5050 &);
+      (bins/$CONFIG/interop_server --port=5051 --use_tls &);
+    fi
+script:
+  - if [ "${BUILD_ONLY}" = "true" ]; then
+      xctool -workspace "$TEST_PATH/$WORKSPACE" -scheme "$SCHEME"
+      -sdk iphonesimulator9.3 build;
+    else
+      xctool -workspace "$TEST_PATH/$WORKSPACE" -scheme "$SCHEME"
+      -sdk iphonesimulator9.3 test;
+    fi
+notifications:
+  email: false

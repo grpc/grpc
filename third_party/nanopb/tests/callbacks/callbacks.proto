@@ -1,0 +1,18 @@
+syntax = "proto2";
+
+message SubMessage {
+    optional string stringvalue = 1;
+    repeated int32 int32value = 2;
+    repeated fixed32 fixed32value = 3;
+    repeated fixed64 fixed64value = 4;
+}
+
+message TestMessage {
+    optional string stringvalue = 1;
+    repeated int32 int32value = 2;
+    repeated fixed32 fixed32value = 3;
+    repeated fixed64 fixed64value = 4;
+    optional SubMessage submsg = 5;
+    repeated string repeatedstring = 6;
+}
+

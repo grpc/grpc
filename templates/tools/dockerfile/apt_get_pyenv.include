@@ -1,0 +1,23 @@
+# Install dependencies for pyenv
+RUN apt-get update && apt-get install -y ${'\\'}
+  libbz2-dev ${'\\'}
+  libncurses5-dev ${'\\'}
+  libncursesw5-dev ${'\\'}
+  libreadline-dev ${'\\'}
+  libsqlite3-dev ${'\\'}
+  libssl-dev ${'\\'}
+  llvm ${'\\'}
+  mercurial ${'\\'}
+  zlib1g-dev && apt-get clean
+
+# Install Pyenv and dev Python versions 3.{5,6,7}
+RUN curl -L https://raw.githubusercontent.com/yyuu/pyenv-installer/master/bin/pyenv-installer | bash
+ENV PATH /root/.pyenv/bin:$PATH
+RUN eval "$(pyenv init -)"
+RUN eval "$(pyenv virtualenv-init -)"
+RUN pyenv update
+RUN pyenv install 3.5-dev
+RUN pyenv install 3.6-dev
+RUN pyenv install 3.7-dev
+RUN pyenv install pypy-5.3.1
+RUN pyenv local 3.5-dev 3.6-dev 3.7-dev pypy-5.3.1

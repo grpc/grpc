@@ -1,0 +1,7 @@
+Each fixture (under fixtures/) is paired with each test (under tests/) and
+forms a complete end-to-end test.
+
+To add a new test or fixture:
+- add the code to the relevant directory
+- update gen_build_yaml.py to reflect the change
+- regenerate projects

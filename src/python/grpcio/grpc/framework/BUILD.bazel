@@ -1,0 +1,11 @@
+package(default_visibility = ["//visibility:public"])
+
+py_library(
+    name = "framework",
+    srcs = ["__init__.py",],
+    deps = [
+        "//src/python/grpcio/grpc/framework/common",
+        "//src/python/grpcio/grpc/framework/foundation",
+        "//src/python/grpcio/grpc/framework/interfaces",
+    ],
+)
