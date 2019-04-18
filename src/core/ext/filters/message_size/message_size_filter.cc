@@ -32,6 +32,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_init.h"
 
 typedef struct {
@@ -39,8 +40,99 @@ typedef struct {
   int max_recv_size;
 } message_size_limits;
 
-namespace grpc_core {
 namespace {
+size_t message_size_parser_index;
+
+// Consumes all the errors in the vector and forms a referencing error from
+// them. If the vector is empty, return GRPC_ERROR_NONE.
+template <size_t N>
+grpc_error* CreateErrorFromVector(
+    const char* desc, grpc_core::InlinedVector<grpc_error*, N>* error_list) {
+  grpc_error* error = GRPC_ERROR_NONE;
+  if (error_list->size() != 0) {
+    error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+        desc, error_list->data(), error_list->size());
+    // Remove refs to all errors in error_list.
+    for (size_t i = 0; i < error_list->size(); i++) {
+      GRPC_ERROR_UNREF((*error_list)[i]);
+    }
+    error_list->clear();
+  }
+  return error;
+}
+}  // namespace
+
+namespace grpc_core {
+
+class MessageSizeParsedObject : public ServiceConfigParsedObject {
+ public:
+  MessageSizeParsedObject(int max_send_size, int max_recv_size) {
+    limits_.max_send_size = max_send_size;
+    limits_.max_recv_size = max_recv_size;
+  }
+
+  const message_size_limits& limits() const { return limits_; }
+
+ private:
+  message_size_limits limits_;
+};
+
+UniquePtr<ServiceConfigParsedObject> MessageSizeParser::ParsePerMethodParams(
+    const grpc_json* json, grpc_error** error) {
+  GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+  int max_request_message_bytes = -1;
+  int max_response_message_bytes = -1;
+  InlinedVector<grpc_error*, 4> error_list;
+  for (grpc_json* field = json->child; field != nullptr; field = field->next) {
+    if (field->key == nullptr) continue;
+    if (strcmp(field->key, "maxRequestMessageBytes") == 0) {
+      if (max_request_message_bytes >= 0) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:maxRequestMessageBytes error:Duplicate entry"));
+        continue;
+      }
+      if (field->type != GRPC_JSON_STRING && field->type != GRPC_JSON_NUMBER) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:maxRequestMessageBytes error:should be of type number"));
+        continue;
+      }
+      max_request_message_bytes = gpr_parse_nonnegative_int(field->value);
+      if (max_request_message_bytes == -1) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:maxRequestMessageBytes error:should be non-negative"));
+      }
+    } else if (strcmp(field->key, "maxResponseMessageBytes") == 0) {
+      if (max_response_message_bytes >= 0) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:maxResponseMessageBytes error:Duplicate entry"));
+        continue;
+      }
+      if (field->type != GRPC_JSON_STRING && field->type != GRPC_JSON_NUMBER) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:maxResponseMessageBytes error:should be of type number"));
+      }
+      max_response_message_bytes = gpr_parse_nonnegative_int(field->value);
+      if (max_response_message_bytes == -1) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:maxResponseMessageBytes error:should be non-negative"));
+      }
+    }
+  }
+  if (!error_list.empty()) {
+    *error = CreateErrorFromVector("Message size parser", &error_list);
+    return nullptr;
+  }
+  return UniquePtr<ServiceConfigParsedObject>(New<MessageSizeParsedObject>(
+      max_request_message_bytes, max_response_message_bytes));
+}
+
+void MessageSizeParser::Register() {
+  gpr_log(GPR_ERROR, "registered");
+  message_size_parser_index = ServiceConfig::RegisterParser(
+      UniquePtr<ServiceConfigParser>(New<MessageSizeParser>()));
+}
+
+size_t MessageSizeParser::ParserIndex() { return message_size_parser_index; }
 
 class MessageSizeLimits : public RefCounted<MessageSizeLimits> {
  public:
@@ -60,34 +152,6 @@ class MessageSizeLimits : public RefCounted<MessageSizeLimits> {
 
   message_size_limits limits_;
 };
-
-RefCountedPtr<MessageSizeLimits> MessageSizeLimits::CreateFromJson(
-    const grpc_json* json) {
-  int max_request_message_bytes = -1;
-  int max_response_message_bytes = -1;
-  for (grpc_json* field = json->child; field != nullptr; field = field->next) {
-    if (field->key == nullptr) continue;
-    if (strcmp(field->key, "maxRequestMessageBytes") == 0) {
-      if (max_request_message_bytes >= 0) return nullptr;  // Duplicate.
-      if (field->type != GRPC_JSON_STRING && field->type != GRPC_JSON_NUMBER) {
-        return nullptr;
-      }
-      max_request_message_bytes = gpr_parse_nonnegative_int(field->value);
-      if (max_request_message_bytes == -1) return nullptr;
-    } else if (strcmp(field->key, "maxResponseMessageBytes") == 0) {
-      if (max_response_message_bytes >= 0) return nullptr;  // Duplicate.
-      if (field->type != GRPC_JSON_STRING && field->type != GRPC_JSON_NUMBER) {
-        return nullptr;
-      }
-      max_response_message_bytes = gpr_parse_nonnegative_int(field->value);
-      if (max_response_message_bytes == -1) return nullptr;
-    }
-  }
-  return MakeRefCounted<MessageSizeLimits>(max_request_message_bytes,
-                                           max_response_message_bytes);
-}
-
-}  // namespace
 }  // namespace grpc_core
 
 static void recv_message_ready(void* user_data, grpc_error* error);
@@ -97,6 +161,7 @@ namespace {
 
 struct channel_data {
   message_size_limits limits;
+  grpc_core::RefCountedPtr<grpc_core::ServiceConfig> svc_cfg;
   // Maps path names to refcounted_message_size_limits structs.
   grpc_core::RefCountedPtr<grpc_core::SliceHashTable<
       grpc_core::RefCountedPtr<grpc_core::MessageSizeLimits>>>
@@ -116,21 +181,32 @@ struct call_data {
     // Note: Per-method config is only available on the client, so we
     // apply the max request size to the send limit and the max response
     // size to the receive limit.
-    if (chand.method_limit_table != nullptr) {
-      grpc_core::RefCountedPtr<grpc_core::MessageSizeLimits> limits =
-          grpc_core::ServiceConfig::MethodConfigTableLookup(
-              *chand.method_limit_table, args.path);
-      if (limits != nullptr) {
-        if (limits->limits().max_send_size >= 0 &&
-            (limits->limits().max_send_size < this->limits.max_send_size ||
-             this->limits.max_send_size < 0)) {
-          this->limits.max_send_size = limits->limits().max_send_size;
-        }
-        if (limits->limits().max_recv_size >= 0 &&
-            (limits->limits().max_recv_size < this->limits.max_recv_size ||
-             this->limits.max_recv_size < 0)) {
-          this->limits.max_recv_size = limits->limits().max_recv_size;
-        }
+    const grpc_core::MessageSizeParsedObject* limits = nullptr;
+    const grpc_core::ServiceConfig::ServiceConfigObjectsVector* objs_vector =
+        static_cast<
+            const grpc_core::ServiceConfig::ServiceConfigObjectsVector*>(
+            args.context[GRPC_SERVICE_CONFIG_METHOD_PARAMS].value);
+    if (objs_vector != nullptr) {
+      limits = static_cast<const grpc_core::MessageSizeParsedObject*>(
+          (*objs_vector)[message_size_parser_index].get());
+    } else if (chand.svc_cfg != nullptr) {
+      objs_vector =
+          chand.svc_cfg->GetMethodServiceConfigObjectsVector(args.path);
+      if (objs_vector != nullptr) {
+        limits = static_cast<const grpc_core::MessageSizeParsedObject*>(
+            (*objs_vector)[message_size_parser_index].get());
+      }
+    }
+    if (limits != nullptr) {
+      if (limits->limits().max_send_size >= 0 &&
+          (limits->limits().max_send_size < this->limits.max_send_size ||
+           this->limits.max_send_size < 0)) {
+        this->limits.max_send_size = limits->limits().max_send_size;
+      }
+      if (limits->limits().max_recv_size >= 0 &&
+          (limits->limits().max_recv_size < this->limits.max_recv_size ||
+           this->limits.max_recv_size < 0)) {
+        this->limits.max_recv_size = limits->limits().max_recv_size;
       }
     }
   }
@@ -313,6 +389,7 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
                                      grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
+  new (chand) channel_data();
   chand->limits = get_message_size_limits(args->channel_args);
   // Get method config table from channel args.
   const grpc_arg* channel_arg =
@@ -320,14 +397,14 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
   const char* service_config_str = grpc_channel_arg_get_string(channel_arg);
   if (service_config_str != nullptr) {
     grpc_error* service_config_error = GRPC_ERROR_NONE;
-    grpc_core::RefCountedPtr<grpc_core::ServiceConfig> service_config =
-        grpc_core::ServiceConfig::Create(service_config_str,
-                                         &service_config_error);
-    GRPC_ERROR_UNREF(service_config_error);
-    if (service_config != nullptr) {
-      chand->method_limit_table = service_config->CreateMethodConfigTable(
-          grpc_core::MessageSizeLimits::CreateFromJson);
+    auto svc_cfg = grpc_core::ServiceConfig::Create(service_config_str,
+                                                    &service_config_error);
+    if (service_config_error == GRPC_ERROR_NONE) {
+      chand->svc_cfg = std::move(svc_cfg);
+    } else {
+      gpr_log(GPR_ERROR, "%s", grpc_error_string(service_config_error));
     }
+    GRPC_ERROR_UNREF(service_config_error);
   }
   return GRPC_ERROR_NONE;
 }
@@ -351,6 +428,15 @@ const grpc_channel_filter grpc_message_size_filter = {
     grpc_channel_next_get_info,
     "message_size"};
 
+// Used for GRPC_CLIENT_SUBCHANNEL
+static bool add_message_size_filter(grpc_channel_stack_builder* builder,
+                                    void* arg) {
+  return grpc_channel_stack_builder_prepend_filter(
+      builder, &grpc_message_size_filter, nullptr, nullptr);
+}
+
+// Used for GRPC_CLIENT_DIRECT_CHANNEL and GRPC_SERVER_CHANNEL. Adds the filter
+// only if message size limits or service config is specified.
 static bool maybe_add_message_size_filter(grpc_channel_stack_builder* builder,
                                           void* arg) {
   const grpc_channel_args* channel_args =
@@ -362,7 +448,8 @@ static bool maybe_add_message_size_filter(grpc_channel_stack_builder* builder,
   }
   const grpc_arg* a =
       grpc_channel_args_find(channel_args, GRPC_ARG_SERVICE_CONFIG);
-  if (a != nullptr) {
+  const char* svc_cfg_str = grpc_channel_arg_get_string(a);
+  if (svc_cfg_str != nullptr) {
     enable = true;
   }
   if (enable) {
@@ -376,7 +463,7 @@ static bool maybe_add_message_size_filter(grpc_channel_stack_builder* builder,
 void grpc_message_size_filter_init(void) {
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   maybe_add_message_size_filter, nullptr);
+                                   add_message_size_filter, nullptr);
   grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    maybe_add_message_size_filter, nullptr);

@@ -34,6 +34,7 @@
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
+#include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/surface/channel_init.h"
 
 static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
@@ -51,6 +52,7 @@ static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
 
 void grpc_service_config_register_parsers() {
   grpc_core::internal::ClientChannelServiceConfigParser::Register();
+  grpc_core::MessageSizeParser::Register();
 }
 
 void grpc_client_channel_init(void) {

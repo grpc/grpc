@@ -128,9 +128,8 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
       const SliceHashTable<RefCountedPtr<T>>& table, const grpc_slice& path);
 
   /// Retrieves the parsed global service config object at index \a index.
-  ServiceConfigParsedObject* GetParsedGlobalServiceConfigObject(int index) {
-    GPR_DEBUG_ASSERT(
-        index < static_cast<int>(parsed_global_service_config_objects_.size()));
+  ServiceConfigParsedObject* GetParsedGlobalServiceConfigObject(size_t index) {
+    GPR_DEBUG_ASSERT(index < parsed_global_service_config_objects_.size());
     return parsed_global_service_config_objects_[index].get();
   }
 
