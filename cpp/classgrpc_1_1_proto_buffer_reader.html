@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.19.0</span>
+   &#160;<span id="projectnumber">1.20.0</span>
    </div>
   </td>
  </tr>
@@ -111,6 +111,8 @@ Protected Member Functions</h2></td></tr>
 <tr class="separator:aa50ef34b08b9cb338dc26db6be108748"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0874823748781629e0b2bde470d78bf3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__slice.html">grpc_slice</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_proto_buffer_reader.html#a0874823748781629e0b2bde470d78bf3">slice</a> ()</td></tr>
 <tr class="separator:a0874823748781629e0b2bde470d78bf3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0a79dd8c63deb9cb1837d531229a7577"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__slice.html">grpc_slice</a> **&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_proto_buffer_reader.html#a0a79dd8c63deb9cb1837d531229a7577">mutable_slice_ptr</a> ()</td></tr>
+<tr class="separator:a0a79dd8c63deb9cb1837d531229a7577"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This is a specialization of the protobuf class ZeroCopyInputStream The principle is to get one chunk of data at a time from the proto layer, with options to backup (re-see some bytes) or skip (forward past some bytes) </p>
@@ -250,6 +252,31 @@ Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Returns the total number of bytes read since this object was created. </p>
+
+</div>
+</div>
+<a id="a0a79dd8c63deb9cb1837d531229a7577"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0a79dd8c63deb9cb1837d531229a7577">&#9670;&nbsp;</a></span>mutable_slice_ptr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgrpc__slice.html">grpc_slice</a>** grpc::ProtoBufferReader::mutable_slice_ptr </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -458,7 +485,7 @@ Protected Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:02 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

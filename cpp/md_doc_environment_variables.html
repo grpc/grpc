@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.19.0</span>
+   &#160;<span id="projectnumber">1.20.0</span>
    </div>
   </td>
  </tr>
@@ -81,8 +81,11 @@ $(function() {
 <li>bdp_estimator - traces behavior of bdp estimation logic</li>
 <li>call_combiner - traces call combiner state</li>
 <li>call_error - traces the possible errors contributing to final call status</li>
+<li>cares_resolver - traces operations of the c-ares based DNS resolver</li>
+<li>cares_address_sorting - traces operations of the c-ares based DNS resolver's resolved address sorter</li>
 <li>channel - traces operations on the C core channel stack</li>
-<li>client_channel - traces client channel activity, including resolver and load balancing policy interaction</li>
+<li>client_channel_call - traces client channel call batch activity</li>
+<li>client_channel_routing - traces client channel call routing, including resolver and load balancing policy interaction</li>
 <li>compression - traces compression operations</li>
 <li>connectivity_state - traces connectivity state changes to channels</li>
 <li>executor - traces grpc's internal thread pool ('the executor')</li>
@@ -141,17 +144,17 @@ $(function() {
 <li>ERROR - log only errors</li>
 </ul>
 </li>
-<li>GRPC_TRACE_FUZZER if set, the fuzzers will output trace (it is usually supressed).</li>
+<li>GRPC_TRACE_FUZZER if set, the fuzzers will output trace (it is usually suppressed).</li>
 <li>GRPC_DNS_RESOLVER Declares which DNS resolver to use. The default is ares if gRPC is built with c-ares support. Otherwise, the value of this environment variable is ignored. Available DNS resolver include:<ul>
-<li>native (default)- a DNS resolver based around getaddrinfo(), creates a new thread to perform name resolution</li>
-<li>ares - a DNS resolver based around the c-ares library</li>
+<li>ares (default on most platforms except iOS, Android or Node)- a DNS resolver based around the c-ares library</li>
+<li>native - a DNS resolver based around getaddrinfo(), creates a new thread to perform name resolution</li>
 </ul>
 </li>
 <li>GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS Default: 5000 Declares the interval between two backup polls on client channels. These polls are run in the timer thread so that gRPC can process connection failures while there is no active polling thread. They help reconnect disconnected client channels (mostly due to idleness), so that the next RPC on this channel won't fail. Set to 0 to turn off the backup polls.</li>
 <li>GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL if set, flow control will be effectively disabled. Max out all values and assume the remote peer does the same. Thus we can ignore any flow control bookkeeping, error checking, and decision making</li>
 <li>grpc_cfstream set to 1 to turn on CFStream experiment. With this experiment gRPC uses CFStream API to make TCP connections. The option is only available on iOS platform and when macro GRPC_CFSTREAM is defined.</li>
 <li><p class="startli">GRPC_ARENA_INIT_STRATEGY Selects the initialization strategy for blocks allocated in the arena. Valid values are:</p><ul>
-<li>no_init (default): Do not inialize the arena block.</li>
+<li>no_init (default): Do not initialize the arena block.</li>
 <li>zero_init: Initialize the arena blocks with 0.</li>
 <li>non_zero_init: Initialize the arena blocks with a non-zero value.</li>
 </ul>
@@ -161,7 +164,7 @@ $(function() {
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:02 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.19.0</span>
+   &#160;<span id="projectnumber">1.20.0</span>
    </div>
   </td>
  </tr>
@@ -88,7 +88,7 @@ $(function() {
 <p>Procedure of client:</p>
 <ol type="1">
 <li>Calls Start on server control port with a large deadline or no deadline, waits for its finish and checks it succeeded.</li>
-<li>Initiates a channel connection to server retry port, which should perform reconnections with proper backoffs. A convienent way to achieve this is to call Start with a deadline of 540s. The rpc should fail with deadline exceeded.</li>
+<li>Initiates a channel connection to server retry port, which should perform reconnections with proper backoffs. A convenient way to achieve this is to call Start with a deadline of 540s. The rpc should fail with deadline exceeded.</li>
 <li>Calls Stop on server control port and checks it succeeded.</li>
 <li>Checks the response to see whether the server thinks the backoffs passed the test.</li>
 <li>Optionally, the client can do its own check on the returned backoffs.</li>
@@ -111,7 +111,7 @@ $(function() {
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:02 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

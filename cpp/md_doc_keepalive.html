@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.19.0</span>
+   &#160;<span id="projectnumber">1.20.0</span>
    </div>
   </td>
  </tr>
@@ -65,17 +65,19 @@ $(function() {
 <div class="contents">
 <div class="textblock"><p>The keepalive ping is a way to check if a channel is currently working by sending HTTP2 pings over the transport. It is sent periodically, and if the ping is not acknowledged by the peer within a certain timeout period, the transport is disconnected.</p>
 <p>This guide documents the knobs within gRPC core to control the current behavior of the keepalive ping.</p>
-<p>The keepalive ping is controlled by two important channel arguments -</p><ul>
+<p>The keepalive ping is controlled by two important channel arguments -</p>
+<ul>
 <li><b>GRPC_ARG_KEEPALIVE_TIME_MS</b><ul>
 <li>This channel argument controls the period (in milliseconds) after which a keepalive ping is sent on the transport.</li>
 </ul>
 </li>
 <li><b>GRPC_ARG_KEEPALIVE_TIMEOUT_MS</b><ul>
-<li>This channel argument controls the amount of time (in milliseconds), the sender of the keepalive ping waits for an acknowledgement. If it does not receive an acknowledgement within this time, it will close the connection.</li>
+<li>This channel argument controls the amount of time (in milliseconds) the sender of the keepalive ping waits for an acknowledgement. If it does not receive an acknowledgment within this time, it will close the connection.</li>
 </ul>
 </li>
 </ul>
-<p>The above two channel arguments should be sufficient for most users, but the following arguments can also be useful in certain use cases.</p><ul>
+<p>The above two channel arguments should be sufficient for most users, but the following arguments can also be useful in certain use cases.</p>
+<ul>
 <li><b>GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS</b><ul>
 <li>This channel argument if set to 1 (0 : false; 1 : true), allows keepalive pings to be sent even if there are no calls in flight.</li>
 </ul>
@@ -123,18 +125,18 @@ $(function() {
 </ul>
 </li>
 <li>What happens when the keepalive timer fires?<ul>
-<li>When the keepalive timer fires, gRPC Core would try to send a keepalive ping on the transport. This ping can be blocked if -<ul>
+<li>When the keepalive timer fires, gRPC Core will try to send a keepalive ping on the transport. This ping can be blocked if -<ul>
 <li>there is no active call on that transport and GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS is false.</li>
 <li>the number of pings already sent on the transport without any data has already exceeded GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA.</li>
-<li>the time expired since the previous ping is less than GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS.</li>
+<li>the time elapsed since the previous ping is less than GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS.</li>
 </ul>
 </li>
-<li>If a keepalive ping is not blocked and is sent on the transport, then the keepalive watchdog timer is started which would close the transport if the ping is not acknowledged before it fires.</li>
+<li>If a keepalive ping is not blocked and is sent on the transport, then the keepalive watchdog timer is started which will close the transport if the ping is not acknowledged before it fires.</li>
 </ul>
 </li>
 <li>Why am I receiving a GOAWAY with error code ENHANCE_YOUR_CALM?<ul>
 <li>A server sends a GOAWAY with ENHANCE_YOUR_CALM if the client sends too many misbehaving pings. For example -<ul>
-<li>if a server has GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS set to false, and the client sends pings without there being any call in flight.</li>
+<li>if a server has GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS set to false and the client sends pings without there being any call in flight.</li>
 <li>if the client's GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS setting is lower than the server's GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS. </li>
 </ul>
 </li>
@@ -144,7 +146,7 @@ $(function() {
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:02 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

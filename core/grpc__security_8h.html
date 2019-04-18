@@ -355,6 +355,12 @@ Functions</h2></td></tr>
 <tr class="memitem:a8ff1f21121b5dafaf848683e8eaf74d9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a0927fc30a7bd209877095da5a67ba22c">grpc_tls_server_authorization_check_config</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a8ff1f21121b5dafaf848683e8eaf74d9">grpc_tls_server_authorization_check_config_create</a> (const void *config_user_data, int(*schedule)(void *config_user_data, <a class="el" href="structgrpc__tls__server__authorization__check__arg.html">grpc_tls_server_authorization_check_arg</a> *arg), void(*cancel)(void *config_user_data, <a class="el" href="structgrpc__tls__server__authorization__check__arg.html">grpc_tls_server_authorization_check_arg</a> *arg), void(*destruct)(void *config_user_data))</td></tr>
 <tr class="memdesc:a8ff1f21121b5dafaf848683e8eaf74d9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a grpc_tls_server_authorization_check_config instance.  <a href="#a8ff1f21121b5dafaf848683e8eaf74d9">More...</a><br /></td></tr>
 <tr class="separator:a8ff1f21121b5dafaf848683e8eaf74d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa0d86b58b1fc00d9aad76c00b9c95231"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#aa0d86b58b1fc00d9aad76c00b9c95231">grpc_tls_spiffe_credentials_create</a> (<a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *options)</td></tr>
+<tr class="memdesc:aa0d86b58b1fc00d9aad76c00b9c95231"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; SPIFFE channel/server credentials &mdash;  <a href="#aa0d86b58b1fc00d9aad76c00b9c95231">More...</a><br /></td></tr>
+<tr class="separator:aa0d86b58b1fc00d9aad76c00b9c95231"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a74132d68002c1f3dde8a810e843604ee"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a74132d68002c1f3dde8a810e843604ee">grpc_tls_spiffe_server_credentials_create</a> (<a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *options)</td></tr>
+<tr class="memdesc:a74132d68002c1f3dde8a810e843604ee"><td class="mdescLeft">&#160;</td><td class="mdescRight">This method creates a TLS server credential object.  <a href="#a74132d68002c1f3dde8a810e843604ee">More...</a><br /></td></tr>
+<tr class="separator:a74132d68002c1f3dde8a810e843604ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="a33e259900dbbac0ea018352adf1a4af7"></a>
@@ -1814,7 +1820,9 @@ Functions</h2></td></tr>
 
 <p>Creates an SSL credentials object. </p>
 <ul>
-<li>pem_root_certs is the NULL-terminated string containing the PEM encoding of the server root certificates. If this parameter is NULL, the implementation will first try to dereference the file pointed by the GRPC_DEFAULT_SSL_ROOTS_FILE_PATH environment variable, and if that fails, try to get the roots set by grpc_override_ssl_default_roots. Eventually, if all these fail, it will try to get the roots from a well-known place on disk (in the grpc install directory).</li>
+<li><p class="startli">pem_root_certs is the NULL-terminated string containing the PEM encoding of the server root certificates. If this parameter is NULL, the implementation will first try to dereference the file pointed by the GRPC_DEFAULT_SSL_ROOTS_FILE_PATH environment variable, and if that fails, try to get the roots set by grpc_override_ssl_default_roots. Eventually, if all these fail, it will try to get the roots from a well-known place on disk (in the grpc install directory).</p>
+<p class="startli">gRPC has implemented root cache if the underlying OpenSSL library supports it. The gRPC root certificates cache is only applicable on the default root certificates, which is used when this parameter is nullptr. If user provides their own pem_root_certs, when creating an SSL credential object, gRPC would not be able to cache it, and each subchannel will generate a copy of the root store. So it is recommended to avoid providing large room pem with pem_root_certs parameter to avoid excessive memory consumption, particularly on mobile platforms such as iOS.</p>
+</li>
 <li>pem_key_cert_pair is a pointer on the object containing client's private key and certificate chain. This parameter can be NULL if the client does not have such a key/cert pair.</li>
 <li>verify_options is an optional <a class="el" href="structverify__peer__options.html" title="Object that holds additional peer-verification options on a secure channel. ">verify_peer_options</a> object which holds additional options controlling how peer certificates are verified. For example, you can supply a callback which receives the peer's certificate with which you can do additional verification. Can be NULL, in which case verification will retain default behavior. Any settings in verify_options are copied during this call, so the verify_options object can be released afterwards. </li>
 </ul>
@@ -2466,10 +2474,62 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="aa0d86b58b1fc00d9aad76c00b9c95231"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa0d86b58b1fc00d9aad76c00b9c95231">&#9670;&nbsp;</a></span>grpc_tls_spiffe_credentials_create()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>* grpc_tls_spiffe_credentials_create </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *&#160;</td>
+          <td class="paramname"><em>options</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>&mdash; SPIFFE channel/server credentials &mdash; </p>
+<p>This method creates a TLS SPIFFE channel credential object. It takes ownership of the options parameter.</p>
+<ul>
+<li>options: grpc TLS credentials options instance.</li>
+</ul>
+<p>It returns the created credential object.</p>
+<p>It is used for experimental purpose for now and subject to change. </p>
+
+</div>
+</div>
+<a id="a74132d68002c1f3dde8a810e843604ee"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a74132d68002c1f3dde8a810e843604ee">&#9670;&nbsp;</a></span>grpc_tls_spiffe_server_credentials_create()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a>* grpc_tls_spiffe_server_credentials_create </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *&#160;</td>
+          <td class="paramname"><em>options</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>This method creates a TLS server credential object. </p>
+<p>It takes ownership of the options parameter.</p>
+<ul>
+<li>options: grpc TLS credentials options instance.</li>
+</ul>
+<p>It returns the created credential object.</p>
+<p>It is used for experimental purpose for now and subject to change. </p>
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:01 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

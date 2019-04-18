@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.19.0</span>
+   &#160;<span id="projectnumber">1.20.0</span>
    </div>
   </td>
  </tr>
@@ -81,6 +81,10 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:af0ca5c52e2459067bef4f0cd1a0d0ddf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a519b9e329576b02f16d7fdaa72274ee8"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_callback_reader.html#a519b9e329576b02f16d7fdaa72274ee8">Read</a> (Response *resp)=0</td></tr>
 <tr class="separator:a519b9e329576b02f16d7fdaa72274ee8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb5fc18e98048624b4bb9438b73fcda6"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_callback_reader.html#abb5fc18e98048624b4bb9438b73fcda6">AddHold</a> (int holds)=0</td></tr>
+<tr class="separator:abb5fc18e98048624b4bb9438b73fcda6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af66bb942ae5c78473a784ca414fcbc67"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_callback_reader.html#af66bb942ae5c78473a784ca414fcbc67">RemoveHold</a> ()=0</td></tr>
+<tr class="separator:af66bb942ae5c78473a784ca414fcbc67"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
@@ -116,6 +120,36 @@ template&lt;class Response&gt; </div>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="abb5fc18e98048624b4bb9438b73fcda6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abb5fc18e98048624b4bb9438b73fcda6">&#9670;&nbsp;</a></span>AddHold()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Response&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void <a class="el" href="classgrpc_1_1experimental_1_1_client_callback_reader.html">grpc::experimental::ClientCallbackReader</a>&lt; Response &gt;::AddHold </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>holds</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implemented in <a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_impl.html#a1e5c08e86f7aa2717971577fc9caef09">grpc::internal::ClientCallbackReaderImpl&lt; Response &gt;</a>.</p>
+
+</div>
+</div>
 <a id="a631c6c6ebfe12a7921d2a84b5b7d75ac"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a631c6c6ebfe12a7921d2a84b5b7d75ac">&#9670;&nbsp;</a></span>BindReactor()</h2>
 
@@ -174,6 +208,35 @@ template&lt;class Response&gt; </div>
 
 </div>
 </div>
+<a id="af66bb942ae5c78473a784ca414fcbc67"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af66bb942ae5c78473a784ca414fcbc67">&#9670;&nbsp;</a></span>RemoveHold()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Response&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void <a class="el" href="classgrpc_1_1experimental_1_1_client_callback_reader.html">grpc::experimental::ClientCallbackReader</a>&lt; Response &gt;::RemoveHold </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implemented in <a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_impl.html#ad06650d27882ad59860a7a5bdc37a0c4">grpc::internal::ClientCallbackReaderImpl&lt; Response &gt;</a>.</p>
+
+</div>
+</div>
 <a id="af0ca5c52e2459067bef4f0cd1a0d0ddf"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af0ca5c52e2459067bef4f0cd1a0d0ddf">&#9670;&nbsp;</a></span>StartCall()</h2>
 
@@ -209,7 +272,7 @@ template&lt;class Response&gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:02 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

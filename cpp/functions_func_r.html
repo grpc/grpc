@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.19.0</span>
+   &#160;<span id="projectnumber">1.20.0</span>
    </div>
   </td>
  </tr>
@@ -117,6 +117,10 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_server_builder.html#a06468091b05b8bba676a0b94ca8e1281">grpc::ServerBuilder</a>
 , <a class="el" href="classgrpc_1_1_server_interface.html#adaddf784fcb65fca743b04e1803f72ae">grpc::ServerInterface</a>
 </li>
+<li>RegisterCallbackGenericService()
+: <a class="el" href="classgrpc_1_1_server_builder_1_1experimental__type.html#a1b6e371d11aeb87d773b99c47d27994d">grpc::ServerBuilder::experimental_type</a>
+, <a class="el" href="classgrpc_1_1_server_interface_1_1experimental__registration__interface.html#ad1b4e31d280dc2e26278f0ff498fdf73">grpc::ServerInterface::experimental_registration_interface</a>
+</li>
 <li>RegisteredAsyncRequest()
 : <a class="el" href="classgrpc_1_1_server_interface_1_1_registered_async_request.html#ab346b5990ac6b21df9359cc82549f88c">grpc::ServerInterface::RegisteredAsyncRequest</a>
 </li>
@@ -129,6 +133,17 @@ $(function() {
 <li>Release()
 : <a class="el" href="classgrpc_1_1_byte_buffer.html#ae03627c8b3297965fa0cdd4f03a9af0f">grpc::ByteBuffer</a>
 </li>
+<li>RemoveHold()
+: <a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#a1d5b28aa3951b0e7c8d20f221f5bf680">grpc::experimental::ClientBidiReactor&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_client_callback_reader.html#af66bb942ae5c78473a784ca414fcbc67">grpc::experimental::ClientCallbackReader&lt; Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_client_callback_reader_writer.html#a9fbddaa67f5000986ef848b566e22bd4">grpc::experimental::ClientCallbackReaderWriter&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_client_callback_writer.html#a95761459608977e0e0a77bc9ee7b7492">grpc::experimental::ClientCallbackWriter&lt; Request &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_client_read_reactor.html#af0a331b11ce546786567dc6d784c57a2">grpc::experimental::ClientReadReactor&lt; Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html#aa428f215ede8a02f70788686fcabe4d7">grpc::experimental::ClientWriteReactor&lt; Request &gt;</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_impl.html#ad06650d27882ad59860a7a5bdc37a0c4">grpc::internal::ClientCallbackReaderImpl&lt; Response &gt;</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#acddc40087e2264efff23f0d5e0322302">grpc::internal::ClientCallbackReaderWriterImpl&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html#a96b1094ae7fbbbdff31e873301f3cdfb">grpc::internal::ClientCallbackWriterImpl&lt; Request &gt;</a>
+</li>
 <li>rend()
 : <a class="el" href="classgrpc_1_1string__ref.html#aaa42745d7676088420d47f69a42a40fb">grpc::string_ref</a>
 </li>
@@ -136,7 +151,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_service.html#ae25c433183a8b53945121c67678371f6">grpc::Service</a>
 </li>
 <li>RequestAsyncCall()
-: <a class="el" href="classgrpc_1_1_server_interface.html#a3967d9d5d9eb3e622c7703093e2cfcca">grpc::ServerInterface</a>
+: <a class="el" href="classgrpc_1_1_server_interface.html#a9e786d4bd3956e420c08a8f9671cbc00">grpc::ServerInterface</a>
 </li>
 <li>RequestAsyncClientStreaming()
 : <a class="el" href="classgrpc_1_1_service.html#a307b51caaa0b4c8b54dae23c8bc64851">grpc::Service</a>
@@ -184,13 +199,13 @@ $(function() {
 , <a class="el" href="classgrpc_1_1internal_1_1_templated_bidi_streaming_handler.html#a5170e31524b287b4d1dda277ff45ab85">grpc::internal::TemplatedBidiStreamingHandler&lt; Streamer, WriteNeeded &gt;</a>
 </li>
 <li>RunInterceptors()
-: <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#a2912a6895dfec6974291bd46bc6d5778">grpc::internal::InterceptorBatchMethodsImpl</a>
+: <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#a048a5b38f372dcfce0e29836a87e22ca">grpc::internal::InterceptorBatchMethodsImpl</a>
 </li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:02 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

@@ -32,6 +32,7 @@ var searchData=
   ['gpr_5ferror',['GPR_ERROR',['../impl_2codegen_2log_8h.html#a63faedb3eefd93d1c0e79974be80cc36',1,'log.h']]],
   ['gpr_5fevent_5finit',['GPR_EVENT_INIT',['../impl_2codegen_2sync__generic_8h.html#a6f38fe7692eaa6663c1f79ff5847c050',1,'sync_generic.h']]],
   ['gpr_5fhas_5fattribute',['GPR_HAS_ATTRIBUTE',['../impl_2codegen_2port__platform_8h.html#a4b5b587f4ab8c10f30046681bc5e87da',1,'port_platform.h']]],
+  ['gpr_5fhas_5ffeature',['GPR_HAS_FEATURE',['../impl_2codegen_2port__platform_8h.html#a237f93b6124a494f4aac2d7abc9f1e48',1,'port_platform.h']]],
   ['gpr_5finfo',['GPR_INFO',['../impl_2codegen_2log_8h.html#af0d0d75690f79edc9294498c88f96703',1,'log.h']]],
   ['gpr_5flikely',['GPR_LIKELY',['../impl_2codegen_2port__platform_8h.html#a518d2d0a7ae17a01e2fa2dee0e2f84df',1,'port_platform.h']]],
   ['gpr_5flog_5fverbosity_5funset',['GPR_LOG_VERBOSITY_UNSET',['../impl_2codegen_2log_8h.html#afce870efb3d4bff38f747f79cb6c0f18',1,'log.h']]],

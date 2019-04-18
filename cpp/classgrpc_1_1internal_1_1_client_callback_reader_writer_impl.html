@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.19.0</span>
+   &#160;<span id="projectnumber">1.20.0</span>
    </div>
   </td>
  </tr>
@@ -86,6 +86,10 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a8879d05d49fe72cf8b0ec4a2dd5d0b28"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a618bf8ffa888846a489431fd4bded2db"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#a618bf8ffa888846a489431fd4bded2db">WritesDone</a> () override</td></tr>
 <tr class="separator:a618bf8ffa888846a489431fd4bded2db"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0722f420d776e8ac43689cd314cc40b1"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#a0722f420d776e8ac43689cd314cc40b1">AddHold</a> (int holds) override</td></tr>
+<tr class="separator:a0722f420d776e8ac43689cd314cc40b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acddc40087e2264efff23f0d5e0322302"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#acddc40087e2264efff23f0d5e0322302">RemoveHold</a> () override</td></tr>
+<tr class="separator:acddc40087e2264efff23f0d5e0322302"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1experimental_1_1_client_callback_reader_writer"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1experimental_1_1_client_callback_reader_writer')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1experimental_1_1_client_callback_reader_writer.html">grpc::experimental::ClientCallbackReaderWriter&lt; Request, Response &gt;</a></td></tr>
 <tr class="memitem:ae8d7f5ecbdeb016d827a99891748f5db inherit pub_methods_classgrpc_1_1experimental_1_1_client_callback_reader_writer"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_callback_reader_writer.html#ae8d7f5ecbdeb016d827a99891748f5db">~ClientCallbackReaderWriter</a> ()</td></tr>
 <tr class="separator:ae8d7f5ecbdeb016d827a99891748f5db inherit pub_methods_classgrpc_1_1experimental_1_1_client_callback_reader_writer"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -109,6 +113,36 @@ Additional Inherited Members</h2></td></tr>
 <tr class="separator:a190150153b498683356b618da56ff79c inherit pro_methods_classgrpc_1_1experimental_1_1_client_callback_reader_writer"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a0722f420d776e8ac43689cd314cc40b1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0722f420d776e8ac43689cd314cc40b1">&#9670;&nbsp;</a></span>AddHold()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Request , class Response &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void <a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html">grpc::internal::ClientCallbackReaderWriterImpl</a>&lt; Request, Response &gt;::AddHold </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>holds</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_client_callback_reader_writer.html#aba1d8d8552c52cbeef8a84e19fe54e8d">grpc::experimental::ClientCallbackReaderWriter&lt; Request, Response &gt;</a>.</p>
+
+</div>
+</div>
 <a id="a82dcb5d498ff4d452ced38378b9dffe0"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a82dcb5d498ff4d452ced38378b9dffe0">&#9670;&nbsp;</a></span>MaybeFinish()</h2>
 
@@ -242,6 +276,35 @@ template&lt;class Request , class Response &gt; </div>
 
 </div>
 </div>
+<a id="acddc40087e2264efff23f0d5e0322302"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acddc40087e2264efff23f0d5e0322302">&#9670;&nbsp;</a></span>RemoveHold()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Request , class Response &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void <a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html">grpc::internal::ClientCallbackReaderWriterImpl</a>&lt; Request, Response &gt;::RemoveHold </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_client_callback_reader_writer.html#a9fbddaa67f5000986ef848b566e22bd4">grpc::experimental::ClientCallbackReaderWriter&lt; Request, Response &gt;</a>.</p>
+
+</div>
+</div>
 <a id="a280b84393872fc41fad3bdd44dade1c8"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a280b84393872fc41fad3bdd44dade1c8">&#9670;&nbsp;</a></span>StartCall()</h2>
 
@@ -371,7 +434,7 @@ template&lt;class Request , class Response &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:02 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

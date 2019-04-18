@@ -63,12 +63,12 @@ $(function() {
 <div class="title">gRPC Wait for Ready Semantics </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p>If an RPC is issued but the channel is in <code>TRANSIENT_FAILURE</code> or <code>SHUTDOWN</code> states, the RPC is unable to be transmited promptly. By default, gRPC implementations SHOULD fail such RPCs immediately. This is known as "fail fast," but usage of the term is historical. RPCs SHOULD NOT fail as a result of the channel being in other states (<code>CONNECTING</code>, <code>READY</code>, or <code>IDLE</code>).</p>
+<div class="textblock"><p>If an RPC is issued but the channel is in <code>TRANSIENT_FAILURE</code> or <code>SHUTDOWN</code> states, the RPC is unable to be transmitted promptly. By default, gRPC implementations SHOULD fail such RPCs immediately. This is known as "fail fast," but usage of the term is historical. RPCs SHOULD NOT fail as a result of the channel being in other states (<code>CONNECTING</code>, <code>READY</code>, or <code>IDLE</code>).</p>
 <p>gRPC implementations MAY provide a per-RPC option to not fail RPCs as a result of the channel being in <code>TRANSIENT_FAILURE</code> state. Instead, the implementation queues the RPCs until the channel is <code>READY</code>. This is known as "wait for ready." The RPCs SHOULD still fail before <code>READY</code> if there are unrelated reasons, such as the channel is <code>SHUTDOWN</code> or the RPC's deadline is reached. </p>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:01 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

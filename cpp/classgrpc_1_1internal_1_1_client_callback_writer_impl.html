@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.19.0</span>
+   &#160;<span id="projectnumber">1.20.0</span>
    </div>
   </td>
  </tr>
@@ -84,6 +84,10 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a3f9865b1233ddfd3115533d3e285593a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae10b243f157cb60635d895babc44257a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html#ae10b243f157cb60635d895babc44257a">WritesDone</a> () override</td></tr>
 <tr class="separator:ae10b243f157cb60635d895babc44257a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac6b5cf2fb003d800107aa3fbd48b4df9"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html#ac6b5cf2fb003d800107aa3fbd48b4df9">AddHold</a> (int holds) override</td></tr>
+<tr class="separator:ac6b5cf2fb003d800107aa3fbd48b4df9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a96b1094ae7fbbbdff31e873301f3cdfb"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html#a96b1094ae7fbbbdff31e873301f3cdfb">RemoveHold</a> () override</td></tr>
+<tr class="separator:a96b1094ae7fbbbdff31e873301f3cdfb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1experimental_1_1_client_callback_writer"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1experimental_1_1_client_callback_writer')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1experimental_1_1_client_callback_writer.html">grpc::experimental::ClientCallbackWriter&lt; Request &gt;</a></td></tr>
 <tr class="memitem:a2bdb71869de3fd4a697b70b9826c8dd9 inherit pub_methods_classgrpc_1_1experimental_1_1_client_callback_writer"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_callback_writer.html#a2bdb71869de3fd4a697b70b9826c8dd9">~ClientCallbackWriter</a> ()</td></tr>
 <tr class="separator:a2bdb71869de3fd4a697b70b9826c8dd9 inherit pub_methods_classgrpc_1_1experimental_1_1_client_callback_writer"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -111,6 +115,36 @@ Additional Inherited Members</h2></td></tr>
 <tr class="separator:a9129135cbb452c1580600284e312a087 inherit pro_methods_classgrpc_1_1experimental_1_1_client_callback_writer"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="ac6b5cf2fb003d800107aa3fbd48b4df9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac6b5cf2fb003d800107aa3fbd48b4df9">&#9670;&nbsp;</a></span>AddHold()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Request &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void <a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html">grpc::internal::ClientCallbackWriterImpl</a>&lt; Request &gt;::AddHold </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>holds</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_client_callback_writer.html#ac6c53741ed1c5d7dfd65514ba0daecf6">grpc::experimental::ClientCallbackWriter&lt; Request &gt;</a>.</p>
+
+</div>
+</div>
 <a id="a25f083a59cd22844511bdcf8abd78284"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a25f083a59cd22844511bdcf8abd78284">&#9670;&nbsp;</a></span>MaybeFinish()</h2>
 
@@ -211,6 +245,35 @@ template&lt;class Request &gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<a id="a96b1094ae7fbbbdff31e873301f3cdfb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a96b1094ae7fbbbdff31e873301f3cdfb">&#9670;&nbsp;</a></span>RemoveHold()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Request &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void <a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html">grpc::internal::ClientCallbackWriterImpl</a>&lt; Request &gt;::RemoveHold </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_client_callback_writer.html#a95761459608977e0e0a77bc9ee7b7492">grpc::experimental::ClientCallbackWriter&lt; Request &gt;</a>.</p>
 
 </div>
 </div>
@@ -343,7 +406,7 @@ template&lt;class Request &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:02 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

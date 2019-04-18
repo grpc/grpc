@@ -106,6 +106,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a8352c7f73cf930c8195e547bd1a5a242"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2byte__buffer_8h.html#a8352c7f73cf930c8195e547bd1a5a242">grpc_byte_buffer_reader_next</a> (<a class="el" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> *reader, <a class="el" href="structgrpc__slice.html">grpc_slice</a> *slice)</td></tr>
 <tr class="memdesc:a8352c7f73cf930c8195e547bd1a5a242"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates <em>slice</em> with the next piece of data from from <em>reader</em> and returns.  <a href="#a8352c7f73cf930c8195e547bd1a5a242">More...</a><br /></td></tr>
 <tr class="separator:a8352c7f73cf930c8195e547bd1a5a242"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a52e8989121500cd583bd25ca9f3ff359"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2byte__buffer_8h.html#a52e8989121500cd583bd25ca9f3ff359">grpc_byte_buffer_reader_peek</a> (<a class="el" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> *reader, <a class="el" href="structgrpc__slice.html">grpc_slice</a> **slice)</td></tr>
+<tr class="memdesc:a52e8989121500cd583bd25ca9f3ff359"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - This function may be removed and changed, in the future.  <a href="#a52e8989121500cd583bd25ca9f3ff359">More...</a><br /></td></tr>
+<tr class="separator:a52e8989121500cd583bd25ca9f3ff359"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4cbf1eb762ea3c6c08bcfc46201c7691"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2byte__buffer_8h.html#a4cbf1eb762ea3c6c08bcfc46201c7691">grpc_byte_buffer_reader_readall</a> (<a class="el" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> *reader)</td></tr>
 <tr class="memdesc:a4cbf1eb762ea3c6c08bcfc46201c7691"><td class="mdescLeft">&#160;</td><td class="mdescRight">Merge all data from <em>reader</em> into single slice.  <a href="#a4cbf1eb762ea3c6c08bcfc46201c7691">More...</a><br /></td></tr>
 <tr class="separator:a4cbf1eb762ea3c6c08bcfc46201c7691"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -274,6 +277,40 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a52e8989121500cd583bd25ca9f3ff359"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a52e8989121500cd583bd25ca9f3ff359">&#9670;&nbsp;</a></span>grpc_byte_buffer_reader_peek()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int grpc_byte_buffer_reader_peek </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structgrpc__byte__buffer__reader.html">grpc_byte_buffer_reader</a> *&#160;</td>
+          <td class="paramname"><em>reader</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structgrpc__slice.html">grpc_slice</a> **&#160;</td>
+          <td class="paramname"><em>slice</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>EXPERIMENTAL API - This function may be removed and changed, in the future. </p>
+<p>Updates <em>slice</em> with the next piece of data from from <em>reader</em> and returns</p><ol type="1">
+<li>Returns 0 at the end of the stream. Caller is responsible for making sure the slice pointer remains valid when accessed.</li>
+</ol>
+<p>NOTE: Do not use this function unless the caller can guarantee that the underlying <a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> outlasts the use of the slice. This is only safe when the underlying <a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> remains immutable while slice is being accessed. </p>
+
+</div>
+</div>
 <a id="a4cbf1eb762ea3c6c08bcfc46201c7691"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4cbf1eb762ea3c6c08bcfc46201c7691">&#9670;&nbsp;</a></span>grpc_byte_buffer_reader_readall()</h2>
 
@@ -386,7 +423,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:01 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

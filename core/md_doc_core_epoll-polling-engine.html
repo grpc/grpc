@@ -133,15 +133,15 @@ $(function() {
 </li>
 <li><b>Case 2:</b> The <code>fd</code>and <code>pollset</code> point to different <code>polling_islands</code>: In this case we <em>merge</em> both the polling islands i.e:<ul>
 <li>Add all the <code>fds</code> from the smaller <code>polling_island</code>to the larger <code>polling_island</code> and update the <code>merged_to</code> pointer on the smaller island to point to the larger island.</li>
-<li>Wake up all the threads waiting on the smaller <code>polling_island</code>'s <code>epoll_fd</code> (by signalling the <code>event_fd</code> on that island) and make them now wait on the larger <code>polling_island</code>'s <code>epoll_fd</code></li>
+<li>Wake up all the threads waiting on the smaller <code>polling_island</code>'s <code>epoll_fd</code> (by signaling the <code>event_fd</code> on that island) and make them now wait on the larger <code>polling_island</code>'s <code>epoll_fd</code></li>
 <li>Update <code>fd</code> and <code>pollset</code> to now point to the larger <code>polling_island</code></li>
 </ul>
 </li>
 </ul>
 <h3>4.3 Directed wakeups:</h3>
 <p>The new implementation, just like the current implementation, does not provide us any guarantees that the thread that is woken up is the thread that is actually interested in the event. So the thread that woke up executes the callbacks and finally has to 'kick' the appropriate polling thread interested in the event.</p>
-<p>In the current implementation, every polling thread also had a <code>event_fd</code> on which it was listening to and hence waking it up was as simple as signalling that <code>event_fd</code>. However, using an <code>event_fd</code> also meant that every thread has to use a <code>poll()</code> (on <code>event_fd</code> and <code>epoll_fd</code>) instead of doing an <code>epoll_wait()</code> and this resulted in the thundering herd problems described above.</p>
-<p>The proposal here is to use signals and kicking a thread would just be sending a signal to that thread. Unfortunately there are only a few signals available on posix systems and most of them have pre-determined behavior leaving only a few signals <code>SIGUSR1</code>, <code>SIGUSR2</code> and <code>SIGRTx (SIGRTMIN to SIGRTMAX)</code> for custom use.</p>
+<p>In the current implementation, every polling thread also had a <code>event_fd</code> on which it was listening to and hence waking it up was as simple as signaling that <code>event_fd</code>. However, using an <code>event_fd</code> also meant that every thread has to use a <code>poll()</code> (on <code>event_fd</code> and <code>epoll_fd</code>) instead of doing an <code>epoll_wait()</code> and this resulted in the thundering herd problems described above.</p>
+<p>The proposal here is to use signals and kicking a thread would just be sending a signal to that thread. Unfortunately there are only a few signals available on POSIX systems and most of them have pre-determined behavior leaving only a few signals <code>SIGUSR1</code>, <code>SIGUSR2</code> and <code>SIGRTx (SIGRTMIN to SIGRTMAX)</code> for custom use.</p>
 <p>The calling application might have registered other signal handlers for these signals. `We will provide a new API where the applications can "give a signal number" to gRPC library to use for this purpose.</p>
 <div class="fragment"><div class="line">void grpc_use_signal(int signal_num)</div></div><!-- fragment --><p>If the calling application does not provide a signal number, then the gRPC library will relegate to using a model similar to the current implementation (where every thread does a blocking <code>poll()</code> on its <code>wakeup_fd</code> and the <code>epoll_fd</code>). The function<code>psi_wait()</code>in figure 2 implements this logic.</p>
 <p>**&gt;&gt; **(<b>NOTE</b>: Or alternatively, we can implement a turnstile polling (i.e having only one thread calling <code>epoll_wait()</code> on the epoll set at any time - which all other threads call poll on their <code>wakeup_fds</code>) in case of not getting a signal number from the applications.</p>
@@ -154,7 +154,7 @@ $(function() {
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:01 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

@@ -90,6 +90,7 @@ var searchData=
   ['grpc_5fbyte_5fbuffer_5freader_5fdestroy',['grpc_byte_buffer_reader_destroy',['../impl_2codegen_2byte__buffer_8h.html#ae28a4ce16b0d8ddd506f1df3fcb3c619',1,'byte_buffer.h']]],
   ['grpc_5fbyte_5fbuffer_5freader_5finit',['grpc_byte_buffer_reader_init',['../impl_2codegen_2byte__buffer_8h.html#affd8fb29176a60c44fe704983fa87406',1,'byte_buffer.h']]],
   ['grpc_5fbyte_5fbuffer_5freader_5fnext',['grpc_byte_buffer_reader_next',['../impl_2codegen_2byte__buffer_8h.html#a8352c7f73cf930c8195e547bd1a5a242',1,'byte_buffer.h']]],
+  ['grpc_5fbyte_5fbuffer_5freader_5fpeek',['grpc_byte_buffer_reader_peek',['../impl_2codegen_2byte__buffer_8h.html#a52e8989121500cd583bd25ca9f3ff359',1,'byte_buffer.h']]],
   ['grpc_5fbyte_5fbuffer_5freader_5freadall',['grpc_byte_buffer_reader_readall',['../impl_2codegen_2byte__buffer_8h.html#a4cbf1eb762ea3c6c08bcfc46201c7691',1,'byte_buffer.h']]],
   ['grpc_5fcall_5farena_5falloc',['grpc_call_arena_alloc',['../grpc_8h.html#ab8b0d5c78fb89f05bc43d349dae561be',1,'grpc.h']]],
   ['grpc_5fcall_5fauth_5fcontext',['grpc_call_auth_context',['../grpc__security_8h.html#a3c1860cddc9edaa7f657a98a35b77e80',1,'grpc_security.h']]],
@@ -200,6 +201,7 @@ var searchData=
   ['grpc_5fservice_5faccount_5fjwt_5faccess_5fcredentials_5fcreate',['grpc_service_account_jwt_access_credentials_create',['../grpc__security_8h.html#ae8c4bf6c9657d6e19ea1481c1ea9a5d5',1,'grpc_security.h']]],
   ['grpc_5fset_5fssl_5froots_5foverride_5fcallback',['grpc_set_ssl_roots_override_callback',['../grpc__security_8h.html#a44c23e47832d9cc27bb56822d66bf436',1,'grpc_security.h']]],
   ['grpc_5fshutdown',['grpc_shutdown',['../grpc_8h.html#a35f55253e80714c17f4f3a0657e06f1b',1,'grpc.h']]],
+  ['grpc_5fshutdown_5fblocking',['grpc_shutdown_blocking',['../grpc_8h.html#aceedc7178f15ebef5f518ca180938a20',1,'grpc.h']]],
   ['grpc_5fslice_5fbuf_5fstart_5feq',['grpc_slice_buf_start_eq',['../slice_8h.html#a0ea487d89fdecd0a19b7f16beb9c8c11',1,'slice.h']]],
   ['grpc_5fslice_5fbuffer_5fadd',['grpc_slice_buffer_add',['../slice__buffer_8h.html#ab26ac15839a7837066d0ebabc30313a9',1,'slice_buffer.h']]],
   ['grpc_5fslice_5fbuffer_5fadd_5findexed',['grpc_slice_buffer_add_indexed',['../slice__buffer_8h.html#a14c17527c0b0e8a1a67d354cba8e5575',1,'slice_buffer.h']]],
@@ -268,6 +270,8 @@ var searchData=
   ['grpc_5ftls_5fkey_5fmaterials_5fconfig_5fcreate',['grpc_tls_key_materials_config_create',['../grpc__security_8h.html#a621979e43112a0d91eec9d617736069e',1,'grpc_security.h']]],
   ['grpc_5ftls_5fkey_5fmaterials_5fconfig_5fset_5fkey_5fmaterials',['grpc_tls_key_materials_config_set_key_materials',['../grpc__security_8h.html#ab6371d3ff79d1330eb914bff2122e6f9',1,'grpc_security.h']]],
   ['grpc_5ftls_5fserver_5fauthorization_5fcheck_5fconfig_5fcreate',['grpc_tls_server_authorization_check_config_create',['../grpc__security_8h.html#a8ff1f21121b5dafaf848683e8eaf74d9',1,'grpc_security.h']]],
+  ['grpc_5ftls_5fspiffe_5fcredentials_5fcreate',['grpc_tls_spiffe_credentials_create',['../grpc__security_8h.html#aa0d86b58b1fc00d9aad76c00b9c95231',1,'grpc_security.h']]],
+  ['grpc_5ftls_5fspiffe_5fserver_5fcredentials_5fcreate',['grpc_tls_spiffe_server_credentials_create',['../grpc__security_8h.html#a74132d68002c1f3dde8a810e843604ee',1,'grpc_security.h']]],
   ['grpc_5ftracer_5fset_5fenabled',['grpc_tracer_set_enabled',['../grpc_8h.html#a0bcbc8d69b256843facb8339d812ae2e',1,'grpc.h']]],
   ['grpc_5fversion_5fstring',['grpc_version_string',['../grpc_8h.html#a8bf40c680565d2d3b29b85e8a9e661f3',1,'grpc.h']]]
 ];

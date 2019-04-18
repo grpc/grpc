@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.19.0</span>
+   &#160;<span id="projectnumber">1.20.0</span>
    </div>
   </td>
  </tr>
@@ -77,25 +77,28 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a956039a5e21a71ae2905ae7e5e46641c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_unimplemented_read_reactor.html#a956039a5e21a71ae2905ae7e5e46641c">OnDone</a> () override</td></tr>
 <tr class="separator:a956039a5e21a71ae2905ae7e5e46641c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4f4ae22b433b378892e9333671776b4a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_unimplemented_read_reactor.html#a4f4ae22b433b378892e9333671776b4a">OnStarted</a> (<a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *, Response *) override</td></tr>
+<tr class="memdesc:a4f4ae22b433b378892e9333671776b4a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Similar to ServerBidiReactor::OnStarted, except that this also provides the response object that the stream fills in before calling Finish.  <a href="#a4f4ae22b433b378892e9333671776b4a">More...</a><br /></td></tr>
 <tr class="separator:a4f4ae22b433b378892e9333671776b4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html">grpc::experimental::ServerReadReactor&lt; Request, Response &gt;</a></td></tr>
 <tr class="memitem:a0f1eb21727e8cc23143c10c38cfbe4aa inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html#a0f1eb21727e8cc23143c10c38cfbe4aa">~ServerReadReactor</a> ()=default</td></tr>
 <tr class="separator:a0f1eb21727e8cc23143c10c38cfbe4aa inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:add19c9d33e31deb9e755566259a85018 inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html#add19c9d33e31deb9e755566259a85018">StartSendInitialMetadata</a> ()</td></tr>
+<tr class="memdesc:add19c9d33e31deb9e755566259a85018 inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="mdescLeft">&#160;</td><td class="mdescRight">The following operation initiations are exactly like <a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC. ">ServerBidiReactor</a>.  <a href="classgrpc_1_1experimental_1_1_server_read_reactor.html#add19c9d33e31deb9e755566259a85018">More...</a><br /></td></tr>
+<tr class="separator:add19c9d33e31deb9e755566259a85018 inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8552d29be6b92e3a5ef898c2c7849a8b inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html#a8552d29be6b92e3a5ef898c2c7849a8b">StartRead</a> (Request *req)</td></tr>
+<tr class="separator:a8552d29be6b92e3a5ef898c2c7849a8b inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a878adbceb405639ee4122632acd27232 inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html#a878adbceb405639ee4122632acd27232">Finish</a> (<a class="el" href="classgrpc_1_1_status.html">Status</a> s)</td></tr>
+<tr class="separator:a878adbceb405639ee4122632acd27232 inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3595164a68f50c847da7689a3ca1d02d inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html#a3595164a68f50c847da7689a3ca1d02d">OnSendInitialMetadataDone</a> (bool ok)</td></tr>
+<tr class="memdesc:a3595164a68f50c847da7689a3ca1d02d inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="mdescLeft">&#160;</td><td class="mdescRight">The following notifications are exactly like <a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC. ">ServerBidiReactor</a>.  <a href="classgrpc_1_1experimental_1_1_server_read_reactor.html#a3595164a68f50c847da7689a3ca1d02d">More...</a><br /></td></tr>
 <tr class="separator:a3595164a68f50c847da7689a3ca1d02d inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2c3a41ea9b2f7b6dce158d089f40f296 inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html#a2c3a41ea9b2f7b6dce158d089f40f296">OnReadDone</a> (bool ok)</td></tr>
 <tr class="separator:a2c3a41ea9b2f7b6dce158d089f40f296 inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:add19c9d33e31deb9e755566259a85018 inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html#add19c9d33e31deb9e755566259a85018">StartSendInitialMetadata</a> ()</td></tr>
-<tr class="separator:add19c9d33e31deb9e755566259a85018 inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a30ccd2964a82326dec23de70aefa201d inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html#a30ccd2964a82326dec23de70aefa201d">StartRead</a> (Request *msg)</td></tr>
-<tr class="separator:a30ccd2964a82326dec23de70aefa201d inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a878adbceb405639ee4122632acd27232 inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html#a878adbceb405639ee4122632acd27232">Finish</a> (<a class="el" href="classgrpc_1_1_status.html">Status</a> s)</td></tr>
-<tr class="separator:a878adbceb405639ee4122632acd27232 inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a78aa063aea9c992c740a3b0b6c4cc4db inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html#a78aa063aea9c992c740a3b0b6c4cc4db">OnCancel</a> () override</td></tr>
+<tr class="separator:a78aa063aea9c992c740a3b0b6c4cc4db inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1internal_1_1_server_reactor"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1internal_1_1_server_reactor')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1internal_1_1_server_reactor.html">grpc::internal::ServerReactor</a></td></tr>
 <tr class="memitem:ac1fad8a93bd91539593f9c8c293d82c7 inherit pub_methods_classgrpc_1_1internal_1_1_server_reactor"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_server_reactor.html#ac1fad8a93bd91539593f9c8c293d82c7">~ServerReactor</a> ()=default</td></tr>
 <tr class="separator:ac1fad8a93bd91539593f9c8c293d82c7 inherit pub_methods_classgrpc_1_1internal_1_1_server_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6ce844545a0940a06fd212e09653766e inherit pub_methods_classgrpc_1_1internal_1_1_server_reactor"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_server_reactor.html#a6ce844545a0940a06fd212e09653766e">OnCancel</a> ()</td></tr>
-<tr class="separator:a6ce844545a0940a06fd212e09653766e inherit pub_methods_classgrpc_1_1internal_1_1_server_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a id="a956039a5e21a71ae2905ae7e5e46641c"></a>
@@ -123,7 +126,7 @@ template&lt;class Request , class Response &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Reimplemented from <a class="el" href="classgrpc_1_1internal_1_1_server_reactor.html#a377a148f200732409b747cd0c8a5edd2">grpc::internal::ServerReactor</a>.</p>
+<p>Reimplemented from <a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html#a08253b119c06499ffad271b2a4c45ee5">grpc::experimental::ServerReadReactor&lt; Request, Response &gt;</a>.</p>
 
 </div>
 </div>
@@ -142,13 +145,13 @@ template&lt;class Request , class Response &gt; </div>
           <td class="memname">void <a class="el" href="classgrpc_1_1internal_1_1_unimplemented_read_reactor.html">grpc::internal::UnimplementedReadReactor</a>&lt; Request, Response &gt;::OnStarted </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *&#160;</td>
-          <td class="paramname">, </td>
+          <td class="paramname"><em>context</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">Response *&#160;</td>
-          <td class="paramname">&#160;</td>
+          <td class="paramname"><em>resp</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -163,7 +166,17 @@ template&lt;class Request , class Response &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Reimplemented from <a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html#aca321a638cba60cff295f3611937bb05">grpc::experimental::ServerReadReactor&lt; Request, Response &gt;</a>.</p>
+<p>Similar to ServerBidiReactor::OnStarted, except that this also provides the response object that the stream fills in before calling Finish. </p>
+<p>(It must be filled in if status is OK, but it may be filled in otherwise.)</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">context</td><td>The context object now associated with this RPC </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">resp</td><td>The response object to be used by this RPC </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Reimplemented from <a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html#a97cf2983b47a9b71eca9a479175835b0">grpc::experimental::ServerReadReactor&lt; Request, Response &gt;</a>.</p>
 
 </div>
 </div>
@@ -173,7 +186,7 @@ template&lt;class Request , class Response &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Mar 5 2019 15:13:02 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>
