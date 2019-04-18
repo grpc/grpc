@@ -1493,10 +1493,7 @@ void CallData::MaybeCacheSendOpsForBatch(PendingBatch* pending) {
   }
   // Set up cache for send_message ops.
   if (batch->send_message) {
-    ByteStreamCache* cache = static_cast<ByteStreamCache*>(
-        arena_->Alloc(sizeof(ByteStreamCache)));
-    new (cache)
-        ByteStreamCache(std::move(batch->payload->send_message.send_message));
+    ByteStreamCache* cache = arena_->New<ByteStreamCache>(std::move(batch->payload->send_message.send_message));
     send_messages_.push_back(cache);
   }
   // Save metadata batch for send_trailing_metadata ops.
