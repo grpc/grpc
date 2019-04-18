@@ -874,8 +874,6 @@ TEST_F(SingleBalancerTest, BackendsRestart) {
   WaitForAllBackends();
   // Stop backends.  RPCs should fail.
   ShutdownAllBackends();
-  // FIXME: the goaway is not picked by the transport until after 5s.
-  sleep(6);
   CheckRpcSendFailure();
   // Restart all backends.  RPCs should start succeeding again.
   StartAllBackends();
