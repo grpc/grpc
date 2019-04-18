@@ -23,6 +23,7 @@
 
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/connector.h"
+#include "src/core/ext/filters/client_channel/health/health_check_parser.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -178,12 +179,14 @@ class Subchannel {
  public:
   // The ctor and dtor are not intended to use directly.
   Subchannel(SubchannelKey* key, grpc_connector* connector,
-             const grpc_channel_args* args);
+             const grpc_channel_args* args,
+             const HealthCheckParsedObject* health_check);
   ~Subchannel();
 
   // Creates a subchannel given \a connector and \a args.
   static Subchannel* Create(grpc_connector* connector,
-                            const grpc_channel_args* args);
+                            const grpc_channel_args* args,
+                            const HealthCheckParsedObject* health_check);
 
   // Strong and weak refcounting.
   Subchannel* Ref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);

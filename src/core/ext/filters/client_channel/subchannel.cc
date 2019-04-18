@@ -532,29 +532,11 @@ BackOff::Options ParseArgsForBackoffValues(
       .set_max_backoff(max_backoff_ms);
 }
 
-struct HealthCheckParams {
-  UniquePtr<char> service_name;
-
-  static void Parse(const grpc_json* field, HealthCheckParams* params) {
-    if (strcmp(field->key, "healthCheckConfig") == 0) {
-      if (field->type != GRPC_JSON_OBJECT) return;
-      for (grpc_json* sub_field = field->child; sub_field != nullptr;
-           sub_field = sub_field->next) {
-        if (sub_field->key == nullptr) return;
-        if (strcmp(sub_field->key, "serviceName") == 0) {
-          if (params->service_name != nullptr) return;  // Duplicate.
-          if (sub_field->type != GRPC_JSON_STRING) return;
-          params->service_name.reset(gpr_strdup(sub_field->value));
-        }
-      }
-    }
-  }
-};
-
 }  // namespace
 
 Subchannel::Subchannel(SubchannelKey* key, grpc_connector* connector,
-                       const grpc_channel_args* args)
+                       const grpc_channel_args* args,
+                       const HealthCheckParsedObject* health_check)
     : key_(key),
       connector_(connector),
       backoff_(ParseArgsForBackoffValues(args, &min_connect_timeout_ms_)) {
@@ -586,20 +568,10 @@ Subchannel::Subchannel(SubchannelKey* key, grpc_connector* connector,
                                "subchannel");
   grpc_connectivity_state_init(&state_and_health_tracker_, GRPC_CHANNEL_IDLE,
                                "subchannel");
-  // Check whether we should enable health checking.
-  const char* service_config_json = grpc_channel_arg_get_string(
-      grpc_channel_args_find(args_, GRPC_ARG_SERVICE_CONFIG));
-  if (service_config_json != nullptr) {
-    grpc_error* service_config_error = GRPC_ERROR_NONE;
-    RefCountedPtr<ServiceConfig> service_config =
-        ServiceConfig::Create(service_config_json, &service_config_error);
-    // service_config_error is currently unused.
-    GRPC_ERROR_UNREF(service_config_error);
-    if (service_config != nullptr) {
-      HealthCheckParams params;
-      service_config->ParseGlobalParams(HealthCheckParams::Parse, &params);
-      health_check_service_name_ = std::move(params.service_name);
-    }
+
+  if (health_check != nullptr) {
+    health_check_service_name_ =
+        UniquePtr<char>(gpr_strdup(health_check->service_name()));
   }
   const grpc_arg* arg = grpc_channel_args_find(args_, GRPC_ARG_ENABLE_CHANNELZ);
   const bool channelz_enabled =
@@ -635,7 +607,8 @@ Subchannel::~Subchannel() {
 }
 
 Subchannel* Subchannel::Create(grpc_connector* connector,
-                               const grpc_channel_args* args) {
+                               const grpc_channel_args* args,
+                               const HealthCheckParsedObject* health_check) {
   SubchannelKey* key = New<SubchannelKey>(args);
   SubchannelPoolInterface* subchannel_pool =
       SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(args);
@@ -645,7 +618,7 @@ Subchannel* Subchannel::Create(grpc_connector* connector,
     Delete(key);
     return c;
   }
-  c = New<Subchannel>(key, connector, args);
+  c = New<Subchannel>(key, connector, args, health_check);
   // Try to register the subchannel before setting the subchannel pool.
   // Otherwise, in case of a registration race, unreffing c in
   // RegisterSubchannel() will cause c to be tried to be unregistered, while

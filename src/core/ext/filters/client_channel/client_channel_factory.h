@@ -23,6 +23,7 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/ext/filters/client_channel/health/health_check_parser.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/gprpp/abstract.h"
 
@@ -33,8 +34,9 @@ class ClientChannelFactory {
   virtual ~ClientChannelFactory() = default;
 
   // Creates a subchannel with the specified args.
-  virtual Subchannel* CreateSubchannel(const grpc_channel_args* args)
-      GRPC_ABSTRACT;
+  virtual Subchannel* CreateSubchannel(
+      const grpc_channel_args* args,
+      const HealthCheckParsedObject* health_check) GRPC_ABSTRACT;
 
   // Creates a channel for the specified target with the specified args.
   virtual grpc_channel* CreateChannel(

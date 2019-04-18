@@ -127,7 +127,6 @@ UniquePtr<ServiceConfigParsedObject> MessageSizeParser::ParsePerMethodParams(
 }
 
 void MessageSizeParser::Register() {
-  gpr_log(GPR_ERROR, "registered");
   message_size_parser_index = ServiceConfig::RegisterParser(
       UniquePtr<ServiceConfigParser>(New<MessageSizeParser>()));
 }

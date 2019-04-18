@@ -233,7 +233,8 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
   SubchannelList(LoadBalancingPolicy* policy, TraceFlag* tracer,
                  const ServerAddressList& addresses, grpc_combiner* combiner,
                  LoadBalancingPolicy::ChannelControlHelper* helper,
-                 const grpc_channel_args& args);
+                 const grpc_channel_args& args,
+                 const HealthCheckParsedObject* health_check);
 
   virtual ~SubchannelList();
 
@@ -487,7 +488,7 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
     LoadBalancingPolicy* policy, TraceFlag* tracer,
     const ServerAddressList& addresses, grpc_combiner* combiner,
     LoadBalancingPolicy::ChannelControlHelper* helper,
-    const grpc_channel_args& args)
+    const grpc_channel_args& args, const HealthCheckParsedObject* health_check)
     : InternallyRefCounted<SubchannelListType>(tracer),
       policy_(policy),
       tracer_(tracer),
@@ -522,7 +523,7 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
         &args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove),
         args_to_add.data(), args_to_add.size());
     gpr_free(args_to_add[subchannel_address_arg_index].value.string);
-    Subchannel* subchannel = helper->CreateSubchannel(*new_args);
+    Subchannel* subchannel = helper->CreateSubchannel(*new_args, health_check);
     grpc_channel_args_destroy(new_args);
     if (subchannel == nullptr) {
       // Subchannel could not be created.

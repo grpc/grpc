@@ -438,13 +438,15 @@ class ClientChannelControlHelper
                              "ClientChannelControlHelper");
   }
 
-  Subchannel* CreateSubchannel(const grpc_channel_args& args) override {
+  Subchannel* CreateSubchannel(
+      const grpc_channel_args& args,
+      const HealthCheckParsedObject* health_check) override {
     grpc_arg arg = SubchannelPoolInterface::CreateChannelArg(
         chand_->subchannel_pool.get());
     grpc_channel_args* new_args =
         grpc_channel_args_copy_and_add(&args, &arg, 1);
-    Subchannel* subchannel =
-        chand_->client_channel_factory->CreateSubchannel(new_args);
+    Subchannel* subchannel = chand_->client_channel_factory->CreateSubchannel(
+        new_args, health_check);
     grpc_channel_args_destroy(new_args);
     return subchannel;
   }
@@ -491,7 +493,8 @@ class ClientChannelControlHelper
 // result update.
 static bool process_resolver_result_locked(
     void* arg, grpc_core::Resolver::Result* result, const char** lb_policy_name,
-    const grpc_core::ParsedLoadBalancingConfig** lb_policy_config) {
+    const grpc_core::ParsedLoadBalancingConfig** lb_policy_config,
+    const grpc_core::HealthCheckParsedObject** health_check) {
   channel_data* chand = static_cast<channel_data*>(arg);
   ProcessedResolverResult resolver_result(result, chand->enable_retries);
   const char* service_config_json = resolver_result.service_config_json();
@@ -517,6 +520,7 @@ static bool process_resolver_result_locked(
   // Return results.
   *lb_policy_name = chand->info_lb_policy_name.get();
   *lb_policy_config = resolver_result.lb_policy_config();
+  *health_check = resolver_result.health_check();
   return service_config_changed;
 }
 

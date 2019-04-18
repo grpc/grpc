@@ -30,6 +30,7 @@
 #include <grpcpp/support/channel_arguments.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/deadline/deadline_filter.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/filters/http/message_compress/message_compress_filter.h"
@@ -321,7 +322,8 @@ static void DoNothing(void* arg, grpc_error* error) {}
 class FakeClientChannelFactory : public grpc_core::ClientChannelFactory {
  public:
   grpc_core::Subchannel* CreateSubchannel(
-      const grpc_channel_args* args) override {
+      const grpc_channel_args* args,
+      const grpc_core::HealthCheckParsedObject* health_check) override {
     return nullptr;
   }
   grpc_channel* CreateChannel(const char* target,

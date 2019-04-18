@@ -328,7 +328,9 @@ class XdsLb : public LoadBalancingPolicy {
         explicit Helper(RefCountedPtr<LocalityEntry> entry)
             : entry_(std::move(entry)) {}
 
-        Subchannel* CreateSubchannel(const grpc_channel_args& args) override;
+        Subchannel* CreateSubchannel(
+            const grpc_channel_args& args,
+            const HealthCheckParsedObject* health_check) override;
         grpc_channel* CreateChannel(const char* target,
                                     const grpc_channel_args& args) override;
         void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
@@ -1576,12 +1578,14 @@ bool XdsLb::LocalityMap::LocalityEntry::Helper::CalledByCurrentChild() const {
 }
 
 Subchannel* XdsLb::LocalityMap::LocalityEntry::Helper::CreateSubchannel(
-    const grpc_channel_args& args) {
+    const grpc_channel_args& args,
+    const HealthCheckParsedObject* health_check) {
   if (entry_->parent_->shutting_down_ ||
       (!CalledByPendingChild() && !CalledByCurrentChild())) {
     return nullptr;
   }
-  return entry_->parent_->channel_control_helper()->CreateSubchannel(args);
+  return entry_->parent_->channel_control_helper()->CreateSubchannel(
+      args, health_check);
 }
 
 grpc_channel* XdsLb::LocalityMap::LocalityEntry::Helper::CreateChannel(

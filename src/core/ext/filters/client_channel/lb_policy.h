@@ -175,8 +175,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     virtual ~ChannelControlHelper() = default;
 
     /// Creates a new subchannel with the specified channel args.
-    virtual Subchannel* CreateSubchannel(const grpc_channel_args& args)
-        GRPC_ABSTRACT;
+    virtual Subchannel* CreateSubchannel(
+        const grpc_channel_args& args,
+        const HealthCheckParsedObject* health_check) GRPC_ABSTRACT;
 
     /// Creates a channel with the specified target and channel args.
     /// This can be used in cases where the LB policy needs to create a
@@ -201,6 +202,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   struct UpdateArgs {
     ServerAddressList addresses;
     const ParsedLoadBalancingConfig* config = nullptr;
+    const HealthCheckParsedObject* health_check = nullptr;
     const grpc_channel_args* args = nullptr;
 
     // TODO(roth): Remove everything below once channel args is

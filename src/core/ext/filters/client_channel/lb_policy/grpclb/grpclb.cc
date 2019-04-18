@@ -295,7 +295,9 @@ class GrpcLb : public LoadBalancingPolicy {
     explicit Helper(RefCountedPtr<GrpcLb> parent)
         : parent_(std::move(parent)) {}
 
-    Subchannel* CreateSubchannel(const grpc_channel_args& args) override;
+    Subchannel* CreateSubchannel(
+        const grpc_channel_args& args,
+        const HealthCheckParsedObject* health_check) override;
     grpc_channel* CreateChannel(const char* target,
                                 const grpc_channel_args& args) override;
     void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
@@ -620,12 +622,15 @@ bool GrpcLb::Helper::CalledByCurrentChild() const {
   return child_ == parent_->child_policy_.get();
 }
 
-Subchannel* GrpcLb::Helper::CreateSubchannel(const grpc_channel_args& args) {
+Subchannel* GrpcLb::Helper::CreateSubchannel(
+    const grpc_channel_args& args,
+    const HealthCheckParsedObject* health_check) {
   if (parent_->shutting_down_ ||
       (!CalledByPendingChild() && !CalledByCurrentChild())) {
     return nullptr;
   }
-  return parent_->channel_control_helper()->CreateSubchannel(args);
+  return parent_->channel_control_helper()->CreateSubchannel(args,
+                                                             health_check);
 }
 
 grpc_channel* GrpcLb::Helper::CreateChannel(const char* target,

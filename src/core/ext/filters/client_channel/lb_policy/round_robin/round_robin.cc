@@ -109,9 +109,10 @@ class RoundRobin : public LoadBalancingPolicy {
     RoundRobinSubchannelList(RoundRobin* policy, TraceFlag* tracer,
                              const ServerAddressList& addresses,
                              grpc_combiner* combiner,
-                             const grpc_channel_args& args)
+                             const grpc_channel_args& args,
+                             const HealthCheckParsedObject* health_check)
         : SubchannelList(policy, tracer, addresses, combiner,
-                         policy->channel_control_helper(), args) {
+                         policy->channel_control_helper(), args, health_check) {
       // Need to maintain a ref to the LB policy as long as we maintain
       // any references to subchannels, since the subchannels'
       // pollset_sets will include the LB policy's pollset_set.
@@ -488,7 +489,8 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
     }
   }
   latest_pending_subchannel_list_ = MakeOrphanable<RoundRobinSubchannelList>(
-      this, &grpc_lb_round_robin_trace, args.addresses, combiner(), *args.args);
+      this, &grpc_lb_round_robin_trace, args.addresses, combiner(), *args.args,
+      args.health_check);
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {
     // If the new list is empty, immediately promote the new list to the
     // current list and transition to TRANSIENT_FAILURE.

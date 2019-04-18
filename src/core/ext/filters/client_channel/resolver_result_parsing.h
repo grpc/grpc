@@ -140,6 +140,8 @@ class ProcessedResolverResult {
   const ParsedLoadBalancingConfig* lb_policy_config() {
     return lb_policy_config_;
   }
+
+  const HealthCheckParsedObject* health_check() { return health_check_; }
   RefCountedPtr<ServiceConfig> service_config() { return service_config_; }
 
  private:
@@ -169,6 +171,7 @@ class ProcessedResolverResult {
   // Retry throttle data.
   char* server_name_ = nullptr;
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
+  const HealthCheckParsedObject* health_check_ = nullptr;
 };
 
 }  // namespace internal

@@ -27,6 +27,7 @@
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
+#include "src/core/ext/filters/client_channel/health/health_check_parser.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/http_proxy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
@@ -53,6 +54,7 @@ static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
 void grpc_service_config_register_parsers() {
   grpc_core::internal::ClientChannelServiceConfigParser::Register();
   grpc_core::MessageSizeParser::Register();
+  grpc_core::HealthCheckParser::Register();
 }
 
 void grpc_client_channel_init(void) {

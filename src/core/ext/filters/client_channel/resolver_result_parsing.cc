@@ -108,6 +108,9 @@ grpc_error* CreateErrorFromVector(const char* desc,
 void ProcessedResolverResult::ProcessServiceConfig(
     const Resolver::Result& resolver_result, bool parse_retry) {
   if (service_config_ == nullptr) return;
+  health_check_ = static_cast<HealthCheckParsedObject*>(
+      service_config_->GetParsedGlobalServiceConfigObject(
+          HealthCheckParser::ParserIndex()));
   service_config_json_ = service_config_->service_config_json();
   auto* parsed_object = static_cast<ClientChannelGlobalParsedObject*>(
       service_config_->GetParsedGlobalServiceConfigObject(
@@ -559,12 +562,10 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(const grpc_json* json,
   }
   *error = CreateErrorFromVector("Client channel parser", &error_list);
   if (*error == GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "hura");
     return UniquePtr<ServiceConfigParsedObject>(
         New<ClientChannelMethodParsedObject>(timeout, wait_for_ready,
                                              std::move(retry_policy)));
   }
-  gpr_log(GPR_ERROR, "hura");
   return nullptr;
 }
 

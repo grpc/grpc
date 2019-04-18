@@ -67,7 +67,8 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   // Returns true if the service config has changed since the last result.
   typedef bool (*ProcessResolverResultCallback)(
       void* user_data, Resolver::Result* result, const char** lb_policy_name,
-      const ParsedLoadBalancingConfig** lb_policy_config);
+      const ParsedLoadBalancingConfig** lb_policy_config,
+      const HealthCheckParsedObject** health_check);
   // If error is set when this returns, then construction failed, and
   // the caller may not use the new object.
   ResolvingLoadBalancingPolicy(
@@ -106,7 +107,8 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   void CreateOrUpdateLbPolicyLocked(
       const char* lb_policy_name,
       const ParsedLoadBalancingConfig* lb_policy_config,
-      Resolver::Result result, TraceStringVector* trace_strings);
+      Resolver::Result result, TraceStringVector* trace_strings,
+      const HealthCheckParsedObject* health_check);
   OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(
       const char* lb_policy_name, const grpc_channel_args& args,
       TraceStringVector* trace_strings);

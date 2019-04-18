@@ -88,9 +88,10 @@ class PickFirst : public LoadBalancingPolicy {
     PickFirstSubchannelList(PickFirst* policy, TraceFlag* tracer,
                             const ServerAddressList& addresses,
                             grpc_combiner* combiner,
-                            const grpc_channel_args& args)
+                            const grpc_channel_args& args,
+                            const HealthCheckParsedObject* health_check)
         : SubchannelList(policy, tracer, addresses, combiner,
-                         policy->channel_control_helper(), args) {
+                         policy->channel_control_helper(), args, health_check) {
       // Need to maintain a ref to the LB policy as long as we maintain
       // any references to subchannels, since the subchannels'
       // pollset_sets will include the LB policy's pollset_set.
@@ -254,7 +255,8 @@ void PickFirst::UpdateLocked(UpdateArgs args) {
   grpc_channel_args* new_args =
       grpc_channel_args_copy_and_add(args.args, &new_arg, 1);
   auto subchannel_list = MakeOrphanable<PickFirstSubchannelList>(
-      this, &grpc_lb_pick_first_trace, args.addresses, combiner(), *new_args);
+      this, &grpc_lb_pick_first_trace, args.addresses, combiner(), *new_args,
+      args.health_check);
   grpc_channel_args_destroy(new_args);
   if (subchannel_list->num_subchannels() == 0) {
     // Empty update or no valid subchannels. Unsubscribe from all current
