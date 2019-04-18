@@ -49,23 +49,39 @@ namespace {
 typedef vector<const Descriptor*> DescriptorVector;
 typedef vector<grpc::string> StringVector;
 
+static grpc::string StripModulePrefixes(
+    const grpc::string& raw_module_name,
+    const std::vector<grpc::string>& prefixes_to_filter) {
+  for (const auto& prefix : prefixes_to_filter) {
+    if (raw_module_name.rfind(prefix, 0) == 0) {
+      return raw_module_name.substr(prefix.size(),
+                                    raw_module_name.size() - prefix.size());
+    }
+  }
+  return raw_module_name;
+}
+
 // TODO(https://github.com/google/protobuf/issues/888):
 // Export `ModuleName` from protobuf's
 // `src/google/protobuf/compiler/python/python_generator.cc` file.
 grpc::string ModuleName(const grpc::string& filename,
-                        const grpc::string& import_prefix) {
+                        const grpc::string& import_prefix,
+                        const std::vector<grpc::string>& prefixes_to_filter) {
   grpc::string basename = StripProto(filename);
   basename = StringReplace(basename, "-", "_");
   basename = StringReplace(basename, "/", ".");
-  return import_prefix + basename + "_pb2";
+  return StripModulePrefixes(import_prefix + basename + "_pb2",
+                             prefixes_to_filter);
 }
 
 // TODO(https://github.com/google/protobuf/issues/888):
 // Export `ModuleAlias` from protobuf's
 // `src/google/protobuf/compiler/python/python_generator.cc` file.
 grpc::string ModuleAlias(const grpc::string& filename,
-                         const grpc::string& import_prefix) {
-  grpc::string module_name = ModuleName(filename, import_prefix);
+                         const grpc::string& import_prefix,
+                         const std::vector<grpc::string>& prefixes_to_filter) {
+  grpc::string module_name =
+      ModuleName(filename, import_prefix, prefixes_to_filter);
   // We can't have dots in the module name, so we replace each with _dot_.
   // But that could lead to a collision between a.b and a_dot_b, so we also
   // duplicate each underscore.
@@ -74,10 +90,10 @@ grpc::string ModuleAlias(const grpc::string& filename,
   return module_name;
 }
 
-bool GetModuleAndMessagePath(const Descriptor* type, grpc::string* out,
-                             grpc::string generator_file_name,
-                             bool generate_in_pb2_grpc,
-                             grpc::string& import_prefix) {
+bool GetModuleAndMessagePath(
+    const Descriptor* type, grpc::string* out, grpc::string generator_file_name,
+    bool generate_in_pb2_grpc, grpc::string& import_prefix,
+    const std::vector<grpc::string>& prefixes_to_filter) {
   const Descriptor* path_elem_type = type;
   DescriptorVector message_path;
   do {
@@ -93,7 +109,7 @@ bool GetModuleAndMessagePath(const Descriptor* type, grpc::string* out,
 
   grpc::string module;
   if (generator_file_name != file_name || generate_in_pb2_grpc) {
-    module = ModuleAlias(file_name, import_prefix) + ".";
+    module = ModuleAlias(file_name, import_prefix, prefixes_to_filter) + ".";
   } else {
     module = "";
   }
