@@ -146,7 +146,7 @@ class ChannelData {
     return picker_.get();
   }
   void AddQueuedPick(QueuedPick* pick, grpc_polling_entity* pollent);
-  void RemoveQueuedPick(QueuedPick* pick, grpc_polling_entity* pollent);
+  void RemoveQueuedPick(QueuedPick* to_remove, grpc_polling_entity* pollent);
 
   bool received_service_config_data() const {
     return received_service_config_data_;
@@ -223,7 +223,7 @@ class ChannelData {
   ~ChannelData();
 
   static bool ProcessResolverResultLocked(
-      void* arg, Resolver::Result* args, const char** lb_policy_name,
+      void* arg, Resolver::Result* result, const char** lb_policy_name,
       RefCountedPtr<LoadBalancingPolicy::Config>* lb_policy_config);
 
   grpc_error* DoPingLocked(grpc_transport_op* op);
