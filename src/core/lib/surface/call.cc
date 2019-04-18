@@ -35,9 +35,9 @@
 #include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/alloc.h"
-#include "src/core/lib/gpr/arena.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
@@ -298,7 +298,7 @@ void* grpc_call_arena_alloc(grpc_call* call, size_t size) {
 static parent_call* get_or_create_parent_call(grpc_call* call) {
   parent_call* p = (parent_call*)gpr_atm_acq_load(&call->parent_call_atm);
   if (p == nullptr) {
-    p = new (call->arena->Alloc(sizeof(*p))) parent_call();
+    p = call->arena->New<parent_call>();
     if (!gpr_atm_rel_cas(&call->parent_call_atm, (gpr_atm) nullptr,
                          (gpr_atm)p)) {
       p->~parent_call();
@@ -364,8 +364,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   bool immediately_cancel = false;
 
   if (args->parent != nullptr) {
-    call->child =
-        new (arena->Alloc(sizeof(child_call))) child_call(args->parent);
+    call->child = arena->New<child_call>(args->parent);
 
     GRPC_CALL_INTERNAL_REF(args->parent, "child");
     GPR_ASSERT(call->is_client);
@@ -1130,7 +1129,7 @@ static batch_control* reuse_or_allocate_batch_control(grpc_call* call,
     bctl->~batch_control();
     bctl->op = {};
   } else {
-    bctl = new (call->arena->Alloc(sizeof(*bctl))) batch_control();
+    bctl = call->arena->New<batch_control>();
     *pslot = bctl;
   }
   bctl->call = call;
