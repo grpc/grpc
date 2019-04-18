@@ -126,6 +126,10 @@ grpc_mdelem grpc_mdelem_create(
 
 bool grpc_mdelem_eq(grpc_mdelem a, grpc_mdelem b);
 
+inline bool grpc_mdelem_eq_static(grpc_mdelem a_static, grpc_mdelem b_static) {
+  return a_static.payload == b_static.payload;
+}
+
 /* Mutator and accessor for grpc_mdelem user data. The destructor function
    is used as a type tag and is checked during user_data fetch. */
 void* grpc_mdelem_get_user_data(grpc_mdelem md, void (*if_destroy_func)(void*));
