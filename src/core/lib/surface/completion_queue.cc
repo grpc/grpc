@@ -34,6 +34,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/atomic.h"
+#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
@@ -816,7 +817,7 @@ static void cq_end_op_for_pluck(grpc_completion_queue* cq, void* tag,
 
 static void functor_callback(void* arg, grpc_error* error) {
   auto* functor = static_cast<grpc_experimental_completion_queue_functor*>(arg);
-  (*functor).functor_run(callback, error == GRPC_ERROR_NONE ? true : false);
+  functor->functor_run(functor, error == GRPC_ERROR_NONE);
 }
 
 /* Complete an event on a completion queue of type GRPC_CQ_CALLBACK */
@@ -853,8 +854,9 @@ static void cq_end_op_for_callback(
 
   auto* functor = static_cast<grpc_experimental_completion_queue_functor*>(tag);
   GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_CREATE(functor_callback, functor,
-                          grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT)),
+      GRPC_CLOSURE_CREATE(
+          functor_callback, functor,
+          grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT)),
       GRPC_ERROR_REF(error));
 
   GRPC_ERROR_UNREF(error);
@@ -1342,10 +1344,10 @@ static void cq_finish_shutdown_callback(grpc_completion_queue* cq) {
 
   cq->poller_vtable->shutdown(POLLSET_FROM_CQ(cq), &cq->pollset_shutdown_done);
   GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_CREATE(functor_callback, callback,
-                          grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT)),
+      GRPC_CLOSURE_CREATE(
+          functor_callback, callback,
+          grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT)),
       GRPC_ERROR_NONE);
-
 }
 
 static void cq_shutdown_callback(grpc_completion_queue* cq) {
