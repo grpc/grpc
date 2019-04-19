@@ -53,6 +53,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/iomgr_custom.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -599,7 +600,7 @@ RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
     const grpc_channel_args* args) {
   const bool use_local_subchannel_pool = grpc_channel_arg_get_bool(
       grpc_channel_args_find(args, GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL), false);
-  if (use_local_subchannel_pool) {
+  if (use_local_subchannel_pool || g_custom_iomgr_enabled) {
     return MakeRefCounted<LocalSubchannelPool>();
   }
   return GlobalSubchannelPool::instance();
