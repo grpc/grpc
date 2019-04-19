@@ -259,7 +259,6 @@ class Subchannel {
   channelz::SubchannelNode* channelz_node();
 
   // Polls the current connectivity state of the subchannel.
-// FIXME: remove inhibit_health_checking arg (and maybe rename)
   grpc_connectivity_state CheckConnectivity(bool inhibit_health_checking);
 
   // When the connectivity state of the subchannel changes from \a *state,
@@ -279,7 +278,7 @@ class Subchannel {
   // destroyed or when CancelConnectivityStateWatch() is called.
   void WatchConnectivityState(
       grpc_pollset_set* interested_parties,
-      grpc_connectivity_state initial_state,
+      grpc_connectivity_state initial_state, bool inhibit_health_checking,
       UniquePtr<SubchannelConnectivityStateWatcher> watcher);
 
   // Cancels a connectivity state watch.
@@ -314,6 +313,7 @@ class Subchannel {
    public:
     void Add(Subchannel* subchannel, grpc_pollset_set* pollset_set,
              grpc_connectivity_state initial_state,
+             bool inhibit_health_checking,
              UniquePtr<SubchannelConnectivityStateWatcher> watcher);
     void Remove(SubchannelConnectivityStateWatcher* watcher);
 

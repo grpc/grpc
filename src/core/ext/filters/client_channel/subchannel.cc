@@ -483,9 +483,12 @@ class Subchannel::ExternalStateWatcherList::ExternalWatcher {
  public:
   ExternalWatcher(Subchannel* subchannel, grpc_pollset_set* pollset_set,
                   grpc_connectivity_state initial_state,
+                  bool inhibit_health_checking,
                   UniquePtr<SubchannelConnectivityStateWatcher> watcher)
       : subchannel_(subchannel), pollset_set_(pollset_set),
-        state_(initial_state), watcher_(std::move(watcher)) {
+        state_(initial_state),
+        inhibit_health_checking_(inhibit_health_checking),
+        watcher_(std::move(watcher)) {
     GRPC_CLOSURE_INIT(&on_state_changed_, OnStateChanged, this,
                       grpc_schedule_on_exec_ctx);
     GRPC_SUBCHANNEL_WEAK_REF(subchannel_, "external_state_watcher+init");
@@ -502,14 +505,22 @@ class Subchannel::ExternalStateWatcherList::ExternalWatcher {
   }
 
   void RequestNotification() {
-    grpc_connectivity_state_notify_on_state_change(&subchannel_->state_tracker_,
-                                                   &state_, &on_state_changed_);
+    grpc_connectivity_state_tracker* tracker =
+        inhibit_health_checking_
+            ? &subchannel_->state_tracker_
+            : &subchannel_->state_and_health_tracker_;
+    grpc_connectivity_state_notify_on_state_change(tracker, &state_,
+                                                   &on_state_changed_);
   }
 
   void Shutdown() {
     shutdown_.Store(true, MemoryOrder::RELEASE);
-    grpc_connectivity_state_notify_on_state_change(&subchannel_->state_tracker_,
-                                                   nullptr, &on_state_changed_);
+    grpc_connectivity_state_tracker* tracker =
+        inhibit_health_checking_
+            ? &subchannel_->state_tracker_
+            : &subchannel_->state_and_health_tracker_;
+    grpc_connectivity_state_notify_on_state_change(tracker, nullptr,
+                                                   &on_state_changed_);
   }
 
  private:
@@ -534,6 +545,7 @@ class Subchannel::ExternalStateWatcherList::ExternalWatcher {
   Subchannel* subchannel_;
   grpc_pollset_set* pollset_set_;
   grpc_connectivity_state state_;
+  const bool inhibit_health_checking_;
   UniquePtr<SubchannelConnectivityStateWatcher> watcher_;
   Atomic<bool> shutdown_{false};
   grpc_closure on_state_changed_;
@@ -546,10 +558,11 @@ class Subchannel::ExternalStateWatcherList::ExternalWatcher {
 
 void Subchannel::ExternalStateWatcherList::Add(
     Subchannel* subchannel, grpc_pollset_set* pollset_set,
-    grpc_connectivity_state initial_state,
+    grpc_connectivity_state initial_state, bool inhibit_health_checking,
     UniquePtr<SubchannelConnectivityStateWatcher> watcher) {
   ExternalWatcher* w = New<ExternalWatcher>(
-      subchannel, pollset_set, initial_state, std::move(watcher));
+      subchannel, pollset_set, initial_state, inhibit_health_checking,
+      std::move(watcher));
   w->next_ = head_;
   head_ = w;
   w->RequestNotification();
@@ -872,9 +885,11 @@ void Subchannel::NotifyOnStateChange(grpc_pollset_set* interested_parties,
 
 void Subchannel::WatchConnectivityState(
     grpc_pollset_set* interested_parties, grpc_connectivity_state initial_state,
+    bool inhibit_health_checking,
     UniquePtr<SubchannelConnectivityStateWatcher> watcher) {
   MutexLock lock(&mu_);
   new_external_state_watcher_list_.Add(this, interested_parties, initial_state,
+                                       inhibit_health_checking,
                                        std::move(watcher));
   MaybeStartConnectingLocked();
 }
