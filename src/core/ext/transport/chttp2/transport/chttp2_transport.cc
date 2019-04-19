@@ -1281,8 +1281,8 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
 
 static bool contains_non_ok_status(grpc_metadata_batch* batch) {
   if (batch->idx.named.grpc_status != nullptr) {
-    return !grpc_mdelem_eq_static(batch->idx.named.grpc_status->md,
-                                  GRPC_MDELEM_GRPC_STATUS_0);
+    return !grpc_mdelem_static_value_eq(batch->idx.named.grpc_status->md,
+                                        GRPC_MDELEM_GRPC_STATUS_0);
   }
   return false;
 }

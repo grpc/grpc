@@ -131,23 +131,23 @@ static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
   static const char* error_name = "Failed processing incoming headers";
 
   if (b->idx.named.method != nullptr) {
-    if (grpc_mdelem_eq_static(b->idx.named.method->md,
-                              GRPC_MDELEM_METHOD_GET)) {
-      *calld->recv_initial_metadata_flags |=
-          GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
-      *calld->recv_initial_metadata_flags &=
-          ~GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
-    } else if (grpc_mdelem_eq_static(b->idx.named.method->md,
-                                     GRPC_MDELEM_METHOD_POST)) {
+    if (grpc_mdelem_static_value_eq(b->idx.named.method->md,
+                                    GRPC_MDELEM_METHOD_POST)) {
       *calld->recv_initial_metadata_flags &=
           ~(GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |
             GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
-    } else if (grpc_mdelem_eq_static(b->idx.named.method->md,
-                                     GRPC_MDELEM_METHOD_PUT)) {
+    } else if (grpc_mdelem_static_value_eq(b->idx.named.method->md,
+                                           GRPC_MDELEM_METHOD_PUT)) {
       *calld->recv_initial_metadata_flags &=
           ~GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
       *calld->recv_initial_metadata_flags |=
           GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
+    } else if (grpc_mdelem_static_value_eq(b->idx.named.method->md,
+                                           GRPC_MDELEM_METHOD_GET)) {
+      *calld->recv_initial_metadata_flags |=
+          GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
+      *calld->recv_initial_metadata_flags &=
+          ~GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
     } else {
       hs_add_error(error_name, &error,
                    grpc_attach_md_to_error(
@@ -164,7 +164,8 @@ static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
   }
 
   if (b->idx.named.te != nullptr) {
-    if (!grpc_mdelem_eq_static(b->idx.named.te->md, GRPC_MDELEM_TE_TRAILERS)) {
+    if (!grpc_mdelem_static_value_eq(b->idx.named.te->md,
+                                     GRPC_MDELEM_TE_TRAILERS)) {
       hs_add_error(error_name, &error,
                    grpc_attach_md_to_error(
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad header"),
@@ -179,12 +180,12 @@ static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
   }
 
   if (b->idx.named.scheme != nullptr) {
-    if (!grpc_mdelem_eq_static(b->idx.named.scheme->md,
-                               GRPC_MDELEM_SCHEME_HTTP) &&
-        !grpc_mdelem_eq_static(b->idx.named.scheme->md,
-                               GRPC_MDELEM_SCHEME_HTTPS) &&
-        !grpc_mdelem_eq_static(b->idx.named.scheme->md,
-                               GRPC_MDELEM_SCHEME_GRPC)) {
+    if (!grpc_mdelem_static_value_eq(b->idx.named.scheme->md,
+                                     GRPC_MDELEM_SCHEME_HTTP) &&
+        !grpc_mdelem_static_value_eq(b->idx.named.scheme->md,
+                                     GRPC_MDELEM_SCHEME_HTTPS) &&
+        !grpc_mdelem_static_value_eq(b->idx.named.scheme->md,
+                                     GRPC_MDELEM_SCHEME_GRPC)) {
       hs_add_error(error_name, &error,
                    grpc_attach_md_to_error(
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad header"),
@@ -200,7 +201,7 @@ static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
   }
 
   if (b->idx.named.content_type != nullptr) {
-    if (!grpc_mdelem_eq_static(
+    if (!grpc_mdelem_static_value_eq(
             b->idx.named.content_type->md,
             GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)) {
       if (grpc_slice_buf_start_eq(GRPC_MDVALUE(b->idx.named.content_type->md),
