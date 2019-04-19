@@ -1100,12 +1100,15 @@ src/core/lib/http/parser.h \
 src/core/lib/iomgr/block_annotate.h \
 src/core/lib/iomgr/buffer_list.h \
 src/core/lib/iomgr/call_combiner.h \
+src/core/lib/iomgr/cfstream_handle.h \
 src/core/lib/iomgr/closure.h \
 src/core/lib/iomgr/combiner.h \
 src/core/lib/iomgr/dynamic_annotations.h \
 src/core/lib/iomgr/endpoint.h \
+src/core/lib/iomgr/endpoint_cfstream.h \
 src/core/lib/iomgr/endpoint_pair.h \
 src/core/lib/iomgr/error.h \
+src/core/lib/iomgr/error_cfstream.h \
 src/core/lib/iomgr/error_internal.h \
 src/core/lib/iomgr/ev_epoll1_linux.h \
 src/core/lib/iomgr/ev_epollex_linux.h \
