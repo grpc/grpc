@@ -63,7 +63,9 @@ module GRPC
       return if status.nil?
 
       GoogleRpcStatusUtils.extract_google_rpc_status(status)
-    rescue
+    rescue Google::Protobuf::ParseError => parse_error
+      GRPC.logger.warn('parse error: to_rpc_status failed')
+      GRPC.logger.warn(parse_error)
       nil
     end
 

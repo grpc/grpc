@@ -127,6 +127,14 @@ describe GRPC::BadStatus do
       exception = GRPC::BadStatus.new(code, details, metadata)
 
       expect(exception.to_rpc_status).to be nil
+
+      # Check that the parse error was logged correctly
+      log_contents = @log_output.read
+      expected_line_1 = 'WARN  GRPC : parse error: to_rpc_status failed'
+      expected_line_2 = 'WARN  GRPC : <Google::Protobuf::ParseError> ' \
+        'Error occurred during parsing: Invalid wire type'
+      expect(log_contents).to include expected_line_1
+      expect(log_contents).to include expected_line_2
     end
   end
 end
