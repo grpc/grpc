@@ -435,7 +435,7 @@ static grpc_address_resolver_vtable ares_resolver = {
 static bool should_use_ares(const char* resolver_env) {
   return resolver_env != nullptr && gpr_stricmp(resolver_env, "ares") == 0;
 }
-#else /* GRPC_UV */
+#else  /* GRPC_UV */
 static bool should_use_ares(const char* resolver_env) {
   return resolver_env == nullptr || strlen(resolver_env) == 0 ||
          gpr_stricmp(resolver_env, "ares") == 0;

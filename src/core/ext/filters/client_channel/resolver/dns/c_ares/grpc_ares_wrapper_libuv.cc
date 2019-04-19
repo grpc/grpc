@@ -29,11 +29,11 @@
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 
-bool grpc_ares_query_ipv6() { 
+bool grpc_ares_query_ipv6() {
   /* The libuv grpc code currently does not have the code to probe for this,
-   * so we assume for nowthat IPv6 is always available in contexts where this
+   * so we assume for now that IPv6 is always available in contexts where this
    * code will be used. */
-  return true; 
+  return true;
 }
 
 /* The following two functions were copied entirely from the Windows file. This

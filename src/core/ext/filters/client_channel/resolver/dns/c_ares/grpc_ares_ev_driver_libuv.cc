@@ -36,22 +36,18 @@ namespace grpc_core {
 
 void ares_uv_poll_cb(uv_poll_t* handle, int status, int events);
 
-void ares_uv_poll_close_cb(uv_handle_t *handle) {
-  Delete(handle);
-}
+void ares_uv_poll_close_cb(uv_handle_t* handle) { Delete(handle); }
 
 class GrpcPolledFdLibuv : public GrpcPolledFd {
  public:
-  GrpcPolledFdLibuv(ares_socket_t as): as_(as) {
+  GrpcPolledFdLibuv(ares_socket_t as) : as_(as) {
     gpr_asprintf(&name_, "c-ares socket: %" PRIdPTR, (intptr_t)as);
     handle_ = New<uv_poll_t>();
     uv_poll_init_socket(uv_default_loop(), handle_, as);
     handle_->data = this;
   }
 
-  ~GrpcPolledFdLibuv() {
-    gpr_free(name_);
-  }
+  ~GrpcPolledFdLibuv() { gpr_free(name_); }
 
   void RegisterForOnReadableLocked(grpc_closure* read_closure) override {
     GPR_ASSERT(read_closure_ == nullptr);
@@ -94,12 +90,14 @@ class GrpcPolledFdLibuv : public GrpcPolledFd {
 
 void ares_uv_poll_cb(uv_poll_t* handle, int status, int events) {
   grpc_core::ExecCtx exec_ctx;
-  GrpcPolledFdLibuv* polled_fd = reinterpret_cast<GrpcPolledFdLibuv*>(handle->data);
-  grpc_error *error = GRPC_ERROR_NONE;
+  GrpcPolledFdLibuv* polled_fd =
+      reinterpret_cast<GrpcPolledFdLibuv*>(handle->data);
+  grpc_error* error = GRPC_ERROR_NONE;
   if (status < 0) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("cares polling error");
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
-                               grpc_slice_from_static_string(uv_strerror(status)));
+    error =
+        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
+                           grpc_slice_from_static_string(uv_strerror(status)));
   }
   if ((events & UV_READABLE) && polled_fd->read_closure_) {
     GRPC_CLOSURE_SCHED(polled_fd->read_closure_, error);
@@ -129,6 +127,6 @@ UniquePtr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(grpc_combiner* combiner) {
   return UniquePtr<GrpcPolledFdFactory>(New<GrpcPolledFdFactoryLibuv>());
 }
 
-} // namespace grpc_core
+}  // namespace grpc_core
 
 #endif /* GRPC_ARES == 1 && defined(GRPC_UV) */
