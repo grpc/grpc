@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#if GRPC_ARES == 1 && !defined(GRPC_UV)
+#if GRPC_ARES == 1
 
 #include <limits.h>
 #include <stdio.h>
@@ -464,10 +464,10 @@ void grpc_resolver_dns_ares_shutdown() {
   gpr_free(resolver_env);
 }
 
-#else /* GRPC_ARES == 1 && !defined(GRPC_UV) */
+#else /* GRPC_ARES == 1 */
 
 void grpc_resolver_dns_ares_init(void) {}
 
 void grpc_resolver_dns_ares_shutdown(void) {}
 
-#endif /* GRPC_ARES == 1 && !defined(GRPC_UV) */
+#endif /* GRPC_ARES == 1 */
