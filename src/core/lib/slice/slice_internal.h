@@ -23,17 +23,215 @@
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
+#include <string.h>
 
-inline const grpc_slice& grpc_slice_ref_internal(const grpc_slice& slice) {
+#include "src/core/lib/gpr/murmur_hash.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/transport/static_metadata.h"
+
+// Interned slices have specific fast-path operations for hashing. To inline
+// these operations, we need to forward declare them here.
+extern uint32_t grpc_static_metadata_hash_values[GRPC_STATIC_MDSTR_COUNT];
+extern uint32_t g_hash_seed;
+
+// grpc_slice_refcount : A reference count for grpc_slice.
+//
+// Non-inlined grpc_slice objects are refcounted. Historically this was
+// implemented via grpc_slice_refcount, a C-style polymorphic class using a
+// manually managed vtable of operations. Subclasses would define their own
+// vtable; the 'virtual' methods (ref, unref, equals and hash) would simply call
+// the function pointers in the vtable as necessary.
+//
+// Unfortunately, this leads to some inefficiencies in the generated code that
+// can be improved upon. For example, equality checking for interned slices is a
+// simple equality check on the refcount pointer. With the vtable approach, this
+// would translate to roughly the following (high-level) instructions:
+//
+// grpc_slice_equals(slice1, slice2):
+//   load vtable->eq -> eq_func
+//   call eq_func(slice1, slice2)
+//
+// interned_slice_equals(slice1, slice2)
+//   load slice1.ref -> r1
+//   load slice2.ref -> r2
+//   cmp r1, r2 -> retval
+//   ret retval
+//
+// This leads to a function call for a function defined in another translation
+// unit, which imposes memory barriers, which reduces the compiler's ability to
+// optimize (in addition to the added overhead of call/ret). Additionally, it
+// may be harder to reason about branch prediction when we're jumping to
+// essentially arbitrarily provided function pointers.
+//
+// In addition, it is arguable that while virtualization was helpful for
+// Equals()/Hash() methods, that it was fundamentally unnecessary for
+// Ref()/Unref().
+//
+// Instead, grpc_slice_refcount provides the same functionality as the C-style
+// virtual class, but in a de-virtualized manner - Eq(), Hash(), Ref() and
+// Unref() are provided within this header file. Fastpaths for Eq()/Hash()
+// (interned and static metadata slices), as well as the Ref() operation, can
+// all be inlined without any memory barriers.
+//
+// It does this by:
+// 1. Using grpc_core::RefCount<> (header-only) for Ref/Unref. Two special cases
+//    need support: No-op ref/unref (eg. static metadata slices) and stream
+//    slice references (where all the slices share the streamref). This is in
+//    addition to the normal case of '1 slice, 1 ref'.
+//    To support these cases, we explicitly track a nullable pointer to the
+//    underlying RefCount<>. No-op ref/unref is used by checking the pointer for
+//    null, and doing nothing if it is. Both stream slice refs and 'normal'
+//    slices use the same path for Ref/Unref (by targeting the non-null
+//    pointer).
+//
+// 2. introducing the notion of grpc_slice_refcount::Type. This describes if a
+//    slice ref is used by a static metadata slice, an interned slice, or other
+//    slices. We switch on the slice ref type in order to provide fastpaths for
+//    Equals() and Hash().
+//
+// In total, this saves us roughly 1-2% latency for unary calls, with smaller
+// calls benefitting. The effect is present, but not as useful, for larger calls
+// where the cost of sending the data dominates.
+struct grpc_slice_refcount {
+ public:
+  enum class Type {
+    STATIC,    // Refcount for a static metadata slice.
+    INTERNED,  // Refcount for an interned slice.
+    REGULAR    // Refcount for non-static-metadata, non-interned slices.
+  };
+  typedef void (*DestroyerFn)(void*);
+
+  grpc_slice_refcount() = default;
+
+  explicit grpc_slice_refcount(grpc_slice_refcount* sub) : sub_refcount_(sub) {}
+  // Regular constructor for grpc_slice_refcount.
+  //
+  // Parameters:
+  //  1. grpc_slice_refcount::Type type
+  //  Whether we are the refcount for a static
+  //  metadata slice, an interned slice, or any other kind of slice.
+  //
+  //  2. RefCount* ref
+  //  The pointer to the actual underlying grpc_core::RefCount. Rather than
+  //  performing struct offset computations as in the original implementation to
+  //  get to the refcount, which requires a virtual method, we devirtualize by
+  //  using a nullable pointer to allow a single pair of Ref/Unref methods.
+  //
+  //  3. DestroyerFn destroyer_fn
+  //  Called when the refcount goes to 0, with destroyer_arg as parameter.
+  //
+  //  4. void* destroyer_arg
+  //  Argument for the virtualized destructor.
+  //
+  //  5. grpc_slice_refcount* sub
+  //  Argument used for interned slices.
+  grpc_slice_refcount(grpc_slice_refcount::Type type, grpc_core::RefCount* ref,
+                      DestroyerFn destroyer_fn, void* destroyer_arg,
+                      grpc_slice_refcount* sub)
+      : ref_(ref),
+        ref_type_(type),
+        sub_refcount_(sub),
+        dest_fn_(destroyer_fn),
+        destroy_fn_arg_(destroyer_arg) {}
+  // Initializer for static refcounts.
+  grpc_slice_refcount(grpc_slice_refcount* sub, Type type)
+      : ref_type_(type), sub_refcount_(sub) {}
+
+  Type GetType() const { return ref_type_; }
+
+  int Eq(const grpc_slice& a, const grpc_slice& b);
+
+  uint32_t Hash(const grpc_slice& slice);
+  void Ref() {
+    if (ref_ == nullptr) return;
+    ref_->RefNonZero();
+  }
+  void Unref() {
+    if (ref_ == nullptr) return;
+    if (ref_->Unref()) {
+      dest_fn_(destroy_fn_arg_);
+    }
+  }
+
+  grpc_slice_refcount* sub_refcount() const { return sub_refcount_; }
+
+ private:
+  grpc_core::RefCount* ref_ = nullptr;
+  const Type ref_type_ = Type::REGULAR;
+  grpc_slice_refcount* sub_refcount_ = this;
+  DestroyerFn dest_fn_ = nullptr;
+  void* destroy_fn_arg_ = nullptr;
+};
+
+namespace grpc_core {
+
+struct InternedSliceRefcount {
+  static void Destroy(void* arg) {
+    auto* rc = static_cast<InternedSliceRefcount*>(arg);
+    rc->~InternedSliceRefcount();
+    gpr_free(rc);
+  }
+
+  InternedSliceRefcount(size_t length, uint32_t hash,
+                        InternedSliceRefcount* bucket_next)
+      : base(grpc_slice_refcount::Type::INTERNED, &refcnt, Destroy, this, &sub),
+        sub(grpc_slice_refcount::Type::REGULAR, &refcnt, Destroy, this, &sub),
+        length(length),
+        hash(hash),
+        bucket_next(bucket_next) {}
+
+  ~InternedSliceRefcount();
+
+  grpc_slice_refcount base;
+  grpc_slice_refcount sub;
+  const size_t length;
+  RefCount refcnt;
+  const uint32_t hash;
+  InternedSliceRefcount* bucket_next;
+};
+
+}  // namespace grpc_core
+
+inline int grpc_slice_refcount::Eq(const grpc_slice& a, const grpc_slice& b) {
+  switch (ref_type_) {
+    case Type::STATIC:
+      return GRPC_STATIC_METADATA_INDEX(a) == GRPC_STATIC_METADATA_INDEX(b);
+    case Type::INTERNED:
+      return a.refcount == b.refcount;
+    case Type::REGULAR:
+      break;
+  }
+  if (GRPC_SLICE_LENGTH(a) != GRPC_SLICE_LENGTH(b)) return false;
+  if (GRPC_SLICE_LENGTH(a) == 0) return true;
+  return 0 == memcmp(GRPC_SLICE_START_PTR(a), GRPC_SLICE_START_PTR(b),
+                     GRPC_SLICE_LENGTH(a));
+}
+
+inline uint32_t grpc_slice_refcount::Hash(const grpc_slice& slice) {
+  switch (ref_type_) {
+    case Type::STATIC:
+      return ::grpc_static_metadata_hash_values[GRPC_STATIC_METADATA_INDEX(
+          slice)];
+    case Type::INTERNED:
+      return reinterpret_cast<grpc_core::InternedSliceRefcount*>(slice.refcount)
+          ->hash;
+    case Type::REGULAR:
+      break;
+  }
+  return gpr_murmur_hash3(GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice),
+                          g_hash_seed);
+}
+
+inline grpc_slice grpc_slice_ref_internal(const grpc_slice& slice) {
   if (slice.refcount) {
-    slice.refcount->vtable->ref(slice.refcount);
+    slice.refcount->Ref();
   }
   return slice;
 }
 
 inline void grpc_slice_unref_internal(const grpc_slice& slice) {
   if (slice.refcount) {
-    slice.refcount->vtable->unref(slice.refcount);
+    slice.refcount->Unref();
   }
 }
 
