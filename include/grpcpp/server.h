@@ -297,12 +297,12 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   experimental_registration_type experimental_registration_{this};
 
   // Server status
-  std::mutex mu_;
+  grpc::internal::Mutex mu_;
   bool started_;
   bool shutdown_;
   bool shutdown_notified_;  // Was notify called on the shutdown_cv_
 
-  std::condition_variable shutdown_cv_;
+  grpc::internal::CondVar shutdown_cv_;
 
   // It is ok (but not required) to nest callback_reqs_mu_ under mu_ .
   // Incrementing callback_reqs_outstanding_ is ok without a lock but it must be
@@ -311,8 +311,8 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   // during periods of increasing load; the decrement happens only when memory
   // is maxed out, during server shutdown, or (possibly in a future version)
   // during decreasing load, so it is less performance-critical.
-  std::mutex callback_reqs_mu_;
-  std::condition_variable callback_reqs_done_cv_;
+  grpc::internal::Mutex callback_reqs_mu_;
+  grpc::internal::CondVar callback_reqs_done_cv_;
   std::atomic_int callback_reqs_outstanding_{0};
 
   std::shared_ptr<GlobalCallbacks> global_callbacks_;

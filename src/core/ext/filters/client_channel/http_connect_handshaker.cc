@@ -33,7 +33,7 @@
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/mutex_lock.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/slice/slice_internal.h"

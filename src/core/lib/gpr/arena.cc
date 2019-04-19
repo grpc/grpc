@@ -29,49 +29,10 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gpr/alloc.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/memory.h"
 
-namespace {
-enum init_strategy {
-  NO_INIT,        // Do not initialize the arena blocks.
-  ZERO_INIT,      // Initialize arena blocks with 0.
-  NON_ZERO_INIT,  // Initialize arena blocks with a non-zero value.
-};
-
-gpr_once g_init_strategy_once = GPR_ONCE_INIT;
-init_strategy g_init_strategy = NO_INIT;
-}  // namespace
-
-static void set_strategy_from_env() {
-  char* str = gpr_getenv("GRPC_ARENA_INIT_STRATEGY");
-  if (str == nullptr) {
-    g_init_strategy = NO_INIT;
-  } else if (strcmp(str, "zero_init") == 0) {
-    g_init_strategy = ZERO_INIT;
-  } else if (strcmp(str, "non_zero_init") == 0) {
-    g_init_strategy = NON_ZERO_INIT;
-  } else {
-    g_init_strategy = NO_INIT;
-  }
-  gpr_free(str);
-}
-
-static void* gpr_arena_alloc_maybe_init(size_t size) {
-  void* mem = gpr_malloc_aligned(size, GPR_MAX_ALIGNMENT);
-  gpr_once_init(&g_init_strategy_once, set_strategy_from_env);
-  if (GPR_UNLIKELY(g_init_strategy != NO_INIT)) {
-    if (g_init_strategy == ZERO_INIT) {
-      memset(mem, 0, size);
-    } else {  // NON_ZERO_INIT.
-      memset(mem, 0xFE, size);
-    }
-  }
-  return mem;
-}
-
-void gpr_arena_init() {
-  gpr_once_init(&g_init_strategy_once, set_strategy_from_env);
+static void* gpr_arena_malloc(size_t size) {
+  return gpr_malloc_aligned(size, GPR_MAX_ALIGNMENT);
 }
 
 // Uncomment this to use a simple arena that simply allocates the
@@ -109,8 +70,7 @@ void* gpr_arena_alloc(gpr_arena* arena, size_t size) {
   gpr_mu_lock(&arena->mu);
   arena->ptrs =
       (void**)gpr_realloc(arena->ptrs, sizeof(void*) * (arena->num_ptrs + 1));
-  void* retval = arena->ptrs[arena->num_ptrs++] =
-      gpr_arena_alloc_maybe_init(size);
+  void* retval = arena->ptrs[arena->num_ptrs++] = gpr_arena_malloc(size);
   gpr_mu_unlock(&arena->mu);
   return retval;
 }
@@ -154,7 +114,7 @@ struct gpr_arena {
 
 gpr_arena* gpr_arena_create(size_t initial_size) {
   initial_size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(initial_size);
-  return new (gpr_arena_alloc_maybe_init(
+  return new (gpr_arena_malloc(
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(gpr_arena)) + initial_size))
       gpr_arena(initial_size);
 }
@@ -179,7 +139,7 @@ void* gpr_arena_alloc(gpr_arena* arena, size_t size) {
     // sizing historesis (that is, most calls should have a large enough initial
     // zone and will not need to grow the arena).
     gpr_mu_lock(&arena->arena_growth_mutex);
-    zone* z = new (gpr_arena_alloc_maybe_init(
+    zone* z = new (gpr_arena_malloc(
         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(zone)) + size)) zone();
     arena->last_zone->next = z;
     arena->last_zone = z;
