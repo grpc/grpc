@@ -385,6 +385,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/service_config.h',
                       'src/core/ext/filters/client_channel/subchannel.h',
                       'src/core/ext/filters/client_channel/subchannel_pool_interface.h',
+                      'src/core/ext/filters/message_size/message_size_parser.h',
                       'src/core/ext/filters/deadline/deadline_filter.h',
                       'src/core/ext/filters/client_channel/health/health.pb.h',
                       'src/core/tsi/fake_transport_security.h',
