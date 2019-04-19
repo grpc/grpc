@@ -41,9 +41,10 @@ typedef enum {
 UPB_INLINE envoy_type_Percent *envoy_type_Percent_new(upb_arena *arena) {
   return (envoy_type_Percent *)upb_msg_new(&envoy_type_Percent_msginit, arena);
 }
-UPB_INLINE envoy_type_Percent *envoy_type_Percent_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_type_Percent *envoy_type_Percent_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_type_Percent *ret = envoy_type_Percent_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_type_Percent_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_type_Percent_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_type_Percent_serialize(const envoy_type_Percent *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_type_Percent_msginit, arena, len);
@@ -61,9 +62,10 @@ UPB_INLINE void envoy_type_Percent_set_value(envoy_type_Percent *msg, double val
 UPB_INLINE envoy_type_FractionalPercent *envoy_type_FractionalPercent_new(upb_arena *arena) {
   return (envoy_type_FractionalPercent *)upb_msg_new(&envoy_type_FractionalPercent_msginit, arena);
 }
-UPB_INLINE envoy_type_FractionalPercent *envoy_type_FractionalPercent_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_type_FractionalPercent *envoy_type_FractionalPercent_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_type_FractionalPercent *ret = envoy_type_FractionalPercent_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_type_FractionalPercent_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_type_FractionalPercent_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_type_FractionalPercent_serialize(const envoy_type_FractionalPercent *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_type_FractionalPercent_msginit, arena, len);

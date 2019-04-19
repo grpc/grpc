@@ -58,9 +58,10 @@ typedef enum {
 UPB_INLINE envoy_api_v2_core_Pipe *envoy_api_v2_core_Pipe_new(upb_arena *arena) {
   return (envoy_api_v2_core_Pipe *)upb_msg_new(&envoy_api_v2_core_Pipe_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_core_Pipe *envoy_api_v2_core_Pipe_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_core_Pipe *envoy_api_v2_core_Pipe_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_core_Pipe *ret = envoy_api_v2_core_Pipe_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_core_Pipe_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_Pipe_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_Pipe_serialize(const envoy_api_v2_core_Pipe *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_Pipe_msginit, arena, len);
@@ -78,9 +79,10 @@ UPB_INLINE void envoy_api_v2_core_Pipe_set_path(envoy_api_v2_core_Pipe *msg, upb
 UPB_INLINE envoy_api_v2_core_SocketAddress *envoy_api_v2_core_SocketAddress_new(upb_arena *arena) {
   return (envoy_api_v2_core_SocketAddress *)upb_msg_new(&envoy_api_v2_core_SocketAddress_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_core_SocketAddress *envoy_api_v2_core_SocketAddress_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_core_SocketAddress *envoy_api_v2_core_SocketAddress_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_core_SocketAddress *ret = envoy_api_v2_core_SocketAddress_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_core_SocketAddress_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_SocketAddress_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_SocketAddress_serialize(const envoy_api_v2_core_SocketAddress *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_SocketAddress_msginit, arena, len);
@@ -89,9 +91,9 @@ UPB_INLINE char *envoy_api_v2_core_SocketAddress_serialize(const envoy_api_v2_co
 typedef enum {
   envoy_api_v2_core_SocketAddress_port_specifier_port_value = 3,
   envoy_api_v2_core_SocketAddress_port_specifier_named_port = 4,
-  envoy_api_v2_core_SocketAddress_port_specifier_NOT_SET = 0,
+  envoy_api_v2_core_SocketAddress_port_specifier_NOT_SET = 0
 } envoy_api_v2_core_SocketAddress_port_specifier_oneofcases;
-UPB_INLINE envoy_api_v2_core_SocketAddress_port_specifier_oneofcases envoy_api_v2_core_SocketAddress_port_specifier_case(const envoy_api_v2_core_SocketAddress* msg) { return UPB_FIELD_AT(msg, int, UPB_SIZE(36, 64)); }
+UPB_INLINE envoy_api_v2_core_SocketAddress_port_specifier_oneofcases envoy_api_v2_core_SocketAddress_port_specifier_case(const envoy_api_v2_core_SocketAddress* msg) { return (envoy_api_v2_core_SocketAddress_port_specifier_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(36, 64)); }
 
 UPB_INLINE int32_t envoy_api_v2_core_SocketAddress_protocol(const envoy_api_v2_core_SocketAddress *msg) { return UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)); }
 UPB_INLINE upb_strview envoy_api_v2_core_SocketAddress_address(const envoy_api_v2_core_SocketAddress *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(12, 16)); }
@@ -127,9 +129,10 @@ UPB_INLINE void envoy_api_v2_core_SocketAddress_set_ipv4_compat(envoy_api_v2_cor
 UPB_INLINE envoy_api_v2_core_TcpKeepalive *envoy_api_v2_core_TcpKeepalive_new(upb_arena *arena) {
   return (envoy_api_v2_core_TcpKeepalive *)upb_msg_new(&envoy_api_v2_core_TcpKeepalive_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_core_TcpKeepalive *envoy_api_v2_core_TcpKeepalive_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_core_TcpKeepalive *envoy_api_v2_core_TcpKeepalive_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_core_TcpKeepalive *ret = envoy_api_v2_core_TcpKeepalive_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_core_TcpKeepalive_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_TcpKeepalive_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_TcpKeepalive_serialize(const envoy_api_v2_core_TcpKeepalive *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_TcpKeepalive_msginit, arena, len);
@@ -182,9 +185,10 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_core_TcpKeepalive_mu
 UPB_INLINE envoy_api_v2_core_BindConfig *envoy_api_v2_core_BindConfig_new(upb_arena *arena) {
   return (envoy_api_v2_core_BindConfig *)upb_msg_new(&envoy_api_v2_core_BindConfig_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_core_BindConfig *envoy_api_v2_core_BindConfig_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_core_BindConfig *envoy_api_v2_core_BindConfig_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_core_BindConfig *ret = envoy_api_v2_core_BindConfig_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_core_BindConfig_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_BindConfig_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_BindConfig_serialize(const envoy_api_v2_core_BindConfig *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_BindConfig_msginit, arena, len);
@@ -238,9 +242,10 @@ UPB_INLINE struct envoy_api_v2_core_SocketOption* envoy_api_v2_core_BindConfig_a
 UPB_INLINE envoy_api_v2_core_Address *envoy_api_v2_core_Address_new(upb_arena *arena) {
   return (envoy_api_v2_core_Address *)upb_msg_new(&envoy_api_v2_core_Address_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_core_Address *envoy_api_v2_core_Address_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_core_Address *envoy_api_v2_core_Address_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_core_Address *ret = envoy_api_v2_core_Address_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_core_Address_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_Address_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_Address_serialize(const envoy_api_v2_core_Address *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_Address_msginit, arena, len);
@@ -249,9 +254,9 @@ UPB_INLINE char *envoy_api_v2_core_Address_serialize(const envoy_api_v2_core_Add
 typedef enum {
   envoy_api_v2_core_Address_address_socket_address = 1,
   envoy_api_v2_core_Address_address_pipe = 2,
-  envoy_api_v2_core_Address_address_NOT_SET = 0,
+  envoy_api_v2_core_Address_address_NOT_SET = 0
 } envoy_api_v2_core_Address_address_oneofcases;
-UPB_INLINE envoy_api_v2_core_Address_address_oneofcases envoy_api_v2_core_Address_address_case(const envoy_api_v2_core_Address* msg) { return UPB_FIELD_AT(msg, int, UPB_SIZE(4, 8)); }
+UPB_INLINE envoy_api_v2_core_Address_address_oneofcases envoy_api_v2_core_Address_address_case(const envoy_api_v2_core_Address* msg) { return (envoy_api_v2_core_Address_address_oneofcases)UPB_FIELD_AT(msg, int32_t, UPB_SIZE(4, 8)); }
 
 UPB_INLINE bool envoy_api_v2_core_Address_has_socket_address(const envoy_api_v2_core_Address *msg) { return _upb_has_oneof_field(msg, UPB_SIZE(4, 8), 1); }
 UPB_INLINE const envoy_api_v2_core_SocketAddress* envoy_api_v2_core_Address_socket_address(const envoy_api_v2_core_Address *msg) { return UPB_READ_ONEOF(msg, const envoy_api_v2_core_SocketAddress*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 1, NULL); }
@@ -289,9 +294,10 @@ UPB_INLINE struct envoy_api_v2_core_Pipe* envoy_api_v2_core_Address_mutable_pipe
 UPB_INLINE envoy_api_v2_core_CidrRange *envoy_api_v2_core_CidrRange_new(upb_arena *arena) {
   return (envoy_api_v2_core_CidrRange *)upb_msg_new(&envoy_api_v2_core_CidrRange_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_core_CidrRange *envoy_api_v2_core_CidrRange_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_core_CidrRange *envoy_api_v2_core_CidrRange_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_core_CidrRange *ret = envoy_api_v2_core_CidrRange_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_core_CidrRange_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_CidrRange_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_CidrRange_serialize(const envoy_api_v2_core_CidrRange *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_CidrRange_msginit, arena, len);
