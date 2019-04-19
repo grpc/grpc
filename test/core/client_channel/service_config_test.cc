@@ -24,7 +24,7 @@
 #include "src/core/ext/filters/client_channel/health/health_check_parser.h"
 #include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
-#include "src/core/ext/filters/message_size/message_size_filter.h"
+#include "src/core/ext/filters/message_size/message_size_parser.h"
 #include "src/core/lib/gpr/string.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -1044,6 +1044,59 @@ TEST_F(MessageSizeParserTest, InvalidMaxResponseMessageBytes) {
   EXPECT_TRUE(std::regex_search(s, match, e));
   GRPC_ERROR_UNREF(error);
 }
+
+class HealthCheckParserTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    ServiceConfig::Shutdown();
+    ServiceConfig::Init();
+    EXPECT_TRUE(ServiceConfig::RegisterParser(UniquePtr<ServiceConfigParser>(
+                    New<HealthCheckParser>())) == 0);
+  }
+};
+
+TEST_F(HealthCheckParserTest, Valid) {
+  const char* test_json =
+      "{\n"
+      "  \"healthCheckConfig\": {\n"
+      "    \"serviceName\": \"health_check_service_name\"\n"
+      "    }\n"
+      "}";
+  grpc_error* error = GRPC_ERROR_NONE;
+  auto svc_cfg = ServiceConfig::Create(test_json, &error);
+  ASSERT_TRUE(error == GRPC_ERROR_NONE);
+  const auto* parsed_object = static_cast<grpc_core::HealthCheckParsedObject*>(
+      svc_cfg->GetParsedGlobalServiceConfigObject(0));
+  ASSERT_TRUE(parsed_object != nullptr);
+  EXPECT_EQ(strcmp(parsed_object->service_name(), "health_check_service_name"),
+            0);
+}
+
+TEST_F(HealthCheckParserTest, MultipleEntries) {
+  const char* test_json =
+      "{\n"
+      "  \"healthCheckConfig\": {\n"
+      "    \"serviceName\": \"health_check_service_name\"\n"
+      "    },\n"
+      "  \"healthCheckConfig\": {\n"
+      "    \"serviceName\": \"health_check_service_name1\"\n"
+      "    }\n"
+      "}";
+  grpc_error* error = GRPC_ERROR_NONE;
+  auto svc_cfg = ServiceConfig::Create(test_json, &error);
+  gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
+  ASSERT_TRUE(error != GRPC_ERROR_NONE);
+  std::regex e(
+      std::string("(Service config parsing "
+                  "error)(.*)(referenced_errors)(.*)(Global "
+                  "Params)(.*)(referenced_errors)(.*)(field:healthCheckConfig "
+                  "field:serviceName error:Duplicate entry)"));
+  std::smatch match;
+  std::string s(grpc_error_string(error));
+  EXPECT_TRUE(std::regex_search(s, match, e));
+  GRPC_ERROR_UNREF(error);
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 
