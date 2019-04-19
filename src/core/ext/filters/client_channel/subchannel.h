@@ -27,6 +27,7 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/arena.h"
+#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -191,37 +192,6 @@ class SubchannelConnectivityStateWatcher {
   GRPC_ABSTRACT_BASE_CLASS
 };
 
-// FIXME: use or remove
-#if 0
-class SubchannelInterface : public RefCounted<SubchannelInterface> {
- public:
-  virtual ~SubchannelInterface() = default;
-
-  // Returns the current connectivity state of the subchannel.
-  virtual grpc_connectivity_state GetConnectivityState() GRPC_ABSTRACT;
-
-  // Starts watching the subchannel's connectivity state.
-  // The first callback to the watcher will be delivered when the
-  // subchannel's connectivity state becomes a value other than
-  // initial_state, which may happen immediately.
-  // Subsequent callbacks will be delivered as the subchannel's state
-  // changes.
-  // The watcher will be destroyed either when the subchannel is
-  // destroyed or when CancelConnectivityStateWatch() is called.
-  virtual void WatchConnectivityState(
-      grpc_pollset_set* interested_parties,
-      grpc_connectivity_state initial_state,
-      UniquePtr<SubchannelConnectivityStateWatcher> watcher) GRPC_ABSTRACT;
-
-  // Cancels a connectivity state watch.
-  // If the watcher has already been destroyed, this is a no-op.
-  virtual void CancelConnectivityStateWatch(
-      SubchannelConnectivityStateWatcher* watcher) GRPC_ABTRACT;
-
-  GRPC_ABSTRACT_BASE_CLASS
-};
-#endif
-
 // A subchannel that knows how to connect to exactly one target address. It
 // provides a target for load balancing.
 class Subchannel {
@@ -259,6 +229,7 @@ class Subchannel {
   channelz::SubchannelNode* channelz_node();
 
   // Polls the current connectivity state of the subchannel.
+// FIXME: replace inhibit_health_checking with health_check_service_name
   grpc_connectivity_state CheckConnectivity(bool inhibit_health_checking);
 
   // When the connectivity state of the subchannel changes from \a *state,
@@ -278,12 +249,14 @@ class Subchannel {
   // destroyed or when CancelConnectivityStateWatch() is called.
   void WatchConnectivityState(
       grpc_pollset_set* interested_parties,
-      grpc_connectivity_state initial_state, bool inhibit_health_checking,
+      grpc_connectivity_state initial_state,
+      UniquePtr<char> health_check_service_name,
       UniquePtr<SubchannelConnectivityStateWatcher> watcher);
 
   // Cancels a connectivity state watch.
   // If the watcher has already been destroyed, this is a no-op.
   void CancelConnectivityStateWatch(
+      const char* health_check_service_name,
       SubchannelConnectivityStateWatcher* watcher);
 
   // Resets the connection backoff of the subchannel.
@@ -313,7 +286,6 @@ class Subchannel {
    public:
     void Add(Subchannel* subchannel, grpc_pollset_set* pollset_set,
              grpc_connectivity_state initial_state,
-             bool inhibit_health_checking,
              UniquePtr<SubchannelConnectivityStateWatcher> watcher);
     void Remove(SubchannelConnectivityStateWatcher* watcher);
 
@@ -324,6 +296,7 @@ class Subchannel {
   };
 
   class ConnectedSubchannelStateWatcher;
+  class HealthWatcher;
 
   // Sets the subchannel's connectivity state to \a state.
   void SetConnectivityStateLocked(grpc_connectivity_state state,
@@ -336,6 +309,9 @@ class Subchannel {
   static void OnConnectingFinished(void* arg, grpc_error* error);
   bool PublishTransportLocked();
   void Disconnect();
+
+  void StartHealthCheckingLocked();
+  void StopHealthCheckingLocked(grpc_connectivity_state state);
 
   gpr_atm RefMutate(gpr_atm delta,
                     int barrier GRPC_SUBCHANNEL_REF_MUTATE_EXTRA_ARGS);
@@ -371,8 +347,12 @@ class Subchannel {
 
   // Connectivity state tracking.
   grpc_connectivity_state_tracker state_tracker_;
-  grpc_connectivity_state_tracker state_and_health_tracker_;
+  Map<const char*, OrphanablePtr<HealthWatcher>, StringLess>
+      health_tracker_map_;
+
+// FIXME: remove
   UniquePtr<char> health_check_service_name_;
+
   ExternalStateWatcher* external_state_watcher_list_ = nullptr;
 // FIXME: rename
   ExternalStateWatcherList new_external_state_watcher_list_;
