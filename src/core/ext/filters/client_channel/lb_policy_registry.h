@@ -53,7 +53,7 @@ class LoadBalancingPolicyRegistry {
   static bool LoadBalancingPolicyExists(const char* name);
 
   static UniquePtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
-      const grpc_json* json, grpc_error** error);
+      const grpc_json* json, const char* field_name, grpc_error** error);
 };
 
 }  // namespace grpc_core

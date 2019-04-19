@@ -1728,7 +1728,7 @@ class XdsFactory : public LoadBalancingPolicyFactory {
         }
         grpc_error* parse_error = GRPC_ERROR_NONE;
         child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            field, &parse_error);
+            field, "childPolicy", &parse_error);
         if (child_policy == nullptr) {
           GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
           error_list.push_back(parse_error);
@@ -1740,7 +1740,7 @@ class XdsFactory : public LoadBalancingPolicyFactory {
         }
         grpc_error* parse_error = GRPC_ERROR_NONE;
         fallback_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            field, &parse_error);
+            field, "fallbackPolicy", &parse_error);
         if (fallback_policy == nullptr) {
           GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
           error_list.push_back(parse_error);

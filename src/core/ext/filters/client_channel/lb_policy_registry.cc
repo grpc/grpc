@@ -101,11 +101,12 @@ bool LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(const char* name) {
 
 UniquePtr<ParsedLoadBalancingConfig>
 LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(const grpc_json* json,
+                                                      const char* field_name,
                                                       grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   GPR_ASSERT(g_state != nullptr);
   const grpc_json* policy =
-      LoadBalancingPolicy::ParseLoadBalancingConfig(json, error);
+      LoadBalancingPolicy::ParseLoadBalancingConfig(json, field_name, error);
   if (policy == nullptr) {
     return nullptr;
   } else {
@@ -114,8 +115,11 @@ LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(const grpc_json* json,
     LoadBalancingPolicyFactory* factory =
         g_state->GetLoadBalancingPolicyFactory(policy->key);
     if (factory == nullptr) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:loadBalancingConfig entry:Factory not found to create policy");
+      char* msg;
+      gpr_asprintf(&msg, "field:%s error:Factory not found to create policy",
+                   field_name);
+      *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+      gpr_free(msg);
       return nullptr;
     }
     // Parse load balancing config via factory.

@@ -1860,7 +1860,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
         }
         grpc_error* parse_error = GRPC_ERROR_NONE;
         child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            field, &parse_error);
+            field, "childPolicy", &parse_error);
         if (parse_error != GRPC_ERROR_NONE) {
           error_list.push_back(parse_error);
         }

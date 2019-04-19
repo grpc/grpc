@@ -276,6 +276,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Returns the JSON node of policy (with both policy name and config content)
   /// given the JSON node of a LoadBalancingConfig array.
   static grpc_json* ParseLoadBalancingConfig(const grpc_json* lb_config_array,
+                                             const char* field_name,
                                              grpc_error** error);
 
   // A picker that returns PICK_QUEUE for all picks.

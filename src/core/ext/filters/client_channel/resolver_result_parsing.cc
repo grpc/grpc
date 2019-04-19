@@ -61,23 +61,6 @@ ProcessedResolverResult::ProcessedResolverResult(
       // Error is currently unused.
       GRPC_ERROR_UNREF(error);
     }
-  } else {
-    // Add the service config JSON to channel args so that it's
-    // accessible in the subchannel.
-    // TODO(roth): Consider whether there's a better way to pass the
-    // service config down into the subchannel stack, such as maybe via
-    // call context or metadata.  This would avoid the problem of having
-    // to recreate all subchannels whenever the service config changes.
-    // It would also avoid the need to pass in the resolver result in
-    // mutable form, both here and in
-    // ResolvingLoadBalancingPolicy::ProcessResolverResultCallback().
-    grpc_arg arg = grpc_channel_arg_string_create(
-        const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
-        const_cast<char*>(service_config_->service_config_json()));
-    grpc_channel_args* new_args =
-        grpc_channel_args_copy_and_add(resolver_result->args, &arg, 1);
-    grpc_channel_args_destroy(resolver_result->args);
-    resolver_result->args = new_args;
   }
   // Process service config.
   ProcessServiceConfig(*resolver_result, parse_retry);
@@ -380,8 +363,8 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
       } else {
         grpc_error* parse_error = GRPC_ERROR_NONE;
         parsed_lb_config =
-            LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(field,
-                                                                  &parse_error);
+            LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+                field, "loadBalancingConfig", &parse_error);
         if (parsed_lb_config == nullptr) {
           error_list.push_back(parse_error);
         }
@@ -398,7 +381,11 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
       } else if (!LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
                      field->value)) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:loadBalancingPolicy error:Unrecognized lb policy"));
+            "field:loadBalancingPolicy error:Unknown lb policy"));
+      } else if (strcmp(field->value, "xds_experimental") == 0) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:loadBalancingPolicy error:xds not supported with this "
+            "field. Please use loadBalancingConfig"));
       } else {
         lb_policy_name = field->value;
       }
@@ -535,7 +522,7 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(const grpc_json* json,
         wait_for_ready.set(false);
       } else {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:waitForReady error:Type should be a true/false"));
+            "field:waitForReady error:Type should be true/false"));
       }
     } else if (strcmp(field->key, "timeout") == 0) {
       if (timeout > 0) {

@@ -37,7 +37,7 @@ namespace {
 typedef InlinedVector<UniquePtr<ServiceConfigParser>,
                       ServiceConfig::kNumPreallocatedParsers>
     ServiceConfigParserList;
-ServiceConfigParserList* registered_parsers;
+ServiceConfigParserList* g_registered_parsers;
 
 // Consumes all the errors in the vector and forms a referencing error from
 // them. If the vector is empty, return GRPC_ERROR_NONE.
@@ -107,10 +107,10 @@ grpc_error* ServiceConfig::ParseGlobalParams(const grpc_json* json_tree) {
   GPR_DEBUG_ASSERT(json_tree_->type == GRPC_JSON_OBJECT);
   GPR_DEBUG_ASSERT(json_tree_->key == nullptr);
   InlinedVector<grpc_error*, 4> error_list;
-  for (size_t i = 0; i < registered_parsers->size(); i++) {
+  for (size_t i = 0; i < g_registered_parsers->size(); i++) {
     grpc_error* parser_error = GRPC_ERROR_NONE;
     auto parsed_obj =
-        (*registered_parsers)[i]->ParseGlobalParams(json_tree, &parser_error);
+        (*g_registered_parsers)[i]->ParseGlobalParams(json_tree, &parser_error);
     if (parser_error != GRPC_ERROR_NONE) {
       error_list.push_back(parser_error);
     }
@@ -125,10 +125,10 @@ grpc_error* ServiceConfig::ParseJsonMethodConfigToServiceConfigObjectsTable(
     size_t* idx) {
   auto objs_vector = MakeUnique<ServiceConfigObjectsVector>();
   InlinedVector<grpc_error*, 4> error_list;
-  for (size_t i = 0; i < registered_parsers->size(); i++) {
+  for (size_t i = 0; i < g_registered_parsers->size(); i++) {
     grpc_error* parser_error = GRPC_ERROR_NONE;
     auto parsed_obj =
-        (*registered_parsers)[i]->ParsePerMethodParams(json, &parser_error);
+        (*g_registered_parsers)[i]->ParsePerMethodParams(json, &parser_error);
     if (parser_error != GRPC_ERROR_NONE) {
       error_list.push_back(parser_error);
     }
@@ -332,18 +332,18 @@ ServiceConfig::GetMethodServiceConfigObjectsVector(const grpc_slice& path) {
 }
 
 size_t ServiceConfig::RegisterParser(UniquePtr<ServiceConfigParser> parser) {
-  registered_parsers->push_back(std::move(parser));
-  return registered_parsers->size() - 1;
+  g_registered_parsers->push_back(std::move(parser));
+  return g_registered_parsers->size() - 1;
 }
 
 void ServiceConfig::Init() {
-  GPR_ASSERT(registered_parsers == nullptr);
-  registered_parsers = New<ServiceConfigParserList>();
+  GPR_ASSERT(g_registered_parsers == nullptr);
+  g_registered_parsers = New<ServiceConfigParserList>();
 }
 
 void ServiceConfig::Shutdown() {
-  Delete(registered_parsers);
-  registered_parsers = nullptr;
+  Delete(g_registered_parsers);
+  g_registered_parsers = nullptr;
 }
 
 }  // namespace grpc_core
