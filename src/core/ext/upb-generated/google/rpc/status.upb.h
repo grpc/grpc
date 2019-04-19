@@ -34,9 +34,10 @@ extern const upb_msglayout google_protobuf_Any_msginit;
 UPB_INLINE google_rpc_Status *google_rpc_Status_new(upb_arena *arena) {
   return (google_rpc_Status *)upb_msg_new(&google_rpc_Status_msginit, arena);
 }
-UPB_INLINE google_rpc_Status *google_rpc_Status_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE google_rpc_Status *google_rpc_Status_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   google_rpc_Status *ret = google_rpc_Status_new(arena);
-  return (ret && upb_decode(buf, ret, &google_rpc_Status_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &google_rpc_Status_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *google_rpc_Status_serialize(const google_rpc_Status *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_rpc_Status_msginit, arena, len);
