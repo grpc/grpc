@@ -256,12 +256,11 @@ extern const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];
 #define GRPC_MDSTR_IDENTITY_COMMA_DEFLATE_COMMA_GZIP \
   (grpc_static_slice_table[106])
 
-extern const grpc_slice_refcount_vtable grpc_static_metadata_vtable;
 extern grpc_slice_refcount
     grpc_static_metadata_refcounts[GRPC_STATIC_MDSTR_COUNT];
 #define GRPC_IS_STATIC_METADATA_STRING(slice) \
   ((slice).refcount != NULL &&                \
-   (slice).refcount->vtable == &grpc_static_metadata_vtable)
+   (slice).refcount->GetType() == grpc_slice_refcount::Type::STATIC)
 
 #define GRPC_STATIC_METADATA_INDEX(static_slice) \
   ((int)((static_slice).refcount - grpc_static_metadata_refcounts))

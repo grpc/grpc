@@ -9,13 +9,12 @@ grpc_deps()
 grpc_test_only_deps()
 
 register_execution_platforms(
-    "//third_party/toolchains:rbe_ubuntu1604",
-    "//third_party/toolchains:rbe_ubuntu1604_large",
+    "//third_party/toolchains:local",
+    "//third_party/toolchains:local_large",
     "//third_party/toolchains:rbe_windows",
 )
 
 register_toolchains(
-    "//third_party/toolchains:cc-toolchain-clang-x86_64-default",
     "//third_party/toolchains/bazel_0.23.2_rbe_windows:cc-toolchain-x64_windows",
 )
 
@@ -53,14 +52,37 @@ load("//bazel:grpc_python_deps.bzl", "grpc_python_deps")
 
 grpc_python_deps()
 
+load("@bazel_toolchains//rules:rbe_repo.bzl", "rbe_autoconfig")
+
+# Create toolchain configuration for remote execution.
+rbe_autoconfig(
+    name = "rbe_default",
+)
+
+load("@bazel_toolchains//rules:environments.bzl", "clang_env")
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
+
+# Create msan toolchain configuration for remote execution.
+rbe_autoconfig(
+    name = "rbe_msan",
+    env = dicts.add(
+        clang_env(),
+        {
+            "BAZEL_LINKOPTS": "-lc++:-lc++abi:-lm",
+        },
+    ),
+)
+
 http_archive(
     name = "io_bazel_rules_go",
-    urls = ["https://github.com/bazelbuild/rules_go/releases/download/0.17.1/rules_go-0.17.1.tar.gz"],
     sha256 = "6776d68ebb897625dead17ae510eac3d5f6342367327875210df44dbe2aeeb19",
+    urls = ["https://github.com/bazelbuild/rules_go/releases/download/0.17.1/rules_go-0.17.1.tar.gz"],
 )
 
 load("@io_bazel_rules_go//go/private:repositories.bzl", "go_rules_dependencies")
+
 go_rules_dependencies()
 
 load("@envoy_api//bazel:repositories.bzl", "api_dependencies")
+
 api_dependencies()
