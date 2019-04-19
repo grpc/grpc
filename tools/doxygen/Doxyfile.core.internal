@@ -1113,8 +1113,6 @@ src/core/lib/gpr/alloc.h \
 src/core/lib/gpr/arena.cc \
 src/core/lib/gpr/arena.h \
 src/core/lib/gpr/atm.cc \
-src/core/lib/gpr/config.cc \
-src/core/lib/gpr/config.h \
 src/core/lib/gpr/cpu_iphone.cc \
 src/core/lib/gpr/cpu_linux.cc \
 src/core/lib/gpr/cpu_posix.cc \
@@ -1166,6 +1164,12 @@ src/core/lib/gprpp/atomic.h \
 src/core/lib/gprpp/debug_location.h \
 src/core/lib/gprpp/fork.cc \
 src/core/lib/gprpp/fork.h \
+src/core/lib/gprpp/global_config.h \
+src/core/lib/gprpp/global_config_custom.h \
+src/core/lib/gprpp/global_config_env.cc \
+src/core/lib/gprpp/global_config_env.h \
+src/core/lib/gprpp/global_config_generic.cc \
+src/core/lib/gprpp/global_config_generic.h \
 src/core/lib/gprpp/inlined_vector.h \
 src/core/lib/gprpp/manual_constructor.h \
 src/core/lib/gprpp/map.h \

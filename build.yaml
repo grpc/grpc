@@ -116,7 +116,6 @@ filegroups:
   - src/core/lib/gpr/alloc.cc
   - src/core/lib/gpr/arena.cc
   - src/core/lib/gpr/atm.cc
-  - src/core/lib/gpr/config.cc
   - src/core/lib/gpr/cpu_iphone.cc
   - src/core/lib/gpr/cpu_linux.cc
   - src/core/lib/gpr/cpu_posix.cc
@@ -149,6 +148,8 @@ filegroups:
   - src/core/lib/gpr/tmpfile_windows.cc
   - src/core/lib/gpr/wrap_memcpy.cc
   - src/core/lib/gprpp/fork.cc
+  - src/core/lib/gprpp/global_config_env.cc
+  - src/core/lib/gprpp/global_config_generic.cc
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/profiling/basic_timers.cc
@@ -177,7 +178,6 @@ filegroups:
   headers:
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/arena.h
-  - src/core/lib/gpr/config.h
   - src/core/lib/gpr/env.h
   - src/core/lib/gpr/host_port.h
   - src/core/lib/gpr/mpscq.h
@@ -195,6 +195,10 @@ filegroups:
   - src/core/lib/gprpp/abstract.h
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/fork.h
+  - src/core/lib/gprpp/global_config.h
+  - src/core/lib/gprpp/global_config_custom.h
+  - src/core/lib/gprpp/global_config_env.h
+  - src/core/lib/gprpp/global_config_generic.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/map.h
   - src/core/lib/gprpp/memory.h

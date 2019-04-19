@@ -89,7 +89,6 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/arena.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/env.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/host_port.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/mpscq.h" role="src" />
@@ -107,6 +106,10 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/abstract.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/atomic.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/fork.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/global_config.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/global_config_custom.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/global_config_env.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/global_config_generic.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/manual_constructor.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/map.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/memory.h" role="src" />
@@ -117,7 +120,6 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/arena.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/atm.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/cpu_iphone.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/cpu_linux.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/cpu_posix.cc" role="src" />
@@ -150,6 +152,8 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/wrap_memcpy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/fork.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/global_config_env.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/global_config_generic.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/basic_timers.cc" role="src" />

@@ -1065,7 +1065,6 @@ src/core/lib/debug/stats_data.h \
 src/core/lib/debug/trace.h \
 src/core/lib/gpr/alloc.h \
 src/core/lib/gpr/arena.h \
-src/core/lib/gpr/config.h \
 src/core/lib/gpr/env.h \
 src/core/lib/gpr/host_port.h \
 src/core/lib/gpr/mpscq.h \
@@ -1084,6 +1083,10 @@ src/core/lib/gprpp/abstract.h \
 src/core/lib/gprpp/atomic.h \
 src/core/lib/gprpp/debug_location.h \
 src/core/lib/gprpp/fork.h \
+src/core/lib/gprpp/global_config.h \
+src/core/lib/gprpp/global_config_custom.h \
+src/core/lib/gprpp/global_config_env.h \
+src/core/lib/gprpp/global_config_generic.h \
 src/core/lib/gprpp/inlined_vector.h \
 src/core/lib/gprpp/manual_constructor.h \
 src/core/lib/gprpp/map.h \

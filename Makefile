@@ -3317,7 +3317,6 @@ LIBGPR_SRC = \
     src/core/lib/gpr/alloc.cc \
     src/core/lib/gpr/arena.cc \
     src/core/lib/gpr/atm.cc \
-    src/core/lib/gpr/config.cc \
     src/core/lib/gpr/cpu_iphone.cc \
     src/core/lib/gpr/cpu_linux.cc \
     src/core/lib/gpr/cpu_posix.cc \
@@ -3350,6 +3349,8 @@ LIBGPR_SRC = \
     src/core/lib/gpr/tmpfile_windows.cc \
     src/core/lib/gpr/wrap_memcpy.cc \
     src/core/lib/gprpp/fork.cc \
+    src/core/lib/gprpp/global_config_env.cc \
+    src/core/lib/gprpp/global_config_generic.cc \
     src/core/lib/gprpp/thd_posix.cc \
     src/core/lib/gprpp/thd_windows.cc \
     src/core/lib/profiling/basic_timers.cc \
