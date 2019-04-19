@@ -989,6 +989,7 @@ include/grpcpp/impl/codegen/status.h \
 include/grpcpp/impl/codegen/status_code_enum.h \
 include/grpcpp/impl/codegen/string_ref.h \
 include/grpcpp/impl/codegen/stub_options.h \
+include/grpcpp/impl/codegen/sync.h \
 include/grpcpp/impl/codegen/sync_stream.h \
 include/grpcpp/impl/codegen/time.h \
 include/grpcpp/impl/grpc_library.h \
@@ -1012,6 +1013,7 @@ include/grpcpp/security/server_credentials.h \
 include/grpcpp/security/server_credentials_impl.h \
 include/grpcpp/server.h \
 include/grpcpp/server_builder.h \
+include/grpcpp/server_builder_impl.h \
 include/grpcpp/server_context.h \
 include/grpcpp/server_posix.h \
 include/grpcpp/server_posix_impl.h \
@@ -1052,6 +1054,7 @@ src/core/lib/channel/handshaker_factory.h \
 src/core/lib/channel/handshaker_registry.h \
 src/core/lib/channel/status_util.h \
 src/core/lib/compression/algorithm_metadata.h \
+src/core/lib/compression/compression_args.h \
 src/core/lib/compression/compression_internal.h \
 src/core/lib/compression/message_compress.h \
 src/core/lib/compression/stream_compression.h \
@@ -1084,12 +1087,12 @@ src/core/lib/gprpp/inlined_vector.h \
 src/core/lib/gprpp/manual_constructor.h \
 src/core/lib/gprpp/map.h \
 src/core/lib/gprpp/memory.h \
-src/core/lib/gprpp/mutex_lock.h \
 src/core/lib/gprpp/optional.h \
 src/core/lib/gprpp/orphanable.h \
 src/core/lib/gprpp/pair.h \
 src/core/lib/gprpp/ref_counted.h \
 src/core/lib/gprpp/ref_counted_ptr.h \
+src/core/lib/gprpp/sync.h \
 src/core/lib/gprpp/thd.h \
 src/core/lib/http/format_request.h \
 src/core/lib/http/httpcli.h \

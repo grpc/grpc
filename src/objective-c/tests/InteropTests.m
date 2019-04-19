@@ -20,7 +20,9 @@
 
 #include <grpc/status.h>
 
+#ifdef GRPC_COMPILE_WITH_CRONET
 #import <Cronet/Cronet.h>
+#endif
 #import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+Cronet.h>
 #import <GRPCClient/GRPCCall+Tests.h>
@@ -225,6 +227,52 @@ BOOL isRemoteInteropTest(NSString *host) {
                callOptions:options];
   [call start];
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
+// Test that responses can be dispatched even if we do not run main run-loop
+- (void)testAsyncDispatchWithV2API {
+  XCTAssertNotNil([[self class] host]);
+
+  GPBEmpty *request = [GPBEmpty message];
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.transportType = [[self class] transportType];
+  options.PEMRootCertificates = [[self class] PEMRootCertificates];
+  options.hostNameOverride = [[self class] hostNameOverride];
+
+  __block BOOL messageReceived = NO;
+  __block BOOL done = NO;
+  NSCondition *cond = [[NSCondition alloc] init];
+  GRPCUnaryProtoCall *call = [_service
+      emptyCallWithMessage:request
+           responseHandler:[[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+                               messageCallback:^(id message) {
+                                 if (message) {
+                                   id expectedResponse = [GPBEmpty message];
+                                   XCTAssertEqualObjects(message, expectedResponse);
+                                   [cond lock];
+                                   messageReceived = YES;
+                                   [cond unlock];
+                                 }
+                               }
+                               closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                                 XCTAssertNil(error, @"Unexpected error: %@", error);
+                                 [cond lock];
+                                 done = YES;
+                                 [cond signal];
+                                 [cond unlock];
+                               }]
+               callOptions:options];
+
+  NSDate *deadline = [NSDate dateWithTimeIntervalSinceNow:TEST_TIMEOUT];
+  [call start];
+
+  [cond lock];
+  while (!done && [deadline timeIntervalSinceNow] > 0) {
+    [cond waitUntilDate:deadline];
+  }
+  XCTAssertTrue(messageReceived);
+  XCTAssertTrue(done);
+  [cond unlock];
 }
 
 - (void)testLargeUnaryRPC {
@@ -753,7 +801,7 @@ BOOL isRemoteInteropTest(NSString *host) {
                      [GRPCCall closeOpenConnections];
 #pragma clang diagnostic pop
 
-                     [_service
+                     [self->_service
                          emptyCallWithRequest:request
                                       handler:^(GPBEmpty *response, NSError *error) {
                                         XCTAssertNil(

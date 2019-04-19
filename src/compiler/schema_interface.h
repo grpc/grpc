@@ -101,6 +101,7 @@ struct File : public CommentHolder {
   virtual grpc::string package() const = 0;
   virtual std::vector<grpc::string> package_parts() const = 0;
   virtual grpc::string additional_headers() const = 0;
+  virtual std::vector<grpc::string> GetImportNames() const { return {}; }
 
   virtual int service_count() const = 0;
   virtual std::unique_ptr<const Service> service(int i) const = 0;

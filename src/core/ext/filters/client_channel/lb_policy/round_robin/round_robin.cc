@@ -36,8 +36,8 @@
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/mutex_lock.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -92,11 +92,11 @@ class RoundRobin : public LoadBalancingPolicy {
     }
 
     void UpdateConnectivityStateLocked(
-        grpc_connectivity_state connectivity_state, grpc_error* error);
+        grpc_connectivity_state connectivity_state);
 
    private:
     void ProcessConnectivityChangeLocked(
-        grpc_connectivity_state connectivity_state, grpc_error* error) override;
+        grpc_connectivity_state connectivity_state) override;
 
     grpc_connectivity_state last_connectivity_state_ = GRPC_CHANNEL_IDLE;
   };
@@ -119,7 +119,6 @@ class RoundRobin : public LoadBalancingPolicy {
     }
 
     ~RoundRobinSubchannelList() {
-      GRPC_ERROR_UNREF(last_transient_failure_error_);
       RoundRobin* p = static_cast<RoundRobin*>(policy());
       p->Unref(DEBUG_LOCATION, "subchannel_list");
     }
@@ -129,11 +128,8 @@ class RoundRobin : public LoadBalancingPolicy {
 
     // Updates the counters of subchannels in each state when a
     // subchannel transitions from old_state to new_state.
-    // transient_failure_error is the error that is reported when
-    // new_state is TRANSIENT_FAILURE.
     void UpdateStateCountersLocked(grpc_connectivity_state old_state,
-                                   grpc_connectivity_state new_state,
-                                   grpc_error* transient_failure_error);
+                                   grpc_connectivity_state new_state);
 
     // If this subchannel list is the RR policy's current subchannel
     // list, updates the RR policy's connectivity state based on the
@@ -148,7 +144,6 @@ class RoundRobin : public LoadBalancingPolicy {
     size_t num_ready_ = 0;
     size_t num_connecting_ = 0;
     size_t num_transient_failure_ = 0;
-    grpc_error* last_transient_failure_error_ = GRPC_ERROR_NONE;
   };
 
   class Picker : public SubchannelPicker {
@@ -193,7 +188,7 @@ class RoundRobin : public LoadBalancingPolicy {
   bool shutdown_ = false;
   /// Lock and data used to capture snapshots of this channel's child
   /// channels and subchannels. This data is consumed by channelz.
-  gpr_mu child_refs_mu_;
+  Mutex child_refs_mu_;
   channelz::ChildRefsList child_subchannels_;
   channelz::ChildRefsList child_channels_;
 };
@@ -245,7 +240,6 @@ RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs* pick,
 //
 
 RoundRobin::RoundRobin(Args args) : LoadBalancingPolicy(std::move(args)) {
-  gpr_mu_init(&child_refs_mu_);
   if (grpc_lb_round_robin_trace.enabled()) {
     gpr_log(GPR_INFO, "[RR %p] Created", this);
   }
@@ -255,7 +249,6 @@ RoundRobin::~RoundRobin() {
   if (grpc_lb_round_robin_trace.enabled()) {
     gpr_log(GPR_INFO, "[RR %p] Destroying Round Robin policy", this);
   }
-  gpr_mu_destroy(&child_refs_mu_);
   GPR_ASSERT(subchannel_list_ == nullptr);
   GPR_ASSERT(latest_pending_subchannel_list_ == nullptr);
 }
@@ -317,11 +310,10 @@ void RoundRobin::RoundRobinSubchannelList::StartWatchingLocked() {
   // subchannel already used by some other channel may have a non-IDLE
   // state.
   for (size_t i = 0; i < num_subchannels(); ++i) {
-    grpc_error* error = GRPC_ERROR_NONE;
     grpc_connectivity_state state =
-        subchannel(i)->CheckConnectivityStateLocked(&error);
+        subchannel(i)->CheckConnectivityStateLocked();
     if (state != GRPC_CHANNEL_IDLE) {
-      subchannel(i)->UpdateConnectivityStateLocked(state, error);
+      subchannel(i)->UpdateConnectivityStateLocked(state);
     }
   }
   // Start connectivity watch for each subchannel.
@@ -335,8 +327,7 @@ void RoundRobin::RoundRobinSubchannelList::StartWatchingLocked() {
 }
 
 void RoundRobin::RoundRobinSubchannelList::UpdateStateCountersLocked(
-    grpc_connectivity_state old_state, grpc_connectivity_state new_state,
-    grpc_error* transient_failure_error) {
+    grpc_connectivity_state old_state, grpc_connectivity_state new_state) {
   GPR_ASSERT(old_state != GRPC_CHANNEL_SHUTDOWN);
   GPR_ASSERT(new_state != GRPC_CHANNEL_SHUTDOWN);
   if (old_state == GRPC_CHANNEL_READY) {
@@ -356,8 +347,6 @@ void RoundRobin::RoundRobinSubchannelList::UpdateStateCountersLocked(
   } else if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     ++num_transient_failure_;
   }
-  GRPC_ERROR_UNREF(last_transient_failure_error_);
-  last_transient_failure_error_ = transient_failure_error;
 }
 
 // Sets the RR policy's connectivity state and generates a new picker based
@@ -384,20 +373,21 @@ void RoundRobin::RoundRobinSubchannelList::
   if (num_ready_ > 0) {
     /* 1) READY */
     p->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_READY, GRPC_ERROR_NONE,
-        UniquePtr<SubchannelPicker>(New<Picker>(p, this)));
+        GRPC_CHANNEL_READY, UniquePtr<SubchannelPicker>(New<Picker>(p, this)));
   } else if (num_connecting_ > 0) {
     /* 2) CONNECTING */
     p->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_CONNECTING, GRPC_ERROR_NONE,
+        GRPC_CHANNEL_CONNECTING,
         UniquePtr<SubchannelPicker>(New<QueuePicker>(p->Ref())));
   } else if (num_transient_failure_ == num_subchannels()) {
     /* 3) TRANSIENT_FAILURE */
+    grpc_error* error =
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                               "connections to all backends failing"),
+                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        GRPC_ERROR_REF(last_transient_failure_error_),
-        UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(
-            GRPC_ERROR_REF(last_transient_failure_error_))));
+        UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(error)));
   }
 }
 
@@ -432,7 +422,7 @@ void RoundRobin::RoundRobinSubchannelList::
 }
 
 void RoundRobin::RoundRobinSubchannelData::UpdateConnectivityStateLocked(
-    grpc_connectivity_state connectivity_state, grpc_error* error) {
+    grpc_connectivity_state connectivity_state) {
   RoundRobin* p = static_cast<RoundRobin*>(subchannel_list()->policy());
   if (grpc_lb_round_robin_trace.enabled()) {
     gpr_log(
@@ -445,12 +435,12 @@ void RoundRobin::RoundRobinSubchannelData::UpdateConnectivityStateLocked(
         grpc_connectivity_state_name(connectivity_state));
   }
   subchannel_list()->UpdateStateCountersLocked(last_connectivity_state_,
-                                               connectivity_state, error);
+                                               connectivity_state);
   last_connectivity_state_ = connectivity_state;
 }
 
 void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
-    grpc_connectivity_state connectivity_state, grpc_error* error) {
+    grpc_connectivity_state connectivity_state) {
   RoundRobin* p = static_cast<RoundRobin*>(subchannel_list()->policy());
   GPR_ASSERT(subchannel() != nullptr);
   // If the new state is TRANSIENT_FAILURE, re-resolve.
@@ -470,7 +460,7 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
   // Renew connectivity watch.
   RenewConnectivityWatchLocked();
   // Update state counters.
-  UpdateConnectivityStateLocked(connectivity_state, error);
+  UpdateConnectivityStateLocked(connectivity_state);
   // Update overall state and renew notification.
   subchannel_list()->UpdateRoundRobinStateFromSubchannelStateCountsLocked();
 }
@@ -494,9 +484,11 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {
     // If the new list is empty, immediately promote the new list to the
     // current list and transition to TRANSIENT_FAILURE.
-    grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update");
+    grpc_error* error =
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
+                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(error),
+        GRPC_CHANNEL_TRANSIENT_FAILURE,
         UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(error)));
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
   } else if (subchannel_list_ == nullptr) {

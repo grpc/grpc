@@ -16,34 +16,45 @@ licenses(["notice"])  # Apache v2
 
 package(default_visibility = ["//visibility:public"])
 
-# Latest RBE Ubuntu16_04 container
-# Update every time when a new container is released.
 alias(
-    name = "rbe_ubuntu1604",
-    actual = ":rbe_ubuntu1604_r346485",
+    name = "rbe_windows",
+    actual = ":rbe_windows_1803",
 )
 
-alias(
-    name = "rbe_ubuntu1604_large",
-    actual = ":rbe_ubuntu1604_r346485_large",
-)
-
-# RBE Ubuntu16_04 r346485
+# RBE Windows
 platform(
-    name = "rbe_ubuntu1604_r346485",
+    name = "rbe_windows_1803",
     constraint_values = [
         "@bazel_tools//platforms:x86_64",
-        "@bazel_tools//platforms:linux",
-        "@bazel_tools//tools/cpp:clang",
-        "@com_github_bazelbuild_bazeltoolchains//constraints:xenial",
-        "@com_github_bazelbuild_bazeltoolchains//constraints/sanitizers:support_msan",
-        "//third_party/toolchains/machine_size:standard",
+        "@bazel_tools//platforms:windows",
+        "@bazel_tools//tools/cpp:msvc",
     ],
     remote_execution_properties = """
         properties: {
           name: "container-image"
-          value:"docker://gcr.io/cloud-marketplace/google/rbe-ubuntu16-04@sha256:f3120a030a19d67626ababdac79cc787e699a1aa924081431285118f87e7b375"
+          value:"docker://gcr.io/grpc-testing/rbe_windows_toolchain@sha256:689b177e4a157c431c7077d19d043de27922c37de835031f29c9093b8d5c6370"
         }
+        properties: {
+          name: "gceMachineType"  # Small machines for majority of tests.
+          value: "n1-highmem-2"
+        }
+        properties:{
+            name: "OSFamily"
+            value: "Windows"
+        }
+
+        """,
+)
+
+# RBE Ubuntu16_04 r346485
+platform(
+    name = "rbe_ubuntu1604",
+    parents = ["@rbe_default//config:platform"],
+    constraint_values = [
+        "//third_party/toolchains/machine_size:standard",
+    ],
+    remote_execution_properties = """
+        {PARENT_REMOTE_EXECUTION_PROPERTIES}
         properties: {
           name: "gceMachineType"  # Small machines for majority of tests.
           value: "n1-highmem-2"
@@ -67,22 +78,14 @@ platform(
         """,
 )
 
-# RBE Ubuntu16_04 r346485 large
 platform(
-    name = "rbe_ubuntu1604_r346485_large",
+    name = "rbe_ubuntu1604_large",
+    parents = ["@rbe_default//config:platform"],
     constraint_values = [
-        "@bazel_tools//platforms:x86_64",
-        "@bazel_tools//platforms:linux",
-        "@bazel_tools//tools/cpp:clang",
-        "@com_github_bazelbuild_bazeltoolchains//constraints:xenial",
-        "@com_github_bazelbuild_bazeltoolchains//constraints/sanitizers:support_msan",
         "//third_party/toolchains/machine_size:large",
     ],
     remote_execution_properties = """
-        properties: {
-          name: "container-image"
-          value:"docker://gcr.io/cloud-marketplace/google/rbe-ubuntu16-04@sha256:f3120a030a19d67626ababdac79cc787e699a1aa924081431285118f87e7b375"
-        }
+        {PARENT_REMOTE_EXECUTION_PROPERTIES}
         properties: {
           name: "gceMachineType"  # Large machines for some resource demanding tests (TSAN).
           value: "n1-standard-8"
@@ -106,12 +109,18 @@ platform(
     """,
 )
 
-toolchain(
-    name = "cc-toolchain-clang-x86_64-default",
-    exec_compatible_with = [
+platform(
+    name = "local",
+    parents = ["@bazel_tools//platforms:target_platform"],
+    constraint_values = [
+        "//third_party/toolchains/machine_size:standard",
     ],
-    target_compatible_with = [
+)
+
+platform(
+    name = "local_large",
+    parents = ["@bazel_tools//platforms:target_platform"],
+    constraint_values = [
+        "//third_party/toolchains/machine_size:large",
     ],
-    toolchain = "@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.1/bazel_0.20.0/default:cc-compiler-k8",
-    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
 )
