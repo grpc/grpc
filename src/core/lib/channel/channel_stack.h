@@ -69,7 +69,7 @@ typedef struct {
   const grpc_slice& path;
   gpr_timespec start_time;
   grpc_millis deadline;
-  gpr_arena* arena;
+  grpc_core::Arena* arena;
   grpc_call_combiner* call_combiner;
 } grpc_call_element_args;
 

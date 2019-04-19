@@ -91,8 +91,8 @@ class Arena {
 
 }  // namespace grpc_core
 
+// TODO(arjunroy) : Remove deprecated gpr_arena API once all callers are gone.
 typedef class grpc_core::Arena gpr_arena;
-
 // Create an arena, with \a initial_size bytes in the first allocated buffer
 inline gpr_arena* gpr_arena_create(size_t initial_size) {
   return grpc_core::Arena::Create(initial_size);

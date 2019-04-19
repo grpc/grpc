@@ -1493,7 +1493,8 @@ void CallData::MaybeCacheSendOpsForBatch(PendingBatch* pending) {
   }
   // Set up cache for send_message ops.
   if (batch->send_message) {
-    ByteStreamCache* cache = arena_->New<ByteStreamCache>(std::move(batch->payload->send_message.send_message));
+    ByteStreamCache* cache = arena_->New<ByteStreamCache>(
+        std::move(batch->payload->send_message.send_message));
     send_messages_.push_back(cache);
   }
   // Save metadata batch for send_trailing_metadata ops.
@@ -2585,10 +2586,10 @@ void CallData::AddRetriableSendInitialMetadataOp(
   //
   // If we've already completed one or more attempts, add the
   // grpc-retry-attempts header.
-  retry_state->send_initial_metadata_storage = static_cast<grpc_linked_mdelem*>(
-      arena_->Alloc(sizeof(grpc_linked_mdelem) *
-                                  (send_initial_metadata_.list.count +
-                                   (num_attempts_completed_ > 0))));
+  retry_state->send_initial_metadata_storage =
+      static_cast<grpc_linked_mdelem*>(arena_->Alloc(
+          sizeof(grpc_linked_mdelem) *
+          (send_initial_metadata_.list.count + (num_attempts_completed_ > 0))));
   grpc_metadata_batch_copy(&send_initial_metadata_,
                            &retry_state->send_initial_metadata,
                            retry_state->send_initial_metadata_storage);
