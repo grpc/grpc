@@ -2105,7 +2105,7 @@ INSTANTIATE_TEST_CASE_P(
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  GPR_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 200);
+  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 200);
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

@@ -25,8 +25,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/lib/gpr/config.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -56,14 +56,14 @@ static backup_poller* g_poller = nullptr;  // guarded by g_poller_mu
 // treated as const.
 static int g_poll_interval_ms = DEFAULT_POLL_INTERVAL_MS;
 
-GPR_CONFIG_DEFINE_INT32(grpc_client_channel_backup_poll_interval_ms,
-                        DEFAULT_POLL_INTERVAL_MS,
-                        "Client channel backup poll interval (ms)");
+GPR_GLOBAL_CONFIG_DEFINE_INT32(grpc_client_channel_backup_poll_interval_ms,
+                               DEFAULT_POLL_INTERVAL_MS,
+                               "Client channel backup poll interval (ms)");
 
 static void init_globals() {
   gpr_mu_init(&g_poller_mu);
   int32_t poll_interval_ms =
-      GPR_CONFIG_GET(grpc_client_channel_backup_poll_interval_ms);
+      GPR_GLOBAL_CONFIG_GET(grpc_client_channel_backup_poll_interval_ms);
   if (poll_interval_ms < 0) {
     gpr_log(GPR_ERROR,
             "Invalid GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS: %d, "

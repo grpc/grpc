@@ -371,7 +371,7 @@ class XdsEnd2endTest : public ::testing::Test {
             client_load_reporting_interval_seconds) {
     // Make the backup poller poll very frequently in order to pick up
     // updates from all the subchannels's FDs.
-    GPR_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+    GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
   }
 
   void SetUp() override {

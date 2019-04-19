@@ -20,15 +20,15 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/config.h"
+#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/transport/metadata.h"
 
-GPR_CONFIG_DEFINE_BOOL(grpc_experimental_disable_flow_control, false,
-                       "Disable flow control");
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_disable_flow_control, false,
+                              "Disable flow control");
 
 void grpc_chttp2_plugin_init(void) {
   g_flow_control_enabled =
-      !GPR_CONFIG_GET(grpc_experimental_disable_flow_control);
+      !GPR_GLOBAL_CONFIG_GET(grpc_experimental_disable_flow_control);
 }
 
 void grpc_chttp2_plugin_shutdown(void) {}

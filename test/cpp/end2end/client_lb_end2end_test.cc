@@ -142,7 +142,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
             grpc_fake_transport_security_credentials_create())) {
     // Make the backup poller poll very frequently in order to pick up
     // updates from all the subchannels's FDs.
-    GPR_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+    GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
   }
 
   void SetUp() override {
