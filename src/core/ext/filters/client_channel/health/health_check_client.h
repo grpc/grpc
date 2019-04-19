@@ -97,7 +97,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
     RefCountedPtr<HealthCheckClient> health_check_client_;
     grpc_polling_entity pollent_;
 
-    gpr_arena* arena_;
+    Arena* arena_;
     grpc_call_combiner call_combiner_;
     grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
