@@ -368,7 +368,10 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
 }
 
 // Destructor for channel_data.
-static void destroy_channel_elem(grpc_channel_element* elem) {}
+static void destroy_channel_elem(grpc_channel_element* elem) {
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
+  chand->svc_cfg.reset();
+}
 
 const grpc_channel_filter grpc_message_size_filter = {
     start_transport_stream_op_batch,
@@ -384,8 +387,13 @@ const grpc_channel_filter grpc_message_size_filter = {
     "message_size"};
 
 // Used for GRPC_CLIENT_SUBCHANNEL
-static bool add_message_size_filter(grpc_channel_stack_builder* builder,
-                                    void* arg) {
+static bool maybe_add_message_size_filter_subchannel(
+    grpc_channel_stack_builder* builder, void* arg) {
+  const grpc_channel_args* channel_args =
+      grpc_channel_stack_builder_get_channel_arguments(builder);
+  if (grpc_channel_args_want_minimal_stack(channel_args)) {
+    return true;
+  }
   return grpc_channel_stack_builder_prepend_filter(
       builder, &grpc_message_size_filter, nullptr, nullptr);
 }
@@ -417,9 +425,9 @@ static bool maybe_add_message_size_filter(grpc_channel_stack_builder* builder,
 }
 
 void grpc_message_size_filter_init(void) {
-  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   add_message_size_filter, nullptr);
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      maybe_add_message_size_filter_subchannel, nullptr);
   grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    maybe_add_message_size_filter, nullptr);
