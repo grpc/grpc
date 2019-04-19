@@ -150,6 +150,24 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
   static void Shutdown();
 
+  // Consumes all the errors in the vector and forms a referencing error from
+  // them. If the vector is empty, return GRPC_ERROR_NONE.
+  template <size_t N>
+  static grpc_error* CreateErrorFromVector(
+      const char* desc, InlinedVector<grpc_error*, N>* error_list) {
+    grpc_error* error = GRPC_ERROR_NONE;
+    if (error_list->size() != 0) {
+      error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+          desc, error_list->data(), error_list->size());
+      // Remove refs to all errors in error_list.
+      for (size_t i = 0; i < error_list->size(); i++) {
+        GRPC_ERROR_UNREF((*error_list)[i]);
+      }
+      error_list->clear();
+    }
+    return error;
+  }
+
  private:
   // So New() can call our private ctor.
   template <typename T, typename... Args>

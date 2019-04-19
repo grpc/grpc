@@ -3080,6 +3080,9 @@ void CallData::ApplyServiceConfigToCallLocked(grpc_call_element* elem) {
             chand, this);
   }
   if (chand->service_config() != nullptr) {
+    // Store a ref to the service_config in CallData. Also, save pointers to the
+    // ServiceConfig and ServiceConfigObjectsVector (for this call) in the
+    // call_context so that all future filters can access it.
     service_config_ = chand->service_config();
     call_context_[GRPC_SERVICE_CONFIG].value = &service_config_;
     const auto* method_params_vector_ptr =

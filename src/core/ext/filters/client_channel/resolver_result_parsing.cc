@@ -79,26 +79,6 @@ ProcessedResolverResult::ProcessedResolverResult(
   if (lb_policy_name_ == nullptr) ProcessLbPolicyName(*resolver_result);
 }
 
-namespace {
-// Consumes all the errors in the vector and forms a referencing error from
-// them. If the vector is empty, return GRPC_ERROR_NONE.
-template <size_t N>
-grpc_error* CreateErrorFromVector(const char* desc,
-                                  InlinedVector<grpc_error*, N>* error_list) {
-  grpc_error* error = GRPC_ERROR_NONE;
-  if (error_list->size() != 0) {
-    error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-        desc, error_list->data(), error_list->size());
-    // Remove refs to all errors in error_list.
-    for (size_t i = 0; i < error_list->size(); i++) {
-      GRPC_ERROR_UNREF((*error_list)[i]);
-    }
-    error_list->clear();
-  }
-  return error;
-}
-}  // namespace
-
 void ProcessedResolverResult::ProcessServiceConfig(
     const Resolver::Result& resolver_result, bool parse_retry) {
   if (service_config_ == nullptr) return;
@@ -349,7 +329,7 @@ UniquePtr<ClientChannelMethodParsedObject::RetryPolicy> ParseRetryPolicy(
       return nullptr;
     }
   }
-  *error = CreateErrorFromVector("retryPolicy", &error_list);
+  *error = ServiceConfig::CreateErrorFromVector("retryPolicy", &error_list);
   return *error == GRPC_ERROR_NONE ? std::move(retry_policy) : nullptr;
 }
 
@@ -504,7 +484,8 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
       }
     }
   }
-  *error = CreateErrorFromVector("Client channel global parser", &error_list);
+  *error = ServiceConfig::CreateErrorFromVector("Client channel global parser",
+                                                &error_list);
   if (*error == GRPC_ERROR_NONE) {
     return UniquePtr<ServiceConfigParsedObject>(
         New<ClientChannelGlobalParsedObject>(std::move(parsed_lb_config),
@@ -560,7 +541,8 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(const grpc_json* json,
       }
     }
   }
-  *error = CreateErrorFromVector("Client channel parser", &error_list);
+  *error = ServiceConfig::CreateErrorFromVector("Client channel parser",
+                                                &error_list);
   if (*error == GRPC_ERROR_NONE) {
     return UniquePtr<ServiceConfigParsedObject>(
         New<ClientChannelMethodParsedObject>(timeout, wait_for_ready,
