@@ -21,6 +21,12 @@
 
 #include <grpcpp/server_builder_impl.h>
 
+namespace grpc_impl {
+
+class ServerCredentials;
+class ResourceQuota;
+}  // namespace grpc_impl
+
 namespace grpc {
 
 typedef ::grpc_impl::ServerBuilder ServerBuilder;

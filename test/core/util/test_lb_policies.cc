@@ -153,12 +153,11 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
       return parent_->channel_control_helper()->CreateChannel(target, args);
     }
 
-    void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
+    void UpdateState(grpc_connectivity_state state,
                      UniquePtr<SubchannelPicker> picker) override {
       parent_->channel_control_helper()->UpdateState(
-          state, state_error,
-          UniquePtr<SubchannelPicker>(
-              New<Picker>(std::move(picker), cb_, user_data_)));
+          state, UniquePtr<SubchannelPicker>(
+                     New<Picker>(std::move(picker), cb_, user_data_)));
     }
 
     void RequestReresolution() override {

@@ -216,7 +216,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/alarm.h",
     "include/grpcpp/alarm_impl.h",
     "include/grpcpp/channel.h",
-    "include/grpcpp/channel_impl.h",
     "include/grpcpp/client_context.h",
     "include/grpcpp/completion_queue.h",
     "include/grpcpp/create_channel.h",
@@ -256,7 +255,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/security/server_credentials.h",
     "include/grpcpp/security/server_credentials_impl.h",
     "include/grpcpp/server.h",
-    "include/grpcpp/server_impl.h",
     "include/grpcpp/server_builder.h",
     "include/grpcpp/server_builder_impl.h",
     "include/grpcpp/server_context.h",
@@ -738,6 +736,7 @@ grpc_cc_library(
         "src/core/lib/channel/handshaker_registry.cc",
         "src/core/lib/channel/status_util.cc",
         "src/core/lib/compression/compression.cc",
+        "src/core/lib/compression/compression_args.cc",
         "src/core/lib/compression/compression_internal.cc",
         "src/core/lib/compression/message_compress.cc",
         "src/core/lib/compression/stream_compression.cc",
@@ -893,6 +892,7 @@ grpc_cc_library(
         "src/core/lib/channel/handshaker_registry.h",
         "src/core/lib/channel/status_util.h",
         "src/core/lib/compression/algorithm_metadata.h",
+        "src/core/lib/compression/compression_args.h",
         "src/core/lib/compression/compression_internal.h",
         "src/core/lib/compression/message_compress.h",
         "src/core/lib/compression/stream_compression.h",
@@ -2132,7 +2132,6 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/client_interceptor.h",
         "include/grpcpp/impl/codegen/client_unary_call.h",
         "include/grpcpp/impl/codegen/completion_queue.h",
-        "include/grpcpp/impl/codegen/completion_queue_impl.h",
         "include/grpcpp/impl/codegen/completion_queue_tag.h",
         "include/grpcpp/impl/codegen/config.h",
         "include/grpcpp/impl/codegen/core_codegen_interface.h",
@@ -2333,6 +2332,28 @@ grpc_cc_library(
 )
 
 #TODO: Get this into build.yaml once we start using it.
+grpc_cc_library(
+    name = "envoy_lrs_upb",
+    srcs = [
+        "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c",
+        "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h",
+        "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h",
+    ],
+    language = "c++",
+    external_deps = [
+        "upb_lib",
+    ],
+    deps = [
+        ":envoy_core_upb",
+        ":google_api_upb",
+        ":proto_gen_validate_upb",
+    ],
+    tags = ["no_windows"],
+)
+
 grpc_cc_library(
     name = "envoy_ads_upb",
     srcs = [

@@ -180,7 +180,7 @@ class ClientReader final : public ClientReaderInterface<R> {
   ///
   //  Side effect:
   ///   Once complete, the initial metadata read from
-  ///   the server will be accessable through the \a ClientContext used to
+  ///   the server will be accessible through the \a ClientContext used to
   ///   construct this object.
   void WaitForInitialMetadata() override {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
@@ -298,7 +298,7 @@ class ClientWriter : public ClientWriterInterface<W> {
   ///
   //  Side effect:
   ///   Once complete, the initial metadata read from the server will be
-  ///   accessable through the \a ClientContext used to construct this object.
+  ///   accessible through the \a ClientContext used to construct this object.
   void WaitForInitialMetadata() {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
@@ -449,7 +449,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
   /// with or after the \a Finish method.
   ///
   /// Once complete, the initial metadata read from the server will be
-  /// accessable through the \a ClientContext used to construct this object.
+  /// accessible through the \a ClientContext used to construct this object.
   void WaitForInitialMetadata() override {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 

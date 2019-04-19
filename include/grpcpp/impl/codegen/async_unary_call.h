@@ -29,6 +29,7 @@
 
 namespace grpc {
 
+class CompletionQueue;
 extern CoreCodegenInterface* g_core_codegen_interface;
 
 /// An interface relevant for async client side unary RPCs (which send

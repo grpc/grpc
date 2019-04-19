@@ -189,6 +189,15 @@ class ProtoBufFile : public grpc_generator::File {
     return grpc_python_generator::get_all_comments(file_);
   }
 
+  vector<grpc::string> GetImportNames() const {
+    vector<grpc::string> proto_names;
+    for (int i = 0; i < file_->dependency_count(); ++i) {
+      const auto& dep = *file_->dependency(i);
+      proto_names.push_back(dep.name());
+    }
+    return proto_names;
+  }
+
  private:
   const grpc::protobuf::FileDescriptor* file_;
 };
