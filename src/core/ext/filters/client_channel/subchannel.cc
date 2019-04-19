@@ -476,6 +476,98 @@ struct Subchannel::ExternalStateWatcher {
 };
 
 //
+// Subchannel::ExternalStateWatcherList::ExternalWatcher
+//
+
+class Subchannel::ExternalStateWatcherList::ExternalWatcher {
+ public:
+  ExternalWatcher(Subchannel* subchannel, grpc_pollset_set* pollset_set,
+                  grpc_connectivity_state initial_state,
+                  UniquePtr<SubchannelConnectivityStateWatcher> watcher)
+      : subchannel_(subchannel), pollset_set_(pollset_set),
+        state_(initial_state), watcher_(std::move(watcher)) {
+    GRPC_CLOSURE_INIT(&on_state_changed_, OnStateChanged, this,
+                      grpc_schedule_on_exec_ctx);
+    GRPC_SUBCHANNEL_WEAK_REF(subchannel_, "external_state_watcher+init");
+    if (pollset_set_ != nullptr) {
+      grpc_pollset_set_add_pollset_set(subchannel_->pollset_set_, pollset_set_);
+    }
+  }
+
+  ~ExternalWatcher() {
+    if (pollset_set_ != nullptr) {
+      grpc_pollset_set_del_pollset_set(subchannel_->pollset_set_, pollset_set_);
+    }
+    GRPC_SUBCHANNEL_WEAK_UNREF(subchannel_, "external_state_watcher+done");
+  }
+
+  void RequestNotification() {
+    grpc_connectivity_state_notify_on_state_change(&subchannel_->state_tracker_,
+                                                   &state_, &on_state_changed_);
+  }
+
+  void Shutdown() {
+    shutdown_.Store(true, MemoryOrder::RELEASE);
+    grpc_connectivity_state_notify_on_state_change(&subchannel_->state_tracker_,
+                                                   nullptr, &on_state_changed_);
+  }
+
+ private:
+  // For access to next_.
+  friend Subchannel::ExternalStateWatcherList;
+
+  static void OnStateChanged(void* arg, grpc_error* error) {
+    ExternalWatcher* self = static_cast<ExternalWatcher*>(arg);
+    if (self->shutdown_.Load(MemoryOrder::ACQUIRE) ||
+        error != GRPC_ERROR_NONE) {
+      Delete(self);
+    }
+    RefCountedPtr<ConnectedSubchannel> connected_subchannel;
+    if (self->state_ == GRPC_CHANNEL_READY) {
+      connected_subchannel = self->subchannel_->connected_subchannel();
+    }
+    self->watcher_->OnConnectivityStateChange(
+        self->state_, std::move(connected_subchannel));
+    self->RequestNotification();
+  }
+
+  Subchannel* subchannel_;
+  grpc_pollset_set* pollset_set_;
+  grpc_connectivity_state state_;
+  UniquePtr<SubchannelConnectivityStateWatcher> watcher_;
+  Atomic<bool> shutdown_{false};
+  grpc_closure on_state_changed_;
+  ExternalWatcher* next_ = nullptr;
+};
+
+//
+// Subchannel::ExternalStateWatcherList
+//
+
+void Subchannel::ExternalStateWatcherList::Add(
+    Subchannel* subchannel, grpc_pollset_set* pollset_set,
+    grpc_connectivity_state initial_state,
+    UniquePtr<SubchannelConnectivityStateWatcher> watcher) {
+  ExternalWatcher* w = New<ExternalWatcher>(
+      subchannel, pollset_set, initial_state, std::move(watcher));
+  w->next_ = head_;
+  head_ = w;
+  w->RequestNotification();
+}
+
+void Subchannel::ExternalStateWatcherList::Remove(
+    SubchannelConnectivityStateWatcher* watcher) {
+  for (ExternalWatcher** w = &head_; *w != nullptr; w = &(*w)->next_) {
+    if ((*w)->watcher_.get() == watcher) {
+      (*w)->Shutdown();
+      *w = (*w)->next_;
+      return;
+    }
+  }
+  GPR_UNREACHABLE_CODE(return );
+}
+
+//
 // Subchannel
 //
 
@@ -776,6 +868,21 @@ void Subchannel::NotifyOnStateChange(grpc_pollset_set* interested_parties,
                                                    &w->on_state_changed);
     MaybeStartConnectingLocked();
   }
+}
+
+void Subchannel::WatchConnectivityState(
+    grpc_pollset_set* interested_parties, grpc_connectivity_state initial_state,
+    UniquePtr<SubchannelConnectivityStateWatcher> watcher) {
+  MutexLock lock(&mu_);
+  new_external_state_watcher_list_.Add(this, interested_parties, initial_state,
+                                       std::move(watcher));
+  MaybeStartConnectingLocked();
+}
+
+void Subchannel::CancelConnectivityStateWatch(
+      SubchannelConnectivityStateWatcher* watcher) {
+  MutexLock lock(&mu_);
+  new_external_state_watcher_list_.Remove(watcher);
 }
 
 void Subchannel::ResetBackoff() {

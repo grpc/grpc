@@ -172,6 +172,56 @@ class SubchannelCall {
   grpc_millis deadline_;
 };
 
+class SubchannelConnectivityStateWatcher {
+ public:
+  virtual ~SubchannelConnectivityStateWatcher() = default;
+
+  // Will be invoked whenever the subchannel's connectivity state
+  // changes.  There will be only one invocation of this method on a
+  // given watcher instance at any given time.
+  //
+  // When the state changes to READY, connected_subchannel will
+  // contain a ref to the connected subchannel.  When it changes from
+  // READY to some other state, the implementation must release its
+  // ref to the connected subchannel.
+  virtual void OnConnectivityStateChange(
+      grpc_connectivity_state new_state,
+      RefCountedPtr<ConnectedSubchannel> connected_subchannel) GRPC_ABSTRACT;
+
+  GRPC_ABSTRACT_BASE_CLASS
+};
+
+// FIXME: use or remove
+#if 0
+class SubchannelInterface : public RefCounted<SubchannelInterface> {
+ public:
+  virtual ~SubchannelInterface() = default;
+
+  // Returns the current connectivity state of the subchannel.
+  virtual grpc_connectivity_state GetConnectivityState() GRPC_ABSTRACT;
+
+  // Starts watching the subchannel's connectivity state.
+  // The first callback to the watcher will be delivered when the
+  // subchannel's connectivity state becomes a value other than
+  // initial_state, which may happen immediately.
+  // Subsequent callbacks will be delivered as the subchannel's state
+  // changes.
+  // The watcher will be destroyed either when the subchannel is
+  // destroyed or when CancelConnectivityStateWatch() is called.
+  virtual void WatchConnectivityState(
+      grpc_pollset_set* interested_parties,
+      grpc_connectivity_state initial_state,
+      UniquePtr<SubchannelConnectivityStateWatcher> watcher) GRPC_ABSTRACT;
+
+  // Cancels a connectivity state watch.
+  // If the watcher has already been destroyed, this is a no-op.
+  virtual void CancelConnectivityStateWatch(
+      SubchannelConnectivityStateWatcher* watcher) GRPC_ABTRACT;
+
+  GRPC_ABSTRACT_BASE_CLASS
+};
+#endif
+
 // A subchannel that knows how to connect to exactly one target address. It
 // provides a target for load balancing.
 class Subchannel {
@@ -203,18 +253,39 @@ class Subchannel {
 
   // Gets the connected subchannel - or nullptr if not connected (which may
   // happen before it initially connects or during transient failures).
+// FIXME: remove
   RefCountedPtr<ConnectedSubchannel> connected_subchannel();
 
   channelz::SubchannelNode* channelz_node();
 
   // Polls the current connectivity state of the subchannel.
+// FIXME: remove inhibit_health_checking arg (and maybe rename)
   grpc_connectivity_state CheckConnectivity(bool inhibit_health_checking);
 
   // When the connectivity state of the subchannel changes from \a *state,
   // invokes \a notify and updates \a *state with the new state.
+// FIXME: remove
   void NotifyOnStateChange(grpc_pollset_set* interested_parties,
                            grpc_connectivity_state* state, grpc_closure* notify,
                            bool inhibit_health_checking);
+
+  // Starts watching the subchannel's connectivity state.
+  // The first callback to the watcher will be delivered when the
+  // subchannel's connectivity state becomes a value other than
+  // initial_state, which may happen immediately.
+  // Subsequent callbacks will be delivered as the subchannel's state
+  // changes.
+  // The watcher will be destroyed either when the subchannel is
+  // destroyed or when CancelConnectivityStateWatch() is called.
+  void WatchConnectivityState(
+      grpc_pollset_set* interested_parties,
+      grpc_connectivity_state initial_state,
+      UniquePtr<SubchannelConnectivityStateWatcher> watcher);
+
+  // Cancels a connectivity state watch.
+  // If the watcher has already been destroyed, this is a no-op.
+  void CancelConnectivityStateWatch(
+      SubchannelConnectivityStateWatcher* watcher);
 
   // Resets the connection backoff of the subchannel.
   // TODO(roth): Move connection backoff out of subchannels and up into LB
@@ -236,7 +307,22 @@ class Subchannel {
                                                  grpc_resolved_address* addr);
 
  private:
+// FIXME: remove
   struct ExternalStateWatcher;
+
+  class ExternalStateWatcherList {
+   public:
+    void Add(Subchannel* subchannel, grpc_pollset_set* pollset_set,
+             grpc_connectivity_state initial_state,
+             UniquePtr<SubchannelConnectivityStateWatcher> watcher);
+    void Remove(SubchannelConnectivityStateWatcher* watcher);
+
+   private:
+    class ExternalWatcher;
+
+    ExternalWatcher* head_ = nullptr;
+  };
+
   class ConnectedSubchannelStateWatcher;
 
   // Sets the subchannel's connectivity state to \a state.
@@ -288,6 +374,8 @@ class Subchannel {
   grpc_connectivity_state_tracker state_and_health_tracker_;
   UniquePtr<char> health_check_service_name_;
   ExternalStateWatcher* external_state_watcher_list_ = nullptr;
+// FIXME: rename
+  ExternalStateWatcherList new_external_state_watcher_list_;
 
   // Backoff state.
   BackOff backoff_;
