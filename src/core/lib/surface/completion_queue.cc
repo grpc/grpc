@@ -814,6 +814,11 @@ static void cq_end_op_for_pluck(grpc_completion_queue* cq, void* tag,
   GRPC_ERROR_UNREF(error);
 }
 
+static void functor_callback(void* arg, grpc_error* error) {
+  auto* functor = static_cast<grpc_experimental_completion_queue_functor*>(arg);
+  (*functor).functor_run(callback, error == GRPC_ERROR_NONE ? true : false);
+}
+
 /* Complete an event on a completion queue of type GRPC_CQ_CALLBACK */
 static void cq_end_op_for_callback(
     grpc_completion_queue* cq, void* tag, grpc_error* error,
@@ -822,7 +827,6 @@ static void cq_end_op_for_callback(
   GPR_TIMER_SCOPE("cq_end_op_for_callback", 0);
 
   cq_callback_data* cqd = static_cast<cq_callback_data*> DATA_FROM_CQ(cq);
-  bool is_success = (error == GRPC_ERROR_NONE);
 
   if (grpc_api_trace.enabled() ||
       (grpc_trace_operation_failures.enabled() && error != GRPC_ERROR_NONE)) {
@@ -847,10 +851,13 @@ static void cq_end_op_for_callback(
     cq_finish_shutdown_callback(cq);
   }
 
-  GRPC_ERROR_UNREF(error);
-
   auto* functor = static_cast<grpc_experimental_completion_queue_functor*>(tag);
-  grpc_core::ApplicationCallbackExecCtx::Enqueue(functor, is_success);
+  GRPC_CLOSURE_SCHED(
+      GRPC_CLOSURE_CREATE(functor_callback, functor,
+                          grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT)),
+      GRPC_ERROR_REF(error));
+
+  GRPC_ERROR_UNREF(error);
 }
 
 void grpc_cq_end_op(grpc_completion_queue* cq, void* tag, grpc_error* error,
@@ -1334,7 +1341,11 @@ static void cq_finish_shutdown_callback(grpc_completion_queue* cq) {
   GPR_ASSERT(cqd->shutdown_called);
 
   cq->poller_vtable->shutdown(POLLSET_FROM_CQ(cq), &cq->pollset_shutdown_done);
-  grpc_core::ApplicationCallbackExecCtx::Enqueue(callback, true);
+  GRPC_CLOSURE_SCHED(
+      GRPC_CLOSURE_CREATE(functor_callback, callback,
+                          grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT)),
+      GRPC_ERROR_NONE);
+
 }
 
 static void cq_shutdown_callback(grpc_completion_queue* cq) {
