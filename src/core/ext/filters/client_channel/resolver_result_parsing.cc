@@ -44,8 +44,19 @@
 namespace grpc_core {
 namespace internal {
 
-size_t ClientChannelServiceConfigParser::
-    client_channel_service_config_parser_index_;
+namespace {
+size_t g_client_channel_service_config_parser_index;
+}
+
+size_t
+ClientChannelServiceConfigParser::client_channel_service_config_parser_index() {
+  return g_client_channel_service_config_parser_index;
+}
+
+void ClientChannelServiceConfigParser::Register() {
+  g_client_channel_service_config_parser_index = ServiceConfig::RegisterParser(
+      UniquePtr<ServiceConfigParser>(New<ClientChannelServiceConfigParser>()));
+}
 
 ProcessedResolverResult::ProcessedResolverResult(
     Resolver::Result* resolver_result, bool parse_retry)
@@ -333,6 +344,8 @@ UniquePtr<ClientChannelMethodParsedObject::RetryPolicy> ParseRetryPolicy(
         retry_policy->max_backoff == 0 ||
         retry_policy->backoff_multiplier == 0 ||
         retry_policy->retryable_status_codes.Empty()) {
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:retryPolicy error:Missing required field(s)");
       return nullptr;
     }
   }

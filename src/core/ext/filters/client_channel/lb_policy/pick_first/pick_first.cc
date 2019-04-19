@@ -530,14 +530,7 @@ void PickFirst::PickFirstSubchannelData::
 
 class ParsedPickFirstConfig : public ParsedLoadBalancingConfig {
  public:
-  ParsedPickFirstConfig(const grpc_json* json) : json_(json) {}
-
   const char* name() const override { return kPickFirst; }
-
-  const grpc_json* config() const { return json_; }
-
- private:
-  const grpc_json* json_;
 };
 
 //
@@ -557,8 +550,7 @@ class PickFirstFactory : public LoadBalancingPolicyFactory {
       const grpc_json* json, grpc_error** error) const override {
     GPR_DEBUG_ASSERT(json != nullptr);
     GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
-    return UniquePtr<ParsedLoadBalancingConfig>(
-        New<ParsedPickFirstConfig>(json));
+    return UniquePtr<ParsedLoadBalancingConfig>(New<ParsedPickFirstConfig>());
   }
 };
 

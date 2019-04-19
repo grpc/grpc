@@ -120,19 +120,16 @@ constexpr char kGrpclb[] = "grpclb";
 
 class ParsedGrpcLbConfig : public ParsedLoadBalancingConfig {
  public:
-  ParsedGrpcLbConfig(UniquePtr<ParsedLoadBalancingConfig> child_policy,
-                     const grpc_json* json)
-      : child_policy_(std::move(child_policy)), json_(json) {}
+  ParsedGrpcLbConfig(UniquePtr<ParsedLoadBalancingConfig> child_policy)
+      : child_policy_(std::move(child_policy)) {}
   const char* name() const override { return kGrpclb; }
 
   const ParsedLoadBalancingConfig* child_policy() const {
     return child_policy_.get();
   }
-  const grpc_json* config() const { return json_; }
 
  private:
   UniquePtr<ParsedLoadBalancingConfig> child_policy_;
-  const grpc_json* json_ = nullptr;
 };
 
 class GrpcLb : public LoadBalancingPolicy {
@@ -1847,6 +1844,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
         if (child_policy != nullptr) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "field:childPolicy error:Duplicate entry"));
+          continue;
         }
         grpc_error* parse_error = GRPC_ERROR_NONE;
         child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
@@ -1858,7 +1856,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
     }
     if (error_list.empty()) {
       return UniquePtr<ParsedLoadBalancingConfig>(
-          New<ParsedGrpcLbConfig>(std::move(child_policy), json));
+          New<ParsedGrpcLbConfig>(std::move(child_policy)));
     } else {
       *error = CreateErrorFromVector("GrpcLb Parser", &error_list);
       return nullptr;

@@ -107,18 +107,8 @@ class ClientChannelServiceConfigParser : public ServiceConfigParser {
   UniquePtr<ServiceConfigParsedObject> ParsePerMethodParams(
       const grpc_json* json, grpc_error** error) override;
 
-  static size_t client_channel_service_config_parser_index() {
-    return client_channel_service_config_parser_index_;
-  }
-
-  static void Register() {
-    client_channel_service_config_parser_index_ =
-        ServiceConfig::RegisterParser(UniquePtr<ServiceConfigParser>(
-            New<ClientChannelServiceConfigParser>()));
-  }
-
- private:
-  static size_t client_channel_service_config_parser_index_;
+  static size_t client_channel_service_config_parser_index();
+  static void Register();
 };
 
 // A container of processed fields from the resolver result. Simplifies the

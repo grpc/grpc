@@ -22,7 +22,7 @@
 
 namespace grpc_core {
 namespace {
-size_t health_check_parser_index;
+size_t g_health_check_parser_index;
 }
 
 UniquePtr<ServiceConfigParsedObject> HealthCheckParser::ParseGlobalParams(
@@ -66,10 +66,10 @@ UniquePtr<ServiceConfigParsedObject> HealthCheckParser::ParseGlobalParams(
 }
 
 void HealthCheckParser::Register() {
-  health_check_parser_index = ServiceConfig::RegisterParser(
+  g_health_check_parser_index = ServiceConfig::RegisterParser(
       UniquePtr<ServiceConfigParser>(New<HealthCheckParser>()));
 }
 
-size_t HealthCheckParser::ParserIndex() { return health_check_parser_index; }
+size_t HealthCheckParser::ParserIndex() { return g_health_check_parser_index; }
 
 }  // namespace grpc_core

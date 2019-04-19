@@ -123,12 +123,10 @@ class ParsedXdsConfig : public ParsedLoadBalancingConfig {
  public:
   ParsedXdsConfig(const char* balancer_name,
                   UniquePtr<ParsedLoadBalancingConfig> child_policy,
-                  UniquePtr<ParsedLoadBalancingConfig> fallback_policy,
-                  const grpc_json* json)
+                  UniquePtr<ParsedLoadBalancingConfig> fallback_policy)
       : balancer_name_(balancer_name),
         child_policy_(std::move(child_policy)),
-        fallback_policy_(std::move(fallback_policy)),
-        json_(json) {}
+        fallback_policy_(std::move(fallback_policy)) {}
 
   const char* name() const override { return kXds; }
 
@@ -142,13 +140,10 @@ class ParsedXdsConfig : public ParsedLoadBalancingConfig {
     return fallback_policy_.get();
   }
 
-  const grpc_json* config() const { return json_; }
-
  private:
   const char* balancer_name_ = nullptr;
   UniquePtr<ParsedLoadBalancingConfig> child_policy_;
   UniquePtr<ParsedLoadBalancingConfig> fallback_policy_;
-  const grpc_json* json_ = nullptr;
 };
 
 class XdsLb : public LoadBalancingPolicy {
@@ -1729,6 +1724,7 @@ class XdsFactory : public LoadBalancingPolicyFactory {
         if (fallback_policy != nullptr) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "field:fallbackPolicy error:Duplicate entry"));
+          continue;
         }
         grpc_error* parse_error = GRPC_ERROR_NONE;
         fallback_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
@@ -1744,9 +1740,8 @@ class XdsFactory : public LoadBalancingPolicyFactory {
           "field:balancerName error:not found"));
     }
     if (error_list.empty()) {
-      return UniquePtr<ParsedLoadBalancingConfig>(
-          New<ParsedXdsConfig>(balancer_name, std::move(child_policy),
-                               std::move(fallback_policy), json));
+      return UniquePtr<ParsedLoadBalancingConfig>(New<ParsedXdsConfig>(
+          balancer_name, std::move(child_policy), std::move(fallback_policy)));
     } else {
       *error = CreateErrorFromVector("Xds Parser", &error_list);
       return nullptr;

@@ -83,7 +83,6 @@ UniquePtr<ServiceConfigParsedObject> MessageSizeParser::ParsePerMethodParams(
         }
       }
     } else if (strcmp(field->key, "maxResponseMessageBytes") == 0) {
-      gpr_log(GPR_ERROR, "bla");
       if (max_response_message_bytes >= 0) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:maxResponseMessageBytes error:Duplicate entry"));
