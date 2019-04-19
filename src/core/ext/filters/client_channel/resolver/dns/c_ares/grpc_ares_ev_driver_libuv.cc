@@ -37,14 +37,14 @@ namespace grpc_core {
 void ares_uv_poll_cb(uv_poll_t* handle, int status, int events);
 
 void ares_uv_poll_close_cb(uv_handle_t *handle) {
-  delete handle;
+  Delete(handle);
 }
 
 class GrpcPolledFdLibuv : public GrpcPolledFd {
  public:
   GrpcPolledFdLibuv(ares_socket_t as): as_(as) {
     gpr_asprintf(&name_, "c-ares socket: %" PRIdPTR, (intptr_t)as);
-    handle_ = new uv_poll_t;
+    handle_ = New<uv_poll_t>();
     uv_poll_init_socket(uv_default_loop(), handle_, as);
     handle_->data = this;
   }
