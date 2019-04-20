@@ -37,10 +37,9 @@ extern const upb_msglayout google_protobuf_UInt32Value_msginit;
 UPB_INLINE envoy_api_v2_cluster_CircuitBreakers *envoy_api_v2_cluster_CircuitBreakers_new(upb_arena *arena) {
   return (envoy_api_v2_cluster_CircuitBreakers *)upb_msg_new(&envoy_api_v2_cluster_CircuitBreakers_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_cluster_CircuitBreakers *envoy_api_v2_cluster_CircuitBreakers_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
+UPB_INLINE envoy_api_v2_cluster_CircuitBreakers *envoy_api_v2_cluster_CircuitBreakers_parsenew(upb_strview buf, upb_arena *arena) {
   envoy_api_v2_cluster_CircuitBreakers *ret = envoy_api_v2_cluster_CircuitBreakers_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_cluster_CircuitBreakers_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, ret, &envoy_api_v2_cluster_CircuitBreakers_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_cluster_CircuitBreakers_serialize(const envoy_api_v2_cluster_CircuitBreakers *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_cluster_CircuitBreakers_msginit, arena, len);
@@ -68,10 +67,9 @@ UPB_INLINE struct envoy_api_v2_cluster_CircuitBreakers_Thresholds* envoy_api_v2_
 UPB_INLINE envoy_api_v2_cluster_CircuitBreakers_Thresholds *envoy_api_v2_cluster_CircuitBreakers_Thresholds_new(upb_arena *arena) {
   return (envoy_api_v2_cluster_CircuitBreakers_Thresholds *)upb_msg_new(&envoy_api_v2_cluster_CircuitBreakers_Thresholds_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_cluster_CircuitBreakers_Thresholds *envoy_api_v2_cluster_CircuitBreakers_Thresholds_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
+UPB_INLINE envoy_api_v2_cluster_CircuitBreakers_Thresholds *envoy_api_v2_cluster_CircuitBreakers_Thresholds_parsenew(upb_strview buf, upb_arena *arena) {
   envoy_api_v2_cluster_CircuitBreakers_Thresholds *ret = envoy_api_v2_cluster_CircuitBreakers_Thresholds_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_cluster_CircuitBreakers_Thresholds_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, ret, &envoy_api_v2_cluster_CircuitBreakers_Thresholds_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_cluster_CircuitBreakers_Thresholds_serialize(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_cluster_CircuitBreakers_Thresholds_msginit, arena, len);

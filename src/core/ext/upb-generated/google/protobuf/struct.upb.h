@@ -45,10 +45,9 @@ typedef enum {
 UPB_INLINE google_protobuf_Struct *google_protobuf_Struct_new(upb_arena *arena) {
   return (google_protobuf_Struct *)upb_msg_new(&google_protobuf_Struct_msginit, arena);
 }
-UPB_INLINE google_protobuf_Struct *google_protobuf_Struct_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
+UPB_INLINE google_protobuf_Struct *google_protobuf_Struct_parsenew(upb_strview buf, upb_arena *arena) {
   google_protobuf_Struct *ret = google_protobuf_Struct_new(arena);
-  return (ret && upb_decode(buf, size, ret, &google_protobuf_Struct_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, ret, &google_protobuf_Struct_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *google_protobuf_Struct_serialize(const google_protobuf_Struct *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_protobuf_Struct_msginit, arena, len);
@@ -76,10 +75,9 @@ UPB_INLINE struct google_protobuf_Struct_FieldsEntry* google_protobuf_Struct_add
 UPB_INLINE google_protobuf_Struct_FieldsEntry *google_protobuf_Struct_FieldsEntry_new(upb_arena *arena) {
   return (google_protobuf_Struct_FieldsEntry *)upb_msg_new(&google_protobuf_Struct_FieldsEntry_msginit, arena);
 }
-UPB_INLINE google_protobuf_Struct_FieldsEntry *google_protobuf_Struct_FieldsEntry_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
+UPB_INLINE google_protobuf_Struct_FieldsEntry *google_protobuf_Struct_FieldsEntry_parsenew(upb_strview buf, upb_arena *arena) {
   google_protobuf_Struct_FieldsEntry *ret = google_protobuf_Struct_FieldsEntry_new(arena);
-  return (ret && upb_decode(buf, size, ret, &google_protobuf_Struct_FieldsEntry_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, ret, &google_protobuf_Struct_FieldsEntry_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *google_protobuf_Struct_FieldsEntry_serialize(const google_protobuf_Struct_FieldsEntry *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_protobuf_Struct_FieldsEntry_msginit, arena, len);
@@ -110,10 +108,9 @@ UPB_INLINE struct google_protobuf_Value* google_protobuf_Struct_FieldsEntry_muta
 UPB_INLINE google_protobuf_Value *google_protobuf_Value_new(upb_arena *arena) {
   return (google_protobuf_Value *)upb_msg_new(&google_protobuf_Value_msginit, arena);
 }
-UPB_INLINE google_protobuf_Value *google_protobuf_Value_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
+UPB_INLINE google_protobuf_Value *google_protobuf_Value_parsenew(upb_strview buf, upb_arena *arena) {
   google_protobuf_Value *ret = google_protobuf_Value_new(arena);
-  return (ret && upb_decode(buf, size, ret, &google_protobuf_Value_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, ret, &google_protobuf_Value_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *google_protobuf_Value_serialize(const google_protobuf_Value *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_protobuf_Value_msginit, arena, len);
@@ -126,7 +123,7 @@ typedef enum {
   google_protobuf_Value_kind_bool_value = 4,
   google_protobuf_Value_kind_struct_value = 5,
   google_protobuf_Value_kind_list_value = 6,
-  google_protobuf_Value_kind_NOT_SET = 0
+  google_protobuf_Value_kind_NOT_SET = 0,
 } google_protobuf_Value_kind_oneofcases;
 UPB_INLINE google_protobuf_Value_kind_oneofcases google_protobuf_Value_kind_case(const google_protobuf_Value* msg) { return UPB_FIELD_AT(msg, int, UPB_SIZE(8, 16)); }
 
@@ -186,10 +183,9 @@ UPB_INLINE struct google_protobuf_ListValue* google_protobuf_Value_mutable_list_
 UPB_INLINE google_protobuf_ListValue *google_protobuf_ListValue_new(upb_arena *arena) {
   return (google_protobuf_ListValue *)upb_msg_new(&google_protobuf_ListValue_msginit, arena);
 }
-UPB_INLINE google_protobuf_ListValue *google_protobuf_ListValue_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
+UPB_INLINE google_protobuf_ListValue *google_protobuf_ListValue_parsenew(upb_strview buf, upb_arena *arena) {
   google_protobuf_ListValue *ret = google_protobuf_ListValue_new(arena);
-  return (ret && upb_decode(buf, size, ret, &google_protobuf_ListValue_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, ret, &google_protobuf_ListValue_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *google_protobuf_ListValue_serialize(const google_protobuf_ListValue *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_protobuf_ListValue_msginit, arena, len);

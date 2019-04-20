@@ -50,10 +50,9 @@ extern const upb_msglayout google_protobuf_UInt32Value_msginit;
 UPB_INLINE envoy_api_v2_core_TcpProtocolOptions *envoy_api_v2_core_TcpProtocolOptions_new(upb_arena *arena) {
   return (envoy_api_v2_core_TcpProtocolOptions *)upb_msg_new(&envoy_api_v2_core_TcpProtocolOptions_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_core_TcpProtocolOptions *envoy_api_v2_core_TcpProtocolOptions_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
+UPB_INLINE envoy_api_v2_core_TcpProtocolOptions *envoy_api_v2_core_TcpProtocolOptions_parsenew(upb_strview buf, upb_arena *arena) {
   envoy_api_v2_core_TcpProtocolOptions *ret = envoy_api_v2_core_TcpProtocolOptions_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_TcpProtocolOptions_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, ret, &envoy_api_v2_core_TcpProtocolOptions_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_TcpProtocolOptions_serialize(const envoy_api_v2_core_TcpProtocolOptions *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_TcpProtocolOptions_msginit, arena, len);
@@ -67,10 +66,9 @@ UPB_INLINE char *envoy_api_v2_core_TcpProtocolOptions_serialize(const envoy_api_
 UPB_INLINE envoy_api_v2_core_HttpProtocolOptions *envoy_api_v2_core_HttpProtocolOptions_new(upb_arena *arena) {
   return (envoy_api_v2_core_HttpProtocolOptions *)upb_msg_new(&envoy_api_v2_core_HttpProtocolOptions_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_core_HttpProtocolOptions *envoy_api_v2_core_HttpProtocolOptions_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
+UPB_INLINE envoy_api_v2_core_HttpProtocolOptions *envoy_api_v2_core_HttpProtocolOptions_parsenew(upb_strview buf, upb_arena *arena) {
   envoy_api_v2_core_HttpProtocolOptions *ret = envoy_api_v2_core_HttpProtocolOptions_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_HttpProtocolOptions_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, ret, &envoy_api_v2_core_HttpProtocolOptions_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_HttpProtocolOptions_serialize(const envoy_api_v2_core_HttpProtocolOptions *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_HttpProtocolOptions_msginit, arena, len);
@@ -97,10 +95,9 @@ UPB_INLINE struct google_protobuf_Duration* envoy_api_v2_core_HttpProtocolOption
 UPB_INLINE envoy_api_v2_core_Http1ProtocolOptions *envoy_api_v2_core_Http1ProtocolOptions_new(upb_arena *arena) {
   return (envoy_api_v2_core_Http1ProtocolOptions *)upb_msg_new(&envoy_api_v2_core_Http1ProtocolOptions_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_core_Http1ProtocolOptions *envoy_api_v2_core_Http1ProtocolOptions_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
+UPB_INLINE envoy_api_v2_core_Http1ProtocolOptions *envoy_api_v2_core_Http1ProtocolOptions_parsenew(upb_strview buf, upb_arena *arena) {
   envoy_api_v2_core_Http1ProtocolOptions *ret = envoy_api_v2_core_Http1ProtocolOptions_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_Http1ProtocolOptions_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, ret, &envoy_api_v2_core_Http1ProtocolOptions_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_Http1ProtocolOptions_serialize(const envoy_api_v2_core_Http1ProtocolOptions *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_Http1ProtocolOptions_msginit, arena, len);
@@ -135,10 +132,9 @@ UPB_INLINE void envoy_api_v2_core_Http1ProtocolOptions_set_default_host_for_http
 UPB_INLINE envoy_api_v2_core_Http2ProtocolOptions *envoy_api_v2_core_Http2ProtocolOptions_new(upb_arena *arena) {
   return (envoy_api_v2_core_Http2ProtocolOptions *)upb_msg_new(&envoy_api_v2_core_Http2ProtocolOptions_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_core_Http2ProtocolOptions *envoy_api_v2_core_Http2ProtocolOptions_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
+UPB_INLINE envoy_api_v2_core_Http2ProtocolOptions *envoy_api_v2_core_Http2ProtocolOptions_parsenew(upb_strview buf, upb_arena *arena) {
   envoy_api_v2_core_Http2ProtocolOptions *ret = envoy_api_v2_core_Http2ProtocolOptions_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_Http2ProtocolOptions_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, ret, &envoy_api_v2_core_Http2ProtocolOptions_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_Http2ProtocolOptions_serialize(const envoy_api_v2_core_Http2ProtocolOptions *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_Http2ProtocolOptions_msginit, arena, len);
@@ -208,10 +204,9 @@ UPB_INLINE void envoy_api_v2_core_Http2ProtocolOptions_set_allow_connect(envoy_a
 UPB_INLINE envoy_api_v2_core_GrpcProtocolOptions *envoy_api_v2_core_GrpcProtocolOptions_new(upb_arena *arena) {
   return (envoy_api_v2_core_GrpcProtocolOptions *)upb_msg_new(&envoy_api_v2_core_GrpcProtocolOptions_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_core_GrpcProtocolOptions *envoy_api_v2_core_GrpcProtocolOptions_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
+UPB_INLINE envoy_api_v2_core_GrpcProtocolOptions *envoy_api_v2_core_GrpcProtocolOptions_parsenew(upb_strview buf, upb_arena *arena) {
   envoy_api_v2_core_GrpcProtocolOptions *ret = envoy_api_v2_core_GrpcProtocolOptions_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_GrpcProtocolOptions_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, ret, &envoy_api_v2_core_GrpcProtocolOptions_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_GrpcProtocolOptions_serialize(const envoy_api_v2_core_GrpcProtocolOptions *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_GrpcProtocolOptions_msginit, arena, len);
