@@ -44,9 +44,10 @@ extern const upb_msglayout google_protobuf_UInt32Value_msginit;
 UPB_INLINE envoy_api_v2_ClusterLoadAssignment *envoy_api_v2_ClusterLoadAssignment_new(upb_arena *arena) {
   return (envoy_api_v2_ClusterLoadAssignment *)upb_msg_new(&envoy_api_v2_ClusterLoadAssignment_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_ClusterLoadAssignment *envoy_api_v2_ClusterLoadAssignment_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_ClusterLoadAssignment *envoy_api_v2_ClusterLoadAssignment_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_ClusterLoadAssignment *ret = envoy_api_v2_ClusterLoadAssignment_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_ClusterLoadAssignment_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_ClusterLoadAssignment_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_ClusterLoadAssignment_serialize(const envoy_api_v2_ClusterLoadAssignment *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_ClusterLoadAssignment_msginit, arena, len);
@@ -91,9 +92,10 @@ UPB_INLINE struct envoy_api_v2_ClusterLoadAssignment_Policy* envoy_api_v2_Cluste
 UPB_INLINE envoy_api_v2_ClusterLoadAssignment_Policy *envoy_api_v2_ClusterLoadAssignment_Policy_new(upb_arena *arena) {
   return (envoy_api_v2_ClusterLoadAssignment_Policy *)upb_msg_new(&envoy_api_v2_ClusterLoadAssignment_Policy_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_ClusterLoadAssignment_Policy *envoy_api_v2_ClusterLoadAssignment_Policy_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_ClusterLoadAssignment_Policy *envoy_api_v2_ClusterLoadAssignment_Policy_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_ClusterLoadAssignment_Policy *ret = envoy_api_v2_ClusterLoadAssignment_Policy_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_ClusterLoadAssignment_Policy_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_ClusterLoadAssignment_Policy_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_ClusterLoadAssignment_Policy_serialize(const envoy_api_v2_ClusterLoadAssignment_Policy *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_ClusterLoadAssignment_Policy_msginit, arena, len);
@@ -134,9 +136,10 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_ClusterLoadAssignmen
 UPB_INLINE envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload *envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload_new(upb_arena *arena) {
   return (envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload *)upb_msg_new(&envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload *envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload *envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload *ret = envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload_serialize(const envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload_msginit, arena, len);

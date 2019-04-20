@@ -207,8 +207,8 @@ def grpc_deps():
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            strip_prefix = "upb-ed9faae0993704b033c594b072d65e1bf19207fa",
-            url = "https://github.com/google/upb/archive/ed9faae0993704b033c594b072d65e1bf19207fa.tar.gz",
+            strip_prefix = "upb-f9dab27de3f3a77650199da487dd450a49ed35b2",
+            url = "https://github.com/google/upb/archive/f9dab27de3f3a77650199da487dd450a49ed35b2.tar.gz",
         )
 
     if "envoy_api" not in native.existing_rules():

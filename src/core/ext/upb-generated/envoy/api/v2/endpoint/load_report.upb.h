@@ -50,9 +50,10 @@ extern const upb_msglayout google_protobuf_Duration_msginit;
 UPB_INLINE envoy_api_v2_endpoint_UpstreamLocalityStats *envoy_api_v2_endpoint_UpstreamLocalityStats_new(upb_arena *arena) {
   return (envoy_api_v2_endpoint_UpstreamLocalityStats *)upb_msg_new(&envoy_api_v2_endpoint_UpstreamLocalityStats_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_endpoint_UpstreamLocalityStats *envoy_api_v2_endpoint_UpstreamLocalityStats_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_endpoint_UpstreamLocalityStats *envoy_api_v2_endpoint_UpstreamLocalityStats_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_endpoint_UpstreamLocalityStats *ret = envoy_api_v2_endpoint_UpstreamLocalityStats_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_endpoint_UpstreamLocalityStats_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_endpoint_UpstreamLocalityStats_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_endpoint_UpstreamLocalityStats_serialize(const envoy_api_v2_endpoint_UpstreamLocalityStats *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_endpoint_UpstreamLocalityStats_msginit, arena, len);
@@ -123,9 +124,10 @@ UPB_INLINE struct envoy_api_v2_endpoint_UpstreamEndpointStats* envoy_api_v2_endp
 UPB_INLINE envoy_api_v2_endpoint_UpstreamEndpointStats *envoy_api_v2_endpoint_UpstreamEndpointStats_new(upb_arena *arena) {
   return (envoy_api_v2_endpoint_UpstreamEndpointStats *)upb_msg_new(&envoy_api_v2_endpoint_UpstreamEndpointStats_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_endpoint_UpstreamEndpointStats *envoy_api_v2_endpoint_UpstreamEndpointStats_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_endpoint_UpstreamEndpointStats *envoy_api_v2_endpoint_UpstreamEndpointStats_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_endpoint_UpstreamEndpointStats *ret = envoy_api_v2_endpoint_UpstreamEndpointStats_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_endpoint_UpstreamEndpointStats_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_endpoint_UpstreamEndpointStats_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_endpoint_UpstreamEndpointStats_serialize(const envoy_api_v2_endpoint_UpstreamEndpointStats *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_endpoint_UpstreamEndpointStats_msginit, arena, len);
@@ -178,9 +180,10 @@ UPB_INLINE struct envoy_api_v2_endpoint_EndpointLoadMetricStats* envoy_api_v2_en
 UPB_INLINE envoy_api_v2_endpoint_EndpointLoadMetricStats *envoy_api_v2_endpoint_EndpointLoadMetricStats_new(upb_arena *arena) {
   return (envoy_api_v2_endpoint_EndpointLoadMetricStats *)upb_msg_new(&envoy_api_v2_endpoint_EndpointLoadMetricStats_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_endpoint_EndpointLoadMetricStats *envoy_api_v2_endpoint_EndpointLoadMetricStats_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_endpoint_EndpointLoadMetricStats *envoy_api_v2_endpoint_EndpointLoadMetricStats_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_endpoint_EndpointLoadMetricStats *ret = envoy_api_v2_endpoint_EndpointLoadMetricStats_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_endpoint_EndpointLoadMetricStats_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_endpoint_EndpointLoadMetricStats_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_endpoint_EndpointLoadMetricStats_serialize(const envoy_api_v2_endpoint_EndpointLoadMetricStats *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_endpoint_EndpointLoadMetricStats_msginit, arena, len);
@@ -206,9 +209,10 @@ UPB_INLINE void envoy_api_v2_endpoint_EndpointLoadMetricStats_set_total_metric_v
 UPB_INLINE envoy_api_v2_endpoint_ClusterStats *envoy_api_v2_endpoint_ClusterStats_new(upb_arena *arena) {
   return (envoy_api_v2_endpoint_ClusterStats *)upb_msg_new(&envoy_api_v2_endpoint_ClusterStats_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_endpoint_ClusterStats *envoy_api_v2_endpoint_ClusterStats_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_endpoint_ClusterStats *envoy_api_v2_endpoint_ClusterStats_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_endpoint_ClusterStats *ret = envoy_api_v2_endpoint_ClusterStats_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_endpoint_ClusterStats_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_endpoint_ClusterStats_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_endpoint_ClusterStats_serialize(const envoy_api_v2_endpoint_ClusterStats *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_endpoint_ClusterStats_msginit, arena, len);
@@ -271,9 +275,10 @@ UPB_INLINE struct envoy_api_v2_endpoint_ClusterStats_DroppedRequests* envoy_api_
 UPB_INLINE envoy_api_v2_endpoint_ClusterStats_DroppedRequests *envoy_api_v2_endpoint_ClusterStats_DroppedRequests_new(upb_arena *arena) {
   return (envoy_api_v2_endpoint_ClusterStats_DroppedRequests *)upb_msg_new(&envoy_api_v2_endpoint_ClusterStats_DroppedRequests_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_endpoint_ClusterStats_DroppedRequests *envoy_api_v2_endpoint_ClusterStats_DroppedRequests_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_endpoint_ClusterStats_DroppedRequests *envoy_api_v2_endpoint_ClusterStats_DroppedRequests_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_endpoint_ClusterStats_DroppedRequests *ret = envoy_api_v2_endpoint_ClusterStats_DroppedRequests_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_endpoint_ClusterStats_DroppedRequests_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_endpoint_ClusterStats_DroppedRequests_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_endpoint_ClusterStats_DroppedRequests_serialize(const envoy_api_v2_endpoint_ClusterStats_DroppedRequests *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_endpoint_ClusterStats_DroppedRequests_msginit, arena, len);

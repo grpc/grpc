@@ -53,9 +53,10 @@ extern const upb_msglayout google_rpc_Status_msginit;
 UPB_INLINE envoy_api_v2_DiscoveryRequest *envoy_api_v2_DiscoveryRequest_new(upb_arena *arena) {
   return (envoy_api_v2_DiscoveryRequest *)upb_msg_new(&envoy_api_v2_DiscoveryRequest_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_DiscoveryRequest *envoy_api_v2_DiscoveryRequest_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_DiscoveryRequest *envoy_api_v2_DiscoveryRequest_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_DiscoveryRequest *ret = envoy_api_v2_DiscoveryRequest_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_DiscoveryRequest_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_DiscoveryRequest_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_DiscoveryRequest_serialize(const envoy_api_v2_DiscoveryRequest *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_DiscoveryRequest_msginit, arena, len);
@@ -118,9 +119,10 @@ UPB_INLINE struct google_rpc_Status* envoy_api_v2_DiscoveryRequest_mutable_error
 UPB_INLINE envoy_api_v2_DiscoveryResponse *envoy_api_v2_DiscoveryResponse_new(upb_arena *arena) {
   return (envoy_api_v2_DiscoveryResponse *)upb_msg_new(&envoy_api_v2_DiscoveryResponse_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_DiscoveryResponse *envoy_api_v2_DiscoveryResponse_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_DiscoveryResponse *envoy_api_v2_DiscoveryResponse_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_DiscoveryResponse *ret = envoy_api_v2_DiscoveryResponse_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_DiscoveryResponse_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_DiscoveryResponse_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_DiscoveryResponse_serialize(const envoy_api_v2_DiscoveryResponse *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_DiscoveryResponse_msginit, arena, len);
@@ -164,9 +166,10 @@ UPB_INLINE void envoy_api_v2_DiscoveryResponse_set_nonce(envoy_api_v2_DiscoveryR
 UPB_INLINE envoy_api_v2_IncrementalDiscoveryRequest *envoy_api_v2_IncrementalDiscoveryRequest_new(upb_arena *arena) {
   return (envoy_api_v2_IncrementalDiscoveryRequest *)upb_msg_new(&envoy_api_v2_IncrementalDiscoveryRequest_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_IncrementalDiscoveryRequest *envoy_api_v2_IncrementalDiscoveryRequest_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_IncrementalDiscoveryRequest *envoy_api_v2_IncrementalDiscoveryRequest_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_IncrementalDiscoveryRequest *ret = envoy_api_v2_IncrementalDiscoveryRequest_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_IncrementalDiscoveryRequest_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_IncrementalDiscoveryRequest_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_IncrementalDiscoveryRequest_serialize(const envoy_api_v2_IncrementalDiscoveryRequest *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_IncrementalDiscoveryRequest_msginit, arena, len);
@@ -250,9 +253,10 @@ UPB_INLINE struct google_rpc_Status* envoy_api_v2_IncrementalDiscoveryRequest_mu
 UPB_INLINE envoy_api_v2_IncrementalDiscoveryRequest_InitialResourceVersionsEntry *envoy_api_v2_IncrementalDiscoveryRequest_InitialResourceVersionsEntry_new(upb_arena *arena) {
   return (envoy_api_v2_IncrementalDiscoveryRequest_InitialResourceVersionsEntry *)upb_msg_new(&envoy_api_v2_IncrementalDiscoveryRequest_InitialResourceVersionsEntry_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_IncrementalDiscoveryRequest_InitialResourceVersionsEntry *envoy_api_v2_IncrementalDiscoveryRequest_InitialResourceVersionsEntry_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_IncrementalDiscoveryRequest_InitialResourceVersionsEntry *envoy_api_v2_IncrementalDiscoveryRequest_InitialResourceVersionsEntry_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_IncrementalDiscoveryRequest_InitialResourceVersionsEntry *ret = envoy_api_v2_IncrementalDiscoveryRequest_InitialResourceVersionsEntry_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_IncrementalDiscoveryRequest_InitialResourceVersionsEntry_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_IncrementalDiscoveryRequest_InitialResourceVersionsEntry_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_IncrementalDiscoveryRequest_InitialResourceVersionsEntry_serialize(const envoy_api_v2_IncrementalDiscoveryRequest_InitialResourceVersionsEntry *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_IncrementalDiscoveryRequest_InitialResourceVersionsEntry_msginit, arena, len);
@@ -274,9 +278,10 @@ UPB_INLINE void envoy_api_v2_IncrementalDiscoveryRequest_InitialResourceVersions
 UPB_INLINE envoy_api_v2_IncrementalDiscoveryResponse *envoy_api_v2_IncrementalDiscoveryResponse_new(upb_arena *arena) {
   return (envoy_api_v2_IncrementalDiscoveryResponse *)upb_msg_new(&envoy_api_v2_IncrementalDiscoveryResponse_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_IncrementalDiscoveryResponse *envoy_api_v2_IncrementalDiscoveryResponse_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_IncrementalDiscoveryResponse *envoy_api_v2_IncrementalDiscoveryResponse_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_IncrementalDiscoveryResponse *ret = envoy_api_v2_IncrementalDiscoveryResponse_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_IncrementalDiscoveryResponse_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_IncrementalDiscoveryResponse_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_IncrementalDiscoveryResponse_serialize(const envoy_api_v2_IncrementalDiscoveryResponse *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_IncrementalDiscoveryResponse_msginit, arena, len);
@@ -323,9 +328,10 @@ UPB_INLINE bool envoy_api_v2_IncrementalDiscoveryResponse_add_removed_resources(
 UPB_INLINE envoy_api_v2_Resource *envoy_api_v2_Resource_new(upb_arena *arena) {
   return (envoy_api_v2_Resource *)upb_msg_new(&envoy_api_v2_Resource_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_Resource *envoy_api_v2_Resource_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_Resource *envoy_api_v2_Resource_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_Resource *ret = envoy_api_v2_Resource_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_Resource_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_Resource_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_Resource_serialize(const envoy_api_v2_Resource *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_Resource_msginit, arena, len);

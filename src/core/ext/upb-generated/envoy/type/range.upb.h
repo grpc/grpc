@@ -35,9 +35,10 @@ extern const upb_msglayout envoy_type_DoubleRange_msginit;
 UPB_INLINE envoy_type_Int64Range *envoy_type_Int64Range_new(upb_arena *arena) {
   return (envoy_type_Int64Range *)upb_msg_new(&envoy_type_Int64Range_msginit, arena);
 }
-UPB_INLINE envoy_type_Int64Range *envoy_type_Int64Range_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_type_Int64Range *envoy_type_Int64Range_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_type_Int64Range *ret = envoy_type_Int64Range_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_type_Int64Range_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_type_Int64Range_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_type_Int64Range_serialize(const envoy_type_Int64Range *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_type_Int64Range_msginit, arena, len);
@@ -59,9 +60,10 @@ UPB_INLINE void envoy_type_Int64Range_set_end(envoy_type_Int64Range *msg, int64_
 UPB_INLINE envoy_type_DoubleRange *envoy_type_DoubleRange_new(upb_arena *arena) {
   return (envoy_type_DoubleRange *)upb_msg_new(&envoy_type_DoubleRange_msginit, arena);
 }
-UPB_INLINE envoy_type_DoubleRange *envoy_type_DoubleRange_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_type_DoubleRange *envoy_type_DoubleRange_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_type_DoubleRange *ret = envoy_type_DoubleRange_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_type_DoubleRange_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_type_DoubleRange_msginit)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_type_DoubleRange_serialize(const envoy_type_DoubleRange *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_type_DoubleRange_msginit, arena, len);
