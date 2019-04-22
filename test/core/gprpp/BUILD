@@ -29,6 +29,16 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "global_config_test",
+    srcs = ["global_config_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "manual_constructor_test",
     srcs = ["manual_constructor_test.cc"],
     language = "C++",

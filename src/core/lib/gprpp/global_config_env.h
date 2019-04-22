@@ -46,7 +46,7 @@ class GlobalConfigEnv {
   char* name_;
 };
 
-class GlobalConfigEnvBool : GlobalConfigEnv {
+class GlobalConfigEnvBool : public GlobalConfigEnv {
  public:
   GlobalConfigEnvBool(char* name, bool default_value);
 
@@ -57,7 +57,7 @@ class GlobalConfigEnvBool : GlobalConfigEnv {
   bool default_value_;
 };
 
-class GlobalConfigEnvInt32 : GlobalConfigEnv {
+class GlobalConfigEnvInt32 : public GlobalConfigEnv {
  public:
   GlobalConfigEnvInt32(char* name, int32_t default_value);
 
@@ -68,7 +68,7 @@ class GlobalConfigEnvInt32 : GlobalConfigEnv {
   int32_t default_value_;
 };
 
-class GlobalConfigEnvString : GlobalConfigEnv {
+class GlobalConfigEnvString : public GlobalConfigEnv {
  public:
   GlobalConfigEnvString(char* name, const char* default_value);
 

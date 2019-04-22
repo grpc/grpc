@@ -37,8 +37,8 @@
   extern int32_t gpr_global_config_get_##name(); \
   extern void gpr_global_config_set_##name(int32_t value)
 
-#define GPR_GLOBAL_CONFIG_DECLARE_STRING(name)           \
-  extern UniquePtr<char> gpr_global_config_get_##name(); \
+#define GPR_GLOBAL_CONFIG_DECLARE_STRING(name)                      \
+  extern grpc_core::UniquePtr<char> gpr_global_config_get_##name(); \
   extern void gpr_global_config_set_##name(const char* value)
 
 typedef void (*gpr_global_config_error_func)(const char* error_message);
