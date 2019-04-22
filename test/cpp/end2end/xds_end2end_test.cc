@@ -432,7 +432,7 @@ class XdsEnd2endTest : public ::testing::Test {
             channel_creds, call_creds, nullptr)));
     call_creds->Unref();
     channel_creds->Unref();
-    channel_ = CreateCustomChannel(uri.str(), creds, args);
+    channel_ = ::grpc::CreateCustomChannel(uri.str(), creds, args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 

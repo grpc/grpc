@@ -341,7 +341,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     if (!GetParam().inproc) {
       if (!GetParam().use_interceptors) {
         channel_ =
-            CreateCustomChannel(server_address_.str(), channel_creds, args);
+            ::grpc::CreateCustomChannel(server_address_.str(), channel_creds, args);
       } else {
         channel_ = CreateCustomChannelWithInterceptors(
             server_address_.str(), channel_creds, args,

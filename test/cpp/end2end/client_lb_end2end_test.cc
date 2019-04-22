@@ -236,7 +236,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }  // else, default to pick first
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());
-    return CreateCustomChannel("fake:///", creds_, args);
+    return ::grpc::CreateCustomChannel("fake:///", creds_, args);
   }
 
   bool SendRpc(

@@ -143,7 +143,7 @@ class ClientCallbackEnd2endTest
       case Protocol::TCP:
         if (!GetParam().use_interceptors) {
           channel_ =
-              CreateCustomChannel(server_address_.str(), channel_creds, args);
+              ::grpc::CreateCustomChannel(server_address_.str(), channel_creds, args);
         } else {
           channel_ = CreateCustomChannelWithInterceptors(
               server_address_.str(), channel_creds, args,
@@ -1094,7 +1094,7 @@ TEST_P(ClientCallbackEnd2endTest, UnimplementedRpc) {
       GetParam().credentials_type, &args);
   std::shared_ptr<Channel> channel =
       (GetParam().protocol == Protocol::TCP)
-          ? CreateCustomChannel(server_address_.str(), channel_creds, args)
+          ? ::grpc::CreateCustomChannel(server_address_.str(), channel_creds, args)
           : server_->InProcessChannel(args);
   std::unique_ptr<grpc::testing::UnimplementedEchoService::Stub> stub;
   stub = grpc::testing::UnimplementedEchoService::NewStub(channel);
