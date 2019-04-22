@@ -109,7 +109,7 @@ def main(argv):
         elif opt == '-d':
             assert not got_preprocessed_input
             with open(arg, 'r') as dict_file:
-                bunch.merge_json(json_dict, yaml.load(dict_file.read()))
+                bunch.merge_json(json_dict, yaml.full_load(dict_file.read()))
         elif opt == '-p':
             plugins.append(import_plugin(arg))
         elif opt == '-w':

@@ -58,7 +58,7 @@ else:
     check_version = lambda version: True
 
 with open('build.yaml', 'r') as f:
-    build_yaml = yaml.load(f.read())
+    build_yaml = yaml.full_load(f.read())
 
 settings = build_yaml['settings']
 

@@ -22,7 +22,7 @@ import yaml
 import json
 
 with open('src/core/lib/debug/stats_data.yaml') as f:
-    attrs = yaml.load(f.read())
+    attrs = yaml.full_load(f.read())
 
 REQUIRED_FIELDS = ['name', 'doc']
 

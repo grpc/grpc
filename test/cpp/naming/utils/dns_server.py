@@ -68,7 +68,7 @@ def start_local_dns_server(args):
     _push_record(name, dns.Record_TXT(*txt_data_list, ttl=r_ttl))
 
   with open(args.records_config_path) as config:
-    test_records_config = yaml.load(config)
+    test_records_config = yaml.full_load(config)
   common_zone_name = test_records_config['resolver_tests_common_zone_name']
   for group in test_records_config['resolver_component_tests']:
     for name in group['records'].keys():

@@ -16,6 +16,8 @@
   
   FROM debian:stretch
   
+  ARG DEBIAN_FRONTEND=noninteractive
+  
   <%include file="../../apt_get_basic.include"/>
   <%include file="../../python_deps.include"/>
   <%include file="../../csharp_deps.include"/>

@@ -1229,7 +1229,7 @@ class Sanity(object):
                     cmd['script'].split(),
                     timeout_seconds=30 * 60,
                     environ=environ,
-                    cpu_cost=cmd.get('cpu_cost', 1)) for cmd in yaml.load(f)
+                    cpu_cost=cmd.get('cpu_cost', 1)) for cmd in yaml.full_load(f)
             ]
 
     def pre_build_steps(self):

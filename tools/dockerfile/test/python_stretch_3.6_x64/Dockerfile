@@ -13,7 +13,9 @@
 # limitations under the License.
 
 FROM debian:stretch
-  
+
+ARG DEBIAN_FRONTEND=noninteractive
+
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
   autoconf \
@@ -39,7 +41,6 @@ RUN apt-get update && apt-get install -y \
   strace \
   python-dev \
   python-setuptools \
-  python-yaml \
   telnet \
   unzip \
   wget \

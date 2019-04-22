@@ -65,7 +65,7 @@ def clean_elem(indict):
 
 for filename in sys.argv[1:]:
     with open(filename) as f:
-        js = yaml.load(f)
+        js = yaml.full_load(f)
     js = rebuild_as_ordered_dict(js, _TOP_LEVEL_KEYS)
     for grp in ['filegroups', 'libs', 'targets']:
         if grp not in js: continue

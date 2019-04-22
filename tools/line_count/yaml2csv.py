@@ -28,7 +28,7 @@ argp.add_argument(
 argp.add_argument('-o', '--output', type=str, default='out.csv')
 args = argp.parse_args()
 
-data = yaml.load(open(args.input).read())
+data = yaml.full_load(open(args.input).read())
 with open(args.output, 'w') as outf:
     writer = csv.DictWriter(
         outf, ['date', 'name', 'language', 'code', 'comment', 'blank'])

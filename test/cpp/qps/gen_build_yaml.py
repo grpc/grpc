@@ -29,7 +29,7 @@ sys.path.append(run_tests_root)
 
 import performance.scenario_config as scenario_config
 
-configs_from_yaml = yaml.load(open(os.path.join(os.path.dirname(sys.argv[0]), '../../../build.yaml')))['configs'].keys()
+configs_from_yaml = yaml.full_load(open(os.path.join(os.path.dirname(sys.argv[0]), '../../../build.yaml')))['configs'].keys()
 
 def mutate_scenario(scenario_json, is_tsan):
   # tweak parameters to get fast test times

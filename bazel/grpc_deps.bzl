@@ -257,9 +257,9 @@ def grpc_test_only_deps():
     if "com_github_yaml_pyyaml" not in native.existing_rules():
         http_archive(
             name = "com_github_yaml_pyyaml",
-            sha256 = "6b4314b1b2051ddb9d4fcd1634e1fa9c1bb4012954273c9ff3ef689f6ec6c93e",
-            strip_prefix = "pyyaml-3.12",
-            url = "https://github.com/yaml/pyyaml/archive/3.12.zip",
+            sha256 = "f0a35d7f282a6d6b1a4f3f3965ef5c124e30ed27a0088efb97c0977268fd671f",
+            strip_prefix = "pyyaml-5.1",
+            url = "https://github.com/yaml/pyyaml/archive/5.1.zip",
             build_file = "@com_github_grpc_grpc//third_party:yaml.BUILD",
         )
 
