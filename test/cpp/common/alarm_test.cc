@@ -347,6 +347,13 @@ TEST(AlarmTest, UnsetDestruction) {
   Alarm alarm;
 }
 
+TEST(AlarmTest, UnsetCancellation) {
+  CompletionQueue cq;
+  Alarm alarm;
+
+  alarm.Cancel();
+}
+
 }  // namespace
 }  // namespace grpc
 

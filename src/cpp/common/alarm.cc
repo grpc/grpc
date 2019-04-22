@@ -17,19 +17,17 @@
 
 #include <grpcpp/alarm.h>
 
-#include <memory>
-
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/time.h>
+
+#include <memory>
+
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/completion_queue.h"
-
-#include <grpc/support/log.h>
-#include "src/core/lib/debug/trace.h"
 
 namespace grpc_impl {
 
@@ -119,12 +117,13 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
 
 static ::grpc::internal::GrpcLibraryInitializer g_gli_initializer;
 
-Alarm::Alarm() : alarm_(new internal::AlarmImpl()) {
-  g_gli_initializer.summon();
-}
+Alarm::Alarm() : alarm_(nullptr) { g_gli_initializer.summon(); }
 
 void Alarm::SetInternal(::grpc::CompletionQueue* cq, gpr_timespec deadline,
                         void* tag) {
+  if (alarm_ == nullptr) {
+    alarm_ = new internal::AlarmImpl;
+  }
   // Note that we know that alarm_ is actually an internal::AlarmImpl
   // but we declared it as the base pointer to avoid a forward declaration
   // or exposing core data structures in the C++ public headers.
@@ -134,6 +133,9 @@ void Alarm::SetInternal(::grpc::CompletionQueue* cq, gpr_timespec deadline,
 }
 
 void Alarm::SetInternal(gpr_timespec deadline, std::function<void(bool)> f) {
+  if (alarm_ == nullptr) {
+    alarm_ = new internal::AlarmImpl;
+  }
   // Note that we know that alarm_ is actually an internal::AlarmImpl
   // but we declared it as the base pointer to avoid a forward declaration
   // or exposing core data structures in the C++ public headers.
@@ -148,5 +150,10 @@ Alarm::~Alarm() {
   }
 }
 
-void Alarm::Cancel() { static_cast<internal::AlarmImpl*>(alarm_)->Cancel(); }
+void Alarm::Cancel() {
+  if (alarm_ != nullptr) {
+    static_cast<internal::AlarmImpl*>(alarm_)->Cancel();
+  }
+}
+
 }  // namespace grpc_impl
