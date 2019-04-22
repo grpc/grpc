@@ -607,6 +607,14 @@ void PrintHeaderClientMethodCallbackInterfaces(
                    "virtual void $Method$(::grpc::ClientContext* context, "
                    "const ::grpc::ByteBuffer* request, $Response$* response, "
                    "std::function<void(::grpc::Status)>) = 0;\n");
+    printer->Print(*vars,
+                   "virtual void $Method$(::grpc::ClientContext* context, "
+                   "const $Request$* request, $Response$* response, "
+                   "::grpc::experimental::ClientUnaryReactor* reactor) = 0;\n");
+    printer->Print(*vars,
+                   "virtual void $Method$(::grpc::ClientContext* context, "
+                   "const ::grpc::ByteBuffer* request, $Response$* response, "
+                   "::grpc::experimental::ClientUnaryReactor* reactor) = 0;\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(*vars,
                    "virtual void $Method$(::grpc::ClientContext* context, "
@@ -673,6 +681,16 @@ void PrintHeaderClientMethodCallback(grpc_generator::Printer* printer,
                    "void $Method$(::grpc::ClientContext* context, "
                    "const ::grpc::ByteBuffer* request, $Response$* response, "
                    "std::function<void(::grpc::Status)>) override;\n");
+    printer->Print(
+        *vars,
+        "void $Method$(::grpc::ClientContext* context, "
+        "const $Request$* request, $Response$* response, "
+        "::grpc::experimental::ClientUnaryReactor* reactor) override;\n");
+    printer->Print(
+        *vars,
+        "void $Method$(::grpc::ClientContext* context, "
+        "const ::grpc::ByteBuffer* request, $Response$* response, "
+        "::grpc::experimental::ClientUnaryReactor* reactor) override;\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(*vars,
                    "void $Method$(::grpc::ClientContext* context, "
@@ -1671,7 +1689,7 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
                    "const $Request$* request, $Response$* response, "
                    "std::function<void(::grpc::Status)> f) {\n");
     printer->Print(*vars,
-                   "  return ::grpc::internal::CallbackUnaryCall"
+                   "  ::grpc::internal::CallbackUnaryCall"
                    "(stub_->channel_.get(), stub_->rpcmethod_$Method$_, "
                    "context, request, response, std::move(f));\n}\n\n");
 
@@ -1681,9 +1699,29 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
                    "const ::grpc::ByteBuffer* request, $Response$* response, "
                    "std::function<void(::grpc::Status)> f) {\n");
     printer->Print(*vars,
-                   "  return ::grpc::internal::CallbackUnaryCall"
+                   "  ::grpc::internal::CallbackUnaryCall"
                    "(stub_->channel_.get(), stub_->rpcmethod_$Method$_, "
                    "context, request, response, std::move(f));\n}\n\n");
+
+    printer->Print(*vars,
+                   "void $ns$$Service$::Stub::experimental_async::$Method$("
+                   "::grpc::ClientContext* context, "
+                   "const $Request$* request, $Response$* response, "
+                   "::grpc::experimental::ClientUnaryReactor* reactor) {\n");
+    printer->Print(*vars,
+                   "  ::grpc::internal::ClientCallbackUnaryFactory::Create"
+                   "(stub_->channel_.get(), stub_->rpcmethod_$Method$_, "
+                   "context, request, response, reactor);\n}\n\n");
+
+    printer->Print(*vars,
+                   "void $ns$$Service$::Stub::experimental_async::$Method$("
+                   "::grpc::ClientContext* context, "
+                   "const ::grpc::ByteBuffer* request, $Response$* response, "
+                   "::grpc::experimental::ClientUnaryReactor* reactor) {\n");
+    printer->Print(*vars,
+                   "  ::grpc::internal::ClientCallbackUnaryFactory::Create"
+                   "(stub_->channel_.get(), stub_->rpcmethod_$Method$_, "
+                   "context, request, response, reactor);\n}\n\n");
 
     for (auto async_prefix : async_prefixes) {
       (*vars)["AsyncPrefix"] = async_prefix.prefix;
