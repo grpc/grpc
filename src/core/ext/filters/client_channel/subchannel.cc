@@ -345,7 +345,6 @@ class Subchannel::ConnectedSubchannelStateWatcher {
                                           "reflect_child");
             c->backoff_begun_ = false;
             c->backoff_.Reset();
-            c->MaybeStartConnectingLocked();
           }
           break;
         }
@@ -945,7 +944,6 @@ void Subchannel::WatchConnectivityState(
                                   std::move(health_check_service_name),
                                   std::move(watcher));
   }
-  MaybeStartConnectingLocked();
 }
 
 void Subchannel::CancelConnectivityStateWatch(
@@ -957,6 +955,11 @@ void Subchannel::CancelConnectivityStateWatch(
   } else {
     health_watcher_map_.RemoveLocked(health_check_service_name, watcher);
   }
+}
+
+void Subchannel::AttemptToConnect() {
+  MutexLock lock(&mu_);
+  MaybeStartConnectingLocked();
 }
 
 void Subchannel::ResetBackoff() {
@@ -1059,10 +1062,6 @@ void Subchannel::MaybeStartConnectingLocked() {
     // Already connected: don't restart.
     return;
   }
-  if (external_state_watcher_list_.empty() && health_watcher_map_.empty()) {
-    // Nobody is interested in connecting: so don't just yet.
-    return;
-  }
   connecting_ = true;
   GRPC_SUBCHANNEL_WEAK_REF(this, "connecting");
   if (!backoff_begun_) {
@@ -1140,7 +1139,6 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error* error) {
       gpr_log(GPR_INFO, "Connect failed: %s", grpc_error_string(error));
       c->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                     "connect_failed");
-      c->MaybeStartConnectingLocked();
       GRPC_SUBCHANNEL_WEAK_UNREF(c, "connecting");
     }
   }

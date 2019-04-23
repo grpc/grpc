@@ -249,6 +249,9 @@ class Subchannel {
       const char* health_check_service_name,
       SubchannelConnectivityStateWatcher* watcher);
 
+  // Attempt to connect to the backend.  Has no effect if already connected.
+  void AttemptToConnect();
+
   // Resets the connection backoff of the subchannel.
   // TODO(roth): Move connection backoff out of subchannels and up into LB
   // policy code (probably by adding a SubchannelGroup between
