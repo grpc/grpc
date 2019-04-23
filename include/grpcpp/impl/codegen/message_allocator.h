@@ -26,11 +26,11 @@ namespace experimental {
 // call arena in here in the future.
 template <typename RequestT, typename ResponseT>
 struct RpcAllocatorInfo {
-  RequestT* request = nullptr;
-  ResponseT* response = nullptr;
+  RequestT* request;
+  ResponseT* response;
   // per rpc allocator internal state. MessageAllocator can set it when
   // AllocateMessages is called and use it later.
-  void* allocator_state = nullptr;
+  void* allocator_state;
 };
 
 // Implementations need to be thread-safe

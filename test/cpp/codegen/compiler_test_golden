@@ -338,7 +338,7 @@ class ServiceA final {
     }
     void SetMessageAllocatorFor_MethodA1(
         ::grpc::experimental::MessageAllocator< ::grpc::testing::Request, ::grpc::testing::Response>* allocator) {
-      dynamic_cast<::grpc::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>*>(
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>*>(
           ::grpc::Service::experimental().GetHandler(0))
               ->SetMessageAllocator(allocator);
     }
@@ -812,7 +812,7 @@ class ServiceB final {
     }
     void SetMessageAllocatorFor_MethodB1(
         ::grpc::experimental::MessageAllocator< ::grpc::testing::Request, ::grpc::testing::Response>* allocator) {
-      dynamic_cast<::grpc::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>*>(
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>*>(
           ::grpc::Service::experimental().GetHandler(0))
               ->SetMessageAllocator(allocator);
     }

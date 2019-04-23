@@ -1002,7 +1002,7 @@ void PrintHeaderServerMethodCallback(
                    "void SetMessageAllocatorFor_$Method$(\n"
                    "    ::grpc::experimental::MessageAllocator< "
                    "$RealRequest$, $RealResponse$>* allocator) {\n"
-                   "  dynamic_cast<::grpc::internal::CallbackUnaryHandler< "
+                   "  static_cast<::grpc::internal::CallbackUnaryHandler< "
                    "$RealRequest$, $RealResponse$>*>(\n"
                    "      ::grpc::Service::experimental().GetHandler($Idx$))\n"
                    "          ->SetMessageAllocator(allocator);\n");
