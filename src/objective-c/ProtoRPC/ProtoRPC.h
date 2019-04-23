@@ -58,8 +58,9 @@ NS_ASSUME_NONNULL_BEGIN
                                error:(nullable NSError *)error;
 
 /**
- * Issued when a write action is completed. To get a correct flow control behavior, the user of a
- * call should not make more than one writeMessage: call before receiving this callback.
+ * Issued when flow control is enabled for the call and a message (written with writeMessage: method
+ * of GRPCStreamingProtoCall or the initializer of GRPCUnaryProtoCall) is passed to gRPC core with
+ * SEND_MESSAGE operation.
  */
 - (void)didWriteMessage;
 

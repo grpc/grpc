@@ -680,12 +680,12 @@ const char *kCFStreamVarName = "grpc_cfstream";
     __weak GRPCCall *weakSelf = self;
     [self startReadWithHandler:^(grpc_byte_buffer *message) {
       __strong GRPCCall *strongSelf = weakSelf;
-      if (strongSelf == nil) {
-        grpc_byte_buffer_destroy(message);
-        return;
-      }
       if (message == NULL) {
         // No more messages from the server
+        return;
+      }
+      if (strongSelf == nil) {
+        grpc_byte_buffer_destroy(message);
         return;
       }
       NSData *data = [NSData grpc_dataWithByteBuffer:message];
@@ -696,7 +696,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
         // that's on the hands of any server to have. Instead we finish and ask
         // the server to cancel.
         @synchronized(strongSelf) {
-          strongSelf->_pendingReceiveNextMessages--;
+          strongSelf->_pendingCoreRead = NO;
           [strongSelf
               finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
                                                   code:GRPCErrorCodeResourceExhausted
@@ -872,7 +872,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
     // Response headers received.
     __strong GRPCCall *strongSelf = weakSelf;
     if (strongSelf) {
-      @synchronized(self) {
+      @synchronized(strongSelf) {
         strongSelf.responseHeaders = headers;
         strongSelf->_pendingCoreRead = NO;
         [strongSelf maybeStartNextRead];

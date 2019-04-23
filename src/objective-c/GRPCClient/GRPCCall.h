@@ -183,6 +183,10 @@ extern NSString *const kGRPCTrailersKey;
 - (void)didCloseWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
                                error:(nullable NSError *)error;
 
+/**
+ * Issued when flow control is enabled for the call and a message written with writeData: method of
+ * GRPCCall2 is passed to gRPC core with SEND_MESSAGE operation.
+ */
 - (void)didWriteData;
 
 @end
