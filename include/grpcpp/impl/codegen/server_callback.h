@@ -364,7 +364,7 @@ class ServerReadReactor : public internal::ServerReactor {
   ServerCallbackReader<Request>* reader_;
 };
 
-/// \a ServerReadReactor is the interface for a server-streaming RPC.
+/// \a ServerWriteReactor is the interface for a server-streaming RPC.
 template <class Request, class Response>
 class ServerWriteReactor : public internal::ServerReactor {
  public:
