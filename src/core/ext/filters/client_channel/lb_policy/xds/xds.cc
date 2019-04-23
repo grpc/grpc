@@ -402,8 +402,8 @@ class XdsLb : public LoadBalancingPolicy {
   // Methods for dealing with fallback state.
   static void OnFallbackTimerLocked(void* arg, grpc_error* error);
   void MaybeExitFallbackMode();
+  void NotEnterFallbackMode();
   void UpdateFallbackPolicyLocked();
-  grpc_channel_args* CreateFallbackPolicyArgsLocked();
   OrphanablePtr<LoadBalancingPolicy> CreateFallbackPolicyLocked(
       const char* name, const grpc_channel_args* args);
 
@@ -435,14 +435,15 @@ class XdsLb : public LoadBalancingPolicy {
   // 1. The fallback timer fires, we enter fallback mode.
   // 2. Before the fallback timer fires, the LB channel becomes
   // TRANSIENT_FAILURE or the LB call fails, we enter fallback mode.
-  // 3. Before the fallback timer fires, any child policy in the locality map
-  // becomes READY, we use that child policy.
+  // 3. Before the fallback timer fires, we receive a response from the
+  // balancer, we cancel the fallback timer and use the response to update the
+  // locality map.
   bool fallback_at_startup_checks_pending_ = false;
   // Timeout in milliseconds for before using fallback backend addresses.
   // 0 means not using fallback.
   int lb_fallback_timeout_ms_ = 0;
   // The backend addresses from the resolver.
-  UniquePtr<ServerAddressList> fallback_backend_addresses_;
+  ServerAddressList fallback_backend_addresses_;
   // Fallback timer.
   grpc_timer lb_fallback_timer_;
   grpc_closure lb_on_fallback_;
@@ -553,14 +554,7 @@ void XdsLb::FallbackHelper::RequestReresolution() {
             parent_.get(), child_);
   }
   GPR_ASSERT(parent_->lb_chand_ != nullptr);
-  // If we are talking to a balancer, we expect to get updated addresses
-  // from the balancer, so we can ignore the re-resolution request from
-  // the fallback policy. Otherwise, pass the re-resolution request up to the
-  // channel.
-  if (parent_->lb_chand_->lb_calld() == nullptr ||
-      !parent_->lb_chand_->lb_calld()->seen_initial_response()) {
-    parent_->channel_control_helper()->RequestReresolution();
-  }
+  parent_->channel_control_helper()->RequestReresolution();
 }
 
 //
@@ -568,12 +562,11 @@ void XdsLb::FallbackHelper::RequestReresolution() {
 //
 
 // Returns the backend addresses extracted from the given addresses.
-UniquePtr<ServerAddressList> ExtractBackendAddresses(
-    const ServerAddressList& addresses) {
-  auto backend_addresses = MakeUnique<ServerAddressList>();
+ServerAddressList ExtractBackendAddresses(const ServerAddressList& addresses) {
+  ServerAddressList backend_addresses;
   for (size_t i = 0; i < addresses.size(); ++i) {
     if (!addresses[i].IsBalancer()) {
-      backend_addresses->emplace_back(addresses[i]);
+      backend_addresses.emplace_back(addresses[i]);
     }
   }
   return backend_addresses;
@@ -1108,10 +1101,18 @@ void XdsLb::BalancerChannelState::BalancerCallState::
       }
       xds_grpclb_destroy_serverlist(serverlist);
     } else {  // New serverlist.
+      // If the balancer tells us to drop all the calls, we should exit fallback
+      // mode immediately.
+      if (serverlist->num_servers == 0) {
+        xdslb_policy->MaybeExitFallbackMode();
+      }
       if (!xdslb_policy->locality_serverlist_.empty()) {
         xds_grpclb_destroy_serverlist(
             xdslb_policy->locality_serverlist_[0]->serverlist);
       } else {
+        // This is the first serverlist we've received, don't enter fallback
+        // mode.
+        xdslb_policy->NotEnterFallbackMode();
         // Initialize locality serverlist, currently the list only handles
         // one child.
         xdslb_policy->locality_serverlist_.emplace_back(
@@ -1483,18 +1484,18 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
 }
 
 //
-// code for balancer channel and call
+// fallback-related methods
 //
 
 void XdsLb::UpdateFallbackPolicyLocked() {
   if (shutting_down_) return;
   // Construct update args.
   UpdateArgs update_args;
-  update_args.addresses = *fallback_backend_addresses_;
+  update_args.addresses = fallback_backend_addresses_;
   update_args.config = fallback_policy_config_ == nullptr
                            ? nullptr
                            : fallback_policy_config_->Ref();
-  update_args.args = CreateFallbackPolicyArgsLocked();
+  update_args.args = grpc_channel_args_copy(args_);
   // If the child policy name changes, we need to create a new child
   // policy.  When this happens, we leave child_policy_ as-is and store
   // the new child policy in pending_child_policy_.  Once the new child
@@ -1544,8 +1545,6 @@ void XdsLb::UpdateFallbackPolicyLocked() {
   //       that was there before, which will be immediately shut down)
   //       and will later be swapped into child_policy_ by the helper
   //       when the new child transitions into state READY.
-  // TODO(juanlishen): If the child policy is not configured via service config,
-  // use whatever algorithm is specified by the balancer.
   const char* fallback_policy_name = fallback_policy_config_ == nullptr
                                          ? "round_robin"
                                          : fallback_policy_config_->name();
@@ -1596,12 +1595,6 @@ void XdsLb::UpdateFallbackPolicyLocked() {
   policy_to_update->UpdateLocked(std::move(update_args));
 }
 
-grpc_channel_args* XdsLb::CreateFallbackPolicyArgsLocked() {
-  grpc_arg arg_to_add = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_ADDRESS_IS_BACKEND_FROM_XDS_LOAD_BALANCER), 0);
-  return grpc_channel_args_copy_and_add(args_, &arg_to_add, 1);
-}
-
 OrphanablePtr<LoadBalancingPolicy> XdsLb::CreateFallbackPolicyLocked(
     const char* name, const grpc_channel_args* args) {
   FallbackHelper* helper = New<FallbackHelper>(Ref());
@@ -1633,16 +1626,17 @@ OrphanablePtr<LoadBalancingPolicy> XdsLb::CreateFallbackPolicyLocked(
 
 void XdsLb::MaybeExitFallbackMode() {
   if (fallback_policy_ != nullptr) {
-    gpr_log(GPR_INFO,
-            "[xdslb %p] Child policy became ready; exiting fallback mode",
-            this);
+    gpr_log(GPR_INFO, "[xdslb %p] Exiting fallback mode", this);
     fallback_policy_.reset();
     pending_fallback_policy_.reset();
   }
+}
+
+void XdsLb::NotEnterFallbackMode() {
   if (fallback_at_startup_checks_pending_) {
     gpr_log(GPR_INFO,
-            "[xdslb %p] Child policy became ready; cancelling fallback "
-            "timer and LB channel connectivity watch",
+            "[xdslb %p] Cancelling fallback timer and LB channel connectivity "
+            "watch",
             this);
     grpc_timer_cancel(&lb_fallback_timer_);
     lb_chand_->CancelConnectivityWatchLocked();
@@ -1663,12 +1657,15 @@ void XdsLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
               xdslb_policy);
     }
     xdslb_policy->fallback_at_startup_checks_pending_ = false;
-    GPR_ASSERT(xdslb_policy->fallback_backend_addresses_ != nullptr);
     xdslb_policy->UpdateFallbackPolicyLocked();
     xdslb_policy->lb_chand_->CancelConnectivityWatchLocked();
   }
   xdslb_policy->Unref(DEBUG_LOCATION, "on_fallback_timer");
 }
+
+//
+// XdsLb::LocalityMap
+//
 
 void XdsLb::LocalityMap::PruneLocalities(const LocalityList& locality_list) {
   for (auto iter = map_.begin(); iter != map_.end();) {
@@ -1709,18 +1706,18 @@ void XdsLb::LocalityMap::UpdateLocked(
   PruneLocalities(locality_serverlist);
 }
 
-void grpc_core::XdsLb::LocalityMap::ShutdownLocked() {
+void XdsLb::LocalityMap::ShutdownLocked() {
   MutexLock lock(&child_refs_mu_);
   map_.clear();
 }
 
-void grpc_core::XdsLb::LocalityMap::ResetBackoffLocked() {
+void XdsLb::LocalityMap::ResetBackoffLocked() {
   for (auto iter = map_.begin(); iter != map_.end(); iter++) {
     iter->second->ResetBackoffLocked();
   }
 }
 
-void grpc_core::XdsLb::LocalityMap::FillChildRefsForChannelz(
+void XdsLb::LocalityMap::FillChildRefsForChannelz(
     channelz::ChildRefsList* child_subchannels,
     channelz::ChildRefsList* child_channels) {
   MutexLock lock(&child_refs_mu_);
@@ -1729,7 +1726,7 @@ void grpc_core::XdsLb::LocalityMap::FillChildRefsForChannelz(
   }
 }
 
-// Locality Entry child policy methods
+// XdsLb::LocalityMap::LocalityEntry
 
 grpc_channel_args*
 XdsLb::LocalityMap::LocalityEntry::CreateChildPolicyArgsLocked(
@@ -1930,7 +1927,7 @@ void XdsLb::LocalityMap::LocalityEntry::Orphan() {
 }
 
 //
-// LocalityEntry::Helper implementation
+// XdsLb::LocalityEntry::Helper
 //
 
 bool XdsLb::LocalityMap::LocalityEntry::Helper::CalledByPendingChild() const {
