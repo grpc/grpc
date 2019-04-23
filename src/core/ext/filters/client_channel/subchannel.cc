@@ -421,7 +421,7 @@ class Subchannel::ExternalStateWatcherList::ExternalWatcher {
       return;
     }
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
-    MutexLock(&self->subchannel_->mu_);
+    MutexLock lock(&self->subchannel_->mu_);
     if (self->state_ == GRPC_CHANNEL_READY) {
       connected_subchannel = self->subchannel_->connected_subchannel_;
     }
