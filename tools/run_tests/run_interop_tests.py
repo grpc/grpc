@@ -214,7 +214,7 @@ class AspNetCoreLanguage:
         return _TEST_CASES + _AUTH_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE
+        return _SKIP_COMPRESSION
 
     def __str__(self):
         return 'aspnetcore'
