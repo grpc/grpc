@@ -137,7 +137,12 @@ class ServerCallbackRpcController {
   virtual void SetCancelCallback(std::function<void()> callback) = 0;
   virtual void ClearCancelCallback() = 0;
 
+  // NOTE: This is an API for advanced users who need custom allocators.
+  // Optionally deallocate request early to reduce the size of working set.
+  // A custom MessageAllocator needs to be registered to make use of this.
   virtual void FreeRequest() = 0;
+  // NOTE: This is an API for advanced users who need custom allocators.
+  // Get and maybe mutate the allocator state associated with the current RPC.
   virtual void* GetAllocatorState() = 0;
 };
 
@@ -449,15 +454,19 @@ class CallbackUnaryHandler : public MethodHandler {
   CallbackUnaryHandler(
       std::function<void(ServerContext*, const RequestType*, ResponseType*,
                          experimental::ServerCallbackRpcController*)>
-          func,
-      MessageAllocator<RequestType, ResponseType>* allocator)
-      : func_(func), allocator_(allocator) {}
+          func)
+      : func_(func) {}
+
+  void SetMessageAllocator(
+      experimental::MessageAllocator<RequestType, ResponseType>* allocator) {
+    allocator_ = allocator;
+  }
 
   void RunHandler(const HandlerParameter& param) final {
     // Arena allocate a controller structure (that includes request/response)
     g_core_codegen_interface->grpc_call_ref(param.call->call());
     auto* allocator_info =
-        static_cast<RpcAllocatorInfo<RequestType, ResponseType>*>(
+        static_cast<experimental::RpcAllocatorInfo<RequestType, ResponseType>*>(
             param.internal_data);
     auto* controller = new (g_core_codegen_interface->grpc_call_arena_alloc(
         param.call->call(), sizeof(ServerCallbackRpcControllerImpl)))
@@ -480,10 +489,10 @@ class CallbackUnaryHandler : public MethodHandler {
     ByteBuffer buf;
     buf.set_buffer(req);
     RequestType* request = nullptr;
-    RpcAllocatorInfo<RequestType, ResponseType>* allocator_info =
+    experimental::RpcAllocatorInfo<RequestType, ResponseType>* allocator_info =
         new (g_core_codegen_interface->grpc_call_arena_alloc(
             call, sizeof(*allocator_info)))
-            RpcAllocatorInfo<RequestType, ResponseType>();
+            experimental::RpcAllocatorInfo<RequestType, ResponseType>();
     if (allocator_ != nullptr) {
       allocator_->AllocateMessages(allocator_info);
     } else {
@@ -517,7 +526,8 @@ class CallbackUnaryHandler : public MethodHandler {
   std::function<void(ServerContext*, const RequestType*, ResponseType*,
                      experimental::ServerCallbackRpcController*)>
       func_;
-  MessageAllocator<RequestType, ResponseType>* allocator_;
+  experimental::MessageAllocator<RequestType, ResponseType>* allocator_ =
+      nullptr;
 
   // The implementation class of ServerCallbackRpcController is a private member
   // of CallbackUnaryHandler since it is never exposed anywhere, and this allows
@@ -593,8 +603,9 @@ class CallbackUnaryHandler : public MethodHandler {
 
     ServerCallbackRpcControllerImpl(
         ServerContext* ctx, Call* call,
-        RpcAllocatorInfo<RequestType, ResponseType>* allocator_info,
-        MessageAllocator<RequestType, ResponseType>* allocator,
+        experimental::RpcAllocatorInfo<RequestType, ResponseType>*
+            allocator_info,
+        experimental::MessageAllocator<RequestType, ResponseType>* allocator,
         std::function<void()> call_requester)
         : ctx_(ctx),
           call_(*call),
@@ -636,8 +647,8 @@ class CallbackUnaryHandler : public MethodHandler {
 
     ServerContext* ctx_;
     Call call_;
-    RpcAllocatorInfo<RequestType, ResponseType>* allocator_info_;
-    MessageAllocator<RequestType, ResponseType>* allocator_;
+    experimental::RpcAllocatorInfo<RequestType, ResponseType>* allocator_info_;
+    experimental::MessageAllocator<RequestType, ResponseType>* allocator_;
     std::function<void()> call_requester_;
     std::atomic_int callbacks_outstanding_{
         2};  // reserve for Finish and CompletionOp

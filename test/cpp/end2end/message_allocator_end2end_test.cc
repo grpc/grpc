@@ -129,7 +129,8 @@ class MessageAllocatorEnd2endTestBase
 
   ~MessageAllocatorEnd2endTestBase() = default;
 
-  void CreateServer(MessageAllocator<EchoRequest, EchoResponse>* allocator) {
+  void CreateServer(
+      experimental::MessageAllocator<EchoRequest, EchoResponse>* allocator) {
     ServerBuilder builder;
 
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
@@ -180,7 +181,7 @@ class MessageAllocatorEnd2endTestBase
       EchoResponse response;
       ClientContext cli_ctx;
 
-      test_string += "Hello world. ";
+      test_string += grpc::string(1024, 'x');
       request.set_message(test_string);
       grpc::string val;
       cli_ctx.set_compression_algorithm(GRPC_COMPRESS_GZIP);
@@ -226,20 +227,24 @@ TEST_P(NullAllocatorTest, SimpleRpc) {
 
 class SimpleAllocatorTest : public MessageAllocatorEnd2endTestBase {
  public:
-  class SimpleAllocator : public MessageAllocator<EchoRequest, EchoResponse> {
+  class SimpleAllocator
+      : public experimental::MessageAllocator<EchoRequest, EchoResponse> {
    public:
-    void AllocateMessages(RpcAllocatorInfo<EchoRequest, EchoResponse>* info) {
+    void AllocateMessages(
+        experimental::RpcAllocatorInfo<EchoRequest, EchoResponse>* info) {
       allocation_count++;
       info->request = new EchoRequest;
       info->response = new EchoResponse;
       info->allocator_state = info;
     }
-    void DeallocateRequest(RpcAllocatorInfo<EchoRequest, EchoResponse>* info) {
+    void DeallocateRequest(
+        experimental::RpcAllocatorInfo<EchoRequest, EchoResponse>* info) {
       request_deallocation_count++;
       delete info->request;
       info->request = nullptr;
     }
-    void DeallocateMessages(RpcAllocatorInfo<EchoRequest, EchoResponse>* info) {
+    void DeallocateMessages(
+        experimental::RpcAllocatorInfo<EchoRequest, EchoResponse>* info) {
       messages_deallocation_count++;
       delete info->request;
       delete info->response;
@@ -284,8 +289,9 @@ TEST_P(SimpleAllocatorTest, RpcWithReleaseRequest) {
   auto mutator = [&released_requests](void* allocator_state,
                                       const EchoRequest* req,
                                       EchoResponse* resp) {
-    auto* info = static_cast<RpcAllocatorInfo<EchoRequest, EchoResponse>*>(
-        allocator_state);
+    auto* info =
+        static_cast<experimental::RpcAllocatorInfo<EchoRequest, EchoResponse>*>(
+            allocator_state);
     EXPECT_EQ(req, info->request);
     EXPECT_EQ(resp, info->response);
     EXPECT_EQ(allocator_state, info->allocator_state);
@@ -307,9 +313,11 @@ TEST_P(SimpleAllocatorTest, RpcWithReleaseRequest) {
 
 class ArenaAllocatorTest : public MessageAllocatorEnd2endTestBase {
  public:
-  class ArenaAllocator : public MessageAllocator<EchoRequest, EchoResponse> {
+  class ArenaAllocator
+      : public experimental::MessageAllocator<EchoRequest, EchoResponse> {
    public:
-    void AllocateMessages(RpcAllocatorInfo<EchoRequest, EchoResponse>* info) {
+    void AllocateMessages(
+        experimental::RpcAllocatorInfo<EchoRequest, EchoResponse>* info) {
       allocation_count++;
       auto* arena = new google::protobuf::Arena;
       info->allocator_state = arena;
@@ -318,10 +326,12 @@ class ArenaAllocatorTest : public MessageAllocatorEnd2endTestBase {
       info->response =
           google::protobuf::Arena::CreateMessage<EchoResponse>(arena);
     }
-    void DeallocateRequest(RpcAllocatorInfo<EchoRequest, EchoResponse>* info) {
+    void DeallocateRequest(
+        experimental::RpcAllocatorInfo<EchoRequest, EchoResponse>* info) {
       GPR_ASSERT(0);
     }
-    void DeallocateMessages(RpcAllocatorInfo<EchoRequest, EchoResponse>* info) {
+    void DeallocateMessages(
+        experimental::RpcAllocatorInfo<EchoRequest, EchoResponse>* info) {
       deallocation_count++;
       auto* arena =
           static_cast<google::protobuf::Arena*>(info->allocator_state);

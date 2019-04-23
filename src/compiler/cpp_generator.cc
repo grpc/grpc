@@ -155,8 +155,10 @@ grpc::string GetHeaderIncludes(grpc_generator::File* file,
                   params.grpc_search_path);
     printer->Print(vars, "\n");
     printer->Print(vars, "namespace grpc {\n");
+    printer->Print(vars, "namespace experimental {\n");
     printer->Print(vars, "template <typename RequestT, typename ResponseT>\n");
     printer->Print(vars, "class MessageAllocator;\n");
+    printer->Print(vars, "}  // namespace experimental\n");
     printer->Print(vars, "class CompletionQueue;\n");
     printer->Print(vars, "class Channel;\n");
     printer->Print(vars, "class ServerCompletionQueue;\n");
@@ -995,23 +997,15 @@ void PrintHeaderServerMethodCallback(
         "controller) {\n"
         "               return this->$"
         "Method$(context, request, response, controller);\n"
-        "             }, nullptr));\n}\n");
-    printer->Print(
-        *vars,
-        "void SetMessageAllocatorFor_$Method$(\n"
-        "    ::grpc::MessageAllocator<$RealRequest$, $RealResponse$>* "
-        "allocator) {\n"
-        "  ::grpc::Service::experimental().MarkMethodCallback($Idx$,\n"
-        "    new ::grpc::internal::CallbackUnaryHandler< "
-        "$RealRequest$, $RealResponse$>(\n"
-        "      [this](::grpc::ServerContext* context,\n"
-        "             const $RealRequest$* request,\n"
-        "             $RealResponse$* response,\n"
-        "             ::grpc::experimental::ServerCallbackRpcController* "
-        "controller) {\n"
-        "               return this->$"
-        "Method$(context, request, response, controller);\n"
-        "             }, allocator));\n");
+        "             }));\n}\n");
+    printer->Print(*vars,
+                   "void SetMessageAllocatorFor_$Method$(\n"
+                   "    ::grpc::experimental::MessageAllocator< "
+                   "$RealRequest$, $RealResponse$>* allocator) {\n"
+                   "  dynamic_cast<::grpc::internal::CallbackUnaryHandler< "
+                   "$RealRequest$, $RealResponse$>*>(\n"
+                   "      ::grpc::Service::experimental().GetHandler($Idx$))\n"
+                   "          ->SetMessageAllocator(allocator);\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(
         *vars,

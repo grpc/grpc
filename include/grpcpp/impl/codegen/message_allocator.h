@@ -20,6 +20,7 @@
 #define GRPCPP_IMPL_CODEGEN_MESSAGE_ALLOCATOR_H
 
 namespace grpc {
+namespace experimental {
 
 // This is per rpc struct for the allocator. We can potentially put the grpc
 // call arena in here in the future.
@@ -48,6 +49,7 @@ class MessageAllocator {
       RpcAllocatorInfo<RequestT, ResponseT>* info) = 0;
 };
 
+}  // namespace experimental
 }  // namespace grpc
 
 #endif  // GRPCPP_IMPL_CODEGEN_MESSAGE_ALLOCATOR_H

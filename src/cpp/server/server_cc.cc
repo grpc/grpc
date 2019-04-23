@@ -590,7 +590,7 @@ class Server::CallbackRequest final : public Server::CallbackRequestBase {
   const bool has_request_payload_;
   grpc_byte_buffer* request_payload_;
   void* request_;
-  void* handler_data_ = nullptr;
+  void* handler_data_;
   Status request_status_;
   grpc_call_details* call_details_ = nullptr;
   grpc_call* call_;
