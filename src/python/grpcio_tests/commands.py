@@ -117,6 +117,7 @@ class TestGevent(setuptools.Command):
         # eventually succeed, but need to dig into performance issues.
         'unit._cython._no_messages_server_completion_queue_per_call_test.Test.test_rpcs',
         'unit._cython._no_messages_single_server_completion_queue_test.Test.test_rpcs',
+        'unit._compression_test',
         # TODO(https://github.com/grpc/grpc/issues/16890) enable this test
         'unit._cython._channel_test.ChannelTest.test_multiple_channels_lonely_connectivity',
         # I have no idea why this doesn't work in gevent, but it shouldn't even be
@@ -153,6 +154,9 @@ class TestGevent(setuptools.Command):
         # TODO(https://github.com/grpc/grpc/issues/15411) enable this test
         'unit._cython._channel_test.ChannelTest.test_negative_deadline_connectivity'
     )
+    BANNED_WINDOWS_TESTS = (
+        # TODO(https://github.com/grpc/grpc/pull/15411) enable this test
+        'unit._dns_resolver_test.DNSResolverTest.test_connect_loopback',)
     description = 'run tests with gevent.  Assumes grpc/gevent are installed'
     user_options = []
 
@@ -178,7 +182,10 @@ class TestGevent(setuptools.Command):
         loader = tests.Loader()
         loader.loadTestsFromNames(['tests'])
         runner = tests.Runner()
-        runner.skip_tests(self.BANNED_TESTS)
+        if sys.platform == 'win32':
+            runner.skip_tests(self.BANNED_TESTS + self.BANNED_WINDOWS_TESTS)
+        else:
+            runner.skip_tests(self.BANNED_TESTS)
         result = gevent.spawn(runner.run, loader.suite)
         result.join()
         if not result.value.wasSuccessful():

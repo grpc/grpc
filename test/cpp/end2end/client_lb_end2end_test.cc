@@ -33,6 +33,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/health_check_service_interface.h>
+#include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
@@ -98,7 +99,7 @@ class MyTestServiceImpl : public TestServiceImpl {
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
     {
-      std::unique_lock<std::mutex> lock(mu_);
+      grpc::internal::MutexLock lock(&mu_);
       ++request_count_;
     }
     AddClient(context->peer());
@@ -106,29 +107,29 @@ class MyTestServiceImpl : public TestServiceImpl {
   }
 
   int request_count() {
-    std::unique_lock<std::mutex> lock(mu_);
+    grpc::internal::MutexLock lock(&mu_);
     return request_count_;
   }
 
   void ResetCounters() {
-    std::unique_lock<std::mutex> lock(mu_);
+    grpc::internal::MutexLock lock(&mu_);
     request_count_ = 0;
   }
 
   std::set<grpc::string> clients() {
-    std::unique_lock<std::mutex> lock(clients_mu_);
+    grpc::internal::MutexLock lock(&clients_mu_);
     return clients_;
   }
 
  private:
   void AddClient(const grpc::string& client) {
-    std::unique_lock<std::mutex> lock(clients_mu_);
+    grpc::internal::MutexLock lock(&clients_mu_);
     clients_.insert(client);
   }
 
-  std::mutex mu_;
+  grpc::internal::Mutex mu_;
   int request_count_;
-  std::mutex clients_mu_;
+  grpc::internal::Mutex clients_mu_;
   std::set<grpc::string> clients_;
 };
 
@@ -293,18 +294,18 @@ class ClientLbEnd2endTest : public ::testing::Test {
     void Start(const grpc::string& server_host) {
       gpr_log(GPR_INFO, "starting server on port %d", port_);
       started_ = true;
-      std::mutex mu;
-      std::unique_lock<std::mutex> lock(mu);
-      std::condition_variable cond;
+      grpc::internal::Mutex mu;
+      grpc::internal::MutexLock lock(&mu);
+      grpc::internal::CondVar cond;
       thread_.reset(new std::thread(
           std::bind(&ServerData::Serve, this, server_host, &mu, &cond)));
-      cond.wait(lock, [this] { return server_ready_; });
+      cond.WaitUntil(&mu, [this] { return server_ready_; });
       server_ready_ = false;
       gpr_log(GPR_INFO, "server startup complete");
     }
 
-    void Serve(const grpc::string& server_host, std::mutex* mu,
-               std::condition_variable* cond) {
+    void Serve(const grpc::string& server_host, grpc::internal::Mutex* mu,
+               grpc::internal::CondVar* cond) {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
@@ -313,9 +314,9 @@ class ClientLbEnd2endTest : public ::testing::Test {
       builder.AddListeningPort(server_address.str(), std::move(creds));
       builder.RegisterService(&service_);
       server_ = builder.BuildAndStart();
-      std::lock_guard<std::mutex> lock(*mu);
+      grpc::internal::MutexLock lock(mu);
       server_ready_ = true;
-      cond->notify_one();
+      cond->Signal();
     }
 
     void Shutdown() {
@@ -1374,7 +1375,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
   void TearDown() override { ClientLbEnd2endTest::TearDown(); }
 
   int trailers_intercepted() {
-    std::unique_lock<std::mutex> lock(mu_);
+    grpc::internal::MutexLock lock(&mu_);
     return trailers_intercepted_;
   }
 
@@ -1382,11 +1383,11 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
   static void ReportTrailerIntercepted(void* arg) {
     ClientLbInterceptTrailingMetadataTest* self =
         static_cast<ClientLbInterceptTrailingMetadataTest*>(arg);
-    std::unique_lock<std::mutex> lock(self->mu_);
+    grpc::internal::MutexLock lock(&self->mu_);
     self->trailers_intercepted_++;
   }
 
-  std::mutex mu_;
+  grpc::internal::Mutex mu_;
   int trailers_intercepted_ = 0;
 };
 

@@ -124,7 +124,7 @@ static void cancel_timer_if_needed(grpc_deadline_state* deadline_state) {
     deadline_state->timer_state = GRPC_DEADLINE_STATE_FINISHED;
     grpc_timer_cancel(&deadline_state->timer);
   } else {
-    // timer was either in STATE_INITAL (nothing to cancel)
+    // timer was either in STATE_INITIAL (nothing to cancel)
     // OR in STATE_FINISHED (again nothing to cancel)
   }
 }

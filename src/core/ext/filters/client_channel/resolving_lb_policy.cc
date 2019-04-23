@@ -48,7 +48,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/mutex_lock.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -119,13 +119,9 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
     return parent_->channel_control_helper()->CreateChannel(target, args);
   }
 
-  void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
+  void UpdateState(grpc_connectivity_state state,
                    UniquePtr<SubchannelPicker> picker) override {
-    if (parent_->resolver_ == nullptr) {
-      // shutting down.
-      GRPC_ERROR_UNREF(state_error);
-      return;
-    }
+    if (parent_->resolver_ == nullptr) return;  // Shutting down.
     // If this request is from the pending child policy, ignore it until
     // it reports READY, at which point we swap it into place.
     if (CalledByPendingChild()) {
@@ -136,10 +132,7 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
                 parent_.get(), this, child_,
                 grpc_connectivity_state_name(state));
       }
-      if (state != GRPC_CHANNEL_READY) {
-        GRPC_ERROR_UNREF(state_error);
-        return;
-      }
+      if (state != GRPC_CHANNEL_READY) return;
       grpc_pollset_set_del_pollset_set(
           parent_->lb_policy_->interested_parties(),
           parent_->interested_parties());
@@ -147,11 +140,9 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
       parent_->lb_policy_ = std::move(parent_->pending_lb_policy_);
     } else if (!CalledByCurrentChild()) {
       // This request is from an outdated child, so ignore it.
-      GRPC_ERROR_UNREF(state_error);
       return;
     }
-    parent_->channel_control_helper()->UpdateState(state, state_error,
-                                                   std::move(picker));
+    parent_->channel_control_helper()->UpdateState(state, std::move(picker));
   }
 
   void RequestReresolution() override {
@@ -234,8 +225,7 @@ grpc_error* ResolvingLoadBalancingPolicy::Init(const grpc_channel_args& args) {
   }
   // Return our picker to the channel.
   channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
-      UniquePtr<SubchannelPicker>(New<QueuePicker>(Ref())));
+      GRPC_CHANNEL_IDLE, UniquePtr<SubchannelPicker>(New<QueuePicker>(Ref())));
   return GRPC_ERROR_NONE;
 }
 
@@ -313,7 +303,7 @@ void ResolvingLoadBalancingPolicy::StartResolvingLocked() {
   GPR_ASSERT(!started_resolving_);
   started_resolving_ = true;
   channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_CONNECTING, GRPC_ERROR_NONE,
+      GRPC_CHANNEL_CONNECTING,
       UniquePtr<SubchannelPicker>(New<QueuePicker>(Ref())));
   resolver_->StartLocked();
 }
@@ -334,7 +324,7 @@ void ResolvingLoadBalancingPolicy::OnResolverError(grpc_error* error) {
     grpc_error* state_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
         "Resolver transient failure", &error, 1);
     channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(state_error),
+        GRPC_CHANNEL_TRANSIENT_FAILURE,
         UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(state_error)));
   }
   GRPC_ERROR_UNREF(error);

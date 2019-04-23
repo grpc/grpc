@@ -696,6 +696,65 @@ TEST_P(ClientCallbackEnd2endTest, RequestStreamServerCancelAfterReads) {
   }
 }
 
+TEST_P(ClientCallbackEnd2endTest, UnaryReactor) {
+  MAYBE_SKIP_TEST;
+  ResetStub();
+  class UnaryClient : public grpc::experimental::ClientUnaryReactor {
+   public:
+    UnaryClient(grpc::testing::EchoTestService::Stub* stub) {
+      cli_ctx_.AddMetadata("key1", "val1");
+      cli_ctx_.AddMetadata("key2", "val2");
+      request_.mutable_param()->set_echo_metadata_initially(true);
+      request_.set_message("Hello metadata");
+      stub->experimental_async()->Echo(&cli_ctx_, &request_, &response_, this);
+      StartCall();
+    }
+    void OnReadInitialMetadataDone(bool ok) override {
+      EXPECT_TRUE(ok);
+      EXPECT_EQ(1u, cli_ctx_.GetServerInitialMetadata().count("key1"));
+      EXPECT_EQ(
+          "val1",
+          ToString(cli_ctx_.GetServerInitialMetadata().find("key1")->second));
+      EXPECT_EQ(1u, cli_ctx_.GetServerInitialMetadata().count("key2"));
+      EXPECT_EQ(
+          "val2",
+          ToString(cli_ctx_.GetServerInitialMetadata().find("key2")->second));
+      initial_metadata_done_ = true;
+    }
+    void OnDone(const Status& s) override {
+      EXPECT_TRUE(initial_metadata_done_);
+      EXPECT_EQ(0u, cli_ctx_.GetServerTrailingMetadata().size());
+      EXPECT_TRUE(s.ok());
+      EXPECT_EQ(request_.message(), response_.message());
+      std::unique_lock<std::mutex> l(mu_);
+      done_ = true;
+      cv_.notify_one();
+    }
+    void Await() {
+      std::unique_lock<std::mutex> l(mu_);
+      while (!done_) {
+        cv_.wait(l);
+      }
+    }
+
+   private:
+    EchoRequest request_;
+    EchoResponse response_;
+    ClientContext cli_ctx_;
+    std::mutex mu_;
+    std::condition_variable cv_;
+    bool done_{false};
+    bool initial_metadata_done_{false};
+  };
+
+  UnaryClient test{stub_.get()};
+  test.Await();
+  // Make sure that the server interceptors were not notified of a cancel
+  if (GetParam().use_interceptors) {
+    EXPECT_EQ(0, DummyInterceptor::GetNumTimesCancel());
+  }
+}
+
 class ReadClient : public grpc::experimental::ClientReadReactor<EchoResponse> {
  public:
   ReadClient(grpc::testing::EchoTestService::Stub* stub,

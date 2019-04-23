@@ -100,6 +100,7 @@ template <class Response>
 class ClientReadReactor;
 template <class Request>
 class ClientWriteReactor;
+class ClientUnaryReactor;
 
 // NOTE: The streaming objects are not actually implemented in the public API.
 //       These interfaces are provided for mocking only. Typical applications
@@ -155,6 +156,15 @@ class ClientCallbackWriter {
   void BindReactor(ClientWriteReactor<Request>* reactor) {
     reactor->BindWriter(this);
   }
+};
+
+class ClientCallbackUnary {
+ public:
+  virtual ~ClientCallbackUnary() {}
+  virtual void StartCall() = 0;
+
+ protected:
+  void BindReactor(ClientUnaryReactor* reactor);
 };
 
 // The following classes are the reactor interfaces that are to be implemented
@@ -346,6 +356,36 @@ class ClientWriteReactor {
   ClientCallbackWriter<Request>* writer_;
 };
 
+/// \a ClientUnaryReactor is a reactor-style interface for a unary RPC.
+/// This is _not_ a common way of invoking a unary RPC. In practice, this
+/// option should be used only if the unary RPC wants to receive initial
+/// metadata without waiting for the response to complete. Most deployments of
+/// RPC systems do not use this option, but it is needed for generality.
+/// All public methods behave as in ClientBidiReactor.
+/// StartCall is included for consistency with the other reactor flavors: even
+/// though there are no StartRead or StartWrite operations to queue before the
+/// call (that is part of the unary call itself) and there is no reactor object
+/// being created as a result of this call, we keep a consistent 2-phase
+/// initiation API among all the reactor flavors.
+class ClientUnaryReactor {
+ public:
+  virtual ~ClientUnaryReactor() {}
+
+  void StartCall() { call_->StartCall(); }
+  virtual void OnDone(const Status& s) {}
+  virtual void OnReadInitialMetadataDone(bool ok) {}
+
+ private:
+  friend class ClientCallbackUnary;
+  void BindCall(ClientCallbackUnary* call) { call_ = call; }
+  ClientCallbackUnary* call_;
+};
+
+// Define function out-of-line from class to avoid forward declaration issue
+inline void ClientCallbackUnary::BindReactor(ClientUnaryReactor* reactor) {
+  reactor->BindCall(this);
+}
+
 }  // namespace experimental
 
 namespace internal {
@@ -512,9 +552,9 @@ class ClientCallbackReaderWriterImpl
     this->BindReactor(reactor);
   }
 
-  ClientContext* context_;
+  ClientContext* const context_;
   Call call_;
-  ::grpc::experimental::ClientBidiReactor<Request, Response>* reactor_;
+  ::grpc::experimental::ClientBidiReactor<Request, Response>* const reactor_;
 
   CallOpSet<CallOpSendInitialMetadata, CallOpRecvInitialMetadata> start_ops_;
   CallbackWithSuccessTag start_tag_;
@@ -651,9 +691,9 @@ class ClientCallbackReaderImpl
     start_ops_.ClientSendClose();
   }
 
-  ClientContext* context_;
+  ClientContext* const context_;
   Call call_;
-  ::grpc::experimental::ClientReadReactor<Response>* reactor_;
+  ::grpc::experimental::ClientReadReactor<Response>* const reactor_;
 
   CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpClientSendClose,
             CallOpRecvInitialMetadata>
@@ -824,9 +864,9 @@ class ClientCallbackWriterImpl
     finish_ops_.AllowNoMessage();
   }
 
-  ClientContext* context_;
+  ClientContext* const context_;
   Call call_;
-  ::grpc::experimental::ClientWriteReactor<Request>* reactor_;
+  ::grpc::experimental::ClientWriteReactor<Request>* const reactor_;
 
   CallOpSet<CallOpSendInitialMetadata, CallOpRecvInitialMetadata> start_ops_;
   CallbackWithSuccessTag start_tag_;
@@ -864,6 +904,109 @@ class ClientCallbackWriterFactory {
     new (g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientCallbackWriterImpl<Request>)))
         ClientCallbackWriterImpl<Request>(call, context, response, reactor);
+  }
+};
+
+class ClientCallbackUnaryImpl final
+    : public ::grpc::experimental::ClientCallbackUnary {
+ public:
+  // always allocated against a call arena, no memory free required
+  static void operator delete(void* ptr, std::size_t size) {
+    assert(size == sizeof(ClientCallbackUnaryImpl));
+  }
+
+  // This operator should never be called as the memory should be freed as part
+  // of the arena destruction. It only exists to provide a matching operator
+  // delete to the operator new so that some compilers will not complain (see
+  // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
+  // there are no tests catching the compiler warning.
+  static void operator delete(void*, void*) { assert(0); }
+
+  void StartCall() override {
+    // This call initiates two batches, each with a callback
+    // 1. Send initial metadata + write + writes done + recv initial metadata
+    // 2. Read message, recv trailing metadata
+    started_ = true;
+
+    start_tag_.Set(call_.call(),
+                   [this](bool ok) {
+                     reactor_->OnReadInitialMetadataDone(ok);
+                     MaybeFinish();
+                   },
+                   &start_ops_);
+    start_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
+                                   context_->initial_metadata_flags());
+    start_ops_.RecvInitialMetadata(context_);
+    start_ops_.set_core_cq_tag(&start_tag_);
+    call_.PerformOps(&start_ops_);
+
+    finish_tag_.Set(call_.call(), [this](bool ok) { MaybeFinish(); },
+                    &finish_ops_);
+    finish_ops_.ClientRecvStatus(context_, &finish_status_);
+    finish_ops_.set_core_cq_tag(&finish_tag_);
+    call_.PerformOps(&finish_ops_);
+  }
+
+  void MaybeFinish() {
+    if (--callbacks_outstanding_ == 0) {
+      Status s = std::move(finish_status_);
+      auto* reactor = reactor_;
+      auto* call = call_.call();
+      this->~ClientCallbackUnaryImpl();
+      g_core_codegen_interface->grpc_call_unref(call);
+      reactor->OnDone(s);
+    }
+  }
+
+ private:
+  friend class ClientCallbackUnaryFactory;
+
+  template <class Request, class Response>
+  ClientCallbackUnaryImpl(Call call, ClientContext* context, Request* request,
+                          Response* response,
+                          ::grpc::experimental::ClientUnaryReactor* reactor)
+      : context_(context), call_(call), reactor_(reactor) {
+    this->BindReactor(reactor);
+    // TODO(vjpai): don't assert
+    GPR_CODEGEN_ASSERT(start_ops_.SendMessagePtr(request).ok());
+    start_ops_.ClientSendClose();
+    finish_ops_.RecvMessage(response);
+    finish_ops_.AllowNoMessage();
+  }
+
+  ClientContext* const context_;
+  Call call_;
+  ::grpc::experimental::ClientUnaryReactor* const reactor_;
+
+  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpClientSendClose,
+            CallOpRecvInitialMetadata>
+      start_ops_;
+  CallbackWithSuccessTag start_tag_;
+
+  CallOpSet<CallOpGenericRecvMessage, CallOpClientRecvStatus> finish_ops_;
+  CallbackWithSuccessTag finish_tag_;
+  Status finish_status_;
+
+  // This call will have 2 callbacks: start and finish
+  std::atomic_int callbacks_outstanding_{2};
+  bool started_{false};
+};
+
+class ClientCallbackUnaryFactory {
+ public:
+  template <class Request, class Response>
+  static void Create(ChannelInterface* channel,
+                     const ::grpc::internal::RpcMethod& method,
+                     ClientContext* context, const Request* request,
+                     Response* response,
+                     ::grpc::experimental::ClientUnaryReactor* reactor) {
+    Call call = channel->CreateCall(method, context, channel->CallbackCQ());
+
+    g_core_codegen_interface->grpc_call_ref(call.call());
+
+    new (g_core_codegen_interface->grpc_call_arena_alloc(
+        call.call(), sizeof(ClientCallbackUnaryImpl)))
+        ClientCallbackUnaryImpl(call, context, request, response, reactor);
   }
 };
 
