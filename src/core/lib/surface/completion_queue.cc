@@ -856,7 +856,7 @@ static void cq_end_op_for_callback(
   GRPC_CLOSURE_SCHED(
       GRPC_CLOSURE_CREATE(
           functor_callback, functor,
-          grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT)),
+          grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::LONG)),
       GRPC_ERROR_REF(error));
 
   GRPC_ERROR_UNREF(error);
@@ -1346,7 +1346,7 @@ static void cq_finish_shutdown_callback(grpc_completion_queue* cq) {
   GRPC_CLOSURE_SCHED(
       GRPC_CLOSURE_CREATE(
           functor_callback, callback,
-          grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT)),
+          grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::LONG)),
       GRPC_ERROR_NONE);
 }
 
