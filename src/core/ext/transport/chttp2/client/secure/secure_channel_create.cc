@@ -44,9 +44,7 @@ namespace grpc_core {
 
 class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
  public:
-  Subchannel* CreateSubchannel(
-      const grpc_channel_args* args,
-      const HealthCheckParsedObject* health_check) override {
+  Subchannel* CreateSubchannel(const grpc_channel_args* args) override {
     grpc_channel_args* new_args = GetSecureNamingChannelArgs(args);
     if (new_args == nullptr) {
       gpr_log(GPR_ERROR,
@@ -54,7 +52,7 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
       return nullptr;
     }
     grpc_connector* connector = grpc_chttp2_connector_create();
-    Subchannel* s = Subchannel::Create(connector, new_args, health_check);
+    Subchannel* s = Subchannel::Create(connector, new_args);
     grpc_connector_unref(connector);
     grpc_channel_args_destroy(new_args);
     return s;

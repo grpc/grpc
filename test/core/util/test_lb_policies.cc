@@ -141,11 +141,8 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
         InterceptRecvTrailingMetadataCallback cb, void* user_data)
         : parent_(std::move(parent)), cb_(cb), user_data_(user_data) {}
 
-    Subchannel* CreateSubchannel(
-        const grpc_channel_args& args,
-        const HealthCheckParsedObject* health_check) override {
-      return parent_->channel_control_helper()->CreateSubchannel(args,
-                                                                 health_check);
+    Subchannel* CreateSubchannel(const grpc_channel_args& args) override {
+      return parent_->channel_control_helper()->CreateSubchannel(args);
     }
 
     grpc_channel* CreateChannel(const char* target,

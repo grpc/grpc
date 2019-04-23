@@ -106,13 +106,10 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
       RefCountedPtr<ResolvingLoadBalancingPolicy> parent)
       : parent_(std::move(parent)) {}
 
-  Subchannel* CreateSubchannel(
-      const grpc_channel_args& args,
-      const HealthCheckParsedObject* health_check) override {
+  Subchannel* CreateSubchannel(const grpc_channel_args& args) override {
     if (parent_->resolver_ == nullptr) return nullptr;  // Shutting down.
     if (!CalledByCurrentChild() && !CalledByPendingChild()) return nullptr;
-    return parent_->channel_control_helper()->CreateSubchannel(args,
-                                                               health_check);
+    return parent_->channel_control_helper()->CreateSubchannel(args);
   }
 
   grpc_channel* CreateChannel(const char* target,
@@ -336,8 +333,7 @@ void ResolvingLoadBalancingPolicy::OnResolverError(grpc_error* error) {
 void ResolvingLoadBalancingPolicy::CreateOrUpdateLbPolicyLocked(
     const char* lb_policy_name,
     const ParsedLoadBalancingConfig* lb_policy_config, Resolver::Result result,
-    TraceStringVector* trace_strings,
-    const HealthCheckParsedObject* health_check) {
+    TraceStringVector* trace_strings) {
   // If the child policy name changes, we need to create a new child
   // policy.  When this happens, we leave child_policy_ as-is and store
   // the new child policy in pending_child_policy_.  Once the new child
@@ -430,7 +426,6 @@ void ResolvingLoadBalancingPolicy::CreateOrUpdateLbPolicyLocked(
   UpdateArgs update_args;
   update_args.addresses = std::move(result.addresses);
   update_args.config = std::move(lb_policy_config);
-  update_args.health_check = health_check;
   // TODO(roth): Once channel args is converted to C++, use std::move() here.
   update_args.args = result.args;
   result.args = nullptr;
@@ -535,12 +530,11 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   // Process the resolver result.
   const char* lb_policy_name = nullptr;
   const ParsedLoadBalancingConfig* lb_policy_config = nullptr;
-  const HealthCheckParsedObject* health_check = nullptr;
   bool service_config_changed = false;
   if (process_resolver_result_ != nullptr) {
-    service_config_changed = process_resolver_result_(
-        process_resolver_result_user_data_, result, &lb_policy_name,
-        &lb_policy_config, &health_check);
+    service_config_changed =
+        process_resolver_result_(process_resolver_result_user_data_, result,
+                                 &lb_policy_name, &lb_policy_config);
   } else {
     lb_policy_name = child_policy_name_.get();
     lb_policy_config = child_lb_config_;
@@ -548,7 +542,7 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   GPR_ASSERT(lb_policy_name != nullptr);
   // Create or update LB policy, as needed.
   CreateOrUpdateLbPolicyLocked(lb_policy_name, lb_policy_config,
-                               std::move(result), &trace_strings, health_check);
+                               std::move(result), &trace_strings);
   // Add channel trace event.
   if (channelz_node() != nullptr) {
     if (service_config_changed) {

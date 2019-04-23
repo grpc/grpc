@@ -532,8 +532,7 @@ BackOff::Options ParseArgsForBackoffValues(
 }  // namespace
 
 Subchannel::Subchannel(SubchannelKey* key, grpc_connector* connector,
-                       const grpc_channel_args* args,
-                       const HealthCheckParsedObject* health_check)
+                       const grpc_channel_args* args)
     : key_(key),
       connector_(connector),
       backoff_(ParseArgsForBackoffValues(args, &min_connect_timeout_ms_)) {
@@ -565,10 +564,9 @@ Subchannel::Subchannel(SubchannelKey* key, grpc_connector* connector,
                                "subchannel");
   grpc_connectivity_state_init(&state_and_health_tracker_, GRPC_CHANNEL_IDLE,
                                "subchannel");
-  if (health_check != nullptr) {
-    health_check_service_name_ =
-        UniquePtr<char>(gpr_strdup(health_check->service_name()));
-  }
+  health_check_service_name_ =
+      UniquePtr<char>(gpr_strdup(grpc_channel_arg_get_string(
+          grpc_channel_args_find(args_, "grpc.temp.health_check"))));
   const grpc_arg* arg = grpc_channel_args_find(args_, GRPC_ARG_ENABLE_CHANNELZ);
   const bool channelz_enabled =
       grpc_channel_arg_get_bool(arg, GRPC_ENABLE_CHANNELZ_DEFAULT);
@@ -603,8 +601,7 @@ Subchannel::~Subchannel() {
 }
 
 Subchannel* Subchannel::Create(grpc_connector* connector,
-                               const grpc_channel_args* args,
-                               const HealthCheckParsedObject* health_check) {
+                               const grpc_channel_args* args) {
   SubchannelKey* key = New<SubchannelKey>(args);
   SubchannelPoolInterface* subchannel_pool =
       SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(args);
@@ -614,7 +611,7 @@ Subchannel* Subchannel::Create(grpc_connector* connector,
     Delete(key);
     return c;
   }
-  c = New<Subchannel>(key, connector, args, health_check);
+  c = New<Subchannel>(key, connector, args);
   // Try to register the subchannel before setting the subchannel pool.
   // Otherwise, in case of a registration race, unreffing c in
   // RegisterSubchannel() will cause c to be tried to be unregistered, while

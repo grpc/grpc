@@ -224,8 +224,7 @@ class ChannelData {
 
   static bool ProcessResolverResultLocked(
       void* arg, const Resolver::Result& result, const char** lb_policy_name,
-      const ParsedLoadBalancingConfig** lb_policy_config,
-      const HealthCheckParsedObject** health_check);
+      const ParsedLoadBalancingConfig** lb_policy_config);
 
   grpc_error* DoPingLocked(grpc_transport_op* op);
 
@@ -932,15 +931,26 @@ class ChannelData::ClientChannelControlHelper
                              "ClientChannelControlHelper");
   }
 
-  Subchannel* CreateSubchannel(
-      const grpc_channel_args& args,
-      const HealthCheckParsedObject* health_check) override {
-    grpc_arg arg = SubchannelPoolInterface::CreateChannelArg(
+  Subchannel* CreateSubchannel(const grpc_channel_args& args) override {
+    grpc_arg args_to_add[2];
+    int num_args_to_add = 0;
+    if (chand_->service_config_ != nullptr) {
+      /*const auto* health_check_object = static_cast<HealthCheckParsedObject*>(
+          chand_->service_config_->GetParsedGlobalServiceConfigObject(
+              HealthCheckParser::ParserIndex()));
+      if (health_check_object != nullptr) {
+        args_to_add[0] = grpc_channel_arg_string_create(
+            const_cast<char*>("grpc.temp.health_check"),
+            const_cast<char*>(health_check_object->service_name()));
+        num_args_to_add++;
+      }*/
+    }
+    args_to_add[num_args_to_add++] = SubchannelPoolInterface::CreateChannelArg(
         chand_->subchannel_pool_.get());
     grpc_channel_args* new_args =
-        grpc_channel_args_copy_and_add(&args, &arg, 1);
-    Subchannel* subchannel = chand_->client_channel_factory_->CreateSubchannel(
-        new_args, health_check);
+        grpc_channel_args_copy_and_add(&args, args_to_add, num_args_to_add);
+    Subchannel* subchannel =
+        chand_->client_channel_factory_->CreateSubchannel(new_args);
     grpc_channel_args_destroy(new_args);
     return subchannel;
   }
@@ -1111,8 +1121,7 @@ ChannelData::~ChannelData() {
 // resolver result update.
 bool ChannelData::ProcessResolverResultLocked(
     void* arg, const Resolver::Result& result, const char** lb_policy_name,
-    const ParsedLoadBalancingConfig** lb_policy_config,
-    const HealthCheckParsedObject** health_check) {
+    const ParsedLoadBalancingConfig** lb_policy_config) {
   ChannelData* chand = static_cast<ChannelData*>(arg);
   ProcessedResolverResult resolver_result(result);
   const char* service_config_json = resolver_result.service_config_json();
@@ -1140,7 +1149,6 @@ bool ChannelData::ProcessResolverResultLocked(
   // Return results.
   *lb_policy_name = chand->info_lb_policy_name_.get();
   *lb_policy_config = resolver_result.lb_policy_config();
-  *health_check = resolver_result.health_check();
   return service_config_changed;
 }
 

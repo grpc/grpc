@@ -179,14 +179,12 @@ class Subchannel {
  public:
   // The ctor and dtor are not intended to use directly.
   Subchannel(SubchannelKey* key, grpc_connector* connector,
-             const grpc_channel_args* args,
-             const HealthCheckParsedObject* health_check);
+             const grpc_channel_args* args);
   ~Subchannel();
 
   // Creates a subchannel given \a connector and \a args.
   static Subchannel* Create(grpc_connector* connector,
-                            const grpc_channel_args* args,
-                            const HealthCheckParsedObject* health_check);
+                            const grpc_channel_args* args);
 
   // Strong and weak refcounting.
   Subchannel* Ref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);

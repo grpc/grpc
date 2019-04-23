@@ -61,6 +61,7 @@ UniquePtr<ServiceConfigParsedObject> HealthCheckParser::ParseGlobalParams(
       }
     }
   }
+  if (service_name == nullptr) return nullptr;
   return UniquePtr<ServiceConfigParsedObject>(
       New<HealthCheckParsedObject>(service_name));
 }
