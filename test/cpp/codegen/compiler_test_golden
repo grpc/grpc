@@ -41,6 +41,10 @@
 #include <grpcpp/impl/codegen/sync_stream.h>
 
 namespace grpc {
+namespace experimental {
+template <typename RequestT, typename ResponseT>
+class MessageAllocator;
+}  // namespace experimental
 class CompletionQueue;
 class Channel;
 class ServerCompletionQueue;
@@ -335,6 +339,12 @@ class ServiceA final {
                  ::grpc::experimental::ServerCallbackRpcController* controller) {
                    return this->MethodA1(context, request, response, controller);
                  }));
+    }
+    void SetMessageAllocatorFor_MethodA1(
+        ::grpc::experimental::MessageAllocator< ::grpc::testing::Request, ::grpc::testing::Response>* allocator) {
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>*>(
+          ::grpc::Service::experimental().GetHandler(0))
+              ->SetMessageAllocator(allocator);
     }
     ~ExperimentalWithCallbackMethod_MethodA1() override {
       BaseClassMustBeDerivedFromService(this);
@@ -807,6 +817,12 @@ class ServiceB final {
                  ::grpc::experimental::ServerCallbackRpcController* controller) {
                    return this->MethodB1(context, request, response, controller);
                  }));
+    }
+    void SetMessageAllocatorFor_MethodB1(
+        ::grpc::experimental::MessageAllocator< ::grpc::testing::Request, ::grpc::testing::Response>* allocator) {
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>*>(
+          ::grpc::Service::experimental().GetHandler(0))
+              ->SetMessageAllocator(allocator);
     }
     ~ExperimentalWithCallbackMethod_MethodB1() override {
       BaseClassMustBeDerivedFromService(this);
