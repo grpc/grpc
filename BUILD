@@ -1099,7 +1099,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/service_config.cc",
         "src/core/ext/filters/client_channel/subchannel.cc",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.cc",
-        "src/core/ext/filters/message_size/message_size_parser.cc",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/backup_poller.h",
@@ -1129,7 +1128,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/service_config.h",
         "src/core/ext/filters/client_channel/subchannel.h",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.h",
-        "src/core/ext/filters/message_size/message_size_parser.h",
     ],
     language = "c++",
     deps = [

@@ -26,7 +26,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/message_size/message_size_parser.h"
+#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/gpr/string.h"
@@ -37,6 +37,69 @@
 
 static void recv_message_ready(void* user_data, grpc_error* error);
 static void recv_trailing_metadata_ready(void* user_data, grpc_error* error);
+
+namespace {
+size_t g_message_size_parser_index;
+}  // namespace
+
+namespace grpc_core {
+
+UniquePtr<ServiceConfigParsedObject> MessageSizeParser::ParsePerMethodParams(
+    const grpc_json* json, grpc_error** error) {
+  GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+  int max_request_message_bytes = -1;
+  int max_response_message_bytes = -1;
+  InlinedVector<grpc_error*, 4> error_list;
+  for (grpc_json* field = json->child; field != nullptr; field = field->next) {
+    if (field->key == nullptr) continue;
+    if (strcmp(field->key, "maxRequestMessageBytes") == 0) {
+      if (max_request_message_bytes >= 0) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:maxRequestMessageBytes error:Duplicate entry"));
+      } else if (field->type != GRPC_JSON_STRING &&
+                 field->type != GRPC_JSON_NUMBER) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:maxRequestMessageBytes error:should be of type number"));
+      } else {
+        max_request_message_bytes = gpr_parse_nonnegative_int(field->value);
+        if (max_request_message_bytes == -1) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "field:maxRequestMessageBytes error:should be non-negative"));
+        }
+      }
+    } else if (strcmp(field->key, "maxResponseMessageBytes") == 0) {
+      if (max_response_message_bytes >= 0) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:maxResponseMessageBytes error:Duplicate entry"));
+      } else if (field->type != GRPC_JSON_STRING &&
+                 field->type != GRPC_JSON_NUMBER) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:maxResponseMessageBytes error:should be of type number"));
+      } else {
+        max_response_message_bytes = gpr_parse_nonnegative_int(field->value);
+        if (max_response_message_bytes == -1) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "field:maxResponseMessageBytes error:should be non-negative"));
+        }
+      }
+    }
+  }
+  if (!error_list.empty()) {
+    *error = ServiceConfig::CreateErrorFromVector("Message size parser",
+                                                  &error_list);
+    return nullptr;
+  }
+  return UniquePtr<ServiceConfigParsedObject>(New<MessageSizeParsedObject>(
+      max_request_message_bytes, max_response_message_bytes));
+}
+
+void MessageSizeParser::Register() {
+  g_message_size_parser_index = ServiceConfig::RegisterParser(
+      UniquePtr<ServiceConfigParser>(New<MessageSizeParser>()));
+}
+
+size_t MessageSizeParser::ParserIndex() { return g_message_size_parser_index; }
+}  // namespace grpc_core
 
 namespace {
 struct channel_data {
@@ -58,18 +121,17 @@ struct call_data {
     // apply the max request size to the send limit and the max response
     // size to the receive limit.
     const grpc_core::MessageSizeParsedObject* limits = nullptr;
-    const grpc_core::ServiceConfig::ServiceConfigObjectsVector* objs_vector =
-        nullptr;
+    grpc_core::ServiceConfig::CallData* svc_cfg_call_data = nullptr;
     if (args.context != nullptr) {
-      objs_vector = static_cast<
-          const grpc_core::ServiceConfig::ServiceConfigObjectsVector*>(
-          args.context[GRPC_SERVICE_CONFIG_METHOD_PARAMS].value);
+      svc_cfg_call_data = static_cast<grpc_core::ServiceConfig::CallData*>(
+          args.context[GRPC_SERVICE_CONFIG_CALL_DATA].value);
     }
-    if (objs_vector != nullptr) {
+    if (svc_cfg_call_data != nullptr) {
       limits = static_cast<const grpc_core::MessageSizeParsedObject*>(
-          (*objs_vector)[grpc_core::MessageSizeParser::ParserIndex()].get());
+          svc_cfg_call_data->GetMethodParsedObject(
+              grpc_core::MessageSizeParser::ParserIndex()));
     } else if (chand.svc_cfg != nullptr) {
-      objs_vector =
+      const auto* objs_vector =
           chand.svc_cfg->GetMethodServiceConfigObjectsVector(args.path);
       if (objs_vector != nullptr) {
         limits = static_cast<const grpc_core::MessageSizeParsedObject*>(

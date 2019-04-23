@@ -107,7 +107,7 @@ class ClientChannelServiceConfigParser : public ServiceConfigParser {
   UniquePtr<ServiceConfigParsedObject> ParsePerMethodParams(
       const grpc_json* json, grpc_error** error) override;
 
-  static size_t client_channel_service_config_parser_index();
+  static size_t ParserIndex();
   static void Register();
 };
 

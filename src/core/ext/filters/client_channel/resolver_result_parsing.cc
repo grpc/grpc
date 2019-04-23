@@ -48,8 +48,7 @@ namespace {
 size_t g_client_channel_service_config_parser_index;
 }
 
-size_t
-ClientChannelServiceConfigParser::client_channel_service_config_parser_index() {
+size_t ClientChannelServiceConfigParser::ParserIndex() {
   return g_client_channel_service_config_parser_index;
 }
 
@@ -87,8 +86,7 @@ void ProcessedResolverResult::ProcessServiceConfig(
   service_config_json_ = service_config_->service_config_json();
   auto* parsed_object = static_cast<const ClientChannelGlobalParsedObject*>(
       service_config_->GetParsedGlobalServiceConfigObject(
-          ClientChannelServiceConfigParser::
-              client_channel_service_config_parser_index()));
+          ClientChannelServiceConfigParser::ParserIndex()));
   if (!parsed_object) {
     return;
   }
@@ -113,8 +111,7 @@ void ProcessedResolverResult::ProcessLbPolicy(
   if (service_config_ != nullptr) {
     auto* parsed_object = static_cast<const ClientChannelGlobalParsedObject*>(
         service_config_->GetParsedGlobalServiceConfigObject(
-            ClientChannelServiceConfigParser::
-                client_channel_service_config_parser_index()));
+            ClientChannelServiceConfigParser::ParserIndex()));
     if (parsed_object != nullptr) {
       if (parsed_object->parsed_lb_config()) {
         lb_policy_name_.reset(

@@ -618,7 +618,7 @@ class CallData {
   grpc_call_context_element* call_context_;
 
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
-  RefCountedPtr<ServiceConfig> service_config_;
+  ServiceConfig::CallData service_config_call_data_;
   const ClientChannelMethodParsedObject* method_params_ = nullptr;
 
   RefCountedPtr<SubchannelCall> subchannel_call_;
@@ -935,7 +935,7 @@ class ChannelData::ClientChannelControlHelper
     grpc_arg args_to_add[2];
     int num_args_to_add = 0;
     if (chand_->service_config_ != nullptr) {
-      /*const auto* health_check_object = static_cast<HealthCheckParsedObject*>(
+      const auto* health_check_object = static_cast<HealthCheckParsedObject*>(
           chand_->service_config_->GetParsedGlobalServiceConfigObject(
               HealthCheckParser::ParserIndex()));
       if (health_check_object != nullptr) {
@@ -943,7 +943,7 @@ class ChannelData::ClientChannelControlHelper
             const_cast<char*>("grpc.temp.health_check"),
             const_cast<char*>(health_check_object->service_name()));
         num_args_to_add++;
-      }*/
+      }
     }
     args_to_add[num_args_to_add++] = SubchannelPoolInterface::CreateChannelArg(
         chand_->subchannel_pool_.get());
@@ -3087,24 +3087,17 @@ void CallData::ApplyServiceConfigToCallLocked(grpc_call_element* elem) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: applying service config to call",
             chand, this);
   }
-  service_config_ = chand->service_config();
-  if (service_config_ != nullptr) {
-    // Store a ref to the service_config in CallData. Also, save pointers to the
-    // ServiceConfig and ServiceConfigObjectsVector (for this call) in the
-    // call_context so that all future filters can access it.
-    call_context_[GRPC_SERVICE_CONFIG].value = &service_config_;
-    const auto* method_params_vector_ptr =
-        service_config_->GetMethodServiceConfigObjectsVector(path_);
-    if (method_params_vector_ptr != nullptr) {
-      method_params_ = static_cast<ClientChannelMethodParsedObject*>(
-          ((*method_params_vector_ptr)
-               [internal::ClientChannelServiceConfigParser::
-                    client_channel_service_config_parser_index()])
-              .get());
-      call_context_[GRPC_SERVICE_CONFIG_METHOD_PARAMS].value =
-          const_cast<ServiceConfig::ServiceConfigObjectsVector*>(
-              method_params_vector_ptr);
-    }
+  // Store a ref to the service_config in service_config_call_data_. Also, save
+  // a pointer to this in the call_context so that all future filters can access
+  // it.
+  service_config_call_data_ =
+      ServiceConfig::CallData(chand->service_config(), path_);
+  if (!service_config_call_data_.empty()) {
+    call_context_[GRPC_SERVICE_CONFIG_CALL_DATA].value =
+        &service_config_call_data_;
+    method_params_ = static_cast<ClientChannelMethodParsedObject*>(
+        service_config_call_data_.GetMethodParsedObject(
+            internal::ClientChannelServiceConfigParser::ParserIndex()));
   }
   retry_throttle_data_ = chand->retry_throttle_data();
   if (method_params_ != nullptr) {

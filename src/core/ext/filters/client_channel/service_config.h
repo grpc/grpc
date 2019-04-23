@@ -91,6 +91,33 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
                         kNumPreallocatedParsers>
       ServiceConfigObjectsVector;
 
+  class CallData {
+   public:
+    CallData() = default;
+    CallData(RefCountedPtr<ServiceConfig> svc_cfg, const grpc_slice& path)
+        : service_config_(std::move(svc_cfg)) {
+      if (service_config_ != nullptr) {
+        method_params_vector_ =
+            service_config_->GetMethodServiceConfigObjectsVector(path);
+      }
+    }
+
+    RefCountedPtr<ServiceConfig> service_config() { return service_config_; }
+
+    ServiceConfigParsedObject* GetMethodParsedObject(int index) const {
+      return method_params_vector_ != nullptr
+                 ? (*method_params_vector_)[index].get()
+                 : nullptr;
+    }
+
+    bool empty() const { return service_config_ == nullptr; }
+
+   private:
+    RefCountedPtr<ServiceConfig> service_config_;
+    const ServiceConfig::ServiceConfigObjectsVector* method_params_vector_ =
+        nullptr;
+  };
+
   /// Creates a new service config from parsing \a json_string.
   /// Returns null on parse error.
   static RefCountedPtr<ServiceConfig> Create(const char* json,

@@ -567,6 +567,7 @@ Subchannel::Subchannel(SubchannelKey* key, grpc_connector* connector,
   health_check_service_name_ =
       UniquePtr<char>(gpr_strdup(grpc_channel_arg_get_string(
           grpc_channel_args_find(args_, "grpc.temp.health_check"))));
+  gpr_log(GPR_ERROR, "healthcheck %s", health_check_service_name_.get());
   const grpc_arg* arg = grpc_channel_args_find(args_, GRPC_ARG_ENABLE_CHANNELZ);
   const bool channelz_enabled =
       grpc_channel_arg_get_bool(arg, GRPC_ENABLE_CHANNELZ_DEFAULT);
