@@ -44,13 +44,13 @@ class CallCredentials;
 class SecureCallCredentials;
 class SecureChannelCredentials;
 
-std::shared_ptr<Channel> CreateCustomChannel(
+std::shared_ptr<::grpc::Channel> CreateCustomChannel(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds,
     const grpc::ChannelArguments& args);
 
 namespace experimental {
-std::shared_ptr<Channel> CreateCustomChannelWithInterceptors(
+std::shared_ptr<::grpc::Channel> CreateCustomChannelWithInterceptors(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds,
     const grpc::ChannelArguments& args,
@@ -78,12 +78,12 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
   virtual SecureChannelCredentials* AsSecureCredentials() = 0;
 
  private:
-  friend std::shared_ptr<Channel> CreateCustomChannel(
+  friend std::shared_ptr<::grpc::Channel> CreateCustomChannel(
       const grpc::string& target,
       const std::shared_ptr<ChannelCredentials>& creds,
       const grpc::ChannelArguments& args);
 
-  friend std::shared_ptr<Channel>
+  friend std::shared_ptr<::grpc::Channel>
   grpc_impl::experimental::CreateCustomChannelWithInterceptors(
       const grpc::string& target,
       const std::shared_ptr<ChannelCredentials>& creds,
@@ -92,12 +92,12 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
           grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators);
 
-  virtual std::shared_ptr<Channel> CreateChannel(
+  virtual std::shared_ptr<::grpc::Channel> CreateChannel(
       const grpc::string& target, const grpc::ChannelArguments& args) = 0;
 
   // This function should have been a pure virtual function, but it is
   // implemented as a virtual function so that it does not break API.
-  virtual std::shared_ptr<Channel> CreateChannelWithInterceptors(
+  virtual std::shared_ptr<::grpc::Channel> CreateChannelWithInterceptors(
       const grpc::string& target, const grpc::ChannelArguments& args,
       std::vector<std::unique_ptr<
           grpc::experimental::ClientInterceptorFactoryInterface>>
