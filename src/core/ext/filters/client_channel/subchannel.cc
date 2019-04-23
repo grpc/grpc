@@ -565,7 +565,6 @@ Subchannel::Subchannel(SubchannelKey* key, grpc_connector* connector,
                                "subchannel");
   grpc_connectivity_state_init(&state_and_health_tracker_, GRPC_CHANNEL_IDLE,
                                "subchannel");
-
   if (health_check != nullptr) {
     health_check_service_name_ =
         UniquePtr<char>(gpr_strdup(health_check->service_name()));

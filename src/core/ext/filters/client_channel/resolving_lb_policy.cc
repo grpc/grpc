@@ -539,7 +539,7 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   bool service_config_changed = false;
   if (process_resolver_result_ != nullptr) {
     service_config_changed = process_resolver_result_(
-        process_resolver_result_user_data_, &result, &lb_policy_name,
+        process_resolver_result_user_data_, result, &lb_policy_name,
         &lb_policy_config, &health_check);
   } else {
     lb_policy_name = child_policy_name_.get();

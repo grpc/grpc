@@ -53,7 +53,6 @@ static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
 
 void grpc_service_config_register_parsers() {
   grpc_core::internal::ClientChannelServiceConfigParser::Register();
-  grpc_core::MessageSizeParser::Register();
   grpc_core::HealthCheckParser::Register();
 }
 

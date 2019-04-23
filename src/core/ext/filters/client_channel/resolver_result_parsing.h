@@ -47,12 +47,12 @@ class ClientChannelGlobalParsedObject : public ServiceConfigParsedObject {
   ClientChannelGlobalParsedObject(
       UniquePtr<ParsedLoadBalancingConfig> parsed_lb_config,
       const char* parsed_deprecated_lb_policy,
-      const grpc_core::Optional<RetryThrottling>& retry_throttling)
+      const Optional<RetryThrottling>& retry_throttling)
       : parsed_lb_config_(std::move(parsed_lb_config)),
         parsed_deprecated_lb_policy_(parsed_deprecated_lb_policy),
         retry_throttling_(retry_throttling) {}
 
-  grpc_core::Optional<RetryThrottling> retry_throttling() const {
+  Optional<RetryThrottling> retry_throttling() const {
     return retry_throttling_;
   }
 
@@ -67,7 +67,7 @@ class ClientChannelGlobalParsedObject : public ServiceConfigParsedObject {
  private:
   UniquePtr<ParsedLoadBalancingConfig> parsed_lb_config_;
   const char* parsed_deprecated_lb_policy_ = nullptr;
-  grpc_core::Optional<RetryThrottling> retry_throttling_;
+  Optional<RetryThrottling> retry_throttling_;
 };
 
 class ClientChannelMethodParsedObject : public ServiceConfigParsedObject {
@@ -116,9 +116,8 @@ class ClientChannelServiceConfigParser : public ServiceConfigParser {
 class ProcessedResolverResult {
  public:
   // Processes the resolver result and populates the relative members
-  // for later consumption. Tries to parse retry parameters only if parse_retry
-  // is true.
-  ProcessedResolverResult(Resolver::Result* resolver_result, bool parse_retry);
+  // for later consumption.
+  ProcessedResolverResult(const Resolver::Result& resolver_result);
 
   // Getters. Any managed object's ownership is transferred.
   const char* service_config_json() { return service_config_json_; }
@@ -137,11 +136,10 @@ class ProcessedResolverResult {
  private:
   // Finds the service config; extracts LB config and (maybe) retry throttle
   // params from it.
-  void ProcessServiceConfig(const Resolver::Result& resolver_result,
-                            bool parse_retry);
+  void ProcessServiceConfig(const Resolver::Result& resolver_result);
 
-  // Finds the LB policy name (when no LB config was found).
-  void ProcessLbPolicyName(const Resolver::Result& resolver_result);
+  // Extracts the LB policy.
+  void ProcessLbPolicy(const Resolver::Result& resolver_result);
 
   // Parses the service config. Intended to be used by
   // ServiceConfig::ParseGlobalParams.
@@ -159,7 +157,6 @@ class ProcessedResolverResult {
   UniquePtr<char> lb_policy_name_;
   const ParsedLoadBalancingConfig* lb_policy_config_ = nullptr;
   // Retry throttle data.
-  char* server_name_ = nullptr;
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
   const HealthCheckParsedObject* health_check_ = nullptr;
 };

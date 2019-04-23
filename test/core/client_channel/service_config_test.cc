@@ -546,12 +546,13 @@ TEST_F(ClientChannelParserTest, LoadBalancingPolicyXdsNotAllowed) {
   auto svc_cfg = ServiceConfig::Create(test_json, &error);
   gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
   ASSERT_TRUE(error != GRPC_ERROR_NONE);
-  std::regex e(
-      std::string("(Service config parsing "
-                  "error)(.*)(referenced_errors)(.*)(Global "
-                  "Params)(.*)(referenced_errors)(.*)(Client channel global "
-                  "parser)(.*)(referenced_errors)(.*)(field:"
-                  "loadBalancingPolicy error:xds not supported)"));
+  std::regex e(std::string(
+      "(Service config parsing "
+      "error)(.*)(referenced_errors)(.*)(Global "
+      "Params)(.*)(referenced_errors)(.*)(Client channel global "
+      "parser)(.*)(referenced_errors)(.*)(field:loadBalancingPolicy error:Xds "
+      "Parser has required field - balancerName. Please use "
+      "loadBalancingConfig instead of the deprecated loadBalancingPolicy)"));
   std::smatch match;
   std::string s(grpc_error_string(error));
   EXPECT_TRUE(std::regex_search(s, match, e));

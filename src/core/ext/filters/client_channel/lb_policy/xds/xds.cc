@@ -1667,7 +1667,16 @@ class XdsFactory : public LoadBalancingPolicyFactory {
 
   UniquePtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
       const grpc_json* json, grpc_error** error) const override {
-    GPR_DEBUG_ASSERT(json != nullptr);
+    GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+    if (json == nullptr) {
+      // xds was mentioned as a policy in the deprecated loadBalancingPolicy
+      // field.
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:loadBalancingPolicy error:Xds Parser has required field - "
+          "balancerName. Please use loadBalancingConfig instead of the "
+          "deprecated loadBalancingPolicy");
+      return nullptr;
+    }
     GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
 
     InlinedVector<grpc_error*, 3> error_list;
@@ -1697,7 +1706,7 @@ class XdsFactory : public LoadBalancingPolicyFactory {
         }
         grpc_error* parse_error = GRPC_ERROR_NONE;
         child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            field, "childPolicy", &parse_error);
+            field, &parse_error);
         if (child_policy == nullptr) {
           GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
           error_list.push_back(parse_error);
@@ -1710,7 +1719,7 @@ class XdsFactory : public LoadBalancingPolicyFactory {
         }
         grpc_error* parse_error = GRPC_ERROR_NONE;
         fallback_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            field, "fallbackPolicy", &parse_error);
+            field, &parse_error);
         if (fallback_policy == nullptr) {
           GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
           error_list.push_back(parse_error);

@@ -66,7 +66,8 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   // lb_policy_name and lb_policy_config to point to the right data.
   // Returns true if the service config has changed since the last result.
   typedef bool (*ProcessResolverResultCallback)(
-      void* user_data, Resolver::Result* result, const char** lb_policy_name,
+      void* user_data, const Resolver::Result& result,
+      const char** lb_policy_name,
       const ParsedLoadBalancingConfig** lb_policy_config,
       const HealthCheckParsedObject** health_check);
   // If error is set when this returns, then construction failed, and

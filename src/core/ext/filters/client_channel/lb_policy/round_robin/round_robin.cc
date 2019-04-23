@@ -525,8 +525,9 @@ class RoundRobinFactory : public LoadBalancingPolicyFactory {
 
   UniquePtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
       const grpc_json* json, grpc_error** error) const override {
-    GPR_DEBUG_ASSERT(json != nullptr);
-    GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
+    if (json != nullptr) {
+      GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
+    }
     return UniquePtr<ParsedLoadBalancingConfig>(New<ParsedRoundRobinConfig>());
   }
 };

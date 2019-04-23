@@ -62,65 +62,6 @@ void LoadBalancingPolicy::ShutdownAndUnrefLocked(void* arg,
   policy->Unref();
 }
 
-grpc_json* LoadBalancingPolicy::ParseLoadBalancingConfig(
-    const grpc_json* lb_config_array, const char* field_name,
-    grpc_error** error) {
-  GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
-  char* error_msg;
-  if (lb_config_array == nullptr || lb_config_array->type != GRPC_JSON_ARRAY) {
-    gpr_asprintf(&error_msg, "field:%s error:type should be array", field_name);
-    *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
-    gpr_free(error_msg);
-    return nullptr;
-  }
-  // Find the first LB policy that this client supports.
-  for (const grpc_json* lb_config = lb_config_array->child;
-       lb_config != nullptr; lb_config = lb_config->next) {
-    if (lb_config->type != GRPC_JSON_OBJECT) {
-      gpr_asprintf(&error_msg,
-                   "field:%s error:child entry should be of type object",
-                   field_name);
-      *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
-      gpr_free(error_msg);
-      return nullptr;
-    }
-    grpc_json* policy = nullptr;
-    for (grpc_json* field = lb_config->child; field != nullptr;
-         field = field->next) {
-      if (field->key == nullptr || field->type != GRPC_JSON_OBJECT) {
-        gpr_asprintf(&error_msg,
-                     "field:%s error:child entry should be of type object",
-                     field_name);
-        *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
-        gpr_free(error_msg);
-        return nullptr;
-      }
-      if (policy != nullptr) {
-        gpr_asprintf(&error_msg, "field:%s error:oneOf violation", field_name);
-        *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
-        gpr_free(error_msg);
-        return nullptr;
-      }  // Violate "oneof" type.
-      policy = field;
-    }
-    if (policy == nullptr) {
-      gpr_asprintf(&error_msg, "field:%s error:no policy found in child entry",
-                   field_name);
-      *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
-      gpr_free(error_msg);
-      return nullptr;
-    }
-    // If we support this policy, then select it.
-    if (LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(policy->key)) {
-      return policy;
-    }
-  }
-  gpr_asprintf(&error_msg, "field:%s error:No known policy", field_name);
-  *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
-  gpr_free(error_msg);
-  return nullptr;
-}
-
 //
 // LoadBalancingPolicy::UpdateArgs
 //

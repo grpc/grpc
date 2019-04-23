@@ -1814,8 +1814,10 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
   UniquePtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
       const grpc_json* json, grpc_error** error) const override {
     GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
-    GPR_DEBUG_ASSERT(json != nullptr);
-    GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
+    if (json == nullptr) {
+      return UniquePtr<ParsedLoadBalancingConfig>(
+          New<ParsedGrpcLbConfig>(nullptr));
+    }
     InlinedVector<grpc_error*, 2> error_list;
     UniquePtr<ParsedLoadBalancingConfig> child_policy = nullptr;
 
@@ -1830,7 +1832,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
         }
         grpc_error* parse_error = GRPC_ERROR_NONE;
         child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            field, "childPolicy", &parse_error);
+            field, &parse_error);
         if (parse_error != GRPC_ERROR_NONE) {
           error_list.push_back(parse_error);
         }

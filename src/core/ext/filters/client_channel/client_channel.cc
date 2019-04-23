@@ -223,7 +223,7 @@ class ChannelData {
   ~ChannelData();
 
   static bool ProcessResolverResultLocked(
-      void* arg, Resolver::Result* result, const char** lb_policy_name,
+      void* arg, const Resolver::Result& result, const char** lb_policy_name,
       const ParsedLoadBalancingConfig** lb_policy_config,
       const HealthCheckParsedObject** health_check);
 
@@ -252,8 +252,8 @@ class ChannelData {
   QueuedPick* queued_picks_ = nullptr;  // Linked list of queued picks.
   // Data from service config.
   bool received_service_config_data_ = false;
-  grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
-  grpc_core::RefCountedPtr<grpc_core::ServiceConfig> service_config_;
+  RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
+  RefCountedPtr<ServiceConfig> service_config_;
 
   //
   // Fields used in the control plane.  Guarded by combiner.
@@ -619,7 +619,7 @@ class CallData {
   grpc_call_context_element* call_context_;
 
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
-  RefCountedPtr<grpc_core::ServiceConfig> service_config_;
+  RefCountedPtr<ServiceConfig> service_config_;
   const ClientChannelMethodParsedObject* method_params_ = nullptr;
 
   RefCountedPtr<SubchannelCall> subchannel_call_;
@@ -1110,11 +1110,11 @@ ChannelData::~ChannelData() {
 // Synchronous callback from ResolvingLoadBalancingPolicy to process a
 // resolver result update.
 bool ChannelData::ProcessResolverResultLocked(
-    void* arg, Resolver::Result* result, const char** lb_policy_name,
+    void* arg, const Resolver::Result& result, const char** lb_policy_name,
     const ParsedLoadBalancingConfig** lb_policy_config,
-    const grpc_core::HealthCheckParsedObject** health_check) {
+    const HealthCheckParsedObject** health_check) {
   ChannelData* chand = static_cast<ChannelData*>(arg);
-  ProcessedResolverResult resolver_result(result, chand->enable_retries_);
+  ProcessedResolverResult resolver_result(result);
   const char* service_config_json = resolver_result.service_config_json();
   if (grpc_client_channel_routing_trace.enabled()) {
     gpr_log(GPR_INFO, "chand=%p: resolver returned service config: \"%s\"",
@@ -1854,7 +1854,7 @@ void CallData::DoRetry(grpc_call_element* elem,
   // Compute backoff delay.
   grpc_millis next_attempt_time;
   if (server_pushback_ms >= 0) {
-    next_attempt_time = grpc_core::ExecCtx::Get()->Now() + server_pushback_ms;
+    next_attempt_time = ExecCtx::Get()->Now() + server_pushback_ms;
     last_attempt_got_server_pushback_ = true;
   } else {
     if (num_attempts_completed_ == 1 || last_attempt_got_server_pushback_) {
@@ -1871,7 +1871,7 @@ void CallData::DoRetry(grpc_call_element* elem,
   if (grpc_client_channel_call_trace.enabled()) {
     gpr_log(GPR_INFO,
             "chand=%p calld=%p: retrying failed call in %" PRId64 " ms", chand,
-            this, next_attempt_time - grpc_core::ExecCtx::Get()->Now());
+            this, next_attempt_time - ExecCtx::Get()->Now());
   }
   // Schedule retry after computed delay.
   GRPC_CLOSURE_INIT(&pick_closure_, StartPickLocked, elem,
@@ -3079,22 +3079,22 @@ void CallData::ApplyServiceConfigToCallLocked(grpc_call_element* elem) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: applying service config to call",
             chand, this);
   }
-  if (chand->service_config() != nullptr) {
+  service_config_ = chand->service_config();
+  if (service_config_ != nullptr) {
     // Store a ref to the service_config in CallData. Also, save pointers to the
     // ServiceConfig and ServiceConfigObjectsVector (for this call) in the
     // call_context so that all future filters can access it.
-    service_config_ = chand->service_config();
     call_context_[GRPC_SERVICE_CONFIG].value = &service_config_;
     const auto* method_params_vector_ptr =
-        chand->service_config()->GetMethodServiceConfigObjectsVector(path_);
+        service_config_->GetMethodServiceConfigObjectsVector(path_);
     if (method_params_vector_ptr != nullptr) {
       method_params_ = static_cast<ClientChannelMethodParsedObject*>(
           ((*method_params_vector_ptr)
-               [grpc_core::internal::ClientChannelServiceConfigParser::
+               [internal::ClientChannelServiceConfigParser::
                     client_channel_service_config_parser_index()])
               .get());
       call_context_[GRPC_SERVICE_CONFIG_METHOD_PARAMS].value =
-          const_cast<grpc_core::ServiceConfig::ServiceConfigObjectsVector*>(
+          const_cast<ServiceConfig::ServiceConfigObjectsVector*>(
               method_params_vector_ptr);
     }
   }

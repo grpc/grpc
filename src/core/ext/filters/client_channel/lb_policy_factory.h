@@ -27,15 +27,6 @@
 
 namespace grpc_core {
 
-class ParsedLoadBalancingConfig {
- public:
-  virtual ~ParsedLoadBalancingConfig() = default;
-
-  virtual const char* name() const GRPC_ABSTRACT;
-
-  GRPC_ABSTRACT_BASE_CLASS;
-};
-
 class LoadBalancingPolicyFactory {
  public:
   /// Returns a new LB policy instance.

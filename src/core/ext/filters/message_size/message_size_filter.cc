@@ -291,7 +291,7 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
 // Destructor for channel_data.
 static void destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  chand->svc_cfg.reset();
+  chand->~channel_data();
 }
 
 const grpc_channel_filter grpc_message_size_filter = {
@@ -355,6 +355,7 @@ void grpc_message_size_filter_init(void) {
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    maybe_add_message_size_filter, nullptr);
+  grpc_core::MessageSizeParser::Register();
 }
 
 void grpc_message_size_filter_shutdown(void) {}
