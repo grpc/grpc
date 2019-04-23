@@ -39,7 +39,8 @@ static inline std::shared_ptr<::grpc::Channel> CreateCustomChannel(
 
 namespace experimental {
 
-static inline std::shared_ptr<::grpc::Channel> CreateCustomChannelWithInterceptors(
+static inline std::shared_ptr<::grpc::Channel>
+CreateCustomChannelWithInterceptors(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds,
     const ChannelArguments& args,

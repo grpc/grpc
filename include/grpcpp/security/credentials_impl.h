@@ -27,14 +27,11 @@
 #include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/security/auth_context.h>
+#include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
 
 struct grpc_call;
-
-namespace grpc {
-class ChannelArguments;
-}  // namespace grpc
 
 namespace grpc_impl {
 
@@ -78,7 +75,7 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
   virtual SecureChannelCredentials* AsSecureCredentials() = 0;
 
  private:
-  friend std::shared_ptr<::grpc::Channel> CreateCustomChannel(
+  friend std::shared_ptr<::grpc::Channel> CreateCustomChannelImpl(
       const grpc::string& target,
       const std::shared_ptr<ChannelCredentials>& creds,
       const grpc::ChannelArguments& args);
@@ -92,7 +89,7 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
           grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators);
 
-  virtual std::shared_ptr<::grpc::Channel> CreateChannel(
+  virtual std::shared_ptr<::grpc::Channel> CreateChannelImpl(
       const grpc::string& target, const grpc::ChannelArguments& args) = 0;
 
   // This function should have been a pure virtual function, but it is
