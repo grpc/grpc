@@ -50,6 +50,7 @@ some configuration as environment variables that can be set.
     resolver and load balancing policy interaction
   - compression - traces compression operations
   - connectivity_state - traces connectivity state changes to channels
+  - cronet - traces state in the cronet transport engine
   - executor - traces grpc's internal thread pool ('the executor')
   - fd_trace - traces fd create(), shutdown() and close() calls for channel fds.
     Also traces epoll fd create()/close() calls in epollex polling engine
