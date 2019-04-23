@@ -83,6 +83,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/impl/codegen/sync_posix.h )
   s.files += %w( include/grpc/impl/codegen/sync_windows.h )
   s.files += %w( src/core/lib/gpr/alloc.h )
+  s.files += %w( src/core/lib/gpr/arena.h )
   s.files += %w( src/core/lib/gpr/env.h )
   s.files += %w( src/core/lib/gpr/host_port.h )
   s.files += %w( src/core/lib/gpr/mpscq.h )

@@ -659,7 +659,8 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
     : t(t),
       refcount(refcount),
       reffer(this),
-      metadata_buffer{{arena}, {arena}} {
+      metadata_buffer{grpc_chttp2_incoming_metadata_buffer(arena),
+                      grpc_chttp2_incoming_metadata_buffer(arena)} {
   if (server_data) {
     id = static_cast<uint32_t>((uintptr_t)server_data);
     *t->accepting_stream = this;

@@ -189,6 +189,7 @@ Pod::Spec.new do |s|
 
     # To save you from scrolling, this is the last part of the podspec.
     ss.source_files = 'src/core/lib/gpr/alloc.h',
+                      'src/core/lib/gpr/arena.h',
                       'src/core/lib/gpr/env.h',
                       'src/core/lib/gpr/host_port.h',
                       'src/core/lib/gpr/mpscq.h',
@@ -870,6 +871,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/error_cfstream.h'
 
     ss.private_header_files = 'src/core/lib/gpr/alloc.h',
+                              'src/core/lib/gpr/arena.h',
                               'src/core/lib/gpr/env.h',
                               'src/core/lib/gpr/host_port.h',
                               'src/core/lib/gpr/mpscq.h',

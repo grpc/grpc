@@ -48,11 +48,6 @@ Arena::~Arena() {
   }
 }
 
-// TODO(roth): We currently assume that all callers need alignment of 16
-// bytes, which may be wrong in some cases.  As part of converting the
-// arena API to C++, we should consider replacing gpr_arena_alloc() with a
-// template that takes the type of the value being allocated, which
-// would allow us to use the alignment actually needed by the caller.
 Arena* Arena::Create(size_t initial_size) {
   static constexpr size_t base_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Arena));

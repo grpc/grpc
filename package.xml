@@ -88,6 +88,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/arena.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/env.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/host_port.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/mpscq.h" role="src" />

@@ -581,6 +581,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/lib/gpr/alloc.h",
+        "src/core/lib/gpr/arena.h",
         "src/core/lib/gpr/env.h",
         "src/core/lib/gpr/host_port.h",
         "src/core/lib/gpr/mpscq.h",

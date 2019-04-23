@@ -615,7 +615,7 @@ class CallData {
   grpc_slice path_;  // Request path.
   gpr_timespec call_start_time_;
   grpc_millis deadline_;
-  gpr_arena* arena_;
+  Arena* arena_;
   grpc_call_stack* owning_call_;
   grpc_call_combiner* call_combiner_;
   grpc_call_context_element* call_context_;
@@ -1991,10 +1991,8 @@ bool CallData::MaybeRetry(grpc_call_element* elem,
 CallData::SubchannelCallBatchData* CallData::SubchannelCallBatchData::Create(
     grpc_call_element* elem, int refcount, bool set_on_complete) {
   CallData* calld = static_cast<CallData*>(elem->call_data);
-  SubchannelCallBatchData* batch_data =
-      new (gpr_arena_alloc(calld->arena_, sizeof(*batch_data)))
-          SubchannelCallBatchData(elem, calld, refcount, set_on_complete);
-  return batch_data;
+  return calld->arena_->New<SubchannelCallBatchData>(elem, calld, refcount,
+                                                     set_on_complete);
 }
 
 CallData::SubchannelCallBatchData::SubchannelCallBatchData(
