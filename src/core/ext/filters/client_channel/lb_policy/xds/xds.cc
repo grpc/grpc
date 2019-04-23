@@ -433,7 +433,7 @@ class XdsLb : public LoadBalancingPolicy {
   // Methods for dealing with fallback state.
   static void OnFallbackTimerLocked(void* arg, grpc_error* error);
   void MaybeExitFallbackMode();
-  void NotEnterFallbackMode();
+  void MaybeCancelFallbackAtStartupChecks();
   void UpdateFallbackPolicyLocked();
   OrphanablePtr<LoadBalancingPolicy> CreateFallbackPolicyLocked(
       const char* name, const grpc_channel_args* args);
@@ -1163,6 +1163,8 @@ void XdsLb::BalancerChannelState::BalancerCallState::
     } else {  // New serverlist.
       // If the balancer tells us to drop all the calls, we should exit fallback
       // mode immediately.
+      // TODO(juanlishen): When we add EDS drop, we should change to check
+      // drop_percentage.
       if (serverlist->num_servers == 0) {
         xdslb_policy->MaybeExitFallbackMode();
       }
@@ -1172,7 +1174,7 @@ void XdsLb::BalancerChannelState::BalancerCallState::
       } else {
         // This is the first serverlist we've received, don't enter fallback
         // mode.
-        xdslb_policy->NotEnterFallbackMode();
+        xdslb_policy->MaybeCancelFallbackAtStartupChecks();
         // Initialize locality serverlist, currently the list only handles
         // one child.
         xdslb_policy->locality_serverlist_.emplace_back(
@@ -1694,7 +1696,7 @@ void XdsLb::MaybeExitFallbackMode() {
   }
 }
 
-void XdsLb::NotEnterFallbackMode() {
+void XdsLb::MaybeCancelFallbackAtStartupChecks() {
   if (fallback_at_startup_checks_pending_) {
     gpr_log(GPR_INFO,
             "[xdslb %p] Cancelling fallback timer and LB channel connectivity "
@@ -1788,7 +1790,9 @@ void XdsLb::LocalityMap::FillChildRefsForChannelz(
   }
 }
 
+//
 // XdsLb::LocalityMap::LocalityEntry
+//
 
 grpc_channel_args*
 XdsLb::LocalityMap::LocalityEntry::CreateChildPolicyArgsLocked(

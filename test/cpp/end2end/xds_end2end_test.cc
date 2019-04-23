@@ -1014,7 +1014,7 @@ TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerCallFails) {
                  /* wait_for_ready */ false);
 }
 
-TEST_F(SingleBalancerTest, FallbackModeIsExitedAfterEmptyServerlist) {
+TEST_F(SingleBalancerTest, FallbackModeIsExitedWhenBalancerSaysToDropAllCalls) {
   // Return an unreachable balancer and one fallback backend.
   SetNextResolution({backends_[0]->port_}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannel({grpc_pick_unused_port_or_die()});
