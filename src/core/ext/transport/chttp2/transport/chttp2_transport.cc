@@ -1281,8 +1281,8 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
 
 static bool contains_non_ok_status(grpc_metadata_batch* batch) {
   if (batch->idx.named.grpc_status != nullptr) {
-    return !grpc_mdelem_eq(batch->idx.named.grpc_status->md,
-                           GRPC_MDELEM_GRPC_STATUS_0);
+    return !grpc_mdelem_static_value_eq(batch->idx.named.grpc_status->md,
+                                        GRPC_MDELEM_GRPC_STATUS_0);
   }
   return false;
 }
@@ -1413,7 +1413,7 @@ static void perform_stream_op_locked(void* stream_op,
   // on_complete will be null if and only if there are no send ops in the batch.
   if (on_complete != nullptr) {
     // This batch has send ops. Use final_data as a barrier until enqueue time;
-    // the inital counter is dropped at the end of this function.
+    // the initial counter is dropped at the end of this function.
     on_complete->next_data.scratch = CLOSURE_BARRIER_FIRST_REF_BIT;
     on_complete->error_data.error = GRPC_ERROR_NONE;
   }
