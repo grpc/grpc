@@ -31,6 +31,7 @@
 #include <grpc/support/time.h>
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/iomgr/combiner.h"
 
 namespace grpc_core {
 
@@ -40,7 +41,8 @@ void ares_uv_poll_close_cb(uv_handle_t* handle) { Delete(handle); }
 
 class GrpcPolledFdLibuv : public GrpcPolledFd {
  public:
-  GrpcPolledFdLibuv(ares_socket_t as) : as_(as) {
+  GrpcPolledFdLibuv(ares_socket_t as, grpc_combiner* combiner)
+      : as_(as), combiner_(combiner) {
     gpr_asprintf(&name_, "c-ares socket: %" PRIdPTR, (intptr_t)as);
     handle_ = New<uv_poll_t>();
     uv_poll_init_socket(uv_default_loop(), handle_, as);
@@ -72,8 +74,15 @@ class GrpcPolledFdLibuv : public GrpcPolledFd {
   }
 
   void ShutdownLocked(grpc_error* error) override {
+    grpc_core::ExecCtx exec_ctx;
     uv_poll_stop(handle_);
     uv_close(reinterpret_cast<uv_handle_t*>(handle_), ares_uv_poll_close_cb);
+    if (read_closure_) {
+      GRPC_CLOSURE_SCHED(read_closure_, GRPC_ERROR_CANCELLED);
+    }
+    if (write_closure_) {
+      GRPC_CLOSURE_SCHED(write_closure_, GRPC_ERROR_CANCELLED);
+    }
   }
 
   ares_socket_t GetWrappedAresSocketLocked() override { return as_; }
@@ -86,13 +95,25 @@ class GrpcPolledFdLibuv : public GrpcPolledFd {
   grpc_closure* read_closure_ = nullptr;
   grpc_closure* write_closure_ = nullptr;
   int poll_events_ = 0;
+  grpc_combiner* combiner_;
 };
 
-void ares_uv_poll_cb(uv_poll_t* handle, int status, int events) {
-  grpc_core::ExecCtx exec_ctx;
+struct AresUvPollCbArg {
+  AresUvPollCbArg(uv_poll_t* handle, int status, int events)
+      : handle(handle), status(status), events(events) {}
+
+  uv_poll_t* handle;
+  int status;
+  int events;
+};
+
+static void inner_callback(void* arg, grpc_error* error) {
+  AresUvPollCbArg* arg_struct = reinterpret_cast<AresUvPollCbArg*>(arg);
+  uv_poll_t* handle = arg_struct->handle;
+  int status = arg_struct->status;
+  int events = arg_struct->events;
   GrpcPolledFdLibuv* polled_fd =
       reinterpret_cast<GrpcPolledFdLibuv*>(handle->data);
-  grpc_error* error = GRPC_ERROR_NONE;
   if (status < 0) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("cares polling error");
     error =
@@ -110,6 +131,18 @@ void ares_uv_poll_cb(uv_poll_t* handle, int status, int events) {
     polled_fd->poll_events_ &= ~UV_WRITABLE;
   }
   uv_poll_start(handle, polled_fd->poll_events_, ares_uv_poll_cb);
+  Delete(arg_struct);
+}
+
+void ares_uv_poll_cb(uv_poll_t* handle, int status, int events) {
+  grpc_core::ExecCtx exec_ctx;
+  GrpcPolledFdLibuv* polled_fd =
+      reinterpret_cast<GrpcPolledFdLibuv*>(handle->data);
+  AresUvPollCbArg* arg = New<AresUvPollCbArg>(handle, status, events);
+  GRPC_CLOSURE_SCHED(
+      GRPC_CLOSURE_CREATE(inner_callback, arg,
+                          grpc_combiner_scheduler(polled_fd->combiner_)),
+      GRPC_ERROR_NONE);
 }
 
 class GrpcPolledFdFactoryLibuv : public GrpcPolledFdFactory {
@@ -117,7 +150,7 @@ class GrpcPolledFdFactoryLibuv : public GrpcPolledFdFactory {
   GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as,
                                       grpc_pollset_set* driver_pollset_set,
                                       grpc_combiner* combiner) override {
-    return New<GrpcPolledFdLibuv>(as);
+    return New<GrpcPolledFdLibuv>(as, combiner);
   }
 
   void ConfigureAresChannelLocked(ares_channel channel) override {}
