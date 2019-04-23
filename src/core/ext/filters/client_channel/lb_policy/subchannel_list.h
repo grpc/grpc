@@ -98,15 +98,13 @@ class SubchannelData {
 
   // Synchronously checks the subchannel's connectivity state.
   // Must not be called while there is a connectivity notification
-  // pending (i.e., between calling StartConnectivityWatchLocked() or
-  // RenewConnectivityWatchLocked() and the resulting invocation of
-  // ProcessConnectivityChangeLocked()).
+  // pending (i.e., between calling StartConnectivityWatchLocked() and
+  // calling CancelConnectivityWatchLocked()).
   grpc_connectivity_state CheckConnectivityStateLocked() {
-    GPR_ASSERT(!connectivity_notification_pending_);
-    pending_connectivity_state_unsafe_ = subchannel()->CheckConnectivity(
-        subchannel_list_->inhibit_health_checking());
-    UpdateConnectedSubchannelLocked();
-    return pending_connectivity_state_unsafe_;
+    GPR_ASSERT(pending_watcher_ == nullptr);
+    connectivity_state_ = subchannel()->CheckConnectivity(
+        subchannel_list_->health_check_service_name(), &connected_subchannel_);
+    return connectivity_state_;
   }
 
   // Resets the connection backoff.
@@ -115,23 +113,11 @@ class SubchannelData {
   void ResetBackoffLocked();
 
   // Starts watching the connectivity state of the subchannel.
-  // ProcessConnectivityChangeLocked() will be called when the
+  // ProcessConnectivityChangeLocked() will be called whenever the
   // connectivity state changes.
   void StartConnectivityWatchLocked();
 
-  // Renews watching the connectivity state of the subchannel.
-  void RenewConnectivityWatchLocked();
-
-  // Stops watching the connectivity state of the subchannel.
-  void StopConnectivityWatchLocked();
-
   // Cancels watching the connectivity state of the subchannel.
-  // Must be called only while there is a connectivity notification
-  // pending (i.e., between calling StartConnectivityWatchLocked() or
-  // RenewConnectivityWatchLocked() and the resulting invocation of
-  // ProcessConnectivityChangeLocked()).
-  // From within ProcessConnectivityChangeLocked(), use
-  // StopConnectivityWatchLocked() instead.
   void CancelConnectivityWatchLocked(const char* reason);
 
   // Cancels any pending connectivity watch and unrefs the subchannel.
@@ -142,16 +128,13 @@ class SubchannelData {
  protected:
   SubchannelData(
       SubchannelList<SubchannelListType, SubchannelDataType>* subchannel_list,
-      const ServerAddress& address, Subchannel* subchannel,
-      grpc_combiner* combiner);
+      const ServerAddress& address, Subchannel* subchannel);
 
   virtual ~SubchannelData();
 
-  // After StartConnectivityWatchLocked() or RenewConnectivityWatchLocked()
-  // is called, this method will be invoked when the subchannel's connectivity
-  // state changes.
-  // Implementations must invoke either RenewConnectivityWatchLocked() or
-  // StopConnectivityWatchLocked() before returning.
+  // After StartConnectivityWatchLocked() is called, this method will be
+  // invoked whenever the subchannel's connectivity state changes.
+  // To stop watching, use CancelConnectivityWatchLocked().
   virtual void ProcessConnectivityChangeLocked(
       grpc_connectivity_state connectivity_state) GRPC_ABSTRACT;
 
@@ -159,27 +142,54 @@ class SubchannelData {
   void UnrefSubchannelLocked(const char* reason);
 
  private:
-  // Updates connected_subchannel_ based on pending_connectivity_state_unsafe_.
-  // Returns true if the connectivity state should be reported.
-  bool UpdateConnectedSubchannelLocked();
+  class Watcher : public SubchannelConnectivityStateWatcher {
+   public:
+    Watcher(SubchannelData<SubchannelListType, SubchannelDataType>*
+                subchannel_data,
+            RefCountedPtr<SubchannelListType> subchannel_list)
+        : subchannel_data_(subchannel_data),
+          subchannel_list_(std::move(subchannel_list)) {}
 
-  static void OnConnectivityChangedLocked(void* arg, grpc_error* error);
+    void OnConnectivityStateChange(
+        grpc_connectivity_state new_state,
+        RefCountedPtr<ConnectedSubchannel> connected_subchannel) override;
+
+   private:
+    class Updater {
+     public:
+      Updater(SubchannelData<SubchannelListType, SubchannelDataType>*
+                  subchannel_data,
+              RefCountedPtr<SubchannelList<SubchannelListType,
+                                           SubchannelDataType>> subchannel_list,
+              grpc_connectivity_state state,
+              RefCountedPtr<ConnectedSubchannel> connected_subchannel);
+
+     private:
+      static void OnUpdate(void* arg, grpc_error* error);
+
+      SubchannelData<SubchannelListType, SubchannelDataType>* subchannel_data_;
+      RefCountedPtr<SubchannelList<SubchannelListType, SubchannelDataType>>
+          subchannel_list_;
+      const grpc_connectivity_state state_;
+      RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
+      grpc_closure closure_;
+    };
+
+    SubchannelData<SubchannelListType, SubchannelDataType>* subchannel_data_;
+    RefCountedPtr<SubchannelListType> subchannel_list_;
+  };
 
   // Backpointer to owning subchannel list.  Not owned.
   SubchannelList<SubchannelListType, SubchannelDataType>* subchannel_list_;
 
   // The subchannel and connected subchannel.
   Subchannel* subchannel_;
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
 
-  // Notification that connectivity has changed on subchannel.
-  grpc_closure connectivity_changed_closure_;
-  // Is a connectivity notification pending?
-  bool connectivity_notification_pending_ = false;
-  // Connectivity state to be updated by
-  // grpc_subchannel_notify_on_state_change(), not guarded by
-  // the combiner.
-  grpc_connectivity_state pending_connectivity_state_unsafe_;
+  // Will be non-null when the subchannel's state is being watched.
+  SubchannelConnectivityStateWatcher* pending_watcher_ = nullptr;
+  // Data updated by the watcher.
+  grpc_connectivity_state connectivity_state_;
+  RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
 };
 
 // A list of subchannels.
@@ -213,7 +223,9 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
   // Accessors.
   LoadBalancingPolicy* policy() const { return policy_; }
   TraceFlag* tracer() const { return tracer_; }
-  bool inhibit_health_checking() const { return inhibit_health_checking_; }
+  const char* health_check_service_name() const {
+    return health_check_service_name_.get();
+  }
 
   // Resets connection backoff of all subchannels.
   // TODO(roth): We will probably need to rethink this as part of moving
@@ -251,7 +263,7 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
 
   TraceFlag* tracer_;
 
-  bool inhibit_health_checking_;
+  UniquePtr<char> health_check_service_name_;
 
   grpc_combiner* combiner_;
 
@@ -269,25 +281,81 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
 //
 
 //
+// SubchannelData::Watcher
+//
+
+template <typename SubchannelListType, typename SubchannelDataType>
+void SubchannelData<SubchannelListType, SubchannelDataType>::Watcher::
+    OnConnectivityStateChange(
+        grpc_connectivity_state new_state,
+        RefCountedPtr<ConnectedSubchannel> connected_subchannel) {
+  // Will delete itself.
+  New<Updater>(subchannel_data_, subchannel_list_->Ref(), new_state,
+               std::move(connected_subchannel));
+}
+
+template <typename SubchannelListType, typename SubchannelDataType>
+SubchannelData<SubchannelListType, SubchannelDataType>::Watcher::Updater::
+    Updater(SubchannelData<SubchannelListType, SubchannelDataType>*
+                subchannel_data,
+            RefCountedPtr<SubchannelList<SubchannelListType,
+                                         SubchannelDataType>> subchannel_list,
+            grpc_connectivity_state state,
+            RefCountedPtr<ConnectedSubchannel> connected_subchannel)
+        : subchannel_data_(subchannel_data),
+          subchannel_list_(std::move(subchannel_list)), state_(state),
+          connected_subchannel_(std::move(connected_subchannel)) {
+  GRPC_CLOSURE_INIT(&closure_, &OnUpdate, this,
+                    grpc_combiner_scheduler(subchannel_list_->combiner_));
+  GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
+}
+
+template <typename SubchannelListType, typename SubchannelDataType>
+void SubchannelData<SubchannelListType, SubchannelDataType>::Watcher::Updater::
+    OnUpdate(void* arg, grpc_error* error) {
+  Updater* self = static_cast<Updater*>(arg);
+  SubchannelData* sd = self->subchannel_data_;
+  if (sd->subchannel_list_->tracer()->enabled()) {
+    gpr_log(
+        GPR_INFO,
+        "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
+        " (subchannel %p): connectivity changed: state=%s, error=%s, "
+        "shutting_down=%d",
+        sd->subchannel_list_->tracer()->name(), sd->subchannel_list_->policy(),
+        sd->subchannel_list_, sd->Index(),
+        sd->subchannel_list_->num_subchannels(), sd->subchannel_,
+        grpc_connectivity_state_name(self->state_),
+        grpc_error_string(error), sd->subchannel_list_->shutting_down());
+  }
+  // If shutting down, unref subchannel and stop watching.
+  if (sd->subchannel_list_->shutting_down() || error == GRPC_ERROR_CANCELLED) {
+    sd->UnrefSubchannelLocked("connectivity_shutdown");
+    sd->CancelConnectivityWatchLocked("connectivity_shutdown");
+    Delete(self);
+    return;
+  }
+  sd->connectivity_state_ = self->state_;
+  // Get or release ref to connected subchannel.
+  sd->connected_subchannel_ = std::move(self->connected_subchannel_);
+  // Call the subclass's ProcessConnectivityChangeLocked() method.
+  sd->ProcessConnectivityChangeLocked(sd->connectivity_state_);
+  // Clean up.
+  Delete(self);
+}
+
+//
 // SubchannelData
 //
 
 template <typename SubchannelListType, typename SubchannelDataType>
 SubchannelData<SubchannelListType, SubchannelDataType>::SubchannelData(
     SubchannelList<SubchannelListType, SubchannelDataType>* subchannel_list,
-    const ServerAddress& address, Subchannel* subchannel,
-    grpc_combiner* combiner)
+    const ServerAddress& address, Subchannel* subchannel)
     : subchannel_list_(subchannel_list),
       subchannel_(subchannel),
       // We assume that the current state is IDLE.  If not, we'll get a
       // callback telling us that.
-      pending_connectivity_state_unsafe_(GRPC_CHANNEL_IDLE) {
-  GRPC_CLOSURE_INIT(
-      &connectivity_changed_closure_,
-      (&SubchannelData<SubchannelListType,
-                       SubchannelDataType>::OnConnectivityChangedLocked),
-      this, grpc_combiner_scheduler(combiner));
-}
+      connectivity_state_(GRPC_CHANNEL_IDLE) {}
 
 template <typename SubchannelListType, typename SubchannelDataType>
 SubchannelData<SubchannelListType, SubchannelDataType>::~SubchannelData() {
@@ -330,52 +398,15 @@ void SubchannelData<SubchannelListType,
             "notification (from %s)",
             subchannel_list_->tracer()->name(), subchannel_list_->policy(),
             subchannel_list_, Index(), subchannel_list_->num_subchannels(),
-            subchannel_,
-            grpc_connectivity_state_name(pending_connectivity_state_unsafe_));
+            subchannel_, grpc_connectivity_state_name(connectivity_state_));
   }
-  GPR_ASSERT(!connectivity_notification_pending_);
-  connectivity_notification_pending_ = true;
-  subchannel_list()->Ref(DEBUG_LOCATION, "connectivity_watch").release();
-  subchannel_->NotifyOnStateChange(
-      subchannel_list_->policy()->interested_parties(),
-      &pending_connectivity_state_unsafe_, &connectivity_changed_closure_,
-      subchannel_list_->inhibit_health_checking());
-}
-
-template <typename SubchannelListType, typename SubchannelDataType>
-void SubchannelData<SubchannelListType,
-                    SubchannelDataType>::RenewConnectivityWatchLocked() {
-  if (subchannel_list_->tracer()->enabled()) {
-    gpr_log(GPR_INFO,
-            "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
-            " (subchannel %p): renewing watch: requesting connectivity change "
-            "notification (from %s)",
-            subchannel_list_->tracer()->name(), subchannel_list_->policy(),
-            subchannel_list_, Index(), subchannel_list_->num_subchannels(),
-            subchannel_,
-            grpc_connectivity_state_name(pending_connectivity_state_unsafe_));
-  }
-  GPR_ASSERT(connectivity_notification_pending_);
-  subchannel_->NotifyOnStateChange(
-      subchannel_list_->policy()->interested_parties(),
-      &pending_connectivity_state_unsafe_, &connectivity_changed_closure_,
-      subchannel_list_->inhibit_health_checking());
-}
-
-template <typename SubchannelListType, typename SubchannelDataType>
-void SubchannelData<SubchannelListType,
-                    SubchannelDataType>::StopConnectivityWatchLocked() {
-  if (subchannel_list_->tracer()->enabled()) {
-    gpr_log(GPR_INFO,
-            "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
-            " (subchannel %p): stopping connectivity watch",
-            subchannel_list_->tracer()->name(), subchannel_list_->policy(),
-            subchannel_list_, Index(), subchannel_list_->num_subchannels(),
-            subchannel_);
-  }
-  GPR_ASSERT(connectivity_notification_pending_);
-  connectivity_notification_pending_ = false;
-  subchannel_list()->Unref(DEBUG_LOCATION, "connectivity_watch");
+  GPR_ASSERT(pending_watcher_ == nullptr);
+  pending_watcher_ = New<Watcher>(this, subchannel_list()->Ref());
+  subchannel_->WatchConnectivityState(
+      subchannel_list_->policy()->interested_parties(), connectivity_state_,
+      UniquePtr<char>(
+          gpr_strdup(subchannel_list_->health_check_service_name())),
+      UniquePtr<SubchannelConnectivityStateWatcher>(pending_watcher_));
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
@@ -389,79 +420,11 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
             subchannel_list_, Index(), subchannel_list_->num_subchannels(),
             subchannel_, reason);
   }
-  GPR_ASSERT(connectivity_notification_pending_);
-  subchannel_->NotifyOnStateChange(nullptr, nullptr,
-                                   &connectivity_changed_closure_,
-                                   subchannel_list_->inhibit_health_checking());
-}
-
-template <typename SubchannelListType, typename SubchannelDataType>
-bool SubchannelData<SubchannelListType,
-                    SubchannelDataType>::UpdateConnectedSubchannelLocked() {
-  // If the subchannel is READY, take a ref to the connected subchannel.
-  if (pending_connectivity_state_unsafe_ == GRPC_CHANNEL_READY) {
-    connected_subchannel_ = subchannel_->connected_subchannel();
-    // If the subchannel became disconnected between the time that READY
-    // was reported and the time we got here (e.g., between when a
-    // notification callback is scheduled and when it was actually run in
-    // the combiner), then the connected subchannel may have disappeared out
-    // from under us.  In that case, we don't actually want to consider the
-    // subchannel to be in state READY.  Instead, we use IDLE as the
-    // basis for any future connectivity watch; this is the one state that
-    // the subchannel will never transition back into, so this ensures
-    // that we will get a notification for the next state, even if that state
-    // is READY again (e.g., if the subchannel has transitioned back to
-    // READY before the next watch gets requested).
-    if (connected_subchannel_ == nullptr) {
-      if (subchannel_list_->tracer()->enabled()) {
-        gpr_log(GPR_INFO,
-                "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
-                " (subchannel %p): state is READY but connected subchannel is "
-                "null; moving to state IDLE",
-                subchannel_list_->tracer()->name(), subchannel_list_->policy(),
-                subchannel_list_, Index(), subchannel_list_->num_subchannels(),
-                subchannel_);
-      }
-      pending_connectivity_state_unsafe_ = GRPC_CHANNEL_IDLE;
-      return false;
-    }
-  } else {
-    // For any state other than READY, unref the connected subchannel.
-    connected_subchannel_.reset();
+  if (pending_watcher_ != nullptr) {
+    subchannel_->CancelConnectivityStateWatch(
+        subchannel_list_->health_check_service_name(), pending_watcher_);
+    pending_watcher_ = nullptr;
   }
-  return true;
-}
-
-template <typename SubchannelListType, typename SubchannelDataType>
-void SubchannelData<SubchannelListType, SubchannelDataType>::
-    OnConnectivityChangedLocked(void* arg, grpc_error* error) {
-  SubchannelData* sd = static_cast<SubchannelData*>(arg);
-  if (sd->subchannel_list_->tracer()->enabled()) {
-    gpr_log(
-        GPR_INFO,
-        "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
-        " (subchannel %p): connectivity changed: state=%s, error=%s, "
-        "shutting_down=%d",
-        sd->subchannel_list_->tracer()->name(), sd->subchannel_list_->policy(),
-        sd->subchannel_list_, sd->Index(),
-        sd->subchannel_list_->num_subchannels(), sd->subchannel_,
-        grpc_connectivity_state_name(sd->pending_connectivity_state_unsafe_),
-        grpc_error_string(error), sd->subchannel_list_->shutting_down());
-  }
-  // If shutting down, unref subchannel and stop watching.
-  if (sd->subchannel_list_->shutting_down() || error == GRPC_ERROR_CANCELLED) {
-    sd->UnrefSubchannelLocked("connectivity_shutdown");
-    sd->StopConnectivityWatchLocked();
-    return;
-  }
-  // Get or release ref to connected subchannel.
-  if (!sd->UpdateConnectedSubchannelLocked()) {
-    // We don't want to report this connectivity state, so renew the watch.
-    sd->RenewConnectivityWatchLocked();
-    return;
-  }
-  // Call the subclass's ProcessConnectivityChangeLocked() method.
-  sd->ProcessConnectivityChangeLocked(sd->pending_connectivity_state_unsafe_);
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
@@ -469,7 +432,7 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::ShutdownLocked() {
   // If there's a pending notification for this subchannel, cancel it;
   // the callback is responsible for unreffing the subchannel.
   // Otherwise, unref the subchannel directly.
-  if (connectivity_notification_pending_) {
+  if (pending_watcher_ != nullptr) {
     CancelConnectivityWatchLocked("shutdown");
   } else if (subchannel_ != nullptr) {
     UnrefSubchannelLocked("shutdown");
@@ -479,6 +442,25 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::ShutdownLocked() {
 //
 // SubchannelList
 //
+
+struct HealthCheckParams {
+  UniquePtr<char> service_name;
+
+  static void Parse(const grpc_json* field, HealthCheckParams* params) {
+    if (strcmp(field->key, "healthCheckConfig") == 0) {
+      if (field->type != GRPC_JSON_OBJECT) return;
+      for (grpc_json* sub_field = field->child; sub_field != nullptr;
+           sub_field = sub_field->next) {
+        if (sub_field->key == nullptr) return;
+        if (strcmp(sub_field->key, "serviceName") == 0) {
+          if (params->service_name != nullptr) return;  // Duplicate.
+          if (sub_field->type != GRPC_JSON_STRING) return;
+          params->service_name.reset(gpr_strdup(sub_field->value));
+        }
+      }
+    }
+  }
+};
 
 template <typename SubchannelListType, typename SubchannelDataType>
 SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
@@ -496,12 +478,29 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
             tracer_->name(), policy, this, addresses.size());
   }
   subchannels_.reserve(addresses.size());
+  // Find health check service name.
+  const bool inhibit_health_checking = grpc_channel_arg_get_bool(
+      grpc_channel_args_find(&args, GRPC_ARG_INHIBIT_HEALTH_CHECKING), false);
+  if (!inhibit_health_checking) {
+    const char* service_config_json = grpc_channel_arg_get_string(
+        grpc_channel_args_find(&args, GRPC_ARG_SERVICE_CONFIG));
+    if (service_config_json != nullptr) {
+      grpc_error* service_config_error = GRPC_ERROR_NONE;
+      RefCountedPtr<ServiceConfig> service_config =
+          ServiceConfig::Create(service_config_json, &service_config_error);
+      // service_config_error is currently unused.
+      GRPC_ERROR_UNREF(service_config_error);
+      if (service_config != nullptr) {
+        HealthCheckParams params;
+        service_config->ParseGlobalParams(HealthCheckParams::Parse, &params);
+        health_check_service_name_ = std::move(params.service_name);
+      }
+    }
+  }
   // We need to remove the LB addresses in order to be able to compare the
   // subchannel keys of subchannels from a different batch of addresses.
   // We also remove the inhibit-health-checking arg, since we are
   // handling that here.
-  inhibit_health_checking_ = grpc_channel_arg_get_bool(
-      grpc_channel_args_find(&args, GRPC_ARG_INHIBIT_HEALTH_CHECKING), false);
   static const char* keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS,
                                          GRPC_ARG_INHIBIT_HEALTH_CHECKING};
   // Create a subchannel for each address.
@@ -543,7 +542,7 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
               address_uri);
       gpr_free(address_uri);
     }
-    subchannels_.emplace_back(this, addresses[i], subchannel, combiner);
+    subchannels_.emplace_back(this, addresses[i], subchannel);
   }
 }
 

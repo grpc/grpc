@@ -83,9 +83,8 @@ class RoundRobin : public LoadBalancingPolicy {
     RoundRobinSubchannelData(
         SubchannelList<RoundRobinSubchannelList, RoundRobinSubchannelData>*
             subchannel_list,
-        const ServerAddress& address, Subchannel* subchannel,
-        grpc_combiner* combiner)
-        : SubchannelData(subchannel_list, address, subchannel, combiner) {}
+        const ServerAddress& address, Subchannel* subchannel)
+        : SubchannelData(subchannel_list, address, subchannel) {}
 
     grpc_connectivity_state connectivity_state() const {
       return last_connectivity_state_;
@@ -457,8 +456,6 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
     }
     p->channel_control_helper()->RequestReresolution();
   }
-  // Renew connectivity watch.
-  RenewConnectivityWatchLocked();
   // Update state counters.
   UpdateConnectivityStateLocked(connectivity_state);
   // Update overall state and renew notification.

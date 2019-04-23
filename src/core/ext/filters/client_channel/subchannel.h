@@ -221,23 +221,13 @@ class Subchannel {
   // Caller doesn't take ownership.
   const char* GetTargetAddress();
 
-  // Gets the connected subchannel - or nullptr if not connected (which may
-  // happen before it initially connects or during transient failures).
-// FIXME: remove
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel();
-
   channelz::SubchannelNode* channelz_node();
 
-  // Polls the current connectivity state of the subchannel.
-// FIXME: replace inhibit_health_checking with health_check_service_name
-  grpc_connectivity_state CheckConnectivity(bool inhibit_health_checking);
-
-  // When the connectivity state of the subchannel changes from \a *state,
-  // invokes \a notify and updates \a *state with the new state.
-// FIXME: remove
-  void NotifyOnStateChange(grpc_pollset_set* interested_parties,
-                           grpc_connectivity_state* state, grpc_closure* notify,
-                           bool inhibit_health_checking);
+  // Returns the current connectivity state of the subchannel.
+  // If the return value is GRPC_CHANNEL_READY, also sets *connected_subchannel.
+  grpc_connectivity_state CheckConnectivity(
+      const char* health_check_service_name,
+      RefCountedPtr<ConnectedSubchannel>* connected_subchannel);
 
   // Starts watching the subchannel's connectivity state.
   // The first callback to the watcher will be delivered when the
@@ -279,20 +269,44 @@ class Subchannel {
                                                  grpc_resolved_address* addr);
 
  private:
-// FIXME: remove
-  struct ExternalStateWatcher;
-
   class ExternalStateWatcherList {
    public:
-    void Add(Subchannel* subchannel, grpc_pollset_set* pollset_set,
-             grpc_connectivity_state initial_state,
-             UniquePtr<SubchannelConnectivityStateWatcher> watcher);
-    void Remove(SubchannelConnectivityStateWatcher* watcher);
+    void AddLocked(Subchannel* subchannel, grpc_pollset_set* pollset_set,
+                   grpc_connectivity_state initial_state,
+                   UniquePtr<SubchannelConnectivityStateWatcher> watcher);
+    void RemoveLocked(SubchannelConnectivityStateWatcher* watcher);
+
+    bool empty() const { return head_ == nullptr; }
 
    private:
     class ExternalWatcher;
 
     ExternalWatcher* head_ = nullptr;
+  };
+
+  class ExternalHealthStateWatcherMap {
+   public:
+    void AddLocked(Subchannel* subchannel, grpc_pollset_set* pollset_set,
+                   grpc_connectivity_state initial_state,
+                   UniquePtr<char> health_check_service_name,
+                   UniquePtr<SubchannelConnectivityStateWatcher> watcher);
+    void RemoveLocked(const char* health_check_service_name,
+                      SubchannelConnectivityStateWatcher* watcher);
+
+    bool empty() const { return map_.empty(); }
+
+    void StartHealthCheckingLocked();
+    void StopHealthCheckingLocked(grpc_connectivity_state state);
+
+    grpc_connectivity_state CheckConnectivityLocked(
+        Subchannel* subchannel, const char* health_check_service_name);
+
+    void ShutdownLocked();
+
+   private:
+    class HealthWatcher;
+
+    Map<const char*, OrphanablePtr<HealthWatcher>, StringLess> map_;
   };
 
   class ConnectedSubchannelStateWatcher;
@@ -309,9 +323,6 @@ class Subchannel {
   static void OnConnectingFinished(void* arg, grpc_error* error);
   bool PublishTransportLocked();
   void Disconnect();
-
-  void StartHealthCheckingLocked();
-  void StopHealthCheckingLocked(grpc_connectivity_state state);
 
   gpr_atm RefMutate(gpr_atm delta,
                     int barrier GRPC_SUBCHANNEL_REF_MUTATE_EXTRA_ARGS);
@@ -341,21 +352,15 @@ class Subchannel {
   grpc_closure on_connecting_finished_;
   // Active connection, or null.
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
-  OrphanablePtr<ConnectedSubchannelStateWatcher> connected_subchannel_watcher_;
   bool connecting_ = false;
   bool disconnected_ = false;
 
   // Connectivity state tracking.
+// FIXME: consider eliminating this and instead looking directly at
+// external_state_watcher_list_ to see who to notify
   grpc_connectivity_state_tracker state_tracker_;
-  Map<const char*, OrphanablePtr<HealthWatcher>, StringLess>
-      health_tracker_map_;
-
-// FIXME: remove
-  UniquePtr<char> health_check_service_name_;
-
-  ExternalStateWatcher* external_state_watcher_list_ = nullptr;
-// FIXME: rename
-  ExternalStateWatcherList new_external_state_watcher_list_;
+  ExternalStateWatcherList external_state_watcher_list_;
+  ExternalHealthStateWatcherMap health_watcher_map_;
 
   // Backoff state.
   BackOff backoff_;

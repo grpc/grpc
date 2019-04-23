@@ -1211,8 +1211,9 @@ TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
   auto channel = BuildChannel("round_robin");
   auto stub = BuildStub(channel);
   SetNextResolution(ports);
-  for (size_t i = 0; i < kNumServers; ++i)
+  for (size_t i = 0; i < kNumServers; ++i) {
     WaitForServer(stub, i, DEBUG_LOCATION);
+  }
   for (size_t i = 0; i < servers_.size(); ++i) {
     CheckRpcSendOk(stub, DEBUG_LOCATION);
     EXPECT_EQ(1, servers_[i]->service_.request_count()) << "for backend #" << i;
@@ -1236,7 +1237,6 @@ TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
   // No requests have gone to the deceased server.
   EXPECT_EQ(pre_death, post_death);
   // Bring the first server back up.
-  servers_[0].reset(new ServerData(ports[0]));
   StartServer(0);
   // Requests should start arriving at the first server either right away (if
   // the server managed to start before the RR policy retried the subchannel) or
