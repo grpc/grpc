@@ -379,7 +379,7 @@ void grpc_transport_destroy_stream(grpc_transport* transport,
 
 void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_transport_stream_op_batch* op, grpc_error* error,
-    grpc_call_combiner* call_combiner);
+    grpc_core::CallCombiner* call_combiner);
 
 char* grpc_transport_stream_op_batch_string(grpc_transport_stream_op_batch* op);
 char* grpc_transport_op_string(grpc_transport_op* op);

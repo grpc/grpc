@@ -74,7 +74,7 @@ struct call_data {
 
   ~call_data() { GRPC_ERROR_UNREF(recv_initial_metadata_error); }
 
-  grpc_call_combiner* call_combiner;
+  grpc_core::CallCombiner* call_combiner;
   grpc_call_stack* owning_call;
   grpc_transport_stream_op_batch* recv_initial_metadata_batch;
   grpc_closure* original_recv_initial_metadata_ready;
@@ -219,8 +219,7 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
       // to drop the call combiner early if we get cancelled.
       GRPC_CLOSURE_INIT(&calld->cancel_closure, cancel_call, elem,
                         grpc_schedule_on_exec_ctx);
-      grpc_call_combiner_set_notify_on_cancel(calld->call_combiner,
-                                              &calld->cancel_closure);
+      calld->call_combiner->SetNotifyOnCancel(&calld->cancel_closure);
       GRPC_CALL_STACK_REF(calld->owning_call, "server_auth_metadata");
       calld->md = metadata_batch_to_md_array(
           batch->payload->recv_initial_metadata.recv_initial_metadata);
