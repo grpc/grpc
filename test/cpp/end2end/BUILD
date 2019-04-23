@@ -450,7 +450,7 @@ grpc_cc_test(
     external_deps = [
         "gmock",
         "gtest",
-        #        "data-plane-api-eds",
+        "data-plane-api-eds",
     ],
     deps = [
         ":test_service_impl",

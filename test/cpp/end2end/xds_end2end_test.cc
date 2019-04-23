@@ -51,8 +51,8 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 
 //#include "envoy/api/v2/core/address.proto.h"
-//#include "third_party/data-plane-api/envoy/api/v2/eds.grpc.pb.h"
-#include "envoy/api/v2/discovery.pb.h"
+#include "envoy/api/v2/eds.grpc.pb.h"
+//#include "envoy/api/v2/discovery.pb.h"
 
 
 #include <gmock/gmock.h>
