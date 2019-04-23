@@ -683,11 +683,11 @@ const char *kCFStreamVarName = "grpc_cfstream";
   dispatch_async(_callQueue, ^{
     __weak GRPCCall *weakSelf = self;
     [self startReadWithHandler:^(grpc_byte_buffer *message) {
-      __strong GRPCCall *strongSelf = weakSelf;
       if (message == NULL) {
         // No more messages from the server
         return;
       }
+      __strong GRPCCall *strongSelf = weakSelf;
       if (strongSelf == nil) {
         grpc_byte_buffer_destroy(message);
         return;
