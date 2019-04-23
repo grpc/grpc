@@ -25,6 +25,7 @@ import enum
 import json
 import os
 import threading
+import time
 
 from google import auth as google_auth
 from google.auth import environment_vars as google_auth_environment_vars
@@ -38,6 +39,7 @@ from src.proto.grpc.testing import test_pb2_grpc
 
 _INITIAL_METADATA_KEY = "x-grpc-test-echo-initial"
 _TRAILING_METADATA_KEY = "x-grpc-test-echo-trailing-bin"
+_US_IN_A_SECOND = 1000 * 1000
 
 
 def _maybe_echo_metadata(servicer_context):
@@ -77,6 +79,8 @@ class TestService(test_pb2_grpc.TestServiceServicer):
     def StreamingOutputCall(self, request, context):
         _maybe_echo_status_and_message(request, context)
         for response_parameters in request.response_parameters:
+            if response_parameters.interval_us != 0:
+                time.sleep(response_parameters.interval_us / _US_IN_A_SECOND)
             yield messages_pb2.StreamingOutputCallResponse(
                 payload=messages_pb2.Payload(
                     type=request.response_type,
@@ -95,6 +99,9 @@ class TestService(test_pb2_grpc.TestServiceServicer):
         for request in request_iterator:
             _maybe_echo_status_and_message(request, context)
             for response_parameters in request.response_parameters:
+                if response_parameters.interval_us != 0:
+                    time.sleep(
+                        response_parameters.interval_us / _US_IN_A_SECOND)
                 yield messages_pb2.StreamingOutputCallResponse(
                     payload=messages_pb2.Payload(
                         type=request.payload.type,
