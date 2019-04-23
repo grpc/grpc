@@ -22,6 +22,7 @@ set PATH=C:\tools\msys64\usr\bin;C:\Python27;%PATH%
 powershell -Command "[guid]::NewGuid().ToString()" >%KOKORO_ARTIFACTS_DIR%/bazel_invocation_ids
 set /p BAZEL_INVOCATION_ID=<%KOKORO_ARTIFACTS_DIR%/bazel_invocation_ids
 
+@rem TODO(jtattermusch): windows RBE should be able to use the same credentials as Linux RBE.
 bazel --bazelrc=tools/remote_build/windows.bazelrc build --invocation_id="%BAZEL_INVOCATION_ID%" --workspace_status_command=tools/remote_build/workspace_status_kokoro.sh :all --incompatible_disallow_filetype=false --google_credentials=%KOKORO_GFILE_DIR%/rbe-windows-credentials.json
 set BAZEL_EXITCODE=%errorlevel%
 
