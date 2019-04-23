@@ -79,10 +79,20 @@ http_archive(
     urls = ["https://github.com/bazelbuild/rules_go/releases/download/0.17.1/rules_go-0.17.1.tar.gz"],
 )
 
+load("@envoy_api//bazel:repositories.bzl", "api_dependencies")
+
+api_dependencies()
+
 load("@io_bazel_rules_go//go/private:repositories.bzl", "go_rules_dependencies")
 
 go_rules_dependencies()
 
-load("@envoy_api//bazel:repositories.bzl", "api_dependencies")
+load("@io_bazel_rules_go//go:def.bzl", "go_rules_dependencies", "go_register_toolchains")
 
-api_dependencies()
+go_rules_dependencies()
+
+go_register_toolchains()
+
+load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
+
+gazelle_dependencies()

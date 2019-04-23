@@ -19,9 +19,11 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/impl/codegen/log.h>
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h"
-
 #include <grpc/support/alloc.h>
+
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/gpr/murmur_hash.h"
 
 namespace grpc_core {
 
@@ -47,8 +49,8 @@ grpc_slice XdsRequestCreateAndEncode(const char* service_name) {
       field, upb_strview_make(kEndpointRequired, strlen(kEndpointRequired)));
   XdsValue* value =
       google_protobuf_Struct_FieldsEntry_mutable_value(field, arena.ptr());
-  google_protobuf_Value_set_bool_value(true);
-  envoy_api_v2_DiscoveryRequest_add_resource_names(request, service_name,
+  google_protobuf_Value_set_bool_value(value, true);
+  envoy_api_v2_DiscoveryRequest_add_resource_names(request, upb_strview_makez(service_name),
                                                    arena.ptr());
   envoy_api_v2_DiscoveryRequest_set_type_url(
       request, upb_strview_make(kEdsTypeUrl, strlen(kEdsTypeUrl)));
@@ -60,6 +62,7 @@ grpc_slice XdsRequestCreateAndEncode(const char* service_name) {
 }
 
 namespace {
+
 void ServerAddressParseAndAppend(const XdsLbEndpoint* lb_endpoint,
                                  ServerAddressList* list) {
   // Find the ip:port.
@@ -68,44 +71,38 @@ void ServerAddressParseAndAppend(const XdsLbEndpoint* lb_endpoint,
   const XdsAddress* address = envoy_api_v2_endpoint_Endpoint_address(endpoint);
   const XdsSocketAddress* socket_address =
       envoy_api_v2_core_Address_socket_address(address);
-  upb_strview address_str =
+  upb_strview address_strview =
       envoy_api_v2_core_SocketAddress_address(socket_address);
   uint32_t port = envoy_api_v2_core_SocketAddress_port_value(socket_address);
   if (GPR_UNLIKELY(port >> 16) != 0) {
     gpr_log(GPR_ERROR, "Invalid port '%d'. Ignoring.", port);
     return;
   }
-  // FIXME: validate length of ip.
   // Populate grpc_resolved_address.
   grpc_resolved_address addr;
-  memset(&addr, 0, sizeof(addr));
-  const uint16_t netorder_port = grpc_htons(static_cast<uint16_t>(port));
-  // FIXME
+  char* address_str = static_cast<char*>(gpr_malloc(address_strview.size));
+  memcpy(address_str, address_strview.data, address_strview.size);
+  address_str[address_strview.size] = '\0';
+  grpc_string_to_sockaddr(&addr, address_str, port);
+  gpr_free(address_str);
+  // Append the address to the list.
   list->emplace_back(addr, nullptr);
 }
 
 XdsLocalityUpdateArgs LocalityParse(
     const XdsLocalityLbEndpoints* locality_lb_endpoints) {
+  upb::Arena arena;
   XdsLocalityUpdateArgs update_args;
   update_args.serverlist = MakeUnique<ServerAddressList>();
   // Parse locality_name.
   const XdsLocality* locality =
       envoy_api_v2_endpoint_LocalityLbEndpoints_locality(locality_lb_endpoints);
-  upb_strview region = envoy_api_v2_core_Locality_region(locality);
-  upb_strview zone = envoy_api_v2_core_Locality_zone(locality);
-  upb_strview sub_zone = envoy_api_v2_core_Locality_sub_zone(locality);
-  size_t size = region.size + zone.size + sub_zone.size + 1;
-  char* buf = static_cast<char*>(malloc(size));
-  char* pos = buf;
-  memcpy(pos, region.data, region.size);
-  pos += region.size;
-  memcpy(pos, zone.data, zone.size);
-  pos += zone.size;
-  memcpy(pos, sub_zone.data, sub_zone.size);
-  buf[size] = '\0';
-  update_args.locality_name = UniquePtr<char>(buf);
+  size_t size;
+  char* serialized_locality = envoy_api_v2_core_Locality_serialize(locality, arena.ptr(), &size);
+  grpc_slice serialized_locality_slice = grpc_slice_from_copied_buffer(serialized_locality, size);
+  update_args.locality_name = serialized_locality_slice;
   // Parse the addresses.
-  XdsLbEndpoint** lb_endpoints =
+  const XdsLbEndpoint* const * lb_endpoints =
       envoy_api_v2_endpoint_LocalityLbEndpoints_lb_endpoints(
           locality_lb_endpoints, &size);
   for (size_t i = 0; i < size; ++i) {
@@ -120,6 +117,7 @@ XdsLocalityUpdateArgs LocalityParse(
       envoy_api_v2_endpoint_LocalityLbEndpoints_priority(locality_lb_endpoints);
   return update_args;
 }
+
 }  // namespace
 
 UniquePtr<XdsLoadUpdateArgs> XdsResponseDecodeAndParse(
@@ -127,9 +125,9 @@ UniquePtr<XdsLoadUpdateArgs> XdsResponseDecodeAndParse(
   upb::Arena arena;
   // Decode the response.
   const XdsDiscoveryResponse* response =
-      envoy_api_v2_DiscoveryResponse_parsenew(
-          upb_strview_make(GRPC_SLICE_START_PTR(encoded_response),
-                           GRPC_SLICE_LENGTH(encoded_response)),
+      envoy_api_v2_DiscoveryResponse_parse(
+          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(encoded_response)),
+                           GRPC_SLICE_LENGTH(encoded_response),
           arena.ptr());
   // Parse the response.
   if (response == nullptr) return nullptr;
@@ -137,21 +135,21 @@ UniquePtr<XdsLoadUpdateArgs> XdsResponseDecodeAndParse(
   upb_strview type_url = envoy_api_v2_DiscoveryResponse_type_url(response);
   upb_strview expected_type_url = upb_strview_makez(kEdsTypeUrl);
   if (!upb_strview_eql(type_url, expected_type_url)) {
-    gpr_log(GPR_WARNING, "Resource is not EDS");
+    gpr_log(GPR_ERROR, "Resource is not EDS");
     return nullptr;
   }
   // Get the resources from the response.
   size_t size;
-  const google_protobuf_Any** resources =
+  const google_protobuf_Any* const * resources =
       envoy_api_v2_DiscoveryResponse_resources(response, &size);
   if (size < 1) {
-    gpr_log(GPR_WARNING, "EDS response contains 0 resource.");
+    gpr_log(GPR_ERROR, "EDS response contains 0 resource.");
     return nullptr;
   }
   // Check the type_url of the resource.
   type_url = google_protobuf_Any_type_url(resources[0]);
   if (!upb_strview_eql(type_url, expected_type_url)) {
-    gpr_log(GPR_WARNING, "Resource is not EDS");
+    gpr_log(GPR_ERROR, "Resource is not EDS");
     return nullptr;
   }
   // Get the cluster_load_assignment.
@@ -159,9 +157,9 @@ UniquePtr<XdsLoadUpdateArgs> XdsResponseDecodeAndParse(
   upb_strview encoded_cluster_load_assignment =
       google_protobuf_Any_value(resources[0]);
   XdsClusterLoadAssignment* cluster_load_assignment =
-      envoy_api_v2_ClusterLoadAssignment_parsenew(
-          encoded_cluster_load_assignment, arena.ptr());
-  const XdsLocalityLbEndpoints** endpoints =
+      envoy_api_v2_ClusterLoadAssignment_parse(
+          encoded_cluster_load_assignment.data, encoded_cluster_load_assignment.size, arena.ptr());
+  const XdsLocalityLbEndpoints* const * endpoints =
       envoy_api_v2_ClusterLoadAssignment_endpoints(cluster_load_assignment,
                                                    &size);
   for (size_t i = 0; i < size; ++i) {
@@ -170,54 +168,17 @@ UniquePtr<XdsLoadUpdateArgs> XdsResponseDecodeAndParse(
   return update_args;
 }
 
-static void populate_timestamp(gpr_timespec timestamp,
-                               xds_grpclb_timestamp* timestamp_pb) {
-  timestamp_pb->has_seconds = true;
-  timestamp_pb->seconds = timestamp.tv_sec;
-  timestamp_pb->has_nanos = true;
-  timestamp_pb->nanos = timestamp.tv_nsec;
-}
-
-static bool encode_string(pb_ostream_t* stream, const pb_field_t* field,
-                          void* const* arg) {
-  char* str = static_cast<char*>(*arg);
-  if (!pb_encode_tag_for_field(stream, field)) return false;
-  return pb_encode_string(stream, reinterpret_cast<uint8_t*>(str), strlen(str));
-}
-
-static bool encode_drops(pb_ostream_t* stream, const pb_field_t* field,
-                         void* const* arg) {
-  grpc_core::XdsLbClientStats::DroppedCallCounts* drop_entries =
-      static_cast<grpc_core::XdsLbClientStats::DroppedCallCounts*>(*arg);
-  if (drop_entries == nullptr) return true;
-  for (size_t i = 0; i < drop_entries->size(); ++i) {
-    if (!pb_encode_tag_for_field(stream, field)) return false;
-    grpc_lb_v1_ClientStatsPerToken drop_message;
-    drop_message.load_balance_token.funcs.encode = encode_string;
-    drop_message.load_balance_token.arg = (*drop_entries)[i].token.get();
-    drop_message.has_num_calls = true;
-    drop_message.num_calls = (*drop_entries)[i].count;
-    if (!pb_encode_submessage(stream, grpc_lb_v1_ClientStatsPerToken_fields,
-                              &drop_message)) {
-      return false;
-    }
-  }
-  return true;
-}
-
 xds_grpclb_request* xds_grpclb_load_report_request_create_locked(
     grpc_core::XdsLbClientStats* client_stats) {
   xds_grpclb_request* req =
       static_cast<xds_grpclb_request*>(gpr_zalloc(sizeof(xds_grpclb_request)));
   req->has_client_stats = true;
   req->client_stats.has_timestamp = true;
-  populate_timestamp(gpr_now(GPR_CLOCK_REALTIME), &req->client_stats.timestamp);
   req->client_stats.has_num_calls_started = true;
   req->client_stats.has_num_calls_finished = true;
   req->client_stats.has_num_calls_finished_with_client_failed_to_send = true;
   req->client_stats.has_num_calls_finished_with_client_failed_to_send = true;
   req->client_stats.has_num_calls_finished_known_received = true;
-  req->client_stats.calls_finished_with_drop.funcs.encode = encode_drops;
   grpc_core::UniquePtr<grpc_core::XdsLbClientStats::DroppedCallCounts>
       drop_counts;
   client_stats->GetLocked(

@@ -1358,6 +1358,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "envoy_ads_upb",
         "grpc_base",
         "grpc_client_channel",
         "grpc_resolver_fake",
@@ -1384,6 +1385,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "envoy_ads_upb",
         "grpc_base",
         "grpc_client_channel",
         "grpc_resolver_fake",
@@ -2340,16 +2342,16 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h",
         "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h",
     ],
-    language = "c++",
     external_deps = [
         "upb_lib",
     ],
+    language = "c++",
+    tags = ["no_windows"],
     deps = [
         ":envoy_core_upb",
         ":google_api_upb",
         ":proto_gen_validate_upb",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_library(
@@ -2378,13 +2380,13 @@ grpc_cc_library(
         "upb_lib",
     ],
     language = "c++",
+    tags = ["no_windows"],
     deps = [
         ":envoy_core_upb",
         ":envoy_type_upb",
         ":google_api_upb",
         ":proto_gen_validate_upb",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_library(

@@ -5685,7 +5685,7 @@ targets:
   build: test
   language: c++
   src:
-  - src/proto/grpc/lb/v1/load_balancer.proto
+  - third_party/data-plane-api/envoy/api/v2/eds.proto
   - test/cpp/end2end/xds_end2end_test.cc
   deps:
   - grpc++_test_util

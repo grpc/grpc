@@ -156,7 +156,7 @@ class XdsLb : public LoadBalancingPolicy {
         return client_stats_;
       }
 
-      bool seen_initial_response() const { return seen_initial_response_; }
+      bool seen_response() const { return seen_response_; }
 
      private:
       // So Delete() can access our private dtor.
@@ -197,8 +197,7 @@ class XdsLb : public LoadBalancingPolicy {
       // recv_message
       grpc_byte_buffer* recv_message_payload_ = nullptr;
       grpc_closure lb_on_balancer_message_received_;
-      // FIXME: rename
-      bool seen_initial_response_ = false;
+      bool seen_response_ = false;
 
       // recv_trailing_metadata
       grpc_closure lb_on_balancer_status_received_;
@@ -372,10 +371,10 @@ class XdsLb : public LoadBalancingPolicy {
   };
 
   struct LocalityServerlistEntry {
-    ~LocalityServerlistEntry() { gpr_free(locality_name); }
+    ~LocalityServerlistEntry() { gpr_free(locality_key); }
 
-    char* locality_name;
     uint32_t locality_weight;
+    char* locality_key;
     // The deserialized response from the balancer. May be nullptr until one
     // such response has arrived.
     UniquePtr<ServerAddressList> serverlist;
@@ -850,10 +849,10 @@ void XdsLb::BalancerChannelState::BalancerCallState::
       gpr_log(GPR_INFO,
               "[xdslb %p] Locality %" PRIuPTR " contains %" PRIuPTR
               " server addresses",
-              xdslb_policy, i, locality.serverlist.size());
-      for (size_t j = 0; j < locality.serverlist.size(); ++i) {
+              xdslb_policy, i, locality.serverlist->size());
+      for (size_t j = 0; j < locality.serverlist->size(); ++i) {
         char* ipport;
-        grpc_sockaddr_to_string(&ipport, &locality.serverlist[j].address(),
+        grpc_sockaddr_to_string(&ipport, &(*locality.serverlist)[j].address(),
                                 false);
         gpr_log(GPR_INFO,
                 "[xdslb %p] Locality %" PRIuPTR ", server address %" PRIuPTR
@@ -910,7 +909,7 @@ void XdsLb::BalancerChannelState::BalancerCallState::
      * one child */
     xdslb_policy->locality_serverlist_.emplace_back(
         MakeUnique<LocalityServerlistEntry>());
-    xdslb_policy->locality_serverlist_[0]->locality_name =
+    xdslb_policy->locality_serverlist_[0]->locality_key =
         gpr_strdup(kDefaultLocalityName);
   }
   // and update the copy in the XdsLb instance. This
@@ -979,7 +978,7 @@ void XdsLb::BalancerChannelState::BalancerCallState::
       // This channel is the most recently created one. Try to restart the call
       // and reresolve.
       lb_chand->lb_calld_.reset();
-      if (lb_calld->seen_initial_response_) {
+      if (lb_calld->seen_response_) {
         // If we lost connection to the LB server, reset the backoff and restart
         // the LB call immediately.
         lb_chand->lb_call_backoff_.Reset();
@@ -1256,7 +1255,7 @@ void XdsLb::LocalityMap::PruneLocalities(const LocalityList& locality_list) {
   for (auto iter = map_.begin(); iter != map_.end();) {
     bool found = false;
     for (size_t i = 0; i < locality_list.size(); i++) {
-      if (!gpr_stricmp(locality_list[i]->locality_name, iter->first.get())) {
+      if (!gpr_stricmp(locality_list[i]->locality_key, iter->first.get())) {
         found = true;
       }
     }
@@ -1275,7 +1274,7 @@ void XdsLb::LocalityMap::UpdateLocked(
   if (parent->shutting_down_) return;
   for (size_t i = 0; i < locality_serverlist.size(); i++) {
     UniquePtr<char> locality_name(
-        gpr_strdup(locality_serverlist[i]->locality_name));
+        gpr_strdup(locality_serverlist[i]->locality_key));
     auto iter = map_.find(locality_name);
     if (iter == map_.end()) {
       OrphanablePtr<LocalityEntry> new_entry = MakeOrphanable<LocalityEntry>(
@@ -1668,7 +1667,7 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::RequestReresolution() {
   // the child policy. Otherwise, pass the re-resolution request up to the
   // channel.
   if (entry_->parent_->lb_chand_->lb_calld() == nullptr ||
-      !entry_->parent_->lb_chand_->lb_calld()->seen_initial_response()) {
+      !entry_->parent_->lb_chand_->lb_calld()->seen_response()) {
     entry_->parent_->channel_control_helper()->RequestReresolution();
   }
 }

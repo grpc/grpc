@@ -108,7 +108,7 @@ def grpc_deps():
 
     native.bind(
         name = "data-plane-api-eds",
-        actual = "@envoy_api//envoy/api/v2:eds",
+        actual = "@envoy_api//envoy/api/v2:eds_cc",
     )
 
     if "boringssl" not in native.existing_rules():
@@ -217,6 +217,18 @@ def grpc_deps():
             strip_prefix = "data-plane-api-35f6d31f6db891186b08cd3830cdbbf77a362ea3",
             url = "https://github.com/envoyproxy/data-plane-api/archive/35f6d31f6db891186b08cd3830cdbbf77a362ea3.tar.gz",
         )
+
+    http_archive(
+        name = "bazel_gazelle",
+        url = "https://github.com/bazelbuild/bazel-gazelle/releases/download/0.16.0/bazel-gazelle-0.16.0.tar.gz",
+        sha256 = "7949fc6cc17b5b191103e97481cf8889217263acf52e00b560683413af204fcb",
+    )
+
+    http_archive(
+        name = "io_bazel_rules_go",
+        url = "https://github.com/bazelbuild/rules_go/releases/download/0.16.0/rules_go-0.16.0.tar.gz",
+        sha256 = "ee5fe78fe417c685ecb77a0a725dc9f6040ae5beb44a0ba4ddb55453aad23a8a",
+    )
 
 # TODO: move some dependencies from "grpc_deps" here?
 def grpc_test_only_deps():

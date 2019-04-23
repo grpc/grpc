@@ -89,6 +89,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_windows"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -99,7 +100,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -450,11 +450,10 @@ grpc_cc_test(
     external_deps = [
         "gmock",
         "gtest",
-        "data-plane-api-eds",
+        #        "data-plane-api-eds",
     ],
     deps = [
         ":test_service_impl",
-#        "//:envoy_ads_upb",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
@@ -465,7 +464,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
-#        "//third_party/data-plane-api/envoy/api/v2:eds",
     ],
 )
 
@@ -627,6 +625,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -637,7 +636,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(

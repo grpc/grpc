@@ -47,13 +47,12 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
-//#include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
-//#include "src/proto/grpc/testing/echo.grpc.pb.h"
-//#include "src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h"
-//#include "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h"
+#include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 
-//#include "third_party/data-plane-api/envoy/api/v2/core/address.proto.h"
-#include "third_party/data-plane-api/envoy/api/v2/eds.grpc.pb.h"
+//#include "envoy/api/v2/core/address.proto.h"
+//#include "third_party/data-plane-api/envoy/api/v2/eds.grpc.pb.h"
+#include "envoy/api/v2/discovery.pb.h"
 
 
 #include <gmock/gmock.h>
@@ -78,9 +77,6 @@
 
 using std::chrono::system_clock;
 
-// using grpc::lb::v1::LoadBalanceRequest;
-// using grpc::lb::v1::LoadBalanceResponse;
-// using grpc::lb::v1::LoadBalancer;
 using ::envoy::api::v2::DiscoveryRequest;
 using ::envoy::api::v2::DiscoveryResponse;
 using ::envoy::api::v2::ClusterLoadAssignment;

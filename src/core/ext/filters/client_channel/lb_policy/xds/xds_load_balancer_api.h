@@ -26,29 +26,27 @@
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/upb-generated/envoy/api/v2//core/address.upb.h"
+#include "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h"
+#include "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h"
 #include "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h"
 #include "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h"
 #include "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h"
 #include "src/core/ext/upb-generated/google/protobuf/struct.upb.h"
-#include "src/core/lib/gprpp/map.h"
+#include "src/core/ext/upb-generated/google/protobuf/wrappers.upb.h"
+#include "src/core/ext/upb-generated/google/protobuf/any.upb.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "third_party/upb/upb/upb.h"
+#include "upb/upb.h"
 
 #define XDS_SERVICE_NAME_MAX_LENGTH 128
 
 namespace grpc_core {
 
 typedef grpc_lb_v1_LoadBalanceRequest xds_grpclb_request;
-typedef google_protobuf_Duration xds_grpclb_duration;
-typedef google_protobuf_Timestamp xds_grpclb_timestamp;
 
 using XdsDiscoveryRequest = envoy_api_v2_DiscoveryRequest;
 using XdsDiscoveryResponse = envoy_api_v2_DiscoveryResponse;
 using XdsClusterLoadAssignment = envoy_api_v2_ClusterLoadAssignment;
 using XdsLocalityLbEndpoints = envoy_api_v2_endpoint_LocalityLbEndpoints;
-using XdsLocalityLbEndpointsList =
-    InlinedVector<Pair<UniquePtr<char>, XdsLocalityLbEndpoints*>, 1>;
 using XdsLocality = envoy_api_v2_core_Locality;
 using XdsLbEndpoint = envoy_api_v2_endpoint_LbEndpoint;
 using XdsEndpoint = envoy_api_v2_endpoint_Endpoint;
@@ -60,7 +58,7 @@ using XdsFieldsEntry = google_protobuf_Struct_FieldsEntry;
 using XdsValue = google_protobuf_Value;
 
 struct XdsLocalityUpdateArgs {
-  UniquePtr<char> locality_name;
+  grpc_slice locality_name;
   UniquePtr<ServerAddressList> serverlist;
   uint32_t lb_weight;
   uint32_t priority;
@@ -68,7 +66,7 @@ struct XdsLocalityUpdateArgs {
 
 struct XdsLoadUpdateArgs {
   InlinedVector<XdsLocalityUpdateArgs, 1> localities;
-  // TODO(juanlishen): Add drop support.
+  // TODO(juanlishen): Pass drop_per_million when adding drop support.
 };
 
 // Creates a request to gRPC LB querying \a service_name.
