@@ -394,7 +394,7 @@ for i, elem in enumerate(all_strs):
 
 def slice_def(i):
     return ('{&grpc_static_metadata_refcounts[%d],'
-            ' {{g_bytes+%d, %d}}}') % (i, id2strofs[i], len(all_strs[i]))
+            ' {{%d, g_bytes+%d}}}') % (i, len(all_strs[i]), id2strofs[i])
 
 
 # validate configuration
@@ -412,29 +412,19 @@ print >> H
 print >> C, 'static uint8_t g_bytes[] = {%s};' % (','.join(
     '%d' % ord(c) for c in ''.join(all_strs)))
 print >> C
-print >> C, 'static void static_ref(void *unused) {}'
-print >> C, 'static void static_unref(void *unused) {}'
-print >> C, ('static const grpc_slice_refcount_vtable static_sub_vtable = '
-             '{static_ref, static_unref, grpc_slice_default_eq_impl, '
-             'grpc_slice_default_hash_impl};')
-print >> H, ('extern const grpc_slice_refcount_vtable '
-             'grpc_static_metadata_vtable;')
-print >> C, ('const grpc_slice_refcount_vtable grpc_static_metadata_vtable = '
-             '{static_ref, static_unref, grpc_static_slice_eq, '
-             'grpc_static_slice_hash};')
-print >> C, ('static grpc_slice_refcount static_sub_refcnt = '
-             '{&static_sub_vtable, &static_sub_refcnt};')
+print >> C, ('static grpc_slice_refcount static_sub_refcnt;')
 print >> H, ('extern grpc_slice_refcount '
              'grpc_static_metadata_refcounts[GRPC_STATIC_MDSTR_COUNT];')
 print >> C, ('grpc_slice_refcount '
              'grpc_static_metadata_refcounts[GRPC_STATIC_MDSTR_COUNT] = {')
 for i, elem in enumerate(all_strs):
-    print >> C, '  {&grpc_static_metadata_vtable, &static_sub_refcnt},'
+    print >> C, ('  grpc_slice_refcount(&static_sub_refcnt, '
+                 'grpc_slice_refcount::Type::STATIC), ')
 print >> C, '};'
 print >> C
 print >> H, '#define GRPC_IS_STATIC_METADATA_STRING(slice) \\'
-print >> H, ('  ((slice).refcount != NULL && (slice).refcount->vtable == '
-             '&grpc_static_metadata_vtable)')
+print >> H, ('  ((slice).refcount != NULL && (slice).refcount->GetType() == '
+             'grpc_slice_refcount::Type::STATIC)')
 print >> H
 print >> C, ('const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT]'
              ' = {')

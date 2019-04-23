@@ -67,7 +67,7 @@ grpc_error* grpc_chttp2_data_parser_begin_frame(grpc_chttp2_data_parser* parser,
 grpc_error* grpc_chttp2_data_parser_parse(void* parser,
                                           grpc_chttp2_transport* t,
                                           grpc_chttp2_stream* s,
-                                          grpc_slice slice, int is_last);
+                                          const grpc_slice& slice, int is_last);
 
 void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
                              uint32_t write_bytes, int is_eof,

@@ -32,6 +32,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr.h"
 
 #define MAX_DEPTH 2
 
@@ -116,7 +117,8 @@ size_t Executor::RunClosures(const char* executor_name,
   // application-level callbacks. No need to create a new ExecCtx, though,
   // since there already is one and it is flushed (but not destructed) in this
   // function itself.
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx(
+      GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
 
   grpc_closure* c = list.head;
   while (c != nullptr) {
@@ -205,6 +207,14 @@ void Executor::SetThreading(bool threading) {
 
     gpr_free(thd_state_);
     gpr_tls_destroy(&g_this_thread_state);
+
+    // grpc_iomgr_shutdown_background_closure() will close all the registered
+    // fds in the background poller, and wait for all pending closures to
+    // finish. Thus, never call Executor::SetThreading(false) in the middle of
+    // an application.
+    // TODO(guantaol): create another method to finish all the pending closures
+    // registered in the background poller by grpc_core::Executor.
+    grpc_iomgr_shutdown_background_closure();
   }
 
   EXECUTOR_TRACE("(%s) SetThreading(%d) done", name_, threading);
@@ -274,6 +284,10 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error* error,
 #endif
       grpc_closure_list_append(grpc_core::ExecCtx::Get()->closure_list(),
                                closure, error);
+      return;
+    }
+
+    if (grpc_iomgr_add_closure_to_background_poller(closure, error)) {
       return;
     }
 

@@ -16,9 +16,11 @@ py_library(
     deps = [
         "//src/python/grpcio/grpc/framework/foundation",
         "//src/python/grpcio/grpc/framework/common",
-        requirement("enum34"),
         requirement("six"),
-    ],
+    ] + select({
+        "//conditions:default": [requirement('enum34'),],
+        "//:python3": [],
+    }),
 )
 
 py_library(

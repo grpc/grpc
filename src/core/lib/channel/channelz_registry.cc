@@ -23,7 +23,7 @@
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/mutex_lock.h"
+#include "src/core/lib/gprpp/sync.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -62,7 +62,7 @@ void ChannelzRegistry::InternalRegister(BaseNode* node) {
 }
 
 void ChannelzRegistry::MaybePerformCompactionLocked() {
-  constexpr double kEmptinessTheshold = 1 / 3;
+  constexpr double kEmptinessTheshold = 1. / 3;
   double emptiness_ratio =
       double(num_empty_slots_) / double(entities_.capacity());
   if (emptiness_ratio > kEmptinessTheshold) {

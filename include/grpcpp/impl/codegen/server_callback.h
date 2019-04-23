@@ -37,11 +37,43 @@ namespace grpc {
 // Declare base class of all reactors as internal
 namespace internal {
 
+// Forward declarations
+template <class Request, class Response>
+class CallbackClientStreamingHandler;
+template <class Request, class Response>
+class CallbackServerStreamingHandler;
+template <class Request, class Response>
+class CallbackBidiHandler;
+
 class ServerReactor {
  public:
   virtual ~ServerReactor() = default;
-  virtual void OnDone() {}
-  virtual void OnCancel() {}
+  virtual void OnDone() = 0;
+  virtual void OnCancel() = 0;
+
+ private:
+  friend class ::grpc::ServerContext;
+  template <class Request, class Response>
+  friend class CallbackClientStreamingHandler;
+  template <class Request, class Response>
+  friend class CallbackServerStreamingHandler;
+  template <class Request, class Response>
+  friend class CallbackBidiHandler;
+
+  // The ServerReactor is responsible for tracking when it is safe to call
+  // OnCancel. This function should not be called until after OnStarted is done
+  // and the RPC has completed with a cancellation. This is tracked by counting
+  // how many of these conditions have been met and calling OnCancel when none
+  // remain unmet.
+
+  void MaybeCallOnCancel() {
+    if (on_cancel_conditions_remaining_.fetch_sub(
+            1, std::memory_order_acq_rel) == 1) {
+      OnCancel();
+    }
+  }
+
+  std::atomic_int on_cancel_conditions_remaining_{2};
 };
 
 }  // namespace internal
@@ -69,6 +101,40 @@ class ServerCallbackRpcController {
   // Allow the method handler to push out the initial metadata before
   // the response and status are ready
   virtual void SendInitialMetadata(std::function<void(bool)>) = 0;
+
+  /// SetCancelCallback passes in a callback to be called when the RPC is
+  /// canceled for whatever reason (streaming calls have OnCancel instead). This
+  /// is an advanced and uncommon use with several important restrictions. This
+  /// function may not be called more than once on the same RPC.
+  ///
+  /// If code calls SetCancelCallback on an RPC, it must also call
+  /// ClearCancelCallback before calling Finish on the RPC controller. That
+  /// method makes sure that no cancellation callback is executed for this RPC
+  /// beyond the point of its return. ClearCancelCallback may be called even if
+  /// SetCancelCallback was not called for this RPC, and it may be called
+  /// multiple times. It _must_ be called if SetCancelCallback was called for
+  /// this RPC.
+  ///
+  /// The callback should generally be lightweight and nonblocking and primarily
+  /// concerned with clearing application state related to the RPC or causing
+  /// operations (such as cancellations) to happen on dependent RPCs.
+  ///
+  /// If the RPC is already canceled at the time that SetCancelCallback is
+  /// called, the callback is invoked immediately.
+  ///
+  /// The cancellation callback may be executed concurrently with the method
+  /// handler that invokes it but will certainly not issue or execute after the
+  /// return of ClearCancelCallback. If ClearCancelCallback is invoked while the
+  /// callback is already executing, the callback will complete its execution
+  /// before ClearCancelCallback takes effect.
+  ///
+  /// To preserve the orderings described above, the callback may be called
+  /// under a lock that is also used for ClearCancelCallback and
+  /// ServerContext::IsCancelled, so the callback CANNOT call either of those
+  /// operations on this RPC or any other function that causes those operations
+  /// to be called before the callback completes.
+  virtual void SetCancelCallback(std::function<void()> callback) = 0;
+  virtual void ClearCancelCallback() = 0;
 };
 
 // NOTE: The actual streaming object classes are provided
@@ -102,7 +168,7 @@ class ServerCallbackWriter {
     // Default implementation that can/should be overridden
     Write(msg, std::move(options));
     Finish(std::move(s));
-  };
+  }
 
  protected:
   template <class Request>
@@ -125,7 +191,7 @@ class ServerCallbackReaderWriter {
     // Default implementation that can/should be overridden
     Write(msg, std::move(options));
     Finish(std::move(s));
-  };
+  }
 
  protected:
   void BindReactor(ServerBidiReactor<Request, Response>* reactor) {
@@ -133,32 +199,129 @@ class ServerCallbackReaderWriter {
   }
 };
 
-// The following classes are reactors that are to be implemented
-// by the user, returned as the result of the method handler for
-// a callback method, and activated by the call to OnStarted
+// The following classes are the reactor interfaces that are to be implemented
+// by the user, returned as the result of the method handler for a callback
+// method, and activated by the call to OnStarted. The library guarantees that
+// OnStarted will be called for any reactor that has been created using a
+// method handler registered on a service. No operation initiation method may be
+// called until after the call to OnStarted.
+// Note that none of the classes are pure; all reactions have a default empty
+// reaction so that the user class only needs to override those classes that it
+// cares about.
+
+/// \a ServerBidiReactor is the interface for a bidirectional streaming RPC.
 template <class Request, class Response>
 class ServerBidiReactor : public internal::ServerReactor {
  public:
   ~ServerBidiReactor() = default;
-  virtual void OnStarted(ServerContext*) {}
+
+  /// Do NOT call any operation initiation method (names that start with Start)
+  /// until after the library has called OnStarted on this object.
+
+  /// Send any initial metadata stored in the RPC context. If not invoked,
+  /// any initial metadata will be passed along with the first Write or the
+  /// Finish (if there are no writes).
+  void StartSendInitialMetadata() { stream_->SendInitialMetadata(); }
+
+  /// Initiate a read operation.
+  ///
+  /// \param[out] req Where to eventually store the read message. Valid when
+  ///                 the library calls OnReadDone
+  void StartRead(Request* req) { stream_->Read(req); }
+
+  /// Initiate a write operation.
+  ///
+  /// \param[in] resp The message to be written. The library takes temporary
+  ///                 ownership until OnWriteDone, at which point the
+  ///                 application regains ownership of resp.
+  void StartWrite(const Response* resp) { StartWrite(resp, WriteOptions()); }
+
+  /// Initiate a write operation with specified options.
+  ///
+  /// \param[in] resp The message to be written. The library takes temporary
+  ///                 ownership until OnWriteDone, at which point the
+  ///                 application regains ownership of resp.
+  /// \param[in] options The WriteOptions to use for writing this message
+  void StartWrite(const Response* resp, WriteOptions options) {
+    stream_->Write(resp, std::move(options));
+  }
+
+  /// Initiate a write operation with specified options and final RPC Status,
+  /// which also causes any trailing metadata for this RPC to be sent out.
+  /// StartWriteAndFinish is like merging StartWriteLast and Finish into a
+  /// single step. A key difference, though, is that this operation doesn't have
+  /// an OnWriteDone reaction - it is considered complete only when OnDone is
+  /// available. An RPC can either have StartWriteAndFinish or Finish, but not
+  /// both.
+  ///
+  /// \param[in] resp The message to be written. The library takes temporary
+  ///                 ownership until Onone, at which point the application
+  ///                 regains ownership of resp.
+  /// \param[in] options The WriteOptions to use for writing this message
+  /// \param[in] s The status outcome of this RPC
+  void StartWriteAndFinish(const Response* resp, WriteOptions options,
+                           Status s) {
+    stream_->WriteAndFinish(resp, std::move(options), std::move(s));
+  }
+
+  /// Inform system of a planned write operation with specified options, but
+  /// allow the library to schedule the actual write coalesced with the writing
+  /// of trailing metadata (which takes place on a Finish call).
+  ///
+  /// \param[in] resp The message to be written. The library takes temporary
+  ///                 ownership until OnWriteDone, at which point the
+  ///                 application regains ownership of resp.
+  /// \param[in] options The WriteOptions to use for writing this message
+  void StartWriteLast(const Response* resp, WriteOptions options) {
+    StartWrite(resp, std::move(options.set_last_message()));
+  }
+
+  /// Indicate that the stream is to be finished and the trailing metadata and
+  /// RPC status are to be sent. Every RPC MUST be finished using either Finish
+  /// or StartWriteAndFinish (but not both), even if the RPC is already
+  /// cancelled.
+  ///
+  /// \param[in] s The status outcome of this RPC
+  void Finish(Status s) { stream_->Finish(std::move(s)); }
+
+  /// Notify the application that a streaming RPC has started and that it is now
+  /// ok to call any operation initiation method. An RPC is considered started
+  /// after the server has received all initial metadata from the client, which
+  /// is a result of the client calling StartCall().
+  ///
+  /// \param[in] context The context object now associated with this RPC
+  virtual void OnStarted(ServerContext* context) {}
+
+  /// Notifies the application that an explicit StartSendInitialMetadata
+  /// operation completed. Not used when the sending of initial metadata
+  /// piggybacks onto the first write.
+  ///
+  /// \param[in] ok Was it successful? If false, no further write-side operation
+  ///               will succeed.
   virtual void OnSendInitialMetadataDone(bool ok) {}
+
+  /// Notifies the application that a StartRead operation completed.
+  ///
+  /// \param[in] ok Was it successful? If false, no further read-side operation
+  ///               will succeed.
   virtual void OnReadDone(bool ok) {}
+
+  /// Notifies the application that a StartWrite (or StartWriteLast) operation
+  /// completed.
+  ///
+  /// \param[in] ok Was it successful? If false, no further write-side operation
+  ///               will succeed.
   virtual void OnWriteDone(bool ok) {}
 
-  void StartSendInitialMetadata() { stream_->SendInitialMetadata(); }
-  void StartRead(Request* msg) { stream_->Read(msg); }
-  void StartWrite(const Response* msg) { StartWrite(msg, WriteOptions()); }
-  void StartWrite(const Response* msg, WriteOptions options) {
-    stream_->Write(msg, std::move(options));
-  }
-  void StartWriteAndFinish(const Response* msg, WriteOptions options,
-                           Status s) {
-    stream_->WriteAndFinish(msg, std::move(options), std::move(s));
-  }
-  void StartWriteLast(const Response* msg, WriteOptions options) {
-    StartWrite(msg, std::move(options.set_last_message()));
-  }
-  void Finish(Status s) { stream_->Finish(std::move(s)); }
+  /// Notifies the application that all operations associated with this RPC
+  /// have completed. This is an override (from the internal base class) but not
+  /// final, so derived classes should override it if they want to take action.
+  void OnDone() override {}
+
+  /// Notifies the application that this RPC has been cancelled. This is an
+  /// override (from the internal base class) but not final, so derived classes
+  /// should override it if they want to take action.
+  void OnCancel() override {}
 
  private:
   friend class ServerCallbackReaderWriter<Request, Response>;
@@ -169,17 +332,30 @@ class ServerBidiReactor : public internal::ServerReactor {
   ServerCallbackReaderWriter<Request, Response>* stream_;
 };
 
+/// \a ServerReadReactor is the interface for a client-streaming RPC.
 template <class Request, class Response>
 class ServerReadReactor : public internal::ServerReactor {
  public:
   ~ServerReadReactor() = default;
-  virtual void OnStarted(ServerContext*, Response* resp) {}
+
+  /// The following operation initiations are exactly like ServerBidiReactor.
+  void StartSendInitialMetadata() { reader_->SendInitialMetadata(); }
+  void StartRead(Request* req) { reader_->Read(req); }
+  void Finish(Status s) { reader_->Finish(std::move(s)); }
+
+  /// Similar to ServerBidiReactor::OnStarted, except that this also provides
+  /// the response object that the stream fills in before calling Finish.
+  /// (It must be filled in if status is OK, but it may be filled in otherwise.)
+  ///
+  /// \param[in] context The context object now associated with this RPC
+  /// \param[in] resp The response object to be used by this RPC
+  virtual void OnStarted(ServerContext* context, Response* resp) {}
+
+  /// The following notifications are exactly like ServerBidiReactor.
   virtual void OnSendInitialMetadataDone(bool ok) {}
   virtual void OnReadDone(bool ok) {}
-
-  void StartSendInitialMetadata() { reader_->SendInitialMetadata(); }
-  void StartRead(Request* msg) { reader_->Read(msg); }
-  void Finish(Status s) { reader_->Finish(std::move(s)); }
+  void OnDone() override {}
+  void OnCancel() override {}
 
  private:
   friend class ServerCallbackReader<Request>;
@@ -188,27 +364,39 @@ class ServerReadReactor : public internal::ServerReactor {
   ServerCallbackReader<Request>* reader_;
 };
 
+/// \a ServerWriteReactor is the interface for a server-streaming RPC.
 template <class Request, class Response>
 class ServerWriteReactor : public internal::ServerReactor {
  public:
   ~ServerWriteReactor() = default;
-  virtual void OnStarted(ServerContext*, const Request* req) {}
-  virtual void OnSendInitialMetadataDone(bool ok) {}
-  virtual void OnWriteDone(bool ok) {}
 
+  /// The following operation initiations are exactly like ServerBidiReactor.
   void StartSendInitialMetadata() { writer_->SendInitialMetadata(); }
-  void StartWrite(const Response* msg) { StartWrite(msg, WriteOptions()); }
-  void StartWrite(const Response* msg, WriteOptions options) {
-    writer_->Write(msg, std::move(options));
+  void StartWrite(const Response* resp) { StartWrite(resp, WriteOptions()); }
+  void StartWrite(const Response* resp, WriteOptions options) {
+    writer_->Write(resp, std::move(options));
   }
-  void StartWriteAndFinish(const Response* msg, WriteOptions options,
+  void StartWriteAndFinish(const Response* resp, WriteOptions options,
                            Status s) {
-    writer_->WriteAndFinish(msg, std::move(options), std::move(s));
+    writer_->WriteAndFinish(resp, std::move(options), std::move(s));
   }
-  void StartWriteLast(const Response* msg, WriteOptions options) {
-    StartWrite(msg, std::move(options.set_last_message()));
+  void StartWriteLast(const Response* resp, WriteOptions options) {
+    StartWrite(resp, std::move(options.set_last_message()));
   }
   void Finish(Status s) { writer_->Finish(std::move(s)); }
+
+  /// Similar to ServerBidiReactor::OnStarted, except that this also provides
+  /// the request object sent by the client.
+  ///
+  /// \param[in] context The context object now associated with this RPC
+  /// \param[in] req The request object sent by the client
+  virtual void OnStarted(ServerContext* context, const Request* req) {}
+
+  /// The following notifications are exactly like ServerBidiReactor.
+  virtual void OnSendInitialMetadataDone(bool ok) {}
+  virtual void OnWriteDone(bool ok) {}
+  void OnDone() override {}
+  void OnCancel() override {}
 
  private:
   friend class ServerCallbackWriter<Response>;
@@ -349,6 +537,15 @@ class CallbackUnaryHandler : public MethodHandler {
       call_.PerformOps(&meta_ops_);
     }
 
+    // Neither SetCancelCallback nor ClearCancelCallback should affect the
+    // callbacks_outstanding_ count since they are paired and both must precede
+    // the invocation of Finish (if they are used at all)
+    void SetCancelCallback(std::function<void()> callback) override {
+      ctx_->SetCancelCallback(std::move(callback));
+    }
+
+    void ClearCancelCallback() override { ctx_->ClearCancelCallback(); }
+
    private:
     friend class CallbackUnaryHandler<RequestType, ResponseType>;
 
@@ -425,6 +622,8 @@ class CallbackClientStreamingHandler : public MethodHandler {
 
     reader->BindReactor(reactor);
     reactor->OnStarted(param.server_context, reader->response());
+    // The earliest that OnCancel can be called is after OnStarted is done.
+    reactor->MaybeCallOnCancel();
     reader->MaybeDone();
   }
 
@@ -567,6 +766,8 @@ class CallbackServerStreamingHandler : public MethodHandler {
                                  std::move(param.call_requester), reactor);
     writer->BindReactor(reactor);
     reactor->OnStarted(param.server_context, writer->request());
+    // The earliest that OnCancel can be called is after OnStarted is done.
+    reactor->MaybeCallOnCancel();
     writer->MaybeDone();
   }
 
@@ -743,6 +944,8 @@ class CallbackBidiHandler : public MethodHandler {
 
     stream->BindReactor(reactor);
     reactor->OnStarted(param.server_context);
+    // The earliest that OnCancel can be called is after OnStarted is done.
+    reactor->MaybeCallOnCancel();
     stream->MaybeDone();
   }
 

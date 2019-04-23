@@ -48,6 +48,7 @@ class Grpc(object):
   yaml = None
 
   def WriteFiles(self, files, asm_outputs):
+    test_binaries = ['ssl_test', 'crypto_test']
 
     self.yaml = {
       '#': 'generated with tools/buildgen/gen_boring_ssl_build_yaml.py',
@@ -86,45 +87,28 @@ class Grpc(object):
               for f in sorted(files['test_support'])
             ],
           }
-      ] + [
-          {
-            'name': 'boringssl_%s_lib' % os.path.splitext(os.path.basename(test))[0],
-            'build': 'private',
-            'secure': 'no',
-            'language': 'c' if os.path.splitext(test)[1] == '.c' else 'c++',
-            'src': [map_dir(test)],
-            'vs_proj_dir': 'test/boringssl',
-            'boringssl': True,
-            'defaults': 'boringssl',
-            'deps': [
-                'boringssl_test_util',
-                'boringssl',
-            ]
-          }
-          for test in list(sorted(set(files['ssl_test'] + files['crypto_test'])))
       ],
       'targets': [
           {
-            'name': 'boringssl_%s' % os.path.splitext(os.path.basename(test))[0],
+            'name': 'boringssl_%s' % test,
             'build': 'test',
             'run': False,
             'secure': 'no',
             'language': 'c++',
-            'src': ["third_party/boringssl/crypto/test/gtest_main.cc"],
+            'src': sorted(map_dir(f) for f in files[test]),
             'vs_proj_dir': 'test/boringssl',
             'boringssl': True,
             'defaults': 'boringssl',
             'deps': [
-                'boringssl_%s_lib' % os.path.splitext(os.path.basename(test))[0],
                 'boringssl_test_util',
                 'boringssl',
             ]
           }
-          for test in list(sorted(set(files['ssl_test'] + files['crypto_test'])))
+          for test in test_binaries
       ],
       'tests': [
           {
-            'name': 'boringssl_%s' % os.path.splitext(os.path.basename(test))[0],
+            'name': 'boringssl_%s' % test,
             'args': [],
             'exclude_configs': ['asan', 'ubsan'],
             'ci_platforms': ['linux', 'mac', 'posix', 'windows'],
@@ -136,9 +120,8 @@ class Grpc(object):
             'defaults': 'boringssl',
             'cpu_cost': 1.0
           }
-          for test in list(sorted(set(files['ssl_test'] + files['crypto_test'])))
+          for test in test_binaries
       ]
-
     }
 
 

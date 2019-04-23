@@ -28,7 +28,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/service_config.h"
 
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"

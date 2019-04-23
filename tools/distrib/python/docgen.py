@@ -44,7 +44,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..'))
 
 CONFIG = args.config
 SETUP_PATH = os.path.join(PROJECT_ROOT, 'setup.py')
-REQUIREMENTS_PATH = os.path.join(PROJECT_ROOT, 'requirements.txt')
+REQUIREMENTS_PATH = os.path.join(PROJECT_ROOT, 'requirements.bazel.txt')
 DOC_PATH = os.path.join(PROJECT_ROOT, 'doc/build')
 INCLUDE_PATH = os.path.join(PROJECT_ROOT, 'include')
 LIBRARY_PATH = os.path.join(PROJECT_ROOT, 'libs/{}'.format(CONFIG))

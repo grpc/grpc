@@ -60,7 +60,7 @@ class ServerRpcInfo {
   /// Type categorizes RPCs by unary or streaming type
   enum class Type { UNARY, CLIENT_STREAMING, SERVER_STREAMING, BIDI_STREAMING };
 
-  ~ServerRpcInfo(){};
+  ~ServerRpcInfo() {}
 
   // Delete all copy and move constructors and assignments
   ServerRpcInfo(const ServerRpcInfo&) = delete;

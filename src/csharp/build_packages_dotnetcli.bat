@@ -12,11 +12,6 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
-@rem Current package versions
-set VERSION=1.19.0-dev
-
-@rem Adjust the location of nuget.exe
-set NUGET=C:\nuget\nuget.exe
 set DOTNET=dotnet
 
 mkdir ..\..\artifacts
@@ -29,20 +24,24 @@ powershell -Command "cp -r ..\..\input_artifacts\csharp_ext_* nativelibs"
 mkdir protoc_plugins
 powershell -Command "cp -r ..\..\input_artifacts\protoc_* protoc_plugins"
 
+@rem Add current timestamp to dev nugets
+expand_dev_version.sh
+
 %DOTNET% restore Grpc.sln || goto :error
 
 @rem To be able to build, we also need to put grpc_csharp_ext to its normal location
 xcopy /Y /I nativelibs\csharp_ext_windows_x64\grpc_csharp_ext.dll ..\..\cmake\build\x64\Release\
 
+%DOTNET% pack --configuration Release Grpc.Core.Api --output ..\..\..\artifacts || goto :error
 %DOTNET% pack --configuration Release Grpc.Core --output ..\..\..\artifacts || goto :error
 %DOTNET% pack --configuration Release Grpc.Core.Testing --output ..\..\..\artifacts || goto :error
 %DOTNET% pack --configuration Release Grpc.Auth --output ..\..\..\artifacts || goto :error
 %DOTNET% pack --configuration Release Grpc.HealthCheck --output ..\..\..\artifacts || goto :error
 %DOTNET% pack --configuration Release Grpc.Reflection --output ..\..\..\artifacts || goto :error
 %DOTNET% pack --configuration Release Grpc.Tools --output ..\..\..\artifacts || goto :error
-
-%NUGET% pack Grpc.nuspec -Version %VERSION% -OutputDirectory ..\..\artifacts || goto :error
-%NUGET% pack Grpc.Core.NativeDebug.nuspec -Version %VERSION% -OutputDirectory ..\..\artifacts
+@rem build auxiliary packages
+%DOTNET% pack --configuration Release Grpc --output ..\..\..\artifacts || goto :error
+%DOTNET% pack --configuration Release Grpc.Core.NativeDebug --output ..\..\..\artifacts || goto :error
 
 @rem copy resulting nuget packages to artifacts directory
 xcopy /Y /I *.nupkg ..\..\artifacts\ || goto :error

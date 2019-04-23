@@ -1,6 +1,8 @@
 [
   "_sanity._sanity_test.SanityTest",
   "channelz._channelz_servicer_test.ChannelzServicerTest",
+  "fork._fork_interop_test.ForkInteropTest",
+  "health_check._health_servicer_test.HealthServicerBackwardsCompatibleWatchTest",
   "health_check._health_servicer_test.HealthServicerTest",
   "interop._insecure_intraop_test.InsecureIntraopTest",
   "interop._secure_intraop_test.SecureIntraopTest",
@@ -44,6 +46,7 @@
   "unit._cython.cygrpc_test.InsecureServerInsecureClient",
   "unit._cython.cygrpc_test.SecureServerSecureClient",
   "unit._cython.cygrpc_test.TypeSmokeTest",
+  "unit._dns_resolver_test.DNSResolverTest",
   "unit._empty_message_test.EmptyMessageTest",
   "unit._error_message_encoding_test.ErrorMessageEncodingTest",
   "unit._exit_test.ExitTest",

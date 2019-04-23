@@ -46,7 +46,7 @@
 
 /* -- Constants. -- */
 
-#define GRPC_COMPUTE_ENGINE_DETECTION_HOST "metadata.google.internal"
+#define GRPC_COMPUTE_ENGINE_DETECTION_HOST "metadata.google.internal."
 
 /* -- Default credentials. -- */
 
@@ -172,7 +172,6 @@ static int is_metadata_server_reachable() {
   detector.pollent = grpc_polling_entity_create_from_pollset(pollset);
   detector.is_done = 0;
   detector.success = 0;
-  memset(&detector.response, 0, sizeof(detector.response));
   memset(&request, 0, sizeof(grpc_httpcli_request));
   request.host = (char*)GRPC_COMPUTE_ENGINE_DETECTION_HOST;
   request.http.path = (char*)"/";
@@ -272,7 +271,7 @@ end:
   GPR_ASSERT((result == nullptr) + (error == GRPC_ERROR_NONE) == 1);
   if (creds_path != nullptr) gpr_free(creds_path);
   grpc_slice_unref_internal(creds_data);
-  if (json != nullptr) grpc_json_destroy(json);
+  grpc_json_destroy(json);
   *creds = result;
   return error;
 }

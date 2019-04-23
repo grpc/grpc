@@ -21,14 +21,16 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy.h"
+#include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
+#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"  // for grpc_millis
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_hash_table.h"
-#include "src/core/lib/transport/service_config.h"
 
 namespace grpc_core {
 namespace internal {
@@ -46,8 +48,7 @@ class ProcessedResolverResult {
   // Processes the resolver result and populates the relative members
   // for later consumption. Tries to parse retry parameters only if parse_retry
   // is true.
-  ProcessedResolverResult(const grpc_channel_args& resolver_result,
-                          bool parse_retry);
+  ProcessedResolverResult(Resolver::Result* resolver_result, bool parse_retry);
 
   // Getters. Any managed object's ownership is transferred.
   UniquePtr<char> service_config_json() {
@@ -60,16 +61,18 @@ class ProcessedResolverResult {
     return std::move(method_params_table_);
   }
   UniquePtr<char> lb_policy_name() { return std::move(lb_policy_name_); }
-  grpc_json* lb_policy_config() { return lb_policy_config_; }
+  RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config() {
+    return std::move(lb_policy_config_);
+  }
 
  private:
   // Finds the service config; extracts LB config and (maybe) retry throttle
   // params from it.
-  void ProcessServiceConfig(const grpc_channel_args& resolver_result,
+  void ProcessServiceConfig(const Resolver::Result& resolver_result,
                             bool parse_retry);
 
   // Finds the LB policy name (when no LB config was found).
-  void ProcessLbPolicyName(const grpc_channel_args& resolver_result);
+  void ProcessLbPolicyName(const Resolver::Result& resolver_result);
 
   // Parses the service config. Intended to be used by
   // ServiceConfig::ParseGlobalParams.
@@ -82,10 +85,10 @@ class ProcessedResolverResult {
 
   // Service config.
   UniquePtr<char> service_config_json_;
-  UniquePtr<grpc_core::ServiceConfig> service_config_;
+  RefCountedPtr<ServiceConfig> service_config_;
   // LB policy.
-  grpc_json* lb_policy_config_ = nullptr;
   UniquePtr<char> lb_policy_name_;
+  RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config_;
   // Retry throttle data.
   char* server_name_ = nullptr;
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;

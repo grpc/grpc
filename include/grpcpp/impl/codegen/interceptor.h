@@ -45,6 +45,10 @@ namespace experimental {
 /// PRE_RECV means an interception between the time that a certain
 /// operation has been requested and it is available. POST_RECV means that a
 /// result is available but has not yet been passed back to the application.
+/// A batch of interception points will only contain either PRE or POST hooks
+/// but not both types. For example, a batch with PRE_SEND hook points will not
+/// contain POST_RECV or POST_SEND ops. Likewise, a batch with POST_* ops can
+/// not contain PRE_* ops.
 enum class InterceptionHookPoints {
   /// The first three in this list are for clients and servers
   PRE_SEND_INITIAL_METADATA,
@@ -52,8 +56,8 @@ enum class InterceptionHookPoints {
   POST_SEND_MESSAGE,
   PRE_SEND_STATUS,  // server only
   PRE_SEND_CLOSE,   // client only: WritesDone for stream; after write in unary
-  /// The following three are for hijacked clients only and can only be
-  /// registered by the global interceptor
+  /// The following three are for hijacked clients only. A batch with PRE_RECV_*
+  /// hook points will never contain hook points of other types.
   PRE_RECV_INITIAL_METADATA,
   PRE_RECV_MESSAGE,
   PRE_RECV_STATUS,
@@ -86,7 +90,7 @@ enum class InterceptionHookPoints {
 ///   5. Set some fields of an RPC at each interception point, when possible
 class InterceptorBatchMethods {
  public:
-  virtual ~InterceptorBatchMethods(){};
+  virtual ~InterceptorBatchMethods() {}
   /// Determine whether the current batch has an interception hook point
   /// of type \a type
   virtual bool QueryInterceptionHookPoint(InterceptionHookPoints type) = 0;

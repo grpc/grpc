@@ -43,6 +43,10 @@ struct census_context;
 
 namespace grpc {
 class ClientContext;
+class GenericServerContext;
+class CompletionQueue;
+class Server;
+class ServerInterface;
 template <class W, class R>
 class ServerAsyncReader;
 template <class W>
@@ -55,6 +59,7 @@ template <class R>
 class ServerReader;
 template <class W>
 class ServerWriter;
+
 namespace internal {
 template <class W, class R>
 class ServerReaderWriterBody;
@@ -81,10 +86,6 @@ class ErrorMethodHandler;
 class Call;
 class ServerReactor;
 }  // namespace internal
-
-class CompletionQueue;
-class Server;
-class ServerInterface;
 
 namespace testing {
 class InteropServerContextInspector;
@@ -302,6 +303,7 @@ class ServerContext {
   template <StatusCode code>
   friend class internal::ErrorMethodHandler;
   friend class ::grpc::ClientContext;
+  friend class ::grpc::GenericServerContext;
 
   /// Prevent copying.
   ServerContext(const ServerContext&);
@@ -326,6 +328,9 @@ class ServerContext {
   void Setup(gpr_timespec deadline);
 
   uint32_t initial_metadata_flags() const { return 0; }
+
+  void SetCancelCallback(std::function<void()> callback);
+  void ClearCancelCallback();
 
   experimental::ServerRpcInfo* set_server_rpc_info(
       const char* method, internal::RpcMethod::RpcType type,

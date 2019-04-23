@@ -13,8 +13,8 @@
  <date>2018-01-19</date>
  <time>16:06:07</time>
  <version>
-  <release>1.19.0dev</release>
-  <api>1.19.0dev</api>
+  <release>1.21.0dev</release>
+  <api>1.21.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -105,12 +105,12 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/useful.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/abstract.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/atomic.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/atomic_with_atm.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/atomic_with_std.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/fork.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/manual_constructor.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/map.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/memory.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/mutex_lock.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/pair.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/sync.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.cc" role="src" />
@@ -230,6 +230,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/plugin/plugin_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/spiffe_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/alts/alts_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/fake/fake_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/load_system_roots.h" role="src" />
@@ -238,6 +239,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl/ssl_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl_utils.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/security_connector/tls/spiffe_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/auth_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/secure_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/security_handshaker.h" role="src" />
@@ -293,13 +295,14 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/parse_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/request_routing.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_result_parsing.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolving_lb_policy.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_throttle.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/server_address.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_pool_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
@@ -329,6 +332,7 @@
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/status_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/algorithm_metadata.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/compression/compression_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/stream_compression.h" role="src" />
@@ -409,7 +413,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_manager.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/udp_server.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_cv.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json.h" role="src" />
@@ -443,7 +446,6 @@
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/pid_controller.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/service_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_metadata.h" role="src" />
@@ -482,10 +484,10 @@
     <file baseinstalldir="/" name="src/core/lib/channel/channelz_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/handshaker_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/status_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/compression/compression_args.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression_internal.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/stream_compression.cc" role="src" />
@@ -576,7 +578,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/udp_server.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix_noop.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_cv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_eventfd.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_nospecial.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.cc" role="src" />
@@ -616,7 +617,6 @@
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/pid_controller.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/service_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_metadata.cc" role="src" />
@@ -672,6 +672,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/plugin/plugin_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/spiffe_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/alts/alts_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/fake/fake_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/load_system_roots_fallback.cc" role="src" />
@@ -680,6 +681,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl/ssl_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl_utils.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/security_connector/tls/spiffe_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/client_auth_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/secure_endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/security_handshaker.cc" role="src" />
@@ -744,12 +746,13 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/parse_address.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper_registry.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/request_routing.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_result_parsing.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolving_lb_policy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_throttle.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/server_address.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_pool_interface.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.cc" role="src" />

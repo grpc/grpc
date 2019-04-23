@@ -51,6 +51,7 @@
 #include <grpcpp/impl/codegen/slice.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/string_ref.h>
+#include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/codegen/time.h>
 
 struct census_context;
@@ -78,6 +79,7 @@ template <class Response>
 class ClientCallbackReaderImpl;
 template <class Request>
 class ClientCallbackWriterImpl;
+class ClientCallbackUnaryImpl;
 }  // namespace internal
 
 template <class R>
@@ -416,6 +418,7 @@ class ClientContext {
   friend class ::grpc::internal::ClientCallbackReaderImpl;
   template <class Request>
   friend class ::grpc::internal::ClientCallbackWriterImpl;
+  friend class ::grpc::internal::ClientCallbackUnaryImpl;
 
   // Used by friend class CallOpClientRecvStatus
   void set_debug_error_string(const grpc::string& debug_error_string) {
@@ -457,7 +460,7 @@ class ClientContext {
   bool idempotent_;
   bool cacheable_;
   std::shared_ptr<Channel> channel_;
-  std::mutex mu_;
+  grpc::internal::Mutex mu_;
   grpc_call* call_;
   bool call_canceled_;
   gpr_timespec deadline_;

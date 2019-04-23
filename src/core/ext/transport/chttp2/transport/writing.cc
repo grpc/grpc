@@ -108,7 +108,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   GRPC_STATS_INC_HTTP2_PINGS_SENT();
   t->ping_state.last_ping_sent_time = now;
   if (grpc_http_trace.enabled() || grpc_bdp_estimator_trace.enabled()) {
-    gpr_log(GPR_INFO, "%s: Ping sent [%p]: %d/%d",
+    gpr_log(GPR_INFO, "%s: Ping sent [%s]: %d/%d",
             t->is_client ? "CLIENT" : "SERVER", t->peer_string,
             t->ping_state.pings_before_data_required,
             t->ping_policy.max_pings_without_data);
@@ -161,15 +161,6 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                                     [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]),
         s->flow_control->remote_window_delta());
   }
-}
-
-static bool stream_ref_if_not_destroyed(gpr_refcount* r) {
-  gpr_atm count;
-  do {
-    count = gpr_atm_acq_load(&r->count);
-    if (count == 0) return false;
-  } while (!gpr_atm_rel_cas(&r->count, count, count + 1));
-  return true;
 }
 
 /* How many bytes would we like to put on the wire during a single syscall */
@@ -254,7 +245,7 @@ class WriteContext {
     while (grpc_chttp2_list_pop_stalled_by_transport(t_, &s)) {
       if (t_->closed_with_error == GRPC_ERROR_NONE &&
           grpc_chttp2_list_add_writable_stream(t_, s)) {
-        if (!stream_ref_if_not_destroyed(&s->refcount->refs)) {
+        if (!s->refcount->refs.RefIfNonZero()) {
           grpc_chttp2_list_remove_writable_stream(t_, s);
         }
       }

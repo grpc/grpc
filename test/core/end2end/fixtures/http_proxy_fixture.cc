@@ -78,7 +78,7 @@ struct grpc_end2end_http_proxy {
 //
 
 // proxy_connection structure is only accessed in the closures which are all
-// scheduled under the same combiner lock. So there is is no need for a mutex to
+// scheduled under the same combiner lock. So there is no need for a mutex to
 // protect this structure.
 typedef struct proxy_connection {
   grpc_end2end_http_proxy* proxy;
@@ -271,7 +271,7 @@ static void on_client_read_done(void* arg, grpc_error* error) {
   }
   // Read more data.
   grpc_endpoint_read(conn->client_endpoint, &conn->client_read_buffer,
-                     &conn->on_client_read_done);
+                     &conn->on_client_read_done, /*urgent=*/false);
 }
 
 // Callback for reading data from the backend server, which will be
@@ -302,7 +302,7 @@ static void on_server_read_done(void* arg, grpc_error* error) {
   }
   // Read more data.
   grpc_endpoint_read(conn->server_endpoint, &conn->server_read_buffer,
-                     &conn->on_server_read_done);
+                     &conn->on_server_read_done, /*urgent=*/false);
 }
 
 // Callback to write the HTTP response for the CONNECT request.
@@ -323,9 +323,9 @@ static void on_write_response_done(void* arg, grpc_error* error) {
   proxy_connection_ref(conn, "server_read");
   proxy_connection_unref(conn, "write_response");
   grpc_endpoint_read(conn->client_endpoint, &conn->client_read_buffer,
-                     &conn->on_client_read_done);
+                     &conn->on_client_read_done, /*urgent=*/false);
   grpc_endpoint_read(conn->server_endpoint, &conn->server_read_buffer,
-                     &conn->on_server_read_done);
+                     &conn->on_server_read_done, /*urgent=*/false);
 }
 
 // Callback to connect to the backend server specified by the HTTP
@@ -405,7 +405,7 @@ static void on_read_request_done(void* arg, grpc_error* error) {
   // If we're not done reading the request, read more data.
   if (conn->http_parser.state != GRPC_HTTP_BODY) {
     grpc_endpoint_read(conn->client_endpoint, &conn->client_read_buffer,
-                       &conn->on_read_request_done);
+                       &conn->on_read_request_done, /*urgent=*/false);
     return;
   }
   // Make sure we got a CONNECT request.
@@ -503,7 +503,7 @@ static void on_accept(void* arg, grpc_endpoint* endpoint,
   grpc_http_parser_init(&conn->http_parser, GRPC_HTTP_REQUEST,
                         &conn->http_request);
   grpc_endpoint_read(conn->client_endpoint, &conn->client_read_buffer,
-                     &conn->on_read_request_done);
+                     &conn->on_read_request_done, /*urgent=*/false);
 }
 
 //

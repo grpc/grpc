@@ -13,15 +13,17 @@
 # limitations under the License.
 
 cimport libc.time
-from libc.stdint cimport intptr_t
 
-
-# Typedef types with approximately the same semantics to provide their names to
-# Cython
-ctypedef unsigned char uint8_t
-ctypedef int int32_t
-ctypedef unsigned uint32_t
-ctypedef long int64_t
+ctypedef          ssize_t   intptr_t
+ctypedef          size_t    uintptr_t
+ctypedef   signed char      int8_t
+ctypedef   signed short     int16_t
+ctypedef   signed int       int32_t
+ctypedef   signed long long int64_t
+ctypedef unsigned char      uint8_t
+ctypedef unsigned short     uint16_t
+ctypedef unsigned int       uint32_t
+ctypedef unsigned long long uint64_t
 
 
 cdef extern from "grpc/support/alloc.h":
@@ -61,6 +63,10 @@ cdef extern from "grpc/grpc.h":
   void *grpc_slice_start_ptr "GRPC_SLICE_START_PTR" (grpc_slice s) nogil
   size_t grpc_slice_length "GRPC_SLICE_LENGTH" (grpc_slice s) nogil
 
+  const int GPR_MS_PER_SEC
+  const int GPR_US_PER_SEC
+  const int GPR_NS_PER_SEC
+
   ctypedef enum gpr_clock_type:
     GPR_CLOCK_MONOTONIC
     GPR_CLOCK_REALTIME
@@ -82,6 +88,8 @@ cdef extern from "grpc/grpc.h":
                                       gpr_clock_type target_clock) nogil
 
   gpr_timespec gpr_time_from_millis(int64_t ms, gpr_clock_type type) nogil
+  gpr_timespec gpr_time_from_nanos(int64_t ns, gpr_clock_type type) nogil
+  double gpr_timespec_to_micros(gpr_timespec t) nogil
 
   gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b) nogil
 
@@ -132,7 +140,8 @@ cdef extern from "grpc/grpc.h":
   const char *GRPC_ARG_SECONDARY_USER_AGENT_STRING
   const char *GRPC_SSL_TARGET_NAME_OVERRIDE_ARG
   const char *GRPC_SSL_SESSION_CACHE_ARG
-  const char *GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM
+  const char *_GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM \
+    "GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM"
   const char *GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL
   const char *GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET
 
@@ -319,7 +328,7 @@ cdef extern from "grpc/grpc.h":
     grpc_op_data data
 
   void grpc_init() nogil
-  void grpc_shutdown() nogil
+  void grpc_shutdown_blocking() nogil
   int grpc_is_initialized() nogil
 
   ctypedef struct grpc_completion_queue_factory:
@@ -610,3 +619,8 @@ cdef extern from "grpc/compression.h":
   int grpc_compression_options_is_algorithm_enabled(
       const grpc_compression_options *opts,
       grpc_compression_algorithm algorithm) nogil
+
+cdef extern from "grpc/impl/codegen/compression_types.h":
+
+  const char *_GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY \
+    "GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY"

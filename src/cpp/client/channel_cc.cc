@@ -18,8 +18,6 @@
 
 #include <grpcpp/channel.h>
 
-#include <chrono>
-#include <condition_variable>
 #include <cstring>
 #include <memory>
 #include <mutex>
@@ -41,12 +39,7 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
-#include <grpcpp/support/time.h>
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/surface/completion_queue.h"
 
 namespace grpc {
@@ -239,7 +232,7 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
 CompletionQueue* Channel::CallbackCQ() {
   // TODO(vjpai): Consider using a single global CQ for the default CQ
   // if there is no explicit per-channel CQ registered
-  std::lock_guard<std::mutex> l(mu_);
+  grpc::internal::MutexLock l(&mu_);
   if (callback_cq_ == nullptr) {
     auto* shutdown_callback = new ShutdownCallback;
     callback_cq_ = new CompletionQueue(grpc_completion_queue_attributes{

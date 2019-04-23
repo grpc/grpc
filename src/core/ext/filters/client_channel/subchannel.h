@@ -29,6 +29,7 @@
 #include "src/core/lib/gpr/arena.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -131,10 +132,6 @@ class SubchannelCall {
   // Returns the call stack of the subchannel call.
   grpc_call_stack* GetCallStack();
 
-  grpc_closure* after_call_stack_destroy() const {
-    return after_call_stack_destroy_;
-  }
-
   // Sets the 'then_schedule_closure' argument for call stack destruction.
   // Must be called once per call.
   void SetAfterCallStackDestroy(grpc_closure* closure);
@@ -147,6 +144,8 @@ class SubchannelCall {
   // but does NOT free the memory because it's in the call arena.
   void Unref();
   void Unref(const DebugLocation& location, const char* reason);
+
+  static void Destroy(void* arg, grpc_error* error);
 
  private:
   // Allow RefCountedPtr<> to access IncrementRefCount().
@@ -191,6 +190,9 @@ class Subchannel {
   void Unref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
   Subchannel* WeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
   void WeakUnref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+  // Attempts to return a strong ref when only the weak refcount is guaranteed
+  // non-zero. If the strong refcount is zero, does not alter the refcount and
+  // returns null.
   Subchannel* RefFromWeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 
   intptr_t GetChildSocketUuid();
@@ -206,14 +208,13 @@ class Subchannel {
   channelz::SubchannelNode* channelz_node();
 
   // Polls the current connectivity state of the subchannel.
-  grpc_connectivity_state CheckConnectivity(grpc_error** error,
-                                            bool inhibit_health_checking);
+  grpc_connectivity_state CheckConnectivity(bool inhibit_health_checking);
 
   // When the connectivity state of the subchannel changes from \a *state,
   // invokes \a notify and updates \a *state with the new state.
   void NotifyOnStateChange(grpc_pollset_set* interested_parties,
                            grpc_connectivity_state* state, grpc_closure* notify,
-                           bool inhibit_health_checks);
+                           bool inhibit_health_checking);
 
   // Resets the connection backoff of the subchannel.
   // TODO(roth): Move connection backoff out of subchannels and up into LB
@@ -240,7 +241,7 @@ class Subchannel {
 
   // Sets the subchannel's connectivity state to \a state.
   void SetConnectivityStateLocked(grpc_connectivity_state state,
-                                  grpc_error* error, const char* reason);
+                                  const char* reason);
 
   // Methods for connection.
   void MaybeStartConnectingLocked();
@@ -263,7 +264,7 @@ class Subchannel {
   // pollset_set tracking who's interested in a connection being setup.
   grpc_pollset_set* pollset_set_;
   // Protects the other members.
-  gpr_mu mu_;
+  Mutex mu_;
   // Refcount
   //    - lower INTERNAL_REF_BITS bits are for internal references:
   //      these do not keep the subchannel open.

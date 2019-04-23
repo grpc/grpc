@@ -52,21 +52,24 @@ typedef struct grpc_rb_compression_options {
   grpc_compression_options* wrapped;
 } grpc_rb_compression_options;
 
-/* Destroys the compression options instances and free the
- * wrapped grpc compression options. */
-static void grpc_rb_compression_options_free(void* p) {
+static void grpc_rb_compression_options_free_internal(void* p) {
   grpc_rb_compression_options* wrapper = NULL;
   if (p == NULL) {
     return;
   };
   wrapper = (grpc_rb_compression_options*)p;
-
   if (wrapper->wrapped != NULL) {
     gpr_free(wrapper->wrapped);
     wrapper->wrapped = NULL;
   }
-
   xfree(p);
+}
+
+/* Destroys the compression options instances and free the
+ * wrapped grpc compression options. */
+static void grpc_rb_compression_options_free(void* p) {
+  grpc_rb_compression_options_free_internal(p);
+  grpc_ruby_shutdown();
 }
 
 /* Ruby recognized data type for the CompressionOptions class. */
@@ -87,9 +90,8 @@ static rb_data_type_t grpc_rb_compression_options_data_type = {
    Allocate the wrapped grpc compression options and
    initialize it here too. */
 static VALUE grpc_rb_compression_options_alloc(VALUE cls) {
+  grpc_ruby_init();
   grpc_rb_compression_options* wrapper = NULL;
-
-  grpc_ruby_once_init();
 
   wrapper = gpr_malloc(sizeof(grpc_rb_compression_options));
   wrapper->wrapped = NULL;

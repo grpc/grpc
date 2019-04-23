@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline)
+cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline) except *
 
 
 cdef _interpret_event(grpc_event c_event)

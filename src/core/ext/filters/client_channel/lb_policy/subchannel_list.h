@@ -51,7 +51,7 @@ class MySubchannelData
     : public SubchannelData<MySubchannelList, MySubchannelData> {
  public:
   void ProcessConnectivityChangeLocked(
-      grpc_connectivity_state connectivity_state, grpc_error* error) override {
+      grpc_connectivity_state connectivity_state) override {
     // ...code to handle connectivity changes...
   }
 };
@@ -101,10 +101,10 @@ class SubchannelData {
   // pending (i.e., between calling StartConnectivityWatchLocked() or
   // RenewConnectivityWatchLocked() and the resulting invocation of
   // ProcessConnectivityChangeLocked()).
-  grpc_connectivity_state CheckConnectivityStateLocked(grpc_error** error) {
+  grpc_connectivity_state CheckConnectivityStateLocked() {
     GPR_ASSERT(!connectivity_notification_pending_);
     pending_connectivity_state_unsafe_ = subchannel()->CheckConnectivity(
-        error, subchannel_list_->inhibit_health_checking());
+        subchannel_list_->inhibit_health_checking());
     UpdateConnectedSubchannelLocked();
     return pending_connectivity_state_unsafe_;
   }
@@ -153,8 +153,7 @@ class SubchannelData {
   // Implementations must invoke either RenewConnectivityWatchLocked() or
   // StopConnectivityWatchLocked() before returning.
   virtual void ProcessConnectivityChangeLocked(
-      grpc_connectivity_state connectivity_state,
-      grpc_error* error) GRPC_ABSTRACT;
+      grpc_connectivity_state connectivity_state) GRPC_ABSTRACT;
 
   // Unrefs the subchannel.
   void UnrefSubchannelLocked(const char* reason);
@@ -232,7 +231,7 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
  protected:
   SubchannelList(LoadBalancingPolicy* policy, TraceFlag* tracer,
                  const ServerAddressList& addresses, grpc_combiner* combiner,
-                 grpc_client_channel_factory* client_channel_factory,
+                 LoadBalancingPolicy::ChannelControlHelper* helper,
                  const grpc_channel_args& args);
 
   virtual ~SubchannelList();
@@ -462,8 +461,7 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
     return;
   }
   // Call the subclass's ProcessConnectivityChangeLocked() method.
-  sd->ProcessConnectivityChangeLocked(sd->pending_connectivity_state_unsafe_,
-                                      GRPC_ERROR_REF(error));
+  sd->ProcessConnectivityChangeLocked(sd->pending_connectivity_state_unsafe_);
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
@@ -486,7 +484,7 @@ template <typename SubchannelListType, typename SubchannelDataType>
 SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
     LoadBalancingPolicy* policy, TraceFlag* tracer,
     const ServerAddressList& addresses, grpc_combiner* combiner,
-    grpc_client_channel_factory* client_channel_factory,
+    LoadBalancingPolicy::ChannelControlHelper* helper,
     const grpc_channel_args& args)
     : InternallyRefCounted<SubchannelListType>(tracer),
       policy_(policy),
@@ -505,16 +503,11 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
   inhibit_health_checking_ = grpc_channel_arg_get_bool(
       grpc_channel_args_find(&args, GRPC_ARG_INHIBIT_HEALTH_CHECKING), false);
   static const char* keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS,
-                                         GRPC_ARG_SERVER_ADDRESS_LIST,
                                          GRPC_ARG_INHIBIT_HEALTH_CHECKING};
   // Create a subchannel for each address.
   for (size_t i = 0; i < addresses.size(); i++) {
-    // If there were any balancer addresses, we would have chosen grpclb
-    // policy, which does not use a SubchannelList.
     GPR_ASSERT(!addresses[i].IsBalancer());
-    InlinedVector<grpc_arg, 4> args_to_add;
-    args_to_add.emplace_back(
-        SubchannelPoolInterface::CreateChannelArg(policy_->subchannel_pool()));
+    InlinedVector<grpc_arg, 3> args_to_add;
     const size_t subchannel_address_arg_index = args_to_add.size();
     args_to_add.emplace_back(
         Subchannel::CreateSubchannelAddressArg(&addresses[i].address()));
@@ -527,8 +520,7 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
         &args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove),
         args_to_add.data(), args_to_add.size());
     gpr_free(args_to_add[subchannel_address_arg_index].value.string);
-    Subchannel* subchannel = grpc_client_channel_factory_create_subchannel(
-        client_channel_factory, new_args);
+    Subchannel* subchannel = helper->CreateSubchannel(*new_args);
     grpc_channel_args_destroy(new_args);
     if (subchannel == nullptr) {
       // Subchannel could not be created.

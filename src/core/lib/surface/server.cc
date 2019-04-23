@@ -123,7 +123,7 @@ typedef struct shutdown_tag {
 typedef enum {
   /* waiting for metadata */
   NOT_STARTED,
-  /* inital metadata read, not flow controlled in yet */
+  /* initial metadata read, not flow controlled in yet */
   PENDING,
   /* flow controlled in, on completion queue */
   ACTIVATED,
@@ -997,10 +997,12 @@ void grpc_server_register_completion_queue(grpc_server* server,
       "grpc_server_register_completion_queue(server=%p, cq=%p, reserved=%p)", 3,
       (server, cq, reserved));
 
-  if (grpc_get_cq_completion_type(cq) != GRPC_CQ_NEXT) {
+  auto cq_type = grpc_get_cq_completion_type(cq);
+  if (cq_type != GRPC_CQ_NEXT && cq_type != GRPC_CQ_CALLBACK) {
     gpr_log(GPR_INFO,
-            "Completion queue which is not of type GRPC_CQ_NEXT is being "
-            "registered as a server-completion-queue");
+            "Completion queue of type %d is being registered as a "
+            "server-completion-queue",
+            static_cast<int>(cq_type));
     /* Ideally we should log an error and abort but ruby-wrapped-language API
        calls grpc_completion_queue_pluck() on server completion queues */
   }

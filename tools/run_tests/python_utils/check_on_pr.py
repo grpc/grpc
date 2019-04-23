@@ -14,9 +14,11 @@
 
 from __future__ import print_function
 import os
+import sys
 import json
 import time
 import datetime
+import traceback
 
 import requests
 import jwt
@@ -27,6 +29,8 @@ _GITHUB_APP_ID = 22338
 _INSTALLATION_ID = 519109
 
 _ACCESS_TOKEN_CACHE = None
+_ACCESS_TOKEN_FETCH_RETRIES = 6
+_ACCESS_TOKEN_FETCH_RETRIES_INTERVAL_S = 15
 
 
 def _jwt_token():
@@ -46,17 +50,34 @@ def _jwt_token():
 def _access_token():
     global _ACCESS_TOKEN_CACHE
     if _ACCESS_TOKEN_CACHE == None or _ACCESS_TOKEN_CACHE['exp'] < time.time():
-        resp = requests.post(
-            url='https://api.github.com/app/installations/%s/access_tokens' %
-            _INSTALLATION_ID,
-            headers={
-                'Authorization': 'Bearer %s' % _jwt_token().decode('ASCII'),
-                'Accept': 'application/vnd.github.machine-man-preview+json',
-            })
-        _ACCESS_TOKEN_CACHE = {
-            'token': resp.json()['token'],
-            'exp': time.time() + 60
-        }
+        for i in range(_ACCESS_TOKEN_FETCH_RETRIES):
+            resp = requests.post(
+                url='https://api.github.com/app/installations/%s/access_tokens'
+                % _INSTALLATION_ID,
+                headers={
+                    'Authorization': 'Bearer %s' % _jwt_token().decode('ASCII'),
+                    'Accept': 'application/vnd.github.machine-man-preview+json',
+                })
+
+            try:
+                _ACCESS_TOKEN_CACHE = {
+                    'token': resp.json()['token'],
+                    'exp': time.time() + 60
+                }
+                break
+            except (KeyError, ValueError) as e:
+                traceback.print_exc(e)
+                print('HTTP Status %d %s' % (resp.status_code, resp.reason))
+                print("Fetch access token from Github API failed:")
+                print(resp.text)
+                if i != _ACCESS_TOKEN_FETCH_RETRIES - 1:
+                    print('Retrying after %.2f second.' %
+                          _ACCESS_TOKEN_FETCH_RETRIES_INTERVAL_S)
+                    time.sleep(_ACCESS_TOKEN_FETCH_RETRIES_INTERVAL_S)
+        else:
+            print("error: Unable to fetch access token, exiting...")
+            sys.exit(0)
+
     return _ACCESS_TOKEN_CACHE['token']
 
 

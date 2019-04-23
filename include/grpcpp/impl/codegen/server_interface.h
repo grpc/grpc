@@ -28,6 +28,10 @@
 #include <grpcpp/impl/codegen/rpc_service_method.h>
 #include <grpcpp/impl/codegen/server_context.h>
 
+namespace grpc_impl {
+
+class ServerCredentials;
+}
 namespace grpc {
 
 class AsyncGenericService;
@@ -35,7 +39,6 @@ class Channel;
 class GenericServerContext;
 class ServerCompletionQueue;
 class ServerContext;
-class ServerCredentials;
 class Service;
 
 extern CoreCodegenInterface* g_core_codegen_interface;
@@ -46,6 +49,10 @@ extern CoreCodegenInterface* g_core_codegen_interface;
 namespace internal {
 class ServerAsyncStreamingInterface;
 }  // namespace internal
+
+namespace experimental {
+class CallbackGenericService;
+}  // namespace experimental
 
 class ServerInterface : public internal::CallHook {
  public:
@@ -115,6 +122,25 @@ class ServerInterface : public internal::CallHook {
   /// service. The service must exist for the lifetime of the Server instance.
   virtual void RegisterAsyncGenericService(AsyncGenericService* service) = 0;
 
+  /// NOTE: class experimental_registration_interface is not part of the public
+  /// API of this class
+  /// TODO(vjpai): Move these contents to public API when no longer experimental
+  class experimental_registration_interface {
+   public:
+    virtual ~experimental_registration_interface() {}
+    /// May not be abstract since this is a post-1.0 API addition
+    virtual void RegisterCallbackGenericService(
+        experimental::CallbackGenericService* service) {}
+  };
+
+  /// NOTE: The function experimental_registration() is not stable public API.
+  /// It is a view to the experimental components of this class. It may be
+  /// changed or removed at any time. May not be abstract since this is a
+  /// post-1.0 API addition
+  virtual experimental_registration_interface* experimental_registration() {
+    return nullptr;
+  }
+
   /// Tries to bind \a server to the given \a addr.
   ///
   /// It can be invoked multiple times.
@@ -123,11 +149,11 @@ class ServerInterface : public internal::CallHook {
   /// 192.168.1.1:31416, [::1]:27182, etc.).
   /// \params creds The credentials associated with the server.
   ///
-  /// \return bound port number on sucess, 0 on failure.
+  /// \return bound port number on success, 0 on failure.
   ///
   /// \warning It's an error to call this method on an already started server.
   virtual int AddListeningPort(const grpc::string& addr,
-                               ServerCredentials* creds) = 0;
+                               grpc_impl::ServerCredentials* creds) = 0;
 
   /// Start the server.
   ///

@@ -36,7 +36,7 @@
 #define EXPECTED_CONTENT_TYPE "application/grpc"
 #define EXPECTED_CONTENT_TYPE_LENGTH sizeof(EXPECTED_CONTENT_TYPE) - 1
 
-/* default maximum size of payload eligable for GET request */
+/* default maximum size of payload eligible for GET request */
 static constexpr size_t kMaxPayloadSizeForGet = 2048;
 
 static void recv_initial_metadata_ready(void* user_data, grpc_error* error);

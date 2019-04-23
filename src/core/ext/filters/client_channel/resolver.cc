@@ -26,10 +26,63 @@ grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount(false,
 
 namespace grpc_core {
 
-Resolver::Resolver(grpc_combiner* combiner)
+//
+// Resolver
+//
+
+Resolver::Resolver(grpc_combiner* combiner,
+                   UniquePtr<ResultHandler> result_handler)
     : InternallyRefCounted(&grpc_trace_resolver_refcount),
+      result_handler_(std::move(result_handler)),
       combiner_(GRPC_COMBINER_REF(combiner, "resolver")) {}
 
 Resolver::~Resolver() { GRPC_COMBINER_UNREF(combiner_, "resolver"); }
+
+//
+// Resolver::Result
+//
+
+Resolver::Result::~Result() {
+  GRPC_ERROR_UNREF(service_config_error);
+  grpc_channel_args_destroy(args);
+}
+
+Resolver::Result::Result(const Result& other) {
+  addresses = other.addresses;
+  service_config = other.service_config;
+  service_config_error = GRPC_ERROR_REF(other.service_config_error);
+  args = grpc_channel_args_copy(other.args);
+}
+
+Resolver::Result::Result(Result&& other) {
+  addresses = std::move(other.addresses);
+  service_config = std::move(other.service_config);
+  service_config_error = other.service_config_error;
+  other.service_config_error = GRPC_ERROR_NONE;
+  args = other.args;
+  other.args = nullptr;
+}
+
+Resolver::Result& Resolver::Result::operator=(const Result& other) {
+  addresses = other.addresses;
+  service_config = other.service_config;
+  GRPC_ERROR_UNREF(service_config_error);
+  service_config_error = GRPC_ERROR_REF(other.service_config_error);
+  grpc_channel_args_destroy(args);
+  args = grpc_channel_args_copy(other.args);
+  return *this;
+}
+
+Resolver::Result& Resolver::Result::operator=(Result&& other) {
+  addresses = std::move(other.addresses);
+  service_config = std::move(other.service_config);
+  GRPC_ERROR_UNREF(service_config_error);
+  service_config_error = other.service_config_error;
+  other.service_config_error = GRPC_ERROR_NONE;
+  grpc_channel_args_destroy(args);
+  args = other.args;
+  other.args = nullptr;
+  return *this;
+}
 
 }  // namespace grpc_core

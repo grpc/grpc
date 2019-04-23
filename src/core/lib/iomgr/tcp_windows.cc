@@ -88,6 +88,18 @@ static grpc_error* enable_loopback_fast_path(SOCKET sock) {
              : GRPC_WSA_ERROR(status, "WSAIoctl(SIO_LOOPBACK_FAST_PATH)");
 }
 
+static grpc_error* enable_socket_low_latency(SOCKET sock) {
+  int status;
+  BOOL param = TRUE;
+  status = ::setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
+                        reinterpret_cast<char*>(&param), sizeof(param));
+  if (status == SOCKET_ERROR) {
+    status = WSAGetLastError();
+  }
+  return status == 0 ? GRPC_ERROR_NONE
+                     : GRPC_WSA_ERROR(status, "setsockopt(TCP_NODELAY)");
+}
+
 grpc_error* grpc_tcp_prepare_socket(SOCKET sock) {
   grpc_error* err;
   err = grpc_tcp_set_non_block(sock);
@@ -95,6 +107,8 @@ grpc_error* grpc_tcp_prepare_socket(SOCKET sock) {
   err = set_dualstack(sock);
   if (err != GRPC_ERROR_NONE) return err;
   err = enable_loopback_fast_path(sock);
+  if (err != GRPC_ERROR_NONE) return err;
+  err = enable_socket_low_latency(sock);
   if (err != GRPC_ERROR_NONE) return err;
   return GRPC_ERROR_NONE;
 }
@@ -241,7 +255,7 @@ static void on_read(void* tcpp, grpc_error* error) {
 #define DEFAULT_TARGET_READ_SIZE 8192
 #define MAX_WSABUF_COUNT 16
 static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
-                     grpc_closure* cb) {
+                     grpc_closure* cb, bool urgent) {
   grpc_tcp* tcp = (grpc_tcp*)ep;
   grpc_winsocket* handle = tcp->socket;
   grpc_winsocket_callback_info* info = &handle->read_info;

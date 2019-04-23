@@ -13,6 +13,8 @@
 # limitations under the License.
 
 FROM debian:jessie
+RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
+
 
 #=================
 # PHP7 dependencies
@@ -78,6 +80,12 @@ RUN apt-get update && apt-get install -y \
 RUN pip install --upgrade pip==10.0.1
 RUN pip install virtualenv
 RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 twisted==17.5.0
+
+#=================	
+# PHP Test dependencies	
+
+ RUN apt-get update && apt-get install -y \	
+    valgrind
 
 
 RUN mkdir /var/local/jenkins

@@ -20,29 +20,31 @@
 
 #include "src/proto/grpc/status/status.pb.h"
 
-namespace grpc {
+namespace grpc_impl {
 
-Status ExtractErrorDetails(const Status& from, ::google::rpc::Status* to) {
+grpc::Status ExtractErrorDetails(const grpc::Status& from,
+                                 ::google::rpc::Status* to) {
   if (to == nullptr) {
-    return Status(StatusCode::FAILED_PRECONDITION, "");
+    return grpc::Status(grpc::StatusCode::FAILED_PRECONDITION, "");
   }
   if (!to->ParseFromString(from.error_details())) {
-    return Status(StatusCode::INVALID_ARGUMENT, "");
+    return grpc::Status(grpc::StatusCode::INVALID_ARGUMENT, "");
   }
-  return Status::OK;
+  return grpc::Status::OK;
 }
 
-Status SetErrorDetails(const ::google::rpc::Status& from, Status* to) {
+grpc::Status SetErrorDetails(const ::google::rpc::Status& from,
+                             grpc::Status* to) {
   if (to == nullptr) {
-    return Status(StatusCode::FAILED_PRECONDITION, "");
+    return grpc::Status(grpc::StatusCode::FAILED_PRECONDITION, "");
   }
-  StatusCode code = StatusCode::UNKNOWN;
-  if (from.code() >= StatusCode::OK &&
-      from.code() <= StatusCode::UNAUTHENTICATED) {
-    code = static_cast<StatusCode>(from.code());
+  grpc::StatusCode code = grpc::StatusCode::UNKNOWN;
+  if (from.code() >= grpc::StatusCode::OK &&
+      from.code() <= grpc::StatusCode::UNAUTHENTICATED) {
+    code = static_cast<grpc::StatusCode>(from.code());
   }
-  *to = Status(code, from.message(), from.SerializeAsString());
-  return Status::OK;
+  *to = grpc::Status(code, from.message(), from.SerializeAsString());
+  return grpc::Status::OK;
 }
 
-}  // namespace grpc
+}  // namespace grpc_impl

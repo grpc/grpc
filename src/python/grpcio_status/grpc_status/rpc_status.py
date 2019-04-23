@@ -17,11 +17,6 @@ import collections
 
 import grpc
 
-# TODO(https://github.com/bazelbuild/bazel/issues/6844)
-# Due to Bazel issue, the namespace packages won't resolve correctly.
-# Adding this unused-import as a workaround to avoid module-not-found error
-# under Bazel builds.
-import google.protobuf  # pylint: disable=unused-import
 from google.rpc import status_pb2
 
 _CODE_TO_GRPC_CODE_MAPPING = {x.value[0]: x for x in grpc.StatusCode}
