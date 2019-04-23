@@ -38,7 +38,7 @@ class CallCredentials;
 class ChannelCredentials;
 }  // namespace grpc
 namespace grpc_impl {
-std::shared_ptr<grpc::Channel> CreateCustomChannel(
+std::shared_ptr<grpc::Channel> CreateCustomChannelImpl(
     const grpc::string& target,
     const std::shared_ptr<grpc::ChannelCredentials>& creds,
     const grpc::ChannelArguments& args);
@@ -77,7 +77,7 @@ class ChannelCredentials : private GrpcLibraryCodegen {
   virtual SecureChannelCredentials* AsSecureCredentials() = 0;
 
  private:
-  friend std::shared_ptr<Channel> grpc_impl::CreateCustomChannel(
+  friend std::shared_ptr<Channel> grpc_impl::CreateCustomChannelImpl(
       const grpc::string& target,
       const std::shared_ptr<ChannelCredentials>& creds,
       const grpc::ChannelArguments& args);
@@ -91,7 +91,7 @@ class ChannelCredentials : private GrpcLibraryCodegen {
           grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators);
 
-  virtual std::shared_ptr<Channel> CreateChannel(
+  virtual std::shared_ptr<Channel> CreateChannelImpl(
       const grpc::string& target, const ChannelArguments& args) = 0;
 
   // This function should have been a pure virtual function, but it is

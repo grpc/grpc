@@ -37,7 +37,7 @@ class SecureChannelCredentials final : public ChannelCredentials {
   }
   grpc_channel_credentials* GetRawCreds() { return c_creds_; }
 
-  std::shared_ptr<grpc::Channel> CreateChannel(
+  std::shared_ptr<grpc::Channel> CreateChannelImpl(
       const string& target, const grpc::ChannelArguments& args) override;
 
   SecureChannelCredentials* AsSecureCredentials() override { return this; }
