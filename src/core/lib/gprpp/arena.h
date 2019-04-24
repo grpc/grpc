@@ -59,10 +59,9 @@ class Arena {
   }
 
   // TODO(roth): We currently assume that all callers need alignment of 16
-  // bytes, which may be wrong in some cases.  As part of converting the
-  // arena API to C++, we should consider replacing gpr_arena_alloc() with a
-  // template that takes the type of the value being allocated, which
-  // would allow us to use the alignment actually needed by the caller.
+  // bytes, which may be wrong in some cases. When we have time, we should
+  // change this to instead use the alignment of the type being allocated by
+  // this method.
   template <typename T, typename... Args>
   T* New(Args&&... args) {
     T* t = static_cast<T*>(Alloc(sizeof(T)));
