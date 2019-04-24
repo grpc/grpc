@@ -388,7 +388,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)issueDidWriteData {
   @synchronized(self) {
-    if (_callOptions.enableFlowControl && [_handler respondsToSelector:@selector(didWriteData)]) {
+    if (_callOptions.flowControlEnabled && [_handler respondsToSelector:@selector(didWriteData)]) {
       dispatch_async(_dispatchQueue, ^{
         id<GRPCResponseHandler> copiedHandler = nil;
         @synchronized(self) {
@@ -401,7 +401,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 }
 
 - (void)receiveNextMessages:(NSUInteger)numberOfMessages {
-  // branching based on _callOptions.enableFlowControl is handled inside _call
+  // branching based on _callOptions.flowControlEnabled is handled inside _call
   GRPCCall *copiedCall = nil;
   @synchronized(self) {
     copiedCall = _call;
@@ -674,7 +674,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
     if (_state != GRXWriterStateStarted) {
       return;
     }
-    if (_callOptions.enableFlowControl && (_pendingCoreRead || _pendingReceiveNextMessages == 0)) {
+    if (_callOptions.flowControlEnabled && (_pendingCoreRead || _pendingReceiveNextMessages == 0)) {
       return;
     }
     _pendingCoreRead = YES;
@@ -781,7 +781,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
   @synchronized(self) {
     _pendingReceiveNextMessages += numberOfMessages;
 
-    if (_state != GRXWriterStateStarted || !_callOptions.enableFlowControl) {
+    if (_state != GRXWriterStateStarted || !_callOptions.flowControlEnabled) {
       return;
     }
     [self maybeStartNextRead];

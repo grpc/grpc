@@ -522,7 +522,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
                                         safety:GRPCCallSafetyDefault];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   options.transportType = GRPCTransportTypeInsecure;
-  options.enableFlowControl = YES;
+  options.flowControlEnabled = YES;
   GRPCCall2 *call =
       [[GRPCCall2 alloc] initWithRequestOptions:callRequest
                                 responseHandler:[[ClientTestsBlockCallbacks alloc]
@@ -564,7 +564,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
                                         safety:GRPCCallSafetyDefault];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   options.transportType = GRPCTransportTypeInsecure;
-  options.enableFlowControl = YES;
+  options.flowControlEnabled = YES;
   __block int unblocked = NO;
   GRPCCall2 *call = [[GRPCCall2 alloc]
       initWithRequestOptions:callRequest
@@ -625,7 +625,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
                                         safety:GRPCCallSafetyDefault];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   options.transportType = GRPCTransportTypeInsecure;
-  options.enableFlowControl = YES;
+  options.flowControlEnabled = YES;
   __block NSUInteger messageId = 0;
   __block GRPCCall2 *call = [[GRPCCall2 alloc]
       initWithRequestOptions:callRequest
@@ -668,7 +668,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
                                         safety:GRPCCallSafetyDefault];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   options.transportType = GRPCTransportTypeInsecure;
-  options.enableFlowControl = YES;
+  options.flowControlEnabled = YES;
   __block BOOL closed = NO;
   GRPCCall2 *call = [[GRPCCall2 alloc]
       initWithRequestOptions:callRequest
@@ -709,7 +709,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
                                         safety:GRPCCallSafetyDefault];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   options.transportType = GRPCTransportTypeInsecure;
-  options.enableFlowControl = YES;
+  options.flowControlEnabled = YES;
   __block BOOL closed = NO;
   GRPCCall2 *call = [[GRPCCall2 alloc]
       initWithRequestOptions:callRequest
@@ -740,7 +740,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
                                           path:kUnaryCallMethod.HTTPPath
                                         safety:GRPCCallSafetyDefault];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
-  options.enableFlowControl = YES;
+  options.flowControlEnabled = YES;
   options.transportType = GRPCTransportTypeInsecure;
 
   RMTSimpleRequest *request = [RMTSimpleRequest message];

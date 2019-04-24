@@ -96,7 +96,7 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
  * receiveNextMessage: must be called each time before gRPC call issues a didReceiveMessage
  * callback.
  */
-@property(readonly) BOOL enableFlowControl;
+@property(readonly) BOOL flowControlEnabled;
 
 // OAuth2 parameters. Users of gRPC may specify one of the following two parameters.
 
@@ -251,7 +251,7 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
  * assumes their own responsibility of flow control by keeping tracking of the pending writes in
  * the call.
  */
-@property(readwrite) BOOL enableFlowControl;
+@property(readwrite) BOOL flowControlEnabled;
 
 // OAuth2 parameters. Users of gRPC may specify one of the following two parameters.
 

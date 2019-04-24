@@ -656,7 +656,7 @@ BOOL isRemoteInteropTest(NSString *host) {
   options.transportType = [[self class] transportType];
   options.PEMRootCertificates = [[self class] PEMRootCertificates];
   options.hostNameOverride = [[self class] hostNameOverride];
-  options.enableFlowControl = YES;
+  options.flowControlEnabled = YES;
   __block BOOL canWriteData = NO;
 
   __block GRPCStreamingProtoCall *call = [_service

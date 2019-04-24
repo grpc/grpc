@@ -22,7 +22,7 @@
 // The default values for the call options.
 static NSString *const kDefaultServerAuthority = nil;
 static const NSTimeInterval kDefaultTimeout = 0;
-static const BOOL kDefaultEnableFlowControl = NO;
+static const BOOL kDefaultFlowControlEnabled = NO;
 static NSDictionary *const kDefaultInitialMetadata = nil;
 static NSString *const kDefaultUserAgentPrefix = nil;
 static const NSUInteger kDefaultResponseSizeLimit = 0;
@@ -60,7 +60,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
  @protected
   NSString *_serverAuthority;
   NSTimeInterval _timeout;
-  BOOL _enableFlowControl;
+  BOOL _flowControlEnabled;
   NSString *_oauth2AccessToken;
   id<GRPCAuthorizationProtocol> _authTokenProvider;
   NSDictionary *_initialMetadata;
@@ -86,7 +86,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 
 @synthesize serverAuthority = _serverAuthority;
 @synthesize timeout = _timeout;
-@synthesize enableFlowControl = _enableFlowControl;
+@synthesize flowControlEnabled = _flowControlEnabled;
 @synthesize oauth2AccessToken = _oauth2AccessToken;
 @synthesize authTokenProvider = _authTokenProvider;
 @synthesize initialMetadata = _initialMetadata;
@@ -112,7 +112,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 - (instancetype)init {
   return [self initWithServerAuthority:kDefaultServerAuthority
                                timeout:kDefaultTimeout
-                     enableFlowControl:kDefaultEnableFlowControl
+                    flowControlEnabled:kDefaultFlowControlEnabled
                      oauth2AccessToken:kDefaultOauth2AccessToken
                      authTokenProvider:kDefaultAuthTokenProvider
                        initialMetadata:kDefaultInitialMetadata
@@ -138,7 +138,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 
 - (instancetype)initWithServerAuthority:(NSString *)serverAuthority
                                 timeout:(NSTimeInterval)timeout
-                      enableFlowControl:(BOOL)enableFlowControl
+                     flowControlEnabled:(BOOL)flowControlEnabled
                       oauth2AccessToken:(NSString *)oauth2AccessToken
                       authTokenProvider:(id<GRPCAuthorizationProtocol>)authTokenProvider
                         initialMetadata:(NSDictionary *)initialMetadata
@@ -163,7 +163,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   if ((self = [super init])) {
     _serverAuthority = [serverAuthority copy];
     _timeout = timeout < 0 ? 0 : timeout;
-    _enableFlowControl = enableFlowControl;
+    _flowControlEnabled = flowControlEnabled;
     _oauth2AccessToken = [oauth2AccessToken copy];
     _authTokenProvider = authTokenProvider;
     _initialMetadata =
@@ -199,7 +199,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   GRPCCallOptions *newOptions =
       [[GRPCCallOptions allocWithZone:zone] initWithServerAuthority:_serverAuthority
                                                             timeout:_timeout
-                                                  enableFlowControl:_enableFlowControl
+                                                 flowControlEnabled:_flowControlEnabled
                                                   oauth2AccessToken:_oauth2AccessToken
                                                   authTokenProvider:_authTokenProvider
                                                     initialMetadata:_initialMetadata
@@ -228,7 +228,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   GRPCMutableCallOptions *newOptions = [[GRPCMutableCallOptions allocWithZone:zone]
       initWithServerAuthority:[_serverAuthority copy]
                       timeout:_timeout
-            enableFlowControl:_enableFlowControl
+           flowControlEnabled:_flowControlEnabled
             oauth2AccessToken:[_oauth2AccessToken copy]
             authTokenProvider:_authTokenProvider
               initialMetadata:[[NSDictionary alloc] initWithDictionary:_initialMetadata
@@ -309,7 +309,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 
 @dynamic serverAuthority;
 @dynamic timeout;
-@dynamic enableFlowControl;
+@dynamic flowControlEnabled;
 @dynamic oauth2AccessToken;
 @dynamic authTokenProvider;
 @dynamic initialMetadata;
@@ -335,7 +335,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 - (instancetype)init {
   return [self initWithServerAuthority:kDefaultServerAuthority
                                timeout:kDefaultTimeout
-                     enableFlowControl:kDefaultEnableFlowControl
+                    flowControlEnabled:kDefaultFlowControlEnabled
                      oauth2AccessToken:kDefaultOauth2AccessToken
                      authTokenProvider:kDefaultAuthTokenProvider
                        initialMetadata:kDefaultInitialMetadata
@@ -363,7 +363,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   GRPCCallOptions *newOptions =
       [[GRPCCallOptions allocWithZone:zone] initWithServerAuthority:_serverAuthority
                                                             timeout:_timeout
-                                                  enableFlowControl:_enableFlowControl
+                                                 flowControlEnabled:_flowControlEnabled
                                                   oauth2AccessToken:_oauth2AccessToken
                                                   authTokenProvider:_authTokenProvider
                                                     initialMetadata:_initialMetadata
@@ -392,7 +392,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   GRPCMutableCallOptions *newOptions = [[GRPCMutableCallOptions allocWithZone:zone]
       initWithServerAuthority:_serverAuthority
                       timeout:_timeout
-            enableFlowControl:_enableFlowControl
+           flowControlEnabled:_flowControlEnabled
             oauth2AccessToken:_oauth2AccessToken
             authTokenProvider:_authTokenProvider
               initialMetadata:_initialMetadata
@@ -429,8 +429,8 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   }
 }
 
-- (void)setEnableFlowControl:(BOOL)enableFlowControl {
-  _enableFlowControl = enableFlowControl;
+- (void)setFlowControlEnabled:(BOOL)flowControlEnabled {
+  _flowControlEnabled = flowControlEnabled;
 }
 
 - (void)setOauth2AccessToken:(NSString *)oauth2AccessToken {
