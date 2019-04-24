@@ -401,8 +401,8 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:retryThrottling error:Duplicate entry"));
       } else {
-        Optional<int> max_milli_tokens(false, 0);
-        Optional<int> milli_token_ratio(false, 0);
+        Optional<int> max_milli_tokens;
+        Optional<int> milli_token_ratio;
         for (grpc_json* sub_field = field->child; sub_field != nullptr;
              sub_field = sub_field->next) {
           if (sub_field->key == nullptr) continue;
