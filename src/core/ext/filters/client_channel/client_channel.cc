@@ -617,7 +617,7 @@ class CallData {
   grpc_millis deadline_;
   gpr_arena* arena_;
   grpc_call_stack* owning_call_;
-  grpc_call_combiner* call_combiner_;
+  CallCombiner* call_combiner_;
   grpc_call_context_element* call_context_;
 
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
@@ -3017,7 +3017,7 @@ class CallData::QueuedPickCanceller {
     GRPC_CALL_STACK_REF(calld->owning_call_, "QueuedPickCanceller");
     GRPC_CLOSURE_INIT(&closure_, &CancelLocked, this,
                       grpc_combiner_scheduler(chand->data_plane_combiner()));
-    grpc_call_combiner_set_notify_on_cancel(calld->call_combiner_, &closure_);
+    calld->call_combiner_->SetNotifyOnCancel(&closure_);
   }
 
  private:

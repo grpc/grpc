@@ -174,7 +174,7 @@ grpc_endpoint* grpc_transport_get_endpoint(grpc_transport* transport) {
 // it's grpc_transport_stream_op_batch_finish_with_failure
 void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_transport_stream_op_batch* batch, grpc_error* error,
-    grpc_call_combiner* call_combiner) {
+    grpc_core::CallCombiner* call_combiner) {
   if (batch->send_message) {
     batch->payload->send_message.send_message.reset();
   }

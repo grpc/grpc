@@ -190,7 +190,7 @@ struct call_data {
   grpc_closure publish;
 
   call_data* pending_next = nullptr;
-  grpc_call_combiner* call_combiner;
+  grpc_core::CallCombiner* call_combiner;
 };
 
 struct request_matcher {

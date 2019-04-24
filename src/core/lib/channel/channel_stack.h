@@ -70,7 +70,7 @@ typedef struct {
   gpr_timespec start_time;
   grpc_millis deadline;
   gpr_arena* arena;
-  grpc_call_combiner* call_combiner;
+  grpc_core::CallCombiner* call_combiner;
 } grpc_call_element_args;
 
 typedef struct {

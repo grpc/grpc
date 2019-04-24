@@ -77,7 +77,7 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
     grpc_millis deadline;
     gpr_arena* arena;
     grpc_call_context_element* context;
-    grpc_call_combiner* call_combiner;
+    grpc_core::CallCombiner* call_combiner;
     size_t parent_data_size;
   };
 

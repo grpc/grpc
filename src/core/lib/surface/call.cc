@@ -131,7 +131,6 @@ struct grpc_call {
         is_client(args.server_transport_data == nullptr),
         stream_op_payload(context) {
     gpr_ref_init(&ext_ref, 1);
-    grpc_call_combiner_init(&call_combiner);
     for (int i = 0; i < 2; i++) {
       for (int j = 0; j < 2; j++) {
         metadata_batch[i][j].deadline = GRPC_MILLIS_INF_FUTURE;
@@ -141,12 +140,11 @@ struct grpc_call {
 
   ~grpc_call() {
     gpr_free(static_cast<void*>(const_cast<char*>(final_info.error_string)));
-    grpc_call_combiner_destroy(&call_combiner);
   }
 
   gpr_refcount ext_ref;
   gpr_arena* arena;
-  grpc_call_combiner call_combiner;
+  grpc_core::CallCombiner call_combiner;
   grpc_completion_queue* cq;
   grpc_polling_entity pollent;
   grpc_channel* channel;
@@ -589,7 +587,7 @@ void grpc_call_unref(grpc_call* c) {
     // holding to the call stack. Also flush the closures on exec_ctx so that
     // filters that schedule cancel notification closures on exec_ctx do not
     // need to take a ref of the call stack to guarantee closure liveness.
-    grpc_call_combiner_set_notify_on_cancel(&c->call_combiner, nullptr);
+    c->call_combiner.SetNotifyOnCancel(nullptr);
     grpc_core::ExecCtx::Get()->Flush();
   }
   GRPC_CALL_INTERNAL_UNREF(c, "destroy");
@@ -685,7 +683,7 @@ static void cancel_with_error(grpc_call* c, grpc_error* error) {
   // any in-flight asynchronous actions that may be holding the call
   // combiner.  This ensures that the cancel_stream batch can be sent
   // down the filter stack in a timely manner.
-  grpc_call_combiner_cancel(&c->call_combiner, GRPC_ERROR_REF(error));
+  c->call_combiner.Cancel(GRPC_ERROR_REF(error));
   cancel_state* state = static_cast<cancel_state*>(gpr_malloc(sizeof(*state)));
   state->call = c;
   GRPC_CLOSURE_INIT(&state->finish_batch, done_termination, state,
