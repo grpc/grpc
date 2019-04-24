@@ -19,29 +19,31 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <gtest/gtest.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "test/core/util/test_config.h"
 
-#define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x)
+namespace {
 
 static bool g_config_error_function_called;
 
-static void clear_config_error_called() {
-  g_config_error_function_called = false;
-}
+void ClearConfigErrorCalled() { g_config_error_function_called = false; }
 
-static bool is_config_error_called() { return g_config_error_function_called; }
+bool IsConfigErrorCalled() { return g_config_error_function_called; }
 
-// This function is for preventing the program from halt due to
-// configuration error and make test routines know whether there is error.
-static void fake_config_error_function(const char* error_message) {
+// This function is for preventing the program from invoking
+// an error handler due to configuration error and
+// make test routines know whether there is error.
+void FakeConfigErrorFunction(const char* error_message) {
   g_config_error_function_called = true;
 }
+
+}  // namespace
 
 GPR_GLOBAL_CONFIG_DECLARE_BOOL(bool_var);
 
@@ -49,142 +51,127 @@ GPR_GLOBAL_CONFIG_DEFINE_BOOL(bool_var, false, "");
 GPR_GLOBAL_CONFIG_DEFINE_INT32(int32_var, 0, "");
 GPR_GLOBAL_CONFIG_DEFINE_STRING(string_var, "", "");
 
-static void test_bool(void) {
-  LOG_TEST_NAME("test_bool");
+TEST(GlobalConfigTest, BoolTest) {
+  ClearConfigErrorCalled();
 
-  clear_config_error_called();
-
-  GPR_ASSERT(GPR_GLOBAL_CONFIG_GET(bool_var) == false);
+  EXPECT_FALSE(GPR_GLOBAL_CONFIG_GET(bool_var));
   GPR_GLOBAL_CONFIG_SET(bool_var, true);
-  GPR_ASSERT(GPR_GLOBAL_CONFIG_GET(bool_var) == true);
+  EXPECT_TRUE(GPR_GLOBAL_CONFIG_GET(bool_var));
 
-  GPR_ASSERT(is_config_error_called() == false);
+  EXPECT_FALSE(IsConfigErrorCalled());
 }
 
-static void test_int32(void) {
-  LOG_TEST_NAME("test_int32");
+TEST(GlobalConfigTest, Int32Test) {
+  ClearConfigErrorCalled();
 
-  clear_config_error_called();
-
-  GPR_ASSERT(GPR_GLOBAL_CONFIG_GET(int32_var) == 0);
+  EXPECT_EQ(0, GPR_GLOBAL_CONFIG_GET(int32_var));
   GPR_GLOBAL_CONFIG_SET(int32_var, 1024);
-  GPR_ASSERT(GPR_GLOBAL_CONFIG_GET(int32_var) == 1024);
+  EXPECT_EQ(1024, GPR_GLOBAL_CONFIG_GET(int32_var));
 
-  GPR_ASSERT(is_config_error_called() == false);
+  EXPECT_FALSE(IsConfigErrorCalled());
 }
 
-static void test_string(void) {
-  LOG_TEST_NAME("test_string");
-
+TEST(GlobalConfigTest, StringTest) {
   grpc_core::UniquePtr<char> value;
 
-  clear_config_error_called();
+  ClearConfigErrorCalled();
 
   value = GPR_GLOBAL_CONFIG_GET(string_var);
-  GPR_ASSERT(strcmp(value.get(), "") == 0);
+  EXPECT_EQ(0, strcmp(value.get(), ""));
 
   GPR_GLOBAL_CONFIG_SET(string_var, "Test");
 
   value = GPR_GLOBAL_CONFIG_GET(string_var);
-  GPR_ASSERT(strcmp(value.get(), "Test") == 0);
+  EXPECT_EQ(0, strcmp(value.get(), "Test"));
 
-  GPR_ASSERT(is_config_error_called() == false);
+  EXPECT_FALSE(IsConfigErrorCalled());
 }
+
+#if !defined(GPR_GLOBAL_CONFIG_CUSTOM)
 
 GPR_GLOBAL_CONFIG_DEFINE_BOOL(bool_var_2, true, "");
 GPR_GLOBAL_CONFIG_DEFINE_INT32(int32_var_2, 1234, "");
 GPR_GLOBAL_CONFIG_DEFINE_STRING(string_var_2, "Apple", "");
 
-static void test_bool_with_env(void) {
-  LOG_TEST_NAME("test_bool_with_env");
-
+TEST(GlobalConfigTest, BoolWithEnvTest) {
   const char* bool_var_2_name = "BOOL_VAR_2";
 
-  clear_config_error_called();
+  ClearConfigErrorCalled();
 
   gpr_unsetenv(bool_var_2_name);
-  GPR_ASSERT(GPR_GLOBAL_CONFIG_GET(bool_var_2) == true);
-
-  gpr_setenv(bool_var_2_name, "");
-  GPR_ASSERT(GPR_GLOBAL_CONFIG_GET(bool_var_2) == true);
+  EXPECT_TRUE(GPR_GLOBAL_CONFIG_GET(bool_var_2));
 
   gpr_setenv(bool_var_2_name, "true");
-  GPR_ASSERT(GPR_GLOBAL_CONFIG_GET(bool_var_2) == true);
+  EXPECT_TRUE(GPR_GLOBAL_CONFIG_GET(bool_var_2));
 
   gpr_setenv(bool_var_2_name, "false");
-  GPR_ASSERT(GPR_GLOBAL_CONFIG_GET(bool_var_2) == false);
+  EXPECT_FALSE(GPR_GLOBAL_CONFIG_GET(bool_var_2));
 
-  GPR_ASSERT(is_config_error_called() == false);
+  EXPECT_FALSE(IsConfigErrorCalled());
+
+  gpr_setenv(bool_var_2_name, "");
+  GPR_GLOBAL_CONFIG_GET(bool_var_2);
+  EXPECT_TRUE(IsConfigErrorCalled());
+  ClearConfigErrorCalled();
 
   gpr_setenv(bool_var_2_name, "!");
   GPR_GLOBAL_CONFIG_GET(bool_var_2);
-  GPR_ASSERT(is_config_error_called() == true);
+  EXPECT_TRUE(IsConfigErrorCalled());
 }
 
-static void test_int32_with_env(void) {
-  LOG_TEST_NAME("test_int32_with_env");
-
+TEST(GlobalConfigTest, Int32WithEnvTest) {
   const char* int32_var_2_name = "INT32_VAR_2";
 
-  clear_config_error_called();
+  ClearConfigErrorCalled();
 
   gpr_unsetenv(int32_var_2_name);
-  GPR_ASSERT(GPR_GLOBAL_CONFIG_GET(int32_var_2) == 1234);
+  EXPECT_EQ(1234, GPR_GLOBAL_CONFIG_GET(int32_var_2));
 
   gpr_setenv(int32_var_2_name, "0");
-  GPR_ASSERT(GPR_GLOBAL_CONFIG_GET(int32_var_2) == 0);
+  EXPECT_EQ(0, GPR_GLOBAL_CONFIG_GET(int32_var_2));
 
   gpr_setenv(int32_var_2_name, "-123456789");
-  GPR_ASSERT(GPR_GLOBAL_CONFIG_GET(int32_var_2) == -123456789);
+  EXPECT_EQ(-123456789, GPR_GLOBAL_CONFIG_GET(int32_var_2));
 
   gpr_setenv(int32_var_2_name, "123456789");
-  GPR_ASSERT(GPR_GLOBAL_CONFIG_GET(int32_var_2) == 123456789);
+  EXPECT_EQ(123456789, GPR_GLOBAL_CONFIG_GET(int32_var_2));
 
-  GPR_ASSERT(is_config_error_called() == false);
+  EXPECT_FALSE(IsConfigErrorCalled());
 
   gpr_setenv(int32_var_2_name, "-1AB");
   GPR_GLOBAL_CONFIG_GET(int32_var_2);
-  GPR_ASSERT(is_config_error_called() == true);
+  EXPECT_TRUE(IsConfigErrorCalled());
 }
 
-static void test_string_with_env(void) {
-  LOG_TEST_NAME("test_string_with_env");
-
+TEST(GlobalConfigTest, StringWithEnvTest) {
   const char* string_var_2_name = "STRING_VAR_2";
   grpc_core::UniquePtr<char> value;
 
-  clear_config_error_called();
+  ClearConfigErrorCalled();
 
   gpr_unsetenv(string_var_2_name);
   value = GPR_GLOBAL_CONFIG_GET(string_var_2);
-  GPR_ASSERT(strcmp(value.get(), "Apple") == 0);
+  EXPECT_EQ(0, strcmp(value.get(), "Apple"));
 
   gpr_setenv(string_var_2_name, "Banana");
   value = GPR_GLOBAL_CONFIG_GET(string_var_2);
-  GPR_ASSERT(strcmp(value.get(), "Banana") == 0);
+  EXPECT_EQ(0, strcmp(value.get(), "Banana"));
 
   gpr_setenv(string_var_2_name, "");
   value = GPR_GLOBAL_CONFIG_GET(string_var_2);
-  GPR_ASSERT(strcmp(value.get(), "") == 0);
+  EXPECT_EQ(0, strcmp(value.get(), ""));
 
-  GPR_ASSERT(is_config_error_called() == false);
+  EXPECT_FALSE(IsConfigErrorCalled());
 }
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
-
-  // Not to abort the test when parsing error happens.
-  gpr_set_global_config_error_function(&fake_config_error_function);
-
-  test_bool();
-  test_int32();
-  test_string();
-
-  // Following tests work only with the default config system.
-#ifndef GPR_GLOBAL_CONFIG_CUSTOM
-  test_bool_with_env();
-  test_int32_with_env();
-  test_string_with_env();
 #endif
-  return 0;
+
+int main(int argc, char** argv) {
+  // Not to abort the test when parsing error happens.
+
+  grpc_core::SetGlobalConfigEnvErrorFunction(&FakeConfigErrorFunction);
+
+  ::testing::InitGoogleTest(&argc, argv);
+  int ret = RUN_ALL_TESTS();
+  return ret;
 }

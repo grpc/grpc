@@ -31,6 +31,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "global_config_test",
     srcs = ["global_config_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:gpr",

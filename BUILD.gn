@@ -187,7 +187,6 @@ config("grpc_config") {
         "src/core/lib/gprpp/global_config_custom.h",
         "src/core/lib/gprpp/global_config_env.cc",
         "src/core/lib/gprpp/global_config_env.h",
-        "src/core/lib/gprpp/global_config_generic.cc",
         "src/core/lib/gprpp/global_config_generic.h",
         "src/core/lib/gprpp/manual_constructor.h",
         "src/core/lib/gprpp/map.h",

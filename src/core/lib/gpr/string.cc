@@ -332,20 +332,6 @@ void* gpr_memrchr(const void* s, int c, size_t n) {
   return nullptr;
 }
 
-bool gpr_is_true(const char* s) {
-  size_t i;
-  if (s == nullptr) {
-    return false;
-  }
-  static const char* truthy[] = {"yes", "true", "1"};
-  for (i = 0; i < GPR_ARRAY_SIZE(truthy); i++) {
-    if (0 == gpr_stricmp(s, truthy[i])) {
-      return true;
-    }
-  }
-  return false;
-}
-
 bool gpr_parse_bool_value(const char* s, bool* dst) {
   const char* kTrue[] = {"1", "t", "true", "y", "yes"};
   const char* kFalse[] = {"0", "f", "false", "n", "no"};

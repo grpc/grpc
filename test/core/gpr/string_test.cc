@@ -279,21 +279,6 @@ static void test_memrchr(void) {
   GPR_ASSERT(0 == strcmp((const char*)gpr_memrchr("hello", 'l', 5), "lo"));
 }
 
-static void test_is_true(void) {
-  LOG_TEST_NAME("test_is_true");
-
-  GPR_ASSERT(true == gpr_is_true("True"));
-  GPR_ASSERT(true == gpr_is_true("true"));
-  GPR_ASSERT(true == gpr_is_true("TRUE"));
-  GPR_ASSERT(true == gpr_is_true("Yes"));
-  GPR_ASSERT(true == gpr_is_true("yes"));
-  GPR_ASSERT(true == gpr_is_true("YES"));
-  GPR_ASSERT(true == gpr_is_true("1"));
-  GPR_ASSERT(false == gpr_is_true(nullptr));
-  GPR_ASSERT(false == gpr_is_true(""));
-  GPR_ASSERT(false == gpr_is_true("0"));
-}
-
 static void test_parse_bool_value(void) {
   LOG_TEST_NAME("test_parse_bool_value");
 

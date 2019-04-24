@@ -41,15 +41,4 @@
   extern grpc_core::UniquePtr<char> gpr_global_config_get_##name(); \
   extern void gpr_global_config_set_##name(const char* value)
 
-typedef void (*gpr_global_config_error_func)(const char* error_message);
-
-/*
- * Set global_config_error_function which is called when config system
- * encounters errors such as parsing error. What the default function does
- * is logging error message and aborting.
- */
-void gpr_set_global_config_error_function(gpr_global_config_error_func func);
-
-void gpr_call_global_config_error_function(const char* error_message);
-
 #endif /* GRPC_CORE_LIB_GPR_GLOBAL_CONFIG_GENERIC_H */

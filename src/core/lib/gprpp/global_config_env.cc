@@ -27,27 +27,40 @@
 
 namespace grpc_core {
 
-static void gpr_convert_canonical_env_name(char* name) {
+namespace {
+
+void DefaultGlobalConfigEnvErrorFunction(const char* error_message) {
+  gpr_log(GPR_ERROR, "%s", error_message);
+}
+
+GlobalConfigEnvErrorFunctionType g_global_config_env_error_func =
+    DefaultGlobalConfigEnvErrorFunction;
+
+void ConvertCanonicalEnvName(char* name) {
   // Makes upper-case string.
   for (char* c = name; *c != 0; ++c) {
-    if (*c >= 'a' && *c <= 'z') {
-      *c -= 'a' - 'A';
-    }
+    *c = toupper(*c);
   }
 }
 
-static void gpr_config_log_parsing_error(const char* name, const char* value) {
+void LogParsingError(const char* name, const char* value) {
   char* error_message;
   gpr_asprintf(&error_message,
                "Illegal value '%s' specified for environment variable '%s'",
                value, name);
-  gpr_call_global_config_error_function(error_message);
+  (*g_global_config_env_error_func)(error_message);
   gpr_free(error_message);
+}
+
+}  // namespace
+
+void SetGlobalConfigEnvErrorFunction(GlobalConfigEnvErrorFunctionType func) {
+  g_global_config_env_error_func = func;
 }
 
 GlobalConfigEnv::GlobalConfigEnv(char* name) {
   name_ = name;
-  gpr_convert_canonical_env_name(name_);
+  ConvertCanonicalEnvName(name_);
 }
 
 UniquePtr<char> GlobalConfigEnv::GetValue() {
@@ -56,24 +69,23 @@ UniquePtr<char> GlobalConfigEnv::GetValue() {
 
 void GlobalConfigEnv::SetValue(const char* value) { gpr_setenv(name_, value); }
 
-void GlobalConfigEnv::RemoveValue() { gpr_unsetenv(name_); }
+void GlobalConfigEnv::Unset() { gpr_unsetenv(name_); }
 
 GlobalConfigEnvBool::GlobalConfigEnvBool(char* name, bool default_value)
-    : GlobalConfigEnv(name), default_value_(default_value) {}
+    : GlobalConfigEnv(name), default_value_(default_value) {
+  static_assert(std::is_trivially_destructible<GlobalConfigEnvBool>::value,
+                "GlobalConfigEnvBool needs to be trivially destructible.");
+}
 
 bool GlobalConfigEnvBool::Get() {
   UniquePtr<char> str = GetValue();
-  if (str.get() == nullptr) {
+  if (str == nullptr) {
     return default_value_;
-  }
-  // empty value means true.
-  if (strlen(str.get()) == 0) {
-    return true;
   }
   // parsing given value string.
   bool result = false;
   if (!gpr_parse_bool_value(str.get(), &result)) {
-    gpr_config_log_parsing_error(name_, str.get());
+    LogParsingError(name_, str.get());
     result = default_value_;
   }
   return result;
@@ -84,18 +96,21 @@ void GlobalConfigEnvBool::Set(bool value) {
 }
 
 GlobalConfigEnvInt32::GlobalConfigEnvInt32(char* name, int32_t default_value)
-    : GlobalConfigEnv(name), default_value_(default_value) {}
+    : GlobalConfigEnv(name), default_value_(default_value) {
+  static_assert(std::is_trivially_destructible<GlobalConfigEnvInt32>::value,
+                "GlobalConfigEnvInt32 needs to be trivially destructible.");
+}
 
 int32_t GlobalConfigEnvInt32::Get() {
   UniquePtr<char> str = GetValue();
-  if (str.get() == nullptr) {
+  if (str == nullptr) {
     return default_value_;
   }
   // parsing given value string.
   char* end = str.get();
   long result = strtol(str.get(), &end, 10);
   if (*end != 0) {
-    gpr_config_log_parsing_error(name_, str.get());
+    LogParsingError(name_, str.get());
     result = default_value_;
   }
   return static_cast<int32_t>(result);
@@ -110,13 +125,15 @@ void GlobalConfigEnvInt32::Set(int32_t value) {
 GlobalConfigEnvString::GlobalConfigEnvString(char* name,
                                              const char* default_value)
     : GlobalConfigEnv(name), default_value_(default_value) {
+  static_assert(std::is_trivially_destructible<GlobalConfigEnvString>::value,
+                "GlobalConfigEnvString needs to be trivially destructible.");
   // Null is not a valid default value.
   GPR_ASSERT(default_value != nullptr);
 }
 
 UniquePtr<char> GlobalConfigEnvString::Get() {
   UniquePtr<char> str = GetValue();
-  if (str.get() == nullptr) {
+  if (str == nullptr) {
     return UniquePtr<char>(gpr_strdup(default_value_));
   }
   return str;

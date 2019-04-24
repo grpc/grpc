@@ -148,7 +148,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gpr/wrap_memcpy.cc )
   s.files += %w( src/core/lib/gprpp/fork.cc )
   s.files += %w( src/core/lib/gprpp/global_config_env.cc )
-  s.files += %w( src/core/lib/gprpp/global_config_generic.cc )
   s.files += %w( src/core/lib/gprpp/thd_posix.cc )
   s.files += %w( src/core/lib/gprpp/thd_windows.cc )
   s.files += %w( src/core/lib/profiling/basic_timers.cc )
