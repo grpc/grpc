@@ -554,7 +554,7 @@ int main(int argc, char** argv) {
   grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  ParseCommandLineFlags(&argc, &argv, true);
+  grpc::testing::InitTest(&argc, &argv, true);
   if (FLAGS_target_name == "") {
     gpr_log(GPR_ERROR, "Missing target_name param.");
     abort();

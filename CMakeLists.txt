@@ -12690,6 +12690,7 @@ target_include_directories(client_crash_test_server
 target_link_libraries(client_crash_test_server
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_config
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -13429,6 +13430,7 @@ target_include_directories(golden_file_test
 target_link_libraries(golden_file_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_config
   grpc++
   grpc
   gpr
@@ -15673,6 +15675,7 @@ target_include_directories(server_crash_test_client
 target_link_libraries(server_crash_test_client
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_config
   grpc++_test_util
   grpc_test_util
   grpc++
