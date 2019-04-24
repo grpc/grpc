@@ -189,15 +189,11 @@ LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(const grpc_json* json,
   }
 }
 
-grpc_error* LoadBalancingPolicyRegistry::ParseDeprecatedLoadBalancingPolicy(
-    const grpc_json* json) {
+grpc_error* LoadBalancingPolicyRegistry::CanCreateLoadBalancingPolicy(
+    const char* lb_policy_name) {
   GPR_DEBUG_ASSERT(g_state != nullptr);
-  GPR_DEBUG_ASSERT(json != nullptr);
-  if (json->type != GRPC_JSON_STRING) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "field:loadBalancingPolicy error:type should be string");
-  }
-  auto* factory = g_state->GetLoadBalancingPolicyFactory(json->value);
+  gpr_log(GPR_ERROR, "%s", lb_policy_name);
+  auto* factory = g_state->GetLoadBalancingPolicyFactory(lb_policy_name);
   if (factory == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "field:loadBalancingPolicy error:Unknown lb policy");

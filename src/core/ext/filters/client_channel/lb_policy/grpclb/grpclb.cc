@@ -393,7 +393,7 @@ class GrpcLb : public LoadBalancingPolicy {
   // until it reports READY, at which point it will be moved to child_policy_.
   OrphanablePtr<LoadBalancingPolicy> pending_child_policy_;
   // The child policy config.
-  RefCountedPtr<ParsedLoadBalancingConfig> child_policy_config_ = nullptr;
+  RefCountedPtr<ParsedLoadBalancingConfig> child_policy_config_;
   // Child policy in state READY.
   bool child_policy_ready_ = false;
 };
@@ -1812,8 +1812,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
           New<ParsedGrpcLbConfig>(nullptr));
     }
     InlinedVector<grpc_error*, 2> error_list;
-    RefCountedPtr<ParsedLoadBalancingConfig> child_policy = nullptr;
-
+    RefCountedPtr<ParsedLoadBalancingConfig> child_policy;
     for (const grpc_json* field = json->child; field != nullptr;
          field = field->next) {
       if (field->key == nullptr) continue;

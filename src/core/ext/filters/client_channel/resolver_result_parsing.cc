@@ -29,6 +29,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/health/health_check_parser.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -53,8 +54,9 @@ size_t ClientChannelServiceConfigParser::ParserIndex() {
 }
 
 void ClientChannelServiceConfigParser::Register() {
-  g_client_channel_service_config_parser_index = ServiceConfig::RegisterParser(
-      UniquePtr<ServiceConfigParser>(New<ClientChannelServiceConfigParser>()));
+  g_client_channel_service_config_parser_index =
+      ServiceConfig::RegisterParser(UniquePtr<ServiceConfig::Parser>(
+          New<ClientChannelServiceConfigParser>()));
 }
 
 ProcessedResolverResult::ProcessedResolverResult(
@@ -73,60 +75,57 @@ ProcessedResolverResult::ProcessedResolverResult(
     }
   }
   // Process service config.
-  ProcessServiceConfig(resolver_result);
-  ProcessLbPolicy(resolver_result);
+  const ClientChannelGlobalParsedObject* parsed_object = nullptr;
+  if (service_config_ != nullptr) {
+    parsed_object = static_cast<const ClientChannelGlobalParsedObject*>(
+        service_config_->GetParsedGlobalServiceConfigObject(
+            ClientChannelServiceConfigParser::ParserIndex()));
+    ProcessServiceConfig(resolver_result, parsed_object);
+  }
+  ProcessLbPolicy(resolver_result, parsed_object);
 }
 
 void ProcessedResolverResult::ProcessServiceConfig(
-    const Resolver::Result& resolver_result) {
-  if (service_config_ == nullptr) return;
+    const Resolver::Result& resolver_result,
+    const ClientChannelGlobalParsedObject* parsed_object) {
   auto* health_check = static_cast<HealthCheckParsedObject*>(
       service_config_->GetParsedGlobalServiceConfigObject(
           HealthCheckParser::ParserIndex()));
   health_check_service_name_ =
       health_check != nullptr ? health_check->service_name() : nullptr;
   service_config_json_ = service_config_->service_config_json();
-  auto* parsed_object = static_cast<const ClientChannelGlobalParsedObject*>(
-      service_config_->GetParsedGlobalServiceConfigObject(
-          ClientChannelServiceConfigParser::ParserIndex()));
   if (!parsed_object) {
     return;
   }
-  const grpc_arg* channel_arg =
-      grpc_channel_args_find(resolver_result.args, GRPC_ARG_SERVER_URI);
-  const char* server_uri = grpc_channel_arg_get_string(channel_arg);
-  GPR_ASSERT(server_uri != nullptr);
-  grpc_uri* uri = grpc_uri_parse(server_uri, true);
-  GPR_ASSERT(uri->path[0] != '\0');
   if (parsed_object->retry_throttling().has_value()) {
-    char* server_name = uri->path[0] == '/' ? uri->path + 1 : uri->path;
-    retry_throttle_data_ = internal::ServerRetryThrottleMap::GetDataForServer(
-        server_name, parsed_object->retry_throttling().value().max_milli_tokens,
-        parsed_object->retry_throttling().value().milli_token_ratio);
+    const grpc_arg* channel_arg =
+        grpc_channel_args_find(resolver_result.args, GRPC_ARG_SERVER_URI);
+    const char* server_uri = grpc_channel_arg_get_string(channel_arg);
+    GPR_ASSERT(server_uri != nullptr);
+    grpc_uri* uri = grpc_uri_parse(server_uri, true);
+    GPR_ASSERT(uri->path[0] != '\0');
+    server_name_ = uri->path[0] == '/' ? uri->path + 1 : uri->path;
+    retry_throttle_data_ = parsed_object->retry_throttling();
+    grpc_uri_destroy(uri);
   }
-  grpc_uri_destroy(uri);
 }
 
 void ProcessedResolverResult::ProcessLbPolicy(
-    const Resolver::Result& resolver_result) {
+    const Resolver::Result& resolver_result,
+    const ClientChannelGlobalParsedObject* parsed_object) {
   // Prefer the LB policy name found in the service config.
-  if (service_config_ != nullptr) {
-    auto* parsed_object = static_cast<const ClientChannelGlobalParsedObject*>(
-        service_config_->GetParsedGlobalServiceConfigObject(
-            ClientChannelServiceConfigParser::ParserIndex()));
-    if (parsed_object != nullptr) {
-      if (parsed_object->parsed_lb_config() != nullptr) {
-        lb_policy_name_.reset(
-            gpr_strdup(parsed_object->parsed_lb_config()->name()));
-        lb_policy_config_ = parsed_object->parsed_lb_config();
-      } else {
-        lb_policy_name_.reset(
-            gpr_strdup(parsed_object->parsed_deprecated_lb_policy()));
-        if (lb_policy_name_ != nullptr) {
-          char* lb_policy_name = lb_policy_name_.get();
-          for (size_t i = 0; i < strlen(lb_policy_name); ++i) {
-            lb_policy_name[i] = tolower(lb_policy_name[i]);
-          }
+  if (parsed_object != nullptr) {
+    if (parsed_object->parsed_lb_config() != nullptr) {
+      lb_policy_name_.reset(
+          gpr_strdup(parsed_object->parsed_lb_config()->name()));
+      lb_policy_config_ = parsed_object->parsed_lb_config();
+    } else {
+      lb_policy_name_.reset(
+          gpr_strdup(parsed_object->parsed_deprecated_lb_policy()));
+      if (lb_policy_name_ != nullptr) {
+        char* lb_policy_name = lb_policy_name_.get();
+        for (size_t i = 0; i < strlen(lb_policy_name); ++i) {
+          lb_policy_name[i] = tolower(lb_policy_name[i]);
         }
       }
     }
@@ -226,7 +225,7 @@ UniquePtr<ClientChannelMethodParsedObject::RetryPolicy> ParseRetryPolicy(
       retry_policy->max_attempts = gpr_parse_nonnegative_int(sub_field->value);
       if (retry_policy->max_attempts <= 1) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:maxAttempts error:should be atleast 2"));
+            "field:maxAttempts error:should be at least 2"));
         continue;
       }
       if (retry_policy->max_attempts > MAX_MAX_RETRY_ATTEMPTS) {
@@ -336,13 +335,13 @@ UniquePtr<ClientChannelMethodParsedObject::RetryPolicy> ParseRetryPolicy(
 
 }  // namespace
 
-UniquePtr<ServiceConfigParsedObject>
+UniquePtr<ServiceConfig::ParsedConfig>
 ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
                                                     grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   InlinedVector<grpc_error*, 4> error_list;
   RefCountedPtr<ParsedLoadBalancingConfig> parsed_lb_config;
-  const char* lb_policy_name = nullptr;
+  UniquePtr<char> lb_policy_name;
   Optional<ClientChannelGlobalParsedObject::RetryThrottling> retry_throttling;
   for (grpc_json* field = json->child; field != nullptr; field = field->next) {
     if (field->key == nullptr) {
@@ -368,21 +367,28 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
       if (lb_policy_name != nullptr) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:loadBalancingPolicy error:Duplicate entry"));
+        continue;
       } else if (field->type != GRPC_JSON_STRING) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:loadBalancingPolicy error:type should be string"));
-      } else if (!LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
-                     field->value)) {
+        continue;
+      }
+      lb_policy_name.reset(gpr_strdup(field->value));
+      char* lb_policy = lb_policy_name.get();
+      if (lb_policy != nullptr) {
+        for (size_t i = 0; i < strlen(lb_policy); ++i) {
+          lb_policy[i] = tolower(lb_policy[i]);
+        }
+      }
+      if (!LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(lb_policy)) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:loadBalancingPolicy error:Unknown lb policy"));
       } else {
         grpc_error* parsing_error =
-            LoadBalancingPolicyRegistry::ParseDeprecatedLoadBalancingPolicy(
-                field);
+            LoadBalancingPolicyRegistry::CanCreateLoadBalancingPolicy(
+                lb_policy);
         if (parsing_error != GRPC_ERROR_NONE) {
           error_list.push_back(parsing_error);
-        } else {
-          lb_policy_name = field->value;
         }
       }
     }
@@ -490,14 +496,15 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
   *error = ServiceConfig::CreateErrorFromVector("Client channel global parser",
                                                 &error_list);
   if (*error == GRPC_ERROR_NONE) {
-    return UniquePtr<ServiceConfigParsedObject>(
+    return UniquePtr<ServiceConfig::ParsedConfig>(
         New<ClientChannelGlobalParsedObject>(std::move(parsed_lb_config),
-                                             lb_policy_name, retry_throttling));
+                                             std::move(lb_policy_name),
+                                             retry_throttling));
   }
   return nullptr;
 }
 
-UniquePtr<ServiceConfigParsedObject>
+UniquePtr<ServiceConfig::ParsedConfig>
 ClientChannelServiceConfigParser::ParsePerMethodParams(const grpc_json* json,
                                                        grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
@@ -547,7 +554,7 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(const grpc_json* json,
   *error = ServiceConfig::CreateErrorFromVector("Client channel parser",
                                                 &error_list);
   if (*error == GRPC_ERROR_NONE) {
-    return UniquePtr<ServiceConfigParsedObject>(
+    return UniquePtr<ServiceConfig::ParsedConfig>(
         New<ClientChannelMethodParsedObject>(timeout, wait_for_ready,
                                              std::move(retry_policy)));
   }

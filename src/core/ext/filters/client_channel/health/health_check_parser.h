@@ -25,20 +25,22 @@
 
 namespace grpc_core {
 
-class HealthCheckParsedObject : public ServiceConfigParsedObject {
+class HealthCheckParsedObject : public ServiceConfig::ParsedConfig {
  public:
   HealthCheckParsedObject(const char* service_name)
       : service_name_(service_name) {}
 
+  // Returns the service_name found in the health check config. The lifetime of
+  // the string is tied to the lifetime of the ServiceConfig object.
   const char* service_name() const { return service_name_; }
 
  private:
   const char* service_name_;
 };
 
-class HealthCheckParser : public ServiceConfigParser {
+class HealthCheckParser : public ServiceConfig::Parser {
  public:
-  UniquePtr<ServiceConfigParsedObject> ParseGlobalParams(
+  UniquePtr<ServiceConfig::ParsedConfig> ParseGlobalParams(
       const grpc_json* json, grpc_error** error) override;
 
   static void Register();

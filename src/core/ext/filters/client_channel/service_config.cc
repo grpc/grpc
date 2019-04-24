@@ -34,7 +34,7 @@
 namespace grpc_core {
 
 namespace {
-typedef InlinedVector<UniquePtr<ServiceConfigParser>,
+typedef InlinedVector<UniquePtr<ServiceConfig::Parser>,
                       ServiceConfig::kNumPreallocatedParsers>
     ServiceConfigParserList;
 ServiceConfigParserList* g_registered_parsers;
@@ -78,7 +78,6 @@ ServiceConfig::ServiceConfig(UniquePtr<char> service_config_json,
     error_list[error_count++] = local_error;
   }
   if (error_count > 0) {
-    gpr_log(GPR_ERROR, "got errors");
     *error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
         "Service config parsing error", error_list, error_count);
     GRPC_ERROR_UNREF(global_error);
@@ -314,7 +313,7 @@ ServiceConfig::GetMethodServiceConfigObjectsVector(const grpc_slice& path) {
   return *value;
 }
 
-size_t ServiceConfig::RegisterParser(UniquePtr<ServiceConfigParser> parser) {
+size_t ServiceConfig::RegisterParser(UniquePtr<ServiceConfig::Parser> parser) {
   g_registered_parsers->push_back(std::move(parser));
   return g_registered_parsers->size() - 1;
 }

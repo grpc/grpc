@@ -55,39 +55,39 @@
 
 namespace grpc_core {
 
-/// This is the base class that all service config parsers MUST use to store
-/// parsed service config data.
-class ServiceConfigParsedObject {
- public:
-  virtual ~ServiceConfigParsedObject() = default;
-
-  GRPC_ABSTRACT_BASE_CLASS;
-};
-
-/// This is the base class that all service config parsers should derive from.
-class ServiceConfigParser {
- public:
-  virtual ~ServiceConfigParser() = default;
-
-  virtual UniquePtr<ServiceConfigParsedObject> ParseGlobalParams(
-      const grpc_json* json, grpc_error** error) {
-    GPR_DEBUG_ASSERT(error != nullptr);
-    return nullptr;
-  }
-
-  virtual UniquePtr<ServiceConfigParsedObject> ParsePerMethodParams(
-      const grpc_json* json, grpc_error** error) {
-    GPR_DEBUG_ASSERT(error != nullptr);
-    return nullptr;
-  }
-
-  GRPC_ABSTRACT_BASE_CLASS;
-};
-
 class ServiceConfig : public RefCounted<ServiceConfig> {
  public:
+  /// This is the base class that all service config parsers MUST use to store
+  /// parsed service config data.
+  class ParsedConfig {
+   public:
+    virtual ~ParsedConfig() = default;
+
+    GRPC_ABSTRACT_BASE_CLASS;
+  };
+
+  /// This is the base class that all service config parsers should derive from.
+  class Parser {
+   public:
+    virtual ~Parser() = default;
+
+    virtual UniquePtr<ServiceConfig::ParsedConfig> ParseGlobalParams(
+        const grpc_json* json, grpc_error** error) {
+      GPR_DEBUG_ASSERT(error != nullptr);
+      return nullptr;
+    }
+
+    virtual UniquePtr<ServiceConfig::ParsedConfig> ParsePerMethodParams(
+        const grpc_json* json, grpc_error** error) {
+      GPR_DEBUG_ASSERT(error != nullptr);
+      return nullptr;
+    }
+
+    GRPC_ABSTRACT_BASE_CLASS;
+  };
+
   static constexpr int kNumPreallocatedParsers = 4;
-  typedef InlinedVector<UniquePtr<ServiceConfigParsedObject>,
+  typedef InlinedVector<UniquePtr<ServiceConfig::ParsedConfig>,
                         kNumPreallocatedParsers>
       ServiceConfigObjectsVector;
 
@@ -104,7 +104,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
     RefCountedPtr<ServiceConfig> service_config() { return service_config_; }
 
-    ServiceConfigParsedObject* GetMethodParsedObject(int index) const {
+    ServiceConfig::ParsedConfig* GetMethodParsedObject(int index) const {
       return method_params_vector_ != nullptr
                  ? (*method_params_vector_)[index].get()
                  : nullptr;
@@ -127,14 +127,18 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
   const char* service_config_json() const { return service_config_json_.get(); }
 
-  /// Retrieves the parsed global service config object at index \a index.
-  ServiceConfigParsedObject* GetParsedGlobalServiceConfigObject(size_t index) {
+  /// Retrieves the parsed global service config object at index \a index. The
+  /// lifetime of the returned object is tied to the lifetime of the
+  /// ServiceConfig object.
+  ServiceConfig::ParsedConfig* GetParsedGlobalServiceConfigObject(
+      size_t index) {
     GPR_DEBUG_ASSERT(index < parsed_global_service_config_objects_.size());
     return parsed_global_service_config_objects_[index].get();
   }
 
   /// Retrieves the vector of method service config objects for a given path \a
-  /// path.
+  /// path. The lifetime of the returned vector and contained objects is tied to
+  /// the lifetime of the ServiceConfig object.
   const ServiceConfigObjectsVector* GetMethodServiceConfigObjectsVector(
       const grpc_slice& path);
 
@@ -144,7 +148,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   /// registered parser. Each parser is responsible for reading the service
   /// config json and returning a parsed object. This parsed object can later be
   /// retrieved using the same index that was returned at registration time.
-  static size_t RegisterParser(UniquePtr<ServiceConfigParser> parser);
+  static size_t RegisterParser(UniquePtr<ServiceConfig::Parser> parser);
 
   static void Init();
 
@@ -199,7 +203,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   UniquePtr<char> json_string_;  // Underlying storage for json_tree.
   grpc_json* json_tree_;
 
-  InlinedVector<UniquePtr<ServiceConfigParsedObject>, kNumPreallocatedParsers>
+  InlinedVector<UniquePtr<ServiceConfig::ParsedConfig>, kNumPreallocatedParsers>
       parsed_global_service_config_objects_;
   // A map from the method name to the service config objects vector. Note that
   // we are using a raw pointer and not a unique pointer so that we can use the

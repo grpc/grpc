@@ -53,13 +53,12 @@ class LoadBalancingPolicyRegistry {
   static bool LoadBalancingPolicyExists(const char* name);
 
   /// Returns a parsed object of the load balancing policy to be used from a
-  /// LoadBalancingConfig array \a json. \a field_name specifies
+  /// LoadBalancingConfig array \a json.
   static RefCountedPtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
       const grpc_json* json, grpc_error** error);
 
-  /// Validates if the deprecated loadBalancingPolicy field can be parsed.
-  /// Returns GRPC_ERROR_NONE if successfully parsed.
-  static grpc_error* ParseDeprecatedLoadBalancingPolicy(const grpc_json* json);
+  /// Validates if a load balancing policy can be created from \a lb_policy_name
+  static grpc_error* CanCreateLoadBalancingPolicy(const char* lb_policy_name);
 };
 
 }  // namespace grpc_core

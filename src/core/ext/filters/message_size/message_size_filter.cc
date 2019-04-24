@@ -44,7 +44,7 @@ size_t g_message_size_parser_index;
 
 namespace grpc_core {
 
-UniquePtr<ServiceConfigParsedObject> MessageSizeParser::ParsePerMethodParams(
+UniquePtr<ServiceConfig::ParsedConfig> MessageSizeParser::ParsePerMethodParams(
     const grpc_json* json, grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   int max_request_message_bytes = -1;
@@ -89,13 +89,13 @@ UniquePtr<ServiceConfigParsedObject> MessageSizeParser::ParsePerMethodParams(
                                                   &error_list);
     return nullptr;
   }
-  return UniquePtr<ServiceConfigParsedObject>(New<MessageSizeParsedObject>(
+  return UniquePtr<ServiceConfig::ParsedConfig>(New<MessageSizeParsedObject>(
       max_request_message_bytes, max_response_message_bytes));
 }
 
 void MessageSizeParser::Register() {
   g_message_size_parser_index = ServiceConfig::RegisterParser(
-      UniquePtr<ServiceConfigParser>(New<MessageSizeParser>()));
+      UniquePtr<ServiceConfig::Parser>(New<MessageSizeParser>()));
 }
 
 size_t MessageSizeParser::ParserIndex() { return g_message_size_parser_index; }

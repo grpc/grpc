@@ -762,11 +762,13 @@ class ChannelData::ConnectivityStateAndPickerSetter {
 class ChannelData::ServiceConfigSetter {
  public:
   ServiceConfigSetter(
-      ChannelData* chand,
-      RefCountedPtr<ServerRetryThrottleData> retry_throttle_data,
+      ChannelData* chand, UniquePtr<char> server_name,
+      Optional<internal::ClientChannelGlobalParsedObject::RetryThrottling>
+          retry_throttle_data,
       RefCountedPtr<ServiceConfig> service_config)
       : chand_(chand),
-        retry_throttle_data_(std::move(retry_throttle_data)),
+        server_name_(std::move(server_name)),
+        retry_throttle_data_(retry_throttle_data),
         service_config_(std::move(service_config)) {
     GRPC_CHANNEL_STACK_REF(chand->owning_stack_, "ServiceConfigSetter");
     GRPC_CLOSURE_INIT(&closure_, SetServiceConfigData, this,
@@ -780,7 +782,13 @@ class ChannelData::ServiceConfigSetter {
     ChannelData* chand = self->chand_;
     // Update channel state.
     chand->received_service_config_data_ = true;
-    chand->retry_throttle_data_ = std::move(self->retry_throttle_data_);
+    if (self->retry_throttle_data_.has_value()) {
+      chand->retry_throttle_data_ =
+          internal::ServerRetryThrottleMap::GetDataForServer(
+              self->server_name_.get(),
+              self->retry_throttle_data_.value().max_milli_tokens,
+              self->retry_throttle_data_.value().milli_token_ratio);
+    }
     chand->service_config_ = std::move(self->service_config_);
     // Apply service config to queued picks.
     for (QueuedPick* pick = chand->queued_picks_; pick != nullptr;
@@ -795,7 +803,9 @@ class ChannelData::ServiceConfigSetter {
   }
 
   ChannelData* chand_;
-  RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
+  UniquePtr<char> server_name_;
+  Optional<internal::ClientChannelGlobalParsedObject::RetryThrottling>
+      retry_throttle_data_;
   RefCountedPtr<ServiceConfig> service_config_;
   grpc_closure closure_;
 };
@@ -1120,15 +1130,16 @@ bool ChannelData::ProcessResolverResultLocked(
     RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config) {
   ChannelData* chand = static_cast<ChannelData*>(arg);
   ProcessedResolverResult resolver_result(result);
-  const char* service_config_json = resolver_result.service_config_json();
+  char* service_config_json = gpr_strdup(resolver_result.service_config_json());
   if (grpc_client_channel_routing_trace.enabled()) {
     gpr_log(GPR_INFO, "chand=%p: resolver returned service config: \"%s\"",
             chand, service_config_json);
   }
   // Create service config setter to update channel state in the data
   // plane combiner.  Destroys itself when done.
-  New<ServiceConfigSetter>(chand, resolver_result.retry_throttle_data(),
-                           resolver_result.service_config());
+  New<ServiceConfigSetter>(
+      chand, UniquePtr<char>(gpr_strdup(resolver_result.server_name())),
+      resolver_result.retry_throttle_data(), resolver_result.service_config());
   // Swap out the data used by GetChannelInfo().
   bool service_config_changed;
   {
@@ -1140,7 +1151,7 @@ bool ChannelData::ProcessResolverResultLocked(
         (service_config_json != nullptr &&
          strcmp(service_config_json, chand->info_service_config_json_.get()) !=
              0);
-    chand->info_service_config_json_.reset(gpr_strdup(service_config_json));
+    chand->info_service_config_json_.reset(service_config_json);
   }
   // Return results.
   *lb_policy_name = chand->info_lb_policy_name_.get();

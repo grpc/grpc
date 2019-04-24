@@ -37,19 +37,19 @@
 namespace grpc_core {
 namespace internal {
 
-class ClientChannelGlobalParsedObject : public ServiceConfigParsedObject {
+class ClientChannelGlobalParsedObject : public ServiceConfig::ParsedConfig {
  public:
   struct RetryThrottling {
-    int max_milli_tokens = 0;
-    int milli_token_ratio = 0;
+    intptr_t max_milli_tokens = 0;
+    intptr_t milli_token_ratio = 0;
   };
 
   ClientChannelGlobalParsedObject(
       RefCountedPtr<ParsedLoadBalancingConfig> parsed_lb_config,
-      const char* parsed_deprecated_lb_policy,
+      UniquePtr<char> parsed_deprecated_lb_policy,
       const Optional<RetryThrottling>& retry_throttling)
       : parsed_lb_config_(std::move(parsed_lb_config)),
-        parsed_deprecated_lb_policy_(parsed_deprecated_lb_policy),
+        parsed_deprecated_lb_policy_(std::move(parsed_deprecated_lb_policy)),
         retry_throttling_(retry_throttling) {}
 
   Optional<RetryThrottling> retry_throttling() const {
@@ -61,16 +61,16 @@ class ClientChannelGlobalParsedObject : public ServiceConfigParsedObject {
   }
 
   const char* parsed_deprecated_lb_policy() const {
-    return parsed_deprecated_lb_policy_;
+    return parsed_deprecated_lb_policy_.get();
   }
 
  private:
   RefCountedPtr<ParsedLoadBalancingConfig> parsed_lb_config_;
-  const char* parsed_deprecated_lb_policy_ = nullptr;
+  UniquePtr<char> parsed_deprecated_lb_policy_;
   Optional<RetryThrottling> retry_throttling_;
 };
 
-class ClientChannelMethodParsedObject : public ServiceConfigParsedObject {
+class ClientChannelMethodParsedObject : public ServiceConfig::ParsedConfig {
  public:
   struct RetryPolicy {
     int max_attempts = 0;
@@ -99,12 +99,12 @@ class ClientChannelMethodParsedObject : public ServiceConfigParsedObject {
   UniquePtr<RetryPolicy> retry_policy_;
 };
 
-class ClientChannelServiceConfigParser : public ServiceConfigParser {
+class ClientChannelServiceConfigParser : public ServiceConfig::Parser {
  public:
-  UniquePtr<ServiceConfigParsedObject> ParseGlobalParams(
+  UniquePtr<ServiceConfig::ParsedConfig> ParseGlobalParams(
       const grpc_json* json, grpc_error** error) override;
 
-  UniquePtr<ServiceConfigParsedObject> ParsePerMethodParams(
+  UniquePtr<ServiceConfig::ParsedConfig> ParsePerMethodParams(
       const grpc_json* json, grpc_error** error) override;
 
   static size_t ParserIndex();
@@ -121,8 +121,12 @@ class ProcessedResolverResult {
 
   // Getters. Any managed object's ownership is transferred.
   const char* service_config_json() { return service_config_json_; }
-  RefCountedPtr<ServerRetryThrottleData> retry_throttle_data() {
-    return std::move(retry_throttle_data_);
+
+  const char* server_name() { return server_name_; }
+
+  Optional<ClientChannelGlobalParsedObject::RetryThrottling>
+  retry_throttle_data() {
+    return retry_throttle_data_;
   }
 
   UniquePtr<char> lb_policy_name() { return std::move(lb_policy_name_); }
@@ -131,15 +135,19 @@ class ProcessedResolverResult {
   }
 
   const char* health_check_service_name() { return health_check_service_name_; }
+
   RefCountedPtr<ServiceConfig> service_config() { return service_config_; }
 
  private:
   // Finds the service config; extracts LB config and (maybe) retry throttle
   // params from it.
-  void ProcessServiceConfig(const Resolver::Result& resolver_result);
+  void ProcessServiceConfig(
+      const Resolver::Result& resolver_result,
+      const ClientChannelGlobalParsedObject* parsed_object);
 
   // Extracts the LB policy.
-  void ProcessLbPolicy(const Resolver::Result& resolver_result);
+  void ProcessLbPolicy(const Resolver::Result& resolver_result,
+                       const ClientChannelGlobalParsedObject* parsed_object);
 
   // Parses the service config. Intended to be used by
   // ServiceConfig::ParseGlobalParams.
@@ -157,7 +165,9 @@ class ProcessedResolverResult {
   UniquePtr<char> lb_policy_name_;
   RefCountedPtr<ParsedLoadBalancingConfig> lb_policy_config_ = nullptr;
   // Retry throttle data.
-  RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
+  const char* server_name_ = nullptr;
+  Optional<ClientChannelGlobalParsedObject::RetryThrottling>
+      retry_throttle_data_;
   const char* health_check_service_name_ = nullptr;
 };
 
