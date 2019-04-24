@@ -248,16 +248,14 @@ class Subchannel {
   // changes.
   // The watcher will be destroyed either when the subchannel is
   // destroyed or when CancelConnectivityStateWatch() is called.
-  void WatchConnectivityState(
-      grpc_connectivity_state initial_state,
-      UniquePtr<char> health_check_service_name,
-      UniquePtr<ConnectivityStateWatcher> watcher);
+  void WatchConnectivityState(grpc_connectivity_state initial_state,
+                              UniquePtr<char> health_check_service_name,
+                              UniquePtr<ConnectivityStateWatcher> watcher);
 
   // Cancels a connectivity state watch.
   // If the watcher has already been destroyed, this is a no-op.
-  void CancelConnectivityStateWatch(
-      const char* health_check_service_name,
-      ConnectivityStateWatcher* watcher);
+  void CancelConnectivityStateWatch(const char* health_check_service_name,
+                                    ConnectivityStateWatcher* watcher);
 
   // Attempt to connect to the backend.  Has no effect if already connected.
   void AttemptToConnect();

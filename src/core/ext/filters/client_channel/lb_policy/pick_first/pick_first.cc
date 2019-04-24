@@ -334,7 +334,8 @@ void PickFirst::UpdateLocked(UpdateArgs args) {
       // state of all subchannels above.
       latest_pending_subchannel_list_->subchannel(0)
           ->StartConnectivityWatchLocked();
-      latest_pending_subchannel_list_->subchannel(0)->subchannel()
+      latest_pending_subchannel_list_->subchannel(0)
+          ->subchannel()
           ->AttemptToConnect();
     }
   }

@@ -394,13 +394,19 @@ void Subchannel::ConnectivityStateWatcherList::RemoveLocked(
 
 void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
     Subchannel* subchannel, grpc_connectivity_state state) {
-  for (ConnectivityStateWatcher* w = head_; w != nullptr;
-       w = w->next_) {
+  for (ConnectivityStateWatcher* w = head_; w != nullptr; w = w->next_) {
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     if (state == GRPC_CHANNEL_READY) {
       connected_subchannel = subchannel->connected_subchannel_;
     }
-// FIXME: is it okay to do this while holding the lock?
+    // TODO(roth): In principle, it seems wrong to send this notification
+    // to the watcher while holding the subchannel's mutex, since it could
+    // lead to a deadlock if the watcher calls back into the subchannel
+    // before returning back to us.  In practice, this doesn't happen,
+    // because the LB policy code that watches subchannels always bounces
+    // the notification into the client_channel control-plane combiner
+    // before processing it.  But if we ever have any other callers here,
+    // we will probably need to change this.
     w->OnConnectivityStateChange(state, std::move(connected_subchannel));
   }
 }
@@ -538,8 +544,7 @@ void Subchannel::HealthWatcherMap::AddLocked(
 }
 
 void Subchannel::HealthWatcherMap::RemoveLocked(
-    const char* health_check_service_name,
-    ConnectivityStateWatcher* watcher) {
+    const char* health_check_service_name, ConnectivityStateWatcher* watcher) {
   auto it = map_.find(health_check_service_name);
   GPR_ASSERT(it != map_.end());
   it->second->RemoveWatcherLocked(watcher);
@@ -580,9 +585,7 @@ grpc_connectivity_state Subchannel::HealthWatcherMap::CheckConnectivityLocked(
   return state;
 }
 
-void Subchannel::HealthWatcherMap::ShutdownLocked() {
-  map_.clear();
-}
+void Subchannel::HealthWatcherMap::ShutdownLocked() { map_.clear(); }
 
 //
 // Subchannel
@@ -841,8 +844,7 @@ void Subchannel::WatchConnectivityState(
 }
 
 void Subchannel::CancelConnectivityStateWatch(
-      const char* health_check_service_name,
-      ConnectivityStateWatcher* watcher) {
+    const char* health_check_service_name, ConnectivityStateWatcher* watcher) {
   MutexLock lock(&mu_);
   grpc_pollset_set* interested_parties = watcher->interested_parties();
   if (interested_parties != nullptr) {
