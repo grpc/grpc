@@ -29,6 +29,7 @@
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/ext/transport/cronet/transport/cronet_transport.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
@@ -45,13 +46,11 @@
 #define GRPC_HEADER_SIZE_IN_BYTES 5
 #define GRPC_FLUSH_READ_SIZE 4096
 
-#define CRONET_LOG(...)                          \
-  do {                                           \
-    if (grpc_cronet_trace) gpr_log(__VA_ARGS__); \
+grpc_core::TraceFlag grpc_cronet_trace(false, "cronet");
+#define CRONET_LOG(...)                                    \
+  do {                                                     \
+    if (grpc_cronet_trace.enabled()) gpr_log(__VA_ARGS__); \
   } while (0)
-
-/* TODO (makdharma): Hook up into the wider tracing mechanism */
-int grpc_cronet_trace = 0;
 
 enum e_op_result {
   ACTION_TAKEN_WITH_CALLBACK,
@@ -177,7 +176,7 @@ struct op_and_state {
   bool done = false;
   struct stream_obj* s; /* Pointer back to the stream object */
   /* next op_and_state in the linked list */
-  struct op_and_state* next;
+  struct op_and_state* next = nullptr;
 };
 
 struct op_storage {
@@ -324,7 +323,7 @@ static grpc_error* make_error_with_desc(int error_code, const char* desc) {
 
 inline op_and_state::op_and_state(stream_obj* s,
                                   const grpc_transport_stream_op_batch& op)
-    : op(op), state(s->arena), s(s), next(s->storage.head) {}
+    : op(op), state(s->arena), s(s) {}
 
 /*
   Add a new stream op to op storage.
@@ -335,10 +334,8 @@ static void add_to_storage(struct stream_obj* s,
   /* add new op at the beginning of the linked list. The memory is freed
   in remove_from_storage */
   op_and_state* new_op = grpc_core::New<op_and_state>(s, *op);
-  // Pontential fix to crash on GPR_ASSERT(!curr->done)
-  // TODO (mxyan): check if this is indeed necessary.
-  new_op->done = false;
   gpr_mu_lock(&s->mu);
+  new_op->next = storage->head;
   storage->head = new_op;
   storage->num_pending_ops++;
   if (op->send_message) {

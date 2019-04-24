@@ -183,8 +183,8 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// within the \a deadline).  A \a tag points to an arbitrary location usually
   /// employed to uniquely identify an event.
   ///
-  /// \param tag [out] Upon sucess, updated to point to the event's tag.
-  /// \param ok [out] Upon sucess, true if a successful event, false otherwise
+  /// \param tag [out] Upon success, updated to point to the event's tag.
+  /// \param ok [out] Upon success, true if a successful event, false otherwise
   ///        See documentation for CompletionQueue::Next for explanation of ok
   /// \param deadline [in] How long to block in wait for an event.
   ///
@@ -203,8 +203,8 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// employed to uniquely identify an event.
   ///
   /// \param f [in] Function to execute before calling AsyncNext on this queue.
-  /// \param tag [out] Upon sucess, updated to point to the event's tag.
-  /// \param ok [out] Upon sucess, true if read a regular event, false
+  /// \param tag [out] Upon success, updated to point to the event's tag.
+  /// \param ok [out] Upon success, true if read a regular event, false
   /// otherwise.
   /// \param deadline [in] How long to block in wait for an event.
   ///
@@ -362,7 +362,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// queue should not really shutdown until all avalanching operations have
   /// been finalized. Note that we maintain the requirement that an avalanche
   /// registration must take place before CQ shutdown (which must be maintained
-  /// elsehwere)
+  /// elsewhere)
   void InitialAvalanching() {
     gpr_atm_rel_store(&avalanches_in_flight_, static_cast<gpr_atm>(1));
   }

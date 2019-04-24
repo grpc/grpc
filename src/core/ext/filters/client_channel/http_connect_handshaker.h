@@ -25,7 +25,7 @@
 
 /// Channel arg indicating HTTP CONNECT headers (string).
 /// Multiple headers are separated by newlines.  Key/value pairs are
-/// seperated by colons.
+/// separated by colons.
 #define GRPC_ARG_HTTP_CONNECT_HEADERS "grpc.http_connect_headers"
 
 /// Registers handshaker factory.

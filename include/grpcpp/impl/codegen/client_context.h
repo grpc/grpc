@@ -79,6 +79,7 @@ template <class Response>
 class ClientCallbackReaderImpl;
 template <class Request>
 class ClientCallbackWriterImpl;
+class ClientCallbackUnaryImpl;
 }  // namespace internal
 
 template <class R>
@@ -417,6 +418,7 @@ class ClientContext {
   friend class ::grpc::internal::ClientCallbackReaderImpl;
   template <class Request>
   friend class ::grpc::internal::ClientCallbackWriterImpl;
+  friend class ::grpc::internal::ClientCallbackUnaryImpl;
 
   // Used by friend class CallOpClientRecvStatus
   void set_debug_error_string(const grpc::string& debug_error_string) {

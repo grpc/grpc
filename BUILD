@@ -269,6 +269,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/support/client_interceptor.h",
     "include/grpcpp/support/config.h",
     "include/grpcpp/support/interceptor.h",
+    "include/grpcpp/support/message_allocator.h",
     "include/grpcpp/support/proto_buffer_reader.h",
     "include/grpcpp/support/proto_buffer_writer.h",
     "include/grpcpp/support/server_callback.h",
@@ -737,6 +738,7 @@ grpc_cc_library(
         "src/core/lib/channel/handshaker_registry.cc",
         "src/core/lib/channel/status_util.cc",
         "src/core/lib/compression/compression.cc",
+        "src/core/lib/compression/compression_args.cc",
         "src/core/lib/compression/compression_internal.cc",
         "src/core/lib/compression/message_compress.cc",
         "src/core/lib/compression/stream_compression.cc",
@@ -892,6 +894,7 @@ grpc_cc_library(
         "src/core/lib/channel/handshaker_registry.h",
         "src/core/lib/channel/status_util.h",
         "src/core/lib/compression/algorithm_metadata.h",
+        "src/core/lib/compression/compression_args.h",
         "src/core/lib/compression/compression_internal.h",
         "src/core/lib/compression/message_compress.h",
         "src/core/lib/compression/stream_compression.h",
@@ -2137,6 +2140,7 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/intercepted_channel.h",
         "include/grpcpp/impl/codegen/interceptor.h",
         "include/grpcpp/impl/codegen/interceptor_common.h",
+        "include/grpcpp/impl/codegen/message_allocator.h",
         "include/grpcpp/impl/codegen/metadata_map.h",
         "include/grpcpp/impl/codegen/method_handler_impl.h",
         "include/grpcpp/impl/codegen/rpc_method.h",
@@ -2347,7 +2351,8 @@ grpc_cc_library(
         ":envoy_core_upb",
         ":google_api_upb",
         ":proto_gen_validate_upb",
-    ]
+    ],
+    tags = ["no_windows"],
 )
 
 grpc_cc_library(
