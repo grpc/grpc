@@ -378,23 +378,16 @@ class Subchannel::ConnectedSubchannelStateWatcher {
 
 class Subchannel::ExternalStateWatcherList::ExternalWatcher {
  public:
-  ExternalWatcher(Subchannel* subchannel, grpc_pollset_set* pollset_set,
-                  grpc_connectivity_state initial_state,
+  ExternalWatcher(Subchannel* subchannel, grpc_connectivity_state initial_state,
                   UniquePtr<SubchannelConnectivityStateWatcher> watcher)
-      : subchannel_(subchannel), pollset_set_(pollset_set),
-        state_(initial_state), watcher_(std::move(watcher)) {
+      : subchannel_(subchannel), state_(initial_state),
+        watcher_(std::move(watcher)) {
     GRPC_CLOSURE_INIT(&on_state_changed_, OnStateChanged, this,
                       grpc_schedule_on_exec_ctx);
     GRPC_SUBCHANNEL_WEAK_REF(subchannel_, "external_state_watcher+init");
-    if (pollset_set_ != nullptr) {
-      grpc_pollset_set_add_pollset_set(subchannel_->pollset_set_, pollset_set_);
-    }
   }
 
   ~ExternalWatcher() {
-    if (pollset_set_ != nullptr) {
-      grpc_pollset_set_del_pollset_set(subchannel_->pollset_set_, pollset_set_);
-    }
     GRPC_SUBCHANNEL_WEAK_UNREF(subchannel_, "external_state_watcher+done");
   }
 
@@ -432,7 +425,6 @@ class Subchannel::ExternalStateWatcherList::ExternalWatcher {
   }
 
   Subchannel* subchannel_;
-  grpc_pollset_set* pollset_set_;
   grpc_connectivity_state state_;
   UniquePtr<SubchannelConnectivityStateWatcher> watcher_;
   Atomic<bool> shutdown_{false};
@@ -445,11 +437,10 @@ class Subchannel::ExternalStateWatcherList::ExternalWatcher {
 //
 
 void Subchannel::ExternalStateWatcherList::AddLocked(
-    Subchannel* subchannel, grpc_pollset_set* pollset_set,
-    grpc_connectivity_state initial_state,
+    Subchannel* subchannel, grpc_connectivity_state initial_state,
     UniquePtr<SubchannelConnectivityStateWatcher> watcher) {
-  ExternalWatcher* w = New<ExternalWatcher>(subchannel, pollset_set,
-                                            initial_state, std::move(watcher));
+  ExternalWatcher* w = New<ExternalWatcher>(subchannel, initial_state,
+                                            std::move(watcher));
   w->next_ = head_;
   head_ = w;
   w->RequestNotificationLocked();
@@ -495,17 +486,12 @@ class Subchannel::ExternalHealthStateWatcherMap::HealthWatcher
 
   grpc_connectivity_state state() const { return state_; }
 
-  void AddWatcherLocked(grpc_pollset_set* pollset_set,
-                        grpc_connectivity_state initial_state,
+  void AddWatcherLocked(grpc_connectivity_state initial_state,
                         UniquePtr<SubchannelConnectivityStateWatcher> watcher) {
     auto* w = New<ExternalHealthWatcher>();
-    w->pollset_set = pollset_set;
     w->watcher = std::move(watcher);
     w->next = head_;
     head_ = w;
-    if (pollset_set != nullptr) {
-      grpc_pollset_set_add_pollset_set(subchannel_->pollset_set_, pollset_set);
-    }
     if (state_ != initial_state) {
       RefCountedPtr<ConnectedSubchannel> connected_subchannel;
       if (state_ == GRPC_CHANNEL_READY) {
@@ -519,10 +505,6 @@ class Subchannel::ExternalHealthStateWatcherMap::HealthWatcher
   void RemoveWatcherLocked(SubchannelConnectivityStateWatcher* watcher) {
     GPR_ASSERT(head_ != nullptr);
     if (head_->watcher.get() == watcher) {
-      if (head_->pollset_set != nullptr) {
-        grpc_pollset_set_del_pollset_set(subchannel_->pollset_set_,
-                                         head_->pollset_set);
-      }
       ExternalHealthWatcher* next = head_->next;
       Delete(head_);
       head_ = next;
@@ -530,10 +512,6 @@ class Subchannel::ExternalHealthStateWatcherMap::HealthWatcher
     }
     for (ExternalHealthWatcher* w = head_; w != nullptr; w = w->next) {
       if (w->next->watcher.get() == watcher) {
-        if (w->next->pollset_set != nullptr) {
-          grpc_pollset_set_del_pollset_set(subchannel_->pollset_set_,
-                                           w->next->pollset_set);
-        }
         w->next = w->next->next;
         Delete(w->next);
         return;
@@ -577,7 +555,6 @@ class Subchannel::ExternalHealthStateWatcherMap::HealthWatcher
 
  private:
   struct ExternalHealthWatcher {
-    grpc_pollset_set* pollset_set;
     UniquePtr<SubchannelConnectivityStateWatcher> watcher;
     ExternalHealthWatcher* next = nullptr;
   };
@@ -625,8 +602,7 @@ class Subchannel::ExternalHealthStateWatcherMap::HealthWatcher
 //
 
 void Subchannel::ExternalHealthStateWatcherMap::AddLocked(
-    Subchannel* subchannel, grpc_pollset_set* pollset_set,
-    grpc_connectivity_state initial_state,
+    Subchannel* subchannel, grpc_connectivity_state initial_state,
     UniquePtr<char> health_check_service_name,
     UniquePtr<SubchannelConnectivityStateWatcher> watcher) {
   auto it = map_.find(health_check_service_name.get());
@@ -641,8 +617,7 @@ void Subchannel::ExternalHealthStateWatcherMap::AddLocked(
   } else {
     health_watcher = it->second.get();
   }
-  health_watcher->AddWatcherLocked(pollset_set, initial_state,
-                                   std::move(watcher));
+  health_watcher->AddWatcherLocked(initial_state, std::move(watcher));
 }
 
 void Subchannel::ExternalHealthStateWatcherMap::RemoveLocked(
@@ -932,15 +907,19 @@ grpc_connectivity_state Subchannel::CheckConnectivity(
 }
 
 void Subchannel::WatchConnectivityState(
-    grpc_pollset_set* interested_parties, grpc_connectivity_state initial_state,
+    grpc_connectivity_state initial_state,
     UniquePtr<char> health_check_service_name,
     UniquePtr<SubchannelConnectivityStateWatcher> watcher) {
   MutexLock lock(&mu_);
+  grpc_pollset_set* interested_parties = watcher->interested_parties();
+  if (interested_parties != nullptr) {
+    grpc_pollset_set_add_pollset_set(pollset_set_, interested_parties);
+  }
   if (health_check_service_name == nullptr) {
-    external_state_watcher_list_.AddLocked(this, interested_parties,
-                                           initial_state, std::move(watcher));
+    external_state_watcher_list_.AddLocked(this, initial_state,
+                                           std::move(watcher));
   } else {
-    health_watcher_map_.AddLocked(this, interested_parties, initial_state,
+    health_watcher_map_.AddLocked(this, initial_state,
                                   std::move(health_check_service_name),
                                   std::move(watcher));
   }
@@ -950,6 +929,10 @@ void Subchannel::CancelConnectivityStateWatch(
       const char* health_check_service_name,
       SubchannelConnectivityStateWatcher* watcher) {
   MutexLock lock(&mu_);
+  grpc_pollset_set* interested_parties = watcher->interested_parties();
+  if (interested_parties != nullptr) {
+    grpc_pollset_set_del_pollset_set(pollset_set_, interested_parties);
+  }
   if (health_check_service_name == nullptr) {
     external_state_watcher_list_.RemoveLocked(watcher);
   } else {

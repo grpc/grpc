@@ -154,6 +154,10 @@ class SubchannelData {
         grpc_connectivity_state new_state,
         RefCountedPtr<ConnectedSubchannel> connected_subchannel) override;
 
+    grpc_pollset_set* interested_parties() override {
+      return subchannel_list_->policy()->interested_parties();
+    }
+
    private:
     class Updater {
      public:
@@ -290,8 +294,10 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::Watcher::
         grpc_connectivity_state new_state,
         RefCountedPtr<ConnectedSubchannel> connected_subchannel) {
   // Will delete itself.
+auto* p =  // FIXME: remove this line
   New<Updater>(subchannel_data_, subchannel_list_->Ref(), new_state,
                std::move(connected_subchannel));
+gpr_log(GPR_INFO, "==> Watcher::OnConnectivityStateChange(): updater=%p sd=%p state=%s connected_subchannel=%p", p, subchannel_data_, grpc_connectivity_state_name(new_state), connected_subchannel.get());
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
@@ -305,6 +311,7 @@ SubchannelData<SubchannelListType, SubchannelDataType>::Watcher::Updater::
         : subchannel_data_(subchannel_data),
           subchannel_list_(std::move(subchannel_list)), state_(state),
           connected_subchannel_(std::move(connected_subchannel)) {
+gpr_log(GPR_INFO, "==> Updater::Updater(): this=%p sd=%p state=%s connected_subchannel=%p", this, subchannel_data, grpc_connectivity_state_name(state), connected_subchannel_.get());
   GRPC_CLOSURE_INIT(&closure_, &OnUpdate, this,
                     grpc_combiner_scheduler(subchannel_list_->combiner_));
   GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
@@ -315,17 +322,19 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::Watcher::Updater::
     OnUpdate(void* arg, grpc_error* error) {
   Updater* self = static_cast<Updater*>(arg);
   SubchannelData* sd = self->subchannel_data_;
+gpr_log(GPR_INFO, "==> Updater::OnUpdate(): self=%p sd=%p state=%s connected_subchannel=%p", self, sd, grpc_connectivity_state_name(self->state_), self->connected_subchannel_.get());
   if (sd->subchannel_list_->tracer()->enabled()) {
     gpr_log(
         GPR_INFO,
         "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
-        " (subchannel %p): connectivity changed: state=%s, error=%s, "
-        "shutting_down=%d",
+        " (subchannel %p): connectivity changed: state=%s, "
+        "connected_subchannel=%p, shutting_down=%d",
         sd->subchannel_list_->tracer()->name(), sd->subchannel_list_->policy(),
         sd->subchannel_list_, sd->Index(),
         sd->subchannel_list_->num_subchannels(), sd->subchannel_,
         grpc_connectivity_state_name(self->state_),
-        grpc_error_string(error), sd->subchannel_list_->shutting_down());
+        self->connected_subchannel_.get(),
+        sd->subchannel_list_->shutting_down());
   }
   // If shutting down, unref subchannel and stop watching.
   if (sd->subchannel_list_->shutting_down() || error == GRPC_ERROR_CANCELLED) {
@@ -403,7 +412,7 @@ void SubchannelData<SubchannelListType,
   GPR_ASSERT(pending_watcher_ == nullptr);
   pending_watcher_ = New<Watcher>(this, subchannel_list()->Ref());
   subchannel_->WatchConnectivityState(
-      subchannel_list_->policy()->interested_parties(), connectivity_state_,
+      connectivity_state_,
       UniquePtr<char>(
           gpr_strdup(subchannel_list_->health_check_service_name())),
       UniquePtr<SubchannelConnectivityStateWatcher>(pending_watcher_));

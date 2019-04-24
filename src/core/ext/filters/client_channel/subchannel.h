@@ -189,6 +189,8 @@ class SubchannelConnectivityStateWatcher {
       grpc_connectivity_state new_state,
       RefCountedPtr<ConnectedSubchannel> connected_subchannel) GRPC_ABSTRACT;
 
+  virtual grpc_pollset_set* interested_parties() GRPC_ABSTRACT;
+
   GRPC_ABSTRACT_BASE_CLASS
 };
 
@@ -238,7 +240,6 @@ class Subchannel {
   // The watcher will be destroyed either when the subchannel is
   // destroyed or when CancelConnectivityStateWatch() is called.
   void WatchConnectivityState(
-      grpc_pollset_set* interested_parties,
       grpc_connectivity_state initial_state,
       UniquePtr<char> health_check_service_name,
       UniquePtr<SubchannelConnectivityStateWatcher> watcher);
@@ -274,12 +275,10 @@ class Subchannel {
  private:
   class ExternalStateWatcherList {
    public:
-    void AddLocked(Subchannel* subchannel, grpc_pollset_set* pollset_set,
+    void AddLocked(Subchannel* subchannel,
                    grpc_connectivity_state initial_state,
                    UniquePtr<SubchannelConnectivityStateWatcher> watcher);
     void RemoveLocked(SubchannelConnectivityStateWatcher* watcher);
-
-    bool empty() const { return head_ == nullptr; }
 
    private:
     class ExternalWatcher;
@@ -289,14 +288,12 @@ class Subchannel {
 
   class ExternalHealthStateWatcherMap {
    public:
-    void AddLocked(Subchannel* subchannel, grpc_pollset_set* pollset_set,
+    void AddLocked(Subchannel* subchannel,
                    grpc_connectivity_state initial_state,
                    UniquePtr<char> health_check_service_name,
                    UniquePtr<SubchannelConnectivityStateWatcher> watcher);
     void RemoveLocked(const char* health_check_service_name,
                       SubchannelConnectivityStateWatcher* watcher);
-
-    bool empty() const { return map_.empty(); }
 
     void StartHealthCheckingLocked();
     void StopHealthCheckingLocked(grpc_connectivity_state state);
