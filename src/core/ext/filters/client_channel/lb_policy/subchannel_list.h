@@ -139,6 +139,7 @@ class SubchannelData {
       grpc_connectivity_state connectivity_state) GRPC_ABSTRACT;
 
  private:
+  // Watcher for subchannel connectivity state.
   class Watcher : public Subchannel::ConnectivityStateWatcher {
    public:
     Watcher(
@@ -158,6 +159,8 @@ class SubchannelData {
     }
 
    private:
+    // A fire-and-forget class that bounces into the combiner to process
+    // a connectivity state update.
     class Updater {
      public:
       Updater(
@@ -192,10 +195,8 @@ class SubchannelData {
 
   // Backpointer to owning subchannel list.  Not owned.
   SubchannelList<SubchannelListType, SubchannelDataType>* subchannel_list_;
-
-  // The subchannel and connected subchannel.
+  // The subchannel.
   Subchannel* subchannel_;
-
   // Will be non-null when the subchannel's state is being watched.
   Subchannel::ConnectivityStateWatcher* pending_watcher_ = nullptr;
   // Data updated by the watcher.
@@ -437,9 +438,6 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
 
 template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType, SubchannelDataType>::ShutdownLocked() {
-  // If there's a pending notification for this subchannel, cancel it;
-  // the callback is responsible for unreffing the subchannel.
-  // Otherwise, unref the subchannel directly.
   if (pending_watcher_ != nullptr) {
     CancelConnectivityWatchLocked("shutdown");
   }
@@ -450,6 +448,8 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::ShutdownLocked() {
 // SubchannelList
 //
 
+// TODO(roth): Move this into the client channel service config parsing
+// code as part of merging in the service config error handling changes.
 struct HealthCheckParams {
   UniquePtr<char> service_name;
 
