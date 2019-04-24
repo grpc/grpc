@@ -155,6 +155,10 @@ grpc::string GetHeaderIncludes(grpc_generator::File* file,
                   params.grpc_search_path);
     printer->Print(vars, "\n");
     printer->Print(vars, "namespace grpc {\n");
+    printer->Print(vars, "namespace experimental {\n");
+    printer->Print(vars, "template <typename RequestT, typename ResponseT>\n");
+    printer->Print(vars, "class MessageAllocator;\n");
+    printer->Print(vars, "}  // namespace experimental\n");
     printer->Print(vars, "class CompletionQueue;\n");
     printer->Print(vars, "class Channel;\n");
     printer->Print(vars, "class ServerCompletionQueue;\n");
@@ -607,6 +611,14 @@ void PrintHeaderClientMethodCallbackInterfaces(
                    "virtual void $Method$(::grpc::ClientContext* context, "
                    "const ::grpc::ByteBuffer* request, $Response$* response, "
                    "std::function<void(::grpc::Status)>) = 0;\n");
+    printer->Print(*vars,
+                   "virtual void $Method$(::grpc::ClientContext* context, "
+                   "const $Request$* request, $Response$* response, "
+                   "::grpc::experimental::ClientUnaryReactor* reactor) = 0;\n");
+    printer->Print(*vars,
+                   "virtual void $Method$(::grpc::ClientContext* context, "
+                   "const ::grpc::ByteBuffer* request, $Response$* response, "
+                   "::grpc::experimental::ClientUnaryReactor* reactor) = 0;\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(*vars,
                    "virtual void $Method$(::grpc::ClientContext* context, "
@@ -673,6 +685,16 @@ void PrintHeaderClientMethodCallback(grpc_generator::Printer* printer,
                    "void $Method$(::grpc::ClientContext* context, "
                    "const ::grpc::ByteBuffer* request, $Response$* response, "
                    "std::function<void(::grpc::Status)>) override;\n");
+    printer->Print(
+        *vars,
+        "void $Method$(::grpc::ClientContext* context, "
+        "const $Request$* request, $Response$* response, "
+        "::grpc::experimental::ClientUnaryReactor* reactor) override;\n");
+    printer->Print(
+        *vars,
+        "void $Method$(::grpc::ClientContext* context, "
+        "const ::grpc::ByteBuffer* request, $Response$* response, "
+        "::grpc::experimental::ClientUnaryReactor* reactor) override;\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(*vars,
                    "void $Method$(::grpc::ClientContext* context, "
@@ -993,7 +1015,15 @@ void PrintHeaderServerMethodCallback(
         "controller) {\n"
         "               return this->$"
         "Method$(context, request, response, controller);\n"
-        "             }));\n");
+        "             }));\n}\n");
+    printer->Print(*vars,
+                   "void SetMessageAllocatorFor_$Method$(\n"
+                   "    ::grpc::experimental::MessageAllocator< "
+                   "$RealRequest$, $RealResponse$>* allocator) {\n"
+                   "  static_cast<::grpc::internal::CallbackUnaryHandler< "
+                   "$RealRequest$, $RealResponse$>*>(\n"
+                   "      ::grpc::Service::experimental().GetHandler($Idx$))\n"
+                   "          ->SetMessageAllocator(allocator);\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(
         *vars,
@@ -1671,7 +1701,7 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
                    "const $Request$* request, $Response$* response, "
                    "std::function<void(::grpc::Status)> f) {\n");
     printer->Print(*vars,
-                   "  return ::grpc::internal::CallbackUnaryCall"
+                   "  ::grpc::internal::CallbackUnaryCall"
                    "(stub_->channel_.get(), stub_->rpcmethod_$Method$_, "
                    "context, request, response, std::move(f));\n}\n\n");
 
@@ -1681,9 +1711,29 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
                    "const ::grpc::ByteBuffer* request, $Response$* response, "
                    "std::function<void(::grpc::Status)> f) {\n");
     printer->Print(*vars,
-                   "  return ::grpc::internal::CallbackUnaryCall"
+                   "  ::grpc::internal::CallbackUnaryCall"
                    "(stub_->channel_.get(), stub_->rpcmethod_$Method$_, "
                    "context, request, response, std::move(f));\n}\n\n");
+
+    printer->Print(*vars,
+                   "void $ns$$Service$::Stub::experimental_async::$Method$("
+                   "::grpc::ClientContext* context, "
+                   "const $Request$* request, $Response$* response, "
+                   "::grpc::experimental::ClientUnaryReactor* reactor) {\n");
+    printer->Print(*vars,
+                   "  ::grpc::internal::ClientCallbackUnaryFactory::Create"
+                   "(stub_->channel_.get(), stub_->rpcmethod_$Method$_, "
+                   "context, request, response, reactor);\n}\n\n");
+
+    printer->Print(*vars,
+                   "void $ns$$Service$::Stub::experimental_async::$Method$("
+                   "::grpc::ClientContext* context, "
+                   "const ::grpc::ByteBuffer* request, $Response$* response, "
+                   "::grpc::experimental::ClientUnaryReactor* reactor) {\n");
+    printer->Print(*vars,
+                   "  ::grpc::internal::ClientCallbackUnaryFactory::Create"
+                   "(stub_->channel_.get(), stub_->rpcmethod_$Method$_, "
+                   "context, request, response, reactor);\n}\n\n");
 
     for (auto async_prefix : async_prefixes) {
       (*vars)["AsyncPrefix"] = async_prefix.prefix;

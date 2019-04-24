@@ -34,12 +34,12 @@ def _args():
         description='gRPC Python stress test client')
     parser.add_argument(
         '--server_addresses',
-        help='comma seperated list of hostname:port to run servers on',
+        help='comma separated list of hostname:port to run servers on',
         default='localhost:8080',
         type=str)
     parser.add_argument(
         '--test_cases',
-        help='comma seperated list of testcase:weighting of tests to run',
+        help='comma separated list of testcase:weighting of tests to run',
         default='large_unary:100',
         type=str)
     parser.add_argument(
