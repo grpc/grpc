@@ -36,7 +36,7 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/transport_impl.h"
 
-grpc_core::DebugOnlyTraceFlag grpc_trace_stream_refcount(true,
+grpc_core::DebugOnlyTraceFlag grpc_trace_stream_refcount(false,
                                                          "stream_refcount");
 
 #ifndef NDEBUG
