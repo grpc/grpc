@@ -401,6 +401,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 }
 
 - (void)receiveNextMessages:(NSUInteger)numberOfMessages {
+  // branching based on _callOptions.enableFlowControl is handled inside _call
   GRPCCall *copiedCall = nil;
   @synchronized(self) {
     copiedCall = _call;
@@ -716,8 +717,13 @@ const char *kCFStreamVarName = "grpc_cfstream";
         @synchronized(strongSelf) {
           [strongSelf->_responseWriteable enqueueValue:data
                                      completionHandler:^{
-                                       strongSelf->_pendingCoreRead = NO;
-                                       [strongSelf maybeStartNextRead];
+                                       __strong GRPCCall *strongSelf = weakSelf;
+                                       if (strongSelf) {
+                                         @synchronized (strongSelf) {
+                                           strongSelf->_pendingCoreRead = NO;
+                                           [strongSelf maybeStartNextRead];
+                                         }
+                                       }
                                      }];
         }
       }
