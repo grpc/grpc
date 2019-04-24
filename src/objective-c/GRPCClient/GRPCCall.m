@@ -719,7 +719,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
                                      completionHandler:^{
                                        __strong GRPCCall *strongSelf = weakSelf;
                                        if (strongSelf) {
-                                         @synchronized (strongSelf) {
+                                         @synchronized(strongSelf) {
                                            strongSelf->_pendingCoreRead = NO;
                                            [strongSelf maybeStartNextRead];
                                          }
