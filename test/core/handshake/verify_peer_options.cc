@@ -146,13 +146,14 @@ static bool verify_peer_options_test(verify_peer_options* verify_options) {
   // lazy, this won't necessarily establish a connection yet.
   char* target;
   gpr_asprintf(&target, "127.0.0.1:%d", port);
-  grpc_arg ssl_name_override = {
-      GRPC_ARG_STRING,
-      const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
-      {const_cast<char*>("foo.test.google.fr")}};
-  grpc_channel_args grpc_args;
-  grpc_args.num_args = 1;
-  grpc_args.args = &ssl_name_override;
+  grpc_arg args[] = {
+      {.type = GRPC_ARG_STRING,
+       .key = const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
+       .value = {.string = const_cast<char*>("foo.test.google.fr")}},
+      {.type = GRPC_ARG_INTEGER,
+       .key = const_cast<char*>(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL),
+       .value = {.integer = 1}}};
+  grpc_channel_args grpc_args = {.num_args = 2, .args = args};
   grpc_channel* channel =
       grpc_secure_channel_create(ssl_creds, target, &grpc_args, nullptr);
   GPR_ASSERT(channel);
