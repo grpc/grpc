@@ -54,11 +54,11 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
  public:
   // If error is set when this returns, then construction failed, and
   // the caller may not use the new object.
-  ResolvingLoadBalancingPolicy(Args args, TraceFlag* tracer,
-                               UniquePtr<char> target_uri,
-                               UniquePtr<char> child_policy_name,
-                               const ParsedLoadBalancingConfig* child_lb_config,
-                               grpc_error** error);
+  ResolvingLoadBalancingPolicy(
+      Args args, TraceFlag* tracer, UniquePtr<char> target_uri,
+      UniquePtr<char> child_policy_name,
+      RefCountedPtr<ParsedLoadBalancingConfig> child_lb_config,
+      grpc_error** error);
 
   // Private ctor, to be used by client_channel only!
   //
@@ -68,7 +68,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   typedef bool (*ProcessResolverResultCallback)(
       void* user_data, const Resolver::Result& result,
       const char** lb_policy_name,
-      const ParsedLoadBalancingConfig** lb_policy_config);
+      RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config);
   // If error is set when this returns, then construction failed, and
   // the caller may not use the new object.
   ResolvingLoadBalancingPolicy(
@@ -106,7 +106,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   void OnResolverError(grpc_error* error);
   void CreateOrUpdateLbPolicyLocked(
       const char* lb_policy_name,
-      const ParsedLoadBalancingConfig* lb_policy_config,
+      RefCountedPtr<ParsedLoadBalancingConfig> lb_policy_config,
       Resolver::Result result, TraceStringVector* trace_strings);
   OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(
       const char* lb_policy_name, const grpc_channel_args& args,
@@ -123,7 +123,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   ProcessResolverResultCallback process_resolver_result_ = nullptr;
   void* process_resolver_result_user_data_ = nullptr;
   UniquePtr<char> child_policy_name_;
-  const ParsedLoadBalancingConfig* child_lb_config_ = nullptr;
+  RefCountedPtr<ParsedLoadBalancingConfig> child_lb_config_ = nullptr;
 
   // Resolver and associated state.
   OrphanablePtr<Resolver> resolver_;

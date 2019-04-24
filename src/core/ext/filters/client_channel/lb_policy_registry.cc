@@ -163,7 +163,7 @@ grpc_json* ParseLoadBalancingConfigHelper(const grpc_json* lb_config_array,
 }
 }  // namespace
 
-UniquePtr<ParsedLoadBalancingConfig>
+RefCountedPtr<ParsedLoadBalancingConfig>
 LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(const grpc_json* json,
                                                       grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);

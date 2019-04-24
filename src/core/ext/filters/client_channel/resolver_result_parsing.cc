@@ -80,9 +80,11 @@ ProcessedResolverResult::ProcessedResolverResult(
 void ProcessedResolverResult::ProcessServiceConfig(
     const Resolver::Result& resolver_result) {
   if (service_config_ == nullptr) return;
-  health_check_ = static_cast<HealthCheckParsedObject*>(
+  auto* health_check = static_cast<HealthCheckParsedObject*>(
       service_config_->GetParsedGlobalServiceConfigObject(
           HealthCheckParser::ParserIndex()));
+  health_check_service_name_ =
+      health_check != nullptr ? health_check->service_name() : nullptr;
   service_config_json_ = service_config_->service_config_json();
   auto* parsed_object = static_cast<const ClientChannelGlobalParsedObject*>(
       service_config_->GetParsedGlobalServiceConfigObject(
@@ -113,7 +115,7 @@ void ProcessedResolverResult::ProcessLbPolicy(
         service_config_->GetParsedGlobalServiceConfigObject(
             ClientChannelServiceConfigParser::ParserIndex()));
     if (parsed_object != nullptr) {
-      if (parsed_object->parsed_lb_config()) {
+      if (parsed_object->parsed_lb_config() != nullptr) {
         lb_policy_name_.reset(
             gpr_strdup(parsed_object->parsed_lb_config()->name()));
         lb_policy_config_ = parsed_object->parsed_lb_config();
@@ -339,7 +341,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
                                                     grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   InlinedVector<grpc_error*, 4> error_list;
-  UniquePtr<ParsedLoadBalancingConfig> parsed_lb_config;
+  RefCountedPtr<ParsedLoadBalancingConfig> parsed_lb_config;
   const char* lb_policy_name = nullptr;
   Optional<ClientChannelGlobalParsedObject::RetryThrottling> retry_throttling;
   for (grpc_json* field = json->child; field != nullptr; field = field->next) {

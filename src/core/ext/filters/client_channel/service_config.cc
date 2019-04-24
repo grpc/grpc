@@ -78,6 +78,7 @@ ServiceConfig::ServiceConfig(UniquePtr<char> service_config_json,
     error_list[error_count++] = local_error;
   }
   if (error_count > 0) {
+    gpr_log(GPR_ERROR, "got errors");
     *error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
         "Service config parsing error", error_list, error_count);
     GRPC_ERROR_UNREF(global_error);

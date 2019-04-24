@@ -120,16 +120,16 @@ constexpr char kGrpclb[] = "grpclb";
 
 class ParsedGrpcLbConfig : public ParsedLoadBalancingConfig {
  public:
-  ParsedGrpcLbConfig(UniquePtr<ParsedLoadBalancingConfig> child_policy)
+  ParsedGrpcLbConfig(RefCountedPtr<ParsedLoadBalancingConfig> child_policy)
       : child_policy_(std::move(child_policy)) {}
   const char* name() const override { return kGrpclb; }
 
-  const ParsedLoadBalancingConfig* child_policy() const {
-    return child_policy_.get();
+  RefCountedPtr<ParsedLoadBalancingConfig> child_policy() const {
+    return child_policy_;
   }
 
  private:
-  UniquePtr<ParsedLoadBalancingConfig> child_policy_;
+  RefCountedPtr<ParsedLoadBalancingConfig> child_policy_;
 };
 
 class GrpcLb : public LoadBalancingPolicy {
@@ -316,7 +316,6 @@ class GrpcLb : public LoadBalancingPolicy {
   // Helper functions used in UpdateLocked().
   void ProcessAddressesAndChannelArgsLocked(const ServerAddressList& addresses,
                                             const grpc_channel_args& args);
-  void ParseLbConfig(const ParsedGrpcLbConfig* grpclb_config);
   static void OnBalancerChannelConnectivityChangedLocked(void* arg,
                                                          grpc_error* error);
   void CancelBalancerChannelConnectivityWatchLocked();
@@ -394,7 +393,7 @@ class GrpcLb : public LoadBalancingPolicy {
   // until it reports READY, at which point it will be moved to child_policy_.
   OrphanablePtr<LoadBalancingPolicy> pending_child_policy_;
   // The child policy config.
-  const ParsedLoadBalancingConfig* child_policy_config_ = nullptr;
+  RefCountedPtr<ParsedLoadBalancingConfig> child_policy_config_ = nullptr;
   // Child policy in state READY.
   bool child_policy_ready_ = false;
 };
@@ -1387,7 +1386,14 @@ void GrpcLb::FillChildRefsForChannelz(
 
 void GrpcLb::UpdateLocked(UpdateArgs args) {
   const bool is_initial_update = lb_channel_ == nullptr;
-  ParseLbConfig(static_cast<const ParsedGrpcLbConfig*>(args.config));
+  auto* grpclb_config =
+      static_cast<const ParsedGrpcLbConfig*>(args.config.get());
+  if (grpclb_config != nullptr) {
+    child_policy_config_ = grpclb_config->child_policy();
+  } else {
+    child_policy_config_ = nullptr;
+  }
+
   ProcessAddressesAndChannelArgsLocked(args.addresses, *args.args);
   // Update the existing child policy.
   if (child_policy_ != nullptr) CreateOrUpdateChildPolicyLocked();
@@ -1474,14 +1480,6 @@ void GrpcLb::ProcessAddressesAndChannelArgsLocked(
   result.addresses = std::move(balancer_addresses);
   result.args = lb_channel_args;
   response_generator_->SetResponse(std::move(result));
-}
-
-void GrpcLb::ParseLbConfig(const ParsedGrpcLbConfig* grpclb_config) {
-  if (grpclb_config != nullptr) {
-    child_policy_config_ = grpclb_config->child_policy();
-  } else {
-    child_policy_config_ = nullptr;
-  }
 }
 
 void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
@@ -1806,15 +1804,15 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 
   const char* name() const override { return kGrpclb; }
 
-  UniquePtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
+  RefCountedPtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
       const grpc_json* json, grpc_error** error) const override {
     GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
     if (json == nullptr) {
-      return UniquePtr<ParsedLoadBalancingConfig>(
+      return RefCountedPtr<ParsedLoadBalancingConfig>(
           New<ParsedGrpcLbConfig>(nullptr));
     }
     InlinedVector<grpc_error*, 2> error_list;
-    UniquePtr<ParsedLoadBalancingConfig> child_policy = nullptr;
+    RefCountedPtr<ParsedLoadBalancingConfig> child_policy = nullptr;
 
     for (const grpc_json* field = json->child; field != nullptr;
          field = field->next) {
@@ -1834,7 +1832,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
       }
     }
     if (error_list.empty()) {
-      return UniquePtr<ParsedLoadBalancingConfig>(
+      return RefCountedPtr<ParsedLoadBalancingConfig>(
           New<ParsedGrpcLbConfig>(std::move(child_policy)));
     } else {
       *error =

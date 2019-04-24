@@ -54,7 +54,7 @@ class LoadBalancingPolicyRegistry {
 
   /// Returns a parsed object of the load balancing policy to be used from a
   /// LoadBalancingConfig array \a json. \a field_name specifies
-  static UniquePtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
+  static RefCountedPtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
       const grpc_json* json, grpc_error** error);
 
   /// Validates if the deprecated loadBalancingPolicy field can be parsed.

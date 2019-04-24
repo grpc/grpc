@@ -544,12 +544,13 @@ class PickFirstFactory : public LoadBalancingPolicyFactory {
 
   const char* name() const override { return kPickFirst; }
 
-  UniquePtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
+  RefCountedPtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
       const grpc_json* json, grpc_error** error) const override {
     if (json != nullptr) {
       GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
     }
-    return UniquePtr<ParsedLoadBalancingConfig>(New<ParsedPickFirstConfig>());
+    return RefCountedPtr<ParsedLoadBalancingConfig>(
+        New<ParsedPickFirstConfig>());
   }
 };
 

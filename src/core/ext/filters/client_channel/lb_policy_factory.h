@@ -37,7 +37,7 @@ class LoadBalancingPolicyFactory {
   /// Caller does NOT take ownership of result.
   virtual const char* name() const GRPC_ABSTRACT;
 
-  virtual UniquePtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
+  virtual RefCountedPtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
       const grpc_json* json, grpc_error** error) const GRPC_ABSTRACT;
 
   virtual ~LoadBalancingPolicyFactory() {}

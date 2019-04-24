@@ -38,7 +38,7 @@ namespace grpc_core {
 
 /// Interface for parsed forms of load balancing configs found in a service
 /// config.
-class ParsedLoadBalancingConfig {
+class ParsedLoadBalancingConfig : public RefCounted<ParsedLoadBalancingConfig> {
  public:
   virtual ~ParsedLoadBalancingConfig() = default;
 
@@ -209,7 +209,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// config are available.
   struct UpdateArgs {
     ServerAddressList addresses;
-    const ParsedLoadBalancingConfig* config = nullptr;
+    RefCountedPtr<ParsedLoadBalancingConfig> config;
     const grpc_channel_args* args = nullptr;
 
     // TODO(roth): Remove everything below once channel args is

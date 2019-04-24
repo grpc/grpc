@@ -45,7 +45,7 @@ class ClientChannelGlobalParsedObject : public ServiceConfigParsedObject {
   };
 
   ClientChannelGlobalParsedObject(
-      UniquePtr<ParsedLoadBalancingConfig> parsed_lb_config,
+      RefCountedPtr<ParsedLoadBalancingConfig> parsed_lb_config,
       const char* parsed_deprecated_lb_policy,
       const Optional<RetryThrottling>& retry_throttling)
       : parsed_lb_config_(std::move(parsed_lb_config)),
@@ -56,8 +56,8 @@ class ClientChannelGlobalParsedObject : public ServiceConfigParsedObject {
     return retry_throttling_;
   }
 
-  const ParsedLoadBalancingConfig* parsed_lb_config() const {
-    return parsed_lb_config_.get();
+  RefCountedPtr<ParsedLoadBalancingConfig> parsed_lb_config() const {
+    return parsed_lb_config_;
   }
 
   const char* parsed_deprecated_lb_policy() const {
@@ -65,7 +65,7 @@ class ClientChannelGlobalParsedObject : public ServiceConfigParsedObject {
   }
 
  private:
-  UniquePtr<ParsedLoadBalancingConfig> parsed_lb_config_;
+  RefCountedPtr<ParsedLoadBalancingConfig> parsed_lb_config_;
   const char* parsed_deprecated_lb_policy_ = nullptr;
   Optional<RetryThrottling> retry_throttling_;
 };
@@ -126,11 +126,11 @@ class ProcessedResolverResult {
   }
 
   UniquePtr<char> lb_policy_name() { return std::move(lb_policy_name_); }
-  const ParsedLoadBalancingConfig* lb_policy_config() {
+  RefCountedPtr<ParsedLoadBalancingConfig> lb_policy_config() {
     return lb_policy_config_;
   }
 
-  const HealthCheckParsedObject* health_check() { return health_check_; }
+  const char* health_check_service_name() { return health_check_service_name_; }
   RefCountedPtr<ServiceConfig> service_config() { return service_config_; }
 
  private:
@@ -155,10 +155,10 @@ class ProcessedResolverResult {
   RefCountedPtr<ServiceConfig> service_config_;
   // LB policy.
   UniquePtr<char> lb_policy_name_;
-  const ParsedLoadBalancingConfig* lb_policy_config_ = nullptr;
+  RefCountedPtr<ParsedLoadBalancingConfig> lb_policy_config_ = nullptr;
   // Retry throttle data.
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
-  const HealthCheckParsedObject* health_check_ = nullptr;
+  const char* health_check_service_name_ = nullptr;
 };
 
 }  // namespace internal

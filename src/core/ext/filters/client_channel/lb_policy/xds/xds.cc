@@ -122,8 +122,8 @@ constexpr char kDefaultLocalityName[] = "xds_default_locality";
 class ParsedXdsConfig : public ParsedLoadBalancingConfig {
  public:
   ParsedXdsConfig(const char* balancer_name,
-                  UniquePtr<ParsedLoadBalancingConfig> child_policy,
-                  UniquePtr<ParsedLoadBalancingConfig> fallback_policy)
+                  RefCountedPtr<ParsedLoadBalancingConfig> child_policy,
+                  RefCountedPtr<ParsedLoadBalancingConfig> fallback_policy)
       : balancer_name_(balancer_name),
         child_policy_(std::move(child_policy)),
         fallback_policy_(std::move(fallback_policy)) {}
@@ -132,18 +132,18 @@ class ParsedXdsConfig : public ParsedLoadBalancingConfig {
 
   const char* balancer_name() const { return balancer_name_; };
 
-  const ParsedLoadBalancingConfig* child_policy() const {
-    return child_policy_.get();
+  RefCountedPtr<ParsedLoadBalancingConfig> child_policy() const {
+    return child_policy_;
   }
 
-  const ParsedLoadBalancingConfig* fallback_policy() const {
-    return fallback_policy_.get();
+  RefCountedPtr<ParsedLoadBalancingConfig> fallback_policy() const {
+    return fallback_policy_;
   }
 
  private:
   const char* balancer_name_ = nullptr;
-  UniquePtr<ParsedLoadBalancingConfig> child_policy_;
-  UniquePtr<ParsedLoadBalancingConfig> fallback_policy_;
+  RefCountedPtr<ParsedLoadBalancingConfig> child_policy_;
+  RefCountedPtr<ParsedLoadBalancingConfig> fallback_policy_;
 };
 
 class XdsLb : public LoadBalancingPolicy {
@@ -308,9 +308,10 @@ class XdsLb : public LoadBalancingPolicy {
           : parent_(std::move(parent)) {}
       ~LocalityEntry() = default;
 
-      void UpdateLocked(xds_grpclb_serverlist* serverlist,
-                        const ParsedLoadBalancingConfig* child_policy_config,
-                        const grpc_channel_args* args);
+      void UpdateLocked(
+          xds_grpclb_serverlist* serverlist,
+          RefCountedPtr<ParsedLoadBalancingConfig> child_policy_config,
+          const grpc_channel_args* args);
       void ShutdownLocked();
       void ResetBackoffLocked();
       void FillChildRefsForChannelz(channelz::ChildRefsList* child_subchannels,
@@ -352,9 +353,10 @@ class XdsLb : public LoadBalancingPolicy {
       RefCountedPtr<XdsLb> parent_;
     };
 
-    void UpdateLocked(const LocalityList& locality_list,
-                      const ParsedLoadBalancingConfig* child_policy_config,
-                      const grpc_channel_args* args, XdsLb* parent);
+    void UpdateLocked(
+        const LocalityList& locality_list,
+        RefCountedPtr<ParsedLoadBalancingConfig> child_policy_config,
+        const grpc_channel_args* args, XdsLb* parent);
     void ShutdownLocked();
     void ResetBackoffLocked();
     void FillChildRefsForChannelz(channelz::ChildRefsList* child_subchannels,
@@ -426,7 +428,7 @@ class XdsLb : public LoadBalancingPolicy {
 
   // Timeout in milliseconds for before using fallback backend addresses.
   // 0 means not using fallback.
-  const ParsedLoadBalancingConfig* fallback_policy_config_ = nullptr;
+  RefCountedPtr<ParsedLoadBalancingConfig> fallback_policy_config_;
   int lb_fallback_timeout_ms_ = 0;
   // The backend addresses from the resolver.
   UniquePtr<ServerAddressList> fallback_backend_addresses_;
@@ -436,7 +438,7 @@ class XdsLb : public LoadBalancingPolicy {
   grpc_closure lb_on_fallback_;
 
   // The policy to use for the backends.
-  const ParsedLoadBalancingConfig* child_policy_config_ = nullptr;
+  RefCountedPtr<ParsedLoadBalancingConfig> child_policy_config_;
   // Map of policies to use in the backend
   LocalityMap locality_map_;
   LocalityList locality_serverlist_;
@@ -1241,7 +1243,7 @@ void XdsLb::ParseLbConfig(const ParsedXdsConfig* xds_config) {
 
 void XdsLb::UpdateLocked(UpdateArgs args) {
   const bool is_initial_update = lb_chand_ == nullptr;
-  ParseLbConfig(static_cast<const ParsedXdsConfig*>(args.config));
+  ParseLbConfig(static_cast<const ParsedXdsConfig*>(args.config.get()));
   // TODO(juanlishen): Pass fallback policy config update after fallback policy
   // is added.
   if (balancer_name_ == nullptr) {
@@ -1311,7 +1313,7 @@ void XdsLb::LocalityMap::PruneLocalities(const LocalityList& locality_list) {
 
 void XdsLb::LocalityMap::UpdateLocked(
     const LocalityList& locality_serverlist,
-    const ParsedLoadBalancingConfig* child_policy_config,
+    RefCountedPtr<ParsedLoadBalancingConfig> child_policy_config,
     const grpc_channel_args* args, XdsLb* parent) {
   if (parent->shutting_down_) return;
   for (size_t i = 0; i < locality_serverlist.size(); i++) {
@@ -1404,7 +1406,7 @@ XdsLb::LocalityMap::LocalityEntry::CreateChildPolicyLocked(
 
 void XdsLb::LocalityMap::LocalityEntry::UpdateLocked(
     xds_grpclb_serverlist* serverlist,
-    const ParsedLoadBalancingConfig* child_policy_config,
+    RefCountedPtr<ParsedLoadBalancingConfig> child_policy_config,
     const grpc_channel_args* args_in) {
   if (parent_->shutting_down_) return;
   // This should never be invoked if we do not have serverlist_, as fallback
@@ -1661,7 +1663,7 @@ class XdsFactory : public LoadBalancingPolicyFactory {
 
   const char* name() const override { return kXds; }
 
-  UniquePtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
+  RefCountedPtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
       const grpc_json* json, grpc_error** error) const override {
     GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
     if (json == nullptr) {
@@ -1677,8 +1679,8 @@ class XdsFactory : public LoadBalancingPolicyFactory {
 
     InlinedVector<grpc_error*, 3> error_list;
     const char* balancer_name = nullptr;
-    UniquePtr<ParsedLoadBalancingConfig> child_policy = nullptr;
-    UniquePtr<ParsedLoadBalancingConfig> fallback_policy = nullptr;
+    RefCountedPtr<ParsedLoadBalancingConfig> child_policy = nullptr;
+    RefCountedPtr<ParsedLoadBalancingConfig> fallback_policy = nullptr;
     for (const grpc_json* field = json->child; field != nullptr;
          field = field->next) {
       if (field->key == nullptr) continue;
@@ -1727,7 +1729,7 @@ class XdsFactory : public LoadBalancingPolicyFactory {
           "field:balancerName error:not found"));
     }
     if (error_list.empty()) {
-      return UniquePtr<ParsedLoadBalancingConfig>(New<ParsedXdsConfig>(
+      return RefCountedPtr<ParsedLoadBalancingConfig>(New<ParsedXdsConfig>(
           balancer_name, std::move(child_policy), std::move(fallback_policy)));
     } else {
       *error = ServiceConfig::CreateErrorFromVector("Xds Parser", &error_list);
