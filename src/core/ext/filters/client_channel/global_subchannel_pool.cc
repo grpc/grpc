@@ -24,7 +24,6 @@
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/sync.h"
 
 constexpr grpc_millis kDefaultSweepIntervalMs = 1000;
 
@@ -35,7 +34,6 @@ class GlobalSubchannelPool::Sweeper : public InternallyRefCounted<Sweeper> {
   Sweeper(GlobalSubchannelPool* subchannel_pool =
               GlobalSubchannelPool::instance_raw())
       : subchannel_pool_(subchannel_pool) {
-    gpr_mu_init(&mu_);
     char* sweep_interval_env =
         gpr_getenv("GRPC_SUBCHANNEL_INDEX_SWEEP_INTERVAL_MS");
     if (sweep_interval_env != nullptr) {
@@ -55,8 +53,6 @@ class GlobalSubchannelPool::Sweeper : public InternallyRefCounted<Sweeper> {
     Ref().release();  // Ref for sweep callback.
     ScheduleNextSweep();
   }
-
-  ~Sweeper() { gpr_mu_destroy(&mu_); }
 
   void Orphan() override {
     {
@@ -93,13 +89,13 @@ class GlobalSubchannelPool::Sweeper : public InternallyRefCounted<Sweeper> {
 
   static void SweepUnusedSubchannels(void* arg, grpc_error* error) {
     Sweeper* sweeper = static_cast<Sweeper*>(arg);
-    gpr_mu_lock(&sweeper->mu_);
+    ReleasableMutexLock lock(&sweeper->mu_);
     if (sweeper->shutdown_ || error != GRPC_ERROR_NONE) {
-      gpr_mu_unlock(&sweeper->mu_);
+      lock.Unlock();
       sweeper->Unref();
       return;
     }
-    gpr_mu_unlock(&sweeper->mu_);
+    lock.Unlock();
     GlobalSubchannelPool* subchannel_pool = sweeper->subchannel_pool_;
     UnusedSubchanels unused_subchannels;
     // We use two-phase cleanup because modification during traversal is unsafe
@@ -116,14 +112,13 @@ class GlobalSubchannelPool::Sweeper : public InternallyRefCounted<Sweeper> {
   GlobalSubchannelPool* subchannel_pool_;
   grpc_closure sweep_unused_subchannels_;
   grpc_millis sweep_interval_ms_ = kDefaultSweepIntervalMs;
-  gpr_mu mu_;  // Protect the data members below.
+  Mutex mu_;  // Protect the data members below.
   grpc_timer next_sweep_timer_;
   bool shutdown_ = false;
 };
 
 GlobalSubchannelPool::GlobalSubchannelPool() {
   subchannel_map_ = grpc_avl_create(&subchannel_avl_vtable_);
-  gpr_mu_init(&mu_);
   // Start backup polling as long as the poll strategy is not specified "none".
   char* s = gpr_getenv("GRPC_POLL_STRATEGY");
   if (s == nullptr || strcmp(s, "none") != 0) {
@@ -137,7 +132,6 @@ GlobalSubchannelPool::GlobalSubchannelPool() {
 
 GlobalSubchannelPool::~GlobalSubchannelPool() {
   grpc_avl_unref(subchannel_map_, pollset_set_);
-  gpr_mu_destroy(&mu_);
   if (pollset_set_ != nullptr) {
     grpc_client_channel_stop_backup_polling(pollset_set_);
     grpc_pollset_set_destroy(pollset_set_);

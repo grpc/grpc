@@ -24,6 +24,7 @@
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
 namespace grpc_core {
@@ -84,7 +85,7 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   // A map from subchannel key to subchannel.
   grpc_avl subchannel_map_;
   // To protect subchannel_map_.
-  gpr_mu mu_;
+  Mutex mu_;
 
   // To periodically sweep unused subchannels.
   OrphanablePtr<Sweeper> sweeper_;
