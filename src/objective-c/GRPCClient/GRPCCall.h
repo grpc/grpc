@@ -269,6 +269,12 @@ extern NSString *const kGRPCTrailersKey;
  */
 - (void)finish;
 
+/**
+ * Tell gRPC to receive the next N gRPC message from gRPC core.
+ *
+ * This method should only be used when flow control is enabled. When flow control is not enabled,
+ * this method is a no-op.
+ */
 - (void)receiveNextMessages:(NSUInteger)numberOfMessages;
 
 /**
