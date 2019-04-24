@@ -423,18 +423,23 @@ void Subchannel::ConnectivityStateWatcherList::Clear() {
 // Subchannel::HealthWatcherMap::HealthWatcher
 //
 
-// All methods must be called while holding c->mu.
+// State needed for tracking the connectivity state with a particular
+// health check service name.
 class Subchannel::HealthWatcherMap::HealthWatcher
     : public InternallyRefCounted<HealthWatcher> {
  public:
   HealthWatcher(Subchannel* c, UniquePtr<char> health_check_service_name,
-                grpc_connectivity_state initial_state)
+                grpc_connectivity_state subchannel_state)
       : subchannel_(c),
         health_check_service_name_(std::move(health_check_service_name)),
-        state_(initial_state) {
+        state_(subchannel_state == GRPC_CHANNEL_READY
+                   ? GRPC_CHANNEL_CONNECTING
+                   : subchannel_state) {
     GRPC_SUBCHANNEL_WEAK_REF(subchannel_, "health_watcher");
     GRPC_CLOSURE_INIT(&on_health_changed_, OnHealthChanged, this,
                       grpc_schedule_on_exec_ctx);
+    // If the subchannel is already connected, start health checking.
+    if (subchannel_state == GRPC_CHANNEL_READY) StartHealthCheckingLocked();
   }
 
   ~HealthWatcher() {
@@ -529,6 +534,8 @@ void Subchannel::HealthWatcherMap::AddLocked(
     Subchannel* subchannel, grpc_connectivity_state initial_state,
     UniquePtr<char> health_check_service_name,
     UniquePtr<ConnectivityStateWatcher> watcher) {
+  // If the health check service name is not already present in the map,
+  // add it.
   auto it = map_.find(health_check_service_name.get());
   HealthWatcher* health_watcher;
   if (it == map_.end()) {
@@ -540,6 +547,7 @@ void Subchannel::HealthWatcherMap::AddLocked(
   } else {
     health_watcher = it->second.get();
   }
+  // Add the watcher to the entry.
   health_watcher->AddWatcherLocked(initial_state, std::move(watcher));
 }
 
@@ -548,6 +556,8 @@ void Subchannel::HealthWatcherMap::RemoveLocked(
   auto it = map_.find(health_check_service_name);
   GPR_ASSERT(it != map_.end());
   it->second->RemoveWatcherLocked(watcher);
+  // If we just removed the last watcher for this service name, remove
+  // the map entry.
   if (!it->second->HasWatchers()) {
     map_.erase(it);
   }

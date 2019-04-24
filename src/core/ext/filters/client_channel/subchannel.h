@@ -280,6 +280,8 @@ class Subchannel {
                                                  grpc_resolved_address* addr);
 
  private:
+  // A linked list of ConnectivityStateWatchers that are monitoring the
+  // subchannel's state.
   class ConnectivityStateWatcherList {
    public:
     ~ConnectivityStateWatcherList() { Clear(); }
@@ -287,6 +289,7 @@ class Subchannel {
     void AddLocked(UniquePtr<ConnectivityStateWatcher> watcher);
     void RemoveLocked(ConnectivityStateWatcher* watcher);
 
+    // Notifies all watchers in the list about a change to state.
     void NotifyLocked(Subchannel* subchannel, grpc_connectivity_state state);
 
     void Clear();
@@ -297,6 +300,15 @@ class Subchannel {
     ConnectivityStateWatcher* head_ = nullptr;
   };
 
+  // A map that tracks ConnectivityStateWatchers using a particular health
+  // check service name.
+  //
+  // There is one entry in the map for each health check service name.
+  // Entries exist only as long as there are watchers using the
+  // corresponding service name.
+  //
+  // A health check client is maintained only while the subchannel is in
+  // state READY.
   class HealthWatcherMap {
    public:
     void AddLocked(Subchannel* subchannel,
@@ -306,7 +318,10 @@ class Subchannel {
     void RemoveLocked(const char* health_check_service_name,
                       ConnectivityStateWatcher* watcher);
 
+    // Called when the subchannel transitions into state READY.
     void StartHealthCheckingLocked();
+
+    // Called when the subchannel transitions into any state other than READY.
     void StopHealthCheckingLocked(grpc_connectivity_state state);
 
     grpc_connectivity_state CheckConnectivityLocked(
