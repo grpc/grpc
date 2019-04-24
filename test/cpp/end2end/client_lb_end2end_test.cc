@@ -1019,8 +1019,8 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   auto channel = BuildChannel("round_robin");
   auto stub = BuildStub(channel);
   std::vector<int> ports;
-
   // Start with a single server.
+  gpr_log(GPR_INFO, "*** FIRST BACKEND ***");
   ports.emplace_back(servers_[0]->port_);
   SetNextResolution(ports);
   WaitForServer(stub, 0, DEBUG_LOCATION);
@@ -1030,36 +1030,33 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   EXPECT_EQ(0, servers_[1]->service_.request_count());
   EXPECT_EQ(0, servers_[2]->service_.request_count());
   servers_[0]->service_.ResetCounters();
-
   // And now for the second server.
+  gpr_log(GPR_INFO, "*** SECOND BACKEND ***");
   ports.clear();
   ports.emplace_back(servers_[1]->port_);
   SetNextResolution(ports);
-
   // Wait until update has been processed, as signaled by the second backend
   // receiving a request.
   EXPECT_EQ(0, servers_[1]->service_.request_count());
   WaitForServer(stub, 1, DEBUG_LOCATION);
-
   for (size_t i = 0; i < 10; ++i) CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(0, servers_[0]->service_.request_count());
   EXPECT_EQ(10, servers_[1]->service_.request_count());
   EXPECT_EQ(0, servers_[2]->service_.request_count());
   servers_[1]->service_.ResetCounters();
-
   // ... and for the last server.
+  gpr_log(GPR_INFO, "*** THIRD BACKEND ***");
   ports.clear();
   ports.emplace_back(servers_[2]->port_);
   SetNextResolution(ports);
   WaitForServer(stub, 2, DEBUG_LOCATION);
-
   for (size_t i = 0; i < 10; ++i) CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(0, servers_[0]->service_.request_count());
   EXPECT_EQ(0, servers_[1]->service_.request_count());
   EXPECT_EQ(10, servers_[2]->service_.request_count());
   servers_[2]->service_.ResetCounters();
-
   // Back to all servers.
+  gpr_log(GPR_INFO, "*** ALL BACKENDS ***");
   ports.clear();
   ports.emplace_back(servers_[0]->port_);
   ports.emplace_back(servers_[1]->port_);
@@ -1068,14 +1065,13 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   WaitForServer(stub, 0, DEBUG_LOCATION);
   WaitForServer(stub, 1, DEBUG_LOCATION);
   WaitForServer(stub, 2, DEBUG_LOCATION);
-
   // Send three RPCs, one per server.
   for (size_t i = 0; i < 3; ++i) CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(1, servers_[0]->service_.request_count());
   EXPECT_EQ(1, servers_[1]->service_.request_count());
   EXPECT_EQ(1, servers_[2]->service_.request_count());
-
   // An empty update will result in the channel going into TRANSIENT_FAILURE.
+  gpr_log(GPR_INFO, "*** NO BACKENDS ***");
   ports.clear();
   SetNextResolution(ports);
   grpc_connectivity_state channel_state;
@@ -1084,15 +1080,14 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   } while (channel_state == GRPC_CHANNEL_READY);
   ASSERT_NE(channel_state, GRPC_CHANNEL_READY);
   servers_[0]->service_.ResetCounters();
-
   // Next update introduces servers_[1], making the channel recover.
+  gpr_log(GPR_INFO, "*** BACK TO SECOND BACKEND ***");
   ports.clear();
   ports.emplace_back(servers_[1]->port_);
   SetNextResolution(ports);
   WaitForServer(stub, 1, DEBUG_LOCATION);
   channel_state = channel->GetState(false /* try to connect */);
   ASSERT_EQ(channel_state, GRPC_CHANNEL_READY);
-
   // Check LB policy name for the channel.
   EXPECT_EQ("round_robin", channel->GetLoadBalancingPolicyName());
 }

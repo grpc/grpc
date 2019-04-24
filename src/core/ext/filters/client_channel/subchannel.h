@@ -173,31 +173,40 @@ class SubchannelCall {
   grpc_millis deadline_;
 };
 
-class SubchannelConnectivityStateWatcher {
- public:
-  virtual ~SubchannelConnectivityStateWatcher() = default;
-
-  // Will be invoked whenever the subchannel's connectivity state
-  // changes.  There will be only one invocation of this method on a
-  // given watcher instance at any given time.
-  //
-  // When the state changes to READY, connected_subchannel will
-  // contain a ref to the connected subchannel.  When it changes from
-  // READY to some other state, the implementation must release its
-  // ref to the connected subchannel.
-  virtual void OnConnectivityStateChange(
-      grpc_connectivity_state new_state,
-      RefCountedPtr<ConnectedSubchannel> connected_subchannel) GRPC_ABSTRACT;
-
-  virtual grpc_pollset_set* interested_parties() GRPC_ABSTRACT;
-
-  GRPC_ABSTRACT_BASE_CLASS
-};
-
 // A subchannel that knows how to connect to exactly one target address. It
 // provides a target for load balancing.
 class Subchannel {
+ private:
+  class ConnectivityStateWatcherList;  // Forward declaration.
+
  public:
+  class ConnectivityStateWatcher {
+   public:
+    virtual ~ConnectivityStateWatcher() = default;
+
+    // Will be invoked whenever the subchannel's connectivity state
+    // changes.  There will be only one invocation of this method on a
+    // given watcher instance at any given time.
+    //
+    // When the state changes to READY, connected_subchannel will
+    // contain a ref to the connected subchannel.  When it changes from
+    // READY to some other state, the implementation must release its
+    // ref to the connected subchannel.
+    virtual void OnConnectivityStateChange(
+        grpc_connectivity_state new_state,
+        RefCountedPtr<ConnectedSubchannel> connected_subchannel) GRPC_ABSTRACT;
+
+    virtual grpc_pollset_set* interested_parties() GRPC_ABSTRACT;
+
+    GRPC_ABSTRACT_BASE_CLASS
+
+   private:
+    // For access to next_.
+    friend class Subchannel::ConnectivityStateWatcherList;
+
+    ConnectivityStateWatcher* next_ = nullptr;
+  };
+
   // The ctor and dtor are not intended to use directly.
   Subchannel(SubchannelKey* key, grpc_connector* connector,
              const grpc_channel_args* args);
@@ -242,13 +251,13 @@ class Subchannel {
   void WatchConnectivityState(
       grpc_connectivity_state initial_state,
       UniquePtr<char> health_check_service_name,
-      UniquePtr<SubchannelConnectivityStateWatcher> watcher);
+      UniquePtr<ConnectivityStateWatcher> watcher);
 
   // Cancels a connectivity state watch.
   // If the watcher has already been destroyed, this is a no-op.
   void CancelConnectivityStateWatch(
       const char* health_check_service_name,
-      SubchannelConnectivityStateWatcher* watcher);
+      ConnectivityStateWatcher* watcher);
 
   // Attempt to connect to the backend.  Has no effect if already connected.
   void AttemptToConnect();
@@ -273,27 +282,31 @@ class Subchannel {
                                                  grpc_resolved_address* addr);
 
  private:
-  class ExternalStateWatcherList {
+  class ConnectivityStateWatcherList {
    public:
-    void AddLocked(Subchannel* subchannel,
-                   grpc_connectivity_state initial_state,
-                   UniquePtr<SubchannelConnectivityStateWatcher> watcher);
-    void RemoveLocked(SubchannelConnectivityStateWatcher* watcher);
+    ~ConnectivityStateWatcherList() { Clear(); }
+
+    void AddLocked(UniquePtr<ConnectivityStateWatcher> watcher);
+    void RemoveLocked(ConnectivityStateWatcher* watcher);
+
+    void NotifyLocked(Subchannel* subchannel, grpc_connectivity_state state);
+
+    void Clear();
+
+    bool empty() const { return head_ == nullptr; }
 
    private:
-    class ExternalWatcher;
-
-    ExternalWatcher* head_ = nullptr;
+    ConnectivityStateWatcher* head_ = nullptr;
   };
 
-  class ExternalHealthStateWatcherMap {
+  class HealthWatcherMap {
    public:
     void AddLocked(Subchannel* subchannel,
                    grpc_connectivity_state initial_state,
                    UniquePtr<char> health_check_service_name,
-                   UniquePtr<SubchannelConnectivityStateWatcher> watcher);
+                   UniquePtr<ConnectivityStateWatcher> watcher);
     void RemoveLocked(const char* health_check_service_name,
-                      SubchannelConnectivityStateWatcher* watcher);
+                      ConnectivityStateWatcher* watcher);
 
     void StartHealthCheckingLocked();
     void StopHealthCheckingLocked(grpc_connectivity_state state);
@@ -310,11 +323,9 @@ class Subchannel {
   };
 
   class ConnectedSubchannelStateWatcher;
-  class HealthWatcher;
 
   // Sets the subchannel's connectivity state to \a state.
-  void SetConnectivityStateLocked(grpc_connectivity_state state,
-                                  const char* reason);
+  void SetConnectivityStateLocked(grpc_connectivity_state state);
 
   // Methods for connection.
   void MaybeStartConnectingLocked();
@@ -356,11 +367,9 @@ class Subchannel {
   bool disconnected_ = false;
 
   // Connectivity state tracking.
-// FIXME: consider eliminating this and instead looking directly at
-// external_state_watcher_list_ to see who to notify
-  grpc_connectivity_state_tracker state_tracker_;
-  ExternalStateWatcherList external_state_watcher_list_;
-  ExternalHealthStateWatcherMap health_watcher_map_;
+  grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
+  ConnectivityStateWatcherList watcher_list_;
+  HealthWatcherMap health_watcher_map_;
 
   // Backoff state.
   BackOff backoff_;
