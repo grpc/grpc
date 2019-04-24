@@ -600,6 +600,8 @@ RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
     const grpc_channel_args* args) {
   const bool use_local_subchannel_pool = grpc_channel_arg_get_bool(
       grpc_channel_args_find(args, GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL), false);
+  // TODO(lidiz): Remove the g_custom_iomgr_enabled check once
+  // https://github.com/grpc/grpc/issues/18854 is fixed.
   if (use_local_subchannel_pool || g_custom_iomgr_enabled) {
     return MakeRefCounted<LocalSubchannelPool>();
   }
