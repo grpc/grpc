@@ -243,7 +243,7 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
 /**
  * Enable flow control of a gRPC call. The option is default to NO. If set to YES, writeData: method
  * should only be called at most once before a didWriteData callback is issued, and
- * receiveNextMessage: must be called each time before gRPC call can issues a didReceiveMessage
+ * receiveNextMessage: must be called each time before gRPC call can issue a didReceiveMessage
  * callback.
  *
  * If writeData: method is called more than once before issuance of a didWriteData callback, gRPC
