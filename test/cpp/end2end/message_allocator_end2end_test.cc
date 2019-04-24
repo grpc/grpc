@@ -154,7 +154,7 @@ class MessageAllocatorEnd2endTestBase
     switch (GetParam().protocol) {
       case Protocol::TCP:
         channel_ =
-            CreateCustomChannel(server_address_.str(), channel_creds, args);
+            ::grpc::CreateCustomChannel(server_address_.str(), channel_creds, args);
         break;
       case Protocol::INPROC:
         channel_ = server_->InProcessChannel(args);
