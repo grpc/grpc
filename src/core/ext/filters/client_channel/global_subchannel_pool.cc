@@ -59,7 +59,6 @@ class GlobalSubchannelPool::Sweeper : public InternallyRefCounted<Sweeper> {
   ~Sweeper() { gpr_mu_destroy(&mu_); }
 
   void Orphan() override {
-    gpr_log(GPR_ERROR, "=== sweeper %p orphaned", this);
     {
       MutexLock lock(&mu_);
       shutdown_ = true;
@@ -81,7 +80,6 @@ class GlobalSubchannelPool::Sweeper : public InternallyRefCounted<Sweeper> {
     MutexLock lock(&mu_);
     grpc_timer_init(&next_sweep_timer_, next_sweep_time,
                     &sweep_unused_subchannels_);
-    gpr_log(GPR_ERROR, "=== sweeper %p scheduled", this);
   }
 
   static void FindUnusedSubchannelsLocked(
@@ -95,11 +93,9 @@ class GlobalSubchannelPool::Sweeper : public InternallyRefCounted<Sweeper> {
 
   static void SweepUnusedSubchannels(void* arg, grpc_error* error) {
     Sweeper* sweeper = static_cast<Sweeper*>(arg);
-    gpr_log(GPR_ERROR, "=== sweeper %p awake", sweeper);
     gpr_mu_lock(&sweeper->mu_);
     if (sweeper->shutdown_ || error != GRPC_ERROR_NONE) {
       gpr_mu_unlock(&sweeper->mu_);
-      gpr_log(GPR_ERROR, "=== sweeper %p unreffing, shutdown=%d, error=%p", sweeper, (int)sweeper->shutdown_, error);
       sweeper->Unref();
       return;
     }
@@ -140,7 +136,6 @@ GlobalSubchannelPool::GlobalSubchannelPool() {
 }
 
 GlobalSubchannelPool::~GlobalSubchannelPool() {
-  gpr_log(GPR_ERROR, "=== gsp %p dtor", this);
   grpc_avl_unref(subchannel_map_, pollset_set_);
   gpr_mu_destroy(&mu_);
   if (pollset_set_ != nullptr) {
@@ -156,7 +151,6 @@ void GlobalSubchannelPool::Init() {
 }
 
 void GlobalSubchannelPool::Shutdown() {
-  gpr_log(GPR_ERROR, "=== gsp shutdown");
   // To ensure Init() was called before.
   GPR_ASSERT(instance_ != nullptr);
   // To ensure Shutdown() was not called before.
