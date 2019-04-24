@@ -1750,7 +1750,7 @@ void XdsLb::LocalityMap::PruneLocalities(const LocalityList& locality_list) {
 
 void XdsLb::LocalityMap::UpdateLocked(
     const LocalityList& locality_serverlist,
-    RefCountedPtr<ParsedLoadBalancingConfig> child_policy_config,
+    const RefCountedPtr<ParsedLoadBalancingConfig>& child_policy_config,
     const grpc_channel_args* args, XdsLb* parent) {
   if (parent->shutting_down_) return;
   for (size_t i = 0; i < locality_serverlist.size(); i++) {
@@ -1845,7 +1845,7 @@ XdsLb::LocalityMap::LocalityEntry::CreateChildPolicyLocked(
 
 void XdsLb::LocalityMap::LocalityEntry::UpdateLocked(
     xds_grpclb_serverlist* serverlist,
-    RefCountedPtr<ParsedLoadBalancingConfig> child_policy_config,
+    const RefCountedPtr<ParsedLoadBalancingConfig>& child_policy_config,
     const grpc_channel_args* args_in) {
   if (parent_->shutting_down_) return;
   // Construct update args.

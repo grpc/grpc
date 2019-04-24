@@ -137,7 +137,7 @@ class ErrorParser : public ServiceConfig::Parser {
   static const char* GlobalError() { return "ErrorParser : globalError"; }
 };
 
-void VerifyRegexMatch(grpc_error* error, std::regex e) {
+void VerifyRegexMatch(grpc_error* error, const std::regex& e) {
   std::smatch match;
   std::string s(grpc_error_string(error));
   EXPECT_TRUE(std::regex_search(s, match, e));
