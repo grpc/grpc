@@ -214,6 +214,7 @@ Subchannel* GlobalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
         }
       }
       if (c != nullptr) {
+        c->set_subchannel_pool(Ref());
         grpc_pollset_set_add_pollset_set(c->pollset_set(), pollset_set_);
       }
       grpc_avl_unref(new_map, nullptr);
