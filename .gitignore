@@ -134,3 +134,11 @@ bm_*.json
 
 # cmake build files
 /cmake/build
+
+# Visual Studio Code artifacts
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+

@@ -609,7 +609,7 @@ BENCHMARK_TEMPLATE(BM_IsolatedFilter, MessageSizeFilter, SendEmptyMetadata);
 namespace isolated_call_filter {
 
 typedef struct {
-  grpc_call_combiner* call_combiner;
+  grpc_core::CallCombiner* call_combiner;
 } call_data;
 
 static void StartTransportStreamOp(grpc_call_element* elem,

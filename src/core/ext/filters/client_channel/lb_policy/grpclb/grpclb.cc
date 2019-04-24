@@ -1142,13 +1142,13 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
   // we want to retry connecting. Otherwise, we have deliberately ended this
   // call and no further action is required.
   if (lb_calld == grpclb_policy->lb_calld_.get()) {
-    // If we did not receive a serverlist and the fallback-at-startup checks
-    // are pending, go into fallback mode immediately.  This short-circuits
-    // the timeout for the fallback-at-startup case.
-    if (!lb_calld->seen_serverlist_ &&
-        grpclb_policy->fallback_at_startup_checks_pending_) {
+    // If the fallback-at-startup checks are pending, go into fallback mode
+    // immediately.  This short-circuits the timeout for the fallback-at-startup
+    // case.
+    if (grpclb_policy->fallback_at_startup_checks_pending_) {
+      GPR_ASSERT(!lb_calld->seen_serverlist_);
       gpr_log(GPR_INFO,
-              "[grpclb %p] balancer call finished without receiving "
+              "[grpclb %p] Balancer call finished without receiving "
               "serverlist; entering fallback mode",
               grpclb_policy);
       grpclb_policy->fallback_at_startup_checks_pending_ = false;
@@ -1627,20 +1627,16 @@ void GrpcLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
 
 grpc_channel_args* GrpcLb::CreateChildPolicyArgsLocked(
     bool is_backend_from_grpclb_load_balancer) {
-  grpc_arg args_to_add[2] = {
-      // A channel arg indicating if the target is a backend inferred from a
-      // grpclb load balancer.
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(
-              GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER),
-          is_backend_from_grpclb_load_balancer),
-  };
-  size_t num_args_to_add = 1;
+  InlinedVector<grpc_arg, 2> args_to_add;
+  args_to_add.emplace_back(grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER),
+      is_backend_from_grpclb_load_balancer));
   if (is_backend_from_grpclb_load_balancer) {
-    args_to_add[num_args_to_add++] = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1);
+    args_to_add.emplace_back(grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1));
   }
-  return grpc_channel_args_copy_and_add(args_, args_to_add, num_args_to_add);
+  return grpc_channel_args_copy_and_add(args_, args_to_add.data(),
+                                        args_to_add.size());
 }
 
 OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(

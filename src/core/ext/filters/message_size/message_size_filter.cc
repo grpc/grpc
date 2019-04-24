@@ -154,7 +154,7 @@ struct call_data {
 
   ~call_data() { GRPC_ERROR_UNREF(error); }
 
-  grpc_call_combiner* call_combiner;
+  grpc_core::CallCombiner* call_combiner;
   grpc_core::MessageSizeParsedObject::message_size_limits limits;
   // Receive closures are chained: we inject this closure as the
   // recv_message_ready up-call on transport_stream_op, and remember to

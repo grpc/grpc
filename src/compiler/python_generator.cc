@@ -214,13 +214,15 @@ bool PrivateGenerator::PrintBetaServerFactory(
       grpc::string input_message_module_and_class;
       if (!method->get_module_and_message_path_input(
               &input_message_module_and_class, generator_file_name,
-              generate_in_pb2_grpc, config.import_prefix)) {
+              generate_in_pb2_grpc, config.import_prefix,
+              config.prefixes_to_filter)) {
         return false;
       }
       grpc::string output_message_module_and_class;
       if (!method->get_module_and_message_path_output(
               &output_message_module_and_class, generator_file_name,
-              generate_in_pb2_grpc, config.import_prefix)) {
+              generate_in_pb2_grpc, config.import_prefix,
+              config.prefixes_to_filter)) {
         return false;
       }
       method_implementation_constructors.insert(
@@ -320,13 +322,15 @@ bool PrivateGenerator::PrintBetaStubFactory(
       grpc::string input_message_module_and_class;
       if (!method->get_module_and_message_path_input(
               &input_message_module_and_class, generator_file_name,
-              generate_in_pb2_grpc, config.import_prefix)) {
+              generate_in_pb2_grpc, config.import_prefix,
+              config.prefixes_to_filter)) {
         return false;
       }
       grpc::string output_message_module_and_class;
       if (!method->get_module_and_message_path_output(
               &output_message_module_and_class, generator_file_name,
-              generate_in_pb2_grpc, config.import_prefix)) {
+              generate_in_pb2_grpc, config.import_prefix,
+              config.prefixes_to_filter)) {
         return false;
       }
       method_cardinalities.insert(
@@ -425,13 +429,15 @@ bool PrivateGenerator::PrintStub(
         grpc::string request_module_and_class;
         if (!method->get_module_and_message_path_input(
                 &request_module_and_class, generator_file_name,
-                generate_in_pb2_grpc, config.import_prefix)) {
+                generate_in_pb2_grpc, config.import_prefix,
+                config.prefixes_to_filter)) {
           return false;
         }
         grpc::string response_module_and_class;
         if (!method->get_module_and_message_path_output(
                 &response_module_and_class, generator_file_name,
-                generate_in_pb2_grpc, config.import_prefix)) {
+                generate_in_pb2_grpc, config.import_prefix,
+                config.prefixes_to_filter)) {
           return false;
         }
         StringMap method_dict;
@@ -516,13 +522,15 @@ bool PrivateGenerator::PrintAddServicerToServer(
         grpc::string request_module_and_class;
         if (!method->get_module_and_message_path_input(
                 &request_module_and_class, generator_file_name,
-                generate_in_pb2_grpc, config.import_prefix)) {
+                generate_in_pb2_grpc, config.import_prefix,
+                config.prefixes_to_filter)) {
           return false;
         }
         grpc::string response_module_and_class;
         if (!method->get_module_and_message_path_output(
                 &response_module_and_class, generator_file_name,
-                generate_in_pb2_grpc, config.import_prefix)) {
+                generate_in_pb2_grpc, config.import_prefix,
+                config.prefixes_to_filter)) {
           return false;
         }
         StringMap method_dict;
@@ -589,17 +597,21 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
 
         grpc::string input_type_file_name = method->get_input_type_name();
         grpc::string input_module_name =
-            ModuleName(input_type_file_name, config.import_prefix);
+            ModuleName(input_type_file_name, config.import_prefix,
+                       config.prefixes_to_filter);
         grpc::string input_module_alias =
-            ModuleAlias(input_type_file_name, config.import_prefix);
+            ModuleAlias(input_type_file_name, config.import_prefix,
+                        config.prefixes_to_filter);
         imports_set.insert(
             std::make_tuple(input_module_name, input_module_alias));
 
         grpc::string output_type_file_name = method->get_output_type_name();
         grpc::string output_module_name =
-            ModuleName(output_type_file_name, config.import_prefix);
+            ModuleName(output_type_file_name, config.import_prefix,
+                       config.prefixes_to_filter);
         grpc::string output_module_alias =
-            ModuleAlias(output_type_file_name, config.import_prefix);
+            ModuleAlias(output_type_file_name, config.import_prefix,
+                        config.prefixes_to_filter);
         imports_set.insert(
             std::make_tuple(output_module_name, output_module_alias));
       }
