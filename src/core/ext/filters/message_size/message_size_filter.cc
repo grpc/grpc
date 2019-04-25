@@ -137,7 +137,7 @@ struct call_data {
 
   ~call_data() { GRPC_ERROR_UNREF(error); }
 
-  grpc_call_combiner* call_combiner;
+  grpc_core::CallCombiner* call_combiner;
   message_size_limits limits;
   // Receive closures are chained: we inject this closure as the
   // recv_message_ready up-call on transport_stream_op, and remember to
@@ -319,8 +319,11 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
       grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVICE_CONFIG);
   const char* service_config_str = grpc_channel_arg_get_string(channel_arg);
   if (service_config_str != nullptr) {
+    grpc_error* service_config_error = GRPC_ERROR_NONE;
     grpc_core::RefCountedPtr<grpc_core::ServiceConfig> service_config =
-        grpc_core::ServiceConfig::Create(service_config_str);
+        grpc_core::ServiceConfig::Create(service_config_str,
+                                         &service_config_error);
+    GRPC_ERROR_UNREF(service_config_error);
     if (service_config != nullptr) {
       chand->method_limit_table = service_config->CreateMethodConfigTable(
           grpc_core::MessageSizeLimits::CreateFromJson);

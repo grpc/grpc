@@ -57,10 +57,12 @@ struct Method : public CommentHolder {
 
   virtual bool get_module_and_message_path_input(
       grpc::string* str, grpc::string generator_file_name,
-      bool generate_in_pb2_grpc, grpc::string import_prefix) const = 0;
+      bool generate_in_pb2_grpc, grpc::string import_prefix,
+      const std::vector<grpc::string>& prefixes_to_filter) const = 0;
   virtual bool get_module_and_message_path_output(
       grpc::string* str, grpc::string generator_file_name,
-      bool generate_in_pb2_grpc, grpc::string import_prefix) const = 0;
+      bool generate_in_pb2_grpc, grpc::string import_prefix,
+      const std::vector<grpc::string>& prefixes_to_filter) const = 0;
 
   virtual grpc::string get_input_type_name() const = 0;
   virtual grpc::string get_output_type_name() const = 0;
@@ -101,6 +103,7 @@ struct File : public CommentHolder {
   virtual grpc::string package() const = 0;
   virtual std::vector<grpc::string> package_parts() const = 0;
   virtual grpc::string additional_headers() const = 0;
+  virtual std::vector<grpc::string> GetImportNames() const { return {}; }
 
   virtual int service_count() const = 0;
   virtual std::unique_ptr<const Service> service(int i) const = 0;

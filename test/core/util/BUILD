@@ -132,7 +132,9 @@ grpc_cc_library(
     deps = [
         ":grpc_test_util",
         "//:grpc",
+        "//test/cpp/util:test_config",
     ],
+    tags = ["no_windows"],
 )
 
 grpc_cc_test(

@@ -22,6 +22,7 @@
 #import <XCTest/XCTest.h>
 
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #import "../version.h"
 
@@ -150,7 +151,7 @@ static const NSTimeInterval kTestTimeout = 16;
                                  closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
                                    trailing_md = trailingMetadata;
                                    if (error) {
-                                     XCTAssertEqual(error.code, 16,
+                                     XCTAssertEqual(error.code, GRPCErrorCodeUnauthenticated,
                                                     @"Finished with unexpected error: %@", error);
                                      XCTAssertEqualObjects(init_md,
                                                            error.userInfo[kGRPCHeadersKey]);
@@ -198,7 +199,9 @@ static const NSTimeInterval kTestTimeout = 16;
                expectedUserAgent = [expectedUserAgent stringByAppendingString:@" grpc-c/"];
                expectedUserAgent =
                    [expectedUserAgent stringByAppendingString:GRPC_C_VERSION_STRING];
-               expectedUserAgent = [expectedUserAgent stringByAppendingString:@" (ios; chttp2; "];
+               expectedUserAgent = [expectedUserAgent stringByAppendingString:@" ("];
+               expectedUserAgent = [expectedUserAgent stringByAppendingString:@GPR_PLATFORM_STRING];
+               expectedUserAgent = [expectedUserAgent stringByAppendingString:@"; chttp2; "];
                expectedUserAgent = [expectedUserAgent
                    stringByAppendingString:[NSString stringWithUTF8String:grpc_g_stands_for()]];
                expectedUserAgent = [expectedUserAgent stringByAppendingString:@")"];

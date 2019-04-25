@@ -24,6 +24,7 @@ import six
 
 import grpc
 from grpc import _common
+from grpc import _compression
 from grpc import _interceptor
 from grpc._cython import cygrpc
 
@@ -94,6 +95,7 @@ class _RPCState(object):
         self.request = None
         self.client = _OPEN
         self.initial_metadata_allowed = True
+        self.compression_algorithm = None
         self.disable_next_compression = False
         self.trailing_metadata = None
         self.code = None
@@ -129,13 +131,33 @@ def _send_status_from_server(state, token):
     return send_status_from_server
 
 
+def _get_initial_metadata(state, metadata):
+    with state.condition:
+        if state.compression_algorithm:
+            compression_metadata = (
+                _compression.compression_algorithm_to_metadata(
+                    state.compression_algorithm),)
+            if metadata is None:
+                return compression_metadata
+            else:
+                return compression_metadata + tuple(metadata)
+        else:
+            return metadata
+
+
+def _get_initial_metadata_operation(state, metadata):
+    operation = cygrpc.SendInitialMetadataOperation(
+        _get_initial_metadata(state, metadata), _EMPTY_FLAGS)
+    return operation
+
+
 def _abort(state, call, code, details):
     if state.client is not _CANCELLED:
         effective_code = _abortion_code(state, code)
         effective_details = details if state.details is None else state.details
         if state.initial_metadata_allowed:
             operations = (
-                cygrpc.SendInitialMetadataOperation(None, _EMPTY_FLAGS),
+                _get_initial_metadata_operation(state, None),
                 cygrpc.SendStatusFromServerOperation(
                     state.trailing_metadata, effective_code, effective_details,
                     _EMPTY_FLAGS),
@@ -259,14 +281,18 @@ class _Context(grpc.ServicerContext):
                 cygrpc.auth_context(self._rpc_event.call))
         }
 
+    def set_compression(self, compression):
+        with self._state.condition:
+            self._state.compression_algorithm = compression
+
     def send_initial_metadata(self, initial_metadata):
         with self._state.condition:
             if self._state.client is _CANCELLED:
                 _raise_rpc_error(self._state)
             else:
                 if self._state.initial_metadata_allowed:
-                    operation = cygrpc.SendInitialMetadataOperation(
-                        initial_metadata, _EMPTY_FLAGS)
+                    operation = _get_initial_metadata_operation(
+                        self._state, initial_metadata)
                     self._rpc_event.call.start_server_batch(
                         (operation,), _send_initial_metadata(self._state))
                     self._state.initial_metadata_allowed = False
@@ -400,10 +426,13 @@ def _call_behavior(rpc_event,
     with _create_servicer_context(rpc_event, state,
                                   request_deserializer) as context:
         try:
+            response_or_iterator = None
             if send_response_callback is not None:
-                return behavior(argument, context, send_response_callback), True
+                response_or_iterator = behavior(argument, context,
+                                                send_response_callback)
             else:
-                return behavior(argument, context), True
+                response_or_iterator = behavior(argument, context)
+            return response_or_iterator, True
         except Exception as exception:  # pylint: disable=broad-except
             with state.condition:
                 if state.aborted:
@@ -447,6 +476,18 @@ def _serialize_response(rpc_event, state, response, response_serializer):
         return serialized_response
 
 
+def _get_send_message_op_flags_from_state(state):
+    if state.disable_next_compression:
+        return cygrpc.WriteFlag.no_compress
+    else:
+        return _EMPTY_FLAGS
+
+
+def _reset_per_message_state(state):
+    with state.condition:
+        state.disable_next_compression = False
+
+
 def _send_response(rpc_event, state, serialized_response):
     with state.condition:
         if not _is_rpc_state_active(state):
@@ -454,19 +495,22 @@ def _send_response(rpc_event, state, serialized_response):
         else:
             if state.initial_metadata_allowed:
                 operations = (
-                    cygrpc.SendInitialMetadataOperation(None, _EMPTY_FLAGS),
-                    cygrpc.SendMessageOperation(serialized_response,
-                                                _EMPTY_FLAGS),
+                    _get_initial_metadata_operation(state, None),
+                    cygrpc.SendMessageOperation(
+                        serialized_response,
+                        _get_send_message_op_flags_from_state(state)),
                 )
                 state.initial_metadata_allowed = False
                 token = _SEND_INITIAL_METADATA_AND_SEND_MESSAGE_TOKEN
             else:
                 operations = (cygrpc.SendMessageOperation(
-                    serialized_response, _EMPTY_FLAGS),)
+                    serialized_response,
+                    _get_send_message_op_flags_from_state(state)),)
                 token = _SEND_MESSAGE_TOKEN
             rpc_event.call.start_server_batch(operations,
                                               _send_message(state, token))
             state.due.add(token)
+            _reset_per_message_state(state)
             while True:
                 state.condition.wait()
                 if token not in state.due:
@@ -483,16 +527,17 @@ def _status(rpc_event, state, serialized_response):
                     state.trailing_metadata, code, details, _EMPTY_FLAGS),
             ]
             if state.initial_metadata_allowed:
-                operations.append(
-                    cygrpc.SendInitialMetadataOperation(None, _EMPTY_FLAGS))
+                operations.append(_get_initial_metadata_operation(state, None))
             if serialized_response is not None:
                 operations.append(
-                    cygrpc.SendMessageOperation(serialized_response,
-                                                _EMPTY_FLAGS))
+                    cygrpc.SendMessageOperation(
+                        serialized_response,
+                        _get_send_message_op_flags_from_state(state)))
             rpc_event.call.start_server_batch(
                 operations,
                 _send_status_from_server(state, _SEND_STATUS_FROM_SERVER_TOKEN))
             state.statused = True
+            _reset_per_message_state(state)
             state.due.add(_SEND_STATUS_FROM_SERVER_TOKEN)
 
 
@@ -639,13 +684,13 @@ def _find_method_handler(rpc_event, generic_handlers, interceptor_pipeline):
 
 
 def _reject_rpc(rpc_event, status, details):
+    rpc_state = _RPCState()
     operations = (
-        cygrpc.SendInitialMetadataOperation(None, _EMPTY_FLAGS),
+        _get_initial_metadata_operation(rpc_state, None),
         cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),
         cygrpc.SendStatusFromServerOperation(None, status, details,
                                              _EMPTY_FLAGS),
     )
-    rpc_state = _RPCState()
     rpc_event.call.start_server_batch(operations,
                                       lambda ignored_event: (rpc_state, (),))
     return rpc_state
@@ -883,13 +928,18 @@ def _validate_generic_rpc_handlers(generic_rpc_handlers):
                 'not have "service" method!'.format(generic_rpc_handler))
 
 
+def _augment_options(base_options, compression):
+    compression_option = _compression.create_channel_option(compression)
+    return tuple(base_options) + compression_option
+
+
 class _Server(grpc.Server):
 
     # pylint: disable=too-many-arguments
     def __init__(self, thread_pool, generic_handlers, interceptors, options,
-                 maximum_concurrent_rpcs):
+                 maximum_concurrent_rpcs, compression):
         completion_queue = cygrpc.CompletionQueue()
-        server = cygrpc.Server(options)
+        server = cygrpc.Server(_augment_options(options, compression))
         server.register_completion_queue(completion_queue)
         self._state = _ServerState(completion_queue, server, generic_handlers,
                                    _interceptor.service_pipeline(interceptors),
@@ -920,7 +970,7 @@ class _Server(grpc.Server):
 
 
 def create_server(thread_pool, generic_rpc_handlers, interceptors, options,
-                  maximum_concurrent_rpcs):
+                  maximum_concurrent_rpcs, compression):
     _validate_generic_rpc_handlers(generic_rpc_handlers)
     return _Server(thread_pool, generic_rpc_handlers, interceptors, options,
-                   maximum_concurrent_rpcs)
+                   maximum_concurrent_rpcs, compression)

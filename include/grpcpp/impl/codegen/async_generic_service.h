@@ -39,7 +39,7 @@ class GenericServerContext final : public ServerContext {
   const grpc::string& host() const { return host_; }
 
  private:
-  friend class grpc_impl::Server;
+  friend class Server;
   friend class ServerInterface;
 
   void Clear() {
@@ -79,8 +79,8 @@ class AsyncGenericService final {
                    ServerCompletionQueue* notification_cq, void* tag);
 
  private:
-  friend class grpc_impl::Server;
-  grpc_impl::Server* server_;
+  friend class Server;
+  Server* server_;
 };
 
 namespace experimental {
@@ -135,14 +135,14 @@ class CallbackGenericService {
   }
 
  private:
-  friend class ::grpc_impl::Server;
+  friend class ::grpc::Server;
 
   internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>* Handler() {
     return new internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>(
         [this] { return CreateReactor(); });
   }
 
-  grpc_impl::Server* server_{nullptr};
+  Server* server_{nullptr};
 };
 }  // namespace experimental
 }  // namespace grpc

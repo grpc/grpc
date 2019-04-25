@@ -21,8 +21,6 @@
 #include <map>
 #include <mutex>
 
-#include <grpcpp/server.h>
-
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"
 

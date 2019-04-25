@@ -6,24 +6,19 @@ sockets) for networking. Using CFStream resolves a bunch of network connectivity
 (see the [doc](https://github.com/grpc/grpc/blob/master/src/objective-c/NetworkTransitionBehavior.md)
 for more information).
 
-CFStream integration is now in experimental state. You will need explicit opt-in to use it to get
+<s>CFStream integration is now in experimental state. You will need explicit opt-in to use it to get
 the benefits of resolving the issues above. We expect to make CFStream the default networking
-interface that gRPC uses when it is ready for production.
+interface that gRPC uses when it is ready for production.</s>
+
+As of v1.21.0, CFStream integration is now the default networking stack being used by gRPC
+Objective-C on iOS layer. You get to use it automatically without special configuration needed. See
+below on how to disable CFStream in case of problem.
 
 ## Usage
-If you use gRPC following the instructions in
-[README.md](https://github.com/grpc/grpc/blob/master/src/objective-c/README.md):
-- Replace the
-dependency on `gRPC-ProtoRPC` with `gRPC-ProtoRPC/CFStream`.
-- Enable CFStream with environment variable `grpc_cfstream=1`. This can be done either in Xcode
-  console or by your code with `setenv()` before gRPC is initialized.
-
-If your project directly depends on podspecs other than `gRPC-ProtoRPC` (e.g. `gRPC` or
-`gRPC-Core`):
-
-- Make your projects depend on subspecs corresponding to CFStream in each gRPC podspec.
-- Enable CFStream with environment variable `grpc_cfstream=1`. This can be done either in Xcode
-  console or by your code with `setenv()` before gRPC is initialized.
+If you use gRPC Objective-C library on iOS, CFStream is on automatically. If you use it on other
+platforms, you can turn it on with macro `GRPC_CFSTREAM=1` for the pod 'gRPC-Core' and 'gRPC'. In
+case of problem and you want to disable CFStream on iOS, you can set environment variable
+"grpc\_cfstream=0".
 
 ## Notes
 

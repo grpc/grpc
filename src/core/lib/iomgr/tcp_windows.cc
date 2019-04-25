@@ -74,18 +74,16 @@ static grpc_error* set_dualstack(SOCKET sock) {
              : GRPC_WSA_ERROR(WSAGetLastError(), "setsockopt(IPV6_V6ONLY)");
 }
 
-static grpc_error* enable_loopback_fast_path(SOCKET sock) {
+static grpc_error* enable_socket_low_latency(SOCKET sock) {
   int status;
-  uint32_t param = 1;
-  DWORD ret;
-  status = WSAIoctl(sock, /*SIO_LOOPBACK_FAST_PATH==*/_WSAIOW(IOC_VENDOR, 16),
-                    &param, sizeof(param), NULL, 0, &ret, 0, 0);
+  BOOL param = TRUE;
+  status = ::setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
+                        reinterpret_cast<char*>(&param), sizeof(param));
   if (status == SOCKET_ERROR) {
     status = WSAGetLastError();
   }
-  return status == 0 || status == WSAEOPNOTSUPP
-             ? GRPC_ERROR_NONE
-             : GRPC_WSA_ERROR(status, "WSAIoctl(SIO_LOOPBACK_FAST_PATH)");
+  return status == 0 ? GRPC_ERROR_NONE
+                     : GRPC_WSA_ERROR(status, "setsockopt(TCP_NODELAY)");
 }
 
 grpc_error* grpc_tcp_prepare_socket(SOCKET sock) {
@@ -94,7 +92,7 @@ grpc_error* grpc_tcp_prepare_socket(SOCKET sock) {
   if (err != GRPC_ERROR_NONE) return err;
   err = set_dualstack(sock);
   if (err != GRPC_ERROR_NONE) return err;
-  err = enable_loopback_fast_path(sock);
+  err = enable_socket_low_latency(sock);
   if (err != GRPC_ERROR_NONE) return err;
   return GRPC_ERROR_NONE;
 }

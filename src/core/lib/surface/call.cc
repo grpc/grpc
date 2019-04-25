@@ -35,9 +35,9 @@
 #include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/alloc.h"
-#include "src/core/lib/gpr/arena.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
@@ -124,14 +124,13 @@ struct child_call {
 #define RECV_INITIAL_METADATA_FIRST ((gpr_atm)1)
 
 struct grpc_call {
-  grpc_call(gpr_arena* arena, const grpc_call_create_args& args)
+  grpc_call(grpc_core::Arena* arena, const grpc_call_create_args& args)
       : arena(arena),
         cq(args.cq),
         channel(args.channel),
         is_client(args.server_transport_data == nullptr),
         stream_op_payload(context) {
     gpr_ref_init(&ext_ref, 1);
-    grpc_call_combiner_init(&call_combiner);
     for (int i = 0; i < 2; i++) {
       for (int j = 0; j < 2; j++) {
         metadata_batch[i][j].deadline = GRPC_MILLIS_INF_FUTURE;
@@ -141,12 +140,11 @@ struct grpc_call {
 
   ~grpc_call() {
     gpr_free(static_cast<void*>(const_cast<char*>(final_info.error_string)));
-    grpc_call_combiner_destroy(&call_combiner);
   }
 
   gpr_refcount ext_ref;
-  gpr_arena* arena;
-  grpc_call_combiner call_combiner;
+  grpc_core::Arena* arena;
+  grpc_core::CallCombiner call_combiner;
   grpc_completion_queue* cq;
   grpc_polling_entity pollent;
   grpc_channel* channel;
@@ -292,13 +290,13 @@ static void add_init_error(grpc_error** composite, grpc_error* new_err) {
 }
 
 void* grpc_call_arena_alloc(grpc_call* call, size_t size) {
-  return gpr_arena_alloc(call->arena, size);
+  return call->arena->Alloc(size);
 }
 
 static parent_call* get_or_create_parent_call(grpc_call* call) {
   parent_call* p = (parent_call*)gpr_atm_acq_load(&call->parent_call_atm);
   if (p == nullptr) {
-    p = new (gpr_arena_alloc(call->arena, sizeof(*p))) parent_call();
+    p = call->arena->New<parent_call>();
     if (!gpr_atm_rel_cas(&call->parent_call_atm, (gpr_atm) nullptr,
                          (gpr_atm)p)) {
       p->~parent_call();
@@ -329,10 +327,10 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   grpc_call* call;
   size_t initial_size = grpc_channel_get_call_size_estimate(args->channel);
   GRPC_STATS_INC_CALL_INITIAL_SIZE(initial_size);
-  gpr_arena* arena = gpr_arena_create(initial_size);
-  call = new (gpr_arena_alloc(
-      arena, GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)) +
-                 channel_stack->call_stack_size)) grpc_call(arena, *args);
+  grpc_core::Arena* arena = grpc_core::Arena::Create(initial_size);
+  call = new (arena->Alloc(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)) +
+                           channel_stack->call_stack_size))
+      grpc_call(arena, *args);
   *out_call = call;
   grpc_slice path = grpc_empty_slice();
   if (call->is_client) {
@@ -364,8 +362,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   bool immediately_cancel = false;
 
   if (args->parent != nullptr) {
-    call->child = new (gpr_arena_alloc(arena, sizeof(child_call)))
-        child_call(args->parent);
+    call->child = arena->New<child_call>(args->parent);
 
     GRPC_CALL_INTERNAL_REF(args->parent, "child");
     GPR_ASSERT(call->is_client);
@@ -502,9 +499,9 @@ void grpc_call_internal_unref(grpc_call* c REF_ARG) {
 static void release_call(void* call, grpc_error* error) {
   grpc_call* c = static_cast<grpc_call*>(call);
   grpc_channel* channel = c->channel;
-  gpr_arena* arena = c->arena;
+  grpc_core::Arena* arena = c->arena;
   c->~grpc_call();
-  grpc_channel_update_call_size_estimate(channel, gpr_arena_destroy(arena));
+  grpc_channel_update_call_size_estimate(channel, arena->Destroy());
   GRPC_CHANNEL_INTERNAL_UNREF(channel, "call");
 }
 
@@ -589,7 +586,7 @@ void grpc_call_unref(grpc_call* c) {
     // holding to the call stack. Also flush the closures on exec_ctx so that
     // filters that schedule cancel notification closures on exec_ctx do not
     // need to take a ref of the call stack to guarantee closure liveness.
-    grpc_call_combiner_set_notify_on_cancel(&c->call_combiner, nullptr);
+    c->call_combiner.SetNotifyOnCancel(nullptr);
     grpc_core::ExecCtx::Get()->Flush();
   }
   GRPC_CALL_INTERNAL_UNREF(c, "destroy");
@@ -685,7 +682,7 @@ static void cancel_with_error(grpc_call* c, grpc_error* error) {
   // any in-flight asynchronous actions that may be holding the call
   // combiner.  This ensures that the cancel_stream batch can be sent
   // down the filter stack in a timely manner.
-  grpc_call_combiner_cancel(&c->call_combiner, GRPC_ERROR_REF(error));
+  c->call_combiner.Cancel(GRPC_ERROR_REF(error));
   cancel_state* state = static_cast<cancel_state*>(gpr_malloc(sizeof(*state)));
   state->call = c;
   GRPC_CLOSURE_INIT(&state->finish_batch, done_termination, state,
@@ -1069,7 +1066,7 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b,
   publish_app_metadata(call, b, true);
 }
 
-gpr_arena* grpc_call_get_arena(grpc_call* call) { return call->arena; }
+grpc_core::Arena* grpc_call_get_arena(grpc_call* call) { return call->arena; }
 
 grpc_call_stack* grpc_call_get_call_stack(grpc_call* call) {
   return CALL_STACK_FROM_CALL(call);
@@ -1130,8 +1127,7 @@ static batch_control* reuse_or_allocate_batch_control(grpc_call* call,
     bctl->~batch_control();
     bctl->op = {};
   } else {
-    bctl = new (gpr_arena_alloc(call->arena, sizeof(batch_control)))
-        batch_control();
+    bctl = call->arena->New<batch_control>();
     *pslot = bctl;
   }
   bctl->call = call;

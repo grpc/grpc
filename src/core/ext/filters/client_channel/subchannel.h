@@ -26,7 +26,7 @@
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/gpr/arena.h"
+#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -75,9 +75,9 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
     grpc_slice path;
     gpr_timespec start_time;
     grpc_millis deadline;
-    gpr_arena* arena;
+    Arena* arena;
     grpc_call_context_element* context;
-    grpc_call_combiner* call_combiner;
+    grpc_core::CallCombiner* call_combiner;
     size_t parent_data_size;
   };
 
@@ -208,8 +208,7 @@ class Subchannel {
   channelz::SubchannelNode* channelz_node();
 
   // Polls the current connectivity state of the subchannel.
-  grpc_connectivity_state CheckConnectivity(grpc_error** error,
-                                            bool inhibit_health_checking);
+  grpc_connectivity_state CheckConnectivity(bool inhibit_health_checking);
 
   // When the connectivity state of the subchannel changes from \a *state,
   // invokes \a notify and updates \a *state with the new state.
@@ -242,7 +241,7 @@ class Subchannel {
 
   // Sets the subchannel's connectivity state to \a state.
   void SetConnectivityStateLocked(grpc_connectivity_state state,
-                                  grpc_error* error, const char* reason);
+                                  const char* reason);
 
   // Methods for connection.
   void MaybeStartConnectingLocked();
