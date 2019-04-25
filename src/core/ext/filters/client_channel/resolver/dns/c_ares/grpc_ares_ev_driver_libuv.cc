@@ -47,9 +47,13 @@ class GrpcPolledFdLibuv : public GrpcPolledFd {
     handle_ = New<uv_poll_t>();
     uv_poll_init_socket(uv_default_loop(), handle_, as);
     handle_->data = this;
+    GRPC_COMBINER_REF(combiner_, "libuv ares event driver");
   }
 
-  ~GrpcPolledFdLibuv() { gpr_free(name_); }
+  ~GrpcPolledFdLibuv() {
+    gpr_free(name_);
+    GRPC_COMBINER_UNREF(combiner_, "libuv ares event driver");
+  }
 
   void RegisterForOnReadableLocked(grpc_closure* read_closure) override {
     GPR_ASSERT(read_closure_ == nullptr);
@@ -73,15 +77,23 @@ class GrpcPolledFdLibuv : public GrpcPolledFd {
     return false;
   }
 
-  void ShutdownLocked(grpc_error* error) override {
-    grpc_core::ExecCtx exec_ctx;
+  void ShutdownInternal(grpc_error* error) {
     uv_poll_stop(handle_);
     uv_close(reinterpret_cast<uv_handle_t*>(handle_), ares_uv_poll_close_cb);
-    if (read_closure_) {
+    if (read_closure_ != nullptr) {
       GRPC_CLOSURE_SCHED(read_closure_, GRPC_ERROR_CANCELLED);
     }
-    if (write_closure_) {
+    if (write_closure_ != nullptr) {
       GRPC_CLOSURE_SCHED(write_closure_, GRPC_ERROR_CANCELLED);
+    }
+  }
+
+  void ShutdownLocked(grpc_error* error) override {
+    if (grpc_core::ExecCtx::Get() == nullptr) {
+      grpc_core::ExecCtx exec_ctx;
+      ShutdownInternal(error);
+    } else {
+      ShutdownInternal(error);
     }
   }
 
@@ -107,8 +119,9 @@ struct AresUvPollCbArg {
   int events;
 };
 
-static void inner_callback(void* arg, grpc_error* error) {
-  AresUvPollCbArg* arg_struct = reinterpret_cast<AresUvPollCbArg*>(arg);
+static void ares_uv_poll_cb_locked(void* arg, grpc_error* error) {
+  grpc_core::UniquePtr<AresUvPollCbArg> arg_struct(
+      reinterpret_cast<AresUvPollCbArg*>(arg));
   uv_poll_t* handle = arg_struct->handle;
   int status = arg_struct->status;
   int events = arg_struct->events;
@@ -120,18 +133,19 @@ static void inner_callback(void* arg, grpc_error* error) {
         grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
                            grpc_slice_from_static_string(uv_strerror(status)));
   }
-  if ((events & UV_READABLE) && polled_fd->read_closure_) {
+  if (events & UV_READABLE) {
+    GPR_ASSERT(polled_fd->read_closure_ != nullptr);
     GRPC_CLOSURE_SCHED(polled_fd->read_closure_, error);
     polled_fd->read_closure_ = nullptr;
     polled_fd->poll_events_ &= ~UV_READABLE;
   }
-  if ((events & UV_WRITABLE) && polled_fd->write_closure_) {
+  if (events & UV_WRITABLE) {
+    GPR_ASSERT(polled_fd->write_closure_ != nullptr);
     GRPC_CLOSURE_SCHED(polled_fd->write_closure_, error);
     polled_fd->write_closure_ = nullptr;
     polled_fd->poll_events_ &= ~UV_WRITABLE;
   }
   uv_poll_start(handle, polled_fd->poll_events_, ares_uv_poll_cb);
-  Delete(arg_struct);
 }
 
 void ares_uv_poll_cb(uv_poll_t* handle, int status, int events) {
@@ -140,7 +154,7 @@ void ares_uv_poll_cb(uv_poll_t* handle, int status, int events) {
       reinterpret_cast<GrpcPolledFdLibuv*>(handle->data);
   AresUvPollCbArg* arg = New<AresUvPollCbArg>(handle, status, events);
   GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_CREATE(inner_callback, arg,
+      GRPC_CLOSURE_CREATE(ares_uv_poll_cb_locked, arg,
                           grpc_combiner_scheduler(polled_fd->combiner_)),
       GRPC_ERROR_NONE);
 }
