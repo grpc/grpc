@@ -111,7 +111,7 @@ How to get your contributions merged smoothly and quickly.
   so.
 
 ## Obtaining Commit Access
-We grant Commit Access from time to time to contributors based on the following criteria:
+We grant Commit Access to contributors based on the following criteria:
 * Sustained contribution to the gRPC project.
 * Deep understanding of the areas contributed to, and good consideration of various reliability, usability and performance tradeoffs. 
 * Contributions demonstrate that obtaining Commit Access will significantly reduce friction for the contributors or others. 
