@@ -355,9 +355,9 @@ BOOL isRemoteInteropTest(NSString *host) {
     request.responseSize = 314159;
     request.payload.body = [NSMutableData dataWithLength:271828];
     if (i % 3 == 0) {
-      request.responseStatus.code = GRPC_STATUS_UNAVAILABLE;
+      request.responseStatus.code = GRPCErrorCodeUnavailable;
     } else if (i % 7 == 0) {
-      request.responseStatus.code = GRPC_STATUS_CANCELLED;
+      request.responseStatus.code = GRPCErrorCodeCancelled;
     }
     GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
     options.transportType = [[self class] transportType];
@@ -404,9 +404,9 @@ BOOL isRemoteInteropTest(NSString *host) {
     request.responseSize = 314159;
     request.payload.body = [NSMutableData dataWithLength:271828];
     if (i % 3 == 0) {
-      request.responseStatus.code = GRPC_STATUS_UNAVAILABLE;
+      request.responseStatus.code = GRPCErrorCodeUnavailable;
     } else if (i % 7 == 0) {
-      request.responseStatus.code = GRPC_STATUS_CANCELLED;
+      request.responseStatus.code = GRPCErrorCodeCancelled;
     }
 
     [_service unaryCallWithRequest:request
@@ -726,7 +726,7 @@ BOOL isRemoteInteropTest(NSString *host) {
       RPCToStreamingInputCallWithRequestsWriter:requestsBuffer
                                         handler:^(RMTStreamingInputCallResponse *response,
                                                   NSError *error) {
-                                          XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
+                                          XCTAssertEqual(error.code, GRPCErrorCodeCancelled);
                                           [expectation fulfill];
                                         }];
   XCTAssertEqual(call.state, GRXWriterStateNotStarted);
@@ -754,7 +754,8 @@ BOOL isRemoteInteropTest(NSString *host) {
                                                 }
                                                 closeCallback:^(NSDictionary *trailingMetadata,
                                                                 NSError *error) {
-                                                  XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
+                                                  XCTAssertEqual(error.code,
+                                                                 GRPCErrorCodeCancelled);
                                                   [expectation fulfill];
                                                 }]
                                 callOptions:nil];
@@ -785,7 +786,7 @@ BOOL isRemoteInteropTest(NSString *host) {
                                               NSError *error) {
                                  if (receivedResponse) {
                                    XCTAssert(done, @"Unexpected extra response %@", response);
-                                   XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
+                                   XCTAssertEqual(error.code, GRPCErrorCodeCancelled);
                                    [expectation fulfill];
                                  } else {
                                    XCTAssertNil(error, @"Finished with unexpected error: %@",
@@ -828,7 +829,7 @@ BOOL isRemoteInteropTest(NSString *host) {
                                             }
                                             closeCallback:^(NSDictionary *trailingMetadata,
                                                             NSError *error) {
-                                              XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
+                                              XCTAssertEqual(error.code, GRPCErrorCodeCancelled);
                                               [completionExpectation fulfill];
                                             }]
                             callOptions:options];
@@ -858,7 +859,7 @@ BOOL isRemoteInteropTest(NSString *host) {
                                             }
                                             closeCallback:^(NSDictionary *trailingMetadata,
                                                             NSError *error) {
-                                              XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
+                                              XCTAssertEqual(error.code, GRPCErrorCodeCancelled);
                                               [completionExpectation fulfill];
                                             }]
                             callOptions:options];
@@ -959,7 +960,7 @@ BOOL isRemoteInteropTest(NSString *host) {
                             } else {
                               // Keepalive should kick after 1s elapsed and fails the call.
                               XCTAssertNotNil(error);
-                              XCTAssertEqual(error.code, GRPC_STATUS_UNAVAILABLE);
+                              XCTAssertEqual(error.code, GRPCErrorCodeUnavailable);
                               XCTAssertEqualObjects(
                                   error.localizedDescription, @"keepalive watchdog timeout",
                                   @"Unexpected failure that is not keepalive watchdog timeout.");
