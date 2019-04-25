@@ -27,8 +27,8 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 
-#include <string.h>
 #include <ctype.h>
+#include <string.h>
 
 namespace grpc_core {
 
