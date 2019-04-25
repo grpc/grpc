@@ -3335,6 +3335,7 @@
       "gpr", 
       "grpc", 
       "grpc++", 
+      "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
@@ -3665,7 +3666,8 @@
     "deps": [
       "gpr", 
       "grpc", 
-      "grpc++"
+      "grpc++", 
+      "grpc++_test_config"
     ], 
     "headers": [
       "src/proto/grpc/testing/compiler_test.grpc.pb.h", 
@@ -4684,6 +4686,7 @@
       "gpr", 
       "grpc", 
       "grpc++", 
+      "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
