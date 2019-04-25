@@ -494,7 +494,8 @@ typedef struct grpc_event {
       field is guaranteed to be 0 */
   int success;
   /** The tag passed to grpc_call_start_batch etc to start this operation.
-      Only GRPC_OP_COMPLETE has a tag. */
+      *Only* GRPC_OP_COMPLETE has a tag. For all other grpc_completion_type
+      values, tag is uninitialized. */
   void* tag;
 } grpc_event;
 

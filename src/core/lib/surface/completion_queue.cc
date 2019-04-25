@@ -1002,15 +1002,15 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
         continue;
       }
 
-      memset(&ret, 0, sizeof(ret));
       ret.type = GRPC_QUEUE_SHUTDOWN;
+      ret.success = 0;
       break;
     }
 
     if (!is_finished_arg.first_loop &&
         grpc_core::ExecCtx::Get()->Now() >= deadline_millis) {
-      memset(&ret, 0, sizeof(ret));
       ret.type = GRPC_QUEUE_TIMEOUT;
+      ret.success = 0;
       dump_pending_tags(cq);
       break;
     }
@@ -1027,8 +1027,8 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
       gpr_log(GPR_ERROR, "Completion queue next failed: %s", msg);
 
       GRPC_ERROR_UNREF(err);
-      memset(&ret, 0, sizeof(ret));
       ret.type = GRPC_QUEUE_TIMEOUT;
+      ret.success = 0;
       dump_pending_tags(cq);
       break;
     }
@@ -1234,8 +1234,8 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
     }
     if (cqd->shutdown.Load(grpc_core::MemoryOrder::RELAXED)) {
       gpr_mu_unlock(cq->mu);
-      memset(&ret, 0, sizeof(ret));
       ret.type = GRPC_QUEUE_SHUTDOWN;
+      ret.success = 0;
       break;
     }
     if (!add_plucker(cq, tag, &worker)) {
@@ -1244,9 +1244,9 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
               "is %d",
               GRPC_MAX_COMPLETION_QUEUE_PLUCKERS);
       gpr_mu_unlock(cq->mu);
-      memset(&ret, 0, sizeof(ret));
       /* TODO(ctiller): should we use a different result here */
       ret.type = GRPC_QUEUE_TIMEOUT;
+      ret.success = 0;
       dump_pending_tags(cq);
       break;
     }
@@ -1254,8 +1254,8 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
         grpc_core::ExecCtx::Get()->Now() >= deadline_millis) {
       del_plucker(cq, tag, &worker);
       gpr_mu_unlock(cq->mu);
-      memset(&ret, 0, sizeof(ret));
       ret.type = GRPC_QUEUE_TIMEOUT;
+      ret.success = 0;
       dump_pending_tags(cq);
       break;
     }
@@ -1269,8 +1269,8 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
       gpr_log(GPR_ERROR, "Completion queue pluck failed: %s", msg);
 
       GRPC_ERROR_UNREF(err);
-      memset(&ret, 0, sizeof(ret));
       ret.type = GRPC_QUEUE_TIMEOUT;
+      ret.success = 0;
       dump_pending_tags(cq);
       break;
     }
