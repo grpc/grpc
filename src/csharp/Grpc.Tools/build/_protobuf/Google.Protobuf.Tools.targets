@@ -42,7 +42,6 @@
   <!-- Workaround for VS Project System bug: -->
   <!-- Duplicated items in None itemgroup without Generator attribute prevents the items -->
   <!-- in Protobuf itemgroup with Generator attribute from triggering design time build. -->
-  <!-- https://devdiv.visualstudio.com/DevDiv/_workitems/edit/849161?src=WorkItemMention&src-action=artifact_link -->
   <ItemGroup Condition=" '$(DisableProtobufDesignTimeBuild)' != 'true' " >
     <!-- Working around this by removing the duplicated items from None itemgroup. -->
     <None Remove="@(Protobuf)" />
