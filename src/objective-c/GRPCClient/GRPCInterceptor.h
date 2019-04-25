@@ -19,6 +19,90 @@
 /**
  * API for interceptors implementation. This feature is currently EXPERIMENTAL and is subject to
  * breaking changes without prior notice.
+ *
+ * The interceptors in the gRPC system forms a chain. When a call is made by the user, each
+ * interceptor on the chain has chances to react to events of the call and make necessary
+ * modifications to the call's parameters, data, metadata, or flow.
+ *
+ *
+ *                                   -----------
+ *                                  | GRPCCall2 |
+ *                                   -----------
+ *                                        |
+ *                                        |
+ *                           --------------------------
+ *                          | GRPCInterceptorManager 1 |
+ *                           --------------------------
+ *                          | GRPCInterceptor 1        |
+ *                           --------------------------
+ *                                        |
+ *                                       ...
+ *                                        |
+ *                           --------------------------
+ *                          | GRPCInterceptorManager N |
+ *                           --------------------------
+ *                          | GRPCInterceptor N        |
+ *                           --------------------------
+ *                                        |
+ *                                        |
+ *                               ------------------
+ *                              | GRPCCallInternal |
+ *                               ------------------
+ *
+ * The chain of interceptors is initialized when the corresponding GRPCCall2 object or proto call
+ * object (GRPCUnaryProtoCall and GRPCStreamingProtoCall) is initialized. The initialization of the
+ * chain is controlled by the property interceptorFactories in the callOptions parameter of the
+ * corresponding call object. Property interceptorFactories is an array of
+ * id<GRPCInterceptorFactory> objects provided by the user. When a call object is initialized, each
+ * interceptor factory generates an interceptor object for the call. gRPC internally links the
+ * interceptors with each other and with the actual call object. The order of the interceptors in
+ * the chain is exactly the same as the order of factory objects in interceptorFactories property.
+ * All requests (start, write, finish, cancel, receive next) initiated by the user will be processed
+ * in the order of interceptors, and all responses (initial metadata, data, trailing metadata, write
+ * data done) are processed in the reverse order.
+ *
+ * Each interceptor in the interceptor chain should behave as a user of the next interceptor, and at
+ * the same time behave as a call to the previous interceptor. Therefore interceptor implementations
+ * must follow the state transition of gRPC calls and must also forward events that are consistent
+ * with the current state of the next/previous interceptor. They should also make sure that the
+ * events they forwarded to the next and previous interceptors will, in the end, make the neighbour
+ * interceptor terminate correctly and reaches "finished" state. The diagram below shows the state
+ * transitions. Any event not appearing on the diagram means the event is not permitted for that
+ * particular state.
+ *
+ *                                      writeData
+ *                                  receiveNextMessages
+ *                               didReceiveInitialMetadata
+ *                                    didReceiveData
+ *                                     didWriteData
+ *           writeData  -----             -----                 ----  didReceiveInitialMetadata
+ * receiveNextMessages |     |           |     |               |    | didReceiveData
+ *                     |     V           |     V               |    V didWriteData
+ *               -------------  start   ---------   finish    ------------
+ *              | initialized | -----> | started | --------> | half-close |
+ *               -------------          ---------             ------------
+ *                     |                     |                      |
+ *                     |                     | didClose             | didClose
+ *                     |cancel               | cancel               | cancel
+ *                     |                     V                      |
+ *                     |                 ----------                 |
+ *                      --------------> | finished | <--------------
+ *                                       ----------
+ *                                        |      ^ writeData
+ *                                        |      | finish
+ *                                         ------  cancel
+ *                                                 receiveNextMessages
+ *
+ * Events of requests and responses are dispatched to interceptor objects using the interceptor's
+ * dispatch queue. The dispatch queue should be serial queue to make sure the events are processed
+ * in order. Interceptor implementations must derive from GRPCInterceptor class. The class makes
+ * some basic implementation of all methods responding to an event of a call. If an interceptor does
+ * not care about a particular event, it can use the basic implementation of the GRPCInterceptor
+ * class, which simply forward the event to the next or previous interceptor in the chain.
+ *
+ * The interceptor object should be unique for each call since the call context is not passed to the
+ * interceptor object in a call event. However, the interceptors can be implemented to share states
+ * by receiving state sharing object from the factory upon construction.
  */
 
 #import "GRPCCall.h"
@@ -28,24 +112,49 @@ NS_ASSUME_NONNULL_BEGIN
 @class GRPCInterceptorManager;
 @class GRPCInterceptor;
 
+/**
+ * The GRPCInterceptorInterface defines the request events that can occur to an interceptr.
+ */
 @protocol GRPCInterceptorInterface<NSObject>
 
-/** The queue on which all methods of this interceptor should be dispatched on */
+/**
+ * The queue on which all methods of this interceptor should be dispatched on. The queue must be a
+ * serial queue.
+ */
 @property(readonly) dispatch_queue_t requestDispatchQueue;
 
+/**
+ * To start the call. This method will only be called once for each instance.
+ */
 - (void)startWithRequestOptions:(GRPCRequestOptions *)requestOptions
                     callOptions:(GRPCCallOptions *)callOptions;
 
+/**
+ * To write data to the call.
+ */
 - (void)writeData:(id)data;
 
+/**
+ * To finish the stream of requests.
+ */
 - (void)finish;
 
+/**
+ * To cancel the call.
+ */
 - (void)cancel;
 
+/**
+ * To indicate the call that the previous interceptor is ready to receive more messages.
+ */
 - (void)receiveNextMessages:(NSUInteger)numberOfMessages;
 
 @end
 
+/**
+ * An interceptor factory object should be used to create interceptor object for the call at the
+ * call start time.
+ */
 @protocol GRPCInterceptorFactory
 
 /**
@@ -56,6 +165,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+/**
+ * The interceptor manager object retains reference to the next and previous interceptor object in
+ * the interceptor chain, and forward corresponding events to them. When a call terminates, it must
+ * invoke shutDown method of its corresponding manager so that references to other interceptors can
+ * be released.
+ */
 @interface GRPCInterceptorManager : NSObject
 
 - (instancetype)init NS_UNAVAILABLE;
