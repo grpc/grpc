@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_GPR_GLOBAL_CONFIG_H
-#define GRPC_CORE_LIB_GPR_GLOBAL_CONFIG_H
+#ifndef GRPC_CORE_LIB_GPRPP_GLOBAL_CONFIG_H
+#define GRPC_CORE_LIB_GPRPP_GLOBAL_CONFIG_H
 
 #include <grpc/support/port_platform.h>
 
@@ -89,4 +89,4 @@
 #include "src/core/lib/gprpp/global_config_env.h"
 #endif
 
-#endif /* GRPC_CORE_LIB_GPR_GLOBAL_CONFIG_H */
+#endif /* GRPC_CORE_LIB_GPRPP_GLOBAL_CONFIG_H */
