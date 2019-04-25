@@ -432,9 +432,8 @@ class Subchannel::HealthWatcherMap::HealthWatcher
                 grpc_connectivity_state subchannel_state)
       : subchannel_(c),
         health_check_service_name_(std::move(health_check_service_name)),
-        state_(subchannel_state == GRPC_CHANNEL_READY
-                   ? GRPC_CHANNEL_CONNECTING
-                   : subchannel_state) {
+        state_(subchannel_state == GRPC_CHANNEL_READY ? GRPC_CHANNEL_CONNECTING
+                                                      : subchannel_state) {
     GRPC_SUBCHANNEL_WEAK_REF(subchannel_, "health_watcher");
     GRPC_CLOSURE_INIT(&on_health_changed_, OnHealthChanged, this,
                       grpc_schedule_on_exec_ctx);
