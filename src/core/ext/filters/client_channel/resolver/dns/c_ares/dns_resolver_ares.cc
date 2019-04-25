@@ -43,6 +43,7 @@
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/gethostname.h"
+#include "src/core/lib/iomgr/iomgr_custom.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
@@ -426,8 +427,11 @@ static grpc_address_resolver_vtable ares_resolver = {
     grpc_resolve_address_ares, blocking_resolve_address_ares};
 
 static bool should_use_ares(const char* resolver_env) {
-  return resolver_env == nullptr || strlen(resolver_env) == 0 ||
-         gpr_stricmp(resolver_env, "ares") == 0;
+  // TODO(lidiz): Remove the "g_custom_iomgr_enabled" flag once c-ares support
+  // custom IO managers (e.g. gevent).
+  return !g_custom_iomgr_enabled &&
+         (resolver_env == nullptr || strlen(resolver_env) == 0 ||
+          gpr_stricmp(resolver_env, "ares") == 0);
 }
 
 void grpc_resolver_dns_ares_init() {
