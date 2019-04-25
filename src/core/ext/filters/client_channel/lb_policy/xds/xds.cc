@@ -364,7 +364,7 @@ class XdsLb : public LoadBalancingPolicy {
 
       void UpdateLocked(
           xds_grpclb_serverlist* serverlist,
-          RefCountedPtr<ParsedLoadBalancingConfig> child_policy_config,
+          const RefCountedPtr<ParsedLoadBalancingConfig>& child_policy_config,
           const grpc_channel_args* args);
       void ShutdownLocked();
       void ResetBackoffLocked();
@@ -412,7 +412,7 @@ class XdsLb : public LoadBalancingPolicy {
 
     void UpdateLocked(
         const LocalityList& locality_list,
-        RefCountedPtr<ParsedLoadBalancingConfig> child_policy_config,
+        const RefCountedPtr<ParsedLoadBalancingConfig>& child_policy_config,
         const grpc_channel_args* args, XdsLb* parent);
     void ShutdownLocked();
     void ResetBackoffLocked();
