@@ -22,11 +22,11 @@
 
 #import "../../GRPCClient/private/NSError+GRPC.h"
 
-@interface UnitTests : XCTestCase
+@interface NSErrorUnitTests : XCTestCase
 
 @end
 
-@implementation UnitTests
+@implementation NSErrorUnitTests
 
 - (void)testNSError {
   const char *kDetails = "test details";

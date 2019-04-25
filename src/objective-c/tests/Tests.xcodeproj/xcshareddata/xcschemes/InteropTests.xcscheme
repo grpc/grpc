@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "0700"
+   LastUpgradeVersion = "1010"
    version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -11,19 +11,19 @@
             buildForRunning = "YES"
             buildForProfiling = "NO"
             buildForArchiving = "NO"
-            buildForAnalyzing = "YES">
+            buildForAnalyzing = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "63DC84421BE152B5000708E8"
-               BuildableName = "InteropTestsLocalCleartext.xctest"
-               BlueprintName = "InteropTestsLocalCleartext"
+               BlueprintIdentifier = "5EA476F32272816A000F72FC"
+               BuildableName = "InteropTests.xctest"
+               BlueprintName = "InteropTests"
                ReferencedContainer = "container:Tests.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
-      buildConfiguration = "Test"
+      buildConfiguration = "Cronet"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES">
@@ -32,9 +32,9 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "63DC84421BE152B5000708E8"
-               BuildableName = "InteropTestsLocalCleartext.xctest"
-               BlueprintName = "InteropTestsLocalCleartext"
+               BlueprintIdentifier = "5EA476F32272816A000F72FC"
+               BuildableName = "InteropTests.xctest"
+               BlueprintName = "InteropTests"
                ReferencedContainer = "container:Tests.xcodeproj">
             </BuildableReference>
             <SkippedTests>
@@ -48,7 +48,7 @@
       </AdditionalOptions>
    </TestAction>
    <LaunchAction
-      buildConfiguration = "Test"
+      buildConfiguration = "Cronet"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
@@ -60,9 +60,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "63DC84421BE152B5000708E8"
-            BuildableName = "InteropTestsLocalCleartext.xctest"
-            BlueprintName = "InteropTestsLocalCleartext"
+            BlueprintIdentifier = "5EA476F32272816A000F72FC"
+            BuildableName = "InteropTests.xctest"
+            BlueprintName = "InteropTests"
             ReferencedContainer = "container:Tests.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -78,15 +78,15 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "63DC84421BE152B5000708E8"
-            BuildableName = "InteropTestsLocalCleartext.xctest"
-            BlueprintName = "InteropTestsLocalCleartext"
+            BlueprintIdentifier = "5EA476F32272816A000F72FC"
+            BuildableName = "InteropTests.xctest"
+            BlueprintName = "InteropTests"
             ReferencedContainer = "container:Tests.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
    </ProfileAction>
    <AnalyzeAction
-      buildConfiguration = "Test">
+      buildConfiguration = "Debug">
    </AnalyzeAction>
    <ArchiveAction
       buildConfiguration = "Release"

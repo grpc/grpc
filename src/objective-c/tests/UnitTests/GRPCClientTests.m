@@ -33,7 +33,7 @@
 
 #include <netinet/in.h>
 
-#import "version.h"
+#import "../version.h"
 
 #define TEST_TIMEOUT 16
 
