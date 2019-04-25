@@ -194,7 +194,8 @@ class Subchannel {
     // ref to the connected subchannel.
     virtual void OnConnectivityStateChange(
         grpc_connectivity_state new_state,
-        RefCountedPtr<ConnectedSubchannel> connected_subchannel) GRPC_ABSTRACT;
+        RefCountedPtr<ConnectedSubchannel> connected_subchannel)  // NOLINT
+        GRPC_ABSTRACT;
 
     virtual grpc_pollset_set* interested_parties() GRPC_ABSTRACT;
 
