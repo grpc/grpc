@@ -35,10 +35,9 @@ _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 def get_free_loopback_tcp_port():
     if socket.has_ipv6:
         tcp_socket = socket.socket(socket.AF_INET6)
-        tcp_socket.bind(('', 0))
     else:
         tcp_socket = socket.socket(socket.AF_INET)
-        tcp_socket.bind(('', 0))
+    tcp_socket.bind(('', 0))
     address_tuple = tcp_socket.getsockname()
     yield "[::1]:%s" % (address_tuple[1])
     tcp_socket.close()
