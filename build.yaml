@@ -14,7 +14,7 @@ settings:
   '#10': See the expand_version.py for all the quirks here
   core_version: 7.0.0
   g_stands_for: godric
-  version: 1.20.0
+  version: 1.20.1
 filegroups:
 - name: alts_proto
   headers:
