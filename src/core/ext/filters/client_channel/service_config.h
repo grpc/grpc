@@ -71,14 +71,14 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
    public:
     virtual ~Parser() = default;
 
-    virtual UniquePtr<ServiceConfig::ParsedConfig> ParseGlobalParams(
-        const grpc_json* json, grpc_error** error) {
+    virtual UniquePtr<ParsedConfig> ParseGlobalParams(const grpc_json* json,
+                                                      grpc_error** error) {
       GPR_DEBUG_ASSERT(error != nullptr);
       return nullptr;
     }
 
-    virtual UniquePtr<ServiceConfig::ParsedConfig> ParsePerMethodParams(
-        const grpc_json* json, grpc_error** error) {
+    virtual UniquePtr<ParsedConfig> ParsePerMethodParams(const grpc_json* json,
+                                                         grpc_error** error) {
       GPR_DEBUG_ASSERT(error != nullptr);
       return nullptr;
     }
@@ -87,10 +87,14 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   };
 
   static constexpr int kNumPreallocatedParsers = 4;
-  typedef InlinedVector<UniquePtr<ServiceConfig::ParsedConfig>,
-                        kNumPreallocatedParsers>
+  typedef InlinedVector<UniquePtr<ParsedConfig>, kNumPreallocatedParsers>
       ServiceConfigObjectsVector;
 
+  /// When a service config is applied to a call in the client_channel_filter,
+  /// we create an instance of this object and store it in the call_data for
+  /// client_channel. A pointer to this object is also stored in the
+  /// call_context, so that future filters can easily access method and global
+  /// parameters for the call.
   class CallData {
    public:
     CallData() = default;
@@ -102,20 +106,21 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
       }
     }
 
-    RefCountedPtr<ServiceConfig> service_config() { return service_config_; }
+    ServiceConfig* service_config() { return service_config_.get(); }
 
-    ServiceConfig::ParsedConfig* GetMethodParsedObject(int index) const {
+    ParsedConfig* GetMethodParsedObject(size_t index) const {
       return method_params_vector_ != nullptr
                  ? (*method_params_vector_)[index].get()
                  : nullptr;
     }
 
-    bool empty() const { return service_config_ == nullptr; }
+    ParsedConfig* GetGlobalParsedObject(size_t index) const {
+      return service_config_->GetParsedGlobalServiceConfigObject(index);
+    }
 
    private:
     RefCountedPtr<ServiceConfig> service_config_;
-    const ServiceConfig::ServiceConfigObjectsVector* method_params_vector_ =
-        nullptr;
+    const ServiceConfigObjectsVector* method_params_vector_ = nullptr;
   };
 
   /// Creates a new service config from parsing \a json_string.
@@ -130,8 +135,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   /// Retrieves the parsed global service config object at index \a index. The
   /// lifetime of the returned object is tied to the lifetime of the
   /// ServiceConfig object.
-  ServiceConfig::ParsedConfig* GetParsedGlobalServiceConfigObject(
-      size_t index) {
+  ParsedConfig* GetParsedGlobalServiceConfigObject(size_t index) {
     GPR_DEBUG_ASSERT(index < parsed_global_service_config_objects_.size());
     return parsed_global_service_config_objects_[index].get();
   }
@@ -148,29 +152,11 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   /// registered parser. Each parser is responsible for reading the service
   /// config json and returning a parsed object. This parsed object can later be
   /// retrieved using the same index that was returned at registration time.
-  static size_t RegisterParser(UniquePtr<ServiceConfig::Parser> parser);
+  static size_t RegisterParser(UniquePtr<Parser> parser);
 
   static void Init();
 
   static void Shutdown();
-
-  // Consumes all the errors in the vector and forms a referencing error from
-  // them. If the vector is empty, return GRPC_ERROR_NONE.
-  template <size_t N>
-  static grpc_error* CreateErrorFromVector(
-      const char* desc, InlinedVector<grpc_error*, N>* error_list) {
-    grpc_error* error = GRPC_ERROR_NONE;
-    if (error_list->size() != 0) {
-      error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          desc, error_list->data(), error_list->size());
-      // Remove refs to all errors in error_list.
-      for (size_t i = 0; i < error_list->size(); i++) {
-        GRPC_ERROR_UNREF((*error_list)[i]);
-      }
-      error_list->clear();
-    }
-    return error;
-  }
 
  private:
   // So New() can call our private ctor.
@@ -203,7 +189,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   UniquePtr<char> json_string_;  // Underlying storage for json_tree.
   grpc_json* json_tree_;
 
-  InlinedVector<UniquePtr<ServiceConfig::ParsedConfig>, kNumPreallocatedParsers>
+  InlinedVector<UniquePtr<ParsedConfig>, kNumPreallocatedParsers>
       parsed_global_service_config_objects_;
   // A map from the method name to the service config objects vector. Note that
   // we are using a raw pointer and not a unique pointer so that we can use the

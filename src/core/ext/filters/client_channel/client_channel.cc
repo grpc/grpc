@@ -240,6 +240,7 @@ class ChannelData {
   const size_t per_rpc_retry_buffer_size_;
   grpc_channel_stack* owning_stack_;
   ClientChannelFactory* client_channel_factory_;
+  UniquePtr<char> server_name_;
   // Initialized shortly after construction.
   channelz::ClientChannelNode* channelz_node_ = nullptr;
 
@@ -263,7 +264,7 @@ class ChannelData {
   OrphanablePtr<LoadBalancingPolicy> resolving_lb_policy_;
   grpc_connectivity_state_tracker state_tracker_;
   ExternalConnectivityWatcher::WatcherList external_connectivity_watcher_list_;
-  const char* health_check_service_name_ = nullptr;
+  UniquePtr<char> health_check_service_name_;
 
   //
   // Fields accessed from both data plane and control plane combiners.
@@ -762,12 +763,11 @@ class ChannelData::ConnectivityStateAndPickerSetter {
 class ChannelData::ServiceConfigSetter {
  public:
   ServiceConfigSetter(
-      ChannelData* chand, UniquePtr<char> server_name,
+      ChannelData* chand,
       Optional<internal::ClientChannelGlobalParsedObject::RetryThrottling>
           retry_throttle_data,
       RefCountedPtr<ServiceConfig> service_config)
       : chand_(chand),
-        server_name_(std::move(server_name)),
         retry_throttle_data_(retry_throttle_data),
         service_config_(std::move(service_config)) {
     GRPC_CHANNEL_STACK_REF(chand->owning_stack_, "ServiceConfigSetter");
@@ -785,7 +785,7 @@ class ChannelData::ServiceConfigSetter {
     if (self->retry_throttle_data_.has_value()) {
       chand->retry_throttle_data_ =
           internal::ServerRetryThrottleMap::GetDataForServer(
-              self->server_name_.get(),
+              chand->server_name_.get(),
               self->retry_throttle_data_.value().max_milli_tokens,
               self->retry_throttle_data_.value().milli_token_ratio);
     }
@@ -803,7 +803,6 @@ class ChannelData::ServiceConfigSetter {
   }
 
   ChannelData* chand_;
-  UniquePtr<char> server_name_;
   Optional<internal::ClientChannelGlobalParsedObject::RetryThrottling>
       retry_throttle_data_;
   RefCountedPtr<ServiceConfig> service_config_;
@@ -948,7 +947,7 @@ class ChannelData::ClientChannelControlHelper
     if (chand_->health_check_service_name_ != nullptr) {
       args_to_add[0] = grpc_channel_arg_string_create(
           const_cast<char*>("grpc.temp.health_check"),
-          const_cast<char*>(chand_->health_check_service_name_));
+          const_cast<char*>(chand_->health_check_service_name_.get()));
       num_args_to_add++;
     }
     args_to_add[num_args_to_add++] = SubchannelPoolInterface::CreateChannelArg(
@@ -1067,6 +1066,10 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
         "filter");
     return;
   }
+  grpc_uri* uri = grpc_uri_parse(server_uri, true);
+  GPR_ASSERT(uri->path[0] != '\0');
+  server_name_.reset(
+      gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path));
   char* proxy_name = nullptr;
   grpc_channel_args* new_args = nullptr;
   grpc_proxy_mappers_map_name(server_uri, args->channel_args, &proxy_name,
@@ -1135,11 +1138,12 @@ bool ChannelData::ProcessResolverResultLocked(
     gpr_log(GPR_INFO, "chand=%p: resolver returned service config: \"%s\"",
             chand, service_config_json);
   }
+  chand->health_check_service_name_.reset(
+      gpr_strdup(resolver_result.health_check_service_name()));
   // Create service config setter to update channel state in the data
   // plane combiner.  Destroys itself when done.
-  New<ServiceConfigSetter>(
-      chand, UniquePtr<char>(gpr_strdup(resolver_result.server_name())),
-      resolver_result.retry_throttle_data(), resolver_result.service_config());
+  New<ServiceConfigSetter>(chand, resolver_result.retry_throttle_data(),
+                           resolver_result.service_config());
   // Swap out the data used by GetChannelInfo().
   bool service_config_changed;
   {
@@ -1156,8 +1160,6 @@ bool ChannelData::ProcessResolverResultLocked(
   // Return results.
   *lb_policy_name = chand->info_lb_policy_name_.get();
   *lb_policy_config = resolver_result.lb_policy_config();
-  chand->health_check_service_name_ =
-      resolver_result.health_check_service_name();
   return service_config_changed;
 }
 
@@ -3101,7 +3103,7 @@ void CallData::ApplyServiceConfigToCallLocked(grpc_call_element* elem) {
   // it.
   service_config_call_data_ =
       ServiceConfig::CallData(chand->service_config(), path_);
-  if (!service_config_call_data_.empty()) {
+  if (service_config_call_data_.service_config() != nullptr) {
     call_context_[GRPC_SERVICE_CONFIG_CALL_DATA].value =
         &service_config_call_data_;
     method_params_ = static_cast<ClientChannelMethodParsedObject*>(

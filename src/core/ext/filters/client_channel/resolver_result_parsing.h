@@ -47,10 +47,12 @@ class ClientChannelGlobalParsedObject : public ServiceConfig::ParsedConfig {
   ClientChannelGlobalParsedObject(
       RefCountedPtr<ParsedLoadBalancingConfig> parsed_lb_config,
       UniquePtr<char> parsed_deprecated_lb_policy,
-      const Optional<RetryThrottling>& retry_throttling)
+      const Optional<RetryThrottling>& retry_throttling,
+      const char* health_check_service_name)
       : parsed_lb_config_(std::move(parsed_lb_config)),
         parsed_deprecated_lb_policy_(std::move(parsed_deprecated_lb_policy)),
-        retry_throttling_(retry_throttling) {}
+        retry_throttling_(retry_throttling),
+        health_check_service_name_(health_check_service_name) {}
 
   Optional<RetryThrottling> retry_throttling() const {
     return retry_throttling_;
@@ -64,10 +66,15 @@ class ClientChannelGlobalParsedObject : public ServiceConfig::ParsedConfig {
     return parsed_deprecated_lb_policy_.get();
   }
 
+  const char* health_check_service_name() const {
+    return health_check_service_name_;
+  }
+
  private:
   RefCountedPtr<ParsedLoadBalancingConfig> parsed_lb_config_;
   UniquePtr<char> parsed_deprecated_lb_policy_;
   Optional<RetryThrottling> retry_throttling_;
+  const char* health_check_service_name_ = nullptr;
 };
 
 class ClientChannelMethodParsedObject : public ServiceConfig::ParsedConfig {
@@ -111,8 +118,9 @@ class ClientChannelServiceConfigParser : public ServiceConfig::Parser {
   static void Register();
 };
 
-// A container of processed fields from the resolver result. Simplifies the
-// usage of resolver result.
+// TODO(yashykt): It would be cleaner to move this logic to the client_channel
+// code. A container of processed fields from the resolver result. Simplifies
+// the usage of resolver result.
 class ProcessedResolverResult {
  public:
   // Processes the resolver result and populates the relative members
@@ -122,21 +130,19 @@ class ProcessedResolverResult {
   // Getters. Any managed object's ownership is transferred.
   const char* service_config_json() { return service_config_json_; }
 
-  const char* server_name() { return server_name_; }
-
-  Optional<ClientChannelGlobalParsedObject::RetryThrottling>
-  retry_throttle_data() {
-    return retry_throttle_data_;
-  }
+  RefCountedPtr<ServiceConfig> service_config() { return service_config_; }
 
   UniquePtr<char> lb_policy_name() { return std::move(lb_policy_name_); }
   RefCountedPtr<ParsedLoadBalancingConfig> lb_policy_config() {
     return lb_policy_config_;
   }
 
-  const char* health_check_service_name() { return health_check_service_name_; }
+  Optional<ClientChannelGlobalParsedObject::RetryThrottling>
+  retry_throttle_data() {
+    return retry_throttle_data_;
+  }
 
-  RefCountedPtr<ServiceConfig> service_config() { return service_config_; }
+  const char* health_check_service_name() { return health_check_service_name_; }
 
  private:
   // Finds the service config; extracts LB config and (maybe) retry throttle
@@ -163,9 +169,8 @@ class ProcessedResolverResult {
   RefCountedPtr<ServiceConfig> service_config_;
   // LB policy.
   UniquePtr<char> lb_policy_name_;
-  RefCountedPtr<ParsedLoadBalancingConfig> lb_policy_config_ = nullptr;
+  RefCountedPtr<ParsedLoadBalancingConfig> lb_policy_config_;
   // Retry throttle data.
-  const char* server_name_ = nullptr;
   Optional<ClientChannelGlobalParsedObject::RetryThrottling>
       retry_throttle_data_;
   const char* health_check_service_name_ = nullptr;

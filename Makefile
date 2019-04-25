@@ -3695,7 +3695,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/connector.cc \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/health/health_check_client.cc \
-    src/core/ext/filters/client_channel/health/health_check_parser.cc \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy.cc \
@@ -4045,7 +4044,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/filters/client_channel/connector.cc \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/health/health_check_client.cc \
-    src/core/ext/filters/client_channel/health/health_check_parser.cc \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy.cc \
@@ -4419,7 +4417,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/ext/filters/client_channel/connector.cc \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/health/health_check_client.cc \
-    src/core/ext/filters/client_channel/health/health_check_parser.cc \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy.cc \
@@ -4732,7 +4729,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/connector.cc \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/health/health_check_client.cc \
-    src/core/ext/filters/client_channel/health/health_check_parser.cc \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy.cc \
@@ -5043,7 +5039,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/connector.cc \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/health/health_check_client.cc \
-    src/core/ext/filters/client_channel/health/health_check_parser.cc \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy.cc \
@@ -5892,7 +5887,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/filters/client_channel/connector.cc \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/health/health_check_client.cc \
-    src/core/ext/filters/client_channel/health/health_check_parser.cc \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy.cc \

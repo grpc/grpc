@@ -367,7 +367,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/connector.h',
                       'src/core/ext/filters/client_channel/global_subchannel_pool.h',
                       'src/core/ext/filters/client_channel/health/health_check_client.h',
-                      'src/core/ext/filters/client_channel/health/health_check_parser.h',
                       'src/core/ext/filters/client_channel/http_connect_handshaker.h',
                       'src/core/ext/filters/client_channel/http_proxy.h',
                       'src/core/ext/filters/client_channel/lb_policy.h',

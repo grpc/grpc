@@ -26,7 +26,7 @@ namespace grpc_core {
 template <typename T>
 class Optional {
  public:
-  Optional() { value_ = {}; }
+  Optional() { value_ = T(); }
   void set(const T& val) {
     value_ = val;
     set_ = true;

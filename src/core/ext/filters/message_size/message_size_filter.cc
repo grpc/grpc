@@ -38,11 +38,11 @@
 static void recv_message_ready(void* user_data, grpc_error* error);
 static void recv_trailing_metadata_ready(void* user_data, grpc_error* error);
 
+namespace grpc_core {
+
 namespace {
 size_t g_message_size_parser_index;
 }  // namespace
-
-namespace grpc_core {
 
 UniquePtr<ServiceConfig::ParsedConfig> MessageSizeParser::ParsePerMethodParams(
     const grpc_json* json, grpc_error** error) {
@@ -56,8 +56,8 @@ UniquePtr<ServiceConfig::ParsedConfig> MessageSizeParser::ParsePerMethodParams(
       if (max_request_message_bytes >= 0) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:maxRequestMessageBytes error:Duplicate entry"));
-      } else if (field->type != GRPC_JSON_STRING &&
-                 field->type != GRPC_JSON_NUMBER) {
+      }  // Duplicate, continue parsing.
+      if (field->type != GRPC_JSON_STRING && field->type != GRPC_JSON_NUMBER) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:maxRequestMessageBytes error:should be of type number"));
       } else {
@@ -71,8 +71,8 @@ UniquePtr<ServiceConfig::ParsedConfig> MessageSizeParser::ParsePerMethodParams(
       if (max_response_message_bytes >= 0) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:maxResponseMessageBytes error:Duplicate entry"));
-      } else if (field->type != GRPC_JSON_STRING &&
-                 field->type != GRPC_JSON_NUMBER) {
+      }  // Duplicate, conitnue parsing
+      if (field->type != GRPC_JSON_STRING && field->type != GRPC_JSON_NUMBER) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:maxResponseMessageBytes error:should be of type number"));
       } else {
@@ -85,8 +85,7 @@ UniquePtr<ServiceConfig::ParsedConfig> MessageSizeParser::ParsePerMethodParams(
     }
   }
   if (!error_list.empty()) {
-    *error = ServiceConfig::CreateErrorFromVector("Message size parser",
-                                                  &error_list);
+    *error = GRPC_ERROR_CREATE_FROM_VECTOR("Message size parser", &error_list);
     return nullptr;
   }
   return UniquePtr<ServiceConfig::ParsedConfig>(New<MessageSizeParsedObject>(
@@ -332,7 +331,12 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   new (chand) channel_data();
   chand->limits = get_message_size_limits(args->channel_args);
-  // Get method config table from channel args.
+  // TODO(yashykt): We only need to read GRPC_ARG_SERVICE_CONFIG in the case of
+  // direct channels. (Service config is otherwise stored in the call_context by
+  // client_channel filter.) If we ever need a second filter that also needs to
+  // parse GRPC_ARG_SERVICE_CONFIG, we should refactor this code and add a
+  // separate filter that reads GRPC_ARG_SERVICE_CONFIG and saves the parsed
+  // config in the call_context. Get service config from channel args.
   const grpc_arg* channel_arg =
       grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVICE_CONFIG);
   const char* service_config_str = grpc_channel_arg_get_string(channel_arg);

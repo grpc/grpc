@@ -530,7 +530,7 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   const bool resolution_contains_addresses = result.addresses.size() > 0;
   // Process the resolver result.
   const char* lb_policy_name = nullptr;
-  RefCountedPtr<ParsedLoadBalancingConfig> lb_policy_config = nullptr;
+  RefCountedPtr<ParsedLoadBalancingConfig> lb_policy_config;
   bool service_config_changed = false;
   if (process_resolver_result_ != nullptr) {
     service_config_changed =

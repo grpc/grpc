@@ -94,9 +94,21 @@ LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
   return factory->CreateLoadBalancingPolicy(std::move(args));
 }
 
-bool LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(const char* name) {
+bool LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
+    const char* name, bool* requires_config) {
   GPR_ASSERT(g_state != nullptr);
-  return g_state->GetLoadBalancingPolicyFactory(name) != nullptr;
+  auto* factory = g_state->GetLoadBalancingPolicyFactory(name);
+  if (factory == nullptr) {
+    return false;
+  }
+  if (requires_config != nullptr) {
+    grpc_error* error = GRPC_ERROR_NONE;
+    // Check if the load balancing policy allows an empty config
+    *requires_config =
+        factory->ParseLoadBalancingConfig(nullptr, &error) == nullptr;
+    GRPC_ERROR_UNREF(error);
+  }
+  return true;
 }
 
 namespace {
@@ -152,7 +164,8 @@ grpc_json* ParseLoadBalancingConfigHelper(const grpc_json* lb_config_array,
       return nullptr;
     }
     // If we support this policy, then select it.
-    if (LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(policy->key)) {
+    if (LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(policy->key,
+                                                               nullptr)) {
       return policy;
     }
   }
@@ -187,21 +200,6 @@ LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(const grpc_json* json,
     // Parse load balancing config via factory.
     return factory->ParseLoadBalancingConfig(policy, error);
   }
-}
-
-grpc_error* LoadBalancingPolicyRegistry::CanCreateLoadBalancingPolicy(
-    const char* lb_policy_name) {
-  GPR_DEBUG_ASSERT(g_state != nullptr);
-  gpr_log(GPR_ERROR, "%s", lb_policy_name);
-  auto* factory = g_state->GetLoadBalancingPolicyFactory(lb_policy_name);
-  if (factory == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "field:loadBalancingPolicy error:Unknown lb policy");
-  }
-  grpc_error* error = GRPC_ERROR_NONE;
-  // Check if the load balancing policy allows an empty config
-  factory->ParseLoadBalancingConfig(nullptr, &error);
-  return error;
 }
 
 }  // namespace grpc_core

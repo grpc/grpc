@@ -30,6 +30,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/inlined_vector.h"
 
 /// Opaque representation of an error.
 /// See https://github.com/grpc/grpc/blob/master/doc/core/grpc-error.md for a
@@ -192,6 +193,24 @@ inline void grpc_error_unref(grpc_error* err) {
 #define GRPC_ERROR_REF(err) grpc_error_ref(err)
 #define GRPC_ERROR_UNREF(err) grpc_error_unref(err)
 #endif
+
+// Consumes all the errors in the vector and forms a referencing error from
+// them. If the vector is empty, return GRPC_ERROR_NONE.
+template <size_t N>
+static grpc_error* GRPC_ERROR_CREATE_FROM_VECTOR(
+    const char* desc, grpc_core::InlinedVector<grpc_error*, N>* error_list) {
+  grpc_error* error = GRPC_ERROR_NONE;
+  if (error_list->size() != 0) {
+    error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+        desc, error_list->data(), error_list->size());
+    // Remove refs to all errors in error_list.
+    for (size_t i = 0; i < error_list->size(); i++) {
+      GRPC_ERROR_UNREF((*error_list)[i]);
+    }
+    error_list->clear();
+  }
+  return error;
+}
 
 grpc_error* grpc_error_set_int(grpc_error* src, grpc_error_ints which,
                                intptr_t value) GRPC_MUST_USE_RESULT;

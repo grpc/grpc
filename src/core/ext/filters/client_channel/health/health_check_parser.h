@@ -24,7 +24,7 @@
 #include "src/core/ext/filters/client_channel/service_config.h"
 
 namespace grpc_core {
-
+#if 0
 class HealthCheckParsedObject : public ServiceConfig::ParsedConfig {
  public:
   HealthCheckParsedObject(const char* service_name)
@@ -47,5 +47,6 @@ class HealthCheckParser : public ServiceConfig::Parser {
 
   static size_t ParserIndex();
 };
+#endif
 }  // namespace grpc_core
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HEALTH_HEALTH_CHECK_PARSER_H */

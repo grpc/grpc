@@ -123,7 +123,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   ProcessResolverResultCallback process_resolver_result_ = nullptr;
   void* process_resolver_result_user_data_ = nullptr;
   UniquePtr<char> child_policy_name_;
-  RefCountedPtr<ParsedLoadBalancingConfig> child_lb_config_ = nullptr;
+  RefCountedPtr<ParsedLoadBalancingConfig> child_lb_config_;
 
   // Resolver and associated state.
   OrphanablePtr<Resolver> resolver_;

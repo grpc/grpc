@@ -98,7 +98,7 @@ grpc_error* ServiceConfig::ParseGlobalParams(const grpc_json* json_tree) {
     }
     parsed_global_service_config_objects_.push_back(std::move(parsed_obj));
   }
-  return CreateErrorFromVector("Global Params", &error_list);
+  return GRPC_ERROR_CREATE_FROM_VECTOR("Global Params", &error_list);
 }
 
 grpc_error* ServiceConfig::ParseJsonMethodConfigToServiceConfigObjectsTable(
@@ -154,7 +154,7 @@ grpc_error* ServiceConfig::ParseJsonMethodConfigToServiceConfigObjectsTable(
     ++*idx;
   }
 wrap_error:
-  return CreateErrorFromVector("methodConfig", &error_list);
+  return GRPC_ERROR_CREATE_FROM_VECTOR("methodConfig", &error_list);
 }
 
 grpc_error* ServiceConfig::ParsePerMethodParams(const grpc_json* json_tree) {
@@ -211,7 +211,7 @@ grpc_error* ServiceConfig::ParsePerMethodParams(const grpc_json* json_tree) {
             num_entries, entries, nullptr);
     gpr_free(entries);
   }
-  return CreateErrorFromVector("Method Params", &error_list);
+  return GRPC_ERROR_CREATE_FROM_VECTOR("Method Params", &error_list);
 }
 
 ServiceConfig::~ServiceConfig() { grpc_json_destroy(json_tree_); }
@@ -313,7 +313,7 @@ ServiceConfig::GetMethodServiceConfigObjectsVector(const grpc_slice& path) {
   return *value;
 }
 
-size_t ServiceConfig::RegisterParser(UniquePtr<ServiceConfig::Parser> parser) {
+size_t ServiceConfig::RegisterParser(UniquePtr<Parser> parser) {
   g_registered_parsers->push_back(std::move(parser));
   return g_registered_parsers->size() - 1;
 }
