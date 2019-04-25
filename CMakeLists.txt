@@ -661,6 +661,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx json_run_localhost)
 endif()
 add_dependencies(buildtests_cxx memory_test)
+add_dependencies(buildtests_cxx message_allocator_end2end_test)
 add_dependencies(buildtests_cxx metrics_client)
 add_dependencies(buildtests_cxx mock_test)
 add_dependencies(buildtests_cxx nonblocking_test)
@@ -838,7 +839,6 @@ endif (gRPC_BUILD_TESTS)
 
 add_library(gpr
   src/core/lib/gpr/alloc.cc
-  src/core/lib/gpr/arena.cc
   src/core/lib/gpr/atm.cc
   src/core/lib/gpr/cpu_iphone.cc
   src/core/lib/gpr/cpu_linux.cc
@@ -871,6 +871,7 @@ add_library(gpr
   src/core/lib/gpr/tmpfile_posix.cc
   src/core/lib/gpr/tmpfile_windows.cc
   src/core/lib/gpr/wrap_memcpy.cc
+  src/core/lib/gprpp/arena.cc
   src/core/lib/gprpp/fork.cc
   src/core/lib/gprpp/thd_posix.cc
   src/core/lib/gprpp/thd_windows.cc
@@ -3054,6 +3055,7 @@ foreach(_hdr
   include/grpcpp/support/client_interceptor.h
   include/grpcpp/support/config.h
   include/grpcpp/support/interceptor.h
+  include/grpcpp/support/message_allocator.h
   include/grpcpp/support/proto_buffer_reader.h
   include/grpcpp/support/proto_buffer_writer.h
   include/grpcpp/support/server_callback.h
@@ -3169,6 +3171,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/intercepted_channel.h
   include/grpcpp/impl/codegen/interceptor.h
   include/grpcpp/impl/codegen/interceptor_common.h
+  include/grpcpp/impl/codegen/message_allocator.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
@@ -3658,6 +3661,7 @@ foreach(_hdr
   include/grpcpp/support/client_interceptor.h
   include/grpcpp/support/config.h
   include/grpcpp/support/interceptor.h
+  include/grpcpp/support/message_allocator.h
   include/grpcpp/support/proto_buffer_reader.h
   include/grpcpp/support/proto_buffer_writer.h
   include/grpcpp/support/server_callback.h
@@ -3773,6 +3777,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/intercepted_channel.h
   include/grpcpp/impl/codegen/interceptor.h
   include/grpcpp/impl/codegen/interceptor_common.h
+  include/grpcpp/impl/codegen/message_allocator.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
@@ -4206,6 +4211,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/intercepted_channel.h
   include/grpcpp/impl/codegen/interceptor.h
   include/grpcpp/impl/codegen/interceptor_common.h
+  include/grpcpp/impl/codegen/message_allocator.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
@@ -4403,6 +4409,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/intercepted_channel.h
   include/grpcpp/impl/codegen/interceptor.h
   include/grpcpp/impl/codegen/interceptor_common.h
+  include/grpcpp/impl/codegen/message_allocator.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
@@ -4637,6 +4644,7 @@ foreach(_hdr
   include/grpcpp/support/client_interceptor.h
   include/grpcpp/support/config.h
   include/grpcpp/support/interceptor.h
+  include/grpcpp/support/message_allocator.h
   include/grpcpp/support/proto_buffer_reader.h
   include/grpcpp/support/proto_buffer_writer.h
   include/grpcpp/support/server_callback.h
@@ -4752,6 +4760,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/intercepted_channel.h
   include/grpcpp/impl/codegen/interceptor.h
   include/grpcpp/impl/codegen/interceptor_common.h
+  include/grpcpp/impl/codegen/message_allocator.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
@@ -12681,6 +12690,7 @@ target_include_directories(client_crash_test_server
 target_link_libraries(client_crash_test_server
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_config
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -13420,6 +13430,7 @@ target_include_directories(golden_file_test
 target_link_libraries(golden_file_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_config
   grpc++
   grpc
   gpr
@@ -14493,6 +14504,46 @@ target_include_directories(memory_test
 target_link_libraries(memory_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc++
+  grpc
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(message_allocator_end2end_test
+  test/cpp/end2end/message_allocator_end2end_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(message_allocator_end2end_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(message_allocator_end2end_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
   grpc_test_util
   grpc++
   grpc
@@ -15624,6 +15675,7 @@ target_include_directories(server_crash_test_client
 target_link_libraries(server_crash_test_client
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_config
   grpc++_test_util
   grpc_test_util
   grpc++

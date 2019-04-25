@@ -655,11 +655,12 @@ grpc_chttp2_stream::Reffer::Reffer(grpc_chttp2_stream* s) {
 grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
                                        grpc_stream_refcount* refcount,
                                        const void* server_data,
-                                       gpr_arena* arena)
+                                       grpc_core::Arena* arena)
     : t(t),
       refcount(refcount),
       reffer(this),
-      metadata_buffer{{arena}, {arena}} {
+      metadata_buffer{grpc_chttp2_incoming_metadata_buffer(arena),
+                      grpc_chttp2_incoming_metadata_buffer(arena)} {
   if (server_data) {
     id = static_cast<uint32_t>((uintptr_t)server_data);
     *t->accepting_stream = this;
@@ -740,7 +741,7 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
 
 static int init_stream(grpc_transport* gt, grpc_stream* gs,
                        grpc_stream_refcount* refcount, const void* server_data,
-                       gpr_arena* arena) {
+                       grpc_core::Arena* arena) {
   GPR_TIMER_SCOPE("init_stream", 0);
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
   new (gs) grpc_chttp2_stream(t, refcount, server_data, arena);
@@ -1281,8 +1282,8 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
 
 static bool contains_non_ok_status(grpc_metadata_batch* batch) {
   if (batch->idx.named.grpc_status != nullptr) {
-    return !grpc_mdelem_eq(batch->idx.named.grpc_status->md,
-                           GRPC_MDELEM_GRPC_STATUS_0);
+    return !grpc_mdelem_static_value_eq(batch->idx.named.grpc_status->md,
+                                        GRPC_MDELEM_GRPC_STATUS_0);
   }
   return false;
 }
@@ -1413,7 +1414,7 @@ static void perform_stream_op_locked(void* stream_op,
   // on_complete will be null if and only if there are no send ops in the batch.
   if (on_complete != nullptr) {
     // This batch has send ops. Use final_data as a barrier until enqueue time;
-    // the inital counter is dropped at the end of this function.
+    // the initial counter is dropped at the end of this function.
     on_complete->next_data.scratch = CLOSURE_BARRIER_FIRST_REF_BIT;
     on_complete->error_data.error = GRPC_ERROR_NONE;
   }

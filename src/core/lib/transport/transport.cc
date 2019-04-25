@@ -124,7 +124,8 @@ void grpc_transport_destroy(grpc_transport* transport) {
 
 int grpc_transport_init_stream(grpc_transport* transport, grpc_stream* stream,
                                grpc_stream_refcount* refcount,
-                               const void* server_data, gpr_arena* arena) {
+                               const void* server_data,
+                               grpc_core::Arena* arena) {
   return transport->vtable->init_stream(transport, stream, refcount,
                                         server_data, arena);
 }
@@ -174,7 +175,7 @@ grpc_endpoint* grpc_transport_get_endpoint(grpc_transport* transport) {
 // it's grpc_transport_stream_op_batch_finish_with_failure
 void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_transport_stream_op_batch* batch, grpc_error* error,
-    grpc_call_combiner* call_combiner) {
+    grpc_core::CallCombiner* call_combiner) {
   if (batch->send_message) {
     batch->payload->send_message.send_message.reset();
   }

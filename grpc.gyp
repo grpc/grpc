@@ -218,7 +218,6 @@
       ],
       'sources': [
         'src/core/lib/gpr/alloc.cc',
-        'src/core/lib/gpr/arena.cc',
         'src/core/lib/gpr/atm.cc',
         'src/core/lib/gpr/cpu_iphone.cc',
         'src/core/lib/gpr/cpu_linux.cc',
@@ -251,6 +250,7 @@
         'src/core/lib/gpr/tmpfile_posix.cc',
         'src/core/lib/gpr/tmpfile_windows.cc',
         'src/core/lib/gpr/wrap_memcpy.cc',
+        'src/core/lib/gprpp/arena.cc',
         'src/core/lib/gprpp/fork.cc',
         'src/core/lib/gprpp/thd_posix.cc',
         'src/core/lib/gprpp/thd_windows.cc',

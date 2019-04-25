@@ -32,12 +32,13 @@ enum grpc_deadline_timer_state {
 // Must be the first field in the filter's call_data.
 struct grpc_deadline_state {
   grpc_deadline_state(grpc_call_element* elem, grpc_call_stack* call_stack,
-                      grpc_call_combiner* call_combiner, grpc_millis deadline);
+                      grpc_core::CallCombiner* call_combiner,
+                      grpc_millis deadline);
   ~grpc_deadline_state();
 
   // We take a reference to the call stack for the timer callback.
   grpc_call_stack* call_stack;
-  grpc_call_combiner* call_combiner;
+  grpc_core::CallCombiner* call_combiner;
   grpc_deadline_timer_state timer_state = GRPC_DEADLINE_STATE_INITIAL;
   grpc_timer timer;
   grpc_closure timer_callback;

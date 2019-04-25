@@ -151,7 +151,7 @@ static const NSTimeInterval kTestTimeout = 16;
                                  closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
                                    trailing_md = trailingMetadata;
                                    if (error) {
-                                     XCTAssertEqual(error.code, 16,
+                                     XCTAssertEqual(error.code, GRPCErrorCodeUnauthenticated,
                                                     @"Finished with unexpected error: %@", error);
                                      XCTAssertEqualObjects(init_md,
                                                            error.userInfo[kGRPCHeadersKey]);

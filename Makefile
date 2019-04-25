@@ -1233,6 +1233,7 @@ interop_server: $(BINDIR)/$(CONFIG)/interop_server
 interop_test: $(BINDIR)/$(CONFIG)/interop_test
 json_run_localhost: $(BINDIR)/$(CONFIG)/json_run_localhost
 memory_test: $(BINDIR)/$(CONFIG)/memory_test
+message_allocator_end2end_test: $(BINDIR)/$(CONFIG)/message_allocator_end2end_test
 metrics_client: $(BINDIR)/$(CONFIG)/metrics_client
 mock_test: $(BINDIR)/$(CONFIG)/mock_test
 nonblocking_test: $(BINDIR)/$(CONFIG)/nonblocking_test
@@ -1701,6 +1702,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/interop_test \
   $(BINDIR)/$(CONFIG)/json_run_localhost \
   $(BINDIR)/$(CONFIG)/memory_test \
+  $(BINDIR)/$(CONFIG)/message_allocator_end2end_test \
   $(BINDIR)/$(CONFIG)/metrics_client \
   $(BINDIR)/$(CONFIG)/mock_test \
   $(BINDIR)/$(CONFIG)/nonblocking_test \
@@ -1844,6 +1846,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/interop_test \
   $(BINDIR)/$(CONFIG)/json_run_localhost \
   $(BINDIR)/$(CONFIG)/memory_test \
+  $(BINDIR)/$(CONFIG)/message_allocator_end2end_test \
   $(BINDIR)/$(CONFIG)/metrics_client \
   $(BINDIR)/$(CONFIG)/mock_test \
   $(BINDIR)/$(CONFIG)/nonblocking_test \
@@ -2343,6 +2346,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/interop_test || ( echo test interop_test failed ; exit 1 )
 	$(E) "[RUN]     Testing memory_test"
 	$(Q) $(BINDIR)/$(CONFIG)/memory_test || ( echo test memory_test failed ; exit 1 )
+	$(E) "[RUN]     Testing message_allocator_end2end_test"
+	$(Q) $(BINDIR)/$(CONFIG)/message_allocator_end2end_test || ( echo test message_allocator_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing mock_test"
 	$(Q) $(BINDIR)/$(CONFIG)/mock_test || ( echo test mock_test failed ; exit 1 )
 	$(E) "[RUN]     Testing nonblocking_test"
@@ -3315,7 +3320,6 @@ endif
 
 LIBGPR_SRC = \
     src/core/lib/gpr/alloc.cc \
-    src/core/lib/gpr/arena.cc \
     src/core/lib/gpr/atm.cc \
     src/core/lib/gpr/cpu_iphone.cc \
     src/core/lib/gpr/cpu_linux.cc \
@@ -3348,6 +3352,7 @@ LIBGPR_SRC = \
     src/core/lib/gpr/tmpfile_posix.cc \
     src/core/lib/gpr/tmpfile_windows.cc \
     src/core/lib/gpr/wrap_memcpy.cc \
+    src/core/lib/gprpp/arena.cc \
     src/core/lib/gprpp/fork.cc \
     src/core/lib/gprpp/thd_posix.cc \
     src/core/lib/gprpp/thd_windows.cc \
@@ -5390,6 +5395,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/support/client_interceptor.h \
     include/grpcpp/support/config.h \
     include/grpcpp/support/interceptor.h \
+    include/grpcpp/support/message_allocator.h \
     include/grpcpp/support/proto_buffer_reader.h \
     include/grpcpp/support/proto_buffer_writer.h \
     include/grpcpp/support/server_callback.h \
@@ -5505,6 +5511,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/intercepted_channel.h \
     include/grpcpp/impl/codegen/interceptor.h \
     include/grpcpp/impl/codegen/interceptor_common.h \
+    include/grpcpp/impl/codegen/message_allocator.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -6002,6 +6009,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/support/client_interceptor.h \
     include/grpcpp/support/config.h \
     include/grpcpp/support/interceptor.h \
+    include/grpcpp/support/message_allocator.h \
     include/grpcpp/support/proto_buffer_reader.h \
     include/grpcpp/support/proto_buffer_writer.h \
     include/grpcpp/support/server_callback.h \
@@ -6117,6 +6125,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/intercepted_channel.h \
     include/grpcpp/impl/codegen/interceptor.h \
     include/grpcpp/impl/codegen/interceptor_common.h \
+    include/grpcpp/impl/codegen/message_allocator.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -6522,6 +6531,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/intercepted_channel.h \
     include/grpcpp/impl/codegen/interceptor.h \
     include/grpcpp/impl/codegen/interceptor_common.h \
+    include/grpcpp/impl/codegen/message_allocator.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -6690,6 +6700,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/intercepted_channel.h \
     include/grpcpp/impl/codegen/interceptor.h \
     include/grpcpp/impl/codegen/interceptor_common.h \
+    include/grpcpp/impl/codegen/message_allocator.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -6930,6 +6941,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/support/client_interceptor.h \
     include/grpcpp/support/config.h \
     include/grpcpp/support/interceptor.h \
+    include/grpcpp/support/message_allocator.h \
     include/grpcpp/support/proto_buffer_reader.h \
     include/grpcpp/support/proto_buffer_writer.h \
     include/grpcpp/support/server_callback.h \
@@ -7045,6 +7057,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/intercepted_channel.h \
     include/grpcpp/impl/codegen/interceptor.h \
     include/grpcpp/impl/codegen/interceptor_common.h \
+    include/grpcpp/impl/codegen/message_allocator.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -15624,16 +15637,16 @@ $(BINDIR)/$(CONFIG)/client_crash_test_server: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/client_crash_test_server: $(PROTOBUF_DEP) $(CLIENT_CRASH_TEST_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/client_crash_test_server: $(PROTOBUF_DEP) $(CLIENT_CRASH_TEST_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(CLIENT_CRASH_TEST_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/client_crash_test_server
+	$(Q) $(LDXX) $(LDFLAGS) $(CLIENT_CRASH_TEST_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/client_crash_test_server
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/cpp/end2end/client_crash_test_server.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/client_crash_test_server.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_client_crash_test_server: $(CLIENT_CRASH_TEST_SERVER_OBJS:.o=.dep)
 
@@ -16371,18 +16384,18 @@ $(BINDIR)/$(CONFIG)/golden_file_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/golden_file_test: $(PROTOBUF_DEP) $(GOLDEN_FILE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/golden_file_test: $(PROTOBUF_DEP) $(GOLDEN_FILE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(GOLDEN_FILE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/golden_file_test
+	$(Q) $(LDXX) $(LDFLAGS) $(GOLDEN_FILE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/golden_file_test
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/compiler_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/compiler_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-$(OBJDIR)/$(CONFIG)/test/cpp/codegen/golden_file_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/cpp/codegen/golden_file_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_golden_file_test: $(GOLDEN_FILE_TEST_OBJS:.o=.dep)
 
@@ -17403,6 +17416,49 @@ deps_memory_test: $(MEMORY_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(MEMORY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+MESSAGE_ALLOCATOR_END2END_TEST_SRC = \
+    test/cpp/end2end/message_allocator_end2end_test.cc \
+
+MESSAGE_ALLOCATOR_END2END_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MESSAGE_ALLOCATOR_END2END_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/message_allocator_end2end_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/message_allocator_end2end_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/message_allocator_end2end_test: $(PROTOBUF_DEP) $(MESSAGE_ALLOCATOR_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(MESSAGE_ALLOCATOR_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/message_allocator_end2end_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/message_allocator_end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_message_allocator_end2end_test: $(MESSAGE_ALLOCATOR_END2END_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(MESSAGE_ALLOCATOR_END2END_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -18544,16 +18600,16 @@ $(BINDIR)/$(CONFIG)/server_crash_test_client: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/server_crash_test_client: $(PROTOBUF_DEP) $(SERVER_CRASH_TEST_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/server_crash_test_client: $(PROTOBUF_DEP) $(SERVER_CRASH_TEST_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(SERVER_CRASH_TEST_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/server_crash_test_client
+	$(Q) $(LDXX) $(LDFLAGS) $(SERVER_CRASH_TEST_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/server_crash_test_client
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/cpp/end2end/server_crash_test_client.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/server_crash_test_client.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_server_crash_test_client: $(SERVER_CRASH_TEST_CLIENT_OBJS:.o=.dep)
 

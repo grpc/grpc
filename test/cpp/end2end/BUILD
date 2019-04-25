@@ -140,6 +140,7 @@ grpc_cc_binary(
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
 )
@@ -544,6 +545,7 @@ grpc_cc_binary(
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
 )
@@ -675,3 +677,23 @@ grpc_cc_test(
         "//test/cpp/util:test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "message_allocator_end2end_test",
+    srcs = ["message_allocator_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":test_service_impl",
+        "//:grpc",
+        "//:gpr",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:simple_messages_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+

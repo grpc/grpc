@@ -45,7 +45,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/address_sorting/address_sorting_posix.c \
     third_party/address_sorting/address_sorting_windows.c \
     src/core/lib/gpr/alloc.cc \
-    src/core/lib/gpr/arena.cc \
     src/core/lib/gpr/atm.cc \
     src/core/lib/gpr/cpu_iphone.cc \
     src/core/lib/gpr/cpu_linux.cc \
@@ -78,6 +77,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gpr/tmpfile_posix.cc \
     src/core/lib/gpr/tmpfile_windows.cc \
     src/core/lib/gpr/wrap_memcpy.cc \
+    src/core/lib/gprpp/arena.cc \
     src/core/lib/gprpp/fork.cc \
     src/core/lib/gprpp/thd_posix.cc \
     src/core/lib/gprpp/thd_windows.cc \

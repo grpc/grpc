@@ -281,7 +281,7 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
         auto* handler = resources_ ? method_->handler()
                                    : server_->resource_exhausted_handler_.get();
         request_ = handler->Deserialize(call_.call(), request_payload_,
-                                        &request_status_);
+                                        &request_status_, nullptr);
 
         request_payload_ = nullptr;
         interceptor_methods_.AddInterceptionHookPoint(
@@ -305,7 +305,7 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
         auto* handler = resources_ ? method_->handler()
                                    : server_->resource_exhausted_handler_.get();
         handler->RunHandler(internal::MethodHandler::HandlerParameter(
-            &call_, &ctx_, request_, request_status_, nullptr));
+            &call_, &ctx_, request_, request_status_, nullptr, nullptr));
         request_ = nullptr;
         global_callbacks_->PostSynchronousRequest(&ctx_);
 
@@ -512,7 +512,8 @@ class Server::CallbackRequest final : public Server::CallbackRequestBase {
       if (req_->has_request_payload_) {
         // Set interception point for RECV MESSAGE
         req_->request_ = req_->method_->handler()->Deserialize(
-            req_->call_, req_->request_payload_, &req_->request_status_);
+            req_->call_, req_->request_payload_, &req_->request_status_,
+            &req_->handler_data_);
         req_->request_payload_ = nullptr;
         req_->interceptor_methods_.AddInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
@@ -532,7 +533,8 @@ class Server::CallbackRequest final : public Server::CallbackRequestBase {
                           ? req_->method_->handler()
                           : req_->server_->generic_handler_.get();
       handler->RunHandler(internal::MethodHandler::HandlerParameter(
-          call_, &req_->ctx_, req_->request_, req_->request_status_, [this] {
+          call_, &req_->ctx_, req_->request_, req_->request_status_,
+          req_->handler_data_, [this] {
             // Recycle this request if there aren't too many outstanding.
             // Note that we don't have to worry about a case where there
             // are no requests waiting to match for this method since that
@@ -577,6 +579,7 @@ class Server::CallbackRequest final : public Server::CallbackRequestBase {
     ctx_.Setup(gpr_inf_future(GPR_CLOCK_REALTIME));
     request_payload_ = nullptr;
     request_ = nullptr;
+    handler_data_ = nullptr;
     request_status_ = Status();
   }
 
@@ -587,6 +590,7 @@ class Server::CallbackRequest final : public Server::CallbackRequestBase {
   const bool has_request_payload_;
   grpc_byte_buffer* request_payload_;
   void* request_;
+  void* handler_data_;
   Status request_status_;
   grpc_call_details* call_details_ = nullptr;
   grpc_call* call_;

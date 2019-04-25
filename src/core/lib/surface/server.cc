@@ -123,7 +123,7 @@ typedef struct shutdown_tag {
 typedef enum {
   /* waiting for metadata */
   NOT_STARTED,
-  /* inital metadata read, not flow controlled in yet */
+  /* initial metadata read, not flow controlled in yet */
   PENDING,
   /* flow controlled in, on completion queue */
   ACTIVATED,
@@ -190,7 +190,7 @@ struct call_data {
   grpc_closure publish;
 
   call_data* pending_next = nullptr;
-  grpc_call_combiner* call_combiner;
+  grpc_core::CallCombiner* call_combiner;
 };
 
 struct request_matcher {
