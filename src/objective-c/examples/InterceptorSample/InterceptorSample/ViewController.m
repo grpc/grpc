@@ -19,8 +19,8 @@
 #import "ViewController.h"
 
 #import <GRPCClient/GRPCCall.h>
-#import <RemoteTest/Test.pbrpc.h>
 #import <RemoteTest/Messages.pbobjc.h>
+#import <RemoteTest/Test.pbrpc.h>
 
 #import "CacheInterceptor.h"
 
@@ -64,7 +64,6 @@ static NSString *const kService = @"TestService";
   [call start];
   [call writeData:[request data]];
   [call finish];
-
 }
 
 - (dispatch_queue_t)dispatchQueue {

@@ -47,8 +47,7 @@
   if ([_nextInterceptor respondsToSelector:@selector(startWithRequestOptions:callOptions:)]) {
     id<GRPCInterceptorInterface> copiedNextInterceptor = _nextInterceptor;
     dispatch_async(copiedNextInterceptor.requestDispatchQueue, ^{
-      [copiedNextInterceptor startWithRequestOptions:requestOptions
-                                         callOptions:callOptions];
+      [copiedNextInterceptor startWithRequestOptions:requestOptions callOptions:callOptions];
     });
   }
 }
@@ -114,13 +113,12 @@
 
 /** Forward call close and trailing metadata to the previous interceptor in the chain */
 - (void)forwardPreviousInterceptorCloseWithTrailingMetadata:
-(nullable NSDictionary *)trailingMetadata
+            (nullable NSDictionary *)trailingMetadata
                                                       error:(nullable NSError *)error {
   if ([_previousInterceptor respondsToSelector:@selector(didCloseWithTrailingMetadata:error:)]) {
     id<GRPCResponseHandler> copiedPreviousInterceptor = _previousInterceptor;
     dispatch_async(copiedPreviousInterceptor.dispatchQueue, ^{
-      [copiedPreviousInterceptor didCloseWithTrailingMetadata:trailingMetadata
-                                                        error:error];
+      [copiedPreviousInterceptor didCloseWithTrailingMetadata:trailingMetadata error:error];
     });
   }
 }
@@ -165,8 +163,7 @@
 
 - (void)startWithRequestOptions:(GRPCRequestOptions *)requestOptions
                     callOptions:(GRPCCallOptions *)callOptions {
-  [_manager startNextInterceptorWithRequest:requestOptions
-                                callOptions:callOptions];
+  [_manager startNextInterceptorWithRequest:requestOptions callOptions:callOptions];
 }
 
 - (void)writeData:(id)data {
@@ -179,13 +176,15 @@
 
 - (void)cancel {
   [_manager cancelNextInterceptor];
-  [_manager forwardPreviousInterceptorCloseWithTrailingMetadata:nil
-                                                          error:[NSError errorWithDomain:kGRPCErrorDomain
-                                                                                    code:GRPCErrorCodeCancelled
-                                                                                userInfo:@{
-                                                                                           NSLocalizedDescriptionKey :
-                                                                                             @"Canceled"
-                                                                                           }]];
+  [_manager
+      forwardPreviousInterceptorCloseWithTrailingMetadata:nil
+                                                    error:[NSError
+                                                              errorWithDomain:kGRPCErrorDomain
+                                                                         code:GRPCErrorCodeCancelled
+                                                                     userInfo:@{
+                                                                       NSLocalizedDescriptionKey :
+                                                                           @"Canceled"
+                                                                     }]];
   [_manager shutDown];
 }
 
@@ -193,13 +192,13 @@
   [_manager receiveNextInterceptorMessages:numberOfMessages];
 }
 
-
 - (void)didReceiveInitialMetadata:(NSDictionary *)initialMetadata {
   [_manager forwardPreviousInterceptorWithInitialMetadata:initialMetadata];
 }
 
 - (void)didReceiveRawMessage:(id)message {
-  NSAssert(NO, @"The method didReceiveRawMessage is deprecated and cannot be used with interceptor");
+  NSAssert(NO,
+           @"The method didReceiveRawMessage is deprecated and cannot be used with interceptor");
   NSLog(@"The method didReceiveRawMessage is deprecated and cannot be used with interceptor");
   abort();
 }
@@ -208,10 +207,8 @@
   [_manager forwardPreviousIntercetporWithData:data];
 }
 
-- (void)didCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata
-                               error:(NSError *)error {
-  [_manager forwardPreviousInterceptorCloseWithTrailingMetadata:trailingMetadata
-                                                          error:error];
+- (void)didCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
+  [_manager forwardPreviousInterceptorCloseWithTrailingMetadata:trailingMetadata error:error];
   [_manager shutDown];
 }
 

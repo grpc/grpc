@@ -175,9 +175,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)init NS_UNAVAILABLE;
 
-+ (instancetype)new NS_UNAVAILABLE;
++ (instancetype) new NS_UNAVAILABLE;
 
-- (nullable instancetype)initWithNextInerceptor:(id<GRPCInterceptorInterface>)nextInterceptor NS_DESIGNATED_INITIALIZER;
+- (nullable instancetype)initWithNextInerceptor:(id<GRPCInterceptorInterface>)nextInterceptor
+    NS_DESIGNATED_INITIALIZER;
 
 /** Set the previous interceptor in the chain. Can only be set once. */
 - (void)setPreviousInterceptor:(id<GRPCResponseHandler>)previousInterceptor;
@@ -213,7 +214,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /** Forward call close and trailing metadata to the previous interceptor in the chain */
 - (void)forwardPreviousInterceptorCloseWithTrailingMetadata:
-(nullable NSDictionary *)trailingMetadata
+            (nullable NSDictionary *)trailingMetadata
                                                       error:(nullable NSError *)error;
 
 /** Forward write completion to the previous interceptor in the chain */
@@ -235,7 +236,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)init NS_UNAVAILABLE;
 
-+ (instancetype)new NS_UNAVAILABLE;
++ (instancetype) new NS_UNAVAILABLE;
 
 /**
  * Initialize the interceptor with the next interceptor in the chain, and provide the dispatch queue
@@ -243,7 +244,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (nullable instancetype)initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
                                requestDispatchQueue:(dispatch_queue_t)requestDispatchQueue
-                              responseDispatchQueue:(dispatch_queue_t)responseDispatchQueue NS_DESIGNATED_INITIALIZER;
+                              responseDispatchQueue:(dispatch_queue_t)responseDispatchQueue
+    NS_DESIGNATED_INITIALIZER;
 
 // Default implementation of GRPCInterceptorInterface
 

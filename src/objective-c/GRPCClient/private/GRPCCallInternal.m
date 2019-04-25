@@ -35,12 +35,12 @@
 
 - (instancetype)init {
   if ((self = [super init])) {
-    // Set queue QoS only when iOS version is 8.0 or above and Xcode version is 9.0 or above
+  // Set queue QoS only when iOS version is 8.0 or above and Xcode version is 9.0 or above
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 110000 || __MAC_OS_X_VERSION_MAX_ALLOWED >= 101300
     if (@available(iOS 8.0, macOS 10.10, *)) {
       _dispatchQueue = dispatch_queue_create(
-                                             NULL,
-                                             dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, 0));
+          NULL,
+          dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, 0));
     } else {
 #else
     {
@@ -53,7 +53,7 @@
 }
 
 - (void)setResponseHandler:(id<GRPCResponseHandler>)responseHandler {
-  @synchronized (self) {
+  @synchronized(self) {
     NSAssert(!_started, @"Call already started.");
     if (_started) {
       return;
@@ -84,7 +84,7 @@
     return;
   }
 
-  @synchronized (self) {
+  @synchronized(self) {
     NSAssert(_handler != nil, @"Response handler required.");
     if (_handler == nil) {
       NSLog(@"Invalid response handler.");
@@ -172,7 +172,7 @@
     }
   };
   id<GRXWriteable> responseWriteable =
-  [[GRXWriteable alloc] initWithValueHandler:valueHandler completionHandler:completionHandler];
+      [[GRXWriteable alloc] initWithValueHandler:valueHandler completionHandler:completionHandler];
   [copiedCall startWithWriteable:responseWriteable];
 }
 
@@ -197,9 +197,9 @@
                                               error:[NSError errorWithDomain:kGRPCErrorDomain
                                                                         code:GRPCErrorCodeCancelled
                                                                     userInfo:@{
-                                                                               NSLocalizedDescriptionKey :
-                                                                                 @"Canceled by app"
-                                                                               }]];
+                                                                      NSLocalizedDescriptionKey :
+                                                                          @"Canceled by app"
+                                                                    }]];
       });
     } else {
       _handler = nil;

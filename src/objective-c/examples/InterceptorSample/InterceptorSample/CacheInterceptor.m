@@ -19,7 +19,7 @@
 #import "CacheInterceptor.h"
 
 @implementation RequestCacheEntry {
-  @protected
+ @protected
   NSString *_path;
   id<NSObject> _message;
 }
@@ -67,7 +67,7 @@
 @end
 
 @implementation ResponseCacheEntry {
-  @protected
+ @protected
   NSDate *_deadline;
   NSDictionary *_headers;
   id _message;
@@ -138,21 +138,19 @@
 }
 
 - (GRPCInterceptor *)createInterceptorWithManager:(GRPCInterceptorManager *)interceptorManager {
-  return [[CacheInterceptor alloc] initWithInterceptorManager:interceptorManager
-                                                 cacheContext:self];
+  return [[CacheInterceptor alloc] initWithInterceptorManager:interceptorManager cacheContext:self];
 }
 
 - (ResponseCacheEntry *)getCachedResponseForRequest:(RequestCacheEntry *)request {
   ResponseCacheEntry *response = nil;
-  @synchronized (self) {
+  @synchronized(self) {
     response = [_cache objectForKey:request];
   }
   return response;
 }
 
-- (void)setCachedResponse:(ResponseCacheEntry *)response
-               forRequest:(RequestCacheEntry *)request {
-  @synchronized (self) {
+- (void)setCachedResponse:(ResponseCacheEntry *)response forRequest:(RequestCacheEntry *)request {
+  @synchronized(self) {
     [_cache setObject:response forKey:request];
   }
 }
@@ -181,8 +179,8 @@
   return _dispatchQueue;
 }
 
-- (instancetype)initWithInterceptorManager:(GRPCInterceptorManager * _Nonnull)intercepterManager
-                              cacheContext:(CacheContext * _Nonnull)cacheContext {
+- (instancetype)initWithInterceptorManager:(GRPCInterceptorManager *_Nonnull)intercepterManager
+                              cacheContext:(CacheContext *_Nonnull)cacheContext {
   if ((self = [super initWithInterceptorManager:intercepterManager
                            requestDispatchQueue:dispatch_get_main_queue()
                           responseDispatchQueue:dispatch_get_main_queue()])) {
@@ -198,7 +196,8 @@
   return self;
 }
 
-- (void)startWithRequestOptions:(GRPCRequestOptions *)requestOptions callOptions:(GRPCCallOptions *)callOptions {
+- (void)startWithRequestOptions:(GRPCRequestOptions *)requestOptions
+                    callOptions:(GRPCCallOptions *)callOptions {
   NSLog(@"start");
   if (requestOptions.safety != GRPCCallSafetyCacheableRequest) {
     NSLog(@"no cache");
@@ -235,8 +234,7 @@
     _response = [[_context getCachedResponseForRequest:_request] copy];
     NSLog(@"Read cache for %@", _request);
     if (!_response) {
-      [_manager startNextInterceptorWithRequest:_requestOptions
-                                    callOptions:_callOptions];
+      [_manager startNextInterceptorWithRequest:_requestOptions callOptions:_callOptions];
       [_manager writeNextInterceptorWithData:_requestMessage];
       [_manager finishNextInterceptor];
     } else {
@@ -256,7 +254,9 @@
       if ([key.lowercaseString isEqualToString:@"cache-control"]) {
         NSArray *cacheControls = [initialMetadata[key] componentsSeparatedByString:@","];
         for (NSString *option in cacheControls) {
-          NSString *trimmedOption = [option stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@" "]];
+          NSString *trimmedOption =
+              [option stringByTrimmingCharactersInSet:[NSCharacterSet
+                                                          characterSetWithCharactersInString:@" "]];
           if ([trimmedOption.lowercaseString isEqualToString:@"no-cache"] ||
               [trimmedOption.lowercaseString isEqualToString:@"no-store"] ||
               [trimmedOption.lowercaseString isEqualToString:@"no-transform"]) {

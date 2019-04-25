@@ -68,10 +68,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)init NS_UNAVAILABLE;
 
-+ (instancetype)new NS_UNAVAILABLE;
++ (instancetype) new NS_UNAVAILABLE;
 
-- (nullable instancetype)initWithInterceptorManager:(GRPCInterceptorManager * _Nonnull)intercepterManager
-                                       cacheContext:(CacheContext * _Nonnull)cacheContext NS_DESIGNATED_INITIALIZER;
+- (nullable instancetype)initWithInterceptorManager:
+                             (GRPCInterceptorManager *_Nonnull)intercepterManager
+                                       cacheContext:(CacheContext *_Nonnull)cacheContext
+    NS_DESIGNATED_INITIALIZER;
 
 // implementation of GRPCInterceptorInterface
 - (void)startWithRequestOptions:(GRPCRequestOptions *)requestOptions

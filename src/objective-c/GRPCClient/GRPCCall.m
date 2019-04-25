@@ -18,8 +18,8 @@
 
 #import "GRPCCall.h"
 #import "GRPCCall+OAuth2.h"
-#import "GRPCInterceptor.h"
 #import "GRPCCallOptions.h"
+#import "GRPCInterceptor.h"
 
 #import <RxLibrary/GRXBufferedPipe.h>
 #import <RxLibrary/GRXConcurrentWriteable.h>
@@ -28,6 +28,8 @@
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 
+#import "private/GRPCCall+V2API.h"
+#import "private/GRPCCallInternal.h"
 #import "private/GRPCChannelPool.h"
 #import "private/GRPCCompletionQueue.h"
 #import "private/GRPCConnectivityMonitor.h"
@@ -37,8 +39,6 @@
 #import "private/NSData+GRPC.h"
 #import "private/NSDictionary+GRPC.h"
 #import "private/NSError+GRPC.h"
-#import "private/GRPCCall+V2API.h"
-#import "private/GRPCCallInternal.h"
 
 // At most 6 ops can be in an op batch for a client: SEND_INITIAL_METADATA,
 // SEND_MESSAGE, SEND_CLOSE_FROM_CLIENT, RECV_INITIAL_METADATA, RECV_MESSAGE,
@@ -142,8 +142,10 @@ const char *kCFStreamVarName = "grpc_cfstream";
       [internalCall setResponseHandler:_responseHandler];
     } else {
       for (int i = (int)interceptorFactories.count - 1; i >= 0; i--) {
-        GRPCInterceptorManager *manager = [[GRPCInterceptorManager alloc] initWithNextInerceptor:nextInterceptor];
-        GRPCInterceptor *interceptor = [interceptorFactories[i] createInterceptorWithManager:manager];
+        GRPCInterceptorManager *manager =
+            [[GRPCInterceptorManager alloc] initWithNextInerceptor:nextInterceptor];
+        GRPCInterceptor *interceptor =
+            [interceptorFactories[i] createInterceptorWithManager:manager];
         NSAssert(interceptor != nil, @"Failed to create interceptor");
         if (interceptor == nil) {
           return nil;
@@ -180,8 +182,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
   GRPCCallOptions *callOptions = [_actualCallOptions copy];
   if ([copiedFirstInterceptor respondsToSelector:@selector(startWithRequestOptions:callOptions:)]) {
     dispatch_async(copiedFirstInterceptor.requestDispatchQueue, ^{
-      [copiedFirstInterceptor startWithRequestOptions:requestOptions
-                                          callOptions:callOptions];
+      [copiedFirstInterceptor startWithRequestOptions:requestOptions callOptions:callOptions];
     });
   }
 }
@@ -200,7 +201,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)writeData:(id)data {
   id<GRPCInterceptorInterface> copiedFirstInterceptor;
-  @synchronized (self) {
+  @synchronized(self) {
     copiedFirstInterceptor = _firstInterceptor;
   }
   if ([copiedFirstInterceptor respondsToSelector:@selector(writeData:)]) {
@@ -212,7 +213,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)finish {
   id<GRPCInterceptorInterface> copiedFirstInterceptor;
-  @synchronized (self) {
+  @synchronized(self) {
     copiedFirstInterceptor = _firstInterceptor;
   }
   if ([copiedFirstInterceptor respondsToSelector:@selector(finish)]) {
@@ -224,7 +225,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)receiveNextMessages:(NSUInteger)numberOfMessages {
   id<GRPCInterceptorInterface> copiedFirstInterceptor;
-  @synchronized (self) {
+  @synchronized(self) {
     copiedFirstInterceptor = _firstInterceptor;
   }
   if ([copiedFirstInterceptor respondsToSelector:@selector(receiveNextMessages:)]) {

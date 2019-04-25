@@ -106,7 +106,6 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
  */
 @property(copy, readonly) NSArray *interceptorFactories;
 
-
 // OAuth2 parameters. Users of gRPC may specify one of the following two parameters.
 
 /**
@@ -269,7 +268,6 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
  * not take effect if done so.
  */
 @property(copy, readwrite) NSArray *interceptorFactories;
-
 
 // OAuth2 parameters. Users of gRPC may specify one of the following two parameters.
 

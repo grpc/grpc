@@ -20,6 +20,4 @@
 
 @interface ViewController : UIViewController
 
-
 @end
-
