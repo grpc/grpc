@@ -79,7 +79,9 @@ std::shared_ptr<grpc::Channel> CreateCustomChannelWithInterceptors(
                      grpc_lame_client_channel_create(
                          nullptr, GRPC_STATUS_INVALID_ARGUMENT,
                          "Invalid credentials."),
-                     std::move(interceptor_creators));
+                     std::vector<std::unique_ptr<
+                         grpc::experimental::
+                             ClientInterceptorFactoryInterface>>());
 }
 }  // namespace experimental
 

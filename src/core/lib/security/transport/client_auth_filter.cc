@@ -92,7 +92,7 @@ struct call_data {
   }
 
   grpc_call_stack* owning_call;
-  grpc_core::CallCombiner* call_combiner;
+  grpc_call_combiner* call_combiner;
   grpc_core::RefCountedPtr<grpc_call_credentials> creds;
   grpc_slice host = grpc_empty_slice();
   grpc_slice method = grpc_empty_slice();
@@ -270,9 +270,11 @@ static void send_security_metadata(grpc_call_element* elem,
     GRPC_ERROR_UNREF(error);
   } else {
     // Async return; register cancellation closure with call combiner.
-    calld->call_combiner->SetNotifyOnCancel(GRPC_CLOSURE_INIT(
-        &calld->get_request_metadata_cancel_closure,
-        cancel_get_request_metadata, elem, grpc_schedule_on_exec_ctx));
+    grpc_call_combiner_set_notify_on_cancel(
+        calld->call_combiner,
+        GRPC_CLOSURE_INIT(&calld->get_request_metadata_cancel_closure,
+                          cancel_get_request_metadata, elem,
+                          grpc_schedule_on_exec_ctx));
   }
 }
 
@@ -343,9 +345,11 @@ static void auth_start_transport_stream_op_batch(
         GRPC_ERROR_UNREF(error);
       } else {
         // Async return; register cancellation closure with call combiner.
-        calld->call_combiner->SetNotifyOnCancel(GRPC_CLOSURE_INIT(
-            &calld->check_call_host_cancel_closure, cancel_check_call_host,
-            elem, grpc_schedule_on_exec_ctx));
+        grpc_call_combiner_set_notify_on_cancel(
+            calld->call_combiner,
+            GRPC_CLOSURE_INIT(&calld->check_call_host_cancel_closure,
+                              cancel_check_call_host, elem,
+                              grpc_schedule_on_exec_ctx));
       }
       gpr_free(call_host);
       return; /* early exit */

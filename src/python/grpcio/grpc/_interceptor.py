@@ -44,9 +44,9 @@ def service_pipeline(interceptors):
 
 
 class _ClientCallDetails(
-        collections.namedtuple('_ClientCallDetails',
-                               ('method', 'timeout', 'metadata', 'credentials',
-                                'wait_for_ready', 'compression')),
+        collections.namedtuple(
+            '_ClientCallDetails',
+            ('method', 'timeout', 'metadata', 'credentials', 'wait_for_ready')),
         grpc.ClientCallDetails):
     pass
 
@@ -77,12 +77,7 @@ def _unwrap_client_call_details(call_details, default_details):
     except AttributeError:
         wait_for_ready = default_details.wait_for_ready
 
-    try:
-        compression = call_details.compression
-    except AttributeError:
-        compression = default_details.compression
-
-    return method, timeout, metadata, credentials, wait_for_ready, compression
+    return method, timeout, metadata, credentials, wait_for_ready
 
 
 class _FailureOutcome(grpc.RpcError, grpc.Future, grpc.Call):  # pylint: disable=too-many-ancestors
@@ -211,15 +206,13 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                  timeout=None,
                  metadata=None,
                  credentials=None,
-                 wait_for_ready=None,
-                 compression=None):
+                 wait_for_ready=None):
         response, ignored_call = self._with_call(
             request,
             timeout=timeout,
             metadata=metadata,
             credentials=credentials,
-            wait_for_ready=wait_for_ready,
-            compression=compression)
+            wait_for_ready=wait_for_ready)
         return response
 
     def _with_call(self,
@@ -227,25 +220,20 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                    timeout=None,
                    metadata=None,
                    credentials=None,
-                   wait_for_ready=None,
-                   compression=None):
-        client_call_details = _ClientCallDetails(self._method, timeout,
-                                                 metadata, credentials,
-                                                 wait_for_ready, compression)
+                   wait_for_ready=None):
+        client_call_details = _ClientCallDetails(
+            self._method, timeout, metadata, credentials, wait_for_ready)
 
         def continuation(new_details, request):
-            (new_method, new_timeout, new_metadata, new_credentials,
-             new_wait_for_ready,
-             new_compression) = (_unwrap_client_call_details(
-                 new_details, client_call_details))
+            new_method, new_timeout, new_metadata, new_credentials, new_wait_for_ready = (
+                _unwrap_client_call_details(new_details, client_call_details))
             try:
                 response, call = self._thunk(new_method).with_call(
                     request,
                     timeout=new_timeout,
                     metadata=new_metadata,
                     credentials=new_credentials,
-                    wait_for_ready=new_wait_for_ready,
-                    compression=new_compression)
+                    wait_for_ready=new_wait_for_ready)
                 return _UnaryOutcome(response, call)
             except grpc.RpcError as rpc_error:
                 return rpc_error
@@ -261,39 +249,32 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                   timeout=None,
                   metadata=None,
                   credentials=None,
-                  wait_for_ready=None,
-                  compression=None):
+                  wait_for_ready=None):
         return self._with_call(
             request,
             timeout=timeout,
             metadata=metadata,
             credentials=credentials,
-            wait_for_ready=wait_for_ready,
-            compression=compression)
+            wait_for_ready=wait_for_ready)
 
     def future(self,
                request,
                timeout=None,
                metadata=None,
                credentials=None,
-               wait_for_ready=None,
-               compression=None):
-        client_call_details = _ClientCallDetails(self._method, timeout,
-                                                 metadata, credentials,
-                                                 wait_for_ready, compression)
+               wait_for_ready=None):
+        client_call_details = _ClientCallDetails(
+            self._method, timeout, metadata, credentials, wait_for_ready)
 
         def continuation(new_details, request):
-            (new_method, new_timeout, new_metadata, new_credentials,
-             new_wait_for_ready,
-             new_compression) = (_unwrap_client_call_details(
-                 new_details, client_call_details))
+            new_method, new_timeout, new_metadata, new_credentials, new_wait_for_ready = (
+                _unwrap_client_call_details(new_details, client_call_details))
             return self._thunk(new_method).future(
                 request,
                 timeout=new_timeout,
                 metadata=new_metadata,
                 credentials=new_credentials,
-                wait_for_ready=new_wait_for_ready,
-                compression=new_compression)
+                wait_for_ready=new_wait_for_ready)
 
         try:
             return self._interceptor.intercept_unary_unary(
@@ -314,24 +295,19 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                  timeout=None,
                  metadata=None,
                  credentials=None,
-                 wait_for_ready=None,
-                 compression=None):
-        client_call_details = _ClientCallDetails(self._method, timeout,
-                                                 metadata, credentials,
-                                                 wait_for_ready, compression)
+                 wait_for_ready=None):
+        client_call_details = _ClientCallDetails(
+            self._method, timeout, metadata, credentials, wait_for_ready)
 
         def continuation(new_details, request):
-            (new_method, new_timeout, new_metadata, new_credentials,
-             new_wait_for_ready,
-             new_compression) = (_unwrap_client_call_details(
-                 new_details, client_call_details))
+            new_method, new_timeout, new_metadata, new_credentials, new_wait_for_ready = (
+                _unwrap_client_call_details(new_details, client_call_details))
             return self._thunk(new_method)(
                 request,
                 timeout=new_timeout,
                 metadata=new_metadata,
                 credentials=new_credentials,
-                wait_for_ready=new_wait_for_ready,
-                compression=new_compression)
+                wait_for_ready=new_wait_for_ready)
 
         try:
             return self._interceptor.intercept_unary_stream(
@@ -352,15 +328,13 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                  timeout=None,
                  metadata=None,
                  credentials=None,
-                 wait_for_ready=None,
-                 compression=None):
+                 wait_for_ready=None):
         response, ignored_call = self._with_call(
             request_iterator,
             timeout=timeout,
             metadata=metadata,
             credentials=credentials,
-            wait_for_ready=wait_for_ready,
-            compression=compression)
+            wait_for_ready=wait_for_ready)
         return response
 
     def _with_call(self,
@@ -368,25 +342,20 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                    timeout=None,
                    metadata=None,
                    credentials=None,
-                   wait_for_ready=None,
-                   compression=None):
-        client_call_details = _ClientCallDetails(self._method, timeout,
-                                                 metadata, credentials,
-                                                 wait_for_ready, compression)
+                   wait_for_ready=None):
+        client_call_details = _ClientCallDetails(
+            self._method, timeout, metadata, credentials, wait_for_ready)
 
         def continuation(new_details, request_iterator):
-            (new_method, new_timeout, new_metadata, new_credentials,
-             new_wait_for_ready,
-             new_compression) = (_unwrap_client_call_details(
-                 new_details, client_call_details))
+            new_method, new_timeout, new_metadata, new_credentials, new_wait_for_ready = (
+                _unwrap_client_call_details(new_details, client_call_details))
             try:
                 response, call = self._thunk(new_method).with_call(
                     request_iterator,
                     timeout=new_timeout,
                     metadata=new_metadata,
                     credentials=new_credentials,
-                    wait_for_ready=new_wait_for_ready,
-                    compression=new_compression)
+                    wait_for_ready=new_wait_for_ready)
                 return _UnaryOutcome(response, call)
             except grpc.RpcError as rpc_error:
                 return rpc_error
@@ -402,39 +371,32 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                   timeout=None,
                   metadata=None,
                   credentials=None,
-                  wait_for_ready=None,
-                  compression=None):
+                  wait_for_ready=None):
         return self._with_call(
             request_iterator,
             timeout=timeout,
             metadata=metadata,
             credentials=credentials,
-            wait_for_ready=wait_for_ready,
-            compression=compression)
+            wait_for_ready=wait_for_ready)
 
     def future(self,
                request_iterator,
                timeout=None,
                metadata=None,
                credentials=None,
-               wait_for_ready=None,
-               compression=None):
-        client_call_details = _ClientCallDetails(self._method, timeout,
-                                                 metadata, credentials,
-                                                 wait_for_ready, compression)
+               wait_for_ready=None):
+        client_call_details = _ClientCallDetails(
+            self._method, timeout, metadata, credentials, wait_for_ready)
 
         def continuation(new_details, request_iterator):
-            (new_method, new_timeout, new_metadata, new_credentials,
-             new_wait_for_ready,
-             new_compression) = (_unwrap_client_call_details(
-                 new_details, client_call_details))
+            new_method, new_timeout, new_metadata, new_credentials, new_wait_for_ready = (
+                _unwrap_client_call_details(new_details, client_call_details))
             return self._thunk(new_method).future(
                 request_iterator,
                 timeout=new_timeout,
                 metadata=new_metadata,
                 credentials=new_credentials,
-                wait_for_ready=new_wait_for_ready,
-                compression=new_compression)
+                wait_for_ready=new_wait_for_ready)
 
         try:
             return self._interceptor.intercept_stream_unary(
@@ -455,24 +417,19 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
                  timeout=None,
                  metadata=None,
                  credentials=None,
-                 wait_for_ready=None,
-                 compression=None):
-        client_call_details = _ClientCallDetails(self._method, timeout,
-                                                 metadata, credentials,
-                                                 wait_for_ready, compression)
+                 wait_for_ready=None):
+        client_call_details = _ClientCallDetails(
+            self._method, timeout, metadata, credentials, wait_for_ready)
 
         def continuation(new_details, request_iterator):
-            (new_method, new_timeout, new_metadata, new_credentials,
-             new_wait_for_ready,
-             new_compression) = (_unwrap_client_call_details(
-                 new_details, client_call_details))
+            new_method, new_timeout, new_metadata, new_credentials, new_wait_for_ready = (
+                _unwrap_client_call_details(new_details, client_call_details))
             return self._thunk(new_method)(
                 request_iterator,
                 timeout=new_timeout,
                 metadata=new_metadata,
                 credentials=new_credentials,
-                wait_for_ready=new_wait_for_ready,
-                compression=new_compression)
+                wait_for_ready=new_wait_for_ready)
 
         try:
             return self._interceptor.intercept_stream_stream(

@@ -43,8 +43,9 @@ struct grpc_completion_queue;
 
 namespace grpc_impl {
 
+class Server;
 class ServerBuilder;
-}
+}  // namespace grpc_impl
 namespace grpc {
 
 template <class R>
@@ -66,7 +67,6 @@ class Channel;
 class ChannelInterface;
 class ClientContext;
 class CompletionQueue;
-class Server;
 class ServerContext;
 class ServerInterface;
 
@@ -183,8 +183,8 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// within the \a deadline).  A \a tag points to an arbitrary location usually
   /// employed to uniquely identify an event.
   ///
-  /// \param tag [out] Upon success, updated to point to the event's tag.
-  /// \param ok [out] Upon success, true if a successful event, false otherwise
+  /// \param tag [out] Upon sucess, updated to point to the event's tag.
+  /// \param ok [out] Upon sucess, true if a successful event, false otherwise
   ///        See documentation for CompletionQueue::Next for explanation of ok
   /// \param deadline [in] How long to block in wait for an event.
   ///
@@ -203,8 +203,8 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// employed to uniquely identify an event.
   ///
   /// \param f [in] Function to execute before calling AsyncNext on this queue.
-  /// \param tag [out] Upon success, updated to point to the event's tag.
-  /// \param ok [out] Upon success, true if read a regular event, false
+  /// \param tag [out] Upon sucess, updated to point to the event's tag.
+  /// \param ok [out] Upon sucess, true if read a regular event, false
   /// otherwise.
   /// \param deadline [in] How long to block in wait for an event.
   ///
@@ -274,7 +274,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   friend class ::grpc::internal::TemplatedBidiStreamingHandler;
   template <StatusCode code>
   friend class ::grpc::internal::ErrorMethodHandler;
-  friend class ::grpc::Server;
+  friend class ::grpc_impl::Server;
   friend class ::grpc::ServerContext;
   friend class ::grpc::ServerInterface;
   template <class InputMessage, class OutputMessage>
@@ -362,7 +362,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// queue should not really shutdown until all avalanching operations have
   /// been finalized. Note that we maintain the requirement that an avalanche
   /// registration must take place before CQ shutdown (which must be maintained
-  /// elsewhere)
+  /// elsehwere)
   void InitialAvalanching() {
     gpr_atm_rel_store(&avalanches_in_flight_, static_cast<gpr_atm>(1));
   }
@@ -408,8 +408,8 @@ class ServerCompletionQueue : public CompletionQueue {
         polling_type_(polling_type) {}
 
   grpc_cq_polling_type polling_type_;
-  friend class ::grpc_impl::ServerBuilder;
-  friend class Server;
+  friend class grpc_impl::ServerBuilder;
+  friend class grpc_impl::Server;
 };
 
 }  // namespace grpc

@@ -66,7 +66,6 @@ grpc_cc_binary(
     deps = [
         "//:grpc++",
         "//test/core/util:grpc_test_util",
-        "//test/cpp/util:test_config",
     ],
 )
 

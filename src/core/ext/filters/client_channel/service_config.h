@@ -25,7 +25,6 @@
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_hash_table.h"
 
@@ -55,46 +54,11 @@
 
 namespace grpc_core {
 
-/// This is the base class that all service config parsers MUST use to store
-/// parsed service config data.
-class ServiceConfigParsedObject {
- public:
-  virtual ~ServiceConfigParsedObject() = default;
-
-  GRPC_ABSTRACT_BASE_CLASS;
-};
-
-/// This is the base class that all service config parsers should derive from.
-class ServiceConfigParser {
- public:
-  virtual ~ServiceConfigParser() = default;
-
-  virtual UniquePtr<ServiceConfigParsedObject> ParseGlobalParams(
-      const grpc_json* json, grpc_error** error) {
-    GPR_DEBUG_ASSERT(error != nullptr);
-    return nullptr;
-  }
-
-  virtual UniquePtr<ServiceConfigParsedObject> ParsePerMethodParams(
-      const grpc_json* json, grpc_error** error) {
-    GPR_DEBUG_ASSERT(error != nullptr);
-    return nullptr;
-  }
-
-  GRPC_ABSTRACT_BASE_CLASS;
-};
-
 class ServiceConfig : public RefCounted<ServiceConfig> {
  public:
-  static constexpr int kNumPreallocatedParsers = 4;
-  typedef InlinedVector<UniquePtr<ServiceConfigParsedObject>,
-                        kNumPreallocatedParsers>
-      ServiceConfigObjectsVector;
-
   /// Creates a new service config from parsing \a json_string.
   /// Returns null on parse error.
-  static RefCountedPtr<ServiceConfig> Create(const char* json,
-                                             grpc_error** error);
+  static RefCountedPtr<ServiceConfig> Create(const char* json);
 
   ~ServiceConfig();
 
@@ -132,30 +96,6 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   static RefCountedPtr<T> MethodConfigTableLookup(
       const SliceHashTable<RefCountedPtr<T>>& table, const grpc_slice& path);
 
-  /// Retrieves the parsed global service config object at index \a index.
-  ServiceConfigParsedObject* GetParsedGlobalServiceConfigObject(int index) {
-    GPR_DEBUG_ASSERT(
-        index < static_cast<int>(parsed_global_service_config_objects_.size()));
-    return parsed_global_service_config_objects_[index].get();
-  }
-
-  /// Retrieves the vector of method service config objects for a given path \a
-  /// path.
-  const ServiceConfigObjectsVector* const* GetMethodServiceConfigObjectsVector(
-      const grpc_slice& path);
-
-  /// Globally register a service config parser. On successful registration, it
-  /// returns the index at which the parser was registered. On failure, -1 is
-  /// returned. Each new service config update will go through all the
-  /// registered parser. Each parser is responsible for reading the service
-  /// config json and returning a parsed object. This parsed object can later be
-  /// retrieved using the same index that was returned at registration time.
-  static size_t RegisterParser(UniquePtr<ServiceConfigParser> parser);
-
-  static void Init();
-
-  static void Shutdown();
-
  private:
   // So New() can call our private ctor.
   template <typename T, typename... Args>
@@ -163,20 +103,14 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
   // Takes ownership of \a json_tree.
   ServiceConfig(UniquePtr<char> service_config_json,
-                UniquePtr<char> json_string, grpc_json* json_tree,
-                grpc_error** error);
-
-  // Helper functions to parse the service config
-  grpc_error* ParseGlobalParams(const grpc_json* json_tree);
-  grpc_error* ParsePerMethodParams(const grpc_json* json_tree);
+                UniquePtr<char> json_string, grpc_json* json_tree);
 
   // Returns the number of names specified in the method config \a json.
   static int CountNamesInMethodConfig(grpc_json* json);
 
   // Returns a path string for the JSON name object specified by \a json.
-  // Returns null on error, and stores error in \a error.
-  static UniquePtr<char> ParseJsonMethodName(grpc_json* json,
-                                             grpc_error** error);
+  // Returns null on error.
+  static UniquePtr<char> ParseJsonMethodName(grpc_json* json);
 
   // Parses the method config from \a json.  Adds an entry to \a entries for
   // each name found, incrementing \a idx for each entry added.
@@ -186,26 +120,9 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
       grpc_json* json, CreateValue<T> create_value,
       typename SliceHashTable<RefCountedPtr<T>>::Entry* entries, size_t* idx);
 
-  grpc_error* ParseJsonMethodConfigToServiceConfigObjectsTable(
-      const grpc_json* json,
-      SliceHashTable<const ServiceConfigObjectsVector*>::Entry* entries,
-      size_t* idx);
-
   UniquePtr<char> service_config_json_;
   UniquePtr<char> json_string_;  // Underlying storage for json_tree.
   grpc_json* json_tree_;
-
-  InlinedVector<UniquePtr<ServiceConfigParsedObject>, kNumPreallocatedParsers>
-      parsed_global_service_config_objects_;
-  // A map from the method name to the service config objects vector. Note that
-  // we are using a raw pointer and not a unique pointer so that we can use the
-  // same vector for multiple names.
-  RefCountedPtr<SliceHashTable<const ServiceConfigObjectsVector*>>
-      parsed_method_service_config_objects_table_;
-  // Storage for all the vectors that are being used in
-  // parsed_method_service_config_objects_table_.
-  InlinedVector<UniquePtr<ServiceConfigObjectsVector>, 32>
-      service_config_objects_vectors_storage_;
 };
 
 //
@@ -240,10 +157,7 @@ bool ServiceConfig::ParseJsonMethodConfig(
     if (strcmp(child->key, "name") == 0) {
       if (child->type != GRPC_JSON_ARRAY) return false;
       for (grpc_json* name = child->child; name != nullptr; name = name->next) {
-        grpc_error* error = GRPC_ERROR_NONE;
-        UniquePtr<char> path = ParseJsonMethodName(name, &error);
-        // We are not reporting the error here.
-        GRPC_ERROR_UNREF(error);
+        UniquePtr<char> path = ParseJsonMethodName(name);
         if (path == nullptr) return false;
         paths.push_back(std::move(path));
       }

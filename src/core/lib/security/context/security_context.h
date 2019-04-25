@@ -21,13 +21,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount;
+
+struct gpr_arena;
 
 /* --- grpc_auth_context ---
 
@@ -120,7 +121,7 @@ struct grpc_client_security_context {
 };
 
 grpc_client_security_context* grpc_client_security_context_create(
-    grpc_core::Arena* arena, grpc_call_credentials* creds);
+    gpr_arena* arena, grpc_call_credentials* creds);
 void grpc_client_security_context_destroy(void* ctx);
 
 /* --- grpc_server_security_context ---
@@ -136,7 +137,7 @@ struct grpc_server_security_context {
 };
 
 grpc_server_security_context* grpc_server_security_context_create(
-    grpc_core::Arena* arena);
+    gpr_arena* arena);
 void grpc_server_security_context_destroy(void* ctx);
 
 /* --- Channel args for auth context --- */

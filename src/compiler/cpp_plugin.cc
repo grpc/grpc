@@ -48,7 +48,6 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     grpc_cpp_generator::Parameters generator_parameters;
     generator_parameters.use_system_headers = true;
     generator_parameters.generate_mock_code = false;
-    generator_parameters.include_import_headers = false;
 
     ProtoBufFile pbfile(file);
 
@@ -84,15 +83,6 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
         } else if (param[0] == "additional_header_includes") {
           generator_parameters.additional_header_includes =
               grpc_generator::tokenize(param[1], ":");
-        } else if (param[0] == "message_header_extension") {
-          generator_parameters.message_header_extension = param[1];
-        } else if (param[0] == "include_import_headers") {
-          if (param[1] == "true") {
-            generator_parameters.include_import_headers = true;
-          } else if (param[1] != "false") {
-            *error = grpc::string("Invalid parameter: ") + *parameter_string;
-            return false;
-          }
         } else {
           *error = grpc::string("Unknown parameter: ") + *parameter_string;
           return false;

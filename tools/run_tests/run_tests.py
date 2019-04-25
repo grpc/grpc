@@ -1064,6 +1064,33 @@ class ObjCLanguage(object):
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
                 timeout_seconds=10 * 60,
+                shortname='objc-build-example-helloworld',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'HelloWorld',
+                    'EXAMPLE_PATH': 'examples/objective-c/helloworld'
+                }),
+            self.config.job_spec(
+                ['src/objective-c/tests/build_one_example.sh'],
+                timeout_seconds=10 * 60,
+                shortname='objc-build-example-routeguide',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'RouteGuideClient',
+                    'EXAMPLE_PATH': 'examples/objective-c/route_guide'
+                }),
+            self.config.job_spec(
+                ['src/objective-c/tests/build_one_example.sh'],
+                timeout_seconds=10 * 60,
+                shortname='objc-build-example-authsample',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'AuthSample',
+                    'EXAMPLE_PATH': 'examples/objective-c/auth_sample'
+                }),
+            self.config.job_spec(
+                ['src/objective-c/tests/build_one_example.sh'],
+                timeout_seconds=10 * 60,
                 shortname='objc-build-example-sample',
                 cpu_cost=1e6,
                 environ={

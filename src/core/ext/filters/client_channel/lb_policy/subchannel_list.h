@@ -51,7 +51,7 @@ class MySubchannelData
     : public SubchannelData<MySubchannelList, MySubchannelData> {
  public:
   void ProcessConnectivityChangeLocked(
-      grpc_connectivity_state connectivity_state) override {
+      grpc_connectivity_state connectivity_state, grpc_error* error) override {
     // ...code to handle connectivity changes...
   }
 };
@@ -101,10 +101,10 @@ class SubchannelData {
   // pending (i.e., between calling StartConnectivityWatchLocked() or
   // RenewConnectivityWatchLocked() and the resulting invocation of
   // ProcessConnectivityChangeLocked()).
-  grpc_connectivity_state CheckConnectivityStateLocked() {
+  grpc_connectivity_state CheckConnectivityStateLocked(grpc_error** error) {
     GPR_ASSERT(!connectivity_notification_pending_);
     pending_connectivity_state_unsafe_ = subchannel()->CheckConnectivity(
-        subchannel_list_->inhibit_health_checking());
+        error, subchannel_list_->inhibit_health_checking());
     UpdateConnectedSubchannelLocked();
     return pending_connectivity_state_unsafe_;
   }
@@ -153,7 +153,8 @@ class SubchannelData {
   // Implementations must invoke either RenewConnectivityWatchLocked() or
   // StopConnectivityWatchLocked() before returning.
   virtual void ProcessConnectivityChangeLocked(
-      grpc_connectivity_state connectivity_state) GRPC_ABSTRACT;
+      grpc_connectivity_state connectivity_state,
+      grpc_error* error) GRPC_ABSTRACT;
 
   // Unrefs the subchannel.
   void UnrefSubchannelLocked(const char* reason);
@@ -461,7 +462,8 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
     return;
   }
   // Call the subclass's ProcessConnectivityChangeLocked() method.
-  sd->ProcessConnectivityChangeLocked(sd->pending_connectivity_state_unsafe_);
+  sd->ProcessConnectivityChangeLocked(sd->pending_connectivity_state_unsafe_,
+                                      GRPC_ERROR_REF(error));
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>

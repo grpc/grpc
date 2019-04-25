@@ -87,7 +87,6 @@ END2END_FIXTURES = {
         client_channel = False,
     ),
     "h2_ssl": _fixture_options(secure = True),
-    "h2_ssl_cred_reload": _fixture_options(secure = True),
     "h2_spiffe": _fixture_options(secure = True),
     "h2_local_uds": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
     "h2_local_ipv4": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
@@ -151,7 +150,6 @@ END2END_NOSEC_FIXTURES = {
         client_channel = False,
     ),
     "h2_ssl": _fixture_options(secure = False),
-    "h2_ssl_cred_reload": _fixture_options(secure = False),
     "h2_ssl_proxy": _fixture_options(includes_proxy = True, secure = False),
     "h2_uds": _fixture_options(
         dns_resolver = False,
@@ -387,7 +385,6 @@ def grpc_end2end_tests():
             ":proxy",
             ":local_util",
         ],
-        tags = ["no_windows"],
     )
 
     for f, fopt in END2END_FIXTURES.items():
@@ -401,7 +398,6 @@ def grpc_end2end_tests():
                 "//:grpc",
                 "//:gpr",
             ],
-            tags = ["no_windows"],
         )
         for t, topt in END2END_TESTS.items():
             #print(_compatible(fopt, topt), f, t, fopt, topt)
@@ -417,7 +413,6 @@ def grpc_end2end_tests():
                         t,
                         poller,
                     ],
-                    tags = ["no_windows"],
                 )
 
 def grpc_end2end_nosec_tests():
@@ -440,7 +435,6 @@ def grpc_end2end_nosec_tests():
             ":proxy",
             ":local_util",
         ],
-        tags = ["no_windows"],
     )
 
     for f, fopt in END2END_NOSEC_FIXTURES.items():
@@ -456,7 +450,6 @@ def grpc_end2end_nosec_tests():
                 "//:grpc_unsecure",
                 "//:gpr",
             ],
-            tags = ["no_windows"],
         )
         for t, topt in END2END_TESTS.items():
             #print(_compatible(fopt, topt), f, t, fopt, topt)

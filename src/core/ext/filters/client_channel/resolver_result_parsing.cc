@@ -52,10 +52,7 @@ ProcessedResolverResult::ProcessedResolverResult(
     const char* service_config_json = grpc_channel_arg_get_string(
         grpc_channel_args_find(resolver_result->args, GRPC_ARG_SERVICE_CONFIG));
     if (service_config_json != nullptr) {
-      grpc_error* error = GRPC_ERROR_NONE;
-      service_config_ = ServiceConfig::Create(service_config_json, &error);
-      // Error is currently unused.
-      GRPC_ERROR_UNREF(error);
+      service_config_ = ServiceConfig::Create(service_config_json);
     }
   } else {
     // Add the service config JSON to channel args so that it's

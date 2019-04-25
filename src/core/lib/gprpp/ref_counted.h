@@ -123,22 +123,6 @@ class RefCount {
     RefNonZero();
   }
 
-  bool RefIfNonZero() { return value_.IncrementIfNonzero(); }
-
-  bool RefIfNonZero(const DebugLocation& location, const char* reason) {
-#ifndef NDEBUG
-    if (location.Log() && trace_flag_ != nullptr && trace_flag_->enabled()) {
-      const RefCount::Value old_refs = get();
-      gpr_log(GPR_INFO,
-              "%s:%p %s:%d ref_if_non_zero "
-              "%" PRIdPTR " -> %" PRIdPTR " %s",
-              trace_flag_->name(), this, location.file(), location.line(),
-              old_refs, old_refs + 1, reason);
-    }
-#endif
-    return RefIfNonZero();
-  }
-
   // Decrements the ref-count and returns true if the ref-count reaches 0.
   bool Unref() {
     const Value prior = value_.FetchSub(1, MemoryOrder::ACQ_REL);

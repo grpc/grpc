@@ -193,13 +193,13 @@ class Stream {
   Stream(Fixture* f) : f_(f) {
     stream_size_ = grpc_transport_stream_size(f->transport());
     stream_ = gpr_malloc(stream_size_);
-    arena_ = grpc_core::Arena::Create(4096);
+    arena_ = gpr_arena_create(4096);
   }
 
   ~Stream() {
     gpr_event_wait(&done_, gpr_inf_future(GPR_CLOCK_REALTIME));
     gpr_free(stream_);
-    arena_->Destroy();
+    gpr_arena_destroy(arena_);
   }
 
   void Init(benchmark::State& state) {
@@ -208,8 +208,8 @@ class Stream {
     gpr_event_init(&done_);
     memset(stream_, 0, stream_size_);
     if ((state.iterations() & 0xffff) == 0) {
-      arena_->Destroy();
-      arena_ = grpc_core::Arena::Create(4096);
+      gpr_arena_destroy(arena_);
+      arena_ = gpr_arena_create(4096);
     }
     grpc_transport_init_stream(f_->transport(),
                                static_cast<grpc_stream*>(stream_), &refcount_,
@@ -245,7 +245,7 @@ class Stream {
 
   Fixture* f_;
   grpc_stream_refcount refcount_;
-  grpc_core::Arena* arena_;
+  gpr_arena* arena_;
   size_t stream_size_;
   void* stream_;
   grpc_closure* destroy_closure_ = nullptr;

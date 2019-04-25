@@ -90,15 +90,6 @@ int const kNumIterations = 1;
   XCTAssert([testApp.staticTexts[@"Call failed"] waitForExistenceWithTimeout:kWaitTime]);
 }
 
-- (void)expectCallSuccessOrFailed {
-  NSDate *startTime = [NSDate date];
-  while (![testApp.staticTexts[@"Call done"] exists] &&
-         ![testApp.staticTexts[@"Call failed"] exists]) {
-    XCTAssertLessThan([[NSDate date] timeIntervalSinceDate:startTime], kWaitTime);
-    [NSThread sleepForTimeInterval:1];
-  }
-}
-
 - (void)setAirplaneMode:(BOOL)to {
   [settingsApp activate];
   XCUIElement *mySwitch = settingsApp.tables.element.cells.switches[@"Airplane Mode"];
@@ -125,6 +116,13 @@ int const kNumIterations = 1;
   // Go back to the first page of Settings.
   XCUIElement *backButton = settingsApp.navigationBars.buttons.firstMatch;
   [backButton tap];
+}
+
+- (void)typeText:(NSString *)text inApp:(XCUIApplication *)app {
+  [app typeText:text];
+  // Wait until all events in run loop have been processed
+  while (CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.1, true) == kCFRunLoopRunHandledSource)
+    ;
 }
 
 - (int)getRandomNumberBetween:(int)min max:(int)max {
@@ -218,17 +216,24 @@ int const kNumIterations = 1;
   // Send test app to background
   [XCUIDevice.sharedDevice pressButton:XCUIDeviceButtonHome];
 
-  // Open stocks app
-  XCUIApplication *stocksApp =
-      [[XCUIApplication alloc] initWithBundleIdentifier:@"com.apple.stocks"];
-  [stocksApp activate];
-  // Ensure that stocks app is running in the foreground
-  XCTAssert([stocksApp waitForState:XCUIApplicationStateRunningForeground timeout:5]);
+  // Open safari and goto a URL
+  XCUIApplication *safari =
+      [[XCUIApplication alloc] initWithBundleIdentifier:@"com.apple.mobilesafari"];
+  [safari activate];
+  // Ensure that safari is running in the foreground
+  XCTAssert([safari waitForState:XCUIApplicationStateRunningForeground timeout:5]);
+  // Move cursor to address bar
+  [safari.buttons[@"URL"] tap];
+  // Wait for keyboard to appear
+  [NSThread sleepForTimeInterval:2];
+  // Enter URL
+  [self typeText:@"http://maps.google.com" inApp:safari];
+  // Presses return key
+  [self typeText:@"\n" inApp:safari];
   // Wait a bit
   int sleepTime = [self getRandomNumberBetween:5 max:10];
   NSLog(@"Sleeping for %d seconds", sleepTime);
   [NSThread sleepForTimeInterval:sleepTime];
-  [stocksApp terminate];
 
   // Make another unary call
   [self doUnaryCall];
@@ -251,13 +256,8 @@ int const kNumIterations = 1;
   [self setWifi:YES];
 
   [testApp activate];
-  [self pressButton:@"Stop streaming call"];
-  // The call will fail if the stream gets a read error, else the call will succeed.
-  [self expectCallSuccessOrFailed];
-
-  // Make another unary call, it should succeed
-  [self doUnaryCall];
-  [self expectCallSuccess];
+  // We expect the call to have failed because the network flapped
+  [self expectCallFailed];
 }
 
 - (void)testConcurrentCalls {

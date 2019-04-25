@@ -213,7 +213,7 @@ struct grpc_pollset {
      poll */
   bool seen_inactive;
   bool shutting_down;             /* Is the pollset shutting down ? */
-  grpc_closure* shutdown_closure; /* Called after shutdown is complete */
+  grpc_closure* shutdown_closure; /* Called after after shutdown is complete */
 
   /* Number of workers who are *about-to* attach themselves to the pollset
    * worker list */

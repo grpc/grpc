@@ -23,7 +23,6 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/surface/api_trace.h"
 
 #include <grpc/grpc.h>
@@ -73,7 +72,7 @@ void grpc_call_internal_unref(grpc_call* call);
 #define GRPC_CALL_INTERNAL_UNREF(call, reason) grpc_call_internal_unref(call)
 #endif
 
-grpc_core::Arena* grpc_call_get_arena(grpc_call* call);
+gpr_arena* grpc_call_get_arena(grpc_call* call);
 
 grpc_call_stack* grpc_call_get_call_stack(grpc_call* call);
 

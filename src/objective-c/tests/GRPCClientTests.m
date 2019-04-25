@@ -16,9 +16,9 @@
  *
  */
 
+#import <UIKit/UIKit.h>
 #import <XCTest/XCTest.h>
 #import <grpc/grpc.h>
-#import <grpc/support/port_platform.h>
 
 #import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+OAuth2.h>
@@ -297,9 +297,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
         expectedUserAgent = [expectedUserAgent stringByAppendingString:GRPC_OBJC_VERSION_STRING];
         expectedUserAgent = [expectedUserAgent stringByAppendingString:@" grpc-c/"];
         expectedUserAgent = [expectedUserAgent stringByAppendingString:GRPC_C_VERSION_STRING];
-        expectedUserAgent = [expectedUserAgent stringByAppendingString:@" ("];
-        expectedUserAgent = [expectedUserAgent stringByAppendingString:@GPR_PLATFORM_STRING];
-        expectedUserAgent = [expectedUserAgent stringByAppendingString:@"; chttp2; "];
+        expectedUserAgent = [expectedUserAgent stringByAppendingString:@" (ios; chttp2; "];
         expectedUserAgent = [expectedUserAgent
             stringByAppendingString:[NSString stringWithUTF8String:grpc_g_stands_for()]];
         expectedUserAgent = [expectedUserAgent stringByAppendingString:@")"];

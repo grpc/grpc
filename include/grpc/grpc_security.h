@@ -264,7 +264,7 @@ GRPCAPI grpc_call_credentials* grpc_google_refresh_token_credentials_create(
     const char* json_refresh_token, void* reserved);
 
 /** Creates an Oauth2 Access Token credentials with an access token that was
-   acquired by an out of band mechanism. */
+   aquired by an out of band mechanism. */
 GRPCAPI grpc_call_credentials* grpc_access_token_credentials_create(
     const char* access_token, void* reserved);
 

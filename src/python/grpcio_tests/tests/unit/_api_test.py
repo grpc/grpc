@@ -31,7 +31,6 @@ class AllTest(unittest.TestCase):
             'FutureCancelledError',
             'Future',
             'ChannelConnectivity',
-            'Compression',
             'StatusCode',
             'Status',
             'RpcError',

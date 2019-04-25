@@ -20,6 +20,7 @@ using System;
 using System.Threading;
 
 using Grpc.Core.Internal;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
@@ -224,6 +225,37 @@ namespace Grpc.Core
         {
             var newOptions = this;
             newOptions.flags = flags;
+            return newOptions;
+        }
+
+        /// <summary>
+        /// Returns a new instance of <see cref="CallOptions"/> with 
+        /// all previously unset values set to their defaults and deadline and cancellation
+        /// token propagated when appropriate.
+        /// </summary>
+        internal CallOptions Normalize()
+        {
+            var newOptions = this;
+            // silently ignore the context propagation token if it wasn't produced by "us"
+            var propagationTokenImpl = propagationToken.AsImplOrNull();
+            if (propagationTokenImpl != null)
+            {
+                if (propagationTokenImpl.Options.IsPropagateDeadline)
+                {
+                    GrpcPreconditions.CheckArgument(!newOptions.deadline.HasValue,
+                        "Cannot propagate deadline from parent call. The deadline has already been set explicitly.");
+                    newOptions.deadline = propagationTokenImpl.ParentDeadline;
+                }
+                if (propagationTokenImpl.Options.IsPropagateCancellation)
+                {
+                    GrpcPreconditions.CheckArgument(!newOptions.cancellationToken.CanBeCanceled,
+                        "Cannot propagate cancellation token from parent call. The cancellation token has already been set to a non-default value.");
+                    newOptions.cancellationToken = propagationTokenImpl.ParentCancellationToken;
+                }
+            }
+
+            newOptions.headers = newOptions.headers ?? Metadata.Empty;
+            newOptions.deadline = newOptions.deadline ?? DateTime.MaxValue;
             return newOptions;
         }
     }

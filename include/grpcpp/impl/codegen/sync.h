@@ -19,15 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_SYNC_H
 #define GRPCPP_IMPL_CODEGEN_SYNC_H
 
-#include <grpc/impl/codegen/port_platform.h>
-
-#ifdef GPR_HAS_PTHREAD_H
-#include <pthread.h>
-#endif
-
-#include <mutex>
-
 #include <grpc/impl/codegen/log.h>
+#include <grpc/impl/codegen/port_platform.h>
 #include <grpc/impl/codegen/sync.h>
 
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
@@ -56,13 +49,7 @@ class Mutex {
   const gpr_mu* get() const { return &mu_; }
 
  private:
-  union {
-    gpr_mu mu_;
-    std::mutex do_not_use_sth_;
-#ifdef GPR_HAS_PTHREAD_H
-    pthread_mutex_t do_not_use_pth_;
-#endif
-  };
+  gpr_mu mu_;
 };
 
 // MutexLock is a std::

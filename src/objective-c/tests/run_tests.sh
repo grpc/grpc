@@ -195,17 +195,4 @@ xcodebuild \
     | egrep -v '^$' \
     | egrep -v "(GPBDictionary|GPBArray)" -
 
-echo "TIME:  $(date)"
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme MacTests \
-    -destination platform=macOS \
-    HOST_PORT_LOCALSSL=localhost:5051 \
-    HOST_PORT_LOCAL=localhost:5050 \
-    HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
-    test \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' \
-    | egrep -v "(GPBDictionary|GPBArray)" -
-
 exit 0

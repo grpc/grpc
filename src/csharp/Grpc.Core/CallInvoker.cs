@@ -17,12 +17,14 @@
 #endregion
 
 using System.Threading.Tasks;
+using Grpc.Core.Internal;
 
 namespace Grpc.Core
 {
     /// <summary>
     /// Abstraction of client-side RPC invocation.
     /// </summary>
+    /// <seealso cref="Calls"/>
     public abstract class CallInvoker
     {
         /// <summary>

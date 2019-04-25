@@ -52,9 +52,7 @@ proto_files=( \
   "envoy/api/v2/cds.proto" \
   "envoy/api/v2/eds.proto" \
   "envoy/api/v2/endpoint/endpoint.proto" \
-  "envoy/api/v2/endpoint/load_report.proto" \
-  "envoy/service/discovery/v2/ads.proto" \
-  "envoy/service/load_stats/v2/lrs.proto")
+  "envoy/service/discovery/v2/ads.proto")
 
 for i in "${proto_files[@]}"
 do

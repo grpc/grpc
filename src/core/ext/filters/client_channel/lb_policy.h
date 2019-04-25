@@ -167,9 +167,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   /// A proxy object used by the LB policy to communicate with the client
   /// channel.
-  // TODO(juanlishen): Consider adding a mid-layer subclass that helps handle
-  // things like swapping in pending policy when it's ready. Currently, we are
-  // duplicating the logic in many subclasses.
   class ChannelControlHelper {
    public:
     ChannelControlHelper() = default;
@@ -188,6 +185,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Sets the connectivity state and returns a new picker to be used
     /// by the client channel.
     virtual void UpdateState(grpc_connectivity_state state,
+                             grpc_error* state_error,
                              UniquePtr<SubchannelPicker>) GRPC_ABSTRACT;
 
     /// Requests that the resolver re-resolve.

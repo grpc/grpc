@@ -314,6 +314,7 @@ class grpc_ssl_server_security_connector
   bool try_fetch_ssl_server_credentials() {
     grpc_ssl_server_certificate_config* certificate_config = nullptr;
     bool status;
+
     if (!has_cert_config_fetcher()) return false;
 
     grpc_ssl_server_credentials* server_creds =
@@ -373,9 +374,7 @@ class grpc_ssl_server_security_connector
     options.num_alpn_protocols = static_cast<uint16_t>(num_alpn_protocols);
     tsi_result result = tsi_create_ssl_server_handshaker_factory_with_options(
         &options, &new_handshaker_factory);
-    grpc_tsi_ssl_pem_key_cert_pairs_destroy(
-        const_cast<tsi_ssl_pem_key_cert_pair*>(options.pem_key_cert_pairs),
-        options.num_key_cert_pairs);
+    gpr_free((void*)options.pem_key_cert_pairs);
     gpr_free((void*)alpn_protocol_strings);
 
     if (result != TSI_OK) {

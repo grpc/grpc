@@ -20,7 +20,7 @@
 
 #import <GRPCClient/GRPCCall.h>
 
-#import "../../GRPCClient/private/NSError+GRPC.h"
+#import "src/objective-c/GRPCClient/private/NSError+GRPC.h"
 
 @interface UnitTests : XCTestCase
 
@@ -42,18 +42,18 @@
       [NSError grpc_errorFromStatusCode:GRPC_STATUS_UNAVAILABLE details:nil errorString:nil];
 
   XCTAssertNil(error1);
-  XCTAssertEqual(error2.code, GRPCErrorCodeCancelled);
+  XCTAssertEqual(error2.code, 1);
   XCTAssertEqualObjects(error2.domain, @"io.grpc");
   XCTAssertEqualObjects(error2.userInfo[NSLocalizedDescriptionKey],
                         [NSString stringWithUTF8String:kDetails]);
   XCTAssertEqualObjects(error2.userInfo[NSDebugDescriptionErrorKey],
                         [NSString stringWithUTF8String:kErrorString]);
-  XCTAssertEqual(error3.code, GRPCErrorCodeUnauthenticated);
+  XCTAssertEqual(error3.code, 16);
   XCTAssertEqualObjects(error3.domain, @"io.grpc");
   XCTAssertEqualObjects(error3.userInfo[NSLocalizedDescriptionKey],
                         [NSString stringWithUTF8String:kDetails]);
   XCTAssertNil(error3.userInfo[NSDebugDescriptionErrorKey]);
-  XCTAssertEqual(error4.code, GRPCErrorCodeUnavailable);
+  XCTAssertEqual(error4.code, 14);
   XCTAssertEqualObjects(error4.domain, @"io.grpc");
   XCTAssertNil(error4.userInfo[NSLocalizedDescriptionKey]);
   XCTAssertNil(error4.userInfo[NSDebugDescriptionErrorKey]);

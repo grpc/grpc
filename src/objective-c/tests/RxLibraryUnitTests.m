@@ -16,6 +16,7 @@
  *
  */
 
+#import <UIKit/UIKit.h>
 #import <XCTest/XCTest.h>
 
 #import <RxLibrary/GRXBufferedPipe.h>
@@ -43,9 +44,9 @@
 
 - (GRXSingleHandler)block {
   return ^(id value, NSError *errorOrNil) {
-    ++self->_timesCalled;
-    self->_value = value;
-    self->_errorOrNil = errorOrNil;
+    ++_timesCalled;
+    _value = value;
+    _errorOrNil = errorOrNil;
   };
 }
 @end

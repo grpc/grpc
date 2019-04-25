@@ -163,6 +163,15 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   }
 }
 
+static bool stream_ref_if_not_destroyed(gpr_refcount* r) {
+  gpr_atm count;
+  do {
+    count = gpr_atm_acq_load(&r->count);
+    if (count == 0) return false;
+  } while (!gpr_atm_rel_cas(&r->count, count, count + 1));
+  return true;
+}
+
 /* How many bytes would we like to put on the wire during a single syscall */
 static uint32_t target_write_size(grpc_chttp2_transport* t) {
   return 1024 * 1024;
@@ -245,7 +254,7 @@ class WriteContext {
     while (grpc_chttp2_list_pop_stalled_by_transport(t_, &s)) {
       if (t_->closed_with_error == GRPC_ERROR_NONE &&
           grpc_chttp2_list_add_writable_stream(t_, s)) {
-        if (!s->refcount->refs.RefIfNonZero()) {
+        if (!stream_ref_if_not_destroyed(&s->refcount->refs)) {
           grpc_chttp2_list_remove_writable_stream(t_, s);
         }
       }

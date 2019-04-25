@@ -58,7 +58,6 @@ template <class R>
 class ClientCallbackReaderFactory;
 template <class W>
 class ClientCallbackWriterFactory;
-class ClientCallbackUnaryFactory;
 class InterceptedChannel;
 }  // namespace internal
 
@@ -118,7 +117,6 @@ class ChannelInterface {
   friend class ::grpc::internal::ClientCallbackReaderFactory;
   template <class W>
   friend class ::grpc::internal::ClientCallbackWriterFactory;
-  friend class ::grpc::internal::ClientCallbackUnaryFactory;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;
   template <class InputMessage, class OutputMessage>

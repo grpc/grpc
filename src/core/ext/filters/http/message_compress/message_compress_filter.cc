@@ -29,7 +29,6 @@
 #include "src/core/ext/filters/http/message_compress/message_compress_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/compression/algorithm_metadata.h"
-#include "src/core/lib/compression/compression_args.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/gpr/string.h"
@@ -72,7 +71,7 @@ struct call_data {
     GRPC_ERROR_UNREF(cancel_error);
   }
 
-  grpc_core::CallCombiner* call_combiner;
+  grpc_call_combiner* call_combiner;
   grpc_linked_mdelem compression_algorithm_storage;
   grpc_linked_mdelem stream_compression_algorithm_storage;
   grpc_linked_mdelem accept_encoding_storage;

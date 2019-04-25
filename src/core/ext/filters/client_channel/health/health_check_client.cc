@@ -37,9 +37,10 @@
 #define HEALTH_CHECK_RECONNECT_MAX_BACKOFF_SECONDS 120
 #define HEALTH_CHECK_RECONNECT_JITTER 0.2
 
-namespace grpc_core {
+grpc_core::TraceFlag grpc_health_check_client_trace(false,
+                                                    "health_check_client");
 
-TraceFlag grpc_health_check_client_trace(false, "health_check_client");
+namespace grpc_core {
 
 //
 // HealthCheckClient
@@ -49,7 +50,7 @@ HealthCheckClient::HealthCheckClient(
     const char* service_name,
     RefCountedPtr<ConnectedSubchannel> connected_subchannel,
     grpc_pollset_set* interested_parties,
-    RefCountedPtr<channelz::SubchannelNode> channelz_node)
+    grpc_core::RefCountedPtr<grpc_core::channelz::SubchannelNode> channelz_node)
     : InternallyRefCounted<HealthCheckClient>(&grpc_health_check_client_trace),
       service_name_(service_name),
       connected_subchannel_(std::move(connected_subchannel)),
@@ -280,9 +281,11 @@ HealthCheckClient::CallState::CallState(
     : InternallyRefCounted<CallState>(&grpc_health_check_client_trace),
       health_check_client_(std::move(health_check_client)),
       pollent_(grpc_polling_entity_create_from_pollset_set(interested_parties)),
-      arena_(Arena::Create(health_check_client_->connected_subchannel_
-                               ->GetInitialCallSizeEstimate(0))),
-      payload_(context_) {}
+      arena_(gpr_arena_create(health_check_client_->connected_subchannel_
+                                  ->GetInitialCallSizeEstimate(0))),
+      payload_(context_) {
+  grpc_call_combiner_init(&call_combiner_);
+}
 
 HealthCheckClient::CallState::~CallState() {
   if (grpc_health_check_client_trace.enabled()) {
@@ -300,13 +303,14 @@ HealthCheckClient::CallState::~CallState() {
   // holding to the call stack. Also flush the closures on exec_ctx so that
   // filters that schedule cancel notification closures on exec_ctx do not
   // need to take a ref of the call stack to guarantee closure liveness.
-  call_combiner_.SetNotifyOnCancel(nullptr);
-  ExecCtx::Get()->Flush();
-  arena_->Destroy();
+  grpc_call_combiner_set_notify_on_cancel(&call_combiner_, nullptr);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_call_combiner_destroy(&call_combiner_);
+  gpr_arena_destroy(arena_);
 }
 
 void HealthCheckClient::CallState::Orphan() {
-  call_combiner_.Cancel(GRPC_ERROR_CANCELLED);
+  grpc_call_combiner_cancel(&call_combiner_, GRPC_ERROR_CANCELLED);
   Cancel();
 }
 

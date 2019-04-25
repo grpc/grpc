@@ -42,9 +42,9 @@ namespace Grpc.Core.Tests
 
     internal class FakeCallCredentials : CallCredentials
     {
-        public override void InternalPopulateConfiguration(CallCredentialsConfiguratorBase configurator, object state)
+        internal override CallCredentialsSafeHandle ToNativeCredentials()
         {
-            // not invoking the configurator on purpose
+            return null;
         }
     }
 }

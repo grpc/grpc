@@ -124,18 +124,7 @@ grpc_mdelem grpc_mdelem_create(
     const grpc_slice& key, const grpc_slice& value,
     grpc_mdelem_data* compatible_external_backing_store);
 
-#define GRPC_MDKEY(md) (GRPC_MDELEM_DATA(md)->key)
-#define GRPC_MDVALUE(md) (GRPC_MDELEM_DATA(md)->value)
-
 bool grpc_mdelem_eq(grpc_mdelem a, grpc_mdelem b);
-/* Often we compare metadata where we know a-priori that the second parameter is
- * static, and that the keys match. This most commonly happens when processing
- * metadata batch callouts in initial/trailing filters. In this case, fastpath
- * grpc_mdelem_eq and remove unnecessary checks. */
-inline bool grpc_mdelem_static_value_eq(grpc_mdelem a, grpc_mdelem b_static) {
-  if (a.payload == b_static.payload) return true;
-  return grpc_slice_eq(GRPC_MDVALUE(a), GRPC_MDVALUE(b_static));
-}
 
 /* Mutator and accessor for grpc_mdelem user data. The destructor function
    is used as a type tag and is checked during user_data fetch. */
@@ -154,6 +143,9 @@ void grpc_mdelem_unref(grpc_mdelem md, const char* file, int line);
 grpc_mdelem grpc_mdelem_ref(grpc_mdelem md);
 void grpc_mdelem_unref(grpc_mdelem md);
 #endif
+
+#define GRPC_MDKEY(md) (GRPC_MDELEM_DATA(md)->key)
+#define GRPC_MDVALUE(md) (GRPC_MDELEM_DATA(md)->value)
 
 #define GRPC_MDNULL GRPC_MAKE_MDELEM(NULL, GRPC_MDELEM_STORAGE_EXTERNAL)
 #define GRPC_MDISNULL(md) (GRPC_MDELEM_DATA(md) == NULL)

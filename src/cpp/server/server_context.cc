@@ -210,20 +210,17 @@ bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
   bool call_cancel = (cancelled_ != 0);
 
   // If it's a unary cancel callback, call it under the lock so that it doesn't
-  // race with ClearCancelCallback. Although we don't normally call callbacks
-  // under a lock, this is a special case since the user needs a guarantee that
-  // the callback won't issue or run after ClearCancelCallback has returned.
-  // This requirement imposes certain restrictions on the callback, documented
-  // in the API comments of SetCancelCallback.
+  // race with ClearCancelCallback
   if (cancel_callback_) {
     cancel_callback_();
   }
 
-  // Release the lock since we may call a callback and interceptors now.
+  // Release the lock since we are going to be calling a callback and
+  // interceptors now
   lock.Unlock();
 
   if (call_cancel && reactor_ != nullptr) {
-    reactor_->MaybeCallOnCancel();
+    reactor_->OnCancel();
   }
   /* Add interception point and run through interceptors */
   interceptor_methods_.AddInterceptionHookPoint(

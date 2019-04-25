@@ -37,8 +37,8 @@ class CFStreamHandle final {
   static CFStreamHandle* CreateStreamHandle(CFReadStreamRef read_stream,
                                             CFWriteStreamRef write_stream);
   ~CFStreamHandle();
-  CFStreamHandle(const CFStreamHandle& ref) = delete;
-  CFStreamHandle(CFStreamHandle&& ref) = delete;
+  CFStreamHandle(const CFReadStreamRef& ref) = delete;
+  CFStreamHandle(CFReadStreamRef&& ref) = delete;
   CFStreamHandle& operator=(const CFStreamHandle& rhs) = delete;
 
   void NotifyOnOpen(grpc_closure* closure);

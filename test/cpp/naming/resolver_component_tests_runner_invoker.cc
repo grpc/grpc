@@ -29,10 +29,6 @@
 #include <thread>
 #include <vector>
 
-#ifdef __FreeBSD__
-#include <sys/wait.h>
-#endif
-
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
 

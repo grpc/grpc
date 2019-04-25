@@ -281,7 +281,7 @@ class GrpcLb : public LoadBalancingPolicy {
     Subchannel* CreateSubchannel(const grpc_channel_args& args) override;
     grpc_channel* CreateChannel(const char* target,
                                 const grpc_channel_args& args) override;
-    void UpdateState(grpc_connectivity_state state,
+    void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
                      UniquePtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
 
@@ -621,8 +621,12 @@ grpc_channel* GrpcLb::Helper::CreateChannel(const char* target,
 }
 
 void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
+                                 grpc_error* state_error,
                                  UniquePtr<SubchannelPicker> picker) {
-  if (parent_->shutting_down_) return;
+  if (parent_->shutting_down_) {
+    GRPC_ERROR_UNREF(state_error);
+    return;
+  }
   // If this request is from the pending child policy, ignore it until
   // it reports READY, at which point we swap it into place.
   if (CalledByPendingChild()) {
@@ -632,7 +636,10 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
               parent_.get(), this, parent_->pending_child_policy_.get(),
               grpc_connectivity_state_name(state));
     }
-    if (state != GRPC_CHANNEL_READY) return;
+    if (state != GRPC_CHANNEL_READY) {
+      GRPC_ERROR_UNREF(state_error);
+      return;
+    }
     grpc_pollset_set_del_pollset_set(
         parent_->child_policy_->interested_parties(),
         parent_->interested_parties());
@@ -640,6 +647,7 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
     parent_->child_policy_ = std::move(parent_->pending_child_policy_);
   } else if (!CalledByCurrentChild()) {
     // This request is from an outdated child, so ignore it.
+    GRPC_ERROR_UNREF(state_error);
     return;
   }
   // Record whether child policy reports READY.
@@ -674,7 +682,8 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
               parent_.get(), this, grpc_connectivity_state_name(state),
               picker.get());
     }
-    parent_->channel_control_helper()->UpdateState(state, std::move(picker));
+    parent_->channel_control_helper()->UpdateState(state, state_error,
+                                                   std::move(picker));
     return;
   }
   // Cases 2 and 3a: wrap picker from the child in our own picker.
@@ -689,9 +698,10 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
     client_stats = parent_->lb_calld_->client_stats()->Ref();
   }
   parent_->channel_control_helper()->UpdateState(
-      state, UniquePtr<SubchannelPicker>(
-                 New<Picker>(parent_.get(), parent_->serverlist_,
-                             std::move(picker), std::move(client_stats))));
+      state, state_error,
+      UniquePtr<SubchannelPicker>(
+          New<Picker>(parent_.get(), parent_->serverlist_, std::move(picker),
+                      std::move(client_stats))));
 }
 
 void GrpcLb::Helper::RequestReresolution() {
@@ -1129,13 +1139,13 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
   // we want to retry connecting. Otherwise, we have deliberately ended this
   // call and no further action is required.
   if (lb_calld == grpclb_policy->lb_calld_.get()) {
-    // If the fallback-at-startup checks are pending, go into fallback mode
-    // immediately.  This short-circuits the timeout for the fallback-at-startup
-    // case.
-    if (grpclb_policy->fallback_at_startup_checks_pending_) {
-      GPR_ASSERT(!lb_calld->seen_serverlist_);
+    // If we did not receive a serverlist and the fallback-at-startup checks
+    // are pending, go into fallback mode immediately.  This short-circuits
+    // the timeout for the fallback-at-startup case.
+    if (!lb_calld->seen_serverlist_ &&
+        grpclb_policy->fallback_at_startup_checks_pending_) {
       gpr_log(GPR_INFO,
-              "[grpclb %p] Balancer call finished without receiving "
+              "[grpclb %p] balancer call finished without receiving "
               "serverlist; entering fallback mode",
               grpclb_policy);
       grpclb_policy->fallback_at_startup_checks_pending_ = false;
@@ -1628,16 +1638,20 @@ void GrpcLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
 
 grpc_channel_args* GrpcLb::CreateChildPolicyArgsLocked(
     bool is_backend_from_grpclb_load_balancer) {
-  InlinedVector<grpc_arg, 2> args_to_add;
-  args_to_add.emplace_back(grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER),
-      is_backend_from_grpclb_load_balancer));
+  grpc_arg args_to_add[2] = {
+      // A channel arg indicating if the target is a backend inferred from a
+      // grpclb load balancer.
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(
+              GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER),
+          is_backend_from_grpclb_load_balancer),
+  };
+  size_t num_args_to_add = 1;
   if (is_backend_from_grpclb_load_balancer) {
-    args_to_add.emplace_back(grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1));
+    args_to_add[num_args_to_add++] = grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1);
   }
-  return grpc_channel_args_copy_and_add(args_, args_to_add.data(),
-                                        args_to_add.size());
+  return grpc_channel_args_copy_and_add(args_, args_to_add, num_args_to_add);
 }
 
 OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(

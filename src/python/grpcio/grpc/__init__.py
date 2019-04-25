@@ -21,7 +21,6 @@ import sys
 import six
 
 from grpc._cython import cygrpc as _cygrpc
-from grpc import _compression
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -414,8 +413,6 @@ class ClientCallDetails(six.with_metaclass(abc.ABCMeta)):
       credentials: An optional CallCredentials for the RPC.
       wait_for_ready: This is an EXPERIMENTAL argument. An optional flag t
         enable wait for ready mechanism.
-      compression: An element of grpc.compression, e.g.
-        grpc.compression.Gzip. This is an EXPERIMENTAL option.
     """
 
 
@@ -672,8 +669,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
                  timeout=None,
                  metadata=None,
                  credentials=None,
-                 wait_for_ready=None,
-                 compression=None):
+                 wait_for_ready=None):
         """Synchronously invokes the underlying RPC.
 
         Args:
@@ -685,8 +681,6 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
         Returns:
           The response value for the RPC.
@@ -704,8 +698,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
                   timeout=None,
                   metadata=None,
                   credentials=None,
-                  wait_for_ready=None,
-                  compression=None):
+                  wait_for_ready=None):
         """Synchronously invokes the underlying RPC.
 
         Args:
@@ -717,8 +710,6 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
         Returns:
           The response value for the RPC and a Call value for the RPC.
@@ -736,8 +727,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
                timeout=None,
                metadata=None,
                credentials=None,
-               wait_for_ready=None,
-               compression=None):
+               wait_for_ready=None):
         """Asynchronously invokes the underlying RPC.
 
         Args:
@@ -749,8 +739,6 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -771,8 +759,7 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
                  timeout=None,
                  metadata=None,
                  credentials=None,
-                 wait_for_ready=None,
-                 compression=None):
+                 wait_for_ready=None):
         """Invokes the underlying RPC.
 
         Args:
@@ -784,8 +771,6 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
         Returns:
             An object that is both a Call for the RPC and an iterator of
@@ -805,8 +790,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
                  timeout=None,
                  metadata=None,
                  credentials=None,
-                 wait_for_ready=None,
-                 compression=None):
+                 wait_for_ready=None):
         """Synchronously invokes the underlying RPC.
 
         Args:
@@ -819,8 +803,6 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
         Returns:
           The response value for the RPC.
@@ -838,8 +820,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
                   timeout=None,
                   metadata=None,
                   credentials=None,
-                  wait_for_ready=None,
-                  compression=None):
+                  wait_for_ready=None):
         """Synchronously invokes the underlying RPC on the client.
 
         Args:
@@ -852,8 +833,6 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
         Returns:
           The response value for the RPC and a Call object for the RPC.
@@ -871,8 +850,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
                timeout=None,
                metadata=None,
                credentials=None,
-               wait_for_ready=None,
-               compression=None):
+               wait_for_ready=None):
         """Asynchronously invokes the underlying RPC on the client.
 
         Args:
@@ -884,8 +862,6 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -906,8 +882,7 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
                  timeout=None,
                  metadata=None,
                  credentials=None,
-                 wait_for_ready=None,
-                 compression=None):
+                 wait_for_ready=None):
         """Invokes the underlying RPC on the client.
 
         Args:
@@ -919,8 +894,6 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
         Returns:
             An object that is both a Call for the RPC and an iterator of
@@ -1124,17 +1097,6 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         """
         raise NotImplementedError()
 
-    def set_compression(self, compression):
-        """Set the compression algorithm to be used for the entire call.
-
-        This is an EXPERIMENTAL method.
-
-        Args:
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
-        """
-        raise NotImplementedError()
-
     @abc.abstractmethod
     def send_initial_metadata(self, initial_metadata):
         """Sends the initial metadata value to the client.
@@ -1219,16 +1181,6 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         Args:
           details: A UTF-8-encodable string to be sent to the client upon
             termination of the RPC.
-        """
-        raise NotImplementedError()
-
-    def disable_next_message_compression(self):
-        """Disables compression for the next response message.
-
-        This is an EXPERIMENTAL method.
-
-        This method will override any compression configuration set during
-        server creation or set on the call.
         """
         raise NotImplementedError()
 
@@ -1730,7 +1682,7 @@ def channel_ready_future(channel):
     return _utilities.channel_ready_future(channel)
 
 
-def insecure_channel(target, options=None, compression=None):
+def insecure_channel(target, options=None):
     """Creates an insecure Channel to a server.
 
     The returned Channel is thread-safe.
@@ -1739,18 +1691,15 @@ def insecure_channel(target, options=None, compression=None):
       target: The server address
       options: An optional list of key-value pairs (channel args
         in gRPC Core runtime) to configure the channel.
-      compression: An optional value indicating the compression method to be
-        used over the lifetime of the channel. This is an EXPERIMENTAL option.
 
     Returns:
       A Channel.
     """
     from grpc import _channel  # pylint: disable=cyclic-import
-    return _channel.Channel(target, ()
-                            if options is None else options, None, compression)
+    return _channel.Channel(target, () if options is None else options, None)
 
 
-def secure_channel(target, credentials, options=None, compression=None):
+def secure_channel(target, credentials, options=None):
     """Creates a secure Channel to a server.
 
     The returned Channel is thread-safe.
@@ -1760,15 +1709,13 @@ def secure_channel(target, credentials, options=None, compression=None):
       credentials: A ChannelCredentials instance.
       options: An optional list of key-value pairs (channel args
         in gRPC Core runtime) to configure the channel.
-      compression: An optional value indicating the compression method to be
-        used over the lifetime of the channel. This is an EXPERIMENTAL option.
 
     Returns:
       A Channel.
     """
     from grpc import _channel  # pylint: disable=cyclic-import
     return _channel.Channel(target, () if options is None else options,
-                            credentials._credentials, compression)
+                            credentials._credentials)
 
 
 def intercept_channel(channel, *interceptors):
@@ -1803,8 +1750,7 @@ def server(thread_pool,
            handlers=None,
            interceptors=None,
            options=None,
-           maximum_concurrent_rpcs=None,
-           compression=None):
+           maximum_concurrent_rpcs=None):
     """Creates a Server with which RPCs can be serviced.
 
     Args:
@@ -1822,9 +1768,6 @@ def server(thread_pool,
       maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server
         will service before returning RESOURCE_EXHAUSTED status, or None to
         indicate no limit.
-      compression: An element of grpc.compression, e.g.
-        grpc.compression.Gzip. This compression algorithm will be used for the
-        lifetime of the server unless overridden. This is an EXPERIMENTAL option.
 
     Returns:
       A Server object.
@@ -1834,7 +1777,7 @@ def server(thread_pool,
                                  if handlers is None else handlers, ()
                                  if interceptors is None else interceptors, ()
                                  if options is None else options,
-                                 maximum_concurrent_rpcs, compression)
+                                 maximum_concurrent_rpcs)
 
 
 @contextlib.contextmanager
@@ -1843,16 +1786,6 @@ def _create_servicer_context(rpc_event, state, request_deserializer):
     context = _server._Context(rpc_event, state, request_deserializer)
     yield context
     context._finalize_state()  # pylint: disable=protected-access
-
-
-class Compression(enum.IntEnum):
-    """Indicates the compression method to be used for an RPC.
-
-       This enumeration is part of an EXPERIMENTAL API.
-    """
-    NoCompression = _compression.NoCompression
-    Deflate = _compression.Deflate
-    Gzip = _compression.Gzip
 
 
 ###################################  __all__  #################################
@@ -1872,7 +1805,6 @@ __all__ = (
     'AuthMetadataContext',
     'AuthMetadataPluginCallback',
     'AuthMetadataPlugin',
-    'Compression',
     'ClientCallDetails',
     'ServerCertificateConfiguration',
     'ServerCredentials',
