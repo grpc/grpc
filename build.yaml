@@ -1520,6 +1520,13 @@ libs:
   - Makefile
   defaults: cxxabi
   secure: false
+- name: dns_test_util
+  build: private
+  language: c
+  headers:
+  - test/cpp/naming/dns_test_util.h
+  src:
+  - test/cpp/naming/dns_test_util.cc
 - name: gpr
   build: all
   language: c

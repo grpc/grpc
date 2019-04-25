@@ -730,7 +730,6 @@ add_dependencies(buildtests_cxx resolver_component_tests_runner_invoker)
 endif()
 add_dependencies(buildtests_cxx address_sorting_test_unsecure)
 add_dependencies(buildtests_cxx address_sorting_test)
-add_dependencies(buildtests_cxx cancel_ares_query_test)
 
 add_custom_target(buildtests
   DEPENDS buildtests_c buildtests_cxx)
@@ -829,6 +828,48 @@ target_link_libraries(alts_test_util
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_library(dns_test_util
+  test/cpp/naming/dns_test_util.cc
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(dns_test_util PROPERTIES COMPILE_PDB_NAME "dns_test_util"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dns_test_util.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+
+target_include_directories(dns_test_util
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+)
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(dns_test_util PROPERTIES LINKER_LANGUAGE C)
+    # only use the flags for C++ source files
+    target_compile_options(dns_test_util PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+target_link_libraries(dns_test_util
+  ${_gRPC_ALLTARGETS_LIBRARIES}
 )
 
 
@@ -18212,6 +18253,7 @@ target_include_directories(resolver_component_test_unsecure
 target_link_libraries(resolver_component_test_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  dns_test_util
   grpc++_test_util_unsecure
   grpc_test_util_unsecure
   grpc++_unsecure
@@ -18253,6 +18295,7 @@ target_include_directories(resolver_component_test
 target_link_libraries(resolver_component_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  dns_test_util
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -18419,47 +18462,6 @@ target_include_directories(address_sorting_test
 )
 
 target_link_libraries(address_sorting_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  grpc++_test_config
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(cancel_ares_query_test
-  test/cpp/naming/cancel_ares_query_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-
-target_include_directories(cancel_ares_query_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE third_party/googletest/googletest/include
-  PRIVATE third_party/googletest/googletest
-  PRIVATE third_party/googletest/googlemock/include
-  PRIVATE third_party/googletest/googlemock
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(cancel_ares_query_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util

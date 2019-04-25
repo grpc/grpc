@@ -212,6 +212,15 @@
       ],
     },
     {
+      'target_name': 'dns_test_util',
+      'type': 'static_library',
+      'dependencies': [
+      ],
+      'sources': [
+        'test/cpp/naming/dns_test_util.cc',
+      ],
+    },
+    {
       'target_name': 'gpr',
       'type': 'static_library',
       'dependencies': [

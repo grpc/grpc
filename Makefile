@@ -1337,7 +1337,6 @@ resolver_component_tests_runner_invoker_unsecure: $(BINDIR)/$(CONFIG)/resolver_c
 resolver_component_tests_runner_invoker: $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker
 address_sorting_test_unsecure: $(BINDIR)/$(CONFIG)/address_sorting_test_unsecure
 address_sorting_test: $(BINDIR)/$(CONFIG)/address_sorting_test
-cancel_ares_query_test: $(BINDIR)/$(CONFIG)/cancel_ares_query_test
 alts_credentials_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/alts_credentials_fuzzer_one_entry
 api_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/api_fuzzer_one_entry
 client_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/client_fuzzer_one_entry
@@ -1396,7 +1395,7 @@ plugins: $(PROTOC_PLUGINS)
 
 privatelibs: privatelibs_c privatelibs_cxx
 
-privatelibs_c:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libcxxabi.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libz.a $(LIBDIR)/$(CONFIG)/libares.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
+privatelibs_c:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libcxxabi.a $(LIBDIR)/$(CONFIG)/libdns_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libz.a $(LIBDIR)/$(CONFIG)/libares.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
 pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
 
 pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
@@ -1750,7 +1749,6 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker \
   $(BINDIR)/$(CONFIG)/address_sorting_test_unsecure \
   $(BINDIR)/$(CONFIG)/address_sorting_test \
-  $(BINDIR)/$(CONFIG)/cancel_ares_query_test \
 
 else
 buildtests_cxx: privatelibs_cxx \
@@ -1890,7 +1888,6 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker \
   $(BINDIR)/$(CONFIG)/address_sorting_test_unsecure \
   $(BINDIR)/$(CONFIG)/address_sorting_test \
-  $(BINDIR)/$(CONFIG)/cancel_ares_query_test \
 
 endif
 
@@ -2418,8 +2415,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/address_sorting_test_unsecure || ( echo test address_sorting_test_unsecure failed ; exit 1 )
 	$(E) "[RUN]     Testing address_sorting_test"
 	$(Q) $(BINDIR)/$(CONFIG)/address_sorting_test || ( echo test address_sorting_test failed ; exit 1 )
-	$(E) "[RUN]     Testing cancel_ares_query_test"
-	$(Q) $(BINDIR)/$(CONFIG)/cancel_ares_query_test || ( echo test cancel_ares_query_test failed ; exit 1 )
 
 
 flaky_test_cxx: buildtests_cxx
@@ -3303,6 +3298,45 @@ endif
 
 ifneq ($(NO_DEPS),true)
 -include $(LIBCXXABI_OBJS:.o=.dep)
+endif
+
+
+LIBDNS_TEST_UTIL_SRC = \
+    test/cpp/naming/dns_test_util.cc \
+
+PUBLIC_HEADERS_C += \
+
+LIBDNS_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBDNS_TEST_UTIL_SRC))))
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL.
+
+$(LIBDIR)/$(CONFIG)/libdns_test_util.a: openssl_dep_error
+
+
+else
+
+
+$(LIBDIR)/$(CONFIG)/libdns_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(LIBDNS_TEST_UTIL_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libdns_test_util.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libdns_test_util.a $(LIBDNS_TEST_UTIL_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libdns_test_util.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(LIBDNS_TEST_UTIL_OBJS:.o=.dep)
+endif
 endif
 
 
@@ -20975,16 +21009,16 @@ $(BINDIR)/$(CONFIG)/resolver_component_test_unsecure: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/resolver_component_test_unsecure: $(PROTOBUF_DEP) $(RESOLVER_COMPONENT_TEST_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(BINDIR)/$(CONFIG)/resolver_component_test_unsecure: $(PROTOBUF_DEP) $(RESOLVER_COMPONENT_TEST_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libdns_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(RESOLVER_COMPONENT_TEST_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/resolver_component_test_unsecure
+	$(Q) $(LDXX) $(LDFLAGS) $(RESOLVER_COMPONENT_TEST_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libdns_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/resolver_component_test_unsecure
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/cpp/naming/resolver_component_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(OBJDIR)/$(CONFIG)/test/cpp/naming/resolver_component_test.o:  $(LIBDIR)/$(CONFIG)/libdns_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
 deps_resolver_component_test_unsecure: $(RESOLVER_COMPONENT_TEST_UNSECURE_OBJS:.o=.dep)
 
@@ -21018,16 +21052,16 @@ $(BINDIR)/$(CONFIG)/resolver_component_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/resolver_component_test: $(PROTOBUF_DEP) $(RESOLVER_COMPONENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(BINDIR)/$(CONFIG)/resolver_component_test: $(PROTOBUF_DEP) $(RESOLVER_COMPONENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libdns_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(RESOLVER_COMPONENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/resolver_component_test
+	$(Q) $(LDXX) $(LDFLAGS) $(RESOLVER_COMPONENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libdns_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/resolver_component_test
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/cpp/naming/resolver_component_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(OBJDIR)/$(CONFIG)/test/cpp/naming/resolver_component_test.o:  $(LIBDIR)/$(CONFIG)/libdns_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
 deps_resolver_component_test: $(RESOLVER_COMPONENT_TEST_OBJS:.o=.dep)
 
@@ -21206,49 +21240,6 @@ deps_address_sorting_test: $(ADDRESS_SORTING_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(ADDRESS_SORTING_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-CANCEL_ARES_QUERY_TEST_SRC = \
-    test/cpp/naming/cancel_ares_query_test.cc \
-
-CANCEL_ARES_QUERY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CANCEL_ARES_QUERY_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/cancel_ares_query_test: openssl_dep_error
-
-else
-
-
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
-
-$(BINDIR)/$(CONFIG)/cancel_ares_query_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/cancel_ares_query_test: $(PROTOBUF_DEP) $(CANCEL_ARES_QUERY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(CANCEL_ARES_QUERY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/cancel_ares_query_test
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/cpp/naming/cancel_ares_query_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
-
-deps_cancel_ares_query_test: $(CANCEL_ARES_QUERY_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(CANCEL_ARES_QUERY_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -21872,6 +21863,7 @@ test/cpp/interop/interop_server.cc: $(OPENSSL_DEP)
 test/cpp/interop/interop_server_bootstrap.cc: $(OPENSSL_DEP)
 test/cpp/interop/server_helper.cc: $(OPENSSL_DEP)
 test/cpp/microbenchmarks/helpers.cc: $(OPENSSL_DEP)
+test/cpp/naming/dns_test_util.cc: $(OPENSSL_DEP)
 test/cpp/qps/benchmark_config.cc: $(OPENSSL_DEP)
 test/cpp/qps/client_async.cc: $(OPENSSL_DEP)
 test/cpp/qps/client_callback.cc: $(OPENSSL_DEP)

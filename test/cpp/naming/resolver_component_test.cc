@@ -39,7 +39,9 @@
 #include "test/cpp/util/test_config.h"
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
@@ -53,8 +55,11 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/iomgr/socket_utils.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+#include "test/cpp/naming/dns_test_util.h"
 
 // TODO: pull in different headers when enabling this
 // test on windows. Also set BAD_SOCKET_RETURN_VAL
@@ -102,6 +107,17 @@ DEFINE_string(
 DEFINE_string(
     enable_txt_queries, "",
     "Whether or not to enable TXT queries for the ares resolver instance."
+    "It would be better if this arg could be bool, but the way that we "
+    "generate "
+    "the python script runner doesn't allow us to pass a gflags bool to this "
+    "binary.");
+DEFINE_string(
+    inject_broken_nameserver_list, "",
+    "Whether or not to configure c-ares to use a broken nameserver list, in "
+    "which "
+    "the first nameserver in the list is non-responsive, but the second one "
+    "works, i.e "
+    "serves the expected DNS records; using for testing such a real scenario."
     "It would be better if this arg could be bool, but the way that we "
     "generate "
     "the python script runner doesn't allow us to pass a gflags bool to this "
@@ -216,7 +232,10 @@ gpr_timespec NSecondDeadline(int seconds) {
 }
 
 void PollPollsetUntilRequestDone(ArgsStruct* args) {
-  gpr_timespec deadline = NSecondDeadline(10);
+  // Use a 20-second timeout to give room for the tests that involve
+  // a non-responsive name server (c-ares uses a ~5 second query timeout
+  // for that server before succeeding with the healthy one).
+  gpr_timespec deadline = NSecondDeadline(20);
   while (true) {
     bool done = gpr_atm_acq_load(&args->done_atm) != 0;
     if (done) {
@@ -468,6 +487,45 @@ class CheckingResultHandler : public ResultHandler {
   }
 };
 
+int g_fake_non_responsive_dns_server_port = -1;
+
+/* This function will configure any ares_channel created by the c-ares based
+ * resolver. This is useful to effectively mock /etc/resolv.conf settings
+ * (and equivalent on Windows), which unit tests don't have write permissions.
+ */
+void InjectBrokenNameServerList(ares_channel channel) {
+  struct ares_addr_port_node dns_server_addrs[2];
+  memset(dns_server_addrs, 0, sizeof(dns_server_addrs));
+  char* unused_host;
+  char* local_dns_server_port;
+  GPR_ASSERT(gpr_split_host_port(FLAGS_local_dns_server_address.c_str(),
+                                 &unused_host, &local_dns_server_port));
+  gpr_log(GPR_DEBUG,
+          "Injecting broken nameserver list. Bad server address:|[::1]:%d|. "
+          "Good server address:%s",
+          g_fake_non_responsive_dns_server_port,
+          FLAGS_local_dns_server_address.c_str());
+  // Put the non-responsive DNS server at the front of c-ares's nameserver list.
+  dns_server_addrs[0].family = AF_INET6;
+  ((char*)&dns_server_addrs[0].addr.addr6)[15] = 0x1;
+  dns_server_addrs[0].tcp_port = g_fake_non_responsive_dns_server_port;
+  dns_server_addrs[0].udp_port = g_fake_non_responsive_dns_server_port;
+  dns_server_addrs[0].next = &dns_server_addrs[1];
+  // Put the actual healthy DNS server after the first one. The expectation is
+  // that the resolver will timeout the query to the non-responsive DNS server
+  // and will skip over to this healthy DNS server, without causing any DNS
+  // resolution errors.
+  dns_server_addrs[1].family = AF_INET;
+  ((char*)&dns_server_addrs[1].addr.addr4)[0] = 0x7f;
+  ((char*)&dns_server_addrs[1].addr.addr4)[3] = 0x1;
+  dns_server_addrs[1].tcp_port = atoi(local_dns_server_port);
+  dns_server_addrs[1].udp_port = atoi(local_dns_server_port);
+  dns_server_addrs[1].next = nullptr;
+  GPR_ASSERT(ares_set_servers_ports(channel, dns_server_addrs) == ARES_SUCCESS);
+  gpr_free(local_dns_server_port);
+  gpr_free(unused_host);
+}
+
 void RunResolvesRelevantRecordsTest(
     grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler> (
         *CreateResultHandler)(ArgsStruct* args)) {
@@ -479,9 +537,29 @@ void RunResolvesRelevantRecordsTest(
   args.expected_lb_policy = FLAGS_expected_lb_policy;
   // maybe build the address with an authority
   char* whole_uri = nullptr;
-  GPR_ASSERT(gpr_asprintf(&whole_uri, "dns://%s/%s",
-                          FLAGS_local_dns_server_address.c_str(),
-                          FLAGS_target_name.c_str()));
+  gpr_log(GPR_DEBUG,
+          "resolver_component_test: --inject_broken_nameserver_list: %s",
+          FLAGS_inject_broken_nameserver_list.c_str());
+  grpc_core::UniquePtr<grpc::testing::FakeNonResponsiveDNSServer>
+      fake_non_responsive_dns_server;
+  if (FLAGS_inject_broken_nameserver_list == "True") {
+    g_fake_non_responsive_dns_server_port = grpc_pick_unused_port_or_die();
+    fake_non_responsive_dns_server.reset(
+        grpc_core::New<grpc::testing::FakeNonResponsiveDNSServer>(
+            g_fake_non_responsive_dns_server_port));
+    grpc_ares_test_only_inject_config = InjectBrokenNameServerList;
+    GPR_ASSERT(
+        gpr_asprintf(&whole_uri, "dns:///%s", FLAGS_target_name.c_str()));
+  } else if (FLAGS_inject_broken_nameserver_list == "False") {
+    gpr_log(GPR_INFO, "Specifying authority in uris to: %s",
+            FLAGS_local_dns_server_address.c_str());
+    GPR_ASSERT(gpr_asprintf(&whole_uri, "dns://%s/%s",
+                            FLAGS_local_dns_server_address.c_str(),
+                            FLAGS_target_name.c_str()));
+  } else {
+    gpr_log(GPR_DEBUG, "Invalid value for --inject_broken_nameserver_list.");
+    abort();
+  }
   gpr_log(GPR_DEBUG, "resolver_component_test: --enable_srv_queries: %s",
           FLAGS_enable_srv_queries.c_str());
   grpc_channel_args* resolver_args = nullptr;
@@ -558,10 +636,6 @@ int main(int argc, char** argv) {
   if (FLAGS_target_name == "") {
     gpr_log(GPR_ERROR, "Missing target_name param.");
     abort();
-  }
-  if (FLAGS_local_dns_server_address != "") {
-    gpr_log(GPR_INFO, "Specifying authority in uris to: %s",
-            FLAGS_local_dns_server_address.c_str());
   }
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();

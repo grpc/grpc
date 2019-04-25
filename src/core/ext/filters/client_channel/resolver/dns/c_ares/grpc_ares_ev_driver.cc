@@ -136,6 +136,11 @@ static void on_timeout_locked(void* arg, grpc_error* error);
 
 static void on_ares_backup_poll_alarm_locked(void* arg, grpc_error* error);
 
+static void noop_inject_channel_config(ares_channel channel) {}
+
+void (*grpc_ares_test_only_inject_config)(ares_channel channel) =
+    noop_inject_channel_config;
+
 grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
                                               grpc_pollset_set* pollset_set,
                                               int query_timeout_ms,
@@ -146,6 +151,7 @@ grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
   memset(&opts, 0, sizeof(opts));
   opts.flags |= ARES_FLAG_STAYOPEN;
   int status = ares_init_options(&(*ev_driver)->channel, &opts, ARES_OPT_FLAGS);
+  grpc_ares_test_only_inject_config((*ev_driver)->channel);
   GRPC_CARES_TRACE_LOG("request:%p grpc_ares_ev_driver_create_locked", request);
   if (status != ARES_SUCCESS) {
     char* err_msg;
