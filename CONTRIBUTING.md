@@ -110,5 +110,16 @@ How to get your contributions merged smoothly and quickly.
 - Exceptions to the rules can be made if there's a compelling reason for doing
   so.
 
+## Obtaining Commit Access
+We grant Commit Access to contributors based on the following criteria:
+* Sustained contribution to the gRPC project.
+* Deep understanding of the areas contributed to, and good consideration of various reliability, usability and performance tradeoffs. 
+* Contributions demonstrate that obtaining Commit Access will significantly reduce friction for the contributors or others. 
 
+In addition to submitting PRs, a Contributor with Commit Access can:
+* Review PRs and merge once other checks and criteria pass.
+* Triage bugs and PRs and assign appropriate labels and reviewers. 
+
+### Obtaining Commit Access without Code Contributions 
+The [gRPC organization](https://github.com/grpc) is comprised of multiple repositories and commit access is usually restricted to one or more of these repositories. Some repositories such as the [grpc.github.io](https://github.com/grpc/grpc.github.io/) do not have code, but the same principle of sustained, high quality contributions, with a good understanding of the fundamentals, apply. 
 
