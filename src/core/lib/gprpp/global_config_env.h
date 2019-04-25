@@ -38,7 +38,7 @@ void SetGlobalConfigEnvErrorFunction(GlobalConfigEnvErrorFunctionType func);
 // Base class for all classes to access environment variables.
 class GlobalConfigEnv {
  protected:
-  // `name` should be wrtiable and should be alive after constructor is called.
+  // `name` should be writable and alive after constructor is called.
   explicit GlobalConfigEnv(char* name);
 
  public:
@@ -91,27 +91,27 @@ class GlobalConfigEnvString : public GlobalConfigEnv {
 }  // namespace grpc_core
 
 // Macros for defining global config instances using environment variables.
-// This defines a GlobalConfigEnv*Type* instance with arguments for
+// This defines a GlobalConfig*Type* instance with arguments for
 // mutable variable name and default value.
 // Mutable name (g_env_str_##name) is here for having an array
 // for the canonical name without dynamic allocation.
 // `help` argument is ignored for this implementation.
 
-#define GPR_GLOBAL_CONFIG_ENV_DEFINE_BOOL(name, default_value, help)     \
+#define GPR_GLOBAL_CONFIG_DEFINE_BOOL(name, default_value, help)         \
   static char g_env_str_##name[] = #name;                                \
   static ::grpc_core::GlobalConfigEnvBool g_env_##name(g_env_str_##name, \
                                                        default_value);   \
   bool gpr_global_config_get_##name() { return g_env_##name.Get(); }     \
   void gpr_global_config_set_##name(bool value) { g_env_##name.Set(value); }
 
-#define GPR_GLOBAL_CONFIG_ENV_DEFINE_INT32(name, default_value, help)     \
+#define GPR_GLOBAL_CONFIG_DEFINE_INT32(name, default_value, help)         \
   static char g_env_str_##name[] = #name;                                 \
   static ::grpc_core::GlobalConfigEnvInt32 g_env_##name(g_env_str_##name, \
                                                         default_value);   \
   int32_t gpr_global_config_get_##name() { return g_env_##name.Get(); }   \
   void gpr_global_config_set_##name(int32_t value) { g_env_##name.Set(value); }
 
-#define GPR_GLOBAL_CONFIG_ENV_DEFINE_STRING(name, default_value, help)     \
+#define GPR_GLOBAL_CONFIG_DEFINE_STRING(name, default_value, help)         \
   static char g_env_str_##name[] = #name;                                  \
   static ::grpc_core::GlobalConfigEnvString g_env_##name(g_env_str_##name, \
                                                          default_value);   \

@@ -22,8 +22,8 @@
 // This is a placeholder for custom global configuration implementaion.
 // To use the custom one, please define following macros here.
 //
-//   GPR_GLOBAL_CONFIG_CUSTOM_DEFINE_BOOL
-//   GPR_GLOBAL_CONFIG_CUSTOM_DEFINE_INT32
-//   GPR_GLOBAL_CONFIG_CUSTOM_DEFINE_STRING
+//   GPR_GLOBAL_CONFIG_DEFINE_BOOL
+//   GPR_GLOBAL_CONFIG_DEFINE_INT32
+//   GPR_GLOBAL_CONFIG_DEFINE_STRING
 
 #endif /* GRPC_CORE_LIB_GPR_GLOBAL_CONFIG_CUSTOM_H */

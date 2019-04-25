@@ -308,7 +308,6 @@ int main(int argc, char** argv) {
   test_leftpad();
   test_stricmp();
   test_memrchr();
-  test_is_true();
   test_parse_bool_value();
   return 0;
 }
