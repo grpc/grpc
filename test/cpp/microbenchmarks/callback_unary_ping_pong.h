@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,9 @@
 #include <sstream>
 #include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/cpp/microbenchmarks/callback_test_service.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
-#include "test/cpp/microbenchmarks/callback_test_service.h"
 
 namespace grpc {
 namespace testing {
@@ -63,12 +63,12 @@ static void BM_CallbackUnaryPingPong(benchmark::State& state) {
     std::condition_variable cv;
     bool done = false;
     stub_->experimental_async()->Echo(&cli_ctx, &request, &response,
-     [&done, &mu, &cv](Status s) {
-      GPR_ASSERT(s.ok());
-      std::lock_guard<std::mutex> l(mu);
-      done = true;
-      cv.notify_one();
-    });
+                                      [&done, &mu, &cv](Status s) {
+                                        GPR_ASSERT(s.ok());
+                                        std::lock_guard<std::mutex> l(mu);
+                                        done = true;
+                                        cv.notify_one();
+                                      });
     std::unique_lock<std::mutex> l(mu);
     while (!done) {
       cv.wait(l);
@@ -76,7 +76,8 @@ static void BM_CallbackUnaryPingPong(benchmark::State& state) {
   }
   fixture->Finish(state);
   fixture.reset();
-  state.SetBytesProcessed(state.range(0) * state.iterations() + state.range(1) * state.iterations());
+  state.SetBytesProcessed(state.range(0) * state.iterations() +
+                          state.range(1) * state.iterations());
 }
 }  // namespace testing
 }  // namespace grpc

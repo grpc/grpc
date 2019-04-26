@@ -1,3 +1,21 @@
+/*
+ *
+ * Copyright 2019 gRPC authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 #include "test/cpp/microbenchmarks/callback_test_service.h"
 
 namespace grpc {
@@ -26,7 +44,7 @@ int GetIntValueFromMetadata(
     int default_value) {
   return GetIntValueFromMetadataHelper(key, metadata, default_value);
 }
-} // namespace
+}  // namespace
 
 void CallbackStreamingTestService::Echo(
     ServerContext* context, const EchoRequest* request, EchoResponse* response,
@@ -36,24 +54,24 @@ void CallbackStreamingTestService::Echo(
 
 experimental::ServerBidiReactor<EchoRequest, EchoResponse>*
 CallbackStreamingTestService::BidiStream() {
-   class Reactor : public experimental::ServerBidiReactor<EchoRequest,
-                                                          EchoResponse> {
+  class Reactor
+      : public experimental::ServerBidiReactor<EchoRequest, EchoResponse> {
    public:
     Reactor() {}
     void OnStarted(ServerContext* context) override {
       ctx_ = context;
       server_write_last_ = GetIntValueFromMetadata(
           kServerFinishAfterNReads, context->client_metadata(), 0);
-      message_size_ = GetIntValueFromMetadata(
-          kServerResponseStreamsToSend, context->client_metadata(), 0);
-//      EchoRequest* request = new EchoRequest;
-//      if (message_size_ > 0) {
-//        request->set_message(std::string(message_size_, 'a'));
-//      } else {
-//        request->set_message("");
-//      }
-//
-//      request_ = request;
+      message_size_ = GetIntValueFromMetadata(kServerResponseStreamsToSend,
+                                              context->client_metadata(), 0);
+      //      EchoRequest* request = new EchoRequest;
+      //      if (message_size_ > 0) {
+      //        request->set_message(std::string(message_size_, 'a'));
+      //      } else {
+      //        request->set_message("");
+      //      }
+      //
+      //      request_ = request;
       StartRead(&request_);
       on_started_done_ = true;
     }
@@ -62,7 +80,7 @@ CallbackStreamingTestService::BidiStream() {
     void OnReadDone(bool ok) override {
       if (ok) {
         num_msgs_read_++;
-//        gpr_log(GPR_INFO, "recv msg %s", request_.message().c_str());
+        //        gpr_log(GPR_INFO, "recv msg %s", request_.message().c_str());
         if (message_size_ > 0) {
           response_.set_message(std::string(message_size_, 'a'));
         } else {
@@ -108,4 +126,3 @@ CallbackStreamingTestService::BidiStream() {
 }
 }  // namespace testing
 }  // namespace grpc
-
