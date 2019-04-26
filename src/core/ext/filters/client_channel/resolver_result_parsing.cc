@@ -416,8 +416,8 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
             "field:retryThrottling error:Type should be object"));
         continue;
       }
-      Optional<int> max_milli_tokens = Optional<int>();
-      Optional<int> milli_token_ratio = Optional<int>();
+      Optional<int> max_milli_tokens;
+      Optional<int> milli_token_ratio;
       for (grpc_json* sub_field = field->child; sub_field != nullptr;
            sub_field = sub_field->next) {
         if (sub_field->key == nullptr) continue;
@@ -535,7 +535,7 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(const grpc_json* json,
                                                        grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   InlinedVector<grpc_error*, 4> error_list;
-  Optional<bool> wait_for_ready = Optional<bool>();
+  Optional<bool> wait_for_ready;
   grpc_millis timeout = 0;
   UniquePtr<ClientChannelMethodParsedObject::RetryPolicy> retry_policy;
   for (grpc_json* field = json->child; field != nullptr; field = field->next) {
