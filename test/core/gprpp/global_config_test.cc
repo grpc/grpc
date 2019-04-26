@@ -28,48 +28,25 @@
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/memory.h"
 
-namespace {
-
-bool g_config_error_function_called;
-
-void ClearConfigErrorCalled() { g_config_error_function_called = false; }
-
-bool IsConfigErrorCalled() { return g_config_error_function_called; }
-
-// This function is for preventing the program from invoking
-// an error handler due to configuration error and
-// make test routines know whether there is error.
-void FakeConfigErrorFunction(const char* error_message) {
-  g_config_error_function_called = true;
-}
-
-class GlobalConfigTest : public ::testing::Test {
- protected:
-  void SetUp() override { ClearConfigErrorCalled(); }
-  void TearDown() override { EXPECT_FALSE(IsConfigErrorCalled()); }
-};
-
-}  // namespace
-
 GPR_GLOBAL_CONFIG_DECLARE_BOOL(bool_var);
 
 GPR_GLOBAL_CONFIG_DEFINE_BOOL(bool_var, false, "");
 GPR_GLOBAL_CONFIG_DEFINE_INT32(int32_var, 0, "");
 GPR_GLOBAL_CONFIG_DEFINE_STRING(string_var, "", "");
 
-TEST_F(GlobalConfigTest, BoolTest) {
+TEST(GlobalConfigTest, BoolTest) {
   EXPECT_FALSE(GPR_GLOBAL_CONFIG_GET(bool_var));
   GPR_GLOBAL_CONFIG_SET(bool_var, true);
   EXPECT_TRUE(GPR_GLOBAL_CONFIG_GET(bool_var));
 }
 
-TEST_F(GlobalConfigTest, Int32Test) {
+TEST(GlobalConfigTest, Int32Test) {
   EXPECT_EQ(0, GPR_GLOBAL_CONFIG_GET(int32_var));
   GPR_GLOBAL_CONFIG_SET(int32_var, 1024);
   EXPECT_EQ(1024, GPR_GLOBAL_CONFIG_GET(int32_var));
 }
 
-TEST_F(GlobalConfigTest, StringTest) {
+TEST(GlobalConfigTest, StringTest) {
   grpc_core::UniquePtr<char> value;
 
   value = GPR_GLOBAL_CONFIG_GET(string_var);
@@ -81,83 +58,7 @@ TEST_F(GlobalConfigTest, StringTest) {
   EXPECT_EQ(0, strcmp(value.get(), "Test"));
 }
 
-#if !defined(GPR_GLOBAL_CONFIG_CUSTOM)
-
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(bool_var_2, true, "");
-GPR_GLOBAL_CONFIG_DEFINE_INT32(int32_var_2, 1234, "");
-GPR_GLOBAL_CONFIG_DEFINE_STRING(string_var_2, "Apple", "");
-
-TEST_F(GlobalConfigTest, BoolWithEnvTest) {
-  const char* bool_var_2_name = "BOOL_VAR_2";
-
-  gpr_unsetenv(bool_var_2_name);
-  EXPECT_TRUE(GPR_GLOBAL_CONFIG_GET(bool_var_2));
-
-  gpr_setenv(bool_var_2_name, "true");
-  EXPECT_TRUE(GPR_GLOBAL_CONFIG_GET(bool_var_2));
-
-  gpr_setenv(bool_var_2_name, "false");
-  EXPECT_FALSE(GPR_GLOBAL_CONFIG_GET(bool_var_2));
-
-  EXPECT_FALSE(IsConfigErrorCalled());
-
-  gpr_setenv(bool_var_2_name, "");
-  GPR_GLOBAL_CONFIG_GET(bool_var_2);
-  EXPECT_TRUE(IsConfigErrorCalled());
-  ClearConfigErrorCalled();
-
-  gpr_setenv(bool_var_2_name, "!");
-  GPR_GLOBAL_CONFIG_GET(bool_var_2);
-  EXPECT_TRUE(IsConfigErrorCalled());
-  ClearConfigErrorCalled();
-}
-
-TEST_F(GlobalConfigTest, Int32WithEnvTest) {
-  const char* int32_var_2_name = "INT32_VAR_2";
-
-  gpr_unsetenv(int32_var_2_name);
-  EXPECT_EQ(1234, GPR_GLOBAL_CONFIG_GET(int32_var_2));
-
-  gpr_setenv(int32_var_2_name, "0");
-  EXPECT_EQ(0, GPR_GLOBAL_CONFIG_GET(int32_var_2));
-
-  gpr_setenv(int32_var_2_name, "-123456789");
-  EXPECT_EQ(-123456789, GPR_GLOBAL_CONFIG_GET(int32_var_2));
-
-  gpr_setenv(int32_var_2_name, "123456789");
-  EXPECT_EQ(123456789, GPR_GLOBAL_CONFIG_GET(int32_var_2));
-
-  EXPECT_FALSE(IsConfigErrorCalled());
-
-  gpr_setenv(int32_var_2_name, "-1AB");
-  GPR_GLOBAL_CONFIG_GET(int32_var_2);
-  EXPECT_TRUE(IsConfigErrorCalled());
-  ClearConfigErrorCalled();
-}
-
-TEST_F(GlobalConfigTest, StringWithEnvTest) {
-  const char* string_var_2_name = "STRING_VAR_2";
-  grpc_core::UniquePtr<char> value;
-
-  gpr_unsetenv(string_var_2_name);
-  value = GPR_GLOBAL_CONFIG_GET(string_var_2);
-  EXPECT_EQ(0, strcmp(value.get(), "Apple"));
-
-  gpr_setenv(string_var_2_name, "Banana");
-  value = GPR_GLOBAL_CONFIG_GET(string_var_2);
-  EXPECT_EQ(0, strcmp(value.get(), "Banana"));
-
-  gpr_setenv(string_var_2_name, "");
-  value = GPR_GLOBAL_CONFIG_GET(string_var_2);
-  EXPECT_EQ(0, strcmp(value.get(), ""));
-}
-
-#endif
-
 int main(int argc, char** argv) {
-  // Not to abort the test when parsing error happens.
-  grpc_core::SetGlobalConfigEnvErrorFunction(&FakeConfigErrorFunction);
-
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

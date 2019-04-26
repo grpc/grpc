@@ -1030,6 +1030,8 @@ fling_server: $(BINDIR)/$(CONFIG)/fling_server
 fling_stream_test: $(BINDIR)/$(CONFIG)/fling_stream_test
 fling_test: $(BINDIR)/$(CONFIG)/fling_test
 fork_test: $(BINDIR)/$(CONFIG)/fork_test
+global_config_env_test: $(BINDIR)/$(CONFIG)/global_config_env_test
+global_config_test: $(BINDIR)/$(CONFIG)/global_config_test
 goaway_server_test: $(BINDIR)/$(CONFIG)/goaway_server_test
 gpr_cpu_test: $(BINDIR)/$(CONFIG)/gpr_cpu_test
 gpr_env_test: $(BINDIR)/$(CONFIG)/gpr_env_test
@@ -1452,6 +1454,8 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/fling_stream_test \
   $(BINDIR)/$(CONFIG)/fling_test \
   $(BINDIR)/$(CONFIG)/fork_test \
+  $(BINDIR)/$(CONFIG)/global_config_env_test \
+  $(BINDIR)/$(CONFIG)/global_config_test \
   $(BINDIR)/$(CONFIG)/goaway_server_test \
   $(BINDIR)/$(CONFIG)/gpr_cpu_test \
   $(BINDIR)/$(CONFIG)/gpr_env_test \
@@ -1971,6 +1975,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/fling_test || ( echo test fling_test failed ; exit 1 )
 	$(E) "[RUN]     Testing fork_test"
 	$(Q) $(BINDIR)/$(CONFIG)/fork_test || ( echo test fork_test failed ; exit 1 )
+	$(E) "[RUN]     Testing global_config_env_test"
+	$(Q) $(BINDIR)/$(CONFIG)/global_config_env_test || ( echo test global_config_env_test failed ; exit 1 )
+	$(E) "[RUN]     Testing global_config_test"
+	$(Q) $(BINDIR)/$(CONFIG)/global_config_test || ( echo test global_config_test failed ; exit 1 )
 	$(E) "[RUN]     Testing goaway_server_test"
 	$(Q) $(BINDIR)/$(CONFIG)/goaway_server_test || ( echo test goaway_server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_cpu_test"
@@ -9870,6 +9878,70 @@ deps_fork_test: $(FORK_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(FORK_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+GLOBAL_CONFIG_ENV_TEST_SRC = \
+    test/core/gprpp/global_config_env_test.cc \
+
+GLOBAL_CONFIG_ENV_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GLOBAL_CONFIG_ENV_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/global_config_env_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/global_config_env_test: $(GLOBAL_CONFIG_ENV_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GLOBAL_CONFIG_ENV_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/global_config_env_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/global_config_env_test.o:  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a
+
+deps_global_config_env_test: $(GLOBAL_CONFIG_ENV_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GLOBAL_CONFIG_ENV_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+GLOBAL_CONFIG_TEST_SRC = \
+    test/core/gprpp/global_config_test.cc \
+
+GLOBAL_CONFIG_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GLOBAL_CONFIG_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/global_config_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/global_config_test: $(GLOBAL_CONFIG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GLOBAL_CONFIG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/global_config_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/global_config_test.o:  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a
+
+deps_global_config_test: $(GLOBAL_CONFIG_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GLOBAL_CONFIG_TEST_OBJS:.o=.dep)
 endif
 endif
 

@@ -67,8 +67,7 @@
 // Builtin system uses environment variables but it can be extended to
 // support command-line flag, file, etc.
 //
-// To customize it, following macros should be defined along with
-// GPR_GLOBAL_CONFIG_CUSTOM.
+// To customize it, following macros should be redefined.
 //
 //   GPR_GLOBAL_CONFIG_DEFINE_BOOL
 //   GPR_GLOBAL_CONFIG_DEFINE_INT32
@@ -81,12 +80,8 @@
 //   bool gpr_global_config_get_test();
 //   void gpr_global_config_set_test(bool value);
 
-#include "src/core/lib/gprpp/global_config_generic.h"
-
-#ifdef GPR_GLOBAL_CONFIG_CUSTOM
 #include "src/core/lib/gprpp/global_config_custom.h"
-#else
 #include "src/core/lib/gprpp/global_config_env.h"
-#endif
+#include "src/core/lib/gprpp/global_config_generic.h"
 
 #endif /* GRPC_CORE_LIB_GPRPP_GLOBAL_CONFIG_H */
