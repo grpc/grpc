@@ -228,8 +228,8 @@ grpc_cc_library(
     srcs = ["callback_test_service.cc"],
     hdrs = ["callback_test_service.h"],
     deps = [
-        "//third_party/grpc/src/proto/grpc/testing:echo_proto",
-        "//third_party/grpc/test/cpp/util:test_util",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/cpp/util:test_util",
     ],
 )
 
