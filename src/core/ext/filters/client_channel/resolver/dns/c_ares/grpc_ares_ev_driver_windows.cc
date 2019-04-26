@@ -306,6 +306,11 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     polled_fd->OnIocpReadableInner(error);
   }
 
+  // TODO(apolcyn): improve this error handling to be less conversative.
+  // An e.g. ECONNRESET error here should result in errors when
+  // c-ares reads from this socket later, but it shouldn't necessarily cancel
+  // the entire resolution attempt. Doing so will allow the "inject broken
+  // nameserver list" test to pass on Windows.
   void OnIocpReadableInner(grpc_error* error) {
     if (error == GRPC_ERROR_NONE) {
       if (winsocket_->read_info.wsa_error != 0) {

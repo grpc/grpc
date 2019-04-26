@@ -58,14 +58,18 @@ FakeNonResponsiveDNSServer::FakeNonResponsiveDNSServer(int port) {
   }
 #ifdef GPR_WINDOWS
   char val = 1;
-  if (setsockopt(tcp_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) == SOCKET_ERROR) {
-    gpr_log(GPR_DEBUG, "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d", port);
+  if (setsockopt(tcp_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) ==
+      SOCKET_ERROR) {
+    gpr_log(GPR_DEBUG,
+            "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d", port);
     abort();
   }
 #else
   int val = 1;
-  if (setsockopt(tcp_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) != 0) {
-    gpr_log(GPR_DEBUG, "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d", port);
+  if (setsockopt(tcp_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) !=
+      0) {
+    gpr_log(GPR_DEBUG,
+            "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d", port);
     abort();
   }
 #endif
