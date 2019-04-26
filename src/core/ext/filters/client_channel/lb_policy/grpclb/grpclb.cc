@@ -1143,13 +1143,13 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
   // we want to retry connecting. Otherwise, we have deliberately ended this
   // call and no further action is required.
   if (lb_calld == grpclb_policy->lb_calld_.get()) {
-    // If we did not receive a serverlist and the fallback-at-startup checks
-    // are pending, go into fallback mode immediately.  This short-circuits
-    // the timeout for the fallback-at-startup case.
-    if (!lb_calld->seen_serverlist_ &&
-        grpclb_policy->fallback_at_startup_checks_pending_) {
+    // If the fallback-at-startup checks are pending, go into fallback mode
+    // immediately.  This short-circuits the timeout for the fallback-at-startup
+    // case.
+    if (grpclb_policy->fallback_at_startup_checks_pending_) {
+      GPR_ASSERT(!lb_calld->seen_serverlist_);
       gpr_log(GPR_INFO,
-              "[grpclb %p] balancer call finished without receiving "
+              "[grpclb %p] Balancer call finished without receiving "
               "serverlist; entering fallback mode",
               grpclb_policy);
       grpclb_policy->fallback_at_startup_checks_pending_ = false;
@@ -1820,7 +1820,6 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
         if (child_policy != nullptr) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "field:childPolicy error:Duplicate entry"));
-          continue;
         }
         grpc_error* parse_error = GRPC_ERROR_NONE;
         child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(

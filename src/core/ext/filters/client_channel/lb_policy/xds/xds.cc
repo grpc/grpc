@@ -1849,7 +1849,8 @@ void XdsLb::LocalityMap::LocalityEntry::UpdateLocked(
   // Construct update args.
   UpdateArgs update_args;
   update_args.addresses = ProcessServerlist(serverlist);
-  update_args.config = child_policy_config->Ref();
+  update_args.config =
+      child_policy_config == nullptr ? nullptr : child_policy_config->Ref();
   update_args.args = CreateChildPolicyArgsLocked(args_in);
   // If the child policy name changes, we need to create a new child
   // policy.  When this happens, we leave child_policy_ as-is and store
@@ -2183,7 +2184,6 @@ class XdsFactory : public LoadBalancingPolicyFactory {
         if (balancer_name != nullptr) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "field:balancerName error:Duplicate entry"));
-          continue;
         }
         if (field->type != GRPC_JSON_STRING) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -2195,7 +2195,6 @@ class XdsFactory : public LoadBalancingPolicyFactory {
         if (child_policy != nullptr) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "field:childPolicy error:Duplicate entry"));
-          continue;
         }
         grpc_error* parse_error = GRPC_ERROR_NONE;
         child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
@@ -2208,7 +2207,6 @@ class XdsFactory : public LoadBalancingPolicyFactory {
         if (fallback_policy != nullptr) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "field:fallbackPolicy error:Duplicate entry"));
-          continue;
         }
         grpc_error* parse_error = GRPC_ERROR_NONE;
         fallback_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(

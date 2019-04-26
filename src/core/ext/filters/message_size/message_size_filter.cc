@@ -336,7 +336,7 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
   // client_channel filter.) If we ever need a second filter that also needs to
   // parse GRPC_ARG_SERVICE_CONFIG, we should refactor this code and add a
   // separate filter that reads GRPC_ARG_SERVICE_CONFIG and saves the parsed
-  // config in the call_context. Get service config from channel args.
+  // config in the call_context.
   const grpc_arg* channel_arg =
       grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVICE_CONFIG);
   const char* service_config_str = grpc_channel_arg_get_string(channel_arg);
