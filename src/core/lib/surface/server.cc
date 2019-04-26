@@ -1099,20 +1099,6 @@ void* grpc_server_register_method(
   return m;
 }
 
-static void start_listeners(void* s, grpc_error* error) {
-  grpc_server* server = static_cast<grpc_server*>(s);
-  for (listener* l = server->listeners; l; l = l->next) {
-    l->start(server, l->arg, server->pollsets, server->pollset_count);
-  }
-
-  gpr_mu_lock(&server->mu_global);
-  server->starting = false;
-  gpr_cv_signal(&server->starting_cv);
-  gpr_mu_unlock(&server->mu_global);
-
-  server_unref(server);
-}
-
 void grpc_server_start(grpc_server* server) {
   size_t i;
   grpc_core::ExecCtx exec_ctx;
@@ -1134,13 +1120,18 @@ void grpc_server_start(grpc_server* server) {
     request_matcher_init(&rm->matcher, server);
   }
 
-  server_ref(server);
+  gpr_mu_lock(&server->mu_global);
   server->starting = true;
-  GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_CREATE(
-          start_listeners, server,
-          grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT)),
-      GRPC_ERROR_NONE);
+  gpr_mu_unlock(&server->mu_global);
+
+  for (listener* l = server->listeners; l; l = l->next) {
+    l->start(server, l->arg, server->pollsets, server->pollset_count);
+  }
+
+  gpr_mu_lock(&server->mu_global);
+  server->starting = false;
+  gpr_cv_signal(&server->starting_cv);
+  gpr_mu_unlock(&server->mu_global);
 }
 
 void grpc_server_get_pollsets(grpc_server* server, grpc_pollset*** pollsets,
