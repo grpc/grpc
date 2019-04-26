@@ -56,6 +56,19 @@ FakeNonResponsiveDNSServer::FakeNonResponsiveDNSServer(int port) {
     gpr_log(GPR_DEBUG, "Failed to bind UDP ipv6 socket to [::1]:%d", port);
     abort();
   }
+#ifdef GPR_WINDOWS
+  char val = 1;
+  if (setsockopt(tcp_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) == SOCKET_ERROR) {
+    gpr_log(GPR_DEBUG, "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d", port);
+    abort();
+  }
+#else
+  int val = 1;
+  if (setsockopt(tcp_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) != 0) {
+    gpr_log(GPR_DEBUG, "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d", port);
+    abort();
+  }
+#endif
   if (bind(tcp_socket_, (const sockaddr*)&addr, sizeof(addr)) != 0) {
     gpr_log(GPR_DEBUG, "Failed to bind TCP ipv6 socket to [::1]:%d", port);
     abort();
