@@ -74,7 +74,7 @@ class ClientChannelGlobalParsedObject : public ServiceConfig::ParsedConfig {
   RefCountedPtr<ParsedLoadBalancingConfig> parsed_lb_config_;
   UniquePtr<char> parsed_deprecated_lb_policy_;
   Optional<RetryThrottling> retry_throttling_;
-  const char* health_check_service_name_ = nullptr;
+  const char* health_check_service_name_;
 };
 
 class ClientChannelMethodParsedObject : public ServiceConfig::ParsedConfig {
@@ -173,7 +173,7 @@ class ProcessedResolverResult {
   // Retry throttle data.
   Optional<ClientChannelGlobalParsedObject::RetryThrottling>
       retry_throttle_data_;
-  const char* health_check_service_name_;
+  const char* health_check_service_name_ = nullptr;
 };
 
 }  // namespace internal

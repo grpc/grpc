@@ -416,8 +416,8 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
             "field:retryThrottling error:Type should be object"));
         continue;
       }
-      Optional<int> max_milli_tokens;
-      Optional<int> milli_token_ratio;
+      Optional<int> max_milli_tokens = Optional<int>();
+      Optional<int> milli_token_ratio = Optional<int>();
       for (grpc_json* sub_field = field->child; sub_field != nullptr;
            sub_field = sub_field->next) {
         if (sub_field->key == nullptr) continue;
@@ -492,20 +492,20 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
           }
         }
       }
+      ClientChannelGlobalParsedObject::RetryThrottling data;
       if (!max_milli_tokens.has_value()) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:retryThrottling field:maxTokens error:Not found"));
+      } else {
+        data.max_milli_tokens = max_milli_tokens.value();
       }
       if (!milli_token_ratio.has_value()) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:retryThrottling field:tokenRatio error:Not found"));
-      }
-      if (error_list.size() == 0) {
-        ClientChannelGlobalParsedObject::RetryThrottling data;
-        data.max_milli_tokens = max_milli_tokens.value();
+      } else {
         data.milli_token_ratio = milli_token_ratio.value();
-        retry_throttling.set(data);
       }
+      retry_throttling.set(data);
     }
     if (strcmp(field->key, "healthCheckConfig") == 0) {
       if (health_check_service_name != nullptr) {
@@ -535,7 +535,7 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(const grpc_json* json,
                                                        grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   InlinedVector<grpc_error*, 4> error_list;
-  Optional<bool> wait_for_ready;
+  Optional<bool> wait_for_ready = Optional<bool>();
   grpc_millis timeout = 0;
   UniquePtr<ClientChannelMethodParsedObject::RetryPolicy> retry_policy;
   for (grpc_json* field = json->child; field != nullptr; field = field->next) {
