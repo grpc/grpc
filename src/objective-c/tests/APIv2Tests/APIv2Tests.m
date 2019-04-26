@@ -179,7 +179,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
                                  closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
                                    trailing_md = trailingMetadata;
                                    if (error) {
-                                     XCTAssertEqual(error.code, GRPCErrorCodeUnauthenticated,
+                                     XCTAssertEqual(error.code, 16,
                                                     @"Finished with unexpected error: %@", error);
                                      XCTAssertEqualObjects(init_md,
                                                            error.userInfo[kGRPCHeadersKey]);
