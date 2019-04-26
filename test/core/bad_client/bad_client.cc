@@ -257,7 +257,7 @@ bool client_connection_preface_validator(grpc_slice_buffer* incoming,
     return false;
   }
   grpc_slice slice = incoming->slices[0];
-  /* There should be atleast a settings frame present */
+  /* There should be at least one settings frame present */
   if (GRPC_SLICE_LENGTH(slice) < MIN_HTTP2_FRAME_SIZE) {
     return false;
   }
