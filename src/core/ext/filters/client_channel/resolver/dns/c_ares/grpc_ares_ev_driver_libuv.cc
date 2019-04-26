@@ -77,7 +77,7 @@ class GrpcPolledFdLibuv : public GrpcPolledFd {
     return false;
   }
 
-  void ShutdownInternal(grpc_error* error) {
+  void ShutdownInternalLocked(grpc_error* error) {
     uv_poll_stop(handle_);
     uv_close(reinterpret_cast<uv_handle_t*>(handle_), ares_uv_poll_close_cb);
     if (read_closure_ != nullptr) {
@@ -91,9 +91,9 @@ class GrpcPolledFdLibuv : public GrpcPolledFd {
   void ShutdownLocked(grpc_error* error) override {
     if (grpc_core::ExecCtx::Get() == nullptr) {
       grpc_core::ExecCtx exec_ctx;
-      ShutdownInternal(error);
+      ShutdownInternalLocked(error);
     } else {
-      ShutdownInternal(error);
+      ShutdownInternalLocked(error);
     }
   }
 

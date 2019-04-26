@@ -37,7 +37,7 @@ bool inner_maybe_resolve_localhost_manually_locked(
   gpr_split_host_port(name, host, port);
   if (*host == nullptr) {
     gpr_log(GPR_ERROR,
-            "Failed to parse %s into host:port during Windows localhost "
+            "Failed to parse %s into host:port during manual localhost "
             "resolution check.",
             name);
     return false;
@@ -45,7 +45,7 @@ bool inner_maybe_resolve_localhost_manually_locked(
   if (*port == nullptr) {
     if (default_port == nullptr) {
       gpr_log(GPR_ERROR,
-              "No port or default port for %s during Windows localhost "
+              "No port or default port for %s during manual localhost "
               "resolution check.",
               name);
       return false;
