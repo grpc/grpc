@@ -77,6 +77,7 @@
 #define GPR_WINDOWS 1
 #define GPR_WINDOWS_SUBPROCESS 1
 #define GPR_WINDOWS_ENV
+#define GPR_HAS_ALIGNED_MALLOC 1
 #ifdef __MSYS__
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_MSYS_TMPFILE
@@ -173,6 +174,7 @@
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
 #define GPR_HAS_PTHREAD_H 1
+#define GPR_HAS_ALIGNED_ALLOC 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
@@ -238,6 +240,7 @@
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
+#define GPR_HAS_POSIX_MEMALIGN 1
 #define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #ifndef GRPC_CFSTREAM
@@ -497,6 +500,23 @@ typedef unsigned __int64 uint64_t;
 /* maximum alignment needed for any type on this platform, rounded up to a
    power of two */
 #define GPR_MAX_ALIGNMENT 16
+
+/* By default, assume we need fallback aligned malloc. */
+#ifdef GRPC_NEED_FALLBACK_ALIGNED_MALLOC
+#error "GRPC_NEED_FALLBACK_ALIGNED_MALLOC already defined."
+#endif
+#define GRPC_NEED_FALLBACK_ALIGNED_MALLOC 1
+
+/* But if a platform version is available, we do not need it. */
+#if defined(GPR_HAS_ALIGNED_ALLOC) || defined(GPR_HAS_POSIX_MEMALIGN) || \
+    defined(GPR_HAS_ALIGNED_MALLOC)
+#undef GRPC_NEED_FALLBACK_ALIGNED_MALLOC
+#endif
+
+/* Unless we're in backwards compat. mode. */
+#if defined(GPR_BACKWARDS_COMPATIBILITY_MODE)
+#define GRPC_NEED_FALLBACK_ALIGNED_MALLOC 1
+#endif
 
 #ifndef GRPC_ARES
 #define GRPC_ARES 1

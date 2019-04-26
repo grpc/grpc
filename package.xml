@@ -119,6 +119,10 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/alloc_fallback.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/alloc_linux.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/alloc_posix.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/alloc_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/atm.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/cpu_iphone.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/cpu_linux.cc" role="src" />
