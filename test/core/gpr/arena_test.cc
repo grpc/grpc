@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/lib/gprpp/arena.h"
+#include "src/core/lib/gpr/arena.h"
 
 #include <inttypes.h>
 #include <string.h>
@@ -31,9 +31,7 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/test_config.h"
 
-using grpc_core::Arena;
-
-static void test_noop(void) { Arena::Create(1)->Destroy(); }
+static void test_noop(void) { gpr_arena_destroy(gpr_arena_create(1)); }
 
 static void test(const char* name, size_t init_size, const size_t* allocs,
                  size_t nallocs) {
@@ -52,10 +50,10 @@ static void test(const char* name, size_t init_size, const size_t* allocs,
   gpr_log(GPR_INFO, "%s", s);
   gpr_free(s);
 
-  Arena* a = Arena::Create(init_size);
+  gpr_arena* a = gpr_arena_create(init_size);
   void** ps = static_cast<void**>(gpr_zalloc(sizeof(*ps) * nallocs));
   for (size_t i = 0; i < nallocs; i++) {
-    ps[i] = a->Alloc(allocs[i]);
+    ps[i] = gpr_arena_alloc(a, allocs[i]);
     // ensure the returned address is aligned
     GPR_ASSERT(((intptr_t)ps[i] & 0xf) == 0);
     // ensure no duplicate results
@@ -65,7 +63,7 @@ static void test(const char* name, size_t init_size, const size_t* allocs,
     // ensure writable
     memset(ps[i], 1, allocs[i]);
   }
-  a->Destroy();
+  gpr_arena_destroy(a);
   gpr_free(ps);
 }
 
@@ -82,14 +80,14 @@ size_t concurrent_test_iterations() {
 
 typedef struct {
   gpr_event ev_start;
-  Arena* arena;
+  gpr_arena* arena;
 } concurrent_test_args;
 
 static void concurrent_test_body(void* arg) {
   concurrent_test_args* a = static_cast<concurrent_test_args*>(arg);
   gpr_event_wait(&a->ev_start, gpr_inf_future(GPR_CLOCK_REALTIME));
   for (size_t i = 0; i < concurrent_test_iterations(); i++) {
-    *static_cast<char*>(a->arena->Alloc(1)) = static_cast<char>(i);
+    *static_cast<char*>(gpr_arena_alloc(a->arena, 1)) = static_cast<char>(i);
   }
 }
 
@@ -98,7 +96,7 @@ static void concurrent_test(void) {
 
   concurrent_test_args args;
   gpr_event_init(&args.ev_start);
-  args.arena = Arena::Create(1024);
+  args.arena = gpr_arena_create(1024);
 
   grpc_core::Thread thds[CONCURRENT_TEST_THREADS];
 
@@ -114,7 +112,7 @@ static void concurrent_test(void) {
     th.Join();
   }
 
-  args.arena->Destroy();
+  gpr_arena_destroy(args.arena);
 }
 
 int main(int argc, char* argv[]) {

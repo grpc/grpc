@@ -110,7 +110,7 @@ typedef struct grpc_cronet_transport grpc_cronet_transport;
 /* TODO (makdharma): reorder structure for memory efficiency per
    http://www.catb.org/esr/structure-packing/#_structure_reordering: */
 struct read_state {
-  read_state(grpc_core::Arena* arena)
+  read_state(gpr_arena* arena)
       : trailing_metadata(arena), initial_metadata(arena) {
     grpc_slice_buffer_init(&read_slice_buffer);
   }
@@ -144,7 +144,7 @@ struct write_state {
 
 /* track state of one stream op */
 struct op_state {
-  op_state(grpc_core::Arena* arena) : rs(arena) {}
+  op_state(gpr_arena* arena) : rs(arena) {}
 
   bool state_op_done[OP_NUM_OPS] = {};
   bool state_callback_received[OP_NUM_OPS] = {};
@@ -186,10 +186,10 @@ struct op_storage {
 
 struct stream_obj {
   stream_obj(grpc_transport* gt, grpc_stream* gs,
-             grpc_stream_refcount* refcount, grpc_core::Arena* arena);
+             grpc_stream_refcount* refcount, gpr_arena* arena);
   ~stream_obj();
 
-  grpc_core::Arena* arena;
+  gpr_arena* arena;
   struct op_and_state* oas = nullptr;
   grpc_transport_stream_op_batch* curr_op = nullptr;
   grpc_cronet_transport* curr_ct;
@@ -1368,8 +1368,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
 */
 
 inline stream_obj::stream_obj(grpc_transport* gt, grpc_stream* gs,
-                              grpc_stream_refcount* refcount,
-                              grpc_core::Arena* arena)
+                              grpc_stream_refcount* refcount, gpr_arena* arena)
     : arena(arena),
       curr_ct(reinterpret_cast<grpc_cronet_transport*>(gt)),
       curr_gs(gs),
@@ -1388,7 +1387,7 @@ inline stream_obj::~stream_obj() {
 
 static int init_stream(grpc_transport* gt, grpc_stream* gs,
                        grpc_stream_refcount* refcount, const void* server_data,
-                       grpc_core::Arena* arena) {
+                       gpr_arena* arena) {
   new (gs) stream_obj(gt, gs, refcount, arena);
   return 0;
 }

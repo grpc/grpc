@@ -19,42 +19,40 @@
 /* Benchmark arenas */
 
 #include <benchmark/benchmark.h>
-#include "src/core/lib/gprpp/arena.h"
+#include "src/core/lib/gpr/arena.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
-using grpc_core::Arena;
-
 static void BM_Arena_NoOp(benchmark::State& state) {
   while (state.KeepRunning()) {
-    Arena::Create(state.range(0))->Destroy();
+    gpr_arena_destroy(gpr_arena_create(state.range(0)));
   }
 }
 BENCHMARK(BM_Arena_NoOp)->Range(1, 1024 * 1024);
 
 static void BM_Arena_ManyAlloc(benchmark::State& state) {
-  Arena* a = Arena::Create(state.range(0));
+  gpr_arena* a = gpr_arena_create(state.range(0));
   const size_t realloc_after =
       1024 * 1024 * 1024 / ((state.range(1) + 15) & 0xffffff0u);
   while (state.KeepRunning()) {
-    a->Alloc(state.range(1));
+    gpr_arena_alloc(a, state.range(1));
     // periodically recreate arena to avoid OOM
     if (state.iterations() % realloc_after == 0) {
-      a->Destroy();
-      a = Arena::Create(state.range(0));
+      gpr_arena_destroy(a);
+      a = gpr_arena_create(state.range(0));
     }
   }
-  a->Destroy();
+  gpr_arena_destroy(a);
 }
 BENCHMARK(BM_Arena_ManyAlloc)->Ranges({{1, 1024 * 1024}, {1, 32 * 1024}});
 
 static void BM_Arena_Batch(benchmark::State& state) {
   while (state.KeepRunning()) {
-    Arena* a = Arena::Create(state.range(0));
+    gpr_arena* a = gpr_arena_create(state.range(0));
     for (int i = 0; i < state.range(1); i++) {
-      a->Alloc(state.range(2));
+      gpr_arena_alloc(a, state.range(2));
     }
-    a->Destroy();
+    gpr_arena_destroy(a);
   }
 }
 BENCHMARK(BM_Arena_Batch)->Ranges({{1, 64 * 1024}, {1, 64}, {1, 1024}});

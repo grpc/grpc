@@ -21,27 +21,21 @@
 // the arena as a whole is freed
 // Tracks the total memory allocated against it, so that future arenas can
 // pre-allocate the right amount of memory
-// This transitional API is deprecated and will be removed soon in favour of
-// src/core/lib/gprpp/arena.h .
 
 #ifndef GRPC_CORE_LIB_GPR_ARENA_H
 #define GRPC_CORE_LIB_GPR_ARENA_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/arena.h"
+#include <stddef.h>
 
-// TODO(arjunroy) : Remove deprecated gpr_arena API once all callers are gone.
-typedef class grpc_core::Arena gpr_arena;
+typedef struct gpr_arena gpr_arena;
+
 // Create an arena, with \a initial_size bytes in the first allocated buffer
-inline gpr_arena* gpr_arena_create(size_t initial_size) {
-  return grpc_core::Arena::Create(initial_size);
-}
-// Destroy an arena, returning the total number of bytes allocated
-inline size_t gpr_arena_destroy(gpr_arena* arena) { return arena->Destroy(); }
+gpr_arena* gpr_arena_create(size_t initial_size);
 // Allocate \a size bytes from the arena
-inline void* gpr_arena_alloc(gpr_arena* arena, size_t size) {
-  return arena->Alloc(size);
-}
+void* gpr_arena_alloc(gpr_arena* arena, size_t size);
+// Destroy an arena, returning the total number of bytes allocated
+size_t gpr_arena_destroy(gpr_arena* arena);
 
 #endif /* GRPC_CORE_LIB_GPR_ARENA_H */

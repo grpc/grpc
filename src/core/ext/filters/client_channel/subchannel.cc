@@ -121,7 +121,7 @@ RefCountedPtr<SubchannelCall> ConnectedSubchannel::CreateCall(
   const size_t allocation_size =
       GetInitialCallSizeEstimate(args.parent_data_size);
   RefCountedPtr<SubchannelCall> call(
-      new (args.arena->Alloc(allocation_size))
+      new (gpr_arena_alloc(args.arena, allocation_size))
           SubchannelCall(Ref(DEBUG_LOCATION, "subchannel_call"), args));
   grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(call.get());
   const grpc_call_element_args call_args = {
