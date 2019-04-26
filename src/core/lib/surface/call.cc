@@ -1555,7 +1555,10 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
           goto done_with_error;
         }
         /* process compression level */
-        memset(&call->compression_md, 0, sizeof(call->compression_md));
+        grpc_metadata& compression_md = call->compression_md;
+        compression_md.key = grpc_empty_slice();
+        compression_md.value = grpc_empty_slice();
+        compression_md.flags = 0;
         size_t additional_metadata_count = 0;
         grpc_compression_level effective_compression_level =
             GRPC_COMPRESS_LEVEL_NONE;
@@ -1578,8 +1581,8 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
                   call, effective_compression_level);
           /* the following will be picked up by the compress filter and used
            * as the call's compression algorithm. */
-          call->compression_md.key = GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST;
-          call->compression_md.value = grpc_compression_algorithm_slice(calgo);
+          compression_md.key = GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST;
+          compression_md.value = grpc_compression_algorithm_slice(calgo);
           additional_metadata_count++;
         }
 
@@ -1593,8 +1596,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         if (!prepare_application_metadata(
                 call, static_cast<int>(op->data.send_initial_metadata.count),
                 op->data.send_initial_metadata.metadata, 0, call->is_client,
-                &call->compression_md,
-                static_cast<int>(additional_metadata_count))) {
+                &compression_md, static_cast<int>(additional_metadata_count))) {
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
         }

@@ -47,7 +47,6 @@ namespace Grpc.Core.Internal.Tests
             GrpcEnvironment.ReleaseAsync().Wait();
             Assert.AreEqual(CompletionQueueEvent.CompletionType.Shutdown, ev.type);
             Assert.AreNotEqual(IntPtr.Zero, ev.success);
-            Assert.AreEqual(IntPtr.Zero, ev.tag);
         }
     }
 }
