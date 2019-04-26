@@ -22,7 +22,28 @@
 #include <grpc/support/port_platform.h>
 
 /// Given a size, round up to the next multiple of sizeof(void*).
-#define GPR_ROUND_UP_TO_ALIGNMENT_SIZE(x) \
-  (((x) + GPR_MAX_ALIGNMENT - 1u) & ~(GPR_MAX_ALIGNMENT - 1u))
+#define GPR_ROUND_UP_TO_ALIGNMENT_SIZE(x, align) \
+  (((x) + (align)-1u) & ~((align)-1u))
+
+#define GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(x) \
+  GPR_ROUND_UP_TO_ALIGNMENT_SIZE((x), GPR_MAX_ALIGNMENT)
+
+#define GPR_ROUND_UP_TO_CACHELINE_SIZE(x) \
+  GPR_ROUND_UP_TO_ALIGNMENT_SIZE((x), GPR_CACHELINE_SIZE)
+
+void* gpr_malloc_aligned_fallback(size_t size, size_t alignment);
+void gpr_free_aligned_fallback(void* ptr);
+
+void* gpr_malloc_aligned_platform(size_t size, size_t alignment);
+void gpr_free_aligned_platform(void* ptr);
+
+#ifndef NDEBUG
+static inline constexpr bool is_power_of_two(size_t value) {
+  // 2^N =     100000...000
+  // 2^N - 1 = 011111...111
+  // (2^N) && ((2^N)-1)) = 0
+  return (value & (value - 1)) == 0;
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_GPR_ALLOC_H */
