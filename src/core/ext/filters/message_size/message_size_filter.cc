@@ -71,7 +71,7 @@ UniquePtr<ServiceConfig::ParsedConfig> MessageSizeParser::ParsePerMethodParams(
       if (max_response_message_bytes >= 0) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:maxResponseMessageBytes error:Duplicate entry"));
-      }  // Duplicate, conitnue parsing
+      }  // Duplicate, continue parsing
       if (field->type != GRPC_JSON_STRING && field->type != GRPC_JSON_NUMBER) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:maxResponseMessageBytes error:should be of type number"));

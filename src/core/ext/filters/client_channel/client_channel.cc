@@ -1070,6 +1070,7 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
   GPR_ASSERT(uri->path[0] != '\0');
   server_name_.reset(
       gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path));
+  grpc_uri_destroy(uri);
   char* proxy_name = nullptr;
   grpc_channel_args* new_args = nullptr;
   grpc_proxy_mappers_map_name(server_uri, args->channel_args, &proxy_name,

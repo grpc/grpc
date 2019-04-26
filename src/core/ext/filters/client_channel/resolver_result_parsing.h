@@ -173,7 +173,7 @@ class ProcessedResolverResult {
   // Retry throttle data.
   Optional<ClientChannelGlobalParsedObject::RetryThrottling>
       retry_throttle_data_;
-  const char* health_check_service_name_ = nullptr;
+  const char* health_check_service_name_;
 };
 
 }  // namespace internal

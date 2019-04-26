@@ -89,10 +89,7 @@ void ProcessedResolverResult::ProcessServiceConfig(
     const ClientChannelGlobalParsedObject* parsed_object) {
   health_check_service_name_ = parsed_object->health_check_service_name();
   service_config_json_ = service_config_->service_config_json();
-  if (!parsed_object) {
-    return;
-  }
-  if (parsed_object->retry_throttling().has_value()) {
+  if (parsed_object != nullptr) {
     retry_throttle_data_ = parsed_object->retry_throttling();
   }
 }
@@ -429,7 +426,8 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
             error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "field:retryThrottling field:maxTokens error:Duplicate "
                 "entry"));
-          } else if (sub_field->type != GRPC_JSON_NUMBER) {
+          }  // Duplicate, continue parsing.
+          if (sub_field->type != GRPC_JSON_NUMBER) {
             error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "field:retryThrottling field:maxTokens error:Type should be "
                 "number"));
