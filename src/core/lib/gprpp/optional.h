@@ -38,8 +38,8 @@ class Optional {
   T value() const { return value_; }
 
  private:
-  bool set_ = false;
   T value_;
+  bool set_ = false;
 };
 
 } /* namespace grpc_core */
