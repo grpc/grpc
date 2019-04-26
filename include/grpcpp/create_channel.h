@@ -32,7 +32,7 @@ static inline std::shared_ptr<::grpc::Channel> CreateChannel(
 
 static inline std::shared_ptr<::grpc::Channel> CreateCustomChannel(
     const grpc::string& target,
-    const std::shared_ptr<grpc::ChannelCredentials>& creds,
+    const std::shared_ptr<ChannelCredentials>& creds,
     const ChannelArguments& args) {
   return ::grpc_impl::CreateCustomChannelImpl(target, creds, args);
 }

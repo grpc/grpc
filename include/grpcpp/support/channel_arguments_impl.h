@@ -34,6 +34,7 @@ class ChannelArgumentsTest;
 }  // namespace grpc
 
 namespace grpc_impl {
+
 class SecureChannelCredentials;
 
 /// Options for channel creation. The user can use generic setters to pass

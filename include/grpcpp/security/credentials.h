@@ -44,10 +44,14 @@ GoogleComputeEngineCredentials() {
   return ::grpc_impl::GoogleComputeEngineCredentials();
 }
 
+/// Constant for maximum auth token lifetime.
+constexpr long kMaxAuthTokenLifetimeSecs =
+    ::grpc_impl::kMaxAuthTokenLifetimeSecs;
+
 static inline std::shared_ptr<grpc_impl::CallCredentials>
 ServiceAccountJWTAccessCredentials(
     const grpc::string& json_key,
-    long token_lifetime_seconds = ::grpc_impl::kMaxAuthTokenLifetimeSecs) {
+    long token_lifetime_seconds = grpc::kMaxAuthTokenLifetimeSecs) {
   return ::grpc_impl::ServiceAccountJWTAccessCredentials(
       json_key, token_lifetime_seconds);
 }

@@ -26,6 +26,8 @@
 
 namespace grpc_impl {
 
+class ChannelArguments;
+
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
 std::shared_ptr<grpc::Channel> CreateInsecureChannelFromFd(

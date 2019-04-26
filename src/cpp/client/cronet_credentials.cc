@@ -57,8 +57,7 @@ class CronetChannelCredentialsImpl final : public ChannelCredentials {
 };
 }  // namespace grpc
 namespace grpc_impl {
-std::shared_ptr<grpc_impl::ChannelCredentials> CronetChannelCredentials(
-    void* engine) {
+std::shared_ptr<ChannelCredentials> CronetChannelCredentials(void* engine) {
   return std::shared_ptr<ChannelCredentials>(
       new grpc::CronetChannelCredentialsImpl(engine));
 }

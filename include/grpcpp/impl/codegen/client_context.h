@@ -60,7 +60,7 @@ struct grpc_call;
 namespace grpc_impl {
 
 class CallCredentials;
-}
+}  // namespace grpc_impl
 namespace grpc {
 
 class Channel;

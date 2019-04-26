@@ -41,7 +41,7 @@ class CallCredentials;
 class SecureCallCredentials;
 class SecureChannelCredentials;
 
-std::shared_ptr<::grpc::Channel> CreateCustomChannel(
+std::shared_ptr<::grpc::Channel> CreateCustomChannelImpl(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds,
     const grpc::ChannelArguments& args);
@@ -171,7 +171,6 @@ std::shared_ptr<ChannelCredentials> SslCredentials(
 /// services.
 std::shared_ptr<CallCredentials> GoogleComputeEngineCredentials();
 
-/// Constant for maximum auth token lifetime.
 constexpr long kMaxAuthTokenLifetimeSecs = 3600;
 
 /// Builds Service Account JWT Access credentials.
@@ -181,7 +180,7 @@ constexpr long kMaxAuthTokenLifetimeSecs = 3600;
 /// \a kMaxAuthTokenLifetimeSecs or will be cropped to this value.
 std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
     const grpc::string& json_key,
-    long token_lifetime_seconds = kMaxAuthTokenLifetimeSecs);
+    long token_lifetime_seconds = grpc_impl::kMaxAuthTokenLifetimeSecs);
 
 /// Builds refresh token credentials.
 /// json_refresh_token is the JSON string containing the refresh token along
