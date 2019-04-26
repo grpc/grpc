@@ -526,6 +526,11 @@ void InjectBrokenNameServerList(ares_channel channel) {
   gpr_free(unused_host);
 }
 
+void StartResolvingLocked(void* arg, grpc_error* unused) {
+  grpc_core::Resolver* r = static_cast<grpc_core::Resolver*>(arg);
+  r->StartLocked();
+}
+
 void RunResolvesRelevantRecordsTest(
     grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler> (
         *CreateResultHandler)(ArgsStruct* args)) {
@@ -602,6 +607,9 @@ void RunResolvesRelevantRecordsTest(
                                                   CreateResultHandler(&args));
   grpc_channel_args_destroy(resolver_args);
   gpr_free(whole_uri);
+  GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(StartResolvingLocked, resolver.get(),
+                                         grpc_combiner_scheduler(args.lock)),
+                     GRPC_ERROR_NONE);
   resolver->StartLocked();
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone(&args);
