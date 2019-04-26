@@ -77,8 +77,8 @@ class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
   void PostSynchronousRequest(ServerContext* context) override {}
 };
 
-DefaultGlobalCallbacks g_default_callbacks;
-Server::GlobalCallbacks* g_callbacks = &g_default_callbacks;
+DefaultGlobalCallbacks* g_default_callbacks = new DefaultGlobalCallbacks();
+Server::GlobalCallbacks* g_callbacks = g_default_callbacks;
 
 class ShutdownTag : public internal::CompletionQueueTag {
  public:
@@ -1007,9 +1007,9 @@ Server::~Server() {
 }
 
 void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
-  GPR_ASSERT(grpc::g_callbacks == &g_default_callbacks);
+  GPR_ASSERT(grpc::g_callbacks == g_default_callbacks);
   GPR_ASSERT(callbacks);
-  GPR_ASSERT(callbacks != &g_default_callbacks);
+  GPR_ASSERT(callbacks != g_default_callbacks);
   grpc::g_callbacks = callbacks;
 }
 
