@@ -536,9 +536,9 @@ TEST_P(ClientCallbackEnd2endTest, RequestEchoServerCancel) {
 struct ClientCancelInfo {
   bool cancel{false};
   int ops_before_cancel;
+
   ClientCancelInfo() : cancel{false} {}
-  // Allow the single-op version to be non-explicit for ease of use
-  ClientCancelInfo(int ops) : cancel{true}, ops_before_cancel{ops} {}
+  explicit ClientCancelInfo(int ops) : cancel{true}, ops_before_cancel{ops} {}
 };
 
 class WriteClient : public grpc::experimental::ClientWriteReactor<EchoRequest> {
@@ -651,7 +651,7 @@ TEST_P(ClientCallbackEnd2endTest, RequestStream) {
 TEST_P(ClientCallbackEnd2endTest, ClientCancelsRequestStream) {
   MAYBE_SKIP_TEST;
   ResetStub();
-  WriteClient test{stub_.get(), DO_NOT_CANCEL, 3, {2}};
+  WriteClient test{stub_.get(), DO_NOT_CANCEL, 3, ClientCancelInfo{2}};
   test.Await();
   // Make sure that the server interceptors got the cancel
   if (GetParam().use_interceptors) {
@@ -869,7 +869,7 @@ TEST_P(ClientCallbackEnd2endTest, ResponseStream) {
 TEST_P(ClientCallbackEnd2endTest, ClientCancelsResponseStream) {
   MAYBE_SKIP_TEST;
   ResetStub();
-  ReadClient test{stub_.get(), DO_NOT_CANCEL, 2};
+  ReadClient test{stub_.get(), DO_NOT_CANCEL, ClientCancelInfo{2}};
   test.Await();
   // Because cancel in this case races with server finish, we can't be sure that
   // server interceptors even see cancellation
@@ -1052,7 +1052,7 @@ TEST_P(ClientCallbackEnd2endTest, ClientCancelsBidiStream) {
   MAYBE_SKIP_TEST;
   ResetStub();
   BidiClient test{stub_.get(), DO_NOT_CANCEL,
-                  kServerDefaultResponseStreamsToSend, 2};
+                  kServerDefaultResponseStreamsToSend, ClientCancelInfo{2}};
   test.Await();
   // Make sure that the server interceptors were notified of a cancel
   if (GetParam().use_interceptors) {
