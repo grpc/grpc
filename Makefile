@@ -3320,7 +3320,6 @@ endif
 
 LIBGPR_SRC = \
     src/core/lib/gpr/alloc.cc \
-    src/core/lib/gpr/arena.cc \
     src/core/lib/gpr/atm.cc \
     src/core/lib/gpr/cpu_iphone.cc \
     src/core/lib/gpr/cpu_linux.cc \
@@ -3353,6 +3352,7 @@ LIBGPR_SRC = \
     src/core/lib/gpr/tmpfile_posix.cc \
     src/core/lib/gpr/tmpfile_windows.cc \
     src/core/lib/gpr/wrap_memcpy.cc \
+    src/core/lib/gprpp/arena.cc \
     src/core/lib/gprpp/fork.cc \
     src/core/lib/gprpp/thd_posix.cc \
     src/core/lib/gprpp/thd_windows.cc \
@@ -3457,12 +3457,15 @@ LIBGRPC_SRC = \
     src/core/lib/http/parser.cc \
     src/core/lib/iomgr/buffer_list.cc \
     src/core/lib/iomgr/call_combiner.cc \
+    src/core/lib/iomgr/cfstream_handle.cc \
     src/core/lib/iomgr/combiner.cc \
     src/core/lib/iomgr/endpoint.cc \
+    src/core/lib/iomgr/endpoint_cfstream.cc \
     src/core/lib/iomgr/endpoint_pair_posix.cc \
     src/core/lib/iomgr/endpoint_pair_uv.cc \
     src/core/lib/iomgr/endpoint_pair_windows.cc \
     src/core/lib/iomgr/error.cc \
+    src/core/lib/iomgr/error_cfstream.cc \
     src/core/lib/iomgr/ev_epoll1_linux.cc \
     src/core/lib/iomgr/ev_epollex_linux.cc \
     src/core/lib/iomgr/ev_poll_posix.cc \
@@ -3483,6 +3486,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/iomgr_custom.cc \
     src/core/lib/iomgr/iomgr_internal.cc \
     src/core/lib/iomgr/iomgr_posix.cc \
+    src/core/lib/iomgr/iomgr_posix_cfstream.cc \
     src/core/lib/iomgr/iomgr_uv.cc \
     src/core/lib/iomgr/iomgr_windows.cc \
     src/core/lib/iomgr/is_epollexclusive_available.cc \
@@ -3511,6 +3515,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
     src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_cfstream.cc \
     src/core/lib/iomgr/tcp_client_custom.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
     src/core/lib/iomgr/tcp_client_windows.cc \
@@ -3878,12 +3883,15 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/http/parser.cc \
     src/core/lib/iomgr/buffer_list.cc \
     src/core/lib/iomgr/call_combiner.cc \
+    src/core/lib/iomgr/cfstream_handle.cc \
     src/core/lib/iomgr/combiner.cc \
     src/core/lib/iomgr/endpoint.cc \
+    src/core/lib/iomgr/endpoint_cfstream.cc \
     src/core/lib/iomgr/endpoint_pair_posix.cc \
     src/core/lib/iomgr/endpoint_pair_uv.cc \
     src/core/lib/iomgr/endpoint_pair_windows.cc \
     src/core/lib/iomgr/error.cc \
+    src/core/lib/iomgr/error_cfstream.cc \
     src/core/lib/iomgr/ev_epoll1_linux.cc \
     src/core/lib/iomgr/ev_epollex_linux.cc \
     src/core/lib/iomgr/ev_poll_posix.cc \
@@ -3904,6 +3912,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/iomgr_custom.cc \
     src/core/lib/iomgr/iomgr_internal.cc \
     src/core/lib/iomgr/iomgr_posix.cc \
+    src/core/lib/iomgr/iomgr_posix_cfstream.cc \
     src/core/lib/iomgr/iomgr_uv.cc \
     src/core/lib/iomgr/iomgr_windows.cc \
     src/core/lib/iomgr/is_epollexclusive_available.cc \
@@ -3932,6 +3941,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
     src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_cfstream.cc \
     src/core/lib/iomgr/tcp_client_custom.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
     src/core/lib/iomgr/tcp_client_windows.cc \
@@ -4283,12 +4293,15 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/http/parser.cc \
     src/core/lib/iomgr/buffer_list.cc \
     src/core/lib/iomgr/call_combiner.cc \
+    src/core/lib/iomgr/cfstream_handle.cc \
     src/core/lib/iomgr/combiner.cc \
     src/core/lib/iomgr/endpoint.cc \
+    src/core/lib/iomgr/endpoint_cfstream.cc \
     src/core/lib/iomgr/endpoint_pair_posix.cc \
     src/core/lib/iomgr/endpoint_pair_uv.cc \
     src/core/lib/iomgr/endpoint_pair_windows.cc \
     src/core/lib/iomgr/error.cc \
+    src/core/lib/iomgr/error_cfstream.cc \
     src/core/lib/iomgr/ev_epoll1_linux.cc \
     src/core/lib/iomgr/ev_epollex_linux.cc \
     src/core/lib/iomgr/ev_poll_posix.cc \
@@ -4309,6 +4322,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/iomgr_custom.cc \
     src/core/lib/iomgr/iomgr_internal.cc \
     src/core/lib/iomgr/iomgr_posix.cc \
+    src/core/lib/iomgr/iomgr_posix_cfstream.cc \
     src/core/lib/iomgr/iomgr_uv.cc \
     src/core/lib/iomgr/iomgr_windows.cc \
     src/core/lib/iomgr/is_epollexclusive_available.cc \
@@ -4337,6 +4351,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
     src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_cfstream.cc \
     src/core/lib/iomgr/tcp_client_custom.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
     src/core/lib/iomgr/tcp_client_windows.cc \
@@ -4595,12 +4610,15 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/http/parser.cc \
     src/core/lib/iomgr/buffer_list.cc \
     src/core/lib/iomgr/call_combiner.cc \
+    src/core/lib/iomgr/cfstream_handle.cc \
     src/core/lib/iomgr/combiner.cc \
     src/core/lib/iomgr/endpoint.cc \
+    src/core/lib/iomgr/endpoint_cfstream.cc \
     src/core/lib/iomgr/endpoint_pair_posix.cc \
     src/core/lib/iomgr/endpoint_pair_uv.cc \
     src/core/lib/iomgr/endpoint_pair_windows.cc \
     src/core/lib/iomgr/error.cc \
+    src/core/lib/iomgr/error_cfstream.cc \
     src/core/lib/iomgr/ev_epoll1_linux.cc \
     src/core/lib/iomgr/ev_epollex_linux.cc \
     src/core/lib/iomgr/ev_poll_posix.cc \
@@ -4621,6 +4639,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/iomgr_custom.cc \
     src/core/lib/iomgr/iomgr_internal.cc \
     src/core/lib/iomgr/iomgr_posix.cc \
+    src/core/lib/iomgr/iomgr_posix_cfstream.cc \
     src/core/lib/iomgr/iomgr_uv.cc \
     src/core/lib/iomgr/iomgr_windows.cc \
     src/core/lib/iomgr/is_epollexclusive_available.cc \
@@ -4649,6 +4668,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
     src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_cfstream.cc \
     src/core/lib/iomgr/tcp_client_custom.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
     src/core/lib/iomgr/tcp_client_windows.cc \
@@ -4870,12 +4890,15 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/http/parser.cc \
     src/core/lib/iomgr/buffer_list.cc \
     src/core/lib/iomgr/call_combiner.cc \
+    src/core/lib/iomgr/cfstream_handle.cc \
     src/core/lib/iomgr/combiner.cc \
     src/core/lib/iomgr/endpoint.cc \
+    src/core/lib/iomgr/endpoint_cfstream.cc \
     src/core/lib/iomgr/endpoint_pair_posix.cc \
     src/core/lib/iomgr/endpoint_pair_uv.cc \
     src/core/lib/iomgr/endpoint_pair_windows.cc \
     src/core/lib/iomgr/error.cc \
+    src/core/lib/iomgr/error_cfstream.cc \
     src/core/lib/iomgr/ev_epoll1_linux.cc \
     src/core/lib/iomgr/ev_epollex_linux.cc \
     src/core/lib/iomgr/ev_poll_posix.cc \
@@ -4896,6 +4919,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/iomgr_custom.cc \
     src/core/lib/iomgr/iomgr_internal.cc \
     src/core/lib/iomgr/iomgr_posix.cc \
+    src/core/lib/iomgr/iomgr_posix_cfstream.cc \
     src/core/lib/iomgr/iomgr_uv.cc \
     src/core/lib/iomgr/iomgr_windows.cc \
     src/core/lib/iomgr/is_epollexclusive_available.cc \
@@ -4924,6 +4948,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
     src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_cfstream.cc \
     src/core/lib/iomgr/tcp_client_custom.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
     src/core/lib/iomgr/tcp_client_windows.cc \
@@ -5748,12 +5773,15 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/http/parser.cc \
     src/core/lib/iomgr/buffer_list.cc \
     src/core/lib/iomgr/call_combiner.cc \
+    src/core/lib/iomgr/cfstream_handle.cc \
     src/core/lib/iomgr/combiner.cc \
     src/core/lib/iomgr/endpoint.cc \
+    src/core/lib/iomgr/endpoint_cfstream.cc \
     src/core/lib/iomgr/endpoint_pair_posix.cc \
     src/core/lib/iomgr/endpoint_pair_uv.cc \
     src/core/lib/iomgr/endpoint_pair_windows.cc \
     src/core/lib/iomgr/error.cc \
+    src/core/lib/iomgr/error_cfstream.cc \
     src/core/lib/iomgr/ev_epoll1_linux.cc \
     src/core/lib/iomgr/ev_epollex_linux.cc \
     src/core/lib/iomgr/ev_poll_posix.cc \
@@ -5774,6 +5802,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/iomgr_custom.cc \
     src/core/lib/iomgr/iomgr_internal.cc \
     src/core/lib/iomgr/iomgr_posix.cc \
+    src/core/lib/iomgr/iomgr_posix_cfstream.cc \
     src/core/lib/iomgr/iomgr_uv.cc \
     src/core/lib/iomgr/iomgr_windows.cc \
     src/core/lib/iomgr/is_epollexclusive_available.cc \
@@ -5802,6 +5831,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
     src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_cfstream.cc \
     src/core/lib/iomgr/tcp_client_custom.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
     src/core/lib/iomgr/tcp_client_windows.cc \
@@ -15637,16 +15667,16 @@ $(BINDIR)/$(CONFIG)/client_crash_test_server: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/client_crash_test_server: $(PROTOBUF_DEP) $(CLIENT_CRASH_TEST_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/client_crash_test_server: $(PROTOBUF_DEP) $(CLIENT_CRASH_TEST_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(CLIENT_CRASH_TEST_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/client_crash_test_server
+	$(Q) $(LDXX) $(LDFLAGS) $(CLIENT_CRASH_TEST_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/client_crash_test_server
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/cpp/end2end/client_crash_test_server.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/client_crash_test_server.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_client_crash_test_server: $(CLIENT_CRASH_TEST_SERVER_OBJS:.o=.dep)
 
@@ -16384,18 +16414,18 @@ $(BINDIR)/$(CONFIG)/golden_file_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/golden_file_test: $(PROTOBUF_DEP) $(GOLDEN_FILE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/golden_file_test: $(PROTOBUF_DEP) $(GOLDEN_FILE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(GOLDEN_FILE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/golden_file_test
+	$(Q) $(LDXX) $(LDFLAGS) $(GOLDEN_FILE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/golden_file_test
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/compiler_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/compiler_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-$(OBJDIR)/$(CONFIG)/test/cpp/codegen/golden_file_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/cpp/codegen/golden_file_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_golden_file_test: $(GOLDEN_FILE_TEST_OBJS:.o=.dep)
 
@@ -18600,16 +18630,16 @@ $(BINDIR)/$(CONFIG)/server_crash_test_client: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/server_crash_test_client: $(PROTOBUF_DEP) $(SERVER_CRASH_TEST_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/server_crash_test_client: $(PROTOBUF_DEP) $(SERVER_CRASH_TEST_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(SERVER_CRASH_TEST_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/server_crash_test_client
+	$(Q) $(LDXX) $(LDFLAGS) $(SERVER_CRASH_TEST_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/server_crash_test_client
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/cpp/end2end/server_crash_test_client.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/server_crash_test_client.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_server_crash_test_client: $(SERVER_CRASH_TEST_CLIENT_OBJS:.o=.dep)
 

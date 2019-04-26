@@ -34,7 +34,7 @@ typedef struct grpc_transport_vtable {
   /* implementation of grpc_transport_init_stream */
   int (*init_stream)(grpc_transport* self, grpc_stream* stream,
                      grpc_stream_refcount* refcount, const void* server_data,
-                     gpr_arena* arena);
+                     grpc_core::Arena* arena);
 
   /* implementation of grpc_transport_set_pollset */
   void (*set_pollset)(grpc_transport* self, grpc_stream* stream,

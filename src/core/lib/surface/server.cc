@@ -347,8 +347,8 @@ static void channel_broadcaster_shutdown(channel_broadcaster* cb,
  */
 
 static void request_matcher_init(request_matcher* rm, grpc_server* server) {
-  memset(rm, 0, sizeof(*rm));
   rm->server = server;
+  rm->pending_head = rm->pending_tail = nullptr;
   rm->requests_per_cq = static_cast<gpr_locked_mpscq*>(
       gpr_malloc(sizeof(*rm->requests_per_cq) * server->cq_count));
   for (size_t i = 0; i < server->cq_count; i++) {
@@ -601,8 +601,9 @@ static void finish_start_new_rpc(
       break;
     case GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER: {
       grpc_op op;
-      memset(&op, 0, sizeof(op));
       op.op = GRPC_OP_RECV_MESSAGE;
+      op.flags = 0;
+      op.reserved = nullptr;
       op.data.recv_message.recv_message = &calld->payload;
       GRPC_CLOSURE_INIT(&calld->publish, publish_new_rpc, elem,
                         grpc_schedule_on_exec_ctx);
