@@ -60,6 +60,10 @@ FakeNonResponsiveDNSServer::FakeNonResponsiveDNSServer(int port) {
     gpr_log(GPR_DEBUG, "Failed to bind TCP ipv6 socket to [::1]:%d", port);
     abort();
   }
+  if (listen(tcp_socket_, 100)) {
+    gpr_log(GPR_DEBUG, "Failed to listen on TCP ipv6 socket to [::1]:%d", port);
+    abort();
+  }
 }
 
 FakeNonResponsiveDNSServer::~FakeNonResponsiveDNSServer() {
