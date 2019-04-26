@@ -1399,6 +1399,21 @@
       ],
     },
     {
+      'target_name': 'callback_test_service',
+      'type': 'static_library',
+      'dependencies': [
+        'benchmark',
+        'grpc++_test_util',
+        'grpc_test_util',
+        'grpc++',
+        'grpc',
+        'gpr',
+      ],
+      'sources': [
+        'test/cpp/microbenchmarks/callback_test_service.cc',
+      ],
+    },
+    {
       'target_name': 'grpc++',
       'type': 'static_library',
       'dependencies': [

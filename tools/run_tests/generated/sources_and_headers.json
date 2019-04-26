@@ -2779,6 +2779,56 @@
   {
     "deps": [
       "benchmark", 
+      "callback_test_service", 
+      "gpr", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_benchmark", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [
+      "test/cpp/microbenchmarks/callback_streaming_ping_pong.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_callback_streaming_ping_pong", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_callback_streaming_ping_pong.cc", 
+      "test/cpp/microbenchmarks/callback_streaming_ping_pong.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "callback_test_service", 
+      "gpr", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_benchmark", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [
+      "test/cpp/microbenchmarks/callback_unary_ping_pong.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_callback_unary_ping_pong", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_callback_unary_ping_pong.cc", 
+      "test/cpp/microbenchmarks/callback_unary_ping_pong.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
       "gpr", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
@@ -6569,6 +6619,28 @@
     "src": [
       "test/core/util/test_tcp_server.cc", 
       "test/core/util/test_tcp_server.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/cpp/microbenchmarks/callback_test_service.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "callback_test_service", 
+    "src": [
+      "test/cpp/microbenchmarks/callback_test_service.cc", 
+      "test/cpp/microbenchmarks/callback_test_service.h"
     ], 
     "third_party": false, 
     "type": "lib"

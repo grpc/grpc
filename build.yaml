@@ -1665,6 +1665,20 @@ libs:
   - grpc_test_util
   - grpc
   - gpr
+- name: callback_test_service
+  build: test
+  language: c++
+  headers:
+  - test/cpp/microbenchmarks/callback_test_service.h
+  src:
+  - test/cpp/microbenchmarks/callback_test_service.cc
+  deps:
+  - benchmark
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
 - name: grpc++
   build: all
   language: c++
@@ -4024,6 +4038,58 @@ targets:
   - linux
   - posix
   uses_polling: false
+- name: bm_callback_streaming_ping_pong
+  build: test
+  language: c++
+  headers:
+  - test/cpp/microbenchmarks/callback_streaming_ping_pong.h
+  src:
+  - test/cpp/microbenchmarks/bm_callback_streaming_ping_pong.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
+  - gpr
+  - grpc++_test_config
+  - callback_test_service
+  benchmark: true
+  defaults: benchmark
+  excluded_poll_engines:
+  - poll
+  platforms:
+  - mac
+  - linux
+  - posix
+  timeout_seconds: 1200
+- name: bm_callback_unary_ping_pong
+  build: test
+  language: c++
+  headers:
+  - test/cpp/microbenchmarks/callback_unary_ping_pong.h
+  src:
+  - test/cpp/microbenchmarks/bm_callback_unary_ping_pong.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
+  - gpr
+  - grpc++_test_config
+  - callback_test_service
+  benchmark: true
+  defaults: benchmark
+  excluded_poll_engines:
+  - poll
+  platforms:
+  - mac
+  - linux
+  - posix
+  timeout_seconds: 1200
 - name: bm_channel
   build: test
   language: c++
