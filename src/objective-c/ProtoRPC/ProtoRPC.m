@@ -41,7 +41,8 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
     @"Expected class" : expectedClass,
     @"Received value" : proto,
   };
-  return [NSError errorWithDomain:kGRPCErrorDomain code:GRPCErrorCodeInternal userInfo:info];
+  // TODO(jcanizales): Use kGRPCErrorDomain and GRPCErrorCodeInternal when they're public.
+  return [NSError errorWithDomain:@"io.grpc" code:13 userInfo:info];
 }
 
 @implementation GRPCUnaryProtoCall {
