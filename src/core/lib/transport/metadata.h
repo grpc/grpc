@@ -145,7 +145,7 @@ inline bool grpc_mdelem_static_value_eq(grpc_mdelem a, grpc_mdelem b_static) {
    is used as a type tag and is checked during user_data fetch. */
 void* grpc_mdelem_get_user_data(grpc_mdelem md, void (*if_destroy_func)(void*));
 void* grpc_mdelem_set_user_data(grpc_mdelem md, void (*destroy_func)(void*),
-                                void* user_data);
+                                void* data);
 
 // Defined in metadata.cc.
 struct mdtab_shard;
@@ -160,12 +160,12 @@ void grpc_mdelem_trace_unref(void* md, const grpc_slice& key,
 #endif
 namespace grpc_core {
 
-typedef void (*destroy_user_data_func)(void* user_data);
+typedef void (*destroy_user_data_func)(void* data);
 
 struct UserData {
   Mutex mu_user_data;
-  gpr_atm destroy_user_data = 0;
-  gpr_atm user_data = 0;
+  grpc_core::Atomic<destroy_user_data_func> destroy_user_data;
+  grpc_core::Atomic<void*> data;
 };
 
 class InternedMetadata {
@@ -214,7 +214,7 @@ class InternedMetadata {
   InternedMetadata* bucket_next() { return link_.next; }
   void set_bucket_next(InternedMetadata* md) { link_.next = md; }
 
-  static intptr_t CleanupLinkedMetadata(BucketLink* head);
+  static size_t CleanupLinkedMetadata(BucketLink* head);
 
  private:
   bool AllRefsDropped() { return refcnt_.Load(MemoryOrder::ACQUIRE) == 0; }
