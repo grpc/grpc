@@ -2538,30 +2538,6 @@ targets:
   - mac
   - linux
   uses_polling: false
-- name: global_config_env_test
-  build: test
-  language: c
-  src:
-  - test/core/gprpp/global_config_env_test.cc
-  deps:
-  - gpr
-  - grpc_test_util_unsecure
-  platforms:
-  - mac
-  - linux
-  uses_polling: false
-- name: global_config_test
-  build: test
-  language: c
-  src:
-  - test/core/gprpp/global_config_test.cc
-  deps:
-  - gpr
-  - grpc_test_util_unsecure
-  platforms:
-  - mac
-  - linux
-  uses_polling: false
 - name: goaway_server_test
   cpu_cost: 0.1
   build: test
@@ -4753,6 +4729,24 @@ targets:
   - grpc++
   - grpc
   - gpr
+- name: global_config_env_test
+  build: test
+  language: c++
+  src:
+  - test/core/gprpp/global_config_env_test.cc
+  deps:
+  - gpr
+  - grpc_test_util_unsecure
+  uses_polling: false
+- name: global_config_test
+  build: test
+  language: c++
+  src:
+  - test/core/gprpp/global_config_test.cc
+  deps:
+  - gpr
+  - grpc_test_util_unsecure
+  uses_polling: false
 - name: golden_file_test
   gtest: true
   build: test

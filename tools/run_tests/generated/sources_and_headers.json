@@ -627,36 +627,6 @@
   {
     "deps": [
       "gpr", 
-      "grpc_test_util_unsecure"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "global_config_env_test", 
-    "src": [
-      "test/core/gprpp/global_config_env_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc_test_util_unsecure"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "global_config_test", 
-    "src": [
-      "test/core/gprpp/global_config_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -3687,6 +3657,36 @@
     "name": "generic_end2end_test", 
     "src": [
       "test/cpp/end2end/generic_end2end_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_test_util_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "global_config_env_test", 
+    "src": [
+      "test/core/gprpp/global_config_env_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_test_util_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "global_config_test", 
+    "src": [
+      "test/core/gprpp/global_config_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
