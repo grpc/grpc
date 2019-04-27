@@ -19,6 +19,8 @@ _PROTO_HEADER_FMT = "{}.pb.h"
 _PROTO_SRC_FMT = "{}.pb.cc"
 
 def _strip_package_from_path(label_package, path):
+    if len(label_package) == 0:
+        return path
     if not path.startswith(label_package + "/"):
         fail("'{}' does not lie within '{}'.".format(path, label_package))
     return path[len(label_package + "/"):]
