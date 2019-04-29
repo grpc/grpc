@@ -82,6 +82,5 @@
 
 #include "src/core/lib/gprpp/global_config_custom.h"
 #include "src/core/lib/gprpp/global_config_env.h"
-#include "src/core/lib/gprpp/global_config_generic.h"
 
 #endif /* GRPC_CORE_LIB_GPRPP_GLOBAL_CONFIG_H */
