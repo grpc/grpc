@@ -29,6 +29,12 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/transport/static_metadata.h"
 
+bool grpc_slice_differs_static(const grpc_slice& a, const grpc_slice& b_static);
+bool grpc_slice_eq_static(const grpc_slice& a, const grpc_slice& b_static);
+bool grpc_slice_differs_interned(const grpc_slice& a,
+                                 const grpc_slice& b_static);
+bool grpc_slice_eq_interned(const grpc_slice& a, const grpc_slice& b_static);
+
 // Interned slices have specific fast-path operations for hashing. To inline
 // these operations, we need to forward declare them here.
 extern uint32_t grpc_static_metadata_hash_values[GRPC_STATIC_MDSTR_COUNT];

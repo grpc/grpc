@@ -410,6 +410,59 @@ int grpc_slice_eq(grpc_slice a, grpc_slice b) {
   return grpc_slice_default_eq_impl(a, b);
 }
 
+bool grpc_slice_differs_interned(const grpc_slice& a,
+                                 const grpc_slice& b_interned) {
+  if (a.refcount == b_interned.refcount) {
+    return false;
+  }
+  size_t a_len;
+  const uint8_t* a_ptr;
+  if (a.refcount) {
+    a_len = a.data.refcounted.length;
+    a_ptr = a.data.refcounted.bytes;
+  } else {
+    a_len = a.data.inlined.length;
+    a_ptr = &a.data.inlined.bytes[0];
+  }
+  if (a_len != b_interned.data.refcounted.length || a_ptr == nullptr) {
+    return true;
+  }
+  return memcmp(a_ptr, b_interned.data.refcounted.bytes, a_len);
+}
+
+bool grpc_slice_eq_interned(const grpc_slice& a, const grpc_slice& b_static) {
+  return !grpc_slice_differs_interned(a, b_static);
+}
+
+bool grpc_slice_differs_static(const grpc_slice& a,
+                               const grpc_slice& b_static) {
+  // This compiles down to a refcount pointer equality check, so it's fine even
+  // if a is not static.
+  if (GRPC_STATIC_METADATA_INDEX(a) == GRPC_STATIC_METADATA_INDEX(b_static)) {
+    return false;
+  }
+  size_t a_len;
+  const uint8_t* a_ptr;
+  if (a.refcount) {
+    a_len = a.data.refcounted.length;
+    a_ptr = a.data.refcounted.bytes;
+  } else {
+    a_len = a.data.inlined.length;
+    a_ptr = &a.data.inlined.bytes[0];
+  }
+  if (a_len != b_static.data.refcounted.length || a_ptr == nullptr) {
+    return true;
+  }
+  // If the lengths are equal, there is no need to check for the 0-length case
+  // since b_static for sure is non-zero. At this point, we know that A is not
+  // static and that the lengths are the same. The only thing left is memcmp.
+  return memcmp(a_ptr, b_static.data.refcounted.bytes, a_len);
+}
+
+bool grpc_slice_eq_static(const grpc_slice& a, const grpc_slice& b_static) {
+  return !grpc_slice_differs_static(a, b_static);
+}
+
 int grpc_slice_cmp(grpc_slice a, grpc_slice b) {
   int d = static_cast<int>(GRPC_SLICE_LENGTH(a) - GRPC_SLICE_LENGTH(b));
   if (d != 0) return d;

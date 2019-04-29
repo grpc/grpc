@@ -136,9 +136,10 @@ bool grpc_mdelem_eq(grpc_mdelem a, grpc_mdelem b);
  * static, and that the keys match. This most commonly happens when processing
  * metadata batch callouts in initial/trailing filters. In this case, fastpath
  * grpc_mdelem_eq and remove unnecessary checks. */
+bool grpc_slice_eq_static(const grpc_slice& a, const grpc_slice& b_static);
 inline bool grpc_mdelem_static_value_eq(grpc_mdelem a, grpc_mdelem b_static) {
   if (a.payload == b_static.payload) return true;
-  return grpc_slice_eq(GRPC_MDVALUE(a), GRPC_MDVALUE(b_static));
+  return grpc_slice_eq_static(GRPC_MDVALUE(a), GRPC_MDVALUE(b_static));
 }
 
 /* Mutator and accessor for grpc_mdelem user data. The destructor function

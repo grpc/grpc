@@ -143,7 +143,7 @@ grpc_slice grpc_slice_maybe_static_intern(grpc_slice slice,
     static_metadata_hash_ent ent =
         static_metadata_hash[(hash + i) % GPR_ARRAY_SIZE(static_metadata_hash)];
     if (ent.hash == hash && ent.idx < GRPC_STATIC_MDSTR_COUNT &&
-        grpc_slice_eq(grpc_static_slice_table[ent.idx], slice)) {
+        grpc_slice_eq_static(slice, grpc_static_slice_table[ent.idx])) {
       *returned_slice_is_different = true;
       return grpc_static_slice_table[ent.idx];
     }
@@ -170,7 +170,7 @@ grpc_slice grpc_slice_intern(grpc_slice slice) {
     static_metadata_hash_ent ent =
         static_metadata_hash[(hash + i) % GPR_ARRAY_SIZE(static_metadata_hash)];
     if (ent.hash == hash && ent.idx < GRPC_STATIC_MDSTR_COUNT &&
-        grpc_slice_eq(grpc_static_slice_table[ent.idx], slice)) {
+        grpc_slice_eq_static(slice, grpc_static_slice_table[ent.idx])) {
       return grpc_static_slice_table[ent.idx];
     }
   }
@@ -183,7 +183,7 @@ grpc_slice grpc_slice_intern(grpc_slice slice) {
   /* search for an existing string */
   size_t idx = TABLE_IDX(hash, shard->capacity);
   for (s = shard->strs[idx]; s; s = s->bucket_next) {
-    if (s->hash == hash && grpc_slice_eq(slice, materialize(s))) {
+    if (s->hash == hash && grpc_slice_eq_interned(slice, materialize(s))) {
       if (s->refcnt.RefIfNonZero()) {
         gpr_mu_unlock(&shard->mu);
         return materialize(s);

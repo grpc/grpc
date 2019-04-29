@@ -422,13 +422,13 @@ static void on_initial_header(void* tp, grpc_mdelem md) {
       s->seen_error = true;
     }
   } else {
-    if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) &&
+    if (grpc_slice_eq_static(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) &&
         !grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {
       /* TODO(ctiller): check for a status like " 0" */
       s->seen_error = true;
     }
 
-    if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT)) {
+    if (grpc_slice_eq_static(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT)) {
       grpc_millis* cached_timeout = static_cast<grpc_millis*>(
           grpc_mdelem_get_user_data(md, free_timeout));
       grpc_millis timeout;
@@ -517,7 +517,7 @@ static void on_trailing_header(void* tp, grpc_mdelem md) {
         md.payload == GRPC_MDELEM_GRPC_STATUS_2.payload) {
       s->seen_error = true;
     }
-  } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) &&
+  } else if (grpc_slice_eq_static(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) &&
              !grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {
     /* TODO(ctiller): check for a status like " 0" */
     s->seen_error = true;
