@@ -34,12 +34,14 @@ static void* zalloc_with_gpr_malloc(size_t sz) {
   return p;
 }
 
+#ifndef NDEBUG
 static constexpr bool is_power_of_two(size_t value) {
   // 2^N =     100000...000
   // 2^N - 1 = 011111...111
   // (2^N) && ((2^N)-1)) = 0
   return (value & (value - 1)) == 0;
 }
+#endif
 
 static void* aligned_alloc_with_gpr_malloc(size_t size, size_t alignment) {
   GPR_DEBUG_ASSERT(is_power_of_two(alignment));
