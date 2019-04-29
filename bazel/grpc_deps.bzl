@@ -145,9 +145,9 @@ def grpc_deps():
         http_archive(
             name = "com_github_google_googletest",
             build_file = "@com_github_grpc_grpc//third_party:gtest.BUILD",
-            sha256 = "175a22300b3450e27e5f2e6f95cc9abca74617cbc21a1e0ed19bdfbd22ea0305",
-            strip_prefix = "googletest-ec44c6c1675c25b9827aacd08c02433cccde7780",
-            url = "https://github.com/google/googletest/archive/ec44c6c1675c25b9827aacd08c02433cccde7780.tar.gz",
+            sha256 = "d0d447b4feeedca837a0d46a289d4223089b32ac2f84545fa4982755cc8919be",
+            strip_prefix = "googletest-2fe3bd994b3189899d93f1d5a881e725e046fdc2",
+            url = "https://github.com/google/googletest/archive/2fe3bd994b3189899d93f1d5a881e725e046fdc2.tar.gz",
         )
 
     if "com_github_gflags_gflags" not in native.existing_rules():
