@@ -43,13 +43,14 @@ namespace testing {
  * Maintains context info per RPC
  */
 struct CallbackClientRpcContext {
-  CallbackClientRpcContext(BenchmarkService::Stub* stub) : stub_(stub) {}
+  CallbackClientRpcContext(BenchmarkService::Stub* stub)
+      : alarm_(nullptr), stub_(stub) {}
 
   ~CallbackClientRpcContext() {}
 
   SimpleResponse response_;
   ClientContext context_;
-  Alarm alarm_;
+  std::unique_ptr<Alarm> alarm_;
   BenchmarkService::Stub* stub_;
 };
 
@@ -169,7 +170,10 @@ class CallbackUnaryClient final : public CallbackClient {
       gpr_timespec next_issue_time = NextRPCIssueTime();
       // Start an alarm callback to run the internal callback after
       // next_issue_time
-      ctx_[vector_idx]->alarm_.experimental().Set(
+      if (ctx_[vector_idx]->alarm_ == nullptr) {
+        ctx_[vector_idx]->alarm_.reset(new Alarm);
+      }
+      ctx_[vector_idx]->alarm_->experimental().Set(
           next_issue_time, [this, t, vector_idx](bool ok) {
             IssueUnaryCallbackRpc(t, vector_idx);
           });
@@ -313,7 +317,10 @@ class CallbackStreamingPingPongReactor final
       gpr_timespec next_issue_time = client_->NextRPCIssueTime();
       // Start an alarm callback to run the internal callback after
       // next_issue_time
-      ctx_->alarm_.experimental().Set(next_issue_time,
+      if (ctx_->alarm_ == nullptr) {
+        ctx_->alarm_.reset(new Alarm);
+      }
+      ctx_->alarm_->experimental().Set(next_issue_time,
                                       [this](bool ok) { StartNewRpc(); });
     } else {
       StartNewRpc();
