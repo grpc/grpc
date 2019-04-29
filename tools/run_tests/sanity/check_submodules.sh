@@ -35,7 +35,7 @@ cat << EOF | awk '{ print $1 }' | sort > "$want_submodules"
  911001cdca003337bdb93fab32740cde61bafee3 third_party/data-plane-api (heads/master)
  28f50e0fed19872e0fd50dd23ce2ee8cd759338e third_party/gflags (v2.2.0-5-g30dbc81)
  80ed4d0bbf65d57cc267dfc63bd2584557f11f9b third_party/googleapis (common-protos-1_3_1-915-g80ed4d0bb)
- ec44c6c1675c25b9827aacd08c02433cccde7780 third_party/googletest (release-1.8.0)
+ 2fe3bd994b3189899d93f1d5a881e725e046fdc2 third_party/googletest (release-1.8.0-1329-g2fe3bd99)
  6599cac0965be8e5a835ab7a5684bbef033d5ad0 third_party/libcxx (heads/release_60)
  9245d481eb3e890f708ff2d7dadf2a10c04748ba third_party/libcxxabi (heads/release_60)
  582743bf40c5d3639a70f98f183914a2c0cd0680 third_party/protobuf (v3.7.0-rc.2-20-g582743bf)
