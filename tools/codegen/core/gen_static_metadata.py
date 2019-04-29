@@ -376,6 +376,8 @@ print >> H, '#define GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H'
 print >> H
 print >> H, '#include <grpc/support/port_platform.h>'
 print >> H
+print >> H, '#include <cstdint>'
+print >> H
 print >> H, '#include "src/core/lib/transport/metadata.h"'
 print >> H
 print >> C, '#include <grpc/support/port_platform.h>'
@@ -433,8 +435,8 @@ for i, elem in enumerate(all_strs):
 print >> C, '};'
 print >> C
 print >> H, '#define GRPC_STATIC_METADATA_INDEX(static_slice) \\'
-print >> H, ('  ((int)((static_slice).refcount - '
-             'grpc_static_metadata_refcounts))')
+print >> H, ('  (static_cast<intptr_t>(((static_slice).refcount - '
+             'grpc_static_metadata_refcounts)))')
 print >> H
 
 print >> D, '# hpack fuzzing dictionary'
@@ -537,10 +539,10 @@ print >> C, 'static const uint8_t elem_idxs[] = {%s};' % ','.join(
     '%d' % i for i in idxs)
 print >> C
 
-print >> H, 'grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b);'
-print >> C, 'grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b) {'
+print >> H, 'grpc_mdelem grpc_static_mdelem_for_static_strings(intptr_t a, intptr_t b);'
+print >> C, 'grpc_mdelem grpc_static_mdelem_for_static_strings(intptr_t a, intptr_t b) {'
 print >> C, '  if (a == -1 || b == -1) return GRPC_MDNULL;'
-print >> C, '  uint32_t k = (uint32_t)(a * %d + b);' % len(all_strs)
+print >> C, '  uint32_t k = static_cast<uint32_t>(a * %d + b);' % len(all_strs)
 print >> C, '  uint32_t h = elems_phash(k);'
 print >> C, '  return h < GPR_ARRAY_SIZE(elem_keys) && elem_keys[h] == k && elem_idxs[h] != 255 ? GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[elem_idxs[h]], GRPC_MDELEM_STORAGE_STATIC) : GRPC_MDNULL;'
 print >> C, '}'
@@ -566,7 +568,7 @@ print >> H, '  } named;'
 print >> H, '} grpc_metadata_batch_callouts;'
 print >> H
 print >> H, '#define GRPC_BATCH_INDEX_OF(slice) \\'
-print >> H, '  (GRPC_IS_STATIC_METADATA_STRING((slice)) ? (grpc_metadata_batch_callouts_index)GPR_CLAMP(GRPC_STATIC_METADATA_INDEX((slice)), 0, GRPC_BATCH_CALLOUTS_COUNT) : GRPC_BATCH_CALLOUTS_COUNT)'
+print >> H, '  (GRPC_IS_STATIC_METADATA_STRING((slice)) ? static_cast<grpc_metadata_batch_callouts_index>(GPR_CLAMP(GRPC_STATIC_METADATA_INDEX((slice)), 0, static_cast<intptr_t>(GRPC_BATCH_CALLOUTS_COUNT))) : GRPC_BATCH_CALLOUTS_COUNT)'
 print >> H
 
 print >> H, 'extern const uint8_t grpc_static_accept_encoding_metadata[%d];' % (
