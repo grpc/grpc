@@ -58,8 +58,8 @@ class Arena {
   // Allocate \a size bytes from the arena.
   void* Alloc(size_t size) {
     static constexpr size_t base_size =
-        GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Arena));
-    size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(size);
+        GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(Arena));
+    size = GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(size);
     size_t begin = total_used_.FetchAdd(size, MemoryOrder::RELAXED);
     if (GPR_LIKELY(begin + size <= initial_zone_size_)) {
       return reinterpret_cast<char*>(this) + base_size + begin;

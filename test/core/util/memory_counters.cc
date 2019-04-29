@@ -54,9 +54,10 @@ static void* guard_malloc(size_t size) {
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_absolute, (gpr_atm)1);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_relative, (gpr_atm)1);
   void* ptr = g_old_allocs.malloc_fn(
-      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size)) + size);
+      GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(size)) + size);
   *static_cast<size_t*>(ptr) = size;
-  return static_cast<char*>(ptr) + GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
+  return static_cast<char*>(ptr) +
+         GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(size));
 }
 
 static void* guard_realloc(void* vptr, size_t size) {
@@ -67,23 +68,24 @@ static void* guard_realloc(void* vptr, size_t size) {
     guard_free(vptr);
     return nullptr;
   }
-  void* ptr =
-      static_cast<char*>(vptr) - GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
+  void* ptr = static_cast<char*>(vptr) -
+              GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(size));
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_absolute, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative,
                        -*static_cast<gpr_atm*>(ptr));
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_absolute, (gpr_atm)1);
   ptr = g_old_allocs.realloc_fn(
-      ptr, GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size)) + size);
+      ptr, GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(size)) + size);
   *static_cast<size_t*>(ptr) = size;
-  return static_cast<char*>(ptr) + GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
+  return static_cast<char*>(ptr) +
+         GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(size));
 }
 
 static void guard_free(void* vptr) {
   if (vptr == nullptr) return;
-  void* ptr =
-      static_cast<char*>(vptr) - GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size_t));
+  void* ptr = static_cast<char*>(vptr) -
+              GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(size_t));
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative,
                        -*static_cast<gpr_atm*>(ptr));
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_relative, -(gpr_atm)1);
@@ -93,7 +95,7 @@ static void guard_free(void* vptr) {
 // NB: We do not specify guard_malloc_aligned/guard_free_aligned methods. Since
 // they are null, calls to gpr_malloc_aligned/gpr_free_aligned are executed as a
 // wrapper over gpr_malloc/gpr_free, which do use guard_malloc/guard_free, and
-// thus there allocations are tracked as well.
+// thus their allocations are tracked as well.
 struct gpr_allocation_functions g_guard_allocs = {
     guard_malloc, nullptr, guard_realloc, guard_free, nullptr, nullptr};
 
