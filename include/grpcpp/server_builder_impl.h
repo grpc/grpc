@@ -36,10 +36,11 @@
 struct grpc_resource_quota;
 
 namespace grpc_impl {
-
+class ExternalConnectionAcceptorImpl;
 class ResourceQuota;
 class ServerCredentials;
 }  // namespace grpc_impl
+
 namespace grpc {
 
 class AsyncGenericService;
@@ -47,7 +48,6 @@ class CompletionQueue;
 class Server;
 class ServerCompletionQueue;
 class Service;
-
 namespace testing {
 class ServerBuilderPluginTest;
 }  // namespace testing
@@ -55,7 +55,21 @@ class ServerBuilderPluginTest;
 namespace experimental {
 class CallbackGenericService;
 }
+
+class ExternalConnectionAcceptor {
+ public:
+  struct NewConnectionParameters {
+    int fd = -1;
+    ByteBuffer read_buffer;  // data intended for the grpc server
+  };
+  virtual ~ExternalConnectionAcceptor() {}
+  // If called before grpc::Server is started, the new connection will be
+  // closed.
+  virtual void HandleNewConnection(NewConnectionParameters* p) = 0;
+};
+
 }  // namespace grpc
+
 namespace grpc_impl {
 
 /// A builder class for the creation and startup of \a grpc::Server instances.
@@ -257,6 +271,16 @@ class ServerBuilder {
   /// at any time.
   experimental_type experimental() { return experimental_type(this); }
 
+  enum ExternalConnectionType {
+    CONNECTION_FROM_FD = 0  // in the form of a file descriptor
+  };
+  // EXPERIMENTAL API:
+  // Create an acceptor to take in external connections and pass them to the
+  // gRPC server.
+  std::unique_ptr<grpc::ExternalConnectionAcceptor>
+  AddExternalConnectionAcceptor(ExternalConnectionType type,
+                                std::shared_ptr<ServerCredentials> creds);
+
  protected:
   /// Experimental, to be deprecated
   struct Port {
@@ -347,6 +371,7 @@ class ServerBuilder {
   std::vector<
       std::unique_ptr<grpc::experimental::ServerInterceptorFactoryInterface>>
       interceptor_creators_;
+  std::vector<std::shared_ptr<ExternalConnectionAcceptorImpl>> acceptors_;
 };
 
 }  // namespace grpc_impl

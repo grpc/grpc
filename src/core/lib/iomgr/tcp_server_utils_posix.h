@@ -92,6 +92,9 @@ struct grpc_tcp_server {
 
   /* channel args for this server */
   grpc_channel_args* channel_args;
+
+  /* a handler for external connections, owned */
+  grpc_core::TcpServerFdHandler* fd_handler;
 };
 
 /* If successful, add a listener to \a s for \a addr, set \a dsmode for the

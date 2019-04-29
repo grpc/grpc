@@ -26,7 +26,9 @@
 
 #include <utility>
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/cpp/server/external_connection_acceptor_impl.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc_impl {
@@ -307,8 +309,8 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   std::unique_ptr<grpc::Server> server(new grpc::Server(
       max_receive_message_size_, &args, sync_server_cqs,
       sync_server_settings_.min_pollers, sync_server_settings_.max_pollers,
-      sync_server_settings_.cq_timeout_msec, resource_quota_,
-      std::move(interceptor_creators_)));
+      sync_server_settings_.cq_timeout_msec, std::move(acceptors_),
+      resource_quota_, std::move(interceptor_creators_)));
 
   grpc_impl::ServerInitializer* initializer = server->initializer();
 
@@ -407,6 +409,17 @@ ServerBuilder& ServerBuilder::EnableWorkaround(grpc_workaround_list id) {
       gpr_log(GPR_ERROR, "Workaround %u does not exist or is obsolete.", id);
       return *this;
   }
+}
+
+std::unique_ptr<grpc::ExternalConnectionAcceptor>
+ServerBuilder::AddExternalConnectionAcceptor(
+    ExternalConnectionType type, std::shared_ptr<ServerCredentials> creds) {
+  grpc::string name_prefix("external:");
+  char count_str[GPR_LTOA_MIN_BUFSIZE];
+  gpr_ltoa(static_cast<long>(acceptors_.size()), count_str);
+  acceptors_.emplace_back(std::make_shared<ExternalConnectionAcceptorImpl>(
+      name_prefix.append(count_str), type, creds));
+  return acceptors_.back()->GetAcceptor();
 }
 
 }  // namespace grpc_impl

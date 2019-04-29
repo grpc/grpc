@@ -28,6 +28,7 @@
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/generic/async_generic_service.h>
 #include <grpcpp/impl/codegen/async_unary_call.h>
+#include <grpcpp/impl/codegen/byte_buffer.h>
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/server_interceptor.h>
@@ -46,6 +47,7 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/cpp/client/create_channel_internal.h"
+#include "src/cpp/server/external_connection_acceptor_impl.h"
 #include "src/cpp/server/health/default_health_check_service.h"
 #include "src/cpp/thread_manager/thread_manager.h"
 
@@ -759,11 +761,14 @@ Server::Server(
     std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
         sync_server_cqs,
     int min_pollers, int max_pollers, int sync_cq_timeout_msec,
+    std::vector<std::shared_ptr<::grpc_impl::ExternalConnectionAcceptorImpl>>
+        acceptors,
     grpc_resource_quota* server_rq,
     std::vector<
         std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
         interceptor_creators)
-    : interceptor_creators_(std::move(interceptor_creators)),
+    : acceptors_(std::move(acceptors)),
+      interceptor_creators_(std::move(interceptor_creators)),
       max_receive_message_size_(max_receive_message_size),
       sync_server_cqs_(std::move(sync_server_cqs)),
       started_(false),
@@ -795,6 +800,10 @@ Server::Server(
     if (default_rq_created) {
       grpc_resource_quota_unref(server_rq);
     }
+  }
+
+  for (auto& acceptor : acceptors_) {
+    acceptor->SetToChannelArgs(args);
   }
 
   grpc_channel_args channel_args;
@@ -1008,6 +1017,10 @@ void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
     RegisterService(nullptr, default_health_check_service_impl);
   }
 
+  for (auto& acceptor : acceptors_) {
+    acceptor->GetCredentials()->AddPortToServer(acceptor->name(), server_);
+  }
+
   // If this server uses callback methods, then create a callback generic
   // service to handle any unimplemented methods using the default reactor
   // creator
@@ -1052,6 +1065,10 @@ void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   if (default_health_check_service_impl != nullptr) {
     default_health_check_service_impl->StartServingThread();
   }
+
+  for (auto& acceptor : acceptors_) {
+    acceptor->Start();
+  }
 }
 
 void Server::ShutdownInternal(gpr_timespec deadline) {
@@ -1061,6 +1078,10 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
   }
 
   shutdown_ = true;
+
+  for (auto& acceptor : acceptors_) {
+    acceptor->Shutdown();
+  }
 
   /// The completion queue to use for server shutdown completion notification
   CompletionQueue shutdown_cq;

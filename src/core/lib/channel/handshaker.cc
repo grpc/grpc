@@ -20,6 +20,7 @@
 
 #include <string.h>
 
+#include <grpc/impl/codegen/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -226,6 +227,11 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
     args_.read_buffer =
         static_cast<grpc_slice_buffer*>(gpr_malloc(sizeof(*args_.read_buffer)));
     grpc_slice_buffer_init(args_.read_buffer);
+    if (acceptor != nullptr && acceptor->external_connection &&
+        acceptor->pending_data != nullptr) {
+      grpc_slice_buffer_swap(args_.read_buffer,
+                             &(acceptor->pending_data->data.raw.slice_buffer));
+    }
     // Initialize state needed for calling handshakers.
     acceptor_ = acceptor;
     GRPC_CLOSURE_INIT(&call_next_handshaker_,

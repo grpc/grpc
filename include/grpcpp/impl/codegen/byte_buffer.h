@@ -29,6 +29,10 @@
 
 #include <vector>
 
+namespace grpc_impl {
+class ExternalConnectionAcceptorImpl;
+}  // namespace grpc_impl
+
 namespace grpc {
 
 class ServerInterface;
@@ -185,6 +189,7 @@ class ByteBuffer final {
   friend class ProtoBufferReader;
   friend class ProtoBufferWriter;
   friend class internal::GrpcByteBufferPeer;
+  friend class ::grpc_impl::ExternalConnectionAcceptorImpl;
 
   grpc_byte_buffer* buffer_;
 

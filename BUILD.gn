@@ -1324,6 +1324,8 @@ config("grpc_config") {
         "src/cpp/server/create_default_thread_pool.cc",
         "src/cpp/server/dynamic_thread_pool.cc",
         "src/cpp/server/dynamic_thread_pool.h",
+        "src/cpp/server/external_connection_acceptor_impl.cc",
+        "src/cpp/server/external_connection_acceptor_impl.h",
         "src/cpp/server/health/default_health_check_service.cc",
         "src/cpp/server/health/default_health_check_service.h",
         "src/cpp/server/health/health_check_service.cc",
