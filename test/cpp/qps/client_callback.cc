@@ -293,7 +293,10 @@ class CallbackStreamingPingPongReactor final
       gpr_timespec next_issue_time = client_->NextRPCIssueTime();
       // Start an alarm callback to run the internal callback after
       // next_issue_time
-      ctx_->alarm_.experimental().Set(next_issue_time, [this](bool ok) {
+      if (ctx_->alarm_ == nullptr) {
+        ctx_->alarm_.reset(new Alarm);
+      }
+      ctx_->alarm_->experimental().Set(next_issue_time, [this](bool ok) {
         write_time_ = UsageTimer::Now();
         StartWrite(client_->request());
       });
