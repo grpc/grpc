@@ -448,27 +448,6 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::ShutdownLocked() {
 // SubchannelList
 //
 
-// TODO(roth): Move this into the client channel service config parsing
-// code as part of merging in the service config error handling changes.
-struct HealthCheckParams {
-  UniquePtr<char> service_name;
-
-  static void Parse(const grpc_json* field, HealthCheckParams* params) {
-    if (strcmp(field->key, "healthCheckConfig") == 0) {
-      if (field->type != GRPC_JSON_OBJECT) return;
-      for (grpc_json* sub_field = field->child; sub_field != nullptr;
-           sub_field = sub_field->next) {
-        if (sub_field->key == nullptr) return;
-        if (strcmp(sub_field->key, "serviceName") == 0) {
-          if (params->service_name != nullptr) return;  // Duplicate.
-          if (sub_field->type != GRPC_JSON_STRING) return;
-          params->service_name.reset(gpr_strdup(sub_field->value));
-        }
-      }
-    }
-  }
-};
-
 template <typename SubchannelListType, typename SubchannelDataType>
 SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
     LoadBalancingPolicy* policy, TraceFlag* tracer,
@@ -489,19 +468,10 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
   const bool inhibit_health_checking = grpc_channel_arg_get_bool(
       grpc_channel_args_find(&args, GRPC_ARG_INHIBIT_HEALTH_CHECKING), false);
   if (!inhibit_health_checking) {
-    const char* service_config_json = grpc_channel_arg_get_string(
-        grpc_channel_args_find(&args, GRPC_ARG_SERVICE_CONFIG));
-    if (service_config_json != nullptr) {
-      grpc_error* service_config_error = GRPC_ERROR_NONE;
-      RefCountedPtr<ServiceConfig> service_config =
-          ServiceConfig::Create(service_config_json, &service_config_error);
-      // service_config_error is currently unused.
-      GRPC_ERROR_UNREF(service_config_error);
-      if (service_config != nullptr) {
-        HealthCheckParams params;
-        service_config->ParseGlobalParams(HealthCheckParams::Parse, &params);
-        health_check_service_name_ = std::move(params.service_name);
-      }
+    const char* health_check_service_name = grpc_channel_arg_get_string(
+        grpc_channel_args_find(&args, "grpc.temp.health_check"));
+    if (health_check_service_name != nullptr) {
+      health_check_service_name_.reset(gpr_strdup(health_check_service_name));
     }
   }
   // We need to remove the LB addresses in order to be able to compare the
