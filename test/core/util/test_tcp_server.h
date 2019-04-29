@@ -35,7 +35,7 @@ typedef struct test_tcp_server {
 void test_tcp_server_init(test_tcp_server* server,
                           grpc_tcp_server_cb on_connect, void* user_data);
 void test_tcp_server_start(test_tcp_server* server, int port);
-void test_tcp_server_poll(test_tcp_server* server, int seconds);
+void test_tcp_server_poll(test_tcp_server* server, int milliseconds);
 void test_tcp_server_destroy(test_tcp_server* server);
 
 #endif /* GRPC_TEST_CORE_UTIL_TEST_TCP_SERVER_H */
