@@ -52,6 +52,7 @@ template <typename RequestT, typename ResponseT>
 class MessageAllocator;
 }  // namespace experimental
 }  // namespace grpc_impl
+
 namespace grpc {
 class ServerContext;
 }  // namespace grpc
