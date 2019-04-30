@@ -480,10 +480,9 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
   // handling that here.
   // We remove the service config, since it will be passed into the
   // subchannel via call context.
-  static const char* keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS,
-                                         "grpc.temp.health_check",
-                                         GRPC_ARG_INHIBIT_HEALTH_CHECKING,
-                                         GRPC_ARG_SERVICE_CONFIG};
+  static const char* keys_to_remove[] = {
+      GRPC_ARG_SUBCHANNEL_ADDRESS, "grpc.temp.health_check",
+      GRPC_ARG_INHIBIT_HEALTH_CHECKING, GRPC_ARG_SERVICE_CONFIG};
   // Create a subchannel for each address.
   for (size_t i = 0; i < addresses.size(); i++) {
     GPR_ASSERT(!addresses[i].IsBalancer());
