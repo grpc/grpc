@@ -1355,6 +1355,52 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingInhibitPerChannel) {
   // Second channel should be READY.
   EXPECT_TRUE(WaitForChannelReady(channel2.get(), 1));
   CheckRpcSendOk(stub2, DEBUG_LOCATION);
+  // Enable health checks on the backend and wait for channel 1 to succeed.
+  servers_[0]->SetServingStatus("health_check_service_name", true);
+  CheckRpcSendOk(stub1, DEBUG_LOCATION, true /* wait_for_ready */);
+  // Check that we created only one subchannel to the backend.
+  EXPECT_EQ(1UL, servers_[0]->service_.clients().size());
+  // Clean up.
+  EnableDefaultHealthCheckService(false);
+}
+
+TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingServiceNamePerChannel) {
+  EnableDefaultHealthCheckService(true);
+  // Start server.
+  const int kNumServers = 1;
+  StartServers(kNumServers);
+  // Create a channel with health-checking enabled.
+  ChannelArguments args;
+  args.SetServiceConfigJSON(
+      "{\"healthCheckConfig\": "
+      "{\"serviceName\": \"health_check_service_name\"}}");
+  auto channel1 = BuildChannel("round_robin", args);
+  auto stub1 = BuildStub(channel1);
+  std::vector<int> ports = GetServersPorts();
+  SetNextResolution(ports);
+  // Create a channel with health-checking enabled with a different
+  // service name.
+  ChannelArguments args2;
+  args2.SetServiceConfigJSON(
+      "{\"healthCheckConfig\": "
+      "{\"serviceName\": \"health_check_service_name2\"}}");
+  auto channel2 = BuildChannel("round_robin", args2);
+  auto stub2 = BuildStub(channel2);
+  SetNextResolution(ports);
+  // Allow health checks from channel 2 to succeed.
+  servers_[0]->SetServingStatus("health_check_service_name2", true);
+  // First channel should not become READY, because health checks should be
+  // failing.
+  EXPECT_FALSE(WaitForChannelReady(channel1.get(), 1));
+  CheckRpcSendFailure(stub1);
+  // Second channel should be READY.
+  EXPECT_TRUE(WaitForChannelReady(channel2.get(), 1));
+  CheckRpcSendOk(stub2, DEBUG_LOCATION);
+  // Enable health checks for channel 1 and wait for it to succeed.
+  servers_[0]->SetServingStatus("health_check_service_name", true);
+  CheckRpcSendOk(stub1, DEBUG_LOCATION, true /* wait_for_ready */);
+  // Check that we created only one subchannel to the backend.
+  EXPECT_EQ(1UL, servers_[0]->service_.clients().size());
   // Clean up.
   EnableDefaultHealthCheckService(false);
 }
