@@ -18,6 +18,7 @@
 
 using System.Runtime.CompilerServices;
 using Grpc.Core;
+using Grpc.Core.Interceptors;
 using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 
