@@ -26,14 +26,14 @@ namespace grpc {
 static inline std::shared_ptr<Channel> CreateChannel(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds) {
-  return ::grpc_impl::CreateChannel(target, creds);
+  return ::grpc_impl::CreateChannelImpl(target, creds);
 }
 
 static inline std::shared_ptr<Channel> CreateCustomChannel(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds,
     const ChannelArguments& args) {
-  return ::grpc_impl::CreateCustomChannel(target, creds, args);
+  return ::grpc_impl::CreateCustomChannelImpl(target, creds, args);
 }
 
 namespace experimental {
