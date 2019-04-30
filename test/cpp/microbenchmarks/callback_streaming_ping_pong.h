@@ -61,8 +61,8 @@ static void BM_CallbackBidiStreaming(benchmark::State& state) {
   }
   fixture->Finish(state);
   fixture.reset();
-  state.SetBytesProcessed(2 * state.range(0) * state.iterations() *
-                          state.range(1));
+  state.SetBytesProcessed(2 * message_size * max_ping_pongs
+                          * state.iterations());
 }
 
 }  // namespace testing

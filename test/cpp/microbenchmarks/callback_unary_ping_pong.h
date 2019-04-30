@@ -38,6 +38,8 @@ namespace testing {
 
 template <class Fixture, class ClientContextMutator, class ServerContextMutator>
 static void BM_CallbackUnaryPingPong(benchmark::State& state) {
+  int request_msgs_size = state.range(0);
+  int response_msgs_size = state.range(1);
   CallbackStreamingTestService service;
   std::unique_ptr<Fixture> fixture(new Fixture(&service));
   std::unique_ptr<EchoTestService::Stub> stub_(
@@ -76,8 +78,8 @@ static void BM_CallbackUnaryPingPong(benchmark::State& state) {
   }
   fixture->Finish(state);
   fixture.reset();
-  state.SetBytesProcessed(state.range(0) * state.iterations() +
-                          state.range(1) * state.iterations());
+  state.SetBytesProcessed(request_msgs_size * state.iterations() +
+                          response_msgs_size * state.iterations());
 }
 }  // namespace testing
 }  // namespace grpc

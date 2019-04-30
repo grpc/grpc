@@ -64,14 +64,6 @@ CallbackStreamingTestService::BidiStream() {
           kServerFinishAfterNReads, context->client_metadata(), 0);
       message_size_ = GetIntValueFromMetadata(kServerResponseStreamsToSend,
                                               context->client_metadata(), 0);
-      //      EchoRequest* request = new EchoRequest;
-      //      if (message_size_ > 0) {
-      //        request->set_message(std::string(message_size_, 'a'));
-      //      } else {
-      //        request->set_message("");
-      //      }
-      //
-      //      request_ = request;
       StartRead(&request_);
       on_started_done_ = true;
     }
@@ -80,7 +72,6 @@ CallbackStreamingTestService::BidiStream() {
     void OnReadDone(bool ok) override {
       if (ok) {
         num_msgs_read_++;
-        //        gpr_log(GPR_INFO, "recv msg %s", request_.message().c_str());
         if (message_size_ > 0) {
           response_.set_message(std::string(message_size_, 'a'));
         } else {
