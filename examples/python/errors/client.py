@@ -20,8 +20,8 @@ import grpc
 from grpc_status import rpc_status
 from google.rpc import error_details_pb2
 
-from examples import helloworld_pb2
-from examples import helloworld_pb2_grpc
+from examples.protos import helloworld_pb2
+from examples.protos import helloworld_pb2_grpc
 
 _LOGGER = logging.getLogger(__name__)
 

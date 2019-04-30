@@ -23,11 +23,6 @@ grpc_proto_library(
     srcs = ["health.proto"],
 )
 
-proto_library(
-    name = "health_proto_descriptor",
-    srcs = ["health.proto"],
-)
-
 filegroup(
     name = "health_proto_file",
     srcs = [

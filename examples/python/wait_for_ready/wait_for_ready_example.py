@@ -22,8 +22,8 @@ import threading
 
 import grpc
 
-from examples import helloworld_pb2
-from examples import helloworld_pb2_grpc
+from examples.protos import helloworld_pb2
+from examples.protos import helloworld_pb2_grpc
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)
@@ -33,13 +33,10 @@ _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 @contextmanager
 def get_free_loopback_tcp_port():
-    if socket.has_ipv6:
-        tcp_socket = socket.socket(socket.AF_INET6)
-    else:
-        tcp_socket = socket.socket(socket.AF_INET)
+    tcp_socket = socket.socket(socket.AF_INET6)
     tcp_socket.bind(('', 0))
     address_tuple = tcp_socket.getsockname()
-    yield "localhost:%s" % (address_tuple[1])
+    yield "[::1]:%s" % (address_tuple[1])
     tcp_socket.close()
 
 
