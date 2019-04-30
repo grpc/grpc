@@ -109,7 +109,7 @@ void reconnect_server_start(reconnect_server* server, int port) {
 }
 
 void reconnect_server_poll(reconnect_server* server, int seconds) {
-  test_tcp_server_poll(&server->tcp_server, seconds);
+  test_tcp_server_poll(&server->tcp_server, 1000 * seconds);
 }
 
 void reconnect_server_clear_timestamps(reconnect_server* server) {

@@ -29,7 +29,6 @@
 
 void grpc_call_details_init(grpc_call_details* cd) {
   GRPC_API_TRACE("grpc_call_details_init(cd=%p)", 1, (cd));
-  memset(cd, 0, sizeof(*cd));
   cd->method = grpc_empty_slice();
   cd->host = grpc_empty_slice();
 }

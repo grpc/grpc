@@ -285,8 +285,18 @@ class CallbackStreamingPingPongReactor final
       }
       return;
     }
-    write_time_ = UsageTimer::Now();
-    StartWrite(client_->request());
+    if (!client_->IsClosedLoop()) {
+      gpr_timespec next_issue_time = client_->NextRPCIssueTime();
+      // Start an alarm callback to run the internal callback after
+      // next_issue_time
+      ctx_->alarm_.experimental().Set(next_issue_time, [this](bool ok) {
+        write_time_ = UsageTimer::Now();
+        StartWrite(client_->request());
+      });
+    } else {
+      write_time_ = UsageTimer::Now();
+      StartWrite(client_->request());
+    }
   }
 
   void OnDone(const Status& s) override {

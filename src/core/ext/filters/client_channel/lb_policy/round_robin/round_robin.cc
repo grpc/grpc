@@ -503,6 +503,11 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
   }
 }
 
+class ParsedRoundRobinConfig : public ParsedLoadBalancingConfig {
+ public:
+  const char* name() const override { return kRoundRobin; }
+};
+
 //
 // factory
 //
@@ -515,6 +520,15 @@ class RoundRobinFactory : public LoadBalancingPolicyFactory {
   }
 
   const char* name() const override { return kRoundRobin; }
+
+  RefCountedPtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
+      const grpc_json* json, grpc_error** error) const override {
+    if (json != nullptr) {
+      GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
+    }
+    return RefCountedPtr<ParsedLoadBalancingConfig>(
+        New<ParsedRoundRobinConfig>());
+  }
 };
 
 }  // namespace

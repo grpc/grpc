@@ -13,7 +13,6 @@
 # limitations under the License.
 
 FROM debian:jessie
-RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
 
 
 RUN apt-get update && apt-get -y install wget xz-utils

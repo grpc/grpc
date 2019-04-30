@@ -42,7 +42,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/arena.h"
+#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/transport.h"
@@ -69,8 +69,8 @@ typedef struct {
   const grpc_slice& path;
   gpr_timespec start_time;
   grpc_millis deadline;
-  gpr_arena* arena;
-  grpc_call_combiner* call_combiner;
+  grpc_core::Arena* arena;
+  grpc_core::CallCombiner* call_combiner;
 } grpc_call_element_args;
 
 typedef struct {

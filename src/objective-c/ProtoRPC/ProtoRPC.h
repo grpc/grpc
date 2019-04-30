@@ -57,6 +57,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)didCloseWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
                                error:(nullable NSError *)error;
 
+/**
+ * Issued when flow control is enabled for the call and a message (written with writeMessage: method
+ * of GRPCStreamingProtoCall or the initializer of GRPCUnaryProtoCall) is passed to gRPC core with
+ * SEND_MESSAGE operation.
+ */
+- (void)didWriteMessage;
+
 @end
 
 /** A unary-request RPC call with Protobuf. */
@@ -129,6 +136,26 @@ NS_ASSUME_NONNULL_BEGIN
  * trailers to the client.
  */
 - (void)finish;
+
+/**
+ * Tell gRPC to receive another message.
+ *
+ * This method should only be used when flow control is enabled. If flow control is enabled, gRPC
+ * will only receive additional messages after the user indicates so by using either
+ * receiveNextMessage: or receiveNextMessages: methods. If flow control is not enabled, messages
+ * will be automatically received after the previous one is delivered.
+ */
+- (void)receiveNextMessage;
+
+/**
+ * Tell gRPC to receive another N message.
+ *
+ * This method should only be used when flow control is enabled. If flow control is enabled, the
+ * messages received from the server are buffered in gRPC until the user want to receive the next
+ * message. If flow control is not enabled, messages will be automatically received after the
+ * previous one is delivered.
+ */
+- (void)receiveNextMessages:(NSUInteger)numberOfMessages;
 
 @end
 

@@ -118,6 +118,21 @@ namespace {
 
 constexpr char kGrpclb[] = "grpclb";
 
+class ParsedGrpcLbConfig : public ParsedLoadBalancingConfig {
+ public:
+  explicit ParsedGrpcLbConfig(
+      RefCountedPtr<ParsedLoadBalancingConfig> child_policy)
+      : child_policy_(std::move(child_policy)) {}
+  const char* name() const override { return kGrpclb; }
+
+  RefCountedPtr<ParsedLoadBalancingConfig> child_policy() const {
+    return child_policy_;
+  }
+
+ private:
+  RefCountedPtr<ParsedLoadBalancingConfig> child_policy_;
+};
+
 class GrpcLb : public LoadBalancingPolicy {
  public:
   explicit GrpcLb(Args args);
@@ -302,7 +317,6 @@ class GrpcLb : public LoadBalancingPolicy {
   // Helper functions used in UpdateLocked().
   void ProcessAddressesAndChannelArgsLocked(const ServerAddressList& addresses,
                                             const grpc_channel_args& args);
-  void ParseLbConfig(Config* grpclb_config);
   static void OnBalancerChannelConnectivityChangedLocked(void* arg,
                                                          grpc_error* error);
   void CancelBalancerChannelConnectivityWatchLocked();
@@ -380,7 +394,7 @@ class GrpcLb : public LoadBalancingPolicy {
   // until it reports READY, at which point it will be moved to child_policy_.
   OrphanablePtr<LoadBalancingPolicy> pending_child_policy_;
   // The child policy config.
-  RefCountedPtr<Config> child_policy_config_;
+  RefCountedPtr<ParsedLoadBalancingConfig> child_policy_config_;
   // Child policy in state READY.
   bool child_policy_ready_ = false;
 };
@@ -1129,13 +1143,13 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
   // we want to retry connecting. Otherwise, we have deliberately ended this
   // call and no further action is required.
   if (lb_calld == grpclb_policy->lb_calld_.get()) {
-    // If we did not receive a serverlist and the fallback-at-startup checks
-    // are pending, go into fallback mode immediately.  This short-circuits
-    // the timeout for the fallback-at-startup case.
-    if (!lb_calld->seen_serverlist_ &&
-        grpclb_policy->fallback_at_startup_checks_pending_) {
+    // If the fallback-at-startup checks are pending, go into fallback mode
+    // immediately.  This short-circuits the timeout for the fallback-at-startup
+    // case.
+    if (grpclb_policy->fallback_at_startup_checks_pending_) {
+      GPR_ASSERT(!lb_calld->seen_serverlist_);
       gpr_log(GPR_INFO,
-              "[grpclb %p] balancer call finished without receiving "
+              "[grpclb %p] Balancer call finished without receiving "
               "serverlist; entering fallback mode",
               grpclb_policy);
       grpclb_policy->fallback_at_startup_checks_pending_ = false;
@@ -1373,7 +1387,13 @@ void GrpcLb::FillChildRefsForChannelz(
 
 void GrpcLb::UpdateLocked(UpdateArgs args) {
   const bool is_initial_update = lb_channel_ == nullptr;
-  ParseLbConfig(args.config.get());
+  auto* grpclb_config =
+      static_cast<const ParsedGrpcLbConfig*>(args.config.get());
+  if (grpclb_config != nullptr) {
+    child_policy_config_ = grpclb_config->child_policy();
+  } else {
+    child_policy_config_ = nullptr;
+  }
   ProcessAddressesAndChannelArgsLocked(args.addresses, *args.args);
   // Update the existing child policy.
   if (child_policy_ != nullptr) CreateOrUpdateChildPolicyLocked();
@@ -1460,27 +1480,6 @@ void GrpcLb::ProcessAddressesAndChannelArgsLocked(
   result.addresses = std::move(balancer_addresses);
   result.args = lb_channel_args;
   response_generator_->SetResponse(std::move(result));
-}
-
-void GrpcLb::ParseLbConfig(Config* grpclb_config) {
-  const grpc_json* child_policy = nullptr;
-  if (grpclb_config != nullptr) {
-    const grpc_json* grpclb_config_json = grpclb_config->config();
-    for (const grpc_json* field = grpclb_config_json; field != nullptr;
-         field = field->next) {
-      if (field->key == nullptr) return;
-      if (strcmp(field->key, "childPolicy") == 0) {
-        if (child_policy != nullptr) return;  // Duplicate.
-        child_policy = ParseLoadBalancingConfig(field);
-      }
-    }
-  }
-  if (child_policy != nullptr) {
-    child_policy_config_ =
-        MakeRefCounted<Config>(child_policy, grpclb_config->service_config());
-  } else {
-    child_policy_config_.reset();
-  }
 }
 
 void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
@@ -1628,20 +1627,16 @@ void GrpcLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
 
 grpc_channel_args* GrpcLb::CreateChildPolicyArgsLocked(
     bool is_backend_from_grpclb_load_balancer) {
-  grpc_arg args_to_add[2] = {
-      // A channel arg indicating if the target is a backend inferred from a
-      // grpclb load balancer.
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(
-              GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER),
-          is_backend_from_grpclb_load_balancer),
-  };
-  size_t num_args_to_add = 1;
+  InlinedVector<grpc_arg, 2> args_to_add;
+  args_to_add.emplace_back(grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER),
+      is_backend_from_grpclb_load_balancer));
   if (is_backend_from_grpclb_load_balancer) {
-    args_to_add[num_args_to_add++] = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1);
+    args_to_add.emplace_back(grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1));
   }
-  return grpc_channel_args_copy_and_add(args_, args_to_add, num_args_to_add);
+  return grpc_channel_args_copy_and_add(args_, args_to_add.data(),
+                                        args_to_add.size());
 }
 
 OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
@@ -1804,6 +1799,40 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
   }
 
   const char* name() const override { return kGrpclb; }
+
+  RefCountedPtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
+      const grpc_json* json, grpc_error** error) const override {
+    GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+    if (json == nullptr) {
+      return RefCountedPtr<ParsedLoadBalancingConfig>(
+          New<ParsedGrpcLbConfig>(nullptr));
+    }
+    InlinedVector<grpc_error*, 2> error_list;
+    RefCountedPtr<ParsedLoadBalancingConfig> child_policy;
+    for (const grpc_json* field = json->child; field != nullptr;
+         field = field->next) {
+      if (field->key == nullptr) continue;
+      if (strcmp(field->key, "childPolicy") == 0) {
+        if (child_policy != nullptr) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "field:childPolicy error:Duplicate entry"));
+        }
+        grpc_error* parse_error = GRPC_ERROR_NONE;
+        child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+            field, &parse_error);
+        if (parse_error != GRPC_ERROR_NONE) {
+          error_list.push_back(parse_error);
+        }
+      }
+    }
+    if (error_list.empty()) {
+      return RefCountedPtr<ParsedLoadBalancingConfig>(
+          New<ParsedGrpcLbConfig>(std::move(child_policy)));
+    } else {
+      *error = GRPC_ERROR_CREATE_FROM_VECTOR("GrpcLb Parser", &error_list);
+      return nullptr;
+    }
+  }
 };
 
 }  // namespace
