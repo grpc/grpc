@@ -753,9 +753,9 @@ class Server::CallbackRequest final : public Server::CallbackRequestBase {
         &server_->callback_unmatched_reqs_count_[method_index_], 1);
     grpc_metadata_array_init(&request_metadata_);
     ctx_.Setup(gpr_inf_future(GPR_CLOCK_REALTIME));
-    handler_data_ = nullptr;
     request_payload_ = nullptr;
     request_ = nullptr;
+    handler_data_ = nullptr;
     request_status_ = grpc::Status();
   }
 
