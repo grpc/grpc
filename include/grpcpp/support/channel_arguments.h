@@ -23,8 +23,9 @@
 
 namespace grpc_impl {
 
+class SecureChannelCredentials;
 class ResourceQuota;
-}
+}  // namespace grpc_impl
 
 namespace grpc {
 
