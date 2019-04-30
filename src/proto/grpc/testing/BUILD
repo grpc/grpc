@@ -16,7 +16,7 @@ licenses(["notice"])  # Apache v2
 
 load("//bazel:grpc_build_system.bzl", "grpc_proto_library", "grpc_package")
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
-load("//bazel:python_rules.bzl", "py_proto_library")
+load("@org_pubref_rules_protobuf//python:rules.bzl", "py_proto_library")
 
 grpc_package(name = "testing", visibility = "public")
 
@@ -61,14 +61,13 @@ grpc_proto_library(
     has_services = False,
 )
 
-proto_library(
-    name = "empty_proto_descriptor",
-    srcs = ["empty.proto"],
-)
-
 py_proto_library(
     name = "py_empty_proto",
-    deps = [":empty_proto_descriptor"],
+    protos = ["empty.proto",],
+    with_grpc = True,
+    deps = [
+        requirement('protobuf'),
+    ],
 )
 
 grpc_proto_library(
@@ -77,14 +76,13 @@ grpc_proto_library(
     has_services = False,
 )
 
-proto_library(
-    name = "messages_proto_descriptor",
-    srcs = ["messages.proto"],
-)
-
 py_proto_library(
     name = "py_messages_proto",
-    deps = [":messages_proto_descriptor"],
+    protos = ["messages.proto",],
+    with_grpc = True,
+    deps = [
+        requirement('protobuf'),
+    ],
 )
 
 grpc_proto_library(
@@ -146,19 +144,16 @@ grpc_proto_library(
     ],
 )
 
-proto_library(
-    name = "test_proto_descriptor",
-    srcs = ["test.proto"],
-    deps = [
-        ":empty_proto_descriptor",
-        ":messages_proto_descriptor",
-    ],
-)
-
 py_proto_library(
     name = "py_test_proto",
+    protos = ["test.proto",],
+    with_grpc = True,
     deps = [
-        ":test_proto_descriptor",
+        requirement('protobuf'),
+    ],
+    proto_deps = [
+        ":py_empty_proto",
+        ":py_messages_proto",
     ]
 )
 

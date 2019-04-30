@@ -115,7 +115,6 @@ bazel-genfiles
 bazel-grpc
 bazel-out
 bazel-testlogs
-bazel_format_virtual_environment/
 
 # Debug output
 gdb.txt
