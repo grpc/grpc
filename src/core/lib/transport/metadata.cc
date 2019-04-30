@@ -211,7 +211,6 @@ void grpc_mdctx_global_shutdown() {
     mdtab_shard* shard = &g_shards[i];
     gpr_mu_destroy(&shard->mu);
     gc_mdtab(shard);
-    /* TODO(ctiller): GPR_ASSERT(shard->count == 0); */
     if (shard->count != 0) {
       gpr_log(GPR_DEBUG, "WARNING: %" PRIuPTR " metadata elements were leaked",
               shard->count);
@@ -219,6 +218,7 @@ void grpc_mdctx_global_shutdown() {
         abort();
       }
     }
+    GPR_DEBUG_ASSERT(shard->count == 0);
     gpr_free(shard->elems);
   }
 }
@@ -251,7 +251,9 @@ static void gc_mdtab(mdtab_shard* shard) {
   GPR_TIMER_SCOPE("gc_mdtab", 0);
   size_t num_freed = 0;
   for (size_t i = 0; i < shard->capacity; ++i) {
-    num_freed += InternedMetadata::CleanupLinkedMetadata(&shard->elems[i]);
+    intptr_t freed = InternedMetadata::CleanupLinkedMetadata(&shard->elems[i]);
+    num_freed += freed;
+    shard->count -= freed;
   }
   gpr_atm_no_barrier_fetch_add(&shard->free_estimate,
                                -static_cast<intptr_t>(num_freed));
