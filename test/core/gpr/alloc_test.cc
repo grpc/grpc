@@ -31,12 +31,21 @@ static void fake_free(void* addr) {
   *(static_cast<intptr_t*>(addr)) = static_cast<intptr_t>(0xdeadd00d);
 }
 
+static void* fake_aligned_malloc(size_t size, size_t alignment) {
+  return (void*)(size + alignment);
+}
+
+static void fake_aligned_free(void* addr) {
+  *(static_cast<intptr_t*>(addr)) = static_cast<intptr_t>(0xcafef00d);
+}
+
 static void test_custom_allocs() {
   const gpr_allocation_functions default_fns = gpr_get_allocation_functions();
   intptr_t addr_to_free = 0;
   char* i;
-  gpr_allocation_functions fns = {fake_malloc, nullptr, fake_realloc,
-                                  fake_free};
+  gpr_allocation_functions fns = {fake_malloc,         nullptr,
+                                  fake_realloc,        fake_free,
+                                  fake_aligned_malloc, fake_aligned_free};
 
   gpr_set_allocation_functions(fns);
   GPR_ASSERT((void*)(size_t)0xdeadbeef == gpr_malloc(0xdeadbeef));
@@ -44,6 +53,11 @@ static void test_custom_allocs() {
 
   gpr_free(&addr_to_free);
   GPR_ASSERT(addr_to_free == (intptr_t)0xdeadd00d);
+
+  GPR_ASSERT((void*)(size_t)(0xdeadbeef + 64) ==
+             gpr_malloc_aligned(0xdeadbeef, 64));
+  gpr_free_aligned(&addr_to_free);
+  GPR_ASSERT(addr_to_free == (intptr_t)0xcafef00d);
 
   /* Restore and check we don't get funky values and that we don't leak */
   gpr_set_allocation_functions(default_fns);
