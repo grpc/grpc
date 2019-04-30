@@ -57,11 +57,15 @@
 struct census_context;
 struct grpc_call;
 
+namespace grpc_impl {
+
+class CallCredentials;
+class Channel;
+class CompletionQueue;
+}  // namespace grpc_impl
 namespace grpc {
 
-class Channel;
 class ChannelInterface;
-class CallCredentials;
 class ClientContext;
 
 namespace internal {
@@ -78,6 +82,7 @@ template <class Response>
 class ClientCallbackReaderImpl;
 template <class Request>
 class ClientCallbackWriterImpl;
+class ClientCallbackUnaryImpl;
 }  // namespace internal
 
 template <class R>
@@ -304,7 +309,8 @@ class ClientContext {
   /// call.
   ///
   /// \see  https://grpc.io/docs/guides/auth.html
-  void set_credentials(const std::shared_ptr<CallCredentials>& creds) {
+  void set_credentials(
+      const std::shared_ptr<grpc_impl::CallCredentials>& creds) {
     creds_ = creds;
   }
 
@@ -391,7 +397,7 @@ class ClientContext {
   friend class ::grpc::testing::InteropClientContextInspector;
   friend class ::grpc::internal::CallOpClientRecvStatus;
   friend class ::grpc::internal::CallOpRecvInitialMetadata;
-  friend class Channel;
+  friend class ::grpc_impl::Channel;
   template <class R>
   friend class ::grpc::ClientReader;
   template <class W>
@@ -416,6 +422,7 @@ class ClientContext {
   friend class ::grpc::internal::ClientCallbackReaderImpl;
   template <class Request>
   friend class ::grpc::internal::ClientCallbackWriterImpl;
+  friend class ::grpc::internal::ClientCallbackUnaryImpl;
 
   // Used by friend class CallOpClientRecvStatus
   void set_debug_error_string(const grpc::string& debug_error_string) {
@@ -423,7 +430,8 @@ class ClientContext {
   }
 
   grpc_call* call() const { return call_; }
-  void set_call(grpc_call* call, const std::shared_ptr<Channel>& channel);
+  void set_call(grpc_call* call,
+                const std::shared_ptr<::grpc_impl::Channel>& channel);
 
   experimental::ClientRpcInfo* set_client_rpc_info(
       const char* method, internal::RpcMethod::RpcType type,
@@ -456,13 +464,13 @@ class ClientContext {
   bool wait_for_ready_explicitly_set_;
   bool idempotent_;
   bool cacheable_;
-  std::shared_ptr<Channel> channel_;
+  std::shared_ptr<::grpc_impl::Channel> channel_;
   grpc::internal::Mutex mu_;
   grpc_call* call_;
   bool call_canceled_;
   gpr_timespec deadline_;
   grpc::string authority_;
-  std::shared_ptr<CallCredentials> creds_;
+  std::shared_ptr<grpc_impl::CallCredentials> creds_;
   mutable std::shared_ptr<const AuthContext> auth_context_;
   struct census_context* census_context_;
   std::multimap<grpc::string, grpc::string> send_initial_metadata_;

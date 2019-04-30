@@ -304,7 +304,7 @@ static VALUE bg_thread_init_rb_mu = Qundef;
 static int bg_thread_init_done = 0;
 
 static void grpc_ruby_init_threads() {
-  // Avoid calling calling into ruby library (when creating threads here)
+  // Avoid calling into ruby library (when creating threads here)
   // in gpr_once_init. In general, it appears to be unsafe to call
   // into the ruby library while holding a non-ruby mutex, because a gil yield
   // could end up trying to lock onto that same mutex and deadlocking.

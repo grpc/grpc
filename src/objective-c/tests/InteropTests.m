@@ -20,7 +20,9 @@
 
 #include <grpc/status.h>
 
+#ifdef GRPC_COMPILE_WITH_CRONET
 #import <Cronet/Cronet.h>
+#endif
 #import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+Cronet.h>
 #import <GRPCClient/GRPCCall+Tests.h>
@@ -79,6 +81,11 @@ BOOL isRemoteInteropTest(NSString *host) {
 
 - (instancetype)initWithInitialMetadataCallback:(void (^)(NSDictionary *))initialMetadataCallback
                                 messageCallback:(void (^)(id))messageCallback
+                                  closeCallback:(void (^)(NSDictionary *, NSError *))closeCallback
+                           writeMessageCallback:(void (^)(void))writeMessageCallback;
+
+- (instancetype)initWithInitialMetadataCallback:(void (^)(NSDictionary *))initialMetadataCallback
+                                messageCallback:(void (^)(id))messageCallback
                                   closeCallback:(void (^)(NSDictionary *, NSError *))closeCallback;
 
 @end
@@ -87,19 +94,31 @@ BOOL isRemoteInteropTest(NSString *host) {
   void (^_initialMetadataCallback)(NSDictionary *);
   void (^_messageCallback)(id);
   void (^_closeCallback)(NSDictionary *, NSError *);
+  void (^_writeMessageCallback)(void);
   dispatch_queue_t _dispatchQueue;
 }
 
 - (instancetype)initWithInitialMetadataCallback:(void (^)(NSDictionary *))initialMetadataCallback
                                 messageCallback:(void (^)(id))messageCallback
-                                  closeCallback:(void (^)(NSDictionary *, NSError *))closeCallback {
+                                  closeCallback:(void (^)(NSDictionary *, NSError *))closeCallback
+                           writeMessageCallback:(void (^)(void))writeMessageCallback {
   if ((self = [super init])) {
     _initialMetadataCallback = initialMetadataCallback;
     _messageCallback = messageCallback;
     _closeCallback = closeCallback;
+    _writeMessageCallback = writeMessageCallback;
     _dispatchQueue = dispatch_queue_create(nil, DISPATCH_QUEUE_SERIAL);
   }
   return self;
+}
+
+- (instancetype)initWithInitialMetadataCallback:(void (^)(NSDictionary *))initialMetadataCallback
+                                messageCallback:(void (^)(id))messageCallback
+                                  closeCallback:(void (^)(NSDictionary *, NSError *))closeCallback {
+  return [self initWithInitialMetadataCallback:initialMetadataCallback
+                               messageCallback:messageCallback
+                                 closeCallback:closeCallback
+                          writeMessageCallback:nil];
 }
 
 - (void)didReceiveInitialMetadata:(NSDictionary *)initialMetadata {
@@ -117,6 +136,12 @@ BOOL isRemoteInteropTest(NSString *host) {
 - (void)didCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
   if (_closeCallback) {
     _closeCallback(trailingMetadata, error);
+  }
+}
+
+- (void)didWriteMessage {
+  if (_writeMessageCallback) {
+    _writeMessageCallback();
   }
 }
 
@@ -227,6 +252,52 @@ BOOL isRemoteInteropTest(NSString *host) {
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
+// Test that responses can be dispatched even if we do not run main run-loop
+- (void)testAsyncDispatchWithV2API {
+  XCTAssertNotNil([[self class] host]);
+
+  GPBEmpty *request = [GPBEmpty message];
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.transportType = [[self class] transportType];
+  options.PEMRootCertificates = [[self class] PEMRootCertificates];
+  options.hostNameOverride = [[self class] hostNameOverride];
+
+  __block BOOL messageReceived = NO;
+  __block BOOL done = NO;
+  NSCondition *cond = [[NSCondition alloc] init];
+  GRPCUnaryProtoCall *call = [_service
+      emptyCallWithMessage:request
+           responseHandler:[[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+                               messageCallback:^(id message) {
+                                 if (message) {
+                                   id expectedResponse = [GPBEmpty message];
+                                   XCTAssertEqualObjects(message, expectedResponse);
+                                   [cond lock];
+                                   messageReceived = YES;
+                                   [cond unlock];
+                                 }
+                               }
+                               closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                                 XCTAssertNil(error, @"Unexpected error: %@", error);
+                                 [cond lock];
+                                 done = YES;
+                                 [cond signal];
+                                 [cond unlock];
+                               }]
+               callOptions:options];
+
+  NSDate *deadline = [NSDate dateWithTimeIntervalSinceNow:TEST_TIMEOUT];
+  [call start];
+
+  [cond lock];
+  while (!done && [deadline timeIntervalSinceNow] > 0) {
+    [cond waitUntilDate:deadline];
+  }
+  XCTAssertTrue(messageReceived);
+  XCTAssertTrue(done);
+  [cond unlock];
+}
+
 - (void)testLargeUnaryRPC {
   XCTAssertNotNil([[self class] host]);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"LargeUnary"];
@@ -290,6 +361,90 @@ BOOL isRemoteInteropTest(NSString *host) {
                                }]
                callOptions:options];
   [call start];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
+- (void)testConcurrentRPCsWithErrorsWithV2API {
+  NSMutableArray *completeExpectations = [NSMutableArray array];
+  NSMutableArray *calls = [NSMutableArray array];
+  int num_rpcs = 10;
+  for (int i = 0; i < num_rpcs; ++i) {
+    [completeExpectations
+        addObject:[self expectationWithDescription:
+                            [NSString stringWithFormat:@"Received trailer for RPC %d", i]]];
+
+    RMTSimpleRequest *request = [RMTSimpleRequest message];
+    request.responseType = RMTPayloadType_Compressable;
+    request.responseSize = 314159;
+    request.payload.body = [NSMutableData dataWithLength:271828];
+    if (i % 3 == 0) {
+      request.responseStatus.code = GRPC_STATUS_UNAVAILABLE;
+    } else if (i % 7 == 0) {
+      request.responseStatus.code = GRPC_STATUS_CANCELLED;
+    }
+    GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+    options.transportType = [[self class] transportType];
+    options.PEMRootCertificates = [[self class] PEMRootCertificates];
+    options.hostNameOverride = [[self class] hostNameOverride];
+
+    GRPCUnaryProtoCall *call = [_service
+        unaryCallWithMessage:request
+             responseHandler:[[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+                                 messageCallback:^(id message) {
+                                   if (message) {
+                                     RMTSimpleResponse *expectedResponse =
+                                         [RMTSimpleResponse message];
+                                     expectedResponse.payload.type = RMTPayloadType_Compressable;
+                                     expectedResponse.payload.body =
+                                         [NSMutableData dataWithLength:314159];
+                                     XCTAssertEqualObjects(message, expectedResponse);
+                                   }
+                                 }
+                                 closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                                   [completeExpectations[i] fulfill];
+                                 }]
+                 callOptions:options];
+    [calls addObject:call];
+  }
+
+  for (int i = 0; i < num_rpcs; ++i) {
+    GRPCUnaryProtoCall *call = calls[i];
+    [call start];
+  }
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
+- (void)testConcurrentRPCsWithErrors {
+  NSMutableArray *completeExpectations = [NSMutableArray array];
+  int num_rpcs = 10;
+  for (int i = 0; i < num_rpcs; ++i) {
+    [completeExpectations
+        addObject:[self expectationWithDescription:
+                            [NSString stringWithFormat:@"Received trailer for RPC %d", i]]];
+
+    RMTSimpleRequest *request = [RMTSimpleRequest message];
+    request.responseType = RMTPayloadType_Compressable;
+    request.responseSize = 314159;
+    request.payload.body = [NSMutableData dataWithLength:271828];
+    if (i % 3 == 0) {
+      request.responseStatus.code = GRPC_STATUS_UNAVAILABLE;
+    } else if (i % 7 == 0) {
+      request.responseStatus.code = GRPC_STATUS_CANCELLED;
+    }
+
+    [_service unaryCallWithRequest:request
+                           handler:^(RMTSimpleResponse *response, NSError *error) {
+                             if (error == nil) {
+                               RMTSimpleResponse *expectedResponse = [RMTSimpleResponse message];
+                               expectedResponse.payload.type = RMTPayloadType_Compressable;
+                               expectedResponse.payload.body =
+                                   [NSMutableData dataWithLength:314159];
+                               XCTAssertEqualObjects(response, expectedResponse);
+                             }
+                             [completeExpectations[i] fulfill];
+                           }];
+  }
+
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
@@ -570,6 +725,67 @@ BOOL isRemoteInteropTest(NSString *host) {
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
+- (void)testPingPongRPCWithFlowControl {
+  XCTAssertNotNil([[self class] host]);
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"PingPongWithV2API"];
+
+  NSArray *requests = @[ @27182, @8, @1828, @45904 ];
+  NSArray *responses = @[ @31415, @9, @2653, @58979 ];
+
+  __block int index = 0;
+
+  id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
+                                               requestedResponseSize:responses[index]];
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.transportType = [[self class] transportType];
+  options.PEMRootCertificates = [[self class] PEMRootCertificates];
+  options.hostNameOverride = [[self class] hostNameOverride];
+  options.flowControlEnabled = YES;
+  __block BOOL canWriteData = NO;
+
+  __block GRPCStreamingProtoCall *call = [_service
+      fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
+                                            initWithInitialMetadataCallback:nil
+                                            messageCallback:^(id message) {
+                                              XCTAssertLessThan(index, 4,
+                                                                @"More than 4 responses received.");
+                                              id expected = [RMTStreamingOutputCallResponse
+                                                  messageWithPayloadSize:responses[index]];
+                                              XCTAssertEqualObjects(message, expected);
+                                              index += 1;
+                                              if (index < 4) {
+                                                id request = [RMTStreamingOutputCallRequest
+                                                    messageWithPayloadSize:requests[index]
+                                                     requestedResponseSize:responses[index]];
+                                                XCTAssertTrue(canWriteData);
+                                                canWriteData = NO;
+                                                [call writeMessage:request];
+                                                [call receiveNextMessage];
+                                              } else {
+                                                [call finish];
+                                              }
+                                            }
+                                            closeCallback:^(NSDictionary *trailingMetadata,
+                                                            NSError *error) {
+                                              XCTAssertNil(error,
+                                                           @"Finished with unexpected error: %@",
+                                                           error);
+                                              XCTAssertEqual(index, 4,
+                                                             @"Received %i responses instead of 4.",
+                                                             index);
+                                              [expectation fulfill];
+                                            }
+                                            writeMessageCallback:^{
+                                              canWriteData = YES;
+                                            }]
+                            callOptions:options];
+  [call start];
+  [call receiveNextMessage];
+  [call writeMessage:request];
+
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
 - (void)testEmptyStreamRPC {
   XCTAssertNotNil([[self class] host]);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyStream"];
@@ -753,7 +969,7 @@ BOOL isRemoteInteropTest(NSString *host) {
                      [GRPCCall closeOpenConnections];
 #pragma clang diagnostic pop
 
-                     [_service
+                     [self->_service
                          emptyCallWithRequest:request
                                       handler:^(GPBEmpty *response, NSError *error) {
                                         XCTAssertNil(

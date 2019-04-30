@@ -130,6 +130,11 @@ class Service {
           internal::RpcServiceMethod::ApiType::RAW_CALL_BACK);
     }
 
+    internal::MethodHandler* GetHandler(int index) {
+      size_t idx = static_cast<size_t>(index);
+      return service_->methods_[idx]->handler();
+    }
+
    private:
     Service* service_;
   };

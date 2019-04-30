@@ -21,8 +21,8 @@
 #include <string.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/arena.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/context/security_context.h"
@@ -102,9 +102,9 @@ grpc_client_security_context::~grpc_client_security_context() {
 }
 
 grpc_client_security_context* grpc_client_security_context_create(
-    gpr_arena* arena, grpc_call_credentials* creds) {
-  return new (gpr_arena_alloc(arena, sizeof(grpc_client_security_context)))
-      grpc_client_security_context(creds != nullptr ? creds->Ref() : nullptr);
+    grpc_core::Arena* arena, grpc_call_credentials* creds) {
+  return arena->New<grpc_client_security_context>(
+      creds != nullptr ? creds->Ref() : nullptr);
 }
 
 void grpc_client_security_context_destroy(void* ctx) {
@@ -123,9 +123,8 @@ grpc_server_security_context::~grpc_server_security_context() {
 }
 
 grpc_server_security_context* grpc_server_security_context_create(
-    gpr_arena* arena) {
-  return new (gpr_arena_alloc(arena, sizeof(grpc_server_security_context)))
-      grpc_server_security_context();
+    grpc_core::Arena* arena) {
+  return arena->New<grpc_server_security_context>();
 }
 
 void grpc_server_security_context_destroy(void* ctx) {

@@ -185,7 +185,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
 
   void ResetStub() {
     string target = "dns:localhost:" + to_string(port_);
-    channel_ = CreateChannel(target, InsecureChannelCredentials());
+    channel_ = grpc::CreateChannel(target, InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 

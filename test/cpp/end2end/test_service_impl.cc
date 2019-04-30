@@ -200,6 +200,17 @@ Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
     EXPECT_FALSE(context->IsCancelled());
   }
 
+  if (request->has_param() && request->param().echo_metadata_initially()) {
+    const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata =
+        context->client_metadata();
+    for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator
+             iter = client_metadata.begin();
+         iter != client_metadata.end(); ++iter) {
+      context->AddInitialMetadata(ToString(iter->first),
+                                  ToString(iter->second));
+    }
+  }
+
   if (request->has_param() && request->param().echo_metadata()) {
     const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata =
         context->client_metadata();
@@ -377,6 +388,18 @@ void CallbackTestServiceImpl::EchoNonDelayed(
   } else if (!request->has_param() ||
              !request->param().skip_cancelled_check()) {
     EXPECT_FALSE(context->IsCancelled());
+  }
+
+  if (request->has_param() && request->param().echo_metadata_initially()) {
+    const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata =
+        context->client_metadata();
+    for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator
+             iter = client_metadata.begin();
+         iter != client_metadata.end(); ++iter) {
+      context->AddInitialMetadata(ToString(iter->first),
+                                  ToString(iter->second));
+    }
+    controller->SendInitialMetadata([](bool ok) { EXPECT_TRUE(ok); });
   }
 
   if (request->has_param() && request->param().echo_metadata()) {

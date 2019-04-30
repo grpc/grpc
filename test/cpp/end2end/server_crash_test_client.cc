@@ -28,6 +28,7 @@
 #include <grpcpp/create_channel.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/cpp/util/test_config.h"
 
 DEFINE_string(address, "", "Address to connect to");
 DEFINE_string(mode, "", "Test mode to use");
@@ -35,15 +36,8 @@ DEFINE_string(mode, "", "Test mode to use");
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 
-// In some distros, gflags is in the namespace google, and in some others,
-// in gflags. This hack is enabling us to find both.
-namespace google {}
-namespace gflags {}
-using namespace google;
-using namespace gflags;
-
 int main(int argc, char** argv) {
-  ParseCommandLineFlags(&argc, &argv, true);
+  grpc::testing::InitTest(&argc, &argv, true);
   auto stub = grpc::testing::EchoTestService::NewStub(
       grpc::CreateChannel(FLAGS_address, grpc::InsecureChannelCredentials()));
 

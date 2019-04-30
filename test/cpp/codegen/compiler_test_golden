@@ -41,11 +41,18 @@
 #include <grpcpp/impl/codegen/sync_stream.h>
 
 namespace grpc_impl {
+class Channel;
 class CompletionQueue;
 class ServerCompletionQueue;
 }  // namespace grpc_impl
+
 namespace grpc {
-class Channel;
+namespace experimental {
+template <typename RequestT, typename ResponseT>
+class MessageAllocator;
+}  // namespace experimental
+}  // namespace grpc_impl
+namespace grpc {
 class ServerContext;
 }  // namespace grpc
 
@@ -116,6 +123,8 @@ class ServiceA final {
       // MethodA1 leading comment 1
       virtual void MethodA1(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, std::function<void(::grpc::Status)>) = 0;
       virtual void MethodA1(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::testing::Response* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void MethodA1(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, ::grpc::experimental::ClientUnaryReactor* reactor) = 0;
+      virtual void MethodA1(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::testing::Response* response, ::grpc::experimental::ClientUnaryReactor* reactor) = 0;
       // MethodA1 trailing comment 1
       // MethodA2 detached leading comment 1
       //
@@ -186,6 +195,8 @@ class ServiceA final {
      public:
       void MethodA1(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, std::function<void(::grpc::Status)>) override;
       void MethodA1(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::testing::Response* response, std::function<void(::grpc::Status)>) override;
+      void MethodA1(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, ::grpc::experimental::ClientUnaryReactor* reactor) override;
+      void MethodA1(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::testing::Response* response, ::grpc::experimental::ClientUnaryReactor* reactor) override;
       void MethodA2(::grpc::ClientContext* context, ::grpc::testing::Response* response, ::grpc::experimental::ClientWriteReactor< ::grpc::testing::Request>* reactor) override;
       void MethodA3(::grpc::ClientContext* context, ::grpc::testing::Request* request, ::grpc::experimental::ClientReadReactor< ::grpc::testing::Response>* reactor) override;
       void MethodA4(::grpc::ClientContext* context, ::grpc::experimental::ClientBidiReactor< ::grpc::testing::Request,::grpc::testing::Response>* reactor) override;
@@ -333,6 +344,12 @@ class ServiceA final {
                  ::grpc::experimental::ServerCallbackRpcController* controller) {
                    return this->MethodA1(context, request, response, controller);
                  }));
+    }
+    void SetMessageAllocatorFor_MethodA1(
+        ::grpc::experimental::MessageAllocator< ::grpc::testing::Request, ::grpc::testing::Response>* allocator) {
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>*>(
+          ::grpc::Service::experimental().GetHandler(0))
+              ->SetMessageAllocator(allocator);
     }
     ~ExperimentalWithCallbackMethod_MethodA1() override {
       BaseClassMustBeDerivedFromService(this);
@@ -719,6 +736,8 @@ class ServiceB final {
       // MethodB1 leading comment 1
       virtual void MethodB1(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, std::function<void(::grpc::Status)>) = 0;
       virtual void MethodB1(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::testing::Response* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void MethodB1(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, ::grpc::experimental::ClientUnaryReactor* reactor) = 0;
+      virtual void MethodB1(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::testing::Response* response, ::grpc::experimental::ClientUnaryReactor* reactor) = 0;
       // MethodB1 trailing comment 1
     };
     virtual class experimental_async_interface* experimental_async() { return nullptr; }
@@ -741,6 +760,8 @@ class ServiceB final {
      public:
       void MethodB1(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, std::function<void(::grpc::Status)>) override;
       void MethodB1(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::testing::Response* response, std::function<void(::grpc::Status)>) override;
+      void MethodB1(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, ::grpc::experimental::ClientUnaryReactor* reactor) override;
+      void MethodB1(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::testing::Response* response, ::grpc::experimental::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit experimental_async(Stub* stub): stub_(stub) { }
@@ -801,6 +822,12 @@ class ServiceB final {
                  ::grpc::experimental::ServerCallbackRpcController* controller) {
                    return this->MethodB1(context, request, response, controller);
                  }));
+    }
+    void SetMessageAllocatorFor_MethodB1(
+        ::grpc::experimental::MessageAllocator< ::grpc::testing::Request, ::grpc::testing::Response>* allocator) {
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>*>(
+          ::grpc::Service::experimental().GetHandler(0))
+              ->SetMessageAllocator(allocator);
     }
     ~ExperimentalWithCallbackMethod_MethodB1() override {
       BaseClassMustBeDerivedFromService(this);

@@ -49,8 +49,8 @@ ClientChannelNode::ClientChannelNode(grpc_channel* channel,
     : ChannelNode(channel, channel_tracer_max_nodes, is_top_level_channel) {
   client_channel_ =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
-  grpc_client_channel_set_channelz_node(client_channel_, this);
   GPR_ASSERT(client_channel_->filter == &grpc_client_channel_filter);
+  grpc_client_channel_set_channelz_node(client_channel_, this);
 }
 
 void ClientChannelNode::PopulateConnectivityState(grpc_json* json) {
@@ -127,8 +127,7 @@ void SubchannelNode::PopulateConnectivityState(grpc_json* json) {
   if (subchannel_ == nullptr) {
     state = GRPC_CHANNEL_SHUTDOWN;
   } else {
-    state = subchannel_->CheckConnectivity(nullptr,
-                                           true /* inhibit_health_checking */);
+    state = subchannel_->CheckConnectivity(true /* inhibit_health_checking */);
   }
   json = grpc_json_create_child(nullptr, json, "state", nullptr,
                                 GRPC_JSON_OBJECT, false);

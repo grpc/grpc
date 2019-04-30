@@ -32,8 +32,9 @@ namespace grpc_impl {
 
 class CompletionQueue;
 class ServerCompletionQueue;
+class Channel;
 class ServerCredentials;
-}
+}  // namespace grpc_impl
 namespace grpc {
 
 class AsyncGenericService;
@@ -149,7 +150,7 @@ class ServerInterface : public internal::CallHook {
   /// 192.168.1.1:31416, [::1]:27182, etc.).
   /// \params creds The credentials associated with the server.
   ///
-  /// \return bound port number on sucess, 0 on failure.
+  /// \return bound port number on success, 0 on failure.
   ///
   /// \warning It's an error to call this method on an already started server.
   virtual int AddListeningPort(const grpc::string& addr,
