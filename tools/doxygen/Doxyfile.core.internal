@@ -970,6 +970,7 @@ src/core/ext/filters/client_channel/service_config.cc \
 src/core/ext/filters/client_channel/service_config.h \
 src/core/ext/filters/client_channel/subchannel.cc \
 src/core/ext/filters/client_channel/subchannel.h \
+src/core/ext/filters/client_channel/subchannel_interface.h \
 src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
 src/core/ext/filters/client_channel/subchannel_pool_interface.h \
 src/core/ext/filters/deadline/deadline_filter.cc \

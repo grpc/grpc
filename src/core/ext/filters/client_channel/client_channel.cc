@@ -176,6 +176,7 @@ class ChannelData {
  private:
   class ConnectivityStateAndPickerSetter;
   class ServiceConfigSetter;
+  class GrpcSubchannel;
   class ClientChannelControlHelper;
 
   class ExternalConnectivityWatcher {
@@ -223,7 +224,7 @@ class ChannelData {
   ~ChannelData();
 
   static bool ProcessResolverResultLocked(
-      void* arg, Resolver::Result* result, const char** lb_policy_name,
+      void* arg, const Resolver::Result& result, const char** lb_policy_name,
       RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config);
 
   grpc_error* DoPingLocked(grpc_transport_op* op);
@@ -264,6 +265,7 @@ class ChannelData {
   OrphanablePtr<LoadBalancingPolicy> resolving_lb_policy_;
   grpc_connectivity_state_tracker state_tracker_;
   ExternalConnectivityWatcher::WatcherList external_connectivity_watcher_list_;
+  UniquePtr<char> health_check_service_name_;
 
   //
   // Fields accessed from both data plane and control plane combiners.
@@ -925,6 +927,83 @@ void ChannelData::ExternalConnectivityWatcher::WatchConnectivityStateLocked(
 }
 
 //
+// ChannelData::GrpcSubchannel
+//
+
+class ChannelData::GrpcSubchannel : public SubchannelInterface {
+ public:
+  GrpcSubchannel(Subchannel* subchannel, grpc_pollset_set* interested_parties,
+                 UniquePtr<char> health_check_service_name)
+      : subchannel_(subchannel),
+        interested_parties_(interested_parties),
+        health_check_service_name_(std::move(health_check_service_name)) {}
+
+  ~GrpcSubchannel() { GRPC_SUBCHANNEL_UNREF(subchannel_, "unref from LB"); }
+
+  grpc_connectivity_state GetConnectivityState(
+      RefCountedPtr<ConnectedSubchannel>* connected_subchannel) override {
+    return subchannel_->CheckConnectivity(
+        health_check_service_name_.get(),
+        connected_subchannel);
+  }
+
+  void WatchConnectivityState(
+      grpc_connectivity_state initial_state,
+      UniquePtr<ConnectivityStateWatcher> watcher) override {
+    GPR_ASSERT(watcher_ == nullptr);
+    watcher_ = New<WatcherWrapper>(std::move(watcher), Ref());
+    subchannel_->WatchConnectivityState(
+        initial_state,
+        UniquePtr<char>(gpr_strdup(health_check_service_name_.get())),
+        UniquePtr<Subchannel::ConnectivityStateWatcher>(watcher_));
+  }
+
+  void CancelConnectivityStateWatch(
+      ConnectivityStateWatcher* watcher) override {
+    subchannel_->CancelConnectivityStateWatch(health_check_service_name_.get(),
+                                              watcher_);
+    watcher_ = nullptr;
+  }
+
+  void AttemptToConnect() override { subchannel_->AttemptToConnect(); }
+
+  channelz::SubchannelNode* channelz_node() override {
+    return subchannel_->channelz_node();
+  }
+
+  void ResetBackoff() override { subchannel_->ResetBackoff(); }
+
+ private:
+  class WatcherWrapper : public Subchannel::ConnectivityStateWatcher {
+   public:
+    WatcherWrapper(
+        UniquePtr<SubchannelInterface::ConnectivityStateWatcher> watcher,
+        RefCountedPtr<GrpcSubchannel> parent)
+        : watcher_(std::move(watcher)), parent_(std::move(parent)) {}
+
+    void OnConnectivityStateChange(
+        grpc_connectivity_state new_state,
+        RefCountedPtr<ConnectedSubchannel> connected_subchannel) override {
+      watcher_->OnConnectivityStateChange(new_state,
+                                          std::move(connected_subchannel));
+    }
+
+    grpc_pollset_set* interested_parties() override {
+      return parent_->interested_parties_;
+    }
+
+   private:
+    UniquePtr<SubchannelInterface::ConnectivityStateWatcher> watcher_;
+    RefCountedPtr<GrpcSubchannel> parent_;
+  };
+
+  Subchannel* subchannel_;
+  grpc_pollset_set* interested_parties_;
+  UniquePtr<char> health_check_service_name_;
+  WatcherWrapper* watcher_ = nullptr;
+};
+
+//
 // ChannelData::ClientChannelControlHelper
 //
 
@@ -940,15 +1019,26 @@ class ChannelData::ClientChannelControlHelper
                              "ClientChannelControlHelper");
   }
 
-  Subchannel* CreateSubchannel(const grpc_channel_args& args) override {
+  RefCountedPtr<SubchannelInterface> CreateSubchannel(
+      const grpc_channel_args& args) override {
+    bool inhibit_health_checking = grpc_channel_arg_get_bool(
+        grpc_channel_args_find(&args, GRPC_ARG_INHIBIT_HEALTH_CHECKING), false);
+    UniquePtr<char> health_check_service_name;
+    if (!inhibit_health_checking) {
+      health_check_service_name.reset(
+          gpr_strdup(chand_->health_check_service_name_.get()));
+    }
+    static const char* args_to_remove[] = {GRPC_ARG_INHIBIT_HEALTH_CHECKING};
     grpc_arg arg = SubchannelPoolInterface::CreateChannelArg(
         chand_->subchannel_pool_.get());
-    grpc_channel_args* new_args =
-        grpc_channel_args_copy_and_add(&args, &arg, 1);
+    grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
+        &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &arg, 1);
     Subchannel* subchannel =
         chand_->client_channel_factory_->CreateSubchannel(new_args);
     grpc_channel_args_destroy(new_args);
-    return subchannel;
+    return MakeRefCounted<GrpcSubchannel>(subchannel,
+                                          chand_->interested_parties_,
+                                          std::move(health_check_service_name));
   }
 
   grpc_channel* CreateChannel(const char* target,
@@ -1122,27 +1212,18 @@ ChannelData::~ChannelData() {
 // Synchronous callback from ResolvingLoadBalancingPolicy to process a
 // resolver result update.
 bool ChannelData::ProcessResolverResultLocked(
-    void* arg, Resolver::Result* result, const char** lb_policy_name,
+    void* arg, const Resolver::Result& result, const char** lb_policy_name,
     RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config) {
   ChannelData* chand = static_cast<ChannelData*>(arg);
-  ProcessedResolverResult resolver_result(*result);
+  ProcessedResolverResult resolver_result(result);
   char* service_config_json = gpr_strdup(resolver_result.service_config_json());
   if (grpc_client_channel_routing_trace.enabled()) {
     gpr_log(GPR_INFO, "chand=%p: resolver returned service config: \"%s\"",
             chand, service_config_json);
   }
-  // FIXME: Eliminate this hack as part of hiding health check
-  // service name from LB policy API.  As part of this, change the API
-  // for this function to pass in result as a const reference.
-  if (resolver_result.health_check_service_name() != nullptr) {
-    grpc_arg new_arg = grpc_channel_arg_string_create(
-        const_cast<char*>("grpc.temp.health_check"),
-        const_cast<char*>(resolver_result.health_check_service_name()));
-    grpc_channel_args* new_args =
-        grpc_channel_args_copy_and_add(result->args, &new_arg, 1);
-    grpc_channel_args_destroy(result->args);
-    result->args = new_args;
-  }
+  // Save health check service name.
+  chand->health_check_service_name_.reset(
+      gpr_strdup(resolver_result.health_check_service_name()));
   // Create service config setter to update channel state in the data
   // plane combiner.  Destroys itself when done.
   New<ServiceConfigSetter>(chand, resolver_result.retry_throttle_data(),

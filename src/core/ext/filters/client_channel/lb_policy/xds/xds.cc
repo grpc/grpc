@@ -337,7 +337,8 @@ class XdsLb : public LoadBalancingPolicy {
     explicit FallbackHelper(RefCountedPtr<XdsLb> parent)
         : parent_(std::move(parent)) {}
 
-    Subchannel* CreateSubchannel(const grpc_channel_args& args) override;
+    RefCountedPtr<SubchannelInterface> CreateSubchannel(
+        const grpc_channel_args& args) override;
     grpc_channel* CreateChannel(const char* target,
                                 const grpc_channel_args& args) override;
     void UpdateState(grpc_connectivity_state state,
@@ -377,7 +378,8 @@ class XdsLb : public LoadBalancingPolicy {
         explicit Helper(RefCountedPtr<LocalityEntry> entry)
             : entry_(std::move(entry)) {}
 
-        Subchannel* CreateSubchannel(const grpc_channel_args& args) override;
+        RefCountedPtr<SubchannelInterface> CreateSubchannel(
+            const grpc_channel_args& args) override;
         grpc_channel* CreateChannel(const char* target,
                                     const grpc_channel_args& args) override;
         void UpdateState(grpc_connectivity_state state,
@@ -584,7 +586,7 @@ bool XdsLb::FallbackHelper::CalledByCurrentFallback() const {
   return child_ == parent_->fallback_policy_.get();
 }
 
-Subchannel* XdsLb::FallbackHelper::CreateSubchannel(
+RefCountedPtr<SubchannelInterface> XdsLb::FallbackHelper::CreateSubchannel(
     const grpc_channel_args& args) {
   if (parent_->shutting_down_ ||
       (!CalledByPendingFallback() && !CalledByCurrentFallback())) {
@@ -2005,7 +2007,8 @@ bool XdsLb::LocalityMap::LocalityEntry::Helper::CalledByCurrentChild() const {
   return child_ == entry_->child_policy_.get();
 }
 
-Subchannel* XdsLb::LocalityMap::LocalityEntry::Helper::CreateSubchannel(
+RefCountedPtr<SubchannelInterface>
+XdsLb::LocalityMap::LocalityEntry::Helper::CreateSubchannel(
     const grpc_channel_args& args) {
   if (entry_->parent_->shutting_down_ ||
       (!CalledByPendingChild() && !CalledByCurrentChild())) {

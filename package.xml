@@ -305,6 +305,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/server_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_pool_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/health/health.pb.h" role="src" />

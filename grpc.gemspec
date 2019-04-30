@@ -300,6 +300,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/server_address.h )
   s.files += %w( src/core/ext/filters/client_channel/service_config.h )
   s.files += %w( src/core/ext/filters/client_channel/subchannel.h )
+  s.files += %w( src/core/ext/filters/client_channel/subchannel_interface.h )
   s.files += %w( src/core/ext/filters/client_channel/subchannel_pool_interface.h )
   s.files += %w( src/core/ext/filters/deadline/deadline_filter.h )
   s.files += %w( src/core/ext/filters/client_channel/health/health.pb.h )

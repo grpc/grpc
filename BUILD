@@ -1128,6 +1128,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/server_address.h",
         "src/core/ext/filters/client_channel/service_config.h",
         "src/core/ext/filters/client_channel/subchannel.h",
+        "src/core/ext/filters/client_channel/subchannel_interface.h",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.h",
     ],
     language = "c++",
