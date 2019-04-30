@@ -110,10 +110,13 @@ BOOL isRemoteInteropTest(NSString *host) {
 + (void)setUp {
   NSLog(@"InteropTest Started, class: %@", [[self class] description]);
 #ifdef GRPC_COMPILE_WITH_CRONET
-  // Cronet setup
-  [Cronet setHttp2Enabled:YES];
-  [Cronet start];
-  [GRPCCall useCronetWithEngine:[Cronet getGlobalEngine]];
+  static dispatch_once_t *enableCronet;
+  dispatch_once(enableCronet, ^{
+    // Cronet setup
+    [Cronet setHttp2Enabled:YES];
+    [Cronet start];
+    [GRPCCall useCronetWithEngine:[Cronet getGlobalEngine]];
+  });
 #endif
 #ifdef GRPC_CFSTREAM
   setenv(kCFStreamVarName, "1", 1);
