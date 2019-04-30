@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/support/log.h>
+
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <string.h>
@@ -239,6 +241,19 @@ void grpc_slice_buffer_reset_and_unref_internal(grpc_slice_buffer* sb);
 void grpc_slice_buffer_partial_unref_internal(grpc_slice_buffer* sb,
                                               size_t idx);
 void grpc_slice_buffer_destroy_internal(grpc_slice_buffer* sb);
+
+// Returns the first slice in the slice buffer.
+inline grpc_slice* grpc_slice_buffer_mutable_first(grpc_slice_buffer* sb) {
+  GPR_DEBUG_ASSERT(sb->count > 0);
+  return &sb->slices[0];
+}
+
+// Consumes the first slice in the slice buffer.
+void grpc_slice_buffer_consume_first(grpc_slice_buffer* sb);
+
+// Calls grpc_slice_sub with the given parameters on the first slice.
+void grpc_slice_buffer_sub_first(grpc_slice_buffer* sb, size_t begin,
+                                 size_t end);
 
 /* Check if a slice is interned */
 bool grpc_slice_is_interned(const grpc_slice& slice);

@@ -144,11 +144,12 @@ size_t SecurityHandshaker::MoveReadBufferIntoHandshakeBuffer() {
   }
   size_t offset = 0;
   while (args_->read_buffer->count > 0) {
-    grpc_slice next_slice = grpc_slice_buffer_take_first(args_->read_buffer);
-    memcpy(handshake_buffer_ + offset, GRPC_SLICE_START_PTR(next_slice),
-           GRPC_SLICE_LENGTH(next_slice));
-    offset += GRPC_SLICE_LENGTH(next_slice);
-    grpc_slice_unref_internal(next_slice);
+    grpc_slice* next_slice =
+        grpc_slice_buffer_mutable_first(args_->read_buffer);
+    memcpy(handshake_buffer_ + offset, GRPC_SLICE_START_PTR(*next_slice),
+           GRPC_SLICE_LENGTH(*next_slice));
+    offset += GRPC_SLICE_LENGTH(*next_slice);
+    grpc_slice_buffer_consume_first(args_->read_buffer);
   }
   return bytes_in_read_buffer;
 }

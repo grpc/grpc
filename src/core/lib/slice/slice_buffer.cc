@@ -370,6 +370,24 @@ grpc_slice grpc_slice_buffer_take_first(grpc_slice_buffer* sb) {
   return slice;
 }
 
+void grpc_slice_buffer_consume_first(grpc_slice_buffer* sb) {
+  GPR_ASSERT(sb->count > 0);
+  sb->length -= GRPC_SLICE_LENGTH(sb->slices[0]);
+  grpc_slice_unref_internal(sb->slices[0]);
+  sb->slices++;
+  if (--sb->count == 0) {
+    sb->slices = sb->base_slices;
+  }
+}
+
+void grpc_slice_buffer_sub_first(grpc_slice_buffer* sb, size_t begin,
+                                 size_t end) {
+  // TODO(soheil): Introduce a ptr version for sub.
+  sb->length -= GRPC_SLICE_LENGTH(sb->slices[0]);
+  sb->slices[0] = grpc_slice_sub_no_ref(sb->slices[0], begin, end);
+  sb->length += GRPC_SLICE_LENGTH(sb->slices[0]);
+}
+
 void grpc_slice_buffer_undo_take_first(grpc_slice_buffer* sb,
                                        grpc_slice slice) {
   sb->slices--;
