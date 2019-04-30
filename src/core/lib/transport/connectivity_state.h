@@ -37,8 +37,6 @@ typedef struct grpc_connectivity_state_watcher {
 typedef struct {
   /** current grpc_connectivity_state */
   gpr_atm current_state_atm;
-  /** error associated with state */
-  grpc_error* current_error;
   /** all our watchers */
   grpc_connectivity_state_watcher* watchers;
   /** a name to help debugging */
@@ -59,7 +57,6 @@ void grpc_connectivity_state_destroy(grpc_connectivity_state_tracker* tracker);
  *  external lock */
 void grpc_connectivity_state_set(grpc_connectivity_state_tracker* tracker,
                                  grpc_connectivity_state state,
-                                 grpc_error* associated_error,
                                  const char* reason);
 
 /** Return true if this connectivity state has watchers.
@@ -70,11 +67,6 @@ bool grpc_connectivity_state_has_watchers(
 /** Return the last seen connectivity state. No need to synchronize access. */
 grpc_connectivity_state grpc_connectivity_state_check(
     grpc_connectivity_state_tracker* tracker);
-
-/** Return the last seen connectivity state, and the associated error.
-    Access must be serialized with an external lock. */
-grpc_connectivity_state grpc_connectivity_state_get(
-    grpc_connectivity_state_tracker* tracker, grpc_error** error);
 
 /** Return 1 if the channel should start connecting, 0 otherwise.
     If current==NULL cancel notify if it is already queued (success==0 in that

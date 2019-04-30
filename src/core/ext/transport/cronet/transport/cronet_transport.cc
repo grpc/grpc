@@ -29,6 +29,7 @@
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/ext/transport/cronet/transport/cronet_transport.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
@@ -45,13 +46,11 @@
 #define GRPC_HEADER_SIZE_IN_BYTES 5
 #define GRPC_FLUSH_READ_SIZE 4096
 
-#define CRONET_LOG(...)                          \
-  do {                                           \
-    if (grpc_cronet_trace) gpr_log(__VA_ARGS__); \
+grpc_core::TraceFlag grpc_cronet_trace(false, "cronet");
+#define CRONET_LOG(...)                                    \
+  do {                                                     \
+    if (grpc_cronet_trace.enabled()) gpr_log(__VA_ARGS__); \
   } while (0)
-
-/* TODO (makdharma): Hook up into the wider tracing mechanism */
-int grpc_cronet_trace = 0;
 
 enum e_op_result {
   ACTION_TAKEN_WITH_CALLBACK,
@@ -111,7 +110,7 @@ typedef struct grpc_cronet_transport grpc_cronet_transport;
 /* TODO (makdharma): reorder structure for memory efficiency per
    http://www.catb.org/esr/structure-packing/#_structure_reordering: */
 struct read_state {
-  read_state(gpr_arena* arena)
+  read_state(grpc_core::Arena* arena)
       : trailing_metadata(arena), initial_metadata(arena) {
     grpc_slice_buffer_init(&read_slice_buffer);
   }
@@ -145,7 +144,7 @@ struct write_state {
 
 /* track state of one stream op */
 struct op_state {
-  op_state(gpr_arena* arena) : rs(arena) {}
+  op_state(grpc_core::Arena* arena) : rs(arena) {}
 
   bool state_op_done[OP_NUM_OPS] = {};
   bool state_callback_received[OP_NUM_OPS] = {};
@@ -187,10 +186,10 @@ struct op_storage {
 
 struct stream_obj {
   stream_obj(grpc_transport* gt, grpc_stream* gs,
-             grpc_stream_refcount* refcount, gpr_arena* arena);
+             grpc_stream_refcount* refcount, grpc_core::Arena* arena);
   ~stream_obj();
 
-  gpr_arena* arena;
+  grpc_core::Arena* arena;
   struct op_and_state* oas = nullptr;
   grpc_transport_stream_op_batch* curr_op = nullptr;
   grpc_cronet_transport* curr_ct;
@@ -1369,7 +1368,8 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
 */
 
 inline stream_obj::stream_obj(grpc_transport* gt, grpc_stream* gs,
-                              grpc_stream_refcount* refcount, gpr_arena* arena)
+                              grpc_stream_refcount* refcount,
+                              grpc_core::Arena* arena)
     : arena(arena),
       curr_ct(reinterpret_cast<grpc_cronet_transport*>(gt)),
       curr_gs(gs),
@@ -1388,7 +1388,7 @@ inline stream_obj::~stream_obj() {
 
 static int init_stream(grpc_transport* gt, grpc_stream* gs,
                        grpc_stream_refcount* refcount, const void* server_data,
-                       gpr_arena* arena) {
+                       grpc_core::Arena* arena) {
   new (gs) stream_obj(gt, gs, refcount, arena);
   return 0;
 }

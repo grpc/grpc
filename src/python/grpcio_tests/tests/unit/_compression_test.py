@@ -13,10 +13,6 @@
 # limitations under the License.
 """Tests server and client side compression."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import unittest
 
 import contextlib
@@ -39,17 +35,17 @@ _STREAM_UNARY = '/test/StreamUnary'
 _STREAM_STREAM = '/test/StreamStream'
 
 # Cut down on test time.
-_STREAM_LENGTH = test_constants.STREAM_LENGTH // 8
+_STREAM_LENGTH = test_constants.STREAM_LENGTH // 16
 
 _HOST = 'localhost'
 
 _REQUEST = b'\x00' * 100
-_COMPRESSION_RATIO_THRESHOLD = 0.1
+_COMPRESSION_RATIO_THRESHOLD = 0.05
 _COMPRESSION_METHODS = (
     None,
     # Disabled for test tractability.
     # grpc.Compression.NoCompression,
-    grpc.Compression.Deflate,
+    # grpc.Compression.Deflate,
     grpc.Compression.Gzip,
 )
 _COMPRESSION_NAMES = {

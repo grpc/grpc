@@ -61,6 +61,7 @@ static void iomgr_platform_init(void) {
   winsock_init();
   grpc_iocp_init();
   grpc_pollset_global_init();
+  grpc_wsa_socket_flags_init();
 }
 
 static void iomgr_platform_flush(void) { grpc_iocp_flush(); }

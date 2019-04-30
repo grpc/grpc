@@ -969,6 +969,7 @@ include/grpcpp/impl/codegen/grpc_library.h \
 include/grpcpp/impl/codegen/intercepted_channel.h \
 include/grpcpp/impl/codegen/interceptor.h \
 include/grpcpp/impl/codegen/interceptor_common.h \
+include/grpcpp/impl/codegen/message_allocator.h \
 include/grpcpp/impl/codegen/metadata_map.h \
 include/grpcpp/impl/codegen/method_handler_impl.h \
 include/grpcpp/impl/codegen/proto_buffer_reader.h \
@@ -1008,6 +1009,7 @@ include/grpcpp/security/auth_context.h \
 include/grpcpp/security/auth_metadata_processor.h \
 include/grpcpp/security/auth_metadata_processor_impl.h \
 include/grpcpp/security/credentials.h \
+include/grpcpp/security/credentials_impl.h \
 include/grpcpp/security/server_credentials.h \
 include/grpcpp/security/server_credentials_impl.h \
 include/grpcpp/server.h \
@@ -1020,10 +1022,12 @@ include/grpcpp/support/async_stream.h \
 include/grpcpp/support/async_unary_call.h \
 include/grpcpp/support/byte_buffer.h \
 include/grpcpp/support/channel_arguments.h \
+include/grpcpp/support/channel_arguments_impl.h \
 include/grpcpp/support/client_callback.h \
 include/grpcpp/support/client_interceptor.h \
 include/grpcpp/support/config.h \
 include/grpcpp/support/interceptor.h \
+include/grpcpp/support/message_allocator.h \
 include/grpcpp/support/proto_buffer_reader.h \
 include/grpcpp/support/proto_buffer_writer.h \
 include/grpcpp/support/server_callback.h \

@@ -32,6 +32,14 @@
 
 struct grpc_channel;
 
+namespace grpc {
+
+std::shared_ptr<::grpc_impl::Channel> CreateChannelInternal(
+    const grpc::string& host, grpc_channel* c_channel,
+    std::vector<
+        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+        interceptor_creators);
+}  // namespace grpc
 namespace grpc_impl {
 
 namespace experimental {
@@ -64,7 +72,7 @@ class Channel final : public ::grpc::ChannelInterface,
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;
   friend void experimental::ChannelResetConnectionBackoff(Channel* channel);
-  friend std::shared_ptr<Channel> CreateChannelInternal(
+  friend std::shared_ptr<Channel> grpc::CreateChannelInternal(
       const grpc::string& host, grpc_channel* c_channel,
       std::vector<std::unique_ptr<
           ::grpc::experimental::ClientInterceptorFactoryInterface>>

@@ -26,9 +26,7 @@
 
 struct grpc_channel;
 
-namespace grpc_impl {
-
-class Channel;
+namespace grpc {
 
 std::shared_ptr<Channel> CreateChannelInternal(
     const grpc::string& host, grpc_channel* c_channel,
@@ -36,6 +34,6 @@ std::shared_ptr<Channel> CreateChannelInternal(
         ::grpc::experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
 
-}  // namespace grpc_impl
+}  // namespace grpc
 
 #endif  // GRPC_INTERNAL_CPP_CLIENT_CREATE_CHANNEL_INTERNAL_H

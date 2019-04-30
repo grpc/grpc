@@ -36,6 +36,18 @@ extern grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount;
 
 namespace grpc_core {
 
+/// Interface for parsed forms of load balancing configs found in a service
+/// config.
+class ParsedLoadBalancingConfig : public RefCounted<ParsedLoadBalancingConfig> {
+ public:
+  virtual ~ParsedLoadBalancingConfig() = default;
+
+  // Returns the load balancing policy name
+  virtual const char* name() const GRPC_ABSTRACT;
+
+  GRPC_ABSTRACT_BASE_CLASS;
+};
+
 /// Interface for load balancing policies.
 ///
 /// The following concepts are used here:
@@ -167,6 +179,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   /// A proxy object used by the LB policy to communicate with the client
   /// channel.
+  // TODO(juanlishen): Consider adding a mid-layer subclass that helps handle
+  // things like swapping in pending policy when it's ready. Currently, we are
+  // duplicating the logic in many subclasses.
   class ChannelControlHelper {
    public:
     ChannelControlHelper() = default;
@@ -185,7 +200,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Sets the connectivity state and returns a new picker to be used
     /// by the client channel.
     virtual void UpdateState(grpc_connectivity_state state,
-                             grpc_error* state_error,
                              UniquePtr<SubchannelPicker>) GRPC_ABSTRACT;
 
     /// Requests that the resolver re-resolve.
@@ -194,30 +208,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     GRPC_ABSTRACT_BASE_CLASS
   };
 
-  /// Configuration for an LB policy instance.
-  // TODO(roth): Find a better JSON representation for this API.
-  class Config : public RefCounted<Config> {
-   public:
-    Config(const grpc_json* lb_config,
-           RefCountedPtr<ServiceConfig> service_config)
-        : json_(lb_config), service_config_(std::move(service_config)) {}
-
-    const char* name() const { return json_->key; }
-    const grpc_json* config() const { return json_->child; }
-    RefCountedPtr<ServiceConfig> service_config() const {
-      return service_config_;
-    }
-
-   private:
-    const grpc_json* json_;
-    RefCountedPtr<ServiceConfig> service_config_;
-  };
-
   /// Data passed to the UpdateLocked() method when new addresses and
   /// config are available.
   struct UpdateArgs {
     ServerAddressList addresses;
-    RefCountedPtr<Config> config;
+    RefCountedPtr<ParsedLoadBalancingConfig> config;
     const grpc_channel_args* args = nullptr;
 
     // TODO(roth): Remove everything below once channel args is
@@ -287,10 +282,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
   void Orphan() override;
-
-  /// Returns the JSON node of policy (with both policy name and config content)
-  /// given the JSON node of a LoadBalancingConfig array.
-  static grpc_json* ParseLoadBalancingConfig(const grpc_json* lb_config_array);
 
   // A picker that returns PICK_QUEUE for all picks.
   // Also calls the parent LB policy's ExitIdleLocked() method when the

@@ -30,9 +30,6 @@
 namespace grpc_impl {
 
 class Channel;
-}
-
-namespace grpc {
 
 class SecureChannelCredentials final : public ChannelCredentials {
  public:
@@ -42,16 +39,16 @@ class SecureChannelCredentials final : public ChannelCredentials {
   }
   grpc_channel_credentials* GetRawCreds() { return c_creds_; }
 
-  std::shared_ptr<::grpc_impl::Channel> CreateChannel(
-      const string& target, const grpc::ChannelArguments& args) override;
+  std::shared_ptr<::grpc::Channel> CreateChannelImpl(
+      const grpc::string& target, const grpc::ChannelArguments& args) override;
 
   SecureChannelCredentials* AsSecureCredentials() override { return this; }
 
  private:
-  std::shared_ptr<::grpc_impl::Channel> CreateChannelWithInterceptors(
-      const string& target, const grpc::ChannelArguments& args,
-      std::vector<
-          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+  std::shared_ptr<::grpc::Channel> CreateChannelWithInterceptors(
+      const grpc::string& target, const grpc::ChannelArguments& args,
+      std::vector<std::unique_ptr<
+          ::grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators) override;
   grpc_channel_credentials* const c_creds_;
 };
@@ -70,6 +67,10 @@ class SecureCallCredentials final : public CallCredentials {
  private:
   grpc_call_credentials* const c_creds_;
 };
+
+}  // namespace grpc_impl
+
+namespace grpc {
 
 class MetadataCredentialsPluginWrapper final : private GrpcLibraryCodegen {
  public:

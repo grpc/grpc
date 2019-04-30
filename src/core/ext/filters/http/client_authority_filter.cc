@@ -40,7 +40,7 @@ namespace {
 
 struct call_data {
   grpc_linked_mdelem authority_storage;
-  grpc_call_combiner* call_combiner;
+  grpc_core::CallCombiner* call_combiner;
 };
 
 struct channel_data {

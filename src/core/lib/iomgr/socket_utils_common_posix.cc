@@ -30,7 +30,11 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <netinet/in.h>
+#ifdef GRPC_LINUX_TCP_H
+#include <linux/tcp.h>
+#else
 #include <netinet/tcp.h>
+#endif
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>

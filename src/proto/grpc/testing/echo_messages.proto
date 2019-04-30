@@ -17,6 +17,8 @@ syntax = "proto3";
 
 package grpc.testing;
 
+option cc_enable_arenas = true;
+
 // Message to be echoed back serialized in trailer.
 message DebugInfo {
   repeated string stack_entries = 1;
@@ -47,6 +49,7 @@ message RequestParams {
   ErrorStatus expected_error = 14;
   int32 server_sleep_us = 15; // Amount to sleep when invoking server
   int32 backend_channel_idx = 16; // which backend to send request to
+  bool echo_metadata_initially = 17;
 }
 
 message EchoRequest {

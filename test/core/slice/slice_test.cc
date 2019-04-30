@@ -51,13 +51,6 @@ static void test_slice_malloc_returns_something_sensible(void) {
     }
     /* Returned slice length must be what was requested. */
     GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == length);
-    /* If the slice has a refcount, it must be destroyable. */
-    if (slice.refcount) {
-      GPR_ASSERT(slice.refcount->vtable != nullptr);
-      GPR_ASSERT(slice.refcount->vtable->ref != nullptr);
-      GPR_ASSERT(slice.refcount->vtable->unref != nullptr);
-      GPR_ASSERT(slice.refcount->vtable->hash != nullptr);
-    }
     /* We must be able to write to every byte of the data */
     for (i = 0; i < length; i++) {
       GRPC_SLICE_START_PTR(slice)[i] = static_cast<uint8_t>(i);
