@@ -104,7 +104,7 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
     uint8_t* end = nullptr;
     uint8_t* cur = nullptr;
 
-    grpc_slice* slice = grpc_slice_buffer_mutable_first(slices);
+    grpc_slice* slice = grpc_slice_buffer_peek_first(slices);
     beg = GRPC_SLICE_START_PTR(*slice);
     end = GRPC_SLICE_END_PTR(*slice);
     cur = beg;

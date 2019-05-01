@@ -371,7 +371,7 @@ grpc_slice grpc_slice_buffer_take_first(grpc_slice_buffer* sb) {
 }
 
 void grpc_slice_buffer_consume_first(grpc_slice_buffer* sb) {
-  GPR_ASSERT(sb->count > 0);
+  GPR_DEBUG_ASSERT(sb->count > 0);
   sb->length -= GRPC_SLICE_LENGTH(sb->slices[0]);
   grpc_slice_unref_internal(sb->slices[0]);
   sb->slices++;

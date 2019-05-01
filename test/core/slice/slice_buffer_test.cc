@@ -119,25 +119,25 @@ void test_slice_buffer_first() {
     grpc_slice_buffer_add_indexed(&buf, slices[idx]);
   }
 
-  grpc_slice* first = grpc_slice_buffer_mutable_first(&buf);
+  grpc_slice* first = grpc_slice_buffer_peek_first(&buf);
   GPR_ASSERT(GPR_SLICE_LENGTH(*first) == GPR_SLICE_LENGTH(slices[0]));
   GPR_ASSERT(buf.count == 3);
   GPR_ASSERT(buf.length == 12);
 
   grpc_slice_buffer_sub_first(&buf, 1, 2);
-  first = grpc_slice_buffer_mutable_first(&buf);
+  first = grpc_slice_buffer_peek_first(&buf);
   GPR_ASSERT(GPR_SLICE_LENGTH(*first) == 1);
   GPR_ASSERT(buf.count == 3);
   GPR_ASSERT(buf.length == 10);
 
   grpc_slice_buffer_consume_first(&buf);
-  first = grpc_slice_buffer_mutable_first(&buf);
+  first = grpc_slice_buffer_peek_first(&buf);
   GPR_ASSERT(GPR_SLICE_LENGTH(*first) == GPR_SLICE_LENGTH(slices[1]));
   GPR_ASSERT(buf.count == 2);
   GPR_ASSERT(buf.length == 9);
 
   grpc_slice_buffer_consume_first(&buf);
-  first = grpc_slice_buffer_mutable_first(&buf);
+  first = grpc_slice_buffer_peek_first(&buf);
   GPR_ASSERT(GPR_SLICE_LENGTH(*first) == GPR_SLICE_LENGTH(slices[2]));
   GPR_ASSERT(buf.count == 1);
   GPR_ASSERT(buf.length == 5);

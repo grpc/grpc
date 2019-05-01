@@ -53,7 +53,7 @@ static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
     ctx->zs.avail_out = static_cast<uInt>(slice_size);
     ctx->zs.next_out = GRPC_SLICE_START_PTR(slice_out);
     while (ctx->zs.avail_out > 0 && in->length > 0 && !eoc) {
-      grpc_slice* slice = grpc_slice_buffer_mutable_first(in);
+      grpc_slice* slice = grpc_slice_buffer_peek_first(in);
       ctx->zs.avail_in = static_cast<uInt> GRPC_SLICE_LENGTH(*slice);
       ctx->zs.next_in = GRPC_SLICE_START_PTR(*slice);
       r = ctx->flate(&ctx->zs, Z_NO_FLUSH);

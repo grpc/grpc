@@ -243,7 +243,7 @@ void grpc_slice_buffer_partial_unref_internal(grpc_slice_buffer* sb,
 void grpc_slice_buffer_destroy_internal(grpc_slice_buffer* sb);
 
 // Returns the first slice in the slice buffer.
-inline grpc_slice* grpc_slice_buffer_mutable_first(grpc_slice_buffer* sb) {
+inline grpc_slice* grpc_slice_buffer_peek_first(grpc_slice_buffer* sb) {
   GPR_DEBUG_ASSERT(sb->count > 0);
   return &sb->slices[0];
 }
