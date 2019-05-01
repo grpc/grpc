@@ -77,8 +77,8 @@ class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
   void PostSynchronousRequest(ServerContext* context) override {}
 };
 
-DefaultGlobalCallbacks* g_default_callbacks = new DefaultGlobalCallbacks();
-Server::GlobalCallbacks* g_callbacks = g_default_callbacks;
+DefaultGlobalCallbacks* global_default_callbacks = new DefaultGlobalCallbacks();
+Server::GlobalCallbacks* global_callbacks = global_default_callbacks;
 
 class ShutdownTag : public internal::CompletionQueueTag {
  public:
@@ -464,13 +464,13 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
     void ContinueRunAfterInterception() {
       {
         ctx_.BeginCompletionOp(&call_, nullptr, nullptr);
-        grpc::g_callbacks->PreSynchronousRequest(&ctx_);
+        grpc::global_callbacks->PreSynchronousRequest(&ctx_);
         auto* handler = resources_ ? method_->handler()
                                    : server_->resource_exhausted_handler_.get();
         handler->RunHandler(grpc::internal::MethodHandler::HandlerParameter(
             &call_, &ctx_, request_, request_status_, nullptr, nullptr));
         request_ = nullptr;
-        grpc::g_callbacks->PostSynchronousRequest(&ctx_);
+        grpc::global_callbacks->PostSynchronousRequest(&ctx_);
 
         cq_.Shutdown();
 
@@ -937,7 +937,7 @@ Server::Server(
       server_initializer_(new grpc_impl::ServerInitializer(this)),
       health_check_service_disabled_(false) {
   g_gli_initializer.summon();
-  grpc::g_callbacks->UpdateArguments(args);
+  grpc::global_callbacks->UpdateArguments(args);
 
   if (sync_server_cqs_ != nullptr) {
     bool default_rq_created = false;
@@ -1007,10 +1007,10 @@ Server::~Server() {
 }
 
 void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
-  GPR_ASSERT(grpc::g_callbacks == grpc::g_default_callbacks);
+  GPR_ASSERT(grpc::global_callbacks == grpc::global_default_callbacks);
   GPR_ASSERT(callbacks);
-  GPR_ASSERT(callbacks != grpc::g_default_callbacks);
-  grpc::g_callbacks = callbacks;
+  GPR_ASSERT(callbacks != grpc::global_default_callbacks);
+  grpc::global_callbacks = callbacks;
 }
 
 grpc_server* Server::c_server() { return server_; }
@@ -1142,13 +1142,13 @@ int Server::AddListeningPort(const grpc::string& addr,
                              grpc::ServerCredentials* creds) {
   GPR_ASSERT(!started_);
   int port = creds->AddPortToServer(addr, server_);
-  grpc::g_callbacks->AddPort(this, addr, creds, port);
+  grpc::global_callbacks->AddPort(this, addr, creds, port);
   return port;
 }
 
 void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
   GPR_ASSERT(!started_);
-  grpc::g_callbacks->PreServerStart(this);
+  grpc::global_callbacks->PreServerStart(this);
   started_ = true;
 
   // Only create default health check service when user did not provide an
