@@ -24,6 +24,7 @@
 void enableCronet(void) {
   static dispatch_once_t enableCronet;
   dispatch_once(&enableCronet, ^{
+    NSLog(@"enableCronet()");
     [Cronet setHttp2Enabled:YES];
     [Cronet setSslKeyLogFileName:@"Documents/key"];
     [Cronet enableTestCertVerifierForTesting];
