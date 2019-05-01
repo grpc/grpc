@@ -27,7 +27,7 @@
 #import <RxLibrary/GRXBufferedPipe.h>
 
 #import "InteropTestsBlockCallbacks.h"
-#import "../EnableCronet"
+#import "../EnableCronet.h"
 
 #define NSStringize_helper(x) #x
 #define NSStringize(x) @NSStringize_helper(x)
