@@ -44,11 +44,11 @@ struct census_context;
 namespace grpc_impl {
 
 class CompletionQueue;
+class Server;
 }  // namespace grpc_impl
 namespace grpc {
 class ClientContext;
 class GenericServerContext;
-class Server;
 class ServerInterface;
 template <class W, class R>
 class ServerAsyncReader;
@@ -273,7 +273,7 @@ class ServerContext {
   friend class ::grpc::testing::InteropServerContextInspector;
   friend class ::grpc::testing::ServerContextTestSpouse;
   friend class ::grpc::ServerInterface;
-  friend class ::grpc::Server;
+  friend class ::grpc_impl::Server;
   template <class W, class R>
   friend class ::grpc::ServerAsyncReader;
   template <class W>

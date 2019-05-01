@@ -271,16 +271,8 @@ static void notify_on_write(grpc_tcp* tcp) {
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_INFO, "TCP:%p notify_on_write", tcp);
   }
-  if (grpc_event_engine_run_in_background()) {
-    // If there is a polling engine always running in the background, there is
-    // no need to run the backup poller.
-    GRPC_CLOSURE_INIT(&tcp->write_done_closure, tcp_handle_write, tcp,
-                      grpc_schedule_on_exec_ctx);
-  } else {
+  if (!grpc_event_engine_run_in_background()) {
     cover_self(tcp);
-    GRPC_CLOSURE_INIT(&tcp->write_done_closure,
-                      tcp_drop_uncovered_then_handle_write, tcp,
-                      grpc_schedule_on_exec_ctx);
   }
   grpc_fd_notify_on_write(tcp->em_fd, &tcp->write_done_closure);
 }
@@ -884,8 +876,6 @@ static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error) {
    * ready. */
   grpc_fd_set_readable(tcp->em_fd);
   grpc_fd_set_writable(tcp->em_fd);
-  GRPC_CLOSURE_INIT(&tcp->error_closure, tcp_handle_error, tcp,
-                    grpc_schedule_on_exec_ctx);
   grpc_fd_notify_on_error(tcp->em_fd, &tcp->error_closure);
 }
 
@@ -1248,6 +1238,16 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->tb_head = nullptr;
   GRPC_CLOSURE_INIT(&tcp->read_done_closure, tcp_handle_read, tcp,
                     grpc_schedule_on_exec_ctx);
+  if (grpc_event_engine_run_in_background()) {
+    // If there is a polling engine always running in the background, there is
+    // no need to run the backup poller.
+    GRPC_CLOSURE_INIT(&tcp->write_done_closure, tcp_handle_write, tcp,
+                      grpc_schedule_on_exec_ctx);
+  } else {
+    GRPC_CLOSURE_INIT(&tcp->write_done_closure,
+                      tcp_drop_uncovered_then_handle_write, tcp,
+                      grpc_schedule_on_exec_ctx);
+  }
   /* Always assume there is something on the queue to read. */
   tcp->inq = 1;
 #ifdef GRPC_HAVE_TCP_INQ

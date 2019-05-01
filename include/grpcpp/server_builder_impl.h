@@ -31,6 +31,7 @@
 #include <grpcpp/impl/codegen/server_interceptor.h>
 #include <grpcpp/impl/server_builder_option.h>
 #include <grpcpp/impl/server_builder_plugin.h>
+#include <grpcpp/server.h>
 #include <grpcpp/support/config.h>
 
 struct grpc_resource_quota;
@@ -39,13 +40,13 @@ namespace grpc_impl {
 
 class CompletionQueue;
 class ResourceQuota;
+class Server;
 class ServerCompletionQueue;
 class ServerCredentials;
 }  // namespace grpc_impl
 namespace grpc {
 
 class AsyncGenericService;
-class Server;
 class Service;
 
 namespace testing {
