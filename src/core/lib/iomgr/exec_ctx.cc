@@ -60,8 +60,7 @@ extern int64_t g_start_time_sec;
 extern int64_t g_start_time_nsec;
 #endif  // GRPC_DEBUG_TIMER_MANAGER
 
-static grpc_millis timespec_to_millis_round_down(gpr_timespec ts) {
-  ts = gpr_time_sub(ts, g_start_time);
+static grpc_millis timespan_to_millis_round_down(gpr_timespec ts) {
   double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
              static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS;
   if (x < 0) return 0;
@@ -69,8 +68,7 @@ static grpc_millis timespec_to_millis_round_down(gpr_timespec ts) {
   return static_cast<grpc_millis>(x);
 }
 
-static grpc_millis timespec_to_millis_round_up(gpr_timespec ts) {
-  ts = gpr_time_sub(ts, g_start_time);
+static grpc_millis timespan_to_millis_round_up(gpr_timespec ts) {
   double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
              static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS +
              static_cast<double>(GPR_NS_PER_SEC - 1) /
@@ -78,6 +76,14 @@ static grpc_millis timespec_to_millis_round_up(gpr_timespec ts) {
   if (x < 0) return 0;
   if (x > GRPC_MILLIS_INF_FUTURE) return GRPC_MILLIS_INF_FUTURE;
   return static_cast<grpc_millis>(x);
+}
+
+static grpc_millis timespec_to_millis_round_down(gpr_timespec ts) {
+  return timespan_to_millis_round_down(gpr_time_sub(ts, g_start_time));
+}
+
+static grpc_millis timespec_to_millis_round_up(gpr_timespec ts) {
+  return timespan_to_millis_round_up(gpr_time_sub(ts, g_start_time));
 }
 
 gpr_timespec grpc_millis_to_timespec(grpc_millis millis,
@@ -99,11 +105,19 @@ gpr_timespec grpc_millis_to_timespec(grpc_millis millis,
 }
 
 grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec ts) {
+  if (ts.clock_type == GPR_TIMESPAN) {
+    // TODO(soheil): specialize for infitinte past and future.
+    return timespan_to_millis_round_down(gpr_time_add(g_start_time, ts));
+  }
   return timespec_to_millis_round_down(
       gpr_convert_clock_type(ts, g_start_time.clock_type));
 }
 
 grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec ts) {
+  if (ts.clock_type == GPR_TIMESPAN) {
+    // TODO(soheil): specialize for infitinte past and future.
+    return timespan_to_millis_round_up(gpr_time_add(g_start_time, ts));
+  }
   return timespec_to_millis_round_up(
       gpr_convert_clock_type(ts, g_start_time.clock_type));
 }
