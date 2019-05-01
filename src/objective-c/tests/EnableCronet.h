@@ -25,7 +25,7 @@ extern "C" {
 /**
  * Enable Cronet for once.
  */
-void enableCronet();
+void enableCronet(void);
 
 #ifdef __cplusplus
 }
