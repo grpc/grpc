@@ -1007,9 +1007,9 @@ Server::~Server() {
 }
 
 void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
-  GPR_ASSERT(grpc::g_callbacks == g_default_callbacks);
+  GPR_ASSERT(grpc::g_callbacks == grpc::g_default_callbacks);
   GPR_ASSERT(callbacks);
-  GPR_ASSERT(callbacks != g_default_callbacks);
+  GPR_ASSERT(callbacks != grpc::g_default_callbacks);
   grpc::g_callbacks = callbacks;
 }
 
