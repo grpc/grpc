@@ -24,7 +24,15 @@
 #include <grpc/support/atm.h>
 #include <stdbool.h>
 
+#include "src/core/lib/gprpp/global_config.h"
+
+GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_trace);
+
+// TODO(veblush): Remove this deprecated function once codes depedning on this
+// function are updated in the internal repo.
 void grpc_tracer_init(const char* env_var_name);
+
+void grpc_tracer_init();
 void grpc_tracer_shutdown(void);
 
 #if defined(__has_feature)

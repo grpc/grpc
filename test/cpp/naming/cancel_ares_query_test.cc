@@ -32,7 +32,6 @@
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -403,7 +402,7 @@ TEST(
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  gpr_setenv("GRPC_DNS_RESOLVER", "ares");
+  GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
   // Sanity check the time that it takes to run the test
   // including the teardown time (the teardown
   // part of the test involves cancelling the DNS query,

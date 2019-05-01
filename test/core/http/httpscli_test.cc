@@ -29,6 +29,7 @@
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "test/core/util/port.h"
 #include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
@@ -184,7 +185,7 @@ int main(int argc, char** argv) {
   /* Set the environment variable for the SSL certificate file */
   char* pem_file;
   gpr_asprintf(&pem_file, "%s/src/core/tsi/test_creds/ca.pem", root);
-  gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, pem_file);
+  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, pem_file);
   gpr_free(pem_file);
 
   /* start the server */
