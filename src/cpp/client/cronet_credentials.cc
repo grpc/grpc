@@ -47,7 +47,7 @@ class CronetChannelCredentialsImpl final : public ChannelCredentials {
           interceptor_creators) override {
     grpc_channel_args channel_args;
     args.SetChannelArgs(&channel_args);
-    return ::grpc_impl::CreateChannelInternal(
+    return ::grpc::CreateChannelInternal(
         "",
         grpc_cronet_secure_channel_create(engine_, target.c_str(),
                                           &channel_args, nullptr),
