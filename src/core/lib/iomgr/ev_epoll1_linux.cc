@@ -383,6 +383,10 @@ static void fd_shutdown_internal(grpc_fd* fd, grpc_error* why,
   if (fd->read_closure->SetShutdown(GRPC_ERROR_REF(why))) {
     if (!releasing_fd) {
       shutdown(fd->fd, SHUT_RDWR);
+    } else {
+      if (epoll_ctl(g_epoll_set.epfd, EPOLL_CTL_DEL, fd->fd, nullptr) != 0) {
+        gpr_log(GPR_ERROR, "epoll_ctl failed: %s", strerror(errno));
+      }
     }
     fd->write_closure->SetShutdown(GRPC_ERROR_REF(why));
     fd->error_closure->SetShutdown(GRPC_ERROR_REF(why));
