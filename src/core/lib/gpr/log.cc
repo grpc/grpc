@@ -22,11 +22,14 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/global_config.h"
 
 #include <stdio.h>
 #include <string.h>
+
+GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_verbosity, "ERROR",
+                                "Default gRPC logging verbosity")
 
 void gpr_default_log(gpr_log_func_args* args);
 static gpr_atm g_log_func = (gpr_atm)gpr_default_log;
@@ -72,28 +75,21 @@ void gpr_set_log_verbosity(gpr_log_severity min_severity_to_print) {
 }
 
 void gpr_log_verbosity_init() {
-  char* verbosity = nullptr;
-  const char* insecure_getenv = gpr_getenv_silent("GRPC_VERBOSITY", &verbosity);
+  grpc_core::UniquePtr<char> verbosity = GPR_GLOBAL_CONFIG_GET(grpc_verbosity);
 
   gpr_atm min_severity_to_print = GPR_LOG_SEVERITY_ERROR;
-  if (verbosity != nullptr) {
-    if (gpr_stricmp(verbosity, "DEBUG") == 0) {
+  if (strlen(verbosity.get()) > 0) {
+    if (gpr_stricmp(verbosity.get(), "DEBUG") == 0) {
       min_severity_to_print = static_cast<gpr_atm>(GPR_LOG_SEVERITY_DEBUG);
-    } else if (gpr_stricmp(verbosity, "INFO") == 0) {
+    } else if (gpr_stricmp(verbosity.get(), "INFO") == 0) {
       min_severity_to_print = static_cast<gpr_atm>(GPR_LOG_SEVERITY_INFO);
-    } else if (gpr_stricmp(verbosity, "ERROR") == 0) {
+    } else if (gpr_stricmp(verbosity.get(), "ERROR") == 0) {
       min_severity_to_print = static_cast<gpr_atm>(GPR_LOG_SEVERITY_ERROR);
     }
-    gpr_free(verbosity);
   }
   if ((gpr_atm_no_barrier_load(&g_min_severity_to_print)) ==
       GPR_LOG_VERBOSITY_UNSET) {
     gpr_atm_no_barrier_store(&g_min_severity_to_print, min_severity_to_print);
-  }
-
-  if (insecure_getenv != nullptr) {
-    gpr_log(GPR_DEBUG, "Warning: insecure environment read function '%s' used",
-            insecure_getenv);
   }
 }
 

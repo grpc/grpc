@@ -154,7 +154,7 @@ void grpc_init(void) {
      * at the appropriate time */
     grpc_register_security_filters();
     register_builtin_channel_init();
-    grpc_tracer_init("GRPC_TRACE");
+    grpc_tracer_init();
     /* no more changes to channel init pipelines */
     grpc_channel_init_finalize();
     grpc_iomgr_start();

@@ -35,7 +35,6 @@
 #include <grpcpp/server_context.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
@@ -46,6 +45,10 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
+
+#ifdef GRPC_POSIX_SOCKET
+#include "src/core/lib/iomgr/ev_posix.h"
+#endif  // GRPC_POSIX_SOCKET
 
 #include <gtest/gtest.h>
 
@@ -809,11 +812,12 @@ TEST_P(End2endTest, ReconnectChannel) {
   int poller_slowdown_factor = 1;
   // It needs 2 pollset_works to reconnect the channel with polling engine
   // "poll"
-  char* s = gpr_getenv("GRPC_POLL_STRATEGY");
-  if (s != nullptr && 0 == strcmp(s, "poll")) {
+#ifdef GRPC_POSIX_SOCKET
+  grpc_core::UniquePtr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
+  if (0 == strcmp(poller.get(), "poll")) {
     poller_slowdown_factor = 2;
   }
-  gpr_free(s);
+#endif  // GRPC_POSIX_SOCKET
   ResetStub();
   SendRpc(stub_.get(), 1, false);
   RestartServer(std::shared_ptr<AuthMetadataProcessor>());
