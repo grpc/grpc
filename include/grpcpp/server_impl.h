@@ -27,7 +27,9 @@
 
 #include <grpc/compression.h>
 #include <grpc/support/atm.h>
+#include <grpcpp/channel.h>
 #include <grpcpp/completion_queue.h>
+#include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
@@ -49,7 +51,6 @@ class ServerContext;
 
 namespace grpc_impl {
 
-class HealthCheckServiceInterface;
 class ServerInitializer;
 
 /// Represents a gRPC server.
@@ -99,12 +100,12 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   grpc_server* c_server();
 
   /// Returns the health check service.
-  grpc_impl::HealthCheckServiceInterface* GetHealthCheckService() const {
+  grpc::HealthCheckServiceInterface* GetHealthCheckService() const {
     return health_check_service_.get();
   }
 
   /// Establish a channel for in-process communication
-  std::shared_ptr<grpc::Channel> InProcessChannel(
+  std::shared_ptr<::grpc::Channel> InProcessChannel(
       const grpc::ChannelArguments& args);
 
   /// NOTE: class experimental_type is not part of the public API of this class.
@@ -116,7 +117,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
 
     /// Establish a channel for in-process communication with client
     /// interceptors
-    std::shared_ptr<grpc::Channel> InProcessChannelWithInterceptors(
+    std::shared_ptr<::grpc::Channel> InProcessChannelWithInterceptors(
         const grpc::ChannelArguments& args,
         std::vector<std::unique_ptr<
             grpc::experimental::ClientInterceptorFactoryInterface>>
@@ -333,7 +334,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
 
   std::unique_ptr<grpc_impl::ServerInitializer> server_initializer_;
 
-  std::unique_ptr<grpc_impl::HealthCheckServiceInterface> health_check_service_;
+  std::unique_ptr<grpc::HealthCheckServiceInterface> health_check_service_;
   bool health_check_service_disabled_;
 
   // When appropriate, use a default callback generic service to handle

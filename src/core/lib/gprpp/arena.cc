@@ -35,8 +35,8 @@ namespace {
 
 void* ArenaStorage(size_t initial_size) {
   static constexpr size_t base_size =
-      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_core::Arena));
-  initial_size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(initial_size);
+      GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(grpc_core::Arena));
+  initial_size = GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(initial_size);
   size_t alloc_size = base_size + initial_size;
   static constexpr size_t alignment =
       (GPR_CACHELINE_SIZE > GPR_MAX_ALIGNMENT &&
@@ -67,7 +67,7 @@ Arena* Arena::Create(size_t initial_size) {
 Pair<Arena*, void*> Arena::CreateWithAlloc(size_t initial_size,
                                            size_t alloc_size) {
   static constexpr size_t base_size =
-      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Arena));
+      GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(Arena));
   auto* new_arena =
       new (ArenaStorage(initial_size)) Arena(initial_size, alloc_size);
   void* first_alloc = reinterpret_cast<char*>(new_arena) + base_size;
@@ -88,7 +88,7 @@ void* Arena::AllocZone(size_t size) {
   // sizing hysteresis (that is, most calls should have a large enough initial
   // zone and will not need to grow the arena).
   static constexpr size_t zone_base_size =
-      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Zone));
+      GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(Zone));
   size_t alloc_size = zone_base_size + size;
   Zone* z = new (gpr_malloc_aligned(alloc_size, GPR_MAX_ALIGNMENT)) Zone();
   {
