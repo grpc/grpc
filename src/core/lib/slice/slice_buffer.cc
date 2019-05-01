@@ -385,7 +385,7 @@ void grpc_slice_buffer_sub_first(grpc_slice_buffer* sb, size_t begin,
   // TODO(soheil): Introduce a ptr version for sub.
   sb->length -= GRPC_SLICE_LENGTH(sb->slices[0]);
   sb->slices[0] = grpc_slice_sub_no_ref(sb->slices[0], begin, end);
-  sb->length += GRPC_SLICE_LENGTH(sb->slices[0]);
+  sb->length += end - begin;
 }
 
 void grpc_slice_buffer_undo_take_first(grpc_slice_buffer* sb,
