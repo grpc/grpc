@@ -21,6 +21,12 @@
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/lib/iomgr/combiner.h"
 
+GPR_GLOBAL_CONFIG_DEFINE_STRING(
+    grpc_dns_resolver, "",
+    "Declares which DNS resolver to use. The default is ares if gRPC is built "
+    "with c-ares support. Otherwise, the value of this environment variable is "
+    "ignored.")
+
 grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount(false,
                                                            "resolver_refcount");
 

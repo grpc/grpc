@@ -39,7 +39,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"

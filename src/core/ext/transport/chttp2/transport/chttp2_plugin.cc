@@ -23,8 +23,11 @@
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/transport/metadata.h"
 
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_disable_flow_control, false,
-                              "Disable flow control");
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(
+    grpc_experimental_disable_flow_control, false,
+    "If set, flow control will be effectively disabled. Max out all values and "
+    "assume the remote peer does the same. Thus we can ignore any flow control "
+    "bookkeeping, error checking, and decision making");
 
 void grpc_chttp2_plugin_init(void) {
   g_flow_control_enabled =
