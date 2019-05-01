@@ -949,9 +949,9 @@ Server::Server(
     }
 
     for (const auto& it : *sync_server_cqs_) {
-      sync_req_mgrs_.emplace_back(new SyncRequestThreadManager(
-          this, it.get(), server_rq, min_pollers, max_pollers,
-          sync_cq_timeout_msec));
+      sync_req_mgrs_.emplace_back(
+          new SyncRequestThreadManager(this, it.get(), server_rq, min_pollers,
+                                       max_pollers, sync_cq_timeout_msec));
     }
 
     if (default_rq_created) {
