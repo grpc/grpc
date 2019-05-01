@@ -20,6 +20,8 @@
 #import <netinet/in.h>
 #import <sys/socket.h>
 
+#import "../EnableCronet.h"
+
 #import <Cronet/Cronet.h>
 #import <grpc/grpc.h>
 #import <grpc/grpc_cronet.h>
@@ -61,16 +63,7 @@ static void drain_cq(grpc_completion_queue *cq) {
   grpc_test_init(1, argv);
 
   grpc_init();
-
-  [Cronet setHttp2Enabled:YES];
-  [Cronet setSslKeyLogFileName:@"Documents/key"];
-  [Cronet enableTestCertVerifierForTesting];
-  NSURL *url = [[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory
-                                                       inDomains:NSUserDomainMask] lastObject];
-  NSLog(@"Documents directory: %@", url);
-  [Cronet start];
-  [Cronet startNetLogToFile:@"Documents/cronet_netlog.json" logBytes:YES];
-
+  enableCronet();
   init_ssl();
 }
 

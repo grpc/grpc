@@ -44,6 +44,10 @@ static int32_t kRemoteInteropServerOverhead = 12;
   return kRemoteSSLHost;
 }
 
++ (BOOL)useCronet {
+  return YES;
+}
+
 - (int32_t)encodingOverhead {
   return kRemoteInteropServerOverhead;  // bytes
 }

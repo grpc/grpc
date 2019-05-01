@@ -59,4 +59,9 @@
  */
 + (NSString *)hostNameOverride;
 
+/**
+ * Whether to use Cronet for all the v1 API tests in the test suite.
+ */
++ (BOOL)useCronet;
+
 @end

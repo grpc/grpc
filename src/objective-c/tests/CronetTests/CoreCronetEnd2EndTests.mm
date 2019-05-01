@@ -49,6 +49,8 @@
 #import <Cronet/Cronet.h>
 #include <grpc/grpc_cronet.h>
 
+#import "../EnableCronet.h"
+
 typedef struct fullstack_secure_fixture_data {
   char *localaddr;
 } fullstack_secure_fixture_data;
@@ -176,13 +178,7 @@ static char *roots_filename;
 
   grpc_init();
 
-  [Cronet setHttp2Enabled:YES];
-  [Cronet enableTestCertVerifierForTesting];
-  NSURL *url = [[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory
-                                                       inDomains:NSUserDomainMask] lastObject];
-  NSLog(@"Documents directory: %@", url);
-  [Cronet start];
-  [Cronet startNetLogToFile:@"cronet_netlog.json" logBytes:YES];
+  enableCronet();
 }
 
 // The tearDown() function is run after all test cases finish running
