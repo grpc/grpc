@@ -148,6 +148,7 @@ filegroups:
   - src/core/lib/gpr/wrap_memcpy.cc
   - src/core/lib/gprpp/arena.cc
   - src/core/lib/gprpp/fork.cc
+  - src/core/lib/gprpp/global_config_env.cc
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/profiling/basic_timers.cc
@@ -194,6 +195,10 @@ filegroups:
   - src/core/lib/gprpp/arena.h
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/fork.h
+  - src/core/lib/gprpp/global_config.h
+  - src/core/lib/gprpp/global_config_custom.h
+  - src/core/lib/gprpp/global_config_env.h
+  - src/core/lib/gprpp/global_config_generic.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/map.h
   - src/core/lib/gprpp/memory.h
@@ -4725,6 +4730,24 @@ targets:
   - grpc++
   - grpc
   - gpr
+- name: global_config_env_test
+  build: test
+  language: c++
+  src:
+  - test/core/gprpp/global_config_env_test.cc
+  deps:
+  - gpr
+  - grpc_test_util_unsecure
+  uses_polling: false
+- name: global_config_test
+  build: test
+  language: c++
+  src:
+  - test/core/gprpp/global_config_test.cc
+  deps:
+  - gpr
+  - grpc_test_util_unsecure
+  uses_polling: false
 - name: golden_file_test
   gtest: true
   build: test

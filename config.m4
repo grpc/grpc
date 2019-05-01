@@ -79,6 +79,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gpr/wrap_memcpy.cc \
     src/core/lib/gprpp/arena.cc \
     src/core/lib/gprpp/fork.cc \
+    src/core/lib/gprpp/global_config_env.cc \
     src/core/lib/gprpp/thd_posix.cc \
     src/core/lib/gprpp/thd_windows.cc \
     src/core/lib/profiling/basic_timers.cc \

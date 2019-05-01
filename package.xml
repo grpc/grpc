@@ -107,6 +107,10 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/arena.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/atomic.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/fork.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/global_config.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/global_config_custom.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/global_config_env.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/global_config_generic.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/manual_constructor.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/map.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/memory.h" role="src" />
@@ -149,6 +153,7 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/wrap_memcpy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/arena.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/fork.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/global_config_env.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/basic_timers.cc" role="src" />

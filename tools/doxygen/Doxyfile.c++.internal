@@ -1089,6 +1089,10 @@ src/core/lib/gprpp/arena.h \
 src/core/lib/gprpp/atomic.h \
 src/core/lib/gprpp/debug_location.h \
 src/core/lib/gprpp/fork.h \
+src/core/lib/gprpp/global_config.h \
+src/core/lib/gprpp/global_config_custom.h \
+src/core/lib/gprpp/global_config_env.h \
+src/core/lib/gprpp/global_config_generic.h \
 src/core/lib/gprpp/inlined_vector.h \
 src/core/lib/gprpp/manual_constructor.h \
 src/core/lib/gprpp/map.h \
