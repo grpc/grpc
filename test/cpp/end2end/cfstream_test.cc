@@ -269,10 +269,11 @@ std::vector<TestScenario> CreateTestScenarios() {
   std::vector<grpc::string> messages;
 
   credentials_types.push_back(kInsecureCredentialsType);
-  auto sec_list = GetCredentialsProvider()->GetSecureCredentialsTypeList();
+  // pjaikumar: TURN OFF SSL for repro
+  /*auto sec_list = GetCredentialsProvider()->GetSecureCredentialsTypeList();
   for (auto sec = sec_list.begin(); sec != sec_list.end(); sec++) {
     credentials_types.push_back(*sec);
-  }
+  }*/
 
   messages.push_back("🖖");
   for (size_t k = 1; k < GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH / 1024; k *= 32) {

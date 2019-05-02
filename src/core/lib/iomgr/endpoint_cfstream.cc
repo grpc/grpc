@@ -34,6 +34,8 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error_cfstream.h"
+#include "src/core/lib/iomgr/timer.h"
+
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
@@ -58,9 +60,14 @@ typedef struct {
   char* peer_string;
   grpc_resource_user* resource_user;
   grpc_resource_user_slice_allocator slice_allocator;
+  gpr_mu mu;
+  bool timer_armed;
+  grpc_timer timer;
+  uint32_t total_bytes_read;
 } CFStreamEndpoint;
 
 static void CFStreamFree(CFStreamEndpoint* ep) {
+  gpr_log(GPR_ERROR, "CFStreamFree ep=%p", ep);
   grpc_resource_user_unref(ep->resource_user);
   CFRelease(ep->read_stream);
   CFRelease(ep->write_stream);
@@ -163,6 +170,7 @@ static void ReadAction(void* arg, grpc_error* error) {
   size_t len = GRPC_SLICE_LENGTH(slice);
   CFIndex read_size =
       CFReadStreamRead(ep->read_stream, GRPC_SLICE_START_PTR(slice), len);
+  gpr_log(GPR_ERROR, "ReadAction read_size=%lu CFReadStreamHasBytesAvailable %u", read_size, CFReadStreamHasBytesAvailable(ep->read_stream));
   if (read_size == -1) {
     grpc_slice_buffer_reset_and_unref_internal(ep->read_slices);
     CFErrorRef stream_error = CFReadStreamCopyError(ep->read_stream);
@@ -182,12 +190,20 @@ static void ReadAction(void* arg, grpc_error* error) {
                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("Socket closed"), ep));
     EP_UNREF(ep, "read");
   } else {
+    ep->total_bytes_read += read_size;
     if (read_size < static_cast<CFIndex>(len)) {
       grpc_slice_buffer_trim_end(ep->read_slices, len - read_size, nullptr);
     }
     CallReadCb(ep, GRPC_ERROR_NONE);
     EP_UNREF(ep, "read");
   }
+  gpr_mu_lock(&ep->mu);
+  if (ep->timer_armed) {
+    gpr_log(GPR_ERROR, "ReadAction canceling timer");
+    grpc_timer_cancel(&ep->timer);
+    ep->timer_armed = false;
+  }
+  gpr_mu_unlock(&ep->mu);
 }
 
 static void WriteAction(void* arg, grpc_error* error) {
@@ -250,13 +266,40 @@ static void CFStreamReadAllocationDone(void* arg, grpc_error* error) {
   }
 }
 
+static void err_cb(void* arg, grpc_error* error) {
+  if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "err_cb got error: %s", grpc_error_string(error));
+    return;
+  }
+  CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(arg);
+  gpr_log(GPR_ERROR, "ReadAction was not called for 60 seconds!");
+  uint8_t *buf = (uint8_t* )gpr_malloc(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH);
+  CFIndex read_size =
+      CFReadStreamRead(ep_impl->read_stream, buf, GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH);
+  gpr_log(GPR_ERROR, "err_cb: read %lu bytes total_bytes_read %u", read_size, ep_impl->total_bytes_read);
+  gpr_free(buf);
+  gpr_mu_lock(&ep_impl->mu);
+  ep_impl->stream_sync->RunOnQueue();
+  ep_impl->timer_armed = false;
+  gpr_mu_unlock(&ep_impl->mu);
+  abort();
+}
+
 static void CFStreamRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
                          grpc_closure* cb, bool urgent) {
   CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
-  if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CFStream endpoint:%p read (%p, %p) length:%zu", ep_impl,
-            slices, cb, slices->length);
+  if (true) {
+    gpr_log(GPR_ERROR, "CFStream endpoint:%p read (%p, %p) length:%zu CFReadStreamGetStatus: %ld CFReadStreamHasBytesAvailable: %u", ep_impl,
+            slices, cb, slices->length, CFReadStreamGetStatus(ep_impl->read_stream), CFReadStreamHasBytesAvailable(ep_impl->read_stream));
   }
+  grpc_millis now = grpc_core::ExecCtx::Get()->Now();
+  gpr_mu_lock(&ep_impl->mu);
+  if (!ep_impl->timer_armed) {
+    gpr_log(GPR_ERROR, "CFStreamRead initializing timer");
+    grpc_timer_init(&ep_impl->timer, now + 1000*60, GRPC_CLOSURE_CREATE(err_cb, (void*)ep_impl, grpc_schedule_on_exec_ctx));
+    ep_impl->timer_armed = true;
+  }
+  gpr_mu_unlock(&ep_impl->mu);
   GPR_ASSERT(ep_impl->read_cb == nullptr);
   ep_impl->read_cb = cb;
   ep_impl->read_slices = slices;
@@ -283,9 +326,17 @@ static void CFStreamWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
 
 void CFStreamShutdown(grpc_endpoint* ep, grpc_error* why) {
   CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
-  if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CFStream endpoint:%p shutdown (%p)", ep_impl, why);
+  if (true) {
+    gpr_log(GPR_ERROR, "CFStream endpoint:%p shutdown (%p)", ep_impl, grpc_error_string(why));
   }
+  gpr_mu_lock(&ep_impl->mu);
+  if (ep_impl->timer_armed) {
+    gpr_log(GPR_ERROR, "shutdown canceling timer");
+    grpc_timer_cancel(&ep_impl->timer);
+    ep_impl->timer_armed = false;
+  }
+  gpr_mu_unlock(&ep_impl->mu);
+
   CFReadStreamClose(ep_impl->read_stream);
   CFWriteStreamClose(ep_impl->write_stream);
   ep_impl->stream_sync->Shutdown(why);
@@ -297,8 +348,8 @@ void CFStreamShutdown(grpc_endpoint* ep, grpc_error* why) {
 
 void CFStreamDestroy(grpc_endpoint* ep) {
   CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
-  if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CFStream endpoint:%p destroy", ep_impl);
+  if (true) {
+    gpr_log(GPR_ERROR, "CFStream endpoint:%p destroy", ep_impl);
   }
   EP_UNREF(ep_impl, "destroy");
 }
@@ -340,8 +391,11 @@ grpc_endpoint* grpc_cfstream_endpoint_create(
     CFStreamHandle* stream_sync) {
   CFStreamEndpoint* ep_impl =
       static_cast<CFStreamEndpoint*>(gpr_malloc(sizeof(CFStreamEndpoint)));
-  if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG,
+  gpr_mu_init(&ep_impl->mu);
+  ep_impl->timer_armed = false;
+  ep_impl->total_bytes_read = 0;
+  if (true) {
+    gpr_log(GPR_ERROR,
             "CFStream endpoint:%p create readStream:%p writeStream: %p",
             ep_impl, read_stream, write_stream);
   }

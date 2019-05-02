@@ -58,8 +58,8 @@ void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
   grpc_error* error;
   CFErrorRef stream_error;
   CFStreamHandle* handle = static_cast<CFStreamHandle*>(client_callback_info);
-  if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CFStream ReadCallback (%p, %p, %lu, %p)", handle,
+  if (true) {
+    gpr_log(GPR_ERROR, "CFStream ReadCallback (%p, %p, %lu, %p)", handle,
             stream, type, client_callback_info);
   }
   switch (type) {
@@ -161,6 +161,13 @@ void CFStreamHandle::NotifyOnRead(grpc_closure* closure) {
 
 void CFStreamHandle::NotifyOnWrite(grpc_closure* closure) {
   write_event_.NotifyOn(closure);
+}
+
+
+void CFStreamHandle::RunOnQueue() {
+  dispatch_sync(dispatch_queue_, ^{
+    gpr_log(GPR_ERROR, "Queue is not stuck!");
+  });
 }
 
 void CFStreamHandle::Shutdown(grpc_error* error) {
