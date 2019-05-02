@@ -463,6 +463,23 @@ typedef unsigned __int64 uint64_t;
 #include <stdint.h>
 #endif /* _MSC_VER */
 
+/* Type of cycle clock implementation */
+#ifdef GPR_LINUX
+/* Disable cycle clock by default.
+   TODO(soheil): enable when we support fallback for unstable cycle clocks.
+#if defined(__i386__)
+#define GPR_CYCLE_COUNTER_RDTSC_32 1
+#elif defined(__x86_64__) || defined(__amd64__)
+#define GPR_CYCLE_COUNTER_RDTSC_64 1
+#else
+#define GPR_CYCLE_COUNTER_FALLBACK 1
+#endif
+*/
+#define GPR_CYCLE_COUNTER_FALLBACK 1
+#else
+#define GPR_CYCLE_COUNTER_FALLBACK 1
+#endif /* GPR_LINUX */
+
 /* Cache line alignment */
 #ifndef GPR_CACHELINE_SIZE_LOG
 #if defined(__i386__) || defined(__x86_64__)

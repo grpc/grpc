@@ -109,9 +109,13 @@ class InlinedVector {
 
   void reserve(size_t capacity) {
     if (capacity > capacity_) {
-      T* new_dynamic = static_cast<T*>(gpr_malloc(sizeof(T) * capacity));
+      T* new_dynamic =
+          std::alignment_of<T>::value == 0
+              ? static_cast<T*>(gpr_malloc(sizeof(T) * capacity))
+              : static_cast<T*>(gpr_malloc_aligned(
+                    sizeof(T) * capacity, std::alignment_of<T>::value));
       move_elements(data(), new_dynamic, size_);
-      gpr_free(dynamic_);
+      free_dynamic();
       dynamic_ = new_dynamic;
       capacity_ = capacity;
     }
@@ -196,7 +200,17 @@ class InlinedVector {
       T& value = data()[i];
       value.~T();
     }
-    gpr_free(dynamic_);
+    free_dynamic();
+  }
+
+  void free_dynamic() {
+    if (dynamic_ != nullptr) {
+      if (std::alignment_of<T>::value == 0) {
+        gpr_free(dynamic_);
+      } else {
+        gpr_free_aligned(dynamic_);
+      }
+    }
   }
 
   typename std::aligned_storage<sizeof(T)>::type inline_[N];
