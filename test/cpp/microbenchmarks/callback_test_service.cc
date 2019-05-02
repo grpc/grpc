@@ -49,6 +49,13 @@ int GetIntValueFromMetadata(
 void CallbackStreamingTestService::Echo(
     ServerContext* context, const EchoRequest* request, EchoResponse* response,
     experimental::ServerCallbackRpcController* controller) {
+  int response_msgs_size = GetIntValueFromMetadata(kServerMessageSize,
+                                                context->client_metadata(), 0);
+  if (response_msgs_size > 0) {
+    response->set_message(std::string(response_msgs_size, 'a'));
+  } else {
+    response->set_message("");
+  }
   controller->Finish(Status::OK);
 }
 
@@ -62,7 +69,7 @@ CallbackStreamingTestService::BidiStream() {
       ctx_ = context;
       server_write_last_ = GetIntValueFromMetadata(
           kServerFinishAfterNReads, context->client_metadata(), 0);
-      message_size_ = GetIntValueFromMetadata(kServerResponseStreamsToSend,
+      message_size_ = GetIntValueFromMetadata(kServerMessageSize,
                                               context->client_metadata(), 0);
       StartRead(&request_);
       on_started_done_ = true;

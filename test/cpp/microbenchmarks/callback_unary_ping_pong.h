@@ -36,6 +36,32 @@ namespace testing {
  * BENCHMARKING KERNELS
  */
 
+// Send next rpc when callback function is evoked.
+void SendCallbackUnaryPingPong(benchmark::State& state, EchoRequest* request,
+                               EchoResponse* response,
+                               EchoTestService::Stub* stub_,
+                               bool &done,
+                               std::mutex& mu,
+                               std::condition_variable& cv) {
+  int response_msgs_size = state.range(1);
+  ClientContext* cli_ctx = new ClientContext();
+  cli_ctx->AddMetadata(kServerMessageSize,
+                           grpc::to_string(response_msgs_size));
+  stub_->experimental_async()->Echo(
+    cli_ctx, request, response,
+    [&state, cli_ctx, request, response, stub_, &done, &mu, &cv](Status s) {
+    GPR_ASSERT(s.ok());
+    if (state.KeepRunning()) {
+      SendCallbackUnaryPingPong(state, request, response, stub_, done, mu, cv);
+    } else {
+      std::lock_guard<std::mutex> l(mu);
+      done = true;
+      cv.notify_one();
+    }
+    delete cli_ctx;
+  });
+}
+
 template <class Fixture, class ClientContextMutator, class ServerContextMutator>
 static void BM_CallbackUnaryPingPong(benchmark::State& state) {
   int request_msgs_size = state.range(0);
@@ -47,40 +73,31 @@ static void BM_CallbackUnaryPingPong(benchmark::State& state) {
   EchoRequest request;
   EchoResponse response;
 
-  if (state.range(0) > 0) {
-    request.set_message(std::string(state.range(0), 'a'));
+  if (request_msgs_size > 0) {
+    request.set_message(std::string(request_msgs_size, 'a'));
   } else {
     request.set_message("");
   }
-  if (state.range(1) > 0) {
-    response.set_message(std::string(state.range(1), 'a'));
-  } else {
-    response.set_message("");
-  }
 
-  while (state.KeepRunning()) {
+  std::mutex mu;
+  std::condition_variable cv;
+  bool done = false;
+  if (state.KeepRunning()) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
-    ClientContext cli_ctx;
-    std::mutex mu;
-    std::condition_variable cv;
-    bool done = false;
-    stub_->experimental_async()->Echo(&cli_ctx, &request, &response,
-                                      [&done, &mu, &cv](Status s) {
-                                        GPR_ASSERT(s.ok());
-                                        std::lock_guard<std::mutex> l(mu);
-                                        done = true;
-                                        cv.notify_one();
-                                      });
-    std::unique_lock<std::mutex> l(mu);
-    while (!done) {
-      cv.wait(l);
-    }
+    SendCallbackUnaryPingPong(state, &request, &response, stub_.get(),
+                              done, mu, cv);
+  }
+  std::unique_lock<std::mutex> l(mu);
+  while (!done) {
+    cv.wait(l);
   }
   fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(request_msgs_size * state.iterations() +
                           response_msgs_size * state.iterations());
 }
+
+
 }  // namespace testing
 }  // namespace grpc
 

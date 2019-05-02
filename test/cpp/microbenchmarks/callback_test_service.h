@@ -30,7 +30,7 @@ namespace grpc {
 namespace testing {
 
 const char* const kServerFinishAfterNReads = "server_finish_after_n_reads";
-const char* const kServerResponseStreamsToSend = "server_responses_to_send";
+const char* const kServerMessageSize = "server_message_size";
 
 class CallbackStreamingTestService
     : public EchoTestService::ExperimentalCallbackService {
@@ -61,7 +61,10 @@ class BidiClient
   }
 
   void OnReadDone(bool ok) override {
-    if (ok && reads_complete_ < msgs_to_send_) {
+    if (!ok) {
+      return;
+    }
+    if (reads_complete_ < msgs_to_send_) {
       reads_complete_++;
       StartRead(response_);
     }
