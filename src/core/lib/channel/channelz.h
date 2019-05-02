@@ -24,6 +24,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_trace.h"
+#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -124,17 +125,28 @@ class CallCountingHelper {
   friend class testing::CallCountingHelperPeer;
 
   struct AtomicCounterData {
-    gpr_atm calls_started = 0;
-    gpr_atm calls_succeeded = 0;
-    gpr_atm calls_failed = 0;
-    gpr_atm last_call_started_millis = 0;
+    AtomicCounterData()
+        : calls_started(0),
+          calls_succeeded(0),
+          calls_failed(0),
+          last_call_started_cycle(0) {}
+
+    union {
+      struct {
+        gpr_atm calls_started;
+        gpr_atm calls_succeeded;
+        gpr_atm calls_failed;
+        gpr_atm last_call_started_cycle;
+      };
+      uint8_t cache_line[GPR_CACHELINE_SIZE];
+    };
   };
 
   struct CounterData {
     intptr_t calls_started = 0;
     intptr_t calls_succeeded = 0;
     intptr_t calls_failed = 0;
-    intptr_t last_call_started_millis = 0;
+    gpr_cycle_counter last_call_started_cycle = 0;
   };
 
   // collects the sharded data into one CounterData struct.
@@ -264,10 +276,10 @@ class SocketNode : public BaseNode {
   gpr_atm messages_sent_ = 0;
   gpr_atm messages_received_ = 0;
   gpr_atm keepalives_sent_ = 0;
-  gpr_atm last_local_stream_created_millis_ = 0;
-  gpr_atm last_remote_stream_created_millis_ = 0;
-  gpr_atm last_message_sent_millis_ = 0;
-  gpr_atm last_message_received_millis_ = 0;
+  gpr_atm last_local_stream_created_cycle_ = 0;
+  gpr_atm last_remote_stream_created_cycle_ = 0;
+  gpr_atm last_message_sent_cycle_ = 0;
+  gpr_atm last_message_received_cycle_ = 0;
   UniquePtr<char> local_;
   UniquePtr<char> remote_;
 };

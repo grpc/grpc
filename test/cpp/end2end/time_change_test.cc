@@ -51,10 +51,9 @@ static int g_time_shift_nsec = 0;
 static gpr_timespec now_impl(gpr_clock_type clock) {
   auto ts = gpr_now_impl_orig(clock);
   // We only manipulate the realtime clock to simulate changes in wall-clock
-  // time
-  if (clock != GPR_CLOCK_REALTIME) {
-    return ts;
-  }
+  // time. We have to convert to REALTIME and then back from REALTIME to the
+  // requested clock.
+  ts = gpr_convert_clock_type(ts, GPR_CLOCK_REALTIME);
   GPR_ASSERT(ts.tv_nsec >= 0);
   GPR_ASSERT(ts.tv_nsec < GPR_NS_PER_SEC);
   gpr_mu_lock(&g_mu);
@@ -68,7 +67,7 @@ static gpr_timespec now_impl(gpr_clock_type clock) {
     --ts.tv_sec;
     ts.tv_nsec = GPR_NS_PER_SEC + ts.tv_nsec;
   }
-  return ts;
+  return gpr_convert_clock_type(ts, clock);
 }
 
 // offset the value returned by gpr_now(GPR_CLOCK_REALTIME) by msecs
