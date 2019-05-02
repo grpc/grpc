@@ -278,10 +278,14 @@ static void err_cb(void* arg, grpc_error* error) {
       CFReadStreamRead(ep_impl->read_stream, buf, GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH);
   gpr_log(GPR_ERROR, "err_cb: read %lu bytes total_bytes_read %u", read_size, ep_impl->total_bytes_read);
   gpr_free(buf);
+  gpr_log(GPR_ERROR, "err_cb: grabbing mutex");
   gpr_mu_lock(&ep_impl->mu);
-  ep_impl->stream_sync->RunOnQueue();
   ep_impl->timer_armed = false;
   gpr_mu_unlock(&ep_impl->mu);
+  gpr_log(GPR_ERROR, "calling RunOnQueue");
+  ep_impl->stream_sync->RunOnQueue();
+  gpr_log(GPR_ERROR, "returned from RunOnQueue");
+  gpr_log(GPR_ERROR, "err_cb: aborting");
   abort();
 }
 
