@@ -683,7 +683,8 @@ GRPCAPI int grpc_tls_credentials_options_set_server_authorization_check_config(
 
 /** Create an empty grpc_tls_key_materials_config instance.
  *  It is used for experimental purpose for now and subject to change. */
-GRPCAPI grpc_tls_key_materials_config* grpc_tls_key_materials_config_create(void);
+GRPCAPI grpc_tls_key_materials_config* grpc_tls_key_materials_config_create(
+    void);
 
 /** Set grpc_tls_key_materials_config instance with provided a TLS certificate.
     config will take the ownership of pem_root_certs and pem_key_cert_pairs.
