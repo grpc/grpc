@@ -214,8 +214,8 @@ class TrickledCHTTP2 : public EndpointPairFixture {
   static grpc_endpoint_pair MakeEndpoints(size_t kilobits,
                                           grpc_passthru_endpoint_stats* stats) {
     grpc_endpoint_pair p;
-    grpc_passthru_endpoint_create(&p.client, &p.server, Library::get().rq(),
-                                  stats);
+    grpc_passthru_endpoint_create(&p.client, &p.server,
+                                  LibraryInitializer::get().rq(), stats);
     double bytes_per_second = 125.0 * kilobits;
     p.client = grpc_trickle_endpoint_create(p.client, bytes_per_second);
     p.server = grpc_trickle_endpoint_create(p.server, bytes_per_second);
@@ -234,9 +234,6 @@ class TrickledCHTTP2 : public EndpointPairFixture {
     }
   }
 };
-
-// force library initialization
-auto& force_library_initialization = Library::get();
 
 static void TrickleCQNext(TrickledCHTTP2* fixture, void** t, bool* ok,
                           int64_t iteration) {
@@ -465,6 +462,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   grpc_timer_manager_set_threading(false);
