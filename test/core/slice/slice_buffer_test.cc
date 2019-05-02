@@ -130,19 +130,19 @@ void test_slice_buffer_first() {
   GPR_ASSERT(buf.count == 3);
   GPR_ASSERT(buf.length == 10);
 
-  grpc_slice_buffer_consume_first(&buf);
+  grpc_slice_buffer_remove_first(&buf);
   first = grpc_slice_buffer_peek_first(&buf);
   GPR_ASSERT(GPR_SLICE_LENGTH(*first) == GPR_SLICE_LENGTH(slices[1]));
   GPR_ASSERT(buf.count == 2);
   GPR_ASSERT(buf.length == 9);
 
-  grpc_slice_buffer_consume_first(&buf);
+  grpc_slice_buffer_remove_first(&buf);
   first = grpc_slice_buffer_peek_first(&buf);
   GPR_ASSERT(GPR_SLICE_LENGTH(*first) == GPR_SLICE_LENGTH(slices[2]));
   GPR_ASSERT(buf.count == 1);
   GPR_ASSERT(buf.length == 5);
 
-  grpc_slice_buffer_consume_first(&buf);
+  grpc_slice_buffer_remove_first(&buf);
   GPR_ASSERT(buf.count == 0);
   GPR_ASSERT(buf.length == 0);
 }

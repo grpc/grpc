@@ -980,7 +980,7 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
         // unref all and forget about all slices that have been written to this
         // point
         for (size_t idx = 0; idx < unwind_slice_idx; ++idx) {
-          grpc_slice_buffer_consume_first(tcp->outgoing_buffer);
+          grpc_slice_buffer_remove_first(tcp->outgoing_buffer);
         }
         return false;
       } else if (errno == EPIPE) {

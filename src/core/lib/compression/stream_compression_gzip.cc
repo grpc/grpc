@@ -60,7 +60,7 @@ static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
       if (r < 0 && r != Z_BUF_ERROR) {
         gpr_log(GPR_ERROR, "zlib error (%d)", r);
         grpc_slice_unref_internal(slice_out);
-        grpc_slice_buffer_consume_first(in);
+        grpc_slice_buffer_remove_first(in);
         return false;
       } else if (r == Z_STREAM_END && ctx->flate == inflate) {
         eoc = true;
@@ -70,7 +70,7 @@ static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
             in, GRPC_SLICE_LENGTH(*slice) - ctx->zs.avail_in,
             GRPC_SLICE_LENGTH(*slice));
       } else {
-        grpc_slice_buffer_consume_first(in);
+        grpc_slice_buffer_remove_first(in);
       }
     }
     if (flush != 0 && ctx->zs.avail_out > 0 && !eoc) {

@@ -242,14 +242,15 @@ void grpc_slice_buffer_partial_unref_internal(grpc_slice_buffer* sb,
                                               size_t idx);
 void grpc_slice_buffer_destroy_internal(grpc_slice_buffer* sb);
 
-// Returns the first slice in the slice buffer.
+// Returns a pointer to the first slice in the slice buffer without giving
+// ownership to or a reference count on that slice.
 inline grpc_slice* grpc_slice_buffer_peek_first(grpc_slice_buffer* sb) {
   GPR_DEBUG_ASSERT(sb->count > 0);
   return &sb->slices[0];
 }
 
-// Consumes the first slice in the slice buffer.
-void grpc_slice_buffer_consume_first(grpc_slice_buffer* sb);
+// Removes the first slice from the slice buffer.
+void grpc_slice_buffer_remove_first(grpc_slice_buffer* sb);
 
 // Calls grpc_slice_sub with the given parameters on the first slice.
 void grpc_slice_buffer_sub_first(grpc_slice_buffer* sb, size_t begin,
