@@ -51,7 +51,9 @@ class CallCountingHelperPeer {
   grpc_millis last_call_started_millis() const {
     CallCountingHelper::CounterData data;
     node_->CollectData(&data);
-    return (grpc_millis)gpr_atm_no_barrier_load(&data.last_call_started_millis);
+    gpr_timespec ts =
+        gpr_cycle_counter_to_timestamp(data.last_call_started_cycle);
+    return grpc_timespec_to_millis_round_up(ts);
   }
 
  private:
