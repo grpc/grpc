@@ -19,7 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
-#if GRPC_ARES == 1 && defined(GPR_WINDOWS)
+#if GRPC_ARES == 1 && defined(GRPC_UV)
 
 #include <grpc/support/string_util.h>
 
@@ -29,9 +29,13 @@
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/iomgr/socket_windows.h"
 
-bool grpc_ares_query_ipv6() { return grpc_ipv6_loopback_available(); }
+bool grpc_ares_query_ipv6() {
+  /* The libuv grpc code currently does not have the code to probe for this,
+   * so we assume for now that IPv6 is always available in contexts where this
+   * code will be used. */
+  return true;
+}
 
 bool grpc_ares_maybe_resolve_localhost_manually_locked(
     const char* name, const char* default_port,
@@ -45,4 +49,4 @@ bool grpc_ares_maybe_resolve_localhost_manually_locked(
   return out;
 }
 
-#endif /* GRPC_ARES == 1 && defined(GPR_WINDOWS) */
+#endif /* GRPC_ARES == 1 && defined(GRPC_UV) */

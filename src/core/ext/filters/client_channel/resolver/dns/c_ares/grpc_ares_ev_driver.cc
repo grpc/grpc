@@ -18,7 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
-#if GRPC_ARES == 1 && !defined(GRPC_UV)
+#if GRPC_ARES == 1
 
 #include <ares.h>
 #include <string.h>
@@ -218,6 +218,7 @@ static void on_timeout_locked(void* arg, grpc_error* error) {
 
 static void on_readable_locked(void* arg, grpc_error* error) {
   fd_node* fdn = static_cast<fd_node*>(arg);
+  GPR_ASSERT(fdn->readable_registered);
   grpc_ares_ev_driver* ev_driver = fdn->ev_driver;
   const ares_socket_t as = fdn->grpc_polled_fd->GetWrappedAresSocketLocked();
   fdn->readable_registered = false;
@@ -242,6 +243,7 @@ static void on_readable_locked(void* arg, grpc_error* error) {
 
 static void on_writable_locked(void* arg, grpc_error* error) {
   fd_node* fdn = static_cast<fd_node*>(arg);
+  GPR_ASSERT(fdn->writable_registered);
   grpc_ares_ev_driver* ev_driver = fdn->ev_driver;
   const ares_socket_t as = fdn->grpc_polled_fd->GetWrappedAresSocketLocked();
   fdn->writable_registered = false;
@@ -365,4 +367,4 @@ void grpc_ares_ev_driver_start_locked(grpc_ares_ev_driver* ev_driver) {
   }
 }
 
-#endif /* GRPC_ARES == 1 && !defined(GRPC_UV) */
+#endif /* GRPC_ARES == 1 */
