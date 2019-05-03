@@ -6646,11 +6646,12 @@
   }, 
   {
     "deps": [
-      "grpc++_codegen_base", 
-      "grpc++_codegen_base_src", 
-      "grpc++_codegen_proto", 
-      "grpc++_config_proto", 
+      "benchmark", 
+      "gpr", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
+      "grpc_benchmark", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 

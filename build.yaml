@@ -1666,21 +1666,22 @@ libs:
   - grpc
   - gpr
 - name: callback_test_service
-  build: private
+  build: test
   language: c++
   headers:
   - test/cpp/microbenchmarks/callback_test_service.h
   src:
   - test/cpp/microbenchmarks/callback_test_service.cc
   deps:
-  - grpc++_unsecure
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util_unsecure
   - grpc_test_util_unsecure
+  - grpc++_unsecure
   - grpc_unsecure
-  filegroups:
-  - grpc++_codegen_base
-  - grpc++_codegen_base_src
-  - grpc++_codegen_proto
-  - grpc++_config_proto
+  - gpr
+  - grpc++_test_config
+  defaults: benchmark
 - name: grpc++
   build: all
   language: c++

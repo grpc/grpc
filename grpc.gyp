@@ -1402,13 +1402,17 @@
       'target_name': 'callback_test_service',
       'type': 'static_library',
       'dependencies': [
-        'grpc++_unsecure',
+        'grpc_benchmark',
+        'benchmark',
+        'grpc++_test_util_unsecure',
         'grpc_test_util_unsecure',
+        'grpc++_unsecure',
         'grpc_unsecure',
+        'gpr',
+        'grpc++_test_config',
       ],
       'sources': [
         'test/cpp/microbenchmarks/callback_test_service.cc',
-        'src/cpp/codegen/codegen_init.cc',
       ],
     },
     {
