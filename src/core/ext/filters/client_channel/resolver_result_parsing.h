@@ -127,6 +127,8 @@ class ProcessedResolverResult {
   // for later consumption.
   ProcessedResolverResult(const Resolver::Result& resolver_result);
 
+  ~ProcessedResolverResult() { GRPC_ERROR_UNREF(service_config_error_); }
+
   // Getters. Any managed object's ownership is transferred.
   const char* service_config_json() { return service_config_json_; }
 
@@ -143,6 +145,12 @@ class ProcessedResolverResult {
   }
 
   const char* health_check_service_name() { return health_check_service_name_; }
+
+  grpc_error* service_config_error() {
+    grpc_error* return_error = service_config_error_;
+    service_config_error_ = GRPC_ERROR_NONE;
+    return return_error;
+  }
 
  private:
   // Finds the service config; extracts LB config and (maybe) retry throttle
@@ -167,6 +175,7 @@ class ProcessedResolverResult {
   // Service config.
   const char* service_config_json_ = nullptr;
   RefCountedPtr<ServiceConfig> service_config_;
+  grpc_error* service_config_error_ = GRPC_ERROR_NONE;
   // LB policy.
   UniquePtr<char> lb_policy_name_;
   RefCountedPtr<ParsedLoadBalancingConfig> lb_policy_config_;

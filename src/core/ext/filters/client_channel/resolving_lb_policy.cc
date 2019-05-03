@@ -533,9 +533,13 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   RefCountedPtr<ParsedLoadBalancingConfig> lb_policy_config;
   bool service_config_changed = false;
   if (process_resolver_result_ != nullptr) {
-    service_config_changed =
-        process_resolver_result_(process_resolver_result_user_data_, result,
-                                 &lb_policy_name, &lb_policy_config);
+    grpc_error* service_config_error = GRPC_ERROR_NONE;
+    service_config_changed = process_resolver_result_(
+        process_resolver_result_user_data_, result, &lb_policy_name,
+        &lb_policy_config, &service_config_error);
+    if (service_config_error != GRPC_ERROR_NONE) {
+      return OnResolverError(service_config_error);
+    }
   } else {
     lb_policy_name = child_policy_name_.get();
     lb_policy_config = child_lb_config_;

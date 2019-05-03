@@ -5520,6 +5520,19 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - gpr
+- name: service_config_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/lb/v1/load_balancer.proto
+  - test/cpp/end2end/service_config_end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
 - name: service_config_test
   gtest: true
   build: test

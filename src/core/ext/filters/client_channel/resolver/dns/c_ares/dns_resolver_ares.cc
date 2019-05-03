@@ -110,6 +110,8 @@ class AresDnsResolver : public Resolver {
   UniquePtr<ServerAddressList> addresses_;
   /// currently resolving service config
   char* service_config_json_ = nullptr;
+  /// last valid service config
+  RefCountedPtr<ServiceConfig> saved_service_config_;
   // has shutdown been initiated
   bool shutdown_initiated_ = false;
   // timeout in milliseconds for active DNS queries
@@ -310,13 +312,29 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
         GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
                              r, service_config_string);
         grpc_error* service_config_error = GRPC_ERROR_NONE;
-        result.service_config =
+        auto new_service_config =
             ServiceConfig::Create(service_config_string, &service_config_error);
-        // Error is currently unused.
-        GRPC_ERROR_UNREF(service_config_error);
+        if (service_config_error == GRPC_ERROR_NONE) {
+          // Valid service config receivd
+          r->saved_service_config_ = std::move(new_service_config);
+        } else {
+          if (r->saved_service_config_ != nullptr) {
+            // Ignore the new service config error, since we have a previously
+            // saved service config
+            GRPC_ERROR_UNREF(service_config_error);
+          } else {
+            // No previously valid service config found.
+            // service_config_error is passed to the channel.
+            result.service_config_error = service_config_error;
+          }
+        }
       }
       gpr_free(service_config_string);
+    } else {
+      // No service config received
+      r->saved_service_config_.reset();
     }
+    result.service_config = r->saved_service_config_;
     result.args = grpc_channel_args_copy(r->channel_args_);
     r->result_handler()->ReturnResult(std::move(result));
     r->addresses_.reset();

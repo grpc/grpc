@@ -68,7 +68,8 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   typedef bool (*ProcessResolverResultCallback)(
       void* user_data, const Resolver::Result& result,
       const char** lb_policy_name,
-      RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config);
+      RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config,
+      grpc_error** service_config_error);
   // If error is set when this returns, then construction failed, and
   // the caller may not use the new object.
   ResolvingLoadBalancingPolicy(

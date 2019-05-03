@@ -224,7 +224,8 @@ class ChannelData {
 
   static bool ProcessResolverResultLocked(
       void* arg, const Resolver::Result& result, const char** lb_policy_name,
-      RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config);
+      RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config,
+      grpc_error** service_config_error);
 
   grpc_error* DoPingLocked(grpc_transport_op* op);
 
@@ -1132,9 +1133,16 @@ ChannelData::~ChannelData() {
 // resolver result update.
 bool ChannelData::ProcessResolverResultLocked(
     void* arg, const Resolver::Result& result, const char** lb_policy_name,
-    RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config) {
+    RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config,
+    grpc_error** service_config_error) {
   ChannelData* chand = static_cast<ChannelData*>(arg);
   ProcessedResolverResult resolver_result(result);
+
+  *service_config_error = resolver_result.service_config_error();
+  if (*service_config_error != GRPC_ERROR_NONE) {
+    // We got an invalid service config.
+    return false;
+  }
   char* service_config_json = gpr_strdup(resolver_result.service_config_json());
   if (grpc_client_channel_routing_trace.enabled()) {
     gpr_log(GPR_INFO, "chand=%p: resolver returned service config: \"%s\"",
