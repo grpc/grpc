@@ -39,27 +39,25 @@ namespace testing {
 // Send next rpc when callback function is evoked.
 void SendCallbackUnaryPingPong(benchmark::State& state, EchoRequest* request,
                                EchoResponse* response,
-                               EchoTestService::Stub* stub_,
-                               bool &done,
-                               std::mutex& mu,
-                               std::condition_variable& cv) {
+                               EchoTestService::Stub* stub_, bool& done,
+                               std::mutex& mu, std::condition_variable& cv) {
   int response_msgs_size = state.range(1);
   ClientContext* cli_ctx = new ClientContext();
-  cli_ctx->AddMetadata(kServerMessageSize,
-                           grpc::to_string(response_msgs_size));
+  cli_ctx->AddMetadata(kServerMessageSize, grpc::to_string(response_msgs_size));
   stub_->experimental_async()->Echo(
-    cli_ctx, request, response,
-    [&state, cli_ctx, request, response, stub_, &done, &mu, &cv](Status s) {
-    GPR_ASSERT(s.ok());
-    if (state.KeepRunning()) {
-      SendCallbackUnaryPingPong(state, request, response, stub_, done, mu, cv);
-    } else {
-      std::lock_guard<std::mutex> l(mu);
-      done = true;
-      cv.notify_one();
-    }
-    delete cli_ctx;
-  });
+      cli_ctx, request, response,
+      [&state, cli_ctx, request, response, stub_, &done, &mu, &cv](Status s) {
+        GPR_ASSERT(s.ok());
+        if (state.KeepRunning()) {
+          SendCallbackUnaryPingPong(state, request, response, stub_, done, mu,
+                                    cv);
+        } else {
+          std::lock_guard<std::mutex> l(mu);
+          done = true;
+          cv.notify_one();
+        }
+        delete cli_ctx;
+      });
 }
 
 template <class Fixture, class ClientContextMutator, class ServerContextMutator>
@@ -84,8 +82,8 @@ static void BM_CallbackUnaryPingPong(benchmark::State& state) {
   bool done = false;
   if (state.KeepRunning()) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
-    SendCallbackUnaryPingPong(state, &request, &response, stub_.get(),
-                              done, mu, cv);
+    SendCallbackUnaryPingPong(state, &request, &response, stub_.get(), done, mu,
+                              cv);
   }
   std::unique_lock<std::mutex> l(mu);
   while (!done) {
@@ -96,7 +94,6 @@ static void BM_CallbackUnaryPingPong(benchmark::State& state) {
   state.SetBytesProcessed(request_msgs_size * state.iterations() +
                           response_msgs_size * state.iterations());
 }
-
 
 }  // namespace testing
 }  // namespace grpc

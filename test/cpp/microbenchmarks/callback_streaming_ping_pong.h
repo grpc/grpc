@@ -53,16 +53,15 @@ static void BM_CallbackBidiStreaming(benchmark::State& state) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     ClientContext cli_ctx;
     cli_ctx.AddMetadata(kServerFinishAfterNReads,
-                         grpc::to_string(max_ping_pongs));
-    cli_ctx.AddMetadata(kServerMessageSize,
-                         grpc::to_string(message_size));
+                        grpc::to_string(max_ping_pongs));
+    cli_ctx.AddMetadata(kServerMessageSize, grpc::to_string(message_size));
     BidiClient test{stub_.get(), &request, &response, &cli_ctx, max_ping_pongs};
     test.Await();
   }
   fixture->Finish(state);
   fixture.reset();
-  state.SetBytesProcessed(2 * message_size * max_ping_pongs
-                          * state.iterations());
+  state.SetBytesProcessed(2 * message_size * max_ping_pongs *
+                          state.iterations());
 }
 
 }  // namespace testing

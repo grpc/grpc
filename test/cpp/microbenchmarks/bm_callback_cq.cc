@@ -27,10 +27,10 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
-#include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/surface/completion_queue.h"
 
 namespace grpc {
 namespace testing {
@@ -43,8 +43,7 @@ class TagCallback : public grpc_experimental_completion_queue_functor {
     functor_run = &TagCallback::Run;
   }
   ~TagCallback() {}
-  static void Run(grpc_experimental_completion_queue_functor* cb,
-                  int ok) {
+  static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
     GPR_ASSERT(static_cast<bool>(ok));
     auto* callback = static_cast<TagCallback*>(cb);
     *callback->counter_ += callback->tag_;
@@ -104,15 +103,14 @@ static void BM_Callback_CQ_Default_Polling(benchmark::State& state) {
           grpc_completion_queue_factory_lookup(&attr), &attr, nullptr);
 
       for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
-        tags[i] =
-            static_cast<void*>(grpc_core::New<TagCallback>(&counter, i));
+        tags[i] = static_cast<void*>(grpc_core::New<TagCallback>(&counter, i));
         sumtags += i;
       }
 
       for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
         GPR_ASSERT(grpc_cq_begin_op(cc, tags[i]));
-        grpc_cq_end_op(cc, tags[i], GRPC_ERROR_NONE,
-                       do_nothing_end_completion, nullptr, &completions[i]);
+        grpc_cq_end_op(cc, tags[i], GRPC_ERROR_NONE, do_nothing_end_completion,
+                       nullptr, &completions[i]);
       }
 
       shutdown_and_destroy(cc);
@@ -149,15 +147,14 @@ static void BM_Callback_CQ_Non_Listening(benchmark::State& state) {
           grpc_completion_queue_factory_lookup(&attr), &attr, nullptr);
 
       for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
-        tags[i] =
-            static_cast<void*>(grpc_core::New<TagCallback>(&counter, i));
+        tags[i] = static_cast<void*>(grpc_core::New<TagCallback>(&counter, i));
         sumtags += i;
       }
 
       for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
         GPR_ASSERT(grpc_cq_begin_op(cc, tags[i]));
-        grpc_cq_end_op(cc, tags[i], GRPC_ERROR_NONE,
-                       do_nothing_end_completion, nullptr, &completions[i]);
+        grpc_cq_end_op(cc, tags[i], GRPC_ERROR_NONE, do_nothing_end_completion,
+                       nullptr, &completions[i]);
       }
 
       shutdown_and_destroy(cc);
@@ -194,15 +191,14 @@ static void BM_Callback_CQ_Non_Polling(benchmark::State& state) {
           grpc_completion_queue_factory_lookup(&attr), &attr, nullptr);
 
       for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
-        tags[i] =
-            static_cast<void*>(grpc_core::New<TagCallback>(&counter, i));
+        tags[i] = static_cast<void*>(grpc_core::New<TagCallback>(&counter, i));
         sumtags += i;
       }
 
       for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
         GPR_ASSERT(grpc_cq_begin_op(cc, tags[i]));
-        grpc_cq_end_op(cc, tags[i], GRPC_ERROR_NONE,
-                       do_nothing_end_completion, nullptr, &completions[i]);
+        grpc_cq_end_op(cc, tags[i], GRPC_ERROR_NONE, do_nothing_end_completion,
+                       nullptr, &completions[i]);
       }
 
       shutdown_and_destroy(cc);
