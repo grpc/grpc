@@ -456,8 +456,10 @@ typedef unsigned __int64 uint64_t;
 
 /* RDTSC cycle clock instruction */
 #ifndef GRPC_TIMERS_RDTSC
+#ifdef GPR_LINUX
 #if defined(__i386__) || defined(__x86_64__)
 #define GRPC_TIMERS_RDTSC 1
+#endif
 #endif
 #endif
 
