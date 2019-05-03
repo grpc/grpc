@@ -148,7 +148,7 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   }
 
   sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
-                   WSA_FLAG_OVERLAPPED);
+                   grpc_get_default_wsa_socket_flags());
   if (sock == INVALID_SOCKET) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "WSASocket");
     goto failure;

@@ -638,6 +638,8 @@ add_dependencies(buildtests_cxx error_details_test)
 add_dependencies(buildtests_cxx exception_test)
 add_dependencies(buildtests_cxx filter_end2end_test)
 add_dependencies(buildtests_cxx generic_end2end_test)
+add_dependencies(buildtests_cxx global_config_env_test)
+add_dependencies(buildtests_cxx global_config_test)
 add_dependencies(buildtests_cxx golden_file_test)
 add_dependencies(buildtests_cxx grpc_alts_credentials_options_test)
 add_dependencies(buildtests_cxx grpc_cli)
@@ -882,6 +884,7 @@ add_library(gpr
   src/core/lib/gpr/wrap_memcpy.cc
   src/core/lib/gprpp/arena.cc
   src/core/lib/gprpp/fork.cc
+  src/core/lib/gprpp/global_config_env.cc
   src/core/lib/gprpp/thd_posix.cc
   src/core/lib/gprpp/thd_windows.cc
   src/core/lib/profiling/basic_timers.cc
@@ -1298,10 +1301,13 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
@@ -2691,10 +2697,13 @@ add_library(grpc_unsecure
   src/core/ext/transport/inproc/inproc_transport.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
@@ -3124,18 +3133,21 @@ foreach(_hdr
   include/grpcpp/security/auth_metadata_processor.h
   include/grpcpp/security/auth_metadata_processor_impl.h
   include/grpcpp/security/credentials.h
+  include/grpcpp/security/credentials_impl.h
   include/grpcpp/security/server_credentials.h
   include/grpcpp/security/server_credentials_impl.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_builder_impl.h
   include/grpcpp/server_context.h
+  include/grpcpp/server_impl.h
   include/grpcpp/server_posix.h
   include/grpcpp/server_posix_impl.h
   include/grpcpp/support/async_stream.h
   include/grpcpp/support/async_unary_call.h
   include/grpcpp/support/byte_buffer.h
   include/grpcpp/support/channel_arguments.h
+  include/grpcpp/support/channel_arguments_impl.h
   include/grpcpp/support/client_callback.h
   include/grpcpp/support/client_interceptor.h
   include/grpcpp/support/config.h
@@ -3735,18 +3747,21 @@ foreach(_hdr
   include/grpcpp/security/auth_metadata_processor.h
   include/grpcpp/security/auth_metadata_processor_impl.h
   include/grpcpp/security/credentials.h
+  include/grpcpp/security/credentials_impl.h
   include/grpcpp/security/server_credentials.h
   include/grpcpp/security/server_credentials_impl.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_builder_impl.h
   include/grpcpp/server_context.h
+  include/grpcpp/server_impl.h
   include/grpcpp/server_posix.h
   include/grpcpp/server_posix_impl.h
   include/grpcpp/support/async_stream.h
   include/grpcpp/support/async_unary_call.h
   include/grpcpp/support/byte_buffer.h
   include/grpcpp/support/channel_arguments.h
+  include/grpcpp/support/channel_arguments_impl.h
   include/grpcpp/support/client_callback.h
   include/grpcpp/support/client_interceptor.h
   include/grpcpp/support/config.h
@@ -4718,18 +4733,21 @@ foreach(_hdr
   include/grpcpp/security/auth_metadata_processor.h
   include/grpcpp/security/auth_metadata_processor_impl.h
   include/grpcpp/security/credentials.h
+  include/grpcpp/security/credentials_impl.h
   include/grpcpp/security/server_credentials.h
   include/grpcpp/security/server_credentials_impl.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_builder_impl.h
   include/grpcpp/server_context.h
+  include/grpcpp/server_impl.h
   include/grpcpp/server_posix.h
   include/grpcpp/server_posix_impl.h
   include/grpcpp/support/async_stream.h
   include/grpcpp/support/async_unary_call.h
   include/grpcpp/support/byte_buffer.h
   include/grpcpp/support/channel_arguments.h
+  include/grpcpp/support/channel_arguments_impl.h
   include/grpcpp/support/client_callback.h
   include/grpcpp/support/client_interceptor.h
   include/grpcpp/support/config.h
@@ -13615,6 +13633,80 @@ target_link_libraries(generic_end2end_test
   grpc++
   grpc
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(global_config_env_test
+  test/core/gprpp/global_config_env_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(global_config_env_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(global_config_env_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr
+  grpc_test_util_unsecure
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(global_config_test
+  test/core/gprpp/global_config_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(global_config_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(global_config_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr
+  grpc_test_util_unsecure
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 

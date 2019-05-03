@@ -34,7 +34,6 @@
 
 #import <Foundation/Foundation.h>
 #import <RxLibrary/GRXWriter.h>
-#include <grpc/status.h>
 
 #include <AvailabilityMacros.h>
 
@@ -54,20 +53,20 @@ extern NSString *const kGRPCErrorDomain;
  */
 typedef NS_ENUM(NSUInteger, GRPCErrorCode) {
   /** The operation was cancelled (typically by the caller). */
-  GRPCErrorCodeCancelled = GRPC_STATUS_CANCELLED,
+  GRPCErrorCodeCancelled = 1,
 
   /**
    * Unknown error. Errors raised by APIs that do not return enough error information may be
    * converted to this error.
    */
-  GRPCErrorCodeUnknown = GRPC_STATUS_UNKNOWN,
+  GRPCErrorCodeUnknown = 2,
 
   /**
    * The client specified an invalid argument. Note that this differs from FAILED_PRECONDITION.
    * INVALID_ARGUMENT indicates arguments that are problematic regardless of the state of the
    * server (e.g., a malformed file name).
    */
-  GRPCErrorCodeInvalidArgument = GRPC_STATUS_INVALID_ARGUMENT,
+  GRPCErrorCodeInvalidArgument = 3,
 
   /**
    * Deadline expired before operation could complete. For operations that change the state of the
@@ -75,13 +74,13 @@ typedef NS_ENUM(NSUInteger, GRPCErrorCode) {
    * example, a successful response from the server could have been delayed long enough for the
    * deadline to expire.
    */
-  GRPCErrorCodeDeadlineExceeded = GRPC_STATUS_DEADLINE_EXCEEDED,
+  GRPCErrorCodeDeadlineExceeded = 4,
 
   /** Some requested entity (e.g., file or directory) was not found. */
-  GRPCErrorCodeNotFound = GRPC_STATUS_NOT_FOUND,
+  GRPCErrorCodeNotFound = 5,
 
   /** Some entity that we attempted to create (e.g., file or directory) already exists. */
-  GRPCErrorCodeAlreadyExists = GRPC_STATUS_ALREADY_EXISTS,
+  GRPCErrorCodeAlreadyExists = 6,
 
   /**
    * The caller does not have permission to execute the specified operation. PERMISSION_DENIED isn't
@@ -89,16 +88,16 @@ typedef NS_ENUM(NSUInteger, GRPCErrorCode) {
    * those errors). PERMISSION_DENIED doesn't indicate a failure to identify the caller
    * (UNAUTHENTICATED is used instead for those errors).
    */
-  GRPCErrorCodePermissionDenied = GRPC_STATUS_PERMISSION_DENIED,
+  GRPCErrorCodePermissionDenied = 7,
 
   /**
    * The request does not have valid authentication credentials for the operation (e.g. the caller's
    * identity can't be verified).
    */
-  GRPCErrorCodeUnauthenticated = GRPC_STATUS_UNAUTHENTICATED,
+  GRPCErrorCodeUnauthenticated = 16,
 
   /** Some resource has been exhausted, perhaps a per-user quota. */
-  GRPCErrorCodeResourceExhausted = GRPC_STATUS_RESOURCE_EXHAUSTED,
+  GRPCErrorCodeResourceExhausted = 8,
 
   /**
    * The RPC was rejected because the server is not in a state required for the procedure's
@@ -107,14 +106,14 @@ typedef NS_ENUM(NSUInteger, GRPCErrorCode) {
    * performing another RPC). The details depend on the service being called, and should be found in
    * the NSError's userInfo.
    */
-  GRPCErrorCodeFailedPrecondition = GRPC_STATUS_FAILED_PRECONDITION,
+  GRPCErrorCodeFailedPrecondition = 9,
 
   /**
    * The RPC was aborted, typically due to a concurrency issue like sequencer check failures,
    * transaction aborts, etc. The client should retry at a higher-level (e.g., restarting a read-
    * modify-write sequence).
    */
-  GRPCErrorCodeAborted = GRPC_STATUS_ABORTED,
+  GRPCErrorCodeAborted = 10,
 
   /**
    * The RPC was attempted past the valid range. E.g., enumerating past the end of a list.
@@ -123,25 +122,25 @@ typedef NS_ENUM(NSUInteger, GRPCErrorCode) {
    * to return the element at a negative index, but it will generate OUT_OF_RANGE if asked to return
    * the element at an index past the current size of the list.
    */
-  GRPCErrorCodeOutOfRange = GRPC_STATUS_OUT_OF_RANGE,
+  GRPCErrorCodeOutOfRange = 11,
 
   /** The procedure is not implemented or not supported/enabled in this server. */
-  GRPCErrorCodeUnimplemented = GRPC_STATUS_UNIMPLEMENTED,
+  GRPCErrorCodeUnimplemented = 12,
 
   /**
    * Internal error. Means some invariant expected by the server application or the gRPC library has
    * been broken.
    */
-  GRPCErrorCodeInternal = GRPC_STATUS_INTERNAL,
+  GRPCErrorCodeInternal = 13,
 
   /**
    * The server is currently unavailable. This is most likely a transient condition and may be
    * corrected by retrying with a backoff.
    */
-  GRPCErrorCodeUnavailable = GRPC_STATUS_UNAVAILABLE,
+  GRPCErrorCodeUnavailable = 14,
 
   /** Unrecoverable data loss or corruption. */
-  GRPCErrorCodeDataLoss = GRPC_STATUS_DATA_LOSS,
+  GRPCErrorCodeDataLoss = 15,
 };
 
 /**

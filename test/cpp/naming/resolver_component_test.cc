@@ -146,8 +146,9 @@ vector<GrpcLBAddress> ParseExpectedAddrs(std::string expected_addrs) {
     expected_addrs = expected_addrs.substr(next_comma + 1, std::string::npos);
     // get the next is_balancer 'bool' associated with this address
     size_t next_semicolon = expected_addrs.find(';');
-    bool is_balancer =
-        gpr_is_true(expected_addrs.substr(0, next_semicolon).c_str());
+    bool is_balancer = false;
+    gpr_parse_bool_value(expected_addrs.substr(0, next_semicolon).c_str(),
+                         &is_balancer);
     out.emplace_back(GrpcLBAddress(next_addr, is_balancer));
     if (next_semicolon == std::string::npos) {
       break;

@@ -36,6 +36,7 @@
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gprpp/atomic.h"
+#include "src/core/lib/gprpp/pair.h"
 
 #include <stddef.h>
 
@@ -45,15 +46,22 @@ class Arena {
  public:
   // Create an arena, with \a initial_size bytes in the first allocated buffer.
   static Arena* Create(size_t initial_size);
+
+  // Create an arena, with \a initial_size bytes in the first allocated buffer,
+  // and return both a void pointer to the returned arena and a void* with the
+  // first allocation.
+  static Pair<Arena*, void*> CreateWithAlloc(size_t initial_size,
+                                             size_t alloc_size);
+
   // Destroy an arena, returning the total number of bytes allocated.
   size_t Destroy();
   // Allocate \a size bytes from the arena.
   void* Alloc(size_t size) {
     static constexpr size_t base_size =
-        GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Arena));
-    size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(size);
+        GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(Arena));
+    size = GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(size);
     size_t begin = total_used_.FetchAdd(size, MemoryOrder::RELAXED);
-    if (begin + size <= initial_zone_size_) {
+    if (GPR_LIKELY(begin + size <= initial_zone_size_)) {
       return reinterpret_cast<char*>(this) + base_size + begin;
     } else {
       return AllocZone(size);
@@ -76,7 +84,21 @@ class Arena {
     Zone* prev;
   };
 
-  explicit Arena(size_t initial_size) : initial_zone_size_(initial_size) {}
+  // Initialize an arena.
+  // Parameters:
+  //   initial_size: The initial size of the whole arena in bytes. These bytes
+  //   are contained within 'zone 0'. If the arena user ends up requiring more
+  //   memory than the arena contains in zone 0, subsequent zones are allocated
+  //   on demand and maintained in a tail-linked list.
+  //
+  //   initial_alloc: Optionally, construct the arena as though a call to
+  //   Alloc() had already been made for initial_alloc bytes. This provides a
+  //   quick optimization (avoiding an atomic fetch-add) for the common case
+  //   where we wish to create an arena and then perform an immediate
+  //   allocation.
+  explicit Arena(size_t initial_size, size_t initial_alloc = 0)
+      : total_used_(initial_alloc), initial_zone_size_(initial_size) {}
+
   ~Arena();
 
   void* AllocZone(size_t size);

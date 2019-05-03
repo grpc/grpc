@@ -174,6 +174,8 @@ class ClientCallbackUnary {
 // StartWrite, or AddHold operations on the streaming object. Note that none of
 // the classes are pure; all reactions have a default empty reaction so that the
 // user class only needs to override those classes that it cares about.
+// The reactor must be passed to the stub invocation before any of the below
+// operations can be called.
 
 /// \a ClientBidiReactor is the interface for a bidirectional streaming RPC.
 template <class Request, class Response>

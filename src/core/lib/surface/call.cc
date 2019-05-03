@@ -260,10 +260,10 @@ grpc_core::TraceFlag grpc_compression_trace(false, "compression");
 
 #define CALL_STACK_FROM_CALL(call)   \
   (grpc_call_stack*)((char*)(call) + \
-                     GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)))
+                     GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(grpc_call)))
 #define CALL_FROM_CALL_STACK(call_stack) \
   (grpc_call*)(((char*)(call_stack)) -   \
-               GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)))
+               GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(grpc_call)))
 
 #define CALL_ELEM_FROM_CALL(call, idx) \
   grpc_call_stack_element(CALL_STACK_FROM_CALL(call), idx)
@@ -321,16 +321,23 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
 
   GRPC_CHANNEL_INTERNAL_REF(args->channel, "call");
 
+  grpc_core::Arena* arena;
+  grpc_call* call;
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_channel_stack* channel_stack =
       grpc_channel_get_channel_stack(args->channel);
-  grpc_call* call;
   size_t initial_size = grpc_channel_get_call_size_estimate(args->channel);
   GRPC_STATS_INC_CALL_INITIAL_SIZE(initial_size);
-  grpc_core::Arena* arena = grpc_core::Arena::Create(initial_size);
-  call = new (arena->Alloc(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)) +
-                           channel_stack->call_stack_size))
-      grpc_call(arena, *args);
+  size_t call_and_stack_size =
+      GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(grpc_call)) +
+      channel_stack->call_stack_size;
+  size_t call_alloc_size =
+      call_and_stack_size + (args->parent ? sizeof(child_call) : 0);
+
+  std::pair<grpc_core::Arena*, void*> arena_with_call =
+      grpc_core::Arena::CreateWithAlloc(initial_size, call_alloc_size);
+  arena = arena_with_call.first;
+  call = new (arena_with_call.second) grpc_call(arena, *args);
   *out_call = call;
   grpc_slice path = grpc_empty_slice();
   if (call->is_client) {
@@ -362,7 +369,8 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   bool immediately_cancel = false;
 
   if (args->parent != nullptr) {
-    call->child = arena->New<child_call>(args->parent);
+    call->child = new (reinterpret_cast<char*>(arena_with_call.second) +
+                       call_and_stack_size) child_call(args->parent);
 
     GRPC_CALL_INTERNAL_REF(args->parent, "child");
     GPR_ASSERT(call->is_client);

@@ -86,8 +86,8 @@ class FullstackFixture : public BaseFixture {
     ChannelArguments args;
     config.ApplyCommonChannelArguments(&args);
     if (address.length() > 0) {
-      channel_ =
-          CreateCustomChannel(address, InsecureChannelCredentials(), args);
+      channel_ = ::grpc::CreateCustomChannel(
+          address, InsecureChannelCredentials(), args);
     } else {
       channel_ = server_->InProcessChannel(args);
     }
@@ -299,8 +299,8 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
 
   static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats* stats) {
     grpc_endpoint_pair p;
-    grpc_passthru_endpoint_create(&p.client, &p.server, Library::get().rq(),
-                                  stats);
+    grpc_passthru_endpoint_create(&p.client, &p.server,
+                                  LibraryInitializer::get().rq(), stats);
     return p;
   }
 };

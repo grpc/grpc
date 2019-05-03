@@ -66,12 +66,13 @@
 #define GRPC_SUBCHANNEL_RECONNECT_JITTER 0.2
 
 // Conversion between subchannel call and call stack.
-#define SUBCHANNEL_CALL_TO_CALL_STACK(call) \
-  (grpc_call_stack*)((char*)(call) +        \
-                     GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)))
-#define CALL_STACK_TO_SUBCHANNEL_CALL(callstack) \
-  (SubchannelCall*)(((char*)(call_stack)) -      \
-                    GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)))
+#define SUBCHANNEL_CALL_TO_CALL_STACK(call)                              \
+  (grpc_call_stack*)((char*)(call) + GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE( \
+                                         sizeof(SubchannelCall)))
+#define CALL_STACK_TO_SUBCHANNEL_CALL(callstack)        \
+  (SubchannelCall*)(((char*)(call_stack)) -             \
+                    GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE( \
+                        sizeof(SubchannelCall)))
 
 namespace grpc_core {
 
@@ -151,10 +152,10 @@ RefCountedPtr<SubchannelCall> ConnectedSubchannel::CreateCall(
 size_t ConnectedSubchannel::GetInitialCallSizeEstimate(
     size_t parent_data_size) const {
   size_t allocation_size =
-      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall));
+      GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(SubchannelCall));
   if (parent_data_size > 0) {
     allocation_size +=
-        GPR_ROUND_UP_TO_ALIGNMENT_SIZE(channel_stack_->call_stack_size) +
+        GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(channel_stack_->call_stack_size) +
         parent_data_size;
   } else {
     allocation_size += channel_stack_->call_stack_size;
@@ -178,8 +179,9 @@ void SubchannelCall::StartTransportStreamOpBatch(
 
 void* SubchannelCall::GetParentData() {
   grpc_channel_stack* chanstk = connected_subchannel_->channel_stack();
-  return (char*)this + GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)) +
-         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(chanstk->call_stack_size);
+  return (char*)this +
+         GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(SubchannelCall)) +
+         GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(chanstk->call_stack_size);
 }
 
 grpc_call_stack* SubchannelCall::GetCallStack() {
@@ -529,25 +531,6 @@ BackOff::Options ParseArgsForBackoffValues(
       .set_max_backoff(max_backoff_ms);
 }
 
-struct HealthCheckParams {
-  UniquePtr<char> service_name;
-
-  static void Parse(const grpc_json* field, HealthCheckParams* params) {
-    if (strcmp(field->key, "healthCheckConfig") == 0) {
-      if (field->type != GRPC_JSON_OBJECT) return;
-      for (grpc_json* sub_field = field->child; sub_field != nullptr;
-           sub_field = sub_field->next) {
-        if (sub_field->key == nullptr) return;
-        if (strcmp(sub_field->key, "serviceName") == 0) {
-          if (params->service_name != nullptr) return;  // Duplicate.
-          if (sub_field->type != GRPC_JSON_STRING) return;
-          params->service_name.reset(gpr_strdup(sub_field->value));
-        }
-      }
-    }
-  }
-};
-
 }  // namespace
 
 Subchannel::Subchannel(SubchannelKey* key, grpc_connector* connector,
@@ -583,21 +566,9 @@ Subchannel::Subchannel(SubchannelKey* key, grpc_connector* connector,
                                "subchannel");
   grpc_connectivity_state_init(&state_and_health_tracker_, GRPC_CHANNEL_IDLE,
                                "subchannel");
-  // Check whether we should enable health checking.
-  const char* service_config_json = grpc_channel_arg_get_string(
-      grpc_channel_args_find(args_, GRPC_ARG_SERVICE_CONFIG));
-  if (service_config_json != nullptr) {
-    grpc_error* service_config_error = GRPC_ERROR_NONE;
-    RefCountedPtr<ServiceConfig> service_config =
-        ServiceConfig::Create(service_config_json, &service_config_error);
-    // service_config_error is currently unused.
-    GRPC_ERROR_UNREF(service_config_error);
-    if (service_config != nullptr) {
-      HealthCheckParams params;
-      service_config->ParseGlobalParams(HealthCheckParams::Parse, &params);
-      health_check_service_name_ = std::move(params.service_name);
-    }
-  }
+  health_check_service_name_ =
+      UniquePtr<char>(gpr_strdup(grpc_channel_arg_get_string(
+          grpc_channel_args_find(args_, "grpc.temp.health_check"))));
   const grpc_arg* arg = grpc_channel_args_find(args_, GRPC_ARG_ENABLE_CHANNELZ);
   const bool channelz_enabled =
       grpc_channel_arg_get_bool(arg, GRPC_ENABLE_CHANNELZ_DEFAULT);

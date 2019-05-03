@@ -24,9 +24,6 @@
 namespace grpc {
 namespace testing {
 
-// force library initialization
-auto& force_library_initialization = Library::get();
-
 /*******************************************************************************
  * CONFIGURATIONS
  */
@@ -122,6 +119,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();
