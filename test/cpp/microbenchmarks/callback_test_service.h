@@ -56,7 +56,6 @@ class BidiClient
         msgs_to_send_{num_msgs_to_send} {
     stub->experimental_async()->BidiStream(context_, this);
     MaybeWrite();
-    StartRead(response_);
     StartCall();
   }
 
@@ -64,9 +63,9 @@ class BidiClient
     if (!ok) {
       return;
     }
-    if (reads_complete_ < msgs_to_send_) {
+    if (ok && reads_complete_ < msgs_to_send_) {
       reads_complete_++;
-      StartRead(response_);
+      MaybeWrite();
     }
   }
 
@@ -75,7 +74,7 @@ class BidiClient
       return;
     }
     writes_complete_++;
-    MaybeWrite();
+    StartRead(response_);
   }
 
   void OnDone(const Status& s) override {

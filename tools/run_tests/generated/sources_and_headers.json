@@ -2779,6 +2779,27 @@
   {
     "deps": [
       "benchmark", 
+      "gpr", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_benchmark", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_callback_cq", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_callback_cq.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
       "callback_test_service", 
       "gpr", 
       "grpc++_test_config", 

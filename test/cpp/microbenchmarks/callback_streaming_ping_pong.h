@@ -54,7 +54,7 @@ static void BM_CallbackBidiStreaming(benchmark::State& state) {
     ClientContext cli_ctx;
     cli_ctx.AddMetadata(kServerFinishAfterNReads,
                          grpc::to_string(max_ping_pongs));
-    cli_ctx.AddMetadata(kServerResponseStreamsToSend,
+    cli_ctx.AddMetadata(kServerMessageSize,
                          grpc::to_string(message_size));
     BidiClient test{stub_.get(), &request, &response, &cli_ctx, max_ping_pongs};
     test.Await();

@@ -276,3 +276,14 @@ grpc_cc_binary(
     tags = ["no_windows"],
     deps = [":callback_streaming_ping_pong_h"],
 )
+
+grpc_cc_binary(
+    name = "bm_callback_cq",
+    testonly = 1,
+    srcs = ["bm_callback_cq.cc"],
+    language = "C++",
+    deps = [
+        ":helpers",
+        "//test/cpp/util:test_util",
+    ],
+)

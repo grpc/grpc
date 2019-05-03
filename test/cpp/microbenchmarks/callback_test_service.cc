@@ -72,52 +72,48 @@ CallbackStreamingTestService::BidiStream() {
       message_size_ = GetIntValueFromMetadata(kServerMessageSize,
                                               context->client_metadata(), 0);
       StartRead(&request_);
-      on_started_done_ = true;
     }
-    void OnDone() override { delete this; }
+    void OnDone() override {
+      GPR_ASSERT(finished_);
+      delete this;
+    }
     void OnCancel() override {}
     void OnReadDone(bool ok) override {
-      if (ok) {
-        num_msgs_read_++;
-        if (message_size_ > 0) {
-          response_.set_message(std::string(message_size_, 'a'));
-        } else {
-          response_.set_message("");
-        }
-        if (num_msgs_read_ == server_write_last_) {
-          StartWriteLast(&response_, WriteOptions());
-        } else {
-          StartWrite(&response_);
-          return;
-        }
+      if (!ok) {
+        return;
       }
-      FinishOnce(Status::OK);
+      num_msgs_read_++;
+      if (message_size_ > 0) {
+        response_.set_message(std::string(message_size_, 'a'));
+      } else {
+        response_.set_message("");
+      }
+      if (num_msgs_read_ == server_write_last_) {
+        StartWriteLast(&response_, WriteOptions());
+      } else {
+        StartWrite(&response_);
+      }
     }
     void OnWriteDone(bool ok) override {
-      std::lock_guard<std::mutex> l(finish_mu_);
-      if (!finished_) {
-        StartRead(&request_);
+      if (!ok) {
+        return;
       }
-    }
-
-   private:
-    void FinishOnce(const Status& s) {
-      std::lock_guard<std::mutex> l(finish_mu_);
-      if (!finished_) {
-        Finish(s);
+      if (num_msgs_read_ < server_write_last_) {
+        StartRead(&request_);
+      } else {
+        Finish(::grpc::Status::OK);
         finished_ = true;
       }
     }
 
+   private:
     ServerContext* ctx_;
     EchoRequest request_;
     EchoResponse response_;
     int num_msgs_read_{0};
     int server_write_last_;
     int message_size_;
-    std::mutex finish_mu_;
     bool finished_{false};
-    bool on_started_done_{false};
   };
 
   return new Reactor;

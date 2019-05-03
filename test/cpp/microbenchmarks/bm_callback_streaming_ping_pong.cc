@@ -32,13 +32,11 @@ auto& force_library_initialization = Library::get();
 // Replace "benchmark::internal::Benchmark" with "::testing::Benchmark" to use
 // internal microbenchmarking tooling
 static void StreamingPingPongMsgSizeArgs(benchmark::internal::Benchmark* b) {
-  int msg_size = 0;
   // base case: 0 byte ping-pong msgs
   b->Args({0, 1});
   b->Args({0, 2});
 
-  for (msg_size = 0; msg_size <= 128 * 1024 * 1024;
-       msg_size == 0 ? msg_size++ : msg_size *= 8) {
+  for (int msg_size = 1; msg_size <= 128 * 1024 * 1024; msg_size *= 8) {
     b->Args({msg_size, 1});
     b->Args({msg_size, 2});
   }
@@ -47,13 +45,9 @@ static void StreamingPingPongMsgSizeArgs(benchmark::internal::Benchmark* b) {
 // Replace "benchmark::internal::Benchmark" with "::testing::Benchmark" to use
 // internal microbenchmarking tooling
 static void StreamingPingPongMsgsNumberArgs(benchmark::internal::Benchmark* b) {
-  int msg_number = 0;
-
-  for (msg_number = 0; msg_number <= 128 * 1024;
-       msg_number == 0 ? msg_number++ : msg_number *= 8) {
+  for (int msg_number = 1; msg_number <= 256 * 1024; msg_number *= 8) {
     b->Args({0, msg_number});
-    // 64 KiB same as the synthetic test configuration
-    b->Args({64 * 1024, msg_number});
+    b->Args({1024, msg_number});
   }
 }
 
@@ -64,12 +58,6 @@ BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcess, NoOpMutator,
 BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, MinInProcess, NoOpMutator,
                    NoOpMutator)
     ->Apply(StreamingPingPongMsgSizeArgs);
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcessCHTTP2, NoOpMutator,
-                   NoOpMutator)
-    ->Apply(StreamingPingPongMsgSizeArgs);
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, MinInProcessCHTTP2, NoOpMutator,
-                   NoOpMutator)
-    ->Apply(StreamingPingPongMsgSizeArgs);
 
 // Streaming with different message number
 BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcess, NoOpMutator,
@@ -78,43 +66,8 @@ BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcess, NoOpMutator,
 BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, MinInProcess, NoOpMutator,
                    NoOpMutator)
     ->Apply(StreamingPingPongMsgsNumberArgs);
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcessCHTTP2, NoOpMutator,
-                   NoOpMutator)
-    ->Apply(StreamingPingPongMsgsNumberArgs);
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, MinInProcessCHTTP2, NoOpMutator,
-                   NoOpMutator)
-    ->Apply(StreamingPingPongMsgsNumberArgs);
 
 // Client context with different metadata
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcessCHTTP2,
-                   Client_AddMetadata<RandomBinaryMetadata<10>, 1>, NoOpMutator)
-    ->Args({0, 1});
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcessCHTTP2,
-                   Client_AddMetadata<RandomBinaryMetadata<31>, 1>, NoOpMutator)
-    ->Args({0, 1});
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcessCHTTP2,
-                   Client_AddMetadata<RandomBinaryMetadata<100>, 1>,
-                   NoOpMutator)
-    ->Args({0, 1});
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcessCHTTP2,
-                   Client_AddMetadata<RandomBinaryMetadata<10>, 2>, NoOpMutator)
-    ->Args({0, 1});
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcessCHTTP2,
-                   Client_AddMetadata<RandomBinaryMetadata<31>, 2>, NoOpMutator)
-    ->Args({0, 1});
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcessCHTTP2,
-                   Client_AddMetadata<RandomBinaryMetadata<100>, 2>,
-                   NoOpMutator)
-    ->Args({0, 1});
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcessCHTTP2,
-                   Client_AddMetadata<RandomAsciiMetadata<10>, 1>, NoOpMutator)
-    ->Args({0, 1});
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcessCHTTP2,
-                   Client_AddMetadata<RandomAsciiMetadata<31>, 1>, NoOpMutator)
-    ->Args({0, 1});
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcessCHTTP2,
-                   Client_AddMetadata<RandomAsciiMetadata<100>, 1>, NoOpMutator)
-    ->Args({0, 1});
 BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcess,
                    Client_AddMetadata<RandomBinaryMetadata<10>, 1>, NoOpMutator)
     ->Args({0, 1});
@@ -146,27 +99,6 @@ BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcess,
     ->Args({0, 1});
 
 // Server context with different metadata
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomBinaryMetadata<10>, 1>)
-    ->Args({0, 1});
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomBinaryMetadata<31>, 1>)
-    ->Args({0, 1});
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomBinaryMetadata<100>, 1>)
-    ->Args({0, 1});
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<10>, 1>)
-    ->Args({0, 1});
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<31>, 1>)
-    ->Args({0, 1});
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<100>, 1>)
-    ->Args({0, 1});
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcessCHTTP2, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<10>, 100>)
-    ->Args({0, 1});
 BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcess, NoOpMutator,
                    Server_AddInitialMetadata<RandomBinaryMetadata<10>, 1>)
     ->Args({0, 1});
