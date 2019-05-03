@@ -18,6 +18,7 @@ package(default_visibility = ["//visibility:public"])
 
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
+load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("@org_pubref_rules_protobuf//python:rules.bzl", "py_proto_library")
 
 grpc_proto_library(
@@ -30,9 +31,23 @@ grpc_proto_library(
     srcs = ["protos/hellostreamingworld.proto"],
 )
 
-grpc_proto_library(
-    name = "helloworld",
+# The following three rules demonstrate the usage of the cc_grpc_library rule in
+# in a mode compatible with the native proto_library and cc_proto_library rules.
+proto_library(
+    name = "helloworld_proto",
     srcs = ["protos/helloworld.proto"],
+)
+
+cc_proto_library(
+    name = "helloworld_cc_proto",
+    deps = [":helloworld_proto"],
+)
+
+cc_grpc_library(
+    name = "helloworld_cc_grpc",
+    srcs = [":helloworld_proto"],
+    grpc_only = True,
+    deps = [":helloworld_cc_proto"],
 )
 
 grpc_proto_library(
@@ -49,7 +64,7 @@ py_proto_library(
     name = "py_helloworld",
     protos = ["protos/helloworld.proto"],
     with_grpc = True,
-    deps = [requirement('protobuf'),],
+    deps = [requirement("protobuf")],
 )
 
 cc_binary(
@@ -164,8 +179,10 @@ cc_binary(
 
 cc_binary(
     name = "keyvaluestore_client",
-    srcs = ["cpp/keyvaluestore/caching_interceptor.h",
-            "cpp/keyvaluestore/client.cc"],    
+    srcs = [
+        "cpp/keyvaluestore/caching_interceptor.h",
+        "cpp/keyvaluestore/client.cc",
+    ],
     defines = ["BAZEL_BUILD"],
     deps = [
         ":keyvaluestore",
