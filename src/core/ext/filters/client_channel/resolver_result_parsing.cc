@@ -61,8 +61,8 @@ void ClientChannelServiceConfigParser::Register() {
 ProcessedResolverResult::ProcessedResolverResult(
     const Resolver::Result& resolver_result)
     : service_config_(resolver_result.service_config) {
-  // If resolver did not return a service config or returned an invalid service config, use the default
-  // specified via the client API.
+  // If resolver did not return a service config or returned an invalid service
+  // config, use the default specified via the client API.
   if (service_config_ == nullptr) {
     const char* service_config_json = grpc_channel_arg_get_string(
         grpc_channel_args_find(resolver_result.args, GRPC_ARG_SERVICE_CONFIG));
@@ -70,7 +70,8 @@ ProcessedResolverResult::ProcessedResolverResult(
       service_config_ =
           ServiceConfig::Create(service_config_json, &service_config_error_);
     } else {
-      service_config_error_ = GRPC_ERROR_REF(resolver_result.service_config_error);
+      service_config_error_ =
+          GRPC_ERROR_REF(resolver_result.service_config_error);
     }
   } else {
     service_config_error_ =

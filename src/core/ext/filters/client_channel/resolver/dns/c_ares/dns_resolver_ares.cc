@@ -229,17 +229,20 @@ bool ValueInJsonArray(grpc_json* array, const char* value) {
   return false;
 }
 
-char* ChooseServiceConfig(char* service_config_choice_json) {
+char* ChooseServiceConfig(char* service_config_choice_json,
+                          grpc_error** error) {
   grpc_json* choices_json = grpc_json_parse_string(service_config_choice_json);
   if (choices_json == nullptr || choices_json->type != GRPC_JSON_ARRAY) {
-    gpr_log(GPR_ERROR, "cannot parse service config JSON string");
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "cannot parse service config JSON string");
     return nullptr;
   }
   char* service_config = nullptr;
   for (grpc_json* choice = choices_json->child; choice != nullptr;
        choice = choice->next) {
     if (choice->type != GRPC_JSON_OBJECT) {
-      gpr_log(GPR_ERROR, "cannot parse service config JSON string");
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "cannot parse service config JSON string");
       break;
     }
     grpc_json* service_config_json = nullptr;
@@ -305,31 +308,40 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     Result result;
     result.addresses = std::move(*r->addresses_);
     if (r->service_config_json_ != nullptr) {
+      grpc_error* service_config_error = GRPC_ERROR_NONE;
       char* service_config_string =
-          ChooseServiceConfig(r->service_config_json_);
+          ChooseServiceConfig(r->service_config_json_, &service_config_error);
       gpr_free(r->service_config_json_);
-      if (service_config_string != nullptr) {
-        GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
-                             r, service_config_string);
-        grpc_error* service_config_error = GRPC_ERROR_NONE;
-        auto new_service_config =
-            ServiceConfig::Create(service_config_string, &service_config_error);
-        if (service_config_error == GRPC_ERROR_NONE) {
-          // Valid service config receivd
-          r->saved_service_config_ = std::move(new_service_config);
+      RefCountedPtr<ServiceConfig> new_service_config;
+      if (service_config_error == GRPC_ERROR_NONE) {
+        if (service_config_string != nullptr) {
+          GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
+                               r, service_config_string);
+          new_service_config = ServiceConfig::Create(service_config_string,
+                                                     &service_config_error);
+          gpr_free(service_config_string);
         } else {
-          if (r->saved_service_config_ != nullptr) {
-            // Ignore the new service config error, since we have a previously
-            // saved service config
-            GRPC_ERROR_UNREF(service_config_error);
-          } else {
-            // No previously valid service config found.
-            // service_config_error is passed to the channel.
-            result.service_config_error = service_config_error;
-          }
+          // Use an empty service config since we did not find a choice
+          GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: {}",
+                               r);
+          new_service_config =
+              ServiceConfig::Create("{}", &service_config_error);
         }
       }
-      gpr_free(service_config_string);
+      if (service_config_error == GRPC_ERROR_NONE) {
+        // Valid service config receivd
+        r->saved_service_config_ = std::move(new_service_config);
+      } else {
+        if (r->saved_service_config_ != nullptr) {
+          // Ignore the new service config error, since we have a previously
+          // saved service config
+          GRPC_ERROR_UNREF(service_config_error);
+        } else {
+          // No previously valid service config found.
+          // service_config_error is passed to the channel.
+          result.service_config_error = service_config_error;
+        }
+      }
     } else {
       // No service config received
       r->saved_service_config_.reset();
