@@ -313,21 +313,14 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
           ChooseServiceConfig(r->service_config_json_, &service_config_error);
       gpr_free(r->service_config_json_);
       RefCountedPtr<ServiceConfig> new_service_config;
-      if (service_config_error == GRPC_ERROR_NONE) {
-        if (service_config_string != nullptr) {
-          GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
-                               r, service_config_string);
-          new_service_config = ServiceConfig::Create(service_config_string,
-                                                     &service_config_error);
-          gpr_free(service_config_string);
-        } else {
-          // Use an empty service config since we did not find a choice
-          GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: {}",
-                               r);
-          new_service_config =
-              ServiceConfig::Create("{}", &service_config_error);
-        }
+      if (service_config_error == GRPC_ERROR_NONE &&
+          service_config_string != nullptr) {
+        GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
+                             r, service_config_string);
+        new_service_config =
+            ServiceConfig::Create(service_config_string, &service_config_error);
       }
+      gpr_free(service_config_string);
       if (service_config_error == GRPC_ERROR_NONE) {
         // Valid service config receivd
         r->saved_service_config_ = std::move(new_service_config);

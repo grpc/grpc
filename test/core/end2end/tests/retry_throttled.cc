@@ -141,7 +141,7 @@ static void test_retry_throttled(grpc_end2end_test_config config) {
       // purposes of this test.)
       "  \"retryThrottling\": {\n"
       "    \"maxTokens\": 2,\n"
-      "    \"tokenRatio\": 1.0,\n"
+      "    \"tokenRatio\": 1.0\n"
       "  }\n"
       "}");
   grpc_channel_args client_args = {1, &arg};
