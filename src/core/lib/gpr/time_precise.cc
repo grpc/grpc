@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
+
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -46,17 +48,21 @@ void gpr_precise_clock_init(void) {
       gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
       gpr_timespec delta = gpr_time_sub(now, start);
       loop_dur_ns = delta.tv_sec * GPR_NS_PER_SEC + delta.tv_nsec;
-    } while (loop_dur_ns < measurement_dur_ns);
+      // On fake test, loop_dur_ns will be 0. If that happens just end the loop,
+      // because there is no point in finding the frequency.
+    } while (loop_dur_ns != 0 && loop_dur_ns < measurement_dur_ns);
     gpr_cycle_counter end_cycle = gpr_get_cycle_counter();
 
     // Frequency should be in Hz.
-    const double freq = static_cast<double>(end_cycle - start_cycle) /
-                        loop_dur_ns * GPR_NS_PER_SEC;
+    const double freq = loop_dur_ns == 0  // Is it a test fake clock?
+                            ? 1
+                            : static_cast<double>(end_cycle - start_cycle) /
+                                  loop_dur_ns * GPR_NS_PER_SEC;
     converged =
         last_freq != -1 && (freq * 0.99 < last_freq && last_freq < freq * 1.01);
     last_freq = freq;
   }
-  cycles_per_second = last_freq;
+  cycles_per_second = std::max<double>(1, last_freq);
   gpr_log(GPR_DEBUG, "... cycles_per_second = %f\n", cycles_per_second);
 }
 
