@@ -113,7 +113,9 @@ int gpr_stricmp(const char* a, const char* b);
 
 void* gpr_memrchr(const void* s, int c, size_t n);
 
-/** Return true if lower(s) equals "true", "yes" or "1", otherwise false. */
-bool gpr_is_true(const char* s);
+/* Try to parse given string into a boolean value.
+   When parsed successfully, dst will have the value and returns true.
+   Otherwise, it returns false. */
+bool gpr_parse_bool_value(const char* value, bool* dst);
 
 #endif /* GRPC_CORE_LIB_GPR_STRING_H */

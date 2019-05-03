@@ -25,6 +25,11 @@ grpc_proto_library(
     well_known_protos = True,
 )
 
+proto_library(
+    name = "channelz_proto_descriptors",
+    srcs = ["channelz.proto"],
+)
+
 filegroup(
     name = "channelz_proto_file",
     srcs = [

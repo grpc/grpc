@@ -3665,6 +3665,36 @@
   {
     "deps": [
       "gpr", 
+      "grpc_test_util_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "global_config_env_test", 
+    "src": [
+      "test/core/gprpp/global_config_env_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_test_util_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "global_config_test", 
+    "src": [
+      "test/core/gprpp/global_config_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config"
@@ -8019,6 +8049,7 @@
       "src/core/lib/gpr/wrap_memcpy.cc", 
       "src/core/lib/gprpp/arena.cc", 
       "src/core/lib/gprpp/fork.cc", 
+      "src/core/lib/gprpp/global_config_env.cc", 
       "src/core/lib/gprpp/thd_posix.cc", 
       "src/core/lib/gprpp/thd_windows.cc", 
       "src/core/lib/profiling/basic_timers.cc", 
@@ -8069,6 +8100,10 @@
       "src/core/lib/gprpp/arena.h", 
       "src/core/lib/gprpp/atomic.h", 
       "src/core/lib/gprpp/fork.h", 
+      "src/core/lib/gprpp/global_config.h", 
+      "src/core/lib/gprpp/global_config_custom.h", 
+      "src/core/lib/gprpp/global_config_env.h", 
+      "src/core/lib/gprpp/global_config_generic.h", 
       "src/core/lib/gprpp/manual_constructor.h", 
       "src/core/lib/gprpp/map.h", 
       "src/core/lib/gprpp/memory.h", 
@@ -8118,6 +8153,10 @@
       "src/core/lib/gprpp/arena.h", 
       "src/core/lib/gprpp/atomic.h", 
       "src/core/lib/gprpp/fork.h", 
+      "src/core/lib/gprpp/global_config.h", 
+      "src/core/lib/gprpp/global_config_custom.h", 
+      "src/core/lib/gprpp/global_config_env.h", 
+      "src/core/lib/gprpp/global_config_generic.h", 
       "src/core/lib/gprpp/manual_constructor.h", 
       "src/core/lib/gprpp/map.h", 
       "src/core/lib/gprpp/memory.h", 
@@ -9102,7 +9141,8 @@
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h", 
-      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h", 
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
@@ -9111,11 +9151,15 @@
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h", 
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc", 
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc", 
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.cc", 
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.h", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc"
     ], 
@@ -10182,6 +10226,7 @@
       "include/grpcpp/server_builder.h", 
       "include/grpcpp/server_builder_impl.h", 
       "include/grpcpp/server_context.h", 
+      "include/grpcpp/server_impl.h", 
       "include/grpcpp/server_posix.h", 
       "include/grpcpp/server_posix_impl.h", 
       "include/grpcpp/support/async_stream.h", 
@@ -10305,6 +10350,7 @@
       "include/grpcpp/server_builder.h", 
       "include/grpcpp/server_builder_impl.h", 
       "include/grpcpp/server_context.h", 
+      "include/grpcpp/server_impl.h", 
       "include/grpcpp/server_posix.h", 
       "include/grpcpp/server_posix_impl.h", 
       "include/grpcpp/support/async_stream.h", 
