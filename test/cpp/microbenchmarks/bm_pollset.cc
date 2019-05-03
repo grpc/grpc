@@ -40,8 +40,6 @@
 #include <unistd.h>
 #endif
 
-auto& force_library_initialization = Library::get();
-
 static void shutdown_ps(void* ps, grpc_error* error) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(ps));
 }
@@ -264,6 +262,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();

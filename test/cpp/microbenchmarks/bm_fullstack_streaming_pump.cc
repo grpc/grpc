@@ -28,9 +28,6 @@ namespace testing {
  * CONFIGURATIONS
  */
 
-// force library initialization
-auto& force_library_initialization = Library::get();
-
 BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, TCP)
     ->Range(0, 128 * 1024 * 1024);
 BENCHMARK_TEMPLATE(BM_PumpStreamClientToServer, UDS)
@@ -72,6 +69,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();

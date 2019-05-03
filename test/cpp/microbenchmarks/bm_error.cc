@@ -27,8 +27,6 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
-auto& force_library_initialization = Library::get();
-
 class ErrorDeleter {
  public:
   void operator()(grpc_error* error) { GRPC_ERROR_UNREF(error); }
@@ -318,6 +316,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();
