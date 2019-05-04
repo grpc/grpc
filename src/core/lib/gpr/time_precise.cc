@@ -40,19 +40,17 @@ static bool is_fake_clock() {
     gpr_timespec delta = gpr_time_sub(now, start);
     sum += delta.tv_sec * GPR_NS_PER_SEC + delta.tv_nsec;
   }
-  // If the clock doesn't move event a nano after 8 tries, it's a fake one.
+  // If the clock doesn't move even a nano after 8 tries, it's a fake one.
   return sum == 0;
 }
 
 void gpr_precise_clock_init(void) {
   gpr_log(GPR_DEBUG, "Calibrating timers");
-
   if (is_fake_clock()) {
     cycles_per_second = 1;
     start_cycle = 0;
     return;
   }
-
   // Start from a loop of 1ms, and gradually increase the loop duration
   // until we either converge or we have passed 255ms (1ms+2ms+...+128ms).
   int64_t measurement_ns = GPR_NS_PER_MS;
