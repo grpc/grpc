@@ -72,6 +72,7 @@ If 'protoc' compiler has not been installed, following commands can be used for 
 
 ```sh
 $ cd grpc/third_party/protobuf
+$ ./configure
 $ sudo make install   # 'make' should have been run by core grpc
 ```
 
