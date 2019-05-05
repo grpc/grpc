@@ -39,15 +39,6 @@
     <AvailableItemName Include="Protobuf" />
   </ItemGroup>
 
-  <!-- Workaround for VS Project System bug: -->
-  <!-- Duplicated items in None itemgroup without Generator attribute prevents the items in Protobuf -->
-  <!-- itemgroup with Generator attribute from triggering design time build. Working around this by -->
-  <!-- removing the duplicated items from None itemgroup. The Remove attribute was introduced -->
-  <!-- in the .NET Framework 3.5, but was only supported inside targets until MSBuild 15.0. -->
-  <ItemGroup Condition=" '$(MSBuildVersion)' &gt;= '15.0' and '$(DisableProtobufDesignTimeBuild)' != 'true' " >
-    <None Remove="@(Protobuf)" />
-  </ItemGroup>
-
   <PropertyGroup>
     <!-- NET SDK: by default, do not include proto files in the directory.
          Current Microsoft's recommendation is against globbing:
