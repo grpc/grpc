@@ -2917,7 +2917,13 @@ target_link_libraries(test_tcp_server
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+if (gRPC_BUILD_CODEGEN)
 add_library(callback_test_service
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_mock.grpc.pb.h
   test/cpp/microbenchmarks/callback_test_service.cc
 )
 
@@ -2932,6 +2938,9 @@ if(WIN32 AND MSVC)
   endif()
 endif()
 
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/echo.proto
+)
 
 target_include_directories(callback_test_service
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -2964,6 +2973,7 @@ target_link_libraries(callback_test_service
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 

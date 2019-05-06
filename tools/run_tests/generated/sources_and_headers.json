@@ -6686,6 +6686,9 @@
       "grpc_unsecure"
     ], 
     "headers": [
+      "src/proto/grpc/testing/echo.grpc.pb.h", 
+      "src/proto/grpc/testing/echo.pb.h", 
+      "src/proto/grpc/testing/echo_mock.grpc.pb.h", 
       "test/cpp/microbenchmarks/callback_test_service.h"
     ], 
     "is_filegroup": false, 

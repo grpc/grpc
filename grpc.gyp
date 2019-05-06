@@ -1419,6 +1419,7 @@
         'grpc++_test_config',
       ],
       'sources': [
+        'src/proto/grpc/testing/echo.proto',
         'test/cpp/microbenchmarks/callback_test_service.cc',
       ],
     },

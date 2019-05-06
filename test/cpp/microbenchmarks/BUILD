@@ -233,6 +233,7 @@ grpc_cc_library(
     tags = ["no_windows"],
     deps = [
         ":helpers",
+        "//src/proto/grpc/testing:echo_proto",
         "//test/cpp/util:test_util",
     ],
 )

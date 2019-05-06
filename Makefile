@@ -5306,6 +5306,7 @@ endif
 
 
 LIBCALLBACK_TEST_SERVICE_SRC = \
+    $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc \
     test/cpp/microbenchmarks/callback_test_service.cc \
 
 PUBLIC_HEADERS_CXX += \
@@ -5353,6 +5354,7 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBCALLBACK_TEST_SERVICE_OBJS:.o=.dep)
 endif
 endif
+$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/callback_test_service.o: $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc
 
 
 LIBGRPC++_SRC = \
