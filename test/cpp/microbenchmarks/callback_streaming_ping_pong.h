@@ -54,10 +54,8 @@ static void BM_CallbackBidiStreaming(benchmark::State& state) {
     std::mutex mu;
     std::condition_variable cv;
     bool done = false;
-    BidiClient* test =
-        new BidiClient(&state, stub_.get(), &request, &response,
-                       &mu, &cv, &done);
-    test->StartNewRpc();
+    BidiClient test{&state, stub_.get(), &request, &response, &mu, &cv, &done};
+    test.StartNewRpc();
     std::unique_lock<std::mutex> l(mu);
     while (!done) {
       cv.wait(l);

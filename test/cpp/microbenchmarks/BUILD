@@ -232,10 +232,7 @@ grpc_cc_library(
     ],
     tags = ["no_windows"],
     deps = [
-        "//:grpc++_unsecure",
-        "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:grpc_test_util_unsecure",
-        "//test/cpp/util:test_config",
+        ":helpers",
         "//test/cpp/util:test_util",
     ],
 )

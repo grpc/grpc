@@ -60,10 +60,6 @@ class BidiClient
         done_(done) {
     msgs_size_ = state->range(0);
     msgs_to_send_ = state->range(1);
-    cli_ctx_ = new ClientContext();
-    cli_ctx_->AddMetadata(kServerFinishAfterNReads,
-                          grpc::to_string(msgs_to_send_));
-    cli_ctx_->AddMetadata(kServerMessageSize, grpc::to_string(msgs_size_));
   }
 
   void OnReadDone(bool ok) override {
@@ -98,6 +94,10 @@ class BidiClient
   }
 
   void StartNewRpc() {
+    cli_ctx_ = new ClientContext();
+    cli_ctx_->AddMetadata(kServerFinishAfterNReads,
+                          grpc::to_string(msgs_to_send_));
+    cli_ctx_->AddMetadata(kServerMessageSize, grpc::to_string(msgs_size_));
     stub_->experimental_async()->BidiStream(cli_ctx_, this);
     MaybeWrite();
     StartCall();
