@@ -501,6 +501,23 @@ typedef unsigned __int64 uint64_t;
    power of two */
 #define GPR_MAX_ALIGNMENT 16
 
+// By default, assume we need fallback aligned malloc.
+#ifdef GRPC_NEED_FALLBACK_ALIGNED_MALLOC
+#error "GRPC_NEED_FALLBACK_ALIGNED_MALLOC already defined."
+#endif
+#define GRPC_NEED_FALLBACK_ALIGNED_MALLOC 1
+
+// But if a platform version is available, we do not need it.
+#if defined(GPR_HAS_ALIGNED_ALLOC) || defined(GPR_HAS_POSIX_MEMALIGN) || \
+    defined(GPR_HAS_ALIGNED_MALLOC)
+#undef GRPC_NEED_FALLBACK_ALIGNED_MALLOC
+#endif
+
+// Unless we're in backwards compat. mode.
+#if defined(GPR_BACKWARDS_COMPATIBILITY_MODE)
+#define GRPC_NEED_FALLBACK_ALIGNED_MALLOC 1
+#endif
+
 #ifndef GRPC_ARES
 #define GRPC_ARES 1
 #endif

@@ -34,56 +34,9 @@ static void* zalloc_with_gpr_malloc(size_t sz) {
   return p;
 }
 
-#ifndef NDEBUG
-static constexpr bool is_power_of_two(size_t value) {
-  // 2^N =     100000...000
-  // 2^N - 1 = 011111...111
-  // (2^N) && ((2^N)-1)) = 0
-  return (value & (value - 1)) == 0;
-}
-#endif
-
-static void* platform_malloc_aligned(size_t size, size_t alignment) {
-#if defined(GPR_HAS_ALIGNED_ALLOC)
-  GPR_DEBUG_ASSERT(is_power_of_two(alignment));
-  size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(size, alignment);
-  void* ret = aligned_alloc(alignment, size);
-  GPR_ASSERT(ret != nullptr);
-  return ret;
-#elif defined(GPR_HAS_ALIGNED_MALLOC)
-  GPR_DEBUG_ASSERT(is_power_of_two(alignment));
-  void* ret = _aligned_malloc(size, alignment);
-  GPR_ASSERT(ret != nullptr);
-  return ret;
-#elif defined(GPR_HAS_POSIX_MEMALIGN)
-  GPR_DEBUG_ASSERT(is_power_of_two(alignment));
-  GPR_DEBUG_ASSERT(alignment % sizeof(void*) == 0);
-  void* ret = nullptr;
-  GPR_ASSERT(posix_memalign(&ret, alignment, size) == 0);
-  return ret;
-#else
-  GPR_DEBUG_ASSERT(is_power_of_two(alignment));
-  size_t extra = alignment - 1 + sizeof(void*);
-  void* p = gpr_malloc(size + extra);
-  void** ret = (void**)(((uintptr_t)p + extra) & ~(alignment - 1));
-  ret[-1] = p;
-  return (void*)ret;
-#endif
-}
-
-static void platform_free_aligned(void* ptr) {
-#if defined(GPR_HAS_ALIGNED_ALLOC) || defined(GPR_HAS_POSIX_MEMALIGN)
-  free(ptr);
-#elif defined(GPR_HAS_ALIGNED_MALLOC)
-  _aligned_free(ptr);
-#else
-  gpr_free((static_cast<void**>(ptr))[-1]);
-#endif
-}
-
 static gpr_allocation_functions g_alloc_functions = {
     malloc, zalloc_with_calloc,      realloc,
-    free,   platform_malloc_aligned, platform_free_aligned};
+    free,   gpr_malloc_aligned, gpr_free_aligned};
 
 gpr_allocation_functions gpr_get_allocation_functions() {
   return g_alloc_functions;
@@ -99,8 +52,8 @@ void gpr_set_allocation_functions(gpr_allocation_functions functions) {
   GPR_ASSERT((functions.aligned_alloc_fn == nullptr) ==
              (functions.aligned_free_fn == nullptr));
   if (functions.aligned_alloc_fn == nullptr) {
-    functions.aligned_alloc_fn = platform_malloc_aligned;
-    functions.aligned_free_fn = platform_free_aligned;
+    functions.aligned_alloc_fn = gpr_malloc_aligned;
+    functions.aligned_free_fn = gpr_free_aligned;
   }
   g_alloc_functions = functions;
 }

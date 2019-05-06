@@ -31,4 +31,16 @@
 #define GPR_ROUND_UP_TO_CACHELINE_SIZE(x) \
   GPR_ROUND_UP_TO_ALIGNMENT_SIZE((x), GPR_CACHELINE_SIZE)
 
+void* gpr_malloc_aligned(size_t size, size_t alignment);
+void gpr_free_aligned(void* ptr);
+
+#ifndef NDEBUG
+static inline constexpr bool is_power_of_two(size_t value) {
+  // 2^N =     100000...000
+  // 2^N - 1 = 011111...111
+  // (2^N) && ((2^N)-1)) = 0
+  return (value & (value - 1)) == 0;
+}
+#endif
+
 #endif /* GRPC_CORE_LIB_GPR_ALLOC_H */
