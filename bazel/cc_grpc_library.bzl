@@ -1,13 +1,14 @@
 """Generates and compiles C++ grpc stubs from proto_library rules."""
 
 load("//bazel:generate_cc.bzl", "generate_cc")
+load("//bazel:protobuf.bzl", "well_known_proto_libs")
 
 def cc_grpc_library(
         name,
         srcs,
         deps,
         proto_only = False,
-        well_known_protos = True,
+        well_known_protos = False,
         generate_mocks = False,
         use_external = False,
         grpc_only = False,
@@ -33,20 +34,26 @@ def cc_grpc_library(
           provides the compiled code of any message that the services depend on.
         proto_only (bool): If True, create only C++ proto classes library,
           avoid creating C++ grpc classes library (expect it in deps).
+          Deprecated, use native cc_proto_library instead.
         well_known_protos (bool): Should this library additionally depend on
-          well known protos.
-        generate_mocks: when True, Google Mock code for client stub is generated.
-        use_external: Not used.
-        grpc_only: if True, generate only grpc library, expecting protobuf
-          messages library (cc_proto_library target) to be passed as deps.
+          well known protos. Deprecated, pass well_known_protos
+          explicitly (proto_library targets in srcs and corresponding
+          cc_proto_library in deps).
+        generate_mocks (bool): when True, Google Mock code for client stub is
+          generated.
+        use_external (bool): Not used.
+        grpc_only (bool): if True, generate only grpc library, expecting
+          protobuf messages library (cc_proto_library target) to be passed as
+          deps.
         **kwargs: rest of arguments, e.g., compatible_with and visibility
     """
     if len(srcs) > 1:
         fail("Only one srcs value supported", "srcs")
     if grpc_only and proto_only:
-        fail("A mutualy exclusive configuraiton is specified: grpc_only = True and proto_only = True")
+        fail("A mutualy exclusive configuration is specified: grpc_only = True and proto_only = True")
 
     extra_deps = []
+    proto_target = None
 
     if not grpc_only:
         proto_target = "_" + name + "_only"
@@ -54,6 +61,8 @@ def cc_grpc_library(
 
         proto_deps = ["_" + dep + "_only" for dep in deps if dep.find(":") == -1]
         proto_deps += [dep.split(":")[0] + ":" + "_" + dep.split(":")[1] + "_only" for dep in deps if dep.find(":") != -1]
+        if well_known_protos:
+            proto_deps += well_known_proto_libs()
 
         native.proto_library(
             name = proto_target,
