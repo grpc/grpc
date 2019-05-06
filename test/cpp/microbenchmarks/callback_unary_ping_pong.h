@@ -58,7 +58,7 @@ void SendCallbackUnaryPingPong(benchmark::State& state, EchoRequest* request,
         }
         delete cli_ctx;
       });
-}
+};
 
 template <class Fixture, class ClientContextMutator, class ServerContextMutator>
 static void BM_CallbackUnaryPingPong(benchmark::State& state) {

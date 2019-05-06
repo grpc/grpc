@@ -35,8 +35,6 @@
 namespace grpc {
 namespace testing {
 
-auto& force_library_initialization = Library::get();
-
 class TagCallback : public grpc_experimental_completion_queue_functor {
  public:
   TagCallback(int* counter, int tag) : counter_(counter), tag_(tag) {
@@ -220,6 +218,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();

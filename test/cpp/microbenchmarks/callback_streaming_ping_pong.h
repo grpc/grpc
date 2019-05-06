@@ -44,19 +44,22 @@ static void BM_CallbackBidiStreaming(benchmark::State& state) {
       EchoTestService::NewStub(fixture->channel()));
   EchoRequest request;
   EchoResponse response;
-  if (state.range(0) > 0) {
-    request.set_message(std::string(state.range(0), 'a'));
+  if (message_size > 0) {
+    request.set_message(std::string(message_size, 'a'));
   } else {
     request.set_message("");
   }
-  while (state.KeepRunning()) {
+  if (state.KeepRunning()) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
-    ClientContext cli_ctx;
-    cli_ctx.AddMetadata(kServerFinishAfterNReads,
-                        grpc::to_string(max_ping_pongs));
-    cli_ctx.AddMetadata(kServerMessageSize, grpc::to_string(message_size));
-    BidiClient test{stub_.get(), &request, &response, &cli_ctx, max_ping_pongs};
-    test.Await();
+    std::mutex mu;
+    std::condition_variable cv;
+    bool done = false;
+    gpr_log(GPR_INFO, "big enter");
+    BidiClient* test =
+        new BidiClient(state, stub_.get(), &request, &response, mu, cv, done);
+    test->StartNewRpc();
+    test->Await();
+    gpr_log(GPR_INFO, "big exit");
   }
   fixture->Finish(state);
   fixture.reset();
