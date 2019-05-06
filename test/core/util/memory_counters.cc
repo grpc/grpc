@@ -90,12 +90,8 @@ static void guard_free(void* vptr) {
   g_old_allocs.free_fn(ptr);
 }
 
-// NB: We do not specify guard_malloc_aligned/guard_free_aligned methods. Since
-// they are null, calls to gpr_malloc_aligned/gpr_free_aligned are executed as a
-// wrapper over gpr_malloc/gpr_free, which do use guard_malloc/guard_free, and
-// thus there allocations are tracked as well.
-struct gpr_allocation_functions g_guard_allocs = {
-    guard_malloc, nullptr, guard_realloc, guard_free, nullptr, nullptr};
+struct gpr_allocation_functions g_guard_allocs = {guard_malloc, nullptr,
+                                                  guard_realloc, guard_free};
 
 void grpc_memory_counters_init() {
   memset(&g_memory_counters, 0, sizeof(g_memory_counters));
