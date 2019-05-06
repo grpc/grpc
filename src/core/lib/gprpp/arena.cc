@@ -35,8 +35,8 @@ namespace {
 
 void* ArenaStorage(size_t initial_size) {
   static constexpr size_t base_size =
-      GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(grpc_core::Arena));
-  initial_size = GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(initial_size);
+      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_core::Arena));
+  initial_size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(initial_size);
   size_t alloc_size = base_size + initial_size;
   static constexpr size_t alignment =
       (GPR_CACHELINE_SIZE > GPR_MAX_ALIGNMENT &&
