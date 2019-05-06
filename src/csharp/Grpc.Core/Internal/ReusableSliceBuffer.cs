@@ -31,36 +31,35 @@ namespace Grpc.Core.Internal
         public const int MaxCachedSegments = 1024;  // ~4MB payload for 4K slices
 
         readonly SliceSegment[] cachedSegments = new SliceSegment[MaxCachedSegments];
-        int populatedSegmentCount = 0;
+        int populatedSegmentCount;
 
         public ReadOnlySequence<byte> PopulateFrom(IBufferReader bufferReader)
         {
+            populatedSegmentCount = 0;
             long offset = 0;
-            int index = 0;
             SliceSegment prevSegment = null;
             while (bufferReader.TryGetNextSlice(out Slice slice))
             {
                 // Initialize cached segment if still null or just allocate a new segment if we already reached MaxCachedSegments
-                var current = index < cachedSegments.Length ? cachedSegments[index] : new SliceSegment();
+                var current = populatedSegmentCount < cachedSegments.Length ? cachedSegments[populatedSegmentCount] : new SliceSegment();
                 if (current == null)
                 {
-                    current = cachedSegments[index] = new SliceSegment();
+                    current = cachedSegments[populatedSegmentCount] = new SliceSegment();
                 }
 
                 current.Reset(slice, offset);
                 prevSegment?.SetNext(current);
 
-                index ++;
+                populatedSegmentCount ++;
                 offset += slice.Length;
                 prevSegment = current;
             }
-            populatedSegmentCount = index;
 
             // Not necessary for ending the ReadOnlySequence, but for making sure we
             // don't keep more than MaxCachedSegments alive.
             prevSegment?.SetNext(null);
 
-            if (index == 0)
+            if (populatedSegmentCount == 0)
             {
                 return ReadOnlySequence<byte>.Empty;
             }
@@ -80,8 +79,9 @@ namespace Grpc.Core.Internal
             while (segment != null)
             {
                 segment.Reset(new Slice(IntPtr.Zero, 0), 0);
+                var nextSegment = (SliceSegment) segment.Next;
                 segment.SetNext(null);
-                segment = (SliceSegment) segment.Next;
+                segment = nextSegment;
             }
             populatedSegmentCount = 0;
         }

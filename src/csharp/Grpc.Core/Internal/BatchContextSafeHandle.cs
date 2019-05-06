@@ -113,20 +113,6 @@ namespace Grpc.Core.Internal
             return data;
         }
 
-        public bool GetReceivedMessageNextSlicePeek(out Slice slice)
-        {
-            UIntPtr sliceLen;
-            IntPtr sliceDataPtr;
-            
-            if (0 == Native.grpcsharp_batch_context_recv_message_next_slice_peek(this, out sliceLen, out sliceDataPtr))
-            {
-                slice = default(Slice);
-                return false;
-            }
-            slice = new Slice(sliceDataPtr, (int) sliceLen);
-            return true;
-        }
-
         public IBufferReader GetReceivedMessageReader()
         {
             return this;
@@ -190,7 +176,16 @@ namespace Grpc.Core.Internal
 
         bool IBufferReader.TryGetNextSlice(out Slice slice)
         {
-            return GetReceivedMessageNextSlicePeek(out slice);
+            UIntPtr sliceLen;
+            IntPtr sliceDataPtr;
+
+            if (0 == Native.grpcsharp_batch_context_recv_message_next_slice_peek(this, out sliceLen, out sliceDataPtr))
+            {
+                slice = default(Slice);
+                return false;
+            }
+            slice = new Slice(sliceDataPtr, (int) sliceLen);
+            return true;
         }
 
         struct CompletionCallbackData

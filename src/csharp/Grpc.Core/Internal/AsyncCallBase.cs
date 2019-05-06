@@ -334,7 +334,7 @@ namespace Grpc.Core.Internal
         /// </summary>
         protected void HandleReadFinished(bool success, IBufferReader receivedMessageReader)
         {
-            // if success == false, received message will be null. It that case we will
+            // if success == false, the message reader will report null payload. It that case we will
             // treat this completion as the last read an rely on C core to handle the failed
             // read (e.g. deliver approriate statusCode on the clientside).
 
