@@ -1709,7 +1709,7 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
 }
 
 static void cancel_pings(grpc_chttp2_transport* t, grpc_error* error) {
-  /* callback remaining pings: they're not allowed to call into the transpot,
+  /* callback remaining pings: they're not allowed to call into the transport,
      and maybe they hold resources that need to be freed */
   grpc_chttp2_ping_queue* pq = &t->ping_queue;
   GPR_ASSERT(error != GRPC_ERROR_NONE);

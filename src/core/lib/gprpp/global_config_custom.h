@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_GPRPP_GLOBAL_CONFIG_CUSTOM_H
 #define GRPC_CORE_LIB_GPRPP_GLOBAL_CONFIG_CUSTOM_H
 
-// This is a placeholder for custom global configuration implementaion.
+// This is a placeholder for custom global configuration implementation.
 // To use the custom one, please define following macros here.
 //
 //   GPR_GLOBAL_CONFIG_DEFINE_BOOL

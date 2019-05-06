@@ -332,7 +332,7 @@ void GrpcUdpListener::OnFdAboutToOrphan() {
   GRPC_CLOSURE_INIT(&destroyed_closure_, destroyed_port, server_,
                     grpc_schedule_on_exec_ctx);
   if (!orphan_notified_ && udp_handler_ != nullptr) {
-    /* Singals udp_handler that the FD is about to be closed and
+    /* Signals udp_handler that the FD is about to be closed and
      * should no longer be used. */
     GRPC_CLOSURE_INIT(&orphan_fd_closure_, shutdown_fd, this,
                       grpc_schedule_on_exec_ctx);
@@ -645,7 +645,7 @@ int grpc_udp_server_add_port(grpc_udp_server* s,
           grpc_sockaddr_set_port(addr, allocated_port1);
           port = allocated_port1;
         } else if (allocated_port1 >= 0) {
-          /* The following sucessfully created socket should have same port as
+          /* The following successfully created socket should have same port as
            * the first one. */
           GPR_ASSERT(port == allocated_port1);
         }

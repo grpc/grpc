@@ -180,7 +180,7 @@ class RefCount {
 // So, use NonPolymorphicRefCount only when both of the following conditions
 // are guaranteed to hold:
 // (a) Child is a concrete leaf class in RefCounted<Child>, and
-// (b) you are gauranteed to call Unref only on concrete leaf classes and not
+// (b) you are guaranteed to call Unref only on concrete leaf classes and not
 //     their parents.
 //
 // The following example is illegal, because calling Unref() will not call
