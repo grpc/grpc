@@ -71,7 +71,6 @@ CallbackStreamingTestService::BidiStream() {
           kServerFinishAfterNReads, context->client_metadata(), 0);
       message_size_ = GetIntValueFromMetadata(kServerMessageSize,
                                               context->client_metadata(), 0);
-      gpr_log(GPR_INFO, "server enter n reads %d", server_write_last_);
       StartRead(&request_);
     }
     void OnDone() override {
@@ -84,17 +83,14 @@ CallbackStreamingTestService::BidiStream() {
         return;
       }
       num_msgs_read_++;
-      gpr_log(GPR_INFO, "server read %d", num_msgs_read_);
       if (message_size_ > 0) {
         response_.set_message(std::string(message_size_, 'a'));
       } else {
         response_.set_message("");
       }
       if (num_msgs_read_ < server_write_last_) {
-        gpr_log(GPR_INFO, "server start write %d", num_msgs_read_);
         StartWrite(&response_);
       } else {
-        gpr_log(GPR_INFO, "server last write %d", num_msgs_read_);
         StartWriteLast(&response_, WriteOptions());
       }
     }
@@ -102,7 +98,6 @@ CallbackStreamingTestService::BidiStream() {
       if (!ok) {
         return;
       }
-      gpr_log(GPR_INFO, "server write %d", num_msgs_read_);
       if (num_msgs_read_ < server_write_last_) {
         StartRead(&request_);
       } else {

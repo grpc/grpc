@@ -58,7 +58,6 @@ class BidiClient
         mu_{mu},
         cv_{cv},
         done_(done) {
-    gpr_log(GPR_INFO, "client enter");
     msgs_size_ = state.range(0);
     msgs_to_send_ = state.range(1);
     cli_ctx_ = new ClientContext();
@@ -87,13 +86,10 @@ class BidiClient
   void OnDone(const Status& s) override {
     GPR_ASSERT(s.ok());
     if (state_.KeepRunning()) {
-      count++;
-      gpr_log(GPR_INFO, "client start %d rpc", count);
       BidiClient* test =
           new BidiClient(state_, stub_, request_, response_, mu_, cv_, done_);
       test->StartNewRpc();
     } else {
-      gpr_log(GPR_INFO, "client done");
       std::unique_lock<std::mutex> l(mu_);
       done_ = true;
       cv_.notify_one();
@@ -109,12 +105,9 @@ class BidiClient
   }
 
   void StartNewRpc() {
-    gpr_log(GPR_INFO, "%d rpc start", count);
     stub_->experimental_async()->BidiStream(cli_ctx_, this);
-    gpr_log(GPR_INFO, "%d write start", count);
     MaybeWrite();
     StartCall();
-    gpr_log(GPR_INFO, "%d call start", count);
   }
 
  private:
@@ -134,7 +127,6 @@ class BidiClient
   int writes_complete_{0};
   int msgs_to_send_;
   int msgs_size_;
-  int count{0};
   std::mutex& mu_;
   std::condition_variable& cv_;
   bool& done_;

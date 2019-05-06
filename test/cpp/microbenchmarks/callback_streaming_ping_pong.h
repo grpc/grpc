@@ -54,12 +54,10 @@ static void BM_CallbackBidiStreaming(benchmark::State& state) {
     std::mutex mu;
     std::condition_variable cv;
     bool done = false;
-    gpr_log(GPR_INFO, "big enter");
     BidiClient* test =
         new BidiClient(state, stub_.get(), &request, &response, mu, cv, done);
     test->StartNewRpc();
     test->Await();
-    gpr_log(GPR_INFO, "big exit");
   }
   fixture->Finish(state);
   fixture.reset();
