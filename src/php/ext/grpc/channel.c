@@ -97,11 +97,9 @@ php_grpc_zend_object create_wrapped_grpc_channel(zend_class_entry *class_type
   PHP_GRPC_FREE_CLASS_OBJECT(wrapped_grpc_channel, channel_ce_handlers);
 }
 
-int php_grpc_read_args_array(zval *args_array,
+int php_grpc_read_args_array(HashTable *array_hash,
                              grpc_channel_args *args TSRMLS_DC) {
-  HashTable *array_hash;
   int args_index;
-  array_hash = Z_ARRVAL_P(args_array);
   if (!array_hash) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "array_hash is NULL", 1 TSRMLS_CC);
@@ -316,7 +314,8 @@ PHP_METHOD(Channel, __construct) {
                          "Channel expects a string and an array", 1 TSRMLS_CC);
     return;
   }
-  array_hash = Z_ARRVAL_P(args_array);
+  array_hash = zend_new_array(zend_hash_num_elements(Z_ARRVAL_P(args_array)));
+  zend_hash_copy(array_hash, Z_ARRVAL_P(args_array), (copy_ctor_func_t) zval_add_ref);
   if (php_grpc_zend_hash_find(array_hash, "credentials", sizeof("credentials"),
                               (void **)&creds_obj) == SUCCESS) {
     if (Z_TYPE_P(creds_obj) == IS_NULL) {
@@ -327,6 +326,8 @@ PHP_METHOD(Channel, __construct) {
       zend_throw_exception(spl_ce_InvalidArgumentException,
                            "credentials must be a ChannelCredentials object",
                            1 TSRMLS_CC);
+      zend_hash_destroy(array_hash);
+      efree(array_hash);
       return;
     } else {
       creds = PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_channel_credentials,
@@ -356,7 +357,9 @@ PHP_METHOD(Channel, __construct) {
   }
 
   // parse the rest of the channel args array
-  if (php_grpc_read_args_array(args_array, &args TSRMLS_CC) == FAILURE) {
+  if (php_grpc_read_args_array(array_hash, &args TSRMLS_CC) == FAILURE) {
+    zend_hash_destroy(array_hash);
+    efree(array_hash);
     efree(args.args);
     return;
   }
@@ -435,6 +438,9 @@ PHP_METHOD(Channel, __construct) {
       update_and_get_target_upper_bound(target, target_upper_bound);
     }
   }
+
+  zend_hash_destroy(array_hash);
+  efree(array_hash);
 }
 
 /**

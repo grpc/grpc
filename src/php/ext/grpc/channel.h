@@ -52,7 +52,7 @@ static inline wrapped_grpc_channel
 GRPC_STARTUP_FUNCTION(channel);
 
 /* Iterates through a PHP array and populates args with the contents */
-int php_grpc_read_args_array(zval *args_array, grpc_channel_args *args
+int php_grpc_read_args_array(HashTable *array_hash, grpc_channel_args *args
                              TSRMLS_DC);
 
 void generate_sha1_str(char *sha1str, char *str, php_grpc_int len);
