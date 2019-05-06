@@ -48,9 +48,9 @@ class CallbackStreamingTestService
 class BidiClient
     : public grpc::experimental::ClientBidiReactor<EchoRequest, EchoResponse> {
  public:
-  BidiClient(benchmark::State& state, EchoTestService::Stub* stub,
-             EchoRequest* request, EchoResponse* response, std::mutex& mu,
-             std::condition_variable& cv, bool& done)
+  BidiClient(benchmark::State* state, EchoTestService::Stub* stub,
+             EchoRequest* request, EchoResponse* response, std::mutex* mu,
+             std::condition_variable* cv, bool* done)
       : state_{state},
         stub_{stub},
         request_{request},
@@ -58,8 +58,8 @@ class BidiClient
         mu_{mu},
         cv_{cv},
         done_(done) {
-    msgs_size_ = state.range(0);
-    msgs_to_send_ = state.range(1);
+    msgs_size_ = state->range(0);
+    msgs_to_send_ = state->range(1);
     cli_ctx_ = new ClientContext();
     cli_ctx_->AddMetadata(kServerFinishAfterNReads,
                           grpc::to_string(msgs_to_send_));
@@ -85,23 +85,16 @@ class BidiClient
 
   void OnDone(const Status& s) override {
     GPR_ASSERT(s.ok());
-    if (state_.KeepRunning()) {
+    if (state_->KeepRunning()) {
       BidiClient* test =
           new BidiClient(state_, stub_, request_, response_, mu_, cv_, done_);
       test->StartNewRpc();
     } else {
-      std::unique_lock<std::mutex> l(mu_);
-      done_ = true;
-      cv_.notify_one();
+      std::unique_lock<std::mutex> l(*mu_);
+      *done_ = true;
+      cv_->notify_one();
     }
     delete cli_ctx_;
-  }
-
-  void Await() {
-    std::unique_lock<std::mutex> l(mu_);
-    while (!done_) {
-      cv_.wait(l);
-    }
   }
 
   void StartNewRpc() {
@@ -120,16 +113,16 @@ class BidiClient
   }
 
   ClientContext* cli_ctx_;
-  benchmark::State& state_;
+  benchmark::State* state_;
   EchoTestService::Stub* stub_;
   EchoRequest* request_;
   EchoResponse* response_;
   int writes_complete_{0};
   int msgs_to_send_;
   int msgs_size_;
-  std::mutex& mu_;
-  std::condition_variable& cv_;
-  bool& done_;
+  std::mutex* mu_;
+  std::condition_variable* cv_;
+  bool* done_;
 };
 
 }  // namespace testing
