@@ -43,9 +43,21 @@ static constexpr bool is_power_of_two(size_t value) {
 }
 #endif
 
+static void* aligned_alloc_with_gpr_malloc(size_t size, size_t alignment) {
+  GPR_DEBUG_ASSERT(is_power_of_two(alignment));
+  size_t extra = alignment - 1 + sizeof(void*);
+  void* p = gpr_malloc(size + extra);
+  void** ret = (void**)(((uintptr_t)p + extra) & ~(alignment - 1));
+  ret[-1] = p;
+  return (void*)ret;
+}
+
+static void aligned_free_with_gpr_malloc(void* ptr) {
+  gpr_free((static_cast<void**>(ptr))[-1]);
+}
+
 static void* platform_malloc_aligned(size_t size, size_t alignment) {
 #if defined(GPR_HAS_ALIGNED_ALLOC)
-  GPR_DEBUG_ASSERT(is_power_of_two(alignment));
   size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(size, alignment);
   void* ret = aligned_alloc(alignment, size);
   GPR_ASSERT(ret != nullptr);
@@ -62,12 +74,7 @@ static void* platform_malloc_aligned(size_t size, size_t alignment) {
   GPR_ASSERT(posix_memalign(&ret, alignment, size) == 0);
   return ret;
 #else
-  GPR_DEBUG_ASSERT(is_power_of_two(alignment));
-  size_t extra = alignment - 1 + sizeof(void*);
-  void* p = gpr_malloc(size + extra);
-  void** ret = (void**)(((uintptr_t)p + extra) & ~(alignment - 1));
-  ret[-1] = p;
-  return (void*)ret;
+  return aligned_alloc_with_gpr_malloc(size, alignment);
 #endif
 }
 
@@ -77,7 +84,7 @@ static void platform_free_aligned(void* ptr) {
 #elif defined(GPR_HAS_ALIGNED_MALLOC)
   _aligned_free(ptr);
 #else
-  gpr_free((static_cast<void**>(ptr))[-1]);
+  aligned_free_with_gpr_malloc(ptr);
 #endif
 }
 
@@ -99,8 +106,8 @@ void gpr_set_allocation_functions(gpr_allocation_functions functions) {
   GPR_ASSERT((functions.aligned_alloc_fn == nullptr) ==
              (functions.aligned_free_fn == nullptr));
   if (functions.aligned_alloc_fn == nullptr) {
-    functions.aligned_alloc_fn = platform_malloc_aligned;
-    functions.aligned_free_fn = platform_free_aligned;
+    functions.aligned_alloc_fn = aligned_alloc_with_gpr_malloc;
+    functions.aligned_free_fn = aligned_free_with_gpr_malloc;
   }
   g_alloc_functions = functions;
 }
