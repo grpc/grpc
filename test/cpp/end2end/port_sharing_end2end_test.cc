@@ -220,12 +220,14 @@ class PortSharingEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     }
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
         GetParam().credentials_type);
-    auto acceptor1 = builder.AddExternalConnectionAcceptor(
-        ServerBuilder::ExternalConnectionType::CONNECTION_FROM_FD,
+    auto acceptor1 = builder.experimental().AddExternalConnectionAcceptor(
+        ServerBuilder::experimental_type::ExternalConnectionType::
+            CONNECTION_FROM_FD,
         server_creds);
     tcp_server1_.SetAcceptor(std::move(acceptor1));
-    auto acceptor2 = builder.AddExternalConnectionAcceptor(
-        ServerBuilder::ExternalConnectionType::CONNECTION_FROM_FD,
+    auto acceptor2 = builder.experimental().AddExternalConnectionAcceptor(
+        ServerBuilder::experimental_type::ExternalConnectionType::
+            CONNECTION_FROM_FD,
         server_creds);
     tcp_server2_.SetAcceptor(std::move(acceptor2));
     builder.RegisterService(&service_);

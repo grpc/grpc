@@ -297,7 +297,6 @@ static grpc_error* chttp2_server_add_acceptor(grpc_server* server,
   server_state* state = nullptr;
   const grpc_arg* arg = nullptr;
   grpc_core::TcpServerFdHandler** arg_val = nullptr;
-
   state = static_cast<server_state*>(gpr_zalloc(sizeof(*state)));
   GRPC_CLOSURE_INIT(&state->tcp_server_shutdown_complete,
                     tcp_server_shutdown_complete, state,
@@ -307,15 +306,12 @@ static grpc_error* chttp2_server_add_acceptor(grpc_server* server,
   if (err != GRPC_ERROR_NONE) {
     goto error;
   }
-
   state->server = server;
   state->tcp_server = tcp_server;
   state->args = args;
   state->shutdown = true;
   gpr_mu_init(&state->mu);
-
   // TODO(yangg) channelz
-
   arg = grpc_channel_args_find(args, name);
   GPR_ASSERT(arg->type == GRPC_ARG_POINTER);
   arg_val = static_cast<grpc_core::TcpServerFdHandler**>(arg->value.pointer.p);
@@ -323,7 +319,6 @@ static grpc_error* chttp2_server_add_acceptor(grpc_server* server,
 
   grpc_server_add_listener(server, state, server_start_listener,
                            server_destroy_listener, /* socket_uuid */ 0);
-
   return err;
 
 /* Error path: cleanup and return */

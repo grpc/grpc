@@ -56,6 +56,9 @@ namespace experimental {
 class CallbackGenericService;
 }
 
+// EXPERIMENTAL API:
+// Interface for a grpc server to handle connections created out of band.
+// See ServerBuilder's AddExternalConnectionAcceptor API for usage.
 class ExternalConnectionAcceptor {
  public:
   struct NewConnectionParameters {
@@ -262,6 +265,16 @@ class ServerBuilder {
     ServerBuilder& RegisterCallbackGenericService(
         grpc::experimental::CallbackGenericService* service);
 
+    enum ExternalConnectionType {
+      CONNECTION_FROM_FD = 0  // in the form of a file descriptor
+    };
+
+    // Create an acceptor to take in external connections and pass them to the
+    // gRPC server.
+    std::unique_ptr<grpc::ExternalConnectionAcceptor>
+    AddExternalConnectionAcceptor(ExternalConnectionType type,
+                                  std::shared_ptr<ServerCredentials> creds);
+
    private:
     ServerBuilder* builder_;
   };
@@ -270,16 +283,6 @@ class ServerBuilder {
   /// to the experimental components of this class. It may be changed or removed
   /// at any time.
   experimental_type experimental() { return experimental_type(this); }
-
-  enum ExternalConnectionType {
-    CONNECTION_FROM_FD = 0  // in the form of a file descriptor
-  };
-  // EXPERIMENTAL API:
-  // Create an acceptor to take in external connections and pass them to the
-  // gRPC server.
-  std::unique_ptr<grpc::ExternalConnectionAcceptor>
-  AddExternalConnectionAcceptor(ExternalConnectionType type,
-                                std::shared_ptr<ServerCredentials> creds);
 
  protected:
   /// Experimental, to be deprecated

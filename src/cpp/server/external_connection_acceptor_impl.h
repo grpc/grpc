@@ -37,9 +37,10 @@ typedef void (*RawConnectionHandler)(int fd, grpc_byte_buffer* buffer);
 class ExternalConnectionAcceptorImpl
     : public std::enable_shared_from_this<ExternalConnectionAcceptorImpl> {
  public:
-  ExternalConnectionAcceptorImpl(const grpc::string& name,
-                                 ServerBuilder::ExternalConnectionType type,
-                                 std::shared_ptr<ServerCredentials> creds);
+  ExternalConnectionAcceptorImpl(
+      const grpc::string& name,
+      ServerBuilder::experimental_type::ExternalConnectionType type,
+      std::shared_ptr<ServerCredentials> creds);
   // Should only be called once.
   std::unique_ptr<grpc::ExternalConnectionAcceptor> GetAcceptor();
 

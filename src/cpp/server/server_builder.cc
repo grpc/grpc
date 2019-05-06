@@ -116,6 +116,19 @@ ServerBuilder& ServerBuilder::experimental_type::RegisterCallbackGenericService(
   return *builder_;
 }
 
+std::unique_ptr<grpc::ExternalConnectionAcceptor>
+ServerBuilder::experimental_type::AddExternalConnectionAcceptor(
+    experimental_type::ExternalConnectionType type,
+    std::shared_ptr<ServerCredentials> creds) {
+  grpc::string name_prefix("external:");
+  char count_str[GPR_LTOA_MIN_BUFSIZE];
+  gpr_ltoa(static_cast<long>(builder_->acceptors_.size()), count_str);
+  builder_->acceptors_.emplace_back(
+      std::make_shared<ExternalConnectionAcceptorImpl>(
+          name_prefix.append(count_str), type, creds));
+  return builder_->acceptors_.back()->GetAcceptor();
+}
+
 ServerBuilder& ServerBuilder::SetOption(
     std::unique_ptr<grpc::ServerBuilderOption> option) {
   options_.push_back(std::move(option));
@@ -409,17 +422,6 @@ ServerBuilder& ServerBuilder::EnableWorkaround(grpc_workaround_list id) {
       gpr_log(GPR_ERROR, "Workaround %u does not exist or is obsolete.", id);
       return *this;
   }
-}
-
-std::unique_ptr<grpc::ExternalConnectionAcceptor>
-ServerBuilder::AddExternalConnectionAcceptor(
-    ExternalConnectionType type, std::shared_ptr<ServerCredentials> creds) {
-  grpc::string name_prefix("external:");
-  char count_str[GPR_LTOA_MIN_BUFSIZE];
-  gpr_ltoa(static_cast<long>(acceptors_.size()), count_str);
-  acceptors_.emplace_back(std::make_shared<ExternalConnectionAcceptorImpl>(
-      name_prefix.append(count_str), type, creds));
-  return acceptors_.back()->GetAcceptor();
 }
 
 }  // namespace grpc_impl
