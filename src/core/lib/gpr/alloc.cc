@@ -56,7 +56,7 @@ static void aligned_free_with_gpr_malloc(void* ptr) {
 
 static void* platform_malloc_aligned(size_t size, size_t alignment) {
 #if defined(GPR_HAS_ALIGNED_ALLOC)
-  size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(size, alignment);
+  size = GPR_ROUND_UP_TO_SPECIFIED_SIZE(size, alignment);
   void* ret = aligned_alloc(alignment, size);
   GPR_ASSERT(ret != nullptr);
   return ret;

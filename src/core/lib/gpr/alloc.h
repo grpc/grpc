@@ -22,13 +22,15 @@
 #include <grpc/support/port_platform.h>
 
 /// Given a size, round up to the next multiple of sizeof(void*).
-#define GPR_ROUND_UP_TO_ALIGNMENT_SIZE(x, align) \
-  (((x) + (align)-1u) & ~((align)-1u))
-
-#define GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(x) \
-  GPR_ROUND_UP_TO_ALIGNMENT_SIZE((x), GPR_MAX_ALIGNMENT)
+#define GPR_ROUND_UP_TO_ALIGNMENT_SIZE(x) \
+  (((x) + GPR_MAX_ALIGNMENT - 1u) & ~(GPR_MAX_ALIGNMENT - 1u))
 
 #define GPR_ROUND_UP_TO_CACHELINE_SIZE(x) \
-  GPR_ROUND_UP_TO_ALIGNMENT_SIZE((x), GPR_CACHELINE_SIZE)
+  (((x) + GPR_CACHELINE_SIZE - 1u) & ~(GPR_CACHELINE_SIZE - 1u))
+
+#define GPR_ROUND_UP_TO_SPECIFIED_SIZE(x, align) \
+  (((x) + align - 1u) & ~(align - 1u))
+
+void* gpr_malloc_cacheline(size_t size);
 
 #endif /* GRPC_CORE_LIB_GPR_ALLOC_H */
