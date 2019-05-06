@@ -74,7 +74,7 @@ cc_binary(
     srcs = ["cpp/helloworld/greeter_client.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [
-        ":helloworld",
+        ":helloworld_cc_grpc",
         "//:grpc++",
     ],
 )
@@ -84,7 +84,7 @@ cc_binary(
     srcs = ["cpp/helloworld/greeter_async_client.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [
-        ":helloworld",
+        ":helloworld_cc_grpc",
         "//:grpc++",
     ],
 )
@@ -94,7 +94,7 @@ cc_binary(
     srcs = ["cpp/helloworld/greeter_async_client2.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [
-        ":helloworld",
+        ":helloworld_cc_grpc",
         "//:grpc++",
     ],
 )
@@ -104,7 +104,7 @@ cc_binary(
     srcs = ["cpp/helloworld/greeter_server.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [
-        ":helloworld",
+        ":helloworld_cc_grpc",
         "//:grpc++",
     ],
 )
@@ -114,7 +114,7 @@ cc_binary(
     srcs = ["cpp/helloworld/greeter_async_server.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [
-        ":helloworld",
+        ":helloworld_cc_grpc",
         "//:grpc++",
     ],
 )
@@ -124,7 +124,7 @@ cc_binary(
     srcs = ["cpp/metadata/greeter_client.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [
-        ":helloworld",
+        ":helloworld_cc_grpc",
         "//:grpc++",
     ],
 )
@@ -134,7 +134,7 @@ cc_binary(
     srcs = ["cpp/metadata/greeter_server.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [
-        ":helloworld",
+        ":helloworld_cc_grpc",
         "//:grpc++",
     ],
 )
@@ -144,7 +144,7 @@ cc_binary(
     srcs = ["cpp/load_balancing/greeter_client.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [
-        ":helloworld",
+        ":helloworld_cc_grpc",
         "//:grpc++",
     ],
 )
@@ -154,7 +154,7 @@ cc_binary(
     srcs = ["cpp/load_balancing/greeter_server.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [
-        ":helloworld",
+        ":helloworld_cc_grpc",
         "//:grpc++",
     ],
 )
@@ -164,7 +164,7 @@ cc_binary(
     srcs = ["cpp/compression/greeter_client.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [
-        ":helloworld",
+        ":helloworld_cc_grpc",
         "//:grpc++",
     ],
 )
@@ -174,7 +174,7 @@ cc_binary(
     srcs = ["cpp/compression/greeter_server.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [
-        ":helloworld",
+        ":helloworld_cc_grpc",
         "//:grpc++",
     ],
 )
