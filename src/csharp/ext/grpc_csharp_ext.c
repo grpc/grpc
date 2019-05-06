@@ -271,30 +271,6 @@ GPR_EXPORT intptr_t GPR_CALLTYPE grpcsharp_batch_context_recv_message_length(
 }
 
 /*
- * Copies data from recv_message to a buffer. Fatal error occurs if
- * buffer is too small.
- */
-GPR_EXPORT void GPR_CALLTYPE grpcsharp_batch_context_recv_message_to_buffer(
-    const grpcsharp_batch_context* ctx, char* buffer, size_t buffer_len) {
-  grpc_byte_buffer_reader reader;
-  grpc_slice slice;
-  size_t offset = 0;
-
-  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, ctx->recv_message));
-
-  while (grpc_byte_buffer_reader_next(&reader, &slice)) {
-    size_t len = GRPC_SLICE_LENGTH(slice);
-    GPR_ASSERT(offset + len <= buffer_len);
-    memcpy(buffer + offset, GRPC_SLICE_START_PTR(slice),
-           GRPC_SLICE_LENGTH(slice));
-    offset += len;
-    grpc_slice_unref(slice);
-  }
-
-  grpc_byte_buffer_reader_destroy(&reader);
-}
-
-/*
  * Gets the next slice from recv_message byte buffer.
  * Returns 1 if a slice was get successfully, 0 if there are no more slices to
  * read. Set slice_len to the length of the slice and the slice_data_ptr to

@@ -100,19 +100,6 @@ namespace Grpc.Core.Internal
             return new ClientSideStatus(status, metadata);
         }
 
-        // Gets data of recv_message completion.
-        public byte[] GetReceivedMessage()
-        {
-            IntPtr len = Native.grpcsharp_batch_context_recv_message_length(this);
-            if (len == new IntPtr(-1))
-            {
-                return null;
-            }
-            byte[] data = new byte[(int)len];
-            Native.grpcsharp_batch_context_recv_message_to_buffer(this, data, new UIntPtr((ulong)data.Length));
-            return data;
-        }
-
         public IBufferReader GetReceivedMessageReader()
         {
             return this;
