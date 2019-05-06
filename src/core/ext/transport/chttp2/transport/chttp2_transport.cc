@@ -1448,14 +1448,12 @@ static void perform_stream_op_locked(void* stream_op,
             true, &s->stream_compression_method) == 0) {
       s->stream_compression_method = GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS;
     }
-
     if (s->stream_compression_method !=
         GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS) {
       s->uncompressed_data_size = 0;
       s->stream_compression_ctx = nullptr;
       grpc_slice_buffer_init(&s->compressed_data_buffer);
     }
-
     s->send_initial_metadata_finished = add_closure_barrier(on_complete);
     s->send_initial_metadata =
         op_payload->send_initial_metadata.send_initial_metadata;
