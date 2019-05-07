@@ -31,32 +31,35 @@
 // Using gpr_get_cycle_counter() is preferred to using ExecCtx::Get()->Now()
 // whenever possible.
 
-#ifdef GRPC_TIMERS_RDTSC
+#if GPR_CYCLE_COUNTER_RDTSC_32
 typedef int64_t gpr_cycle_counter;
-#if defined(__i386__)
 inline gpr_cycle_counter gpr_get_cycle_counter() {
   int64_t ret;
   __asm__ volatile("rdtsc" : "=A"(ret));
   return ret;
 }
-#else
+#elif GPR_CYCLE_COUNTER_RDTSC_64
+typedef int64_t gpr_cycle_counter;
 inline gpr_cycle_counter gpr_get_cycle_counter() {
   uint64_t low, high;
   __asm__ volatile("rdtsc" : "=a"(low), "=d"(high));
   return (high << 32) | low;
 }
-#endif
-#else /* GRPC_TIMERS_RDTSC */
-
+#elif GPR_CYCLE_COUNTER_FALLBACK
 // TODO(soheil): add support for mrs on Arm.
 
 // Real time in micros.
 typedef double gpr_cycle_counter;
 gpr_cycle_counter gpr_get_cycle_counter();
+#else
+#error Must define exactly one of \
+    GPR_CYCLE_COUNTER_RDTSC_32, \
+    GPR_CYCLE_COUNTER_RDTSC_64, or \
+    GPR_CYCLE_COUNTER_FALLBACK
 #endif
 
 void gpr_precise_clock_init(void);
 void gpr_precise_clock_now(gpr_timespec* clk);
-gpr_timespec gpr_cycle_counter_to_timestamp(gpr_cycle_counter cycles);
+gpr_timespec gpr_cycle_counter_to_time(gpr_cycle_counter cycles);
 
 #endif /* GRPC_CORE_LIB_GPR_TIME_PRECISE_H */

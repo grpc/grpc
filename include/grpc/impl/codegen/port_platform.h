@@ -454,14 +454,18 @@ typedef unsigned __int64 uint64_t;
 #include <stdint.h>
 #endif /* _MSC_VER */
 
-/* RDTSC cycle clock instruction */
-#ifndef GRPC_TIMERS_RDTSC
+/* Type of cycle clock implementation */
 #ifdef GPR_LINUX
-#if defined(__i386__) || defined(__x86_64__)
-#define GRPC_TIMERS_RDTSC 1
-#endif
-#endif
-#endif
+#if defined(__i386__)
+#define GPR_CYCLE_COUNTER_RDTSC_32 1
+#elif defined(__x86_64__) || defined(__amd64__)
+#define GPR_CYCLE_COUNTER_RDTSC_64 1
+#else
+#define GPR_CYCLE_COUNTER_FALLBACK 1
+#endif /* defined(__i386__) */
+#else
+#define GPR_CYCLE_COUNTER_FALLBACK 1
+#endif /* GPR_LINUX */
 
 /* Cache line alignment */
 #ifndef GPR_CACHELINE_SIZE_LOG
