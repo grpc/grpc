@@ -4096,13 +4096,10 @@ targets:
   - callback_test_service
   benchmark: true
   defaults: benchmark
-  excluded_poll_engines:
-  - poll
   platforms:
   - mac
   - linux
   - posix
-  timeout_seconds: 1200
 - name: bm_callback_unary_ping_pong
   build: test
   language: c++
@@ -4122,13 +4119,10 @@ targets:
   - callback_test_service
   benchmark: true
   defaults: benchmark
-  excluded_poll_engines:
-  - poll
   platforms:
   - mac
   - linux
   - posix
-  timeout_seconds: 1200
 - name: bm_channel
   build: test
   language: c++
