@@ -32,8 +32,6 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/iomgr.h"
 
-GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_dns_resolver);
-
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount;
 
 namespace grpc_core {

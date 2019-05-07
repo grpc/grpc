@@ -3769,6 +3769,47 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
+    src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc \
+    src/core/lib/gpr/alloc.cc \
+    src/core/lib/gpr/atm.cc \
+    src/core/lib/gpr/cpu_iphone.cc \
+    src/core/lib/gpr/cpu_linux.cc \
+    src/core/lib/gpr/cpu_posix.cc \
+    src/core/lib/gpr/cpu_windows.cc \
+    src/core/lib/gpr/env_linux.cc \
+    src/core/lib/gpr/env_posix.cc \
+    src/core/lib/gpr/env_windows.cc \
+    src/core/lib/gpr/host_port.cc \
+    src/core/lib/gpr/log.cc \
+    src/core/lib/gpr/log_android.cc \
+    src/core/lib/gpr/log_linux.cc \
+    src/core/lib/gpr/log_posix.cc \
+    src/core/lib/gpr/log_windows.cc \
+    src/core/lib/gpr/mpscq.cc \
+    src/core/lib/gpr/murmur_hash.cc \
+    src/core/lib/gpr/string.cc \
+    src/core/lib/gpr/string_posix.cc \
+    src/core/lib/gpr/string_util_windows.cc \
+    src/core/lib/gpr/string_windows.cc \
+    src/core/lib/gpr/sync.cc \
+    src/core/lib/gpr/sync_posix.cc \
+    src/core/lib/gpr/sync_windows.cc \
+    src/core/lib/gpr/time.cc \
+    src/core/lib/gpr/time_posix.cc \
+    src/core/lib/gpr/time_precise.cc \
+    src/core/lib/gpr/time_windows.cc \
+    src/core/lib/gpr/tls_pthread.cc \
+    src/core/lib/gpr/tmpfile_msys.cc \
+    src/core/lib/gpr/tmpfile_posix.cc \
+    src/core/lib/gpr/tmpfile_windows.cc \
+    src/core/lib/gpr/wrap_memcpy.cc \
+    src/core/lib/gprpp/arena.cc \
+    src/core/lib/gprpp/fork.cc \
+    src/core/lib/gprpp/global_config_env.cc \
+    src/core/lib/gprpp/thd_posix.cc \
+    src/core/lib/gprpp/thd_windows.cc \
+    src/core/lib/profiling/basic_timers.cc \
+    src/core/lib/profiling/stap_timers.cc \
     src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/ext/filters/census/grpc_context.cc \
@@ -3815,6 +3856,23 @@ PUBLIC_HEADERS_C += \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
     include/grpc/support/workaround_list.h \
+    include/grpc/support/alloc.h \
+    include/grpc/support/atm.h \
+    include/grpc/support/atm_gcc_atomic.h \
+    include/grpc/support/atm_gcc_sync.h \
+    include/grpc/support/atm_windows.h \
+    include/grpc/support/cpu.h \
+    include/grpc/support/log.h \
+    include/grpc/support/log_windows.h \
+    include/grpc/support/port_platform.h \
+    include/grpc/support/string_util.h \
+    include/grpc/support/sync.h \
+    include/grpc/support/sync_custom.h \
+    include/grpc/support/sync_generic.h \
+    include/grpc/support/sync_posix.h \
+    include/grpc/support/sync_windows.h \
+    include/grpc/support/thd_id.h \
+    include/grpc/support/time.h \
     include/grpc/census.h \
 
 LIBGRPC_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_SRC))))
@@ -5113,6 +5171,47 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
+    src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc \
+    src/core/lib/gpr/alloc.cc \
+    src/core/lib/gpr/atm.cc \
+    src/core/lib/gpr/cpu_iphone.cc \
+    src/core/lib/gpr/cpu_linux.cc \
+    src/core/lib/gpr/cpu_posix.cc \
+    src/core/lib/gpr/cpu_windows.cc \
+    src/core/lib/gpr/env_linux.cc \
+    src/core/lib/gpr/env_posix.cc \
+    src/core/lib/gpr/env_windows.cc \
+    src/core/lib/gpr/host_port.cc \
+    src/core/lib/gpr/log.cc \
+    src/core/lib/gpr/log_android.cc \
+    src/core/lib/gpr/log_linux.cc \
+    src/core/lib/gpr/log_posix.cc \
+    src/core/lib/gpr/log_windows.cc \
+    src/core/lib/gpr/mpscq.cc \
+    src/core/lib/gpr/murmur_hash.cc \
+    src/core/lib/gpr/string.cc \
+    src/core/lib/gpr/string_posix.cc \
+    src/core/lib/gpr/string_util_windows.cc \
+    src/core/lib/gpr/string_windows.cc \
+    src/core/lib/gpr/sync.cc \
+    src/core/lib/gpr/sync_posix.cc \
+    src/core/lib/gpr/sync_windows.cc \
+    src/core/lib/gpr/time.cc \
+    src/core/lib/gpr/time_posix.cc \
+    src/core/lib/gpr/time_precise.cc \
+    src/core/lib/gpr/time_windows.cc \
+    src/core/lib/gpr/tls_pthread.cc \
+    src/core/lib/gpr/tmpfile_msys.cc \
+    src/core/lib/gpr/tmpfile_posix.cc \
+    src/core/lib/gpr/tmpfile_windows.cc \
+    src/core/lib/gpr/wrap_memcpy.cc \
+    src/core/lib/gprpp/arena.cc \
+    src/core/lib/gprpp/fork.cc \
+    src/core/lib/gprpp/global_config_env.cc \
+    src/core/lib/gprpp/thd_posix.cc \
+    src/core/lib/gprpp/thd_windows.cc \
+    src/core/lib/profiling/basic_timers.cc \
+    src/core/lib/profiling/stap_timers.cc \
     src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
@@ -5173,6 +5272,23 @@ PUBLIC_HEADERS_C += \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
     include/grpc/support/workaround_list.h \
+    include/grpc/support/alloc.h \
+    include/grpc/support/atm.h \
+    include/grpc/support/atm_gcc_atomic.h \
+    include/grpc/support/atm_gcc_sync.h \
+    include/grpc/support/atm_windows.h \
+    include/grpc/support/cpu.h \
+    include/grpc/support/log.h \
+    include/grpc/support/log_windows.h \
+    include/grpc/support/port_platform.h \
+    include/grpc/support/string_util.h \
+    include/grpc/support/sync.h \
+    include/grpc/support/sync_custom.h \
+    include/grpc/support/sync_generic.h \
+    include/grpc/support/sync_posix.h \
+    include/grpc/support/sync_windows.h \
+    include/grpc/support/thd_id.h \
+    include/grpc/support/time.h \
     include/grpc/census.h \
 
 LIBGRPC_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_UNSECURE_SRC))))

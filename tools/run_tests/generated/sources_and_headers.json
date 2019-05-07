@@ -9137,7 +9137,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_channel"
+      "grpc_client_channel", 
+      "grpc_resolver_dns_selection"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h", 
@@ -9170,7 +9171,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_channel"
+      "grpc_client_channel", 
+      "grpc_resolver_dns_selection"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -9178,6 +9180,23 @@
     "name": "grpc_resolver_dns_native", 
     "src": [
       "src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr_base"
+    ], 
+    "headers": [
+      "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_resolver_dns_selection", 
+    "src": [
+      "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc", 
+      "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

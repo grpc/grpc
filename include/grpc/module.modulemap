@@ -50,6 +50,17 @@ framework module grpc {
   header "slice_buffer.h"
   header "status.h"
   header "support/workaround_list.h"
+  header "support/alloc.h"
+  header "support/atm.h"
+  header "support/cpu.h"
+  header "support/log.h"
+  header "support/log_windows.h"
+  header "support/port_platform.h"
+  header "support/string_util.h"
+  header "support/sync.h"
+  header "support/sync_generic.h"
+  header "support/thd_id.h"
+  header "support/time.h"
   header "census.h"
 
   textual header "support/atm_gcc_atomic.h"
@@ -70,6 +81,12 @@ framework module grpc {
   textual header "impl/codegen/sync_custom.h"
   textual header "impl/codegen/sync_posix.h"
   textual header "impl/codegen/sync_windows.h"
+  textual header "support/atm_gcc_atomic.h"
+  textual header "support/atm_gcc_sync.h"
+  textual header "support/atm_windows.h"
+  textual header "support/sync_custom.h"
+  textual header "support/sync_posix.h"
+  textual header "support/sync_windows.h"
 
   export *
   module * { export * }

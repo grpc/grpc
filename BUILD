@@ -1560,6 +1560,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_resolver_dns_selection",
+    srcs = [
+        "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_resolver_dns_native",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc",
@@ -1568,6 +1582,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_resolver_dns_selection",
     ],
 )
 
@@ -1599,6 +1614,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_resolver_dns_selection",
     ],
 )
 

@@ -58,7 +58,7 @@ static int g_poll_interval_ms = DEFAULT_POLL_INTERVAL_MS;
 
 GPR_GLOBAL_CONFIG_DEFINE_INT32(
     grpc_client_channel_backup_poll_interval_ms, DEFAULT_POLL_INTERVAL_MS,
-    "Declares the interval between two backup polls on client channels. (ms)"
+    "Declares the interval in ms between two backup polls on client channels. "
     "These polls are run in the timer thread so that gRPC can process "
     "connection failures while there is no active polling thread. "
     "They help reconnect disconnected client channels (mostly due to "

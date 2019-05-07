@@ -797,6 +797,7 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
+  - grpc_resolver_dns_selection
 - name: grpc_resolver_dns_native
   src:
   - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
@@ -804,6 +805,14 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
+  - grpc_resolver_dns_selection
+- name: grpc_resolver_dns_selection
+  headers:
+  - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h
+  src:
+  - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc
+  uses:
+  - gpr_base
 - name: grpc_resolver_fake
   headers:
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
