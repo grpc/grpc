@@ -538,7 +538,16 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
         process_resolver_result_user_data_, result, &lb_policy_name,
         &lb_policy_config, &service_config_error);
     if (service_config_error != GRPC_ERROR_NONE) {
-      return OnResolverError(service_config_error);
+      if (channelz_node() != nullptr) {
+        trace_strings.push_back(
+            gpr_strdup(grpc_error_string(service_config_error)));
+      }
+      if (lb_policy_name == nullptr) {
+        // Use an empty lb_policy_name as an indicator that we received an
+        // invalid service config and we don't have a fallback service config.
+        return OnResolverError(service_config_error);
+      }
+      GRPC_ERROR_UNREF(service_config_error);
     }
   } else {
     lb_policy_name = child_policy_name_.get();

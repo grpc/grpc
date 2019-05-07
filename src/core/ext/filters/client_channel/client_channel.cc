@@ -67,7 +67,6 @@
 #include "src/core/lib/transport/status_metadata.h"
 
 using grpc_core::internal::ClientChannelMethodParsedObject;
-using grpc_core::internal::ProcessedResolverResult;
 using grpc_core::internal::ServerRetryThrottleData;
 
 //
@@ -233,6 +232,12 @@ class ChannelData {
 
   static void TryToConnectLocked(void* arg, grpc_error* error_ignored);
 
+  void ProcessLbPolicy(
+      const Resolver::Result& resolver_result,
+      const internal::ClientChannelGlobalParsedObject* parsed_object,
+      UniquePtr<char>* lb_policy_name,
+      RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config);
+
   //
   // Fields set at construction and never modified.
   //
@@ -242,6 +247,7 @@ class ChannelData {
   grpc_channel_stack* owning_stack_;
   ClientChannelFactory* client_channel_factory_;
   UniquePtr<char> server_name_;
+  RefCountedPtr<ServiceConfig> default_service_config_;
   // Initialized shortly after construction.
   channelz::ClientChannelNode* channelz_node_ = nullptr;
 
@@ -266,7 +272,7 @@ class ChannelData {
   grpc_connectivity_state_tracker state_tracker_;
   ExternalConnectivityWatcher::WatcherList external_connectivity_watcher_list_;
   UniquePtr<char> health_check_service_name_;
-  bool saved_service_config_ = false;
+  RefCountedPtr<ServiceConfig> saved_service_config_;
 
   //
   // Fields accessed from both data plane and control plane combiners.
@@ -1068,6 +1074,17 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
         "filter");
     return;
   }
+  // Get default service config
+  const char* service_config_json = grpc_channel_arg_get_string(
+      grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVICE_CONFIG));
+  if (service_config_json != nullptr) {
+    *error = GRPC_ERROR_NONE;
+    default_service_config_ = ServiceConfig::Create(service_config_json, error);
+    if (*error != GRPC_ERROR_NONE) {
+      default_service_config_.reset();
+      return;
+    }
+  }
   grpc_uri* uri = grpc_uri_parse(server_uri, true);
   if (uri != nullptr && uri->path[0] != '\0') {
     server_name_.reset(
@@ -1130,6 +1147,56 @@ ChannelData::~ChannelData() {
   gpr_mu_destroy(&info_mu_);
 }
 
+void ChannelData::ProcessLbPolicy(
+    const Resolver::Result& resolver_result,
+    const internal::ClientChannelGlobalParsedObject* parsed_object,
+    UniquePtr<char>* lb_policy_name,
+    RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config) {
+  // Prefer the LB policy name found in the service config.
+  if (parsed_object != nullptr) {
+    if (parsed_object->parsed_lb_config() != nullptr) {
+      (*lb_policy_name)
+          .reset(gpr_strdup(parsed_object->parsed_lb_config()->name()));
+      *lb_policy_config = parsed_object->parsed_lb_config();
+    } else {
+      (*lb_policy_name)
+          .reset(gpr_strdup(parsed_object->parsed_deprecated_lb_policy()));
+    }
+  }
+  // Otherwise, find the LB policy name set by the client API.
+  if (*lb_policy_name == nullptr) {
+    const grpc_arg* channel_arg =
+        grpc_channel_args_find(resolver_result.args, GRPC_ARG_LB_POLICY_NAME);
+    (*lb_policy_name)
+        .reset(gpr_strdup(grpc_channel_arg_get_string(channel_arg)));
+  }
+  // Special case: If at least one balancer address is present, we use
+  // the grpclb policy, regardless of what the resolver has returned.
+  bool found_balancer_address = false;
+  for (size_t i = 0; i < resolver_result.addresses.size(); ++i) {
+    const ServerAddress& address = resolver_result.addresses[i];
+    if (address.IsBalancer()) {
+      found_balancer_address = true;
+      break;
+    }
+  }
+  if (found_balancer_address) {
+    if (*lb_policy_name != nullptr &&
+        strcmp((*lb_policy_name).get(), "grpclb") != 0) {
+      gpr_log(GPR_INFO,
+              "resolver requested LB policy %s but provided at least one "
+              "balancer address -- forcing use of grpclb LB policy",
+              (*lb_policy_name).get());
+    }
+    (*lb_policy_name).reset(gpr_strdup("grpclb"));
+  }
+  // Use pick_first if nothing was specified and we didn't select grpclb
+  // above.
+  if (*lb_policy_name == nullptr) {
+    (*lb_policy_name).reset(gpr_strdup("pick_first"));
+  }
+}
+
 // Synchronous callback from ResolvingLoadBalancingPolicy to process a
 // resolver result update.
 bool ChannelData::ProcessResolverResultLocked(
@@ -1137,41 +1204,73 @@ bool ChannelData::ProcessResolverResultLocked(
     RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config,
     grpc_error** service_config_error) {
   ChannelData* chand = static_cast<ChannelData*>(arg);
-  ProcessedResolverResult resolver_result(result, chand->saved_service_config_);
-  *service_config_error = resolver_result.service_config_error();
-  if (*service_config_error != GRPC_ERROR_NONE) {
-    // We got an invalid service config. If we had a service config previously,
-    // we will continue using it.
+  RefCountedPtr<ServiceConfig> service_config;
+  // If resolver did not return a service config or returned an invalid service
+  // config, we need a fallback service config
+  if (result.service_config_error != GRPC_ERROR_NONE) {
+    // If the service config was invalid, then prefer using the saved service
+    // config, otherwise use the default service config provided by the client
+    // API
+    if (chand->saved_service_config_ != nullptr) {
+      service_config = chand->saved_service_config_;
+    } else if (chand->default_service_config_ != nullptr) {
+      service_config = chand->default_service_config_;
+    }
+  } else if (result.service_config == nullptr) {
+    // We got no service config. Fallback to default service config
+    if (chand->default_service_config_ != nullptr) {
+      service_config = chand->default_service_config_;
+    }
+  } else {
+    service_config = result.service_config;
+  }
+  *service_config_error = GRPC_ERROR_REF(result.service_config_error);
+  if (service_config == nullptr &&
+      result.service_config_error != GRPC_ERROR_NONE) {
     return false;
   }
-  chand->saved_service_config_ = true;
-  char* service_config_json = gpr_strdup(resolver_result.service_config_json());
+  char* service_config_json = nullptr;
+  // Process service config.
+  const internal::ClientChannelGlobalParsedObject* parsed_object = nullptr;
+  if (service_config != nullptr) {
+    parsed_object =
+        static_cast<const internal::ClientChannelGlobalParsedObject*>(
+            service_config->GetParsedGlobalServiceConfigObject(
+                internal::ClientChannelServiceConfigParser::ParserIndex()));
+    service_config_json = gpr_strdup(service_config->service_config_json());
+  }
+  bool service_config_changed = service_config != chand->saved_service_config_;
+  if (service_config_changed) {
+    chand->saved_service_config_ = std::move(service_config);
+    Optional<internal::ClientChannelGlobalParsedObject::RetryThrottling>
+        retry_throttle_data;
+    if (parsed_object != nullptr) {
+      chand->health_check_service_name_.reset(
+          gpr_strdup(parsed_object->health_check_service_name()));
+      retry_throttle_data = parsed_object->retry_throttling();
+    } else {
+      chand->health_check_service_name_.reset();
+    }
+    // Create service config setter to update channel state in the data
+    // plane combiner.  Destroys itself when done.
+    New<ServiceConfigSetter>(chand, retry_throttle_data,
+                             chand->saved_service_config_);
+  }
+  UniquePtr<char> processed_lb_policy_name;
+  chand->ProcessLbPolicy(result, parsed_object, &processed_lb_policy_name,
+                         lb_policy_config);
   if (grpc_client_channel_routing_trace.enabled()) {
     gpr_log(GPR_INFO, "chand=%p: resolver returned service config: \"%s\"",
             chand, service_config_json);
   }
-  chand->health_check_service_name_.reset(
-      gpr_strdup(resolver_result.health_check_service_name()));
-  // Create service config setter to update channel state in the data
-  // plane combiner.  Destroys itself when done.
-  New<ServiceConfigSetter>(chand, resolver_result.retry_throttle_data(),
-                           resolver_result.service_config());
   // Swap out the data used by GetChannelInfo().
-  bool service_config_changed;
   {
     MutexLock lock(&chand->info_mu_);
-    chand->info_lb_policy_name_ = resolver_result.lb_policy_name();
-    service_config_changed =
-        ((service_config_json == nullptr) !=
-         (chand->info_service_config_json_ == nullptr)) ||
-        (service_config_json != nullptr &&
-         strcmp(service_config_json, chand->info_service_config_json_.get()) !=
-             0);
+    chand->info_lb_policy_name_ = std::move(processed_lb_policy_name);
     chand->info_service_config_json_.reset(service_config_json);
   }
   // Return results.
   *lb_policy_name = chand->info_lb_policy_name_.get();
-  *lb_policy_config = resolver_result.lb_policy_config();
   return service_config_changed;
 }
 

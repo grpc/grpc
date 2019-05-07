@@ -251,7 +251,7 @@ char* ChooseServiceConfig(char* service_config_choice_json,
       continue;
     }
     grpc_json* service_config_json = nullptr;
-    bool not_choice = false;  // has this choice been rejected?
+    bool selected = true;  // has this choice been rejected?
     for (grpc_json* field = choice->child; field != nullptr;
          field = field->next) {
       // Check client language, if specified.
@@ -260,7 +260,7 @@ char* ChooseServiceConfig(char* service_config_choice_json,
           error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "field:clientLanguage error:should be of type array"));
         } else if (!ValueInJsonArray(field, "c++")) {
-          not_choice = true;
+          selected = false;
         }
       }
       // Check client hostname, if specified.
@@ -272,7 +272,7 @@ char* ChooseServiceConfig(char* service_config_choice_json,
         }
         char* hostname = grpc_gethostname();
         if (hostname == nullptr || !ValueInJsonArray(field, hostname)) {
-          not_choice = true;
+          selected = false;
         }
       }
       // Check percentage, if specified.
@@ -290,7 +290,7 @@ char* ChooseServiceConfig(char* service_config_choice_json,
           continue;
         }
         if (random_pct > percentage || percentage == 0) {
-          not_choice = true;
+          selected = false;
         }
       }
       // Save service config.
@@ -303,7 +303,7 @@ char* ChooseServiceConfig(char* service_config_choice_json,
         }
       }
     }
-    if (!found_choice && !not_choice && service_config_json != nullptr) {
+    if (!found_choice && selected && service_config_json != nullptr) {
       service_config = grpc_json_dump_to_string(service_config_json, 0);
       found_choice = true;
     }
