@@ -35,6 +35,7 @@ namespace Grpc.Core.Internal.Tests
         Server server;
         FakeNativeCall fakeCall;
         AsyncCallServer<string, string> asyncCallServer;
+        FakeBufferReaderManager fakeBufferReaderManager;
 
         [SetUp]
         public void Init()
@@ -52,11 +53,13 @@ namespace Grpc.Core.Internal.Tests
                 Marshallers.StringMarshaller.ContextualSerializer, Marshallers.StringMarshaller.ContextualDeserializer,
                 server);
             asyncCallServer.InitializeForTesting(fakeCall);
+            fakeBufferReaderManager = new FakeBufferReaderManager();
         }
 
         [TearDown]
         public void Cleanup()
         {
+            fakeBufferReaderManager.Dispose();
             server.ShutdownAsync().Wait();
         }
 
@@ -77,7 +80,7 @@ namespace Grpc.Core.Internal.Tests
             var moveNextTask = requestStream.MoveNext();
 
             fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServer(true, cancelled: true);
-            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, null);
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, CreateNullResponse());
             Assert.IsFalse(moveNextTask.Result);
 
             AssertFinished(asyncCallServer, fakeCall, finishedTask);
@@ -107,7 +110,7 @@ namespace Grpc.Core.Internal.Tests
             // if a read completion's success==false, the request stream will silently finish
             // and we rely on C core cancelling the call.
             var moveNextTask = requestStream.MoveNext();
-            fakeCall.ReceivedMessageCallback.OnReceivedMessage(false, null);
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(false, CreateNullResponse());
             Assert.IsFalse(moveNextTask.Result);
 
             fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServer(true, cancelled: true);
@@ -181,6 +184,11 @@ namespace Grpc.Core.Internal.Tests
             Assert.IsTrue(fakeCall.IsDisposed);
             Assert.IsTrue(finishedTask.IsCompleted);
             Assert.DoesNotThrow(() => finishedTask.Wait());
+        }
+
+        IBufferReader CreateNullResponse()
+        {
+            return fakeBufferReaderManager.CreateNullPayloadBufferReader();
         }
     }
 }

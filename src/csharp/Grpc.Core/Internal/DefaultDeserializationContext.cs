@@ -20,6 +20,10 @@ using Grpc.Core.Utils;
 using System;
 using System.Threading;
 
+#if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
+using System.Buffers;
+#endif
+
 namespace Grpc.Core.Internal
 {
     internal class DefaultDeserializationContext : DeserializationContext
@@ -27,40 +31,71 @@ namespace Grpc.Core.Internal
         static readonly ThreadLocal<DefaultDeserializationContext> threadLocalInstance =
             new ThreadLocal<DefaultDeserializationContext>(() => new DefaultDeserializationContext(), false);
 
-        byte[] payload;
-        bool alreadyCalledPayloadAsNewBuffer;
+        IBufferReader bufferReader;
+        int payloadLength;
+#if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
+        ReusableSliceBuffer cachedSliceBuffer = new ReusableSliceBuffer();
+#endif
 
         public DefaultDeserializationContext()
         {
             Reset();
         }
 
-        public override int PayloadLength => payload.Length;
+        public override int PayloadLength => payloadLength;
 
         public override byte[] PayloadAsNewBuffer()
         {
-            GrpcPreconditions.CheckState(!alreadyCalledPayloadAsNewBuffer);
-            alreadyCalledPayloadAsNewBuffer = true;
-            return payload;
+            var buffer = new byte[payloadLength];
+            FillContinguousBuffer(bufferReader, buffer);
+            return buffer;
         }
 
-        public void Initialize(byte[] payload)
+#if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
+        public override ReadOnlySequence<byte> PayloadAsReadOnlySequence()
         {
-            this.payload = GrpcPreconditions.CheckNotNull(payload);
-            this.alreadyCalledPayloadAsNewBuffer = false;
+            var sequence = cachedSliceBuffer.PopulateFrom(bufferReader);
+            GrpcPreconditions.CheckState(sequence.Length == payloadLength);
+            return sequence;
+        }
+#endif
+
+        public void Initialize(IBufferReader bufferReader)
+        {
+            this.bufferReader = GrpcPreconditions.CheckNotNull(bufferReader);
+            this.payloadLength = bufferReader.TotalLength.Value;  // payload must not be null
         }
 
         public void Reset()
         {
-            this.payload = null;
-            this.alreadyCalledPayloadAsNewBuffer = true;  // mark payload as read
+            this.bufferReader = null;
+            this.payloadLength = 0;
+#if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
+            this.cachedSliceBuffer.Invalidate();
+#endif
         }
 
-        public static DefaultDeserializationContext GetInitializedThreadLocal(byte[] payload)
+        public static DefaultDeserializationContext GetInitializedThreadLocal(IBufferReader bufferReader)
         {
             var instance = threadLocalInstance.Value;
-            instance.Initialize(payload);
+            instance.Initialize(bufferReader);
             return instance;
+        }
+
+        private void FillContinguousBuffer(IBufferReader reader, byte[] destination)
+        {
+#if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
+            PayloadAsReadOnlySequence().CopyTo(new Span<byte>(destination));
+#else
+            int offset = 0;
+            while (reader.TryGetNextSlice(out Slice slice))
+            {
+                slice.CopyTo(new ArraySegment<byte>(destination, offset, (int)slice.Length));
+                offset += (int)slice.Length;
+            }
+            // check that we filled the entire destination
+            GrpcPreconditions.CheckState(offset == payloadLength);
+#endif
         }
     }
 }

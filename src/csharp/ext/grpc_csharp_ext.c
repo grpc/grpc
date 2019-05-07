@@ -59,12 +59,16 @@ typedef struct grpcsharp_batch_context {
   } send_status_from_server;
   grpc_metadata_array recv_initial_metadata;
   grpc_byte_buffer* recv_message;
+  grpc_byte_buffer_reader* recv_message_reader;
   struct {
     grpc_metadata_array trailing_metadata;
     grpc_status_code status;
     grpc_slice status_details;
   } recv_status_on_client;
   int recv_close_on_server_cancelled;
+
+  /* reserve space for byte_buffer_reader */
+  grpc_byte_buffer_reader reserved_recv_message_reader;
 } grpcsharp_batch_context;
 
 GPR_EXPORT grpcsharp_batch_context* GPR_CALLTYPE
@@ -206,6 +210,9 @@ grpcsharp_batch_context_reset(grpcsharp_batch_context* ctx) {
 
   grpcsharp_metadata_array_destroy_metadata_only(&(ctx->recv_initial_metadata));
 
+  if (ctx->recv_message_reader) {
+    grpc_byte_buffer_reader_destroy(ctx->recv_message_reader);
+  }
   grpc_byte_buffer_destroy(ctx->recv_message);
 
   grpcsharp_metadata_array_destroy_metadata_only(
@@ -264,27 +271,42 @@ GPR_EXPORT intptr_t GPR_CALLTYPE grpcsharp_batch_context_recv_message_length(
 }
 
 /*
- * Copies data from recv_message to a buffer. Fatal error occurs if
- * buffer is too small.
+ * Gets the next slice from recv_message byte buffer.
+ * Returns 1 if a slice was get successfully, 0 if there are no more slices to
+ * read. Set slice_len to the length of the slice and the slice_data_ptr to
+ * point to slice's data. Caller must ensure that the byte buffer being read
+ * from stays alive as long as the data of the slice are being accessed
+ * (grpc_byte_buffer_reader_peek method is used internally)
+ *
+ * Remarks:
+ * Slices can only be iterated once.
+ * Initializes recv_message_buffer_reader if it was not initialized yet.
  */
-GPR_EXPORT void GPR_CALLTYPE grpcsharp_batch_context_recv_message_to_buffer(
-    const grpcsharp_batch_context* ctx, char* buffer, size_t buffer_len) {
-  grpc_byte_buffer_reader reader;
-  grpc_slice slice;
-  size_t offset = 0;
+GPR_EXPORT int GPR_CALLTYPE
+grpcsharp_batch_context_recv_message_next_slice_peek(
+    grpcsharp_batch_context* ctx, size_t* slice_len, uint8_t** slice_data_ptr) {
+  *slice_len = 0;
+  *slice_data_ptr = NULL;
 
-  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, ctx->recv_message));
-
-  while (grpc_byte_buffer_reader_next(&reader, &slice)) {
-    size_t len = GRPC_SLICE_LENGTH(slice);
-    GPR_ASSERT(offset + len <= buffer_len);
-    memcpy(buffer + offset, GRPC_SLICE_START_PTR(slice),
-           GRPC_SLICE_LENGTH(slice));
-    offset += len;
-    grpc_slice_unref(slice);
+  if (!ctx->recv_message) {
+    return 0;
   }
 
-  grpc_byte_buffer_reader_destroy(&reader);
+  if (!ctx->recv_message_reader) {
+    ctx->recv_message_reader = &ctx->reserved_recv_message_reader;
+    GPR_ASSERT(grpc_byte_buffer_reader_init(ctx->recv_message_reader,
+                                            ctx->recv_message));
+  }
+
+  grpc_slice* slice_ptr;
+  if (!grpc_byte_buffer_reader_peek(ctx->recv_message_reader, &slice_ptr)) {
+    return 0;
+  }
+
+  /* recv_message buffer must not be deleted before all the data is read */
+  *slice_len = GRPC_SLICE_LENGTH(*slice_ptr);
+  *slice_data_ptr = GRPC_SLICE_START_PTR(*slice_ptr);
+  return 1;
 }
 
 GPR_EXPORT grpc_status_code GPR_CALLTYPE
