@@ -433,6 +433,7 @@ grpc_cc_library(
         "src/compiler/config.h",
         "src/compiler/cpp_generator.h",
         "src/compiler/cpp_generator_helpers.h",
+        "src/compiler/cpp_plugin.h",
         "src/compiler/csharp_generator.h",
         "src/compiler/csharp_generator_helpers.h",
         "src/compiler/generator_helpers.h",
