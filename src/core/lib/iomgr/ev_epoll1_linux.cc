@@ -386,7 +386,6 @@ static void fd_shutdown_internal(grpc_fd* fd, grpc_error* why,
     } else {
       /* we need a dummy event for earlier linux versions. */
       epoll_event dummy_event;
-      memset(&dummy_event, 0, sizeof(dummy_event));
       if (epoll_ctl(g_epoll_set.epfd, EPOLL_CTL_DEL, fd->fd, &dummy_event) !=
           0) {
         gpr_log(GPR_ERROR, "epoll_ctl failed: %s", strerror(errno));
