@@ -58,12 +58,16 @@ def proto_path_to_generated_filename(proto_path, fmt_str):
 
 def _get_include_directory(include):
     directory = include.path
-    if directory.startswith("external"):
-        external_separator = directory.find("/")
+    prefix_len = 0
+    if not include.is_source and directory.startswith(include.root.path):
+        prefix_len = len(include.root.path) + 1
+
+    if directory.startswith("external", prefix_len):
+        external_separator = directory.find("/", prefix_len)
         repository_separator = directory.find("/", external_separator + 1)
         return directory[:repository_separator]
     else:
-        return "."
+        return include.root.path if include.root.path else "."
 
 def get_include_protoc_args(includes):
     """Returns protoc args that imports protos relative to their import root.

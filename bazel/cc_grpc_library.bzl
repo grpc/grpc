@@ -34,17 +34,17 @@ def cc_grpc_library(
           provides the compiled code of any message that the services depend on.
         proto_only (bool): If True, create only C++ proto classes library,
           avoid creating C++ grpc classes library (expect it in deps).
-          Deprecated, use native cc_proto_library instead.
+          Deprecated, use native cc_proto_library instead. False by default.
         well_known_protos (bool): Should this library additionally depend on
-          well known protos. Deprecated, pass well_known_protos
-          explicitly (proto_library targets in srcs and corresponding
-          cc_proto_library in deps).
+          well known protos. Deprecated, the well known protos should be
+          specified as explicit dependencies of the proto_library target
+          (passed in srcs parameter) instead. False by default.
         generate_mocks (bool): when True, Google Mock code for client stub is
-          generated.
+          generated. False by default.
         use_external (bool): Not used.
         grpc_only (bool): if True, generate only grpc library, expecting
           protobuf messages library (cc_proto_library target) to be passed as
-          deps.
+          deps. False by default (will become True by default eventually).
         **kwargs: rest of arguments, e.g., compatible_with and visibility
     """
     if len(srcs) > 1:
@@ -53,7 +53,7 @@ def cc_grpc_library(
         fail("A mutualy exclusive configuration is specified: grpc_only = True and proto_only = True")
 
     extra_deps = []
-    proto_target = None
+    proto_targets = []
 
     if not grpc_only:
         proto_target = "_" + name + "_only"
@@ -77,16 +77,17 @@ def cc_grpc_library(
             **kwargs
         )
         extra_deps.append(":" + cc_proto_target)
+        proto_targets.append(proto_target)
     else:
         if not srcs:
             fail("srcs cannot be empty", "srcs")
-        proto_target = srcs[0]
+        proto_targets += srcs
 
     if not proto_only:
         codegen_grpc_target = "_" + name + "_grpc_codegen"
         generate_cc(
             name = codegen_grpc_target,
-            srcs = [proto_target],
+            srcs = proto_targets,
             plugin = "@com_github_grpc_grpc//:grpc_cpp_plugin",
             well_known_protos = well_known_protos,
             generate_mocks = generate_mocks,
