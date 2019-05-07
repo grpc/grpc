@@ -59,19 +59,34 @@ void ClientChannelServiceConfigParser::Register() {
 }
 
 ProcessedResolverResult::ProcessedResolverResult(
-    const Resolver::Result& resolver_result)
+    const Resolver::Result& resolver_result, bool saved_service_config)
     : service_config_(resolver_result.service_config) {
   // If resolver did not return a service config or returned an invalid service
-  // config, use the default specified via the client API.
+  // config, we need a fallback service config
   if (service_config_ == nullptr) {
-    const char* service_config_json = grpc_channel_arg_get_string(
-        grpc_channel_args_find(resolver_result.args, GRPC_ARG_SERVICE_CONFIG));
-    if (service_config_json != nullptr) {
-      service_config_ =
-          ServiceConfig::Create(service_config_json, &service_config_error_);
-    } else {
+    // If the service config was invalid, then prefer using the saved service
+    // config, otherwise use the default service config provided by the client
+    // API
+    if (resolver_result.service_config_error != GRPC_ERROR_NONE &&
+        saved_service_config) {
+      // Return the service config error to client channel, so that it continues
+      // using the existing service config.
       service_config_error_ =
           GRPC_ERROR_REF(resolver_result.service_config_error);
+    } else {
+      // Either no service config or an invalid service config was received.
+      const char* service_config_json =
+          grpc_channel_arg_get_string(grpc_channel_args_find(
+              resolver_result.args, GRPC_ARG_SERVICE_CONFIG));
+      if (service_config_json != nullptr) {
+        service_config_ =
+            ServiceConfig::Create(service_config_json, &service_config_error_);
+      } else {
+        // We could not find a fallback service config, save the service config
+        // error.
+        service_config_error_ =
+            GRPC_ERROR_REF(resolver_result.service_config_error);
+      }
     }
   } else {
     service_config_error_ =

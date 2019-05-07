@@ -125,7 +125,8 @@ class ProcessedResolverResult {
  public:
   // Processes the resolver result and populates the relative members
   // for later consumption.
-  ProcessedResolverResult(const Resolver::Result& resolver_result);
+  ProcessedResolverResult(const Resolver::Result& resolver_result,
+                          bool saved_service_config);
 
   ~ProcessedResolverResult() { GRPC_ERROR_UNREF(service_config_error_); }
 

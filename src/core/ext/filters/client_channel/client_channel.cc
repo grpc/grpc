@@ -266,6 +266,7 @@ class ChannelData {
   grpc_connectivity_state_tracker state_tracker_;
   ExternalConnectivityWatcher::WatcherList external_connectivity_watcher_list_;
   UniquePtr<char> health_check_service_name_;
+  bool saved_service_config_ = false;
 
   //
   // Fields accessed from both data plane and control plane combiners.
@@ -1136,13 +1137,14 @@ bool ChannelData::ProcessResolverResultLocked(
     RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config,
     grpc_error** service_config_error) {
   ChannelData* chand = static_cast<ChannelData*>(arg);
-  ProcessedResolverResult resolver_result(result);
-
+  ProcessedResolverResult resolver_result(result, chand->saved_service_config_);
   *service_config_error = resolver_result.service_config_error();
   if (*service_config_error != GRPC_ERROR_NONE) {
-    // We got an invalid service config.
+    // We got an invalid service config. If we had a service config previously,
+    // we will continue using it.
     return false;
   }
+  chand->saved_service_config_ = true;
   char* service_config_json = gpr_strdup(resolver_result.service_config_json());
   if (grpc_client_channel_routing_trace.enabled()) {
     gpr_log(GPR_INFO, "chand=%p: resolver returned service config: \"%s\"",

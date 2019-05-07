@@ -201,6 +201,15 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     response_generator_->SetResponse(result);
   }
 
+  void SetNextResolutionWithServiceConfig(const std::vector<int>& ports,
+                                          const char* svc_cfg) {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::Resolver::Result result = BuildFakeResults(ports);
+    result.service_config =
+        grpc_core::ServiceConfig::Create(svc_cfg, &result.service_config_error);
+    response_generator_->SetResponse(result);
+  }
+
   std::vector<int> GetServersPorts(size_t start_index = 0) {
     std::vector<int> ports;
     for (size_t i = start_index; i < servers_.size(); ++i) {
@@ -377,6 +386,18 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     }
   }
 
+  const char* ValidServiceConfigV1() { return "{\"version\": \"1\"}"; }
+
+  const char* ValidServiceConfigV2() { return "{\"version\": \"2\"}"; }
+
+  const char* ValidDefaultServiceConfig() {
+    return "{\"version\": \"valid_default\"}";
+  }
+
+  const char* InvalidDefaultServiceConfig() {
+    return "{\"version\": \"invalid_default\"}";
+  }
+
   const grpc::string server_host_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::vector<std::unique_ptr<ServerData>> servers_;
@@ -386,12 +407,25 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   std::shared_ptr<ChannelCredentials> creds_;
 };
 
-TEST_F(ServiceConfigEnd2endTest, BasicTest) {
+TEST_F(ServiceConfigEnd2endTest, NoServiceConfigTest) {
   StartServers(1);
   auto channel = BuildChannel();
   auto stub = BuildStub(channel);
   SetNextResolutionNoServiceConfig(GetServersPorts());
   CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_STREQ("", channel->GetServiceConfigJSON().c_str());
+}
+
+TEST_F(ServiceConfigEnd2endTest, NoServiceConfigWithDefaultConfigTest) {
+  StartServers(1);
+  ChannelArguments args;
+  args.SetServiceConfigJSON(ValidDefaultServiceConfig());
+  auto channel = BuildChannel(args);
+  auto stub = BuildStub(channel);
+  SetNextResolutionNoServiceConfig(GetServersPorts());
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_STREQ(ValidDefaultServiceConfig(),
+               channel->GetServiceConfigJSON().c_str());
 }
 
 TEST_F(ServiceConfigEnd2endTest, InvalidServiceConfigTest) {
@@ -402,7 +436,89 @@ TEST_F(ServiceConfigEnd2endTest, InvalidServiceConfigTest) {
   CheckRpcSendFailure(stub);
 }
 
-TEST_F(ServiceConfigEnd2endTest, ValidServiceConfigAfterInvalidTest) {
+TEST_F(ServiceConfigEnd2endTest, InvalidServiceConfigWithDefaultConfigTest) {
+  StartServers(1);
+  ChannelArguments args;
+  args.SetServiceConfigJSON(ValidDefaultServiceConfig());
+  auto channel = BuildChannel(args);
+  auto stub = BuildStub(channel);
+  SetNextResolutionInvalidServiceConfig(GetServersPorts());
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_STREQ(ValidDefaultServiceConfig(),
+               channel->GetServiceConfigJSON().c_str());
+}
+
+TEST_F(ServiceConfigEnd2endTest, ValidServiceConfigUpdatesTest) {
+  StartServers(1);
+  auto channel = BuildChannel();
+  auto stub = BuildStub(channel);
+  SetNextResolutionWithServiceConfig(GetServersPorts(), ValidServiceConfigV1());
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_STREQ(ValidServiceConfigV1(), channel->GetServiceConfigJSON().c_str());
+  SetNextResolutionWithServiceConfig(GetServersPorts(), ValidServiceConfigV2());
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_STREQ(ValidServiceConfigV2(), channel->GetServiceConfigJSON().c_str());
+}
+
+TEST_F(ServiceConfigEnd2endTest,
+       NoServiceConfigUpdateAfterValidServiceConfigTest) {
+  StartServers(1);
+  auto channel = BuildChannel();
+  auto stub = BuildStub(channel);
+  SetNextResolutionWithServiceConfig(GetServersPorts(), ValidServiceConfigV1());
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_STREQ(ValidServiceConfigV1(), channel->GetServiceConfigJSON().c_str());
+  SetNextResolutionNoServiceConfig(GetServersPorts());
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_STREQ("", channel->GetServiceConfigJSON().c_str());
+}
+
+TEST_F(ServiceConfigEnd2endTest,
+       NoServiceConfigUpdateAfterValidServiceConfigWithDefaultConfigTest) {
+  StartServers(1);
+  ChannelArguments args;
+  args.SetServiceConfigJSON(ValidDefaultServiceConfig());
+  auto channel = BuildChannel(args);
+  auto stub = BuildStub(channel);
+  SetNextResolutionWithServiceConfig(GetServersPorts(), ValidServiceConfigV1());
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_STREQ(ValidServiceConfigV1(), channel->GetServiceConfigJSON().c_str());
+  SetNextResolutionNoServiceConfig(GetServersPorts());
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_STREQ(ValidDefaultServiceConfig(),
+               channel->GetServiceConfigJSON().c_str());
+}
+
+TEST_F(ServiceConfigEnd2endTest,
+       InvalidServiceConfigUpdateAfterValidServiceConfigTest) {
+  StartServers(1);
+  auto channel = BuildChannel();
+  auto stub = BuildStub(channel);
+  SetNextResolutionWithServiceConfig(GetServersPorts(), ValidServiceConfigV1());
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_STREQ(ValidServiceConfigV1(), channel->GetServiceConfigJSON().c_str());
+  SetNextResolutionInvalidServiceConfig(GetServersPorts());
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_STREQ(ValidServiceConfigV1(), channel->GetServiceConfigJSON().c_str());
+}
+
+TEST_F(ServiceConfigEnd2endTest,
+       InvalidServiceConfigUpdateAfterValidServiceConfigWithDefaultConfigTest) {
+  StartServers(1);
+  ChannelArguments args;
+  args.SetServiceConfigJSON(ValidDefaultServiceConfig());
+  auto channel = BuildChannel(args);
+  auto stub = BuildStub(channel);
+  SetNextResolutionWithServiceConfig(GetServersPorts(), ValidServiceConfigV1());
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_STREQ(ValidServiceConfigV1(), channel->GetServiceConfigJSON().c_str());
+  SetNextResolutionInvalidServiceConfig(GetServersPorts());
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_STREQ(ValidServiceConfigV1(), channel->GetServiceConfigJSON().c_str());
+}
+
+TEST_F(ServiceConfigEnd2endTest,
+       ValidServiceConfigAfterInvalidServiceConfigTest) {
   StartServers(1);
   auto channel = BuildChannel();
   auto stub = BuildStub(channel);
@@ -412,14 +528,26 @@ TEST_F(ServiceConfigEnd2endTest, ValidServiceConfigAfterInvalidTest) {
   CheckRpcSendOk(stub, DEBUG_LOCATION);
 }
 
-TEST_F(ServiceConfigEnd2endTest, InvalidServiceConfigWithDefaultConfigTest) {
+TEST_F(ServiceConfigEnd2endTest, NoServiceConfigAfterInvalidServiceConfigTest) {
   StartServers(1);
-  ChannelArguments args;
-  args.SetServiceConfigJSON("{}");
-  auto channel = BuildChannel(args);
+  auto channel = BuildChannel();
   auto stub = BuildStub(channel);
   SetNextResolutionInvalidServiceConfig(GetServersPorts());
+  CheckRpcSendFailure(stub);
+  SetNextResolutionNoServiceConfig(GetServersPorts());
   CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_STREQ("", channel->GetServiceConfigJSON().c_str());
+}
+
+TEST_F(ServiceConfigEnd2endTest,
+       AnotherInvalidServiceConfigAfterInvalidServiceConfigTest) {
+  StartServers(1);
+  auto channel = BuildChannel();
+  auto stub = BuildStub(channel);
+  SetNextResolutionInvalidServiceConfig(GetServersPorts());
+  CheckRpcSendFailure(stub);
+  SetNextResolutionInvalidServiceConfig(GetServersPorts());
+  CheckRpcSendFailure(stub);
 }
 
 }  // namespace
