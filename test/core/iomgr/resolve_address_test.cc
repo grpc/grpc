@@ -83,7 +83,7 @@ static grpc_millis n_sec_deadline(int seconds) {
 
 static void poll_pollset_until_request_done(args_struct* args) {
   grpc_core::ExecCtx exec_ctx;
-  // Try to give enough time for c-ares to run through it's retries
+  // Try to give enough time for c-ares to run through its retries
   // a few times if needed.
   grpc_millis deadline = n_sec_deadline(90);
   while (true) {
@@ -376,7 +376,7 @@ int main(int argc, char** argv) {
     test_invalid_ip_addresses();
     test_unparseable_hostports();
     if (gpr_stricmp(resolver_type, "ares") == 0) {
-      // This behavior expecation is specific to c-ares.
+      // This behavior expectation is specific to c-ares.
       test_localhost_result_has_ipv6_first();
     }
     grpc_core::Executor::ShutdownAll();

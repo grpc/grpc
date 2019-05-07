@@ -28,9 +28,11 @@
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #define BAD_SOCKET_RETURN_VAL INVALID_SOCKET
+#define BAD_SETSOCKOPT_RETURN_VAL SOCKET_ERROR
 #else
 #include "src/core/lib/iomgr/sockaddr_posix.h"
 #define BAD_SOCKET_RETURN_VAL -1
+#define BAD_SETSOCKOPT_RETURN_VAL -1
 #endif
 
 namespace grpc {
@@ -56,23 +58,13 @@ FakeNonResponsiveDNSServer::FakeNonResponsiveDNSServer(int port) {
     gpr_log(GPR_DEBUG, "Failed to bind UDP ipv6 socket to [::1]:%d", port);
     abort();
   }
-#ifdef GPR_WINDOWS
-  char val = 1;
-  if (setsockopt(tcp_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) ==
-      SOCKET_ERROR) {
-    gpr_log(GPR_DEBUG,
-            "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d", port);
-    abort();
-  }
-#else
   int val = 1;
-  if (setsockopt(tcp_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) !=
-      0) {
+  if (setsockopt(tcp_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) ==
+      BAD_SETSOCKOPT_RETURN_VAL) {
     gpr_log(GPR_DEBUG,
             "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d", port);
     abort();
   }
-#endif
   if (bind(tcp_socket_, (const sockaddr*)&addr, sizeof(addr)) != 0) {
     gpr_log(GPR_DEBUG, "Failed to bind TCP ipv6 socket to [::1]:%d", port);
     abort();

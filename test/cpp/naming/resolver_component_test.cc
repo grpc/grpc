@@ -610,7 +610,6 @@ void RunResolvesRelevantRecordsTest(
   GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(StartResolvingLocked, resolver.get(),
                                          grpc_combiner_scheduler(args.lock)),
                      GRPC_ERROR_NONE);
-  resolver->StartLocked();
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone(&args);
   ArgsFinish(&args);
