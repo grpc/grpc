@@ -62,6 +62,10 @@ void ExternalConnectionAcceptorImpl::HandleNewConnection(
   std::lock_guard<std::mutex> lock(mu_);
   if (shutdown_ || !started_) {
     // TODO(yangg) clean up.
+    gpr_log(
+        GPR_ERROR,
+        "NOT handling external connection with fd %d, started %d, shutdown %d",
+        p->fd, started_, shutdown_);
     return;
   }
   if (handler_) {

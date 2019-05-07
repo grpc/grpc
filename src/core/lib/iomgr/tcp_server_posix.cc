@@ -587,26 +587,19 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
       close(fd);
       return;
     }
-
     grpc_set_socket_no_sigpipe_if_possible(fd);
-
     addr_str = grpc_sockaddr_to_uri(&addr);
     gpr_asprintf(&name, "tcp-server-connection:%s", addr_str);
-
     if (grpc_tcp_trace.enabled()) {
       gpr_log(GPR_INFO, "SERVER_CONNECT: incoming external connection: %s",
               addr_str);
     }
-
     grpc_fd* fdobj = grpc_fd_create(fd, name, true);
-
     read_notifier_pollset =
         s_->pollsets[static_cast<size_t>(gpr_atm_no_barrier_fetch_add(
                          &s_->next_pollset_to_assign, 1)) %
                      s_->pollset_count];
-
     grpc_pollset_add_fd(read_notifier_pollset, fdobj);
-
     grpc_tcp_server_acceptor* acceptor =
         static_cast<grpc_tcp_server_acceptor*>(gpr_malloc(sizeof(*acceptor)));
     acceptor->from_server = s_;
@@ -614,7 +607,6 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
     acceptor->fd_index = -1;
     acceptor->external_connection = true;
     acceptor->pending_data = buf;
-
     s_->on_accept_cb(s_->on_accept_cb_arg,
                      grpc_tcp_create(fdobj, s_->channel_args, addr_str),
                      read_notifier_pollset, acceptor);
