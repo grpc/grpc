@@ -110,8 +110,6 @@ class AresDnsResolver : public Resolver {
   UniquePtr<ServerAddressList> addresses_;
   /// currently resolving service config
   char* service_config_json_ = nullptr;
-  /// last valid service config
-  RefCountedPtr<ServiceConfig> saved_service_config_;
   // has shutdown been initiated
   bool shutdown_initiated_ = false;
   // timeout in milliseconds for active DNS queries
@@ -232,66 +230,93 @@ bool ValueInJsonArray(grpc_json* array, const char* value) {
 char* ChooseServiceConfig(char* service_config_choice_json,
                           grpc_error** error) {
   grpc_json* choices_json = grpc_json_parse_string(service_config_choice_json);
-  if (choices_json == nullptr || choices_json->type != GRPC_JSON_ARRAY) {
+  if (choices_json == nullptr) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "cannot parse service config JSON string");
+        "Service Config JSON Parsing, error: could not parse");
+    return nullptr;
+  }
+  if (choices_json->type != GRPC_JSON_ARRAY) {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Service Config Choices, error: should be of type array");
     return nullptr;
   }
   char* service_config = nullptr;
+  InlinedVector<grpc_error*, 4> error_list;
+  bool found_choice = false;  // have we found a choice?
   for (grpc_json* choice = choices_json->child; choice != nullptr;
        choice = choice->next) {
     if (choice->type != GRPC_JSON_OBJECT) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "cannot parse service config JSON string");
-      break;
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Service Config Choice, error: should be of type object"));
+      continue;
     }
     grpc_json* service_config_json = nullptr;
+    bool not_choice = false;  // has this choice been rejected?
     for (grpc_json* field = choice->child; field != nullptr;
          field = field->next) {
       // Check client language, if specified.
       if (strcmp(field->key, "clientLanguage") == 0) {
-        if (field->type != GRPC_JSON_ARRAY || !ValueInJsonArray(field, "c++")) {
-          service_config_json = nullptr;
-          break;
+        if (field->type != GRPC_JSON_ARRAY) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "field:clientLanguage error:should be of type array"));
+        } else if (!ValueInJsonArray(field, "c++")) {
+          not_choice = true;
         }
       }
       // Check client hostname, if specified.
       if (strcmp(field->key, "clientHostname") == 0) {
+        if (field->type != GRPC_JSON_ARRAY) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "field:clientHostname error:should be of type array"));
+          continue;
+        }
         char* hostname = grpc_gethostname();
-        if (hostname == nullptr || field->type != GRPC_JSON_ARRAY ||
-            !ValueInJsonArray(field, hostname)) {
-          service_config_json = nullptr;
-          break;
+        if (hostname == nullptr || !ValueInJsonArray(field, hostname)) {
+          not_choice = true;
         }
       }
       // Check percentage, if specified.
       if (strcmp(field->key, "percentage") == 0) {
         if (field->type != GRPC_JSON_NUMBER) {
-          service_config_json = nullptr;
-          break;
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "field:percentage error:should be of type number"));
+          continue;
         }
         int random_pct = rand() % 100;
         int percentage;
-        if (sscanf(field->value, "%d", &percentage) != 1 ||
-            random_pct > percentage || percentage == 0) {
-          service_config_json = nullptr;
-          break;
+        if (sscanf(field->value, "%d", &percentage) != 1) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "field:percentage error:should be of type integer"));
+          continue;
+        }
+        if (random_pct > percentage || percentage == 0) {
+          not_choice = true;
         }
       }
       // Save service config.
       if (strcmp(field->key, "serviceConfig") == 0) {
         if (field->type == GRPC_JSON_OBJECT) {
           service_config_json = field;
+        } else {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "field:serviceConfig error:should be of type object"));
         }
       }
     }
-    if (service_config_json != nullptr) {
+    if (!found_choice && !not_choice && service_config_json != nullptr) {
       service_config = grpc_json_dump_to_string(service_config_json, 0);
-      break;
+      found_choice = true;
     }
   }
   grpc_json_destroy(choices_json);
-  return service_config;
+  if (error_list.empty()) {
+    return service_config;
+  } else {
+    gpr_free(service_config);
+    *error = GRPC_ERROR_CREATE_FROM_VECTOR("Service Config Choices Parser",
+                                           &error_list);
+    return nullptr;
+  }
 }
 
 void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
@@ -308,38 +333,18 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     Result result;
     result.addresses = std::move(*r->addresses_);
     if (r->service_config_json_ != nullptr) {
-      grpc_error* service_config_error = GRPC_ERROR_NONE;
-      char* service_config_string =
-          ChooseServiceConfig(r->service_config_json_, &service_config_error);
+      char* service_config_string = ChooseServiceConfig(
+          r->service_config_json_, &result.service_config_error);
       gpr_free(r->service_config_json_);
-      RefCountedPtr<ServiceConfig> new_service_config;
-      if (service_config_error == GRPC_ERROR_NONE &&
+      if (result.service_config_error == GRPC_ERROR_NONE &&
           service_config_string != nullptr) {
         GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
                              r, service_config_string);
-        new_service_config =
-            ServiceConfig::Create(service_config_string, &service_config_error);
+        result.service_config = ServiceConfig::Create(
+            service_config_string, &result.service_config_error);
       }
       gpr_free(service_config_string);
-      if (service_config_error == GRPC_ERROR_NONE) {
-        // Valid service config receivd
-        r->saved_service_config_ = std::move(new_service_config);
-      } else {
-        if (r->saved_service_config_ != nullptr) {
-          // Ignore the new service config error, since we have a previously
-          // saved service config
-          GRPC_ERROR_UNREF(service_config_error);
-        } else {
-          // No previously valid service config found.
-          // service_config_error is passed to the channel.
-          result.service_config_error = service_config_error;
-        }
-      }
-    } else {
-      // No service config received
-      r->saved_service_config_.reset();
     }
-    result.service_config = r->saved_service_config_;
     result.args = grpc_channel_args_copy(r->channel_args_);
     r->result_handler()->ReturnResult(std::move(result));
     r->addresses_.reset();

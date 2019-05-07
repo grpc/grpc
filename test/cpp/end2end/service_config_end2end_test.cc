@@ -201,16 +201,6 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     response_generator_->SetResponse(result);
   }
 
-  void SetNextResolutionUponError(const std::vector<int>& ports) {
-    grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetReresolutionResponse(BuildFakeResults(ports));
-  }
-
-  void SetFailureOnReresolution() {
-    grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetFailureOnReresolution();
-  }
-
   std::vector<int> GetServersPorts(size_t start_index = 0) {
     std::vector<int> ports;
     for (size_t i = start_index; i < servers_.size(); ++i) {
