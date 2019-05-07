@@ -410,10 +410,11 @@ int grpc_slice_eq(grpc_slice a, grpc_slice b) {
   return grpc_slice_default_eq_impl(a, b);
 }
 
-static bool grpc_slice_differs_slowpath(const grpc_slice& a,
-                                        const grpc_slice& b_not_inline) {
+int grpc_slice_differs_slowpath(const grpc_slice& a,
+                                const grpc_slice& b_not_inline) {
   size_t a_len;
   const uint8_t* a_ptr;
+  // Slice inlined, or refcounted?
   if (a.refcount) {
     a_len = a.data.refcounted.length;
     a_ptr = a.data.refcounted.bytes;
@@ -421,40 +422,20 @@ static bool grpc_slice_differs_slowpath(const grpc_slice& a,
     a_len = a.data.inlined.length;
     a_ptr = &a.data.inlined.bytes[0];
   }
-  if (a_len != b_not_inline.data.refcounted.length || a_ptr == nullptr) {
+  // Lengths differ => they're different.
+  if (a_len != b_not_inline.data.refcounted.length) {
     return true;
   }
+  // Lengths the same and they're empty: they're the same.
+  if (a_len == 0) {
+    return false;
+  }
+  // Lengths are the same but we got a malformed slice? They differ.
+  if (a_ptr == nullptr) {
+    return true;
+  }
+  // We have valid slices of the same length that we must compare.
   return memcmp(a_ptr, b_not_inline.data.refcounted.bytes, a_len);
-}
-
-bool grpc_slice_differs_interned(const grpc_slice& a,
-                                 const grpc_slice& b_interned) {
-  if (a.refcount == b_interned.refcount) {
-    return false;
-  }
-  return grpc_slice_differs_slowpath(a, b_interned);
-}
-
-bool grpc_slice_differs_static(const grpc_slice& a,
-                               const grpc_slice& b_static) {
-  // This compiles down to a refcount pointer equality check, so it's fine even
-  // if a is not static.
-  if (GRPC_STATIC_METADATA_INDEX(a) == GRPC_STATIC_METADATA_INDEX(b_static)) {
-    return false;
-  }
-  return grpc_slice_differs_slowpath(a, b_static);
-}
-
-bool grpc_slice_eq_interned(const grpc_slice& a, const grpc_slice& b_interned) {
-  GPR_DEBUG_ASSERT((!grpc_slice_differs_interned(a, b_interned)) ==
-                    grpc_slice_eq(a,  b_interned));
-  return !grpc_slice_differs_interned(a, b_interned);
-}
-
-bool grpc_slice_eq_static(const grpc_slice& a, const grpc_slice& b_static) {
-  GPR_DEBUG_ASSERT((!grpc_slice_differs_interned(a, b_static)) ==
-                    grpc_slice_eq(a,  b_static));
-  return !grpc_slice_differs_static(a, b_static);
 }
 
 int grpc_slice_cmp(grpc_slice a, grpc_slice b) {

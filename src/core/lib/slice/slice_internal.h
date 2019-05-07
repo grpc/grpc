@@ -29,11 +29,22 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-bool grpc_slice_differs_static(const grpc_slice& a, const grpc_slice& b_static);
-bool grpc_slice_eq_static(const grpc_slice& a, const grpc_slice& b_static);
-bool grpc_slice_differs_interned(const grpc_slice& a,
-                                 const grpc_slice& b_static);
-bool grpc_slice_eq_interned(const grpc_slice& a, const grpc_slice& b_static);
+int grpc_slice_differs_slowpath(const grpc_slice& a,
+                                const grpc_slice& b_not_inline);
+inline int grpc_slice_eq_static(const grpc_slice& a,
+                                const grpc_slice& b_static) {
+  if (a.refcount == b_static.refcount) {
+    return true;
+  }
+  return !grpc_slice_differs_slowpath(a, b_static);
+}
+inline int grpc_slice_eq_interned(const grpc_slice& a,
+                                  const grpc_slice& b_interned) {
+  if (a.refcount == b_interned.refcount) {
+    return true;
+  }
+  return !grpc_slice_differs_slowpath(a, b_interned);
+}
 
 // Interned slices have specific fast-path operations for hashing. To inline
 // these operations, we need to forward declare them here.
