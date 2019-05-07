@@ -410,11 +410,8 @@ int grpc_slice_eq(grpc_slice a, grpc_slice b) {
   return grpc_slice_default_eq_impl(a, b);
 }
 
-bool grpc_slice_differs_interned(const grpc_slice& a,
-                                 const grpc_slice& b_interned) {
-  if (a.refcount == b_interned.refcount) {
-    return false;
-  }
+static bool grpc_slice_differs_slowpath(const grpc_slice& a,
+                                        const grpc_slice& b_not_inline) {
   size_t a_len;
   const uint8_t* a_ptr;
   if (a.refcount) {
@@ -424,14 +421,18 @@ bool grpc_slice_differs_interned(const grpc_slice& a,
     a_len = a.data.inlined.length;
     a_ptr = &a.data.inlined.bytes[0];
   }
-  if (a_len != b_interned.data.refcounted.length || a_ptr == nullptr) {
+  if (a_len != b_not_inline.data.refcounted.length || a_ptr == nullptr) {
     return true;
   }
-  return memcmp(a_ptr, b_interned.data.refcounted.bytes, a_len);
+  return memcmp(a_ptr, b_not_inline.data.refcounted.bytes, a_len);
 }
 
-bool grpc_slice_eq_interned(const grpc_slice& a, const grpc_slice& b_static) {
-  return !grpc_slice_differs_interned(a, b_static);
+bool grpc_slice_differs_interned(const grpc_slice& a,
+                                 const grpc_slice& b_interned) {
+  if (a.refcount == b_interned.refcount) {
+    return false;
+  }
+  return grpc_slice_differs_slowpath(a, b_interned);
 }
 
 bool grpc_slice_differs_static(const grpc_slice& a,
@@ -441,25 +442,18 @@ bool grpc_slice_differs_static(const grpc_slice& a,
   if (GRPC_STATIC_METADATA_INDEX(a) == GRPC_STATIC_METADATA_INDEX(b_static)) {
     return false;
   }
-  size_t a_len;
-  const uint8_t* a_ptr;
-  if (a.refcount) {
-    a_len = a.data.refcounted.length;
-    a_ptr = a.data.refcounted.bytes;
-  } else {
-    a_len = a.data.inlined.length;
-    a_ptr = &a.data.inlined.bytes[0];
-  }
-  if (a_len != b_static.data.refcounted.length || a_ptr == nullptr) {
-    return true;
-  }
-  // If the lengths are equal, there is no need to check for the 0-length case
-  // since b_static for sure is non-zero. At this point, we know that A is not
-  // static and that the lengths are the same. The only thing left is memcmp.
-  return memcmp(a_ptr, b_static.data.refcounted.bytes, a_len);
+  return grpc_slice_differs_slowpath(a, b_static);
+}
+
+bool grpc_slice_eq_interned(const grpc_slice& a, const grpc_slice& b_interned) {
+  GPR_DEBUG_ASSERT((!grpc_slice_differs_interned(a, b_interned)) ==
+                    grpc_slice_eq(a,  b_interned));
+  return !grpc_slice_differs_interned(a, b_interned);
 }
 
 bool grpc_slice_eq_static(const grpc_slice& a, const grpc_slice& b_static) {
+  GPR_DEBUG_ASSERT((!grpc_slice_differs_interned(a, b_static)) ==
+                    grpc_slice_eq(a,  b_static));
   return !grpc_slice_differs_static(a, b_static);
 }
 
