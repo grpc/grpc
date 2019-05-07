@@ -5661,6 +5661,7 @@ target_include_directories(upb
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/upb
 )
   # avoid dependency on libstdc++
   if (_gRPC_CORE_NOSTDCXX_FLAGS)

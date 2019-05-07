@@ -101,7 +101,7 @@
   # Providers for third-party dependencies (gRPC_*_PROVIDER properties):
   # "module": build the dependency using sources from git submodule (under third_party)
   # "package": use cmake's find_package functionality to locate a pre-installed dependency
-  
+
   set(gRPC_ZLIB_PROVIDER "module" CACHE STRING "Provider of zlib library")
   set_property(CACHE gRPC_ZLIB_PROVIDER PROPERTY STRINGS "module" "package")
 
@@ -142,7 +142,7 @@
 
   ## Some libraries are shared even with BUILD_SHARED_LIBRARIES=OFF
   set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
-  
+
   add_definitions(-DPB_FIELD_32BIT)
 
   if (MSVC)
@@ -441,6 +441,9 @@
   % if lib.language == 'c++':
     PRIVATE <%text>${_gRPC_PROTO_GENS_DIR}</%text>
   % endif
+  % if lib.name in ['upb']:
+    PRIVATE third_party/upb
+  % endif
   )
   % if lib.language in ['c', 'csharp']:
     # avoid dependency on libstdc++
@@ -573,6 +576,6 @@
       DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>
     )
   endforeach()
-  
+
   install(FILES <%text>${CMAKE_CURRENT_SOURCE_DIR}/etc/roots.pem</%text>
     DESTINATION <%text>${gRPC_INSTALL_SHAREDIR}</%text>)
