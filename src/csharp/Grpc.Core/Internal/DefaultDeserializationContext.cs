@@ -82,14 +82,11 @@ namespace Grpc.Core.Internal
             return instance;
         }
 
+        private void FillContinguousBuffer(IBufferReader reader, byte[] destination)
+        {
 #if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
-        private void FillContinguousBuffer(IBufferReader reader, byte[] destination)
-        {
             PayloadAsReadOnlySequence().CopyTo(new Span<byte>(destination));
-        }
 #else
-        private void FillContinguousBuffer(IBufferReader reader, byte[] destination)
-        {
             int offset = 0;
             while (reader.TryGetNextSlice(out Slice slice))
             {
@@ -98,7 +95,7 @@ namespace Grpc.Core.Internal
             }
             // check that we filled the entire destination
             GrpcPreconditions.CheckState(offset == payloadLength);
-        }
 #endif
+        }
     }
 }
