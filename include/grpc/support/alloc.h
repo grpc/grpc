@@ -32,8 +32,6 @@ typedef struct gpr_allocation_functions {
   void* (*zalloc_fn)(size_t size); /** if NULL, uses malloc_fn then memset */
   void* (*realloc_fn)(void* ptr, size_t size);
   void (*free_fn)(void* ptr);
-  void* (*aligned_alloc_fn)(size_t size, size_t alignment);
-  void (*aligned_free_fn)(void* ptr);
 } gpr_allocation_functions;
 
 /** malloc.
