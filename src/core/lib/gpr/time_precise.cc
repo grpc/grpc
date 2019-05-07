@@ -18,17 +18,43 @@
 
 #include <grpc/support/port_platform.h>
 
+#if GPR_LINUX
+#include <fcntl.h>
+#include <unistd.h>
+#endif
+
 #include <algorithm>
 
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <stdio.h>
 
 #include "src/core/lib/gpr/time_precise.h"
 
-#ifdef GRPC_TIMERS_RDTSC
-#ifndef GRPC_CUSTOME_CYCLE_CLOCK
+#if GPR_CYCLE_COUNTER_RDTSC_32 or GPR_CYCLE_COUNTER_RDTSC_64
+#if GPR_LINUX
+static bool read_freq_from_kernel(double* freq) {
+  // Google production kernel export the frequency for us in kHz.
+  int fd = open("/sys/devices/system/cpu/cpu0/tsc_freq_khz", O_RDONLY);
+  if (fd == -1) {
+    return false;
+  }
+  char line[1024] = {};
+  char* err;
+  bool ret = false;
+  int len = read(fd, line, sizeof(line) - 1);
+  if (len > 0) {
+    const long val = strtol(line, &err, 10);
+    if (line[0] != '\0' && (*err == '\n' || *err == '\0')) {
+      *freq = val * 1e3;  // Value is kHz.
+      ret = true;
+    }
+  }
+  close(fd);
+  return ret;
+}
+#endif /* GPR_LINUX */
+
 static double cycles_per_second = 0;
 static gpr_cycle_counter start_cycle;
 
@@ -46,6 +72,14 @@ static bool is_fake_clock() {
 
 void gpr_precise_clock_init(void) {
   gpr_log(GPR_DEBUG, "Calibrating timers");
+
+#if GPR_LINUX
+  if (read_freq_from_kernel(&cycles_per_second)) {
+    start_cycle = gpr_get_cycle_counter();
+    return;
+  }
+#endif /* GPR_LINUX */
+
   if (is_fake_clock()) {
     cycles_per_second = 1;
     start_cycle = 0;
@@ -78,7 +112,7 @@ void gpr_precise_clock_init(void) {
   gpr_log(GPR_DEBUG, "... cycles_per_second = %f\n", cycles_per_second);
 }
 
-gpr_timespec gpr_cycle_counter_to_timestamp(gpr_cycle_counter cycles) {
+gpr_timespec gpr_cycle_counter_to_time(gpr_cycle_counter cycles) {
   double secs = static_cast<double>(cycles - start_cycle) / cycles_per_second;
   gpr_timespec ts;
   ts.tv_sec = static_cast<int64_t>(secs);
@@ -90,11 +124,9 @@ gpr_timespec gpr_cycle_counter_to_timestamp(gpr_cycle_counter cycles) {
 
 void gpr_precise_clock_now(gpr_timespec* clk) {
   int64_t counter = gpr_get_cycle_counter();
-  *clk = gpr_cycle_counter_to_timestamp(counter);
+  *clk = gpr_cycle_counter_to_time(counter);
 }
-
-#endif /* GRPC_CUSTOME_CYCLE_CLOCK */
-#else  /* GRPC_TIMERS_RDTSC */
+#elif GPR_CYCLE_COUNTER_FALLBACK
 void gpr_precise_clock_init(void) {}
 
 gpr_cycle_counter gpr_get_cycle_counter() {
@@ -102,7 +134,7 @@ gpr_cycle_counter gpr_get_cycle_counter() {
   return gpr_timespec_to_micros(ts);
 }
 
-gpr_timespec gpr_cycle_counter_to_timestamp(gpr_cycle_counter cycles) {
+gpr_timespec gpr_cycle_counter_to_time(gpr_cycle_counter cycles) {
   gpr_timespec ts;
   ts.tv_sec = cycles / GPR_US_PER_SEC;
   ts.tv_nsec = (cycles - ts.tv_sec * GPR_US_PER_SEC) * GPR_NS_PER_US;
@@ -114,4 +146,4 @@ void gpr_precise_clock_now(gpr_timespec* clk) {
   *clk = gpr_now(GPR_CLOCK_REALTIME);
   clk->clock_type = GPR_CLOCK_PRECISE;
 }
-#endif /* GRPC_TIMERS_RDTSC */
+#endif /* GPR_CYCLE_COUNTER_FALLBACK */

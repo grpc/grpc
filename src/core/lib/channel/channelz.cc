@@ -130,7 +130,7 @@ void CallCountingHelper::PopulateCallCounts(grpc_json* json) {
   }
   if (data.calls_started != 0) {
     gpr_timespec ts = gpr_convert_clock_type(
-        gpr_cycle_counter_to_timestamp(data.last_call_started_cycle),
+        gpr_cycle_counter_to_time(data.last_call_started_cycle),
         GPR_CLOCK_REALTIME);
     json_iterator =
         grpc_json_create_child(json_iterator, json, "lastCallStartedTimestamp",
@@ -393,7 +393,7 @@ grpc_json* SocketNode::RenderJson() {
         gpr_atm_no_barrier_load(&last_local_stream_created_cycle_);
     if (last_local_stream_created_cycle != 0) {
       ts = gpr_convert_clock_type(
-          gpr_cycle_counter_to_timestamp(last_local_stream_created_cycle),
+          gpr_cycle_counter_to_time(last_local_stream_created_cycle),
           GPR_CLOCK_REALTIME);
       json_iterator = grpc_json_create_child(
           json_iterator, json, "lastLocalStreamCreatedTimestamp",
@@ -403,7 +403,7 @@ grpc_json* SocketNode::RenderJson() {
         gpr_atm_no_barrier_load(&last_remote_stream_created_cycle_);
     if (last_remote_stream_created_cycle != 0) {
       ts = gpr_convert_clock_type(
-          gpr_cycle_counter_to_timestamp(last_remote_stream_created_cycle),
+          gpr_cycle_counter_to_time(last_remote_stream_created_cycle),
           GPR_CLOCK_REALTIME);
       json_iterator = grpc_json_create_child(
           json_iterator, json, "lastRemoteStreamCreatedTimestamp",
@@ -425,7 +425,7 @@ grpc_json* SocketNode::RenderJson() {
     json_iterator = grpc_json_add_number_string_child(
         json, json_iterator, "messagesSent", messages_sent);
     ts = gpr_convert_clock_type(
-        gpr_cycle_counter_to_timestamp(
+        gpr_cycle_counter_to_time(
             gpr_atm_no_barrier_load(&last_message_sent_cycle_)),
         GPR_CLOCK_REALTIME);
     json_iterator =
@@ -437,7 +437,7 @@ grpc_json* SocketNode::RenderJson() {
     json_iterator = grpc_json_add_number_string_child(
         json, json_iterator, "messagesReceived", messages_received);
     ts = gpr_convert_clock_type(
-        gpr_cycle_counter_to_timestamp(
+        gpr_cycle_counter_to_time(
             gpr_atm_no_barrier_load(&last_message_received_cycle_)),
         GPR_CLOCK_REALTIME);
     json_iterator = grpc_json_create_child(
