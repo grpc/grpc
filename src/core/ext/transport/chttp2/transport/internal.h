@@ -583,10 +583,6 @@ struct grpc_chttp2_stream {
 
   grpc_slice_buffer frame_storage; /* protected by t combiner */
 
-  /* Accessed only by transport thread when stream->pending_byte_stream == false
-   * Accessed only by application thread when stream->pending_byte_stream ==
-   * true */
-  grpc_slice_buffer unprocessed_incoming_frames_buffer;
   grpc_closure* on_next = nullptr;  /* protected by t combiner */
   bool pending_byte_stream = false; /* protected by t combiner */
   // cached length of buffer to be used by the transport thread in cases where
@@ -594,6 +590,10 @@ struct grpc_chttp2_stream {
   // application threads are allowed to modify
   // unprocessed_incoming_frames_buffer
   size_t unprocessed_incoming_frames_buffer_cached_length = 0;
+  /* Accessed only by transport thread when stream->pending_byte_stream == false
+   * Accessed only by application thread when stream->pending_byte_stream ==
+   * true */
+  grpc_slice_buffer unprocessed_incoming_frames_buffer;
   grpc_closure reset_byte_stream;
   grpc_error* byte_stream_error = GRPC_ERROR_NONE; /* protected by t combiner */
   bool received_last_frame = false;                /* protected by t combiner */
@@ -634,18 +634,7 @@ struct grpc_chttp2_stream {
   /* Stream decompression method to be used. */
   grpc_stream_compression_method stream_decompression_method =
       GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS;
-  /** Stream compression decompress context */
-  grpc_stream_compression_context* stream_decompression_ctx = nullptr;
-  /** Stream compression compress context */
-  grpc_stream_compression_context* stream_compression_ctx = nullptr;
 
-  /** Buffer storing data that is compressed but not sent */
-  grpc_slice_buffer compressed_data_buffer;
-  /** Amount of uncompressed bytes sent out when compressed_data_buffer is
-   * emptied */
-  size_t uncompressed_data_size = 0;
-  /** Temporary buffer storing decompressed data */
-  grpc_slice_buffer decompressed_data_buffer;
   /** Whether bytes stored in unprocessed_incoming_byte_stream is decompressed
    */
   bool unprocessed_incoming_frames_decompressed = false;
@@ -655,6 +644,22 @@ struct grpc_chttp2_stream {
   size_t decompressed_header_bytes = 0;
   /** Byte counter for number of bytes written */
   size_t byte_counter = 0;
+
+  /** Amount of uncompressed bytes sent out when compressed_data_buffer is
+   * emptied */
+  size_t uncompressed_data_size;
+  /** Stream compression compress context */
+  grpc_stream_compression_context* stream_compression_ctx;
+  /** Buffer storing data that is compressed but not sent */
+  grpc_slice_buffer compressed_data_buffer;
+
+  /** Stream compression decompress context */
+  grpc_stream_compression_context* stream_decompression_ctx;
+  /** Temporary buffer storing decompressed data.
+   * Initialized, used, and destroyed only when stream uses (non-identity)
+   * compression.
+   */
+  grpc_slice_buffer decompressed_data_buffer;
 };
 
 /** Transport writing call flow:
