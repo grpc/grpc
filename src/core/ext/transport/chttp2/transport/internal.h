@@ -238,7 +238,7 @@ class Chttp2IncomingByteStream : public ByteStream {
   // switch to std::shared_ptr<>.
   void Ref() { refs_.Ref(); }
   void Unref() {
-    if (refs_.Unref()) {
+    if (GPR_UNLIKELY(refs_.Unref())) {
       grpc_core::Delete(this);
     }
   }
