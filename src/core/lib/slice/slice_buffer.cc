@@ -33,7 +33,7 @@
 #define GROW(x) (3 * (x) / 2)
 
 static void maybe_embiggen(grpc_slice_buffer* sb) {
-  if (sb->length == 0) {
+  if (sb->count == 0) {
     sb->slices = sb->base_slices;
   }
 

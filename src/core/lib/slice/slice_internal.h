@@ -222,7 +222,7 @@ inline uint32_t grpc_slice_refcount::Hash(const grpc_slice& slice) {
                           g_hash_seed);
 }
 
-inline grpc_slice grpc_slice_ref_internal(const grpc_slice& slice) {
+inline const grpc_slice& grpc_slice_ref_internal(const grpc_slice& slice) {
   if (slice.refcount) {
     slice.refcount->Ref();
   }

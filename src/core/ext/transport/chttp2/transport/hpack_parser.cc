@@ -1616,6 +1616,12 @@ static void parse_stream_compression_md(grpc_chttp2_transport* t,
     s->stream_decompression_method =
         GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS;
   }
+
+  if (s->stream_decompression_method !=
+      GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS) {
+    s->stream_decompression_ctx = nullptr;
+    grpc_slice_buffer_init(&s->decompressed_data_buffer);
+  }
 }
 
 grpc_error* grpc_chttp2_header_parser_parse(void* hpack_parser,

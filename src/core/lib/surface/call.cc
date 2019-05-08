@@ -260,10 +260,10 @@ grpc_core::TraceFlag grpc_compression_trace(false, "compression");
 
 #define CALL_STACK_FROM_CALL(call)   \
   (grpc_call_stack*)((char*)(call) + \
-                     GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(grpc_call)))
+                     GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)))
 #define CALL_FROM_CALL_STACK(call_stack) \
   (grpc_call*)(((char*)(call_stack)) -   \
-               GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(grpc_call)))
+               GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)))
 
 #define CALL_ELEM_FROM_CALL(call, idx) \
   grpc_call_stack_element(CALL_STACK_FROM_CALL(call), idx)
@@ -329,7 +329,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   size_t initial_size = grpc_channel_get_call_size_estimate(args->channel);
   GRPC_STATS_INC_CALL_INITIAL_SIZE(initial_size);
   size_t call_and_stack_size =
-      GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(grpc_call)) +
+      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)) +
       channel_stack->call_stack_size;
   size_t call_alloc_size =
       call_and_stack_size + (args->parent ? sizeof(child_call) : 0);
