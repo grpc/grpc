@@ -506,7 +506,9 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
                                          GRPC_ARG_INHIBIT_HEALTH_CHECKING};
   // Create a subchannel for each address.
   for (size_t i = 0; i < addresses.size(); i++) {
-    GPR_ASSERT(!addresses[i].IsBalancer());
+    if (addresses[i].IsBalancer()) {
+      continue;
+    }
     InlinedVector<grpc_arg, 3> args_to_add;
     const size_t subchannel_address_arg_index = args_to_add.size();
     args_to_add.emplace_back(

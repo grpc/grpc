@@ -738,6 +738,38 @@ TEST_F(SingleBalancerTest, SelectGrpclbWithMigrationServiceConfig) {
 }
 
 TEST_F(SingleBalancerTest,
+       DoNotSpecialCaseUseGrpclbWithLoadBalancingConfigTest1) {
+  const int kFallbackTimeoutMs = 200 * grpc_test_slowdown_factor();
+  ResetStub(kFallbackTimeoutMs);
+  SetNextResolution({AddressData{backends_[0]->port_, false, ""},
+                     AddressData{balancers_[0]->port_, true, ""}},
+                    "{\n"
+                    " \"loadBalancingConfig\":[\n"
+                    "  {\"pick_first\":{} }\n"
+                    " ]\n"
+                    "}");
+  CheckRpcSendOk();
+  // Check LB policy name for the channel.
+  EXPECT_EQ("pick_first", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(SingleBalancerTest,
+       DoNotSpecialCaseUseGrpclbWithLoadBalancingConfigTest2) {
+  const int kFallbackTimeoutMs = 200 * grpc_test_slowdown_factor();
+  ResetStub(kFallbackTimeoutMs);
+  SetNextResolution({AddressData{balancers_[0]->port_, true, ""}},
+                    "{\n"
+                    " \"loadBalancingConfig\":[\n"
+                    "  {\"pick_first\":{} }\n"
+                    " ]\n"
+                    "}");
+  // This should fail since we do not have a non-balancer backend
+  CheckRpcSendFailure();
+  // Check LB policy name for the channel.
+  EXPECT_EQ("pick_first", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(SingleBalancerTest,
        SelectGrpclbWithMigrationServiceConfigAndNoAddresses) {
   const int kFallbackTimeoutMs = 200 * grpc_test_slowdown_factor();
   ResetStub(kFallbackTimeoutMs);
