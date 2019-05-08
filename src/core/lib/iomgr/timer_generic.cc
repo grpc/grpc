@@ -36,6 +36,7 @@
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/atomic.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -291,14 +292,12 @@ struct shared_mutables {
   grpc_core::Mutex mu;
 } GPR_ALIGN_STRUCT(GPR_CACHELINE_SIZE);
 
-static shared_mutables* g_shared_mutables = nullptr;
+static grpc_core::ManualConstructor<shared_mutables> g_shared_mutables;
 static gpr_once g_once_init_shared_mutables = GPR_ONCE_INIT;
 
 shared_mutables& GetSharedMutables() {
   gpr_once_init(&g_once_init_shared_mutables, [] {
-    g_shared_mutables =
-        new (gpr_malloc_aligned(sizeof(shared_mutables), GPR_CACHELINE_SIZE))
-            shared_mutables();
+    g_shared_mutables.Init();
   });
   return *g_shared_mutables;
 }
