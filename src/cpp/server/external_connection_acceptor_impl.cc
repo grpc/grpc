@@ -26,10 +26,11 @@
 namespace grpc {
 namespace internal {
 namespace {
-class InternalAcceptor : public experimental::ExternalConnectionAcceptor {
+// The actual type to return to user. It co-owns the internal impl object with
+// the server.
+class AcceptorWrapper : public experimental::ExternalConnectionAcceptor {
  public:
-  explicit InternalAcceptor(
-      std::shared_ptr<ExternalConnectionAcceptorImpl> impl)
+  explicit AcceptorWrapper(std::shared_ptr<ExternalConnectionAcceptorImpl> impl)
       : impl_(std::move(impl)) {}
   void HandleNewConnection(NewConnectionParameters* p) override {
     impl_->HandleNewConnection(p);
@@ -55,7 +56,7 @@ ExternalConnectionAcceptorImpl::GetAcceptor() {
   GPR_ASSERT(!has_acceptor_);
   has_acceptor_ = true;
   return std::unique_ptr<experimental::ExternalConnectionAcceptor>(
-      new InternalAcceptor(shared_from_this()));
+      new AcceptorWrapper(shared_from_this()));
 }
 
 void ExternalConnectionAcceptorImpl::HandleNewConnection(
