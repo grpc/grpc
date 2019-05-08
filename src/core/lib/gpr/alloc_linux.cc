@@ -28,7 +28,7 @@
 #include "src/core/lib/gpr/alloc.h"
 
 void* gpr_malloc_aligned_platform(size_t size, size_t alignment) {
-  GPR_DEBUG_ASSERT(is_power_of_two(alignment));
+  GPR_DEBUG_ASSERT(gpr_is_power_of_two(alignment));
   size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(size, alignment);
   void* ret = aligned_alloc(alignment, size);
   GPR_ASSERT(ret != nullptr);

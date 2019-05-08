@@ -38,7 +38,7 @@ void* gpr_malloc_aligned_platform(size_t size, size_t alignment);
 void gpr_free_aligned_platform(void* ptr);
 
 #ifndef NDEBUG
-static inline constexpr bool is_power_of_two(size_t value) {
+inline constexpr bool gpr_is_power_of_two(size_t value) {
   // 2^N =     100000...000
   // 2^N - 1 = 011111...111
   // (2^N) && ((2^N)-1)) = 0

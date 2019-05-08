@@ -26,7 +26,7 @@
 #include "src/core/lib/gpr/alloc.h"
 
 void* gpr_malloc_aligned_fallback(size_t size, size_t alignment) {
-  GPR_DEBUG_ASSERT(is_power_of_two(alignment));
+  GPR_DEBUG_ASSERT(gpr_is_power_of_two(alignment));
   size_t extra = alignment - 1 + sizeof(void*);
   void* p = gpr_malloc(size + extra);
   void** ret = (void**)(((uintptr_t)p + extra) & ~(alignment - 1));
