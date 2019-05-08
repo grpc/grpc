@@ -36,8 +36,6 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
-auto& force_library_initialization = Library::get();
-
 ////////////////////////////////////////////////////////////////////////////////
 // Helper classes
 //
@@ -57,7 +55,8 @@ class DummyEndpoint : public grpc_endpoint {
                                                    get_fd,
                                                    can_track_err};
     grpc_endpoint::vtable = &my_vtable;
-    ru_ = grpc_resource_user_create(Library::get().rq(), "dummy_endpoint");
+    ru_ = grpc_resource_user_create(LibraryInitializer::get().rq(),
+                                    "dummy_endpoint");
   }
 
   void PushInput(grpc_slice slice) {
@@ -642,6 +641,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();

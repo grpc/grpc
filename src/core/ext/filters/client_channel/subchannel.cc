@@ -66,13 +66,12 @@
 #define GRPC_SUBCHANNEL_RECONNECT_JITTER 0.2
 
 // Conversion between subchannel call and call stack.
-#define SUBCHANNEL_CALL_TO_CALL_STACK(call)                              \
-  (grpc_call_stack*)((char*)(call) + GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE( \
-                                         sizeof(SubchannelCall)))
-#define CALL_STACK_TO_SUBCHANNEL_CALL(callstack)        \
-  (SubchannelCall*)(((char*)(call_stack)) -             \
-                    GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE( \
-                        sizeof(SubchannelCall)))
+#define SUBCHANNEL_CALL_TO_CALL_STACK(call) \
+  (grpc_call_stack*)((char*)(call) +        \
+                     GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)))
+#define CALL_STACK_TO_SUBCHANNEL_CALL(callstack) \
+  (SubchannelCall*)(((char*)(call_stack)) -      \
+                    GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)))
 
 namespace grpc_core {
 
@@ -152,10 +151,10 @@ RefCountedPtr<SubchannelCall> ConnectedSubchannel::CreateCall(
 size_t ConnectedSubchannel::GetInitialCallSizeEstimate(
     size_t parent_data_size) const {
   size_t allocation_size =
-      GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(SubchannelCall));
+      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall));
   if (parent_data_size > 0) {
     allocation_size +=
-        GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(channel_stack_->call_stack_size) +
+        GPR_ROUND_UP_TO_ALIGNMENT_SIZE(channel_stack_->call_stack_size) +
         parent_data_size;
   } else {
     allocation_size += channel_stack_->call_stack_size;
@@ -179,9 +178,8 @@ void SubchannelCall::StartTransportStreamOpBatch(
 
 void* SubchannelCall::GetParentData() {
   grpc_channel_stack* chanstk = connected_subchannel_->channel_stack();
-  return (char*)this +
-         GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(SubchannelCall)) +
-         GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(chanstk->call_stack_size);
+  return (char*)this + GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)) +
+         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(chanstk->call_stack_size);
 }
 
 grpc_call_stack* SubchannelCall::GetCallStack() {

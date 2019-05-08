@@ -8,6 +8,7 @@ resolver_component_tests:
   expected_lb_policy: null
   enable_srv_queries: true
   enable_txt_queries: true
+  inject_broken_nameserver_list: false
   record_to_resolve: no-srv-ipv4-single-target
   records:
     no-srv-ipv4-single-target:
@@ -19,6 +20,7 @@ resolver_component_tests:
   expected_lb_policy: null
   enable_srv_queries: true
   enable_txt_queries: true
+  inject_broken_nameserver_list: false
   record_to_resolve: srv-ipv4-single-target
   records:
     _grpclb._tcp.srv-ipv4-single-target:
@@ -34,6 +36,7 @@ resolver_component_tests:
   expected_lb_policy: null
   enable_srv_queries: true
   enable_txt_queries: true
+  inject_broken_nameserver_list: false
   record_to_resolve: srv-ipv4-multi-target
   records:
     _grpclb._tcp.srv-ipv4-multi-target:
@@ -49,6 +52,7 @@ resolver_component_tests:
   expected_lb_policy: null
   enable_srv_queries: true
   enable_txt_queries: true
+  inject_broken_nameserver_list: false
   record_to_resolve: srv-ipv6-single-target
   records:
     _grpclb._tcp.srv-ipv6-single-target:
@@ -64,6 +68,7 @@ resolver_component_tests:
   expected_lb_policy: null
   enable_srv_queries: true
   enable_txt_queries: true
+  inject_broken_nameserver_list: false
   record_to_resolve: srv-ipv6-multi-target
   records:
     _grpclb._tcp.srv-ipv6-multi-target:
@@ -79,6 +84,7 @@ resolver_component_tests:
   expected_lb_policy: round_robin
   enable_srv_queries: true
   enable_txt_queries: true
+  inject_broken_nameserver_list: false
   record_to_resolve: srv-ipv4-simple-service-config
   records:
     _grpclb._tcp.srv-ipv4-simple-service-config:
@@ -95,6 +101,7 @@ resolver_component_tests:
   expected_lb_policy: round_robin
   enable_srv_queries: true
   enable_txt_queries: true
+  inject_broken_nameserver_list: false
   record_to_resolve: ipv4-no-srv-simple-service-config
   records:
     ipv4-no-srv-simple-service-config:
@@ -109,6 +116,7 @@ resolver_component_tests:
   expected_lb_policy: null
   enable_srv_queries: true
   enable_txt_queries: true
+  inject_broken_nameserver_list: false
   record_to_resolve: ipv4-no-config-for-cpp
   records:
     ipv4-no-config-for-cpp:
@@ -123,6 +131,7 @@ resolver_component_tests:
   expected_lb_policy: null
   enable_srv_queries: true
   enable_txt_queries: true
+  inject_broken_nameserver_list: false
   record_to_resolve: ipv4-cpp-config-has-zero-percentage
   records:
     ipv4-cpp-config-has-zero-percentage:
@@ -137,6 +146,7 @@ resolver_component_tests:
   expected_lb_policy: round_robin
   enable_srv_queries: true
   enable_txt_queries: true
+  inject_broken_nameserver_list: false
   record_to_resolve: ipv4-second-language-is-cpp
   records:
     ipv4-second-language-is-cpp:
@@ -151,6 +161,7 @@ resolver_component_tests:
   expected_lb_policy: round_robin
   enable_srv_queries: true
   enable_txt_queries: true
+  inject_broken_nameserver_list: false
   record_to_resolve: ipv4-config-with-percentages
   records:
     ipv4-config-with-percentages:
@@ -166,6 +177,7 @@ resolver_component_tests:
   expected_lb_policy: null
   enable_srv_queries: true
   enable_txt_queries: true
+  inject_broken_nameserver_list: false
   record_to_resolve: srv-ipv4-target-has-backend-and-balancer
   records:
     _grpclb._tcp.srv-ipv4-target-has-backend-and-balancer:
@@ -182,6 +194,7 @@ resolver_component_tests:
   expected_lb_policy: null
   enable_srv_queries: true
   enable_txt_queries: true
+  inject_broken_nameserver_list: false
   record_to_resolve: srv-ipv6-target-has-backend-and-balancer
   records:
     _grpclb._tcp.srv-ipv6-target-has-backend-and-balancer:
@@ -197,6 +210,7 @@ resolver_component_tests:
   expected_lb_policy: null
   enable_srv_queries: true
   enable_txt_queries: true
+  inject_broken_nameserver_list: false
   record_to_resolve: ipv4-config-causing-fallback-to-tcp
   records:
     ipv4-config-causing-fallback-to-tcp:
@@ -212,6 +226,7 @@ resolver_component_tests:
   expected_lb_policy: null
   enable_srv_queries: false
   enable_txt_queries: true
+  inject_broken_nameserver_list: false
   record_to_resolve: srv-ipv4-single-target-srv-disabled
   records:
     _grpclb._tcp.srv-ipv4-single-target-srv-disabled:
@@ -229,6 +244,7 @@ resolver_component_tests:
   expected_lb_policy: null
   enable_srv_queries: false
   enable_txt_queries: true
+  inject_broken_nameserver_list: false
   record_to_resolve: srv-ipv4-multi-target-srv-disabled
   records:
     _grpclb._tcp.srv-ipv4-multi-target-srv-disabled:
@@ -248,6 +264,7 @@ resolver_component_tests:
   expected_lb_policy: null
   enable_srv_queries: false
   enable_txt_queries: true
+  inject_broken_nameserver_list: false
   record_to_resolve: srv-ipv6-single-target-srv-disabled
   records:
     _grpclb._tcp.srv-ipv6-single-target-srv-disabled:
@@ -265,6 +282,7 @@ resolver_component_tests:
   expected_lb_policy: null
   enable_srv_queries: false
   enable_txt_queries: true
+  inject_broken_nameserver_list: false
   record_to_resolve: srv-ipv6-multi-target-srv-disabled
   records:
     _grpclb._tcp.srv-ipv6-multi-target-srv-disabled:
@@ -284,6 +302,7 @@ resolver_component_tests:
   expected_lb_policy: round_robin
   enable_srv_queries: false
   enable_txt_queries: true
+  inject_broken_nameserver_list: false
   record_to_resolve: srv-ipv4-simple-service-config-srv-disabled
   records:
     _grpclb._tcp.srv-ipv4-simple-service-config-srv-disabled:
@@ -302,6 +321,7 @@ resolver_component_tests:
   expected_lb_policy: null
   enable_srv_queries: true
   enable_txt_queries: false
+  inject_broken_nameserver_list: false
   record_to_resolve: srv-ipv4-simple-service-config-txt-disabled
   records:
     _grpclb._tcp.srv-ipv4-simple-service-config-txt-disabled:
@@ -318,6 +338,7 @@ resolver_component_tests:
   expected_lb_policy: null
   enable_srv_queries: true
   enable_txt_queries: false
+  inject_broken_nameserver_list: false
   record_to_resolve: ipv4-cpp-config-has-zero-percentage-txt-disabled
   records:
     ipv4-cpp-config-has-zero-percentage-txt-disabled:
@@ -332,6 +353,7 @@ resolver_component_tests:
   expected_lb_policy: null
   enable_srv_queries: true
   enable_txt_queries: false
+  inject_broken_nameserver_list: false
   record_to_resolve: ipv4-second-language-is-cpp-txt-disabled
   records:
     ipv4-second-language-is-cpp-txt-disabled:
@@ -346,6 +368,7 @@ resolver_component_tests:
   expected_lb_policy: null
   enable_srv_queries: true
   enable_txt_queries: true
+  inject_broken_nameserver_list: false
   record_to_resolve: ipv4-svc_cfg_bad_json
   records:
     ipv4-svc_cfg_bad_json:
@@ -360,6 +383,7 @@ resolver_component_tests:
   expected_lb_policy: null
   enable_srv_queries: true
   enable_txt_queries: true
+  inject_broken_nameserver_list: false
   record_to_resolve: ipv4-svc_cfg_bad_client_language
   records:
     ipv4-svc_cfg_bad_client_language:
@@ -374,6 +398,7 @@ resolver_component_tests:
   expected_lb_policy: null
   enable_srv_queries: true
   enable_txt_queries: true
+  inject_broken_nameserver_list: false
   record_to_resolve: ipv4-svc_cfg_bad_percentage
   records:
     ipv4-svc_cfg_bad_percentage:
@@ -388,6 +413,7 @@ resolver_component_tests:
   expected_lb_policy: null
   enable_srv_queries: true
   enable_txt_queries: true
+  inject_broken_nameserver_list: false
   record_to_resolve: ipv4-svc_cfg_bad_wait_for_ready
   records:
     ipv4-svc_cfg_bad_wait_for_ready:
@@ -395,3 +421,31 @@ resolver_component_tests:
     _grpc_config.ipv4-svc_cfg_bad_wait_for_ready:
     - {TTL: '2100', data: 'grpc_config=[{"serviceConfig":{"methodConfig":[{"name":[{"method":"Foo","service":"CppService"}],"waitForReady":"true"}]}}]',
       type: TXT}      
+# Tests for which we also exercise the resolver's ability to skip past a broken DNS server in its nameserver list
+- expected_addrs:
+  - {address: '5.5.5.5:443', is_balancer: false}
+  expected_chosen_service_config: null
+  expected_service_config_error: null
+  expected_lb_policy: null
+  enable_srv_queries: true
+  enable_txt_queries: true
+  inject_broken_nameserver_list: true
+  record_to_resolve: no-srv-ipv4-single-target-inject-broken-nameservers
+  records:
+    no-srv-ipv4-single-target-inject-broken-nameservers:
+    - {TTL: '2100', data: 5.5.5.5, type: A}
+- expected_addrs:
+  - {address: '1.2.3.4:443', is_balancer: false}
+  expected_chosen_service_config: '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooThree","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFour","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFive","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSix","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSeven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEight","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooNine","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTen","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEleven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]}]}'
+  expected_service_config_error: 'Service config parsing error'
+  expected_lb_policy: null
+  enable_srv_queries: true
+  enable_txt_queries: true
+  inject_broken_nameserver_list: true
+  record_to_resolve: ipv4-config-causing-fallback-to-tcp-inject-broken-nameservers
+  records:
+    ipv4-config-causing-fallback-to-tcp-inject-broken-nameservers:
+    - {TTL: '2100', data: 1.2.3.4, type: A}
+    _grpc_config.ipv4-config-causing-fallback-to-tcp-inject-broken-nameservers:
+    - {TTL: '2100', data: 'grpc_config=[{"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooThree","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFour","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFive","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSix","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSeven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEight","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooNine","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTen","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEleven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]}]}}]',
+      type: TXT}

@@ -13,7 +13,6 @@
 # limitations under the License.
 
 require_relative './grpc'
-require_relative './google_rpc_status_utils'
 
 # GRPC contains the General RPC module.
 module GRPC
@@ -58,10 +57,11 @@ module GRPC
     #
     # @return [Google::Rpc::Status, nil]
     def to_rpc_status
+      # Lazily require google_rpc_status_utils to scope
+      # loading protobuf_c.so to the users of this method.
+      require_relative './google_rpc_status_utils'
       status = to_status
-
       return if status.nil?
-
       GoogleRpcStatusUtils.extract_google_rpc_status(status)
     rescue Google::Protobuf::ParseError => parse_error
       GRPC.logger.warn('parse error: to_rpc_status failed')

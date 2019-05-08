@@ -135,7 +135,8 @@ typedef NS_ENUM(NSUInteger, GRPCErrorCode) {
 
   /**
    * The server is currently unavailable. This is most likely a transient condition and may be
-   * corrected by retrying with a backoff.
+   * corrected by retrying with a backoff. Note that it is not always safe to retry
+   * non-idempotent operations.
    */
   GRPCErrorCodeUnavailable = 14,
 

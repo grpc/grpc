@@ -30,8 +30,6 @@
 namespace grpc {
 namespace testing {
 
-auto& force_library_initialization = Library::get();
-
 static void BM_Alarm_Tag_Immediate(benchmark::State& state) {
   TrackCounters track_counters;
   CompletionQueue cq;
@@ -57,6 +55,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();

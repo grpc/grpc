@@ -44,6 +44,7 @@
 #include "test/core/util/cmdline.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/naming/dns_test_util.h"
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/sockaddr_windows.h"
@@ -75,36 +76,6 @@ void EndTest(grpc_channel* client, grpc_completion_queue* cq) {
   DrainCq(cq);
   grpc_completion_queue_destroy(cq);
 }
-
-class FakeNonResponsiveDNSServer {
- public:
-  FakeNonResponsiveDNSServer(int port) {
-    socket_ = socket(AF_INET6, SOCK_DGRAM, 0);
-    if (socket_ == BAD_SOCKET_RETURN_VAL) {
-      gpr_log(GPR_DEBUG, "Failed to create UDP ipv6 socket");
-      abort();
-    }
-    sockaddr_in6 addr;
-    memset(&addr, 0, sizeof(addr));
-    addr.sin6_family = AF_INET6;
-    addr.sin6_port = htons(port);
-    ((char*)&addr.sin6_addr)[15] = 1;
-    if (bind(socket_, (const sockaddr*)&addr, sizeof(addr)) != 0) {
-      gpr_log(GPR_DEBUG, "Failed to bind UDP ipv6 socket to [::1]:%d", port);
-      abort();
-    }
-  }
-  ~FakeNonResponsiveDNSServer() {
-#ifdef GPR_WINDOWS
-    closesocket(socket_);
-#else
-    close(socket_);
-#endif
-  }
-
- private:
-  int socket_;
-};
 
 struct ArgsStruct {
   gpr_atm done_atm;
@@ -184,7 +155,7 @@ class AssertFailureResultHandler : public grpc_core::Resolver::ResultHandler {
 
 void TestCancelActiveDNSQuery(ArgsStruct* args) {
   int fake_dns_port = grpc_pick_unused_port_or_die();
-  FakeNonResponsiveDNSServer fake_dns_server(fake_dns_port);
+  grpc::testing::FakeNonResponsiveDNSServer fake_dns_server(fake_dns_port);
   char* client_target;
   GPR_ASSERT(gpr_asprintf(
       &client_target,
@@ -282,7 +253,7 @@ void TestCancelDuringActiveQuery(
     cancellation_test_query_timeout_setting query_timeout_setting) {
   // Start up fake non responsive DNS server
   int fake_dns_port = grpc_pick_unused_port_or_die();
-  FakeNonResponsiveDNSServer fake_dns_server(fake_dns_port);
+  grpc::testing::FakeNonResponsiveDNSServer fake_dns_server(fake_dns_port);
   // Create a call that will try to use the fake DNS server
   char* client_target = nullptr;
   GPR_ASSERT(gpr_asprintf(

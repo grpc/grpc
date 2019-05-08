@@ -466,7 +466,7 @@ void grpc_mdelem_do_unref(grpc_mdelem gmd DEBUG_ARGS) {
     case GRPC_MDELEM_STORAGE_INTERNED: {
       auto* md = reinterpret_cast<InternedMetadata*> GRPC_MDELEM_DATA(gmd);
       uint32_t hash = md->hash();
-      if (md->Unref(FWD_DEBUG_ARGS)) {
+      if (GPR_UNLIKELY(md->Unref(FWD_DEBUG_ARGS))) {
         /* once the refcount hits zero, some other thread can come along and
            free md at any time: it's unsafe from this point on to access it */
         note_disposed_interned_metadata(hash);
@@ -475,7 +475,7 @@ void grpc_mdelem_do_unref(grpc_mdelem gmd DEBUG_ARGS) {
     }
     case GRPC_MDELEM_STORAGE_ALLOCATED: {
       auto* md = reinterpret_cast<AllocatedMetadata*> GRPC_MDELEM_DATA(gmd);
-      if (md->Unref(FWD_DEBUG_ARGS)) {
+      if (GPR_UNLIKELY(md->Unref(FWD_DEBUG_ARGS))) {
         grpc_core::Delete(md);
       }
       break;
