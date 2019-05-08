@@ -296,9 +296,7 @@ static grpc_core::ManualConstructor<shared_mutables> g_shared_mutables;
 static gpr_once g_once_init_shared_mutables = GPR_ONCE_INIT;
 
 shared_mutables& GetSharedMutables() {
-  gpr_once_init(&g_once_init_shared_mutables, [] {
-    g_shared_mutables.Init();
-  });
+  gpr_once_init(&g_once_init_shared_mutables, [] { g_shared_mutables.Init(); });
   return *g_shared_mutables;
 }
 
