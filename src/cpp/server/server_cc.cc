@@ -938,7 +938,7 @@ Server::Server(
     std::shared_ptr<std::vector<std::unique_ptr<grpc::ServerCompletionQueue>>>
         sync_server_cqs,
     int min_pollers, int max_pollers, int sync_cq_timeout_msec,
-    std::vector<std::shared_ptr<::grpc_impl::ExternalConnectionAcceptorImpl>>
+    std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
         acceptors,
     grpc_resource_quota* server_rq,
     std::vector<

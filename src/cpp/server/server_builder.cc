@@ -116,7 +116,7 @@ ServerBuilder& ServerBuilder::experimental_type::RegisterCallbackGenericService(
   return *builder_;
 }
 
-std::unique_ptr<grpc::ExternalConnectionAcceptor>
+std::unique_ptr<grpc::experimental::ExternalConnectionAcceptor>
 ServerBuilder::experimental_type::AddExternalConnectionAcceptor(
     experimental_type::ExternalConnectionType type,
     std::shared_ptr<ServerCredentials> creds) {
@@ -124,7 +124,7 @@ ServerBuilder::experimental_type::AddExternalConnectionAcceptor(
   char count_str[GPR_LTOA_MIN_BUFSIZE];
   gpr_ltoa(static_cast<long>(builder_->acceptors_.size()), count_str);
   builder_->acceptors_.emplace_back(
-      std::make_shared<ExternalConnectionAcceptorImpl>(
+      std::make_shared<grpc::internal::ExternalConnectionAcceptorImpl>(
           name_prefix.append(count_str), type, creds));
   return builder_->acceptors_.back()->GetAcceptor();
 }

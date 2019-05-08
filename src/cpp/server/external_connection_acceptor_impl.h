@@ -30,9 +30,8 @@
 
 #include "src/core/lib/iomgr/tcp_server.h"
 
-namespace grpc_impl {
-
-typedef void (*RawConnectionHandler)(int fd, grpc_byte_buffer* buffer);
+namespace grpc {
+namespace internal {
 
 class ExternalConnectionAcceptorImpl
     : public std::enable_shared_from_this<ExternalConnectionAcceptorImpl> {
@@ -42,10 +41,10 @@ class ExternalConnectionAcceptorImpl
       ServerBuilder::experimental_type::ExternalConnectionType type,
       std::shared_ptr<ServerCredentials> creds);
   // Should only be called once.
-  std::unique_ptr<grpc::ExternalConnectionAcceptor> GetAcceptor();
+  std::unique_ptr<experimental::ExternalConnectionAcceptor> GetAcceptor();
 
   void HandleNewConnection(
-      grpc::ExternalConnectionAcceptor::NewConnectionParameters* p);
+      experimental::ExternalConnectionAcceptor::NewConnectionParameters* p);
 
   void Shutdown();
 
@@ -67,6 +66,7 @@ class ExternalConnectionAcceptorImpl
   bool shutdown_ = false;
 };
 
-}  // namespace grpc_impl
+}  // namespace internal
+}  // namespace grpc
 
 #endif  // SRC_CPP_SERVER_EXTERNAL_CONNECTION_ACCEPTOR_IMPL_H_

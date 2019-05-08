@@ -23,9 +23,10 @@
 #include <grpcpp/server_builder_impl.h>
 #include <grpcpp/support/channel_arguments.h>
 
-namespace grpc_impl {
+namespace grpc {
+namespace internal {
 namespace {
-class InternalAcceptor : public grpc::ExternalConnectionAcceptor {
+class InternalAcceptor : public experimental::ExternalConnectionAcceptor {
  public:
   explicit InternalAcceptor(
       std::shared_ptr<ExternalConnectionAcceptorImpl> impl)
@@ -48,17 +49,17 @@ ExternalConnectionAcceptorImpl::ExternalConnectionAcceptorImpl(
                          CONNECTION_FROM_FD);
 }
 
-std::unique_ptr<grpc::ExternalConnectionAcceptor>
+std::unique_ptr<experimental::ExternalConnectionAcceptor>
 ExternalConnectionAcceptorImpl::GetAcceptor() {
   std::lock_guard<std::mutex> lock(mu_);
   GPR_ASSERT(!has_acceptor_);
   has_acceptor_ = true;
-  return std::unique_ptr<grpc::ExternalConnectionAcceptor>(
+  return std::unique_ptr<experimental::ExternalConnectionAcceptor>(
       new InternalAcceptor(shared_from_this()));
 }
 
 void ExternalConnectionAcceptorImpl::HandleNewConnection(
-    grpc::ExternalConnectionAcceptor::NewConnectionParameters* p) {
+    experimental::ExternalConnectionAcceptor::NewConnectionParameters* p) {
   std::lock_guard<std::mutex> lock(mu_);
   if (shutdown_ || !started_) {
     // TODO(yangg) clean up.
@@ -86,9 +87,9 @@ void ExternalConnectionAcceptorImpl::Start() {
   started_ = true;
 }
 
-void ExternalConnectionAcceptorImpl::SetToChannelArgs(
-    ::grpc::ChannelArguments* args) {
+void ExternalConnectionAcceptorImpl::SetToChannelArgs(ChannelArguments* args) {
   args->SetPointer(name_.c_str(), &handler_);
 }
 
-}  // namespace grpc_impl
+}  // namespace internal
+}  // namespace grpc

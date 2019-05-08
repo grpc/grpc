@@ -116,7 +116,8 @@ class TestTcpServer {
 
   const grpc::string& address() { return address_; }
 
-  void SetAcceptor(std::unique_ptr<ExternalConnectionAcceptor> acceptor) {
+  void SetAcceptor(
+      std::unique_ptr<experimental::ExternalConnectionAcceptor> acceptor) {
     connection_acceptor_ = std::move(acceptor);
   }
 
@@ -164,7 +165,7 @@ class TestTcpServer {
 
   void OnFdReleased(grpc_error* err) {
     EXPECT_EQ(GRPC_ERROR_NONE, err);
-    ExternalConnectionAcceptor::NewConnectionParameters p;
+    experimental::ExternalConnectionAcceptor::NewConnectionParameters p;
     p.fd = fd_;
     if (queue_data_) {
       char buf[1024];
@@ -190,7 +191,8 @@ class TestTcpServer {
   std::thread running_thread_;
   int port_;
   grpc::string address_;
-  std::unique_ptr<ExternalConnectionAcceptor> connection_acceptor_;
+  std::unique_ptr<experimental::ExternalConnectionAcceptor>
+      connection_acceptor_;
   test_tcp_server tcp_server_;
 };
 
