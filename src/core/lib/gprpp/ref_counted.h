@@ -211,12 +211,12 @@ class RefCounted : public Impl {
   // private, since it will only be used by RefCountedPtr<>, which is a
   // friend of this class.
   void Unref() {
-    if (refs_.Unref()) {
+    if (GPR_UNLIKELY(refs_.Unref())) {
       Delete(static_cast<Child*>(this));
     }
   }
   void Unref(const DebugLocation& location, const char* reason) {
-    if (refs_.Unref(location, reason)) {
+    if (GPR_UNLIKELY(refs_.Unref(location, reason))) {
       Delete(static_cast<Child*>(this));
     }
   }
