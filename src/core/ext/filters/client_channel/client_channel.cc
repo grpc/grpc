@@ -1078,8 +1078,8 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
   // Get default service config
   const char* service_config_json = grpc_channel_arg_get_string(
       grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVICE_CONFIG));
-  // Make sure we set the channel in TRANSIENT_FAILURE on an invalid default
-  // service config
+  // TODO(yashkt): Make sure we set the channel in TRANSIENT_FAILURE on an
+  // invalid default service config
   if (service_config_json != nullptr) {
     *error = GRPC_ERROR_NONE;
     default_service_config_ = ServiceConfig::Create(service_config_json, error);
@@ -1175,7 +1175,7 @@ void ChannelData::ProcessLbPolicy(
   }
   // Special case: If at least one balancer address is present, we use
   // the grpclb policy, regardless of what the resolver has returned.
-  // TODO(yashkt) : Test that we do not use this special case if the we have set
+  // TODO(yashkt) : Test that we do not use this special case if we have set
   // the lb policy from the loadBalancingConfig field
   bool found_balancer_address = false;
   for (size_t i = 0; i < resolver_result.addresses.size(); ++i) {
