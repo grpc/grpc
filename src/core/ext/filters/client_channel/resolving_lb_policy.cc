@@ -532,31 +532,33 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   const char* lb_policy_name = nullptr;
   RefCountedPtr<ParsedLoadBalancingConfig> lb_policy_config;
   bool service_config_changed = false;
+  char* service_config_error_string = nullptr;
   if (process_resolver_result_ != nullptr) {
     grpc_error* service_config_error = GRPC_ERROR_NONE;
     service_config_changed = process_resolver_result_(
         process_resolver_result_user_data_, result, &lb_policy_name,
         &lb_policy_config, &service_config_error);
     if (service_config_error != GRPC_ERROR_NONE) {
-      if (channelz_node() != nullptr) {
-        trace_strings.push_back(
-            gpr_strdup(grpc_error_string(service_config_error)));
-      }
+      service_config_error_string =
+          gpr_strdup(grpc_error_string(service_config_error));
       if (lb_policy_name == nullptr) {
         // Use an empty lb_policy_name as an indicator that we received an
         // invalid service config and we don't have a fallback service config.
-        return OnResolverError(service_config_error);
+        OnResolverError(service_config_error);
+      } else {
+        GRPC_ERROR_UNREF(service_config_error);
       }
-      GRPC_ERROR_UNREF(service_config_error);
     }
   } else {
     lb_policy_name = child_policy_name_.get();
     lb_policy_config = child_lb_config_;
   }
-  GPR_ASSERT(lb_policy_name != nullptr);
-  // Create or update LB policy, as needed.
-  CreateOrUpdateLbPolicyLocked(lb_policy_name, lb_policy_config,
-                               std::move(result), &trace_strings);
+  if (lb_policy_name != nullptr) {
+    gpr_log(GPR_ERROR, "%s", lb_policy_name);
+    // Create or update LB policy, as needed.
+    CreateOrUpdateLbPolicyLocked(lb_policy_name, lb_policy_config,
+                                 std::move(result), &trace_strings);
+  }
   // Add channel trace event.
   if (channelz_node() != nullptr) {
     if (service_config_changed) {
@@ -564,10 +566,15 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
       // config in the trace, at the risk of bloating the trace logs.
       trace_strings.push_back(gpr_strdup("Service config changed"));
     }
+    if (service_config_error_string != nullptr) {
+      trace_strings.push_back(service_config_error_string);
+      service_config_error_string = nullptr;
+    }
     MaybeAddTraceMessagesForAddressChangesLocked(resolution_contains_addresses,
                                                  &trace_strings);
     ConcatenateAndAddChannelTraceLocked(&trace_strings);
   }
+  gpr_free(service_config_error_string);
 }
 
 }  // namespace grpc_core

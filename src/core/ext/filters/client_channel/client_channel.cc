@@ -1242,20 +1242,20 @@ bool ChannelData::ProcessResolverResultLocked(
   bool service_config_changed = service_config != chand->saved_service_config_;
   if (service_config_changed) {
     chand->saved_service_config_ = std::move(service_config);
-    Optional<internal::ClientChannelGlobalParsedObject::RetryThrottling>
-        retry_throttle_data;
-    if (parsed_object != nullptr) {
-      chand->health_check_service_name_.reset(
-          gpr_strdup(parsed_object->health_check_service_name()));
-      retry_throttle_data = parsed_object->retry_throttling();
-    } else {
-      chand->health_check_service_name_.reset();
-    }
-    // Create service config setter to update channel state in the data
-    // plane combiner.  Destroys itself when done.
-    New<ServiceConfigSetter>(chand, retry_throttle_data,
-                             chand->saved_service_config_);
   }
+  Optional<internal::ClientChannelGlobalParsedObject::RetryThrottling>
+      retry_throttle_data;
+  if (parsed_object != nullptr) {
+    chand->health_check_service_name_.reset(
+        gpr_strdup(parsed_object->health_check_service_name()));
+    retry_throttle_data = parsed_object->retry_throttling();
+  } else {
+    chand->health_check_service_name_.reset();
+  }
+  // Create service config setter to update channel state in the data
+  // plane combiner.  Destroys itself when done.
+  New<ServiceConfigSetter>(chand, retry_throttle_data,
+                           chand->saved_service_config_);
   UniquePtr<char> processed_lb_policy_name;
   chand->ProcessLbPolicy(result, parsed_object, &processed_lb_policy_name,
                          lb_policy_config);
