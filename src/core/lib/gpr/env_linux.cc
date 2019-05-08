@@ -38,7 +38,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 
-const char* gpr_getenv_silent(const char* name, char** dst) {
+static const char* gpr_getenv_silent(const char* name, char** dst) {
   const char* insecure_func_used = nullptr;
   char* result = nullptr;
 #if defined(GPR_BACKWARDS_COMPATIBILITY_MODE)

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_DNS_DNS_RESOLVER_SELECTION_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_DNS_DNS_RESOLVER_SELECTION_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_DNS_RESOLVER_SELECTION_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_DNS_RESOLVER_SELECTION_H
 
 #include <grpc/support/port_platform.h>
 
@@ -25,4 +25,4 @@
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_dns_resolver);
 
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_DNS_DNS_RESOLVER_SELECTION_H
+#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_DNS_RESOLVER_SELECTION_H
