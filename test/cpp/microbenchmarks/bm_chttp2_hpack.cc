@@ -36,8 +36,6 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
-auto& force_library_initialization = Library::get();
-
 static grpc_slice MakeSlice(std::vector<uint8_t> bytes) {
   grpc_slice s = grpc_slice_malloc(bytes.size());
   uint8_t* p = GRPC_SLICE_START_PTR(s);
@@ -928,6 +926,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();

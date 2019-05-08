@@ -1206,6 +1206,8 @@ error_details_test: $(BINDIR)/$(CONFIG)/error_details_test
 exception_test: $(BINDIR)/$(CONFIG)/exception_test
 filter_end2end_test: $(BINDIR)/$(CONFIG)/filter_end2end_test
 generic_end2end_test: $(BINDIR)/$(CONFIG)/generic_end2end_test
+global_config_env_test: $(BINDIR)/$(CONFIG)/global_config_env_test
+global_config_test: $(BINDIR)/$(CONFIG)/global_config_test
 golden_file_test: $(BINDIR)/$(CONFIG)/golden_file_test
 grpc_alts_credentials_options_test: $(BINDIR)/$(CONFIG)/grpc_alts_credentials_options_test
 grpc_cli: $(BINDIR)/$(CONFIG)/grpc_cli
@@ -1683,6 +1685,8 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/exception_test \
   $(BINDIR)/$(CONFIG)/filter_end2end_test \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
+  $(BINDIR)/$(CONFIG)/global_config_env_test \
+  $(BINDIR)/$(CONFIG)/global_config_test \
   $(BINDIR)/$(CONFIG)/golden_file_test \
   $(BINDIR)/$(CONFIG)/grpc_alts_credentials_options_test \
   $(BINDIR)/$(CONFIG)/grpc_cli \
@@ -1828,6 +1832,8 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/exception_test \
   $(BINDIR)/$(CONFIG)/filter_end2end_test \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
+  $(BINDIR)/$(CONFIG)/global_config_env_test \
+  $(BINDIR)/$(CONFIG)/global_config_test \
   $(BINDIR)/$(CONFIG)/golden_file_test \
   $(BINDIR)/$(CONFIG)/grpc_alts_credentials_options_test \
   $(BINDIR)/$(CONFIG)/grpc_cli \
@@ -2321,6 +2327,10 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/filter_end2end_test || ( echo test filter_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing generic_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/generic_end2end_test || ( echo test generic_end2end_test failed ; exit 1 )
+	$(E) "[RUN]     Testing global_config_env_test"
+	$(Q) $(BINDIR)/$(CONFIG)/global_config_env_test || ( echo test global_config_env_test failed ; exit 1 )
+	$(E) "[RUN]     Testing global_config_test"
+	$(Q) $(BINDIR)/$(CONFIG)/global_config_test || ( echo test global_config_test failed ; exit 1 )
 	$(E) "[RUN]     Testing golden_file_test"
 	$(Q) $(BINDIR)/$(CONFIG)/golden_file_test || ( echo test golden_file_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_alts_credentials_options_test"
@@ -3359,6 +3369,7 @@ LIBGPR_SRC = \
     src/core/lib/gpr/wrap_memcpy.cc \
     src/core/lib/gprpp/arena.cc \
     src/core/lib/gprpp/fork.cc \
+    src/core/lib/gprpp/global_config_env.cc \
     src/core/lib/gprpp/thd_posix.cc \
     src/core/lib/gprpp/thd_windows.cc \
     src/core/lib/profiling/basic_timers.cc \
@@ -3754,10 +3765,13 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
     src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
@@ -5095,10 +5109,13 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/inproc/inproc_transport.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
     src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
@@ -16403,6 +16420,92 @@ deps_generic_end2end_test: $(GENERIC_END2END_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(GENERIC_END2END_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+GLOBAL_CONFIG_ENV_TEST_SRC = \
+    test/core/gprpp/global_config_env_test.cc \
+
+GLOBAL_CONFIG_ENV_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GLOBAL_CONFIG_ENV_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/global_config_env_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/global_config_env_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/global_config_env_test: $(PROTOBUF_DEP) $(GLOBAL_CONFIG_ENV_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(GLOBAL_CONFIG_ENV_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/global_config_env_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/global_config_env_test.o:  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a
+
+deps_global_config_env_test: $(GLOBAL_CONFIG_ENV_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GLOBAL_CONFIG_ENV_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+GLOBAL_CONFIG_TEST_SRC = \
+    test/core/gprpp/global_config_test.cc \
+
+GLOBAL_CONFIG_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GLOBAL_CONFIG_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/global_config_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/global_config_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/global_config_test: $(PROTOBUF_DEP) $(GLOBAL_CONFIG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(GLOBAL_CONFIG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/global_config_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/global_config_test.o:  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a
+
+deps_global_config_test: $(GLOBAL_CONFIG_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GLOBAL_CONFIG_TEST_OBJS:.o=.dep)
 endif
 endif
 

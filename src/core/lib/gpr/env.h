@@ -40,4 +40,7 @@ void gpr_setenv(const char* name, const char* value);
    level of logging. So DO NOT USE THIS. */
 const char* gpr_getenv_silent(const char* name, char** dst);
 
+/* Deletes the variable name from the environment. */
+void gpr_unsetenv(const char* name);
+
 #endif /* GRPC_CORE_LIB_GPR_ENV_H */
