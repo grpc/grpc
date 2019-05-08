@@ -1265,8 +1265,12 @@ bool ChannelData::ProcessResolverResultLocked(
        strcmp(service_config->service_config_json(),
               chand->saved_service_config_->service_config_json()) != 0);
   if (service_config_changed) {
-    service_config_json.reset(
-        gpr_strdup(service_config->service_config_json()));
+    if (service_config != nullptr) {
+      service_config_json.reset(
+          gpr_strdup(service_config->service_config_json()));
+    } else {
+      service_config_json.reset(gpr_strdup(""));
+    }
     if (grpc_client_channel_routing_trace.enabled()) {
       gpr_log(GPR_INFO, "chand=%p: resolver returned service config: \"%s\"",
               chand, service_config_json.get());
