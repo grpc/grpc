@@ -136,7 +136,11 @@ extern const char *kCFStreamVarName;
   return GRPCTransportTypeChttp2BoringSSL;
 }
 
-- (void)testNetworkFlapWithV2API {
+- (int)getRandomNumberBetween:(int)min max:(int)max {
+  return min + arc4random_uniform((max - min + 1));
+}
+
+- (void)testNetworkFlapOnUnaryCallWithV2API {
   NSMutableArray *completeExpectations = [NSMutableArray array];
   NSMutableArray *calls = [NSMutableArray array];
   int num_rpcs = 100;
@@ -175,6 +179,7 @@ extern const char *kCFStreamVarName;
                                            UTF8String]);
                                        address_removed = YES;
                                      } else if (error != nil && !address_readded) {
+                                       XCTAssertTrue(address_removed);
                                        system([
                                            [NSString stringWithFormat:@"sudo ifconfig lo0 alias %@",
                                                                       [[self class] hostAddress]]
@@ -196,7 +201,255 @@ extern const char *kCFStreamVarName;
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
-- (void)testNetworkFlapWithV1API {
+- (void)testNetworkFlapOnClientStreamingCallWithV2API {
+  NSMutableArray *completeExpectations = [NSMutableArray array];
+  NSMutableArray *calls = [NSMutableArray array];
+  int num_rpcs = 100;
+  __block BOOL address_removed = FALSE;
+  __block BOOL address_readded = FALSE;
+  dispatch_queue_t q = dispatch_queue_create(NULL, DISPATCH_QUEUE_CONCURRENT);
+  for (int i = 0; i < num_rpcs; ++i) {
+    [completeExpectations
+        addObject:[self expectationWithDescription:
+                            [NSString stringWithFormat:@"Received trailer for RPC %d", i]]];
+
+    GRPCStreamingProtoCall *call = [_service
+        streamingInputCallWithResponseHandler:
+            [[MacTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+                messageCallback:^(id message) {
+                  if (message) {
+                    RMTStreamingInputCallResponse *expectedResponse =
+                        [RMTStreamingInputCallResponse message];
+                    expectedResponse.aggregatedPayloadSize = 27190;
+                    XCTAssertEqualObjects(message, expectedResponse);
+                  }
+                }
+                closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                  @synchronized(self) {
+                    if (error == nil && !address_removed) {
+                      system([[NSString stringWithFormat:@"sudo ifconfig lo0 -alias %@",
+                                                         [[self class] hostAddress]] UTF8String]);
+                      address_removed = YES;
+                    } else if (error != nil && !address_readded) {
+                      XCTAssertTrue(address_removed);
+                      system([[NSString stringWithFormat:@"sudo ifconfig lo0 alias %@",
+                                                         [[self class] hostAddress]] UTF8String]);
+                      address_readded = YES;
+                    }
+                  }
+                  [completeExpectations[i] fulfill];
+                }]
+                                  callOptions:nil];
+    [calls addObject:call];
+  }
+
+  for (int i = 0; i < num_rpcs; ++i) {
+    dispatch_async(q, ^{
+      GRPCStreamingProtoCall *call = calls[i];
+      [call start];
+      RMTStreamingInputCallRequest *request1 = [RMTStreamingInputCallRequest message];
+      request1.payload.body = [NSMutableData dataWithLength:27182];
+      RMTStreamingInputCallRequest *request2 = [RMTStreamingInputCallRequest message];
+      request2.payload.body = [NSMutableData dataWithLength:8];
+
+      [call writeMessage:request1];
+      [NSThread sleepForTimeInterval:0.1f];
+      [call writeMessage:request2];
+      [call finish];
+    });
+  }
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
+- (void)testNetworkFlapOnServerStreamingCallWithV2API {
+  NSMutableArray *completeExpectations = [NSMutableArray array];
+  NSMutableArray *calls = [NSMutableArray array];
+  int num_rpcs = 100;
+  __block BOOL address_removed = FALSE;
+  __block BOOL address_readded = FALSE;
+  dispatch_queue_t q = dispatch_queue_create(NULL, DISPATCH_QUEUE_CONCURRENT);
+  for (int i = 0; i < num_rpcs; ++i) {
+    [completeExpectations
+        addObject:[self expectationWithDescription:
+                            [NSString stringWithFormat:@"Received trailer for RPC %d", i]]];
+
+    RMTStreamingOutputCallRequest *request = [RMTStreamingOutputCallRequest message];
+    for (int i = 0; i < 5; i++) {
+      RMTResponseParameters *parameters = [RMTResponseParameters message];
+      parameters.size = 10000;
+      [request.responseParametersArray addObject:parameters];
+    }
+
+    request.payload.body = [NSMutableData dataWithLength:100];
+
+    GRPCUnaryProtoCall *call = [_service
+        streamingOutputCallWithMessage:request
+                       responseHandler:
+                           [[MacTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+                               messageCallback:^(id message) {
+                                 if (message) {
+                                   RMTStreamingOutputCallResponse *expectedResponse =
+                                       [RMTStreamingOutputCallResponse message];
+                                   expectedResponse.payload.body =
+                                       [NSMutableData dataWithLength:10000];
+                                   XCTAssertEqualObjects(message, expectedResponse);
+                                 }
+                               }
+                               closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                                 @synchronized(self) {
+                                   if (error == nil && !address_removed) {
+                                     system([[NSString
+                                         stringWithFormat:@"sudo ifconfig lo0 -alias %@",
+                                                          [[self class] hostAddress]] UTF8String]);
+                                     address_removed = YES;
+                                   } else if (error != nil && !address_readded) {
+                                     XCTAssertTrue(address_removed);
+                                     system([[NSString
+                                         stringWithFormat:@"sudo ifconfig lo0 alias %@",
+                                                          [[self class] hostAddress]] UTF8String]);
+                                     address_readded = YES;
+                                   }
+                                 }
+                                 [completeExpectations[i] fulfill];
+                               }]
+                           callOptions:nil];
+    [calls addObject:call];
+  }
+
+  for (int i = 0; i < num_rpcs; ++i) {
+    dispatch_async(q, ^{
+      GRPCStreamingProtoCall *call = calls[i];
+      [call start];
+    });
+  }
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
+- (void)testNetworkFlapOnHalfDuplexCallWithV2API {
+  NSMutableArray *completeExpectations = [NSMutableArray array];
+  NSMutableArray *calls = [NSMutableArray array];
+  int num_rpcs = 100;
+  __block BOOL address_removed = FALSE;
+  __block BOOL address_readded = FALSE;
+  dispatch_queue_t q = dispatch_queue_create(NULL, DISPATCH_QUEUE_CONCURRENT);
+  for (int i = 0; i < num_rpcs; ++i) {
+    [completeExpectations
+        addObject:[self expectationWithDescription:
+                            [NSString stringWithFormat:@"Received trailer for RPC %d", i]]];
+
+    GRPCStreamingProtoCall *call = [_service
+        halfDuplexCallWithResponseHandler:
+            [[MacTestsBlockCallbacks alloc]
+                initWithInitialMetadataCallback:nil
+                                messageCallback:nil
+                                  closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                                    @synchronized(self) {
+                                      if (error == nil && !address_removed) {
+                                        system([[NSString
+                                            stringWithFormat:@"sudo ifconfig lo0 -alias %@",
+                                                             [[self class] hostAddress]]
+                                            UTF8String]);
+                                        address_removed = YES;
+                                      } else if (error != nil && !address_readded) {
+                                        XCTAssertTrue(address_removed);
+                                        system([[NSString
+                                            stringWithFormat:@"sudo ifconfig lo0 alias %@",
+                                                             [[self class] hostAddress]]
+                                            UTF8String]);
+                                        address_readded = YES;
+                                      }
+                                    }
+                                    [completeExpectations[i] fulfill];
+                                  }]
+                              callOptions:nil];
+    [calls addObject:call];
+  }
+
+  for (int i = 0; i < num_rpcs; ++i) {
+    dispatch_async(q, ^{
+      GRPCStreamingProtoCall *call = calls[i];
+      [call start];
+      RMTStreamingOutputCallRequest *request1 = [RMTStreamingOutputCallRequest message];
+      RMTStreamingOutputCallRequest *request2 = [RMTStreamingOutputCallRequest message];
+      for (int i = 0; i < 5; i++) {
+        RMTResponseParameters *parameters = [RMTResponseParameters message];
+        parameters.size = 1000;
+        [request1.responseParametersArray addObject:parameters];
+        [request2.responseParametersArray addObject:parameters];
+      }
+
+      request1.payload.body = [NSMutableData dataWithLength:100];
+      request2.payload.body = [NSMutableData dataWithLength:100];
+
+      [call writeMessage:request1];
+      [NSThread sleepForTimeInterval:0.1f];
+      [call writeMessage:request2];
+      [call finish];
+    });
+  }
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
+- (void)testNetworkFlapOnFullDuplexCallWithV2API {
+  NSMutableArray *completeExpectations = [NSMutableArray array];
+  NSMutableArray *calls = [NSMutableArray array];
+  int num_rpcs = 100;
+  __block BOOL address_removed = FALSE;
+  __block BOOL address_readded = FALSE;
+  dispatch_queue_t q = dispatch_queue_create(NULL, DISPATCH_QUEUE_CONCURRENT);
+  for (int i = 0; i < num_rpcs; ++i) {
+    [completeExpectations
+        addObject:[self expectationWithDescription:
+                            [NSString stringWithFormat:@"Received trailer for RPC %d", i]]];
+
+    GRPCStreamingProtoCall *call = [_service
+        fullDuplexCallWithResponseHandler:
+            [[MacTestsBlockCallbacks alloc]
+                initWithInitialMetadataCallback:nil
+                                messageCallback:nil
+                                  closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                                    @synchronized(self) {
+                                      if (error == nil && !address_removed) {
+                                        system([[NSString
+                                            stringWithFormat:@"sudo ifconfig lo0 -alias %@",
+                                                             [[self class] hostAddress]]
+                                            UTF8String]);
+                                        address_removed = YES;
+                                      } else if (error != nil && !address_readded) {
+                                        XCTAssertTrue(address_removed);
+                                        system([[NSString
+                                            stringWithFormat:@"sudo ifconfig lo0 alias %@",
+                                                             [[self class] hostAddress]]
+                                            UTF8String]);
+                                        address_readded = YES;
+                                      }
+                                    }
+                                    [completeExpectations[i] fulfill];
+                                  }]
+                              callOptions:nil];
+    [calls addObject:call];
+  }
+
+  for (int i = 0; i < num_rpcs; ++i) {
+    dispatch_async(q, ^{
+      GRPCStreamingProtoCall *call = calls[i];
+      [call start];
+
+      RMTResponseParameters *parameters = [RMTResponseParameters message];
+      parameters.size = 1000;
+      for (int i = 0; i < 5; i++) {
+        RMTStreamingOutputCallRequest *request = [RMTStreamingOutputCallRequest message];
+        [request.responseParametersArray addObject:parameters];
+        request.payload.body = [NSMutableData dataWithLength:100];
+        [call writeMessage:request];
+      }
+      [call finish];
+    });
+  }
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
+- (void)testNetworkFlapOnUnaryCallWithV1API {
   NSMutableArray *completeExpectations = [NSMutableArray array];
   int num_rpcs = 100;
   __block BOOL address_removed = FALSE;
@@ -220,6 +473,7 @@ extern const char *kCFStreamVarName;
                                      UTF8String]);
                                  address_removed = YES;
                                } else if (error != nil && !address_readded) {
+                                 XCTAssertTrue(address_removed);
                                  system([[NSString stringWithFormat:@"sudo ifconfig lo0 alias %@",
                                                                     [[self class] hostAddress]]
                                      UTF8String]);
@@ -232,6 +486,110 @@ extern const char *kCFStreamVarName;
 
     [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
   }
+}
+
+- (void)testTimeoutOnFullDuplexCallWithV2API {
+  NSMutableArray *completeExpectations = [NSMutableArray array];
+  NSMutableArray *calls = [NSMutableArray array];
+  int num_rpcs = 100;
+  dispatch_queue_t q = dispatch_queue_create(NULL, DISPATCH_QUEUE_CONCURRENT);
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.transportType = [[self class] transportType];
+  options.PEMRootCertificates = [[self class] PEMRootCertificates];
+  options.hostNameOverride = [[self class] hostNameOverride];
+  options.timeout = 0.3;
+  for (int i = 0; i < num_rpcs; ++i) {
+    [completeExpectations
+        addObject:[self expectationWithDescription:
+                            [NSString stringWithFormat:@"Received trailer for RPC %d", i]]];
+
+    GRPCStreamingProtoCall *call = [_service
+        fullDuplexCallWithResponseHandler:
+            [[MacTestsBlockCallbacks alloc]
+                initWithInitialMetadataCallback:nil
+                                messageCallback:nil
+                                  closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                                    if (error != nil) {
+                                      XCTAssertEqual(error.code, GRPC_STATUS_DEADLINE_EXCEEDED);
+                                    }
+                                    [completeExpectations[i] fulfill];
+                                  }]
+                              callOptions:options];
+    [calls addObject:call];
+  }
+
+  for (int i = 0; i < num_rpcs; ++i) {
+    dispatch_async(q, ^{
+      GRPCStreamingProtoCall *call = calls[i];
+      [call start];
+      RMTStreamingOutputCallRequest *request = [RMTStreamingOutputCallRequest message];
+      RMTResponseParameters *parameters = [RMTResponseParameters message];
+      parameters.size = 1000;
+      // delay response by 100-200 milliseconds
+      parameters.intervalUs = [self getRandomNumberBetween:100 * 1000 max:200 * 1000];
+      [request.responseParametersArray addObject:parameters];
+      request.payload.body = [NSMutableData dataWithLength:100];
+
+      [call writeMessage:request];
+      [call writeMessage:request];
+      [call finish];
+    });
+  }
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
+- (void)testServerStreamingCallSlowClientWithV2API {
+  NSMutableArray *completeExpectations = [NSMutableArray array];
+  NSMutableArray *calls = [NSMutableArray array];
+  int num_rpcs = 100;
+  dispatch_queue_t q = dispatch_queue_create(NULL, DISPATCH_QUEUE_CONCURRENT);
+  for (int i = 0; i < num_rpcs; ++i) {
+    [completeExpectations
+        addObject:[self expectationWithDescription:
+                            [NSString stringWithFormat:@"Received trailer for RPC %d", i]]];
+
+    RMTStreamingOutputCallRequest *request = [RMTStreamingOutputCallRequest message];
+    for (int i = 0; i < 5; i++) {
+      RMTResponseParameters *parameters = [RMTResponseParameters message];
+      parameters.size = 10000;
+      [request.responseParametersArray addObject:parameters];
+      [request.responseParametersArray addObject:parameters];
+      [request.responseParametersArray addObject:parameters];
+      [request.responseParametersArray addObject:parameters];
+      [request.responseParametersArray addObject:parameters];
+    }
+
+    request.payload.body = [NSMutableData dataWithLength:100];
+
+    GRPCUnaryProtoCall *call = [_service
+        streamingOutputCallWithMessage:request
+                       responseHandler:[[MacTestsBlockCallbacks alloc]
+                                           initWithInitialMetadataCallback:nil
+                                           messageCallback:^(id message) {
+                                             RMTStreamingOutputCallResponse *expectedResponse =
+                                                 [RMTStreamingOutputCallResponse message];
+                                             expectedResponse.payload.body =
+                                                 [NSMutableData dataWithLength:10000];
+                                             XCTAssertEqualObjects(message, expectedResponse);
+                                             // inject a delay
+                                             [NSThread sleepForTimeInterval:0.5f];
+                                           }
+                                           closeCallback:^(NSDictionary *trailingMetadata,
+                                                           NSError *error) {
+                                             XCTAssertNil(error, @"Unexpected error: %@", error);
+                                             [completeExpectations[i] fulfill];
+                                           }]
+                           callOptions:nil];
+    [calls addObject:call];
+  }
+
+  for (int i = 0; i < num_rpcs; ++i) {
+    dispatch_async(q, ^{
+      GRPCStreamingProtoCall *call = calls[i];
+      [call start];
+    });
+  }
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 @end

@@ -21,6 +21,10 @@
 #import <RemoteTest/Messages.pbobjc.h>
 #import <XCTest/XCTest.h>
 
+#import "../../GRPCClient/private/GRPCChannel.h"
+#import "../../GRPCClient/private/GRPCChannelPool.h"
+#import "../../GRPCClient/private/GRPCWrappedCall.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
@@ -48,12 +52,35 @@ static const int kSimpleDataLength = 100;
 static const NSTimeInterval kTestTimeout = 8;
 static const NSTimeInterval kInvertedTimeout = 2;
 
-// Reveal the _class ivar for testing access
+// Reveal the _class ivars for testing access
 @interface GRPCCall2 () {
  @public
   GRPCCall *_call;
 }
+@end
 
+@interface GRPCCall () {
+ @public
+  GRPCWrappedCall *_wrappedCall;
+}
+@end
+
+@interface GRPCWrappedCall () {
+ @public
+  GRPCPooledChannel *_pooledChannel;
+}
+@end
+
+@interface GRPCPooledChannel () {
+ @public
+  GRPCChannel *_wrappedChannel;
+}
+@end
+
+@interface GRPCChannel () {
+ @public
+  grpc_channel *_unmanagedChannel;
+}
 @end
 
 // Convenience class to use blocks as callbacks
@@ -179,7 +206,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
                                  closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
                                    trailing_md = trailingMetadata;
                                    if (error) {
-                                     XCTAssertEqual(error.code, 16,
+                                     XCTAssertEqual(error.code, GRPCErrorCodeUnauthenticated,
                                                     @"Finished with unexpected error: %@", error);
                                      XCTAssertEqualObjects(init_md,
                                                            error.userInfo[kGRPCHeadersKey]);
@@ -759,7 +786,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
                                  }
                                  closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
                                    XCTAssertNotNil(error, @"Expecting non-nil error");
-                                   XCTAssertEqual(error.code, 2);
+                                   XCTAssertEqual(error.code, GRPCErrorCodeUnknown);
                                    [completion fulfill];
                                  }]
                  callOptions:options];
@@ -767,6 +794,259 @@ static const NSTimeInterval kInvertedTimeout = 2;
   [call start];
   [call finish];
 
+  [self waitForExpectationsWithTimeout:kTestTimeout handler:nil];
+}
+
+- (void)testAdditionalChannelArgs {
+  __weak XCTestExpectation *completion = [self expectationWithDescription:@"RPC completed."];
+
+  GRPCRequestOptions *requestOptions =
+      [[GRPCRequestOptions alloc] initWithHost:kHostAddress
+                                          path:kUnaryCallMethod.HTTPPath
+                                        safety:GRPCCallSafetyDefault];
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  // set max message length = 1 byte.
+  options.additionalChannelArgs =
+      [NSDictionary dictionaryWithObjectsAndKeys:@1, @GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, nil];
+  options.transportType = GRPCTransportTypeInsecure;
+
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  request.payload.body = [NSMutableData dataWithLength:options.responseSizeLimit];
+
+  GRPCCall2 *call = [[GRPCCall2 alloc]
+      initWithRequestOptions:requestOptions
+             responseHandler:[[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+                                 messageCallback:^(NSData *data) {
+                                   XCTFail(@"Received unexpected message");
+                                 }
+                                 closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                                   XCTAssertNotNil(error, @"Expecting non-nil error");
+                                   NSLog(@"Got error: %@", error);
+                                   XCTAssertEqual(error.code, GRPCErrorCodeResourceExhausted,
+                                                  @"Finished with unexpected error: %@", error);
+
+                                   [completion fulfill];
+                                 }]
+                 callOptions:options];
+  [call writeData:[request data]];
+  [call start];
+  [call finish];
+
+  [self waitForExpectationsWithTimeout:kTestTimeout handler:nil];
+}
+
+- (void)testChannelReuseIdentical {
+  __weak XCTestExpectation *completion1 = [self expectationWithDescription:@"RPC1 completed."];
+  __weak XCTestExpectation *completion2 = [self expectationWithDescription:@"RPC2 completed."];
+
+  GRPCRequestOptions *requestOptions =
+      [[GRPCRequestOptions alloc] initWithHost:kHostAddress
+                                          path:kUnaryCallMethod.HTTPPath
+                                        safety:GRPCCallSafetyDefault];
+  GRPCMutableCallOptions *callOptions = [[GRPCMutableCallOptions alloc] init];
+  callOptions.transportType = GRPCTransportTypeInsecure;
+  GRPCCall2 *call1 = [[GRPCCall2 alloc]
+      initWithRequestOptions:requestOptions
+             responseHandler:[[ClientTestsBlockCallbacks alloc]
+                                 initWithInitialMetadataCallback:nil
+                                                 messageCallback:nil
+                                                   closeCallback:^(NSDictionary *trailingMetadata,
+                                                                   NSError *error) {
+                                                     [completion1 fulfill];
+                                                   }]
+                 callOptions:callOptions];
+  GRPCCall2 *call2 = [[GRPCCall2 alloc]
+      initWithRequestOptions:requestOptions
+             responseHandler:[[ClientTestsBlockCallbacks alloc]
+                                 initWithInitialMetadataCallback:nil
+                                                 messageCallback:nil
+                                                   closeCallback:^(NSDictionary *trailingMetadata,
+                                                                   NSError *error) {
+                                                     [completion2 fulfill];
+                                                   }]
+                 callOptions:callOptions];
+  [call1 start];
+  [call2 start];
+  [call1 finish];
+  [call2 finish];
+  XCTAssertEqual(call1->_call->_wrappedCall->_pooledChannel->_wrappedChannel->_unmanagedChannel,
+                 call2->_call->_wrappedCall->_pooledChannel->_wrappedChannel->_unmanagedChannel);
+  [self waitForExpectationsWithTimeout:kTestTimeout handler:nil];
+}
+
+- (void)testChannelReuseDifferentPath {
+  __weak XCTestExpectation *completion1 = [self expectationWithDescription:@"RPC1 completed."];
+  __weak XCTestExpectation *completion2 = [self expectationWithDescription:@"RPC2 completed."];
+
+  GRPCRequestOptions *requestOptions1 =
+      [[GRPCRequestOptions alloc] initWithHost:kHostAddress
+                                          path:kUnaryCallMethod.HTTPPath
+                                        safety:GRPCCallSafetyDefault];
+  GRPCRequestOptions *requestOptions2 =
+      [[GRPCRequestOptions alloc] initWithHost:kHostAddress
+                                          path:kEmptyCallMethod.HTTPPath
+                                        safety:GRPCCallSafetyDefault];
+
+  GRPCMutableCallOptions *callOptions = [[GRPCMutableCallOptions alloc] init];
+  callOptions.transportType = GRPCTransportTypeInsecure;
+  GRPCCall2 *call1 = [[GRPCCall2 alloc]
+      initWithRequestOptions:requestOptions1
+             responseHandler:[[ClientTestsBlockCallbacks alloc]
+                                 initWithInitialMetadataCallback:nil
+                                                 messageCallback:nil
+                                                   closeCallback:^(NSDictionary *trailingMetadata,
+                                                                   NSError *error) {
+                                                     [completion1 fulfill];
+                                                   }]
+                 callOptions:callOptions];
+  GRPCCall2 *call2 = [[GRPCCall2 alloc]
+      initWithRequestOptions:requestOptions2
+             responseHandler:[[ClientTestsBlockCallbacks alloc]
+                                 initWithInitialMetadataCallback:nil
+                                                 messageCallback:nil
+                                                   closeCallback:^(NSDictionary *trailingMetadata,
+                                                                   NSError *error) {
+                                                     [completion2 fulfill];
+                                                   }]
+                 callOptions:callOptions];
+  [call1 start];
+  [call2 start];
+  [call1 finish];
+  [call2 finish];
+  XCTAssertEqual(call1->_call->_wrappedCall->_pooledChannel->_wrappedChannel->_unmanagedChannel,
+                 call2->_call->_wrappedCall->_pooledChannel->_wrappedChannel->_unmanagedChannel);
+  [self waitForExpectationsWithTimeout:kTestTimeout handler:nil];
+}
+
+- (void)testChannelReuseDifferentCallSafety {
+  __weak XCTestExpectation *completion1 = [self expectationWithDescription:@"RPC1 completed."];
+  __weak XCTestExpectation *completion2 = [self expectationWithDescription:@"RPC2 completed."];
+
+  GRPCRequestOptions *requestOptions1 =
+      [[GRPCRequestOptions alloc] initWithHost:kHostAddress
+                                          path:kUnaryCallMethod.HTTPPath
+                                        safety:GRPCCallSafetyDefault];
+  GRPCRequestOptions *requestOptions2 =
+      [[GRPCRequestOptions alloc] initWithHost:kHostAddress
+                                          path:kUnaryCallMethod.HTTPPath
+                                        safety:GRPCCallSafetyIdempotentRequest];
+
+  GRPCMutableCallOptions *callOptions = [[GRPCMutableCallOptions alloc] init];
+  callOptions.transportType = GRPCTransportTypeInsecure;
+  GRPCCall2 *call1 = [[GRPCCall2 alloc]
+      initWithRequestOptions:requestOptions1
+             responseHandler:[[ClientTestsBlockCallbacks alloc]
+                                 initWithInitialMetadataCallback:nil
+                                                 messageCallback:nil
+                                                   closeCallback:^(NSDictionary *trailingMetadata,
+                                                                   NSError *error) {
+                                                     [completion1 fulfill];
+                                                   }]
+                 callOptions:callOptions];
+  GRPCCall2 *call2 = [[GRPCCall2 alloc]
+      initWithRequestOptions:requestOptions2
+             responseHandler:[[ClientTestsBlockCallbacks alloc]
+                                 initWithInitialMetadataCallback:nil
+                                                 messageCallback:nil
+                                                   closeCallback:^(NSDictionary *trailingMetadata,
+                                                                   NSError *error) {
+                                                     [completion2 fulfill];
+                                                   }]
+                 callOptions:callOptions];
+  [call1 start];
+  [call2 start];
+  [call1 finish];
+  [call2 finish];
+  XCTAssertEqual(call1->_call->_wrappedCall->_pooledChannel->_wrappedChannel->_unmanagedChannel,
+                 call2->_call->_wrappedCall->_pooledChannel->_wrappedChannel->_unmanagedChannel);
+  [self waitForExpectationsWithTimeout:kTestTimeout handler:nil];
+}
+
+- (void)testChannelReuseDifferentHost {
+  __weak XCTestExpectation *completion1 = [self expectationWithDescription:@"RPC1 completed."];
+  __weak XCTestExpectation *completion2 = [self expectationWithDescription:@"RPC2 completed."];
+
+  GRPCRequestOptions *requestOptions1 =
+      [[GRPCRequestOptions alloc] initWithHost:@"::1:5050"
+                                          path:kUnaryCallMethod.HTTPPath
+                                        safety:GRPCCallSafetyDefault];
+  GRPCRequestOptions *requestOptions2 =
+      [[GRPCRequestOptions alloc] initWithHost:@"127.0.0.1:5050"
+                                          path:kEmptyCallMethod.HTTPPath
+                                        safety:GRPCCallSafetyDefault];
+
+  GRPCMutableCallOptions *callOptions = [[GRPCMutableCallOptions alloc] init];
+  callOptions.transportType = GRPCTransportTypeInsecure;
+
+  GRPCCall2 *call1 = [[GRPCCall2 alloc]
+      initWithRequestOptions:requestOptions1
+             responseHandler:[[ClientTestsBlockCallbacks alloc]
+                                 initWithInitialMetadataCallback:nil
+                                                 messageCallback:nil
+                                                   closeCallback:^(NSDictionary *trailingMetadata,
+                                                                   NSError *error) {
+                                                     [completion1 fulfill];
+                                                   }]
+                 callOptions:callOptions];
+  GRPCCall2 *call2 = [[GRPCCall2 alloc]
+      initWithRequestOptions:requestOptions2
+             responseHandler:[[ClientTestsBlockCallbacks alloc]
+                                 initWithInitialMetadataCallback:nil
+                                                 messageCallback:nil
+                                                   closeCallback:^(NSDictionary *trailingMetadata,
+                                                                   NSError *error) {
+                                                     [completion2 fulfill];
+                                                   }]
+                 callOptions:callOptions];
+  [call1 start];
+  [call2 start];
+  [call1 finish];
+  [call2 finish];
+  XCTAssertNotEqual(call1->_call->_wrappedCall->_pooledChannel->_wrappedChannel->_unmanagedChannel,
+                    call2->_call->_wrappedCall->_pooledChannel->_wrappedChannel->_unmanagedChannel);
+  [self waitForExpectationsWithTimeout:kTestTimeout handler:nil];
+}
+
+- (void)testChannelReuseDifferentChannelArgs {
+  __weak XCTestExpectation *completion1 = [self expectationWithDescription:@"RPC1 completed."];
+  __weak XCTestExpectation *completion2 = [self expectationWithDescription:@"RPC2 completed."];
+
+  GRPCRequestOptions *requestOptions =
+      [[GRPCRequestOptions alloc] initWithHost:kHostAddress
+                                          path:kUnaryCallMethod.HTTPPath
+                                        safety:GRPCCallSafetyDefault];
+  GRPCMutableCallOptions *callOptions1 = [[GRPCMutableCallOptions alloc] init];
+  callOptions1.transportType = GRPCTransportTypeInsecure;
+  GRPCMutableCallOptions *callOptions2 = [[GRPCMutableCallOptions alloc] init];
+  callOptions2.transportType = GRPCTransportTypeInsecure;
+  callOptions2.channelID = 2;
+
+  GRPCCall2 *call1 = [[GRPCCall2 alloc]
+      initWithRequestOptions:requestOptions
+             responseHandler:[[ClientTestsBlockCallbacks alloc]
+                                 initWithInitialMetadataCallback:nil
+                                                 messageCallback:nil
+                                                   closeCallback:^(NSDictionary *trailingMetadata,
+                                                                   NSError *error) {
+                                                     [completion1 fulfill];
+                                                   }]
+                 callOptions:callOptions1];
+  GRPCCall2 *call2 = [[GRPCCall2 alloc]
+      initWithRequestOptions:requestOptions
+             responseHandler:[[ClientTestsBlockCallbacks alloc]
+                                 initWithInitialMetadataCallback:nil
+                                                 messageCallback:nil
+                                                   closeCallback:^(NSDictionary *trailingMetadata,
+                                                                   NSError *error) {
+                                                     [completion2 fulfill];
+                                                   }]
+                 callOptions:callOptions2];
+  [call1 start];
+  [call2 start];
+  [call1 finish];
+  [call2 finish];
+  XCTAssertNotEqual(call1->_call->_wrappedCall->_pooledChannel->_wrappedChannel->_unmanagedChannel,
+                    call2->_call->_wrappedCall->_pooledChannel->_wrappedChannel->_unmanagedChannel);
   [self waitForExpectationsWithTimeout:kTestTimeout handler:nil];
 }
 
