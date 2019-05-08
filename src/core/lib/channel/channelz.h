@@ -111,7 +111,6 @@ class BaseNode : public RefCounted<BaseNode> {
 class CallCountingHelper {
  public:
   CallCountingHelper();
-  ~CallCountingHelper();
 
   void RecordCallStarted();
   void RecordCallFailed();
@@ -124,23 +123,28 @@ class CallCountingHelper {
   // testing peer friend.
   friend class testing::CallCountingHelperPeer;
 
+  // TODO(soheil): add a proper PerCPU helper and use it here.
   struct AtomicCounterData {
-    AtomicCounterData()
-        : calls_started(0),
-          calls_succeeded(0),
-          calls_failed(0),
-          last_call_started_cycle(0) {}
+    // Define the ctors so that we can use this structure in InlinedVector.
+    AtomicCounterData() = default;
+    AtomicCounterData(const AtomicCounterData& that)
+        : calls_started(
+              that.calls_started.Load(grpc_core::MemoryOrder::RELAXED)),
+          calls_succeeded(
+              that.calls_succeeded.Load(grpc_core::MemoryOrder::RELAXED)),
+          calls_failed(that.calls_failed.Load(grpc_core::MemoryOrder::RELAXED)),
+          last_call_started_cycle(that.last_call_started_cycle.Load(
+              grpc_core::MemoryOrder::RELAXED)) {}
 
-    union {
-      struct {
-        gpr_atm calls_started;
-        gpr_atm calls_succeeded;
-        gpr_atm calls_failed;
-        gpr_atm last_call_started_cycle;
-      };
-      uint8_t cache_line[GPR_CACHELINE_SIZE];
-    };
-  };
+    grpc_core::Atomic<intptr_t> calls_started;
+    grpc_core::Atomic<intptr_t> calls_succeeded;
+    grpc_core::Atomic<intptr_t> calls_failed;
+    grpc_core::Atomic<gpr_cycle_counter> last_call_started_cycle;
+    // Make sure the size is exactly one cache line.
+    uint8_t padding[GPR_CACHELINE_SIZE - sizeof(calls_started) -
+                    sizeof(calls_succeeded) - sizeof(calls_failed) -
+                    sizeof(last_call_started_cycle)];
+  } GPR_ALIGN_STRUCT(GPR_CACHELINE_SIZE);
 
   struct CounterData {
     intptr_t calls_started = 0;
@@ -152,7 +156,7 @@ class CallCountingHelper {
   // collects the sharded data into one CounterData struct.
   void CollectData(CounterData* out);
 
-  AtomicCounterData* per_cpu_counter_data_storage_ = nullptr;
+  grpc_core::InlinedVector<AtomicCounterData, 0> per_cpu_counter_data_storage_;
   size_t num_cores_ = 0;
 };
 
