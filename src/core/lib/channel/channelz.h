@@ -134,10 +134,10 @@ class CallCountingHelper {
           last_call_started_cycle(
               that.last_call_started_cycle.Load(MemoryOrder::RELAXED)) {}
 
-    Atomic<intptr_t> calls_started;
-    Atomic<intptr_t> calls_succeeded;
-    Atomic<intptr_t> calls_failed;
-    Atomic<gpr_cycle_counter> last_call_started_cycle;
+    Atomic<intptr_t> calls_started{0};
+    Atomic<intptr_t> calls_succeeded{0};
+    Atomic<intptr_t> calls_failed{0};
+    Atomic<gpr_cycle_counter> last_call_started_cycle{0};
     // Make sure the size is exactly one cache line.
     uint8_t padding[GPR_CACHELINE_SIZE - sizeof(calls_started) -
                     sizeof(calls_succeeded) - sizeof(calls_failed) -
