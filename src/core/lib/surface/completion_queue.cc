@@ -411,14 +411,16 @@ static const cq_vtable g_cq_vtable[] = {
 
 grpc_core::TraceFlag grpc_cq_pluck_trace(false, "queue_pluck");
 
-#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)    \
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) &&        \
-      (GRPC_TRACE_FLAG_ENABLED(grpc_cq_pluck_trace) ||  \
-       (event)->type != GRPC_QUEUE_TIMEOUT)) {          \
-    char* _ev = grpc_event_string(event);               \
-    gpr_log(GPR_INFO, "RETURN_EVENT[%p]: %s", cq, _ev); \
-    gpr_free(_ev);                                      \
-  }
+#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)      \
+  do {                                                    \
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) &&        \
+        (GRPC_TRACE_FLAG_ENABLED(grpc_cq_pluck_trace) ||  \
+         (event)->type != GRPC_QUEUE_TIMEOUT)) {          \
+      char* _ev = grpc_event_string(event);               \
+      gpr_log(GPR_INFO, "RETURN_EVENT[%p]: %s", cq, _ev); \
+      gpr_free(_ev);                                      \
+    }                                                     \
+  } while (0)
 
 static void on_pollset_shutdown_done(void* cq, grpc_error* error);
 

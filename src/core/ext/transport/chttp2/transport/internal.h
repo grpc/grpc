@@ -771,10 +771,12 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
 // extern grpc_core::TraceFlag grpc_http_trace;
 // extern grpc_core::TraceFlag grpc_flowctl_trace;
 
-#define GRPC_CHTTP2_IF_TRACING(stmt)              \
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) { \
-    (stmt);                                       \
-  }
+#define GRPC_CHTTP2_IF_TRACING(stmt)                \
+  do {                                              \
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) { \
+      (stmt);                                       \
+    }                                               \
+  } while (0)
 
 void grpc_chttp2_fake_status(grpc_chttp2_transport* t,
                              grpc_chttp2_stream* stream, grpc_error* error);
