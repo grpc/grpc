@@ -102,7 +102,7 @@ class SubchannelData {
   // calling CancelConnectivityWatchLocked()).
   grpc_connectivity_state CheckConnectivityStateLocked() {
     GPR_ASSERT(pending_watcher_ == nullptr);
-    connectivity_state_ = subchannel()->CheckConnectivity(
+    connectivity_state_ = subchannel()->CheckConnectivityState(
         subchannel_list_->health_check_service_name(), &connected_subchannel_);
     return connectivity_state_;
   }
@@ -439,9 +439,7 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
 
 template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType, SubchannelDataType>::ShutdownLocked() {
-  if (pending_watcher_ != nullptr) {
-    CancelConnectivityWatchLocked("shutdown");
-  }
+  if (pending_watcher_ != nullptr) CancelConnectivityWatchLocked("shutdown");
   UnrefSubchannelLocked("shutdown");
 }
 

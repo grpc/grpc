@@ -236,8 +236,11 @@ class Subchannel {
   channelz::SubchannelNode* channelz_node();
 
   // Returns the current connectivity state of the subchannel.
+  // If health_check_service_name is non-null, the returned connectivity
+  // state will be based on the state reported by the backend for that
+  // service name.
   // If the return value is GRPC_CHANNEL_READY, also sets *connected_subchannel.
-  grpc_connectivity_state CheckConnectivity(
+  grpc_connectivity_state CheckConnectivityState(
       const char* health_check_service_name,
       RefCountedPtr<ConnectedSubchannel>* connected_subchannel);
 
@@ -287,8 +290,8 @@ class Subchannel {
    public:
     ~ConnectivityStateWatcherList() { Clear(); }
 
-    void AddLocked(UniquePtr<ConnectivityStateWatcher> watcher);
-    void RemoveLocked(ConnectivityStateWatcher* watcher);
+    void AddWatcherLocked(UniquePtr<ConnectivityStateWatcher> watcher);
+    void RemoveWatcherLocked(ConnectivityStateWatcher* watcher);
 
     // Notifies all watchers in the list about a change to state.
     void NotifyLocked(Subchannel* subchannel, grpc_connectivity_state state);
@@ -312,12 +315,12 @@ class Subchannel {
   // state READY.
   class HealthWatcherMap {
    public:
-    void AddLocked(Subchannel* subchannel,
-                   grpc_connectivity_state initial_state,
-                   UniquePtr<char> health_check_service_name,
-                   UniquePtr<ConnectivityStateWatcher> watcher);
-    void RemoveLocked(const char* health_check_service_name,
-                      ConnectivityStateWatcher* watcher);
+    void AddWatcherLocked(Subchannel* subchannel,
+                          grpc_connectivity_state initial_state,
+                          UniquePtr<char> health_check_service_name,
+                          UniquePtr<ConnectivityStateWatcher> watcher);
+    void RemoveWatcherLocked(const char* health_check_service_name,
+                             ConnectivityStateWatcher* watcher);
 
     // Called when the subchannel transitions into state READY.
     void StartHealthCheckingLocked();
@@ -325,7 +328,7 @@ class Subchannel {
     // Called when the subchannel transitions into any state other than READY.
     void StopHealthCheckingLocked(grpc_connectivity_state state);
 
-    grpc_connectivity_state CheckConnectivityLocked(
+    grpc_connectivity_state CheckConnectivityStateLocked(
         Subchannel* subchannel, const char* health_check_service_name);
 
     void ShutdownLocked();
@@ -382,7 +385,9 @@ class Subchannel {
 
   // Connectivity state tracking.
   grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
+  // The list of watchers without a health check service name.
   ConnectivityStateWatcherList watcher_list_;
+  // The map of watchers with health check service names.
   HealthWatcherMap health_watcher_map_;
 
   // Backoff state.

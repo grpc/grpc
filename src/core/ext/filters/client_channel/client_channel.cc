@@ -1131,7 +1131,7 @@ bool ChannelData::ProcessResolverResultLocked(
     gpr_log(GPR_INFO, "chand=%p: resolver returned service config: \"%s\"",
             chand, service_config_json);
   }
-  // FIXME: Eliminate this hack as part of hiding health check
+  // TODO(roth): Eliminate this hack as part of hiding health check
   // service name from LB policy API.  As part of this, change the API
   // for this function to pass in result as a const reference.
   if (resolver_result.health_check_service_name() != nullptr) {

@@ -374,13 +374,13 @@ class Subchannel::ConnectedSubchannelStateWatcher {
 // Subchannel::ConnectivityStateWatcherList
 //
 
-void Subchannel::ConnectivityStateWatcherList::AddLocked(
+void Subchannel::ConnectivityStateWatcherList::AddWatcherLocked(
     UniquePtr<ConnectivityStateWatcher> watcher) {
   watcher->next_ = head_;
   head_ = watcher.release();
 }
 
-void Subchannel::ConnectivityStateWatcherList::RemoveLocked(
+void Subchannel::ConnectivityStateWatcherList::RemoveWatcherLocked(
     ConnectivityStateWatcher* watcher) {
   for (ConnectivityStateWatcher** w = &head_; *w != nullptr; w = &(*w)->next_) {
     if (*w == watcher) {
@@ -461,11 +461,11 @@ class Subchannel::HealthWatcherMap::HealthWatcher
       watcher->OnConnectivityStateChange(state_,
                                          std::move(connected_subchannel));
     }
-    watcher_list_.AddLocked(std::move(watcher));
+    watcher_list_.AddWatcherLocked(std::move(watcher));
   }
 
   void RemoveWatcherLocked(ConnectivityStateWatcher* watcher) {
-    watcher_list_.RemoveLocked(watcher);
+    watcher_list_.RemoveWatcherLocked(watcher);
   }
 
   bool HasWatchers() const { return !watcher_list_.empty(); }
@@ -529,7 +529,7 @@ class Subchannel::HealthWatcherMap::HealthWatcher
 // Subchannel::HealthWatcherMap
 //
 
-void Subchannel::HealthWatcherMap::AddLocked(
+void Subchannel::HealthWatcherMap::AddWatcherLocked(
     Subchannel* subchannel, grpc_connectivity_state initial_state,
     UniquePtr<char> health_check_service_name,
     UniquePtr<ConnectivityStateWatcher> watcher) {
@@ -550,16 +550,14 @@ void Subchannel::HealthWatcherMap::AddLocked(
   health_watcher->AddWatcherLocked(initial_state, std::move(watcher));
 }
 
-void Subchannel::HealthWatcherMap::RemoveLocked(
+void Subchannel::HealthWatcherMap::RemoveWatcherLocked(
     const char* health_check_service_name, ConnectivityStateWatcher* watcher) {
   auto it = map_.find(health_check_service_name);
   GPR_ASSERT(it != map_.end());
   it->second->RemoveWatcherLocked(watcher);
   // If we just removed the last watcher for this service name, remove
   // the map entry.
-  if (!it->second->HasWatchers()) {
-    map_.erase(it);
-  }
+  if (!it->second->HasWatchers()) map_.erase(it);
 }
 
 void Subchannel::HealthWatcherMap::StartHealthCheckingLocked() {
@@ -575,9 +573,9 @@ void Subchannel::HealthWatcherMap::StopHealthCheckingLocked(
   }
 }
 
-grpc_connectivity_state Subchannel::HealthWatcherMap::CheckConnectivityLocked(
+grpc_connectivity_state
+Subchannel::HealthWatcherMap::CheckConnectivityStateLocked(
     Subchannel* subchannel, const char* health_check_service_name) {
-  grpc_connectivity_state state;
   auto it = map_.find(health_check_service_name);
   if (it == map_.end()) {
     // If the health check service name is not found in the map, we're
@@ -585,13 +583,11 @@ grpc_connectivity_state Subchannel::HealthWatcherMap::CheckConnectivityLocked(
     // subchannel's state without health checking is READY, report
     // CONNECTING, since that's what we'd be in as soon as we do start a
     // watch.  Otherwise, report the channel's state without health checking.
-    state = subchannel->state_;
-    if (state == GRPC_CHANNEL_READY) state = GRPC_CHANNEL_CONNECTING;
-  } else {
-    HealthWatcher* health_watcher = it->second.get();
-    state = health_watcher->state();
+    return subchannel->state_ == GRPC_CHANNEL_READY ? GRPC_CHANNEL_CONNECTING
+                                                    : subchannel->state_;
   }
-  return state;
+  HealthWatcher* health_watcher = it->second.get();
+  return health_watcher->state();
 }
 
 void Subchannel::HealthWatcherMap::ShutdownLocked() { map_.clear(); }
@@ -814,7 +810,7 @@ channelz::SubchannelNode* Subchannel::channelz_node() {
   return channelz_node_.get();
 }
 
-grpc_connectivity_state Subchannel::CheckConnectivity(
+grpc_connectivity_state Subchannel::CheckConnectivityState(
     const char* health_check_service_name,
     RefCountedPtr<ConnectedSubchannel>* connected_subchannel) {
   MutexLock lock(&mu_);
@@ -822,7 +818,7 @@ grpc_connectivity_state Subchannel::CheckConnectivity(
   if (health_check_service_name == nullptr) {
     state = state_;
   } else {
-    state = health_watcher_map_.CheckConnectivityLocked(
+    state = health_watcher_map_.CheckConnectivityStateLocked(
         this, health_check_service_name);
   }
   if (connected_subchannel != nullptr && state == GRPC_CHANNEL_READY) {
@@ -844,11 +840,11 @@ void Subchannel::WatchConnectivityState(
     if (state_ != initial_state) {
       watcher->OnConnectivityStateChange(state_, connected_subchannel_);
     }
-    watcher_list_.AddLocked(std::move(watcher));
+    watcher_list_.AddWatcherLocked(std::move(watcher));
   } else {
-    health_watcher_map_.AddLocked(this, initial_state,
-                                  std::move(health_check_service_name),
-                                  std::move(watcher));
+    health_watcher_map_.AddWatcherLocked(this, initial_state,
+                                         std::move(health_check_service_name),
+                                         std::move(watcher));
   }
 }
 
@@ -860,9 +856,9 @@ void Subchannel::CancelConnectivityStateWatch(
     grpc_pollset_set_del_pollset_set(pollset_set_, interested_parties);
   }
   if (health_check_service_name == nullptr) {
-    watcher_list_.RemoveLocked(watcher);
+    watcher_list_.RemoveWatcherLocked(watcher);
   } else {
-    health_watcher_map_.RemoveLocked(health_check_service_name, watcher);
+    health_watcher_map_.RemoveWatcherLocked(health_check_service_name, watcher);
   }
 }
 
@@ -942,6 +938,7 @@ const char* SubchannelConnectivityStateChangeString(
 
 }  // namespace
 
+// Note: Must be called with a state that is different from the current state.
 void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state) {
   state_ = state;
   if (channelz_node_ != nullptr) {
