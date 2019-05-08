@@ -51,15 +51,8 @@ static void BM_CallbackBidiStreaming(benchmark::State& state) {
   }
   if (state.KeepRunning()) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
-    std::mutex mu;
-    std::condition_variable cv;
-    bool done = false;
-    BidiClient test{&state, stub_.get(), &request, &response, &mu, &cv, &done};
-    test.StartNewRpc();
-    std::unique_lock<std::mutex> l(mu);
-    while (!done) {
-      cv.wait(l);
-    }
+    BidiClient test{&state, stub_.get(), &request, &response};
+    test.Await();
   }
   fixture->Finish(state);
   fixture.reset();
