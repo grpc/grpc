@@ -63,49 +63,44 @@ char* BaseNode::RenderJsonString() {
 
 CallCountingHelper::CallCountingHelper() {
   num_cores_ = GPR_MAX(1, gpr_cpu_num_cores());
-  per_cpu_counter_data_storage_ = static_cast<AtomicCounterData*>(
-      gpr_zalloc(sizeof(AtomicCounterData) * num_cores_));
-}
-
-CallCountingHelper::~CallCountingHelper() {
-  gpr_free(per_cpu_counter_data_storage_);
+  per_cpu_counter_data_storage_.reserve(num_cores_);
+  for (size_t i = 0; i < num_cores_; ++i) {
+    per_cpu_counter_data_storage_.push_back({});
+  }
 }
 
 void CallCountingHelper::RecordCallStarted() {
-  gpr_atm_no_barrier_fetch_add(
-      &per_cpu_counter_data_storage_[grpc_core::ExecCtx::Get()->starting_cpu()]
-           .calls_started,
-      static_cast<gpr_atm>(1));
-  gpr_atm_no_barrier_store(
-      &per_cpu_counter_data_storage_[grpc_core::ExecCtx::Get()->starting_cpu()]
-           .last_call_started_cycle,
-      gpr_get_cycle_counter());
+  AtomicCounterData& data =
+      per_cpu_counter_data_storage_[grpc_core::ExecCtx::Get()->starting_cpu()];
+  data.calls_started.FetchAdd(1, grpc_core::MemoryOrder::RELAXED);
+  data.last_call_started_cycle.Store(gpr_get_cycle_counter(),
+                                     grpc_core::MemoryOrder::RELAXED);
 }
 
 void CallCountingHelper::RecordCallFailed() {
-  gpr_atm_no_barrier_fetch_add(
-      &per_cpu_counter_data_storage_[grpc_core::ExecCtx::Get()->starting_cpu()]
-           .calls_failed,
-      static_cast<gpr_atm>(1));
+  per_cpu_counter_data_storage_[grpc_core::ExecCtx::Get()->starting_cpu()]
+      .calls_failed.FetchAdd(1, grpc_core::MemoryOrder::RELAXED);
 }
 
 void CallCountingHelper::RecordCallSucceeded() {
-  gpr_atm_no_barrier_fetch_add(
-      &per_cpu_counter_data_storage_[grpc_core::ExecCtx::Get()->starting_cpu()]
-           .calls_succeeded,
-      static_cast<gpr_atm>(1));
+  per_cpu_counter_data_storage_[grpc_core::ExecCtx::Get()->starting_cpu()]
+      .calls_succeeded.FetchAdd(1, grpc_core::MemoryOrder::RELAXED);
 }
 
 void CallCountingHelper::CollectData(CounterData* out) {
   for (size_t core = 0; core < num_cores_; ++core) {
-    out->calls_started += gpr_atm_no_barrier_load(
-        &per_cpu_counter_data_storage_[core].calls_started);
-    out->calls_succeeded += gpr_atm_no_barrier_load(
-        &per_cpu_counter_data_storage_[core].calls_succeeded);
-    out->calls_failed += gpr_atm_no_barrier_load(
-        &per_cpu_counter_data_storage_[core].calls_failed);
-    gpr_atm last_call = gpr_atm_no_barrier_load(
-        &per_cpu_counter_data_storage_[core].last_call_started_cycle);
+    AtomicCounterData& data = per_cpu_counter_data_storage_[core];
+
+    out->calls_started +=
+        data.calls_started.Load(grpc_core::MemoryOrder::RELAXED);
+    out->calls_succeeded +=
+        per_cpu_counter_data_storage_[core].calls_succeeded.Load(
+            grpc_core::MemoryOrder::RELAXED);
+    out->calls_failed += per_cpu_counter_data_storage_[core].calls_failed.Load(
+        grpc_core::MemoryOrder::RELAXED);
+    const gpr_cycle_counter last_call =
+        per_cpu_counter_data_storage_[core].last_call_started_cycle.Load(
+            grpc_core::MemoryOrder::RELAXED);
     if (last_call > out->last_call_started_cycle) {
       out->last_call_started_cycle = last_call;
     }
