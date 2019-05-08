@@ -64,4 +64,10 @@
  */
 + (BOOL)useCronet;
 
+/**
+ * Whether we can run compression tests in the test suite.
+ */
+
++ (BOOL)canRunCompressionTest;
+
 @end
