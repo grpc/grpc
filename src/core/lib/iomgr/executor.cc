@@ -37,13 +37,13 @@
 #define MAX_DEPTH 2
 
 #define EXECUTOR_TRACE(format, ...)                     \
-  if (executor_trace.enabled()) {                       \
+  if (GRPC_TRACE_FLAG_ENABLED(executor_trace)) {        \
     gpr_log(GPR_INFO, "EXECUTOR " format, __VA_ARGS__); \
   }
 
-#define EXECUTOR_TRACE0(str)            \
-  if (executor_trace.enabled()) {       \
-    gpr_log(GPR_INFO, "EXECUTOR " str); \
+#define EXECUTOR_TRACE0(str)                     \
+  if (GRPC_TRACE_FLAG_ENABLED(executor_trace)) { \
+    gpr_log(GPR_INFO, "EXECUTOR " str);          \
   }
 
 namespace grpc_core {

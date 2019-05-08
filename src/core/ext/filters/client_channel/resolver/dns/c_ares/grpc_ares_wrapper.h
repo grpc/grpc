@@ -33,7 +33,7 @@ extern grpc_core::TraceFlag grpc_trace_cares_address_sorting;
 extern grpc_core::TraceFlag grpc_trace_cares_resolver;
 
 #define GRPC_CARES_TRACE_LOG(format, ...)                         \
-  if (grpc_trace_cares_resolver.enabled()) {                      \
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_resolver)) {       \
     gpr_log(GPR_DEBUG, "(c-ares resolver) " format, __VA_ARGS__); \
   }
 

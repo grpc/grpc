@@ -723,7 +723,7 @@ static void cancel_with_status(grpc_call* c, grpc_status_code status,
 }
 
 static void set_final_status(grpc_call* call, grpc_error* error) {
-  if (grpc_call_error_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_call_error_trace)) {
     gpr_log(GPR_DEBUG, "set_final_status %s", call->is_client ? "CLI" : "SVR");
     gpr_log(GPR_DEBUG, "%s", grpc_error_string(error));
   }
@@ -1280,7 +1280,7 @@ static void receiving_slice_ready(void* bctlp, grpc_error* error) {
   }
 
   if (error != GRPC_ERROR_NONE) {
-    if (grpc_trace_operation_failures.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures)) {
       GRPC_LOG_IF_ERROR("receiving_slice_ready", GRPC_ERROR_REF(error));
     }
     call->receiving_stream.reset();
@@ -1404,7 +1404,7 @@ static void validate_filtered_metadata(batch_control* bctl) {
 
     GPR_ASSERT(call->encodings_accepted_by_peer != 0);
     if (!GPR_BITGET(call->encodings_accepted_by_peer, compression_algorithm)) {
-      if (grpc_compression_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
         const char* algo_name = nullptr;
         grpc_compression_algorithm_name(compression_algorithm, &algo_name);
         gpr_log(GPR_ERROR,

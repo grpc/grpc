@@ -274,7 +274,11 @@ void grpc_call_log_op(const char* file, int line, gpr_log_severity severity,
 
 extern grpc_core::TraceFlag grpc_trace_channel;
 
-#define GRPC_CALL_LOG_OP(sev, elem, op) \
-  if (grpc_trace_channel.enabled()) grpc_call_log_op(sev, elem, op)
+#define GRPC_CALL_LOG_OP(sev, elem, op)                \
+  do {                                                 \
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_channel)) { \
+      grpc_call_log_op(sev, elem, op);                 \
+    }                                                  \
+  } while (0)
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_H */

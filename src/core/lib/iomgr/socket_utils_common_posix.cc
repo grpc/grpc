@@ -292,7 +292,7 @@ grpc_error* grpc_set_socket_tcp_user_timeout(
   }
   if (enable) {
     extern grpc_core::TraceFlag grpc_tcp_trace;
-    if (grpc_tcp_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "Enabling TCP_USER_TIMEOUT with a timeout of %d ms",
               timeout);
     }
@@ -315,7 +315,7 @@ grpc_error* grpc_set_socket_tcp_user_timeout(
   }
 #else
   extern grpc_core::TraceFlag grpc_tcp_trace;
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP_USER_TIMEOUT not supported for this platform");
   }
 #endif /* GRPC_HAVE_TCP_USER_TIMEOUT */

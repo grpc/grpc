@@ -125,7 +125,7 @@ static void partly_done(state_watcher* w, bool due_to_completion,
   gpr_mu_lock(&w->mu);
 
   if (due_to_completion) {
-    if (grpc_trace_operation_failures.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures)) {
       GRPC_LOG_IF_ERROR("watch_completion_error", GRPC_ERROR_REF(error));
     }
     GRPC_ERROR_UNREF(error);

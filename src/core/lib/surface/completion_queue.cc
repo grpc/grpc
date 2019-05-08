@@ -411,12 +411,13 @@ static const cq_vtable g_cq_vtable[] = {
 
 grpc_core::TraceFlag grpc_cq_pluck_trace(false, "queue_pluck");
 
-#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)                       \
-  if (grpc_api_trace.enabled() && (grpc_cq_pluck_trace.enabled() ||        \
-                                   (event)->type != GRPC_QUEUE_TIMEOUT)) { \
-    char* _ev = grpc_event_string(event);                                  \
-    gpr_log(GPR_INFO, "RETURN_EVENT[%p]: %s", cq, _ev);                    \
-    gpr_free(_ev);                                                         \
+#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)    \
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) &&        \
+      (GRPC_TRACE_FLAG_ENABLED(grpc_cq_pluck_trace) ||  \
+       (event)->type != GRPC_QUEUE_TIMEOUT)) {          \
+    char* _ev = grpc_event_string(event);               \
+    gpr_log(GPR_INFO, "RETURN_EVENT[%p]: %s", cq, _ev); \
+    gpr_free(_ev);                                      \
   }
 
 static void on_pollset_shutdown_done(void* cq, grpc_error* error);
@@ -572,7 +573,7 @@ int grpc_get_cq_poll_num(grpc_completion_queue* cq) {
 #ifndef NDEBUG
 void grpc_cq_internal_ref(grpc_completion_queue* cq, const char* reason,
                           const char* file, int line) {
-  if (grpc_trace_cq_refcount.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cq_refcount)) {
     gpr_atm val = gpr_atm_no_barrier_load(&cq->owning_refs.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "CQ:%p   ref %" PRIdPTR " -> %" PRIdPTR " %s", cq, val, val + 1,
@@ -592,7 +593,7 @@ static void on_pollset_shutdown_done(void* arg, grpc_error* error) {
 #ifndef NDEBUG
 void grpc_cq_internal_unref(grpc_completion_queue* cq, const char* reason,
                             const char* file, int line) {
-  if (grpc_trace_cq_refcount.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cq_refcount)) {
     gpr_atm val = gpr_atm_no_barrier_load(&cq->owning_refs.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "CQ:%p unref %" PRIdPTR " -> %" PRIdPTR " %s", cq, val, val - 1,
@@ -678,14 +679,16 @@ static void cq_end_op_for_next(grpc_completion_queue* cq, void* tag,
                                void* done_arg, grpc_cq_completion* storage) {
   GPR_TIMER_SCOPE("cq_end_op_for_next", 0);
 
-  if (grpc_api_trace.enabled() ||
-      (grpc_trace_operation_failures.enabled() && error != GRPC_ERROR_NONE)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) ||
+      (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) &&
+       error != GRPC_ERROR_NONE)) {
     const char* errmsg = grpc_error_string(error);
     GRPC_API_TRACE(
         "cq_end_op_for_next(cq=%p, tag=%p, error=%s, "
         "done=%p, done_arg=%p, storage=%p)",
         6, (cq, tag, errmsg, done, done_arg, storage));
-    if (grpc_trace_operation_failures.enabled() && error != GRPC_ERROR_NONE) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) &&
+        error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "Operation failed: tag=%p, error=%s", tag, errmsg);
     }
   }
@@ -759,14 +762,16 @@ static void cq_end_op_for_pluck(grpc_completion_queue* cq, void* tag,
   cq_pluck_data* cqd = static_cast<cq_pluck_data*> DATA_FROM_CQ(cq);
   int is_success = (error == GRPC_ERROR_NONE);
 
-  if (grpc_api_trace.enabled() ||
-      (grpc_trace_operation_failures.enabled() && error != GRPC_ERROR_NONE)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) ||
+      (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) &&
+       error != GRPC_ERROR_NONE)) {
     const char* errmsg = grpc_error_string(error);
     GRPC_API_TRACE(
         "cq_end_op_for_pluck(cq=%p, tag=%p, error=%s, "
         "done=%p, done_arg=%p, storage=%p)",
         6, (cq, tag, errmsg, done, done_arg, storage));
-    if (grpc_trace_operation_failures.enabled() && error != GRPC_ERROR_NONE) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) &&
+        error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "Operation failed: tag=%p, error=%s", tag, errmsg);
     }
   }
@@ -824,14 +829,16 @@ static void cq_end_op_for_callback(
   cq_callback_data* cqd = static_cast<cq_callback_data*> DATA_FROM_CQ(cq);
   bool is_success = (error == GRPC_ERROR_NONE);
 
-  if (grpc_api_trace.enabled() ||
-      (grpc_trace_operation_failures.enabled() && error != GRPC_ERROR_NONE)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) ||
+      (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) &&
+       error != GRPC_ERROR_NONE)) {
     const char* errmsg = grpc_error_string(error);
     GRPC_API_TRACE(
         "cq_end_op_for_callback(cq=%p, tag=%p, error=%s, "
         "done=%p, done_arg=%p, storage=%p)",
         6, (cq, tag, errmsg, done, done_arg, storage));
-    if (grpc_trace_operation_failures.enabled() && error != GRPC_ERROR_NONE) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) &&
+        error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "Operation failed: tag=%p, error=%s", tag, errmsg);
     }
   }
@@ -906,7 +913,7 @@ class ExecCtxNext : public grpc_core::ExecCtx {
 
 #ifndef NDEBUG
 static void dump_pending_tags(grpc_completion_queue* cq) {
-  if (!grpc_trace_pending_tags.enabled()) return;
+  if (!GRPC_TRACE_FLAG_ENABLED(grpc_trace_pending_tags)) return;
 
   gpr_strvec v;
   gpr_strvec_init(&v);
@@ -1176,7 +1183,7 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
   grpc_pollset_worker* worker = nullptr;
   cq_pluck_data* cqd = static_cast<cq_pluck_data*> DATA_FROM_CQ(cq);
 
-  if (grpc_cq_pluck_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_cq_pluck_trace)) {
     GRPC_API_TRACE(
         "grpc_completion_queue_pluck("
         "cq=%p, tag=%p, "

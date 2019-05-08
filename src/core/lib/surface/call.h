@@ -102,7 +102,8 @@ void grpc_call_context_set(grpc_call* call, grpc_context_index elem,
 void* grpc_call_context_get(grpc_call* call, grpc_context_index elem);
 
 #define GRPC_CALL_LOG_BATCH(sev, call, ops, nops, tag) \
-  if (grpc_api_trace.enabled()) grpc_call_log_batch(sev, call, ops, nops, tag)
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace))         \
+  grpc_call_log_batch(sev, call, ops, nops, tag)
 
 uint8_t grpc_call_is_client(grpc_call* call);
 
