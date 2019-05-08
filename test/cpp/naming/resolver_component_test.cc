@@ -249,8 +249,6 @@ void CheckServiceConfigResultLocked(const char* service_config_json,
   if (args->expected_service_config_string != "") {
     GPR_ASSERT(service_config_json != nullptr);
     EXPECT_EQ(service_config_json, args->expected_service_config_string);
-  } else {
-    GPR_ASSERT(service_config_json == nullptr);
   }
   if (args->expected_service_config_error == "") {
     EXPECT_EQ(service_config_error, GRPC_ERROR_NONE);
