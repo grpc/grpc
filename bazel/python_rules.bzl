@@ -130,21 +130,6 @@ def _generate_py(well_known_protos, **kwargs):
     else:
         __generate_py(**kwargs)
 
-_WELL_KNOWN_PROTO_LIBS = [
-    "@com_google_protobuf//:any_proto",
-    "@com_google_protobuf//:api_proto",
-    "@com_google_protobuf//:compiler_plugin_proto",
-    "@com_google_protobuf//:descriptor_proto",
-    "@com_google_protobuf//:duration_proto",
-    "@com_google_protobuf//:empty_proto",
-    "@com_google_protobuf//:field_mask_proto",
-    "@com_google_protobuf//:source_context_proto",
-    "@com_google_protobuf//:struct_proto",
-    "@com_google_protobuf//:timestamp_proto",
-    "@com_google_protobuf//:type_proto",
-    "@com_google_protobuf//:wrappers_proto",
-]
-
 def py_proto_library(
         name,
         deps,
@@ -166,8 +151,6 @@ def py_proto_library(
 
     codegen_target = "_{}_codegen".format(name)
     codegen_grpc_target = "_{}_grpc_codegen".format(name)
-
-    well_known_proto_rules = _WELL_KNOWN_PROTO_LIBS if well_known_protos else []
 
     _generate_py(
         name = codegen_target,
