@@ -65,6 +65,9 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   // Synchronous callback that takes the resolver result and sets
   // lb_policy_name and lb_policy_config to point to the right data.
   // Returns true if the service config has changed since the last result.
+  // If the returned service_config_error is not none and lb_policy_name is
+  // empty, it means that we don't have a valid service config to use, and we
+  // should set the channel to be in TRANSIENT_FAILURE.
   typedef bool (*ProcessResolverResultCallback)(
       void* user_data, const Resolver::Result& result,
       const char** lb_policy_name,

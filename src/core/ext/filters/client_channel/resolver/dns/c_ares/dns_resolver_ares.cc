@@ -309,14 +309,13 @@ char* ChooseServiceConfig(char* service_config_choice_json,
     }
   }
   grpc_json_destroy(choices_json);
-  if (error_list.empty()) {
-    return service_config;
-  } else {
+  if (!error_list.empty()) {
     gpr_free(service_config);
+    service_config = nullptr;
     *error = GRPC_ERROR_CREATE_FROM_VECTOR("Service Config Choices Parser",
                                            &error_list);
-    return nullptr;
   }
+  return service_config;
 }
 
 void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {

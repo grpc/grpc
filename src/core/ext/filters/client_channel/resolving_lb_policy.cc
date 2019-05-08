@@ -554,7 +554,6 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
     lb_policy_config = child_lb_config_;
   }
   if (lb_policy_name != nullptr) {
-    gpr_log(GPR_ERROR, "%s", lb_policy_name);
     // Create or update LB policy, as needed.
     CreateOrUpdateLbPolicyLocked(lb_policy_name, lb_policy_config,
                                  std::move(result), &trace_strings);

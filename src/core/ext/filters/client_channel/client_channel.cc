@@ -273,6 +273,7 @@ class ChannelData {
   ExternalConnectivityWatcher::WatcherList external_connectivity_watcher_list_;
   UniquePtr<char> health_check_service_name_;
   RefCountedPtr<ServiceConfig> saved_service_config_;
+  bool set_service_config_ = false;
 
   //
   // Fields accessed from both data plane and control plane combiners.
@@ -1077,6 +1078,8 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
   // Get default service config
   const char* service_config_json = grpc_channel_arg_get_string(
       grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVICE_CONFIG));
+  // Make sure we set the channel in TRANSIENT_FAILURE on an invalid default
+  // service config
   if (service_config_json != nullptr) {
     *error = GRPC_ERROR_NONE;
     default_service_config_ = ServiceConfig::Create(service_config_json, error);
@@ -1155,23 +1158,25 @@ void ChannelData::ProcessLbPolicy(
   // Prefer the LB policy name found in the service config.
   if (parsed_object != nullptr) {
     if (parsed_object->parsed_lb_config() != nullptr) {
-      (*lb_policy_name)
-          .reset(gpr_strdup(parsed_object->parsed_lb_config()->name()));
+      lb_policy_name->reset(
+          gpr_strdup(parsed_object->parsed_lb_config()->name()));
       *lb_policy_config = parsed_object->parsed_lb_config();
-    } else {
-      (*lb_policy_name)
-          .reset(gpr_strdup(parsed_object->parsed_deprecated_lb_policy()));
+      return;
+    } else if (parsed_object->parsed_deprecated_lb_policy() != nullptr) {
+      lb_policy_name->reset(
+          gpr_strdup(parsed_object->parsed_deprecated_lb_policy()));
     }
   }
   // Otherwise, find the LB policy name set by the client API.
   if (*lb_policy_name == nullptr) {
     const grpc_arg* channel_arg =
         grpc_channel_args_find(resolver_result.args, GRPC_ARG_LB_POLICY_NAME);
-    (*lb_policy_name)
-        .reset(gpr_strdup(grpc_channel_arg_get_string(channel_arg)));
+    lb_policy_name->reset(gpr_strdup(grpc_channel_arg_get_string(channel_arg)));
   }
   // Special case: If at least one balancer address is present, we use
   // the grpclb policy, regardless of what the resolver has returned.
+  // TODO(yashkt) : Test that we do not use this special case if the we have set
+  // the lb policy from the loadBalancingConfig field
   bool found_balancer_address = false;
   for (size_t i = 0; i < resolver_result.addresses.size(); ++i) {
     const ServerAddress& address = resolver_result.addresses[i];
@@ -1182,18 +1187,18 @@ void ChannelData::ProcessLbPolicy(
   }
   if (found_balancer_address) {
     if (*lb_policy_name != nullptr &&
-        strcmp((*lb_policy_name).get(), "grpclb") != 0) {
+        strcmp(lb_policy_name->get(), "grpclb") != 0) {
       gpr_log(GPR_INFO,
               "resolver requested LB policy %s but provided at least one "
               "balancer address -- forcing use of grpclb LB policy",
-              (*lb_policy_name).get());
+              lb_policy_name->get());
     }
-    (*lb_policy_name).reset(gpr_strdup("grpclb"));
+    lb_policy_name->reset(gpr_strdup("grpclb"));
   }
   // Use pick_first if nothing was specified and we didn't select grpclb
   // above.
   if (*lb_policy_name == nullptr) {
-    (*lb_policy_name).reset(gpr_strdup("pick_first"));
+    lb_policy_name->reset(gpr_strdup("pick_first"));
   }
 }
 
@@ -1239,23 +1244,33 @@ bool ChannelData::ProcessResolverResultLocked(
                 internal::ClientChannelServiceConfigParser::ParserIndex()));
     service_config_json = gpr_strdup(service_config->service_config_json());
   }
-  bool service_config_changed = service_config != chand->saved_service_config_;
+  bool service_config_changed =
+      ((service_config == nullptr) !=
+       (chand->saved_service_config_ == nullptr)) ||
+      (service_config != nullptr &&
+       strcmp(service_config->service_config_json(),
+              chand->saved_service_config_->service_config_json()) != 0);
   if (service_config_changed) {
     chand->saved_service_config_ = std::move(service_config);
+    if (parsed_object != nullptr) {
+      chand->health_check_service_name_.reset(
+          gpr_strdup(parsed_object->health_check_service_name()));
+    } else {
+      chand->health_check_service_name_.reset();
+    }
   }
-  Optional<internal::ClientChannelGlobalParsedObject::RetryThrottling>
-      retry_throttle_data;
-  if (parsed_object != nullptr) {
-    chand->health_check_service_name_.reset(
-        gpr_strdup(parsed_object->health_check_service_name()));
-    retry_throttle_data = parsed_object->retry_throttling();
-  } else {
-    chand->health_check_service_name_.reset();
+  if (service_config_changed || !chand->set_service_config_) {
+    chand->set_service_config_ = true;
+    Optional<internal::ClientChannelGlobalParsedObject::RetryThrottling>
+        retry_throttle_data;
+    if (parsed_object != nullptr) {
+      retry_throttle_data = parsed_object->retry_throttling();
+    }
+    // Create service config setter to update channel state in the data
+    // plane combiner.  Destroys itself when done.
+    New<ServiceConfigSetter>(chand, retry_throttle_data,
+                             chand->saved_service_config_);
   }
-  // Create service config setter to update channel state in the data
-  // plane combiner.  Destroys itself when done.
-  New<ServiceConfigSetter>(chand, retry_throttle_data,
-                           chand->saved_service_config_);
   UniquePtr<char> processed_lb_policy_name;
   chand->ProcessLbPolicy(result, parsed_object, &processed_lb_policy_name,
                          lb_policy_config);
