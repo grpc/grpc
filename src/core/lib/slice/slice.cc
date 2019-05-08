@@ -410,8 +410,8 @@ int grpc_slice_eq(grpc_slice a, grpc_slice b) {
   return grpc_slice_default_eq_impl(a, b);
 }
 
-int grpc_slice_differs_slowpath(const grpc_slice& a,
-                                const grpc_slice& b_not_inline) {
+int grpc_slice_differs_refcounted(const grpc_slice& a,
+                                  const grpc_slice& b_not_inline) {
   size_t a_len;
   const uint8_t* a_ptr;
   // Slice inlined, or refcounted?

@@ -29,21 +29,37 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-int grpc_slice_differs_slowpath(const grpc_slice& a,
-                                const grpc_slice& b_not_inline);
+// When we compare two slices, and we know the latter is not inlined, we can
+// short circuit our comparison operator. We specifically use differs()
+// semantics instead of equals() semantics due to more favourable code
+// generation when using differs(). Specifically, we may use the output of
+// grpc_slice_differs_refcounted for control flow. If we use differs()
+// semantics, we end with a tailcall to memcmp(). If we use equals() semantics,
+// we need to invert the result that memcmp provides us, which costs several
+// instructions to do so. If we're using the result for control flow (i.e.
+// branching based on the output) then we're just performing the extra
+// operations to invert the result pointlessly. Concretely, we save 6 ops on
+// x86-64/clang with differs().
+int grpc_slice_differs_refcounted(const grpc_slice& a,
+                                  const grpc_slice& b_not_inline);
+// When we compare two slices, and we *know* that one of them is static or
+// interned, we can short circuit our slice equality function.
+// grpc_slice_eq_static(interned) will examine two slices a and
+// b_static(interned); b_static(interned) must be a static(interned) slice,
+// while a can be any slice, static or otherwise, inlined or refcounted.
 inline int grpc_slice_eq_static(const grpc_slice& a,
                                 const grpc_slice& b_static) {
   if (a.refcount == b_static.refcount) {
     return true;
   }
-  return !grpc_slice_differs_slowpath(a, b_static);
+  return !grpc_slice_differs_refcounted(a, b_static);
 }
 inline int grpc_slice_eq_interned(const grpc_slice& a,
                                   const grpc_slice& b_interned) {
   if (a.refcount == b_interned.refcount) {
     return true;
   }
-  return !grpc_slice_differs_slowpath(a, b_interned);
+  return !grpc_slice_differs_refcounted(a, b_interned);
 }
 
 // Interned slices have specific fast-path operations for hashing. To inline
