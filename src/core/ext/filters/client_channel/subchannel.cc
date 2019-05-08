@@ -470,24 +470,23 @@ class Subchannel::HealthWatcherMap::HealthWatcher
 
   bool HasWatchers() const { return !watcher_list_.empty(); }
 
-  void StartHealthCheckingLocked() {
-    GPR_ASSERT(health_check_client_ == nullptr);
-    if (state_ != GRPC_CHANNEL_CONNECTING) {
-      state_ = GRPC_CHANNEL_CONNECTING;
-      watcher_list_.NotifyLocked(subchannel_, state_);
-    }
-    health_check_client_ = MakeOrphanable<HealthCheckClient>(
-        health_check_service_name_.get(), subchannel_->connected_subchannel_,
-        subchannel_->pollset_set_, subchannel_->channelz_node_);
-    Ref().release();  // Ref for health callback tracked manually.
-    health_check_client_->NotifyOnHealthChange(&state_, &on_health_changed_);
-  }
-
-  void StopHealthCheckingLocked(grpc_connectivity_state state) {
-    health_check_client_.reset();
-    if (state_ != state) {
+  void NotifyLocked(grpc_connectivity_state state) {
+    if (state == GRPC_CHANNEL_READY) {
+      // If we had not already notified for CONNECTING state, do so now.
+      // (We may have missed this earlier, because if the transition
+      // from IDLE to CONNECTING to READY was too quick, the connected
+      // subchannel may not have sent us a notification for CONNECTING.)
+      if (state_ != GRPC_CHANNEL_CONNECTING) {
+        state_ = GRPC_CHANNEL_CONNECTING;
+        watcher_list_.NotifyLocked(subchannel_, state_);
+      }
+      // If we've become connected, start health checking.
+      StartHealthCheckingLocked();
+    } else {
       state_ = state;
       watcher_list_.NotifyLocked(subchannel_, state_);
+      // We're not connected, so stop health checking.
+      health_check_client_.reset();
     }
   }
 
@@ -498,6 +497,15 @@ class Subchannel::HealthWatcherMap::HealthWatcher
   }
 
  private:
+  void StartHealthCheckingLocked() {
+    GPR_ASSERT(health_check_client_ == nullptr);
+    health_check_client_ = MakeOrphanable<HealthCheckClient>(
+        health_check_service_name_.get(), subchannel_->connected_subchannel_,
+        subchannel_->pollset_set_, subchannel_->channelz_node_);
+    Ref().release();  // Ref for health callback tracked manually.
+    health_check_client_->NotifyOnHealthChange(&state_, &on_health_changed_);
+  }
+
   static void OnHealthChanged(void* arg, grpc_error* error) {
     auto* self = static_cast<HealthWatcher*>(arg);
     Subchannel* c = self->subchannel_;
@@ -560,16 +568,9 @@ void Subchannel::HealthWatcherMap::RemoveWatcherLocked(
   if (!it->second->HasWatchers()) map_.erase(it);
 }
 
-void Subchannel::HealthWatcherMap::StartHealthCheckingLocked() {
+void Subchannel::HealthWatcherMap::NotifyLocked(grpc_connectivity_state state) {
   for (const auto& p : map_) {
-    p.second->StartHealthCheckingLocked();
-  }
-}
-
-void Subchannel::HealthWatcherMap::StopHealthCheckingLocked(
-    grpc_connectivity_state state) {
-  for (const auto& p : map_) {
-    p.second->StopHealthCheckingLocked(state);
+    p.second->NotifyLocked(state);
   }
 }
 
@@ -947,12 +948,10 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state) {
         grpc_slice_from_static_string(
             SubchannelConnectivityStateChangeString(state)));
   }
+  // Notify non-health watchers.
   watcher_list_.NotifyLocked(this, state);
-  if (state == GRPC_CHANNEL_READY) {
-    health_watcher_map_.StartHealthCheckingLocked();
-  } else {
-    health_watcher_map_.StopHealthCheckingLocked(state);
-  }
+  // Notify health watchers.
+  health_watcher_map_.NotifyLocked(state);
 }
 
 void Subchannel::MaybeStartConnectingLocked() {

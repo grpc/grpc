@@ -322,11 +322,8 @@ class Subchannel {
     void RemoveWatcherLocked(const char* health_check_service_name,
                              ConnectivityStateWatcher* watcher);
 
-    // Called when the subchannel transitions into state READY.
-    void StartHealthCheckingLocked();
-
-    // Called when the subchannel transitions into any state other than READY.
-    void StopHealthCheckingLocked(grpc_connectivity_state state);
+    // Notifies the watcher when the subchannel's state changes.
+    void NotifyLocked(grpc_connectivity_state state);
 
     grpc_connectivity_state CheckConnectivityStateLocked(
         Subchannel* subchannel, const char* health_check_service_name);
