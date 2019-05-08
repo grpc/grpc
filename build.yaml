@@ -5525,7 +5525,6 @@ targets:
   build: test
   language: c++
   src:
-  - src/proto/grpc/lb/v1/load_balancer.proto
   - test/cpp/end2end/service_config_end2end_test.cc
   deps:
   - grpc++_test_util

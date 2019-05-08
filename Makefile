@@ -18901,7 +18901,6 @@ $(OBJDIR)/$(CONFIG)/test/cpp/server/server_request_call_test.o: $(GENDIR)/src/pr
 
 
 SERVICE_CONFIG_END2END_TEST_SRC = \
-    $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc \
     test/cpp/end2end/service_config_end2end_test.cc \
 
 SERVICE_CONFIG_END2END_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVICE_CONFIG_END2END_TEST_SRC))))
@@ -18933,8 +18932,6 @@ endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/src/proto/grpc/lb/v1/load_balancer.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
 $(OBJDIR)/$(CONFIG)/test/cpp/end2end/service_config_end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_service_config_end2end_test: $(SERVICE_CONFIG_END2END_TEST_OBJS:.o=.dep)
@@ -18944,7 +18941,6 @@ ifneq ($(NO_DEPS),true)
 -include $(SERVICE_CONFIG_END2END_TEST_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/end2end/service_config_end2end_test.o: $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
 
 
 SERVICE_CONFIG_TEST_SRC = \

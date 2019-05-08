@@ -15941,18 +15941,11 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(service_config_end2end_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.h
   test/cpp/end2end/service_config_end2end_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/lb/v1/load_balancer.proto
-)
 
 target_include_directories(service_config_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
