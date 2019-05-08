@@ -45,6 +45,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
 #ifdef GRPC_CFSTREAM
@@ -53,6 +54,8 @@ using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 using grpc::testing::RequestParams;
 using std::chrono::system_clock;
+
+static std::string g_root;
 
 namespace grpc {
 namespace testing {
@@ -125,10 +128,16 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
 
   void StartServer() {
     port_ = grpc_pick_unused_port_or_die();
-    server_.reset(new ServerData(port_, GetParam().credentials_type));
-    server_->Start(server_host_);
+    std::ostringstream server_address;
+    server_address << server_host_ << ":" << port_;
+    server_.reset(new SubProcess({
+        g_root + "/client_crash_test_server",
+        "--address=" + server_address.str(),
+        "--creds=" + GetParam().credentials_type,
+    }));
+    GPR_ASSERT(server_);
   }
-  void StopServer() { server_->Shutdown(); }
+  void StopServer() { server_.reset(); }
 
   std::unique_ptr<grpc::testing::EchoTestService::Stub> BuildStub(
       const std::shared_ptr<Channel>& channel) {
@@ -152,6 +161,7 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
     auto& msg = GetParam().message_content;
     request.set_message(msg);
     ClientContext context;
+    context.set_wait_for_ready(true);
     Status status = stub->Echo(&context, request, response.get());
     if (status.ok()) {
       EXPECT_EQ(msg, response->message());
@@ -170,6 +180,7 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
     *request.mutable_param() = std::move(param);
     AsyncClientCall* call = new AsyncClientCall;
 
+    call->context.set_wait_for_ready(true);
     call->response_reader =
         stub->PrepareAsyncEcho(&call->context, request, &cq_);
 
@@ -211,55 +222,12 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
   };
 
  private:
-  struct ServerData {
-    int port_;
-    const grpc::string creds_;
-    std::unique_ptr<Server> server_;
-    TestServiceImpl service_;
-    std::unique_ptr<std::thread> thread_;
-    bool server_ready_ = false;
-
-    ServerData(int port, const grpc::string& creds)
-        : port_(port), creds_(creds) {}
-
-    void Start(const grpc::string& server_host) {
-      gpr_log(GPR_INFO, "starting server on port %d", port_);
-      std::mutex mu;
-      std::unique_lock<std::mutex> lock(mu);
-      std::condition_variable cond;
-      thread_.reset(new std::thread(
-          std::bind(&ServerData::Serve, this, server_host, &mu, &cond)));
-      cond.wait(lock, [this] { return server_ready_; });
-      server_ready_ = false;
-      gpr_log(GPR_INFO, "server startup complete");
-    }
-
-    void Serve(const grpc::string& server_host, std::mutex* mu,
-               std::condition_variable* cond) {
-      std::ostringstream server_address;
-      server_address << server_host << ":" << port_;
-      ServerBuilder builder;
-      auto server_creds =
-          GetCredentialsProvider()->GetServerCredentials(creds_);
-      builder.AddListeningPort(server_address.str(), server_creds);
-      builder.RegisterService(&service_);
-      server_ = builder.BuildAndStart();
-      std::lock_guard<std::mutex> lock(*mu);
-      server_ready_ = true;
-      cond->notify_one();
-    }
-
-    void Shutdown(bool join = true) {
-      server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
-      if (join) thread_->join();
-    }
-  };
 
   CompletionQueue cq_;
   const grpc::string server_host_;
   const grpc::string interface_;
   const grpc::string ipv4_address_;
-  std::unique_ptr<ServerData> server_;
+  std::unique_ptr<SubProcess> server_;
   int port_;
 };
 
@@ -446,6 +414,14 @@ TEST_P(CFStreamTest, ConcurrentRpc) {
 #endif  // GRPC_CFSTREAM
 
 int main(int argc, char** argv) {
+  std::string me = argv[0];
+  auto lslash = me.rfind('/');
+  if (lslash != std::string::npos) {
+    g_root = me.substr(0, lslash);
+  } else {
+    g_root = ".";
+  }
+
   ::testing::InitGoogleTest(&argc, argv);
   grpc_test_init(argc, argv);
   gpr_setenv("grpc_cfstream", "1");

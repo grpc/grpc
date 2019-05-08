@@ -27,9 +27,12 @@
 #include <grpcpp/server_context.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_config.h"
+#include "test/cpp/util/test_credentials_provider.h"
 
 DEFINE_string(address, "", "Address to bind to");
+DEFINE_string(creds, grpc::testing::kInsecureCredentialsType, "Server credentials");
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -44,29 +47,14 @@ using namespace gflags;
 namespace grpc {
 namespace testing {
 
-class ServiceImpl final : public ::grpc::testing::EchoTestService::Service {
-  Status BidiStream(
-      ServerContext* context,
-      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
-    EchoRequest request;
-    EchoResponse response;
-    while (stream->Read(&request)) {
-      gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
-      response.set_message(request.message());
-      stream->Write(response);
-    }
-    return Status::OK;
-  }
-};
-
 void RunServer() {
-  ServiceImpl service;
+  TestServiceImpl service;
 
   ServerBuilder builder;
-  builder.AddListeningPort(FLAGS_address, grpc::InsecureServerCredentials());
+  auto server_creds = GetCredentialsProvider()->GetServerCredentials(FLAGS_creds);
+  builder.AddListeningPort(FLAGS_address, server_creds);
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  std::cout << "Server listening on " << FLAGS_address << std::endl;
   server->Wait();
 }
 }  // namespace testing

@@ -665,6 +665,9 @@ grpc_cc_test(
         "gtest",
     ],
     tags = ["manual"],  # test requires root, won't work with bazel RBE
+    data = [
+        ":client_crash_test_server",
+    ],
     deps = [
         ":test_service_impl",
         "//:gpr",
