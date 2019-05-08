@@ -1162,7 +1162,6 @@ bm_alarm: $(BINDIR)/$(CONFIG)/bm_alarm
 bm_arena: $(BINDIR)/$(CONFIG)/bm_arena
 bm_byte_buffer: $(BINDIR)/$(CONFIG)/bm_byte_buffer
 bm_call_create: $(BINDIR)/$(CONFIG)/bm_call_create
-bm_callback_cq: $(BINDIR)/$(CONFIG)/bm_callback_cq
 bm_callback_streaming_ping_pong: $(BINDIR)/$(CONFIG)/bm_callback_streaming_ping_pong
 bm_callback_unary_ping_pong: $(BINDIR)/$(CONFIG)/bm_callback_unary_ping_pong
 bm_channel: $(BINDIR)/$(CONFIG)/bm_channel
@@ -1643,7 +1642,6 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bm_arena \
   $(BINDIR)/$(CONFIG)/bm_byte_buffer \
   $(BINDIR)/$(CONFIG)/bm_call_create \
-  $(BINDIR)/$(CONFIG)/bm_callback_cq \
   $(BINDIR)/$(CONFIG)/bm_callback_streaming_ping_pong \
   $(BINDIR)/$(CONFIG)/bm_callback_unary_ping_pong \
   $(BINDIR)/$(CONFIG)/bm_channel \
@@ -1792,7 +1790,6 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bm_arena \
   $(BINDIR)/$(CONFIG)/bm_byte_buffer \
   $(BINDIR)/$(CONFIG)/bm_call_create \
-  $(BINDIR)/$(CONFIG)/bm_callback_cq \
   $(BINDIR)/$(CONFIG)/bm_callback_streaming_ping_pong \
   $(BINDIR)/$(CONFIG)/bm_callback_unary_ping_pong \
   $(BINDIR)/$(CONFIG)/bm_channel \
@@ -2247,8 +2244,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/bm_byte_buffer || ( echo test bm_byte_buffer failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_call_create"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_call_create || ( echo test bm_call_create failed ; exit 1 )
-	$(E) "[RUN]     Testing bm_callback_cq"
-	$(Q) $(BINDIR)/$(CONFIG)/bm_callback_cq || ( echo test bm_callback_cq failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_callback_streaming_ping_pong"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_callback_streaming_ping_pong || ( echo test bm_callback_streaming_ping_pong failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_callback_unary_ping_pong"
@@ -5305,21 +5300,21 @@ endif
 endif
 
 
-LIBCALLBACK_TEST_SERVICE_SRC = \
+LIBBM_CALLBACK_TEST_SERVICE_IMPL_SRC = \
     $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc \
     test/cpp/microbenchmarks/callback_test_service.cc \
 
 PUBLIC_HEADERS_CXX += \
 
-LIBCALLBACK_TEST_SERVICE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBCALLBACK_TEST_SERVICE_SRC))))
+LIBBM_CALLBACK_TEST_SERVICE_IMPL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBM_CALLBACK_TEST_SERVICE_IMPL_SRC))))
 
-$(LIBCALLBACK_TEST_SERVICE_OBJS): CPPFLAGS += -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
+$(LIBBM_CALLBACK_TEST_SERVICE_IMPL_OBJS): CPPFLAGS += -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
 
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure libraries if you don't have OpenSSL.
 
-$(LIBDIR)/$(CONFIG)/libcallback_test_service.a: openssl_dep_error
+$(LIBDIR)/$(CONFIG)/libbm_callback_test_service_impl.a: openssl_dep_error
 
 
 else
@@ -5328,18 +5323,18 @@ ifeq ($(NO_PROTOBUF),true)
 
 # You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
 
-$(LIBDIR)/$(CONFIG)/libcallback_test_service.a: protobuf_dep_error
+$(LIBDIR)/$(CONFIG)/libbm_callback_test_service_impl.a: protobuf_dep_error
 
 
 else
 
-$(LIBDIR)/$(CONFIG)/libcallback_test_service.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(PROTOBUF_DEP) $(LIBCALLBACK_TEST_SERVICE_OBJS) 
+$(LIBDIR)/$(CONFIG)/libbm_callback_test_service_impl.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(PROTOBUF_DEP) $(LIBBM_CALLBACK_TEST_SERVICE_IMPL_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libcallback_test_service.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libcallback_test_service.a $(LIBCALLBACK_TEST_SERVICE_OBJS) 
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbm_callback_test_service_impl.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libbm_callback_test_service_impl.a $(LIBBM_CALLBACK_TEST_SERVICE_IMPL_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libcallback_test_service.a
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libbm_callback_test_service_impl.a
 endif
 
 
@@ -5351,7 +5346,7 @@ endif
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(LIBCALLBACK_TEST_SERVICE_OBJS:.o=.dep)
+-include $(LIBBM_CALLBACK_TEST_SERVICE_IMPL_OBJS:.o=.dep)
 endif
 endif
 $(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/callback_test_service.o: $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc
@@ -14500,50 +14495,6 @@ endif
 endif
 
 
-BM_CALLBACK_CQ_SRC = \
-    test/cpp/microbenchmarks/bm_callback_cq.cc \
-
-BM_CALLBACK_CQ_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BM_CALLBACK_CQ_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/bm_callback_cq: openssl_dep_error
-
-else
-
-
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
-
-$(BINDIR)/$(CONFIG)/bm_callback_cq: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/bm_callback_cq: $(PROTOBUF_DEP) $(BM_CALLBACK_CQ_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(BM_CALLBACK_CQ_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bm_callback_cq
-
-endif
-
-endif
-
-$(BM_CALLBACK_CQ_OBJS): CPPFLAGS += -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
-$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_callback_cq.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
-
-deps_bm_callback_cq: $(BM_CALLBACK_CQ_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(BM_CALLBACK_CQ_OBJS:.o=.dep)
-endif
-endif
-
-
 BM_CALLBACK_STREAMING_PING_PONG_SRC = \
     test/cpp/microbenchmarks/bm_callback_streaming_ping_pong.cc \
 
@@ -14567,17 +14518,17 @@ $(BINDIR)/$(CONFIG)/bm_callback_streaming_ping_pong: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/bm_callback_streaming_ping_pong: $(PROTOBUF_DEP) $(BM_CALLBACK_STREAMING_PING_PONG_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libcallback_test_service.a
+$(BINDIR)/$(CONFIG)/bm_callback_streaming_ping_pong: $(PROTOBUF_DEP) $(BM_CALLBACK_STREAMING_PING_PONG_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libbm_callback_test_service_impl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(BM_CALLBACK_STREAMING_PING_PONG_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libcallback_test_service.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bm_callback_streaming_ping_pong
+	$(Q) $(LDXX) $(LDFLAGS) $(BM_CALLBACK_STREAMING_PING_PONG_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libbm_callback_test_service_impl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bm_callback_streaming_ping_pong
 
 endif
 
 endif
 
 $(BM_CALLBACK_STREAMING_PING_PONG_OBJS): CPPFLAGS += -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
-$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_callback_streaming_ping_pong.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libcallback_test_service.a
+$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_callback_streaming_ping_pong.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libbm_callback_test_service_impl.a
 
 deps_bm_callback_streaming_ping_pong: $(BM_CALLBACK_STREAMING_PING_PONG_OBJS:.o=.dep)
 
@@ -14611,17 +14562,17 @@ $(BINDIR)/$(CONFIG)/bm_callback_unary_ping_pong: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/bm_callback_unary_ping_pong: $(PROTOBUF_DEP) $(BM_CALLBACK_UNARY_PING_PONG_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libcallback_test_service.a
+$(BINDIR)/$(CONFIG)/bm_callback_unary_ping_pong: $(PROTOBUF_DEP) $(BM_CALLBACK_UNARY_PING_PONG_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libbm_callback_test_service_impl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(BM_CALLBACK_UNARY_PING_PONG_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libcallback_test_service.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bm_callback_unary_ping_pong
+	$(Q) $(LDXX) $(LDFLAGS) $(BM_CALLBACK_UNARY_PING_PONG_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libbm_callback_test_service_impl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bm_callback_unary_ping_pong
 
 endif
 
 endif
 
 $(BM_CALLBACK_UNARY_PING_PONG_OBJS): CPPFLAGS += -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
-$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_callback_unary_ping_pong.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libcallback_test_service.a
+$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_callback_unary_ping_pong.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libbm_callback_test_service_impl.a
 
 deps_bm_callback_unary_ping_pong: $(BM_CALLBACK_UNARY_PING_PONG_OBJS:.o=.dep)
 

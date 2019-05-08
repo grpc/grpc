@@ -556,9 +556,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_call_create)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-add_dependencies(buildtests_cxx bm_callback_cq)
-endif()
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_callback_streaming_ping_pong)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -2918,7 +2915,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 if (gRPC_BUILD_CODEGEN)
-add_library(callback_test_service
+add_library(bm_callback_test_service_impl
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -2928,11 +2925,11 @@ add_library(callback_test_service
 )
 
 if(WIN32 AND MSVC)
-  set_target_properties(callback_test_service PROPERTIES COMPILE_PDB_NAME "callback_test_service"
+  set_target_properties(bm_callback_test_service_impl PROPERTIES COMPILE_PDB_NAME "bm_callback_test_service_impl"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
   if (gRPC_INSTALL)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/callback_test_service.pdb
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bm_callback_test_service_impl.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
     )
   endif()
@@ -2942,7 +2939,7 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/echo.proto
 )
 
-target_include_directories(callback_test_service
+target_include_directories(bm_callback_test_service_impl
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -2959,7 +2956,7 @@ target_include_directories(callback_test_service
   PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
-target_link_libraries(callback_test_service
+target_link_libraries(bm_callback_test_service_impl
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_benchmark
@@ -11572,51 +11569,6 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-add_executable(bm_callback_cq
-  test/cpp/microbenchmarks/bm_callback_cq.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-
-target_include_directories(bm_callback_cq
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE third_party/googletest/googletest/include
-  PRIVATE third_party/googletest/googletest
-  PRIVATE third_party/googletest/googlemock/include
-  PRIVATE third_party/googletest/googlemock
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(bm_callback_cq
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_benchmark
-  ${_gRPC_BENCHMARK_LIBRARIES}
-  grpc++_test_util_unsecure
-  grpc_test_util_unsecure
-  grpc++_unsecure
-  grpc_unsecure
-  gpr
-  grpc++_test_config
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-
-endif()
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
 add_executable(bm_callback_streaming_ping_pong
   test/cpp/microbenchmarks/bm_callback_streaming_ping_pong.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -11653,7 +11605,7 @@ target_link_libraries(bm_callback_streaming_ping_pong
   grpc_unsecure
   gpr
   grpc++_test_config
-  callback_test_service
+  bm_callback_test_service_impl
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -11699,7 +11651,7 @@ target_link_libraries(bm_callback_unary_ping_pong
   grpc_unsecure
   gpr
   grpc++_test_config
-  callback_test_service
+  bm_callback_test_service_impl
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 

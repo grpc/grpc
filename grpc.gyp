@@ -1406,7 +1406,7 @@
       ],
     },
     {
-      'target_name': 'callback_test_service',
+      'target_name': 'bm_callback_test_service_impl',
       'type': 'static_library',
       'dependencies': [
         'grpc_benchmark',

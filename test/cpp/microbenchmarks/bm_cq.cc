@@ -144,6 +144,56 @@ static void BM_EmptyCore(benchmark::State& state) {
 }
 BENCHMARK(BM_EmptyCore);
 
+// helper for tests to shutdown correctly and tersely
+static void shutdown_and_destroy(grpc_completion_queue* cc) {
+  grpc_completion_queue_shutdown(cc);
+  grpc_completion_queue_destroy(cc);
+}
+
+class TagCallback : public grpc_experimental_completion_queue_functor {
+ public:
+  TagCallback() { functor_run = &TagCallback::Run; }
+  ~TagCallback() {}
+  static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
+    GPR_ASSERT(static_cast<bool>(ok));
+  };
+};
+
+class ShutdownCallback : public grpc_experimental_completion_queue_functor {
+ public:
+  ShutdownCallback(bool* done) : done_(done) {
+    functor_run = &ShutdownCallback::Run;
+  }
+  ~ShutdownCallback() {}
+  static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
+    *static_cast<ShutdownCallback*>(cb)->done_ = static_cast<bool>(ok);
+  }
+
+ private:
+  bool* done_;
+};
+
+static void BM_Callback_CQ_Pass1Core(benchmark::State& state) {
+  TrackCounters track_counters;
+  TagCallback tag;
+  bool got_shutdown = false;
+  ShutdownCallback shutdown_cb(&got_shutdown);
+  grpc_completion_queue* cc =
+      grpc_completion_queue_create_for_callback(&shutdown_cb, nullptr);
+  while (state.KeepRunning()) {
+    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
+    grpc_cq_completion completion;
+    GPR_ASSERT(grpc_cq_begin_op(cc, &tag));
+    grpc_cq_end_op(cc, &tag, GRPC_ERROR_NONE, DoneWithCompletionOnStack,
+                   nullptr, &completion);
+  }
+  shutdown_and_destroy(cc);
+  GPR_ASSERT(got_shutdown);
+  track_counters.Finish(state);
+}
+BENCHMARK(BM_Callback_CQ_Pass1Core);
+
 }  // namespace testing
 }  // namespace grpc
 
