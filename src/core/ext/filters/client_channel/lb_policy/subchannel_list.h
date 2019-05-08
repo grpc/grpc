@@ -176,7 +176,7 @@ class SubchannelData {
       }
 
      private:
-      static void OnUpdate(void* arg, grpc_error* error);
+      static void OnUpdateLocked(void* arg, grpc_error* error);
 
       SubchannelData<SubchannelListType, SubchannelDataType>* subchannel_data_;
       RefCountedPtr<SubchannelList<SubchannelListType, SubchannelDataType>>
@@ -319,29 +319,30 @@ SubchannelData<SubchannelListType, SubchannelDataType>::Watcher::Updater::
       subchannel_list_(std::move(subchannel_list)),
       state_(state),
       connected_subchannel_(std::move(connected_subchannel)) {
-  GRPC_CLOSURE_INIT(&closure_, &OnUpdate, this,
+  GRPC_CLOSURE_INIT(&closure_, &OnUpdateLocked, this,
                     grpc_combiner_scheduler(subchannel_list_->combiner_));
   GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType, SubchannelDataType>::Watcher::Updater::
-    OnUpdate(void* arg, grpc_error* error) {
+    OnUpdateLocked(void* arg, grpc_error* error) {
   Updater* self = static_cast<Updater*>(arg);
   SubchannelData* sd = self->subchannel_data_;
   if (sd->subchannel_list_->tracer()->enabled()) {
     gpr_log(GPR_INFO,
             "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
             " (subchannel %p): connectivity changed: state=%s, "
-            "connected_subchannel=%p, shutting_down=%d",
+            "connected_subchannel=%p, shutting_down=%d, pending_watcher=%p",
             sd->subchannel_list_->tracer()->name(),
             sd->subchannel_list_->policy(), sd->subchannel_list_, sd->Index(),
             sd->subchannel_list_->num_subchannels(), sd->subchannel_,
             grpc_connectivity_state_name(self->state_),
             self->connected_subchannel_.get(),
-            sd->subchannel_list_->shutting_down());
+            sd->subchannel_list_->shutting_down(), sd->pending_watcher_);
   }
-  if (!sd->subchannel_list_->shutting_down()) {
+  if (!sd->subchannel_list_->shutting_down() &&
+      sd->pending_watcher_ != nullptr) {
     sd->connectivity_state_ = self->state_;
     // Get or release ref to connected subchannel.
     sd->connected_subchannel_ = std::move(self->connected_subchannel_);
