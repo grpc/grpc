@@ -182,7 +182,7 @@ extern NSString *const kGRPCTrailersKey;
 
 /**
  * Issued when a decompressed message is received from the server. The message is decompressed, and
- * deserialized if a marshaller is provided to the call.
+ * deserialized if a marshaller is provided to the call (marshaller is work in progress).
  */
 - (void)didReceiveData:(id)data;
 
@@ -271,7 +271,8 @@ extern NSString *const kGRPCTrailersKey;
 - (void)cancel;
 
 /**
- * Send a message to the server. The data is subject to marshaller serialization and compression.
+ * Send a message to the server. The data is subject to marshaller serialization and compression
+ * (marshaller is work in progress).
  */
 - (void)writeData:(id)data;
 
