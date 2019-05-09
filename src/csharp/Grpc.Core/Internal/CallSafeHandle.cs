@@ -35,11 +35,11 @@ namespace Grpc.Core.Internal
         // Completion handlers are pre-allocated to avoid unneccessary delegate allocations.
         // The "state" field is used to store the actual callback to invoke.
         static readonly BatchCompletionDelegate CompletionHandler_IUnaryResponseClientCallback =
-            (success, context, state) => ((IUnaryResponseClientCallback)state).OnUnaryResponseClient(success, context.GetReceivedStatusOnClient(), context.GetReceivedMessage(), context.GetReceivedInitialMetadata());
+            (success, context, state) => ((IUnaryResponseClientCallback)state).OnUnaryResponseClient(success, context.GetReceivedStatusOnClient(), context.GetReceivedMessageReader(), context.GetReceivedInitialMetadata());
         static readonly BatchCompletionDelegate CompletionHandler_IReceivedStatusOnClientCallback =
             (success, context, state) => ((IReceivedStatusOnClientCallback)state).OnReceivedStatusOnClient(success, context.GetReceivedStatusOnClient());
         static readonly BatchCompletionDelegate CompletionHandler_IReceivedMessageCallback =
-            (success, context, state) => ((IReceivedMessageCallback)state).OnReceivedMessage(success, context.GetReceivedMessage());
+            (success, context, state) => ((IReceivedMessageCallback)state).OnReceivedMessage(success, context.GetReceivedMessageReader());
         static readonly BatchCompletionDelegate CompletionHandler_IReceivedResponseHeadersCallback =
             (success, context, state) => ((IReceivedResponseHeadersCallback)state).OnReceivedResponseHeaders(success, context.GetReceivedInitialMetadata());
         static readonly BatchCompletionDelegate CompletionHandler_ISendCompletionCallback =

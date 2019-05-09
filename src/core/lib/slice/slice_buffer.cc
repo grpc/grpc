@@ -33,6 +33,10 @@
 #define GROW(x) (3 * (x) / 2)
 
 static void maybe_embiggen(grpc_slice_buffer* sb) {
+  if (sb->count == 0) {
+    sb->slices = sb->base_slices;
+  }
+
   /* How far away from sb->base_slices is sb->slices pointer */
   size_t slice_offset = static_cast<size_t>(sb->slices - sb->base_slices);
   size_t slice_count = sb->count + slice_offset;
@@ -177,6 +181,7 @@ void grpc_slice_buffer_reset_and_unref_internal(grpc_slice_buffer* sb) {
 
   sb->count = 0;
   sb->length = 0;
+  sb->slices = sb->base_slices;
 }
 
 void grpc_slice_buffer_reset_and_unref(grpc_slice_buffer* sb) {

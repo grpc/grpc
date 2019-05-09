@@ -260,10 +260,10 @@ grpc_core::TraceFlag grpc_compression_trace(false, "compression");
 
 #define CALL_STACK_FROM_CALL(call)   \
   (grpc_call_stack*)((char*)(call) + \
-                     GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(grpc_call)))
+                     GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)))
 #define CALL_FROM_CALL_STACK(call_stack) \
   (grpc_call*)(((char*)(call_stack)) -   \
-               GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(grpc_call)))
+               GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)))
 
 #define CALL_ELEM_FROM_CALL(call, idx) \
   grpc_call_stack_element(CALL_STACK_FROM_CALL(call), idx)
@@ -329,7 +329,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   size_t initial_size = grpc_channel_get_call_size_estimate(args->channel);
   GRPC_STATS_INC_CALL_INITIAL_SIZE(initial_size);
   size_t call_and_stack_size =
-      GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(sizeof(grpc_call)) +
+      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)) +
       channel_stack->call_stack_size;
   size_t call_alloc_size =
       call_and_stack_size + (args->parent ? sizeof(child_call) : 0);
@@ -723,7 +723,7 @@ static void cancel_with_status(grpc_call* c, grpc_status_code status,
 }
 
 static void set_final_status(grpc_call* call, grpc_error* error) {
-  if (grpc_call_error_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_call_error_trace)) {
     gpr_log(GPR_DEBUG, "set_final_status %s", call->is_client ? "CLI" : "SVR");
     gpr_log(GPR_DEBUG, "%s", grpc_error_string(error));
   }
@@ -1280,7 +1280,7 @@ static void receiving_slice_ready(void* bctlp, grpc_error* error) {
   }
 
   if (error != GRPC_ERROR_NONE) {
-    if (grpc_trace_operation_failures.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures)) {
       GRPC_LOG_IF_ERROR("receiving_slice_ready", GRPC_ERROR_REF(error));
     }
     call->receiving_stream.reset();
@@ -1404,7 +1404,7 @@ static void validate_filtered_metadata(batch_control* bctl) {
 
     GPR_ASSERT(call->encodings_accepted_by_peer != 0);
     if (!GPR_BITGET(call->encodings_accepted_by_peer, compression_algorithm)) {
-      if (grpc_compression_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
         const char* algo_name = nullptr;
         grpc_compression_algorithm_name(compression_algorithm, &algo_name);
         gpr_log(GPR_ERROR,
