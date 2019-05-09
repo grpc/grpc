@@ -26,16 +26,18 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
-#define GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS 10000
+#define GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS 120000
 
 extern grpc_core::TraceFlag grpc_trace_cares_address_sorting;
 
 extern grpc_core::TraceFlag grpc_trace_cares_resolver;
 
-#define GRPC_CARES_TRACE_LOG(format, ...)                         \
-  if (grpc_trace_cares_resolver.enabled()) {                      \
-    gpr_log(GPR_DEBUG, "(c-ares resolver) " format, __VA_ARGS__); \
-  }
+#define GRPC_CARES_TRACE_LOG(format, ...)                           \
+  do {                                                              \
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_resolver)) {       \
+      gpr_log(GPR_DEBUG, "(c-ares resolver) " format, __VA_ARGS__); \
+    }                                                               \
+  } while (0)
 
 typedef struct grpc_ares_request grpc_ares_request;
 

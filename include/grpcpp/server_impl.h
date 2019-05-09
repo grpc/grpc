@@ -28,6 +28,7 @@
 #include <grpc/compression.h>
 #include <grpc/support/atm.h>
 #include <grpcpp/completion_queue.h>
+#include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
@@ -49,7 +50,6 @@ class ServerContext;
 
 namespace grpc_impl {
 
-class HealthCheckServiceInterface;
 class ServerInitializer;
 
 /// Represents a gRPC server.
@@ -99,7 +99,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   grpc_server* c_server();
 
   /// Returns the health check service.
-  grpc_impl::HealthCheckServiceInterface* GetHealthCheckService() const {
+  grpc::HealthCheckServiceInterface* GetHealthCheckService() const {
     return health_check_service_.get();
   }
 
@@ -333,7 +333,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
 
   std::unique_ptr<grpc_impl::ServerInitializer> server_initializer_;
 
-  std::unique_ptr<grpc_impl::HealthCheckServiceInterface> health_check_service_;
+  std::unique_ptr<grpc::HealthCheckServiceInterface> health_check_service_;
   bool health_check_service_disabled_;
 
   // When appropriate, use a default callback generic service to handle

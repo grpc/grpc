@@ -359,10 +359,12 @@ typedef struct {
  * load balancing policy. Note that this only works with the "ares"
  * DNS resolver, and isn't supported by the "native" DNS resolver. */
 #define GRPC_ARG_DNS_ENABLE_SRV_QUERIES "grpc.dns_enable_srv_queries"
-/** If set, determines the number of milliseconds that the c-ares based
- * DNS resolver will wait on queries before cancelling them. The default value
- * is 10000. Setting this to "0" will disable c-ares query timeouts
- * entirely. */
+/** If set, determines an upper bound on the number of milliseconds that the
+ * c-ares based DNS resolver will wait on queries before cancelling them.
+ * The default value is 120,000. Setting this to "0" will disable the
+ * overall timeout entirely. Note that this doesn't include internal c-ares
+ * timeouts/backoff/retry logic, and so the actual DNS resolution may time out
+ * sooner than the value specified here. */
 #define GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS "grpc.dns_ares_query_timeout"
 /** If set, uses a local subchannel pool within the channel. Otherwise, uses the
  * global subchannel pool. */

@@ -29,7 +29,7 @@ class CronetChannelCredentialsImpl final : public ChannelCredentials {
  public:
   CronetChannelCredentialsImpl(void* engine) : engine_(engine) {}
 
-  std::shared_ptr<grpc::Channel> CreateChannel(
+  std::shared_ptr<grpc::Channel> CreateChannelImpl(
       const string& target, const grpc::ChannelArguments& args) override {
     return CreateChannelWithInterceptors(
         target, args,
@@ -55,10 +55,10 @@ class CronetChannelCredentialsImpl final : public ChannelCredentials {
   }
   void* engine_;
 };
-
+}  // namespace grpc
+namespace grpc_impl {
 std::shared_ptr<ChannelCredentials> CronetChannelCredentials(void* engine) {
   return std::shared_ptr<ChannelCredentials>(
-      new CronetChannelCredentialsImpl(engine));
+      new grpc::CronetChannelCredentialsImpl(engine));
 }
-
-}  // namespace grpc
+}  // namespace grpc_impl

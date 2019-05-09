@@ -98,7 +98,7 @@ inline void grpc_stream_unref(grpc_stream_refcount* refcount,
 #else
 inline void grpc_stream_unref(grpc_stream_refcount* refcount) {
 #endif
-  if (refcount->refs.Unref()) {
+  if (GPR_UNLIKELY(refcount->refs.Unref())) {
     grpc_stream_destroy(refcount);
   }
 }

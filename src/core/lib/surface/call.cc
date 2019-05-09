@@ -321,16 +321,23 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
 
   GRPC_CHANNEL_INTERNAL_REF(args->channel, "call");
 
+  grpc_core::Arena* arena;
+  grpc_call* call;
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_channel_stack* channel_stack =
       grpc_channel_get_channel_stack(args->channel);
-  grpc_call* call;
   size_t initial_size = grpc_channel_get_call_size_estimate(args->channel);
   GRPC_STATS_INC_CALL_INITIAL_SIZE(initial_size);
-  grpc_core::Arena* arena = grpc_core::Arena::Create(initial_size);
-  call = new (arena->Alloc(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)) +
-                           channel_stack->call_stack_size))
-      grpc_call(arena, *args);
+  size_t call_and_stack_size =
+      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)) +
+      channel_stack->call_stack_size;
+  size_t call_alloc_size =
+      call_and_stack_size + (args->parent ? sizeof(child_call) : 0);
+
+  std::pair<grpc_core::Arena*, void*> arena_with_call =
+      grpc_core::Arena::CreateWithAlloc(initial_size, call_alloc_size);
+  arena = arena_with_call.first;
+  call = new (arena_with_call.second) grpc_call(arena, *args);
   *out_call = call;
   grpc_slice path = grpc_empty_slice();
   if (call->is_client) {
@@ -362,7 +369,8 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   bool immediately_cancel = false;
 
   if (args->parent != nullptr) {
-    call->child = arena->New<child_call>(args->parent);
+    call->child = new (reinterpret_cast<char*>(arena_with_call.second) +
+                       call_and_stack_size) child_call(args->parent);
 
     GRPC_CALL_INTERNAL_REF(args->parent, "child");
     GPR_ASSERT(call->is_client);
@@ -715,7 +723,7 @@ static void cancel_with_status(grpc_call* c, grpc_status_code status,
 }
 
 static void set_final_status(grpc_call* call, grpc_error* error) {
-  if (grpc_call_error_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_call_error_trace)) {
     gpr_log(GPR_DEBUG, "set_final_status %s", call->is_client ? "CLI" : "SVR");
     gpr_log(GPR_DEBUG, "%s", grpc_error_string(error));
   }
@@ -1272,7 +1280,7 @@ static void receiving_slice_ready(void* bctlp, grpc_error* error) {
   }
 
   if (error != GRPC_ERROR_NONE) {
-    if (grpc_trace_operation_failures.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures)) {
       GRPC_LOG_IF_ERROR("receiving_slice_ready", GRPC_ERROR_REF(error));
     }
     call->receiving_stream.reset();
@@ -1396,7 +1404,7 @@ static void validate_filtered_metadata(batch_control* bctl) {
 
     GPR_ASSERT(call->encodings_accepted_by_peer != 0);
     if (!GPR_BITGET(call->encodings_accepted_by_peer, compression_algorithm)) {
-      if (grpc_compression_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
         const char* algo_name = nullptr;
         grpc_compression_algorithm_name(compression_algorithm, &algo_name);
         gpr_log(GPR_ERROR,
