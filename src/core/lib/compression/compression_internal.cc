@@ -34,20 +34,20 @@
 
 grpc_message_compression_algorithm
 grpc_message_compression_algorithm_from_slice(const grpc_slice& str) {
-  if (grpc_slice_eq_static(str, GRPC_MDSTR_IDENTITY))
+  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_IDENTITY))
     return GRPC_MESSAGE_COMPRESS_NONE;
-  if (grpc_slice_eq_static(str, GRPC_MDSTR_DEFLATE))
+  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_DEFLATE))
     return GRPC_MESSAGE_COMPRESS_DEFLATE;
-  if (grpc_slice_eq_static(str, GRPC_MDSTR_GZIP))
+  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_GZIP))
     return GRPC_MESSAGE_COMPRESS_GZIP;
   return GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT;
 }
 
 grpc_stream_compression_algorithm grpc_stream_compression_algorithm_from_slice(
     const grpc_slice& str) {
-  if (grpc_slice_eq_static(str, GRPC_MDSTR_IDENTITY))
+  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_IDENTITY))
     return GRPC_STREAM_COMPRESS_NONE;
-  if (grpc_slice_eq_static(str, GRPC_MDSTR_GZIP))
+  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_GZIP))
     return GRPC_STREAM_COMPRESS_GZIP;
   return GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT;
 }
@@ -248,13 +248,13 @@ grpc_message_compression_algorithm grpc_message_compression_algorithm_for_level(
 
 int grpc_message_compression_algorithm_parse(
     grpc_slice value, grpc_message_compression_algorithm* algorithm) {
-  if (grpc_slice_eq_static(value, GRPC_MDSTR_IDENTITY)) {
+  if (grpc_slice_eq_static_interned(value, GRPC_MDSTR_IDENTITY)) {
     *algorithm = GRPC_MESSAGE_COMPRESS_NONE;
     return 1;
-  } else if (grpc_slice_eq_static(value, GRPC_MDSTR_DEFLATE)) {
+  } else if (grpc_slice_eq_static_interned(value, GRPC_MDSTR_DEFLATE)) {
     *algorithm = GRPC_MESSAGE_COMPRESS_DEFLATE;
     return 1;
-  } else if (grpc_slice_eq_static(value, GRPC_MDSTR_GZIP)) {
+  } else if (grpc_slice_eq_static_interned(value, GRPC_MDSTR_GZIP)) {
     *algorithm = GRPC_MESSAGE_COMPRESS_GZIP;
     return 1;
   } else {
@@ -267,10 +267,10 @@ int grpc_message_compression_algorithm_parse(
 
 int grpc_stream_compression_algorithm_parse(
     grpc_slice value, grpc_stream_compression_algorithm* algorithm) {
-  if (grpc_slice_eq_static(value, GRPC_MDSTR_IDENTITY)) {
+  if (grpc_slice_eq_static_interned(value, GRPC_MDSTR_IDENTITY)) {
     *algorithm = GRPC_STREAM_COMPRESS_NONE;
     return 1;
-  } else if (grpc_slice_eq_static(value, GRPC_MDSTR_GZIP)) {
+  } else if (grpc_slice_eq_static_interned(value, GRPC_MDSTR_GZIP)) {
     *algorithm = GRPC_STREAM_COMPRESS_GZIP;
     return 1;
   } else {
