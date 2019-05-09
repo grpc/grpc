@@ -144,21 +144,29 @@ static void BM_EmptyCore(benchmark::State& state) {
 }
 BENCHMARK(BM_EmptyCore);
 
-// helper for tests to shutdown correctly and tersely
+// Helper for tests to shutdown correctly and tersely
 static void shutdown_and_destroy(grpc_completion_queue* cc) {
   grpc_completion_queue_shutdown(cc);
   grpc_completion_queue_destroy(cc);
 }
 
+// Tag completion queue iterate times
 class TagCallback : public grpc_experimental_completion_queue_functor {
  public:
-  TagCallback() { functor_run = &TagCallback::Run; }
+  TagCallback(int* iter) : iter_ (iter) {
+    functor_run = &TagCallback::Run;
+  }
   ~TagCallback() {}
   static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
     GPR_ASSERT(static_cast<bool>(ok));
+    *static_cast<TagCallback*>(cb)->iter_ += 1;
   };
+
+ private:
+  int* iter_;
 };
 
+// Check if completion queue is shut down
 class ShutdownCallback : public grpc_experimental_completion_queue_functor {
  public:
   ShutdownCallback(bool* done) : done_(done) {
@@ -175,7 +183,8 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
 
 static void BM_Callback_CQ_Pass1Core(benchmark::State& state) {
   TrackCounters track_counters;
-  TagCallback tag;
+  int iteration = 0;
+  TagCallback tag_cb(&iteration);
   bool got_shutdown = false;
   ShutdownCallback shutdown_cb(&got_shutdown);
   grpc_completion_queue* cc =
@@ -184,12 +193,13 @@ static void BM_Callback_CQ_Pass1Core(benchmark::State& state) {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     grpc_cq_completion completion;
-    GPR_ASSERT(grpc_cq_begin_op(cc, &tag));
-    grpc_cq_end_op(cc, &tag, GRPC_ERROR_NONE, DoneWithCompletionOnStack,
+    GPR_ASSERT(grpc_cq_begin_op(cc, &tag_cb));
+    grpc_cq_end_op(cc, &tag_cb, GRPC_ERROR_NONE, DoneWithCompletionOnStack,
                    nullptr, &completion);
   }
   shutdown_and_destroy(cc);
   GPR_ASSERT(got_shutdown);
+  GPR_ASSERT(iteration == static_cast<int>(state.iterations()));
   track_counters.Finish(state);
 }
 BENCHMARK(BM_Callback_CQ_Pass1Core);

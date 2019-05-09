@@ -230,7 +230,6 @@ grpc_cc_library(
     external_deps = [
         "benchmark",
     ],
-    tags = ["no_windows"],
     deps = [
         ":helpers",
         "//src/proto/grpc/testing:echo_proto",

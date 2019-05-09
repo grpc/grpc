@@ -36,7 +36,6 @@ namespace testing {
  * BENCHMARKING KERNELS
  */
 
-// Send next rpc when callback function is evoked.
 void SendCallbackUnaryPingPong(benchmark::State* state, ClientContext* cli_ctx,
                                EchoRequest* request, EchoResponse* response,
                                EchoTestService::Stub* stub_, bool* done,

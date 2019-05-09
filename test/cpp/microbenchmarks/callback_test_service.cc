@@ -75,11 +75,13 @@ CallbackStreamingTestService::BidiStream() {
     }
     void OnDone() override {
       GPR_ASSERT(finished_);
+      GPR_ASSERT(num_msgs_read_ == server_write_last_);
       delete this;
     }
     void OnCancel() override {}
     void OnReadDone(bool ok) override {
       if (!ok) {
+        gpr_log(GPR_ERROR, "Server read failed");
         return;
       }
       num_msgs_read_++;
@@ -96,6 +98,7 @@ CallbackStreamingTestService::BidiStream() {
     }
     void OnWriteDone(bool ok) override {
       if (!ok) {
+        gpr_log(GPR_ERROR, "Server write failed");
         return;
       }
       if (num_msgs_read_ < server_write_last_) {

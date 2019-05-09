@@ -34,16 +34,105 @@ namespace testing {
  * BENCHMARKING KERNELS
  */
 
+class BidiClient
+    : public grpc::experimental::ClientBidiReactor<EchoRequest, EchoResponse> {
+ public:
+  BidiClient(benchmark::State* state, EchoTestService::Stub* stub,
+             ClientContext* cli_ctx, EchoRequest* request,
+             EchoResponse* response)
+      : state_{state},
+        stub_{stub},
+        cli_ctx_{cli_ctx},
+        request_{request},
+        response_{response} {
+    msgs_size_ = state->range(0);
+    msgs_to_send_ = state->range(1);
+    StartNewRpc();
+  }
+
+  void OnReadDone(bool ok) override {
+    if (!ok) {
+      gpr_log(GPR_ERROR, "Client read failed");
+      return;
+    }
+    if (writes_complete_ < msgs_to_send_) {
+      MaybeWrite();
+    }
+  }
+
+  void OnWriteDone(bool ok) override {
+    if (!ok) {
+      gpr_log(GPR_ERROR, "Client write failed");
+      return;
+    }
+    writes_complete_++;
+    StartRead(response_);
+  }
+
+  void OnDone(const Status& s) override {
+    GPR_ASSERT(s.ok());
+    GPR_ASSERT(writes_complete_ == msgs_to_send_);
+    if (state_->KeepRunning()) {
+      writes_complete_ = 0;
+      StartNewRpc();
+    } else {
+      std::unique_lock<std::mutex> l(mu);
+      done = true;
+      cv.notify_one();
+    }
+  }
+
+  void StartNewRpc() {
+    cli_ctx_->~ClientContext();
+    new (cli_ctx_) ClientContext();
+    cli_ctx_->AddMetadata(kServerFinishAfterNReads,
+                          grpc::to_string(msgs_to_send_));
+    cli_ctx_->AddMetadata(kServerMessageSize, grpc::to_string(msgs_size_));
+    stub_->experimental_async()->BidiStream(cli_ctx_, this);
+    MaybeWrite();
+    StartCall();
+  }
+
+  void Await() {
+    std::unique_lock<std::mutex> l(mu);
+    while (!done) {
+      cv.wait(l);
+    }
+  }
+
+ private:
+  void MaybeWrite() {
+    if (writes_complete_ < msgs_to_send_) {
+      StartWrite(request_);
+    } else {
+      StartWritesDone();
+    }
+  }
+
+  benchmark::State* state_;
+  EchoTestService::Stub* stub_;
+  ClientContext* cli_ctx_;
+  EchoRequest* request_;
+  EchoResponse* response_;
+  int writes_complete_{0};
+  int msgs_to_send_;
+  int msgs_size_;
+  std::mutex mu;
+  std::condition_variable cv;
+  bool done;
+};
+
 template <class Fixture, class ClientContextMutator, class ServerContextMutator>
 static void BM_CallbackBidiStreaming(benchmark::State& state) {
-  const int message_size = state.range(0);
-  const int max_ping_pongs = state.range(1);
+  int message_size = state.range(0);
+  int max_ping_pongs = state.range(1);
   CallbackStreamingTestService service;
   std::unique_ptr<Fixture> fixture(new Fixture(&service));
   std::unique_ptr<EchoTestService::Stub> stub_(
       EchoTestService::NewStub(fixture->channel()));
   EchoRequest request;
   EchoResponse response;
+  ClientContext cli_ctx;
   if (message_size > 0) {
     request.set_message(std::string(message_size, 'a'));
   } else {
@@ -51,7 +140,7 @@ static void BM_CallbackBidiStreaming(benchmark::State& state) {
   }
   if (state.KeepRunning()) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
-    BidiClient test{&state, stub_.get(), &request, &response};
+    BidiClient test{&state, stub_.get(), &cli_ctx, &request, &response};
     test.Await();
   }
   fixture->Finish(state);
