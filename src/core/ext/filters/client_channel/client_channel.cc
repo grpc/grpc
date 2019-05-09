@@ -273,7 +273,7 @@ class ChannelData {
   ExternalConnectivityWatcher::WatcherList external_connectivity_watcher_list_;
   UniquePtr<char> health_check_service_name_;
   RefCountedPtr<ServiceConfig> saved_service_config_;
-  bool set_service_config_ = false;
+  bool received_first_resolver_result_ = false;
 
   //
   // Fields accessed from both data plane and control plane combiners.
@@ -1249,7 +1249,7 @@ bool ChannelData::ProcessResolverResultLocked(
       result.service_config_error != GRPC_ERROR_NONE) {
     return false;
   }
-  UniquePtr<char> service_config_json = nullptr;
+  UniquePtr<char> service_config_json;
   // Process service config.
   const internal::ClientChannelGlobalParsedObject* parsed_object = nullptr;
   if (service_config != nullptr) {
@@ -1265,14 +1265,12 @@ bool ChannelData::ProcessResolverResultLocked(
        strcmp(service_config->service_config_json(),
               chand->saved_service_config_->service_config_json()) != 0);
   if (service_config_changed) {
-    if (service_config != nullptr) {
-      service_config_json.reset(
-          gpr_strdup(service_config->service_config_json()));
-    } else {
-      service_config_json.reset(gpr_strdup(""));
-    }
+    service_config_json.reset(gpr_strdup(
+        service_config != nullptr ? service_config->service_config_json()
+                                  : ""));
     if (grpc_client_channel_routing_trace.enabled()) {
-      gpr_log(GPR_INFO, "chand=%p: resolver returned service config: \"%s\"",
+      gpr_log(GPR_INFO,
+              "chand=%p: resolver returned updated service config: \"%s\"",
               chand, service_config_json.get());
     }
     chand->saved_service_config_ = std::move(service_config);
@@ -1283,8 +1281,11 @@ bool ChannelData::ProcessResolverResultLocked(
       chand->health_check_service_name_.reset();
     }
   }
-  if (service_config_changed || !chand->set_service_config_) {
-    chand->set_service_config_ = true;
+  // We want to set the service config atleast once. This should not really be
+  // needed, but we are doing it as a defensive approach. This can be removed,
+  // if we feel it is unnecessary.
+  if (service_config_changed || !chand->received_first_resolver_result_) {
+    chand->received_first_resolver_result_ = true;
     Optional<internal::ClientChannelGlobalParsedObject::RetryThrottling>
         retry_throttle_data;
     if (parsed_object != nullptr) {
@@ -3029,6 +3030,8 @@ void CallData::AddSubchannelBatchesForPendingBatches(
     // If we're not retrying, just send the batch as-is.
     if (method_params_ == nullptr ||
         method_params_->retry_policy() == nullptr || retry_committed_) {
+      // TODO(roth) : We should probably call
+      // MaybeInjectRecvTrailingMetadataReadyForLoadBalancingPolicy here.
       AddClosureForSubchannelBatch(elem, batch, closures);
       PendingBatchClear(pending);
       continue;

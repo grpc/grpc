@@ -738,7 +738,7 @@ TEST_F(SingleBalancerTest, SelectGrpclbWithMigrationServiceConfig) {
 }
 
 TEST_F(SingleBalancerTest,
-       DoNotSpecialCaseUseGrpclbWithLoadBalancingConfigTest1) {
+       DoNotSpecialCaseUseGrpclbWithLoadBalancingConfigTest) {
   const int kFallbackTimeoutMs = 200 * grpc_test_slowdown_factor();
   ResetStub(kFallbackTimeoutMs);
   SetNextResolution({AddressData{backends_[0]->port_, false, ""},
@@ -753,8 +753,9 @@ TEST_F(SingleBalancerTest,
   EXPECT_EQ("pick_first", channel_->GetLoadBalancingPolicyName());
 }
 
-TEST_F(SingleBalancerTest,
-       DoNotSpecialCaseUseGrpclbWithLoadBalancingConfigTest2) {
+TEST_F(
+    SingleBalancerTest,
+    DoNotSpecialCaseUseGrpclbWithLoadBalancingConfigTestAndNoBackendAddress) {
   const int kFallbackTimeoutMs = 200 * grpc_test_slowdown_factor();
   ResetStub(kFallbackTimeoutMs);
   SetNextResolution({AddressData{balancers_[0]->port_, true, ""}},

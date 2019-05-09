@@ -506,6 +506,10 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
                                          GRPC_ARG_INHIBIT_HEALTH_CHECKING};
   // Create a subchannel for each address.
   for (size_t i = 0; i < addresses.size(); i++) {
+    // TODO(roth): we should ideally hide this from the LB policy code. In
+    // principle, if we're dealing with this special case in the client_channel
+    // code for selecting grpclb, then we should also strip out these addresses
+    // there if we're not using grpclb.
     if (addresses[i].IsBalancer()) {
       continue;
     }
