@@ -139,9 +139,8 @@ class CallCountingHelper {
     Atomic<intptr_t> calls_failed{0};
     Atomic<gpr_cycle_counter> last_call_started_cycle{0};
     // Make sure the size is exactly one cache line.
-    uint8_t padding[GPR_CACHELINE_SIZE - sizeof(calls_started) -
-                    sizeof(calls_succeeded) - sizeof(calls_failed) -
-                    sizeof(last_call_started_cycle)];
+    uint8_t padding[GPR_CACHELINE_SIZE - 3 * sizeof(Atomic<intptr_t>) -
+                    sizeof(Atomic<gpr_cycle_counter>)];
   } GPR_ALIGN_STRUCT(GPR_CACHELINE_SIZE);
 
   struct CounterData {
