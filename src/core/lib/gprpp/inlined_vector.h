@@ -190,7 +190,13 @@ class InlinedVector {
       T& value = data()[i];
       value.~T();
     }
-    gpr_free(dynamic_);
+    if (dynamic_ != nullptr) {
+      if (std::alignment_of<T>::value == 0) {
+        gpr_free(dynamic_);
+      } else {
+        gpr_free_aligned(dynamic_);
+      }
+    }
   }
 
   typename std::aligned_storage<sizeof(T)>::type inline_[N];
