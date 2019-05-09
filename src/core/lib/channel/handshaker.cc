@@ -94,7 +94,7 @@ void HandshakeManager::ShutdownAllPending(grpc_error* why) {
 }
 
 void HandshakeManager::Add(RefCountedPtr<Handshaker> handshaker) {
-  if (grpc_handshaker_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)) {
     gpr_log(
         GPR_INFO,
         "handshake_manager %p: adding handshaker %s [%p] at index %" PRIuPTR,
@@ -125,7 +125,7 @@ void HandshakeManager::Shutdown(grpc_error* why) {
 // on_handshake_done callback.
 // Returns true if we've scheduled the on_handshake_done callback.
 bool HandshakeManager::CallNextHandshakerLocked(grpc_error* error) {
-  if (grpc_handshaker_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)) {
     char* args_str = HandshakerArgsString(&args_);
     gpr_log(GPR_INFO,
             "handshake_manager %p: error=%s shutdown=%d index=%" PRIuPTR
@@ -159,7 +159,7 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error* error) {
         args_.read_buffer = nullptr;
       }
     }
-    if (grpc_handshaker_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)) {
       gpr_log(GPR_INFO,
               "handshake_manager %p: handshaking complete -- scheduling "
               "on_handshake_done with error=%s",
@@ -172,7 +172,7 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error* error) {
     is_shutdown_ = true;
   } else {
     auto handshaker = handshakers_[index_];
-    if (grpc_handshaker_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)) {
       gpr_log(
           GPR_INFO,
           "handshake_manager %p: calling handshaker %s [%p] at index %" PRIuPTR,
