@@ -65,7 +65,7 @@ CallCountingHelper::CallCountingHelper() {
   num_cores_ = GPR_MAX(1, gpr_cpu_num_cores());
   per_cpu_counter_data_storage_.reserve(num_cores_);
   for (size_t i = 0; i < num_cores_; ++i) {
-    per_cpu_counter_data_storage_.push_back(AtomicCounterData());
+    per_cpu_counter_data_storage_.emplace_back();
   }
 }
 
