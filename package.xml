@@ -478,6 +478,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/max_age/max_age_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/message_size/message_size_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client_authority_filter.h" role="src" />
@@ -811,6 +812,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/census/grpc_context.cc" role="src" />
