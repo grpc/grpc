@@ -77,7 +77,7 @@ class ResolvingLoadBalancingPolicy::ResolverResultHandler
       : parent_(std::move(parent)) {}
 
   ~ResolverResultHandler() {
-    if (parent_->tracer_->enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(*(parent_->tracer_))) {
       gpr_log(GPR_INFO, "resolving_lb=%p: resolver shutdown complete",
               parent_.get());
     }
@@ -125,7 +125,7 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
     // If this request is from the pending child policy, ignore it until
     // it reports READY, at which point we swap it into place.
     if (CalledByPendingChild()) {
-      if (parent_->tracer_->enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(*(parent_->tracer_))) {
         gpr_log(GPR_INFO,
                 "resolving_lb=%p helper=%p: pending child policy %p reports "
                 "state=%s",
@@ -151,7 +151,7 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
     if (parent_->pending_lb_policy_ != nullptr && !CalledByPendingChild()) {
       return;
     }
-    if (parent_->tracer_->enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(*(parent_->tracer_))) {
       gpr_log(GPR_INFO, "resolving_lb=%p: started name re-resolving",
               parent_.get());
     }
@@ -241,7 +241,7 @@ void ResolvingLoadBalancingPolicy::ShutdownLocked() {
     resolver_.reset();
     MutexLock lock(&lb_policy_mu_);
     if (lb_policy_ != nullptr) {
-      if (tracer_->enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
         gpr_log(GPR_INFO, "resolving_lb=%p: shutting down lb_policy=%p", this,
                 lb_policy_.get());
       }
@@ -250,7 +250,7 @@ void ResolvingLoadBalancingPolicy::ShutdownLocked() {
       lb_policy_.reset();
     }
     if (pending_lb_policy_ != nullptr) {
-      if (tracer_->enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
         gpr_log(GPR_INFO, "resolving_lb=%p: shutting down pending lb_policy=%p",
                 this, pending_lb_policy_.get());
       }
@@ -298,7 +298,7 @@ void ResolvingLoadBalancingPolicy::FillChildRefsForChannelz(
 }
 
 void ResolvingLoadBalancingPolicy::StartResolvingLocked() {
-  if (tracer_->enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
     gpr_log(GPR_INFO, "resolving_lb=%p: starting name resolution", this);
   }
   GPR_ASSERT(!started_resolving_);
@@ -314,7 +314,7 @@ void ResolvingLoadBalancingPolicy::OnResolverError(grpc_error* error) {
     GRPC_ERROR_UNREF(error);
     return;
   }
-  if (tracer_->enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
     gpr_log(GPR_INFO, "resolving_lb=%p: resolver transient failure: %s", this,
             grpc_error_string(error));
   }
@@ -398,7 +398,7 @@ void ResolvingLoadBalancingPolicy::CreateOrUpdateLbPolicyLocked(
     // Cases 1, 2b, and 3b: create a new child policy.
     // If lb_policy_ is null, we set it (case 1), else we set
     // pending_lb_policy_ (cases 2b and 3b).
-    if (tracer_->enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
       gpr_log(GPR_INFO, "resolving_lb=%p: Creating new %schild policy %s", this,
               lb_policy_ == nullptr ? "" : "pending ", lb_policy_name);
     }
@@ -419,7 +419,7 @@ void ResolvingLoadBalancingPolicy::CreateOrUpdateLbPolicyLocked(
   }
   GPR_ASSERT(policy_to_update != nullptr);
   // Update the policy.
-  if (tracer_->enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
     gpr_log(GPR_INFO, "resolving_lb=%p: Updating %schild policy %p", this,
             policy_to_update == pending_lb_policy_.get() ? "pending " : "",
             policy_to_update);
@@ -458,7 +458,7 @@ ResolvingLoadBalancingPolicy::CreateLbPolicyLocked(
     return nullptr;
   }
   helper->set_child(lb_policy.get());
-  if (tracer_->enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
     gpr_log(GPR_INFO, "resolving_lb=%p: created new LB policy \"%s\" (%p)",
             this, lb_policy_name, lb_policy.get());
   }
@@ -514,7 +514,7 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
     Resolver::Result result) {
   // Handle race conditions.
   if (resolver_ == nullptr) return;
-  if (tracer_->enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
     gpr_log(GPR_INFO, "resolving_lb=%p: got resolver result", this);
   }
   // We only want to trace the address resolution in the follow cases:

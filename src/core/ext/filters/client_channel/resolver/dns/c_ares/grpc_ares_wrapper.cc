@@ -101,7 +101,7 @@ static void log_address_sorting_list(const ServerAddressList& addresses,
 }
 
 void grpc_cares_wrapper_address_sorting_sort(ServerAddressList* addresses) {
-  if (grpc_trace_cares_address_sorting.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_address_sorting)) {
     log_address_sorting_list(*addresses, "input");
   }
   address_sorting_sortable* sortables = (address_sorting_sortable*)gpr_zalloc(
@@ -120,7 +120,7 @@ void grpc_cares_wrapper_address_sorting_sort(ServerAddressList* addresses) {
   }
   gpr_free(sortables);
   *addresses = std::move(sorted);
-  if (grpc_trace_cares_address_sorting.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_address_sorting)) {
     log_address_sorting_list(*addresses, "output");
   }
 }
