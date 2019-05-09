@@ -154,6 +154,10 @@ void grpc_ares_complete_request_locked(grpc_ares_request* r) {
 static grpc_ares_hostbyname_request* create_hostbyname_request_locked(
     grpc_ares_request* parent_request, char* host, uint16_t port,
     bool is_balancer) {
+  GRPC_CARES_TRACE_LOG(
+      "request:%p create_hostbyname_request_locked host:%s port:%d "
+      "is_balancer:%d",
+      parent_request, host, port, is_balancer);
   grpc_ares_hostbyname_request* hr = static_cast<grpc_ares_hostbyname_request*>(
       gpr_zalloc(sizeof(grpc_ares_hostbyname_request)));
   hr->parent_request = parent_request;
@@ -251,6 +255,8 @@ static void on_srv_query_done_locked(void* arg, int status, int timeouts,
     GRPC_CARES_TRACE_LOG("request:%p on_srv_query_done_locked ARES_SUCCESS", r);
     struct ares_srv_reply* reply;
     const int parse_status = ares_parse_srv_reply(abuf, alen, &reply);
+    GRPC_CARES_TRACE_LOG("request:%p ares_parse_srv_reply: %d", r,
+                         parse_status);
     if (parse_status == ARES_SUCCESS) {
       ares_channel* channel =
           grpc_ares_ev_driver_get_channel_locked(r->ev_driver);
