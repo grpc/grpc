@@ -104,8 +104,9 @@ class InlinedVector {
               ? static_cast<T*>(gpr_malloc(sizeof(T) * capacity))
               : static_cast<T*>(gpr_malloc_aligned(
                     sizeof(T) * capacity, std::alignment_of<T>::value));
+
       move_elements(data(), new_dynamic, size_);
-      gpr_free(dynamic_);
+      free_dynamic();
       dynamic_ = new_dynamic;
       capacity_ = capacity;
     }
@@ -190,6 +191,10 @@ class InlinedVector {
       T& value = data()[i];
       value.~T();
     }
+    free_dynamic();
+  }
+
+  void free_dynamic() {
     if (dynamic_ != nullptr) {
       if (std::alignment_of<T>::value == 0) {
         gpr_free(dynamic_);
