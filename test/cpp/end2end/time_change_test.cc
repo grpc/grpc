@@ -139,7 +139,7 @@ class TimeChangeTest : public ::testing::Test {
         "--address=" + addr,
     }));
     GPR_ASSERT(server_);
-    channel_ = CreateChannel(addr, InsecureChannelCredentials());
+    channel_ = grpc::CreateChannel(addr, InsecureChannelCredentials());
     GPR_ASSERT(channel_);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }

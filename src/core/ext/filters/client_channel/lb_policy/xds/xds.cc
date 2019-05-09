@@ -608,7 +608,7 @@ void XdsLb::FallbackHelper::UpdateState(grpc_connectivity_state state,
   // If this request is from the pending fallback policy, ignore it until
   // it reports READY, at which point we swap it into place.
   if (CalledByPendingFallback()) {
-    if (grpc_lb_xds_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       gpr_log(
           GPR_INFO,
           "[xdslb %p helper %p] pending fallback policy %p reports state=%s",
@@ -635,7 +635,7 @@ void XdsLb::FallbackHelper::RequestReresolution() {
           ? parent_->pending_fallback_policy_.get()
           : parent_->fallback_policy_.get();
   if (child_ != latest_fallback_policy) return;
-  if (grpc_lb_xds_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO,
             "[xdslb %p] Re-resolution requested from the fallback policy (%p).",
             parent_.get(), child_);
@@ -755,7 +755,7 @@ void XdsLb::BalancerChannelState::Orphan() {
 
 void XdsLb::BalancerChannelState::StartCallRetryTimerLocked() {
   grpc_millis next_try = lb_call_backoff_.NextAttemptTime();
-  if (grpc_lb_xds_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO,
             "[xdslb %p] Failed to connect to LB server (lb_chand: %p)...",
             xdslb_policy_.get(), this);
@@ -781,7 +781,7 @@ void XdsLb::BalancerChannelState::OnCallRetryTimerLocked(void* arg,
   lb_chand->retry_timer_callback_pending_ = false;
   if (!lb_chand->shutting_down_ && error == GRPC_ERROR_NONE &&
       lb_chand->lb_calld_ == nullptr) {
-    if (grpc_lb_xds_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       gpr_log(GPR_INFO,
               "[xdslb %p] Restarting call to LB server (lb_chand: %p)",
               lb_chand->xdslb_policy_.get(), lb_chand);
@@ -796,7 +796,7 @@ void XdsLb::BalancerChannelState::StartCallLocked() {
   GPR_ASSERT(channel_ != nullptr);
   GPR_ASSERT(lb_calld_ == nullptr);
   lb_calld_ = MakeOrphanable<BalancerCallState>(Ref());
-  if (grpc_lb_xds_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO,
             "[xdslb %p] Query for backends (lb_chand: %p, lb_calld: %p)",
             xdslb_policy_.get(), this, lb_calld_.get());
@@ -932,7 +932,7 @@ void XdsLb::BalancerChannelState::BalancerCallState::Orphan() {
 
 void XdsLb::BalancerChannelState::BalancerCallState::StartQuery() {
   GPR_ASSERT(lb_call_ != nullptr);
-  if (grpc_lb_xds_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO, "[xdslb %p] Starting LB call (lb_calld: %p, lb_call: %p)",
             xdslb_policy(), this, lb_call_);
   }
@@ -1121,7 +1121,7 @@ void XdsLb::BalancerChannelState::BalancerCallState::
             GPR_MAX(GPR_MS_PER_SEC, interval);
       }
     }
-    if (grpc_lb_xds_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       if (lb_calld->client_stats_report_interval_ != 0) {
         gpr_log(GPR_INFO,
                 "[xdslb %p] Received initial LB response message; "
@@ -1140,7 +1140,7 @@ void XdsLb::BalancerChannelState::BalancerCallState::
                   response_slice)) != nullptr) {
     // Have seen initial response, look for serverlist.
     GPR_ASSERT(lb_calld->lb_call_ != nullptr);
-    if (grpc_lb_xds_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       gpr_log(GPR_INFO,
               "[xdslb %p] Serverlist with %" PRIuPTR " servers received",
               xdslb_policy, serverlist->num_servers);
@@ -1159,7 +1159,7 @@ void XdsLb::BalancerChannelState::BalancerCallState::
     // such channels don't have any current call but we have checked this call
     // is a current call.
     if (!lb_calld->lb_chand_->IsCurrentChannel()) {
-      if (grpc_lb_xds_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
         gpr_log(GPR_INFO,
                 "[xdslb %p] Promoting pending LB channel %p to replace "
                 "current LB channel %p",
@@ -1180,7 +1180,7 @@ void XdsLb::BalancerChannelState::BalancerCallState::
     if (!xdslb_policy->locality_serverlist_.empty() &&
         xds_grpclb_serverlist_equals(
             xdslb_policy->locality_serverlist_[0]->serverlist, serverlist)) {
-      if (grpc_lb_xds_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
         gpr_log(GPR_INFO,
                 "[xdslb %p] Incoming server list identical to current, "
                 "ignoring.",
@@ -1252,7 +1252,7 @@ void XdsLb::BalancerChannelState::BalancerCallState::
   XdsLb* xdslb_policy = lb_calld->xdslb_policy();
   BalancerChannelState* lb_chand = lb_calld->lb_chand_.get();
   GPR_ASSERT(lb_calld->lb_call_ != nullptr);
-  if (grpc_lb_xds_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     char* status_details =
         grpc_slice_to_c_string(lb_calld->lb_call_status_details_);
     gpr_log(GPR_INFO,
@@ -1271,7 +1271,7 @@ void XdsLb::BalancerChannelState::BalancerCallState::
     if (lb_chand != xdslb_policy->LatestLbChannel()) {
       // This channel must be the current one and there is a pending one. Swap
       // in the pending one and we are done.
-      if (grpc_lb_xds_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
         gpr_log(GPR_INFO,
                 "[xdslb %p] Promoting pending LB channel %p to replace "
                 "current LB channel %p",
@@ -1370,7 +1370,7 @@ XdsLb::XdsLb(Args args)
   grpc_uri* uri = grpc_uri_parse(server_uri, true);
   GPR_ASSERT(uri->path[0] != '\0');
   server_name_ = gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path);
-  if (grpc_lb_xds_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO,
             "[xdslb %p] Will use '%s' as the server name for LB request.", this,
             server_name_);
@@ -1569,7 +1569,7 @@ void XdsLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
   // this callback actually runs, don't fall back.
   if (xdslb_policy->fallback_at_startup_checks_pending_ &&
       !xdslb_policy->shutting_down_ && error == GRPC_ERROR_NONE) {
-    if (grpc_lb_xds_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       gpr_log(GPR_INFO,
               "[xdslb %p] Child policy not ready after fallback timeout; "
               "entering fallback mode",
@@ -1657,7 +1657,7 @@ void XdsLb::UpdateFallbackPolicyLocked() {
     // Cases 1, 2b, and 3b: create a new child policy.
     // If child_policy_ is null, we set it (case 1), else we set
     // pending_child_policy_ (cases 2b and 3b).
-    if (grpc_lb_xds_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       gpr_log(GPR_INFO, "[xdslb %p] Creating new %sfallback policy %s", this,
               fallback_policy_ == nullptr ? "" : "pending ",
               fallback_policy_name);
@@ -1681,7 +1681,7 @@ void XdsLb::UpdateFallbackPolicyLocked() {
   }
   GPR_ASSERT(policy_to_update != nullptr);
   // Update the policy.
-  if (grpc_lb_xds_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(
         GPR_INFO, "[xdslb %p] Updating %sfallback policy %p", this,
         policy_to_update == pending_fallback_policy_.get() ? "pending " : "",
@@ -1707,7 +1707,7 @@ OrphanablePtr<LoadBalancingPolicy> XdsLb::CreateFallbackPolicyLocked(
     return nullptr;
   }
   helper->set_child(lb_policy.get());
-  if (grpc_lb_xds_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO, "[xdslb %p] Created new fallback policy %s (%p)", this,
             name, lb_policy.get());
   }
@@ -1829,7 +1829,7 @@ XdsLb::LocalityMap::LocalityEntry::CreateChildPolicyLocked(
     return nullptr;
   }
   helper->set_child(lb_policy.get());
-  if (grpc_lb_xds_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO, "[xdslb %p] Created new child policy %s (%p)", this, name,
             lb_policy.get());
   }
@@ -1920,7 +1920,7 @@ void XdsLb::LocalityMap::LocalityEntry::UpdateLocked(
     // Cases 1, 2b, and 3b: create a new child policy.
     // If child_policy_ is null, we set it (case 1), else we set
     // pending_child_policy_ (cases 2b and 3b).
-    if (grpc_lb_xds_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       gpr_log(GPR_INFO, "[xdslb %p] Creating new %schild policy %s", this,
               child_policy_ == nullptr ? "" : "pending ", child_policy_name);
     }
@@ -1943,7 +1943,7 @@ void XdsLb::LocalityMap::LocalityEntry::UpdateLocked(
   }
   GPR_ASSERT(policy_to_update != nullptr);
   // Update the policy.
-  if (grpc_lb_xds_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO, "[xdslb %p] Updating %schild policy %p", this,
             policy_to_update == pending_child_policy_.get() ? "pending " : "",
             policy_to_update);
@@ -2029,7 +2029,7 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
   // If this request is from the pending child policy, ignore it until
   // it reports READY, at which point we swap it into place.
   if (CalledByPendingChild()) {
-    if (grpc_lb_xds_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       gpr_log(GPR_INFO,
               "[xdslb %p helper %p] pending child policy %p reports state=%s",
               entry_->parent_.get(), this, entry_->pending_child_policy_.get(),
@@ -2129,7 +2129,7 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::RequestReresolution() {
   if (entry_->pending_child_policy_ != nullptr && !CalledByPendingChild()) {
     return;
   }
-  if (grpc_lb_xds_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO,
             "[xdslb %p] Re-resolution requested from the internal RR policy "
             "(%p).",

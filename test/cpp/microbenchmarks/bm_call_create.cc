@@ -47,8 +47,6 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
-auto& force_library_initialization = Library::get();
-
 void BM_Zalloc(benchmark::State& state) {
   // speed of light for call creation is zalloc, so benchmark a few interesting
   // sizes
@@ -823,6 +821,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();

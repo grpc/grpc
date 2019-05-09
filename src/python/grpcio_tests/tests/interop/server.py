@@ -21,7 +21,7 @@ import time
 import grpc
 from src.proto.grpc.testing import test_pb2_grpc
 
-from tests.interop import methods
+from tests.interop import service
 from tests.interop import resources
 from tests.unit import test_common
 
@@ -42,7 +42,7 @@ def serve():
     args = parser.parse_args()
 
     server = test_common.test_server()
-    test_pb2_grpc.add_TestServiceServicer_to_server(methods.TestService(),
+    test_pb2_grpc.add_TestServiceServicer_to_server(service.TestService(),
                                                     server)
     if args.use_tls:
         private_key = resources.private_key()

@@ -37,13 +37,13 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/tcp_client.h"
@@ -142,7 +142,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
             grpc_fake_transport_security_credentials_create())) {
     // Make the backup poller poll very frequently in order to pick up
     // updates from all the subchannels's FDs.
-    gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "1");
+    GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
   }
 
   void SetUp() override {
@@ -237,7 +237,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }  // else, default to pick first
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());
-    return CreateCustomChannel("fake:///", creds_, args);
+    return ::grpc::CreateCustomChannel("fake:///", creds_, args);
   }
 
   bool SendRpc(

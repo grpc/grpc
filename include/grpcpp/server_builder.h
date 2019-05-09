@@ -23,6 +23,7 @@
 
 namespace grpc_impl {
 
+class Server;
 class ServerCredentials;
 class ResourceQuota;
 }  // namespace grpc_impl

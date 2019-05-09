@@ -18,12 +18,22 @@ _GRPC_PROTO_MOCK_HEADER_FMT = "{}_mock.grpc.pb.h"
 _PROTO_HEADER_FMT = "{}.pb.h"
 _PROTO_SRC_FMT = "{}.pb.cc"
 
-def _strip_package_from_path(label_package, path):
+def _strip_package_from_path(label_package, file):
+    prefix_len = 0
+    if not file.is_source and file.path.startswith(file.root.path):
+        prefix_len = len(file.root.path) + 1
+
+    path = file.path
     if len(label_package) == 0:
         return path
-    if not path.startswith(label_package + "/"):
+    if not path.startswith(label_package + "/", prefix_len):
         fail("'{}' does not lie within '{}'.".format(path, label_package))
-    return path[len(label_package + "/"):]
+    return path[prefix_len + len(label_package + "/"):]
+
+def _get_srcs_file_path(file):
+    if not file.is_source and file.path.startswith(file.root.path):
+        return file.path[len(file.root.path) + 1:]
+    return file.path
 
 def _join_directories(directories):
     massaged_directories = [directory for directory in directories if len(directory) != 0]
@@ -31,7 +41,7 @@ def _join_directories(directories):
 
 def generate_cc_impl(ctx):
     """Implementation of the generate_cc rule."""
-    protos = [f for src in ctx.attr.srcs for f in src.proto.direct_sources]
+    protos = [f for src in ctx.attr.srcs for f in src.proto.check_deps_sources]
     includes = [
         f
         for src in ctx.attr.srcs
@@ -46,14 +56,14 @@ def generate_cc_impl(ctx):
     if ctx.executable.plugin:
         outs += [
             proto_path_to_generated_filename(
-                _strip_package_from_path(label_package, proto.path),
+                _strip_package_from_path(label_package, proto),
                 _GRPC_PROTO_HEADER_FMT,
             )
             for proto in protos
         ]
         outs += [
             proto_path_to_generated_filename(
-                _strip_package_from_path(label_package, proto.path),
+                _strip_package_from_path(label_package, proto),
                 _GRPC_PROTO_SRC_FMT,
             )
             for proto in protos
@@ -61,7 +71,7 @@ def generate_cc_impl(ctx):
         if ctx.attr.generate_mocks:
             outs += [
                 proto_path_to_generated_filename(
-                    _strip_package_from_path(label_package, proto.path),
+                    _strip_package_from_path(label_package, proto),
                     _GRPC_PROTO_MOCK_HEADER_FMT,
                 )
                 for proto in protos
@@ -69,14 +79,14 @@ def generate_cc_impl(ctx):
     else:
         outs += [
             proto_path_to_generated_filename(
-                _strip_package_from_path(label_package, proto.path),
+                _strip_package_from_path(label_package, proto),
                 _PROTO_HEADER_FMT,
             )
             for proto in protos
         ]
         outs += [
             proto_path_to_generated_filename(
-                _strip_package_from_path(label_package, proto.path),
+                _strip_package_from_path(label_package, proto),
                 _PROTO_SRC_FMT,
             )
             for proto in protos
@@ -102,7 +112,7 @@ def generate_cc_impl(ctx):
     # Include the output directory so that protoc puts the generated code in the
     # right directory.
     arguments += ["--proto_path={0}{1}".format(dir_out, proto_root)]
-    arguments += [proto.path for proto in protos]
+    arguments += [_get_srcs_file_path(proto) for proto in protos]
 
     # create a list of well known proto files if the argument is non-None
     well_known_proto_files = []

@@ -122,7 +122,7 @@ class TestCliCredentials final : public grpc::testing::CliCredentials {
       return InsecureChannelCredentials();
     }
     SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
-    return SslCredentials(grpc::SslCredentialsOptions(ssl_opts));
+    return grpc::SslCredentials(grpc::SslCredentialsOptions(ssl_opts));
   }
   const grpc::string GetCredentialUsage() const override { return ""; }
 
