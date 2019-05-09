@@ -29,6 +29,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
@@ -224,15 +225,16 @@ int main(int argc, char** argv) {
   // --resolver will always be the first one, so only parse the first argument
   // (other arguments may be unknown to cl)
   gpr_cmdline_parse(cl, argc > 2 ? 2 : argc, argv);
-  const char* cur_resolver = gpr_getenv("GRPC_DNS_RESOLVER");
-  if (cur_resolver != nullptr && strlen(cur_resolver) != 0) {
+  grpc_core::UniquePtr<char> resolver =
+      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+  if (strlen(resolver.get()) != 0) {
     gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s",
-            cur_resolver);
+            resolver.get());
   }
   if (gpr_stricmp(resolver_type, "native") == 0) {
-    gpr_setenv("GRPC_DNS_RESOLVER", "native");
+    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "native");
   } else if (gpr_stricmp(resolver_type, "ares") == 0) {
-    gpr_setenv("GRPC_DNS_RESOLVER", "ares");
+    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
   } else {
     gpr_log(GPR_ERROR, "--resolver_type was not set to ares or native");
     abort();
@@ -246,12 +248,12 @@ int main(int argc, char** argv) {
     // c-ares resolver doesn't support UDS (ability for native DNS resolver
     // to handle this is only expected to be used by servers, which
     // unconditionally use the native DNS resolver).
-    char* resolver_env = gpr_getenv("GRPC_DNS_RESOLVER");
-    if (resolver_env == nullptr || gpr_stricmp(resolver_env, "native") == 0) {
+    grpc_core::UniquePtr<char> resolver =
+        GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+    if (gpr_stricmp(resolver.get(), "native") == 0) {
       test_unix_socket();
       test_unix_socket_path_name_too_long();
     }
-    gpr_free(resolver_env);
   }
   gpr_cmdline_destroy(cl);
 

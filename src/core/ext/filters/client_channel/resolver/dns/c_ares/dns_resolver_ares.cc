@@ -32,12 +32,12 @@
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
@@ -447,8 +447,9 @@ static bool should_use_ares(const char* resolver_env) {
 #endif /* GRPC_UV */
 
 void grpc_resolver_dns_ares_init() {
-  char* resolver_env = gpr_getenv("GRPC_DNS_RESOLVER");
-  if (should_use_ares(resolver_env)) {
+  grpc_core::UniquePtr<char> resolver =
+      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+  if (should_use_ares(resolver.get())) {
     gpr_log(GPR_DEBUG, "Using ares dns resolver");
     address_sorting_init();
     grpc_error* error = grpc_ares_init();
@@ -464,16 +465,15 @@ void grpc_resolver_dns_ares_init() {
         grpc_core::UniquePtr<grpc_core::ResolverFactory>(
             grpc_core::New<grpc_core::AresDnsResolverFactory>()));
   }
-  gpr_free(resolver_env);
 }
 
 void grpc_resolver_dns_ares_shutdown() {
-  char* resolver_env = gpr_getenv("GRPC_DNS_RESOLVER");
-  if (should_use_ares(resolver_env)) {
+  grpc_core::UniquePtr<char> resolver =
+      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+  if (should_use_ares(resolver.get())) {
     address_sorting_shutdown();
     grpc_ares_cleanup();
   }
-  gpr_free(resolver_env);
 }
 
 #else /* GRPC_ARES == 1 */
