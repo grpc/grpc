@@ -83,8 +83,8 @@ static void BM_CallbackUnaryPingPong(benchmark::State& state) {
   bool done = false;
   if (state.KeepRunning()) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
-    SendCallbackUnaryPingPong(&state, &cli_ctx, &request, &response, stub_.get(), &done,
-                              &mu, &cv);
+    SendCallbackUnaryPingPong(&state, &cli_ctx, &request, &response,
+                              stub_.get(), &done, &mu, &cv);
   }
   std::unique_lock<std::mutex> l(mu);
   while (!done) {

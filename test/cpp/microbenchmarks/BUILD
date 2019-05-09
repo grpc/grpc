@@ -223,7 +223,7 @@ grpc_cc_binary(
 )
 
 grpc_cc_library(
-    name = "callback_test_service",
+    name = "bm_callback_test_service_impl",
     testonly = 1,
     srcs = ["callback_test_service.cc"],
     hdrs = ["callback_test_service.h"],
@@ -245,7 +245,7 @@ grpc_cc_library(
         "callback_unary_ping_pong.h",
     ],
     deps = [
-        ":callback_test_service",
+        ":bm_callback_test_service_impl",
         ":helpers",
     ],
 )
@@ -267,7 +267,7 @@ grpc_cc_library(
         "callback_streaming_ping_pong.h",
     ],
     deps = [
-        ":callback_test_service",
+        ":bm_callback_test_service_impl",
         ":helpers",
     ],
 )

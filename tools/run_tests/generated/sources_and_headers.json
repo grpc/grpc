@@ -6064,6 +6064,7 @@
   }, 
   {
     "deps": [
+      "dns_test_util", 
       "gpr", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
@@ -6083,6 +6084,7 @@
   }, 
   {
     "deps": [
+      "dns_test_util", 
       "gpr", 
       "grpc", 
       "grpc++", 
@@ -6178,6 +6180,7 @@
   }, 
   {
     "deps": [
+      "dns_test_util", 
       "gpr", 
       "grpc", 
       "grpc++", 
@@ -6676,6 +6679,21 @@
     "src": [
       "test/cpp/microbenchmarks/callback_test_service.cc", 
       "test/cpp/microbenchmarks/callback_test_service.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "test/cpp/naming/dns_test_util.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "dns_test_util", 
+    "src": [
+      "test/cpp/naming/dns_test_util.cc", 
+      "test/cpp/naming/dns_test_util.h"
     ], 
     "third_party": false, 
     "type": "lib"

@@ -26,7 +26,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
-#define GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS 10000
+#define GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS 120000
 
 extern grpc_core::TraceFlag grpc_trace_cares_address_sorting;
 
