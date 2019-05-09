@@ -30,6 +30,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/slice/slice_utils.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_metadata;
 
@@ -136,15 +137,9 @@ bool grpc_mdelem_eq(grpc_mdelem a, grpc_mdelem b);
  * static, and that the keys match. This most commonly happens when processing
  * metadata batch callouts in initial/trailing filters. In this case, fastpath
  * grpc_mdelem_eq and remove unnecessary checks. */
-int grpc_slice_differs_refcounted(const grpc_slice& a,
-                                  const grpc_slice& b_not_inline);
 inline bool grpc_mdelem_static_value_eq(grpc_mdelem a, grpc_mdelem b_static) {
   if (a.payload == b_static.payload) return true;
-  const grpc_slice& a_slice = GRPC_MDVALUE(a);
-  const grpc_slice& b_slice = GRPC_MDVALUE(b_static);
-  return a_slice.refcount == b_slice.refcount
-             ? true
-             : !grpc_slice_differs_refcounted(a_slice, b_slice);
+  return grpc_slice_eq_static(GRPC_MDVALUE(a), GRPC_MDVALUE(b_static));
 }
 
 /* Mutator and accessor for grpc_mdelem user data. The destructor function
