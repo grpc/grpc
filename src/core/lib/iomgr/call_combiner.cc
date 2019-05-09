@@ -113,7 +113,7 @@ void CallCombiner::ScheduleClosure(grpc_closure* closure, grpc_error* error) {
 void CallCombiner::Start(grpc_closure* closure, grpc_error* error,
                          DEBUG_ARGS const char* reason) {
   GPR_TIMER_SCOPE("CallCombiner::Start", 0);
-  if (grpc_call_combiner_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
     gpr_log(GPR_INFO,
             "==> CallCombiner::Start() [%p] closure=%p [" DEBUG_FMT_STR
             "%s] error=%s",
@@ -121,7 +121,7 @@ void CallCombiner::Start(grpc_closure* closure, grpc_error* error,
   }
   size_t prev_size =
       static_cast<size_t>(gpr_atm_full_fetch_add(&size_, (gpr_atm)1));
-  if (grpc_call_combiner_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
     gpr_log(GPR_INFO, "  size: %" PRIdPTR " -> %" PRIdPTR, prev_size,
             prev_size + 1);
   }
@@ -129,13 +129,13 @@ void CallCombiner::Start(grpc_closure* closure, grpc_error* error,
   if (prev_size == 0) {
     GRPC_STATS_INC_CALL_COMBINER_LOCKS_INITIATED();
     GPR_TIMER_MARK("call_combiner_initiate", 0);
-    if (grpc_call_combiner_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
       gpr_log(GPR_INFO, "  EXECUTING IMMEDIATELY");
     }
     // Queue was empty, so execute this closure immediately.
     ScheduleClosure(closure, error);
   } else {
-    if (grpc_call_combiner_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
       gpr_log(GPR_INFO, "  QUEUING");
     }
     // Queue was not empty, so add closure to queue.
@@ -146,20 +146,20 @@ void CallCombiner::Start(grpc_closure* closure, grpc_error* error,
 
 void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
   GPR_TIMER_SCOPE("CallCombiner::Stop", 0);
-  if (grpc_call_combiner_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
     gpr_log(GPR_INFO, "==> CallCombiner::Stop() [%p] [" DEBUG_FMT_STR "%s]",
             this DEBUG_FMT_ARGS, reason);
   }
   size_t prev_size =
       static_cast<size_t>(gpr_atm_full_fetch_add(&size_, (gpr_atm)-1));
-  if (grpc_call_combiner_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
     gpr_log(GPR_INFO, "  size: %" PRIdPTR " -> %" PRIdPTR, prev_size,
             prev_size - 1);
   }
   GPR_ASSERT(prev_size >= 1);
   if (prev_size > 1) {
     while (true) {
-      if (grpc_call_combiner_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
         gpr_log(GPR_INFO, "  checking queue");
       }
       bool empty;
@@ -168,19 +168,19 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
       if (closure == nullptr) {
         // This can happen either due to a race condition within the mpscq
         // code or because of a race with Start().
-        if (grpc_call_combiner_trace.enabled()) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
           gpr_log(GPR_INFO, "  queue returned no result; checking again");
         }
         continue;
       }
-      if (grpc_call_combiner_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
         gpr_log(GPR_INFO, "  EXECUTING FROM QUEUE: closure=%p error=%s",
                 closure, grpc_error_string(closure->error_data.error));
       }
       ScheduleClosure(closure, closure->error_data.error);
       break;
     }
-  } else if (grpc_call_combiner_trace.enabled()) {
+  } else if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
     gpr_log(GPR_INFO, "  queue empty");
   }
 }
@@ -194,7 +194,7 @@ void CallCombiner::SetNotifyOnCancel(grpc_closure* closure) {
     // If error is set, invoke the cancellation closure immediately.
     // Otherwise, store the new closure.
     if (original_error != GRPC_ERROR_NONE) {
-      if (grpc_call_combiner_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
         gpr_log(GPR_INFO,
                 "call_combiner=%p: scheduling notify_on_cancel callback=%p "
                 "for pre-existing cancellation",
@@ -204,7 +204,7 @@ void CallCombiner::SetNotifyOnCancel(grpc_closure* closure) {
       break;
     } else {
       if (gpr_atm_full_cas(&cancel_state_, original_state, (gpr_atm)closure)) {
-        if (grpc_call_combiner_trace.enabled()) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
           gpr_log(GPR_INFO, "call_combiner=%p: setting notify_on_cancel=%p",
                   this, closure);
         }
@@ -213,7 +213,7 @@ void CallCombiner::SetNotifyOnCancel(grpc_closure* closure) {
         // up any resources they may be holding for the callback.
         if (original_state != 0) {
           closure = (grpc_closure*)original_state;
-          if (grpc_call_combiner_trace.enabled()) {
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
             gpr_log(GPR_INFO,
                     "call_combiner=%p: scheduling old cancel callback=%p", this,
                     closure);
@@ -240,7 +240,7 @@ void CallCombiner::Cancel(grpc_error* error) {
                          EncodeCancelStateError(error))) {
       if (original_state != 0) {
         grpc_closure* notify_on_cancel = (grpc_closure*)original_state;
-        if (grpc_call_combiner_trace.enabled()) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
           gpr_log(GPR_INFO,
                   "call_combiner=%p: scheduling notify_on_cancel callback=%p",
                   this, notify_on_cancel);

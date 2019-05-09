@@ -33,7 +33,7 @@ extern grpc_core::TraceFlag grpc_fd_trace;      /* Disabled by default */
 extern grpc_core::TraceFlag grpc_polling_trace; /* Disabled by default */
 
 #define GRPC_FD_TRACE(format, ...)                        \
-  if (grpc_fd_trace.enabled()) {                          \
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_fd_trace)) {           \
     gpr_log(GPR_INFO, "(fd-trace) " format, __VA_ARGS__); \
   }
 

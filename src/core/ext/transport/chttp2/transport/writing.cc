@@ -53,7 +53,8 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   }
   if (!grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_INFLIGHT])) {
     /* ping already in-flight: wait */
-    if (grpc_http_trace.enabled() || grpc_bdp_estimator_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
+        GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
       gpr_log(GPR_INFO, "%s: Ping delayed [%p]: already pinging",
               t->is_client ? "CLIENT" : "SERVER", t->peer_string);
     }
@@ -62,7 +63,8 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   if (t->ping_state.pings_before_data_required == 0 &&
       t->ping_policy.max_pings_without_data != 0) {
     /* need to receive something of substance before sending a ping again */
-    if (grpc_http_trace.enabled() || grpc_bdp_estimator_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
+        GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
       gpr_log(GPR_INFO, "%s: Ping delayed [%p]: too many recent pings: %d/%d",
               t->is_client ? "CLIENT" : "SERVER", t->peer_string,
               t->ping_state.pings_before_data_required,
@@ -82,7 +84,8 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
 
   if (next_allowed_ping > now) {
     /* not enough elapsed time between successive pings */
-    if (grpc_http_trace.enabled() || grpc_bdp_estimator_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
+        GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
       gpr_log(GPR_INFO,
               "%s: Ping delayed [%p]: not enough time elapsed since last ping. "
               " Last ping %f: Next ping %f: Now %f",
@@ -108,7 +111,8 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
                         grpc_chttp2_ping_create(false, pq->inflight_id));
   GRPC_STATS_INC_HTTP2_PINGS_SENT();
   t->ping_state.last_ping_sent_time = now;
-  if (grpc_http_trace.enabled() || grpc_bdp_estimator_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
+      GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
     gpr_log(GPR_INFO, "%s: Ping sent [%s]: %d/%d",
             t->is_client ? "CLIENT" : "SERVER", t->peer_string,
             t->ping_state.pings_before_data_required,
@@ -141,7 +145,7 @@ static bool update_list(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
 
 static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                          const char* staller) {
-  if (grpc_flowctl_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_flowctl_trace)) {
     gpr_log(
         GPR_DEBUG,
         "%s:%p stream %d moved to stalled list by %s. This is FULLY expected "
