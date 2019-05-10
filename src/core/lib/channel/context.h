@@ -38,6 +38,9 @@ typedef enum {
   /// Holds a pointer to ServiceConfig::CallData associated with this call.
   GRPC_SERVICE_CONFIG_CALL_DATA,
 
+  /// Holds a pointer to BackendMetricData.
+  GRPC_CONTEXT_BACKEND_METRIC_DATA,
+
   GRPC_CONTEXT_COUNT
 } grpc_context_index;
 
