@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,14 @@
  *
  */
 
-#ifndef GRPCPP_CHANNEL_H
-#define GRPCPP_CHANNEL_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_DNS_RESOLVER_SELECTION_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_DNS_RESOLVER_SELECTION_H
 
-#include <grpcpp/channel_impl.h>
+#include <grpc/support/port_platform.h>
 
-namespace grpc {
+#include "src/core/lib/gprpp/global_config.h"
 
-typedef ::grpc_impl::Channel Channel;
+GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_dns_resolver);
 
-namespace experimental {
-/// Resets the channel's connection backoff.
-/// TODO(roth): Once we see whether this proves useful, either create a gRFC
-/// and change this to be a method of the Channel class, or remove it.
-void ChannelResetConnectionBackoff(Channel* channel);
-}  // namespace experimental
-
-}  // namespace grpc
-
-#endif  // GRPCPP_CHANNEL_H
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_DNS_RESOLVER_SELECTION_H \
+        */

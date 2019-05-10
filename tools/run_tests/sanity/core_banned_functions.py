@@ -45,10 +45,6 @@ BANNED_EXCEPT = {
     'grpc_closure_sched(': ['src/core/lib/iomgr/closure.cc'],
     'grpc_closure_run(': ['src/core/lib/iomgr/closure.cc'],
     'grpc_closure_list_sched(': ['src/core/lib/iomgr/closure.cc'],
-    'gpr_getenv_silent(': [
-        'src/core/lib/gpr/log.cc', 'src/core/lib/gpr/env_linux.cc',
-        'src/core/lib/gpr/env_posix.cc', 'src/core/lib/gpr/env_windows.cc'
-    ],
 }
 
 errors = 0

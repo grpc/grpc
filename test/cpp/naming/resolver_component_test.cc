@@ -46,7 +46,6 @@
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -94,6 +93,8 @@ DEFINE_string(expected_addrs, "",
 DEFINE_string(expected_chosen_service_config, "",
               "Expected service config json string that gets chosen (no "
               "whitespace). Empty for none.");
+DEFINE_string(expected_service_config_error, "",
+              "Expected service config error. Empty for none.");
 DEFINE_string(
     local_dns_server_address, "",
     "Optional. This address is placed as the uri authority if present.");
@@ -195,6 +196,7 @@ struct ArgsStruct {
   grpc_channel_args* channel_args;
   vector<GrpcLBAddress> expected_addrs;
   std::string expected_service_config_string;
+  std::string expected_service_config_error;
   std::string expected_lb_policy;
 };
 
@@ -260,13 +262,19 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
 }
 
 void CheckServiceConfigResultLocked(const char* service_config_json,
+                                    grpc_error* service_config_error,
                                     ArgsStruct* args) {
   if (args->expected_service_config_string != "") {
     GPR_ASSERT(service_config_json != nullptr);
     EXPECT_EQ(service_config_json, args->expected_service_config_string);
-  } else {
-    GPR_ASSERT(service_config_json == nullptr);
   }
+  if (args->expected_service_config_error == "") {
+    EXPECT_EQ(service_config_error, GRPC_ERROR_NONE);
+  } else {
+    EXPECT_THAT(grpc_error_string(service_config_error),
+                testing::HasSubstr(args->expected_service_config_error));
+  }
+  GRPC_ERROR_UNREF(service_config_error);
 }
 
 void CheckLBPolicyResultLocked(const grpc_channel_args* channel_args,
@@ -481,7 +489,8 @@ class CheckingResultHandler : public ResultHandler {
         result.service_config == nullptr
             ? nullptr
             : result.service_config->service_config_json();
-    CheckServiceConfigResultLocked(service_config_json, args);
+    CheckServiceConfigResultLocked(
+        service_config_json, GRPC_ERROR_REF(result.service_config_error), args);
     if (args->expected_service_config_string == "") {
       CheckLBPolicyResultLocked(result.args, args);
     }
@@ -540,6 +549,7 @@ void RunResolvesRelevantRecordsTest(
   ArgsInit(&args);
   args.expected_addrs = ParseExpectedAddrs(FLAGS_expected_addrs);
   args.expected_service_config_string = FLAGS_expected_chosen_service_config;
+  args.expected_service_config_error = FLAGS_expected_service_config_error;
   args.expected_lb_policy = FLAGS_expected_lb_policy;
   // maybe build the address with an authority
   char* whole_uri = nullptr;
