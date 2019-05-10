@@ -68,8 +68,9 @@ class PickFirst : public LoadBalancingPolicy {
     PickFirstSubchannelData(
         SubchannelList<PickFirstSubchannelList, PickFirstSubchannelData>*
             subchannel_list,
-        const ServerAddress& address, Subchannel* subchannel)
-        : SubchannelData(subchannel_list, address, subchannel) {}
+        const ServerAddress& address,
+        RefCountedPtr<SubchannelInterface> subchannel)
+        : SubchannelData(subchannel_list, address, std::move(subchannel)) {}
 
     void ProcessConnectivityChangeLocked(
         grpc_connectivity_state connectivity_state) override;

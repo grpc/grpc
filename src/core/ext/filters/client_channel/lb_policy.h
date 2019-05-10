@@ -24,7 +24,7 @@
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
-#include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -188,8 +188,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     virtual ~ChannelControlHelper() = default;
 
     /// Creates a new subchannel with the specified channel args.
-    virtual Subchannel* CreateSubchannel(const grpc_channel_args& args)
-        GRPC_ABSTRACT;
+    virtual RefCountedPtr<SubchannelInterface> CreateSubchannel(
+        const grpc_channel_args& args) GRPC_ABSTRACT;
 
     /// Creates a channel with the specified target and channel args.
     /// This can be used in cases where the LB policy needs to create a
