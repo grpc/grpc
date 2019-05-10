@@ -385,13 +385,3 @@ size_t grpc_chttp2_get_size_in_hpack_table(grpc_mdelem elem,
     return overhead_and_key + value_len;
   }
 }
-
-uint8_t grpc_chttp2_get_static_hpack_table_index(grpc_mdelem md) {
-  if (GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC) {
-    uint8_t index = GRPC_MDELEM_DATA(md) - grpc_static_mdelem_table;
-    if (index < GRPC_CHTTP2_LAST_STATIC_ENTRY) {
-      return index + 1;  // Hpack static metadata element indices start at 1
-    }
-  }
-  return 0;
-}
