@@ -536,7 +536,7 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   if (process_resolver_result_ != nullptr) {
     grpc_error* service_config_error = GRPC_ERROR_NONE;
     service_config_changed = process_resolver_result_(
-        process_resolver_result_user_data_, result, &lb_policy_name,
+        process_resolver_result_user_data_, &result, &lb_policy_name,
         &lb_policy_config, &service_config_error);
     if (service_config_error != GRPC_ERROR_NONE) {
       service_config_error_string =
