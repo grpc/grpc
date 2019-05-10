@@ -173,31 +173,23 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
                             InterceptRecvTrailingMetadataCallback cb,
                             void* user_data)
         : cb_(cb), user_data_(user_data) {
-      GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
-                        RecordRecvTrailingMetadata, this,
-                        grpc_schedule_on_exec_ctx);
-      pick->recv_trailing_metadata_ready = &recv_trailing_metadata_ready_;
-      pick->original_recv_trailing_metadata_ready =
-          &original_recv_trailing_metadata_ready_;
-      pick->recv_trailing_metadata = &recv_trailing_metadata_;
+      pick->recv_trailing_metadata_ready = &RecordRecvTrailingMetadata;
+      pick->recv_trailing_metadata_ready_user_data = this;
     }
 
    private:
-    static void RecordRecvTrailingMetadata(void* arg, grpc_error* err) {
+    static void RecordRecvTrailingMetadata(
+        void* arg, grpc_metadata_batch* recv_trailing_metadata,
+        grpc_call_context_element* call_context) {
       TrailingMetadataHandler* self =
           static_cast<TrailingMetadataHandler*>(arg);
-      GPR_ASSERT(self->recv_trailing_metadata_ != nullptr);
+      GPR_ASSERT(recv_trailing_metadata != nullptr);
       self->cb_(self->user_data_);
-      GRPC_CLOSURE_SCHED(self->original_recv_trailing_metadata_ready_,
-                         GRPC_ERROR_REF(err));
       Delete(self);
     }
 
     InterceptRecvTrailingMetadataCallback cb_;
     void* user_data_;
-    grpc_closure recv_trailing_metadata_ready_;
-    grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
-    grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
   };
 };
 

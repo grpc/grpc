@@ -111,25 +111,19 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// the LB policy decides to drop the call.
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     /// Callback set by lb policy to be notified of trailing metadata.
-    /// The callback must be scheduled on grpc_schedule_on_exec_ctx.
-    // TODO(roth): Provide a cleaner callback API.
-    grpc_closure* recv_trailing_metadata_ready = nullptr;
-    /// The address that will be set to point to the original
-    /// recv_trailing_metadata_ready callback, to be invoked by the LB
-    /// policy's recv_trailing_metadata_ready callback when complete.
-    /// Must be non-null if recv_trailing_metadata_ready is non-null.
-    // TODO(roth): Consider making the recv_trailing_metadata closure a
-    // synchronous callback, in which case it is not responsible for
-    // chaining to the next callback, so this can be removed from the API.
-    grpc_closure** original_recv_trailing_metadata_ready = nullptr;
-    /// If this is not nullptr, then the client channel will point it to the
-    /// call's trailing metadata before invoking recv_trailing_metadata_ready.
-    /// If this is nullptr, then the callback will still be called.
-    /// The lb does not have ownership of the metadata.
-    // TODO(roth): If we make this a synchronous callback, then this can
-    // be passed to the callback as a parameter and can be removed from
-    // the API here.
-    grpc_metadata_batch** recv_trailing_metadata = nullptr;
+    /// The user_data argument will be set to the
+    /// recv_trailing_metadata_ready_user_data field.
+    /// recv_trailing_metadata will be set to the metadata, which may be
+    /// modified by the callback.  The callback does not take ownership,
+    /// however, so any data that needs to be used after returning must
+    /// be copied.
+    /// call_context is set to the call's context.  Note that the
+    /// GRPC_CONTEXT_BACKEND_METRIC_DATA field will contain the backend
+    /// metric data returned by the backend, if any.
+    void (*recv_trailing_metadata_ready)(
+        void* user_data, grpc_metadata_batch* recv_trailing_metadata,
+        grpc_call_context_element* call_context) = nullptr;
+    void* recv_trailing_metadata_ready_user_data = nullptr;
   };
 
   /// The result of picking a subchannel for an RPC.

@@ -449,8 +449,9 @@ class CallData {
       grpc_call_element* elem, SubchannelCallBatchData* batch_data,
       SubchannelCallRetryState* retry_state);
 
-  static void MaybeInjectRecvTrailingMetadataReadyForLoadBalancingPolicy(
-      const LoadBalancingPolicy::PickArgs& pick,
+  static void RecvTrailingMetadataReadyForLoadBalancingPolicy(
+      void* arg, grpc_error* error);
+  void MaybeInjectRecvTrailingMetadataReadyForLoadBalancingPolicy(
       grpc_transport_stream_op_batch* batch);
 
   // Returns the index into pending_batches_ to be used for batch.
@@ -641,6 +642,11 @@ class CallData {
   bool service_config_applied_ = false;
   QueuedPickCanceller* pick_canceller_ = nullptr;
   grpc_closure pick_closure_;
+
+  // For intercepting recv_trailing_metadata_ready for the LB policy.
+  grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
+  grpc_closure recv_trailing_metadata_ready_;
+  grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
 
   grpc_polling_entity* pollent_ = nullptr;
 
@@ -1739,18 +1745,30 @@ void CallData::FreeCachedSendOpDataForCompletedBatch(
 // LB recv_trailing_metadata_ready handling
 //
 
+void CallData::RecvTrailingMetadataReadyForLoadBalancingPolicy(
+    void* arg, grpc_error* error) {
+  CallData* calld = static_cast<CallData*>(arg);
+  // Invoke callback to LB policy.
+  calld->pick_.pick.recv_trailing_metadata_ready(
+      calld->pick_.pick.recv_trailing_metadata_ready_user_data,
+      calld->recv_trailing_metadata_, calld->call_context_);
+  // Chain to original callback.
+  GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready_,
+                   GRPC_ERROR_REF(error));
+}
+
 void CallData::MaybeInjectRecvTrailingMetadataReadyForLoadBalancingPolicy(
-    const LoadBalancingPolicy::PickArgs& pick,
     grpc_transport_stream_op_batch* batch) {
-  if (pick.recv_trailing_metadata_ready != nullptr) {
-    *pick.original_recv_trailing_metadata_ready =
+  if (pick_.pick.recv_trailing_metadata_ready != nullptr) {
+    recv_trailing_metadata_ =
+        batch->payload->recv_trailing_metadata.recv_trailing_metadata;
+    original_recv_trailing_metadata_ready_ =
         batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
+    GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
+                      RecvTrailingMetadataReadyForLoadBalancingPolicy, this,
+                      grpc_schedule_on_exec_ctx);
     batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
-        pick.recv_trailing_metadata_ready;
-    if (pick.recv_trailing_metadata != nullptr) {
-      *pick.recv_trailing_metadata =
-          batch->payload->recv_trailing_metadata.recv_trailing_metadata;
-    }
+        &recv_trailing_metadata_ready_;
   }
 }
 
@@ -1896,8 +1914,7 @@ void CallData::PendingBatchesFail(
     grpc_transport_stream_op_batch* batch = pending->batch;
     if (batch != nullptr) {
       if (batch->recv_trailing_metadata) {
-        MaybeInjectRecvTrailingMetadataReadyForLoadBalancingPolicy(pick_.pick,
-                                                                   batch);
+        MaybeInjectRecvTrailingMetadataReadyForLoadBalancingPolicy(batch);
       }
       batch->handler_private.extra_arg = this;
       GRPC_CLOSURE_INIT(&batch->handler_private.closure,
@@ -1951,8 +1968,7 @@ void CallData::PendingBatchesResume(grpc_call_element* elem) {
     grpc_transport_stream_op_batch* batch = pending->batch;
     if (batch != nullptr) {
       if (batch->recv_trailing_metadata) {
-        MaybeInjectRecvTrailingMetadataReadyForLoadBalancingPolicy(pick_.pick,
-                                                                   batch);
+        MaybeInjectRecvTrailingMetadataReadyForLoadBalancingPolicy(batch);
       }
       batch->handler_private.extra_arg = subchannel_call_.get();
       GRPC_CLOSURE_INIT(&batch->handler_private.closure,
@@ -2870,7 +2886,7 @@ void CallData::AddRetriableRecvTrailingMetadataOp(
       .recv_trailing_metadata_ready =
       &retry_state->recv_trailing_metadata_ready;
   MaybeInjectRecvTrailingMetadataReadyForLoadBalancingPolicy(
-      pick_.pick, &batch_data->batch);
+      &batch_data->batch);
 }
 
 void CallData::StartInternalRecvTrailingMetadata(grpc_call_element* elem) {
