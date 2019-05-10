@@ -38,14 +38,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/iomgr/load_file.h"
-
-GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_system_ssl_roots_dir, "",
-                                "Custom directory to SSL Roots");
 
 namespace grpc_core {
 namespace {
@@ -142,9 +139,10 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
 grpc_slice LoadSystemRootCerts() {
   grpc_slice result = grpc_empty_slice();
   // Prioritize user-specified custom directory if flag is set.
-  UniquePtr<char> custom_dir = GPR_GLOBAL_CONFIG_GET(grpc_system_ssl_roots_dir);
-  if (strlen(custom_dir.get()) > 0) {
-    result = CreateRootCertsBundle(custom_dir.get());
+  char* custom_dir = gpr_getenv("GRPC_SYSTEM_SSL_ROOTS_DIR");
+  if (custom_dir != nullptr) {
+    result = CreateRootCertsBundle(custom_dir);
+    gpr_free(custom_dir);
   }
   // If the custom directory is empty/invalid/not specified, fallback to
   // distribution-specific directory.

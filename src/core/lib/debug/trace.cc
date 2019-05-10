@@ -26,11 +26,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-
-GPR_GLOBAL_CONFIG_DEFINE_STRING(
-    grpc_trace, "",
-    "A comma separated list of tracers that provide additional insight into "
-    "how gRPC C core is processing requests via debug logs.");
+#include "src/core/lib/gpr/env.h"
 
 int grpc_tracer_set_enabled(const char* name, int enabled);
 
@@ -137,14 +133,12 @@ static void parse(const char* s) {
   gpr_free(strings);
 }
 
-void grpc_tracer_init(const char* env_var_name) {
-  (void)env_var_name;  // suppress unused variable error
-  grpc_tracer_init();
-}
-
-void grpc_tracer_init() {
-  grpc_core::UniquePtr<char> value = GPR_GLOBAL_CONFIG_GET(grpc_trace);
-  parse(value.get());
+void grpc_tracer_init(const char* env_var) {
+  char* e = gpr_getenv(env_var);
+  if (e != nullptr) {
+    parse(e);
+    gpr_free(e);
+  }
 }
 
 void grpc_tracer_shutdown(void) {}

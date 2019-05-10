@@ -28,14 +28,10 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/end2end/cq_verifier.h"
-
-#ifdef GRPC_POSIX_SOCKET
-#include "src/core/lib/iomgr/ev_posix.h"
-#endif  // GRPC_POSIX_SOCKET
 
 static void* tag(intptr_t t) { return (void*)t; }
 
@@ -229,13 +225,13 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
  * 200ms. In the success case, each ping ack should reset the keepalive timer so
  * that the keepalive ping is never sent. */
 static void test_read_delays_keepalive(grpc_end2end_test_config config) {
-#ifdef GRPC_POSIX_SOCKET
-  grpc_core::UniquePtr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
+  char* poller = gpr_getenv("GRPC_POLL_STRATEGY");
   /* It is hard to get the timing right for the polling engine poll. */
-  if ((0 == strcmp(poller.get(), "poll"))) {
+  if (poller != nullptr && (0 == strcmp(poller, "poll"))) {
+    gpr_free(poller);
     return;
   }
-#endif  // GRPC_POSIX_SOCKET
+  gpr_free(poller);
   const int kPingIntervalMS = 100;
   grpc_arg keepalive_arg_elems[3];
   keepalive_arg_elems[0].type = GRPC_ARG_INTEGER;
