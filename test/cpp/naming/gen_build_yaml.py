@@ -47,6 +47,7 @@ def _resolver_test_cases(resolver_component_data):
              _build_expected_addrs_cmd_arg(test_case['expected_addrs'])),
             ('expected_chosen_service_config',
              (test_case['expected_chosen_service_config'] or '')),
+            ('expected_service_config_error', (test_case['expected_service_config_error'] or '')),
             ('expected_lb_policy', (test_case['expected_lb_policy'] or '')),
             ('enable_srv_queries', test_case['enable_srv_queries']),
             ('enable_txt_queries', test_case['enable_txt_queries']),
