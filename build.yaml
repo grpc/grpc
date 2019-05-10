@@ -779,8 +779,8 @@ filegroups:
 - name: grpc_resolver_dns_ares
   headers:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrappe_windows_inner.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
-  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.h
   src:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc
@@ -790,9 +790,11 @@ filegroups:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_nonwindows.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows_inner.cc
   plugin: grpc_resolver_dns_ares
   uses:
   - grpc_base
