@@ -21,6 +21,7 @@
 #include "pb_decode.h"
 #include "pb_encode.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h"
+#include "src/core/lib/gpr/useful.h"
 
 #include <grpc/support/alloc.h>
 
@@ -67,8 +68,8 @@ xds_grpclb_request* xds_grpclb_request_create(const char* lb_service_name) {
   req->has_client_stats = false;
   req->has_initial_request = true;
   req->initial_request.has_name = true;
-  strncpy(req->initial_request.name, lb_service_name,
-          XDS_SERVICE_NAME_MAX_LENGTH);
+  memcpy(req->initial_request.name, lb_service_name,
+         GPR_MIN(XDS_SERVICE_NAME_MAX_LENGTH, strlen(lb_service_name) + 1));
   return req;
 }
 
