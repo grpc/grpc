@@ -23,11 +23,34 @@
 
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/filters/client_channel/parse_address.h"
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows_inner.h"
+#include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gpr/string.h"
+
 bool grpc_ares_query_ipv6() {
   /* The libuv grpc code currently does not have the code to probe for this,
    * so we assume for now that IPv6 is always available in contexts where this
    * code will be used. */
   return true;
+}
+
+bool grpc_ares_maybe_resolve_localhost_manually_locked(
+    const char* name, const char* default_port,
+    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs) {
+#ifdef GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY
+  char* host = nullptr;
+  char* port = nullptr;
+  bool out = inner_maybe_resolve_localhost_manually_locked(name, default_port,
+                                                           addrs, &host, &port);
+  gpr_free(host);
+  gpr_free(port);
+  return out;
+#else  /* GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY */
+  return false;
+#endif /* GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY */
 }
 
 #endif /* GRPC_ARES == 1 && defined(GRPC_UV) */

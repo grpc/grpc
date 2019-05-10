@@ -19,7 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
-#if GRPC_ARES == 1 && (defined(GRPC_UV) || defined(GPR_WINDOWS))
+#if GRPC_ARES == 1 && defined(GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY)
 
 #include <grpc/support/string_util.h>
 
@@ -80,4 +80,4 @@ bool inner_maybe_resolve_localhost_manually_locked(
   return false;
 }
 
-#endif /* GRPC_ARES == 1 && (defined(GRPC_UV) || defined(GPR_WINDOWS)) */
+#endif /* GRPC_ARES == 1 && defined(GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY) */

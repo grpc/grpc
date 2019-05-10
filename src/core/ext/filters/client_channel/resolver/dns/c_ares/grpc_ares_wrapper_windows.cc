@@ -45,4 +45,4 @@ bool grpc_ares_maybe_resolve_localhost_manually_locked(
   return out;
 }
 
-#endif /* GRPC_ARES == 1 && defined(GPR_WINDOWS) */
+#endif /* GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER) */
