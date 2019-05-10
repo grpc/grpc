@@ -1019,8 +1019,8 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   auto channel = BuildChannel("round_robin");
   auto stub = BuildStub(channel);
   std::vector<int> ports;
-
   // Start with a single server.
+  gpr_log(GPR_INFO, "*** FIRST BACKEND ***");
   ports.emplace_back(servers_[0]->port_);
   SetNextResolution(ports);
   WaitForServer(stub, 0, DEBUG_LOCATION);
@@ -1030,36 +1030,33 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   EXPECT_EQ(0, servers_[1]->service_.request_count());
   EXPECT_EQ(0, servers_[2]->service_.request_count());
   servers_[0]->service_.ResetCounters();
-
   // And now for the second server.
+  gpr_log(GPR_INFO, "*** SECOND BACKEND ***");
   ports.clear();
   ports.emplace_back(servers_[1]->port_);
   SetNextResolution(ports);
-
   // Wait until update has been processed, as signaled by the second backend
   // receiving a request.
   EXPECT_EQ(0, servers_[1]->service_.request_count());
   WaitForServer(stub, 1, DEBUG_LOCATION);
-
   for (size_t i = 0; i < 10; ++i) CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(0, servers_[0]->service_.request_count());
   EXPECT_EQ(10, servers_[1]->service_.request_count());
   EXPECT_EQ(0, servers_[2]->service_.request_count());
   servers_[1]->service_.ResetCounters();
-
   // ... and for the last server.
+  gpr_log(GPR_INFO, "*** THIRD BACKEND ***");
   ports.clear();
   ports.emplace_back(servers_[2]->port_);
   SetNextResolution(ports);
   WaitForServer(stub, 2, DEBUG_LOCATION);
-
   for (size_t i = 0; i < 10; ++i) CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(0, servers_[0]->service_.request_count());
   EXPECT_EQ(0, servers_[1]->service_.request_count());
   EXPECT_EQ(10, servers_[2]->service_.request_count());
   servers_[2]->service_.ResetCounters();
-
   // Back to all servers.
+  gpr_log(GPR_INFO, "*** ALL BACKENDS ***");
   ports.clear();
   ports.emplace_back(servers_[0]->port_);
   ports.emplace_back(servers_[1]->port_);
@@ -1068,14 +1065,13 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   WaitForServer(stub, 0, DEBUG_LOCATION);
   WaitForServer(stub, 1, DEBUG_LOCATION);
   WaitForServer(stub, 2, DEBUG_LOCATION);
-
   // Send three RPCs, one per server.
   for (size_t i = 0; i < 3; ++i) CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(1, servers_[0]->service_.request_count());
   EXPECT_EQ(1, servers_[1]->service_.request_count());
   EXPECT_EQ(1, servers_[2]->service_.request_count());
-
   // An empty update will result in the channel going into TRANSIENT_FAILURE.
+  gpr_log(GPR_INFO, "*** NO BACKENDS ***");
   ports.clear();
   SetNextResolution(ports);
   grpc_connectivity_state channel_state;
@@ -1084,15 +1080,14 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   } while (channel_state == GRPC_CHANNEL_READY);
   ASSERT_NE(channel_state, GRPC_CHANNEL_READY);
   servers_[0]->service_.ResetCounters();
-
   // Next update introduces servers_[1], making the channel recover.
+  gpr_log(GPR_INFO, "*** BACK TO SECOND BACKEND ***");
   ports.clear();
   ports.emplace_back(servers_[1]->port_);
   SetNextResolution(ports);
   WaitForServer(stub, 1, DEBUG_LOCATION);
   channel_state = channel->GetState(false /* try to connect */);
   ASSERT_EQ(channel_state, GRPC_CHANNEL_READY);
-
   // Check LB policy name for the channel.
   EXPECT_EQ("round_robin", channel->GetLoadBalancingPolicyName());
 }
@@ -1211,8 +1206,9 @@ TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
   auto channel = BuildChannel("round_robin");
   auto stub = BuildStub(channel);
   SetNextResolution(ports);
-  for (size_t i = 0; i < kNumServers; ++i)
+  for (size_t i = 0; i < kNumServers; ++i) {
     WaitForServer(stub, i, DEBUG_LOCATION);
+  }
   for (size_t i = 0; i < servers_.size(); ++i) {
     CheckRpcSendOk(stub, DEBUG_LOCATION);
     EXPECT_EQ(1, servers_[i]->service_.request_count()) << "for backend #" << i;
@@ -1236,7 +1232,6 @@ TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
   // No requests have gone to the deceased server.
   EXPECT_EQ(pre_death, post_death);
   // Bring the first server back up.
-  servers_[0].reset(new ServerData(ports[0]));
   StartServer(0);
   // Requests should start arriving at the first server either right away (if
   // the server managed to start before the RR policy retried the subchannel) or
@@ -1360,6 +1355,52 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingInhibitPerChannel) {
   // Second channel should be READY.
   EXPECT_TRUE(WaitForChannelReady(channel2.get(), 1));
   CheckRpcSendOk(stub2, DEBUG_LOCATION);
+  // Enable health checks on the backend and wait for channel 1 to succeed.
+  servers_[0]->SetServingStatus("health_check_service_name", true);
+  CheckRpcSendOk(stub1, DEBUG_LOCATION, true /* wait_for_ready */);
+  // Check that we created only one subchannel to the backend.
+  EXPECT_EQ(1UL, servers_[0]->service_.clients().size());
+  // Clean up.
+  EnableDefaultHealthCheckService(false);
+}
+
+TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingServiceNamePerChannel) {
+  EnableDefaultHealthCheckService(true);
+  // Start server.
+  const int kNumServers = 1;
+  StartServers(kNumServers);
+  // Create a channel with health-checking enabled.
+  ChannelArguments args;
+  args.SetServiceConfigJSON(
+      "{\"healthCheckConfig\": "
+      "{\"serviceName\": \"health_check_service_name\"}}");
+  auto channel1 = BuildChannel("round_robin", args);
+  auto stub1 = BuildStub(channel1);
+  std::vector<int> ports = GetServersPorts();
+  SetNextResolution(ports);
+  // Create a channel with health-checking enabled with a different
+  // service name.
+  ChannelArguments args2;
+  args2.SetServiceConfigJSON(
+      "{\"healthCheckConfig\": "
+      "{\"serviceName\": \"health_check_service_name2\"}}");
+  auto channel2 = BuildChannel("round_robin", args2);
+  auto stub2 = BuildStub(channel2);
+  SetNextResolution(ports);
+  // Allow health checks from channel 2 to succeed.
+  servers_[0]->SetServingStatus("health_check_service_name2", true);
+  // First channel should not become READY, because health checks should be
+  // failing.
+  EXPECT_FALSE(WaitForChannelReady(channel1.get(), 1));
+  CheckRpcSendFailure(stub1);
+  // Second channel should be READY.
+  EXPECT_TRUE(WaitForChannelReady(channel2.get(), 1));
+  CheckRpcSendOk(stub2, DEBUG_LOCATION);
+  // Enable health checks for channel 1 and wait for it to succeed.
+  servers_[0]->SetServingStatus("health_check_service_name", true);
+  CheckRpcSendOk(stub1, DEBUG_LOCATION, true /* wait_for_ready */);
+  // Check that we created only one subchannel to the backend.
+  EXPECT_EQ(1UL, servers_[0]->service_.clients().size());
   // Clean up.
   EnableDefaultHealthCheckService(false);
 }
