@@ -55,9 +55,7 @@ class BidiClient
       gpr_log(GPR_ERROR, "Client read failed");
       return;
     }
-    if (writes_complete_ < msgs_to_send_) {
-      MaybeWrite();
-    }
+    MaybeWrite();
   }
 
   void OnWriteDone(bool ok) override {

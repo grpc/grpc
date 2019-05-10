@@ -153,7 +153,9 @@ static void shutdown_and_destroy(grpc_completion_queue* cc) {
 // Tag completion queue iterate times
 class TagCallback : public grpc_experimental_completion_queue_functor {
  public:
-  TagCallback(int* iter) : iter_(iter) { functor_run = &TagCallback::Run; }
+  explicit TagCallback(int* iter) : iter_(iter) {
+    functor_run = &TagCallback::Run;
+  }
   ~TagCallback() {}
   static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
     GPR_ASSERT(static_cast<bool>(ok));
@@ -167,7 +169,7 @@ class TagCallback : public grpc_experimental_completion_queue_functor {
 // Check if completion queue is shut down
 class ShutdownCallback : public grpc_experimental_completion_queue_functor {
  public:
-  ShutdownCallback(bool* done) : done_(done) {
+  explicit ShutdownCallback(bool* done) : done_(done) {
     functor_run = &ShutdownCallback::Run;
   }
   ~ShutdownCallback() {}
