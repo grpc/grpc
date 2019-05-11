@@ -25,6 +25,7 @@
 
 #include <google/protobuf/arena.h>
 
+#include <grpc/impl/codegen/log.h>
 #include <gtest/gtest.h>
 
 #include <grpcpp/channel.h>
@@ -62,11 +63,9 @@ class CallbackTestServiceImpl
  public:
   explicit CallbackTestServiceImpl() {}
 
-  void SetFreeRequest() { free_request_ = true; }
-
   void SetAllocatorMutator(
-      std::function<void(void* allocator_state, const EchoRequest* req,
-                         EchoResponse* resp)>
+      std::function<void(experimental::RpcAllocatorState* allocator_state,
+                         const EchoRequest* req, EchoResponse* resp)>
           mutator) {
     allocator_mutator_ = mutator;
   }
@@ -75,18 +74,15 @@ class CallbackTestServiceImpl
             EchoResponse* response,
             experimental::ServerCallbackRpcController* controller) override {
     response->set_message(request->message());
-    if (free_request_) {
-      controller->FreeRequest();
-    } else if (allocator_mutator_) {
-      allocator_mutator_(controller->GetAllocatorState(), request, response);
+    if (allocator_mutator_) {
+      allocator_mutator_(controller->GetRpcAllocatorState(), request, response);
     }
     controller->Finish(Status::OK);
   }
 
  private:
-  bool free_request_ = false;
-  std::function<void(void* allocator_state, const EchoRequest* req,
-                     EchoResponse* resp)>
+  std::function<void(experimental::RpcAllocatorState* allocator_state,
+                     const EchoRequest* req, EchoResponse* resp)>
       allocator_mutator_;
 };
 
@@ -230,26 +226,44 @@ class SimpleAllocatorTest : public MessageAllocatorEnd2endTestBase {
   class SimpleAllocator
       : public experimental::MessageAllocator<EchoRequest, EchoResponse> {
    public:
-    void AllocateMessages(
-        experimental::RpcAllocatorInfo<EchoRequest, EchoResponse>* info) {
-      allocation_count++;
-      info->request = new EchoRequest;
-      info->response = new EchoResponse;
-      info->allocator_state = info;
-    }
-    void DeallocateRequest(
-        experimental::RpcAllocatorInfo<EchoRequest, EchoResponse>* info) {
-      request_deallocation_count++;
-      delete info->request;
-      info->request = nullptr;
-    }
-    void DeallocateMessages(
-        experimental::RpcAllocatorInfo<EchoRequest, EchoResponse>* info) {
-      messages_deallocation_count++;
-      delete info->request;
-      delete info->response;
-    }
+    class MessageHolderImpl
+        : public experimental::MessageHolder<EchoRequest, EchoResponse> {
+     public:
+      MessageHolderImpl(int* request_deallocation_count,
+                        int* messages_deallocation_count)
+          : request_deallocation_count_(request_deallocation_count),
+            messages_deallocation_count_(messages_deallocation_count) {
+        request_ = new EchoRequest;
+        response_ = new EchoResponse;
+      }
+      void Release() override {
+        (*messages_deallocation_count_)++;
+        delete request_;
+        delete response_;
+        delete this;
+      }
+      void FreeRequest() override {
+        (*request_deallocation_count_)++;
+        delete request_;
+        request_ = nullptr;
+      }
 
+      EchoRequest* ReleaseRequest() {
+        auto* ret = request_;
+        request_ = nullptr;
+        return ret;
+      }
+
+     private:
+      int* request_deallocation_count_;
+      int* messages_deallocation_count_;
+    };
+    experimental::MessageHolder<EchoRequest, EchoResponse>* AllocateMessages()
+        override {
+      allocation_count++;
+      return new MessageHolderImpl(&request_deallocation_count,
+                                   &messages_deallocation_count);
+    }
     int allocation_count = 0;
     int request_deallocation_count = 0;
     int messages_deallocation_count = 0;
@@ -272,7 +286,16 @@ TEST_P(SimpleAllocatorTest, RpcWithEarlyFreeRequest) {
   MAYBE_SKIP_TEST;
   const int kRpcCount = 10;
   std::unique_ptr<SimpleAllocator> allocator(new SimpleAllocator);
-  callback_service_.SetFreeRequest();
+  auto mutator = [](experimental::RpcAllocatorState* allocator_state,
+                    const EchoRequest* req, EchoResponse* resp) {
+    auto* info =
+        static_cast<SimpleAllocator::MessageHolderImpl*>(allocator_state);
+    EXPECT_EQ(req, info->request());
+    EXPECT_EQ(resp, info->response());
+    allocator_state->FreeRequest();
+    EXPECT_EQ(nullptr, info->request());
+  };
+  callback_service_.SetAllocatorMutator(mutator);
   CreateServer(allocator.get());
   ResetStub();
   SendRpcs(kRpcCount);
@@ -286,17 +309,15 @@ TEST_P(SimpleAllocatorTest, RpcWithReleaseRequest) {
   const int kRpcCount = 10;
   std::unique_ptr<SimpleAllocator> allocator(new SimpleAllocator);
   std::vector<EchoRequest*> released_requests;
-  auto mutator = [&released_requests](void* allocator_state,
-                                      const EchoRequest* req,
-                                      EchoResponse* resp) {
+  auto mutator = [&released_requests](
+                     experimental::RpcAllocatorState* allocator_state,
+                     const EchoRequest* req, EchoResponse* resp) {
     auto* info =
-        static_cast<experimental::RpcAllocatorInfo<EchoRequest, EchoResponse>*>(
-            allocator_state);
-    EXPECT_EQ(req, info->request);
-    EXPECT_EQ(resp, info->response);
-    EXPECT_EQ(allocator_state, info->allocator_state);
-    released_requests.push_back(info->request);
-    info->request = nullptr;
+        static_cast<SimpleAllocator::MessageHolderImpl*>(allocator_state);
+    EXPECT_EQ(req, info->request());
+    EXPECT_EQ(resp, info->response());
+    released_requests.push_back(info->ReleaseRequest());
+    EXPECT_EQ(nullptr, info->request());
   };
   callback_service_.SetAllocatorMutator(mutator);
   CreateServer(allocator.get());
@@ -316,30 +337,25 @@ class ArenaAllocatorTest : public MessageAllocatorEnd2endTestBase {
   class ArenaAllocator
       : public experimental::MessageAllocator<EchoRequest, EchoResponse> {
    public:
-    void AllocateMessages(
-        experimental::RpcAllocatorInfo<EchoRequest, EchoResponse>* info) {
-      allocation_count++;
-      auto* arena = new google::protobuf::Arena;
-      info->allocator_state = arena;
-      info->request =
-          google::protobuf::Arena::CreateMessage<EchoRequest>(arena);
-      info->response =
-          google::protobuf::Arena::CreateMessage<EchoResponse>(arena);
-    }
-    void DeallocateRequest(
-        experimental::RpcAllocatorInfo<EchoRequest, EchoResponse>* info) {
-      GPR_ASSERT(0);
-    }
-    void DeallocateMessages(
-        experimental::RpcAllocatorInfo<EchoRequest, EchoResponse>* info) {
-      deallocation_count++;
-      auto* arena =
-          static_cast<google::protobuf::Arena*>(info->allocator_state);
-      delete arena;
-    }
+    class MessageHolderImpl
+        : public experimental::MessageHolder<EchoRequest, EchoResponse> {
+     public:
+      MessageHolderImpl() {
+        request_ = google::protobuf::Arena::CreateMessage<EchoRequest>(&arena_);
+        response_ =
+            google::protobuf::Arena::CreateMessage<EchoResponse>(&arena_);
+      }
+      void FreeRequest() override { GPR_ASSERT(0); }
 
+     private:
+      google::protobuf::Arena arena_;
+    };
+    experimental::MessageHolder<EchoRequest, EchoResponse>* AllocateMessages()
+        override {
+      allocation_count++;
+      return new MessageHolderImpl;
+    }
     int allocation_count = 0;
-    int deallocation_count = 0;
   };
 };
 
@@ -351,7 +367,6 @@ TEST_P(ArenaAllocatorTest, SimpleRpc) {
   ResetStub();
   SendRpcs(kRpcCount);
   EXPECT_EQ(kRpcCount, allocator->allocation_count);
-  EXPECT_EQ(kRpcCount, allocator->deallocation_count);
 }
 
 std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {

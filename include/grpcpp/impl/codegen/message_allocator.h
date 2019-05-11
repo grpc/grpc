@@ -22,31 +22,42 @@
 namespace grpc {
 namespace experimental {
 
-// This is per rpc struct for the allocator. We can potentially put the grpc
-// call arena in here in the future.
-template <typename RequestT, typename ResponseT>
-struct RpcAllocatorInfo {
-  RequestT* request;
-  ResponseT* response;
-  // per rpc allocator internal state. MessageAllocator can set it when
-  // AllocateMessages is called and use it later.
-  void* allocator_state;
+// NOTE: This is an API for advanced users who need custom allocators.
+// Per rpc struct for the allocator. This is the interface to return to user.
+class RpcAllocatorState {
+ public:
+  virtual ~RpcAllocatorState() = default;
+  // Optionally deallocate request early to reduce the size of working set.
+  // A custom MessageAllocator needs to be registered to make use of this.
+  // This is not abstract because implementing it is optional.
+  virtual void FreeRequest() {}
 };
 
-// Implementations need to be thread-safe
+// This is the interface returned by the allocator.
+// grpc library will call the methods to get request/response pointers and to
+// release the object when it is done.
+template <typename RequestT, typename ResponseT>
+class MessageHolder : public RpcAllocatorState {
+ public:
+  virtual void Release() { delete this; }
+  RequestT* request() { return request_; }
+  ResponseT* response() { return response_; }
+
+ protected:
+  // NOTE: subclasses should set these pointers.
+  RequestT* request_;
+  ResponseT* response_;
+};
+
+// A custom allocator can be set via the generated code to a callback unary
+// method, such as SetMessageAllocatorFor_Echo(custom_allocator). The allocator
+// needs to be alive for the lifetime of the server.
+// Implementations need to be thread-safe.
 template <typename RequestT, typename ResponseT>
 class MessageAllocator {
  public:
   virtual ~MessageAllocator() = default;
-  // Allocate both request and response
-  virtual void AllocateMessages(
-      RpcAllocatorInfo<RequestT, ResponseT>* info) = 0;
-  // Optional: deallocate request early, called by
-  // ServerCallbackRpcController::ReleaseRequest
-  virtual void DeallocateRequest(RpcAllocatorInfo<RequestT, ResponseT>* info) {}
-  // Deallocate response and request (if applicable)
-  virtual void DeallocateMessages(
-      RpcAllocatorInfo<RequestT, ResponseT>* info) = 0;
+  virtual MessageHolder<RequestT, ResponseT>* AllocateMessages() = 0;
 };
 
 }  // namespace experimental
