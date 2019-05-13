@@ -493,9 +493,8 @@ class XdsLb : public LoadBalancingPolicy {
   // 1. The fallback timer fires, we enter fallback mode.
   // 2. Before the fallback timer fires, the LB channel becomes
   // TRANSIENT_FAILURE or the LB call fails, we enter fallback mode.
-  // 3. Before the fallback timer fires, we receive a response from the
-  // balancer, we cancel the fallback timer and use the response to update the
-  // locality map.
+  // 3. Before the fallback timer fires, if any child policy in the locality map
+  // becomes READY, we cancel the fallback timer.
   bool fallback_at_startup_checks_pending_ = false;
   // Timeout in milliseconds for before using fallback backend addresses.
   // 0 means not using fallback.
@@ -1197,9 +1196,6 @@ void XdsLb::BalancerChannelState::BalancerCallState::
         xds_grpclb_destroy_serverlist(
             xdslb_policy->locality_serverlist_[0]->serverlist);
       } else {
-        // This is the first serverlist we've received, don't enter fallback
-        // mode.
-        xdslb_policy->MaybeCancelFallbackAtStartupChecks();
         // Initialize locality serverlist, currently the list only handles
         // one child.
         xdslb_policy->locality_serverlist_.emplace_back(
@@ -2046,7 +2042,10 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
     return;
   }
   // At this point, child_ must be the current child policy.
-  if (state == GRPC_CHANNEL_READY) entry_->parent_->MaybeExitFallbackMode();
+  if (state == GRPC_CHANNEL_READY) {
+    entry_->parent_->MaybeCancelFallbackAtStartupChecks();
+    entry_->parent_->MaybeExitFallbackMode();
+  }
   // If we are in fallback mode, ignore update request from the child policy.
   if (entry_->parent_->fallback_policy_ != nullptr) return;
   GPR_ASSERT(entry_->parent_->lb_chand_ != nullptr);
