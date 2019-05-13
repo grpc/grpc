@@ -222,7 +222,9 @@ ChannelArguments::experimental_type::ValidateAndSetServiceConfigJSON(
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_core::ServiceConfig::Create(service_config_json.c_str(), &error);
   if (error != GRPC_ERROR_NONE) {
-    return grpc_error_string(error);
+    grpc::string return_value = grpc_error_string(error);
+    GRPC_ERROR_UNREF(error);
+    return return_value;
   }
   args_->SetServiceConfigJSON(service_config_json);
   return "";
