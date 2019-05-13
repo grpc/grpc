@@ -67,54 +67,41 @@ CallbackStreamingTestService::BidiStream() {
     Reactor() {}
     void OnStarted(ServerContext* context) override {
       ctx_ = context;
-      server_write_last_ = GetIntValueFromMetadata(
-          kServerFinishAfterNReads, context->client_metadata(), 0);
       message_size_ = GetIntValueFromMetadata(kServerMessageSize,
                                               context->client_metadata(), 0);
       StartRead(&request_);
     }
     void OnDone() override {
       GPR_ASSERT(finished_);
-      GPR_ASSERT(num_msgs_read_ == server_write_last_);
       delete this;
     }
     void OnCancel() override {}
     void OnReadDone(bool ok) override {
       if (!ok) {
-        gpr_log(GPR_ERROR, "Server read failed");
+        // Stream is over
+        Finish(::grpc::Status::OK);
+        finished_ = true;
         return;
       }
-      num_msgs_read_++;
       if (message_size_ > 0) {
         response_.set_message(std::string(message_size_, 'a'));
       } else {
         response_.set_message("");
       }
-      if (num_msgs_read_ < server_write_last_) {
-        StartWrite(&response_);
-      } else {
-        StartWriteLast(&response_, WriteOptions());
-      }
+      StartWrite(&response_);
     }
     void OnWriteDone(bool ok) override {
       if (!ok) {
         gpr_log(GPR_ERROR, "Server write failed");
         return;
       }
-      if (num_msgs_read_ < server_write_last_) {
-        StartRead(&request_);
-      } else {
-        Finish(::grpc::Status::OK);
-        finished_ = true;
-      }
+      StartRead(&request_);
     }
 
    private:
     ServerContext* ctx_;
     EchoRequest request_;
     EchoResponse response_;
-    int num_msgs_read_{0};
-    int server_write_last_;
     int message_size_;
     bool finished_{false};
   };

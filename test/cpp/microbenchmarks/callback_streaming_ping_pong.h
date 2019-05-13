@@ -83,8 +83,6 @@ class BidiClient
   void StartNewRpc() {
     cli_ctx_->~ClientContext();
     new (cli_ctx_) ClientContext();
-    cli_ctx_->AddMetadata(kServerFinishAfterNReads,
-                          grpc::to_string(msgs_to_send_));
     cli_ctx_->AddMetadata(kServerMessageSize, grpc::to_string(msgs_size_));
     stub_->experimental_async()->BidiStream(cli_ctx_, this);
     MaybeWrite();

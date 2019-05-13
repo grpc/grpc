@@ -30,7 +30,6 @@
 namespace grpc {
 namespace testing {
 
-const char* const kServerFinishAfterNReads = "server_finish_after_n_reads";
 const char* const kServerMessageSize = "server_message_size";
 
 class CallbackStreamingTestService
