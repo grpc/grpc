@@ -52,7 +52,7 @@ class ChannelArguments : private ::grpc::GrpcLibraryCodegen {
    public:
     explicit experimental_type(ChannelArguments* args) : args_(args) {}
 
-    /// Validates \a service_config_json. If valid, set the service config and
+    /// Validates \a service_config_json. If valid, sets the service config and
     /// returns an empty string. If invalid, returns the validation error.
     grpc::string ValidateAndSetServiceConfigJSON(
         const grpc::string& service_config_json);
