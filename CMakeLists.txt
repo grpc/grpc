@@ -24,7 +24,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.21.0-dev")
+set(PACKAGE_VERSION   "1.22.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -704,6 +704,7 @@ add_dependencies(buildtests_cxx server_crash_test_client)
 add_dependencies(buildtests_cxx server_early_return_test)
 add_dependencies(buildtests_cxx server_interceptors_end2end_test)
 add_dependencies(buildtests_cxx server_request_call_test)
+add_dependencies(buildtests_cxx service_config_end2end_test)
 add_dependencies(buildtests_cxx service_config_test)
 add_dependencies(buildtests_cxx shutdown_test)
 add_dependencies(buildtests_cxx slice_hash_table_test)
@@ -1302,6 +1303,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
+  src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   src/core/ext/filters/census/grpc_context.cc
@@ -2698,6 +2700,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
+  src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
@@ -2907,6 +2910,49 @@ target_link_libraries(test_tcp_server
 
 
 endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_library(dns_test_util
+  test/cpp/naming/dns_test_util.cc
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(dns_test_util PROPERTIES COMPILE_PDB_NAME "dns_test_util"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dns_test_util.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+
+target_include_directories(dns_test_util
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+target_link_libraries(dns_test_util
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
 
 add_library(grpc++
   src/cpp/client/insecure_credentials.cc
@@ -3041,6 +3087,7 @@ foreach(_hdr
   include/grpcpp/alarm.h
   include/grpcpp/alarm_impl.h
   include/grpcpp/channel.h
+  include/grpcpp/channel_impl.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
   include/grpcpp/create_channel.h
@@ -3202,6 +3249,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/client_interceptor.h
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
+  include/grpcpp/impl/codegen/completion_queue_impl.h
   include/grpcpp/impl/codegen/completion_queue_tag.h
   include/grpcpp/impl/codegen/config.h
   include/grpcpp/impl/codegen/core_codegen_interface.h
@@ -3656,6 +3704,7 @@ foreach(_hdr
   include/grpcpp/alarm.h
   include/grpcpp/alarm_impl.h
   include/grpcpp/channel.h
+  include/grpcpp/channel_impl.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
   include/grpcpp/create_channel.h
@@ -3817,6 +3866,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/client_interceptor.h
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
+  include/grpcpp/impl/codegen/completion_queue_impl.h
   include/grpcpp/impl/codegen/completion_queue_tag.h
   include/grpcpp/impl/codegen/config.h
   include/grpcpp/impl/codegen/core_codegen_interface.h
@@ -4251,6 +4301,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/client_interceptor.h
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
+  include/grpcpp/impl/codegen/completion_queue_impl.h
   include/grpcpp/impl/codegen/completion_queue_tag.h
   include/grpcpp/impl/codegen/config.h
   include/grpcpp/impl/codegen/core_codegen_interface.h
@@ -4449,6 +4500,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/client_interceptor.h
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
+  include/grpcpp/impl/codegen/completion_queue_impl.h
   include/grpcpp/impl/codegen/completion_queue_tag.h
   include/grpcpp/impl/codegen/config.h
   include/grpcpp/impl/codegen/core_codegen_interface.h
@@ -4643,6 +4695,7 @@ foreach(_hdr
   include/grpcpp/alarm.h
   include/grpcpp/alarm_impl.h
   include/grpcpp/channel.h
+  include/grpcpp/channel_impl.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
   include/grpcpp/create_channel.h
@@ -4804,6 +4857,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/client_interceptor.h
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
+  include/grpcpp/impl/codegen/completion_queue_impl.h
   include/grpcpp/impl/codegen/completion_queue_tag.h
   include/grpcpp/impl/codegen/config.h
   include/grpcpp/impl/codegen/core_codegen_interface.h
@@ -15990,6 +16044,46 @@ target_link_libraries(server_request_call_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(service_config_end2end_test
+  test/cpp/end2end/service_config_end2end_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(service_config_end2end_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(service_config_end2end_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(service_config_test
   test/core/client_channel/service_config_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -18535,6 +18629,7 @@ target_include_directories(resolver_component_test_unsecure
 target_link_libraries(resolver_component_test_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  dns_test_util
   grpc++_test_util_unsecure
   grpc_test_util_unsecure
   grpc++_unsecure
@@ -18576,6 +18671,7 @@ target_include_directories(resolver_component_test
 target_link_libraries(resolver_component_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  dns_test_util
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -18785,6 +18881,7 @@ target_include_directories(cancel_ares_query_test
 target_link_libraries(cancel_ares_query_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  dns_test_util
   grpc++_test_util
   grpc_test_util
   grpc++

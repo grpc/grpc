@@ -74,11 +74,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gandalf"
+g_stands_for = "gale"
 
 core_version = "7.0.0"
 
-version = "1.21.0-dev"
+version = "1.22.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -218,6 +218,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/alarm.h",
     "include/grpcpp/alarm_impl.h",
     "include/grpcpp/channel.h",
+    "include/grpcpp/channel_impl.h",
     "include/grpcpp/client_context.h",
     "include/grpcpp/completion_queue.h",
     "include/grpcpp/create_channel.h",
@@ -435,6 +436,7 @@ grpc_cc_library(
         "src/compiler/config.h",
         "src/compiler/cpp_generator.h",
         "src/compiler/cpp_generator_helpers.h",
+        "src/compiler/cpp_plugin.h",
         "src/compiler/csharp_generator.h",
         "src/compiler/csharp_generator_helpers.h",
         "src/compiler/generator_helpers.h",
@@ -997,6 +999,7 @@ grpc_cc_library(
         "src/core/lib/slice/slice_hash_table.h",
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
+        "src/core/lib/slice/slice_utils.h",
         "src/core/lib/slice/slice_weak_hash_table.h",
         "src/core/lib/surface/api_trace.h",
         "src/core/lib/surface/call.h",
@@ -1562,6 +1565,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_resolver_dns_selection",
+    srcs = [
+        "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_resolver_dns_native",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc",
@@ -1570,6 +1587,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_resolver_dns_selection",
     ],
 )
 
@@ -1601,6 +1619,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_resolver_dns_selection",
     ],
 )
 
@@ -2147,6 +2166,7 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/client_interceptor.h",
         "include/grpcpp/impl/codegen/client_unary_call.h",
         "include/grpcpp/impl/codegen/completion_queue.h",
+        "include/grpcpp/impl/codegen/completion_queue_impl.h",
         "include/grpcpp/impl/codegen/completion_queue_tag.h",
         "include/grpcpp/impl/codegen/config.h",
         "include/grpcpp/impl/codegen/core_codegen_interface.h",

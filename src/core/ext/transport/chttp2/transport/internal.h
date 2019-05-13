@@ -238,7 +238,7 @@ class Chttp2IncomingByteStream : public ByteStream {
   // switch to std::shared_ptr<>.
   void Ref() { refs_.Ref(); }
   void Unref() {
-    if (refs_.Unref()) {
+    if (GPR_UNLIKELY(refs_.Unref())) {
       grpc_core::Delete(this);
     }
   }
@@ -771,11 +771,12 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
 // extern grpc_core::TraceFlag grpc_http_trace;
 // extern grpc_core::TraceFlag grpc_flowctl_trace;
 
-#define GRPC_CHTTP2_IF_TRACING(stmt) \
-  if (!(grpc_http_trace.enabled()))  \
-    ;                                \
-  else                               \
-    stmt
+#define GRPC_CHTTP2_IF_TRACING(stmt)                \
+  do {                                              \
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) { \
+      (stmt);                                       \
+    }                                               \
+  } while (0)
 
 void grpc_chttp2_fake_status(grpc_chttp2_transport* t,
                              grpc_chttp2_stream* stream, grpc_error* error);

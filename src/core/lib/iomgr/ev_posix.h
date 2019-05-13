@@ -24,16 +24,19 @@
 #include <poll.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
+GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
+
 extern grpc_core::TraceFlag grpc_fd_trace;      /* Disabled by default */
 extern grpc_core::TraceFlag grpc_polling_trace; /* Disabled by default */
 
 #define GRPC_FD_TRACE(format, ...)                        \
-  if (grpc_fd_trace.enabled()) {                          \
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_fd_trace)) {           \
     gpr_log(GPR_INFO, "(fd-trace) " format, __VA_ARGS__); \
   }
 

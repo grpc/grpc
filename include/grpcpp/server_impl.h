@@ -27,6 +27,7 @@
 
 #include <grpc/compression.h>
 #include <grpc/support/atm.h>
+#include <grpcpp/channel.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/call.h>
@@ -107,7 +108,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   }
 
   /// Establish a channel for in-process communication
-  std::shared_ptr<grpc::Channel> InProcessChannel(
+  std::shared_ptr<::grpc::Channel> InProcessChannel(
       const grpc::ChannelArguments& args);
 
   /// NOTE: class experimental_type is not part of the public API of this class.
@@ -119,7 +120,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
 
     /// Establish a channel for in-process communication with client
     /// interceptors
-    std::shared_ptr<grpc::Channel> InProcessChannelWithInterceptors(
+    std::shared_ptr<::grpc::Channel> InProcessChannelWithInterceptors(
         const grpc::ChannelArguments& args,
         std::vector<std::unique_ptr<
             grpc::experimental::ClientInterceptorFactoryInterface>>

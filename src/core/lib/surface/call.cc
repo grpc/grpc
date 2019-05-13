@@ -39,10 +39,11 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/slice/slice_utils.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_test_only.h"
@@ -130,7 +131,6 @@ struct grpc_call {
         channel(args.channel),
         is_client(args.server_transport_data == nullptr),
         stream_op_payload(context) {
-    gpr_ref_init(&ext_ref, 1);
     for (int i = 0; i < 2; i++) {
       for (int j = 0; j < 2; j++) {
         metadata_batch[i][j].deadline = GRPC_MILLIS_INF_FUTURE;
@@ -142,7 +142,7 @@ struct grpc_call {
     gpr_free(static_cast<void*>(const_cast<char*>(final_info.error_string)));
   }
 
-  gpr_refcount ext_ref;
+  grpc_core::RefCount ext_ref;
   grpc_core::Arena* arena;
   grpc_core::CallCombiner call_combiner;
   grpc_completion_queue* cq;
@@ -349,8 +349,8 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
                MAX_SEND_EXTRA_METADATA_COUNT);
     for (size_t i = 0; i < args->add_initial_metadata_count; i++) {
       call->send_extra_metadata[i].md = args->add_initial_metadata[i];
-      if (grpc_slice_eq(GRPC_MDKEY(args->add_initial_metadata[i]),
-                        GRPC_MDSTR_PATH)) {
+      if (grpc_slice_eq_static_interned(
+              GRPC_MDKEY(args->add_initial_metadata[i]), GRPC_MDSTR_PATH)) {
         path = grpc_slice_ref_internal(
             GRPC_MDVALUE(args->add_initial_metadata[i]));
       }
@@ -553,10 +553,10 @@ static void destroy_call(void* call, grpc_error* error) {
                                             grpc_schedule_on_exec_ctx));
 }
 
-void grpc_call_ref(grpc_call* c) { gpr_ref(&c->ext_ref); }
+void grpc_call_ref(grpc_call* c) { c->ext_ref.Ref(); }
 
 void grpc_call_unref(grpc_call* c) {
-  if (!gpr_unref(&c->ext_ref)) return;
+  if (GPR_LIKELY(!c->ext_ref.Unref())) return;
 
   GPR_TIMER_SCOPE("grpc_call_unref", 0);
 
@@ -723,7 +723,7 @@ static void cancel_with_status(grpc_call* c, grpc_status_code status,
 }
 
 static void set_final_status(grpc_call* call, grpc_error* error) {
-  if (grpc_call_error_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_call_error_trace)) {
     gpr_log(GPR_DEBUG, "set_final_status %s", call->is_client ? "CLI" : "SVR");
     gpr_log(GPR_DEBUG, "%s", grpc_error_string(error));
   }
@@ -1225,7 +1225,7 @@ static void post_batch_completion(batch_control* bctl) {
 }
 
 static void finish_batch_step(batch_control* bctl) {
-  if (gpr_unref(&bctl->steps_to_complete)) {
+  if (GPR_UNLIKELY(gpr_unref(&bctl->steps_to_complete))) {
     post_batch_completion(bctl);
   }
 }
@@ -1280,7 +1280,7 @@ static void receiving_slice_ready(void* bctlp, grpc_error* error) {
   }
 
   if (error != GRPC_ERROR_NONE) {
-    if (grpc_trace_operation_failures.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures)) {
       GRPC_LOG_IF_ERROR("receiving_slice_ready", GRPC_ERROR_REF(error));
     }
     call->receiving_stream.reset();
@@ -1404,7 +1404,7 @@ static void validate_filtered_metadata(batch_control* bctl) {
 
     GPR_ASSERT(call->encodings_accepted_by_peer != 0);
     if (!GPR_BITGET(call->encodings_accepted_by_peer, compression_algorithm)) {
-      if (grpc_compression_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
         const char* algo_name = nullptr;
         grpc_compression_algorithm_name(compression_algorithm, &algo_name);
         gpr_log(GPR_ERROR,

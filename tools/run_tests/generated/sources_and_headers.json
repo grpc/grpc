@@ -4819,6 +4819,24 @@
       "gpr", 
       "grpc", 
       "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "service_config_end2end_test", 
+    "src": [
+      "test/cpp/end2end/service_config_end2end_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc++", 
       "grpc++_test", 
       "grpc_test_util"
     ], 
@@ -6033,6 +6051,7 @@
   }, 
   {
     "deps": [
+      "dns_test_util", 
       "gpr", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
@@ -6052,6 +6071,7 @@
   }, 
   {
     "deps": [
+      "dns_test_util", 
       "gpr", 
       "grpc", 
       "grpc++", 
@@ -6147,6 +6167,7 @@
   }, 
   {
     "deps": [
+      "dns_test_util", 
       "gpr", 
       "grpc", 
       "grpc++", 
@@ -6618,6 +6639,21 @@
     "src": [
       "test/core/util/test_tcp_server.cc", 
       "test/core/util/test_tcp_server.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "test/cpp/naming/dns_test_util.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "dns_test_util", 
+    "src": [
+      "test/cpp/naming/dns_test_util.cc", 
+      "test/cpp/naming/dns_test_util.h"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -8557,6 +8593,7 @@
       "src/core/lib/slice/slice_hash_table.h", 
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.h", 
+      "src/core/lib/slice/slice_utils.h", 
       "src/core/lib/slice/slice_weak_hash_table.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
@@ -8713,6 +8750,7 @@
       "src/core/lib/slice/slice_hash_table.h", 
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.h", 
+      "src/core/lib/slice/slice_utils.h", 
       "src/core/lib/slice/slice_weak_hash_table.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
@@ -9156,7 +9194,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_channel"
+      "grpc_client_channel", 
+      "grpc_resolver_dns_selection"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h", 
@@ -9189,7 +9228,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_channel"
+      "grpc_client_channel", 
+      "grpc_resolver_dns_selection"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -9197,6 +9237,24 @@
     "name": "grpc_resolver_dns_native", 
     "src": [
       "src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base"
+    ], 
+    "headers": [
+      "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_resolver_dns_selection", 
+    "src": [
+      "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc", 
+      "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -9999,6 +10057,7 @@
       "include/grpcpp/impl/codegen/client_interceptor.h", 
       "include/grpcpp/impl/codegen/client_unary_call.h", 
       "include/grpcpp/impl/codegen/completion_queue.h", 
+      "include/grpcpp/impl/codegen/completion_queue_impl.h", 
       "include/grpcpp/impl/codegen/completion_queue_tag.h", 
       "include/grpcpp/impl/codegen/config.h", 
       "include/grpcpp/impl/codegen/core_codegen_interface.h", 
@@ -10076,6 +10135,7 @@
       "include/grpcpp/impl/codegen/client_interceptor.h", 
       "include/grpcpp/impl/codegen/client_unary_call.h", 
       "include/grpcpp/impl/codegen/completion_queue.h", 
+      "include/grpcpp/impl/codegen/completion_queue_impl.h", 
       "include/grpcpp/impl/codegen/completion_queue_tag.h", 
       "include/grpcpp/impl/codegen/config.h", 
       "include/grpcpp/impl/codegen/core_codegen_interface.h", 
@@ -10204,6 +10264,7 @@
       "include/grpcpp/alarm.h", 
       "include/grpcpp/alarm_impl.h", 
       "include/grpcpp/channel.h", 
+      "include/grpcpp/channel_impl.h", 
       "include/grpcpp/client_context.h", 
       "include/grpcpp/completion_queue.h", 
       "include/grpcpp/create_channel.h", 
@@ -10329,6 +10390,7 @@
       "include/grpcpp/alarm.h", 
       "include/grpcpp/alarm_impl.h", 
       "include/grpcpp/channel.h", 
+      "include/grpcpp/channel_impl.h", 
       "include/grpcpp/client_context.h", 
       "include/grpcpp/completion_queue.h", 
       "include/grpcpp/create_channel.h", 

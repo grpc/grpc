@@ -28,6 +28,7 @@
 
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/slice/slice_utils.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_conversion.h"
@@ -304,7 +305,7 @@ static grpc_error* init_frame_parser(grpc_chttp2_transport* t) {
     case GRPC_CHTTP2_FRAME_GOAWAY:
       return init_goaway_parser(t);
     default:
-      if (grpc_http_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
         gpr_log(GPR_ERROR, "Unknown frame type %02x", t->incoming_frame_type);
       }
       return init_skip_frame_parser(t, 0);
@@ -400,7 +401,7 @@ static void on_initial_header(void* tp, grpc_mdelem md) {
   grpc_chttp2_stream* s = t->incoming_stream;
   GPR_ASSERT(s != nullptr);
 
-  if (grpc_http_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     char* key = grpc_slice_to_c_string(GRPC_MDKEY(md));
     char* value =
         grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -410,53 +411,42 @@ static void on_initial_header(void* tp, grpc_mdelem md) {
     gpr_free(value);
   }
 
-  if (GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC) {
-    // We don't use grpc_mdelem_eq here to avoid executing additional
-    // instructions. The reasoning is if the payload is not equal, we already
-    // know that the metadata elements are not equal because the md is
-    // confirmed to be static. If we had used grpc_mdelem_eq here, then if the
-    // payloads are not equal, grpc_mdelem_eq executes more instructions to
-    // determine if they're equal or not.
-    if (md.payload == GRPC_MDELEM_GRPC_STATUS_1.payload ||
-        md.payload == GRPC_MDELEM_GRPC_STATUS_2.payload) {
-      s->seen_error = true;
-    }
-  } else {
-    if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) &&
-        !grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {
-      /* TODO(ctiller): check for a status like " 0" */
-      s->seen_error = true;
-    }
-
-    if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT)) {
-      grpc_millis* cached_timeout = static_cast<grpc_millis*>(
-          grpc_mdelem_get_user_data(md, free_timeout));
-      grpc_millis timeout;
-      if (cached_timeout != nullptr) {
-        timeout = *cached_timeout;
-      } else {
-        if (GPR_UNLIKELY(
-                !grpc_http2_decode_timeout(GRPC_MDVALUE(md), &timeout))) {
-          char* val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
-          gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'", val);
-          gpr_free(val);
-          timeout = GRPC_MILLIS_INF_FUTURE;
-        }
-        if (GRPC_MDELEM_IS_INTERNED(md)) {
-          /* store the result */
-          cached_timeout =
-              static_cast<grpc_millis*>(gpr_malloc(sizeof(grpc_millis)));
-          *cached_timeout = timeout;
-          grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
-        }
+  // If md.payload == GRPC_MDELEM_GRPC_STATUS_1 or GRPC_MDELEM_GRPC_STATUS_2,
+  // then we have seen an error. In fact, if it is a GRPC_STATUS and it's
+  // not equal to GRPC_MDELEM_GRPC_STATUS_0, then we have seen an error.
+  if (grpc_slice_eq_static_interned(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) &&
+      !grpc_mdelem_static_value_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {
+    /* TODO(ctiller): check for a status like " 0" */
+    s->seen_error = true;
+  } else if (grpc_slice_eq_static_interned(GRPC_MDKEY(md),
+                                           GRPC_MDSTR_GRPC_TIMEOUT)) {
+    grpc_millis* cached_timeout =
+        static_cast<grpc_millis*>(grpc_mdelem_get_user_data(md, free_timeout));
+    grpc_millis timeout;
+    if (cached_timeout != nullptr) {
+      timeout = *cached_timeout;
+    } else {
+      if (GPR_UNLIKELY(
+              !grpc_http2_decode_timeout(GRPC_MDVALUE(md), &timeout))) {
+        char* val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
+        gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'", val);
+        gpr_free(val);
+        timeout = GRPC_MILLIS_INF_FUTURE;
       }
-      if (timeout != GRPC_MILLIS_INF_FUTURE) {
-        grpc_chttp2_incoming_metadata_buffer_set_deadline(
-            &s->metadata_buffer[0], grpc_core::ExecCtx::Get()->Now() + timeout);
+      if (GRPC_MDELEM_IS_INTERNED(md)) {
+        /* store the result */
+        cached_timeout =
+            static_cast<grpc_millis*>(gpr_malloc(sizeof(grpc_millis)));
+        *cached_timeout = timeout;
+        grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
       }
-      GRPC_MDELEM_UNREF(md);
-      return;
     }
+    if (timeout != GRPC_MILLIS_INF_FUTURE) {
+      grpc_chttp2_incoming_metadata_buffer_set_deadline(
+          &s->metadata_buffer[0], grpc_core::ExecCtx::Get()->Now() + timeout);
+    }
+    GRPC_MDELEM_UNREF(md);
+    return;
   }
 
   const size_t new_size = s->metadata_buffer[0].size + GRPC_MDELEM_LENGTH(md);
@@ -496,7 +486,7 @@ static void on_trailing_header(void* tp, grpc_mdelem md) {
   grpc_chttp2_stream* s = t->incoming_stream;
   GPR_ASSERT(s != nullptr);
 
-  if (grpc_http_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     char* key = grpc_slice_to_c_string(GRPC_MDKEY(md));
     char* value =
         grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -506,19 +496,11 @@ static void on_trailing_header(void* tp, grpc_mdelem md) {
     gpr_free(value);
   }
 
-  if (GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC) {
-    // We don't use grpc_mdelem_eq here to avoid executing additional
-    // instructions. The reasoning is if the payload is not equal, we already
-    // know that the metadata elements are not equal because the md is
-    // confirmed to be static. If we had used grpc_mdelem_eq here, then if the
-    // payloads are not equal, grpc_mdelem_eq executes more instructions to
-    // determine if they're equal or not.
-    if (md.payload == GRPC_MDELEM_GRPC_STATUS_1.payload ||
-        md.payload == GRPC_MDELEM_GRPC_STATUS_2.payload) {
-      s->seen_error = true;
-    }
-  } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) &&
-             !grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {
+  // If md.payload == GRPC_MDELEM_GRPC_STATUS_1 or GRPC_MDELEM_GRPC_STATUS_2,
+  // then we have seen an error. In fact, if it is a GRPC_STATUS and it's
+  // not equal to GRPC_MDELEM_GRPC_STATUS_0, then we have seen an error.
+  if (grpc_slice_eq_static_interned(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) &&
+      !grpc_mdelem_static_value_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {
     /* TODO(ctiller): check for a status like " 0" */
     s->seen_error = true;
   }
@@ -761,7 +743,7 @@ static grpc_error* parse_frame_slice(grpc_chttp2_transport* t,
   if (GPR_LIKELY(err == GRPC_ERROR_NONE)) {
     return err;
   } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, &unused)) {
-    if (grpc_http_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
       const char* msg = grpc_error_string(err);
       gpr_log(GPR_ERROR, "%s", msg);
     }
