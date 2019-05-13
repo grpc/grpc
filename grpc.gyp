@@ -1408,6 +1408,24 @@
       ],
     },
     {
+      'target_name': 'bm_callback_test_service_impl',
+      'type': 'static_library',
+      'dependencies': [
+        'grpc_benchmark',
+        'benchmark',
+        'grpc++_test_util_unsecure',
+        'grpc_test_util_unsecure',
+        'grpc++_unsecure',
+        'grpc_unsecure',
+        'gpr',
+        'grpc++_test_config',
+      ],
+      'sources': [
+        'src/proto/grpc/testing/echo.proto',
+        'test/cpp/microbenchmarks/callback_test_service.cc',
+      ],
+    },
+    {
       'target_name': 'dns_test_util',
       'type': 'static_library',
       'dependencies': [

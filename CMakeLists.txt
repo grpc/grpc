@@ -556,6 +556,12 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_call_create)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx bm_callback_streaming_ping_pong)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx bm_callback_unary_ping_pong)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_channel)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -2907,6 +2913,67 @@ target_link_libraries(test_tcp_server
   gpr
 )
 
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+if (gRPC_BUILD_CODEGEN)
+add_library(bm_callback_test_service_impl
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_mock.grpc.pb.h
+  test/cpp/microbenchmarks/callback_test_service.cc
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(bm_callback_test_service_impl PROPERTIES COMPILE_PDB_NAME "bm_callback_test_service_impl"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bm_callback_test_service_impl.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/echo.proto
+)
+
+target_include_directories(bm_callback_test_service_impl
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+target_link_libraries(bm_callback_test_service_impl
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
+  ${_gRPC_BENCHMARK_LIBRARIES}
+  grpc++_test_util_unsecure
+  grpc_test_util_unsecure
+  grpc++_unsecure
+  grpc_unsecure
+  gpr
+  grpc++_test_config
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -11547,6 +11614,98 @@ target_link_libraries(bm_call_create
   grpc_unsecure
   gpr
   grpc++_test_config
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+add_executable(bm_callback_streaming_ping_pong
+  test/cpp/microbenchmarks/bm_callback_streaming_ping_pong.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(bm_callback_streaming_ping_pong
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(bm_callback_streaming_ping_pong
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
+  ${_gRPC_BENCHMARK_LIBRARIES}
+  grpc++_test_util_unsecure
+  grpc_test_util_unsecure
+  grpc++_unsecure
+  grpc_unsecure
+  gpr
+  grpc++_test_config
+  bm_callback_test_service_impl
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+add_executable(bm_callback_unary_ping_pong
+  test/cpp/microbenchmarks/bm_callback_unary_ping_pong.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(bm_callback_unary_ping_pong
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(bm_callback_unary_ping_pong
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
+  ${_gRPC_BENCHMARK_LIBRARIES}
+  grpc++_test_util_unsecure
+  grpc_test_util_unsecure
+  grpc++_unsecure
+  grpc_unsecure
+  gpr
+  grpc++_test_config
+  bm_callback_test_service_impl
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
