@@ -76,16 +76,18 @@ UPB_INLINE char *envoy_api_v2_cluster_CircuitBreakers_Thresholds_serialize(const
 }
 
 UPB_INLINE int32_t envoy_api_v2_cluster_CircuitBreakers_Thresholds_priority(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_connections(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(8, 8)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_pending_requests(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(12, 16)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_requests(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(16, 24)); }
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_retries(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(20, 32)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_connections(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(12, 16)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_pending_requests(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(16, 24)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_requests(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(20, 32)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_retries(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(24, 40)); }
+UPB_INLINE bool envoy_api_v2_cluster_CircuitBreakers_Thresholds_track_remaining(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(8, 8)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_connection_pools(const envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(28, 48)); }
 
 UPB_INLINE void envoy_api_v2_cluster_CircuitBreakers_Thresholds_set_priority(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, int32_t value) {
   UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)) = value;
 }
 UPB_INLINE void envoy_api_v2_cluster_CircuitBreakers_Thresholds_set_max_connections(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(8, 8)) = value;
+  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(12, 16)) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_mutable_max_connections(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_connections(msg);
@@ -97,7 +99,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreak
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_CircuitBreakers_Thresholds_set_max_pending_requests(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(12, 16)) = value;
+  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(16, 24)) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_mutable_max_pending_requests(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_pending_requests(msg);
@@ -109,7 +111,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreak
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_CircuitBreakers_Thresholds_set_max_requests(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(16, 24)) = value;
+  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(20, 32)) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_mutable_max_requests(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_requests(msg);
@@ -121,7 +123,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreak
   return sub;
 }
 UPB_INLINE void envoy_api_v2_cluster_CircuitBreakers_Thresholds_set_max_retries(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, struct google_protobuf_UInt32Value* value) {
-  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(20, 32)) = value;
+  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(24, 40)) = value;
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_mutable_max_retries(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, upb_arena *arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_retries(msg);
@@ -129,6 +131,21 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreak
     sub = (struct google_protobuf_UInt32Value*)upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
     if (!sub) return NULL;
     envoy_api_v2_cluster_CircuitBreakers_Thresholds_set_max_retries(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_api_v2_cluster_CircuitBreakers_Thresholds_set_track_remaining(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, bool value) {
+  UPB_FIELD_AT(msg, bool, UPB_SIZE(8, 8)) = value;
+}
+UPB_INLINE void envoy_api_v2_cluster_CircuitBreakers_Thresholds_set_max_connection_pools(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, struct google_protobuf_UInt32Value* value) {
+  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(28, 48)) = value;
+}
+UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_cluster_CircuitBreakers_Thresholds_mutable_max_connection_pools(envoy_api_v2_cluster_CircuitBreakers_Thresholds *msg, upb_arena *arena) {
+  struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_cluster_CircuitBreakers_Thresholds_max_connection_pools(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_UInt32Value*)upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
+    if (!sub) return NULL;
+    envoy_api_v2_cluster_CircuitBreakers_Thresholds_set_max_connection_pools(msg, sub);
   }
   return sub;
 }

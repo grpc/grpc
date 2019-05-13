@@ -145,6 +145,7 @@ UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_core_Http2Prot
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_core_Http2ProtocolOptions_initial_stream_window_size(const envoy_api_v2_core_Http2ProtocolOptions *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(12, 24)); }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_core_Http2ProtocolOptions_initial_connection_window_size(const envoy_api_v2_core_Http2ProtocolOptions *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(16, 32)); }
 UPB_INLINE bool envoy_api_v2_core_Http2ProtocolOptions_allow_connect(const envoy_api_v2_core_Http2ProtocolOptions *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(0, 0)); }
+UPB_INLINE bool envoy_api_v2_core_Http2ProtocolOptions_allow_metadata(const envoy_api_v2_core_Http2ProtocolOptions *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(1, 1)); }
 
 UPB_INLINE void envoy_api_v2_core_Http2ProtocolOptions_set_hpack_table_size(envoy_api_v2_core_Http2ProtocolOptions *msg, struct google_protobuf_UInt32Value* value) {
   UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(4, 8)) = value;
@@ -196,6 +197,9 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_core_Http2ProtocolOp
 }
 UPB_INLINE void envoy_api_v2_core_Http2ProtocolOptions_set_allow_connect(envoy_api_v2_core_Http2ProtocolOptions *msg, bool value) {
   UPB_FIELD_AT(msg, bool, UPB_SIZE(0, 0)) = value;
+}
+UPB_INLINE void envoy_api_v2_core_Http2ProtocolOptions_set_allow_metadata(envoy_api_v2_core_Http2ProtocolOptions *msg, bool value) {
+  UPB_FIELD_AT(msg, bool, UPB_SIZE(1, 1)) = value;
 }
 
 

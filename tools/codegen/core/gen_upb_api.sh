@@ -54,9 +54,11 @@ proto_files=( \
   "envoy/api/v2/endpoint/endpoint.proto" \
   "envoy/api/v2/endpoint/load_report.proto" \
   "envoy/service/discovery/v2/ads.proto" \
-  "envoy/service/load_stats/v2/lrs.proto")
+  "envoy/service/load_stats/v2/lrs.proto" \
+  "udpa/data/orca/v1/orca_load_report.proto")
 
 for i in "${proto_files[@]}"
 do
+  echo "Compiling: ${i}"
   protoc -I=$PWD/third_party/data-plane-api -I=$PWD/third_party/googleapis -I=$PWD/third_party/protobuf -I=$PWD/third_party/protoc-gen-validate $i --upb_out=./src/core/ext/upb-generated --plugin=protoc-gen-upb=third_party/upb/bazel-bin/protoc-gen-upb
 done

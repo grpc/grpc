@@ -27,10 +27,12 @@ struct envoy_api_v2_core_Metadata_FilterMetadataEntry;
 struct envoy_api_v2_core_RuntimeUInt32;
 struct envoy_api_v2_core_HeaderValue;
 struct envoy_api_v2_core_HeaderValueOption;
+struct envoy_api_v2_core_HeaderMap;
 struct envoy_api_v2_core_DataSource;
 struct envoy_api_v2_core_TransportSocket;
 struct envoy_api_v2_core_SocketOption;
 struct envoy_api_v2_core_RuntimeFractionalPercent;
+struct envoy_api_v2_core_ControlPlane;
 typedef struct envoy_api_v2_core_Locality envoy_api_v2_core_Locality;
 typedef struct envoy_api_v2_core_Node envoy_api_v2_core_Node;
 typedef struct envoy_api_v2_core_Metadata envoy_api_v2_core_Metadata;
@@ -38,10 +40,12 @@ typedef struct envoy_api_v2_core_Metadata_FilterMetadataEntry envoy_api_v2_core_
 typedef struct envoy_api_v2_core_RuntimeUInt32 envoy_api_v2_core_RuntimeUInt32;
 typedef struct envoy_api_v2_core_HeaderValue envoy_api_v2_core_HeaderValue;
 typedef struct envoy_api_v2_core_HeaderValueOption envoy_api_v2_core_HeaderValueOption;
+typedef struct envoy_api_v2_core_HeaderMap envoy_api_v2_core_HeaderMap;
 typedef struct envoy_api_v2_core_DataSource envoy_api_v2_core_DataSource;
 typedef struct envoy_api_v2_core_TransportSocket envoy_api_v2_core_TransportSocket;
 typedef struct envoy_api_v2_core_SocketOption envoy_api_v2_core_SocketOption;
 typedef struct envoy_api_v2_core_RuntimeFractionalPercent envoy_api_v2_core_RuntimeFractionalPercent;
+typedef struct envoy_api_v2_core_ControlPlane envoy_api_v2_core_ControlPlane;
 extern const upb_msglayout envoy_api_v2_core_Locality_msginit;
 extern const upb_msglayout envoy_api_v2_core_Node_msginit;
 extern const upb_msglayout envoy_api_v2_core_Metadata_msginit;
@@ -49,10 +53,12 @@ extern const upb_msglayout envoy_api_v2_core_Metadata_FilterMetadataEntry_msgini
 extern const upb_msglayout envoy_api_v2_core_RuntimeUInt32_msginit;
 extern const upb_msglayout envoy_api_v2_core_HeaderValue_msginit;
 extern const upb_msglayout envoy_api_v2_core_HeaderValueOption_msginit;
+extern const upb_msglayout envoy_api_v2_core_HeaderMap_msginit;
 extern const upb_msglayout envoy_api_v2_core_DataSource_msginit;
 extern const upb_msglayout envoy_api_v2_core_TransportSocket_msginit;
 extern const upb_msglayout envoy_api_v2_core_SocketOption_msginit;
 extern const upb_msglayout envoy_api_v2_core_RuntimeFractionalPercent_msginit;
+extern const upb_msglayout envoy_api_v2_core_ControlPlane_msginit;
 struct envoy_type_FractionalPercent;
 struct google_protobuf_Any;
 struct google_protobuf_BoolValue;
@@ -323,6 +329,36 @@ UPB_INLINE struct google_protobuf_BoolValue* envoy_api_v2_core_HeaderValueOption
 }
 
 
+/* envoy.api.v2.core.HeaderMap */
+
+UPB_INLINE envoy_api_v2_core_HeaderMap *envoy_api_v2_core_HeaderMap_new(upb_arena *arena) {
+  return (envoy_api_v2_core_HeaderMap *)upb_msg_new(&envoy_api_v2_core_HeaderMap_msginit, arena);
+}
+UPB_INLINE envoy_api_v2_core_HeaderMap *envoy_api_v2_core_HeaderMap_parsenew(upb_strview buf, upb_arena *arena) {
+  envoy_api_v2_core_HeaderMap *ret = envoy_api_v2_core_HeaderMap_new(arena);
+  return (ret && upb_decode(buf, ret, &envoy_api_v2_core_HeaderMap_msginit)) ? ret : NULL;
+}
+UPB_INLINE char *envoy_api_v2_core_HeaderMap_serialize(const envoy_api_v2_core_HeaderMap *msg, upb_arena *arena, size_t *len) {
+  return upb_encode(msg, &envoy_api_v2_core_HeaderMap_msginit, arena, len);
+}
+
+UPB_INLINE const envoy_api_v2_core_HeaderValue* const* envoy_api_v2_core_HeaderMap_headers(const envoy_api_v2_core_HeaderMap *msg, size_t *len) { return (const envoy_api_v2_core_HeaderValue* const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len); }
+
+UPB_INLINE envoy_api_v2_core_HeaderValue** envoy_api_v2_core_HeaderMap_mutable_headers(envoy_api_v2_core_HeaderMap *msg, size_t *len) {
+  return (envoy_api_v2_core_HeaderValue**)_upb_array_mutable_accessor(msg, UPB_SIZE(0, 0), len);
+}
+UPB_INLINE envoy_api_v2_core_HeaderValue** envoy_api_v2_core_HeaderMap_resize_headers(envoy_api_v2_core_HeaderMap *msg, size_t len, upb_arena *arena) {
+  return (envoy_api_v2_core_HeaderValue**)_upb_array_resize_accessor(msg, UPB_SIZE(0, 0), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+}
+UPB_INLINE struct envoy_api_v2_core_HeaderValue* envoy_api_v2_core_HeaderMap_add_headers(envoy_api_v2_core_HeaderMap *msg, upb_arena *arena) {
+  struct envoy_api_v2_core_HeaderValue* sub = (struct envoy_api_v2_core_HeaderValue*)upb_msg_new(&envoy_api_v2_core_HeaderValue_msginit, arena);
+  bool ok = _upb_array_append_accessor(
+      msg, UPB_SIZE(0, 0), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+  if (!ok) return NULL;
+  return sub;
+}
+
+
 /* envoy.api.v2.core.DataSource */
 
 UPB_INLINE envoy_api_v2_core_DataSource *envoy_api_v2_core_DataSource_new(upb_arena *arena) {
@@ -495,6 +531,26 @@ UPB_INLINE struct envoy_type_FractionalPercent* envoy_api_v2_core_RuntimeFractio
   return sub;
 }
 UPB_INLINE void envoy_api_v2_core_RuntimeFractionalPercent_set_runtime_key(envoy_api_v2_core_RuntimeFractionalPercent *msg, upb_strview value) {
+  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
+}
+
+
+/* envoy.api.v2.core.ControlPlane */
+
+UPB_INLINE envoy_api_v2_core_ControlPlane *envoy_api_v2_core_ControlPlane_new(upb_arena *arena) {
+  return (envoy_api_v2_core_ControlPlane *)upb_msg_new(&envoy_api_v2_core_ControlPlane_msginit, arena);
+}
+UPB_INLINE envoy_api_v2_core_ControlPlane *envoy_api_v2_core_ControlPlane_parsenew(upb_strview buf, upb_arena *arena) {
+  envoy_api_v2_core_ControlPlane *ret = envoy_api_v2_core_ControlPlane_new(arena);
+  return (ret && upb_decode(buf, ret, &envoy_api_v2_core_ControlPlane_msginit)) ? ret : NULL;
+}
+UPB_INLINE char *envoy_api_v2_core_ControlPlane_serialize(const envoy_api_v2_core_ControlPlane *msg, upb_arena *arena, size_t *len) {
+  return upb_encode(msg, &envoy_api_v2_core_ControlPlane_msginit, arena, len);
+}
+
+UPB_INLINE upb_strview envoy_api_v2_core_ControlPlane_identifier(const envoy_api_v2_core_ControlPlane *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
+
+UPB_INLINE void envoy_api_v2_core_ControlPlane_set_identifier(envoy_api_v2_core_ControlPlane *msg, upb_strview value) {
   UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
 }
 

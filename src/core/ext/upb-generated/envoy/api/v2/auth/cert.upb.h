@@ -53,9 +53,11 @@ extern const upb_msglayout envoy_api_v2_auth_Secret_msginit;
 struct envoy_api_v2_core_ConfigSource;
 struct envoy_api_v2_core_DataSource;
 struct google_protobuf_BoolValue;
+struct google_protobuf_UInt32Value;
 extern const upb_msglayout envoy_api_v2_core_ConfigSource_msginit;
 extern const upb_msglayout envoy_api_v2_core_DataSource_msginit;
 extern const upb_msglayout google_protobuf_BoolValue_msginit;
+extern const upb_msglayout google_protobuf_UInt32Value_msginit;
 
 /* Enums */
 
@@ -507,6 +509,7 @@ UPB_INLINE char *envoy_api_v2_auth_UpstreamTlsContext_serialize(const envoy_api_
 UPB_INLINE const envoy_api_v2_auth_CommonTlsContext* envoy_api_v2_auth_UpstreamTlsContext_common_tls_context(const envoy_api_v2_auth_UpstreamTlsContext *msg) { return UPB_FIELD_AT(msg, const envoy_api_v2_auth_CommonTlsContext*, UPB_SIZE(12, 24)); }
 UPB_INLINE upb_strview envoy_api_v2_auth_UpstreamTlsContext_sni(const envoy_api_v2_auth_UpstreamTlsContext *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(4, 8)); }
 UPB_INLINE bool envoy_api_v2_auth_UpstreamTlsContext_allow_renegotiation(const envoy_api_v2_auth_UpstreamTlsContext *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(0, 0)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_auth_UpstreamTlsContext_max_session_keys(const envoy_api_v2_auth_UpstreamTlsContext *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(16, 32)); }
 
 UPB_INLINE void envoy_api_v2_auth_UpstreamTlsContext_set_common_tls_context(envoy_api_v2_auth_UpstreamTlsContext *msg, envoy_api_v2_auth_CommonTlsContext* value) {
   UPB_FIELD_AT(msg, envoy_api_v2_auth_CommonTlsContext*, UPB_SIZE(12, 24)) = value;
@@ -525,6 +528,18 @@ UPB_INLINE void envoy_api_v2_auth_UpstreamTlsContext_set_sni(envoy_api_v2_auth_U
 }
 UPB_INLINE void envoy_api_v2_auth_UpstreamTlsContext_set_allow_renegotiation(envoy_api_v2_auth_UpstreamTlsContext *msg, bool value) {
   UPB_FIELD_AT(msg, bool, UPB_SIZE(0, 0)) = value;
+}
+UPB_INLINE void envoy_api_v2_auth_UpstreamTlsContext_set_max_session_keys(envoy_api_v2_auth_UpstreamTlsContext *msg, struct google_protobuf_UInt32Value* value) {
+  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(16, 32)) = value;
+}
+UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_auth_UpstreamTlsContext_mutable_max_session_keys(envoy_api_v2_auth_UpstreamTlsContext *msg, upb_arena *arena) {
+  struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_auth_UpstreamTlsContext_max_session_keys(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_UInt32Value*)upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
+    if (!sub) return NULL;
+    envoy_api_v2_auth_UpstreamTlsContext_set_max_session_keys(msg, sub);
+  }
+  return sub;
 }
 
 
