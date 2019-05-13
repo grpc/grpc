@@ -13,8 +13,8 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 7.0.0
-  g_stands_for: gandalf
-  version: 1.21.0-dev
+  g_stands_for: gale
+  version: 1.22.0-dev
 filegroups:
 - name: alts_proto
   headers:
@@ -525,6 +525,7 @@ filegroups:
   - src/core/lib/slice/slice_hash_table.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/slice/slice_utils.h
   - src/core/lib/slice/slice_weak_hash_table.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h

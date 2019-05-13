@@ -68,9 +68,8 @@ class PickFirst : public LoadBalancingPolicy {
     PickFirstSubchannelData(
         SubchannelList<PickFirstSubchannelList, PickFirstSubchannelData>*
             subchannel_list,
-        const ServerAddress& address, Subchannel* subchannel,
-        grpc_combiner* combiner)
-        : SubchannelData(subchannel_list, address, subchannel, combiner) {}
+        const ServerAddress& address, Subchannel* subchannel)
+        : SubchannelData(subchannel_list, address, subchannel) {}
 
     void ProcessConnectivityChangeLocked(
         grpc_connectivity_state connectivity_state) override;
@@ -312,6 +311,7 @@ void PickFirst::UpdateLocked(UpdateArgs args) {
       // here, since we've already checked the initial connectivity
       // state of all subchannels above.
       subchannel_list_->subchannel(0)->StartConnectivityWatchLocked();
+      subchannel_list_->subchannel(0)->subchannel()->AttemptToConnect();
     }
   } else {
     // We do have a selected subchannel (which means it's READY), so keep
@@ -334,6 +334,9 @@ void PickFirst::UpdateLocked(UpdateArgs args) {
       // state of all subchannels above.
       latest_pending_subchannel_list_->subchannel(0)
           ->StartConnectivityWatchLocked();
+      latest_pending_subchannel_list_->subchannel(0)
+          ->subchannel()
+          ->AttemptToConnect();
     }
   }
 }
@@ -366,7 +369,8 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
                 p->subchannel_list_.get());
       }
       p->selected_ = nullptr;
-      StopConnectivityWatchLocked();
+      CancelConnectivityWatchLocked(
+          "selected subchannel failed; switching to pending update");
       p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
       // Set our state to that of the pending subchannel list.
       if (p->subchannel_list_->in_transient_failure()) {
@@ -391,7 +395,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         p->idle_ = true;
         p->channel_control_helper()->RequestReresolution();
         p->selected_ = nullptr;
-        StopConnectivityWatchLocked();
+        CancelConnectivityWatchLocked("selected subchannel failed; going IDLE");
         p->channel_control_helper()->UpdateState(
             GRPC_CHANNEL_IDLE,
             UniquePtr<SubchannelPicker>(New<QueuePicker>(p->Ref())));
@@ -408,8 +412,6 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
               connectivity_state,
               UniquePtr<SubchannelPicker>(New<QueuePicker>(p->Ref())));
         }
-        // Renew notification.
-        RenewConnectivityWatchLocked();
       }
     }
     return;
@@ -426,13 +428,11 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
   subchannel_list()->set_in_transient_failure(false);
   switch (connectivity_state) {
     case GRPC_CHANNEL_READY: {
-      // Renew notification.
-      RenewConnectivityWatchLocked();
       ProcessUnselectedReadyLocked();
       break;
     }
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-      StopConnectivityWatchLocked();
+      CancelConnectivityWatchLocked("connection attempt failed");
       PickFirstSubchannelData* sd = this;
       size_t next_index =
           (sd->Index() + 1) % subchannel_list()->num_subchannels();
@@ -468,8 +468,6 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
             GRPC_CHANNEL_CONNECTING,
             UniquePtr<SubchannelPicker>(New<QueuePicker>(p->Ref())));
       }
-      // Renew notification.
-      RenewConnectivityWatchLocked();
       break;
     }
     case GRPC_CHANNEL_SHUTDOWN:
@@ -521,8 +519,11 @@ void PickFirst::PickFirstSubchannelData::
   // If current state is READY, select the subchannel now, since we started
   // watching from this state and will not get a notification of it
   // transitioning into this state.
-  if (p->selected_ != this && current_state == GRPC_CHANNEL_READY) {
-    ProcessUnselectedReadyLocked();
+  // If the current state is not READY, attempt to connect.
+  if (current_state == GRPC_CHANNEL_READY) {
+    if (p->selected_ != this) ProcessUnselectedReadyLocked();
+  } else {
+    subchannel()->AttemptToConnect();
   }
 }
 

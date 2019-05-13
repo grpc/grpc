@@ -69,8 +69,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   // empty, it means that we don't have a valid service config to use, and we
   // should set the channel to be in TRANSIENT_FAILURE.
   typedef bool (*ProcessResolverResultCallback)(
-      void* user_data, const Resolver::Result& result,
-      const char** lb_policy_name,
+      void* user_data, Resolver::Result* result, const char** lb_policy_name,
       RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config,
       grpc_error** service_config_error);
   // If error is set when this returns, then construction failed, and

@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.21.0-dev'
+  version = '1.22.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -494,6 +494,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice_hash_table.h',
                       'src/core/lib/slice/slice_internal.h',
                       'src/core/lib/slice/slice_string_helpers.h',
+                      'src/core/lib/slice/slice_utils.h',
                       'src/core/lib/slice/slice_weak_hash_table.h',
                       'src/core/lib/surface/api_trace.h',
                       'src/core/lib/surface/call.h',
@@ -1147,6 +1148,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/slice_hash_table.h',
                               'src/core/lib/slice/slice_internal.h',
                               'src/core/lib/slice/slice_string_helpers.h',
+                              'src/core/lib/slice/slice_utils.h',
                               'src/core/lib/slice/slice_weak_hash_table.h',
                               'src/core/lib/surface/api_trace.h',
                               'src/core/lib/surface/call.h',

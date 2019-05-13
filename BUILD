@@ -74,11 +74,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gandalf"
+g_stands_for = "gale"
 
 core_version = "7.0.0"
 
-version = "1.21.0-dev"
+version = "1.22.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -997,6 +997,7 @@ grpc_cc_library(
         "src/core/lib/slice/slice_hash_table.h",
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
+        "src/core/lib/slice/slice_utils.h",
         "src/core/lib/slice/slice_weak_hash_table.h",
         "src/core/lib/surface/api_trace.h",
         "src/core/lib/surface/call.h",

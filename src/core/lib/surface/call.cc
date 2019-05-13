@@ -42,8 +42,8 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/slice/slice_utils.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_test_only.h"
@@ -349,8 +349,8 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
                MAX_SEND_EXTRA_METADATA_COUNT);
     for (size_t i = 0; i < args->add_initial_metadata_count; i++) {
       call->send_extra_metadata[i].md = args->add_initial_metadata[i];
-      if (grpc_slice_eq(GRPC_MDKEY(args->add_initial_metadata[i]),
-                        GRPC_MDSTR_PATH)) {
+      if (grpc_slice_eq_static_interned(
+              GRPC_MDKEY(args->add_initial_metadata[i]), GRPC_MDSTR_PATH)) {
         path = grpc_slice_ref_internal(
             GRPC_MDVALUE(args->add_initial_metadata[i]));
       }
