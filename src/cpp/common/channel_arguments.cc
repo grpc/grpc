@@ -23,6 +23,7 @@
 #include <grpc/support/log.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/resource_quota.h>
+#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
@@ -35,7 +36,7 @@ ChannelArguments::ChannelArguments() {
 }
 
 ChannelArguments::ChannelArguments(const ChannelArguments& other)
-    : strings_(other.strings_) {
+    : ::grpc::GrpcLibraryCodegen(), strings_(other.strings_) {
   args_.reserve(other.args_.size());
   auto list_it_dst = strings_.begin();
   auto list_it_src = other.strings_.begin();
@@ -213,6 +214,18 @@ void ChannelArguments::SetChannelArgs(grpc_channel_args* channel_args) const {
   if (channel_args->num_args > 0) {
     channel_args->args = const_cast<grpc_arg*>(&args_[0]);
   }
+}
+
+grpc::string
+ChannelArguments::experimental_type::ValidateAndSetServiceConfigJSON(
+    const grpc::string& service_config_json) {
+  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_core::ServiceConfig::Create(service_config_json.c_str(), &error);
+  if (error != GRPC_ERROR_NONE) {
+    return grpc_error_string(error);
+  }
+  args_->SetServiceConfigJSON(service_config_json);
+  return "";
 }
 
 }  // namespace grpc_impl
