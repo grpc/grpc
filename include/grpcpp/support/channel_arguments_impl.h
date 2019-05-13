@@ -40,6 +40,9 @@ class SecureChannelCredentials;
 /// Options for channel creation. The user can use generic setters to pass
 /// key value pairs down to C channel creation code. For gRPC related options,
 /// concrete setters are provided.
+/// This class derives from GrpcLibraryCodegen so that gRPC is initialized
+/// before ValidateAndSetServiceConfigJSON is used. (Service config validation
+/// methods are registered at initialization.)
 class ChannelArguments : private ::grpc::GrpcLibraryCodegen {
  public:
   /// NOTE: class experimental_type is not part of the public API of this class.
