@@ -19,10 +19,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/channel/context.h"
+#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/map.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 
+// Represents backend metrics reported by the backend to the client.
 class BackendMetricData {
  public:
   typedef Map<const char*, double, StringLess> MetricMap;
@@ -33,10 +37,12 @@ class BackendMetricData {
         rps_(rps),
         request_cost_or_utilization_(std::move(request_cost_or_utilization)) {}
 
-  double cpu_utilization() const;
-  double mem_utilization() const;
-  uint64_t rps() const;
-  const MetricMap& request_cost_or_utilization() const;
+  double cpu_utilization() const { return cpu_utilization_; }
+  double mem_utilization() const { return mem_utilization_; }
+  uint64_t rps() const { return rps_; }
+  const MetricMap& request_cost_or_utilization() const {
+    return request_cost_or_utilization_;
+  }
 
  private:
   double cpu_utilization_ = 0;
@@ -44,6 +50,14 @@ class BackendMetricData {
   uint64_t rps_ = 0;
   MetricMap request_cost_or_utilization_;
 };
+
+// Gets the backend metrics for a particular call sent by the server in
+// recv_trailing_metadata.  Caches the parsed metrics in call_context element
+// GRPC_CONTEXT_BACKEND_METRIC_DATA for subsequent calls.
+// TODO(roth): Implement this once we can use upb.
+BackendMetricData* GetBackendMetricDataForCall(
+    grpc_call_context_element* call_context,
+    grpc_metadata_batch* recv_trailing_metadata, Arena* arena);
 
 }  // namespace grpc_core
 

@@ -1086,6 +1086,7 @@ grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
         "src/core/ext/filters/client_channel/backup_poller.cc",
+        "src/core/ext/filters/client_channel/backend_metric.cc",
         "src/core/ext/filters/client_channel/channel_connectivity.cc",
         "src/core/ext/filters/client_channel/client_channel.cc",
         "src/core/ext/filters/client_channel/client_channel_channelz.cc",
@@ -1114,6 +1115,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/backup_poller.h",
+        "src/core/ext/filters/client_channel/backend_metric.h",
         "src/core/ext/filters/client_channel/client_channel.h",
         "src/core/ext/filters/client_channel/client_channel_channelz.h",
         "src/core/ext/filters/client_channel/client_channel_factory.h",
@@ -1142,6 +1144,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "envoy_orca_upb",
         "gpr_base",
         "grpc_base",
         "grpc_client_authority_filter",
@@ -2365,6 +2368,24 @@ grpc_cc_library(
 )
 
 #TODO: Get this into build.yaml once we start using it.
+grpc_cc_library(
+    name = "envoy_orca_upb",
+    srcs = [
+        "src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h",
+    ],
+    language = "c++",
+    external_deps = [
+        "upb_lib",
+    ],
+    deps = [
+        ":proto_gen_validate_upb",
+    ],
+    tags = ["no_windows"],
+)
+
 grpc_cc_library(
     name = "envoy_lrs_upb",
     srcs = [
