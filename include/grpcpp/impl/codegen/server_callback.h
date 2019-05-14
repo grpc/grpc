@@ -82,8 +82,8 @@ class DefaultMessageHolder
     : public experimental::MessageHolder<Request, Response> {
  public:
   DefaultMessageHolder() {
-    this->request_ = &request_obj_;
-    this->response_ = &response_obj_;
+    this->set_request(&request_obj_);
+    this->set_response(&response_obj_);
   }
   void Release() override {
     // the object is allocated in the call arena.

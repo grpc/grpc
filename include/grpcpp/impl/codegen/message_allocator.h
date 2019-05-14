@@ -42,8 +42,10 @@ class MessageHolder : public RpcAllocatorState {
   virtual void Release() { delete this; }
   RequestT* request() { return request_; }
   ResponseT* response() { return response_; }
+  void set_request(RequestT* request) { request_ = request; }
+  void set_response(ResponseT* response) { response_ = response; }
 
- protected:
+ private:
   // NOTE: subclasses should set these pointers.
   RequestT* request_;
   ResponseT* response_;

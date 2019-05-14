@@ -233,24 +233,24 @@ class SimpleAllocatorTest : public MessageAllocatorEnd2endTestBase {
                         int* messages_deallocation_count)
           : request_deallocation_count_(request_deallocation_count),
             messages_deallocation_count_(messages_deallocation_count) {
-        request_ = new EchoRequest;
-        response_ = new EchoResponse;
+        set_request(new EchoRequest);
+        set_response(new EchoResponse);
       }
       void Release() override {
         (*messages_deallocation_count_)++;
-        delete request_;
-        delete response_;
+        delete request();
+        delete response();
         delete this;
       }
       void FreeRequest() override {
         (*request_deallocation_count_)++;
-        delete request_;
-        request_ = nullptr;
+        delete request();
+        set_request(nullptr);
       }
 
       EchoRequest* ReleaseRequest() {
-        auto* ret = request_;
-        request_ = nullptr;
+        auto* ret = request();
+        set_request(nullptr);
         return ret;
       }
 
@@ -341,9 +341,10 @@ class ArenaAllocatorTest : public MessageAllocatorEnd2endTestBase {
         : public experimental::MessageHolder<EchoRequest, EchoResponse> {
      public:
       MessageHolderImpl() {
-        request_ = google::protobuf::Arena::CreateMessage<EchoRequest>(&arena_);
-        response_ =
-            google::protobuf::Arena::CreateMessage<EchoResponse>(&arena_);
+        set_request(
+            google::protobuf::Arena::CreateMessage<EchoRequest>(&arena_));
+        set_response(
+            google::protobuf::Arena::CreateMessage<EchoResponse>(&arena_));
       }
       void FreeRequest() override { GPR_ASSERT(0); }
 
