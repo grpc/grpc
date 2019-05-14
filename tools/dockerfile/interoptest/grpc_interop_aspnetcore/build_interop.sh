@@ -39,5 +39,4 @@ fi
 
 ./build/get-grpc.sh
 
-cd testassets/InteropTestsWebsite
-dotnet build --configuration Debug
+dotnet build --configuration Debug Grpc.AspNetCore.sln
