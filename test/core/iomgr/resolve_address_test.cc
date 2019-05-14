@@ -27,7 +27,7 @@
 
 #include <string.h>
 
-#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -347,17 +347,16 @@ int main(int argc, char** argv) {
   // --resolver will always be the first one, so only parse the first argument
   // (other arguments may be unknown to cl)
   gpr_cmdline_parse(cl, argc > 2 ? 2 : argc, argv);
-  grpc_core::UniquePtr<char> resolver =
-      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
-  if (strlen(resolver.get()) != 0) {
+  const char* cur_resolver = gpr_getenv("GRPC_DNS_RESOLVER");
+  if (cur_resolver != nullptr && strlen(cur_resolver) != 0) {
     gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s",
-            resolver.get());
+            cur_resolver);
   }
   if (gpr_stricmp(resolver_type, "native") == 0) {
-    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "native");
+    gpr_setenv("GRPC_DNS_RESOLVER", "native");
   } else if (gpr_stricmp(resolver_type, "ares") == 0) {
 #ifndef GRPC_UV
-    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
+    gpr_setenv("GRPC_DNS_RESOLVER", "ares");
 #endif
   } else {
     gpr_log(GPR_ERROR, "--resolver_type was not set to ares or native");
