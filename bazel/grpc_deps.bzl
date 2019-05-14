@@ -52,6 +52,11 @@ def grpc_deps():
     )
 
     native.bind(
+        name = "zlib",
+        actual = "@zlib//:zlib",
+    )
+
+    native.bind(
         name = "cares",
         actual = "@com_github_cares_cares//:ares",
     )
@@ -130,7 +135,7 @@ def grpc_deps():
     if "zlib" not in native.existing_rules():
         http_archive(
             name = "zlib",
-            build_file = "@com_google_protobuf//third_party:zlib.BUILD",
+            build_file = "@com_github_grpc_grpc//third_party:zlib.BUILD",
             strip_prefix = "zlib-1.2.11",
             url = "https://zlib.net/zlib-1.2.11.tar.gz",
         )
