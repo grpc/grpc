@@ -42,6 +42,11 @@ def grpc_deps():
     )
 
     native.bind(
+        name = "protobuf_zlib",
+        actual = "@zlib//:zlib",
+    )
+
+    native.bind(
         name = "protobuf_headers",
         actual = "@com_google_protobuf//:protobuf_headers",
     )
