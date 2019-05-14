@@ -864,7 +864,7 @@ static void cq_end_op_for_callback(
   auto* functor = static_cast<grpc_experimental_completion_queue_functor*>(tag);
   GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(functor_callback, functor,
                                          grpc_core::Executor::Scheduler(
-                                             grpc_core::ExecutorJobType::LONG)),
+                                             grpc_core::ExecutorJobType::SHORT)),
                      GRPC_ERROR_REF(error));
 
   GRPC_ERROR_UNREF(error);
@@ -1353,7 +1353,7 @@ static void cq_finish_shutdown_callback(grpc_completion_queue* cq) {
   cq->poller_vtable->shutdown(POLLSET_FROM_CQ(cq), &cq->pollset_shutdown_done);
   GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(functor_callback, callback,
                                          grpc_core::Executor::Scheduler(
-                                             grpc_core::ExecutorJobType::LONG)),
+                                             grpc_core::ExecutorJobType::SHORT)),
                      GRPC_ERROR_NONE);
 }
 
