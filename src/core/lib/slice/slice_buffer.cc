@@ -33,6 +33,10 @@
 #define GROW(x) (3 * (x) / 2)
 
 static void maybe_embiggen(grpc_slice_buffer* sb) {
+  if (sb->count == 0) {
+    sb->slices = sb->base_slices;
+  }
+
   /* How far away from sb->base_slices is sb->slices pointer */
   size_t slice_offset = static_cast<size_t>(sb->slices - sb->base_slices);
   size_t slice_count = sb->count + slice_offset;
@@ -177,6 +181,7 @@ void grpc_slice_buffer_reset_and_unref_internal(grpc_slice_buffer* sb) {
 
   sb->count = 0;
   sb->length = 0;
+  sb->slices = sb->base_slices;
 }
 
 void grpc_slice_buffer_reset_and_unref(grpc_slice_buffer* sb) {
@@ -368,6 +373,24 @@ grpc_slice grpc_slice_buffer_take_first(grpc_slice_buffer* sb) {
   sb->length -= GRPC_SLICE_LENGTH(slice);
 
   return slice;
+}
+
+void grpc_slice_buffer_remove_first(grpc_slice_buffer* sb) {
+  GPR_DEBUG_ASSERT(sb->count > 0);
+  sb->length -= GRPC_SLICE_LENGTH(sb->slices[0]);
+  grpc_slice_unref_internal(sb->slices[0]);
+  sb->slices++;
+  if (--sb->count == 0) {
+    sb->slices = sb->base_slices;
+  }
+}
+
+void grpc_slice_buffer_sub_first(grpc_slice_buffer* sb, size_t begin,
+                                 size_t end) {
+  // TODO(soheil): Introduce a ptr version for sub.
+  sb->length -= GRPC_SLICE_LENGTH(sb->slices[0]);
+  sb->slices[0] = grpc_slice_sub_no_ref(sb->slices[0], begin, end);
+  sb->length += end - begin;
 }
 
 void grpc_slice_buffer_undo_take_first(grpc_slice_buffer* sb,

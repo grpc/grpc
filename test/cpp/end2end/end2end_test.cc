@@ -34,7 +34,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
@@ -45,6 +45,10 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
+
+#ifdef GRPC_POSIX_SOCKET
+#include "src/core/lib/iomgr/ev_posix.h"
+#endif  // GRPC_POSIX_SOCKET
 
 #include <gtest/gtest.h>
 
@@ -129,7 +133,7 @@ class TestAuthMetadataProcessor : public AuthMetadataProcessor {
   TestAuthMetadataProcessor(bool is_blocking) : is_blocking_(is_blocking) {}
 
   std::shared_ptr<CallCredentials> GetCompatibleClientCreds() {
-    return MetadataCredentialsFromPlugin(
+    return grpc::MetadataCredentialsFromPlugin(
         std::unique_ptr<MetadataCredentialsPlugin>(
             new TestMetadataCredentialsPlugin(
                 TestMetadataCredentialsPlugin::kGoodMetadataKey, kGoodGuy,
@@ -137,7 +141,7 @@ class TestAuthMetadataProcessor : public AuthMetadataProcessor {
   }
 
   std::shared_ptr<CallCredentials> GetIncompatibleClientCreds() {
-    return MetadataCredentialsFromPlugin(
+    return grpc::MetadataCredentialsFromPlugin(
         std::unique_ptr<MetadataCredentialsPlugin>(
             new TestMetadataCredentialsPlugin(
                 TestMetadataCredentialsPlugin::kGoodMetadataKey, "Mr Hyde",
@@ -340,8 +344,8 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
 
     if (!GetParam().inproc) {
       if (!GetParam().use_interceptors) {
-        channel_ =
-            CreateCustomChannel(server_address_.str(), channel_creds, args);
+        channel_ = ::grpc::CreateCustomChannel(server_address_.str(),
+                                               channel_creds, args);
       } else {
         channel_ = CreateCustomChannelWithInterceptors(
             server_address_.str(), channel_creds, args,
@@ -374,7 +378,8 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
 
       proxy_server_ = builder.BuildAndStart();
 
-      channel_ = CreateChannel(proxyaddr.str(), InsecureChannelCredentials());
+      channel_ =
+          grpc::CreateChannel(proxyaddr.str(), InsecureChannelCredentials());
     }
 
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
@@ -807,11 +812,12 @@ TEST_P(End2endTest, ReconnectChannel) {
   int poller_slowdown_factor = 1;
   // It needs 2 pollset_works to reconnect the channel with polling engine
   // "poll"
-  char* s = gpr_getenv("GRPC_POLL_STRATEGY");
-  if (s != nullptr && 0 == strcmp(s, "poll")) {
+#ifdef GRPC_POSIX_SOCKET
+  grpc_core::UniquePtr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
+  if (0 == strcmp(poller.get(), "poll")) {
     poller_slowdown_factor = 2;
   }
-  gpr_free(s);
+#endif  // GRPC_POSIX_SOCKET
   ResetStub();
   SendRpc(stub_.get(), 1, false);
   RestartServer(std::shared_ptr<AuthMetadataProcessor>());
@@ -1277,7 +1283,7 @@ TEST_P(End2endTest, ChannelStateTimeout) {
   server_address << "127.0.0.1:" << port;
   // Channel to non-existing server
   auto channel =
-      CreateChannel(server_address.str(), InsecureChannelCredentials());
+      grpc::CreateChannel(server_address.str(), InsecureChannelCredentials());
   // Start IDLE
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel->GetState(true));
 
@@ -1825,8 +1831,8 @@ TEST_P(SecureEnd2endTest, AuthMetadataPluginKeyFailure) {
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
-  context.set_credentials(
-      MetadataCredentialsFromPlugin(std::unique_ptr<MetadataCredentialsPlugin>(
+  context.set_credentials(grpc::MetadataCredentialsFromPlugin(
+      std::unique_ptr<MetadataCredentialsPlugin>(
           new TestMetadataCredentialsPlugin(
               TestMetadataCredentialsPlugin::kBadMetadataKey,
               "Does not matter, will fail the key is invalid.", false, true))));
@@ -1843,8 +1849,8 @@ TEST_P(SecureEnd2endTest, AuthMetadataPluginValueFailure) {
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
-  context.set_credentials(
-      MetadataCredentialsFromPlugin(std::unique_ptr<MetadataCredentialsPlugin>(
+  context.set_credentials(grpc::MetadataCredentialsFromPlugin(
+      std::unique_ptr<MetadataCredentialsPlugin>(
           new TestMetadataCredentialsPlugin(
               TestMetadataCredentialsPlugin::kGoodMetadataKey,
               "With illegal \n value.", false, true))));
@@ -1861,8 +1867,8 @@ TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginFailure) {
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
-  context.set_credentials(
-      MetadataCredentialsFromPlugin(std::unique_ptr<MetadataCredentialsPlugin>(
+  context.set_credentials(grpc::MetadataCredentialsFromPlugin(
+      std::unique_ptr<MetadataCredentialsPlugin>(
           new TestMetadataCredentialsPlugin(
               TestMetadataCredentialsPlugin::kGoodMetadataKey,
               "Does not matter, will fail anyway (see 3rd param)", false,
@@ -1925,8 +1931,8 @@ TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginFailure) {
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
-  context.set_credentials(
-      MetadataCredentialsFromPlugin(std::unique_ptr<MetadataCredentialsPlugin>(
+  context.set_credentials(grpc::MetadataCredentialsFromPlugin(
+      std::unique_ptr<MetadataCredentialsPlugin>(
           new TestMetadataCredentialsPlugin(
               TestMetadataCredentialsPlugin::kGoodMetadataKey,
               "Does not matter, will fail anyway (see 3rd param)", true,
@@ -1952,13 +1958,15 @@ TEST_P(SecureEnd2endTest, CompositeCallCreds) {
   const char kMetadataVal1[] = "call-creds-val1";
   const char kMetadataVal2[] = "call-creds-val2";
 
-  context.set_credentials(CompositeCallCredentials(
-      MetadataCredentialsFromPlugin(std::unique_ptr<MetadataCredentialsPlugin>(
-          new TestMetadataCredentialsPlugin(kMetadataKey1, kMetadataVal1, true,
-                                            true))),
-      MetadataCredentialsFromPlugin(std::unique_ptr<MetadataCredentialsPlugin>(
-          new TestMetadataCredentialsPlugin(kMetadataKey2, kMetadataVal2, true,
-                                            true)))));
+  context.set_credentials(grpc::CompositeCallCredentials(
+      grpc::MetadataCredentialsFromPlugin(
+          std::unique_ptr<MetadataCredentialsPlugin>(
+              new TestMetadataCredentialsPlugin(kMetadataKey1, kMetadataVal1,
+                                                true, true))),
+      grpc::MetadataCredentialsFromPlugin(
+          std::unique_ptr<MetadataCredentialsPlugin>(
+              new TestMetadataCredentialsPlugin(kMetadataKey2, kMetadataVal2,
+                                                true, true)))));
   request.set_message("Hello");
   request.mutable_param()->set_echo_metadata(true);
 
@@ -2104,7 +2112,7 @@ INSTANTIATE_TEST_CASE_P(
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "200");
+  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 200);
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

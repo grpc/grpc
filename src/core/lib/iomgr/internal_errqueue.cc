@@ -36,7 +36,7 @@ static bool errqueue_supported = false;
 bool kernel_supports_errqueue() { return errqueue_supported; }
 
 void grpc_errqueue_init() {
-/* Both-compile time and run-time linux kernel versions should be atleast 4.0.0
+/* Both-compile time and run-time linux kernel versions should be at least 4.0.0
  */
 #ifdef GRPC_LINUX_ERRQUEUE
   struct utsname buffer;

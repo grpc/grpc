@@ -27,6 +27,7 @@
 #include <grpcpp/server_context.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/cpp/util/test_config.h"
 
 DEFINE_string(address, "", "Address to bind to");
 
@@ -72,7 +73,7 @@ void RunServer() {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  ParseCommandLineFlags(&argc, &argv, true);
+  grpc::testing::InitTest(&argc, &argv, true);
   grpc::testing::RunServer();
 
   return 0;

@@ -47,8 +47,6 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
-auto& force_library_initialization = Library::get();
-
 void BM_Zalloc(benchmark::State& state) {
   // speed of light for call creation is zalloc, so benchmark a few interesting
   // sizes
@@ -405,7 +403,7 @@ const char* name;
 /* implementation of grpc_transport_init_stream */
 int InitStream(grpc_transport* self, grpc_stream* stream,
                grpc_stream_refcount* refcount, const void* server_data,
-               gpr_arena* arena) {
+               grpc_core::Arena* arena) {
   return 0;
 }
 
@@ -540,7 +538,7 @@ static void BM_IsolatedFilter(benchmark::State& state) {
                                    method,
                                    start_time,
                                    deadline,
-                                   gpr_arena_create(kArenaSize),
+                                   grpc_core::Arena::Create(kArenaSize),
                                    nullptr};
   while (state.KeepRunning()) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
@@ -552,11 +550,11 @@ static void BM_IsolatedFilter(benchmark::State& state) {
     grpc_core::ExecCtx::Get()->Flush();
     // recreate arena every 64k iterations to avoid oom
     if (0 == (state.iterations() & 0xffff)) {
-      gpr_arena_destroy(call_args.arena);
-      call_args.arena = gpr_arena_create(kArenaSize);
+      call_args.arena->Destroy();
+      call_args.arena = grpc_core::Arena::Create(kArenaSize);
     }
   }
-  gpr_arena_destroy(call_args.arena);
+  call_args.arena->Destroy();
   grpc_channel_stack_destroy(channel_stack);
   grpc_core::ExecCtx::Get()->Flush();
 
@@ -609,7 +607,7 @@ BENCHMARK_TEMPLATE(BM_IsolatedFilter, MessageSizeFilter, SendEmptyMetadata);
 namespace isolated_call_filter {
 
 typedef struct {
-  grpc_call_combiner* call_combiner;
+  grpc_core::CallCombiner* call_combiner;
 } call_data;
 
 static void StartTransportStreamOp(grpc_call_element* elem,
@@ -823,6 +821,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();

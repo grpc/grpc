@@ -233,3 +233,16 @@ gsutil -m cp -r "$LOCAL_STAGING_TEMPDIR/${BUILD_RELPATH%%/*}" "$GCS_ARCHIVE_ROOT
 )
 # Upload the new /index.xml
 gsutil -h "Content-Type:application/xml" cp "$NEW_INDEX" "$GCS_INDEX"
+
+# Upload C# nugets to the dev nuget feed
+pushd "$UNZIPPED_CSHARP_PACKAGES"
+docker pull mcr.microsoft.com/dotnet/core/sdk:2.1
+for nugetfile in *.nupkg
+do
+  echo "Going to push $nugetfile"
+  # use nuget from a docker container to push the nupkg
+  set +x  # IMPORTANT: avoid revealing the nuget api key by the command echo
+  docker run -v "$(pwd):/nugets:ro" --rm=true mcr.microsoft.com/dotnet/core/sdk:2.1 bash -c "dotnet nuget push /nugets/$nugetfile -k $(cat ${KOKORO_GFILE_DIR}/artifactory_grpc_nuget_dev_api_key) --source https://grpc.jfrog.io/grpc/api/nuget/v3/grpc-nuget-dev"
+  set -ex
+done
+popd

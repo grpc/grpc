@@ -23,7 +23,7 @@
 
 #include <string.h>
 
-/* Retuns 1 if the version is supported, 0 otherwise. */
+/* Returns 1 if the version is supported, 0 otherwise. */
 int grpc_chttp2_is_alpn_version_supported(const char* version, size_t size);
 
 /* Returns the number of protocol versions to advertise */

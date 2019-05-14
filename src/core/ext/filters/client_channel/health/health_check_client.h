@@ -27,7 +27,7 @@
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/backoff/backoff.h"
-#include "src/core/lib/gpr/arena.h"
+#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -61,7 +61,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
 
  private:
   // Contains a call to the backend and all the data related to the call.
-  class CallState : public InternallyRefCounted<CallState> {
+  class CallState : public Orphanable {
    public:
     CallState(RefCountedPtr<HealthCheckClient> health_check_client,
               grpc_pollset_set* interested_parties_);
@@ -97,12 +97,14 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
     RefCountedPtr<HealthCheckClient> health_check_client_;
     grpc_polling_entity pollent_;
 
-    gpr_arena* arena_;
-    grpc_call_combiner call_combiner_;
+    Arena* arena_;
+    grpc_core::CallCombiner call_combiner_;
     grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
-    // The streaming call to the backend. Always non-NULL.
-    RefCountedPtr<SubchannelCall> call_;
+    // The streaming call to the backend. Always non-null.
+    // Refs are tracked manually; when the last ref is released, the
+    // CallState object will be automatically destroyed.
+    SubchannelCall* call_;
 
     grpc_transport_stream_op_batch_payload payload_;
     grpc_transport_stream_op_batch batch_;

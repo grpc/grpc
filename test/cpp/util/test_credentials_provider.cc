@@ -63,7 +63,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
     } else if (type == grpc::testing::kTlsCredentialsType) {
       SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
       args->SetSslTargetNameOverride("foo.test.google.fr");
-      return SslCredentials(ssl_opts);
+      return grpc::SslCredentials(ssl_opts);
     } else if (type == grpc::testing::kGoogleDefaultCredentialsType) {
       return grpc::GoogleDefaultCredentials();
     } else {

@@ -29,6 +29,4 @@ cp -r /var/local/jenkins/service_account $HOME || true
 cd /var/local/git/grpc-node
 
 # build Node interop client & server
-npm install -g node-gyp gulp
-npm install
-gulp setup
+./setup_interop.sh

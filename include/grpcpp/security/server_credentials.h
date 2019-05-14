@@ -21,6 +21,10 @@
 
 #include <grpcpp/security/server_credentials_impl.h>
 
+namespace grpc_impl {
+
+class Server;
+}  // namespace grpc_impl
 namespace grpc {
 
 typedef ::grpc_impl::ServerCredentials ServerCredentials;
