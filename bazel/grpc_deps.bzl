@@ -130,9 +130,9 @@ def grpc_deps():
     if "zlib" not in native.existing_rules():
         http_archive(
             name = "zlib",
-            build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
+            build_file = "@com_google_protobuf//third_party:zlib.BUILD",
             strip_prefix = "zlib-1.2.11",
-            urls = ["https://zlib.net/zlib-1.2.11.tar.gz"],
+            url = "https://zlib.net/zlib-1.2.11.tar.gz",
         )
 
     if "com_github_nanopb_nanopb" not in native.existing_rules():
