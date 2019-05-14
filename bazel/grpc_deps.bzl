@@ -52,11 +52,6 @@ def grpc_deps():
     )
 
     native.bind(
-        name = "zlib",
-        actual = "@zlib//:zlib",
-    )
-
-    native.bind(
         name = "cares",
         actual = "@com_github_cares_cares//:ares",
     )
