@@ -26,14 +26,14 @@ extern const grpc_channel_filter grpc_message_size_filter;
 
 namespace grpc_core {
 
-class MessageSizeParsedObject : public ServiceConfig::ParsedConfig {
+class MessageSizeParsedConfig : public ServiceConfig::ParsedConfig {
  public:
   struct message_size_limits {
     int max_send_size;
     int max_recv_size;
   };
 
-  MessageSizeParsedObject(int max_send_size, int max_recv_size) {
+  MessageSizeParsedConfig(int max_send_size, int max_recv_size) {
     limits_.max_send_size = max_send_size;
     limits_.max_recv_size = max_recv_size;
   }

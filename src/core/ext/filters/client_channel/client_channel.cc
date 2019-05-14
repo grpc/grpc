@@ -66,7 +66,7 @@
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_metadata.h"
 
-using grpc_core::internal::ClientChannelMethodParsedObject;
+using grpc_core::internal::ClientChannelMethodParsedConfig;
 using grpc_core::internal::ServerRetryThrottleData;
 
 //
@@ -234,7 +234,7 @@ class ChannelData {
 
   void ProcessLbPolicy(
       const Resolver::Result& resolver_result,
-      const internal::ClientChannelGlobalParsedObject* parsed_service_config,
+      const internal::ClientChannelGlobalParsedConfig* parsed_service_config,
       UniquePtr<char>* lb_policy_name,
       RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config);
 
@@ -629,7 +629,7 @@ class CallData {
 
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
   ServiceConfig::CallData service_config_call_data_;
-  const ClientChannelMethodParsedObject* method_params_ = nullptr;
+  const ClientChannelMethodParsedConfig* method_params_ = nullptr;
 
   RefCountedPtr<SubchannelCall> subchannel_call_;
 
@@ -772,7 +772,7 @@ class ChannelData::ServiceConfigSetter {
  public:
   ServiceConfigSetter(
       ChannelData* chand,
-      Optional<internal::ClientChannelGlobalParsedObject::RetryThrottling>
+      Optional<internal::ClientChannelGlobalParsedConfig::RetryThrottling>
           retry_throttle_data,
       RefCountedPtr<ServiceConfig> service_config)
       : chand_(chand),
@@ -811,7 +811,7 @@ class ChannelData::ServiceConfigSetter {
   }
 
   ChannelData* chand_;
-  Optional<internal::ClientChannelGlobalParsedObject::RetryThrottling>
+  Optional<internal::ClientChannelGlobalParsedConfig::RetryThrottling>
       retry_throttle_data_;
   RefCountedPtr<ServiceConfig> service_config_;
   grpc_closure closure_;
@@ -1141,7 +1141,7 @@ ChannelData::~ChannelData() {
 
 void ChannelData::ProcessLbPolicy(
     const Resolver::Result& resolver_result,
-    const internal::ClientChannelGlobalParsedObject* parsed_service_config,
+    const internal::ClientChannelGlobalParsedConfig* parsed_service_config,
     UniquePtr<char>* lb_policy_name,
     RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config) {
   // Prefer the LB policy name found in the service config.
@@ -1238,12 +1238,12 @@ bool ChannelData::ProcessResolverResultLocked(
   }
   // Process service config.
   UniquePtr<char> service_config_json;
-  const internal::ClientChannelGlobalParsedObject* parsed_service_config =
+  const internal::ClientChannelGlobalParsedConfig* parsed_service_config =
       nullptr;
   if (service_config != nullptr) {
     parsed_service_config =
-        static_cast<const internal::ClientChannelGlobalParsedObject*>(
-            service_config->GetParsedGlobalServiceConfigObject(
+        static_cast<const internal::ClientChannelGlobalParsedConfig*>(
+            service_config->GetGlobalParsedConfig(
                 internal::ClientChannelServiceConfigParser::ParserIndex()));
   }
   // TODO(roth): Eliminate this hack as part of hiding health check
@@ -1282,7 +1282,7 @@ bool ChannelData::ProcessResolverResultLocked(
   // if we feel it is unnecessary.
   if (service_config_changed || !chand->received_first_resolver_result_) {
     chand->received_first_resolver_result_ = true;
-    Optional<internal::ClientChannelGlobalParsedObject::RetryThrottling>
+    Optional<internal::ClientChannelGlobalParsedConfig::RetryThrottling>
         retry_throttle_data;
     if (parsed_service_config != nullptr) {
       retry_throttle_data = parsed_service_config->retry_throttling();
@@ -3245,10 +3245,10 @@ void CallData::ApplyServiceConfigToCallLocked(grpc_call_element* elem) {
   service_config_call_data_ =
       ServiceConfig::CallData(chand->service_config(), path_);
   if (service_config_call_data_.service_config() != nullptr) {
-    call_context_[GRPC_SERVICE_CONFIG_CALL_DATA].value =
+    call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value =
         &service_config_call_data_;
-    method_params_ = static_cast<ClientChannelMethodParsedObject*>(
-        service_config_call_data_.GetMethodParsedObject(
+    method_params_ = static_cast<ClientChannelMethodParsedConfig*>(
+        service_config_call_data_.GetMethodParsedConfig(
             internal::ClientChannelServiceConfigParser::ParserIndex()));
   }
   retry_throttle_data_ = chand->retry_throttle_data();
