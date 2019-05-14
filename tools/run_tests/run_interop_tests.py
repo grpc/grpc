@@ -192,7 +192,7 @@ class CSharpCoreCLRLanguage:
 class AspNetCoreLanguage:
 
     def __init__(self):
-        self.client_cwd = '../grpc-dotnet'
+        self.client_cwd = '../grpc-dotnet/testassets/InteropTestsClient/bin/Debug/netcoreapp3.0'
         self.server_cwd = '../grpc-dotnet/testassets/InteropTestsWebsite/bin/Debug/netcoreapp3.0'
         self.safename = str(self)
 
@@ -200,8 +200,7 @@ class AspNetCoreLanguage:
         return {}
 
     def client_cmd(self, args):
-        # attempt to run client should fail
-        return ['dotnet' 'exec', 'CLIENT_NOT_SUPPORTED'] + args
+        return ['dotnet', 'exec', 'InteropTestsClient.dll'] + args
 
     def server_cmd(self, args):
         return ['dotnet', 'exec', 'InteropTestsWebsite.dll'] + args
@@ -210,8 +209,10 @@ class AspNetCoreLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        # aspnetcore doesn't have a client so ignore all test cases.
-        return _TEST_CASES + _AUTH_TEST_CASES
+        return _SKIP_COMPRESSION + \
+            _SKIP_SPECIAL_STATUS_MESSAGE + \
+            _AUTH_TEST_CASES + \
+            ['cancel_after_first_response', 'ping_pong']
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE
