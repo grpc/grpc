@@ -22,6 +22,7 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/resource_quota.h>
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -30,7 +31,12 @@
 
 namespace grpc_impl {
 
+namespace {
+::grpc::internal::GrpcLibraryInitializer g_gli_initializer;
+}  // namespace
+
 ChannelArguments::ChannelArguments() {
+  g_gli_initializer.summon();
   // This will be ignored if used on the server side.
   SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, "grpc-c++/" + grpc::Version());
 }
