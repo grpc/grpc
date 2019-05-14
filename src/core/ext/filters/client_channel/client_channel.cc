@@ -51,6 +51,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -939,6 +940,14 @@ void ChannelData::ExternalConnectivityWatcher::WatchConnectivityStateLocked(
 // ChannelData::GrpcSubchannel
 //
 
+// This class is a wrapper for Subchannel that hides details of the
+// channel's implementation (such as the health check service name) from
+// the LB policy API.
+//
+// Note that no synchronization is needed here, because even if the
+// underlying subchannel is shared between channels, this wrapper will only
+// be used within one channel, so it will always be synchronized by the
+// control plane combiner.
 class ChannelData::GrpcSubchannel : public SubchannelInterface {
  public:
   GrpcSubchannel(Subchannel* subchannel,
@@ -957,19 +966,22 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
   void WatchConnectivityState(
       grpc_connectivity_state initial_state,
       UniquePtr<ConnectivityStateWatcher> watcher) override {
-    GPR_ASSERT(watcher_ == nullptr);
-    watcher_ = New<WatcherWrapper>(std::move(watcher), Ref());
+    auto& watcher_wrapper = watcher_map_[watcher.get()];
+    GPR_ASSERT(watcher_wrapper == nullptr);
+    watcher_wrapper = New<WatcherWrapper>(std::move(watcher), Ref());
     subchannel_->WatchConnectivityState(
         initial_state,
         UniquePtr<char>(gpr_strdup(health_check_service_name_.get())),
-        UniquePtr<Subchannel::ConnectivityStateWatcher>(watcher_));
+        UniquePtr<Subchannel::ConnectivityStateWatcher>(watcher_wrapper));
   }
 
   void CancelConnectivityStateWatch(
       ConnectivityStateWatcher* watcher) override {
+    auto it = watcher_map_.find(watcher);
+    GPR_ASSERT(it != watcher_map_.end());
     subchannel_->CancelConnectivityStateWatch(health_check_service_name_.get(),
-                                              watcher_);
-    watcher_ = nullptr;
+                                              it->second);
+    watcher_map_.erase(it);
   }
 
   void AttemptToConnect() override { subchannel_->AttemptToConnect(); }
@@ -1006,7 +1018,12 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
 
   Subchannel* subchannel_;
   UniquePtr<char> health_check_service_name_;
-  WatcherWrapper* watcher_ = nullptr;
+  // Maps from the address of the wrapper watcher passed to us to the
+  // address of the real watcher passed to the underlying Subchannel.
+  // This is needed so that when the LB policy calls
+  // CancelConnectivityStateWatch() with the wrapper watcher, we know the
+  // corresponding real watcher to cancel on the underlying subchannel.
+  Map<ConnectivityStateWatcher*, WatcherWrapper*> watcher_map_;
 };
 
 //
