@@ -941,10 +941,9 @@ void ChannelData::ExternalConnectivityWatcher::WatchConnectivityStateLocked(
 
 class ChannelData::GrpcSubchannel : public SubchannelInterface {
  public:
-  GrpcSubchannel(Subchannel* subchannel, grpc_pollset_set* interested_parties,
+  GrpcSubchannel(Subchannel* subchannel,
                  UniquePtr<char> health_check_service_name)
       : subchannel_(subchannel),
-        interested_parties_(interested_parties),
         health_check_service_name_(std::move(health_check_service_name)) {}
 
   ~GrpcSubchannel() { GRPC_SUBCHANNEL_UNREF(subchannel_, "unref from LB"); }
@@ -997,7 +996,7 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
     }
 
     grpc_pollset_set* interested_parties() override {
-      return parent_->interested_parties_;
+      return watcher_->interested_parties();
     }
 
    private:
@@ -1006,7 +1005,6 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
   };
 
   Subchannel* subchannel_;
-  grpc_pollset_set* interested_parties_;
   UniquePtr<char> health_check_service_name_;
   WatcherWrapper* watcher_ = nullptr;
 };
@@ -1046,7 +1044,6 @@ class ChannelData::ClientChannelControlHelper
     grpc_channel_args_destroy(new_args);
     if (subchannel == nullptr) return nullptr;
     return MakeRefCounted<GrpcSubchannel>(subchannel,
-                                          chand_->interested_parties_,
                                           std::move(health_check_service_name));
   }
 

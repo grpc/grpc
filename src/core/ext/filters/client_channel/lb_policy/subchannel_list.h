@@ -155,6 +155,10 @@ class SubchannelData {
         grpc_connectivity_state new_state,
         RefCountedPtr<ConnectedSubchannel> connected_subchannel) override;
 
+    grpc_pollset_set* interested_parties() override {
+      return subchannel_list_->policy()->interested_parties();
+    }
+
    private:
     // A fire-and-forget class that bounces into the combiner to process
     // a connectivity state update.

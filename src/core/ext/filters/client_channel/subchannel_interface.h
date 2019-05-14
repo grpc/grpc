@@ -46,6 +46,10 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
         RefCountedPtr<ConnectedSubchannel> connected_subchannel)  // NOLINT
         GRPC_ABSTRACT;
 
+    // TODO(roth): Remove this as soon as we move to EventManager-based
+    // polling.
+    virtual grpc_pollset_set* interested_parties() GRPC_ABSTRACT;
+
     GRPC_ABSTRACT_BASE_CLASS
   };
 
