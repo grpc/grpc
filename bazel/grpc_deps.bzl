@@ -129,7 +129,8 @@ def grpc_deps():
 
     http_archive(
         name = "zlib",
-        build_file = "@com_github_grpc_grpc//third_party:zlib.BUILD",
+        build_file = "@com_google_protobuf//third_party:zlib.BUILD",
+        sha256 = "FAC54AC78F4DED16C64AEC1A9C7D73BC082305306AF849A16787D7828FABA783",
         strip_prefix = "zlib-1.2.11",
         url = "https://zlib.net/zlib-1.2.11.tar.gz",
     )
