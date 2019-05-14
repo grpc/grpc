@@ -42,8 +42,7 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 
 GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_abort_on_leaks, false,
-                              "A debugging aid to cause a call to abort() when "
-                              "gRPC objects are leaked past grpc_shutdown()");
+                              "Abort when leak is found");
 
 static gpr_mu g_mu;
 static gpr_cv g_rcv;
