@@ -131,14 +131,13 @@ def grpc_deps():
             strip_prefix = "protobuf-761012be8bf57b33a47ce497359445f51fcf8a03",
             url = "https://github.com/google/protobuf/archive/761012be8bf57b33a47ce497359445f51fcf8a03.tar.gz",
         )
-        
-    if "zlib" not in native.existing_rules():
-        http_archive(
-            name = "zlib",
-            build_file = "@com_github_grpc_grpc//third_party:zlib.BUILD",
-            strip_prefix = "zlib-1.2.11",
-            url = "https://zlib.net/zlib-1.2.11.tar.gz",
-        )
+
+    http_archive(
+        name = "zlib",
+        build_file = "@com_github_grpc_grpc//third_party:zlib.BUILD",
+        strip_prefix = "zlib-1.2.11",
+        url = "https://zlib.net/zlib-1.2.11.tar.gz",
+    )
 
     if "com_github_nanopb_nanopb" not in native.existing_rules():
         http_archive(
