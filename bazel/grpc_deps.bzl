@@ -32,11 +32,6 @@ def grpc_deps():
     )
 
     native.bind(
-        name = "zlib",
-        actual = "@com_github_madler_zlib//:z",
-    )
-
-    native.bind(
         name = "protobuf",
         actual = "@com_google_protobuf//:protobuf",
     )
@@ -130,6 +125,15 @@ def grpc_deps():
             sha256 = "803796530db081fdca4f5702c2a0dccdd6536d3ffe49141179a024f27004be9c",
             strip_prefix = "protobuf-01a0a355baebd886c7bbcc2c85099f01f17b3c4c",
             url = "https://github.com/google/protobuf/archive/01a0a355baebd886c7bbcc2c85099f01f17b3c4c.tar.gz",
+        )
+        
+    if "zlib" not in native.existing_rules():
+        http_archive(
+            name = "zlib",
+            build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
+            sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
+            strip_prefix = "zlib-1.2.11",
+            urls = ["https://zlib.net/zlib-1.2.11.tar.gz"],
         )
 
     if "com_github_nanopb_nanopb" not in native.existing_rules():
