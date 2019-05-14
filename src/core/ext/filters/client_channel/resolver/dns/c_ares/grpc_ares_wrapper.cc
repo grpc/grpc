@@ -572,12 +572,10 @@ static bool inner_maybe_resolve_localhost_manually_locked(
   }
   return false;
 }
-#endif /* GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY */
 
 static bool grpc_ares_maybe_resolve_localhost_manually_locked(
     const char* name, const char* default_port,
     grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs) {
-#ifdef GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY
   char* host = nullptr;
   char* port = nullptr;
   bool out = inner_maybe_resolve_localhost_manually_locked(name, default_port,
@@ -585,10 +583,14 @@ static bool grpc_ares_maybe_resolve_localhost_manually_locked(
   gpr_free(host);
   gpr_free(port);
   return out;
-#else  /* GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY */
-  return false;
-#endif /* GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY */
 }
+#else  /* GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY */
+static bool grpc_ares_maybe_resolve_localhost_manually_locked(
+    const char* name, const char* default_port,
+    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs) {
+  return false;
+}
+#endif /* GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY */
 
 static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     const char* dns_server, const char* name, const char* default_port,
