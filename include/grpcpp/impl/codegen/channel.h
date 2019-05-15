@@ -16,9 +16,23 @@
  *
  */
 
-#ifndef GRPCPP_CHANNEL_H
-#define GRPCPP_CHANNEL_H
 
-#include <grpcpp/impl/codegen/channel.h>
+#ifndef GRPCPP_IMPL_CODEGEN_CHANNEL_H
+#define GRPCPP_IMPL_CODEGEN_CHANNEL_H
 
-#endif  // GRPCPP_CHANNEL_H
+#include <grpcpp/impl/codegen/channel_impl.h>
+
+namespace grpc {
+
+typedef ::grpc_impl::Channel Channel;
+
+namespace experimental {
+/// Resets the channel's connection backoff.
+/// TODO(roth): Once we see whether this proves useful, either create a gRFC
+/// and change this to be a method of the Channel class, or remove it.
+void ChannelResetConnectionBackoff(Channel* channel);
+}  // namespace experimental
+
+}  // namespace grpc
+
+#endif  // GRPCPP_IMPL_CODEGEN_CHANNEL_H
