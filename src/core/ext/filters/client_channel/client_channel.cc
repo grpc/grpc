@@ -31,8 +31,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/backend_metric.h"
+#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
@@ -319,18 +319,19 @@ class CallData {
    public:
     explicit LbCallState(CallData* calld) : calld_(calld) {}
 
-    void* Alloc(size_t size) override {
-      return calld_->arena_->Alloc(size);
-    }
+    void* Alloc(size_t size) override { return calld_->arena_->Alloc(size); }
 
     LoadBalancingPolicy::BackendMetricData* GetBackendMetricData() override {
-// FIXME: use the real thing once we can build upb under make
-      return nullptr;
-#if 0
-      return GetBackendMetricDataForCall(calld_->call_context_,
-                                         calld_->recv_trailing_metadata_,
-                                         calld_->arena_);
-#endif
+      if (calld_->backend_metric_data_ == nullptr) {
+        grpc_linked_mdelem* md = calld_->recv_trailing_metadata_->idx.named
+                                     .x_endpoint_load_metrics_bin;
+        if (md != nullptr) {
+          // TODO(roth): Enable this as soon as we can build upb with make.
+          // calld_->backend_metric_data_ =
+          //    ParseBackendMetricData(GRPC_MDVALUE(md->md), calld_->arena_);
+        }
+      }
+      return calld_->backend_metric_data_;
     }
 
    private:
@@ -665,6 +666,7 @@ class CallData {
   bool service_config_applied_ = false;
   QueuedPickCanceller* pick_canceller_ = nullptr;
   grpc_closure pick_closure_;
+  LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
   LbCallState lb_call_state_;
 
   // For intercepting recv_trailing_metadata_ready for the LB policy.
@@ -1548,6 +1550,10 @@ CallData::CallData(grpc_call_element* elem, const ChannelData& chand,
 CallData::~CallData() {
   grpc_slice_unref_internal(path_);
   GRPC_ERROR_UNREF(cancel_error_);
+  if (backend_metric_data_ != nullptr) {
+    backend_metric_data_
+        ->LoadBalancingPolicy::BackendMetricData::~BackendMetricData();
+  }
   // Make sure there are no remaining pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
     GPR_ASSERT(pending_batches_[i].batch == nullptr);
@@ -3378,8 +3384,8 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
       calld->seen_send_initial_metadata_
           ? calld->send_initial_metadata_flags_
           : calld->pending_batches_[0]
-                 .batch->payload->send_initial_metadata
-                 .send_initial_metadata_flags;
+                .batch->payload->send_initial_metadata
+                .send_initial_metadata_flags;
   // Apply service config to call if needed.
   calld->MaybeApplyServiceConfigToCallLocked(elem);
   // When done, we schedule this closure to leave the data plane combiner.

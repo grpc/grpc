@@ -19,22 +19,17 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/slice.h>
+
 #include "src/core/ext/filters/client_channel/lb_policy.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/arena.h"
-#include "src/core/lib/gprpp/map.h"
-#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 
-// Gets the backend metrics for a particular call sent by the server in
-// recv_trailing_metadata.  Caches the parsed metrics in call_context element
-// GRPC_CONTEXT_BACKEND_METRIC_DATA for subsequent calls.
-// TODO(roth): Implement this once we can use upb.
-// FIXME: change this to not use call_context
-LoadBalancingPolicy::BackendMetricData* GetBackendMetricDataForCall(
-    grpc_call_context_element* call_context,
-    grpc_metadata_batch* recv_trailing_metadata, Arena* arena);
+// Parses the serialized load report and allocates a BackendMetricData
+// object on the arena.
+LoadBalancingPolicy::BackendMetricData* ParseBackendMetricData(
+    const grpc_slice& serialized_load_report, Arena *arena);
 
 }  // namespace grpc_core
 

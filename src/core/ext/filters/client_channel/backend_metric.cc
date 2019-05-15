@@ -21,9 +21,7 @@
 
 namespace grpc_core {
 
-namespace {
-
-BackendMetricData* ParseBackendMetricData(
+LoadBalancingPolicy::BackendMetricData* ParseBackendMetricData(
     const grpc_slice& serialized_load_report, Arena *arena) {
   upb::Arena upb_arena;
   upb_strview serialized_data = {
@@ -56,22 +54,6 @@ BackendMetricData* ParseBackendMetricData(
       udpa_data_orca_v1_OrcaLoadReport_mem_utilization(msg),
       udpa_data_orca_v1_OrcaLoadReport_rps(msg),
       std::move(request_cost_or_utilization));
-}
-
-}  // namespace
-
-BackendMetricData* GetBackendMetricDataForCall(
-    grpc_call_context_element* call_context,
-    grpc_metadata_batch* recv_trailing_metadata, Arena *arena) {
-  if (call_context[GRPC_CONTEXT_BACKEND_METRIC_DATA].value == nullptr) {
-    grpc_linked_mdelem* md =
-        recv_trailing_metadata->idx.named.x_endpoint_load_metrics_bin;
-    if (md == nullptr) return nullptr;
-    call_context[GRPC_CONTEXT_BACKEND_METRIC_DATA].value =
-        ParseBackendMetricData(GRPC_MDVALUE(md->md), arena);
-  }
-  return static_cast<BackendMetricData*>(
-      call_context[GRPC_CONTEXT_BACKEND_METRIC_DATA].value);
 }
 
 }  // namespace grpc_core
