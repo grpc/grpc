@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPCPP_CHANNEL_IMPL_H
-#define GRPCPP_CHANNEL_IMPL_H
+#ifndef GRPCPP_CHANNEL_H
+#define GRPCPP_CHANNEL_H
 
 #include <memory>
 #include <mutex>
@@ -113,4 +113,4 @@ class Channel final : public ChannelInterface,
 
 }  // namespace grpc
 
-#endif  // GRPCPP_CHANNEL_IMPL_H
+#endif  // GRPCPP_CHANNEL_H
