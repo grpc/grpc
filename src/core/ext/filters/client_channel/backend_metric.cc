@@ -21,7 +21,7 @@
 
 namespace grpc_core {
 
-LoadBalancingPolicy::BackendMetricData* ParseBackendMetricData(
+const LoadBalancingPolicy::BackendMetricData* ParseBackendMetricData(
     const grpc_slice& serialized_load_report, Arena *arena) {
   upb::Arena upb_arena;
   upb_strview serialized_data = {
@@ -32,7 +32,7 @@ LoadBalancingPolicy::BackendMetricData* ParseBackendMetricData(
       udpa_data_orca_v1_OrcaLoadReport_parsenew(serialized_data,
                                                 upb_arena.ptr());
   if (msg == nullptr) return nullptr;
-  BackendMetricData::MetricMap request_cost_or_utilization;
+  Map<const char*, double, StringLess> request_cost_or_utilization;
   size_t size;
   const udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry* const*
       entries =
@@ -49,11 +49,17 @@ LoadBalancingPolicy::BackendMetricData* ParseBackendMetricData(
         udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry_value(
             entries[i]);
   }
-  return arena->New<BackendMetricData>(
-      udpa_data_orca_v1_OrcaLoadReport_cpu_utilization(msg),
-      udpa_data_orca_v1_OrcaLoadReport_mem_utilization(msg),
-      udpa_data_orca_v1_OrcaLoadReport_rps(msg),
-      std::move(request_cost_or_utilization));
+  LoadBalancingPolicy::BackendMetricData* backend_metric_data =
+      arena->New<LoadBalancingPolicy::BackendMetricData>();
+  backend_metric_data->cpu_utilization =
+      udpa_data_orca_v1_OrcaLoadReport_cpu_utilization(msg);
+  backend_metric_data->mem_utilization =
+      udpa_data_orca_v1_OrcaLoadReport_mem_utilization(msg);
+  backend_metric_data->rps =
+      udpa_data_orca_v1_OrcaLoadReport_rps(msg);
+  backend_metric_data->request_cost_or_utilization =
+      std::move(request_cost_or_utilization);
+  return backend_metric_data;
 }
 
 }  // namespace grpc_core

@@ -28,7 +28,7 @@ namespace grpc_core {
 
 // Parses the serialized load report and allocates a BackendMetricData
 // object on the arena.
-LoadBalancingPolicy::BackendMetricData* ParseBackendMetricData(
+const LoadBalancingPolicy::BackendMetricData* ParseBackendMetricData(
     const grpc_slice& serialized_load_report, Arena *arena);
 
 }  // namespace grpc_core

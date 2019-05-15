@@ -91,30 +91,11 @@ class ParsedLoadBalancingConfig : public RefCounted<ParsedLoadBalancingConfig> {
 class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
  public:
   // Represents backend metrics reported by the backend to the client.
-// FIXME: maybe just make this a struct?
-  class BackendMetricData {
-   public:
-    typedef Map<const char*, double, StringLess> MetricMap;
-
-    BackendMetricData(double cpu_utilization, double mem_utilization,
-                      uint64_t rps, MetricMap request_cost_or_utilization)
-        : cpu_utilization_(cpu_utilization), mem_utilization_(mem_utilization),
-          rps_(rps),
-          request_cost_or_utilization_(
-              std::move(request_cost_or_utilization)) {}
-
-    double cpu_utilization() const { return cpu_utilization_; }
-    double mem_utilization() const { return mem_utilization_; }
-    uint64_t rps() const { return rps_; }
-    const MetricMap& request_cost_or_utilization() const {
-      return request_cost_or_utilization_;
-    }
-
-   private:
-    double cpu_utilization_ = 0;
-    double mem_utilization_ = 0;
-    uint64_t rps_ = 0;
-    MetricMap request_cost_or_utilization_;
+  struct BackendMetricData {
+    double cpu_utilization;
+    double mem_utilization;
+    uint64_t rps;
+    Map<const char*, double, StringLess> request_cost_or_utilization;
   };
 
   /// Interface for accessing per-call state.
@@ -131,7 +112,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Returns the backend metric data returned by the server for the call,
     /// or null if no backend metric data was returned.
-    virtual BackendMetricData* GetBackendMetricData() GRPC_ABSTRACT;
+    virtual const BackendMetricData* GetBackendMetricData() GRPC_ABSTRACT;
 
     GRPC_ABSTRACT_BASE_CLASS
   };

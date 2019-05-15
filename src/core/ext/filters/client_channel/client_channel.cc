@@ -321,7 +321,8 @@ class CallData {
 
     void* Alloc(size_t size) override { return calld_->arena_->Alloc(size); }
 
-    LoadBalancingPolicy::BackendMetricData* GetBackendMetricData() override {
+    const LoadBalancingPolicy::BackendMetricData* GetBackendMetricData()
+        override {
       if (calld_->backend_metric_data_ == nullptr) {
         grpc_linked_mdelem* md = calld_->recv_trailing_metadata_->idx.named
                                      .x_endpoint_load_metrics_bin;
@@ -666,7 +667,7 @@ class CallData {
   bool service_config_applied_ = false;
   QueuedPickCanceller* pick_canceller_ = nullptr;
   grpc_closure pick_closure_;
-  LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
+  const LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
   LbCallState lb_call_state_;
 
   // For intercepting recv_trailing_metadata_ready for the LB policy.
