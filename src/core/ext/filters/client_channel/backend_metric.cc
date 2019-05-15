@@ -22,7 +22,7 @@
 namespace grpc_core {
 
 const LoadBalancingPolicy::BackendMetricData* ParseBackendMetricData(
-    const grpc_slice& serialized_load_report, Arena *arena) {
+    const grpc_slice& serialized_load_report, Arena* arena) {
   upb::Arena upb_arena;
   upb_strview serialized_data = {
       reinterpret_cast<const char*>(
@@ -37,7 +37,7 @@ const LoadBalancingPolicy::BackendMetricData* ParseBackendMetricData(
   const udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry* const*
       entries =
           udpa_data_orca_v1_OrcaLoadReport_mutable_request_cost_or_utilization(
-              msg, &size); 
+              msg, &size);
   for (size_t i = 0; i < size; ++i) {
     upb_strview key_view =
         udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry_key(
@@ -55,8 +55,7 @@ const LoadBalancingPolicy::BackendMetricData* ParseBackendMetricData(
       udpa_data_orca_v1_OrcaLoadReport_cpu_utilization(msg);
   backend_metric_data->mem_utilization =
       udpa_data_orca_v1_OrcaLoadReport_mem_utilization(msg);
-  backend_metric_data->rps =
-      udpa_data_orca_v1_OrcaLoadReport_rps(msg);
+  backend_metric_data->rps = udpa_data_orca_v1_OrcaLoadReport_rps(msg);
   backend_metric_data->request_cost_or_utilization =
       std::move(request_cost_or_utilization);
   return backend_metric_data;

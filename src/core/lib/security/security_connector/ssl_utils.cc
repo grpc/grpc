@@ -27,6 +27,7 @@
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/global_config.h"
@@ -45,13 +46,7 @@ static const char* installed_roots_path =
     INSTALL_PREFIX "/share/grpc/roots.pem";
 #endif
 
-/** Config variable that points to the default SSL roots file. This file
-   must be a PEM encoded file with all the roots such as the one that can be
-   downloaded from https://pki.google.com/roots.pem.  */
-GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_default_ssl_roots_file_path, "",
-                                "Path to the default SSL roots file.");
-
-/** Config variable used as a flag to enable/disable loading system root
+/** Environment variable used as a flag to enable/disable loading system root
     certificates from the OS trust store. */
 GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_not_use_system_ssl_roots, false,
                               "Disable loading system root certificates.");
@@ -70,22 +65,20 @@ void grpc_set_ssl_roots_override_callback(grpc_ssl_roots_override_callback cb) {
 
 /* -- Cipher suites. -- */
 
+/* Defines the cipher suites that we accept by default. All these cipher suites
+   are compliant with HTTP2. */
+#define GRPC_SSL_CIPHER_SUITES     \
+  "ECDHE-ECDSA-AES128-GCM-SHA256:" \
+  "ECDHE-ECDSA-AES256-GCM-SHA384:" \
+  "ECDHE-RSA-AES128-GCM-SHA256:"   \
+  "ECDHE-RSA-AES256-GCM-SHA384"
+
 static gpr_once cipher_suites_once = GPR_ONCE_INIT;
 static const char* cipher_suites = nullptr;
 
-// All cipher suites for default are compliant with HTTP2.
-GPR_GLOBAL_CONFIG_DEFINE_STRING(
-    grpc_ssl_cipher_suites,
-    "ECDHE-ECDSA-AES128-GCM-SHA256:"
-    "ECDHE-ECDSA-AES256-GCM-SHA384:"
-    "ECDHE-RSA-AES128-GCM-SHA256:"
-    "ECDHE-RSA-AES256-GCM-SHA384",
-    "A colon separated list of cipher suites to use with OpenSSL")
-
 static void init_cipher_suites(void) {
-  grpc_core::UniquePtr<char> value =
-      GPR_GLOBAL_CONFIG_GET(grpc_ssl_cipher_suites);
-  cipher_suites = value.release();
+  char* overridden = gpr_getenv("GRPC_SSL_CIPHER_SUITES");
+  cipher_suites = overridden != nullptr ? overridden : GRPC_SSL_CIPHER_SUITES;
 }
 
 /* --- Util --- */
@@ -437,12 +430,13 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
   grpc_slice result = grpc_empty_slice();
   const bool not_use_system_roots =
       GPR_GLOBAL_CONFIG_GET(grpc_not_use_system_ssl_roots);
-  // First try to load the roots from the configuration.
-  UniquePtr<char> default_root_certs_path =
-      GPR_GLOBAL_CONFIG_GET(grpc_default_ssl_roots_file_path);
-  if (strlen(default_root_certs_path.get()) > 0) {
-    GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(default_root_certs_path.get(), 1, &result));
+  // First try to load the roots from the environment.
+  char* default_root_certs_path =
+      gpr_getenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR);
+  if (default_root_certs_path != nullptr) {
+    GRPC_LOG_IF_ERROR("load_file",
+                      grpc_load_file(default_root_certs_path, 1, &result));
+    gpr_free(default_root_certs_path);
   }
   // Try overridden roots if needed.
   grpc_ssl_roots_override_result ovrd_res = GRPC_SSL_ROOTS_OVERRIDE_FAIL;
