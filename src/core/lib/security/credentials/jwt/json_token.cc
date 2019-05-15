@@ -77,7 +77,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const grpc_json* json) {
     goto end;
   }
 
-  prop_value = grpc_json_get_string_property(json, "type");
+  prop_value = grpc_json_get_string_property(json, "type", false);
   if (prop_value == nullptr ||
       strcmp(prop_value, GRPC_AUTH_JSON_TYPE_SERVICE_ACCOUNT)) {
     goto end;
@@ -92,7 +92,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const grpc_json* json) {
     goto end;
   }
 
-  prop_value = grpc_json_get_string_property(json, "private_key");
+  prop_value = grpc_json_get_string_property(json, "private_key", false);
   if (prop_value == nullptr) {
     goto end;
   }

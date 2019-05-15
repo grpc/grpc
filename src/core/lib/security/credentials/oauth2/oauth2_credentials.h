@@ -21,8 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "grpc/grpc_security.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 // auth_refresh_token parsing.
 typedef struct {
@@ -147,5 +149,8 @@ grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
     const struct grpc_http_response* response, grpc_mdelem* token_md,
     grpc_millis* token_lifetime);
+
+grpc_uri* grpc_validate_sts_credentials_options(
+    const grpc_sts_credentials_options* options);
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_OAUTH2_CREDENTIALS_H */

@@ -110,6 +110,7 @@ EXPORTS
     grpc_google_refresh_token_credentials_create
     grpc_access_token_credentials_create
     grpc_google_iam_credentials_create
+    grpc_sts_credentials_create
     grpc_metadata_credentials_create_from_plugin
     grpc_secure_channel_create
     grpc_server_credentials_release

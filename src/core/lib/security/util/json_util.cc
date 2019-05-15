@@ -26,17 +26,22 @@
 #include <grpc/support/string_util.h>
 
 const char* grpc_json_get_string_property(const grpc_json* json,
-                                          const char* prop_name) {
+                                          const char* prop_name,
+                                          bool suppress_log) {
   grpc_json* child;
   for (child = json->child; child != nullptr; child = child->next) {
     if (child->key == nullptr) {
-      gpr_log(GPR_ERROR, "Invalid (null) JSON key encountered");
+      if (!suppress_log) {
+        gpr_log(GPR_ERROR, "Invalid (null) JSON key encountered");
+      }
       return nullptr;
     }
     if (strcmp(child->key, prop_name) == 0) break;
   }
   if (child == nullptr || child->type != GRPC_JSON_STRING) {
-    gpr_log(GPR_ERROR, "Invalid or missing %s property.", prop_name);
+    if (!suppress_log) {
+      gpr_log(GPR_ERROR, "Invalid or missing %s property.", prop_name);
+    }
     return nullptr;
   }
   return child->value;
@@ -45,7 +50,8 @@ const char* grpc_json_get_string_property(const grpc_json* json,
 bool grpc_copy_json_string_property(const grpc_json* json,
                                     const char* prop_name,
                                     char** copied_value) {
-  const char* prop_value = grpc_json_get_string_property(json, prop_name);
+  const char* prop_value =
+      grpc_json_get_string_property(json, prop_name, false);
   if (prop_value == nullptr) return false;
   *copied_value = gpr_strdup(prop_value);
   return true;
