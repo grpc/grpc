@@ -121,5 +121,4 @@ class Channel final : public ::grpc::ChannelInterface,
 
 }  // namespace grpc_impl
 
-
 #endif  // GRPCPP_IMPL_CODEGEN_CHANNEL_IMPL_H
