@@ -126,13 +126,14 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// The LB policy may use the existing metadata to influence its routing
     /// decision, and it may add new metadata elements to be sent with the
     /// call to the chosen backend.
-    // TODO(roth): Provide a more generic metadata API here.
-// FIXME: maybe move this to CallState?
+    // TODO(roth): Provide a more generic metadata API here.  Maybe do
+    // this via CallState?
     grpc_metadata_batch* initial_metadata = nullptr;
     /// Storage for LB token in \a initial_metadata, or nullptr if not used.
     // TODO(roth): Remove this from the API.  Maybe have the LB policy
-    // allocate this on the arena instead?
-// FIXME: use CallState to allocate instead of doing it here
+    // allocate this on the arena instead?  (Can do this via
+    // CallState::Alloc(), if we don't wind up simply moving the allocation
+    // inside of some new metadata API.)
     grpc_linked_mdelem lb_token_mdelem_storage;
     /// An interface for accessing call state.  Can be used to allocate
     /// data associated with the call in an efficient way.
