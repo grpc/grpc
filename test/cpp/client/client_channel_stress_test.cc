@@ -233,7 +233,6 @@ class ClientChannelStressTest {
         response_generator;
     std::shared_ptr<Channel> channel;
     std::unique_ptr<grpc::testing::EchoTestService::Stub> stub;
-    std::mutex stub_mutex;
   };
 
   void SetNextResolution(ClientHandle* client_handle,
@@ -272,10 +271,7 @@ class ClientChannelStressTest {
       EchoRequest request;
       request.set_message("test");
       EchoResponse response;
-      {
-        std::lock_guard<std::mutex> lock(client_handle->stub_mutex);
-        Status status = client_handle->stub->Echo(&context, request, &response);
-      }
+      Status status = client_handle->stub->Echo(&context, request, &response);
     }
     gpr_log(GPR_INFO, "Finish sending requests.");
   }
@@ -336,8 +332,8 @@ class ClientChannelStressTest {
           CreateClientHandle(kServiceConfigs[j]);
       for (size_t i = 0; i < kNumClientThreadsPerChannel; ++i) {
         client_threads_.emplace_back(
-            std::thread(&ClientChannelStressTest::KeepSendingRequests, this,
-                        client_handle.get()));
+            &ClientChannelStressTest::KeepSendingRequests, this,
+            client_handle.get());
       }
       client_handles_.push_back(std::move(client_handle));
     }
