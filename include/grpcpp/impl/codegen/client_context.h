@@ -430,8 +430,7 @@ class ClientContext {
   }
 
   grpc_call* call() const { return call_; }
-  void set_call(grpc_call* call,
-                const std::shared_ptr<Channel>& channel);
+  void set_call(grpc_call* call, const std::shared_ptr<Channel>& channel);
 
   experimental::ClientRpcInfo* set_client_rpc_info(
       const char* method, internal::RpcMethod::RpcType type,

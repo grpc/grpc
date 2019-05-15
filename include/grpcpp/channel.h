@@ -72,28 +72,28 @@ class Channel final : public ChannelInterface,
           interceptor_creators);
   friend class internal::InterceptedChannel;
   Channel(const grpc::string& host, grpc_channel* c_channel,
-          std::vector<std::unique_ptr<
-              experimental::ClientInterceptorFactoryInterface>>
+          std::vector<
+              std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
               interceptor_creators);
 
   internal::Call CreateCall(const internal::RpcMethod& method,
-                                    ClientContext* context,
-                                    CompletionQueue* cq) override;
+                            ClientContext* context,
+                            CompletionQueue* cq) override;
   void PerformOpsOnCall(internal::CallOpSetInterface* ops,
                         internal::Call* call) override;
   void* RegisterMethod(const char* method) override;
 
   void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
-                               gpr_timespec deadline,
-                               CompletionQueue* cq, void* tag) override;
+                               gpr_timespec deadline, CompletionQueue* cq,
+                               void* tag) override;
   bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
                               gpr_timespec deadline) override;
 
   CompletionQueue* CallbackCQ() override;
 
-  internal::Call CreateCallInternal(
-      const internal::RpcMethod& method, ClientContext* context,
-      CompletionQueue* cq, size_t interceptor_pos) override;
+  internal::Call CreateCallInternal(const internal::RpcMethod& method,
+                                    ClientContext* context, CompletionQueue* cq,
+                                    size_t interceptor_pos) override;
 
   const grpc::string host_;
   grpc_channel* const c_channel_;  // owned
@@ -107,11 +107,10 @@ class Channel final : public ChannelInterface,
   // shutdown callback tag (invoked when the CQ is fully shutdown).
   CompletionQueue* callback_cq_ = nullptr;
 
-  std::vector<
-      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       interceptor_creators_;
 };
 
-}  // namespace grpc_impl
+}  // namespace grpc
 
 #endif  // GRPCPP_CHANNEL_IMPL_H
