@@ -54,7 +54,7 @@ struct passthru_endpoint {
 };
 
 static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb) {
+                    grpc_closure* cb, bool urgent) {
   half* m = reinterpret_cast<half*>(ep);
   gpr_mu_lock(&m->parent->mu);
   if (m->parent->shutdown) {
@@ -155,6 +155,8 @@ static char* me_get_peer(grpc_endpoint* ep) {
 
 static int me_get_fd(grpc_endpoint* ep) { return -1; }
 
+static bool me_can_track_err(grpc_endpoint* ep) { return false; }
+
 static grpc_resource_user* me_get_resource_user(grpc_endpoint* ep) {
   half* m = reinterpret_cast<half*>(ep);
   return m->resource_user;
@@ -171,6 +173,7 @@ static const grpc_endpoint_vtable vtable = {
     me_get_resource_user,
     me_get_peer,
     me_get_fd,
+    me_can_track_err,
 };
 
 static void half_init(half* m, passthru_endpoint* parent,

@@ -41,7 +41,7 @@ typedef struct mock_endpoint {
 } mock_endpoint;
 
 static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb) {
+                    grpc_closure* cb, bool urgent) {
   mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
   gpr_mu_lock(&m->mu);
   if (m->read_buffer.count > 0) {
@@ -89,6 +89,7 @@ static void me_destroy(grpc_endpoint* ep) {
   mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
   grpc_slice_buffer_destroy(&m->read_buffer);
   grpc_resource_user_unref(m->resource_user);
+  gpr_mu_destroy(&m->mu);
   gpr_free(m);
 }
 
@@ -103,18 +104,19 @@ static grpc_resource_user* me_get_resource_user(grpc_endpoint* ep) {
 
 static int me_get_fd(grpc_endpoint* ep) { return -1; }
 
-static const grpc_endpoint_vtable vtable = {
-    me_read,
-    me_write,
-    me_add_to_pollset,
-    me_add_to_pollset_set,
-    me_delete_from_pollset_set,
-    me_shutdown,
-    me_destroy,
-    me_get_resource_user,
-    me_get_peer,
-    me_get_fd,
-};
+static bool me_can_track_err(grpc_endpoint* ep) { return false; }
+
+static const grpc_endpoint_vtable vtable = {me_read,
+                                            me_write,
+                                            me_add_to_pollset,
+                                            me_add_to_pollset_set,
+                                            me_delete_from_pollset_set,
+                                            me_shutdown,
+                                            me_destroy,
+                                            me_get_resource_user,
+                                            me_get_peer,
+                                            me_get_fd,
+                                            me_can_track_err};
 
 grpc_endpoint* grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice),
                                          grpc_resource_quota* resource_quota) {

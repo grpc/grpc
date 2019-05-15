@@ -163,9 +163,9 @@ TEST(MakeRefCounted, Args) {
 
 TraceFlag foo_tracer(true, "foo");
 
-class FooWithTracing : public RefCountedWithTracing<FooWithTracing> {
+class FooWithTracing : public RefCounted<FooWithTracing> {
  public:
-  FooWithTracing() : RefCountedWithTracing(&foo_tracer) {}
+  FooWithTracing() : RefCounted(&foo_tracer) {}
 };
 
 TEST(RefCountedPtr, RefCountedWithTracing) {
@@ -241,7 +241,7 @@ TEST(RefCountedPtr, CanPassSubclassToFunctionExpectingSubclass) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

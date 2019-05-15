@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
   int four[4];
   int five[5];
   uint32_t bitset = 0;
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
 
   GPR_ASSERT(GPR_MIN(1, 2) == 1);
   GPR_ASSERT(GPR_MAX(1, 2) == 2);

@@ -255,7 +255,7 @@ static grpc_error* start_accept_locked(grpc_tcp_listener* port) {
   }
 
   sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
-                   WSA_FLAG_OVERLAPPED);
+                   grpc_get_default_wsa_socket_flags());
   if (sock == INVALID_SOCKET) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "WSASocket");
     goto failure;
@@ -493,7 +493,7 @@ static grpc_error* tcp_server_add_port(grpc_tcp_server* s,
   }
 
   sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
-                   WSA_FLAG_OVERLAPPED);
+                   grpc_get_default_wsa_socket_flags());
   if (sock == INVALID_SOCKET) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "WSASocket");
     goto done;

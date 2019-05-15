@@ -106,7 +106,7 @@ struct channel_data {
      +--------------------------------+----------------+---------+
 
      MAX_IDLE_STATE_INIT: The initial and final state of 'idle_state'. The
-     channel has 1 or 1+ active calls, and the the timer is not set. Note that
+     channel has 1 or 1+ active calls, and the timer is not set. Note that
      we may put a virtual call to hold this state at channel initialization or
      shutdown, so that the channel won't enter other states.
 
@@ -499,7 +499,10 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
 }
 
 /* Destructor for channel_data. */
-static void destroy_channel_elem(grpc_channel_element* elem) {}
+static void destroy_channel_elem(grpc_channel_element* elem) {
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
+  gpr_mu_destroy(&chand->max_age_timer_mu);
+}
 
 const grpc_channel_filter grpc_max_age_filter = {
     grpc_call_next_op,

@@ -43,9 +43,9 @@ grpc_cc_test(
         "//:grpc",
         "//:lb_load_reporter",
         "//:lb_server_load_reporting_filter",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
+    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -58,7 +58,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:lb_get_cpu_stats",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )

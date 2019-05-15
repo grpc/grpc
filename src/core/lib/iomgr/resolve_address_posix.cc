@@ -105,7 +105,7 @@ static grpc_error* posix_blocking_resolve_address(
         grpc_error_set_str(
             grpc_error_set_str(
                 grpc_error_set_int(
-                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("OS Error"),
+                    GRPC_ERROR_CREATE_FROM_STATIC_STRING(gai_strerror(s)),
                     GRPC_ERROR_INT_ERRNO, s),
                 GRPC_ERROR_STR_OS_ERROR,
                 grpc_slice_from_static_string(gai_strerror(s))),
@@ -150,7 +150,7 @@ typedef struct {
   void* arg;
 } request;
 
-/* Callback to be passed to grpc_executor to asynch-ify
+/* Callback to be passed to grpc Executor to asynch-ify
  * grpc_blocking_resolve_address */
 static void do_request_thread(void* rp, grpc_error* error) {
   request* r = static_cast<request*>(rp);
@@ -168,7 +168,8 @@ static void posix_resolve_address(const char* name, const char* default_port,
   request* r = static_cast<request*>(gpr_malloc(sizeof(request)));
   GRPC_CLOSURE_INIT(
       &r->request_closure, do_request_thread, r,
-      grpc_executor_scheduler(GRPC_RESOLVER_EXECUTOR, GRPC_EXECUTOR_SHORT));
+      grpc_core::Executor::Scheduler(grpc_core::ExecutorType::RESOLVER,
+                                     grpc_core::ExecutorJobType::SHORT));
   r->name = gpr_strdup(name);
   r->default_port = gpr_strdup(default_port);
   r->on_done = on_done;

@@ -14,7 +14,7 @@ Xamarin.Android
   `arm64-v8a` (some newer Android devices), `x86` (for emulator)
 
 Xamarin.iOS
-- supported architectures: arm64 (iPhone 6+) and x86_64 (iPhone simulator)
+- supported architectures: armv7, arm64 (iPhone 6+) and x86_64 (iPhone simulator)
 
 # Unity
 

@@ -70,13 +70,13 @@ typedef struct grpc_http_request {
 /* A response */
 typedef struct grpc_http_response {
   /* HTTP status code */
-  int status;
+  int status = 0;
   /* Headers: count and key/values */
-  size_t hdr_count;
-  grpc_http_header* hdrs;
+  size_t hdr_count = 0;
+  grpc_http_header* hdrs = nullptr;
   /* Body: length and contents; contents are NOT null-terminated */
-  size_t body_length;
-  char* body;
+  size_t body_length = 0;
+  char* body = nullptr;
 } grpc_http_response;
 
 typedef struct {
@@ -101,7 +101,8 @@ void grpc_http_parser_init(grpc_http_parser* parser, grpc_http_type type,
 void grpc_http_parser_destroy(grpc_http_parser* parser);
 
 /* Sets \a start_of_body to the offset in \a slice of the start of the body. */
-grpc_error* grpc_http_parser_parse(grpc_http_parser* parser, grpc_slice slice,
+grpc_error* grpc_http_parser_parse(grpc_http_parser* parser,
+                                   const grpc_slice& slice,
                                    size_t* start_of_body);
 grpc_error* grpc_http_parser_eof(grpc_http_parser* parser);
 

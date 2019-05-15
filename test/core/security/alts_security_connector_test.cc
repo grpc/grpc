@@ -33,40 +33,34 @@ using grpc_core::internal::grpc_alts_auth_context_from_tsi_peer;
 
 /* This file contains unit tests of grpc_alts_auth_context_from_tsi_peer(). */
 static void test_invalid_input_failure() {
-  tsi_peer peer;
-  grpc_auth_context* ctx;
-  GPR_ASSERT(grpc_alts_auth_context_from_tsi_peer(nullptr, &ctx) ==
-             GRPC_SECURITY_ERROR);
-  GPR_ASSERT(grpc_alts_auth_context_from_tsi_peer(&peer, nullptr) ==
-             GRPC_SECURITY_ERROR);
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_alts_auth_context_from_tsi_peer(nullptr);
+  GPR_ASSERT(ctx == nullptr);
 }
 
 static void test_empty_certificate_type_failure() {
   tsi_peer peer;
-  grpc_auth_context* ctx = nullptr;
   GPR_ASSERT(tsi_construct_peer(0, &peer) == TSI_OK);
-  GPR_ASSERT(grpc_alts_auth_context_from_tsi_peer(&peer, &ctx) ==
-             GRPC_SECURITY_ERROR);
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_alts_auth_context_from_tsi_peer(&peer);
   GPR_ASSERT(ctx == nullptr);
   tsi_peer_destruct(&peer);
 }
 
 static void test_empty_peer_property_failure() {
   tsi_peer peer;
-  grpc_auth_context* ctx;
   GPR_ASSERT(tsi_construct_peer(1, &peer) == TSI_OK);
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
                  &peer.properties[0]) == TSI_OK);
-  GPR_ASSERT(grpc_alts_auth_context_from_tsi_peer(&peer, &ctx) ==
-             GRPC_SECURITY_ERROR);
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_alts_auth_context_from_tsi_peer(&peer);
   GPR_ASSERT(ctx == nullptr);
   tsi_peer_destruct(&peer);
 }
 
 static void test_missing_rpc_protocol_versions_property_failure() {
   tsi_peer peer;
-  grpc_auth_context* ctx;
   GPR_ASSERT(tsi_construct_peer(kTsiAltsNumOfPeerProperties, &peer) == TSI_OK);
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
@@ -74,23 +68,22 @@ static void test_missing_rpc_protocol_versions_property_failure() {
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY, "alice",
                  &peer.properties[1]) == TSI_OK);
-  GPR_ASSERT(grpc_alts_auth_context_from_tsi_peer(&peer, &ctx) ==
-             GRPC_SECURITY_ERROR);
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_alts_auth_context_from_tsi_peer(&peer);
   GPR_ASSERT(ctx == nullptr);
   tsi_peer_destruct(&peer);
 }
 
 static void test_unknown_peer_property_failure() {
   tsi_peer peer;
-  grpc_auth_context* ctx;
   GPR_ASSERT(tsi_construct_peer(kTsiAltsNumOfPeerProperties, &peer) == TSI_OK);
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
                  &peer.properties[0]) == TSI_OK);
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  "unknown", "alice", &peer.properties[1]) == TSI_OK);
-  GPR_ASSERT(grpc_alts_auth_context_from_tsi_peer(&peer, &ctx) ==
-             GRPC_SECURITY_ERROR);
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_alts_auth_context_from_tsi_peer(&peer);
   GPR_ASSERT(ctx == nullptr);
   tsi_peer_destruct(&peer);
 }
@@ -119,7 +112,6 @@ static bool test_identity(const grpc_auth_context* ctx,
 
 static void test_alts_peer_to_auth_context_success() {
   tsi_peer peer;
-  grpc_auth_context* ctx;
   GPR_ASSERT(tsi_construct_peer(kTsiAltsNumOfPeerProperties, &peer) == TSI_OK);
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
@@ -144,11 +136,12 @@ static void test_alts_peer_to_auth_context_success() {
                      GRPC_SLICE_START_PTR(serialized_peer_versions)),
                  GRPC_SLICE_LENGTH(serialized_peer_versions),
                  &peer.properties[2]) == TSI_OK);
-  GPR_ASSERT(grpc_alts_auth_context_from_tsi_peer(&peer, &ctx) ==
-             GRPC_SECURITY_OK);
-  GPR_ASSERT(
-      test_identity(ctx, TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY, "alice"));
-  GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_alts_auth_context_from_tsi_peer(&peer);
+  GPR_ASSERT(ctx != nullptr);
+  GPR_ASSERT(test_identity(ctx.get(), TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY,
+                           "alice"));
+  ctx.reset(DEBUG_LOCATION, "test");
   grpc_slice_unref(serialized_peer_versions);
   tsi_peer_destruct(&peer);
 }

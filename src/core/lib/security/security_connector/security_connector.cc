@@ -35,150 +35,67 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount(
     false, "security_connector_refcount");
 
-void grpc_channel_security_connector_add_handshakers(
-    grpc_channel_security_connector* connector,
-    grpc_pollset_set* interested_parties,
-    grpc_handshake_manager* handshake_mgr) {
-  if (connector != nullptr) {
-    connector->add_handshakers(connector, interested_parties, handshake_mgr);
-  }
-}
+grpc_server_security_connector::grpc_server_security_connector(
+    const char* url_scheme,
+    grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
+    : grpc_security_connector(url_scheme),
+      server_creds_(std::move(server_creds)) {}
 
-void grpc_server_security_connector_add_handshakers(
-    grpc_server_security_connector* connector,
-    grpc_pollset_set* interested_parties,
-    grpc_handshake_manager* handshake_mgr) {
-  if (connector != nullptr) {
-    connector->add_handshakers(connector, interested_parties, handshake_mgr);
-  }
-}
+grpc_channel_security_connector::grpc_channel_security_connector(
+    const char* url_scheme,
+    grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds)
+    : grpc_security_connector(url_scheme),
+      channel_creds_(std::move(channel_creds)),
+      request_metadata_creds_(std::move(request_metadata_creds)) {}
+grpc_channel_security_connector::~grpc_channel_security_connector() {}
 
-void grpc_security_connector_check_peer(grpc_security_connector* sc,
-                                        tsi_peer peer,
-                                        grpc_auth_context** auth_context,
-                                        grpc_closure* on_peer_checked) {
-  if (sc == nullptr) {
-    GRPC_CLOSURE_SCHED(on_peer_checked,
-                       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                           "cannot check peer -- no security connector"));
-    tsi_peer_destruct(&peer);
-  } else {
-    sc->vtable->check_peer(sc, peer, auth_context, on_peer_checked);
-  }
-}
-
-int grpc_security_connector_cmp(grpc_security_connector* sc,
-                                grpc_security_connector* other) {
+int grpc_security_connector_cmp(const grpc_security_connector* sc,
+                                const grpc_security_connector* other) {
   if (sc == nullptr || other == nullptr) return GPR_ICMP(sc, other);
-  int c = GPR_ICMP(sc->vtable, other->vtable);
-  if (c != 0) return c;
-  return sc->vtable->cmp(sc, other);
+  return sc->cmp(other);
 }
 
-int grpc_channel_security_connector_cmp(grpc_channel_security_connector* sc1,
-                                        grpc_channel_security_connector* sc2) {
-  GPR_ASSERT(sc1->channel_creds != nullptr);
-  GPR_ASSERT(sc2->channel_creds != nullptr);
-  int c = GPR_ICMP(sc1->channel_creds, sc2->channel_creds);
+int grpc_channel_security_connector::channel_security_connector_cmp(
+    const grpc_channel_security_connector* other) const {
+  const grpc_channel_security_connector* other_sc =
+      static_cast<const grpc_channel_security_connector*>(other);
+  GPR_ASSERT(channel_creds() != nullptr);
+  GPR_ASSERT(other_sc->channel_creds() != nullptr);
+  int c = GPR_ICMP(channel_creds(), other_sc->channel_creds());
   if (c != 0) return c;
-  c = GPR_ICMP(sc1->request_metadata_creds, sc2->request_metadata_creds);
-  if (c != 0) return c;
-  c = GPR_ICMP((void*)sc1->check_call_host, (void*)sc2->check_call_host);
-  if (c != 0) return c;
-  c = GPR_ICMP((void*)sc1->cancel_check_call_host,
-               (void*)sc2->cancel_check_call_host);
-  if (c != 0) return c;
-  return GPR_ICMP((void*)sc1->add_handshakers, (void*)sc2->add_handshakers);
+  return GPR_ICMP(request_metadata_creds(), other_sc->request_metadata_creds());
 }
 
-int grpc_server_security_connector_cmp(grpc_server_security_connector* sc1,
-                                       grpc_server_security_connector* sc2) {
-  GPR_ASSERT(sc1->server_creds != nullptr);
-  GPR_ASSERT(sc2->server_creds != nullptr);
-  int c = GPR_ICMP(sc1->server_creds, sc2->server_creds);
-  if (c != 0) return c;
-  return GPR_ICMP((void*)sc1->add_handshakers, (void*)sc2->add_handshakers);
-}
-
-bool grpc_channel_security_connector_check_call_host(
-    grpc_channel_security_connector* sc, const char* host,
-    grpc_auth_context* auth_context, grpc_closure* on_call_host_checked,
-    grpc_error** error) {
-  if (sc == nullptr || sc->check_call_host == nullptr) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "cannot check call host -- no security connector");
-    return true;
-  }
-  return sc->check_call_host(sc, host, auth_context, on_call_host_checked,
-                             error);
-}
-
-void grpc_channel_security_connector_cancel_check_call_host(
-    grpc_channel_security_connector* sc, grpc_closure* on_call_host_checked,
-    grpc_error* error) {
-  if (sc == nullptr || sc->cancel_check_call_host == nullptr) {
-    GRPC_ERROR_UNREF(error);
-    return;
-  }
-  sc->cancel_check_call_host(sc, on_call_host_checked, error);
-}
-
-#ifndef NDEBUG
-grpc_security_connector* grpc_security_connector_ref(
-    grpc_security_connector* sc, const char* file, int line,
-    const char* reason) {
-  if (sc == nullptr) return nullptr;
-  if (grpc_trace_security_connector_refcount.enabled()) {
-    gpr_atm val = gpr_atm_no_barrier_load(&sc->refcount.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "SECURITY_CONNECTOR:%p   ref %" PRIdPTR " -> %" PRIdPTR " %s", sc,
-            val, val + 1, reason);
-  }
-#else
-grpc_security_connector* grpc_security_connector_ref(
-    grpc_security_connector* sc) {
-  if (sc == nullptr) return nullptr;
-#endif
-  gpr_ref(&sc->refcount);
-  return sc;
-}
-
-#ifndef NDEBUG
-void grpc_security_connector_unref(grpc_security_connector* sc,
-                                   const char* file, int line,
-                                   const char* reason) {
-  if (sc == nullptr) return;
-  if (grpc_trace_security_connector_refcount.enabled()) {
-    gpr_atm val = gpr_atm_no_barrier_load(&sc->refcount.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "SECURITY_CONNECTOR:%p unref %" PRIdPTR " -> %" PRIdPTR " %s", sc,
-            val, val - 1, reason);
-  }
-#else
-void grpc_security_connector_unref(grpc_security_connector* sc) {
-  if (sc == nullptr) return;
-#endif
-  if (gpr_unref(&sc->refcount)) sc->vtable->destroy(sc);
+int grpc_server_security_connector::server_security_connector_cmp(
+    const grpc_server_security_connector* other) const {
+  const grpc_server_security_connector* other_sc =
+      static_cast<const grpc_server_security_connector*>(other);
+  GPR_ASSERT(server_creds() != nullptr);
+  GPR_ASSERT(other_sc->server_creds() != nullptr);
+  return GPR_ICMP(server_creds(), other_sc->server_creds());
 }
 
 static void connector_arg_destroy(void* p) {
-  GRPC_SECURITY_CONNECTOR_UNREF((grpc_security_connector*)p,
-                                "connector_arg_destroy");
+  static_cast<grpc_security_connector*>(p)->Unref(DEBUG_LOCATION,
+                                                  "connector_arg_destroy");
 }
 
 static void* connector_arg_copy(void* p) {
-  return GRPC_SECURITY_CONNECTOR_REF((grpc_security_connector*)p,
-                                     "connector_arg_copy");
+  return static_cast<grpc_security_connector*>(p)
+      ->Ref(DEBUG_LOCATION, "connector_arg_copy")
+      .release();
 }
 
 static int connector_cmp(void* a, void* b) {
-  return grpc_security_connector_cmp(static_cast<grpc_security_connector*>(a),
-                                     static_cast<grpc_security_connector*>(b));
+  return static_cast<grpc_security_connector*>(a)->cmp(
+      static_cast<grpc_security_connector*>(b));
 }
 
 static const grpc_arg_pointer_vtable connector_arg_vtable = {

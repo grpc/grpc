@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-ProtoRPC'
-  version = '1.17.0-dev'
+  version = '1.22.0-dev'
   s.version  = version
   s.summary  = 'RPC library for Protocol Buffers, based on gRPC'
   s.homepage = 'https://grpc.io'
@@ -35,6 +35,7 @@ Pod::Spec.new do |s|
 
   s.ios.deployment_target = '7.0'
   s.osx.deployment_target = '10.9'
+  s.tvos.deployment_target = '10.0'
 
   name = 'ProtoRPC'
   s.module_name = name
@@ -52,12 +53,10 @@ Pod::Spec.new do |s|
 
     ss.source_files = "#{src_dir}/*.{h,m}"
   end
+
+  # CFStream is now default. Leaving this subspec only for compatibility purpose.
   s.subspec 'CFStream' do |ss|
-    ss.dependency 'gRPC/CFStream', version
     ss.dependency "#{s.name}/Main", version
-    ss.pod_target_xcconfig = {
-      'GCC_PREPROCESSOR_DEFINITIONS' => 'GRPC_CFSTREAM=1'
-    }
   end
 
   s.pod_target_xcconfig = {

@@ -59,22 +59,16 @@
     return [file for file in out if not file in excl]
 
   def grpc_test_util_files(libs):
-    out = grpc_lib_files(libs, ("grpc_test_util", "gpr_test_util"), ("src", "headers"))
+    out = grpc_lib_files(libs, ("grpc_test_util",), ("src", "headers"))
     excl = grpc_private_files(libs)
+    # Subprocess is not supported in tvOS and not needed by our tests.
+    excl += ["test/core/util/subprocess_posix.cc"]
     return [file for file in out if not file in excl]
 
   def end2end_tests_files(libs):
     out = grpc_lib_files(libs, ("end2end_tests",), ("src", "headers"))
     excl = grpc_private_files(libs)
     return [file for file in out if not file in excl]
-
-  def cfstream_private_headers(libs):
-    out = grpc_lib_files(libs, ("grpc_cfstream",), ("own_headers",))
-    return out
-
-  def cfstream_private_files(libs):
-    out = grpc_lib_files(libs, ("grpc_cfstream",), ("own_src", "own_headers"))
-    return out
 
   def ruby_multiline_list(files, indent):
     return (',\n' + indent*' ').join('\'%s\'' % f for f in files)
@@ -99,6 +93,8 @@
 
     s.ios.deployment_target = '7.0'
     s.osx.deployment_target = '10.9'
+    s.tvos.deployment_target = '10.0'
+    
     s.requires_arc = false
 
     name = 'grpc'
@@ -152,7 +148,7 @@
     }
 
     s.default_subspecs = 'Interface', 'Implementation'
-    s.compiler_flags = '-DGRPC_ARES=0', '-DPB_FIELD_16BIT'
+    s.compiler_flags = '-DGRPC_ARES=0', '-DPB_FIELD_32BIT'
     s.libraries = 'c++'
 
     # Like many other C libraries, gRPC-Core has its public headers under `include/<libname>/` and its
@@ -174,7 +170,7 @@
       ss.header_mappings_dir = '.'
       ss.libraries = 'z'
       ss.dependency "#{s.name}/Interface", version
-      ss.dependency 'BoringSSL-GRPC', '0.0.2'
+      ss.dependency 'BoringSSL-GRPC', '0.0.3'
       ss.dependency 'nanopb', '~> 0.3'
       ss.compiler_flags = '-DGRPC_SHADOW_BORINGSSL_SYMBOLS'
 
@@ -184,14 +180,9 @@
       ss.private_header_files = ${ruby_multiline_list(grpc_private_headers(libs), 30)}
     end
 
+    # CFStream is now default. Leaving this subspec only for compatibility purpose.
     s.subspec 'CFStream-Implementation' do |ss|
-      ss.header_mappings_dir = '.'
       ss.dependency "#{s.name}/Implementation", version
-      ss.pod_target_xcconfig = {
-        'GCC_PREPROCESSOR_DEFINITIONS' => 'GRPC_CFSTREAM=1'
-      }
-      ss.source_files = ${ruby_multiline_list(cfstream_private_files(filegroups), 22)}
-      ss.private_header_files = ${ruby_multiline_list(cfstream_private_headers(filegroups), 30)}
     end
 
     s.subspec 'Cronet-Interface' do |ss|

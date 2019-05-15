@@ -115,7 +115,7 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
   });
 
   auto stub = testing::EchoTestService::NewStub(
-      CreateChannel(address, InsecureChannelCredentials()));
+      grpc::CreateChannel(address, InsecureChannelCredentials()));
 
   for (int i = 0; i < 100; i++) {
     gpr_log(GPR_INFO, "Sending %d.", i);

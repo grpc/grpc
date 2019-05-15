@@ -17,7 +17,8 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
-export GOPATH=$(pwd)/../gopath
+GOPATH=$(pwd)/../gopath
+export GOPATH
 
 # Get grpc-go and the dependencies but get rid of the upstream/master version
 go get google.golang.org/grpc

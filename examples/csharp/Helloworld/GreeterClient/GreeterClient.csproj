@@ -1,12 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <AssemblyTitle>GreeterClient</AssemblyTitle>
-    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
-    <DebugType>portable</DebugType>
-    <AssemblyName>GreeterClient</AssemblyName>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
     <OutputType>Exe</OutputType>
-    <PackageId>GreeterClient</PackageId>
   </PropertyGroup>
 
   <ItemGroup>

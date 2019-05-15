@@ -27,26 +27,18 @@
 
 // A handshaker factory is used to create handshakers.
 
-typedef struct grpc_handshaker_factory grpc_handshaker_factory;
+namespace grpc_core {
 
-typedef struct {
-  void (*add_handshakers)(grpc_handshaker_factory* handshaker_factory,
-                          const grpc_channel_args* args,
-                          grpc_pollset_set* interested_parties,
-                          grpc_handshake_manager* handshake_mgr);
-  void (*destroy)(grpc_handshaker_factory* handshaker_factory);
-} grpc_handshaker_factory_vtable;
+class HandshakerFactory {
+ public:
+  virtual void AddHandshakers(const grpc_channel_args* args,
+                              grpc_pollset_set* interested_parties,
+                              HandshakeManager* handshake_mgr) GRPC_ABSTRACT;
+  virtual ~HandshakerFactory() = default;
 
-struct grpc_handshaker_factory {
-  const grpc_handshaker_factory_vtable* vtable;
+  GRPC_ABSTRACT_BASE_CLASS
 };
 
-void grpc_handshaker_factory_add_handshakers(
-    grpc_handshaker_factory* handshaker_factory, const grpc_channel_args* args,
-    grpc_pollset_set* interested_parties,
-    grpc_handshake_manager* handshake_mgr);
-
-void grpc_handshaker_factory_destroy(
-    grpc_handshaker_factory* handshaker_factory);
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_FACTORY_H */

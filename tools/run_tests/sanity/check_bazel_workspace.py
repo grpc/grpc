@@ -34,7 +34,8 @@ git_submodule_hashes = {
     for s in git_submodules
 }
 
-_BAZEL_TOOLCHAINS_DEP_NAME = 'com_github_bazelbuild_bazeltoolchains'
+_BAZEL_SKYLIB_DEP_NAME = 'bazel_skylib'
+_BAZEL_TOOLCHAINS_DEP_NAME = 'bazel_toolchains'
 _TWISTED_TWISTED_DEP_NAME = 'com_github_twisted_twisted'
 _YAML_PYYAML_DEP_NAME = 'com_github_yaml_pyyaml'
 _TWISTED_INCREMENTAL_DEP_NAME = 'com_github_twisted_incremental'
@@ -42,6 +43,7 @@ _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME = 'com_github_zopefoundation_zope_interf
 _TWISTED_CONSTANTLY_DEP_NAME = 'com_github_twisted_constantly'
 
 _GRPC_DEP_NAMES = [
+    'upb',
     'boringssl',
     'com_github_madler_zlib',
     'com_google_protobuf',
@@ -52,6 +54,7 @@ _GRPC_DEP_NAMES = [
     'com_github_cares_cares',
     'com_google_absl',
     'io_opencensus_cpp',
+    _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
     _TWISTED_TWISTED_DEP_NAME,
     _YAML_PYYAML_DEP_NAME,
@@ -61,6 +64,7 @@ _GRPC_DEP_NAMES = [
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
+    _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
     _TWISTED_TWISTED_DEP_NAME,
     _YAML_PYYAML_DEP_NAME,
@@ -110,6 +114,8 @@ bazel_file += '\ngrpc_deps()\n'
 bazel_file += '\ngrpc_test_only_deps()\n'
 build_rules = {
     'native': eval_state,
+    'http_archive': lambda **args: eval_state.http_archive(**args),
+    'load': lambda a, b: None,
 }
 exec bazel_file in build_rules
 for name in _GRPC_DEP_NAMES:
@@ -149,6 +155,8 @@ for name in _GRPC_DEP_NAMES:
         names_and_urls_with_overridden_name, overridden_name=name)
     rules = {
         'native': state,
+        'http_archive': lambda **args: state.http_archive(**args),
+        'load': lambda a, b: None,
     }
     exec bazel_file in rules
     assert name not in names_and_urls_with_overridden_name.keys()

@@ -46,21 +46,26 @@
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/create_auth_context.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
+#include <grpcpp/impl/codegen/rpc_method.h>
 #include <grpcpp/impl/codegen/security/auth_context.h>
 #include <grpcpp/impl/codegen/slice.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/string_ref.h>
+#include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/codegen/time.h>
 
 struct census_context;
 struct grpc_call;
 
+namespace grpc_impl {
+
+class CallCredentials;
+class Channel;
+class CompletionQueue;
+}  // namespace grpc_impl
 namespace grpc {
 
-class Channel;
 class ChannelInterface;
-class CompletionQueue;
-class CallCredentials;
 class ClientContext;
 
 namespace internal {
@@ -71,6 +76,13 @@ template <class InputMessage, class OutputMessage>
 class BlockingUnaryCallImpl;
 template <class InputMessage, class OutputMessage>
 class CallbackUnaryCallImpl;
+template <class Request, class Response>
+class ClientCallbackReaderWriterImpl;
+template <class Response>
+class ClientCallbackReaderImpl;
+template <class Request>
+class ClientCallbackWriterImpl;
+class ClientCallbackUnaryImpl;
 }  // namespace internal
 
 template <class R>
@@ -162,6 +174,8 @@ class InteropClientContextInspector;
 /// (see \a grpc::CreateCustomChannel).
 ///
 /// \warning ClientContext instances should \em not be reused across rpcs.
+/// \warning The ClientContext instance used for creating an rpc must remain
+///          alive and valid for the lifetime of the rpc.
 class ClientContext {
  public:
   ClientContext();
@@ -191,6 +205,13 @@ class ClientContext {
   /// end in "-bin".
   /// \param meta_value The metadata value. If its value is binary, the key name
   /// must end in "-bin".
+  ///
+  /// Metadata must conform to the following format:
+  /// Custom-Metadata -> Binary-Header / ASCII-Header
+  /// Binary-Header -> {Header-Name "-bin" } {binary value}
+  /// ASCII-Header -> Header-Name ASCII-Value
+  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
   void AddMetadata(const grpc::string& meta_key,
                    const grpc::string& meta_value);
 
@@ -288,7 +309,8 @@ class ClientContext {
   /// call.
   ///
   /// \see  https://grpc.io/docs/guides/auth.html
-  void set_credentials(const std::shared_ptr<CallCredentials>& creds) {
+  void set_credentials(
+      const std::shared_ptr<grpc_impl::CallCredentials>& creds) {
     creds_ = creds;
   }
 
@@ -375,7 +397,7 @@ class ClientContext {
   friend class ::grpc::testing::InteropClientContextInspector;
   friend class ::grpc::internal::CallOpClientRecvStatus;
   friend class ::grpc::internal::CallOpRecvInitialMetadata;
-  friend class Channel;
+  friend class ::grpc_impl::Channel;
   template <class R>
   friend class ::grpc::ClientReader;
   template <class W>
@@ -394,6 +416,13 @@ class ClientContext {
   friend class ::grpc::internal::BlockingUnaryCallImpl;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::CallbackUnaryCallImpl;
+  template <class Request, class Response>
+  friend class ::grpc::internal::ClientCallbackReaderWriterImpl;
+  template <class Response>
+  friend class ::grpc::internal::ClientCallbackReaderImpl;
+  template <class Request>
+  friend class ::grpc::internal::ClientCallbackWriterImpl;
+  friend class ::grpc::internal::ClientCallbackUnaryImpl;
 
   // Used by friend class CallOpClientRecvStatus
   void set_debug_error_string(const grpc::string& debug_error_string) {
@@ -401,15 +430,17 @@ class ClientContext {
   }
 
   grpc_call* call() const { return call_; }
-  void set_call(grpc_call* call, const std::shared_ptr<Channel>& channel);
+  void set_call(grpc_call* call,
+                const std::shared_ptr<::grpc_impl::Channel>& channel);
 
   experimental::ClientRpcInfo* set_client_rpc_info(
-      const char* method, grpc::ChannelInterface* channel,
+      const char* method, internal::RpcMethod::RpcType type,
+      grpc::ChannelInterface* channel,
       const std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>&
           creators,
       size_t interceptor_pos) {
-    rpc_info_ = experimental::ClientRpcInfo(this, method, channel);
+    rpc_info_ = experimental::ClientRpcInfo(this, type, method, channel);
     rpc_info_.RegisterInterceptors(creators, interceptor_pos);
     return &rpc_info_;
   }
@@ -433,13 +464,13 @@ class ClientContext {
   bool wait_for_ready_explicitly_set_;
   bool idempotent_;
   bool cacheable_;
-  std::shared_ptr<Channel> channel_;
-  std::mutex mu_;
+  std::shared_ptr<::grpc_impl::Channel> channel_;
+  grpc::internal::Mutex mu_;
   grpc_call* call_;
   bool call_canceled_;
   gpr_timespec deadline_;
   grpc::string authority_;
-  std::shared_ptr<CallCredentials> creds_;
+  std::shared_ptr<grpc_impl::CallCredentials> creds_;
   mutable std::shared_ptr<const AuthContext> auth_context_;
   struct census_context* census_context_;
   std::multimap<grpc::string, grpc::string> send_initial_metadata_;

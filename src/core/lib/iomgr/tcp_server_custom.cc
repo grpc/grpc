@@ -220,7 +220,7 @@ static void finish_accept(grpc_tcp_listener* sp, grpc_custom_socket* socket) {
     GRPC_LOG_IF_ERROR("getpeername error", err);
     GRPC_ERROR_UNREF(err);
   }
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     if (peer_name_string) {
       gpr_log(GPR_INFO, "SERVER_CONNECT: %p accepted connection: %s",
               sp->server, peer_name_string);
@@ -372,7 +372,7 @@ static grpc_error* tcp_server_add_port(grpc_tcp_server* s,
     addr = &wildcard;
   }
 
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     char* port_string;
     grpc_sockaddr_to_string(&port_string, addr, 0);
     const char* str = grpc_error_string(error);
@@ -418,7 +418,7 @@ static void tcp_server_start(grpc_tcp_server* server, grpc_pollset** pollsets,
   (void)pollsets;
   (void)pollset_count;
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "SERVER_START %p", server);
   }
   GPR_ASSERT(on_accept_cb);

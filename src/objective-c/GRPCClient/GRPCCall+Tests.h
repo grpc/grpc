@@ -18,34 +18,13 @@
 
 #import "GRPCCall.h"
 
-/**
- * Methods to let tune down the security of gRPC connections for specific hosts. These shouldn't be
- * used in releases, but are sometimes needed for testing.
- */
+// Deprecated interface. Please use GRPCCallOptions instead.
 @interface GRPCCall (Tests)
 
-/**
- * Establish all SSL connections to the provided host using the passed SSL target name and the root
- * certificates found in the file at |certsPath|.
- *
- * Must be called before any gRPC call to that host is made. It's illegal to pass the same host to
- * more than one invocation of the methods of this category.
- */
 + (void)useTestCertsPath:(NSString *)certsPath
                 testName:(NSString *)testName
                  forHost:(NSString *)host;
-
-/**
- * Establish all connections to the provided host using cleartext instead of SSL.
- *
- * Must be called before any gRPC call to that host is made. It's illegal to pass the same host to
- * more than one invocation of the methods of this category.
- */
 + (void)useInsecureConnectionsForHost:(NSString *)host;
-
-/**
- * Resets all host configurations to their default values, and flushes all connections from the
- * cache.
- */
 + (void)resetHostSettings;
+
 @end

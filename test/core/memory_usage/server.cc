@@ -162,7 +162,7 @@ int main(int argc, char** argv) {
 
   GPR_ASSERT(argc >= 1);
   fake_argv[0] = argv[0];
-  grpc_test_init(1, fake_argv);
+  grpc::testing::TestEnvironment env(1, fake_argv);
 
   grpc_init();
   srand(static_cast<unsigned>(clock()));
@@ -318,7 +318,7 @@ int main(int argc, char** argv) {
 
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq);
-  grpc_shutdown();
+  grpc_shutdown_blocking();
   grpc_memory_counters_destroy();
   return 0;
 }

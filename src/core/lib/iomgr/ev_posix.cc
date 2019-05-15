@@ -36,6 +36,7 @@
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_epollex_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
+#include "src/core/lib/iomgr/internal_errqueue.h"
 
 grpc_core::TraceFlag grpc_polling_trace(false,
                                         "polling"); /* Disabled by default */
@@ -49,7 +50,7 @@ grpc_core::DebugOnlyTraceFlag grpc_polling_api_trace(false, "polling_api");
 
 // Polling API trace only enabled in debug builds
 #define GRPC_POLLING_API_TRACE(format, ...)                  \
-  if (grpc_polling_api_trace.enabled()) {                    \
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_api_trace)) {     \
     gpr_log(GPR_INFO, "(polling-api) " format, __VA_ARGS__); \
   }
 #else
@@ -125,10 +126,9 @@ static event_engine_factory g_factories[] = {
     {ENGINE_HEAD_CUSTOM, nullptr},        {ENGINE_HEAD_CUSTOM, nullptr},
     {ENGINE_HEAD_CUSTOM, nullptr},        {ENGINE_HEAD_CUSTOM, nullptr},
     {"epollex", grpc_init_epollex_linux}, {"epoll1", grpc_init_epoll1_linux},
-    {"poll", grpc_init_poll_posix},       {"poll-cv", grpc_init_poll_cv_posix},
-    {"none", init_non_polling},           {ENGINE_TAIL_CUSTOM, nullptr},
+    {"poll", grpc_init_poll_posix},       {"none", init_non_polling},
     {ENGINE_TAIL_CUSTOM, nullptr},        {ENGINE_TAIL_CUSTOM, nullptr},
-    {ENGINE_TAIL_CUSTOM, nullptr},
+    {ENGINE_TAIL_CUSTOM, nullptr},        {ENGINE_TAIL_CUSTOM, nullptr},
 };
 
 static void add(const char* beg, const char* end, char*** ss, size_t* ns) {
@@ -236,19 +236,22 @@ void grpc_event_engine_shutdown(void) {
 }
 
 bool grpc_event_engine_can_track_errors(void) {
-/* Only track errors if platform supports errqueue. */
-#ifdef GRPC_LINUX_ERRQUEUE
-  return g_event_engine->can_track_err;
-#else
+  /* Only track errors if platform supports errqueue. */
+  if (grpc_core::kernel_supports_errqueue()) {
+    return g_event_engine->can_track_err;
+  }
   return false;
-#endif /* GRPC_LINUX_ERRQUEUE */
+}
+
+bool grpc_event_engine_run_in_background(void) {
+  return g_event_engine->run_in_background;
 }
 
 grpc_fd* grpc_fd_create(int fd, const char* name, bool track_err) {
   GRPC_POLLING_API_TRACE("fd_create(%d, %s, %d)", fd, name, track_err);
   GRPC_FD_TRACE("fd_create(%d, %s, %d)", fd, name, track_err);
-  return g_event_engine->fd_create(fd, name,
-                                   track_err && g_event_engine->can_track_err);
+  return g_event_engine->fd_create(
+      fd, name, track_err && grpc_event_engine_can_track_errors());
 }
 
 int grpc_fd_wrapped_fd(grpc_fd* fd) {
@@ -393,6 +396,19 @@ void grpc_pollset_set_del_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
   GRPC_POLLING_API_TRACE("pollset_set_del_fd(%p, %d)", pollset_set,
                          grpc_fd_wrapped_fd(fd));
   g_event_engine->pollset_set_del_fd(pollset_set, fd);
+}
+
+bool grpc_is_any_background_poller_thread(void) {
+  return g_event_engine->is_any_background_poller_thread();
+}
+
+bool grpc_add_closure_to_background_poller(grpc_closure* closure,
+                                           grpc_error* error) {
+  return g_event_engine->add_closure_to_background_poller(closure, error);
+}
+
+void grpc_shutdown_background_closure(void) {
+  g_event_engine->shutdown_background_closure();
 }
 
 #endif  // GRPC_POSIX_SOCKET_EV

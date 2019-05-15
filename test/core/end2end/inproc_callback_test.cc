@@ -65,7 +65,10 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
     gpr_mu_init(&mu_);
     gpr_cv_init(&cv_);
   }
-  ~ShutdownCallback() {}
+  ~ShutdownCallback() {
+    gpr_mu_destroy(&mu_);
+    gpr_cv_destroy(&cv_);
+  }
   static void StaticRun(grpc_experimental_completion_queue_functor* cb,
                         int ok) {
     auto* callback = static_cast<ShutdownCallback*>(cb);
@@ -495,7 +498,7 @@ static grpc_end2end_test_config configs[] = {
 };
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 
   simple_request_pre_init();

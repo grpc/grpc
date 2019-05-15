@@ -71,17 +71,23 @@
 
 #pragma mark GRPCWrappedCall
 
+@class GRPCPooledChannel;
+
 @interface GRPCWrappedCall : NSObject
 
-- (instancetype)initWithHost:(NSString *)host
-                  serverName:(NSString *)serverName
-                        path:(NSString *)path
-                     timeout:(NSTimeInterval)timeout NS_DESIGNATED_INITIALIZER;
+- (instancetype)init NS_UNAVAILABLE;
+
++ (instancetype) new NS_UNAVAILABLE;
+
+- (instancetype)initWithUnmanagedCall:(grpc_call *)unmanagedCall
+                        pooledChannel:(GRPCPooledChannel *)pooledChannel NS_DESIGNATED_INITIALIZER;
 
 - (void)startBatchWithOperations:(NSArray *)ops errorHandler:(void (^)(void))errorHandler;
 
 - (void)startBatchWithOperations:(NSArray *)ops;
 
 - (void)cancel;
+
+- (void)channelDisconnected;
 
 @end

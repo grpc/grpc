@@ -96,11 +96,11 @@
     return out
 
   def grpc_test_util_files(libs):
-    out = grpc_lib_files(libs, ("grpc_test_util", "gpr_test_util"), ("src", "headers"))
+    out = grpc_lib_files(libs, ("grpc_test_util",), ("src", "headers"))
     return out
 
   def grpc_test_util_headers(libs):
-    out = grpc_lib_files(libs, ("grpc_test_util", "gpr_test_util"), ("headers",))
+    out = grpc_lib_files(libs, ("grpc_test_util",), ("headers",))
     return out
 
   # Tests subspec is currently disabled since the tests currently use `grpc++` include style instead of `grpcpp`.
@@ -127,12 +127,20 @@
 
   def ruby_multiline_list(files, indent):
     return (',\n' + indent*' ').join('\'%s\'' % f for f in files)
+
+  def modify_podspec_version_string(pod_version, grpc_version):
+    # Append -preX when it is a pre-release
+    if len(str(grpc_version).split('-')) > 1:
+      return pod_version + '-' + str(grpc_version).split('-')[-1]
+    else:
+      return pod_version
+
   %>
   Pod::Spec.new do |s|
     s.name     = 'gRPC-C++'
     # TODO (mxyan): use version that match gRPC version when pod is stabilized
     # version = '${settings.version}'
-    version = '0.0.4'
+    version = '${modify_podspec_version_string('0.0.8', settings.version)}'
     s.version  = version
     s.summary  = 'gRPC C++ library'
     s.homepage = 'https://grpc.io'
@@ -148,6 +156,8 @@
 
     s.ios.deployment_target = '7.0'
     s.osx.deployment_target = '10.9'
+    s.tvos.deployment_target = '10.0'
+
     s.requires_arc = false
 
     name = 'grpcpp'

@@ -16,19 +16,19 @@
  *
  */
 
-#include "test/cpp/util/channel_trace_proto_helper.h"
+#include <grpc/support/port_platform.h>
 
-#include <google/protobuf/text_format.h>
-#include <google/protobuf/util/json_util.h>
+#include "test/cpp/util/channel_trace_proto_helper.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpcpp/impl/codegen/config.h>
+#include <grpcpp/impl/codegen/config_protobuf.h>
 #include <gtest/gtest.h>
 
 #include "src/proto/grpc/channelz/channelz.pb.h"
 
 namespace grpc {
-namespace testing {
 
 namespace {
 
@@ -37,32 +37,33 @@ namespace {
 // according to https://developers.google.com/protocol-buffers/docs/proto3#json
 template <typename Message>
 void VaidateProtoJsonTranslation(char* json_c_str) {
-  std::string json_str(json_c_str);
+  grpc::string json_str(json_c_str);
   Message msg;
-  google::protobuf::util::JsonParseOptions parse_options;
+  grpc::protobuf::json::JsonParseOptions parse_options;
   // If the following line is failing, then uncomment the last line of the
   // comment, and uncomment the lines that print the two strings. You can
   // then compare the output, and determine what fields are missing.
   //
   // parse_options.ignore_unknown_fields = true;
-  EXPECT_EQ(google::protobuf::util::JsonStringToMessage(json_str, &msg,
-                                                        parse_options),
-            google::protobuf::util::Status::OK);
-  std::string proto_json_str;
-  google::protobuf::util::JsonPrintOptions print_options;
+  grpc::protobuf::util::Status s =
+      grpc::protobuf::json::JsonStringToMessage(json_str, &msg, parse_options);
+  EXPECT_TRUE(s.ok());
+  grpc::string proto_json_str;
+  grpc::protobuf::json::JsonPrintOptions print_options;
   // We usually do not want this to be true, however it can be helpful to
   // uncomment and see the output produced then all fields are printed.
   // print_options.always_print_primitive_fields = true;
-  EXPECT_EQ(google::protobuf::util::MessageToJsonString(msg, &proto_json_str,
-                                                        print_options),
-            google::protobuf::util::Status::OK);
-  // uncomment these to compare the the json strings.
+  s = grpc::protobuf::json::MessageToJsonString(msg, &proto_json_str);
+  EXPECT_TRUE(s.ok());
+  // uncomment these to compare the json strings.
   // gpr_log(GPR_ERROR, "tracer json: %s", json_str.c_str());
   // gpr_log(GPR_ERROR, "proto  json: %s", proto_json_str.c_str());
   EXPECT_EQ(json_str, proto_json_str);
 }
 
 }  // namespace
+
+namespace testing {
 
 void ValidateChannelTraceProtoJsonTranslation(char* json_c_str) {
   VaidateProtoJsonTranslation<grpc::channelz::v1::ChannelTrace>(json_c_str);

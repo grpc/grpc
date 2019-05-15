@@ -98,7 +98,7 @@ $ protoc -I ../../protos/ --cpp_out=. ../../protos/helloworld.proto
     ```
 
 - Create a stub. A stub implements the rpc methods of a service and in the
-  generated code, a method is provided to created a stub with a channel:
+  generated code, a method is provided to create a stub with a channel:
 
     ```cpp
     auto stub = helloworld::Greeter::NewStub(channel);

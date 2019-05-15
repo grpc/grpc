@@ -29,11 +29,11 @@ if [ "x$1" == 'x--pre-commit' ]; then
     fi
   fi
   CHANGED_FILES=$(eval $DIFF_COMMAND) ./tools/distrib/clang_format_code.sh
-  ./tools/distrib/check_copyright.py --fix --precommit
+  ./tools/distrib/check_copyright.py --precommit
   ./tools/distrib/check_trailing_newlines.sh
 else
   ./tools/buildgen/generate_projects.sh
   ./tools/distrib/clang_format_code.sh
-  ./tools/distrib/check_copyright.py --fix
+  ./tools/distrib/check_copyright.py
   ./tools/distrib/check_trailing_newlines.sh
 fi

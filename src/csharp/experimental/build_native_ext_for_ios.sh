@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Helper script to crosscompile grpc_csharp_ext native extension for Android.
+# Helper script to crosscompile grpc_csharp_ext native extension for iOS.
 
 set -ex
 
@@ -28,9 +28,8 @@ function build {
     PATH_CC="$(xcrun --sdk $SDK --find clang)"
     PATH_CXX="$(xcrun --sdk $SDK --find clang++)"
 
-    # TODO(jtattermusch): add  -mios-version-min=6.0 and -Wl,ios_version_min=6.0
-    CPPFLAGS="-O2 -Wframe-larger-than=16384 -arch $ARCH -isysroot $(xcrun --sdk $SDK --show-sdk-path) -DPB_NO_PACKED_STRUCTS=1"
-    LDFLAGS="-arch $ARCH -isysroot $(xcrun --sdk $SDK --show-sdk-path)"
+    CPPFLAGS="-O2 -Wframe-larger-than=16384 -arch $ARCH -isysroot $(xcrun --sdk $SDK --show-sdk-path) -mios-version-min=6.0 -DPB_NO_PACKED_STRUCTS=1"
+    LDFLAGS="-arch $ARCH -isysroot $(xcrun --sdk $SDK --show-sdk-path) -Wl,ios_version_min=6.0"
 
     # TODO(jtattermusch): revisit the build arguments
     make -j4 static_csharp \
@@ -51,10 +50,12 @@ function fatten {
 
     mkdir -p libs/ios
     lipo -create -output libs/ios/lib$LIB_NAME.a \
+        libs/ios_armv7/lib$LIB_NAME.a \
         libs/ios_arm64/lib$LIB_NAME.a \
         libs/ios_x86_64/lib$LIB_NAME.a
 }
 
+build iphoneos armv7
 build iphoneos arm64
 build iphonesimulator x86_64
 

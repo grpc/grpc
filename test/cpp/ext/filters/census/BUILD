@@ -24,19 +24,18 @@ grpc_cc_test(
     srcs = [
         "stats_plugin_end2end_test.cc",
     ],
-    language = "C++",
     external_deps = [
         "gtest",
         "gmock",
         "opencensus-stats-test",
     ],
+    language = "C++",
     deps = [
         "//:grpc++",
         "//:grpc_opencensus_plugin",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
-        "//test/cpp/util:test_util",
         "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
     ],
 )

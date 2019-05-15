@@ -22,7 +22,7 @@ cd "$(dirname "$0")"
 
 CLOUD_PROJECT=grpc-testing
 ZONE=us-central1-b  # this zone allows 32core machines
-LATEST_PERF_WORKER_IMAGE=grpc-performance-kokoro-v2  # update if newer image exists
+LATEST_PERF_WORKER_IMAGE=grpc-performance-kokoro-v5  # update if newer image exists
 
 INSTANCE_NAME="${1:-grpc-kokoro-performance-server}"
 MACHINE_TYPE="${2:-n1-standard-32}"

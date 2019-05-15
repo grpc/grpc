@@ -21,61 +21,62 @@ grpc_package(name = "test/cpp/common")
 grpc_cc_test(
     name = "alarm_test",
     srcs = ["alarm_test.cc"],
-    deps = [
-        "//:grpc++_unsecure",
-        "//test/core/util:gpr_test_util",
-    ],
     external_deps = [
         "gtest",
     ],
+    deps = [
+        "//:grpc++_unsecure",
+        "//test/core/util:grpc_test_util_unsecure",
+    ],
+    tags = ["no_windows"],
 )
 
 grpc_cc_test(
     name = "auth_property_iterator_test",
     srcs = ["auth_property_iterator_test.cc"],
-    deps = [
-        "//:grpc++",
-        "//test/core/util:gpr_test_util",
-        "//test/cpp/util:test_util",
-    ],
     external_deps = [
         "gtest",
+    ],
+    deps = [
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
     ],
 )
 
 grpc_cc_test(
     name = "channel_arguments_test",
     srcs = ["channel_arguments_test.cc"],
-    deps = [
-        "//:grpc++",
-        "//test/core/util:gpr_test_util",
-    ],
     external_deps = [
         "gtest",
+    ],
+    deps = [
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "channel_filter_test",
     srcs = ["channel_filter_test.cc"],
-    deps = [
-        "//:grpc++",
-        "//test/core/util:gpr_test_util",
-    ],
     external_deps = [
         "gtest",
+    ],
+    deps = [
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "secure_auth_context_test",
     srcs = ["secure_auth_context_test.cc"],
-    deps = [
-        "//:grpc++",
-        "//test/core/util:gpr_test_util",
-        "//test/cpp/util:test_util",
-    ],
     external_deps = [
         "gtest",
+    ],
+    deps = [
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
     ],
 )

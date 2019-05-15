@@ -130,7 +130,7 @@ class RawEnd2EndTest : public ::testing::Test {
 
   void ResetStub() {
     ChannelArguments args;
-    std::shared_ptr<Channel> channel = CreateChannel(
+    std::shared_ptr<Channel> channel = grpc::CreateChannel(
         server_address_.str(), grpc::InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
@@ -363,7 +363,7 @@ TEST_F(RawEnd2EndTest, CompileTest) {
 int main(int argc, char** argv) {
   // Change the backup poll interval from 5s to 100ms to speed up the
   // ReconnectChannel test
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

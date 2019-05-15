@@ -83,11 +83,11 @@ TEST(OrphanablePtr, InternallyRefCounted) {
 // things build properly in both debug and non-debug cases.
 DebugOnlyTraceFlag baz_tracer(true, "baz");
 
-class Baz : public InternallyRefCountedWithTracing<Baz> {
+class Baz : public InternallyRefCounted<Baz> {
  public:
   Baz() : Baz(0) {}
   explicit Baz(int value)
-      : InternallyRefCountedWithTracing<Baz>(&baz_tracer), value_(value) {}
+      : InternallyRefCounted<Baz>(&baz_tracer), value_(value) {}
   void Orphan() override { Unref(); }
   int value() const { return value_; }
 
@@ -114,7 +114,7 @@ TEST(OrphanablePtr, InternallyRefCountedWithTracing) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

@@ -116,7 +116,7 @@ typedef InlinedVector<int, kInlinedLength> IntVec8;
 const size_t kInlinedFillSize = kInlinedLength - 1;
 const size_t kAllocatedFillSize = kInlinedLength + 1;
 
-TEST(InlinedVectorTest, CopyConstructerInlined) {
+TEST(InlinedVectorTest, CopyConstructorInlined) {
   IntVec8 original;
   FillVector(&original, kInlinedFillSize);
   IntVec8 copy_constructed(original);
@@ -125,7 +125,7 @@ TEST(InlinedVectorTest, CopyConstructerInlined) {
   }
 }
 
-TEST(InlinedVectorTest, CopyConstructerAllocated) {
+TEST(InlinedVectorTest, CopyConstructorAllocated) {
   IntVec8 original;
   FillVector(&original, kAllocatedFillSize);
   IntVec8 copy_constructed(original);
@@ -264,6 +264,166 @@ TEST(InlinedVectorTest, MoveAssignmentAllocatedAllocated) {
   EXPECT_EQ(move_assigned.data(), old_data);
 }
 
+// A copyable and movable value class, used to test that elements' copy
+// and move methods are called correctly.
+class Value {
+ public:
+  explicit Value(int v) : value_(MakeUnique<int>(v)) {}
+
+  // copyable
+  Value(const Value& v) {
+    value_ = MakeUnique<int>(*v.value_);
+    copied_ = true;
+  }
+  Value& operator=(const Value& v) {
+    value_ = MakeUnique<int>(*v.value_);
+    copied_ = true;
+    return *this;
+  }
+
+  // movable
+  Value(Value&& v) {
+    value_ = std::move(v.value_);
+    moved_ = true;
+  }
+  Value& operator=(Value&& v) {
+    value_ = std::move(v.value_);
+    moved_ = true;
+    return *this;
+  }
+
+  const UniquePtr<int>& value() const { return value_; }
+  bool copied() const { return copied_; }
+  bool moved() const { return moved_; }
+
+ private:
+  UniquePtr<int> value_;
+  bool copied_ = false;
+  bool moved_ = false;
+};
+
+TEST(InlinedVectorTest, CopyConstructorCopiesElementsInlined) {
+  InlinedVector<Value, 1> v1;
+  v1.emplace_back(3);
+  InlinedVector<Value, 1> v2(v1);
+  EXPECT_EQ(v2.size(), 1UL);
+  EXPECT_EQ(*v2[0].value(), 3);
+  // Addresses should differ.
+  EXPECT_NE(v1[0].value().get(), v2[0].value().get());
+  EXPECT_TRUE(v2[0].copied());
+}
+
+TEST(InlinedVectorTest, CopyConstructorCopiesElementsAllocated) {
+  InlinedVector<Value, 1> v1;
+  v1.reserve(2);
+  v1.emplace_back(3);
+  v1.emplace_back(5);
+  InlinedVector<Value, 1> v2(v1);
+  EXPECT_EQ(v2.size(), 2UL);
+  EXPECT_EQ(*v2[0].value(), 3);
+  EXPECT_EQ(*v2[1].value(), 5);
+  // Addresses should differ.
+  EXPECT_NE(v1[0].value().get(), v2[0].value().get());
+  EXPECT_NE(v1[1].value().get(), v2[1].value().get());
+  EXPECT_TRUE(v2[0].copied());
+  EXPECT_TRUE(v2[1].copied());
+}
+
+TEST(InlinedVectorTest, CopyAssignmentCopiesElementsInlined) {
+  InlinedVector<Value, 1> v1;
+  v1.emplace_back(3);
+  InlinedVector<Value, 1> v2;
+  EXPECT_EQ(v2.size(), 0UL);
+  v2 = v1;
+  EXPECT_EQ(v2.size(), 1UL);
+  EXPECT_EQ(*v2[0].value(), 3);
+  // Addresses should differ.
+  EXPECT_NE(v1[0].value().get(), v2[0].value().get());
+  EXPECT_TRUE(v2[0].copied());
+}
+
+TEST(InlinedVectorTest, CopyAssignmentCopiesElementsAllocated) {
+  InlinedVector<Value, 1> v1;
+  v1.reserve(2);
+  v1.emplace_back(3);
+  v1.emplace_back(5);
+  InlinedVector<Value, 1> v2;
+  EXPECT_EQ(v2.size(), 0UL);
+  v2 = v1;
+  EXPECT_EQ(v2.size(), 2UL);
+  EXPECT_EQ(*v2[0].value(), 3);
+  EXPECT_EQ(*v2[1].value(), 5);
+  // Addresses should differ.
+  EXPECT_NE(v1[0].value().get(), v2[0].value().get());
+  EXPECT_NE(v1[1].value().get(), v2[1].value().get());
+  EXPECT_TRUE(v2[0].copied());
+  EXPECT_TRUE(v2[1].copied());
+}
+
+TEST(InlinedVectorTest, MoveConstructorMovesElementsInlined) {
+  InlinedVector<Value, 1> v1;
+  v1.emplace_back(3);
+  int* addr = v1[0].value().get();
+  InlinedVector<Value, 1> v2(std::move(v1));
+  EXPECT_EQ(v2.size(), 1UL);
+  EXPECT_EQ(*v2[0].value(), 3);
+  EXPECT_EQ(addr, v2[0].value().get());
+  EXPECT_TRUE(v2[0].moved());
+}
+
+TEST(InlinedVectorTest, MoveConstructorMovesElementsAllocated) {
+  InlinedVector<Value, 1> v1;
+  v1.reserve(2);
+  v1.emplace_back(3);
+  v1.emplace_back(5);
+  int* addr1 = v1[0].value().get();
+  int* addr2 = v1[1].value().get();
+  Value* data1 = v1.data();
+  InlinedVector<Value, 1> v2(std::move(v1));
+  EXPECT_EQ(v2.size(), 2UL);
+  EXPECT_EQ(*v2[0].value(), 3);
+  EXPECT_EQ(*v2[1].value(), 5);
+  EXPECT_EQ(addr1, v2[0].value().get());
+  EXPECT_EQ(addr2, v2[1].value().get());
+  // In this case, elements won't be moved, because we have just stolen
+  // the underlying storage.
+  EXPECT_EQ(data1, v2.data());
+}
+
+TEST(InlinedVectorTest, MoveAssignmentMovesElementsInlined) {
+  InlinedVector<Value, 1> v1;
+  v1.emplace_back(3);
+  int* addr = v1[0].value().get();
+  InlinedVector<Value, 1> v2;
+  EXPECT_EQ(v2.size(), 0UL);
+  v2 = std::move(v1);
+  EXPECT_EQ(v2.size(), 1UL);
+  EXPECT_EQ(*v2[0].value(), 3);
+  EXPECT_EQ(addr, v2[0].value().get());
+  EXPECT_TRUE(v2[0].moved());
+}
+
+TEST(InlinedVectorTest, MoveAssignmentMovesElementsAllocated) {
+  InlinedVector<Value, 1> v1;
+  v1.reserve(2);
+  v1.emplace_back(3);
+  v1.emplace_back(5);
+  int* addr1 = v1[0].value().get();
+  int* addr2 = v1[1].value().get();
+  Value* data1 = v1.data();
+  InlinedVector<Value, 1> v2;
+  EXPECT_EQ(v2.size(), 0UL);
+  v2 = std::move(v1);
+  EXPECT_EQ(v2.size(), 2UL);
+  EXPECT_EQ(*v2[0].value(), 3);
+  EXPECT_EQ(*v2[1].value(), 5);
+  EXPECT_EQ(addr1, v2[0].value().get());
+  EXPECT_EQ(addr2, v2[1].value().get());
+  // In this case, elements won't be moved, because we have just stolen
+  // the underlying storage.
+  EXPECT_EQ(data1, v2.data());
+}
+
 TEST(InlinedVectorTest, PopBackInlined) {
   InlinedVector<UniquePtr<int>, 2> v;
   // Add two elements, pop one out
@@ -294,7 +454,7 @@ TEST(InlinedVectorTest, PopBackAllocated) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

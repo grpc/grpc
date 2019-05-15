@@ -342,6 +342,28 @@ describe GRPC::RpcServer do
         t.join
       end
 
+      it 'should return UNIMPLEMENTED on unimplemented ' \
+         'methods for client_streamer', server: true do
+        @srv.handle(EchoService)
+        t = Thread.new { @srv.run }
+        @srv.wait_till_running
+        blk = proc do
+          stub = EchoStub.new(@host, :this_channel_is_insecure, **client_opts)
+          requests = [EchoMsg.new, EchoMsg.new]
+          stub.a_client_streaming_rpc_unimplemented(requests)
+        end
+
+        begin
+          expect(&blk).to raise_error do |error|
+            expect(error).to be_a(GRPC::BadStatus)
+            expect(error.code).to eq(GRPC::Core::StatusCodes::UNIMPLEMENTED)
+          end
+        ensure
+          @srv.stop # should be call not to crash
+          t.join
+        end
+      end
+
       it 'should handle multiple sequential requests', server: true do
         @srv.handle(EchoService)
         t = Thread.new { @srv.run }

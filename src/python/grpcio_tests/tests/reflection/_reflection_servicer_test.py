@@ -50,14 +50,28 @@ def _file_descriptor_to_proto(descriptor):
 
 class ReflectionServicerTest(unittest.TestCase):
 
+    # TODO(https://github.com/grpc/grpc/issues/17844)
+    # Bazel + Python 3 will result in creating two different instance of
+    # DESCRIPTOR for each message. So, the equal comparison between protobuf
+    # returned by stub and manually crafted protobuf will always fail.
+    def _assert_sequence_of_proto_equal(self, x, y):
+        self.assertSequenceEqual(
+            tuple(proto.SerializeToString() for proto in x),
+            tuple(proto.SerializeToString() for proto in y),
+        )
+
     def setUp(self):
         self._server = test_common.test_server()
         reflection.enable_server_reflection(_SERVICE_NAMES, self._server)
         port = self._server.add_insecure_port('[::]:0')
         self._server.start()
 
-        channel = grpc.insecure_channel('localhost:%d' % port)
-        self._stub = reflection_pb2_grpc.ServerReflectionStub(channel)
+        self._channel = grpc.insecure_channel('localhost:%d' % port)
+        self._stub = reflection_pb2_grpc.ServerReflectionStub(self._channel)
+
+    def tearDown(self):
+        self._server.stop(None)
+        self._channel.close()
 
     def testFileByName(self):
         requests = (
@@ -80,7 +94,7 @@ class ReflectionServicerTest(unittest.TestCase):
                     error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
                 )),
         )
-        self.assertSequenceEqual(expected_responses, responses)
+        self._assert_sequence_of_proto_equal(expected_responses, responses)
 
     def testFileBySymbol(self):
         requests = (
@@ -104,7 +118,7 @@ class ReflectionServicerTest(unittest.TestCase):
                     error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
                 )),
         )
-        self.assertSequenceEqual(expected_responses, responses)
+        self._assert_sequence_of_proto_equal(expected_responses, responses)
 
     def testFileContainingExtension(self):
         requests = (
@@ -133,7 +147,7 @@ class ReflectionServicerTest(unittest.TestCase):
                     error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
                 )),
         )
-        self.assertSequenceEqual(expected_responses, responses)
+        self._assert_sequence_of_proto_equal(expected_responses, responses)
 
     def testExtensionNumbersOfType(self):
         requests = (
@@ -158,7 +172,7 @@ class ReflectionServicerTest(unittest.TestCase):
                     error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
                 )),
         )
-        self.assertSequenceEqual(expected_responses, responses)
+        self._assert_sequence_of_proto_equal(expected_responses, responses)
 
     def testListServices(self):
         requests = (reflection_pb2.ServerReflectionRequest(list_services='',),)
@@ -169,7 +183,7 @@ class ReflectionServicerTest(unittest.TestCase):
                 service=tuple(
                     reflection_pb2.ServiceResponse(name=name)
                     for name in _SERVICE_NAMES))),)
-        self.assertSequenceEqual(expected_responses, responses)
+        self._assert_sequence_of_proto_equal(expected_responses, responses)
 
     def testReflectionServiceName(self):
         self.assertEqual(reflection.SERVICE_NAME,

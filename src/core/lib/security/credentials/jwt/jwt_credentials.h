@@ -24,25 +24,44 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"
 
-typedef struct {
-  grpc_call_credentials base;
+class grpc_service_account_jwt_access_credentials
+    : public grpc_call_credentials {
+ public:
+  grpc_service_account_jwt_access_credentials(grpc_auth_json_key key,
+                                              gpr_timespec token_lifetime);
+  ~grpc_service_account_jwt_access_credentials() override;
+
+  bool get_request_metadata(grpc_polling_entity* pollent,
+                            grpc_auth_metadata_context context,
+                            grpc_credentials_mdelem_array* md_array,
+                            grpc_closure* on_request_metadata,
+                            grpc_error** error) override;
+
+  void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
+                                   grpc_error* error) override;
+
+  const gpr_timespec& jwt_lifetime() const { return jwt_lifetime_; }
+  const grpc_auth_json_key& key() const { return key_; }
+
+ private:
+  void reset_cache();
 
   // Have a simple cache for now with just 1 entry. We could have a map based on
   // the service_url for a more sophisticated one.
-  gpr_mu cache_mu;
+  gpr_mu cache_mu_;
   struct {
-    grpc_mdelem jwt_md;
-    char* service_url;
+    grpc_mdelem jwt_md = GRPC_MDNULL;
+    char* service_url = nullptr;
     gpr_timespec jwt_expiration;
-  } cached;
+  } cached_;
 
-  grpc_auth_json_key key;
-  gpr_timespec jwt_lifetime;
-} grpc_service_account_jwt_access_credentials;
+  grpc_auth_json_key key_;
+  gpr_timespec jwt_lifetime_;
+};
 
 // Private constructor for jwt credentials from an already parsed json key.
 // Takes ownership of the key.
-grpc_call_credentials*
+grpc_core::RefCountedPtr<grpc_call_credentials>
 grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
     grpc_auth_json_key key, gpr_timespec token_lifetime);
 

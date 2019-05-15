@@ -20,3 +20,4 @@ include src/python/grpcio/README.rst
 include requirements.txt
 include etc/roots.pem
 include Makefile
+include LICENSE

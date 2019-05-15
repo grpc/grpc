@@ -22,27 +22,28 @@
   </PropertyGroup>
 
   <ItemDefinitionGroup Condition=" '$(Protobuf_ProjectSupported)' == 'true' and '$(Language)' == 'C#' ">
-    <ProtoBuf>
-      <Access Condition="'%(ProtoBuf.Access)' == '' ">Public</Access>
-      <ProtoCompile Condition="'%(ProtoBuf.ProtoCompile)' == '' ">True</ProtoCompile>
-      <ProtoRoot Condition="'%(ProtoBuf.ProtoRoot)' == '' " />
-      <CompileOutputs Condition="'%(ProtoBuf.CompileOutputs)' == ''">True</CompileOutputs>
-      <OutputDir Condition="'%(ProtoBuf.OutputDir)' == '' ">$(Protobuf_OutputPath)</OutputDir>
-    </ProtoBuf>
+    <Protobuf>
+      <Access Condition="'%(Protobuf.Access)' == '' ">Public</Access>
+      <ProtoCompile Condition="'%(Protobuf.ProtoCompile)' == '' ">True</ProtoCompile>
+      <ProtoRoot Condition="'%(Protobuf.ProtoRoot)' == '' " />
+      <CompileOutputs Condition="'%(Protobuf.CompileOutputs)' == ''">True</CompileOutputs>
+      <OutputDir Condition="'%(Protobuf.OutputDir)' == '' ">$(Protobuf_OutputPath)</OutputDir>
+      <Generator Condition="'%(Protobuf.Generator)' == '' and '$(DisableProtobufDesignTimeBuild)' != 'true' " >MSBuild:Compile</Generator>
+    </Protobuf>
   </ItemDefinitionGroup>
 
   <ItemGroup Condition=" '$(Protobuf_ProjectSupported)' == 'true' and '$(Language)' == 'C#' ">
     <PropertyPageSchema Include="$(MSBuildThisFileDirectory)Protobuf.CSharp.xml">
       <Context>File;BrowseObject</Context>
     </PropertyPageSchema>
-    <AvailableItemName Include="ProtoBuf" />
+    <AvailableItemName Include="Protobuf" />
   </ItemGroup>
 
   <PropertyGroup>
     <!-- NET SDK: by default, do not include proto files in the directory.
          Current Microsoft's recommendation is against globbing:
          https://docs.microsoft.com/en-us/dotnet/core/tools/csproj#recommendation -->
-    <EnableDefaultProtoBufItems Condition=" '$(EnableDefaultProtoBufItems)' == '' ">false</EnableDefaultProtoBufItems>
+    <EnableDefaultProtobufItems Condition=" '$(EnableDefaultProtobufItems)' == '' ">false</EnableDefaultProtobufItems>
   </PropertyGroup>
 
   <!-- Check configuration sanity before build. -->
@@ -74,14 +75,13 @@
       <!-- Next try OS and CPU resolved by ProtoToolsPlatform. -->
       <Protobuf_ToolsOs Condition=" '$(Protobuf_ToolsOs)' == '' ">$(_Protobuf_ToolsOs)</Protobuf_ToolsOs>
       <Protobuf_ToolsCpu Condition=" '$(Protobuf_ToolsCpu)' == '' ">$(_Protobuf_ToolsCpu)</Protobuf_ToolsCpu>
-      <!-- TODO(kkm): Do not package windows x64 builds (#13098). -->
       <Protobuf_ProtocFullPath Condition=" '$(Protobuf_ProtocFullPath)' == '' and '$(Protobuf_ToolsOs)' == 'windows' "
-           >$(Protobuf_PackagedToolsPath)\$(Protobuf_ToolsOs)_x86\protoc.exe</Protobuf_ProtocFullPath>
+           >$(Protobuf_PackagedToolsPath)\$(Protobuf_ToolsOs)_$(Protobuf_ToolsCpu)\protoc.exe</Protobuf_ProtocFullPath>
       <Protobuf_ProtocFullPath Condition=" '$(Protobuf_ProtocFullPath)' == '' "
            >$(Protobuf_PackagedToolsPath)/$(Protobuf_ToolsOs)_$(Protobuf_ToolsCpu)/protoc</Protobuf_ProtocFullPath>
     </PropertyGroup>
 
-    <Error Condition=" '$(DesignTimeBuild)' != 'true' and '$(PROTOBUF_PROTOC)' == ''
+    <Error Condition=" '$(DisableProtobufDesignTimeBuild)' != 'true' and '$(PROTOBUF_PROTOC)' == ''
                         and ( '$(Protobuf_ToolsOs)' == '' or '$(Protobuf_ToolsCpu)' == '' ) "
       Text="Google.Protobuf.Tools cannot determine host OS and CPU.&#10;Use environment variables PROTOBUF_TOOLS_OS={linux|macosx|windows} and PROTOBUF_TOOLS_CPU={x86|x64} to try the closest match to your system.&#10;You may also set PROTOBUF_PROTOC to specify full path to the host-provided compiler (v3.5+ is required)." />
   </Target>
@@ -94,10 +94,10 @@
   <Target Name="Protobuf_BeforeCompile" />
   <Target Name="Protobuf_AfterCompile" />
 
-  <!-- Main compile sequence. Certain steps are gated by the value $(DesignTimeBuild),
+  <!-- Main compile sequence. Certain steps are gated by the value $(DisableProtobufDesignTimeBuild),
        so the sequence is good for either design time or build time. -->
   <Target Name="Protobuf_Compile"
-          Condition=" '@(ProtoBuf)' != '' "
+          Condition=" '@(Protobuf)' != '' "
           DependsOnTargets=" Protobuf_BeforeCompile;
                              Protobuf_ResolvePlatform;
                              _Protobuf_SelectFiles;
@@ -121,13 +121,13 @@
          to "." for the project's directory, as it is the current when compiling; for the
          files outside of project directory, use each .proto file's directory as the root. -->
     <FindUnderPath Path="$(MSBuildProjectDirectory)"
-                   Files="@(ProtoBuf->WithMetadataValue('ProtoRoot',''))">
+                   Files="@(Protobuf->WithMetadataValue('ProtoRoot',''))">
       <Output TaskParameter="InPath" ItemName="_Protobuf_NoRootInProject"/>
       <Output TaskParameter="OutOfPath" ItemName="_Protobuf_NoRootElsewhere"/>
     </FindUnderPath>
     <ItemGroup>
       <!-- Files with explicit metadata. -->
-      <Protobuf_Compile Include="@(ProtoBuf->HasMetadata('ProtoRoot'))" />
+      <Protobuf_Compile Include="@(Protobuf->HasMetadata('ProtoRoot'))" />
       <!-- In-project files will have ProtoRoot='.'. -->
       <Protobuf_Compile Include="@(_Protobuf_NoRootInProject)">
         <ProtoRoot>.</ProtoRoot>
@@ -155,13 +155,13 @@
   <Target Name="Protobuf_PrepareCompile" Condition=" '@(Protobuf_Compile)' != '' ">
     <!-- Predict expected names. -->
     <ProtoCompilerOutputs Condition=" '$(Language)' == 'C#' "
-                          ProtoBuf="@(Protobuf_Compile)"
+                          Protobuf="@(Protobuf_Compile)"
                           Generator="$(Protobuf_Generator)">
       <Output TaskParameter="PossibleOutputs" ItemName="Protobuf_ExpectedOutputs" />
     </ProtoCompilerOutputs>
     <!-- Read any dependency files from previous compiles. -->
-    <ProtoReadDependencies Condition=" '$(Protobuf_DepFilesPath)' != '' and '$(DesignTimeBuild)' != 'true' "
-                           ProtoBuf="@(Protobuf_Compile)"
+    <ProtoReadDependencies Condition=" '$(Protobuf_DepFilesPath)' != '' and '$(DisableProtobufDesignTimeBuild)' != 'true' "
+                           Protobuf="@(Protobuf_Compile)"
                            ProtoDepDir="$(Protobuf_DepFilesPath)" >
       <Output TaskParameter="Dependencies" ItemName="Protobuf_Dependencies" />
     </ProtoReadDependencies>
@@ -247,7 +247,7 @@
   </Target>
 
   <Target Name="_Protobuf_CoreCompile"
-          Condition=" '$(DesignTimeBuild)' != 'true' "
+          Condition=" '$(DisableProtobufDesignTimeBuild)' != 'true' "
           DependsOnTargets="Protobuf_PrepareCompileOptions;_Protobuf_GatherStaleFiles">
     <!-- Ensure output directories. -->
     <MakeDir Directories="%(_Protobuf_OutOfDateProto.OutputDir)" />
@@ -264,7 +264,7 @@
     <ProtoCompile Condition=" '@(_Protobuf_OutOfDateProto)' != '' "
       ToolExe="$(Protobuf_ProtocFullPath)"
       Generator="$(Protobuf_Generator)"
-      ProtoBuf="%(_Protobuf_OutOfDateProto.Source)"
+      Protobuf="%(_Protobuf_OutOfDateProto.Source)"
       ProtoPath="%(_Protobuf_OutOfDateProto.AdditionalImportDirs);$(Protobuf_StandardImportsPath);%(_Protobuf_OutOfDateProto.ProtoRoot)"
       ProtoDepDir="$(Protobuf_DepFilesPath)"
       OutputDir="%(_Protobuf_OutOfDateProto.OutputDir)"
@@ -290,7 +290,7 @@
        compile though). You can empty this collection in your Before targets to do nothing.
        The target is not executed if the proto compiler is not executed. -->
   <Target Name="Protobuf_ReconcileOutputs"
-          Condition=" '$(DesignTimeBuild)' != 'true' ">
+          Condition=" '$(DisableProtobufDesignTimeBuild)' != 'true' ">
     <!-- Warn about unexpected/missing files outside object file directory only.
          This should have happened because build was incorrectly customized. -->
     <FindUnderPath Path="$(BaseIntermediateOutputPath)" Files="@(Protobuf_ExpectedNotGenerated)">
@@ -327,7 +327,7 @@
 
   <!-- Main cleanup sequence. -->
   <Target Name="Protobuf_Clean"
-          Condition=" '@(ProtoBuf)' != '' "
+          Condition=" '@(Protobuf)' != '' "
           DependsOnTargets=" Protobuf_BeforeClean;
                              Protobuf_PrepareClean;
                              _Protobuf_CoreClean;
@@ -354,7 +354,7 @@
   <Target Name="Protobuf_PrepareClean" Condition=" '@(Protobuf)' != '' ">
     <!-- Predict expected names. -->
     <ProtoCompilerOutputs Condition=" '$(Language)' == 'C#' "
-                          ProtoBuf="@(Protobuf)"
+                          Protobuf="@(Protobuf)"
                           Generator="$(Protobuf_Generator)">
       <Output TaskParameter="PossibleOutputs" ItemName="Protobuf_ExpectedOutputs" />
     </ProtoCompilerOutputs>
@@ -376,9 +376,9 @@
        * The Pack target includes .proto files into the source package.  -->
   <Target Name="_Protobuf_SourceFilesProjectOutputGroup"
           BeforeTargets="SourceFilesProjectOutputGroup"
-          Condition=" '@(ProtoBuf)' != '' " >
+          Condition=" '@(Protobuf)' != '' " >
     <ItemGroup>
-      <SourceFilesProjectOutputGroupOutput Include="@(ProtoBuf->'%(FullPath)')" />
+      <SourceFilesProjectOutputGroupOutput Include="@(Protobuf->'%(FullPath)')" />
     </ItemGroup>
   </Target>
 </Project>

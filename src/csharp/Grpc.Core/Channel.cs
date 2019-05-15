@@ -59,7 +59,7 @@ namespace Grpc.Core
 
         /// <summary>
         /// Creates a channel that connects to a specific host.
-        /// Port will default to 80 for an unsecure channel and to 443 for a secure channel.
+        /// Port will default to 80 for an unsecure channel or to 443 for a secure channel.
         /// </summary>
         /// <param name="target">Target of the channel.</param>
         /// <param name="credentials">Credentials to secure the channel.</param>
@@ -112,7 +112,7 @@ namespace Grpc.Core
 
         /// <summary>
         /// Gets current connectivity state of this channel.
-        /// After channel is has been shutdown, <c>ChannelState.Shutdown</c> will be returned.
+        /// After channel has been shutdown, <c>ChannelState.Shutdown</c> will be returned.
         /// </summary>
         public ChannelState State
         {
@@ -132,7 +132,7 @@ namespace Grpc.Core
         /// <summary>
         /// Returned tasks completes once channel state has become different from 
         /// given lastObservedState. 
-        /// If deadline is reached or and error occurs, returned task is cancelled.
+        /// If deadline is reached or an error occurs, returned task is cancelled.
         /// </summary>
         public async Task WaitForStateChangedAsync(ChannelState lastObservedState, DateTime? deadline = null)
         {

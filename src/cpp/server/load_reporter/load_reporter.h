@@ -29,6 +29,7 @@
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config.h>
 
+#include "src/core/lib/gprpp/sync.h"
 #include "src/cpp/server/load_reporter/load_data_store.h"
 #include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
 
@@ -212,11 +213,11 @@ class LoadReporter {
 
   std::atomic<int64_t> next_lb_id_{0};
   const std::chrono::seconds feedback_sample_window_seconds_;
-  std::mutex feedback_mu_;
+  grpc_core::Mutex feedback_mu_;
   std::deque<LoadBalancingFeedbackRecord> feedback_records_;
   // TODO(juanlishen): Lock in finer grain. Locking the whole store may be
   // too expensive.
-  std::mutex store_mu_;
+  grpc_core::Mutex store_mu_;
   LoadDataStore load_data_store_;
   std::unique_ptr<CensusViewProvider> census_view_provider_;
   std::unique_ptr<CpuStatsProvider> cpu_stats_provider_;

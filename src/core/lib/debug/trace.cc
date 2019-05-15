@@ -21,6 +21,7 @@
 #include "src/core/lib/debug/trace.h"
 
 #include <string.h>
+#include <type_traits>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -79,6 +80,8 @@ void TraceFlagList::LogAllTracers() {
 
 // Flags register themselves on the list during construction
 TraceFlag::TraceFlag(bool default_enabled, const char* name) : name_(name) {
+  static_assert(std::is_trivially_destructible<TraceFlag>::value,
+                "TraceFlag needs to be trivially destructible.");
   set_enabled(default_enabled);
   TraceFlagList::Add(this);
 }

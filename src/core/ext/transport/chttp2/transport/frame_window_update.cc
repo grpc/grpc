@@ -69,11 +69,11 @@ grpc_error* grpc_chttp2_window_update_parser_begin_frame(
 grpc_error* grpc_chttp2_window_update_parser_parse(void* parser,
                                                    grpc_chttp2_transport* t,
                                                    grpc_chttp2_stream* s,
-                                                   grpc_slice slice,
+                                                   const grpc_slice& slice,
                                                    int is_last) {
-  uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
-  uint8_t* const end = GRPC_SLICE_END_PTR(slice);
-  uint8_t* cur = beg;
+  const uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
+  const uint8_t* const end = GRPC_SLICE_END_PTR(slice);
+  const uint8_t* cur = beg;
   grpc_chttp2_window_update_parser* p =
       static_cast<grpc_chttp2_window_update_parser*>(parser);
 
@@ -88,8 +88,9 @@ grpc_error* grpc_chttp2_window_update_parser_parse(void* parser,
   }
 
   if (p->byte == 4) {
-    uint32_t received_update = p->amount;
-    if (received_update == 0 || (received_update & 0x80000000u)) {
+    // top bit is reserved and must be ignored.
+    uint32_t received_update = p->amount & 0x7fffffffu;
+    if (received_update == 0) {
       char* msg;
       gpr_asprintf(&msg, "invalid window update bytes: %d", p->amount);
       grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);

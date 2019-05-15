@@ -41,12 +41,12 @@ typedef struct connected_channel_channel_data {
 typedef struct {
   grpc_closure closure;
   grpc_closure* original_closure;
-  grpc_call_combiner* call_combiner;
+  grpc_core::CallCombiner* call_combiner;
   const char* reason;
 } callback_state;
 
 typedef struct connected_channel_call_data {
-  grpc_call_combiner* call_combiner;
+  grpc_core::CallCombiner* call_combiner;
   // Closures used for returning results on the call combiner.
   callback_state on_complete[6];  // Max number of pending batches.
   callback_state recv_initial_metadata_ready;

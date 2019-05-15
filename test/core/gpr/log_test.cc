@@ -53,7 +53,7 @@ static void test_should_not_log(gpr_log_func_args* args) { GPR_ASSERT(false); }
   gpr_log(SEVERITY, "hello %d %d %d", 1, 2, 3);
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   /* test logging at various verbosity levels */
   gpr_log(GPR_DEBUG, "%s", "hello world");
   gpr_log(GPR_INFO, "%s", "hello world");

@@ -39,7 +39,7 @@ void test_unknown_scheme_target(void) {
   GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));
   grpc_core::ExecCtx exec_ctx;
   GRPC_CHANNEL_INTERNAL_UNREF(chan, "test");
-  grpc_channel_credentials_unref(creds);
+  creds->Unref();
 }
 
 void test_security_connector_already_in_arg(void) {
@@ -70,7 +70,7 @@ void test_null_creds(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_security_connector_already_in_arg();
   test_null_creds();

@@ -95,6 +95,17 @@ static deque<string> get_workers(const string& env_name) {
   return out;
 }
 
+std::string GetCredType(
+    const std::string& worker_addr,
+    const std::map<std::string, std::string>& per_worker_credential_types,
+    const std::string& credential_type) {
+  auto it = per_worker_credential_types.find(worker_addr);
+  if (it != per_worker_credential_types.end()) {
+    return it->second;
+  }
+  return credential_type;
+}
+
 // helpers for postprocess_scenario_result
 static double WallTime(const ClientStats& s) { return s.time_elapsed(); }
 static double SystemTime(const ClientStats& s) { return s.time_system(); }
@@ -198,8 +209,9 @@ std::unique_ptr<ScenarioResult> RunScenario(
     const ServerConfig& initial_server_config, size_t num_servers,
     int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count,
     const grpc::string& qps_server_target_override,
-    const grpc::string& credential_type, bool run_inproc,
-    int32_t median_latency_collection_interval_millis) {
+    const grpc::string& credential_type,
+    const std::map<std::string, std::string>& per_worker_credential_types,
+    bool run_inproc, int32_t median_latency_collection_interval_millis) {
   if (run_inproc) {
     g_inproc_servers = new std::vector<grpc::testing::Server*>;
   }
@@ -276,9 +288,11 @@ std::unique_ptr<ScenarioResult> RunScenario(
     gpr_log(GPR_INFO, "Starting server on %s (worker #%" PRIuPTR ")",
             workers[i].c_str(), i);
     if (!run_inproc) {
-      servers[i].stub = WorkerService::NewStub(CreateChannel(
+      servers[i].stub = WorkerService::NewStub(grpc::CreateChannel(
           workers[i], GetCredentialsProvider()->GetChannelCredentials(
-                          credential_type, &channel_args)));
+                          GetCredType(workers[i], per_worker_credential_types,
+                                      credential_type),
+                          &channel_args)));
     } else {
       servers[i].stub = WorkerService::NewStub(
           local_workers[i]->InProcessChannel(channel_args));
@@ -335,9 +349,11 @@ std::unique_ptr<ScenarioResult> RunScenario(
     gpr_log(GPR_INFO, "Starting client on %s (worker #%" PRIuPTR ")",
             worker.c_str(), i + num_servers);
     if (!run_inproc) {
-      clients[i].stub = WorkerService::NewStub(
-          CreateChannel(worker, GetCredentialsProvider()->GetChannelCredentials(
-                                    credential_type, &channel_args)));
+      clients[i].stub = WorkerService::NewStub(grpc::CreateChannel(
+          worker,
+          GetCredentialsProvider()->GetChannelCredentials(
+              GetCredType(worker, per_worker_credential_types, credential_type),
+              &channel_args)));
     } else {
       clients[i].stub = WorkerService::NewStub(
           local_workers[i + num_servers]->InProcessChannel(channel_args));
@@ -529,7 +545,9 @@ std::unique_ptr<ScenarioResult> RunScenario(
   return result;
 }
 
-bool RunQuit(const grpc::string& credential_type) {
+bool RunQuit(
+    const grpc::string& credential_type,
+    const std::map<std::string, std::string>& per_worker_credential_types) {
   // Get client, server lists
   bool result = true;
   auto workers = get_workers("QPS_WORKERS");
@@ -539,9 +557,11 @@ bool RunQuit(const grpc::string& credential_type) {
 
   ChannelArguments channel_args;
   for (size_t i = 0; i < workers.size(); i++) {
-    auto stub = WorkerService::NewStub(CreateChannel(
+    auto stub = WorkerService::NewStub(grpc::CreateChannel(
         workers[i], GetCredentialsProvider()->GetChannelCredentials(
-                        credential_type, &channel_args)));
+                        GetCredType(workers[i], per_worker_credential_types,
+                                    credential_type),
+                        &channel_args)));
     Void dummy;
     grpc::ClientContext ctx;
     ctx.set_wait_for_ready(true);

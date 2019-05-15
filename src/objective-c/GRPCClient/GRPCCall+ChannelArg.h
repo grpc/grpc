@@ -19,52 +19,20 @@
 
 #include <AvailabilityMacros.h>
 
-typedef NS_ENUM(NSInteger, GRPCCompressAlgorithm) {
-  GRPCCompressNone,
-  GRPCCompressDeflate,
-  GRPCCompressGzip,
-};
-
-/**
- * Methods to configure GRPC channel options.
- */
+// Deprecated interface. Please use GRPCCallOptions instead.
 @interface GRPCCall (ChannelArg)
 
-/**
- * Use the provided @c userAgentPrefix at the beginning of the HTTP User Agent string for all calls
- * to the specified @c host.
- */
 + (void)setUserAgentPrefix:(nonnull NSString *)userAgentPrefix forHost:(nonnull NSString *)host;
-
-/** The default response size limit is 4MB. Set this to override that default. */
 + (void)setResponseSizeLimit:(NSUInteger)limit forHost:(nonnull NSString *)host;
-
 + (void)closeOpenConnections DEPRECATED_MSG_ATTRIBUTE(
     "The API for this feature is experimental, "
     "and might be removed or modified at any "
     "time.");
-
 + (void)setDefaultCompressMethod:(GRPCCompressAlgorithm)algorithm forhost:(nonnull NSString *)host;
-
-/** Enable keepalive and configure keepalive parameters. A user should call this function once to
- * enable keepalive for a particular host. gRPC client sends a ping after every \a interval ms to
- * check if the transport is still alive. After waiting for \a timeout ms, if the client does not
- * receive the ping ack, it closes the transport; all pending calls to this host will fail with
- * error GRPC_STATUS_INTERNAL with error information "keepalive watchdog timeout". */
 + (void)setKeepaliveWithInterval:(int)interval
                          timeout:(int)timeout
                          forHost:(nonnull NSString *)host;
-
-/** Enable/Disable automatic retry of gRPC calls on the channel. If automatic retry is enabled, the
- * retry is controlled by server's service config. If automatic retry is disabled, failed calls are
- * immediately returned to the application layer. */
 + (void)enableRetry:(BOOL)enabled forHost:(nonnull NSString *)host;
-
-/** Set channel connection timeout and backoff parameters. All parameters are positive integers in
- * milliseconds. Set a parameter to 0 to make gRPC use default value for that parameter.
- *
- * Refer to gRPC's doc at https://github.com/grpc/grpc/blob/master/doc/connection-backoff.md for the
- * details of each parameter. */
 + (void)setMinConnectTimeout:(unsigned int)timeout
               initialBackoff:(unsigned int)initialBackoff
                   maxBackoff:(unsigned int)maxBackoff

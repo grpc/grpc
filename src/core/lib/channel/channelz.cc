@@ -203,33 +203,34 @@ ServerNode::ServerNode(grpc_server* server, size_t channel_tracer_max_nodes)
 
 ServerNode::~ServerNode() {}
 
-char* ServerNode::RenderServerSockets(intptr_t start_socket_id) {
+char* ServerNode::RenderServerSockets(intptr_t start_socket_id,
+                                      intptr_t max_results) {
+  // if user does not set max_results, we choose 500.
+  size_t pagination_limit = max_results == 0 ? 500 : max_results;
   grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
   grpc_json* json = top_level_json;
   grpc_json* json_iterator = nullptr;
-  ChildRefsList socket_refs;
-  // uuids index into entities one-off (idx 0 is really uuid 1, since 0 is
-  // reserved). However, we want to support requests coming in with
-  // start_server_id=0, which signifies "give me everything."
-  size_t start_idx = start_socket_id == 0 ? 0 : start_socket_id - 1;
-  grpc_server_populate_server_sockets(server_, &socket_refs, start_idx);
+  ChildSocketsList socket_refs;
+  grpc_server_populate_server_sockets(server_, &socket_refs, start_socket_id);
+  // declared early so it can be used outside of the loop.
+  size_t i = 0;
   if (!socket_refs.empty()) {
     // create list of socket refs
     grpc_json* array_parent = grpc_json_create_child(
         nullptr, json, "socketRef", nullptr, GRPC_JSON_ARRAY, false);
-    for (size_t i = 0; i < socket_refs.size(); ++i) {
-      json_iterator =
-          grpc_json_create_child(json_iterator, array_parent, nullptr, nullptr,
-                                 GRPC_JSON_OBJECT, false);
-      grpc_json_add_number_string_child(json_iterator, nullptr, "socketId",
-                                        socket_refs[i]);
+    for (i = 0; i < GPR_MIN(socket_refs.size(), pagination_limit); ++i) {
+      grpc_json* socket_ref_json = grpc_json_create_child(
+          nullptr, array_parent, nullptr, nullptr, GRPC_JSON_OBJECT, false);
+      json_iterator = grpc_json_add_number_string_child(
+          socket_ref_json, nullptr, "socketId", socket_refs[i]->uuid());
+      grpc_json_create_child(json_iterator, socket_ref_json, "name",
+                             socket_refs[i]->remote(), GRPC_JSON_STRING, false);
     }
   }
-  // For now we do not have any pagination rules. In the future we could
-  // pick a constant for max_channels_sent for a GetServers request.
-  // Tracking: https://github.com/grpc/grpc/issues/16019.
-  json_iterator = grpc_json_create_child(nullptr, json, "end", nullptr,
-                                         GRPC_JSON_TRUE, false);
+  if (i == socket_refs.size()) {
+    json_iterator = grpc_json_create_child(nullptr, json, "end", nullptr,
+                                           GRPC_JSON_TRUE, false);
+  }
   char* json_str = grpc_json_dump_to_string(top_level_json, 0);
   grpc_json_destroy(top_level_json);
   return json_str;
@@ -384,52 +385,65 @@ grpc_json* SocketNode::RenderJson() {
   json = data;
   json_iterator = nullptr;
   gpr_timespec ts;
-  if (streams_started_ != 0) {
+  gpr_atm streams_started = gpr_atm_no_barrier_load(&streams_started_);
+  if (streams_started != 0) {
     json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "streamsStarted", streams_started_);
-    if (last_local_stream_created_millis_ != 0) {
-      ts = grpc_millis_to_timespec(last_local_stream_created_millis_,
+        json, json_iterator, "streamsStarted", streams_started);
+    gpr_atm last_local_stream_created_millis =
+        gpr_atm_no_barrier_load(&last_local_stream_created_millis_);
+    if (last_local_stream_created_millis != 0) {
+      ts = grpc_millis_to_timespec(last_local_stream_created_millis,
                                    GPR_CLOCK_REALTIME);
       json_iterator = grpc_json_create_child(
           json_iterator, json, "lastLocalStreamCreatedTimestamp",
           gpr_format_timespec(ts), GRPC_JSON_STRING, true);
     }
-    if (last_remote_stream_created_millis_ != 0) {
-      ts = grpc_millis_to_timespec(last_remote_stream_created_millis_,
+    gpr_atm last_remote_stream_created_millis =
+        gpr_atm_no_barrier_load(&last_remote_stream_created_millis_);
+    if (last_remote_stream_created_millis != 0) {
+      ts = grpc_millis_to_timespec(last_remote_stream_created_millis,
                                    GPR_CLOCK_REALTIME);
       json_iterator = grpc_json_create_child(
           json_iterator, json, "lastRemoteStreamCreatedTimestamp",
           gpr_format_timespec(ts), GRPC_JSON_STRING, true);
     }
   }
-  if (streams_succeeded_ != 0) {
+  gpr_atm streams_succeeded = gpr_atm_no_barrier_load(&streams_succeeded_);
+  if (streams_succeeded != 0) {
     json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "streamsSucceeded", streams_succeeded_);
+        json, json_iterator, "streamsSucceeded", streams_succeeded);
   }
-  if (streams_failed_) {
+  gpr_atm streams_failed = gpr_atm_no_barrier_load(&streams_failed_);
+  if (streams_failed) {
     json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "streamsFailed", streams_failed_);
+        json, json_iterator, "streamsFailed", streams_failed);
   }
-  if (messages_sent_ != 0) {
+  gpr_atm messages_sent = gpr_atm_no_barrier_load(&messages_sent_);
+  if (messages_sent != 0) {
     json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "messagesSent", messages_sent_);
-    ts = grpc_millis_to_timespec(last_message_sent_millis_, GPR_CLOCK_REALTIME);
+        json, json_iterator, "messagesSent", messages_sent);
+    ts = grpc_millis_to_timespec(
+        gpr_atm_no_barrier_load(&last_message_sent_millis_),
+        GPR_CLOCK_REALTIME);
     json_iterator =
         grpc_json_create_child(json_iterator, json, "lastMessageSentTimestamp",
                                gpr_format_timespec(ts), GRPC_JSON_STRING, true);
   }
-  if (messages_received_ != 0) {
+  gpr_atm messages_received = gpr_atm_no_barrier_load(&messages_received_);
+  if (messages_received != 0) {
     json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "messagesReceived", messages_received_);
-    ts = grpc_millis_to_timespec(last_message_received_millis_,
-                                 GPR_CLOCK_REALTIME);
+        json, json_iterator, "messagesReceived", messages_received);
+    ts = grpc_millis_to_timespec(
+        gpr_atm_no_barrier_load(&last_message_received_millis_),
+        GPR_CLOCK_REALTIME);
     json_iterator = grpc_json_create_child(
         json_iterator, json, "lastMessageReceivedTimestamp",
         gpr_format_timespec(ts), GRPC_JSON_STRING, true);
   }
-  if (keepalives_sent_ != 0) {
+  gpr_atm keepalives_sent = gpr_atm_no_barrier_load(&keepalives_sent_);
+  if (keepalives_sent != 0) {
     json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "keepAlivesSent", keepalives_sent_);
+        json, json_iterator, "keepAlivesSent", keepalives_sent);
   }
   return top_level_json;
 }

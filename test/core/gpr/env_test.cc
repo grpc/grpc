@@ -42,8 +42,22 @@ static void test_setenv_getenv(void) {
   gpr_free(retrieved_value);
 }
 
+static void test_unsetenv(void) {
+  const char* name = "FOO";
+  const char* value = "BAR";
+  char* retrieved_value;
+
+  LOG_TEST_NAME("test_unsetenv");
+
+  gpr_setenv(name, value);
+  gpr_unsetenv(name);
+  retrieved_value = gpr_getenv(name);
+  GPR_ASSERT(retrieved_value == nullptr);
+}
+
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   test_setenv_getenv();
+  test_unsetenv();
   return 0;
 }

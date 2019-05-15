@@ -55,6 +55,7 @@ grpc_error* grpc_chttp2_settings_parser_begin_frame(
 grpc_error* grpc_chttp2_settings_parser_parse(void* parser,
                                               grpc_chttp2_transport* t,
                                               grpc_chttp2_stream* s,
-                                              grpc_slice slice, int is_last);
+                                              const grpc_slice& slice,
+                                              int is_last);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_SETTINGS_H */

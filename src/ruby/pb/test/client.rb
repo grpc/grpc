@@ -111,10 +111,13 @@ def create_stub(opts)
   if opts.secure
     creds = ssl_creds(opts.use_test_ca)
     stub_opts = {
-      channel_args: {
-        GRPC::Core::Channel::SSL_TARGET => opts.server_host_override
-      }
+      channel_args: {}
     }
+    unless opts.server_host_override.empty?
+      stub_opts[:channel_args].merge!({
+          GRPC::Core::Channel::SSL_TARGET => opts.server_host_override
+      })
+    end
 
     # Add service account creds if specified
     wants_creds = %w(all compute_engine_creds service_account_creds)
@@ -603,7 +606,7 @@ class NamedTests
     if not op.metadata.has_key?(initial_metadata_key)
       fail AssertionError, "Expected initial metadata. None received"
     elsif op.metadata[initial_metadata_key] != metadata[initial_metadata_key]
-      fail AssertionError, 
+      fail AssertionError,
              "Expected initial metadata: #{metadata[initial_metadata_key]}. "\
              "Received: #{op.metadata[initial_metadata_key]}"
     end
@@ -611,7 +614,7 @@ class NamedTests
       fail AssertionError, "Expected trailing metadata. None received"
     elsif op.trailing_metadata[trailing_metadata_key] !=
           metadata[trailing_metadata_key]
-      fail AssertionError, 
+      fail AssertionError,
             "Expected trailing metadata: #{metadata[trailing_metadata_key]}. "\
             "Received: #{op.trailing_metadata[trailing_metadata_key]}"
     end
@@ -639,7 +642,7 @@ class NamedTests
       fail AssertionError, "Expected trailing metadata. None received"
     elsif duplex_op.trailing_metadata[trailing_metadata_key] !=
           metadata[trailing_metadata_key]
-      fail AssertionError, 
+      fail AssertionError,
           "Expected trailing metadata: #{metadata[trailing_metadata_key]}. "\
           "Received: #{duplex_op.trailing_metadata[trailing_metadata_key]}"
     end
@@ -710,7 +713,7 @@ Args = Struct.new(:default_service_account, :server_host, :server_host_override,
 # validates the command line options, returning them as a Hash.
 def parse_args
   args = Args.new
-  args.server_host_override = 'foo.test.google.fr'
+  args.server_host_override = ''
   OptionParser.new do |opts|
     opts.on('--oauth_scope scope',
             'Scope for OAuth tokens') { |v| args['oauth_scope'] = v }

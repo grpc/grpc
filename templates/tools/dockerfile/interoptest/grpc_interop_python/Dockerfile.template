@@ -14,15 +14,7 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  FROM debian:jessie
-  
-  <%include file="../../apt_get_basic.include"/>
-  <%include file="../../python_deps.include"/>
-  # Install pip and virtualenv for Python 3.4
-  RUN curl https://bootstrap.pypa.io/get-pip.py | python3.4
-  RUN python3.4 -m pip install virtualenv
+  <%include file="../../python_stretch.include"/>
 
-  <%include file="../../run_tests_addons.include"/>
-  # Define the default command.
-  CMD ["bash"]
-  
+  RUN apt-get update && apt-get -t testing install -y python3.7 python3-all-dev
+  RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7

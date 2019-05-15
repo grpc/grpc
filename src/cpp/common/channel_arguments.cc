@@ -27,11 +27,11 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 
-namespace grpc {
+namespace grpc_impl {
 
 ChannelArguments::ChannelArguments() {
   // This will be ignored if used on the server side.
-  SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, "grpc-c++/" + Version());
+  SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, "grpc-c++/" + grpc::Version());
 }
 
 ChannelArguments::ChannelArguments(const ChannelArguments& other)
@@ -106,7 +106,9 @@ void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
   }
 
   if (!replaced) {
+    strings_.push_back(grpc::string(mutator_arg.key));
     args_.push_back(mutator_arg);
+    args_.back().key = const_cast<char*>(strings_.back().c_str());
   }
 }
 
@@ -141,7 +143,7 @@ void ChannelArguments::SetUserAgentPrefix(
 }
 
 void ChannelArguments::SetResourceQuota(
-    const grpc::ResourceQuota& resource_quota) {
+    const grpc_impl::ResourceQuota& resource_quota) {
   SetPointerWithVtable(GRPC_ARG_RESOURCE_QUOTA,
                        resource_quota.c_resource_quota(),
                        grpc_resource_quota_arg_vtable());
@@ -213,4 +215,4 @@ void ChannelArguments::SetChannelArgs(grpc_channel_args* channel_args) const {
   }
 }
 
-}  // namespace grpc
+}  // namespace grpc_impl

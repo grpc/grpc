@@ -68,7 +68,7 @@ try:
         'grpcio-tools=={version}'.format(version=grpc_version.VERSION),)
     COMMAND_CLASS = {
         # Run preprocess from the repository *before* doing any packaging!
-        'preprocess': _health_commands.CopyProtoModules,
+        'preprocess': _health_commands.Preprocess,
         'build_package_protos': _health_commands.BuildPackageProtos,
     }
 except ImportError:

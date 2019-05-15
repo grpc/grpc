@@ -202,7 +202,7 @@ module GRPC
     # forcing an abrupt exit to each thread.
     #
     # * connect_md_proc:
-    # when non-nil is a proc for determining metadata to to send back the client
+    # when non-nil is a proc for determining metadata to send back the client
     # on receiving an invocation req.  The proc signature is:
     #   {key: val, ..} func(method_name, {key: val, ...})
     #
@@ -217,7 +217,7 @@ module GRPC
     def initialize(pool_size: DEFAULT_POOL_SIZE,
                    max_waiting_requests: DEFAULT_MAX_WAITING_REQUESTS,
                    poll_period: DEFAULT_POLL_PERIOD,
-                   pool_keep_alive: GRPC::RpcServer::DEFAULT_POOL_SIZE,
+                   pool_keep_alive: Pool::DEFAULT_KEEP_ALIVE,
                    connect_md_proc: nil,
                    server_args: {},
                    interceptors: [])
@@ -240,6 +240,13 @@ module GRPC
     # the call has no impact if the server is already stopped, otherwise
     # server's current call loop is it's last.
     def stop
+      # if called via run_till_terminated_or_interrupted,
+      #   signal stop_server_thread and dont do anything
+      if @stop_server.nil? == false && @stop_server == false
+        @stop_server = true
+        @stop_server_cv.broadcast
+        return
+      end
       @run_mutex.synchronize do
         fail 'Cannot stop before starting' if @running_state == :not_started
         return if @running_state != :running
@@ -353,6 +360,60 @@ module GRPC
     end
 
     alias_method :run_till_terminated, :run
+
+    # runs the server with signal handlers
+    # @param signals
+    #     List of String, Integer or both representing signals that the user
+    #     would like to send to the server for graceful shutdown
+    # @param wait_interval (optional)
+    #     Integer seconds that user would like stop_server_thread to poll
+    #     stop_server
+    def run_till_terminated_or_interrupted(signals, wait_interval = 60)
+      @stop_server = false
+      @stop_server_mu = Mutex.new
+      @stop_server_cv = ConditionVariable.new
+
+      @stop_server_thread = Thread.new do
+        loop do
+          break if @stop_server
+          @stop_server_mu.synchronize do
+            @stop_server_cv.wait(@stop_server_mu, wait_interval)
+          end
+        end
+
+        # stop is surrounded by mutex, should handle multiple calls to stop
+        #   correctly
+        stop
+      end
+
+      valid_signals = Signal.list
+
+      # register signal handlers
+      signals.each do |sig|
+        # input validation
+        if sig.class == String
+          sig.upcase!
+          if sig.start_with?('SIG')
+            # cut out the SIG prefix to see if valid signal
+            sig = sig[3..-1]
+          end
+        end
+
+        # register signal traps for all valid signals
+        if valid_signals.value?(sig) || valid_signals.key?(sig)
+          Signal.trap(sig) do
+            @stop_server = true
+            @stop_server_cv.broadcast
+          end
+        else
+          fail "#{sig} not a valid signal"
+        end
+      end
+
+      run
+
+      @stop_server_thread.join
+    end
 
     # Sends RESOURCE_EXHAUSTED if there are too many unprocessed jobs
     def available?(an_rpc)

@@ -34,12 +34,12 @@ def _args():
         description='gRPC Python stress test client')
     parser.add_argument(
         '--server_addresses',
-        help='comma seperated list of hostname:port to run servers on',
+        help='comma separated list of hostname:port to run servers on',
         default='localhost:8080',
         type=str)
     parser.add_argument(
         '--test_cases',
-        help='comma seperated list of testcase:weighting of tests to run',
+        help='comma separated list of testcase:weighting of tests to run',
         default='large_unary:100',
         type=str)
     parser.add_argument(
@@ -71,7 +71,6 @@ def _args():
         '--use_tls', help='Whether to use TLS', default=False, type=bool)
     parser.add_argument(
         '--server_host_override',
-        default="foo.test.google.fr",
         help='the server host to which to claim to connect',
         type=str)
     return parser.parse_args()
@@ -132,9 +131,9 @@ def run_test(args):
     server.start()
 
     for test_server_target in test_server_targets:
-        for _ in xrange(args.num_channels_per_server):
+        for _ in range(args.num_channels_per_server):
             channel = _get_channel(test_server_target, args)
-            for _ in xrange(args.num_stubs_per_channel):
+            for _ in range(args.num_stubs_per_channel):
                 stub = test_pb2_grpc.TestServiceStub(channel)
                 runner = test_runner.TestRunner(stub, test_cases, hist,
                                                 exception_queue, stop_event)

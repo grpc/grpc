@@ -50,11 +50,11 @@
     <Reference Include="System.Interactive.Async">
       <HintPath>..\packages\System.Interactive.Async.3.1.1\lib\netstandard1.3\System.Interactive.Async.dll</HintPath>
     </Reference>
-    <Reference Include="Grpc.Core">
-      <HintPath>..\packages\Grpc.Core.1.15.0-dev\lib\netstandard1.5\Grpc.Core.dll</HintPath>
-    </Reference>
     <Reference Include="Google.Protobuf">
       <HintPath>..\packages\Google.Protobuf.3.6.0\lib\netstandard1.0\Google.Protobuf.dll</HintPath>
+    </Reference>
+    <Reference Include="Grpc.Core">
+      <HintPath>..\packages\Grpc.Core.1.18.0\lib\netstandard1.5\Grpc.Core.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -79,5 +79,5 @@
   </ItemGroup>
   <Import Project="..\HelloworldXamarin\HelloworldXamarin.projitems" Label="Shared" Condition="Exists('..\HelloworldXamarin\HelloworldXamarin.projitems')" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
-  <Import Project="..\packages\Grpc.Core.1.15.0-dev\build\MonoAndroid\Grpc.Core.targets" Condition="Exists('..\packages\Grpc.Core.1.15.0-dev\build\MonoAndroid\Grpc.Core.targets')" />
+  <Import Project="..\packages\Grpc.Core.1.18.0\build\MonoAndroid10\Grpc.Core.targets" Condition="Exists('..\packages\Grpc.Core.1.18.0\build\MonoAndroid10\Grpc.Core.targets')" />
 </Project>

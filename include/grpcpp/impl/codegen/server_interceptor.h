@@ -23,6 +23,7 @@
 #include <vector>
 
 #include <grpcpp/impl/codegen/interceptor.h>
+#include <grpcpp/impl/codegen/rpc_method.h>
 #include <grpcpp/impl/codegen/string_ref.h>
 
 namespace grpc {
@@ -36,27 +37,66 @@ class InterceptorBatchMethodsImpl;
 namespace experimental {
 class ServerRpcInfo;
 
+// A factory interface for creation of server interceptors. A vector of
+// factories can be provided to ServerBuilder which will be used to create a new
+// vector of server interceptors per RPC. Server interceptor authors should
+// create a subclass of ServerInterceptorFactorInterface which creates objects
+// of their interceptors.
 class ServerInterceptorFactoryInterface {
  public:
   virtual ~ServerInterceptorFactoryInterface() {}
+  // Returns a pointer to an Interceptor object on successful creation, nullptr
+  // otherwise. If nullptr is returned, this server interceptor factory is
+  // ignored for the purposes of that RPC.
   virtual Interceptor* CreateServerInterceptor(ServerRpcInfo* info) = 0;
 };
 
+/// ServerRpcInfo represents the state of a particular RPC as it
+/// appears to an interceptor. It is created and owned by the library and
+/// passed to the CreateServerInterceptor method of the application's
+/// ServerInterceptorFactoryInterface implementation
 class ServerRpcInfo {
  public:
-  ~ServerRpcInfo(){};
+  /// Type categorizes RPCs by unary or streaming type
+  enum class Type { UNARY, CLIENT_STREAMING, SERVER_STREAMING, BIDI_STREAMING };
 
+  ~ServerRpcInfo() {}
+
+  // Delete all copy and move constructors and assignments
   ServerRpcInfo(const ServerRpcInfo&) = delete;
-  ServerRpcInfo(ServerRpcInfo&&) = default;
-  ServerRpcInfo& operator=(ServerRpcInfo&&) = default;
+  ServerRpcInfo& operator=(const ServerRpcInfo&) = delete;
+  ServerRpcInfo(ServerRpcInfo&&) = delete;
+  ServerRpcInfo& operator=(ServerRpcInfo&&) = delete;
 
   // Getter methods
-  const char* method() { return method_; }
+
+  /// Return the fully-specified method name
+  const char* method() const { return method_; }
+
+  /// Return the type of the RPC (unary or a streaming flavor)
+  Type type() const { return type_; }
+
+  /// Return a pointer to the underlying ServerContext structure associated
+  /// with the RPC to support features that apply to it
   grpc::ServerContext* server_context() { return ctx_; }
 
  private:
-  ServerRpcInfo(grpc::ServerContext* ctx, const char* method)
-      : ctx_(ctx), method_(method) {
+  static_assert(Type::UNARY ==
+                    static_cast<Type>(internal::RpcMethod::NORMAL_RPC),
+                "violated expectation about Type enum");
+  static_assert(Type::CLIENT_STREAMING ==
+                    static_cast<Type>(internal::RpcMethod::CLIENT_STREAMING),
+                "violated expectation about Type enum");
+  static_assert(Type::SERVER_STREAMING ==
+                    static_cast<Type>(internal::RpcMethod::SERVER_STREAMING),
+                "violated expectation about Type enum");
+  static_assert(Type::BIDI_STREAMING ==
+                    static_cast<Type>(internal::RpcMethod::BIDI_STREAMING),
+                "violated expectation about Type enum");
+
+  ServerRpcInfo(grpc::ServerContext* ctx, const char* method,
+                internal::RpcMethod::RpcType type)
+      : ctx_(ctx), method_(method), type_(static_cast<Type>(type)) {
     ref_.store(1);
   }
 
@@ -72,8 +112,11 @@ class ServerRpcInfo {
           std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>&
           creators) {
     for (const auto& creator : creators) {
-      interceptors_.push_back(std::unique_ptr<experimental::Interceptor>(
-          creator->CreateServerInterceptor(this)));
+      auto* interceptor = creator->CreateServerInterceptor(this);
+      if (interceptor != nullptr) {
+        interceptors_.push_back(
+            std::unique_ptr<experimental::Interceptor>(interceptor));
+      }
     }
   }
 
@@ -86,6 +129,7 @@ class ServerRpcInfo {
 
   grpc::ServerContext* ctx_ = nullptr;
   const char* method_ = nullptr;
+  const Type type_;
   std::atomic_int ref_;
   std::vector<std::unique_ptr<experimental::Interceptor>> interceptors_;
 

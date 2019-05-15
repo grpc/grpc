@@ -20,7 +20,7 @@
 
 #import <GRPCClient/GRPCCall.h>
 
-#import "src/objective-c/GRPCClient/private/NSError+GRPC.h"
+#import "../../GRPCClient/private/NSError+GRPC.h"
 
 @interface UnitTests : XCTestCase
 

@@ -15,6 +15,7 @@
 
 import unittest
 import logging
+import six
 
 import grpc
 
@@ -52,6 +53,16 @@ class CredentialsTest(unittest.TestCase):
         self.assertIsInstance(channel_first_and_second, grpc.ChannelCredentials)
         self.assertIsInstance(channel_first_second_and_third,
                               grpc.ChannelCredentials)
+
+    @unittest.skipIf(six.PY2, 'only invalid in Python3')
+    def test_invalid_string_certificate(self):
+        self.assertRaises(
+            TypeError,
+            grpc.ssl_channel_credentials,
+            root_certificates='A Certificate',
+            private_key=None,
+            certificate_chain=None,
+        )
 
 
 if __name__ == '__main__':

@@ -41,12 +41,14 @@ struct ResolverArgs {
   grpc_pollset_set* pollset_set = nullptr;
   /// The combiner under which all resolver calls will be run.
   grpc_combiner* combiner = nullptr;
+  /// The result handler to be used by the resolver.
+  UniquePtr<Resolver::ResultHandler> result_handler;
 };
 
 class ResolverFactory {
  public:
   /// Returns a new resolver instance.
-  virtual OrphanablePtr<Resolver> CreateResolver(const ResolverArgs& args) const
+  virtual OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const
       GRPC_ABSTRACT;
 
   /// Returns a string representing the default authority to use for this

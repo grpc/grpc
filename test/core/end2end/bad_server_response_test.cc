@@ -65,7 +65,7 @@
 
 #define HTTP1_DETAIL_MSG "Trying to connect an http1.x server"
 
-/* TODO(zyc) Check the content of incomming data instead of using this length */
+/* TODO(zyc) Check the content of incoming data instead of using this length */
 /* The 'bad' server will start sending responses after reading this amount of
  * data from the client. */
 #define SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD (size_t)200
@@ -126,7 +126,8 @@ static void handle_read(void* arg, grpc_error* error) {
       SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD) {
     handle_write();
   } else {
-    grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read);
+    grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
+                       /*urgent=*/false);
   }
 }
 
@@ -142,7 +143,8 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
   state.tcp = tcp;
   state.incoming_data_length = 0;
   grpc_endpoint_add_to_pollset(tcp, server->pollset);
-  grpc_endpoint_read(tcp, &state.temp_incoming_buffer, &on_read);
+  grpc_endpoint_read(tcp, &state.temp_incoming_buffer, &on_read,
+                     /*urgent=*/false);
 }
 
 static gpr_timespec n_sec_deadline(int seconds) {
@@ -248,7 +250,7 @@ static void actually_poll_server(void* arg) {
     if (done || gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) < 0) {
       break;
     }
-    test_tcp_server_poll(pa->server, 1);
+    test_tcp_server_poll(pa->server, 1000);
   }
   gpr_event_set(pa->signal_when_done, (void*)1);
   gpr_free(pa);
@@ -302,7 +304,7 @@ static void run_test(const char* response_payload,
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 
   /* status defined in hpack static table */

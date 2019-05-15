@@ -32,6 +32,7 @@
 #include <grpcpp/impl/codegen/call_hook.h>
 #include <grpcpp/impl/codegen/call_op_set_interface.h>
 #include <grpcpp/impl/codegen/client_context.h>
+#include <grpcpp/impl/codegen/completion_queue.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
@@ -47,7 +48,6 @@
 
 namespace grpc {
 
-class CompletionQueue;
 extern CoreCodegenInterface* g_core_codegen_interface;
 
 namespace internal {
@@ -303,9 +303,29 @@ class CallOpSendMessage {
   template <class M>
   Status SendMessage(const M& message) GRPC_MUST_USE_RESULT;
 
+  /// Send \a message using \a options for the write. The \a options are cleared
+  /// after use. This form of SendMessage allows gRPC to reference \a message
+  /// beyond the lifetime of SendMessage.
+  template <class M>
+  Status SendMessagePtr(const M* message,
+                        WriteOptions options) GRPC_MUST_USE_RESULT;
+
+  /// This form of SendMessage allows gRPC to reference \a message beyond the
+  /// lifetime of SendMessage.
+  template <class M>
+  Status SendMessagePtr(const M* message) GRPC_MUST_USE_RESULT;
+
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {
-    if (!send_buf_.Valid() || hijacked_) return;
+    if (msg_ == nullptr && !send_buf_.Valid()) return;
+    if (hijacked_) {
+      serializer_ = nullptr;
+      return;
+    }
+    if (msg_ != nullptr) {
+      GPR_CODEGEN_ASSERT(serializer_(msg_).ok());
+    }
+    serializer_ = nullptr;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_MESSAGE;
     op->flags = write_options_.flags();
@@ -314,48 +334,95 @@ class CallOpSendMessage {
     // Flags are per-message: clear them after use.
     write_options_.Clear();
   }
-  void FinishOp(bool* status) { send_buf_.Clear(); }
+  void FinishOp(bool* status) {
+    if (msg_ == nullptr && !send_buf_.Valid()) return;
+    if (hijacked_ && failed_send_) {
+      // Hijacking interceptor failed this Op
+      *status = false;
+    } else if (!*status) {
+      // This Op was passed down to core and the Op failed
+      failed_send_ = true;
+    }
+  }
 
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
-    if (!send_buf_.Valid()) return;
+    if (msg_ == nullptr && !send_buf_.Valid()) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::PRE_SEND_MESSAGE);
-    interceptor_methods->SetSendMessage(&send_buf_);
+    interceptor_methods->SetSendMessage(&send_buf_, &msg_, &failed_send_,
+                                        serializer_);
   }
 
   void SetFinishInterceptionHookPoint(
-      InterceptorBatchMethodsImpl* interceptor_methods) {}
+      InterceptorBatchMethodsImpl* interceptor_methods) {
+    if (msg_ != nullptr || send_buf_.Valid()) {
+      interceptor_methods->AddInterceptionHookPoint(
+          experimental::InterceptionHookPoints::POST_SEND_MESSAGE);
+    }
+    send_buf_.Clear();
+    msg_ = nullptr;
+    // The contents of the SendMessage value that was previously set
+    // has had its references stolen by core's operations
+    interceptor_methods->SetSendMessage(nullptr, nullptr, &failed_send_,
+                                        nullptr);
+  }
 
   void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
     hijacked_ = true;
   }
 
  private:
+  const void* msg_ = nullptr;  // The original non-serialized message
   bool hijacked_ = false;
+  bool failed_send_ = false;
   ByteBuffer send_buf_;
   WriteOptions write_options_;
+  std::function<Status(const void*)> serializer_;
 };
 
 template <class M>
 Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   write_options_ = options;
-  bool own_buf;
-  // TODO(vjpai): Remove the void below when possible
-  // The void in the template parameter below should not be needed
-  // (since it should be implicit) but is needed due to an observed
-  // difference in behavior between clang and gcc for certain internal users
-  Status result = SerializationTraits<M, void>::Serialize(
-      message, send_buf_.bbuf_ptr(), &own_buf);
-  if (!own_buf) {
-    send_buf_.Duplicate();
+  serializer_ = [this](const void* message) {
+    bool own_buf;
+    send_buf_.Clear();
+    // TODO(vjpai): Remove the void below when possible
+    // The void in the template parameter below should not be needed
+    // (since it should be implicit) but is needed due to an observed
+    // difference in behavior between clang and gcc for certain internal users
+    Status result = SerializationTraits<M, void>::Serialize(
+        *static_cast<const M*>(message), send_buf_.bbuf_ptr(), &own_buf);
+    if (!own_buf) {
+      send_buf_.Duplicate();
+    }
+    return result;
+  };
+  // Serialize immediately only if we do not have access to the message pointer
+  if (msg_ == nullptr) {
+    Status result = serializer_(&message);
+    serializer_ = nullptr;
+    return result;
   }
-  return result;
+  return Status();
 }
 
 template <class M>
 Status CallOpSendMessage::SendMessage(const M& message) {
   return SendMessage(message, WriteOptions());
+}
+
+template <class M>
+Status CallOpSendMessage::SendMessagePtr(const M* message,
+                                         WriteOptions options) {
+  msg_ = message;
+  return SendMessage(*message, options);
+}
+
+template <class M>
+Status CallOpSendMessage::SendMessagePtr(const M* message) {
+  msg_ = message;
+  return SendMessage(*message, WriteOptions());
 }
 
 template <class R>
@@ -406,14 +473,16 @@ class CallOpRecvMessage {
 
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
-    interceptor_methods->SetRecvMessage(message_);
+    if (message_ == nullptr) return;
+    interceptor_methods->SetRecvMessage(message_, &got_message);
   }
 
   void SetFinishInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
-    if (!got_message) return;
+    if (message_ == nullptr) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
+    if (!got_message) interceptor_methods->SetRecvMessage(nullptr, nullptr);
   }
   void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
     hijacked_ = true;
@@ -501,20 +570,23 @@ class CallOpGenericRecvMessage {
 
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
-    interceptor_methods->SetRecvMessage(message_);
+    if (!deserialize_) return;
+    interceptor_methods->SetRecvMessage(message_, &got_message);
   }
 
   void SetFinishInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
-    if (!got_message) return;
+    if (!deserialize_) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
+    if (!got_message) interceptor_methods->SetRecvMessage(nullptr, nullptr);
   }
   void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
     hijacked_ = true;
     if (!deserialize_) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::PRE_RECV_MESSAGE);
+    got_message = true;
   }
 
  private:
@@ -805,6 +877,8 @@ class CallOpSet : public CallOpSetInterface,
 
   bool FinalizeResult(void** tag, bool* status) override {
     if (done_intercepting_) {
+      // Complete the avalanching since we are done with this batch of ops
+      call_.cq()->CompleteAvalanching();
       // We have already finished intercepting and filling in the results. This
       // round trip from the core needed to be made because interceptors were
       // run
@@ -889,6 +963,12 @@ class CallOpSet : public CallOpSetInterface,
     this->Op4::SetInterceptionHookPoint(&interceptor_methods_);
     this->Op5::SetInterceptionHookPoint(&interceptor_methods_);
     this->Op6::SetInterceptionHookPoint(&interceptor_methods_);
+    if (interceptor_methods_.InterceptorsListEmpty()) {
+      return true;
+    }
+    // This call will go through interceptors and would need to
+    // schedule new batches, so delay completion queue shutdown
+    call_.cq()->RegisterAvalanching();
     return interceptor_methods_.RunInterceptors();
   }
   // Returns true if no interceptors need to be run

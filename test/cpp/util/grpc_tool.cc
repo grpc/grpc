@@ -217,7 +217,8 @@ std::shared_ptr<grpc::Channel> CreateCliChannel(
   if (!cred.GetSslTargetNameOverride().empty()) {
     args.SetSslTargetNameOverride(cred.GetSslTargetNameOverride());
   }
-  return grpc::CreateCustomChannel(server_address, cred.GetCredentials(), args);
+  return ::grpc::CreateCustomChannel(server_address, cred.GetCredentials(),
+                                     args);
 }
 
 struct Command {
@@ -590,6 +591,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
 
     call.WritesDoneAndWait();
     read_thread.join();
+    gpr_mu_destroy(&parser_mu);
 
     std::multimap<grpc::string_ref, grpc::string_ref> server_trailing_metadata;
     Status status = call.Finish(&server_trailing_metadata);

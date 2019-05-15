@@ -22,24 +22,6 @@ grpc_package(
 )
 
 grpc_cc_library(
-    name = "gpr_test_util",
-    srcs = [
-        "memory_counters.cc",
-        "test_config.cc",
-    ],
-    hdrs = [
-        "memory_counters.h",
-        "test_config.h",
-    ],
-    deps = ["//:gpr"],
-    data = [
-        "lsan_suppressions.txt",
-        "tsan_suppressions.txt",
-        "ubsan_suppressions.txt",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_debugger_macros",
     srcs = [
         "debugger_macros.cc",
@@ -48,7 +30,6 @@ grpc_cc_library(
         "debugger_macros.h",
     ],
     deps = [
-        ":gpr_test_util",
         "//:grpc_common",
     ],
 )
@@ -60,6 +41,7 @@ grpc_cc_library(
         "fuzzer_util.cc",
         "grpc_profiler.cc",
         "histogram.cc",
+        "memory_counters.cc",
         "mock_endpoint.cc",
         "parse_hexstring.cc",
         "passthru_endpoint.cc",
@@ -70,6 +52,7 @@ grpc_cc_library(
         "slice_splitter.cc",
         "subprocess_posix.cc",
         "subprocess_windows.cc",
+        "test_config.cc",
         "test_tcp_server.cc",
         "tracer_util.cc",
         "trickle_endpoint.cc",
@@ -79,22 +62,29 @@ grpc_cc_library(
         "fuzzer_util.h",
         "grpc_profiler.h",
         "histogram.h",
+        "memory_counters.h",
         "mock_endpoint.h",
         "parse_hexstring.h",
         "passthru_endpoint.h",
         "port.h",
         "port_server_client.h",
         "reconnect_server.h",
-        "subprocess.h",
         "slice_splitter.h",
+        "subprocess.h",
+        "test_config.h",
         "test_tcp_server.h",
         "tracer_util.h",
         "trickle_endpoint.h",
     ],
+    data = [
+        "lsan_suppressions.txt",
+        "tsan_suppressions.txt",
+        "ubsan_suppressions.txt",
+    ],
     language = "C++",
     deps = [
-        ":gpr_test_util",
         ":grpc_debugger_macros",
+        "//:gpr",
         "//:grpc_common",
     ],
 )
@@ -140,9 +130,11 @@ grpc_cc_library(
         "gflags",
     ],
     deps = [
-        ":gpr_test_util",
+        ":grpc_test_util",
         "//:grpc",
+        "//test/cpp/util:test_config",
     ],
+    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -163,4 +155,14 @@ sh_library(
 sh_library(
     name = "run_with_poller_sh",
     srcs = ["run_with_poller.sh"],
+)
+
+grpc_cc_library(
+    name = "test_lb_policies",
+    testonly = 1,
+    srcs = ["test_lb_policies.cc"],
+    hdrs = ["test_lb_policies.h"],
+    deps = [
+        "//:grpc",
+    ],
 )

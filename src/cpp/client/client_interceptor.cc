@@ -28,7 +28,17 @@ experimental::ClientInterceptorFactoryInterface*
 namespace experimental {
 void RegisterGlobalClientInterceptorFactory(
     ClientInterceptorFactoryInterface* factory) {
+  if (internal::g_global_client_interceptor_factory != nullptr) {
+    GPR_ASSERT(false &&
+               "It is illegal to call RegisterGlobalClientInterceptorFactory "
+               "multiple times.");
+  }
   internal::g_global_client_interceptor_factory = factory;
+}
+
+// For testing purposes only.
+void TestOnlyResetGlobalClientInterceptorFactory() {
+  internal::g_global_client_interceptor_factory = nullptr;
 }
 }  // namespace experimental
 }  // namespace grpc

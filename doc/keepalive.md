@@ -5,12 +5,14 @@ The keepalive ping is a way to check if a channel is currently working by sendin
 This guide documents the knobs within gRPC core to control the current behavior of the keepalive ping.
 
 The keepalive ping is controlled by two important channel arguments -
+
 * **GRPC_ARG_KEEPALIVE_TIME_MS**
   * This channel argument controls the period (in milliseconds) after which a keepalive ping is sent on the transport.
 * **GRPC_ARG_KEEPALIVE_TIMEOUT_MS**
-  * This channel argument controls the amount of time (in milliseconds), the sender of the keepalive ping waits for an acknowledgement. If it does not receive an acknowledgement within this time, it will close the connection.
+  * This channel argument controls the amount of time (in milliseconds) the sender of the keepalive ping waits for an acknowledgement. If it does not receive an acknowledgment within this time, it will close the connection.
 
 The above two channel arguments should be sufficient for most users, but the following arguments can also be useful in certain use cases.
+
 * **GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS**
   * This channel argument if set to 1 (0 : false; 1 : true), allows keepalive pings to be sent even if there are no calls in flight. 
 * **GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA**
@@ -39,12 +41,12 @@ GRPC_ARG_HTTP2_MAX_PING_STRIKES|N/A|2
 * When is the keepalive timer started?
   * The keepalive timer is started when a transport is done connecting (after handshake).
 * What happens when the keepalive timer fires?
-  * When the keepalive timer fires, gRPC Core would try to send a keepalive ping on the transport. This ping can be blocked if -
+  * When the keepalive timer fires, gRPC Core will try to send a keepalive ping on the transport. This ping can be blocked if -
     * there is no active call on that transport and GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS is false.
     * the number of pings already sent on the transport without any data has already exceeded GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA.
-    * the time expired since the previous ping is less than GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS.
-  * If a keepalive ping is not blocked and is sent on the transport, then the keepalive watchdog timer is started which would close the transport if the ping is not acknowledged before it fires.
+    * the time elapsed since the previous ping is less than GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS.
+  * If a keepalive ping is not blocked and is sent on the transport, then the keepalive watchdog timer is started which will close the transport if the ping is not acknowledged before it fires.
 * Why am I receiving a GOAWAY with error code ENHANCE_YOUR_CALM?
   * A server sends a GOAWAY with ENHANCE_YOUR_CALM if the client sends too many misbehaving pings. For example -
-    * if a server has GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS set to false, and the client sends pings without there being any call in flight.
+    * if a server has GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS set to false and the client sends pings without there being any call in flight.
     * if the client's GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS setting is lower than the server's GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS.

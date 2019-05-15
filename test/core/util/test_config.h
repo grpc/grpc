@@ -37,6 +37,21 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms);
 #define GRPC_TEST_PICK_PORT
 #endif
 
+// Prefer TestEnvironment below.
 void grpc_test_init(int argc, char** argv);
+
+namespace grpc {
+namespace testing {
+
+// A TestEnvironment object should be alive in the main function of a test. It
+// provides test init and shutdown inside.
+class TestEnvironment {
+ public:
+  TestEnvironment(int argc, char** argv);
+  ~TestEnvironment();
+};
+
+}  // namespace testing
+}  // namespace grpc
 
 #endif /* GRPC_TEST_CORE_UTIL_TEST_CONFIG_H */

@@ -266,7 +266,7 @@ cdef grpc_error* socket_listen(grpc_custom_socket* socket) with gil:
   (<SocketWrapper>socket.impl).socket.listen(50)
   return grpc_error_none()
 
-cdef void accept_callback_cython(SocketWrapper s):
+cdef void accept_callback_cython(SocketWrapper s) except *:
    try:
      conn, address = s.socket.accept()
      sw = SocketWrapper()

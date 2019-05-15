@@ -20,17 +20,48 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+#include <grpc/impl/codegen/log.h>
 #include "src/core/lib/iomgr/internal_errqueue.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
-bool kernel_supports_errqueue() {
-#ifdef LINUX_VERSION_CODE
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
-  return true;
-#endif /* LINUX_VERSION_CODE <= KERNEL_VERSION(4, 0, 0) */
-#endif /* LINUX_VERSION_CODE */
-  return false;
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/utsname.h>
+
+namespace grpc_core {
+static bool errqueue_supported = false;
+
+bool kernel_supports_errqueue() { return errqueue_supported; }
+
+void grpc_errqueue_init() {
+/* Both-compile time and run-time linux kernel versions should be at least 4.0.0
+ */
+#ifdef GRPC_LINUX_ERRQUEUE
+  struct utsname buffer;
+  if (uname(&buffer) != 0) {
+    gpr_log(GPR_ERROR, "uname: %s", strerror(errno));
+    return;
+  }
+  char* release = buffer.release;
+  if (release == nullptr) {
+    return;
+  }
+
+  if (strtol(release, nullptr, 10) >= 4) {
+    errqueue_supported = true;
+  } else {
+    gpr_log(GPR_DEBUG, "ERRQUEUE support not enabled");
+  }
+#endif /* GRPC_LINUX_ERRQUEUE */
 }
+} /* namespace grpc_core */
+
+#else
+
+namespace grpc_core {
+void grpc_errqueue_init() {}
+} /* namespace grpc_core */
 
 #endif /* GRPC_POSIX_SOCKET_TCP */

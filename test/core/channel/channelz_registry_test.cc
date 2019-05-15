@@ -112,7 +112,7 @@ TEST_F(ChannelzRegistryTest, NullIfNotPresentTest) {
 }
 
 TEST_F(ChannelzRegistryTest, TestCompaction) {
-  const int kLoopIterations = 100;
+  const int kLoopIterations = 300;
   // These channels that will stay in the registry for the duration of the test.
   std::vector<UniquePtr<BaseNode>> even_channels;
   even_channels.reserve(kLoopIterations);
@@ -195,7 +195,7 @@ TEST_F(ChannelzRegistryTest, TestAddAfterCompaction) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

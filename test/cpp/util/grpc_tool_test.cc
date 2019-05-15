@@ -48,6 +48,7 @@ using grpc::testing::EchoResponse;
 
 #define ECHO_TEST_SERVICE_SUMMARY \
   "Echo\n"                        \
+  "CheckClientInitialMetadata\n"  \
   "RequestStream\n"               \
   "ResponseStream\n"              \
   "BidiStream\n"                  \
@@ -59,6 +60,8 @@ using grpc::testing::EchoResponse;
   "service EchoTestService {\n"                                               \
   "  rpc Echo(grpc.testing.EchoRequest) returns (grpc.testing.EchoResponse) " \
   "{}\n"                                                                      \
+  "  rpc CheckClientInitialMetadata(grpc.testing.SimpleRequest) returns "     \
+  "(grpc.testing.SimpleResponse) {}\n"                                        \
   "  rpc RequestStream(stream grpc.testing.EchoRequest) returns "             \
   "(grpc.testing.EchoResponse) {}\n"                                          \
   "  rpc ResponseStream(grpc.testing.EchoRequest) returns (stream "           \
@@ -119,7 +122,7 @@ class TestCliCredentials final : public grpc::testing::CliCredentials {
       return InsecureChannelCredentials();
     }
     SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
-    return SslCredentials(grpc::SslCredentialsOptions(ssl_opts));
+    return grpc::SslCredentials(grpc::SslCredentialsOptions(ssl_opts));
   }
   const grpc::string GetCredentialUsage() const override { return ""; }
 
@@ -254,14 +257,6 @@ class GrpcToolTest : public ::testing::Test {
   }
 
   void ShutdownServer() { server_->Shutdown(); }
-
-  void ExitWhenError(int argc, const char** argv, const CliCredentials& cred,
-                     GrpcToolOutputCallback callback) {
-    int result = GrpcToolMainLib(argc, argv, cred, callback);
-    if (result) {
-      exit(result);
-    }
-  }
 
   std::unique_ptr<Server> server_;
   TestServiceImpl service_;
@@ -415,11 +410,9 @@ TEST_F(GrpcToolTest, TypeNotFound) {
   const char* argv[] = {"grpc_cli", "type", server_address.c_str(),
                         "grpc.testing.DummyRequest"};
 
-  EXPECT_DEATH(ExitWhenError(ArraySize(argv), argv, TestCliCredentials(),
-                             std::bind(PrintStream, &output_stream,
-                                       std::placeholders::_1)),
-               ".*Type grpc.testing.DummyRequest not found.*");
-
+  EXPECT_TRUE(1 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
   ShutdownServer();
 }
 
@@ -1173,7 +1166,7 @@ TEST_F(GrpcToolTest, ListCommand_OverrideSslHostName) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   return RUN_ALL_TESTS();

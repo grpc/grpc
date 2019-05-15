@@ -53,7 +53,9 @@ void grpc_tracer_enable_flag(grpc_core::TraceFlag* flag);
 class TraceFlag {
  public:
   TraceFlag(bool default_enabled, const char* name);
-  ~TraceFlag() {}
+  // TraceFlag needs to be trivially destructible since it is used as global
+  // variable.
+  ~TraceFlag() = default;
 
   const char* name() const { return name_; }
 
@@ -63,6 +65,8 @@ class TraceFlag {
 // wrapped language (wr don't want to force recompilation to get tracing).
 // Internally, however, for performance reasons, we compile them out by
 // default, since internal build systems make recompiling trivial.
+//
+// Prefer GRPC_TRACE_FLAG_ENABLED() macro instead of using enabled() directly.
 #define GRPC_USE_TRACERS  // tracers on by default in OSS
 #if defined(GRPC_USE_TRACERS) || !defined(NDEBUG)
   bool enabled() {
@@ -97,13 +101,16 @@ class TraceFlag {
 #endif
 };
 
+#define GRPC_TRACE_FLAG_ENABLED(f) GPR_UNLIKELY((f).enabled())
+
 #ifndef NDEBUG
 typedef TraceFlag DebugOnlyTraceFlag;
 #else
 class DebugOnlyTraceFlag {
  public:
-  DebugOnlyTraceFlag(bool default_enabled, const char* name) {}
-  bool enabled() { return false; }
+  constexpr DebugOnlyTraceFlag(bool default_enabled, const char* name) {}
+  constexpr bool enabled() const { return false; }
+  constexpr const char* name() const { return "DebugOnlyTraceFlag"; }
 
  private:
   void set_enabled(bool enabled) {}

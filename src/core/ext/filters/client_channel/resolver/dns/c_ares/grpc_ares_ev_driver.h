@@ -43,6 +43,7 @@ ares_channel* grpc_ares_ev_driver_get_channel_locked(
    created successfully. */
 grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
                                               grpc_pollset_set* pollset_set,
+                                              int query_timeout_ms,
                                               grpc_combiner* combiner,
                                               grpc_ares_request* request);
 
@@ -52,6 +53,9 @@ void grpc_ares_ev_driver_on_queries_complete_locked(
 
 /* Shutdown all the grpc_fds used by \a ev_driver */
 void grpc_ares_ev_driver_shutdown_locked(grpc_ares_ev_driver* ev_driver);
+
+/* Exposed in this header for C-core tests only */
+extern void (*grpc_ares_test_only_inject_config)(ares_channel channel);
 
 namespace grpc_core {
 

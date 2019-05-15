@@ -74,7 +74,11 @@ END2END_FIXTURES = {
     'h2_sockpair+trace': socketpair_unsecure_fixture_options._replace(
         ci_mac=False, tracing=True, large_writes=False, exclude_iomgrs=['uv']),
     'h2_ssl': default_secure_fixture_options,
-    'h2_local': local_fixture_options,
+    'h2_ssl_cred_reload': default_secure_fixture_options,
+    'h2_spiffe': default_secure_fixture_options,
+    'h2_local_uds': local_fixture_options,
+    'h2_local_ipv4': local_fixture_options,
+    'h2_local_ipv6': local_fixture_options,
     'h2_ssl_proxy': default_secure_fixture_options._replace(
         includes_proxy=True, ci_mac=False, exclude_iomgrs=['uv']),
     'h2_uds': uds_fixture_options,
@@ -122,6 +126,7 @@ END2END_TESTS = {
     'empty_batch': default_test_options._replace(cpu_cost=LOWCPU),
     'filter_causes_close': default_test_options._replace(cpu_cost=LOWCPU),
     'filter_call_init_fails': default_test_options,
+    'filter_context': default_test_options,
     'filter_latency': default_test_options._replace(cpu_cost=LOWCPU),
     'filter_status_code': default_test_options._replace(cpu_cost=LOWCPU),
     'graceful_server_shutdown': default_test_options._replace(
@@ -144,7 +149,6 @@ END2END_TESTS = {
         proxyable=False, exclude_iomgrs=['uv'], cpu_cost=LOWCPU),
     'max_message_length': default_test_options._replace(cpu_cost=LOWCPU),
     'negative_deadline': default_test_options,
-    'network_status_change': default_test_options._replace(cpu_cost=LOWCPU),
     'no_error_on_hotpath': default_test_options._replace(proxyable=False),
     'no_logging': default_test_options._replace(traceable=False),
     'no_op': default_test_options,
@@ -281,13 +285,11 @@ def main():
   sec_deps = [
     'grpc_test_util',
     'grpc',
-    'gpr_test_util',
     'gpr'
   ]
   unsec_deps = [
     'grpc_test_util_unsecure',
     'grpc_unsecure',
-    'gpr_test_util',
     'gpr'
   ]
   json = {

@@ -30,8 +30,6 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
-auto& force_library_initialization = Library::get();
-
 static void BM_NoOpExecCtx(benchmark::State& state) {
   TrackCounters track_counters;
   while (state.KeepRunning()) {
@@ -183,6 +181,7 @@ static void BM_AcquireMutex(benchmark::State& state) {
     DoNothing(nullptr, GRPC_ERROR_NONE);
     gpr_mu_unlock(&mu);
   }
+  gpr_mu_destroy(&mu);
 
   track_counters.Finish(state);
 }
@@ -202,6 +201,7 @@ static void BM_TryAcquireMutex(benchmark::State& state) {
       abort();
     }
   }
+  gpr_mu_destroy(&mu);
 
   track_counters.Finish(state);
 }
@@ -423,6 +423,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();

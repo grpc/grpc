@@ -47,11 +47,13 @@ bool registered_handlers = false;
 }  // namespace
 
 void grpc_prefork() {
-  grpc_core::ExecCtx exec_ctx;
   skipped_handler = true;
+  // This  may be called after core shuts down, so verify initialized before
+  // instantiating an ExecCtx.
   if (!grpc_is_initialized()) {
     return;
   }
+  grpc_core::ExecCtx exec_ctx;
   if (!grpc_core::Fork::Enabled()) {
     gpr_log(GPR_ERROR,
             "Fork support not enabled; try running with the "
@@ -60,7 +62,7 @@ void grpc_prefork() {
   }
   if (strcmp(grpc_get_poll_strategy_name(), "epoll1") != 0 &&
       strcmp(grpc_get_poll_strategy_name(), "poll") != 0) {
-    gpr_log(GPR_ERROR,
+    gpr_log(GPR_INFO,
             "Fork support is only compatible with the epoll1 and poll polling "
             "strategies");
   }
@@ -71,7 +73,7 @@ void grpc_prefork() {
     return;
   }
   grpc_timer_manager_set_threading(false);
-  grpc_executor_set_threading(false);
+  grpc_core::Executor::SetThreadingAll(false);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_core::Fork::AwaitThreads();
   skipped_handler = false;
@@ -82,7 +84,7 @@ void grpc_postfork_parent() {
     grpc_core::Fork::AllowExecCtx();
     grpc_core::ExecCtx exec_ctx;
     grpc_timer_manager_set_threading(true);
-    grpc_executor_set_threading(true);
+    grpc_core::Executor::SetThreadingAll(true);
   }
 }
 
@@ -96,7 +98,7 @@ void grpc_postfork_child() {
       reset_polling_engine();
     }
     grpc_timer_manager_set_threading(true);
-    grpc_executor_set_threading(true);
+    grpc_core::Executor::SetThreadingAll(true);
   }
 }
 

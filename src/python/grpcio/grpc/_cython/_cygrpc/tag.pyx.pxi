@@ -30,13 +30,14 @@ cdef class _ConnectivityTag(_Tag):
 
 cdef class _RequestCallTag(_Tag):
 
-  def __cinit__(self, user_tag):
+  def __cinit__(self, user_tag, _VTable vtable not None):
     self._user_tag = user_tag
     self.call = None
     self.call_details = None
+    self._vtable = vtable
 
-  cdef void prepare(self):
-    self.call = Call()
+  cdef void prepare(self) except *:
+    self.call = Call(self._vtable)
     self.call_details = CallDetails()
     grpc_metadata_array_init(&self.c_invocation_metadata)
 
@@ -55,19 +56,20 @@ cdef class _BatchOperationTag:
     self._operations = operations
     self._retained_call = call
 
-  cdef void prepare(self):
+  cdef void prepare(self) except *:
+    cdef Operation operation
     self.c_nops = 0 if self._operations is None else len(self._operations)
     if 0 < self.c_nops:
       self.c_ops = <grpc_op *>gpr_malloc(sizeof(grpc_op) * self.c_nops)
       for index, operation in enumerate(self._operations):
-        (<Operation>operation).c()
-        self.c_ops[index] = (<Operation>operation).c_op
+        operation.c()
+        self.c_ops[index] = operation.c_op
 
   cdef BatchOperationEvent event(self, grpc_event c_event):
+    cdef Operation operation
     if 0 < self.c_nops:
-      for index, operation in enumerate(self._operations):
-        (<Operation>operation).c_op = self.c_ops[index]
-        (<Operation>operation).un_c()
+      for operation in self._operations:
+        operation.un_c()
       gpr_free(self.c_ops)
       return BatchOperationEvent(
           c_event.type, c_event.success, self._user_tag, self._operations)

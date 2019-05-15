@@ -25,7 +25,7 @@ _Metadatum = collections.namedtuple('_Metadatum', ('key', 'value',))
 
 
 cdef void _store_c_metadata(
-    metadata, grpc_metadata **c_metadata, size_t *c_count):
+    metadata, grpc_metadata **c_metadata, size_t *c_count) except *:
   if metadata is None:
     c_count[0] = 0
     c_metadata[0] = NULL
@@ -45,7 +45,7 @@ cdef void _store_c_metadata(
         c_metadata[0][index].value = _slice_from_bytes(encoded_value)
 
 
-cdef void _release_c_metadata(grpc_metadata *c_metadata, int count):
+cdef void _release_c_metadata(grpc_metadata *c_metadata, int count) except *:
   if 0 < count:
     for index in range(count):
       grpc_slice_unref(c_metadata[index].key)

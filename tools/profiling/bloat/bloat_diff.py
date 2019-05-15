@@ -25,7 +25,7 @@ import sys
 sys.path.append(
     os.path.join(
         os.path.dirname(sys.argv[0]), '..', '..', 'run_tests', 'python_utils'))
-import comment_on_pr
+import check_on_pr
 
 argp = argparse.ArgumentParser(description='Perform diff on microbenchmarks')
 
@@ -90,4 +90,4 @@ for lib in LIBS:
     text += '\n\n'
 
 print text
-comment_on_pr.comment_on_pr('```\n%s\n```' % text)
+check_on_pr.check_on_pr('Bloat Difference', '```\n%s\n```' % text)

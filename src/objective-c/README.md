@@ -242,3 +242,12 @@ pod `gRPC-Core`, :podspec => "." # assuming gRPC-Core.podspec is in the same dir
 
 These steps should allow gRPC to use OpenSSL and drop BoringSSL dependency. If you see any issue,
 file an issue to us.
+
+## Upgrade issue with BoringSSL
+If you were using an old version of gRPC (<= v1.14) which depended on pod `BoringSSL` rather than
+`BoringSSL-GRPC` and meet issue with the library like:
+```
+ld: framework not found openssl
+```
+updating `-framework openssl` in Other Linker Flags to `-framework openssl_grpc` in your project
+may resolve this issue (see [#16821](https://github.com/grpc/grpc/issues/16821)).

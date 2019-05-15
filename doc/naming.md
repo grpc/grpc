@@ -51,7 +51,9 @@ but may not be supported in other languages:
 
 - `ipv6:address[:port][,address[:port],...]` -- IPv6 addresses
   - Can specify multiple comma-delimited addresses of the form `address[:port]`:
-    - `address` is the IPv6 address to use.
+    - `address` is the IPv6 address to use. To use with a `port` the `address`
+      must enclosed in literal square brackets (`[` and `]`).  Example:
+      `ipv6:[2607:f8b0:400e:c00::ef]:443` or `ipv6:[::]:1234`
     - `port` is the port to use.  If not specified, 443 is used.
 
 In the future, additional schemes such as `etcd` could be added.
@@ -65,14 +67,10 @@ Resolvers should be able to contact the authority and get a resolution
 that they return back to the gRPC client library. The returned contents
 include:
 
-- A list of resolved addresses, each of which has three attributes:
-  - The address itself, including both IP address and port.
-  - A boolean indicating whether the address is a backend address (i.e.,
-    the address to use to contact the server directly) or a balancer
-    address (for cases where [external load balancing](load-balancing.md)
-    is in use).
-  - The name of the balancer, if the address is a balancer address.
-    This will be used to perform peer authorization.
+- A list of resolved addresses (both IP address and port).  Each address
+  may have a set of arbitrary attributes (key/value pairs) associated with
+  it, which can be used to communicate information from the resolver to the
+  [load balancing](load-balancing.md) policy.
 - A [service config](service_config.md).
 
 The plugin API allows the resolvers to continuously watch an endpoint

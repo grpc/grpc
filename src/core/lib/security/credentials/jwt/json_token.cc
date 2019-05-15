@@ -121,7 +121,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_string(
   char* scratchpad = gpr_strdup(json_string);
   grpc_json* json = grpc_json_parse_string(scratchpad);
   grpc_auth_json_key result = grpc_auth_json_key_create_from_json(json);
-  if (json != nullptr) grpc_json_destroy(json);
+  grpc_json_destroy(json);
   gpr_free(scratchpad);
   return result;
 }

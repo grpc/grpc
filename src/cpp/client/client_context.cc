@@ -25,10 +25,16 @@
 #include <grpc/support/string_util.h>
 
 #include <grpcpp/impl/codegen/interceptor_common.h>
+#include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/time.h>
+
+namespace grpc_impl {
+
+class Channel;
+}
 
 namespace grpc {
 
@@ -41,9 +47,10 @@ class DefaultGlobalClientCallbacks final
 };
 
 static internal::GrpcLibraryInitializer g_gli_initializer;
-static DefaultGlobalClientCallbacks g_default_client_callbacks;
+static DefaultGlobalClientCallbacks* g_default_client_callbacks =
+    new DefaultGlobalClientCallbacks();
 static ClientContext::GlobalCallbacks* g_client_callbacks =
-    &g_default_client_callbacks;
+    g_default_client_callbacks;
 
 ClientContext::ClientContext()
     : initial_metadata_received_(false),
@@ -56,6 +63,7 @@ ClientContext::ClientContext()
       deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)),
       census_context_(nullptr),
       propagate_from_call_(nullptr),
+      compression_algorithm_(GRPC_COMPRESS_NONE),
       initial_metadata_corked_(false) {
   g_client_callbacks->DefaultConstructor(this);
 }
@@ -80,9 +88,9 @@ void ClientContext::AddMetadata(const grpc::string& meta_key,
   send_initial_metadata_.insert(std::make_pair(meta_key, meta_value));
 }
 
-void ClientContext::set_call(grpc_call* call,
-                             const std::shared_ptr<Channel>& channel) {
-  std::unique_lock<std::mutex> lock(mu_);
+void ClientContext::set_call(
+    grpc_call* call, const std::shared_ptr<::grpc_impl::Channel>& channel) {
+  grpc::internal::MutexLock lock(&mu_);
   GPR_ASSERT(call_ == nullptr);
   call_ = call;
   channel_ = channel;
@@ -112,7 +120,7 @@ void ClientContext::set_compression_algorithm(
 }
 
 void ClientContext::TryCancel() {
-  std::unique_lock<std::mutex> lock(mu_);
+  grpc::internal::MutexLock lock(&mu_);
   if (call_) {
     SendCancelToInterceptors();
     grpc_call_cancel(call_, nullptr);
@@ -139,9 +147,9 @@ grpc::string ClientContext::peer() const {
 }
 
 void ClientContext::SetGlobalCallbacks(GlobalCallbacks* client_callbacks) {
-  GPR_ASSERT(g_client_callbacks == &g_default_client_callbacks);
+  GPR_ASSERT(g_client_callbacks == g_default_client_callbacks);
   GPR_ASSERT(client_callbacks != nullptr);
-  GPR_ASSERT(client_callbacks != &g_default_client_callbacks);
+  GPR_ASSERT(client_callbacks != g_default_client_callbacks);
   g_client_callbacks = client_callbacks;
 }
 

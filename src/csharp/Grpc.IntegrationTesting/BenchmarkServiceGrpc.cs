@@ -74,6 +74,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of BenchmarkService</summary>
+    [grpc::BindServiceMethod(typeof(BenchmarkService), "BindService")]
     public abstract partial class BenchmarkServiceBase
     {
       /// <summary>
@@ -324,17 +325,17 @@ namespace Grpc.Testing {
           .AddMethod(__Method_StreamingBothWays, serviceImpl.StreamingBothWays).Build();
     }
 
-    /// <summary>Register service method implementations with a service binder. Useful when customizing the service binding logic.
+    /// <summary>Register service method with a service binder with or without implementation. Useful when customizing the  service binding logic.
     /// Note: this method is part of an experimental API that can change or be removed without any prior notice.</summary>
     /// <param name="serviceBinder">Service methods will be bound by calling <c>AddMethod</c> on this object.</param>
     /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
     public static void BindService(grpc::ServiceBinderBase serviceBinder, BenchmarkServiceBase serviceImpl)
     {
-      serviceBinder.AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall);
-      serviceBinder.AddMethod(__Method_StreamingCall, serviceImpl.StreamingCall);
-      serviceBinder.AddMethod(__Method_StreamingFromClient, serviceImpl.StreamingFromClient);
-      serviceBinder.AddMethod(__Method_StreamingFromServer, serviceImpl.StreamingFromServer);
-      serviceBinder.AddMethod(__Method_StreamingBothWays, serviceImpl.StreamingBothWays);
+      serviceBinder.AddMethod(__Method_UnaryCall, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse>(serviceImpl.UnaryCall));
+      serviceBinder.AddMethod(__Method_StreamingCall, serviceImpl == null ? null : new grpc::DuplexStreamingServerMethod<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse>(serviceImpl.StreamingCall));
+      serviceBinder.AddMethod(__Method_StreamingFromClient, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse>(serviceImpl.StreamingFromClient));
+      serviceBinder.AddMethod(__Method_StreamingFromServer, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse>(serviceImpl.StreamingFromServer));
+      serviceBinder.AddMethod(__Method_StreamingBothWays, serviceImpl == null ? null : new grpc::DuplexStreamingServerMethod<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse>(serviceImpl.StreamingBothWays));
     }
 
   }

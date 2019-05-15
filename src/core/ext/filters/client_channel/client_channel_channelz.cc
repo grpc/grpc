@@ -49,8 +49,8 @@ ClientChannelNode::ClientChannelNode(grpc_channel* channel,
     : ChannelNode(channel, channel_tracer_max_nodes, is_top_level_channel) {
   client_channel_ =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
-  grpc_client_channel_set_channelz_node(client_channel_, this);
   GPR_ASSERT(client_channel_->filter == &grpc_client_channel_filter);
+  grpc_client_channel_set_channelz_node(client_channel_, this);
 }
 
 void ClientChannelNode::PopulateConnectivityState(grpc_json* json) {
@@ -113,12 +113,11 @@ RefCountedPtr<ChannelNode> ClientChannelNode::MakeClientChannelNode(
                                            is_top_level_channel);
 }
 
-SubchannelNode::SubchannelNode(grpc_subchannel* subchannel,
+SubchannelNode::SubchannelNode(Subchannel* subchannel,
                                size_t channel_tracer_max_nodes)
     : BaseNode(EntityType::kSubchannel),
       subchannel_(subchannel),
-      target_(
-          UniquePtr<char>(gpr_strdup(grpc_subchannel_get_target(subchannel_)))),
+      target_(UniquePtr<char>(gpr_strdup(subchannel_->GetTargetAddress()))),
       trace_(channel_tracer_max_nodes) {}
 
 SubchannelNode::~SubchannelNode() {}
@@ -128,8 +127,9 @@ void SubchannelNode::PopulateConnectivityState(grpc_json* json) {
   if (subchannel_ == nullptr) {
     state = GRPC_CHANNEL_SHUTDOWN;
   } else {
-    state = grpc_subchannel_check_connectivity(
-        subchannel_, nullptr, true /* inhibit_health_checking */);
+    state = subchannel_->CheckConnectivityState(
+        nullptr /* health_check_service_name */,
+        nullptr /* connected_subchannel */);
   }
   json = grpc_json_create_child(nullptr, json, "state", nullptr,
                                 GRPC_JSON_OBJECT, false);
@@ -170,7 +170,7 @@ grpc_json* SubchannelNode::RenderJson() {
   call_counter_.PopulateCallCounts(json);
   json = top_level_json;
   // populate the child socket.
-  intptr_t socket_uuid = grpc_subchannel_get_child_socket_uuid(subchannel_);
+  intptr_t socket_uuid = subchannel_->GetChildSocketUuid();
   if (socket_uuid != 0) {
     grpc_json* array_parent = grpc_json_create_child(
         nullptr, json, "socketRef", nullptr, GRPC_JSON_ARRAY, false);

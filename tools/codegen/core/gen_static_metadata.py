@@ -64,6 +64,7 @@ CONFIG = [
     # well known method names
     '/grpc.lb.v1.LoadBalancer/BalanceLoad',
     '/grpc.health.v1.Health/Watch',
+    '/envoy.service.discovery.v2.AggregatedDiscoveryService/StreamAggregatedResources',
     # compression algorithm names
     'deflate',
     'gzip',
@@ -375,6 +376,8 @@ print >> H, '#define GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H'
 print >> H
 print >> H, '#include <grpc/support/port_platform.h>'
 print >> H
+print >> H, '#include <cstdint>'
+print >> H
 print >> H, '#include "src/core/lib/transport/metadata.h"'
 print >> H
 print >> C, '#include <grpc/support/port_platform.h>'
@@ -393,7 +396,7 @@ for i, elem in enumerate(all_strs):
 
 def slice_def(i):
     return ('{&grpc_static_metadata_refcounts[%d],'
-            ' {{g_bytes+%d, %d}}}') % (i, id2strofs[i], len(all_strs[i]))
+            ' {{%d, g_bytes+%d}}}') % (i, len(all_strs[i]), id2strofs[i])
 
 
 # validate configuration
@@ -411,29 +414,19 @@ print >> H
 print >> C, 'static uint8_t g_bytes[] = {%s};' % (','.join(
     '%d' % ord(c) for c in ''.join(all_strs)))
 print >> C
-print >> C, 'static void static_ref(void *unused) {}'
-print >> C, 'static void static_unref(void *unused) {}'
-print >> C, ('static const grpc_slice_refcount_vtable static_sub_vtable = '
-             '{static_ref, static_unref, grpc_slice_default_eq_impl, '
-             'grpc_slice_default_hash_impl};')
-print >> H, ('extern const grpc_slice_refcount_vtable '
-             'grpc_static_metadata_vtable;')
-print >> C, ('const grpc_slice_refcount_vtable grpc_static_metadata_vtable = '
-             '{static_ref, static_unref, grpc_static_slice_eq, '
-             'grpc_static_slice_hash};')
-print >> C, ('static grpc_slice_refcount static_sub_refcnt = '
-             '{&static_sub_vtable, &static_sub_refcnt};')
+print >> C, ('static grpc_slice_refcount static_sub_refcnt;')
 print >> H, ('extern grpc_slice_refcount '
              'grpc_static_metadata_refcounts[GRPC_STATIC_MDSTR_COUNT];')
 print >> C, ('grpc_slice_refcount '
              'grpc_static_metadata_refcounts[GRPC_STATIC_MDSTR_COUNT] = {')
 for i, elem in enumerate(all_strs):
-    print >> C, '  {&grpc_static_metadata_vtable, &static_sub_refcnt},'
+    print >> C, ('  grpc_slice_refcount(&static_sub_refcnt, '
+                 'grpc_slice_refcount::Type::STATIC), ')
 print >> C, '};'
 print >> C
 print >> H, '#define GRPC_IS_STATIC_METADATA_STRING(slice) \\'
-print >> H, ('  ((slice).refcount != NULL && (slice).refcount->vtable == '
-             '&grpc_static_metadata_vtable)')
+print >> H, ('  ((slice).refcount != NULL && (slice).refcount->GetType() == '
+             'grpc_slice_refcount::Type::STATIC)')
 print >> H
 print >> C, ('const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT]'
              ' = {')
@@ -442,8 +435,8 @@ for i, elem in enumerate(all_strs):
 print >> C, '};'
 print >> C
 print >> H, '#define GRPC_STATIC_METADATA_INDEX(static_slice) \\'
-print >> H, ('  ((int)((static_slice).refcount - '
-             'grpc_static_metadata_refcounts))')
+print >> H, ('  (static_cast<intptr_t>(((static_slice).refcount - '
+             'grpc_static_metadata_refcounts)))')
 print >> H
 
 print >> D, '# hpack fuzzing dictionary'
@@ -546,10 +539,10 @@ print >> C, 'static const uint8_t elem_idxs[] = {%s};' % ','.join(
     '%d' % i for i in idxs)
 print >> C
 
-print >> H, 'grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b);'
-print >> C, 'grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b) {'
+print >> H, 'grpc_mdelem grpc_static_mdelem_for_static_strings(intptr_t a, intptr_t b);'
+print >> C, 'grpc_mdelem grpc_static_mdelem_for_static_strings(intptr_t a, intptr_t b) {'
 print >> C, '  if (a == -1 || b == -1) return GRPC_MDNULL;'
-print >> C, '  uint32_t k = (uint32_t)(a * %d + b);' % len(all_strs)
+print >> C, '  uint32_t k = static_cast<uint32_t>(a * %d + b);' % len(all_strs)
 print >> C, '  uint32_t h = elems_phash(k);'
 print >> C, '  return h < GPR_ARRAY_SIZE(elem_keys) && elem_keys[h] == k && elem_idxs[h] != 255 ? GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[elem_idxs[h]], GRPC_MDELEM_STORAGE_STATIC) : GRPC_MDNULL;'
 print >> C, '}'
@@ -575,7 +568,7 @@ print >> H, '  } named;'
 print >> H, '} grpc_metadata_batch_callouts;'
 print >> H
 print >> H, '#define GRPC_BATCH_INDEX_OF(slice) \\'
-print >> H, '  (GRPC_IS_STATIC_METADATA_STRING((slice)) ? (grpc_metadata_batch_callouts_index)GPR_CLAMP(GRPC_STATIC_METADATA_INDEX((slice)), 0, GRPC_BATCH_CALLOUTS_COUNT) : GRPC_BATCH_CALLOUTS_COUNT)'
+print >> H, '  (GRPC_IS_STATIC_METADATA_STRING((slice)) ? static_cast<grpc_metadata_batch_callouts_index>(GPR_CLAMP(GRPC_STATIC_METADATA_INDEX((slice)), 0, static_cast<intptr_t>(GRPC_BATCH_CALLOUTS_COUNT))) : GRPC_BATCH_CALLOUTS_COUNT)'
 print >> H
 
 print >> H, 'extern const uint8_t grpc_static_accept_encoding_metadata[%d];' % (

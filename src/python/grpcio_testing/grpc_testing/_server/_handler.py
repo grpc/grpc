@@ -185,7 +185,7 @@ class _Handler(Handler):
                 elif self._code is None:
                     self._condition.wait()
                 else:
-                    return self._trailing_metadata, self._code, self._details,
+                    return self._trailing_metadata, self._code, self._details
 
     def expire(self):
         with self._condition:

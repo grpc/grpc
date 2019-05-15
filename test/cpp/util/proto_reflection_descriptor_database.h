@@ -44,7 +44,7 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
 
   // The following four methods implement DescriptorDatabase interfaces.
   //
-  // Find a file by file name.  Fills in in *output and returns true if found.
+  // Find a file by file name.  Fills in *output and returns true if found.
   // Otherwise, returns false, leaving the contents of *output undefined.
   bool FindFileByName(const string& filename,
                       protobuf::FileDescriptorProto* output) override;

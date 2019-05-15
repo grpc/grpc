@@ -20,49 +20,68 @@
 
 #include <grpc/grpc.h>
 
+@protocol GRPCChannelFactory;
+
 @class GRPCCompletionQueue;
+@class GRPCCallOptions;
+@class GRPCChannelConfiguration;
 struct grpc_channel_credentials;
+
+NS_ASSUME_NONNULL_BEGIN
+
+/**
+ * Signature for the channel. If two channel's signatures are the same and connect to the same
+ * remote, they share the same underlying \a GRPCChannel object.
+ */
+@interface GRPCChannelConfiguration : NSObject<NSCopying>
+
+- (instancetype)init NS_UNAVAILABLE;
+
++ (instancetype) new NS_UNAVAILABLE;
+
+/** The host that this channel is connected to. */
+@property(copy, readonly) NSString *host;
+
+/**
+ * Options of the corresponding call. Note that only the channel-related options are of interest to
+ * this class.
+ */
+@property(readonly) GRPCCallOptions *callOptions;
+
+/** Acquire the factory to generate a new channel with current configurations. */
+@property(readonly) id<GRPCChannelFactory> channelFactory;
+
+/** Acquire the dictionary of channel args with current configurations. */
+@property(copy, readonly) NSDictionary *channelArgs;
+
+- (nullable instancetype)initWithHost:(NSString *)host
+                          callOptions:(GRPCCallOptions *)callOptions NS_DESIGNATED_INITIALIZER;
+
+@end
 
 /**
  * Each separate instance of this class represents at least one TCP connection to the provided host.
  */
 @interface GRPCChannel : NSObject
 
-@property(nonatomic, readonly, nonnull) struct grpc_channel *unmanagedChannel;
-
 - (nullable instancetype)init NS_UNAVAILABLE;
 
++ (nullable instancetype) new NS_UNAVAILABLE;
+
 /**
- * Creates a secure channel to the specified @c host using default credentials and channel
- * arguments. If certificates could not be found to create a secure channel, then @c nil is
+ * Create a channel with remote \a host and signature \a channelConfigurations.
+ */
+- (nullable instancetype)initWithChannelConfiguration:
+    (GRPCChannelConfiguration *)channelConfiguration NS_DESIGNATED_INITIALIZER;
+
+/**
+ * Create a grpc core call object (grpc_call) from this channel. If no call is created, NULL is
  * returned.
  */
-+ (nullable GRPCChannel *)secureChannelWithHost:(nonnull NSString *)host;
+- (nullable grpc_call *)unmanagedCallWithPath:(NSString *)path
+                              completionQueue:(GRPCCompletionQueue *)queue
+                                  callOptions:(GRPCCallOptions *)callOptions;
 
-/**
- * Creates a secure channel to the specified @c host using Cronet as a transport mechanism.
- */
-#ifdef GRPC_COMPILE_WITH_CRONET
-+ (nullable GRPCChannel *)secureCronetChannelWithHost:(nonnull NSString *)host
-                                          channelArgs:(nonnull NSDictionary *)channelArgs;
-#endif
-/**
- * Creates a secure channel to the specified @c host using the specified @c credentials and
- * @c channelArgs. Only in tests should @c GRPC_SSL_TARGET_NAME_OVERRIDE_ARG channel arg be set.
- */
-+ (nonnull GRPCChannel *)secureChannelWithHost:(nonnull NSString *)host
-                                   credentials:
-                                       (nonnull struct grpc_channel_credentials *)credentials
-                                   channelArgs:(nullable NSDictionary *)channelArgs;
-
-/**
- * Creates an insecure channel to the specified @c host using the specified @c channelArgs.
- */
-+ (nonnull GRPCChannel *)insecureChannelWithHost:(nonnull NSString *)host
-                                     channelArgs:(nullable NSDictionary *)channelArgs;
-
-- (nullable grpc_call *)unmanagedCallWithPath:(nonnull NSString *)path
-                                   serverName:(nonnull NSString *)serverName
-                                      timeout:(NSTimeInterval)timeout
-                              completionQueue:(nonnull GRPCCompletionQueue *)queue;
 @end
+
+NS_ASSUME_NONNULL_END

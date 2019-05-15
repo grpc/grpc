@@ -30,7 +30,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/sockaddr_posix.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -342,8 +342,8 @@ bool MaybeAddServerLoadReportingFilter(const grpc_channel_args& args) {
 // time if we build with the filter target.
 struct ServerLoadReportingFilterStaticRegistrar {
   ServerLoadReportingFilterStaticRegistrar() {
-    static std::atomic_bool registered{false};
-    if (registered) return;
+    static grpc_core::Atomic<bool> registered{false};
+    if (registered.Load(grpc_core::MemoryOrder::ACQUIRE)) return;
     RegisterChannelFilter<ServerLoadReportingChannelData,
                           ServerLoadReportingCallData>(
         "server_load_reporting", GRPC_SERVER_CHANNEL, INT_MAX,
@@ -356,7 +356,7 @@ struct ServerLoadReportingFilterStaticRegistrar {
     ::grpc::load_reporter::MeasureEndBytesReceived();
     ::grpc::load_reporter::MeasureEndLatencyMs();
     ::grpc::load_reporter::MeasureOtherCallMetric();
-    registered = true;
+    registered.Store(true, grpc_core::MemoryOrder::RELEASE);
   }
 } server_load_reporting_filter_static_registrar;
 

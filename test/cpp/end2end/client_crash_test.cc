@@ -60,7 +60,7 @@ class CrashTest : public ::testing::Test {
     }));
     GPR_ASSERT(server_);
     return grpc::testing::EchoTestService::NewStub(
-        CreateChannel(addr, InsecureChannelCredentials()));
+        grpc::CreateChannel(addr, InsecureChannelCredentials()));
   }
 
   void KillServer() { server_.reset(); }
@@ -135,7 +135,7 @@ int main(int argc, char** argv) {
     g_root = ".";
   }
 
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   // Order seems to matter on these tests: run three times to eliminate that
   for (int i = 0; i < 3; i++) {

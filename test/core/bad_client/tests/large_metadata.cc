@@ -141,7 +141,7 @@ static void server_verifier_sends_too_much_metadata(grpc_server* server,
 int main(int argc, char** argv) {
   int i;
 
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
 
   // Test sending more metadata than the server will accept.
   gpr_strvec headers;

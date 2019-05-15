@@ -221,7 +221,7 @@ void long_running_service_cleanup_test(void) {
 int main(int argc, char** argv) {
   /* Tests with default g_start_time */
   {
-    grpc_test_init(argc, argv);
+    grpc::testing::TestEnvironment env(argc, argv);
     grpc_core::ExecCtx::GlobalInit();
     grpc_core::ExecCtx exec_ctx;
     grpc_determine_iomgr_platform();
@@ -235,7 +235,7 @@ int main(int argc, char** argv) {
 
   /* Begin long running service tests */
   {
-    grpc_test_init(argc, argv);
+    grpc::testing::TestEnvironment env(argc, argv);
     /* Set g_start_time back 25 days. */
     /* We set g_start_time here in case there are any initialization
         dependencies that use g_start_time. */

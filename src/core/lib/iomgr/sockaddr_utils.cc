@@ -217,6 +217,7 @@ void grpc_string_to_sockaddr(grpc_resolved_address* out, char* addr, int port) {
 }
 
 char* grpc_sockaddr_to_uri(const grpc_resolved_address* resolved_addr) {
+  if (resolved_addr->len == 0) return nullptr;
   grpc_resolved_address addr_normalized;
   if (grpc_sockaddr_is_v4mapped(resolved_addr, &addr_normalized)) {
     resolved_addr = &addr_normalized;

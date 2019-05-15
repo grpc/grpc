@@ -66,10 +66,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     gpr_set_log_function(dont_log);
   }
   gpr_free(grpc_trace_fuzzer);
-  struct grpc_memory_counters counters;
-  if (leak_check) {
-    grpc_memory_counters_init();
-  }
+  grpc_core::testing::LeakDetector leak_detector(leak_check);
   input_stream inp = {data, data + size};
   grpc_init();
   bool is_on_gcp = grpc_alts_is_running_on_gcp();
@@ -111,10 +108,5 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     gpr_free(handshaker_service_url);
   }
   grpc_shutdown();
-  if (leak_check) {
-    counters = grpc_memory_counters_snapshot();
-    grpc_memory_counters_destroy();
-    GPR_ASSERT(counters.total_size_relative == 0);
-  }
   return 0;
 }

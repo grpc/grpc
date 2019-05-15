@@ -31,10 +31,13 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -166,24 +169,24 @@ class ClientChannelStressTest {
     explicit ServerThread(const grpc::string& type,
                           const grpc::string& server_host, T* service)
         : type_(type), service_(service) {
-      std::mutex mu;
+      grpc::internal::Mutex mu;
       // We need to acquire the lock here in order to prevent the notify_one
       // by ServerThread::Start from firing before the wait below is hit.
-      std::unique_lock<std::mutex> lock(mu);
+      grpc::internal::MutexLock lock(&mu);
       port_ = grpc_pick_unused_port_or_die();
       gpr_log(GPR_INFO, "starting %s server on port %d", type_.c_str(), port_);
-      std::condition_variable cond;
+      grpc::internal::CondVar cond;
       thread_.reset(new std::thread(
           std::bind(&ServerThread::Start, this, server_host, &mu, &cond)));
-      cond.wait(lock);
+      cond.Wait(&mu);
       gpr_log(GPR_INFO, "%s server startup complete", type_.c_str());
     }
 
-    void Start(const grpc::string& server_host, std::mutex* mu,
-               std::condition_variable* cond) {
+    void Start(const grpc::string& server_host, grpc::internal::Mutex* mu,
+               grpc::internal::CondVar* cond) {
       // We need to acquire the lock here in order to prevent the notify_one
       // below from firing before its corresponding wait is executed.
-      std::lock_guard<std::mutex> lock(*mu);
+      grpc::internal::MutexLock lock(mu);
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
@@ -191,7 +194,7 @@ class ClientChannelStressTest {
                                InsecureServerCredentials());
       builder.RegisterService(service_);
       server_ = builder.BuildAndStart();
-      cond->notify_one();
+      cond->Signal();
     }
 
     void Shutdown() {
@@ -216,23 +219,29 @@ class ClientChannelStressTest {
 
   void SetNextResolution(const std::vector<AddressData>& address_data) {
     grpc_core::ExecCtx exec_ctx;
-    grpc_lb_addresses* addresses =
-        grpc_lb_addresses_create(address_data.size(), nullptr);
-    for (size_t i = 0; i < address_data.size(); ++i) {
+    grpc_core::Resolver::Result result;
+    for (const auto& addr : address_data) {
       char* lb_uri_str;
-      gpr_asprintf(&lb_uri_str, "ipv4:127.0.0.1:%d", address_data[i].port);
+      gpr_asprintf(&lb_uri_str, "ipv4:127.0.0.1:%d", addr.port);
       grpc_uri* lb_uri = grpc_uri_parse(lb_uri_str, true);
       GPR_ASSERT(lb_uri != nullptr);
-      grpc_lb_addresses_set_address_from_uri(
-          addresses, i, lb_uri, address_data[i].is_balancer,
-          address_data[i].balancer_name.c_str(), nullptr);
+      grpc_resolved_address address;
+      GPR_ASSERT(grpc_parse_uri(lb_uri, &address));
+      std::vector<grpc_arg> args_to_add;
+      if (addr.is_balancer) {
+        args_to_add.emplace_back(grpc_channel_arg_integer_create(
+            const_cast<char*>(GRPC_ARG_ADDRESS_IS_BALANCER), 1));
+        args_to_add.emplace_back(grpc_channel_arg_string_create(
+            const_cast<char*>(GRPC_ARG_ADDRESS_BALANCER_NAME),
+            const_cast<char*>(addr.balancer_name.c_str())));
+      }
+      grpc_channel_args* args = grpc_channel_args_copy_and_add(
+          nullptr, args_to_add.data(), args_to_add.size());
+      result.addresses.emplace_back(address.addr, address.len, args);
       grpc_uri_destroy(lb_uri);
       gpr_free(lb_uri_str);
     }
-    grpc_arg fake_addresses = grpc_lb_addresses_create_channel_arg(addresses);
-    grpc_channel_args fake_result = {1, &fake_addresses};
-    response_generator_->SetResponse(&fake_result);
-    grpc_lb_addresses_destroy(addresses);
+    response_generator_->SetResponse(std::move(result));
   }
 
   void KeepSendingRequests() {
@@ -259,8 +268,8 @@ class ClientChannelStressTest {
                     response_generator_.get());
     std::ostringstream uri;
     uri << "fake:///servername_not_used";
-    channel_ =
-        CreateCustomChannel(uri.str(), InsecureChannelCredentials(), args);
+    channel_ = ::grpc::CreateCustomChannel(uri.str(),
+                                           InsecureChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
@@ -321,7 +330,7 @@ class ClientChannelStressTest {
 
 int main(int argc, char** argv) {
   grpc_init();
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::ClientChannelStressTest test;
   test.Run();
   grpc_shutdown();

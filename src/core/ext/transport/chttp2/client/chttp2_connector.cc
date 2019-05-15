@@ -55,7 +55,7 @@ typedef struct {
 
   grpc_closure connected;
 
-  grpc_handshake_manager* handshake_mgr;
+  grpc_core::RefCountedPtr<grpc_core::HandshakeManager> handshake_mgr;
 } chttp2_connector;
 
 static void chttp2_connector_ref(grpc_connector* con) {
@@ -79,7 +79,7 @@ static void chttp2_connector_shutdown(grpc_connector* con, grpc_error* why) {
   gpr_mu_lock(&c->mu);
   c->shutdown = true;
   if (c->handshake_mgr != nullptr) {
-    grpc_handshake_manager_shutdown(c->handshake_mgr, GRPC_ERROR_REF(why));
+    c->handshake_mgr->Shutdown(GRPC_ERROR_REF(why));
   }
   // If handshaking is not yet in progress, shutdown the endpoint.
   // Otherwise, the handshaker will do this for us.
@@ -91,7 +91,7 @@ static void chttp2_connector_shutdown(grpc_connector* con, grpc_error* why) {
 }
 
 static void on_handshake_done(void* arg, grpc_error* error) {
-  grpc_handshaker_args* args = static_cast<grpc_handshaker_args*>(arg);
+  auto* args = static_cast<grpc_core::HandshakerArgs*>(arg);
   chttp2_connector* c = static_cast<chttp2_connector*>(args->user_data);
   gpr_mu_lock(&c->mu);
   if (error != GRPC_ERROR_NONE || c->shutdown) {
@@ -117,8 +117,9 @@ static void on_handshake_done(void* arg, grpc_error* error) {
                                           c->args.interested_parties);
     c->result->transport =
         grpc_create_chttp2_transport(args->args, args->endpoint, true);
-    c->result->socket_uuid =
-        grpc_chttp2_transport_get_socket_uuid(c->result->transport);
+    grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> socket_node =
+        grpc_chttp2_transport_get_socket_node(c->result->transport);
+    c->result->socket_uuid = socket_node == nullptr ? 0 : socket_node->uuid();
     GPR_ASSERT(c->result->transport);
     // TODO(roth): We ideally want to wait until we receive HTTP/2
     // settings from the server before we consider the connection
@@ -151,20 +152,20 @@ static void on_handshake_done(void* arg, grpc_error* error) {
   grpc_closure* notify = c->notify;
   c->notify = nullptr;
   GRPC_CLOSURE_SCHED(notify, error);
-  grpc_handshake_manager_destroy(c->handshake_mgr);
-  c->handshake_mgr = nullptr;
+  c->handshake_mgr.reset();
   gpr_mu_unlock(&c->mu);
   chttp2_connector_unref(reinterpret_cast<grpc_connector*>(c));
 }
 
 static void start_handshake_locked(chttp2_connector* c) {
-  c->handshake_mgr = grpc_handshake_manager_create();
-  grpc_handshakers_add(HANDSHAKER_CLIENT, c->args.channel_args,
-                       c->args.interested_parties, c->handshake_mgr);
+  c->handshake_mgr = grpc_core::MakeRefCounted<grpc_core::HandshakeManager>();
+  grpc_core::HandshakerRegistry::AddHandshakers(
+      grpc_core::HANDSHAKER_CLIENT, c->args.channel_args,
+      c->args.interested_parties, c->handshake_mgr.get());
   grpc_endpoint_add_to_pollset_set(c->endpoint, c->args.interested_parties);
-  grpc_handshake_manager_do_handshake(
-      c->handshake_mgr, c->endpoint, c->args.channel_args, c->args.deadline,
-      nullptr /* acceptor */, on_handshake_done, c);
+  c->handshake_mgr->DoHandshake(c->endpoint, c->args.channel_args,
+                                c->args.deadline, nullptr /* acceptor */,
+                                on_handshake_done, c);
   c->endpoint = nullptr;  // Endpoint handed off to handshake manager.
 }
 
@@ -201,7 +202,8 @@ static void chttp2_connector_connect(grpc_connector* con,
                                      grpc_closure* notify) {
   chttp2_connector* c = reinterpret_cast<chttp2_connector*>(con);
   grpc_resolved_address addr;
-  grpc_get_subchannel_address_arg(args->channel_args, &addr);
+  grpc_core::Subchannel::GetAddressFromSubchannelAddressArg(args->channel_args,
+                                                            &addr);
   gpr_mu_lock(&c->mu);
   GPR_ASSERT(c->notify == nullptr);
   c->notify = notify;

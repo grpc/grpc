@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,60 +19,38 @@
 #ifndef GRPCPP_CREATE_CHANNEL_H
 #define GRPCPP_CREATE_CHANNEL_H
 
-#include <memory>
-
-#include <grpcpp/channel.h>
-#include <grpcpp/impl/codegen/client_interceptor.h>
-#include <grpcpp/security/credentials.h>
+#include <grpcpp/create_channel_impl.h>
 #include <grpcpp/support/channel_arguments.h>
-#include <grpcpp/support/config.h>
 
 namespace grpc {
 
-/// Create a new \a Channel pointing to \a target.
-///
-/// \param target The URI of the endpoint to connect to.
-/// \param creds Credentials to use for the created channel. If it does not
-/// hold an object or is invalid, a lame channel (one on which all operations
-/// fail) is returned.
-std::shared_ptr<Channel> CreateChannel(
+static inline std::shared_ptr<::grpc::Channel> CreateChannel(
     const grpc::string& target,
-    const std::shared_ptr<ChannelCredentials>& creds);
+    const std::shared_ptr<ChannelCredentials>& creds) {
+  return ::grpc_impl::CreateChannelImpl(target, creds);
+}
 
-/// Create a new \em custom \a Channel pointing to \a target.
-///
-/// \warning For advanced use and testing ONLY. Override default channel
-/// arguments only if necessary.
-///
-/// \param target The URI of the endpoint to connect to.
-/// \param creds Credentials to use for the created channel. If it does not
-/// hold an object or is invalid, a lame channel (one on which all operations
-/// fail) is returned.
-/// \param args Options for channel creation.
-std::shared_ptr<Channel> CreateCustomChannel(
+static inline std::shared_ptr<::grpc::Channel> CreateCustomChannel(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds,
-    const ChannelArguments& args);
+    const ChannelArguments& args) {
+  return ::grpc_impl::CreateCustomChannelImpl(target, creds, args);
+}
 
 namespace experimental {
-/// Create a new \em custom \a Channel pointing to \a target with \a
-/// interceptors being invoked per call.
-///
-/// \warning For advanced use and testing ONLY. Override default channel
-/// arguments only if necessary.
-///
-/// \param target The URI of the endpoint to connect to.
-/// \param creds Credentials to use for the created channel. If it does not
-/// hold an object or is invalid, a lame channel (one on which all operations
-/// fail) is returned.
-/// \param args Options for channel creation.
-std::shared_ptr<Channel> CreateCustomChannelWithInterceptors(
+
+static inline std::shared_ptr<::grpc::Channel>
+CreateCustomChannelWithInterceptors(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds,
     const ChannelArguments& args,
     std::vector<
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
-        interceptor_creators);
+        interceptor_creators) {
+  return ::grpc_impl::experimental::CreateCustomChannelWithInterceptors(
+      target, creds, args, std::move(interceptor_creators));
+}
+
 }  // namespace experimental
 }  // namespace grpc
 

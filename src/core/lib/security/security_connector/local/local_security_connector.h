@@ -34,13 +34,13 @@
  * - sc: address of local channel security connector instance to be returned
  *   from the method.
  *
- * It returns GRPC_SECURITY_OK on success, and an error stauts code on failure.
+ * It returns nullptr on failure.
  */
-grpc_security_status grpc_local_channel_security_connector_create(
-    grpc_channel_credentials* channel_creds,
-    grpc_call_credentials* request_metadata_creds,
-    const grpc_channel_args* args, const char* target_name,
-    grpc_channel_security_connector** sc);
+grpc_core::RefCountedPtr<grpc_channel_security_connector>
+grpc_local_channel_security_connector_create(
+    grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+    const grpc_channel_args* args, const char* target_name);
 
 /**
  * This method creates a local server security connector.
@@ -49,10 +49,11 @@ grpc_security_status grpc_local_channel_security_connector_create(
  * - sc: address of local server security connector instance to be returned from
  *   the method.
  *
- * It returns GRPC_SECURITY_OK on success, and an error status code on failure.
+ * It returns nullptr on failure.
  */
-grpc_security_status grpc_local_server_security_connector_create(
-    grpc_server_credentials* server_creds, grpc_server_security_connector** sc);
+grpc_core::RefCountedPtr<grpc_server_security_connector>
+grpc_local_server_security_connector_create(
+    grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
 
 #endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOCAL_LOCAL_SECURITY_CONNECTOR_H \
         */

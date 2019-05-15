@@ -21,30 +21,28 @@ grpc_package(name = "test/core/transport")
 grpc_cc_test(
     name = "bdp_estimator_test",
     srcs = ["bdp_estimator_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
-    ],
-    external_deps = [
-        "gtest",
     ],
 )
 
 grpc_cc_test(
     name = "byte_stream_test",
     srcs = ["byte_stream_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
-    ],
-    external_deps = [
-        "gtest",
     ],
 )
 
@@ -55,7 +53,6 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -67,7 +64,6 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -75,15 +71,14 @@ grpc_cc_test(
 grpc_cc_test(
     name = "pid_controller_test",
     srcs = ["pid_controller_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
-    ],
-    external_deps = [
-        "gtest",
     ],
 )
 
@@ -94,7 +89,6 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -106,7 +100,6 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -118,7 +111,6 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -126,12 +118,12 @@ grpc_cc_test(
 grpc_cc_test(
     name = "status_metadata_test",
     srcs = ["status_metadata_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:grpc",
-        "//test/core/util:gpr_test_util",
-    ],
-    external_deps = [
-        "gtest",
+        "//test/core/util:grpc_test_util",
     ],
 )

@@ -3,7 +3,8 @@
     {
       "src": [
         {
-          "files": ["Grpc.Core/Grpc.Core.csproj",
+          "files": ["Grpc.Core.Api/Grpc.Core.Api.csproj",
+                    "Grpc.Core/Grpc.Core.csproj",
                     "Grpc.Auth/Grpc.Auth.csproj",
                     "Grpc.Core.Testing/Grpc.Core.Testing.csproj",
                     "Grpc.HealthCheck/Grpc.HealthCheck.csproj",

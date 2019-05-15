@@ -891,7 +891,7 @@ static void test_thread_maxquota_change() {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_cv);

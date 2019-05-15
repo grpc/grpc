@@ -332,7 +332,7 @@ void GrpcUdpListener::OnFdAboutToOrphan() {
   GRPC_CLOSURE_INIT(&destroyed_closure_, destroyed_port, server_,
                     grpc_schedule_on_exec_ctx);
   if (!orphan_notified_ && udp_handler_ != nullptr) {
-    /* Singals udp_handler that the FD is about to be closed and
+    /* Signals udp_handler that the FD is about to be closed and
      * should no longer be used. */
     GRPC_CLOSURE_INIT(&orphan_fd_closure_, shutdown_fd, this,
                       grpc_schedule_on_exec_ctx);
@@ -481,8 +481,9 @@ void GrpcUdpListener::OnRead(grpc_error* error, void* do_read_arg) {
   if (udp_handler_->Read()) {
     /* There maybe more packets to read. Schedule read_more_cb_ closure to run
      * after finishing this event loop. */
-    GRPC_CLOSURE_INIT(&do_read_closure_, do_read, do_read_arg,
-                      grpc_executor_scheduler(GRPC_EXECUTOR_LONG));
+    GRPC_CLOSURE_INIT(
+        &do_read_closure_, do_read, do_read_arg,
+        grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::LONG));
     GRPC_CLOSURE_SCHED(&do_read_closure_, GRPC_ERROR_NONE);
   } else {
     /* Finish reading all the packets, re-arm the notification event so we can
@@ -542,8 +543,9 @@ void GrpcUdpListener::OnCanWrite(grpc_error* error, void* do_write_arg) {
   }
 
   /* Schedule actual write in another thread. */
-  GRPC_CLOSURE_INIT(&do_write_closure_, do_write, do_write_arg,
-                    grpc_executor_scheduler(GRPC_EXECUTOR_LONG));
+  GRPC_CLOSURE_INIT(
+      &do_write_closure_, do_write, do_write_arg,
+      grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::LONG));
 
   GRPC_CLOSURE_SCHED(&do_write_closure_, GRPC_ERROR_NONE);
 }
@@ -643,7 +645,7 @@ int grpc_udp_server_add_port(grpc_udp_server* s,
           grpc_sockaddr_set_port(addr, allocated_port1);
           port = allocated_port1;
         } else if (allocated_port1 >= 0) {
-          /* The following sucessfully created socket should have same port as
+          /* The following successfully created socket should have same port as
            * the first one. */
           GPR_ASSERT(port == allocated_port1);
         }

@@ -16,6 +16,8 @@
 
 #endregion
 
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;  // UWYU: Object.GetType() extension.
 using Microsoft.Build.Framework;
 using Moq;
@@ -30,6 +32,7 @@ namespace Grpc.Tools.Tests
         {
             public string LastPathToTool { get; private set; }
             public string[] LastResponseFile { get; private set; }
+            public List<string> StdErrMessages { get; } = new List<string>();
 
             protected override int ExecuteTool(string pathToTool,
                                                string response,
@@ -45,8 +48,13 @@ namespace Grpc.Tools.Tests
                 LastPathToTool = pathToTool;
                 LastResponseFile = response.Remove(response.Length - 1).Split('\n');
 
+                foreach (string message in StdErrMessages)
+                {
+                    LogEventsFromTextOutput(message, MessageImportance.High);
+                }
+
                 // Do not run the tool, but pretend it ran successfully.
-                return 0;
+                return StdErrMessages.Any() ? -1 : 0;
             }
         };
 
@@ -62,7 +70,7 @@ namespace Grpc.Tools.Tests
             };
         }
 
-        [TestCase("ProtoBuf")]
+        [TestCase("Protobuf")]
         [TestCase("Generator")]
         [TestCase("OutputDir")]
         [Description("We trust MSBuild to initialize these properties.")]

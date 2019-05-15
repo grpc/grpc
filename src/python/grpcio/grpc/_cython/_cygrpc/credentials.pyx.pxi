@@ -17,8 +17,6 @@ cimport cpython
 import grpc
 import threading
 
-from libc.stdint cimport uintptr_t
-
 
 def _spawn_callback_in_thread(cb_func, args):
   ForkManagedThread(target=cb_func, args=args).start()
@@ -35,7 +33,7 @@ def _spawn_callback_async(callback, args):
 
 cdef class CallCredentials:
 
-  cdef grpc_call_credentials *c(self):
+  cdef grpc_call_credentials *c(self) except *:
     raise NotImplementedError()
 
 
@@ -61,6 +59,7 @@ cdef int _get_metadata(
 
 cdef void _destroy(void *state) with gil:
   cpython.Py_DECREF(<object>state)
+  grpc_shutdown_blocking()
 
 
 cdef class MetadataPluginCallCredentials(CallCredentials):
@@ -69,13 +68,14 @@ cdef class MetadataPluginCallCredentials(CallCredentials):
     self._metadata_plugin = metadata_plugin
     self._name = name
 
-  cdef grpc_call_credentials *c(self):
+  cdef grpc_call_credentials *c(self) except *:
     cdef grpc_metadata_credentials_plugin c_metadata_plugin
     c_metadata_plugin.get_metadata = _get_metadata
     c_metadata_plugin.destroy = _destroy
     c_metadata_plugin.state = <void *>self._metadata_plugin
     c_metadata_plugin.type = self._name
     cpython.Py_INCREF(self._metadata_plugin)
+    fork_handlers_and_grpc_init()
     return grpc_metadata_credentials_create_from_plugin(c_metadata_plugin, NULL)
 
 
@@ -101,13 +101,13 @@ cdef class CompositeCallCredentials(CallCredentials):
   def __cinit__(self, call_credentialses):
     self._call_credentialses = call_credentialses
 
-  cdef grpc_call_credentials *c(self):
+  cdef grpc_call_credentials *c(self) except *:
     return _composition(self._call_credentialses)
 
 
 cdef class ChannelCredentials:
 
-  cdef grpc_channel_credentials *c(self):
+  cdef grpc_channel_credentials *c(self) except *:
     raise NotImplementedError()
 
 
@@ -123,17 +123,19 @@ cdef class SSLSessionCacheLRU:
   def __dealloc__(self):
     if self._cache != NULL:
         grpc_ssl_session_cache_destroy(self._cache)
-    grpc_shutdown()
+    grpc_shutdown_blocking()
 
 
 cdef class SSLChannelCredentials(ChannelCredentials):
 
   def __cinit__(self, pem_root_certificates, private_key, certificate_chain):
+    if pem_root_certificates is not None and not isinstance(pem_root_certificates, bytes):
+      raise TypeError('expected certificate to be bytes, got %s' % (type(pem_root_certificates)))
     self._pem_root_certificates = pem_root_certificates
     self._private_key = private_key
     self._certificate_chain = certificate_chain
 
-  cdef grpc_channel_credentials *c(self):
+  cdef grpc_channel_credentials *c(self) except *:
     cdef const char *c_pem_root_certificates
     cdef grpc_ssl_pem_key_cert_pair c_pem_key_certificate_pair
     if self._pem_root_certificates is None:
@@ -162,7 +164,7 @@ cdef class CompositeChannelCredentials(ChannelCredentials):
     self._call_credentialses = call_credentialses
     self._channel_credentials = channel_credentials
 
-  cdef grpc_channel_credentials *c(self):
+  cdef grpc_channel_credentials *c(self) except *:
     cdef grpc_channel_credentials *c_channel_credentials
     c_channel_credentials = self._channel_credentials.c()
     cdef grpc_call_credentials *c_call_credentials_composition = _composition(
@@ -187,7 +189,7 @@ cdef class ServerCertificateConfig:
   def __dealloc__(self):
     grpc_ssl_server_certificate_config_destroy(self.c_cert_config)
     gpr_free(self.c_ssl_pem_key_cert_pairs)
-    grpc_shutdown()
+    grpc_shutdown_blocking()
 
 
 cdef class ServerCredentials:
@@ -203,7 +205,7 @@ cdef class ServerCredentials:
   def __dealloc__(self):
     if self.c_credentials != NULL:
       grpc_server_credentials_release(self.c_credentials)
-    grpc_shutdown()
+    grpc_shutdown_blocking()
 
 cdef const char* _get_c_pem_root_certs(pem_root_certs):
   if pem_root_certs is None:

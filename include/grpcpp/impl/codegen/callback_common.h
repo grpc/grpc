@@ -32,6 +32,8 @@ namespace grpc {
 namespace internal {
 
 /// An exception-safe way of invoking a user-specified callback function
+// TODO(vjpai): decide whether it is better for this to take a const lvalue
+//              parameter or an rvalue parameter, or if it even matters
 template <class Func, class... Args>
 void CatchingCallback(Func&& func, Args&&... args) {
 #if GRPC_ALLOW_EXCEPTIONS
@@ -42,6 +44,20 @@ void CatchingCallback(Func&& func, Args&&... args) {
   }
 #else   // GRPC_ALLOW_EXCEPTIONS
   func(std::forward<Args>(args)...);
+#endif  // GRPC_ALLOW_EXCEPTIONS
+}
+
+template <class ReturnType, class Func, class... Args>
+ReturnType* CatchingReactorCreator(Func&& func, Args&&... args) {
+#if GRPC_ALLOW_EXCEPTIONS
+  try {
+    return func(std::forward<Args>(args)...);
+  } catch (...) {
+    // fail the RPC, don't crash the library
+    return nullptr;
+  }
+#else   // GRPC_ALLOW_EXCEPTIONS
+  return func(std::forward<Args>(args)...);
 #endif  // GRPC_ALLOW_EXCEPTIONS
 }
 
@@ -145,18 +161,19 @@ class CallbackWithSuccessTag
   // or on a tag that has been Set before unless the tag has been cleared.
   void Set(grpc_call* call, std::function<void(bool)> f,
            CompletionQueueTag* ops) {
+    GPR_CODEGEN_ASSERT(call_ == nullptr);
+    g_core_codegen_interface->grpc_call_ref(call);
     call_ = call;
     func_ = std::move(f);
     ops_ = ops;
-    g_core_codegen_interface->grpc_call_ref(call);
     functor_run = &CallbackWithSuccessTag::StaticRun;
   }
 
   void Clear() {
     if (call_ != nullptr) {
-      func_ = nullptr;
       grpc_call* call = call_;
       call_ = nullptr;
+      func_ = nullptr;
       g_core_codegen_interface->grpc_call_unref(call);
     }
   }
@@ -182,11 +199,11 @@ class CallbackWithSuccessTag
   }
   void Run(bool ok) {
     void* ignored = ops_;
-    bool new_ok = ok;
     // Allow a "false" return value from FinalizeResult to silence the
     // callback, just as it silences a CQ tag in the async cases
-    bool do_callback = ops_->FinalizeResult(&ignored, &new_ok);
-    GPR_CODEGEN_ASSERT(ignored == ops_);
+    auto* ops = ops_;
+    bool do_callback = ops_->FinalizeResult(&ignored, &ok);
+    GPR_CODEGEN_ASSERT(ignored == ops);
 
     if (do_callback) {
       CatchingCallback(func_, ok);

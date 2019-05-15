@@ -48,7 +48,7 @@ LoadReporterAsyncServiceImpl::~LoadReporterAsyncServiceImpl() {
   // We will reach here after the server starts shutting down.
   shutdown_ = true;
   {
-    std::unique_lock<std::mutex> lock(cq_shutdown_mu_);
+    grpc_core::MutexLock lock(&cq_shutdown_mu_);
     cq_->Shutdown();
   }
   if (next_fetch_and_sample_alarm_ != nullptr)
@@ -62,7 +62,7 @@ void LoadReporterAsyncServiceImpl::ScheduleNextFetchAndSample() {
                    gpr_time_from_millis(kFetchAndSampleIntervalSeconds * 1000,
                                         GPR_TIMESPAN));
   {
-    std::unique_lock<std::mutex> lock(cq_shutdown_mu_);
+    grpc_core::MutexLock lock(&cq_shutdown_mu_);
     if (shutdown_) return;
     // TODO(juanlishen): Improve the Alarm implementation to reuse a single
     // instance for multiple events.
@@ -119,7 +119,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::CreateAndStart(
       std::make_shared<ReportLoadHandler>(cq, service, load_reporter);
   ReportLoadHandler* p = handler.get();
   {
-    std::unique_lock<std::mutex> lock(service->cq_shutdown_mu_);
+    grpc_core::MutexLock lock(&service->cq_shutdown_mu_);
     if (service->shutdown_) return;
     p->on_done_notified_ =
         CallableTag(std::bind(&ReportLoadHandler::OnDoneNotified, p,
@@ -164,9 +164,9 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnRequestDelivered(
   // instance will deallocate itself when it's done.
   CreateAndStart(cq_, service_, load_reporter_);
   {
-    std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
+    grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
-      lock.release()->unlock();
+      lock.Unlock();
       Shutdown(std::move(self), "OnRequestDelivered");
       return;
     }
@@ -211,8 +211,8 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
                                           load_key_);
       const auto& load_report_interval = initial_request.load_report_interval();
       load_report_interval_ms_ =
-          static_cast<uint64_t>(load_report_interval.seconds() * 1000 +
-                                load_report_interval.nanos() / 1000);
+          static_cast<unsigned long>(load_report_interval.seconds() * 1000 +
+                                     load_report_interval.nanos() / 1000);
       gpr_log(
           GPR_INFO,
           "[LRS %p] Initial request received. Start load reporting (load "
@@ -222,9 +222,9 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
       SendReport(self, true /* ok */);
       // Expect this read to fail.
       {
-        std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
+        grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
         if (service_->shutdown_) {
-          lock.release()->unlock();
+          lock.Unlock();
           Shutdown(std::move(self), "OnReadDone");
           return;
         }
@@ -254,9 +254,9 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::ScheduleNextReport(
       gpr_now(GPR_CLOCK_MONOTONIC),
       gpr_time_from_millis(load_report_interval_ms_, GPR_TIMESPAN));
   {
-    std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
+    grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
-      lock.release()->unlock();
+      lock.Unlock();
       Shutdown(std::move(self), "ScheduleNextReport");
       return;
     }
@@ -294,9 +294,9 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(
     call_status_ = INITIAL_RESPONSE_SENT;
   }
   {
-    std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
+    grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
-      lock.release()->unlock();
+      lock.Unlock();
       Shutdown(std::move(self), "SendReport");
       return;
     }
@@ -342,7 +342,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::Shutdown(
   // OnRequestDelivered() may be called after OnDoneNotified(), so we need to
   // try to Finish() every time we are in Shutdown().
   if (call_status_ >= DELIVERED && call_status_ < FINISH_CALLED) {
-    std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
+    grpc_core::MutexLock lock(&service_->cq_shutdown_mu_);
     if (!service_->shutdown_) {
       on_finish_done_ =
           CallableTag(std::bind(&ReportLoadHandler::OnFinishDone, this,

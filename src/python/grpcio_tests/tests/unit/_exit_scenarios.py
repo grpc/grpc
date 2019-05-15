@@ -87,7 +87,7 @@ def hang_stream_stream(request_iterator, servicer_context):
 
 def hang_partial_stream_stream(request_iterator, servicer_context):
     for _ in range(test_constants.STREAM_LENGTH // 2):
-        yield next(request_iterator)
+        yield next(request_iterator)  #pylint: disable=stop-iteration-return
     time.sleep(WAIT_TIME)
 
 

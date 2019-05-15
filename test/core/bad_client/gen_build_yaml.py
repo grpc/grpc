@@ -56,7 +56,6 @@ def main():
             'deps': [
               'grpc_test_util_unsecure',
               'grpc_unsecure',
-              'gpr_test_util',
               'gpr'
             ]
           }],
@@ -74,7 +73,6 @@ def main():
                   'bad_client_test',
                   'grpc_test_util_unsecure',
                   'grpc_unsecure',
-                  'gpr_test_util',
                   'gpr'
               ]
           }

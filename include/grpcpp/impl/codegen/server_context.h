@@ -41,8 +41,15 @@ struct grpc_metadata;
 struct grpc_call;
 struct census_context;
 
+namespace grpc_impl {
+
+class CompletionQueue;
+class Server;
+}  // namespace grpc_impl
 namespace grpc {
 class ClientContext;
+class GenericServerContext;
+class ServerInterface;
 template <class W, class R>
 class ServerAsyncReader;
 template <class W>
@@ -55,6 +62,7 @@ template <class R>
 class ServerReader;
 template <class W>
 class ServerWriter;
+
 namespace internal {
 template <class W, class R>
 class ServerReaderWriterBody;
@@ -66,19 +74,23 @@ template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class BidiStreamingHandler;
-template <class ServiceType, class RequestType, class ResponseType>
+template <class RequestType, class ResponseType>
 class CallbackUnaryHandler;
+template <class RequestType, class ResponseType>
+class CallbackClientStreamingHandler;
+template <class RequestType, class ResponseType>
+class CallbackServerStreamingHandler;
+template <class RequestType, class ResponseType>
+class CallbackBidiHandler;
 template <class Streamer, bool WriteNeeded>
 class TemplatedBidiStreamingHandler;
 template <StatusCode code>
 class ErrorMethodHandler;
 class Call;
+class ServerReactor;
 }  // namespace internal
 
-class CompletionQueue;
-class Server;
 class ServerInterface;
-
 namespace testing {
 class InteropServerContextInspector;
 class ServerContextTestSpouse;
@@ -124,6 +136,13 @@ class ServerContext {
   /// end in "-bin".
   /// \param value The metadata value. If its value is binary, the key name
   /// must end in "-bin".
+  ///
+  /// Metadata must conform to the following format:
+  /// Custom-Metadata -> Binary-Header / ASCII-Header
+  /// Binary-Header -> {Header-Name "-bin" } {binary value}
+  /// ASCII-Header -> Header-Name ASCII-Value
+  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
   void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
 
   /// Add the (\a key, \a value) pair to the initial metadata
@@ -138,6 +157,13 @@ class ServerContext {
   /// it must end in "-bin".
   /// \param value The metadata value. If its value is binary, the key name
   /// must end in "-bin".
+  ///
+  /// Metadata must conform to the following format:
+  /// Custom-Metadata -> Binary-Header / ASCII-Header
+  /// Binary-Header -> {Header-Name "-bin" } {binary value}
+  /// ASCII-Header -> Header-Name ASCII-Value
+  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
 
   /// IsCancelled is always safe to call when using sync or callback API.
@@ -247,7 +273,7 @@ class ServerContext {
   friend class ::grpc::testing::InteropServerContextInspector;
   friend class ::grpc::testing::ServerContextTestSpouse;
   friend class ::grpc::ServerInterface;
-  friend class ::grpc::Server;
+  friend class ::grpc_impl::Server;
   template <class W, class R>
   friend class ::grpc::ServerAsyncReader;
   template <class W>
@@ -270,11 +296,18 @@ class ServerContext {
   friend class ::grpc::internal::ServerStreamingHandler;
   template <class Streamer, bool WriteNeeded>
   friend class ::grpc::internal::TemplatedBidiStreamingHandler;
-  template <class ServiceType, class RequestType, class ResponseType>
+  template <class RequestType, class ResponseType>
   friend class ::grpc::internal::CallbackUnaryHandler;
+  template <class RequestType, class ResponseType>
+  friend class ::grpc::internal::CallbackClientStreamingHandler;
+  template <class RequestType, class ResponseType>
+  friend class ::grpc::internal::CallbackServerStreamingHandler;
+  template <class RequestType, class ResponseType>
+  friend class ::grpc::internal::CallbackBidiHandler;
   template <StatusCode code>
   friend class internal::ErrorMethodHandler;
   friend class ::grpc::ClientContext;
+  friend class ::grpc::GenericServerContext;
 
   /// Prevent copying.
   ServerContext(const ServerContext&);
@@ -282,7 +315,9 @@ class ServerContext {
 
   class CompletionOp;
 
-  void BeginCompletionOp(internal::Call* call, bool callback);
+  void BeginCompletionOp(internal::Call* call,
+                         std::function<void(bool)> callback,
+                         internal::ServerReactor* reactor);
   /// Return the tag queued by BeginCompletionOp()
   internal::CompletionQueueTag* GetCompletionOpTag();
 
@@ -298,13 +333,16 @@ class ServerContext {
 
   uint32_t initial_metadata_flags() const { return 0; }
 
+  void SetCancelCallback(std::function<void()> callback);
+  void ClearCancelCallback();
+
   experimental::ServerRpcInfo* set_server_rpc_info(
-      const char* method,
+      const char* method, internal::RpcMethod::RpcType type,
       const std::vector<
           std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>&
           creators) {
     if (creators.size() != 0) {
-      rpc_info_ = new experimental::ServerRpcInfo(this, method);
+      rpc_info_ = new experimental::ServerRpcInfo(this, method, type);
       rpc_info_->RegisterInterceptors(creators);
     }
     return rpc_info_;
@@ -317,7 +355,7 @@ class ServerContext {
 
   gpr_timespec deadline_;
   grpc_call* call_;
-  CompletionQueue* cq_;
+  ::grpc_impl::CompletionQueue* cq_;
   bool sent_initial_metadata_;
   mutable std::shared_ptr<const AuthContext> auth_context_;
   mutable internal::MetadataMap client_metadata_;

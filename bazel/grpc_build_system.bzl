@@ -23,14 +23,22 @@
 # each change must be ported from one to the other.
 #
 
+load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+
 # The set of pollers to test against if a test exercises polling
-POLLERS = ["epollex", "epoll1", "poll", "poll-cv"]
+POLLERS = ["epollex", "epoll1", "poll"]
 
 def if_not_windows(a):
     return select({
         "//:windows": [],
         "//:windows_msvc": [],
         "//conditions:default": a,
+    })
+
+def if_mac(a):
+    return select({
+        "//:mac_x86_64": a,
+        "//conditions:default": [],
     })
 
 def _get_external_deps(external_deps):
@@ -71,10 +79,17 @@ def grpc_cc_library(
         testonly = False,
         visibility = None,
         alwayslink = 0,
-        data = []):
+        data = [],
+        use_cfstream = False,
+        tags = []):
     copts = []
+    if use_cfstream:
+        copts = if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
-        copts = if_not_windows(["-std=c99"])
+        copts = copts + if_not_windows(["-std=c99"])
+    linkopts = if_not_windows(["-pthread"])
+    if use_cfstream:
+        linkopts = linkopts + if_mac(["-framework CoreFoundation"])
     native.cc_library(
         name = name,
         srcs = srcs,
@@ -96,12 +111,11 @@ def grpc_cc_library(
         copts = copts,
         visibility = visibility,
         testonly = testonly,
-        linkopts = if_not_windows(["-pthread"]),
-        includes = [
-            "include",
-        ],
+        linkopts = linkopts,
+        includes = ["include"] + if_not_windows(["src/core/ext/upb-generated"]),
         alwayslink = alwayslink,
         data = data,
+        tags = tags,
     )
 
 def grpc_proto_plugin(name, srcs = [], deps = []):
@@ -110,8 +124,6 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
         srcs = srcs,
         deps = deps,
     )
-
-load("//:bazel/cc_grpc_library.bzl", "cc_grpc_library")
 
 def grpc_proto_library(
         name,
@@ -131,12 +143,11 @@ def grpc_proto_library(
         generate_mocks = generate_mocks,
     )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = "moderate", tags = []):
-    copts = []
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = []):
+    copts = if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
-        copts = if_not_windows(["-std=c99"])
+        copts = copts + if_not_windows(["-std=c99"])
     args = {
-        "name": name,
         "srcs": srcs,
         "args": args,
         "data": data,
@@ -145,9 +156,20 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "linkopts": if_not_windows(["-pthread"]),
         "size": size,
         "timeout": timeout,
+        "exec_compatible_with": exec_compatible_with,
     }
     if uses_polling:
-        native.cc_test(testonly = True, tags = ["manual"], **args)
+        # Only run targets with pollers for non-MSVC
+        # TODO(yfen): Enable MSVC for poller-enabled targets without pollers
+        native.cc_test(
+            name = name,
+            testonly = True,
+            tags = [
+                "manual",
+                "no_windows",
+            ],
+            **args
+        )
         for poller in POLLERS:
             native.sh_test(
                 name = name + "@poller=" + poller,
@@ -161,12 +183,13 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
                     poller,
                     "$(location %s)" % name,
                 ] + args["args"],
-                tags = tags,
+                tags = (tags + ["no_windows"]),
+                exec_compatible_with = exec_compatible_with,
             )
     else:
-        native.cc_test(**args)
+        native.cc_test(tags = tags, **args)
 
-def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = []):
+def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = []):
     copts = []
     if language.upper() == "C":
         copts = ["-std=c99"]
@@ -180,6 +203,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
         deps = deps + _get_external_deps(external_deps),
         copts = copts,
         linkopts = if_not_windows(["-pthread"]) + linkopts,
+        tags = tags,
     )
 
 def grpc_generate_one_off_targets():

@@ -197,10 +197,21 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         inner_jobs=inner_jobs,
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
+    # C# tests on .NET desktop/mono
     test_jobs += _generate_jobs(
         languages=['csharp'],
         configs=['dbg', 'opt'],
         platforms=['linux', 'macos', 'windows'],
+        labels=['basictests', 'multilang'],
+        extra_args=extra_args,
+        inner_jobs=inner_jobs)
+    # C# tests on .NET core
+    test_jobs += _generate_jobs(
+        languages=['csharp'],
+        configs=['dbg', 'opt'],
+        platforms=['linux', 'macos', 'windows'],
+        arch='default',
+        compiler='coreclr',
         labels=['basictests', 'multilang'],
         extra_args=extra_args,
         inner_jobs=inner_jobs)
@@ -388,16 +399,6 @@ def _create_portability_test_jobs(extra_args=[],
         platforms=['linux'],
         arch='default',
         compiler='python_alpine',
-        labels=['portability', 'multilang'],
-        extra_args=extra_args,
-        inner_jobs=inner_jobs)
-
-    test_jobs += _generate_jobs(
-        languages=['csharp'],
-        configs=['dbg'],
-        platforms=['linux'],
-        arch='default',
-        compiler='coreclr',
         labels=['portability', 'multilang'],
         extra_args=extra_args,
         inner_jobs=inner_jobs)

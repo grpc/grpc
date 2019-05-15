@@ -850,7 +850,7 @@ namespace Grpc.Reflection.V1Alpha {
       }
       if (other.originalRequest_ != null) {
         if (originalRequest_ == null) {
-          originalRequest_ = new global::Grpc.Reflection.V1Alpha.ServerReflectionRequest();
+          OriginalRequest = new global::Grpc.Reflection.V1Alpha.ServerReflectionRequest();
         }
         OriginalRequest.MergeFrom(other.OriginalRequest);
       }
@@ -898,9 +898,9 @@ namespace Grpc.Reflection.V1Alpha {
           }
           case 18: {
             if (originalRequest_ == null) {
-              originalRequest_ = new global::Grpc.Reflection.V1Alpha.ServerReflectionRequest();
+              OriginalRequest = new global::Grpc.Reflection.V1Alpha.ServerReflectionRequest();
             }
-            input.ReadMessage(originalRequest_);
+            input.ReadMessage(OriginalRequest);
             break;
           }
           case 34: {

@@ -72,6 +72,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of WorkerService</summary>
+    [grpc::BindServiceMethod(typeof(WorkerService), "BindService")]
     public abstract partial class WorkerServiceBase
     {
       /// <summary>
@@ -321,16 +322,16 @@ namespace Grpc.Testing {
           .AddMethod(__Method_QuitWorker, serviceImpl.QuitWorker).Build();
     }
 
-    /// <summary>Register service method implementations with a service binder. Useful when customizing the service binding logic.
+    /// <summary>Register service method with a service binder with or without implementation. Useful when customizing the  service binding logic.
     /// Note: this method is part of an experimental API that can change or be removed without any prior notice.</summary>
     /// <param name="serviceBinder">Service methods will be bound by calling <c>AddMethod</c> on this object.</param>
     /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
     public static void BindService(grpc::ServiceBinderBase serviceBinder, WorkerServiceBase serviceImpl)
     {
-      serviceBinder.AddMethod(__Method_RunServer, serviceImpl.RunServer);
-      serviceBinder.AddMethod(__Method_RunClient, serviceImpl.RunClient);
-      serviceBinder.AddMethod(__Method_CoreCount, serviceImpl.CoreCount);
-      serviceBinder.AddMethod(__Method_QuitWorker, serviceImpl.QuitWorker);
+      serviceBinder.AddMethod(__Method_RunServer, serviceImpl == null ? null : new grpc::DuplexStreamingServerMethod<global::Grpc.Testing.ServerArgs, global::Grpc.Testing.ServerStatus>(serviceImpl.RunServer));
+      serviceBinder.AddMethod(__Method_RunClient, serviceImpl == null ? null : new grpc::DuplexStreamingServerMethod<global::Grpc.Testing.ClientArgs, global::Grpc.Testing.ClientStatus>(serviceImpl.RunClient));
+      serviceBinder.AddMethod(__Method_CoreCount, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Grpc.Testing.CoreRequest, global::Grpc.Testing.CoreResponse>(serviceImpl.CoreCount));
+      serviceBinder.AddMethod(__Method_QuitWorker, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Grpc.Testing.Void, global::Grpc.Testing.Void>(serviceImpl.QuitWorker));
     }
 
   }

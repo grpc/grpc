@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/port.h"
 
 #include <stdlib.h>
@@ -34,6 +35,24 @@ void grpc_iomgr_start();
 /** Signals the intention to shutdown the iomgr. Expects to be able to flush
  * exec_ctx. */
 void grpc_iomgr_shutdown();
+
+/** Signals the intention to shutdown all the closures registered in the
+ * background poller. */
+void grpc_iomgr_shutdown_background_closure();
+
+/* Returns true if polling engine runs in the background, false otherwise.
+ * Currently only 'epollbg' runs in the background.
+ */
+bool grpc_iomgr_run_in_background();
+
+/** Returns true if the caller is a worker thread for any background poller. */
+bool grpc_iomgr_is_any_background_poller_thread();
+
+/** Returns true if the closure is registered into the background poller. Note
+ * that the closure may or may not run yet when this function returns, and the
+ * closure should not be blocking or long-running. */
+bool grpc_iomgr_add_closure_to_background_poller(grpc_closure* closure,
+                                                 grpc_error* error);
 
 /* Exposed only for testing */
 size_t grpc_iomgr_count_objects_for_testing();

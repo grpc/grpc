@@ -70,6 +70,8 @@ extern void filter_call_init_fails(grpc_end2end_test_config config);
 extern void filter_call_init_fails_pre_init(void);
 extern void filter_causes_close(grpc_end2end_test_config config);
 extern void filter_causes_close_pre_init(void);
+extern void filter_context(grpc_end2end_test_config config);
+extern void filter_context_pre_init(void);
 extern void filter_latency(grpc_end2end_test_config config);
 extern void filter_latency_pre_init(void);
 extern void filter_status_code(grpc_end2end_test_config config);
@@ -98,8 +100,6 @@ extern void max_message_length(grpc_end2end_test_config config);
 extern void max_message_length_pre_init(void);
 extern void negative_deadline(grpc_end2end_test_config config);
 extern void negative_deadline_pre_init(void);
-extern void network_status_change(grpc_end2end_test_config config);
-extern void network_status_change_pre_init(void);
 extern void no_error_on_hotpath(grpc_end2end_test_config config);
 extern void no_error_on_hotpath_pre_init(void);
 extern void no_logging(grpc_end2end_test_config config);
@@ -209,6 +209,7 @@ void grpc_end2end_tests_pre_init(void) {
   empty_batch_pre_init();
   filter_call_init_fails_pre_init();
   filter_causes_close_pre_init();
+  filter_context_pre_init();
   filter_latency_pre_init();
   filter_status_code_pre_init();
   graceful_server_shutdown_pre_init();
@@ -223,7 +224,6 @@ void grpc_end2end_tests_pre_init(void) {
   max_connection_idle_pre_init();
   max_message_length_pre_init();
   negative_deadline_pre_init();
-  network_status_change_pre_init();
   no_error_on_hotpath_pre_init();
   no_logging_pre_init();
   no_op_pre_init();
@@ -295,6 +295,7 @@ void grpc_end2end_tests(int argc, char **argv,
     empty_batch(config);
     filter_call_init_fails(config);
     filter_causes_close(config);
+    filter_context(config);
     filter_latency(config);
     filter_status_code(config);
     graceful_server_shutdown(config);
@@ -309,7 +310,6 @@ void grpc_end2end_tests(int argc, char **argv,
     max_connection_idle(config);
     max_message_length(config);
     negative_deadline(config);
-    network_status_change(config);
     no_error_on_hotpath(config);
     no_logging(config);
     no_op(config);
@@ -436,6 +436,10 @@ void grpc_end2end_tests(int argc, char **argv,
       filter_causes_close(config);
       continue;
     }
+    if (0 == strcmp("filter_context", argv[i])) {
+      filter_context(config);
+      continue;
+    }
     if (0 == strcmp("filter_latency", argv[i])) {
       filter_latency(config);
       continue;
@@ -490,10 +494,6 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("negative_deadline", argv[i])) {
       negative_deadline(config);
-      continue;
-    }
-    if (0 == strcmp("network_status_change", argv[i])) {
-      network_status_change(config);
       continue;
     }
     if (0 == strcmp("no_error_on_hotpath", argv[i])) {

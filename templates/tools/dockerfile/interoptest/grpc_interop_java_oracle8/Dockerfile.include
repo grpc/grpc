@@ -12,16 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:jessie
+<%include file="../../debian_jessie_header.include"/>
 
 <%include file="java_deps.include"/>
-<%include file="../../python_deps.include"/>
-
-# Trigger download of as many Gradle artifacts as possible.
-RUN git clone --recursive --depth 1 https://github.com/grpc/grpc-java.git && ${'\\'}
-  cd grpc-java && ${'\\'}
-  ./gradlew :grpc-interop-testing:installDist -PskipCodegen=true && ${'\\'}
-  rm -r "$(pwd)"
 
 # Define the default command.
 CMD ["bash"]

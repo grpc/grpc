@@ -53,7 +53,7 @@
         deps.append("${_gRPC_BENCHMARK_LIBRARIES}")
       else:
         deps.append(d)
-    if target_dict.build == 'test' and target_dict.language == 'c++':
+    if (target_dict.build == 'test' or target_dict.build == 'private') and target_dict.language == 'c++':
       deps.append("${_gRPC_GFLAGS_LIBRARIES}")
     return deps
 
@@ -143,7 +143,7 @@
   ## Some libraries are shared even with BUILD_SHARED_LIBRARIES=OFF
   set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
   
-  add_definitions(-DPB_FIELD_16BIT)
+  add_definitions(-DPB_FIELD_32BIT)
 
   if (MSVC)
     include(cmake/msvc_static_runtime.cmake)
@@ -239,6 +239,13 @@
       get_filename_component(REL_DIR <%text>${REL_FIL}</%text> DIRECTORY)
       set(RELFIL_WE "<%text>${REL_DIR}/${FIL_WE}</%text>")
 
+      #if cross-compiling, find host plugin
+      if(CMAKE_CROSSCOMPILING)
+          find_program(_gRPC_CPP_PLUGIN grpc_cpp_plugin)
+      else()
+          set(_gRPC_CPP_PLUGIN $<TARGET_FILE:grpc_cpp_plugin>)
+      endif()
+
       add_custom_command(
         OUTPUT <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc"</%text>
                <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h"</%text>
@@ -248,7 +255,7 @@
         COMMAND <%text>${_gRPC_PROTOBUF_PROTOC_EXECUTABLE}</%text>
         ARGS --grpc_out=<%text>generate_mock_code=true:${_gRPC_PROTO_GENS_DIR}</%text>
              --cpp_out=<%text>${_gRPC_PROTO_GENS_DIR}</%text>
-             --plugin=protoc-gen-grpc=$<TARGET_FILE:grpc_cpp_plugin>
+             --plugin=protoc-gen-grpc=<%text>${_gRPC_CPP_PLUGIN}</%text>
              <%text>${_protobuf_include_path}</%text>
              <%text>${REL_FIL}</%text>
         DEPENDS <%text>${ABS_FIL}</%text> <%text>${_gRPC_PROTOBUF_PROTOC}</%text> grpc_cpp_plugin
@@ -324,12 +331,24 @@
   % elif lib.name in ['grpc_csharp_ext']:
   if (gRPC_BUILD_CSHARP_EXT)
   ${cc_library(lib)}
+  % if any(proto_re.match(src) for src in lib.src):
+  if (gRPC_BUILD_CODEGEN)
+  % endif
   ${cc_install(lib)}
+  % if any(proto_re.match(src) for src in lib.src):
+  endif (gRPC_BUILD_CODEGEN)
+  % endif
   endif (gRPC_BUILD_CSHARP_EXT)
   % else:
   ${cc_library(lib)}
   % if not lib.build in ["tool"]:
+  % if any(proto_re.match(src) for src in lib.src):
+  if (gRPC_BUILD_CODEGEN)
+  % endif
   ${cc_install(lib)}
+  % if any(proto_re.match(src) for src in lib.src):
+  endif (gRPC_BUILD_CODEGEN)
+  % endif
   % endif
   % endif
   % endif

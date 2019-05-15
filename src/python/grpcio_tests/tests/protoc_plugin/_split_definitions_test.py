@@ -144,7 +144,7 @@ class _ProtoBeforeGrpcProtocStyle(object):
                                        absolute_proto_file_names)
         pb2_grpc_protoc_exit_code = _protoc(
             proto_path, None, 'grpc_2_0', python_out, absolute_proto_file_names)
-        return pb2_protoc_exit_code, pb2_grpc_protoc_exit_code,
+        return pb2_protoc_exit_code, pb2_grpc_protoc_exit_code
 
 
 class _GrpcBeforeProtoProtocStyle(object):
@@ -160,7 +160,7 @@ class _GrpcBeforeProtoProtocStyle(object):
             proto_path, None, 'grpc_2_0', python_out, absolute_proto_file_names)
         pb2_protoc_exit_code = _protoc(proto_path, python_out, None, None,
                                        absolute_proto_file_names)
-        return pb2_grpc_protoc_exit_code, pb2_protoc_exit_code,
+        return pb2_grpc_protoc_exit_code, pb2_protoc_exit_code
 
 
 _PROTOC_STYLES = (
@@ -243,9 +243,9 @@ class _Test(six.with_metaclass(abc.ABCMeta, unittest.TestCase)):
 
     def _services_modules(self):
         if self.PROTOC_STYLE.grpc_in_pb2_expected():
-            return self._services_pb2, self._services_pb2_grpc,
+            return self._services_pb2, self._services_pb2_grpc
         else:
-            return self._services_pb2_grpc,
+            return (self._services_pb2_grpc,)
 
     def test_imported_attributes(self):
         self._protoc()

@@ -101,6 +101,73 @@ static void test_read_none_compressed_slice(void) {
   grpc_byte_buffer_destroy(buffer);
 }
 
+static void test_peek_one_slice(void) {
+  grpc_slice slice;
+  grpc_byte_buffer* buffer;
+  grpc_byte_buffer_reader reader;
+  grpc_slice* first_slice;
+  grpc_slice* second_slice;
+  int first_code, second_code;
+
+  LOG_TEST("test_peek_one_slice");
+  slice = grpc_slice_from_copied_string("test");
+  buffer = grpc_raw_byte_buffer_create(&slice, 1);
+  grpc_slice_unref(slice);
+  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, buffer) &&
+             "Couldn't init byte buffer reader");
+  first_code = grpc_byte_buffer_reader_peek(&reader, &first_slice);
+  GPR_ASSERT(first_code != 0);
+  GPR_ASSERT(memcmp(GRPC_SLICE_START_PTR(*first_slice), "test", 4) == 0);
+  second_code = grpc_byte_buffer_reader_peek(&reader, &second_slice);
+  GPR_ASSERT(second_code == 0);
+  grpc_byte_buffer_destroy(buffer);
+}
+
+static void test_peek_one_slice_malloc(void) {
+  grpc_slice slice;
+  grpc_byte_buffer* buffer;
+  grpc_byte_buffer_reader reader;
+  grpc_slice* first_slice;
+  grpc_slice* second_slice;
+  int first_code, second_code;
+
+  LOG_TEST("test_peek_one_slice_malloc");
+  slice = grpc_slice_malloc(4);
+  memcpy(GRPC_SLICE_START_PTR(slice), "test", 4);
+  buffer = grpc_raw_byte_buffer_create(&slice, 1);
+  grpc_slice_unref(slice);
+  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, buffer) &&
+             "Couldn't init byte buffer reader");
+  first_code = grpc_byte_buffer_reader_peek(&reader, &first_slice);
+  GPR_ASSERT(first_code != 0);
+  GPR_ASSERT(memcmp(GRPC_SLICE_START_PTR(*first_slice), "test", 4) == 0);
+  second_code = grpc_byte_buffer_reader_peek(&reader, &second_slice);
+  GPR_ASSERT(second_code == 0);
+  grpc_byte_buffer_destroy(buffer);
+}
+
+static void test_peek_none_compressed_slice(void) {
+  grpc_slice slice;
+  grpc_byte_buffer* buffer;
+  grpc_byte_buffer_reader reader;
+  grpc_slice* first_slice;
+  grpc_slice* second_slice;
+  int first_code, second_code;
+
+  LOG_TEST("test_peek_none_compressed_slice");
+  slice = grpc_slice_from_copied_string("test");
+  buffer = grpc_raw_byte_buffer_create(&slice, 1);
+  grpc_slice_unref(slice);
+  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, buffer) &&
+             "Couldn't init byte buffer reader");
+  first_code = grpc_byte_buffer_reader_peek(&reader, &first_slice);
+  GPR_ASSERT(first_code != 0);
+  GPR_ASSERT(memcmp(GRPC_SLICE_START_PTR(*first_slice), "test", 4) == 0);
+  second_code = grpc_byte_buffer_reader_peek(&reader, &second_slice);
+  GPR_ASSERT(second_code == 0);
+  grpc_byte_buffer_destroy(buffer);
+}
+
 static void test_read_corrupted_slice(void) {
   grpc_slice slice;
   grpc_byte_buffer* buffer;
@@ -267,10 +334,13 @@ static void test_byte_buffer_copy(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   test_read_one_slice();
   test_read_one_slice_malloc();
   test_read_none_compressed_slice();
+  test_peek_one_slice();
+  test_peek_one_slice_malloc();
+  test_peek_none_compressed_slice();
   test_read_gzip_compressed_slice();
   test_read_deflate_compressed_slice();
   test_read_corrupted_slice();

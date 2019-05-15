@@ -74,7 +74,7 @@ grpc_error* grpc_metadata_batch_substitute(grpc_metadata_batch* batch,
                                            grpc_mdelem new_value);
 
 void grpc_metadata_batch_set_value(grpc_linked_mdelem* storage,
-                                   grpc_slice value);
+                                   const grpc_slice& value);
 
 /** Add \a storage to the beginning of \a batch. storage->md is
     assumed to be valid.

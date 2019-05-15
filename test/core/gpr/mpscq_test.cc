@@ -178,11 +178,12 @@ static void test_mt_multipop(void) {
   for (auto& th : thds) {
     th.Join();
   }
+  gpr_mu_destroy(&pa.mu);
   gpr_mpscq_destroy(&q);
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   test_serial();
   test_mt();
   test_mt_multipop();

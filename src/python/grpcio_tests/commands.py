@@ -22,7 +22,6 @@ import re
 import shutil
 import subprocess
 import sys
-import traceback
 
 import setuptools
 from setuptools.command import build_ext
@@ -112,10 +111,13 @@ class TestGevent(setuptools.Command):
     """Command to run tests w/gevent."""
 
     BANNED_TESTS = (
+        # Fork support is not compatible with gevent
+        'fork._fork_interop_test.ForkInteropTest',
         # These tests send a lot of RPCs and are really slow on gevent.  They will
         # eventually succeed, but need to dig into performance issues.
         'unit._cython._no_messages_server_completion_queue_per_call_test.Test.test_rpcs',
         'unit._cython._no_messages_single_server_completion_queue_test.Test.test_rpcs',
+        'unit._compression_test',
         # TODO(https://github.com/grpc/grpc/issues/16890) enable this test
         'unit._cython._channel_test.ChannelTest.test_multiple_channels_lonely_connectivity',
         # I have no idea why this doesn't work in gevent, but it shouldn't even be
@@ -132,7 +134,29 @@ class TestGevent(setuptools.Command):
         'unit.beta._beta_features_test',
         # TODO(https://github.com/grpc/grpc/issues/15411) unpin gevent version
         # This test will stuck while running higher version of gevent
-        'unit._auth_context_test.AuthContextTest.testSessionResumption')
+        'unit._auth_context_test.AuthContextTest.testSessionResumption',
+        # TODO(https://github.com/grpc/grpc/issues/15411) enable these tests
+        'unit._channel_ready_future_test.ChannelReadyFutureTest.test_immediately_connectable_channel_connectivity',
+        "unit._cython._channel_test.ChannelTest.test_single_channel_lonely_connectivity",
+        'unit._exit_test.ExitTest.test_in_flight_unary_unary_call',
+        'unit._exit_test.ExitTest.test_in_flight_unary_stream_call',
+        'unit._exit_test.ExitTest.test_in_flight_stream_unary_call',
+        'unit._exit_test.ExitTest.test_in_flight_stream_stream_call',
+        'unit._exit_test.ExitTest.test_in_flight_partial_unary_stream_call',
+        'unit._exit_test.ExitTest.test_in_flight_partial_stream_unary_call',
+        'unit._exit_test.ExitTest.test_in_flight_partial_stream_stream_call',
+        'unit._metadata_flags_test',
+        'health_check._health_servicer_test.HealthServicerTest.test_cancelled_watch_removed_from_watch_list',
+        # TODO(https://github.com/grpc/grpc/issues/17330) enable these three tests
+        'channelz._channelz_servicer_test.ChannelzServicerTest.test_many_subchannels',
+        'channelz._channelz_servicer_test.ChannelzServicerTest.test_many_subchannels_and_sockets',
+        'channelz._channelz_servicer_test.ChannelzServicerTest.test_streaming_rpc',
+        # TODO(https://github.com/grpc/grpc/issues/15411) enable this test
+        'unit._cython._channel_test.ChannelTest.test_negative_deadline_connectivity'
+    )
+    BANNED_WINDOWS_TESTS = (
+        # TODO(https://github.com/grpc/grpc/pull/15411) enable this test
+        'unit._dns_resolver_test.DNSResolverTest.test_connect_loopback',)
     description = 'run tests with gevent.  Assumes grpc/gevent are installed'
     user_options = []
 
@@ -158,7 +182,10 @@ class TestGevent(setuptools.Command):
         loader = tests.Loader()
         loader.loadTestsFromNames(['tests'])
         runner = tests.Runner()
-        runner.skip_tests(self.BANNED_TESTS)
+        if sys.platform == 'win32':
+            runner.skip_tests(self.BANNED_TESTS + self.BANNED_WINDOWS_TESTS)
+        else:
+            runner.skip_tests(self.BANNED_TESTS)
         result = gevent.spawn(runner.run, loader.suite)
         result.join()
         if not result.value.wasSuccessful():

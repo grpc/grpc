@@ -289,6 +289,28 @@ static void test_user_data_works(void) {
   grpc_shutdown();
 }
 
+static void test_user_data_works_for_allocated_md(void) {
+  int* ud1;
+  int* ud2;
+  grpc_mdelem md;
+  gpr_log(GPR_INFO, "test_user_data_works");
+
+  grpc_init();
+  grpc_core::ExecCtx exec_ctx;
+  ud1 = static_cast<int*>(gpr_malloc(sizeof(int)));
+  *ud1 = 1;
+  ud2 = static_cast<int*>(gpr_malloc(sizeof(int)));
+  *ud2 = 2;
+  md = grpc_mdelem_from_slices(grpc_slice_from_static_string("abc"),
+                               grpc_slice_from_static_string("123"));
+  grpc_mdelem_set_user_data(md, gpr_free, ud1);
+  grpc_mdelem_set_user_data(md, gpr_free, ud2);
+  GPR_ASSERT(grpc_mdelem_get_user_data(md, gpr_free) == ud1);
+  GRPC_MDELEM_UNREF(md);
+
+  grpc_shutdown();
+}
+
 static void verify_ascii_header_size(const char* key, const char* value,
                                      bool intern_key, bool intern_value) {
   grpc_mdelem elem = grpc_mdelem_from_slices(
@@ -370,7 +392,7 @@ static void test_copied_static_metadata(bool dup_key, bool dup_value) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_no_op();
   for (int k = 0; k <= 1; k++) {
@@ -386,6 +408,7 @@ int main(int argc, char** argv) {
   test_create_many_persistant_metadata();
   test_things_stick_around();
   test_user_data_works();
+  test_user_data_works_for_allocated_md();
   grpc_shutdown();
   return 0;
 }

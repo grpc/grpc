@@ -40,7 +40,7 @@ namespace Grpc.Core.Internal
         public readonly Delegates.grpcsharp_batch_context_create_delegate grpcsharp_batch_context_create;
         public readonly Delegates.grpcsharp_batch_context_recv_initial_metadata_delegate grpcsharp_batch_context_recv_initial_metadata;
         public readonly Delegates.grpcsharp_batch_context_recv_message_length_delegate grpcsharp_batch_context_recv_message_length;
-        public readonly Delegates.grpcsharp_batch_context_recv_message_to_buffer_delegate grpcsharp_batch_context_recv_message_to_buffer;
+        public readonly Delegates.grpcsharp_batch_context_recv_message_next_slice_peek_delegate grpcsharp_batch_context_recv_message_next_slice_peek;
         public readonly Delegates.grpcsharp_batch_context_recv_status_on_client_status_delegate grpcsharp_batch_context_recv_status_on_client_status;
         public readonly Delegates.grpcsharp_batch_context_recv_status_on_client_details_delegate grpcsharp_batch_context_recv_status_on_client_details;
         public readonly Delegates.grpcsharp_batch_context_recv_status_on_client_trailing_metadata_delegate grpcsharp_batch_context_recv_status_on_client_trailing_metadata;
@@ -103,6 +103,7 @@ namespace Grpc.Core.Internal
         public readonly Delegates.grpcsharp_metadata_array_get_value_delegate grpcsharp_metadata_array_get_value;
         public readonly Delegates.grpcsharp_metadata_array_destroy_full_delegate grpcsharp_metadata_array_destroy_full;
         public readonly Delegates.grpcsharp_redirect_log_delegate grpcsharp_redirect_log;
+        public readonly Delegates.grpcsharp_native_callback_dispatcher_init_delegate grpcsharp_native_callback_dispatcher_init;
         public readonly Delegates.grpcsharp_metadata_credentials_create_from_plugin_delegate grpcsharp_metadata_credentials_create_from_plugin;
         public readonly Delegates.grpcsharp_metadata_credentials_notify_from_plugin_delegate grpcsharp_metadata_credentials_notify_from_plugin;
         public readonly Delegates.grpcsharp_ssl_server_credentials_create_delegate grpcsharp_ssl_server_credentials_create;
@@ -140,7 +141,7 @@ namespace Grpc.Core.Internal
             this.grpcsharp_batch_context_create = GetMethodDelegate<Delegates.grpcsharp_batch_context_create_delegate>(library);
             this.grpcsharp_batch_context_recv_initial_metadata = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_initial_metadata_delegate>(library);
             this.grpcsharp_batch_context_recv_message_length = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_message_length_delegate>(library);
-            this.grpcsharp_batch_context_recv_message_to_buffer = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_message_to_buffer_delegate>(library);
+            this.grpcsharp_batch_context_recv_message_next_slice_peek = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_message_next_slice_peek_delegate>(library);
             this.grpcsharp_batch_context_recv_status_on_client_status = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_status_on_client_status_delegate>(library);
             this.grpcsharp_batch_context_recv_status_on_client_details = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_status_on_client_details_delegate>(library);
             this.grpcsharp_batch_context_recv_status_on_client_trailing_metadata = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_status_on_client_trailing_metadata_delegate>(library);
@@ -203,6 +204,7 @@ namespace Grpc.Core.Internal
             this.grpcsharp_metadata_array_get_value = GetMethodDelegate<Delegates.grpcsharp_metadata_array_get_value_delegate>(library);
             this.grpcsharp_metadata_array_destroy_full = GetMethodDelegate<Delegates.grpcsharp_metadata_array_destroy_full_delegate>(library);
             this.grpcsharp_redirect_log = GetMethodDelegate<Delegates.grpcsharp_redirect_log_delegate>(library);
+            this.grpcsharp_native_callback_dispatcher_init = GetMethodDelegate<Delegates.grpcsharp_native_callback_dispatcher_init_delegate>(library);
             this.grpcsharp_metadata_credentials_create_from_plugin = GetMethodDelegate<Delegates.grpcsharp_metadata_credentials_create_from_plugin_delegate>(library);
             this.grpcsharp_metadata_credentials_notify_from_plugin = GetMethodDelegate<Delegates.grpcsharp_metadata_credentials_notify_from_plugin_delegate>(library);
             this.grpcsharp_ssl_server_credentials_create = GetMethodDelegate<Delegates.grpcsharp_ssl_server_credentials_create_delegate>(library);
@@ -239,7 +241,7 @@ namespace Grpc.Core.Internal
             this.grpcsharp_batch_context_create = DllImportsFromStaticLib.grpcsharp_batch_context_create;
             this.grpcsharp_batch_context_recv_initial_metadata = DllImportsFromStaticLib.grpcsharp_batch_context_recv_initial_metadata;
             this.grpcsharp_batch_context_recv_message_length = DllImportsFromStaticLib.grpcsharp_batch_context_recv_message_length;
-            this.grpcsharp_batch_context_recv_message_to_buffer = DllImportsFromStaticLib.grpcsharp_batch_context_recv_message_to_buffer;
+            this.grpcsharp_batch_context_recv_message_next_slice_peek = DllImportsFromStaticLib.grpcsharp_batch_context_recv_message_next_slice_peek;
             this.grpcsharp_batch_context_recv_status_on_client_status = DllImportsFromStaticLib.grpcsharp_batch_context_recv_status_on_client_status;
             this.grpcsharp_batch_context_recv_status_on_client_details = DllImportsFromStaticLib.grpcsharp_batch_context_recv_status_on_client_details;
             this.grpcsharp_batch_context_recv_status_on_client_trailing_metadata = DllImportsFromStaticLib.grpcsharp_batch_context_recv_status_on_client_trailing_metadata;
@@ -302,6 +304,7 @@ namespace Grpc.Core.Internal
             this.grpcsharp_metadata_array_get_value = DllImportsFromStaticLib.grpcsharp_metadata_array_get_value;
             this.grpcsharp_metadata_array_destroy_full = DllImportsFromStaticLib.grpcsharp_metadata_array_destroy_full;
             this.grpcsharp_redirect_log = DllImportsFromStaticLib.grpcsharp_redirect_log;
+            this.grpcsharp_native_callback_dispatcher_init = DllImportsFromStaticLib.grpcsharp_native_callback_dispatcher_init;
             this.grpcsharp_metadata_credentials_create_from_plugin = DllImportsFromStaticLib.grpcsharp_metadata_credentials_create_from_plugin;
             this.grpcsharp_metadata_credentials_notify_from_plugin = DllImportsFromStaticLib.grpcsharp_metadata_credentials_notify_from_plugin;
             this.grpcsharp_ssl_server_credentials_create = DllImportsFromStaticLib.grpcsharp_ssl_server_credentials_create;
@@ -338,7 +341,7 @@ namespace Grpc.Core.Internal
             this.grpcsharp_batch_context_create = DllImportsFromSharedLib.grpcsharp_batch_context_create;
             this.grpcsharp_batch_context_recv_initial_metadata = DllImportsFromSharedLib.grpcsharp_batch_context_recv_initial_metadata;
             this.grpcsharp_batch_context_recv_message_length = DllImportsFromSharedLib.grpcsharp_batch_context_recv_message_length;
-            this.grpcsharp_batch_context_recv_message_to_buffer = DllImportsFromSharedLib.grpcsharp_batch_context_recv_message_to_buffer;
+            this.grpcsharp_batch_context_recv_message_next_slice_peek = DllImportsFromSharedLib.grpcsharp_batch_context_recv_message_next_slice_peek;
             this.grpcsharp_batch_context_recv_status_on_client_status = DllImportsFromSharedLib.grpcsharp_batch_context_recv_status_on_client_status;
             this.grpcsharp_batch_context_recv_status_on_client_details = DllImportsFromSharedLib.grpcsharp_batch_context_recv_status_on_client_details;
             this.grpcsharp_batch_context_recv_status_on_client_trailing_metadata = DllImportsFromSharedLib.grpcsharp_batch_context_recv_status_on_client_trailing_metadata;
@@ -401,6 +404,7 @@ namespace Grpc.Core.Internal
             this.grpcsharp_metadata_array_get_value = DllImportsFromSharedLib.grpcsharp_metadata_array_get_value;
             this.grpcsharp_metadata_array_destroy_full = DllImportsFromSharedLib.grpcsharp_metadata_array_destroy_full;
             this.grpcsharp_redirect_log = DllImportsFromSharedLib.grpcsharp_redirect_log;
+            this.grpcsharp_native_callback_dispatcher_init = DllImportsFromSharedLib.grpcsharp_native_callback_dispatcher_init;
             this.grpcsharp_metadata_credentials_create_from_plugin = DllImportsFromSharedLib.grpcsharp_metadata_credentials_create_from_plugin;
             this.grpcsharp_metadata_credentials_notify_from_plugin = DllImportsFromSharedLib.grpcsharp_metadata_credentials_notify_from_plugin;
             this.grpcsharp_ssl_server_credentials_create = DllImportsFromSharedLib.grpcsharp_ssl_server_credentials_create;
@@ -440,7 +444,7 @@ namespace Grpc.Core.Internal
             public delegate BatchContextSafeHandle grpcsharp_batch_context_create_delegate();
             public delegate IntPtr grpcsharp_batch_context_recv_initial_metadata_delegate(BatchContextSafeHandle ctx);
             public delegate IntPtr grpcsharp_batch_context_recv_message_length_delegate(BatchContextSafeHandle ctx);
-            public delegate void grpcsharp_batch_context_recv_message_to_buffer_delegate(BatchContextSafeHandle ctx, byte[] buffer, UIntPtr bufferLen);
+            public delegate int grpcsharp_batch_context_recv_message_next_slice_peek_delegate(BatchContextSafeHandle ctx, out UIntPtr sliceLen, out IntPtr sliceDataPtr);
             public delegate StatusCode grpcsharp_batch_context_recv_status_on_client_status_delegate(BatchContextSafeHandle ctx);
             public delegate IntPtr grpcsharp_batch_context_recv_status_on_client_details_delegate(BatchContextSafeHandle ctx, out UIntPtr detailsLength);
             public delegate IntPtr grpcsharp_batch_context_recv_status_on_client_trailing_metadata_delegate(BatchContextSafeHandle ctx);
@@ -478,7 +482,7 @@ namespace Grpc.Core.Internal
             public delegate void grpcsharp_channel_args_set_integer_delegate(ChannelArgsSafeHandle args, UIntPtr index, string key, int value);
             public delegate void grpcsharp_channel_args_destroy_delegate(IntPtr args);
             public delegate void grpcsharp_override_default_ssl_roots_delegate(string pemRootCerts);
-            public delegate ChannelCredentialsSafeHandle grpcsharp_ssl_credentials_create_delegate(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey);
+            public delegate ChannelCredentialsSafeHandle grpcsharp_ssl_credentials_create_delegate(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey, IntPtr verifyPeerCallbackTag);
             public delegate ChannelCredentialsSafeHandle grpcsharp_composite_channel_credentials_create_delegate(ChannelCredentialsSafeHandle channelCreds, CallCredentialsSafeHandle callCreds);
             public delegate void grpcsharp_channel_credentials_release_delegate(IntPtr credentials);
             public delegate ChannelSafeHandle grpcsharp_insecure_channel_create_delegate(string target, ChannelArgsSafeHandle channelArgs);
@@ -503,7 +507,8 @@ namespace Grpc.Core.Internal
             public delegate IntPtr grpcsharp_metadata_array_get_value_delegate(IntPtr metadataArray, UIntPtr index, out UIntPtr valueLength);
             public delegate void grpcsharp_metadata_array_destroy_full_delegate(IntPtr array);
             public delegate void grpcsharp_redirect_log_delegate(GprLogDelegate callback);
-            public delegate CallCredentialsSafeHandle grpcsharp_metadata_credentials_create_from_plugin_delegate(NativeMetadataInterceptor interceptor);
+            public delegate void grpcsharp_native_callback_dispatcher_init_delegate(NativeCallbackDispatcherCallback dispatcher);
+            public delegate CallCredentialsSafeHandle grpcsharp_metadata_credentials_create_from_plugin_delegate(IntPtr nativeCallbackTag);
             public delegate void grpcsharp_metadata_credentials_notify_from_plugin_delegate(IntPtr callbackPtr, IntPtr userData, MetadataArraySafeHandle metadataArray, StatusCode statusCode, string errorDetails);
             public delegate ServerCredentialsSafeHandle grpcsharp_ssl_server_credentials_create_delegate(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, UIntPtr numKeyCertPairs, SslClientCertificateRequestType clientCertificateRequest);
             public delegate void grpcsharp_server_credentials_release_delegate(IntPtr credentials);
@@ -557,7 +562,7 @@ namespace Grpc.Core.Internal
             public static extern IntPtr grpcsharp_batch_context_recv_message_length(BatchContextSafeHandle ctx);
             
             [DllImport(ImportName)]
-            public static extern void grpcsharp_batch_context_recv_message_to_buffer(BatchContextSafeHandle ctx, byte[] buffer, UIntPtr bufferLen);
+            public static extern int grpcsharp_batch_context_recv_message_next_slice_peek(BatchContextSafeHandle ctx, out UIntPtr sliceLen, out IntPtr sliceDataPtr);
             
             [DllImport(ImportName)]
             public static extern StatusCode grpcsharp_batch_context_recv_status_on_client_status(BatchContextSafeHandle ctx);
@@ -671,7 +676,7 @@ namespace Grpc.Core.Internal
             public static extern void grpcsharp_override_default_ssl_roots(string pemRootCerts);
             
             [DllImport(ImportName)]
-            public static extern ChannelCredentialsSafeHandle grpcsharp_ssl_credentials_create(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey);
+            public static extern ChannelCredentialsSafeHandle grpcsharp_ssl_credentials_create(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey, IntPtr verifyPeerCallbackTag);
             
             [DllImport(ImportName)]
             public static extern ChannelCredentialsSafeHandle grpcsharp_composite_channel_credentials_create(ChannelCredentialsSafeHandle channelCreds, CallCredentialsSafeHandle callCreds);
@@ -746,7 +751,10 @@ namespace Grpc.Core.Internal
             public static extern void grpcsharp_redirect_log(GprLogDelegate callback);
             
             [DllImport(ImportName)]
-            public static extern CallCredentialsSafeHandle grpcsharp_metadata_credentials_create_from_plugin(NativeMetadataInterceptor interceptor);
+            public static extern void grpcsharp_native_callback_dispatcher_init(NativeCallbackDispatcherCallback dispatcher);
+            
+            [DllImport(ImportName)]
+            public static extern CallCredentialsSafeHandle grpcsharp_metadata_credentials_create_from_plugin(IntPtr nativeCallbackTag);
             
             [DllImport(ImportName)]
             public static extern void grpcsharp_metadata_credentials_notify_from_plugin(IntPtr callbackPtr, IntPtr userData, MetadataArraySafeHandle metadataArray, StatusCode statusCode, string errorDetails);
@@ -850,7 +858,7 @@ namespace Grpc.Core.Internal
             public static extern IntPtr grpcsharp_batch_context_recv_message_length(BatchContextSafeHandle ctx);
             
             [DllImport(ImportName)]
-            public static extern void grpcsharp_batch_context_recv_message_to_buffer(BatchContextSafeHandle ctx, byte[] buffer, UIntPtr bufferLen);
+            public static extern int grpcsharp_batch_context_recv_message_next_slice_peek(BatchContextSafeHandle ctx, out UIntPtr sliceLen, out IntPtr sliceDataPtr);
             
             [DllImport(ImportName)]
             public static extern StatusCode grpcsharp_batch_context_recv_status_on_client_status(BatchContextSafeHandle ctx);
@@ -964,7 +972,7 @@ namespace Grpc.Core.Internal
             public static extern void grpcsharp_override_default_ssl_roots(string pemRootCerts);
             
             [DllImport(ImportName)]
-            public static extern ChannelCredentialsSafeHandle grpcsharp_ssl_credentials_create(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey);
+            public static extern ChannelCredentialsSafeHandle grpcsharp_ssl_credentials_create(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey, IntPtr verifyPeerCallbackTag);
             
             [DllImport(ImportName)]
             public static extern ChannelCredentialsSafeHandle grpcsharp_composite_channel_credentials_create(ChannelCredentialsSafeHandle channelCreds, CallCredentialsSafeHandle callCreds);
@@ -1039,7 +1047,10 @@ namespace Grpc.Core.Internal
             public static extern void grpcsharp_redirect_log(GprLogDelegate callback);
             
             [DllImport(ImportName)]
-            public static extern CallCredentialsSafeHandle grpcsharp_metadata_credentials_create_from_plugin(NativeMetadataInterceptor interceptor);
+            public static extern void grpcsharp_native_callback_dispatcher_init(NativeCallbackDispatcherCallback dispatcher);
+            
+            [DllImport(ImportName)]
+            public static extern CallCredentialsSafeHandle grpcsharp_metadata_credentials_create_from_plugin(IntPtr nativeCallbackTag);
             
             [DllImport(ImportName)]
             public static extern void grpcsharp_metadata_credentials_notify_from_plugin(IntPtr callbackPtr, IntPtr userData, MetadataArraySafeHandle metadataArray, StatusCode statusCode, string errorDetails);

@@ -50,7 +50,7 @@ static void thd_body(void* arg) {
 int main(int argc, char* argv[]) {
   grpc_core::Thread threads[NUM_THREADS];
 
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
 
   gpr_tls_init(&test_var);
 

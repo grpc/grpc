@@ -26,7 +26,6 @@
 #include "opencensus/stats/stats.h"
 
 namespace grpc {
-
 class ServerContext;
 
 // The tag keys set when recording RPC stats.

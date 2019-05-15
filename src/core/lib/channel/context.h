@@ -35,8 +35,8 @@ typedef enum {
   /// Reserved for traffic_class_context.
   GRPC_CONTEXT_TRAFFIC,
 
-  /// Value is a \a grpc_grpclb_client_stats.
-  GRPC_GRPCLB_CLIENT_STATS,
+  /// Holds a pointer to ServiceConfig::CallData associated with this call.
+  GRPC_SERVICE_CONFIG_CALL_DATA,
 
   GRPC_CONTEXT_COUNT
 } grpc_context_index;

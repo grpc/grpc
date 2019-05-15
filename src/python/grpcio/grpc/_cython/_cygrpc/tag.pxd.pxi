@@ -29,10 +29,11 @@ cdef class _RequestCallTag(_Tag):
 
   cdef readonly object _user_tag
   cdef Call call
+  cdef _VTable _vtable
   cdef CallDetails call_details
   cdef grpc_metadata_array c_invocation_metadata
 
-  cdef void prepare(self)
+  cdef void prepare(self) except *
   cdef RequestCallEvent event(self, grpc_event c_event)
 
 
@@ -44,7 +45,7 @@ cdef class _BatchOperationTag(_Tag):
   cdef grpc_op *c_ops
   cdef size_t c_nops
 
-  cdef void prepare(self)
+  cdef void prepare(self) except *
   cdef BatchOperationEvent event(self, grpc_event c_event)
 
 

@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#if GRPC_ARES != 1 || defined(GRPC_UV)
+#if GRPC_ARES != 1
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 
@@ -29,7 +29,8 @@ struct grpc_ares_request {
 static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_lb_addresses** addrs, bool check_grpclb, char** service_config_json,
+    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs,
+    bool check_grpclb, char** service_config_json, int query_timeout_ms,
     grpc_combiner* combiner) {
   return NULL;
 }
@@ -37,7 +38,8 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
 grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_lb_addresses** addrs, bool check_grpclb, char** service_config_json,
+    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs,
+    bool check_grpclb, char** service_config_json, int query_timeout_ms,
     grpc_combiner* combiner) = grpc_dns_lookup_ares_locked_impl;
 
 static void grpc_cancel_ares_request_locked_impl(grpc_ares_request* r) {}
@@ -60,4 +62,4 @@ void (*grpc_resolve_address_ares)(
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     grpc_resolved_addresses** addrs) = grpc_resolve_address_ares_impl;
 
-#endif /* GRPC_ARES != 1 || defined(GRPC_UV) */
+#endif /* GRPC_ARES != 1 */

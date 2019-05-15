@@ -135,6 +135,10 @@ gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b) {
   gpr_timespec sum;
   int64_t inc = 0;
   GPR_ASSERT(b.clock_type == GPR_TIMESPAN);
+  // tv_nsec in a timespan is always +ve. -ve timespan is represented as (-ve
+  // tv_sec, +ve tv_nsec). For example, timespan = -2.5 seconds is represented
+  // as {-3, 5e8, GPR_TIMESPAN}
+  GPR_ASSERT(b.tv_nsec >= 0);
   sum.clock_type = a.clock_type;
   sum.tv_nsec = a.tv_nsec + b.tv_nsec;
   if (sum.tv_nsec >= GPR_NS_PER_SEC) {
@@ -165,6 +169,10 @@ gpr_timespec gpr_time_sub(gpr_timespec a, gpr_timespec b) {
   int64_t dec = 0;
   if (b.clock_type == GPR_TIMESPAN) {
     diff.clock_type = a.clock_type;
+    // tv_nsec in a timespan is always +ve. -ve timespan is represented as (-ve
+    // tv_sec, +ve tv_nsec). For example, timespan = -2.5 seconds is represented
+    // as {-3, 5e8, GPR_TIMESPAN}
+    GPR_ASSERT(b.tv_nsec >= 0);
   } else {
     GPR_ASSERT(a.clock_type == b.clock_type);
     diff.clock_type = GPR_TIMESPAN;

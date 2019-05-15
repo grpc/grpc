@@ -45,7 +45,6 @@ def main():
               'deps': [
                   'grpc_test_util',
                   'grpc',
-                  'gpr_test_util',
                   'gpr'
               ]
           }
@@ -63,7 +62,6 @@ def main():
                   'bad_ssl_test_server',
                   'grpc_test_util',
                   'grpc',
-                  'gpr_test_util',
                   'gpr'
               ]
           }
@@ -79,7 +77,6 @@ def main():
               'deps': [
                   'grpc_test_util',
                   'grpc',
-                  'gpr_test_util',
                   'gpr'
               ]
           }

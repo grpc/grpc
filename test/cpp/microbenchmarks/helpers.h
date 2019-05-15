@@ -29,26 +29,16 @@
 #include <benchmark/benchmark.h>
 #include <grpcpp/impl/grpc_library.h>
 
-class Library {
+class LibraryInitializer {
  public:
-  static Library& get() {
-    static Library lib;
-    return lib;
-  }
+  LibraryInitializer();
+  ~LibraryInitializer();
 
   grpc_resource_quota* rq() { return rq_; }
 
+  static LibraryInitializer& get();
+
  private:
-  Library() {
-#ifdef GPR_LOW_LEVEL_COUNTERS
-    grpc_memory_counters_init();
-#endif
-    init_lib_.init();
-    rq_ = grpc_resource_quota_create("bm");
-  }
-
-  ~Library() { init_lib_.shutdown(); }
-
   grpc::internal::GrpcLibrary init_lib_;
   grpc_resource_quota* rq_;
 };

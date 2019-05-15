@@ -44,6 +44,7 @@
 #include "test/core/util/cmdline.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/naming/dns_test_util.h"
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/sockaddr_windows.h"
@@ -75,36 +76,6 @@ void EndTest(grpc_channel* client, grpc_completion_queue* cq) {
   DrainCq(cq);
   grpc_completion_queue_destroy(cq);
 }
-
-class FakeNonResponsiveDNSServer {
- public:
-  FakeNonResponsiveDNSServer(int port) {
-    socket_ = socket(AF_INET6, SOCK_DGRAM, 0);
-    if (socket_ == BAD_SOCKET_RETURN_VAL) {
-      gpr_log(GPR_DEBUG, "Failed to create UDP ipv6 socket");
-      abort();
-    }
-    sockaddr_in6 addr;
-    memset(&addr, 0, sizeof(addr));
-    addr.sin6_family = AF_INET6;
-    addr.sin6_port = htons(port);
-    ((char*)&addr.sin6_addr)[15] = 1;
-    if (bind(socket_, (const sockaddr*)&addr, sizeof(addr)) != 0) {
-      gpr_log(GPR_DEBUG, "Failed to bind UDP ipv6 socket to [::1]:%d", port);
-      abort();
-    }
-  }
-  ~FakeNonResponsiveDNSServer() {
-#ifdef GPR_WINDOWS
-    closesocket(socket_);
-#else
-    close(socket_);
-#endif
-  }
-
- private:
-  int socket_;
-};
 
 struct ArgsStruct {
   gpr_atm done_atm;
@@ -160,18 +131,31 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
   }
 }
 
-void CheckResolverResultAssertFailureLocked(void* arg, grpc_error* error) {
-  EXPECT_NE(error, GRPC_ERROR_NONE);
-  ArgsStruct* args = static_cast<ArgsStruct*>(arg);
-  gpr_atm_rel_store(&args->done_atm, 1);
-  gpr_mu_lock(args->mu);
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
-  gpr_mu_unlock(args->mu);
-}
+class AssertFailureResultHandler : public grpc_core::Resolver::ResultHandler {
+ public:
+  explicit AssertFailureResultHandler(ArgsStruct* args) : args_(args) {}
+
+  ~AssertFailureResultHandler() override {
+    gpr_atm_rel_store(&args_->done_atm, 1);
+    gpr_mu_lock(args_->mu);
+    GRPC_LOG_IF_ERROR("pollset_kick",
+                      grpc_pollset_kick(args_->pollset, nullptr));
+    gpr_mu_unlock(args_->mu);
+  }
+
+  void ReturnResult(grpc_core::Resolver::Result result) override {
+    GPR_ASSERT(false);
+  }
+
+  void ReturnError(grpc_error* error) override { GPR_ASSERT(false); }
+
+ private:
+  ArgsStruct* args_;
+};
 
 void TestCancelActiveDNSQuery(ArgsStruct* args) {
   int fake_dns_port = grpc_pick_unused_port_or_die();
-  FakeNonResponsiveDNSServer fake_dns_server(fake_dns_port);
+  grpc::testing::FakeNonResponsiveDNSServer fake_dns_server(fake_dns_port);
   char* client_target;
   GPR_ASSERT(gpr_asprintf(
       &client_target,
@@ -180,13 +164,11 @@ void TestCancelActiveDNSQuery(ArgsStruct* args) {
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       grpc_core::ResolverRegistry::CreateResolver(
-          client_target, nullptr, args->pollset_set, args->lock);
+          client_target, nullptr, args->pollset_set, args->lock,
+          grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler>(
+              grpc_core::New<AssertFailureResultHandler>(args)));
   gpr_free(client_target);
-  grpc_closure on_resolver_result_changed;
-  GRPC_CLOSURE_INIT(&on_resolver_result_changed,
-                    CheckResolverResultAssertFailureLocked, (void*)args,
-                    grpc_combiner_scheduler(args->lock));
-  resolver->NextLocked(&args->channel_args, &on_resolver_result_changed);
+  resolver->StartLocked();
   // Without resetting and causing resolver shutdown, the
   // PollPollsetUntilRequestDone call should never finish.
   resolver.reset();
@@ -260,20 +242,51 @@ TEST(CancelDuringAresQuery, TestFdsAreDeletedFromPollsetSet) {
   grpc_pollset_set_destroy(fake_other_pollset_set);
 }
 
-TEST(CancelDuringAresQuery,
-     TestHitDeadlineAndDestroyChannelDuringAresResolutionIsGraceful) {
+// Settings for TestCancelDuringActiveQuery test
+typedef enum {
+  NONE,
+  SHORT,
+  ZERO,
+} cancellation_test_query_timeout_setting;
+
+void TestCancelDuringActiveQuery(
+    cancellation_test_query_timeout_setting query_timeout_setting) {
   // Start up fake non responsive DNS server
   int fake_dns_port = grpc_pick_unused_port_or_die();
-  FakeNonResponsiveDNSServer fake_dns_server(fake_dns_port);
+  grpc::testing::FakeNonResponsiveDNSServer fake_dns_server(fake_dns_port);
   // Create a call that will try to use the fake DNS server
   char* client_target = nullptr;
   GPR_ASSERT(gpr_asprintf(
       &client_target,
       "dns://[::1]:%d/dont-care-since-wont-be-resolved.test.com:1234",
       fake_dns_port));
+  gpr_log(GPR_DEBUG, "TestCancelActiveDNSQuery. query timeout setting: %d",
+          query_timeout_setting);
+  grpc_channel_args* client_args = nullptr;
+  grpc_status_code expected_status_code = GRPC_STATUS_OK;
+  if (query_timeout_setting == NONE) {
+    expected_status_code = GRPC_STATUS_DEADLINE_EXCEEDED;
+    client_args = nullptr;
+  } else if (query_timeout_setting == SHORT) {
+    expected_status_code = GRPC_STATUS_UNAVAILABLE;
+    grpc_arg arg;
+    arg.type = GRPC_ARG_INTEGER;
+    arg.key = const_cast<char*>(GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS);
+    arg.value.integer =
+        1;  // Set this shorter than the call deadline so that it goes off.
+    client_args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
+  } else if (query_timeout_setting == ZERO) {
+    expected_status_code = GRPC_STATUS_DEADLINE_EXCEEDED;
+    grpc_arg arg;
+    arg.type = GRPC_ARG_INTEGER;
+    arg.key = const_cast<char*>(GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS);
+    arg.value.integer = 0;  // Set this to zero to disable query timeouts.
+    client_args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
+  } else {
+    abort();
+  }
   grpc_channel* client =
-      grpc_insecure_channel_create(client_target,
-                                   /* client_args */ nullptr, nullptr);
+      grpc_insecure_channel_create(client_target, client_args, nullptr);
   gpr_free(client_target);
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   cq_verifier* cqv = cq_verifier_create(cq);
@@ -325,8 +338,9 @@ TEST(CancelDuringAresQuery,
   EXPECT_EQ(GRPC_CALL_OK, error);
   CQ_EXPECT_COMPLETION(cqv, Tag(1), 1);
   cq_verify(cqv);
-  EXPECT_EQ(status, GRPC_STATUS_DEADLINE_EXCEEDED);
+  EXPECT_EQ(status, expected_status_code);
   // Teardown
+  grpc_channel_args_destroy(client_args);
   grpc_slice_unref(details);
   gpr_free((void*)error_string);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -338,10 +352,27 @@ TEST(CancelDuringAresQuery,
   EndTest(client, cq);
 }
 
+TEST(CancelDuringAresQuery,
+     TestHitDeadlineAndDestroyChannelDuringAresResolutionIsGraceful) {
+  TestCancelDuringActiveQuery(NONE /* don't set query timeouts */);
+}
+
+TEST(
+    CancelDuringAresQuery,
+    TestHitDeadlineAndDestroyChannelDuringAresResolutionWithQueryTimeoutIsGraceful) {
+  TestCancelDuringActiveQuery(SHORT /* set short query timeout */);
+}
+
+TEST(
+    CancelDuringAresQuery,
+    TestHitDeadlineAndDestroyChannelDuringAresResolutionWithZeroQueryTimeoutIsGraceful) {
+  TestCancelDuringActiveQuery(ZERO /* disable query timeouts */);
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   gpr_setenv("GRPC_DNS_RESOLVER", "ares");
   // Sanity check the time that it takes to run the test

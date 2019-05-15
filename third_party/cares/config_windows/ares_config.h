@@ -331,6 +331,9 @@
 /* Define to 1 if you have the ws2tcpip.h header file. */
 #define HAVE_WS2TCPIP_H
 
+/* Define if __system_property_get exists. */
+/* #undef HAVE___SYSTEM_PROPERTY_GET */
+
 /* Define to 1 if you need the malloc.h header file even with stdlib.h */
 /* #undef NEED_MALLOC_H */
 

@@ -134,7 +134,8 @@ ResolverFactory* ResolverRegistry::LookupResolverFactory(const char* scheme) {
 
 OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
     const char* target, const grpc_channel_args* args,
-    grpc_pollset_set* pollset_set, grpc_combiner* combiner) {
+    grpc_pollset_set* pollset_set, grpc_combiner* combiner,
+    UniquePtr<Resolver::ResultHandler> result_handler) {
   GPR_ASSERT(g_state != nullptr);
   grpc_uri* uri = nullptr;
   char* canonical_target = nullptr;
@@ -145,8 +146,10 @@ OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
   resolver_args.args = args;
   resolver_args.pollset_set = pollset_set;
   resolver_args.combiner = combiner;
+  resolver_args.result_handler = std::move(result_handler);
   OrphanablePtr<Resolver> resolver =
-      factory == nullptr ? nullptr : factory->CreateResolver(resolver_args);
+      factory == nullptr ? nullptr
+                         : factory->CreateResolver(std::move(resolver_args));
   grpc_uri_destroy(uri);
   gpr_free(canonical_target);
   return resolver;

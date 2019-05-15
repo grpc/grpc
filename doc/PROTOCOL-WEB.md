@@ -132,7 +132,7 @@ finalized and implemented in modern browsers
 
 Versioning
 
-* Special headers may be introduced to support features that may break compatiblity.
+* Special headers may be introduced to support features that may break compatibility.
 
 ---
 

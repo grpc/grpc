@@ -56,6 +56,9 @@ class ServicerContext(grpc.ServicerContext):
     def auth_context(self):
         raise NotImplementedError()
 
+    def set_compression(self):
+        raise NotImplementedError()
+
     def send_initial_metadata(self, initial_metadata):
         initial_metadata_sent = self._rpc.send_initial_metadata(
             _common.fuss_with_metadata(initial_metadata))
@@ -63,11 +66,17 @@ class ServicerContext(grpc.ServicerContext):
             raise ValueError(
                 'ServicerContext.send_initial_metadata called too late!')
 
+    def disable_next_message_compression(self):
+        raise NotImplementedError()
+
     def set_trailing_metadata(self, trailing_metadata):
         self._rpc.set_trailing_metadata(
             _common.fuss_with_metadata(trailing_metadata))
 
     def abort(self, code, details):
+        raise NotImplementedError()
+
+    def abort_with_status(self, status):
         raise NotImplementedError()
 
     def set_code(self, code):

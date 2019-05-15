@@ -21,6 +21,7 @@
 
 #include <grpcpp/impl/codegen/async_stream.h>
 #include <grpcpp/impl/codegen/byte_buffer.h>
+#include <grpcpp/impl/codegen/server_callback.h>
 
 struct grpc_server;
 
@@ -38,8 +39,14 @@ class GenericServerContext final : public ServerContext {
   const grpc::string& host() const { return host_; }
 
  private:
-  friend class Server;
+  friend class grpc_impl::Server;
   friend class ServerInterface;
+
+  void Clear() {
+    method_.clear();
+    host_.clear();
+    ServerContext::Clear();
+  }
 
   grpc::string method_;
   grpc::string host_;
@@ -72,10 +79,72 @@ class AsyncGenericService final {
                    ServerCompletionQueue* notification_cq, void* tag);
 
  private:
-  friend class Server;
-  Server* server_;
+  friend class grpc_impl::Server;
+  grpc_impl::Server* server_;
 };
 
+namespace experimental {
+
+/// \a ServerGenericBidiReactor is the reactor class for bidi streaming RPCs
+/// invoked on a CallbackGenericService. The API difference relative to
+/// ServerBidiReactor is that the argument to OnStarted is a
+/// GenericServerContext rather than a ServerContext. All other reaction and
+/// operation initiation APIs are the same as ServerBidiReactor.
+class ServerGenericBidiReactor
+    : public ServerBidiReactor<ByteBuffer, ByteBuffer> {
+ public:
+  /// Similar to ServerBidiReactor::OnStarted except for argument type.
+  ///
+  /// \param[in] context The context object associated with this RPC.
+  virtual void OnStarted(GenericServerContext* context) {}
+
+ private:
+  void OnStarted(ServerContext* ctx) final {
+    OnStarted(static_cast<GenericServerContext*>(ctx));
+  }
+};
+
+}  // namespace experimental
+
+namespace internal {
+class UnimplementedGenericBidiReactor
+    : public experimental::ServerGenericBidiReactor {
+ public:
+  void OnDone() override { delete this; }
+  void OnStarted(GenericServerContext*) override {
+    this->Finish(Status(StatusCode::UNIMPLEMENTED, ""));
+  }
+};
+}  // namespace internal
+
+namespace experimental {
+
+/// \a CallbackGenericService is the base class for generic services implemented
+/// using the callback API and registered through the ServerBuilder using
+/// RegisterCallbackGenericService.
+class CallbackGenericService {
+ public:
+  CallbackGenericService() {}
+  virtual ~CallbackGenericService() {}
+
+  /// The "method handler" for the generic API. This function should be
+  /// overridden to return a ServerGenericBidiReactor that implements the
+  /// application-level interface for this RPC.
+  virtual ServerGenericBidiReactor* CreateReactor() {
+    return new internal::UnimplementedGenericBidiReactor;
+  }
+
+ private:
+  friend class ::grpc_impl::Server;
+
+  internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>* Handler() {
+    return new internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>(
+        [this] { return CreateReactor(); });
+  }
+
+  grpc_impl::Server* server_{nullptr};
+};
+}  // namespace experimental
 }  // namespace grpc
 
 #endif  // GRPCPP_IMPL_CODEGEN_ASYNC_GENERIC_SERVICE_H

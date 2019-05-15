@@ -51,16 +51,22 @@
     // We need a copy, so that it doesn't mutate before it's written at the other end of the pipe.
     value = [value copy];
   }
-  __weak GRXBufferedPipe *weakSelf = self;
   dispatch_async(_writeQueue, ^(void) {
-    [weakSelf.writeable writeValue:value];
+    @synchronized(self) {
+      if (self->_state == GRXWriterStateFinished) {
+        return;
+      }
+      [self.writeable writeValue:value];
+    }
   });
 }
 
 - (void)writesFinishedWithError:(NSError *)errorOrNil {
-  __weak GRXBufferedPipe *weakSelf = self;
   dispatch_async(_writeQueue, ^{
-    [weakSelf finishWithError:errorOrNil];
+    if (self->_state == GRXWriterStateFinished) {
+      return;
+    }
+    [self finishWithError:errorOrNil];
   });
 }
 
@@ -100,14 +106,15 @@
 }
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
-  self.writeable = writeable;
-  _state = GRXWriterStateStarted;
+  @synchronized(self) {
+    self.writeable = writeable;
+    _state = GRXWriterStateStarted;
+  }
   dispatch_resume(_writeQueue);
 }
 
 - (void)finishWithError:(NSError *)errorOrNil {
   [self.writeable writesFinishedWithError:errorOrNil];
-  self.state = GRXWriterStateFinished;
 }
 
 - (void)dealloc {

@@ -1,22 +1,36 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="Version.csproj.include" />
   <Import Project="Common.csproj.include" />
 
   <PropertyGroup>
-    <Copyright>Copyright 2015, Google Inc.</Copyright>
-    <AssemblyTitle>gRPC C# Core</AssemblyTitle>
-    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
-    <Authors>Google Inc.</Authors>
-    <TargetFrameworks>net45;netstandard1.5</TargetFrameworks>
-    <AssemblyName>Grpc.Core</AssemblyName>
-    <PackageId>Grpc.Core</PackageId>
-    <PackageTags>gRPC RPC Protocol HTTP/2</PackageTags>
+    <Authors>The gRPC Authors</Authors>
+    <Copyright>Copyright 2015 The gRPC Authors</Copyright>
+    <Description>C# implementation of gRPC based on native gRPC C-core library.</Description>
+    <PackageIconUrl>https://github.com/grpc/grpc.github.io/raw/master/img/grpc_square_reverse_4x.png</PackageIconUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageTags>gRPC RPC HTTP/2</PackageTags>
+    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;netstandard1.5;netstandard2.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <LangVersion>7.2</LangVersion>
+    <DefineConstants>$(DefineConstants);GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Grpc.Core.Api\Version.cs" />
+  </ItemGroup>
 
   <Import Project="SourceLink.csproj.include" />
 
@@ -81,7 +95,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Interactive.Async" Version="3.1.1" />
+    <ProjectReference Include="../Grpc.Core.Api/Grpc.Core.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Interactive.Async" Version="3.2.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">

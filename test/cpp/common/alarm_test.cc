@@ -47,6 +47,44 @@ TEST(AlarmTest, RegularExpiry) {
   EXPECT_EQ(junk, output_tag);
 }
 
+TEST(AlarmTest, RegularExpiryMultiSet) {
+  CompletionQueue cq;
+  void* junk = reinterpret_cast<void*>(1618033);
+  Alarm alarm;
+
+  for (int i = 0; i < 3; i++) {
+    alarm.Set(&cq, grpc_timeout_seconds_to_deadline(1), junk);
+
+    void* output_tag;
+    bool ok;
+    const CompletionQueue::NextStatus status =
+        cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
+
+    EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
+    EXPECT_TRUE(ok);
+    EXPECT_EQ(junk, output_tag);
+  }
+}
+
+TEST(AlarmTest, RegularExpiryMultiSetMultiCQ) {
+  void* junk = reinterpret_cast<void*>(1618033);
+  Alarm alarm;
+
+  for (int i = 0; i < 3; i++) {
+    CompletionQueue cq;
+    alarm.Set(&cq, grpc_timeout_seconds_to_deadline(1), junk);
+
+    void* output_tag;
+    bool ok;
+    const CompletionQueue::NextStatus status =
+        cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
+
+    EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
+    EXPECT_TRUE(ok);
+    EXPECT_EQ(junk, output_tag);
+  }
+}
+
 struct Completion {
   bool completed = false;
   std::mutex mu;
@@ -313,7 +351,7 @@ TEST(AlarmTest, UnsetDestruction) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

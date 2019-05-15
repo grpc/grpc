@@ -23,6 +23,11 @@ grpc_proto_library(
     srcs = ["reflection.proto"],
 )
 
+proto_library(
+    name = "reflection_proto_descriptor",
+    srcs = ["reflection.proto"],
+)
+
 filegroup(
     name = "reflection_proto_file",
     srcs = [

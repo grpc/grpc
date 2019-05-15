@@ -14,8 +14,12 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
 
-grpc_package(name = "test/core/network_benchmarks",
-             features = ["-layering_check", "-parse_headers" ]
+grpc_package(
+    name = "test/core/network_benchmarks",
+    features = [
+        "-layering_check",
+        "-parse_headers",
+    ],
 )
 
 licenses(["notice"])  # Apache v2
@@ -27,7 +31,7 @@ grpc_cc_binary(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
+    tags = ["no_windows"],
 )

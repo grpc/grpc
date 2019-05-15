@@ -42,7 +42,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/arena.h"
+#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/transport.h"
@@ -66,11 +66,11 @@ typedef struct {
   grpc_call_stack* call_stack;
   const void* server_transport_data;
   grpc_call_context_element* context;
-  grpc_slice path;
+  const grpc_slice& path;
   gpr_timespec start_time;
   grpc_millis deadline;
-  gpr_arena* arena;
-  grpc_call_combiner* call_combiner;
+  grpc_core::Arena* arena;
+  grpc_core::CallCombiner* call_combiner;
 } grpc_call_element_args;
 
 typedef struct {
@@ -274,7 +274,11 @@ void grpc_call_log_op(const char* file, int line, gpr_log_severity severity,
 
 extern grpc_core::TraceFlag grpc_trace_channel;
 
-#define GRPC_CALL_LOG_OP(sev, elem, op) \
-  if (grpc_trace_channel.enabled()) grpc_call_log_op(sev, elem, op)
+#define GRPC_CALL_LOG_OP(sev, elem, op)                \
+  do {                                                 \
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_channel)) { \
+      grpc_call_log_op(sev, elem, op);                 \
+    }                                                  \
+  } while (0)
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_H */

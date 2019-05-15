@@ -52,6 +52,7 @@ class CoreCodegenInterface {
       void* reserved) = 0;
   virtual grpc_completion_queue* grpc_completion_queue_create_for_pluck(
       void* reserved) = 0;
+  virtual void grpc_completion_queue_shutdown(grpc_completion_queue* cq) = 0;
   virtual void grpc_completion_queue_destroy(grpc_completion_queue* cq) = 0;
   virtual grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq,
                                                  void* tag,
@@ -91,6 +92,8 @@ class CoreCodegenInterface {
       grpc_byte_buffer_reader* reader) = 0;
   virtual int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
                                            grpc_slice* slice) = 0;
+  virtual int grpc_byte_buffer_reader_peek(grpc_byte_buffer_reader* reader,
+                                           grpc_slice** slice) = 0;
 
   virtual grpc_byte_buffer* grpc_raw_byte_buffer_create(grpc_slice* slice,
                                                         size_t nslices) = 0;

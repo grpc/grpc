@@ -53,7 +53,7 @@ static void server_setup_transport(void* ts, grpc_transport* transport) {
   grpc_endpoint_pair* sfd = static_cast<grpc_endpoint_pair*>(f->fixture_data);
   grpc_endpoint_add_to_pollset(sfd->server, grpc_cq_pollset(f->cq));
   grpc_server_setup_transport(f->server, transport, nullptr,
-                              grpc_server_get_channel_args(f->server), 0);
+                              grpc_server_get_channel_args(f->server), nullptr);
 }
 
 typedef struct {
@@ -140,7 +140,16 @@ int main(int argc, char** argv) {
   g_fixture_slowdown_factor = 10;
 #endif
 
-  grpc_test_init(argc, argv);
+#ifdef GPR_WINDOWS
+  /* on Windows, writing logs to stderr is very slow
+     when stderr is redirected to a disk file.
+     The "trace" tests fixtures generates large amount
+     of logs, so setting a buffer for stderr prevents certain
+     test cases from timing out. */
+  setvbuf(stderr, NULL, _IOLBF, 1024);
+#endif
+
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_end2end_tests_pre_init();
   grpc_init();
 

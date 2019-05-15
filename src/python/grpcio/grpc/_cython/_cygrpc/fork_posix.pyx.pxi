@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import logging
 import os
 import threading
@@ -37,8 +36,12 @@ _GRPC_ENABLE_FORK_SUPPORT = (
     os.environ.get('GRPC_ENABLE_FORK_SUPPORT', '0')
         .lower() in _TRUE_VALUES)
 
+_fork_handler_failed = False
+
 cdef void __prefork() nogil:
     with gil:
+        global _fork_handler_failed
+        _fork_handler_failed = False
         with _fork_state.fork_in_progress_condition:
             _fork_state.fork_in_progress = True
         if not _fork_state.active_thread_count.await_zero_threads(
@@ -46,6 +49,7 @@ cdef void __prefork() nogil:
             _LOGGER.error(
                 'Failed to shutdown gRPC Python threads prior to fork. '
                 'Behavior after fork will be undefined.')
+            _fork_handler_failed = True
 
 
 cdef void __postfork_parent() nogil:
@@ -57,20 +61,28 @@ cdef void __postfork_parent() nogil:
 
 cdef void __postfork_child() nogil:
     with gil:
-        # Thread could be holding the fork_in_progress_condition inside of
-        # block_if_fork_in_progress() when fork occurs. Reset the lock here.
-        _fork_state.fork_in_progress_condition = threading.Condition()
-        # A thread in return_from_user_request_generator() may hold this lock
-        # when fork occurs.
-        _fork_state.active_thread_count = _ActiveThreadCount()
-        for state_to_reset in _fork_state.postfork_states_to_reset:
-            state_to_reset.reset_postfork_child()
-        _fork_state.fork_epoch += 1
-        for channel in _fork_state.channels:
-            channel._close_on_fork()
-        # TODO(ericgribkoff) Check and abort if core is not shutdown
-        with _fork_state.fork_in_progress_condition:
-            _fork_state.fork_in_progress = False
+        try:
+            if _fork_handler_failed:
+                return
+            # Thread could be holding the fork_in_progress_condition inside of
+            # block_if_fork_in_progress() when fork occurs. Reset the lock here.
+            _fork_state.fork_in_progress_condition = threading.Condition()
+            # A thread in return_from_user_request_generator() may hold this lock
+            # when fork occurs.
+            _fork_state.active_thread_count = _ActiveThreadCount()
+            for state_to_reset in _fork_state.postfork_states_to_reset:
+                state_to_reset.reset_postfork_child()
+            _fork_state.postfork_states_to_reset = []
+            _fork_state.fork_epoch += 1
+            for channel in _fork_state.channels:
+                channel._close_on_fork()
+            with _fork_state.fork_in_progress_condition:
+                _fork_state.fork_in_progress = False
+        except:
+            _LOGGER.error('Exiting child due to raised exception')
+            _LOGGER.error(sys.exc_info()[0])
+            os._exit(os.EX_USAGE)
+
     if grpc_is_initialized() > 0:
         with gil:
             _LOGGER.error('Failed to shutdown gRPC Core after fork()')
@@ -148,7 +160,7 @@ def fork_register_channel(channel):
 
 def fork_unregister_channel(channel):
     if _GRPC_ENABLE_FORK_SUPPORT:
-        _fork_state.channels.remove(channel)
+        _fork_state.channels.discard(channel)
 
 
 class _ActiveThreadCount(object):

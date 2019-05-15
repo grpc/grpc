@@ -33,7 +33,7 @@ import bm_speedup
 sys.path.append(
     os.path.join(
         os.path.dirname(sys.argv[0]), '..', '..', 'run_tests', 'python_utils'))
-import comment_on_pr
+import check_on_pr
 
 
 def _args():
@@ -164,7 +164,7 @@ def main(args):
     else:
         text = '[qps] No significant performance differences'
     print('%s' % text)
-    comment_on_pr.comment_on_pr('```\n%s\n```' % text)
+    check_on_pr.check_on_pr('QPS', '```\n%s\n```' % text)
 
 
 if __name__ == '__main__':

@@ -146,8 +146,8 @@ class FilterEnd2endTest : public ::testing::Test {
   }
 
   void ResetStub() {
-    std::shared_ptr<Channel> channel =
-        CreateChannel(server_address_.str(), InsecureChannelCredentials());
+    std::shared_ptr<Channel> channel = grpc::CreateChannel(
+        server_address_.str(), InsecureChannelCredentials());
     generic_stub_.reset(new GenericStub(channel));
     ResetConnectionCounter();
     ResetCallCounter();
@@ -331,7 +331,7 @@ void RegisterFilter() {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::RegisterFilter();
   return RUN_ALL_TESTS();

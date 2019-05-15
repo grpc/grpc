@@ -218,7 +218,7 @@ int main(int argc, char** argv) {
                                                GRPC_SLICE_SPLIT_ONE_BYTE};
   char *tmp1, *tmp2;
 
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 
   for (i = 0; i < GPR_ARRAY_SIZE(split_modes); i++) {

@@ -58,96 +58,6 @@ static void test_create(void) {
   grpc_channel_args_destroy(ch_args);
 }
 
-static void test_set_compression_algorithm(void) {
-  grpc_core::ExecCtx exec_ctx;
-  grpc_channel_args* ch_args;
-
-  ch_args =
-      grpc_channel_args_set_compression_algorithm(nullptr, GRPC_COMPRESS_GZIP);
-  GPR_ASSERT(ch_args->num_args == 1);
-  GPR_ASSERT(strcmp(ch_args->args[0].key,
-                    GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM) == 0);
-  GPR_ASSERT(ch_args->args[0].type == GRPC_ARG_INTEGER);
-
-  grpc_channel_args_destroy(ch_args);
-}
-
-static void test_compression_algorithm_states(void) {
-  grpc_core::ExecCtx exec_ctx;
-  grpc_channel_args *ch_args, *ch_args_wo_gzip, *ch_args_wo_gzip_deflate,
-      *ch_args_wo_gzip_deflate_gzip;
-  unsigned states_bitset;
-  size_t i;
-
-  ch_args = grpc_channel_args_copy_and_add(nullptr, nullptr, 0);
-  /* by default, all enabled */
-  states_bitset = static_cast<unsigned>(
-      grpc_channel_args_compression_algorithm_get_states(ch_args));
-
-  for (i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
-    GPR_ASSERT(GPR_BITGET(states_bitset, i));
-  }
-
-  /* disable gzip and deflate and stream/gzip */
-  ch_args_wo_gzip = grpc_channel_args_compression_algorithm_set_state(
-      &ch_args, GRPC_COMPRESS_GZIP, 0);
-  GPR_ASSERT(ch_args == ch_args_wo_gzip);
-  ch_args_wo_gzip_deflate = grpc_channel_args_compression_algorithm_set_state(
-      &ch_args_wo_gzip, GRPC_COMPRESS_DEFLATE, 0);
-  GPR_ASSERT(ch_args_wo_gzip == ch_args_wo_gzip_deflate);
-  ch_args_wo_gzip_deflate_gzip =
-      grpc_channel_args_compression_algorithm_set_state(
-          &ch_args_wo_gzip_deflate, GRPC_COMPRESS_STREAM_GZIP, 0);
-  GPR_ASSERT(ch_args_wo_gzip_deflate == ch_args_wo_gzip_deflate_gzip);
-
-  states_bitset =
-      static_cast<unsigned>(grpc_channel_args_compression_algorithm_get_states(
-          ch_args_wo_gzip_deflate));
-  for (i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
-    if (i == GRPC_COMPRESS_GZIP || i == GRPC_COMPRESS_DEFLATE ||
-        i == GRPC_COMPRESS_STREAM_GZIP) {
-      GPR_ASSERT(GPR_BITGET(states_bitset, i) == 0);
-    } else {
-      GPR_ASSERT(GPR_BITGET(states_bitset, i) != 0);
-    }
-  }
-
-  /* re-enabled gzip and stream/gzip only */
-  ch_args_wo_gzip = grpc_channel_args_compression_algorithm_set_state(
-      &ch_args_wo_gzip_deflate_gzip, GRPC_COMPRESS_GZIP, 1);
-  ch_args_wo_gzip = grpc_channel_args_compression_algorithm_set_state(
-      &ch_args_wo_gzip, GRPC_COMPRESS_STREAM_GZIP, 1);
-  GPR_ASSERT(ch_args_wo_gzip == ch_args_wo_gzip_deflate_gzip);
-
-  states_bitset = static_cast<unsigned>(
-      grpc_channel_args_compression_algorithm_get_states(ch_args_wo_gzip));
-  for (i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
-    if (i == GRPC_COMPRESS_DEFLATE) {
-      GPR_ASSERT(GPR_BITGET(states_bitset, i) == 0);
-    } else {
-      GPR_ASSERT(GPR_BITGET(states_bitset, i) != 0);
-    }
-  }
-
-  grpc_channel_args_destroy(ch_args);
-}
-
-static void test_set_socket_mutator(void) {
-  grpc_channel_args* ch_args;
-  grpc_socket_mutator mutator;
-  grpc_socket_mutator_init(&mutator, nullptr);
-
-  ch_args = grpc_channel_args_set_socket_mutator(nullptr, &mutator);
-  GPR_ASSERT(ch_args->num_args == 1);
-  GPR_ASSERT(strcmp(ch_args->args[0].key, GRPC_ARG_SOCKET_MUTATOR) == 0);
-  GPR_ASSERT(ch_args->args[0].type == GRPC_ARG_POINTER);
-
-  {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_channel_args_destroy(ch_args);
-  }
-}
-
 struct fake_class {
   int foo;
 };
@@ -231,12 +141,9 @@ static void test_server_create_with_args(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_create();
-  test_set_compression_algorithm();
-  test_compression_algorithm_states();
-  test_set_socket_mutator();
   test_channel_create_with_args();
   test_server_create_with_args();
   grpc_shutdown();

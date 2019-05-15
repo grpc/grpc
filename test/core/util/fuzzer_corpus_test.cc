@@ -29,6 +29,7 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/util/test_config.h"
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size);
 extern bool squelch;
@@ -144,9 +145,9 @@ INSTANTIATE_TEST_CASE_P(
     ::testing::internal::ParamGenerator<std::string>(new ExampleGenerator));
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
-  ParseCommandLineFlags(&argc, &argv, true);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::InitTest(&argc, &argv, true);
 
   return RUN_ALL_TESTS();
 }

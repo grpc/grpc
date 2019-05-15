@@ -35,6 +35,7 @@
 "\x1Fgrpc.max_response_message_bytes"
 "$/grpc.lb.v1.LoadBalancer/BalanceLoad"
 "\x1C/grpc.health.v1.Health/Watch"
+"P/envoy.service.discovery.v2.AggregatedDiscoveryService/StreamAggregatedResources"
 "\x07deflate"
 "\x04gzip"
 "\x0Bstream/gzip"

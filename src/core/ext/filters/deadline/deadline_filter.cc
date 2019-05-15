@@ -68,8 +68,7 @@ static void timer_callback(void* arg, grpc_error* error) {
     error = grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Deadline Exceeded"),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_DEADLINE_EXCEEDED);
-    grpc_call_combiner_cancel(deadline_state->call_combiner,
-                              GRPC_ERROR_REF(error));
+    deadline_state->call_combiner->Cancel(GRPC_ERROR_REF(error));
     GRPC_CLOSURE_INIT(&deadline_state->timer_callback,
                       send_cancel_op_in_call_combiner, elem,
                       grpc_schedule_on_exec_ctx);
@@ -124,7 +123,7 @@ static void cancel_timer_if_needed(grpc_deadline_state* deadline_state) {
     deadline_state->timer_state = GRPC_DEADLINE_STATE_FINISHED;
     grpc_timer_cancel(&deadline_state->timer);
   } else {
-    // timer was either in STATE_INITAL (nothing to cancel)
+    // timer was either in STATE_INITIAL (nothing to cancel)
     // OR in STATE_FINISHED (again nothing to cancel)
   }
 }
@@ -183,7 +182,7 @@ static void start_timer_after_init(void* arg, grpc_error* error) {
 
 grpc_deadline_state::grpc_deadline_state(grpc_call_element* elem,
                                          grpc_call_stack* call_stack,
-                                         grpc_call_combiner* call_combiner,
+                                         grpc_core::CallCombiner* call_combiner,
                                          grpc_millis deadline)
     : call_stack(call_stack), call_combiner(call_combiner) {
   // Deadline will always be infinite on servers, so the timer will only be

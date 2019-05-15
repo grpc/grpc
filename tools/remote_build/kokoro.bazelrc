@@ -21,12 +21,8 @@ build --remote_executor=remotebuildexecution.googleapis.com
 build --tls_enabled=true
 
 build --auth_enabled=true
-# magic location where kokoro script puts the credentials
-build --auth_credentials=/tmpfs/src/keystore/4321_grpc-testing-service
-build --auth_scope=https://www.googleapis.com/auth/cloud-source-tools
 
 build --bes_backend=buildeventservice.googleapis.com
-build --bes_best_effort=false
 build --bes_timeout=600s
 build --project_id=grpc-testing
 

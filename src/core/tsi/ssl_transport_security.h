@@ -111,7 +111,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
     const char** alpn_protocols, uint16_t num_alpn_protocols,
     tsi_ssl_client_handshaker_factory** factory);
 
-typedef struct {
+struct tsi_ssl_client_handshaker_options {
   /* pem_key_cert_pair is a pointer to the object containing client's private
      key and certificate chain. This parameter can be NULL if the client does
      not have such a key/cert pair. */
@@ -140,7 +140,16 @@ typedef struct {
   size_t num_alpn_protocols;
   /* ssl_session_cache is a cache for reusable client-side sessions. */
   tsi_ssl_session_cache* session_cache;
-} tsi_ssl_client_handshaker_options;
+
+  tsi_ssl_client_handshaker_options()
+      : pem_key_cert_pair(nullptr),
+        pem_root_certs(nullptr),
+        root_store(nullptr),
+        cipher_suites(nullptr),
+        alpn_protocols(nullptr),
+        num_alpn_protocols(0),
+        session_cache(nullptr) {}
+};
 
 /* Creates a client handshaker factory.
    - options is the options used to create a factory.
@@ -221,7 +230,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
     const char* cipher_suites, const char** alpn_protocols,
     uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory);
 
-typedef struct {
+struct tsi_ssl_server_handshaker_options {
   /* pem_key_cert_pairs is an array private key / certificate chains of the
      server. */
   const tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs;
@@ -255,7 +264,18 @@ typedef struct {
   const char* session_ticket_key;
   /* session_ticket_key_size is a size of session ticket encryption key. */
   size_t session_ticket_key_size;
-} tsi_ssl_server_handshaker_options;
+
+  tsi_ssl_server_handshaker_options()
+      : pem_key_cert_pairs(nullptr),
+        num_key_cert_pairs(0),
+        pem_client_root_certs(nullptr),
+        client_certificate_request(TSI_DONT_REQUEST_CLIENT_CERTIFICATE),
+        cipher_suites(nullptr),
+        alpn_protocols(nullptr),
+        num_alpn_protocols(0),
+        session_ticket_key(nullptr),
+        session_ticket_key_size(0) {}
+};
 
 /* Creates a server handshaker factory.
    - options is the options used to create a factory.

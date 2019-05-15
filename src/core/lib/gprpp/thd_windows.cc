@@ -33,10 +33,8 @@
 
 #if defined(_MSC_VER)
 #define thread_local __declspec(thread)
-#define WIN_LAMBDA
 #elif defined(__GNUC__)
 #define thread_local __thread
-#define WIN_LAMBDA WINAPI
 #else
 #error "Unknown compiler - please file a bug report"
 #endif
@@ -48,6 +46,7 @@ struct thd_info {
   void (*body)(void* arg); /* body of a thread */
   void* arg;               /* argument to a thread */
   HANDLE join_event;       /* the join event */
+  bool joinable;           /* whether it is joinable */
 };
 
 thread_local struct thd_info* g_thd_info;
@@ -55,7 +54,8 @@ thread_local struct thd_info* g_thd_info;
 class ThreadInternalsWindows
     : public grpc_core::internal::ThreadInternalsInterface {
  public:
-  ThreadInternalsWindows(void (*thd_body)(void* arg), void* arg, bool* success)
+  ThreadInternalsWindows(void (*thd_body)(void* arg), void* arg, bool* success,
+                         const grpc_core::Thread::Options& options)
       : started_(false) {
     gpr_mu_init(&mu_);
     gpr_cv_init(&ready_);
@@ -65,35 +65,23 @@ class ThreadInternalsWindows
     info_->thread = this;
     info_->body = thd_body;
     info_->arg = arg;
-
-    info_->join_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-    if (info_->join_event == nullptr) {
-      gpr_free(info_);
+    info_->join_event = nullptr;
+    info_->joinable = options.joinable();
+    if (info_->joinable) {
+      info_->join_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+      if (info_->join_event == nullptr) {
+        gpr_free(info_);
+        *success = false;
+        return;
+      }
+    }
+    handle = CreateThread(nullptr, 64 * 1024, thread_body, info_, 0, nullptr);
+    if (handle == nullptr) {
+      destroy_thread();
       *success = false;
     } else {
-      handle = CreateThread(
-          nullptr, 64 * 1024,
-          [](void* v) WIN_LAMBDA -> DWORD {
-            g_thd_info = static_cast<thd_info*>(v);
-            gpr_mu_lock(&g_thd_info->thread->mu_);
-            while (!g_thd_info->thread->started_) {
-              gpr_cv_wait(&g_thd_info->thread->ready_, &g_thd_info->thread->mu_,
-                          gpr_inf_future(GPR_CLOCK_MONOTONIC));
-            }
-            gpr_mu_unlock(&g_thd_info->thread->mu_);
-            g_thd_info->body(g_thd_info->arg);
-            BOOL ret = SetEvent(g_thd_info->join_event);
-            GPR_ASSERT(ret);
-            return 0;
-          },
-          info_, 0, nullptr);
-      if (handle == nullptr) {
-        destroy_thread();
-        *success = false;
-      } else {
-        CloseHandle(handle);
-        *success = true;
-      }
+      CloseHandle(handle);
+      *success = true;
     }
   }
 
@@ -116,8 +104,32 @@ class ThreadInternalsWindows
   }
 
  private:
+  static DWORD WINAPI thread_body(void* v) {
+    g_thd_info = static_cast<thd_info*>(v);
+    gpr_mu_lock(&g_thd_info->thread->mu_);
+    while (!g_thd_info->thread->started_) {
+      gpr_cv_wait(&g_thd_info->thread->ready_, &g_thd_info->thread->mu_,
+                  gpr_inf_future(GPR_CLOCK_MONOTONIC));
+    }
+    gpr_mu_unlock(&g_thd_info->thread->mu_);
+    if (!g_thd_info->joinable) {
+      grpc_core::Delete(g_thd_info->thread);
+      g_thd_info->thread = nullptr;
+    }
+    g_thd_info->body(g_thd_info->arg);
+    if (g_thd_info->joinable) {
+      BOOL ret = SetEvent(g_thd_info->join_event);
+      GPR_ASSERT(ret);
+    } else {
+      gpr_free(g_thd_info);
+    }
+    return 0;
+  }
+
   void destroy_thread() {
-    CloseHandle(info_->join_event);
+    if (info_ != nullptr && info_->joinable) {
+      CloseHandle(info_->join_event);
+    }
     gpr_free(info_);
   }
 
@@ -132,14 +144,15 @@ class ThreadInternalsWindows
 namespace grpc_core {
 
 Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
-               bool* success) {
+               bool* success, const Options& options)
+    : options_(options) {
   bool outcome = false;
-  impl_ = grpc_core::New<ThreadInternalsWindows>(thd_body, arg, &outcome);
+  impl_ = New<ThreadInternalsWindows>(thd_body, arg, &outcome, options);
   if (outcome) {
     state_ = ALIVE;
   } else {
     state_ = FAILED;
-    grpc_core::Delete(impl_);
+    Delete(impl_);
     impl_ = nullptr;
   }
 

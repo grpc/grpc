@@ -19,8 +19,10 @@ import sys
 PYTHON_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                              '..', '..', '..', 'src', 'python')
 sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio'))
+sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_channelz'))
 sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_health_checking'))
 sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_reflection'))
+sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_status'))
 sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_testing'))
 
 # -- Project information -----------------------------------------------------
@@ -63,6 +65,8 @@ autodoc_default_options = {
 
 autodoc_mock_imports = [
     'grpc._cython',
+    'grpc_channelz.v1.channelz_pb2',
+    'grpc_channelz.v1.channelz_pb2_grpc',
     'grpc_health.v1.health_pb2',
     'grpc_health.v1.health_pb2_grpc',
     'grpc_reflection.v1alpha.reflection_pb2',

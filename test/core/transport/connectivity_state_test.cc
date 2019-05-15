@@ -60,13 +60,9 @@ static void test_connectivity_state_name(void) {
 static void test_check(void) {
   grpc_connectivity_state_tracker tracker;
   grpc_core::ExecCtx exec_ctx;
-  grpc_error* error;
   gpr_log(GPR_DEBUG, "test_check");
   grpc_connectivity_state_init(&tracker, GRPC_CHANNEL_IDLE, "xxx");
-  GPR_ASSERT(grpc_connectivity_state_get(&tracker, &error) ==
-             GRPC_CHANNEL_IDLE);
   GPR_ASSERT(grpc_connectivity_state_check(&tracker) == GRPC_CHANNEL_IDLE);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_connectivity_state_destroy(&tracker);
 }
 
@@ -134,7 +130,7 @@ static void test_subscribe_with_failure_then_destroy(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   grpc_core::testing::grpc_tracer_enable_flag(&grpc_connectivity_state_trace);
   test_connectivity_state_name();

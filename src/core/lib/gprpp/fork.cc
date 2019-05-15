@@ -160,8 +160,6 @@ void Fork::GlobalInit() {
   if (!override_enabled_) {
 #ifdef GRPC_ENABLE_FORK_SUPPORT
     support_enabled_ = true;
-#else
-    support_enabled_ = false;
 #endif
     bool env_var_set = false;
     char* env = gpr_getenv("GRPC_ENABLE_FORK_SUPPORT");
@@ -262,7 +260,7 @@ void Fork::AwaitThreads() {
 
 internal::ExecCtxState* Fork::exec_ctx_state_ = nullptr;
 internal::ThreadState* Fork::thread_state_ = nullptr;
-bool Fork::support_enabled_ = false;
+std::atomic<bool> Fork::support_enabled_;
 bool Fork::override_enabled_ = false;
 Fork::child_postfork_func Fork::reset_child_polling_engine_ = nullptr;
 }  // namespace grpc_core
