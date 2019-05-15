@@ -138,6 +138,7 @@ grpc::string GetHeaderIncludes(grpc_generator::File* file,
     }
     static const char* headers_strs[] = {
         "functional",
+        "grpcpp/channel.h",
         "grpcpp/impl/codegen/async_generic_service.h",
         "grpcpp/impl/codegen/async_stream.h",
         "grpcpp/impl/codegen/async_unary_call.h",
