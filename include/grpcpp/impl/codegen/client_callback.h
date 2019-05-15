@@ -29,12 +29,9 @@
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/status.h>
 
-namespace grpc_impl {
-class Channel;
-}
-
 namespace grpc {
 
+class Channel;
 class ClientContext;
 class CompletionQueue;
 
