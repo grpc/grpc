@@ -61,11 +61,11 @@ namespace grpc_impl {
 
 class CallCredentials;
 class Channel;
-class CompletionQueue;
 }  // namespace grpc_impl
 namespace grpc {
 
 class ChannelInterface;
+class CompletionQueue;
 class ClientContext;
 
 namespace internal {

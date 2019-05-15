@@ -48,6 +48,7 @@
 
 namespace grpc {
 
+class CompletionQueue;
 extern CoreCodegenInterface* g_core_codegen_interface;
 
 namespace internal {
