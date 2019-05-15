@@ -32,6 +32,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/impl/codegen/sync.h>
+#include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
@@ -59,7 +60,7 @@ namespace {
 
 const size_t kNumBackends = 10;
 const size_t kNumBalancers = 5;
-const size_t kNumClientThreads = 100;
+const size_t kNumClientThreadsPerChannel = 100;
 const int kResolutionUpdateIntervalMs = 50;
 const int kServerlistUpdateIntervalMs = 10;
 const int kTestDurationSec = 30;
@@ -133,6 +134,7 @@ class BalancerServiceImpl : public LoadBalancer::Service {
 class ClientChannelStressTest {
  public:
   void Run() {
+    EnableDefaultHealthCheckService(true);
     Start();
     // Keep updating resolution for the test duration.
     gpr_log(GPR_INFO, "Start updating resolution.");
@@ -146,7 +148,7 @@ class ClientChannelStressTest {
               .count() > kTestDurationSec) {
         break;
       }
-      // Generate a random subset of balancers.
+      // Generate a random subset of balancers and backends.
       addresses.clear();
       for (const auto& balancer_server : balancer_servers_) {
         // Select each address with probability of 0.8.
@@ -154,9 +156,18 @@ class ClientChannelStressTest {
           addresses.emplace_back(AddressData{balancer_server.port_, true, ""});
         }
       }
+      for (const auto& backend_server : backend_servers_) {
+        // Select each address with probability of 0.8.
+        if (std::rand() % 10 < 8) {
+          addresses.emplace_back(AddressData{backend_server.port_, false, ""});
+        }
+      }
       std::shuffle(addresses.begin(), addresses.end(),
                    std::mt19937(std::random_device()()));
-      SetNextResolution(addresses);
+      // Choose which client handle to update.
+      ClientHandle* client_handle =
+          client_handles_[std::rand() % client_handles_.size()].get();
+      SetNextResolution(client_handle, addresses);
       std::this_thread::sleep_for(wait_duration);
     }
     gpr_log(GPR_INFO, "Finish updating resolution.");
@@ -217,7 +228,16 @@ class ClientChannelStressTest {
     grpc::string balancer_name;
   };
 
-  void SetNextResolution(const std::vector<AddressData>& address_data) {
+  struct ClientHandle {
+    grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
+        response_generator;
+    std::shared_ptr<Channel> channel;
+    std::unique_ptr<grpc::testing::EchoTestService::Stub> stub;
+    std::mutex stub_mutex;
+  };
+
+  void SetNextResolution(ClientHandle* client_handle,
+                         const std::vector<AddressData>& address_data) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
     for (const auto& addr : address_data) {
@@ -241,10 +261,10 @@ class ClientChannelStressTest {
       grpc_uri_destroy(lb_uri);
       gpr_free(lb_uri_str);
     }
-    response_generator_->SetResponse(std::move(result));
+    client_handle->response_generator->SetResponse(std::move(result));
   }
 
-  void KeepSendingRequests() {
+  void KeepSendingRequests(ClientHandle* client_handle) {
     gpr_log(GPR_INFO, "Start sending requests.");
     while (!shutdown_) {
       ClientContext context;
@@ -253,24 +273,29 @@ class ClientChannelStressTest {
       request.set_message("test");
       EchoResponse response;
       {
-        std::lock_guard<std::mutex> lock(stub_mutex_);
-        Status status = stub_->Echo(&context, request, &response);
+        std::lock_guard<std::mutex> lock(client_handle->stub_mutex);
+        Status status = client_handle->stub->Echo(&context, request, &response);
       }
     }
     gpr_log(GPR_INFO, "Finish sending requests.");
   }
 
-  void CreateStub() {
+  std::unique_ptr<ClientHandle> CreateClientHandle(
+      const char* service_config_json) {
+    std::unique_ptr<ClientHandle> client_handle(new ClientHandle());
     ChannelArguments args;
-    response_generator_ =
+    if (service_config_json != nullptr) {
+      args.SetServiceConfigJSON(service_config_json);
+    }
+    client_handle->response_generator =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
-                    response_generator_.get());
-    std::ostringstream uri;
-    uri << "fake:///servername_not_used";
-    channel_ = ::grpc::CreateCustomChannel(uri.str(),
-                                           InsecureChannelCredentials(), args);
-    stub_ = grpc::testing::EchoTestService::NewStub(channel_);
+                    client_handle->response_generator.get());
+    client_handle->channel = ::grpc::CreateCustomChannel(
+        "fake:///servername_not_used", InsecureChannelCredentials(), args);
+    client_handle->stub =
+        grpc::testing::EchoTestService::NewStub(client_handle->channel);
+    return client_handle;
   }
 
   void Start() {
@@ -289,10 +314,32 @@ class ClientChannelStressTest {
           "balancer", server_host_, balancers_.back().get()));
     }
     // Start sending RPCs in multiple threads.
-    CreateStub();
-    for (size_t i = 0; i < kNumClientThreads; ++i) {
-      client_threads_.emplace_back(
-          std::thread(&ClientChannelStressTest::KeepSendingRequests, this));
+    static const char* kServiceConfigs[] = {
+        // No service config -- will use grpclb with no health checking.
+        nullptr,
+        // Use pick_first.
+        "{\"loadBalancingConfig\":[{\"pick_first\":{}}]}",
+        // Use round_robin with client-side health checking.
+        "{"
+        "  \"loadBalancingConfig\":[{\"round_robin\":{}}],"
+        "  \"healthCheckConfig\": {\"serviceName\": \"\"}"
+        "}",
+        // Same as pervious, but with a different (unhealthy) health
+        // check service name.
+        "{"
+        "  \"loadBalancingConfig\":[{\"round_robin\":{}}],"
+        "  \"healthCheckConfig\": {\"serviceName\": \"unhealthy\"}"
+        "}",
+        };
+    for (size_t j = 0; j < GPR_ARRAY_SIZE(kServiceConfigs); ++j) {
+      std::unique_ptr<ClientHandle> client_handle =
+          CreateClientHandle(kServiceConfigs[j]);
+      for (size_t i = 0; i < kNumClientThreadsPerChannel; ++i) {
+        client_threads_.emplace_back(
+            std::thread(&ClientChannelStressTest::KeepSendingRequests, this,
+                        client_handle.get()));
+      }
+      client_handles_.push_back(std::move(client_handle));
     }
   }
 
@@ -312,15 +359,11 @@ class ClientChannelStressTest {
 
   std::atomic_bool shutdown_{false};
   const grpc::string server_host_ = "localhost";
-  std::shared_ptr<Channel> channel_;
-  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
-  std::mutex stub_mutex_;
+  std::vector<std::unique_ptr<ClientHandle>> client_handles_;
   std::vector<std::unique_ptr<BackendServiceImpl>> backends_;
   std::vector<std::unique_ptr<BalancerServiceImpl>> balancers_;
   std::vector<ServerThread<BackendServiceImpl>> backend_servers_;
   std::vector<ServerThread<BalancerServiceImpl>> balancer_servers_;
-  grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
-      response_generator_;
   std::vector<std::thread> client_threads_;
 };
 
