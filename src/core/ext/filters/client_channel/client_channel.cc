@@ -960,11 +960,6 @@ class ChannelData::ClientChannelControlHelper
     return subchannel;
   }
 
-  grpc_channel* CreateChannel(const char* target,
-                              const grpc_channel_args& args) override {
-    return chand_->client_channel_factory_->CreateChannel(target, &args);
-  }
-
   void UpdateState(
       grpc_connectivity_state state,
       UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
