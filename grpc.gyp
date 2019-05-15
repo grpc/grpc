@@ -593,7 +593,6 @@
         'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc',
         'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc',
         'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc',
-        'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc',
         'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc',
         'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc',
         'src/core/ext/filters/census/grpc_context.cc',
@@ -1353,7 +1352,6 @@
         'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc',
         'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc',
         'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc',
-        'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc',
         'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc',
         'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc',
         'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc',
@@ -1403,6 +1401,24 @@
       ],
       'sources': [
         'test/core/util/test_tcp_server.cc',
+      ],
+    },
+    {
+      'target_name': 'bm_callback_test_service_impl',
+      'type': 'static_library',
+      'dependencies': [
+        'grpc_benchmark',
+        'benchmark',
+        'grpc++_test_util_unsecure',
+        'grpc_test_util_unsecure',
+        'grpc++_unsecure',
+        'grpc_unsecure',
+        'gpr',
+        'grpc++_test_config',
+      ],
+      'sources': [
+        'src/proto/grpc/testing/echo.proto',
+        'test/cpp/microbenchmarks/callback_test_service.cc',
       ],
     },
     {

@@ -222,7 +222,7 @@ class ChannelData {
   ~ChannelData();
 
   static bool ProcessResolverResultLocked(
-      void* arg, const Resolver::Result& result, const char** lb_policy_name,
+      void* arg, Resolver::Result* result, const char** lb_policy_name,
       RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config,
       grpc_error** service_config_error);
 
@@ -271,7 +271,6 @@ class ChannelData {
   OrphanablePtr<LoadBalancingPolicy> resolving_lb_policy_;
   grpc_connectivity_state_tracker state_tracker_;
   ExternalConnectivityWatcher::WatcherList external_connectivity_watcher_list_;
-  UniquePtr<char> health_check_service_name_;
   RefCountedPtr<ServiceConfig> saved_service_config_;
   bool received_first_resolver_result_ = false;
 
@@ -951,18 +950,10 @@ class ChannelData::ClientChannelControlHelper
   }
 
   Subchannel* CreateSubchannel(const grpc_channel_args& args) override {
-    grpc_arg args_to_add[2];
-    int num_args_to_add = 0;
-    if (chand_->health_check_service_name_ != nullptr) {
-      args_to_add[0] = grpc_channel_arg_string_create(
-          const_cast<char*>("grpc.temp.health_check"),
-          const_cast<char*>(chand_->health_check_service_name_.get()));
-      num_args_to_add++;
-    }
-    args_to_add[num_args_to_add++] = SubchannelPoolInterface::CreateChannelArg(
+    grpc_arg arg = SubchannelPoolInterface::CreateChannelArg(
         chand_->subchannel_pool_.get());
     grpc_channel_args* new_args =
-        grpc_channel_args_copy_and_add(&args, args_to_add, num_args_to_add);
+        grpc_channel_args_copy_and_add(&args, &arg, 1);
     Subchannel* subchannel =
         chand_->client_channel_factory_->CreateSubchannel(new_args);
     grpc_channel_args_destroy(new_args);
@@ -1078,8 +1069,6 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
   // Get default service config
   const char* service_config_json = grpc_channel_arg_get_string(
       grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVICE_CONFIG));
-  // TODO(yashkt): Make sure we set the channel in TRANSIENT_FAILURE on an
-  // invalid default service config
   if (service_config_json != nullptr) {
     *error = GRPC_ERROR_NONE;
     default_service_config_ = ServiceConfig::Create(service_config_json, error);
@@ -1201,14 +1190,14 @@ void ChannelData::ProcessLbPolicy(
 // Synchronous callback from ResolvingLoadBalancingPolicy to process a
 // resolver result update.
 bool ChannelData::ProcessResolverResultLocked(
-    void* arg, const Resolver::Result& result, const char** lb_policy_name,
+    void* arg, Resolver::Result* result, const char** lb_policy_name,
     RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config,
     grpc_error** service_config_error) {
   ChannelData* chand = static_cast<ChannelData*>(arg);
   RefCountedPtr<ServiceConfig> service_config;
   // If resolver did not return a service config or returned an invalid service
   // config, we need a fallback service config.
-  if (result.service_config_error != GRPC_ERROR_NONE) {
+  if (result->service_config_error != GRPC_ERROR_NONE) {
     // If the service config was invalid, then fallback to the saved service
     // config. If there is no saved config either, use the default service
     // config.
@@ -1229,7 +1218,7 @@ bool ChannelData::ProcessResolverResultLocked(
       }
       service_config = chand->default_service_config_;
     }
-  } else if (result.service_config == nullptr) {
+  } else if (result->service_config == nullptr) {
     if (chand->default_service_config_ != nullptr) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
         gpr_log(GPR_INFO,
@@ -1240,15 +1229,15 @@ bool ChannelData::ProcessResolverResultLocked(
       service_config = chand->default_service_config_;
     }
   } else {
-    service_config = result.service_config;
+    service_config = result->service_config;
   }
-  *service_config_error = GRPC_ERROR_REF(result.service_config_error);
+  *service_config_error = GRPC_ERROR_REF(result->service_config_error);
   if (service_config == nullptr &&
-      result.service_config_error != GRPC_ERROR_NONE) {
+      result->service_config_error != GRPC_ERROR_NONE) {
     return false;
   }
-  UniquePtr<char> service_config_json;
   // Process service config.
+  UniquePtr<char> service_config_json;
   const internal::ClientChannelGlobalParsedObject* parsed_service_config =
       nullptr;
   if (service_config != nullptr) {
@@ -1257,6 +1246,20 @@ bool ChannelData::ProcessResolverResultLocked(
             service_config->GetParsedGlobalServiceConfigObject(
                 internal::ClientChannelServiceConfigParser::ParserIndex()));
   }
+  // TODO(roth): Eliminate this hack as part of hiding health check
+  // service name from LB policy API.  As part of this, change the API
+  // for this function to pass in result as a const reference.
+  if (parsed_service_config != nullptr &&
+      parsed_service_config->health_check_service_name() != nullptr) {
+    grpc_arg new_arg = grpc_channel_arg_string_create(
+        const_cast<char*>("grpc.temp.health_check"),
+        const_cast<char*>(parsed_service_config->health_check_service_name()));
+    grpc_channel_args* new_args =
+        grpc_channel_args_copy_and_add(result->args, &new_arg, 1);
+    grpc_channel_args_destroy(result->args);
+    result->args = new_args;
+  }
+  // Check if the config has changed.
   const bool service_config_changed =
       ((service_config == nullptr) !=
        (chand->saved_service_config_ == nullptr)) ||
@@ -1273,12 +1276,6 @@ bool ChannelData::ProcessResolverResultLocked(
               chand, service_config_json.get());
     }
     chand->saved_service_config_ = std::move(service_config);
-    if (parsed_service_config != nullptr) {
-      chand->health_check_service_name_.reset(
-          gpr_strdup(parsed_service_config->health_check_service_name()));
-    } else {
-      chand->health_check_service_name_.reset();
-    }
   }
   // We want to set the service config at least once. This should not really be
   // needed, but we are doing it as a defensive approach. This can be removed,
@@ -1296,7 +1293,7 @@ bool ChannelData::ProcessResolverResultLocked(
                              chand->saved_service_config_);
   }
   UniquePtr<char> processed_lb_policy_name;
-  chand->ProcessLbPolicy(result, parsed_service_config,
+  chand->ProcessLbPolicy(*result, parsed_service_config,
                          &processed_lb_policy_name, lb_policy_config);
   // Swap out the data used by GetChannelInfo().
   {

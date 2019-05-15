@@ -2779,6 +2779,56 @@
   {
     "deps": [
       "benchmark", 
+      "bm_callback_test_service_impl", 
+      "gpr", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_benchmark", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [
+      "test/cpp/microbenchmarks/callback_streaming_ping_pong.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_callback_streaming_ping_pong", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_callback_streaming_ping_pong.cc", 
+      "test/cpp/microbenchmarks/callback_streaming_ping_pong.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "bm_callback_test_service_impl", 
+      "gpr", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_benchmark", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [
+      "test/cpp/microbenchmarks/callback_unary_ping_pong.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_callback_unary_ping_pong", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_callback_unary_ping_pong.cc", 
+      "test/cpp/microbenchmarks/callback_unary_ping_pong.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
       "gpr", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
@@ -6625,6 +6675,33 @@
     "type": "lib"
   }, 
   {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_benchmark", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [
+      "src/proto/grpc/testing/echo.grpc.pb.h", 
+      "src/proto/grpc/testing/echo.pb.h", 
+      "src/proto/grpc/testing/echo_mock.grpc.pb.h", 
+      "test/cpp/microbenchmarks/callback_test_service.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_callback_test_service_impl", 
+    "src": [
+      "test/cpp/microbenchmarks/callback_test_service.cc", 
+      "test/cpp/microbenchmarks/callback_test_service.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
     "deps": [], 
     "headers": [
       "test/cpp/naming/dns_test_util.h"
@@ -8574,6 +8651,7 @@
       "src/core/lib/slice/slice_hash_table.h", 
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.h", 
+      "src/core/lib/slice/slice_utils.h", 
       "src/core/lib/slice/slice_weak_hash_table.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
@@ -8730,6 +8808,7 @@
       "src/core/lib/slice/slice_hash_table.h", 
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.h", 
+      "src/core/lib/slice/slice_utils.h", 
       "src/core/lib/slice/slice_weak_hash_table.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
@@ -9173,8 +9252,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_channel", 
-      "grpc_resolver_dns_selection"
+      "grpc_client_channel"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h", 
@@ -9204,8 +9282,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_channel", 
-      "grpc_resolver_dns_selection"
+      "grpc_client_channel"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -9213,24 +9290,6 @@
     "name": "grpc_resolver_dns_native", 
     "src": [
       "src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc_base"
-    ], 
-    "headers": [
-      "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
-    ], 
-    "is_filegroup": true, 
-    "language": "c", 
-    "name": "grpc_resolver_dns_selection", 
-    "src": [
-      "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc", 
-      "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

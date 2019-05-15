@@ -35,7 +35,7 @@ typedef enum {
   GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT
 } grpc_message_compression_algorithm;
 
-/** Stream compresssion algorithms supported by gRPC */
+/** Stream compression algorithms supported by gRPC */
 typedef enum {
   GRPC_STREAM_COMPRESS_NONE = 0,
   GRPC_STREAM_COMPRESS_GZIP,

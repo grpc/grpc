@@ -83,9 +83,8 @@ class RoundRobin : public LoadBalancingPolicy {
     RoundRobinSubchannelData(
         SubchannelList<RoundRobinSubchannelList, RoundRobinSubchannelData>*
             subchannel_list,
-        const ServerAddress& address, Subchannel* subchannel,
-        grpc_combiner* combiner)
-        : SubchannelData(subchannel_list, address, subchannel, combiner) {}
+        const ServerAddress& address, Subchannel* subchannel)
+        : SubchannelData(subchannel_list, address, subchannel) {}
 
     grpc_connectivity_state connectivity_state() const {
       return last_connectivity_state_;
@@ -320,6 +319,7 @@ void RoundRobin::RoundRobinSubchannelList::StartWatchingLocked() {
   for (size_t i = 0; i < num_subchannels(); i++) {
     if (subchannel(i)->subchannel() != nullptr) {
       subchannel(i)->StartConnectivityWatchLocked();
+      subchannel(i)->subchannel()->AttemptToConnect();
     }
   }
   // Now set the LB policy's state based on the subchannels' states.
@@ -448,6 +448,7 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
   // Otherwise, if the subchannel was already in state TRANSIENT_FAILURE
   // when the subchannel list was created, we'd wind up in a constant
   // loop of re-resolution.
+  // Also attempt to reconnect.
   if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
       gpr_log(GPR_INFO,
@@ -456,9 +457,8 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
               p, subchannel());
     }
     p->channel_control_helper()->RequestReresolution();
+    subchannel()->AttemptToConnect();
   }
-  // Renew connectivity watch.
-  RenewConnectivityWatchLocked();
   // Update state counters.
   UpdateConnectivityStateLocked(connectivity_state);
   // Update overall state and renew notification.

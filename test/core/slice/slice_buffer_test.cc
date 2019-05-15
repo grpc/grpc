@@ -19,6 +19,7 @@
 #include <grpc/grpc.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
+#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
 void test_slice_buffer_add() {
@@ -105,12 +106,54 @@ void test_slice_buffer_move_first() {
   GPR_ASSERT(dst.length == dst_len);
 }
 
+void test_slice_buffer_first() {
+  grpc_slice slices[3];
+  slices[0] = grpc_slice_from_copied_string("aaa");
+  slices[1] = grpc_slice_from_copied_string("bbbb");
+  slices[2] = grpc_slice_from_copied_string("ccccc");
+
+  grpc_slice_buffer buf;
+  grpc_slice_buffer_init(&buf);
+  for (int idx = 0; idx < 3; ++idx) {
+    grpc_slice_ref(slices[idx]);
+    grpc_slice_buffer_add_indexed(&buf, slices[idx]);
+  }
+
+  grpc_slice* first = grpc_slice_buffer_peek_first(&buf);
+  GPR_ASSERT(GPR_SLICE_LENGTH(*first) == GPR_SLICE_LENGTH(slices[0]));
+  GPR_ASSERT(buf.count == 3);
+  GPR_ASSERT(buf.length == 12);
+
+  grpc_slice_buffer_sub_first(&buf, 1, 2);
+  first = grpc_slice_buffer_peek_first(&buf);
+  GPR_ASSERT(GPR_SLICE_LENGTH(*first) == 1);
+  GPR_ASSERT(buf.count == 3);
+  GPR_ASSERT(buf.length == 10);
+
+  grpc_slice_buffer_remove_first(&buf);
+  first = grpc_slice_buffer_peek_first(&buf);
+  GPR_ASSERT(GPR_SLICE_LENGTH(*first) == GPR_SLICE_LENGTH(slices[1]));
+  GPR_ASSERT(buf.count == 2);
+  GPR_ASSERT(buf.length == 9);
+
+  grpc_slice_buffer_remove_first(&buf);
+  first = grpc_slice_buffer_peek_first(&buf);
+  GPR_ASSERT(GPR_SLICE_LENGTH(*first) == GPR_SLICE_LENGTH(slices[2]));
+  GPR_ASSERT(buf.count == 1);
+  GPR_ASSERT(buf.length == 5);
+
+  grpc_slice_buffer_remove_first(&buf);
+  GPR_ASSERT(buf.count == 0);
+  GPR_ASSERT(buf.length == 0);
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 
   test_slice_buffer_add();
   test_slice_buffer_move_first();
+  test_slice_buffer_first();
 
   grpc_shutdown();
   return 0;

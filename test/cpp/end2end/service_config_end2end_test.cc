@@ -237,6 +237,14 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     return ::grpc::CreateCustomChannel("fake:///", creds_, args);
   }
 
+  std::shared_ptr<Channel> BuildChannelWithInvalidDefaultServiceConfig() {
+    ChannelArguments args;
+    args.SetServiceConfigJSON(InvalidDefaultServiceConfig());
+    args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
+                    response_generator_.get());
+    return ::grpc::CreateCustomChannel("fake:///", creds_, args);
+  }
+
   bool SendRpc(
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       EchoResponse* response = nullptr, int timeout_ms = 1000,
@@ -402,7 +410,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   }
 
   const char* InvalidDefaultServiceConfig() {
-    return "{\"version\": \"invalid_default\"}";
+    return "{\"version\": \"invalid_default\"";
   }
 
   const grpc::string server_host_;
@@ -546,6 +554,51 @@ TEST_F(ServiceConfigEnd2endTest,
   SetNextResolutionInvalidServiceConfig(GetServersPorts());
   CheckRpcSendFailure(stub);
   SetNextResolutionInvalidServiceConfig(GetServersPorts());
+  CheckRpcSendFailure(stub);
+}
+
+TEST_F(ServiceConfigEnd2endTest, InvalidDefaultServiceConfigTest) {
+  StartServers(1);
+  auto channel = BuildChannelWithInvalidDefaultServiceConfig();
+  auto stub = BuildStub(channel);
+  // An invalid default service config results in a lame channel which fails all
+  // RPCs
+  CheckRpcSendFailure(stub);
+}
+
+TEST_F(ServiceConfigEnd2endTest,
+       InvalidDefaultServiceConfigTestWithValidServiceConfig) {
+  StartServers(1);
+  auto channel = BuildChannelWithInvalidDefaultServiceConfig();
+  auto stub = BuildStub(channel);
+  CheckRpcSendFailure(stub);
+  // An invalid default service config results in a lame channel which fails all
+  // RPCs
+  SetNextResolutionValidServiceConfig(GetServersPorts());
+  CheckRpcSendFailure(stub);
+}
+
+TEST_F(ServiceConfigEnd2endTest,
+       InvalidDefaultServiceConfigTestWithInvalidServiceConfig) {
+  StartServers(1);
+  auto channel = BuildChannelWithInvalidDefaultServiceConfig();
+  auto stub = BuildStub(channel);
+  CheckRpcSendFailure(stub);
+  // An invalid default service config results in a lame channel which fails all
+  // RPCs
+  SetNextResolutionInvalidServiceConfig(GetServersPorts());
+  CheckRpcSendFailure(stub);
+}
+
+TEST_F(ServiceConfigEnd2endTest,
+       InvalidDefaultServiceConfigTestWithNoServiceConfig) {
+  StartServers(1);
+  auto channel = BuildChannelWithInvalidDefaultServiceConfig();
+  auto stub = BuildStub(channel);
+  CheckRpcSendFailure(stub);
+  // An invalid default service config results in a lame channel which fails all
+  // RPCs
+  SetNextResolutionNoServiceConfig(GetServersPorts());
   CheckRpcSendFailure(stub);
 }
 
