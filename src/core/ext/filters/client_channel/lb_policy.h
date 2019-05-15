@@ -26,6 +26,7 @@
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/gprpp/abstract.h"
+#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -89,6 +90,52 @@ class ParsedLoadBalancingConfig : public RefCounted<ParsedLoadBalancingConfig> {
 // interested_parties() hooks from the API.
 class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
  public:
+  // Represents backend metrics reported by the backend to the client.
+// FIXME: maybe just make this a struct?
+  class BackendMetricData {
+   public:
+    typedef Map<const char*, double, StringLess> MetricMap;
+
+    BackendMetricData(double cpu_utilization, double mem_utilization,
+                      uint64_t rps, MetricMap request_cost_or_utilization)
+        : cpu_utilization_(cpu_utilization), mem_utilization_(mem_utilization),
+          rps_(rps),
+          request_cost_or_utilization_(
+              std::move(request_cost_or_utilization)) {}
+
+    double cpu_utilization() const { return cpu_utilization_; }
+    double mem_utilization() const { return mem_utilization_; }
+    uint64_t rps() const { return rps_; }
+    const MetricMap& request_cost_or_utilization() const {
+      return request_cost_or_utilization_;
+    }
+
+   private:
+    double cpu_utilization_ = 0;
+    double mem_utilization_ = 0;
+    uint64_t rps_ = 0;
+    MetricMap request_cost_or_utilization_;
+  };
+
+  /// Interface for accessing per-call state.
+  class CallState {
+   public:
+    CallState() = default;
+    virtual ~CallState() = default;
+
+    /// Allocates memory associated with the call, which will be
+    /// automatically freed when the call is complete.
+    /// It is more efficient to use this than to allocate memory directly
+    /// for allocations that need to be made on a per-call basis.
+    virtual void* Alloc(size_t size) GRPC_ABSTRACT;
+
+    /// Returns the backend metric data returned by the server for the call,
+    /// or null if no backend metric data was returned.
+    virtual BackendMetricData* GetBackendMetricData() GRPC_ABSTRACT;
+
+    GRPC_ABSTRACT_BASE_CLASS
+  };
+
   /// Arguments used when picking a subchannel for an RPC.
   struct PickArgs {
     ///
@@ -99,11 +146,16 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// decision, and it may add new metadata elements to be sent with the
     /// call to the chosen backend.
     // TODO(roth): Provide a more generic metadata API here.
+// FIXME: maybe move this to CallState?
     grpc_metadata_batch* initial_metadata = nullptr;
     /// Storage for LB token in \a initial_metadata, or nullptr if not used.
     // TODO(roth): Remove this from the API.  Maybe have the LB policy
     // allocate this on the arena instead?
+// FIXME: use CallState to allocate instead of doing it here
     grpc_linked_mdelem lb_token_mdelem_storage;
+    /// An interface for accessing call state.  Can be used to allocate
+    /// data associated with the call in an efficient way.
+    CallState* call_state;
     ///
     /// Output parameters.
     ///
@@ -117,12 +169,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// modified by the callback.  The callback does not take ownership,
     /// however, so any data that needs to be used after returning must
     /// be copied.
-    /// call_context is set to the call's context.  Note that the
-    /// GRPC_CONTEXT_BACKEND_METRIC_DATA field will contain the backend
-    /// metric data returned by the backend, if any.
+    /// call_state can be used to obtain backend metric data.
     void (*recv_trailing_metadata_ready)(
         void* user_data, grpc_metadata_batch* recv_trailing_metadata,
-        grpc_call_context_element* call_context) = nullptr;
+        CallState* call_state) = nullptr;
     void* recv_trailing_metadata_ready_user_data = nullptr;
   };
 

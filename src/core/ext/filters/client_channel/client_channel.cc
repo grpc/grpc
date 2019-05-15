@@ -32,6 +32,7 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/ext/filters/client_channel/backend_metric.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
@@ -313,6 +314,28 @@ class CallData {
 
  private:
   class QueuedPickCanceller;
+
+  class LbCallState : public LoadBalancingPolicy::CallState {
+   public:
+    explicit LbCallState(CallData* calld) : calld_(calld) {}
+
+    void* Alloc(size_t size) override {
+      return calld_->arena_->Alloc(size);
+    }
+
+    LoadBalancingPolicy::BackendMetricData* GetBackendMetricData() override {
+// FIXME: use the real thing once we can build upb under make
+      return nullptr;
+#if 0
+      return GetBackendMetricDataForCall(calld_->call_context_,
+                                         calld_->recv_trailing_metadata_,
+                                         calld_->arena_);
+#endif
+    }
+
+   private:
+    CallData* calld_;
+  };
 
   // State used for starting a retryable batch on a subchannel call.
   // This provides its own grpc_transport_stream_op_batch and other data
@@ -642,6 +665,7 @@ class CallData {
   bool service_config_applied_ = false;
   QueuedPickCanceller* pick_canceller_ = nullptr;
   grpc_closure pick_closure_;
+  LbCallState lb_call_state_;
 
   // For intercepting recv_trailing_metadata_ready for the LB policy.
   grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
@@ -1513,6 +1537,7 @@ CallData::CallData(grpc_call_element* elem, const ChannelData& chand,
       owning_call_(args.call_stack),
       call_combiner_(args.call_combiner),
       call_context_(args.context),
+      lb_call_state_(this),
       pending_send_initial_metadata_(false),
       pending_send_message_(false),
       pending_send_trailing_metadata_(false),
@@ -1751,7 +1776,7 @@ void CallData::RecvTrailingMetadataReadyForLoadBalancingPolicy(
   // Invoke callback to LB policy.
   calld->pick_.pick.recv_trailing_metadata_ready(
       calld->pick_.pick.recv_trailing_metadata_ready_user_data,
-      calld->recv_trailing_metadata_, calld->call_context_);
+      calld->recv_trailing_metadata_, &calld->lb_call_state_);
   // Chain to original callback.
   GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready_,
                    GRPC_ERROR_REF(error));
@@ -3333,6 +3358,7 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   GPR_ASSERT(calld->pick_.pick.connected_subchannel == nullptr);
   GPR_ASSERT(calld->subchannel_call_ == nullptr);
+  calld->pick_.pick.call_state = &calld->lb_call_state_;
   // If this is a retry, use the send_initial_metadata payload that
   // we've cached; otherwise, use the pending batch.  The
   // send_initial_metadata batch will be the first pending batch in the
@@ -3348,10 +3374,10 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
           ? &calld->send_initial_metadata_
           : calld->pending_batches_[0]
                 .batch->payload->send_initial_metadata.send_initial_metadata;
-  uint32_t* send_initial_metadata_flags =
+  const uint32_t send_initial_metadata_flags =
       calld->seen_send_initial_metadata_
-          ? &calld->send_initial_metadata_flags_
-          : &calld->pending_batches_[0]
+          ? calld->send_initial_metadata_flags_
+          : calld->pending_batches_[0]
                  .batch->payload->send_initial_metadata
                  .send_initial_metadata_flags;
   // Apply service config to call if needed.
@@ -3382,7 +3408,7 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
       }
       // If wait_for_ready is false, then the error indicates the RPC
       // attempt's final status.
-      if ((*send_initial_metadata_flags &
+      if ((send_initial_metadata_flags &
            GRPC_INITIAL_METADATA_WAIT_FOR_READY) == 0) {
         // Retry if appropriate; otherwise, fail.
         grpc_status_code status = GRPC_STATUS_OK;

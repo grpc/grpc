@@ -123,7 +123,8 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     PickResult Pick(PickArgs* pick, grpc_error** error) override {
       PickResult result = delegate_picker_->Pick(pick, error);
       if (result == PICK_COMPLETE && pick->connected_subchannel != nullptr) {
-        New<TrailingMetadataHandler>(pick, cb_, user_data_);  // deletes itself
+        new (pick->call_state->Alloc(sizeof(TrailingMetadataHandler)))
+            TrailingMetadataHandler(pick, cb_, user_data_);
       }
       return result;
     }
@@ -180,12 +181,12 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
    private:
     static void RecordRecvTrailingMetadata(
         void* arg, grpc_metadata_batch* recv_trailing_metadata,
-        grpc_call_context_element* call_context) {
+        CallState* call_state) {
       TrailingMetadataHandler* self =
           static_cast<TrailingMetadataHandler*>(arg);
       GPR_ASSERT(recv_trailing_metadata != nullptr);
       self->cb_(self->user_data_);
-      Delete(self);
+      self->~TrailingMetadataHandler();
     }
 
     InterceptRecvTrailingMetadataCallback cb_;
