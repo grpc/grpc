@@ -781,7 +781,6 @@ filegroups:
   headers:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
-  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.h
   src:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc
@@ -791,14 +790,12 @@ filegroups:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc
-  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
   plugin: grpc_resolver_dns_ares
   uses:
   - grpc_base
   - grpc_client_channel
-  - grpc_resolver_dns_selection
 - name: grpc_resolver_dns_native
   src:
   - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
@@ -806,14 +803,6 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
-  - grpc_resolver_dns_selection
-- name: grpc_resolver_dns_selection
-  headers:
-  - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h
-  src:
-  - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc
-  uses:
-  - grpc_base
 - name: grpc_resolver_fake
   headers:
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
@@ -1264,7 +1253,6 @@ filegroups:
   - include/grpcpp/impl/codegen/client_interceptor.h
   - include/grpcpp/impl/codegen/client_unary_call.h
   - include/grpcpp/impl/codegen/completion_queue.h
-  - include/grpcpp/impl/codegen/completion_queue_impl.h
   - include/grpcpp/impl/codegen/completion_queue_tag.h
   - include/grpcpp/impl/codegen/config.h
   - include/grpcpp/impl/codegen/core_codegen_interface.h
@@ -1362,7 +1350,6 @@ filegroups:
   - include/grpcpp/alarm.h
   - include/grpcpp/alarm_impl.h
   - include/grpcpp/channel.h
-  - include/grpcpp/channel_impl.h
   - include/grpcpp/client_context.h
   - include/grpcpp/completion_queue.h
   - include/grpcpp/create_channel.h
@@ -1691,6 +1678,24 @@ libs:
   - grpc_test_util
   - grpc
   - gpr
+- name: bm_callback_test_service_impl
+  build: test
+  language: c++
+  headers:
+  - test/cpp/microbenchmarks/callback_test_service.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - test/cpp/microbenchmarks/callback_test_service.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
+  - gpr
+  - grpc++_test_config
+  defaults: benchmark
 - name: dns_test_util
   build: private
   language: c++
@@ -4057,6 +4062,52 @@ targets:
   - linux
   - posix
   uses_polling: false
+- name: bm_callback_streaming_ping_pong
+  build: test
+  language: c++
+  headers:
+  - test/cpp/microbenchmarks/callback_streaming_ping_pong.h
+  src:
+  - test/cpp/microbenchmarks/bm_callback_streaming_ping_pong.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
+  - gpr
+  - grpc++_test_config
+  - bm_callback_test_service_impl
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: bm_callback_unary_ping_pong
+  build: test
+  language: c++
+  headers:
+  - test/cpp/microbenchmarks/callback_unary_ping_pong.h
+  src:
+  - test/cpp/microbenchmarks/bm_callback_unary_ping_pong.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
+  - gpr
+  - grpc++_test_config
+  - bm_callback_test_service_impl
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: bm_channel
   build: test
   language: c++

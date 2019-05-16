@@ -1031,7 +1031,7 @@ static grpc_error* pollset_work(grpc_pollset* ps,
        process the pending epoll events.
 
        The reason for decoupling do_epoll_wait and process_epoll_events is to
-       better distrubute the work (i.e handling epoll events) across multiple
+       better distribute the work (i.e handling epoll events) across multiple
        threads
 
        process_epoll_events() returns very quickly: It just queues the work on
