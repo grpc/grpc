@@ -435,7 +435,7 @@ class ServerUnaryReactor : public internal::ServerReactor {
 };
 
 template <typename Request, typename Response, typename F>
-inline ServerUnaryReactor<Request, Response>* ServeRpc(F&& func) {
+ServerUnaryReactor<Request, Response>* ServeRpc(F&& func) {
   // TODO(vjpai): Specialize this to prevent counting OnCancel conditions
   class SimpleUnaryReactor final
       : public ServerUnaryReactor<Request, Response> {
@@ -447,10 +447,11 @@ inline ServerUnaryReactor<Request, Response>* ServeRpc(F&& func) {
                    Response* resp) override {
       on_started_func_(context, req, resp, this);
     }
+    void OnDone() override { delete this; }
 
     F on_started_func_;
   };
-  return new SimpleUnaryReactor(std::move(func));
+  return new SimpleUnaryReactor(std::forward<F>(func));
 }
 
 }  // namespace experimental
