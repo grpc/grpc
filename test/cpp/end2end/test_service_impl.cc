@@ -564,7 +564,7 @@ CallbackTestServiceImpl::Echo() {
             gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                          gpr_time_from_micros(loop_delay_us, GPR_TIMESPAN)),
             [this, loop_delay_us](bool ok) {
-              if (ok) {
+              if (!ok) {
                 EXPECT_TRUE(ctx_->IsCancelled());
               }
               LoopUntilCancelled(loop_delay_us);
