@@ -23,6 +23,7 @@
 
 #include <string.h>
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -480,12 +481,12 @@ grpc_call_credentials* grpc_google_refresh_token_credentials_create(
 
 namespace {
 
-char* maybe_add_to_query(char* body, const char* field_name, char* field) {
-  if (field == nullptr || strlen(field) == 0) return body;
-  char* new_body;
-  gpr_asprintf(&new_body, "%s&%s=%s", body, field_name, field);
-  gpr_free(body);
-  return new_body;
+void maybe_add_to_body(gpr_strvec* body_strvec, const char* field_name,
+                       char* field) {
+  if (field == nullptr || strlen(field) == 0) return;
+  char* new_query;
+  gpr_asprintf(&new_query, "&%s=%s", field_name, field);
+  gpr_strvec_add(body_strvec, new_query);
 }
 
 class grpc_sts_token_fetcher_credentials
@@ -515,17 +516,23 @@ class grpc_sts_token_fetcher_credentials
     grpc_http_header header = {(char*)"Content-Type",
                                (char*)"application/x-www-form-urlencoded"};
     grpc_httpcli_request request;
+    gpr_strvec body_strvec;
+    gpr_strvec_init(&body_strvec);
     char* body = nullptr;
     gpr_asprintf(&body, GRPC_STS_POST_MINIMAL_BODY_FORMAT_STRING,
                  subject_token_.get(), subject_token_type_.get());
-    body = maybe_add_to_query(body, "resource", resource_.get());
-    body = maybe_add_to_query(body, "audience", audience_.get());
-    body = maybe_add_to_query(body, "scope", scope_.get());
-    body = maybe_add_to_query(body, "requested_token_type",
-                              requested_token_type_.get());
-    body = maybe_add_to_query(body, "actor_token", actor_token_.get());
-    body =
-        maybe_add_to_query(body, "actor_token_type", actor_token_type_.get());
+    gpr_strvec_add(&body_strvec, body);
+    maybe_add_to_body(&body_strvec, "resource", resource_.get());
+    maybe_add_to_body(&body_strvec, "audience", audience_.get());
+    maybe_add_to_body(&body_strvec, "scope", scope_.get());
+    maybe_add_to_body(&body_strvec, "requested_token_type",
+                      requested_token_type_.get());
+    maybe_add_to_body(&body_strvec, "actor_token", actor_token_.get());
+    maybe_add_to_body(&body_strvec, "actor_token_type",
+                      actor_token_type_.get());
+    size_t body_length;
+    body = gpr_strvec_flatten(&body_strvec, &body_length);
+    gpr_strvec_destroy(&body_strvec);
 
     memset(&request, 0, sizeof(grpc_httpcli_request));
     request.host = (char*)sts_url_->authority;
@@ -541,7 +548,7 @@ class grpc_sts_token_fetcher_credentials
     grpc_resource_quota* resource_quota =
         grpc_resource_quota_create("oauth2_credentials_refresh");
     grpc_httpcli_post(http_context, pollent, resource_quota, &request, body,
-                      strlen(body), deadline,
+                      body_length, deadline,
                       GRPC_CLOSURE_CREATE(response_cb, metadata_req,
                                           grpc_schedule_on_exec_ctx),
                       &metadata_req->response);

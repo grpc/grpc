@@ -291,7 +291,7 @@ typedef struct {
 /** Creates an STS credentials following the STS Token Exchanged specifed in the
    IETF draft https://tools.ietf.org/html/draft-ietf-oauth-token-exchange-16. */
 GRPCAPI grpc_call_credentials* grpc_sts_credentials_create(
-    const grpc_sts_credentials_options*, void* reserved);
+    const grpc_sts_credentials_options* options, void* reserved);
 
 /** Callback function to be called by the metadata credentials plugin
    implementation when the metadata is ready.
