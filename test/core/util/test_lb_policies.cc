@@ -72,12 +72,6 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   void ResetBackoffLocked() override { delegate_->ResetBackoffLocked(); }
 
-  void FillChildRefsForChannelz(
-      channelz::ChildRefsList* child_subchannels,
-      channelz::ChildRefsList* child_channels) override {
-    delegate_->FillChildRefsForChannelz(child_subchannels, child_channels);
-  }
-
  private:
   void ShutdownLocked() override { delegate_.reset(); }
 

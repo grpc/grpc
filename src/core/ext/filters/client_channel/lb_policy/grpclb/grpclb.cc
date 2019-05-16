@@ -1242,10 +1242,11 @@ grpc_channel_args* BuildBalancerChannelArgs(
       // A channel arg indicating the target is a grpclb load balancer.
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER), 1),
+// FIXME
       // A channel arg indicating this is an internal channels, aka it is
       // owned by components in Core, not by the user application.
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_CHANNELZ_CHANNEL_IS_INTERNAL_CHANNEL), 1),
+//      grpc_channel_arg_integer_create(
+//          const_cast<char*>(GRPC_ARG_CHANNELZ_CHANNEL_IS_INTERNAL_CHANNEL), 1),
   };
   // Construct channel args.
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
@@ -1330,7 +1331,6 @@ void GrpcLb::ShutdownLocked() {
   if (lb_channel_ != nullptr) {
     grpc_channel_destroy(lb_channel_);
     lb_channel_ = nullptr;
-    gpr_atm_no_barrier_store(&lb_channel_uuid_, 0);
   }
 }
 
@@ -1432,11 +1432,6 @@ void GrpcLb::ProcessAddressesAndChannelArgsLocked(
     lb_channel_ =
         channel_control_helper()->CreateChannel(uri_str, *lb_channel_args);
     GPR_ASSERT(lb_channel_ != nullptr);
-    grpc_core::channelz::ChannelNode* channel_node =
-        grpc_channel_get_channelz_node(lb_channel_);
-    if (channel_node != nullptr) {
-      gpr_atm_no_barrier_store(&lb_channel_uuid_, channel_node->uuid());
-    }
     gpr_free(uri_str);
   }
   // Propagate updates to the LB channel (pick_first) through the fake

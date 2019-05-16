@@ -35,30 +35,20 @@ namespace channelz {
 //
 
 RefCountedPtr<ChannelNode> ClientChannelNode::MakeClientChannelNode(
-    grpc_channel* channel, size_t channel_tracer_max_nodes,
-    bool is_top_level_channel) {
-  return MakeRefCounted<ClientChannelNode>(channel, channel_tracer_max_nodes,
-                                           is_top_level_channel);
+    UniquePtr<char> target, size_t channel_tracer_max_nodes,
+    intptr_t parent_uuid) {
+  return MakeRefCounted<ClientChannelNode>(
+      std::move(target), channel_tracer_max_nodes, parent_uuid);
 }
 
-ClientChannelNode::ClientChannelNode(grpc_channel* channel,
+ClientChannelNode::ClientChannelNode(UniquePtr<char> target,
                                      size_t channel_tracer_max_nodes,
                                      intptr_t parent_uuid)
-    : ChannelNode(channel, channel_tracer_max_nodes, parent_uuid) {
-  client_channel_ =
-      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
-  GPR_ASSERT(client_channel_->filter == &grpc_client_channel_filter);
-  grpc_client_channel_set_channelz_node(client_channel_, this);
-}
+    : ChannelNode(std::move(target), channel_tracer_max_nodes, parent_uuid) {}
 
 void ClientChannelNode::PopulateConnectivityState(grpc_json* json) {
-  grpc_connectivity_state state;
-  if (ChannelIsDestroyed()) {
-    state = GRPC_CHANNEL_SHUTDOWN;
-  } else {
-    state =
-        grpc_client_channel_check_connectivity_state(client_channel_, false);
-  }
+  grpc_connectivity_state state =
+      connectivity_state_.Load(MemoryOrder::RELAXED);
   json = grpc_json_create_child(nullptr, json, "state", nullptr,
                                 GRPC_JSON_OBJECT, false);
   grpc_json_create_child(nullptr, json, "state",

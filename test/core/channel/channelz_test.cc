@@ -487,7 +487,7 @@ TEST_F(ChannelzRegistryBasedTest, InternalChannelTest) {
   // create an internal channel
   grpc_arg client_a[2];
   client_a[0] = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_CHANNELZ_CHANNEL_IS_INTERNAL_CHANNEL), true);
+      const_cast<char*>(GRPC_ARG_CHANNELZ_PARENT_UUID), 1);
   client_a[1] = grpc_channel_arg_integer_create(
       const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true);
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};

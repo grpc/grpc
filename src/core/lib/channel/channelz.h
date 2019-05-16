@@ -34,9 +34,12 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 
-// Channel arg key for client channel factory.
+// Channel arg key for channelz node factory.
 #define GRPC_ARG_CHANNELZ_CHANNEL_NODE_CREATION_FUNC \
   "grpc.channelz_channel_node_creation_func"
+
+// Channel arg key for channelz node.
+#define GRPC_ARG_CHANNELZ_CHANNEL_NODE "grpc.channelz_channel_node"
 
 // Channel arg key to encode the channelz uuid of the channel's parent.
 #define GRPC_ARG_CHANNELZ_PARENT_UUID "grpc.channelz_parent_uuid"
@@ -149,10 +152,10 @@ class CallCountingHelper {
 class ChannelNode : public BaseNode {
  public:
   static RefCountedPtr<ChannelNode> MakeChannelNode(
-      grpc_channel* channel, size_t channel_tracer_max_nodes,
+      UniquePtr<char> target, size_t channel_tracer_max_nodes,
       intptr_t parent_uuid);
 
-  ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
+  ChannelNode(UniquePtr<char> target, size_t channel_tracer_max_nodes,
               intptr_t parent_uuid);
   ~ChannelNode() override;
 
@@ -169,13 +172,6 @@ class ChannelNode : public BaseNode {
   // TODO(ncteisen): Remove this template method in favor of manual traversal
   // and mutation of the grpc_json object.
   virtual void PopulateConnectivityState(grpc_json* json) {}
-
-  void MarkChannelDestroyed() {
-    GPR_ASSERT(channel_ != nullptr);
-    channel_ = nullptr;
-  }
-
-  bool ChannelIsDestroyed() { return channel_ == nullptr; }
 
   // proxy methods to composed classes.
   void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
@@ -202,11 +198,12 @@ class ChannelNode : public BaseNode {
 
   // to allow the channel trace test to access trace_.
   friend class testing::ChannelNodePeer;
-  grpc_channel* channel_ = nullptr;
+
   UniquePtr<char> target_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
   const intptr_t parent_uuid_;
+
   Mutex child_mu_;  // Guards child maps below.
   // TODO(roth): We don't actually use the values here, only the keys, so
   // these should be sets instead of maps, but we don't currently have a set
@@ -301,7 +298,7 @@ class ListenSocketNode : public BaseNode {
 // Creation functions
 
 typedef RefCountedPtr<ChannelNode> (*ChannelNodeCreationFunc)(
-    grpc_channel* channel, size_t channel_tracer_max_nodes,
+    UniquePtr<char> target, size_t channel_tracer_max_nodes,
     intptr_t parent_uuid);
 
 }  // namespace channelz

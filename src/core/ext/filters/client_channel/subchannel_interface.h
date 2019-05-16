@@ -84,6 +84,7 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
 
   // TODO(roth): These methods should be removed from this interface to
   // bettter hide grpc-specific functionality from the LB policy API.
+// FIXME: remove
   virtual channelz::SubchannelNode* channelz_node() GRPC_ABSTRACT;
   virtual void ResetBackoff() GRPC_ABSTRACT;
 

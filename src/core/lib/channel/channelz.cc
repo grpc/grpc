@@ -150,18 +150,17 @@ void CallCountingHelper::PopulateCallCounts(grpc_json* json) {
 //
 
 RefCountedPtr<ChannelNode> ChannelNode::MakeChannelNode(
-    grpc_channel* channel, size_t channel_tracer_max_nodes,
+    UniquePtr<char> target, size_t channel_tracer_max_nodes,
     intptr_t parent_uuid) {
   return MakeRefCounted<grpc_core::channelz::ChannelNode>(
-      channel, channel_tracer_max_nodes, parent_uuid);
+      std::move(target), channel_tracer_max_nodes, parent_uuid);
 }
 
-ChannelNode::ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
-                         intptr_t parent_uuid)
+ChannelNode::ChannelNode(UniquePtr<char> target,
+                         size_t channel_tracer_max_nodes, intptr_t parent_uuid)
     : BaseNode(parent_uuid == 0 ? EntityType::kTopLevelChannel
                                 : EntityType::kInternalChannel),
-      channel_(channel),
-      target_(UniquePtr<char>(grpc_channel_get_target(channel_))),
+      target_(std::move(target)),
       trace_(channel_tracer_max_nodes),
       parent_uuid_(parent_uuid) {
   if (parent_uuid > 0) {
@@ -221,8 +220,9 @@ grpc_json* ChannelNode::RenderJson() {
   return top_level_json;
 }
 
-void ChannelNode::PopulateChildChannelRefs(grpc_json* json) {
+void ChannelNode::PopulateChildRefs(grpc_json* json) {
   MutexLock lock(&child_mu_);
+  grpc_json* json_iterator = nullptr;
   if (!child_subchannels_.empty()) {
     grpc_json* array_parent = grpc_json_create_child(
         nullptr, json, "subchannelRef", nullptr, GRPC_JSON_ARRAY, false);

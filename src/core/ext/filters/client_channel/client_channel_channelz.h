@@ -25,6 +25,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/gprpp/atomic.h"
 
 namespace grpc_core {
 
@@ -37,10 +38,10 @@ namespace channelz {
 class ClientChannelNode : public ChannelNode {
  public:
   static RefCountedPtr<ChannelNode> MakeClientChannelNode(
-      grpc_channel* channel, size_t channel_tracer_max_nodes,
+      UniquePtr<char> target, size_t channel_tracer_max_nodes,
       intptr_t parent_uuid);
 
-  ClientChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
+  ClientChannelNode(UniquePtr<char> target, size_t channel_tracer_max_nodes,
                     intptr_t parent_uuid);
   virtual ~ClientChannelNode() {}
 
@@ -48,12 +49,16 @@ class ClientChannelNode : public ChannelNode {
   // only ClientChannelNode knows about.
   void PopulateConnectivityState(grpc_json* json) override;
 
+  void set_connectivity_state(grpc_connectivity_state state) {
+    connectivity_state_.Store(state, MemoryOrder::RELAXED);
+  }
+
   // Helper to create a channel arg to ensure this type of ChannelNode is
   // created.
   static grpc_arg CreateChannelArg();
 
  private:
-  grpc_channel_element* client_channel_;
+  Atomic<grpc_connectivity_state> connectivity_state_{GRPC_CHANNEL_IDLE};
 };
 
 // Handles channelz bookkeeping for sockets

@@ -1323,10 +1323,11 @@ grpc_channel_args* BuildBalancerChannelArgs(const grpc_channel_args* args) {
       // A channel arg indicating the target is a xds load balancer.
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_ADDRESS_IS_XDS_LOAD_BALANCER), 1),
+// FIXME
       // A channel arg indicating this is an internal channels, aka it is
       // owned by components in Core, not by the user application.
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_CHANNELZ_CHANNEL_IS_INTERNAL_CHANNEL), 1),
+//      grpc_channel_arg_integer_create(
+//          const_cast<char*>(GRPC_ARG_CHANNELZ_CHANNEL_IS_INTERNAL_CHANNEL), 1),
   };
   // Construct channel args.
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
