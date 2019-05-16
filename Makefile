@@ -3781,7 +3781,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
     src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
@@ -5125,7 +5124,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
     src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
@@ -5503,7 +5501,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/alarm.h \
     include/grpcpp/alarm_impl.h \
     include/grpcpp/channel.h \
-    include/grpcpp/channel_impl.h \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
     include/grpcpp/create_channel.h \
@@ -5665,7 +5662,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
-    include/grpcpp/impl/codegen/completion_queue_impl.h \
     include/grpcpp/impl/codegen/completion_queue_tag.h \
     include/grpcpp/impl/codegen/config.h \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
@@ -6127,7 +6123,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/alarm.h \
     include/grpcpp/alarm_impl.h \
     include/grpcpp/channel.h \
-    include/grpcpp/channel_impl.h \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
     include/grpcpp/create_channel.h \
@@ -6289,7 +6284,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
-    include/grpcpp/impl/codegen/completion_queue_impl.h \
     include/grpcpp/impl/codegen/completion_queue_tag.h \
     include/grpcpp/impl/codegen/config.h \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
@@ -6696,7 +6690,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
-    include/grpcpp/impl/codegen/completion_queue_impl.h \
     include/grpcpp/impl/codegen/completion_queue_tag.h \
     include/grpcpp/impl/codegen/config.h \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
@@ -6866,7 +6859,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
-    include/grpcpp/impl/codegen/completion_queue_impl.h \
     include/grpcpp/impl/codegen/completion_queue_tag.h \
     include/grpcpp/impl/codegen/config.h \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
@@ -7066,7 +7058,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/alarm.h \
     include/grpcpp/alarm_impl.h \
     include/grpcpp/channel.h \
-    include/grpcpp/channel_impl.h \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
     include/grpcpp/create_channel.h \
@@ -7228,7 +7219,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
-    include/grpcpp/impl/codegen/completion_queue_impl.h \
     include/grpcpp/impl/codegen/completion_queue_tag.h \
     include/grpcpp/impl/codegen/config.h \
     include/grpcpp/impl/codegen/core_codegen_interface.h \

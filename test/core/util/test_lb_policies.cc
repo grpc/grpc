@@ -120,11 +120,12 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
           cb_(cb),
           user_data_(user_data) {}
 
-    PickResult Pick(PickArgs* pick, grpc_error** error) override {
-      PickResult result = delegate_picker_->Pick(pick, error);
-      if (result == PICK_COMPLETE && pick->connected_subchannel != nullptr) {
-        new (pick->call_state->Alloc(sizeof(TrailingMetadataHandler)))
-            TrailingMetadataHandler(pick, cb_, user_data_);
+    PickResult Pick(PickArgs args) override {
+      PickResult result = delegate_picker_->Pick(args);
+      if (result.type == PickResult::PICK_COMPLETE &&
+          result.connected_subchannel != nullptr) {
+        new (args.call_state->Alloc(sizeof(TrailingMetadataHandler)))
+            TrailingMetadataHandler(&result, cb_, user_data_);
       }
       return result;
     }
@@ -170,12 +171,12 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
 
   class TrailingMetadataHandler {
    public:
-    TrailingMetadataHandler(PickArgs* pick,
+    TrailingMetadataHandler(PickResult* result,
                             InterceptRecvTrailingMetadataCallback cb,
                             void* user_data)
         : cb_(cb), user_data_(user_data) {
-      pick->recv_trailing_metadata_ready = &RecordRecvTrailingMetadata;
-      pick->recv_trailing_metadata_ready_user_data = this;
+      result->recv_trailing_metadata_ready = &RecordRecvTrailingMetadata;
+      result->recv_trailing_metadata_ready_user_data = this;
     }
 
    private:

@@ -149,7 +149,7 @@ class RoundRobin : public LoadBalancingPolicy {
    public:
     Picker(RoundRobin* parent, RoundRobinSubchannelList* subchannel_list);
 
-    PickResult Pick(PickArgs* pick, grpc_error** error) override;
+    PickResult Pick(PickArgs args) override;
 
    private:
     // Using pointer value only, no ref held -- do not dereference!
@@ -220,8 +220,7 @@ RoundRobin::Picker::Picker(RoundRobin* parent,
   }
 }
 
-RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs* pick,
-                                                grpc_error** error) {
+RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs args) {
   last_picked_index_ = (last_picked_index_ + 1) % subchannels_.size();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO,
@@ -230,8 +229,10 @@ RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs* pick,
             parent_, this, last_picked_index_,
             subchannels_[last_picked_index_].get());
   }
-  pick->connected_subchannel = subchannels_[last_picked_index_];
-  return PICK_COMPLETE;
+  PickResult result;
+  result.type = PickResult::PICK_COMPLETE;
+  result.connected_subchannel = subchannels_[last_picked_index_];
+  return result;
 }
 
 //
@@ -503,7 +504,7 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
   }
 }
 
-class ParsedRoundRobinConfig : public ParsedLoadBalancingConfig {
+class ParsedRoundRobinConfig : public LoadBalancingPolicy::Config {
  public:
   const char* name() const override { return kRoundRobin; }
 };
@@ -521,12 +522,12 @@ class RoundRobinFactory : public LoadBalancingPolicyFactory {
 
   const char* name() const override { return kRoundRobin; }
 
-  RefCountedPtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
+  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
       const grpc_json* json, grpc_error** error) const override {
     if (json != nullptr) {
       GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
     }
-    return RefCountedPtr<ParsedLoadBalancingConfig>(
+    return RefCountedPtr<LoadBalancingPolicy::Config>(
         New<ParsedRoundRobinConfig>());
   }
 };

@@ -37,15 +37,15 @@
 namespace grpc_core {
 namespace internal {
 
-class ClientChannelGlobalParsedObject : public ServiceConfig::ParsedConfig {
+class ClientChannelGlobalParsedConfig : public ServiceConfig::ParsedConfig {
  public:
   struct RetryThrottling {
     intptr_t max_milli_tokens = 0;
     intptr_t milli_token_ratio = 0;
   };
 
-  ClientChannelGlobalParsedObject(
-      RefCountedPtr<ParsedLoadBalancingConfig> parsed_lb_config,
+  ClientChannelGlobalParsedConfig(
+      RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config,
       UniquePtr<char> parsed_deprecated_lb_policy,
       const Optional<RetryThrottling>& retry_throttling,
       const char* health_check_service_name)
@@ -58,7 +58,7 @@ class ClientChannelGlobalParsedObject : public ServiceConfig::ParsedConfig {
     return retry_throttling_;
   }
 
-  RefCountedPtr<ParsedLoadBalancingConfig> parsed_lb_config() const {
+  RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config() const {
     return parsed_lb_config_;
   }
 
@@ -71,13 +71,13 @@ class ClientChannelGlobalParsedObject : public ServiceConfig::ParsedConfig {
   }
 
  private:
-  RefCountedPtr<ParsedLoadBalancingConfig> parsed_lb_config_;
+  RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config_;
   UniquePtr<char> parsed_deprecated_lb_policy_;
   Optional<RetryThrottling> retry_throttling_;
   const char* health_check_service_name_;
 };
 
-class ClientChannelMethodParsedObject : public ServiceConfig::ParsedConfig {
+class ClientChannelMethodParsedConfig : public ServiceConfig::ParsedConfig {
  public:
   struct RetryPolicy {
     int max_attempts = 0;
@@ -87,7 +87,7 @@ class ClientChannelMethodParsedObject : public ServiceConfig::ParsedConfig {
     StatusCodeSet retryable_status_codes;
   };
 
-  ClientChannelMethodParsedObject(grpc_millis timeout,
+  ClientChannelMethodParsedConfig(grpc_millis timeout,
                                   const Optional<bool>& wait_for_ready,
                                   UniquePtr<RetryPolicy> retry_policy)
       : timeout_(timeout),

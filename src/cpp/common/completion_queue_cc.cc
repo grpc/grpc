@@ -24,9 +24,9 @@
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/time.h>
 
-namespace grpc_impl {
+namespace grpc {
 
-static ::grpc::internal::GrpcLibraryInitializer g_gli_initializer;
+static internal::GrpcLibraryInitializer g_gli_initializer;
 
 // 'CompletionQueue' constructor can safely call GrpcLibraryCodegen(false) here
 // i.e not have GrpcLibraryCodegen call grpc_init(). This is because, to create
@@ -52,8 +52,7 @@ CompletionQueue::NextStatus CompletionQueue::AsyncNextInternal(
       case GRPC_QUEUE_SHUTDOWN:
         return SHUTDOWN;
       case GRPC_OP_COMPLETE:
-        auto core_cq_tag =
-            static_cast<::grpc::internal::CompletionQueueTag*>(ev.tag);
+        auto core_cq_tag = static_cast<internal::CompletionQueueTag*>(ev.tag);
         *ok = ev.success != 0;
         *tag = core_cq_tag;
         if (core_cq_tag->FinalizeResult(tag, ok)) {
@@ -80,8 +79,7 @@ bool CompletionQueue::CompletionQueueTLSCache::Flush(void** tag, bool* ok) {
   flushed_ = true;
   if (grpc_completion_queue_thread_local_cache_flush(cq_->cq_, &res_tag,
                                                      &res)) {
-    auto core_cq_tag =
-        static_cast<::grpc::internal::CompletionQueueTag*>(res_tag);
+    auto core_cq_tag = static_cast<internal::CompletionQueueTag*>(res_tag);
     *ok = res == 1;
     if (core_cq_tag->FinalizeResult(tag, ok)) {
       return true;
@@ -90,4 +88,4 @@ bool CompletionQueue::CompletionQueueTLSCache::Flush(void** tag, bool* ok) {
   return false;
 }
 
-}  // namespace grpc_impl
+}  // namespace grpc

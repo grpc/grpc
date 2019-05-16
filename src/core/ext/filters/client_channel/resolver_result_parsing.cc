@@ -92,11 +92,11 @@ bool ParseDuration(grpc_json* field, grpc_millis* duration) {
   return true;
 }
 
-UniquePtr<ClientChannelMethodParsedObject::RetryPolicy> ParseRetryPolicy(
+UniquePtr<ClientChannelMethodParsedConfig::RetryPolicy> ParseRetryPolicy(
     grpc_json* field, grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   auto retry_policy =
-      MakeUnique<ClientChannelMethodParsedObject::RetryPolicy>();
+      MakeUnique<ClientChannelMethodParsedConfig::RetryPolicy>();
   if (field->type != GRPC_JSON_OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "field:retryPolicy error:should be of type object");
@@ -268,9 +268,9 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
                                                     grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   InlinedVector<grpc_error*, 4> error_list;
-  RefCountedPtr<ParsedLoadBalancingConfig> parsed_lb_config;
+  RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config;
   UniquePtr<char> lb_policy_name;
-  Optional<ClientChannelGlobalParsedObject::RetryThrottling> retry_throttling;
+  Optional<ClientChannelGlobalParsedConfig::RetryThrottling> retry_throttling;
   const char* health_check_service_name = nullptr;
   for (grpc_json* field = json->child; field != nullptr; field = field->next) {
     if (field->key == nullptr) {
@@ -409,7 +409,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
           }
         }
       }
-      ClientChannelGlobalParsedObject::RetryThrottling data;
+      ClientChannelGlobalParsedConfig::RetryThrottling data;
       if (!max_milli_tokens.has_value()) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:retryThrottling field:maxTokens error:Not found"));
@@ -440,7 +440,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
                                          &error_list);
   if (*error == GRPC_ERROR_NONE) {
     return UniquePtr<ServiceConfig::ParsedConfig>(
-        New<ClientChannelGlobalParsedObject>(
+        New<ClientChannelGlobalParsedConfig>(
             std::move(parsed_lb_config), std::move(lb_policy_name),
             retry_throttling, health_check_service_name));
   }
@@ -454,7 +454,7 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(const grpc_json* json,
   InlinedVector<grpc_error*, 4> error_list;
   Optional<bool> wait_for_ready;
   grpc_millis timeout = 0;
-  UniquePtr<ClientChannelMethodParsedObject::RetryPolicy> retry_policy;
+  UniquePtr<ClientChannelMethodParsedConfig::RetryPolicy> retry_policy;
   for (grpc_json* field = json->child; field != nullptr; field = field->next) {
     if (field->key == nullptr) continue;
     if (strcmp(field->key, "waitForReady") == 0) {
@@ -494,7 +494,7 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(const grpc_json* json,
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("Client channel parser", &error_list);
   if (*error == GRPC_ERROR_NONE) {
     return UniquePtr<ServiceConfig::ParsedConfig>(
-        New<ClientChannelMethodParsedObject>(timeout, wait_for_ready,
+        New<ClientChannelMethodParsedConfig>(timeout, wait_for_ready,
                                              std::move(retry_policy)));
   }
   return nullptr;

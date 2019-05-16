@@ -67,7 +67,7 @@
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_metadata.h"
 
-using grpc_core::internal::ClientChannelMethodParsedObject;
+using grpc_core::internal::ClientChannelMethodParsedConfig;
 using grpc_core::internal::ServerRetryThrottleData;
 
 //
@@ -106,7 +106,6 @@ namespace {
 class ChannelData {
  public:
   struct QueuedPick {
-    LoadBalancingPolicy::PickArgs pick;
     grpc_call_element* elem;
     QueuedPick* next = nullptr;
   };
@@ -224,7 +223,7 @@ class ChannelData {
 
   static bool ProcessResolverResultLocked(
       void* arg, Resolver::Result* result, const char** lb_policy_name,
-      RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config,
+      RefCountedPtr<LoadBalancingPolicy::Config>* lb_policy_config,
       grpc_error** service_config_error);
 
   grpc_error* DoPingLocked(grpc_transport_op* op);
@@ -235,9 +234,9 @@ class ChannelData {
 
   void ProcessLbPolicy(
       const Resolver::Result& resolver_result,
-      const internal::ClientChannelGlobalParsedObject* parsed_service_config,
+      const internal::ClientChannelGlobalParsedConfig* parsed_service_config,
       UniquePtr<char>* lb_policy_name,
-      RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config);
+      RefCountedPtr<LoadBalancingPolicy::Config>* lb_policy_config);
 
   //
   // Fields set at construction and never modified.
@@ -655,7 +654,7 @@ class CallData {
 
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
   ServiceConfig::CallData service_config_call_data_;
-  const ClientChannelMethodParsedObject* method_params_ = nullptr;
+  const ClientChannelMethodParsedConfig* method_params_ = nullptr;
 
   RefCountedPtr<SubchannelCall> subchannel_call_;
 
@@ -666,9 +665,14 @@ class CallData {
   bool pick_queued_ = false;
   bool service_config_applied_ = false;
   QueuedPickCanceller* pick_canceller_ = nullptr;
-  grpc_closure pick_closure_;
-  const LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
   LbCallState lb_call_state_;
+  const LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
+  RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
+  void (*lb_recv_trailing_metadata_ready_)(
+      void* user_data, grpc_metadata_batch* recv_trailing_metadata,
+      LoadBalancingPolicy::CallState* call_state) = nullptr;
+  void* lb_recv_trailing_metadata_ready_user_data_ = nullptr;
+  grpc_closure pick_closure_;
 
   // For intercepting recv_trailing_metadata_ready for the LB policy.
   grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
@@ -805,7 +809,7 @@ class ChannelData::ServiceConfigSetter {
  public:
   ServiceConfigSetter(
       ChannelData* chand,
-      Optional<internal::ClientChannelGlobalParsedObject::RetryThrottling>
+      Optional<internal::ClientChannelGlobalParsedConfig::RetryThrottling>
           retry_throttle_data,
       RefCountedPtr<ServiceConfig> service_config)
       : chand_(chand),
@@ -844,7 +848,7 @@ class ChannelData::ServiceConfigSetter {
   }
 
   ChannelData* chand_;
-  Optional<internal::ClientChannelGlobalParsedObject::RetryThrottling>
+  Optional<internal::ClientChannelGlobalParsedConfig::RetryThrottling>
       retry_throttle_data_;
   RefCountedPtr<ServiceConfig> service_config_;
   grpc_closure closure_;
@@ -1174,9 +1178,9 @@ ChannelData::~ChannelData() {
 
 void ChannelData::ProcessLbPolicy(
     const Resolver::Result& resolver_result,
-    const internal::ClientChannelGlobalParsedObject* parsed_service_config,
+    const internal::ClientChannelGlobalParsedConfig* parsed_service_config,
     UniquePtr<char>* lb_policy_name,
-    RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config) {
+    RefCountedPtr<LoadBalancingPolicy::Config>* lb_policy_config) {
   // Prefer the LB policy name found in the service config.
   if (parsed_service_config != nullptr &&
       parsed_service_config->parsed_lb_config() != nullptr) {
@@ -1224,7 +1228,7 @@ void ChannelData::ProcessLbPolicy(
 // resolver result update.
 bool ChannelData::ProcessResolverResultLocked(
     void* arg, Resolver::Result* result, const char** lb_policy_name,
-    RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config,
+    RefCountedPtr<LoadBalancingPolicy::Config>* lb_policy_config,
     grpc_error** service_config_error) {
   ChannelData* chand = static_cast<ChannelData*>(arg);
   RefCountedPtr<ServiceConfig> service_config;
@@ -1271,12 +1275,12 @@ bool ChannelData::ProcessResolverResultLocked(
   }
   // Process service config.
   UniquePtr<char> service_config_json;
-  const internal::ClientChannelGlobalParsedObject* parsed_service_config =
+  const internal::ClientChannelGlobalParsedConfig* parsed_service_config =
       nullptr;
   if (service_config != nullptr) {
     parsed_service_config =
-        static_cast<const internal::ClientChannelGlobalParsedObject*>(
-            service_config->GetParsedGlobalServiceConfigObject(
+        static_cast<const internal::ClientChannelGlobalParsedConfig*>(
+            service_config->GetGlobalParsedConfig(
                 internal::ClientChannelServiceConfigParser::ParserIndex()));
   }
   // TODO(roth): Eliminate this hack as part of hiding health check
@@ -1315,7 +1319,7 @@ bool ChannelData::ProcessResolverResultLocked(
   // if we feel it is unnecessary.
   if (service_config_changed || !chand->received_first_resolver_result_) {
     chand->received_first_resolver_result_ = true;
-    Optional<internal::ClientChannelGlobalParsedObject::RetryThrottling>
+    Optional<internal::ClientChannelGlobalParsedConfig::RetryThrottling>
         retry_throttle_data;
     if (parsed_service_config != nullptr) {
       retry_throttle_data = parsed_service_config->retry_throttling();
@@ -1345,19 +1349,18 @@ grpc_error* ChannelData::DoPingLocked(grpc_transport_op* op) {
   if (grpc_connectivity_state_check(&state_tracker_) != GRPC_CHANNEL_READY) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("channel not connected");
   }
-  LoadBalancingPolicy::PickArgs pick;
-  grpc_error* error = GRPC_ERROR_NONE;
-  picker_->Pick(&pick, &error);
-  if (pick.connected_subchannel != nullptr) {
-    pick.connected_subchannel->Ping(op->send_ping.on_initiate,
-                                    op->send_ping.on_ack);
+  LoadBalancingPolicy::PickResult result =
+      picker_->Pick(LoadBalancingPolicy::PickArgs());
+  if (result.connected_subchannel != nullptr) {
+    result.connected_subchannel->Ping(op->send_ping.on_initiate,
+                                      op->send_ping.on_ack);
   } else {
-    if (error == GRPC_ERROR_NONE) {
-      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    if (result.error == GRPC_ERROR_NONE) {
+      result.error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "LB policy dropped call on ping");
     }
   }
-  return error;
+  return result.error;
 }
 
 void ChannelData::StartTransportOpLocked(void* arg, grpc_error* ignored) {
@@ -1779,8 +1782,8 @@ void CallData::RecvTrailingMetadataReadyForLoadBalancingPolicy(
     void* arg, grpc_error* error) {
   CallData* calld = static_cast<CallData*>(arg);
   // Invoke callback to LB policy.
-  calld->pick_.pick.recv_trailing_metadata_ready(
-      calld->pick_.pick.recv_trailing_metadata_ready_user_data,
+  calld->lb_recv_trailing_metadata_ready_(
+      calld->lb_recv_trailing_metadata_ready_user_data_,
       calld->recv_trailing_metadata_, &calld->lb_call_state_);
   // Chain to original callback.
   GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready_,
@@ -1789,7 +1792,7 @@ void CallData::RecvTrailingMetadataReadyForLoadBalancingPolicy(
 
 void CallData::MaybeInjectRecvTrailingMetadataReadyForLoadBalancingPolicy(
     grpc_transport_stream_op_batch* batch) {
-  if (pick_.pick.recv_trailing_metadata_ready != nullptr) {
+  if (lb_recv_trailing_metadata_ready_ != nullptr) {
     recv_trailing_metadata_ =
         batch->payload->recv_trailing_metadata.recv_trailing_metadata;
     original_recv_trailing_metadata_ready_ =
@@ -2059,7 +2062,7 @@ void CallData::DoRetry(grpc_call_element* elem,
   GPR_ASSERT(retry_policy != nullptr);
   // Reset subchannel call and connected subchannel.
   subchannel_call_.reset();
-  pick_.pick.connected_subchannel.reset();
+  connected_subchannel_.reset();
   // Compute backoff delay.
   grpc_millis next_attempt_time;
   if (server_pushback_ms >= 0) {
@@ -3183,8 +3186,7 @@ void CallData::CreateSubchannelCall(grpc_call_element* elem) {
       // need to use a separate call context for each subchannel call.
       call_context_, call_combiner_, parent_data_size};
   grpc_error* error = GRPC_ERROR_NONE;
-  subchannel_call_ =
-      pick_.pick.connected_subchannel->CreateCall(call_args, &error);
+  subchannel_call_ = connected_subchannel_->CreateCall(call_args, &error);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: create subchannel_call=%p: error=%s",
             chand, this, subchannel_call_.get(), grpc_error_string(error));
@@ -3293,10 +3295,10 @@ void CallData::ApplyServiceConfigToCallLocked(grpc_call_element* elem) {
   service_config_call_data_ =
       ServiceConfig::CallData(chand->service_config(), path_);
   if (service_config_call_data_.service_config() != nullptr) {
-    call_context_[GRPC_SERVICE_CONFIG_CALL_DATA].value =
+    call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value =
         &service_config_call_data_;
-    method_params_ = static_cast<ClientChannelMethodParsedObject*>(
-        service_config_call_data_.GetMethodParsedObject(
+    method_params_ = static_cast<ClientChannelMethodParsedConfig*>(
+        service_config_call_data_.GetMethodParsedConfig(
             internal::ClientChannelServiceConfigParser::ParserIndex()));
   }
   retry_throttle_data_ = chand->retry_throttle_data();
@@ -3345,13 +3347,14 @@ void CallData::MaybeApplyServiceConfigToCallLocked(grpc_call_element* elem) {
   }
 }
 
-const char* PickResultName(LoadBalancingPolicy::PickResult result) {
-  switch (result) {
-    case LoadBalancingPolicy::PICK_COMPLETE:
+const char* PickResultTypeName(
+    LoadBalancingPolicy::PickResult::ResultType type) {
+  switch (type) {
+    case LoadBalancingPolicy::PickResult::PICK_COMPLETE:
       return "COMPLETE";
-    case LoadBalancingPolicy::PICK_QUEUE:
+    case LoadBalancingPolicy::PickResult::PICK_QUEUE:
       return "QUEUE";
-    case LoadBalancingPolicy::PICK_TRANSIENT_FAILURE:
+    case LoadBalancingPolicy::PickResult::PICK_TRANSIENT_FAILURE:
       return "TRANSIENT_FAILURE";
   }
   GPR_UNREACHABLE_CODE(return "UNKNOWN");
@@ -3361,9 +3364,10 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
-  GPR_ASSERT(calld->pick_.pick.connected_subchannel == nullptr);
+  GPR_ASSERT(calld->connected_subchannel_ == nullptr);
   GPR_ASSERT(calld->subchannel_call_ == nullptr);
-  calld->pick_.pick.call_state = &calld->lb_call_state_;
+  // Apply service config to call if needed.
+  calld->MaybeApplyServiceConfigToCallLocked(elem);
   // If this is a retry, use the send_initial_metadata payload that
   // we've cached; otherwise, use the pending batch.  The
   // send_initial_metadata batch will be the first pending batch in the
@@ -3374,39 +3378,39 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
   // allocate the subchannel batch earlier so that we can give the
   // subchannel's copy of the metadata batch (which is copied for each
   // attempt) to the LB policy instead the one from the parent channel.
-  calld->pick_.pick.initial_metadata =
+  LoadBalancingPolicy::PickArgs pick_args;
+  pick_args.call_state = &calld->lb_call_state_;
+  pick_args.initial_metadata =
       calld->seen_send_initial_metadata_
           ? &calld->send_initial_metadata_
           : calld->pending_batches_[0]
                 .batch->payload->send_initial_metadata.send_initial_metadata;
+  // Grab initial metadata flags so that we can check later if the call has
+  // wait_for_ready enabled.
   const uint32_t send_initial_metadata_flags =
       calld->seen_send_initial_metadata_
           ? calld->send_initial_metadata_flags_
           : calld->pending_batches_[0]
                 .batch->payload->send_initial_metadata
                 .send_initial_metadata_flags;
-  // Apply service config to call if needed.
-  calld->MaybeApplyServiceConfigToCallLocked(elem);
   // When done, we schedule this closure to leave the data plane combiner.
   GRPC_CLOSURE_INIT(&calld->pick_closure_, PickDone, elem,
                     grpc_schedule_on_exec_ctx);
   // Attempt pick.
-  error = GRPC_ERROR_NONE;
-  auto pick_result = chand->picker()->Pick(&calld->pick_.pick, &error);
+  auto result = chand->picker()->Pick(pick_args);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO,
             "chand=%p calld=%p: LB pick returned %s (connected_subchannel=%p, "
             "error=%s)",
-            chand, calld, PickResultName(pick_result),
-            calld->pick_.pick.connected_subchannel.get(),
-            grpc_error_string(error));
+            chand, calld, PickResultTypeName(result.type),
+            result.connected_subchannel.get(), grpc_error_string(result.error));
   }
-  switch (pick_result) {
-    case LoadBalancingPolicy::PICK_TRANSIENT_FAILURE: {
+  switch (result.type) {
+    case LoadBalancingPolicy::PickResult::PICK_TRANSIENT_FAILURE: {
       // If we're shutting down, fail all RPCs.
       grpc_error* disconnect_error = chand->disconnect_error();
       if (disconnect_error != GRPC_ERROR_NONE) {
-        GRPC_ERROR_UNREF(error);
+        GRPC_ERROR_UNREF(result.error);
         GRPC_CLOSURE_SCHED(&calld->pick_closure_,
                            GRPC_ERROR_REF(disconnect_error));
         break;
@@ -3417,15 +3421,15 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
            GRPC_INITIAL_METADATA_WAIT_FOR_READY) == 0) {
         // Retry if appropriate; otherwise, fail.
         grpc_status_code status = GRPC_STATUS_OK;
-        grpc_error_get_status(error, calld->deadline_, &status, nullptr,
+        grpc_error_get_status(result.error, calld->deadline_, &status, nullptr,
                               nullptr, nullptr);
         if (!calld->enable_retries_ ||
             !calld->MaybeRetry(elem, nullptr /* batch_data */, status,
                                nullptr /* server_pushback_md */)) {
           grpc_error* new_error =
               GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                  "Failed to pick subchannel", &error, 1);
-          GRPC_ERROR_UNREF(error);
+                  "Failed to pick subchannel", &result.error, 1);
+          GRPC_ERROR_UNREF(result.error);
           GRPC_CLOSURE_SCHED(&calld->pick_closure_, new_error);
         }
         if (calld->pick_queued_) calld->RemoveCallFromQueuedPicksLocked(elem);
@@ -3433,19 +3437,24 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
       }
       // If wait_for_ready is true, then queue to retry when we get a new
       // picker.
-      GRPC_ERROR_UNREF(error);
+      GRPC_ERROR_UNREF(result.error);
     }
     // Fallthrough
-    case LoadBalancingPolicy::PICK_QUEUE:
+    case LoadBalancingPolicy::PickResult::PICK_QUEUE:
       if (!calld->pick_queued_) calld->AddCallToQueuedPicksLocked(elem);
       break;
     default:  // PICK_COMPLETE
       // Handle drops.
-      if (GPR_UNLIKELY(calld->pick_.pick.connected_subchannel == nullptr)) {
-        error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      if (GPR_UNLIKELY(result.connected_subchannel == nullptr)) {
+        result.error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Call dropped by load balancing policy");
       }
-      GRPC_CLOSURE_SCHED(&calld->pick_closure_, error);
+      calld->connected_subchannel_ = std::move(result.connected_subchannel);
+      calld->lb_recv_trailing_metadata_ready_ =
+          result.recv_trailing_metadata_ready;
+      calld->lb_recv_trailing_metadata_ready_user_data_ =
+          result.recv_trailing_metadata_ready_user_data;
+      GRPC_CLOSURE_SCHED(&calld->pick_closure_, result.error);
       if (calld->pick_queued_) calld->RemoveCallFromQueuedPicksLocked(elem);
   }
 }
