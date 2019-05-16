@@ -23,6 +23,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/surface/api_trace.h"
 
 #include <grpc/grpc.h>
@@ -72,7 +73,7 @@ void grpc_call_internal_unref(grpc_call* call);
 #define GRPC_CALL_INTERNAL_UNREF(call, reason) grpc_call_internal_unref(call)
 #endif
 
-gpr_arena* grpc_call_get_arena(grpc_call* call);
+grpc_core::Arena* grpc_call_get_arena(grpc_call* call);
 
 grpc_call_stack* grpc_call_get_call_stack(grpc_call* call);
 
@@ -101,7 +102,11 @@ void grpc_call_context_set(grpc_call* call, grpc_context_index elem,
 void* grpc_call_context_get(grpc_call* call, grpc_context_index elem);
 
 #define GRPC_CALL_LOG_BATCH(sev, call, ops, nops, tag) \
-  if (grpc_api_trace.enabled()) grpc_call_log_batch(sev, call, ops, nops, tag)
+  do {                                                 \
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace)) {     \
+      grpc_call_log_batch(sev, call, ops, nops, tag);  \
+    }                                                  \
+  } while (0)
 
 uint8_t grpc_call_is_client(grpc_call* call);
 

@@ -20,7 +20,7 @@ statuses are defined as such:
 | OUT_OF_RANGE | 11 | The operation was attempted past the valid range. E.g., seeking or reading past end-of-file. Unlike `INVALID_ARGUMENT`, this error indicates a problem that may be fixed if the system state changes. For example, a 32-bit file system will generate `INVALID_ARGUMENT` if asked to read at an offset that is not in the range [0,2^32-1], but it will generate `OUT_OF_RANGE` if asked to read from an offset past the current file size. There is a fair bit of overlap between `FAILED_PRECONDITION` and `OUT_OF_RANGE`. We recommend using `OUT_OF_RANGE` (the more specific error) when it applies so that callers who are iterating through a space can easily look for an `OUT_OF_RANGE` error to detect when they are done. | 400 Bad Request |
 | UNIMPLEMENTED | 12 | The operation is not implemented or is not supported/enabled in this service. | 501 Not Implemented |
 | INTERNAL | 13 | Internal errors. This means that some invariants expected by the underlying system have been broken. This error code is reserved for serious errors. | 500 Internal Server Error |
-| UNAVAILABLE | 14 | The service is currently unavailable. This is most likely a transient condition, which can be corrected by retrying with a backoff. | 503 Service Unavailable |
+| UNAVAILABLE | 14 | The service is currently unavailable. This is most likely a transient condition, which can be corrected by retrying with a backoff. Note that it is not always safe to retry non-idempotent operations. | 503 Service Unavailable |
 | DATA_LOSS | 15 | Unrecoverable data loss or corruption. | 500 Internal Server Error |
 
 All RPCs started at a client return a `status` object composed of an integer

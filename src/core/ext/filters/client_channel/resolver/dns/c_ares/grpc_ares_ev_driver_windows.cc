@@ -18,7 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
-#if GRPC_ARES == 1 && defined(GPR_WINDOWS)
+#if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 
 #include <ares.h>
 
@@ -109,6 +109,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     read_closure_ = read_closure;
     GPR_ASSERT(GRPC_SLICE_LENGTH(read_buf_) == 0);
     grpc_slice_unref_internal(read_buf_);
+    GPR_ASSERT(!read_buf_has_data_);
     read_buf_ = GRPC_SLICE_MALLOC(4192);
     WSABUF buffer;
     buffer.buf = (char*)GRPC_SLICE_START_PTR(read_buf_);
@@ -175,7 +176,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     GRPC_CARES_TRACE_LOG(
         "RecvFrom called on fd:|%s|. Current read buf length:|%d|", GetName(),
         GRPC_SLICE_LENGTH(read_buf_));
-    if (GRPC_SLICE_LENGTH(read_buf_) == 0) {
+    if (!read_buf_has_data_) {
       WSASetLastError(WSAEWOULDBLOCK);
       return -1;
     }
@@ -186,6 +187,9 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     }
     read_buf_ = grpc_slice_sub_no_ref(read_buf_, bytes_read,
                                       GRPC_SLICE_LENGTH(read_buf_));
+    if (GRPC_SLICE_LENGTH(read_buf_) == 0) {
+      read_buf_has_data_ = false;
+    }
     /* c-ares overloads this recv_from virtual socket function to receive
      * data on both UDP and TCP sockets, and from is nullptr for TCP. */
     if (from != nullptr) {
@@ -302,6 +306,11 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     polled_fd->OnIocpReadableInner(error);
   }
 
+  // TODO(apolcyn): improve this error handling to be less conversative.
+  // An e.g. ECONNRESET error here should result in errors when
+  // c-ares reads from this socket later, but it shouldn't necessarily cancel
+  // the entire resolution attempt. Doing so will allow the "inject broken
+  // nameserver list" test to pass on Windows.
   void OnIocpReadableInner(grpc_error* error) {
     if (error == GRPC_ERROR_NONE) {
       if (winsocket_->read_info.wsa_error != 0) {
@@ -323,6 +332,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     if (error == GRPC_ERROR_NONE) {
       read_buf_ = grpc_slice_sub_no_ref(read_buf_, 0,
                                         winsocket_->read_info.bytes_transfered);
+      read_buf_has_data_ = true;
     } else {
       grpc_slice_unref_internal(read_buf_);
       read_buf_ = grpc_empty_slice();
@@ -370,6 +380,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
   char recv_from_source_addr_[200];
   ares_socklen_t recv_from_source_addr_len_;
   grpc_slice read_buf_;
+  bool read_buf_has_data_ = false;
   grpc_slice write_buf_;
   grpc_closure* read_closure_ = nullptr;
   grpc_closure* write_closure_ = nullptr;
@@ -445,7 +456,8 @@ class SockToPolledFdMap {
    */
   static ares_socket_t Socket(int af, int type, int protocol, void* user_data) {
     SockToPolledFdMap* map = static_cast<SockToPolledFdMap*>(user_data);
-    SOCKET s = WSASocket(af, type, protocol, nullptr, 0, WSA_FLAG_OVERLAPPED);
+    SOCKET s = WSASocket(af, type, protocol, nullptr, 0,
+                         grpc_get_default_wsa_socket_flags());
     if (s == INVALID_SOCKET) {
       return s;
     }

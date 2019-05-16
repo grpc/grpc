@@ -36,7 +36,7 @@
 #define EXPECTED_CONTENT_TYPE "application/grpc"
 #define EXPECTED_CONTENT_TYPE_LENGTH sizeof(EXPECTED_CONTENT_TYPE) - 1
 
-/* default maximum size of payload eligable for GET request */
+/* default maximum size of payload eligible for GET request */
 static constexpr size_t kMaxPayloadSizeForGet = 2048;
 
 static void recv_initial_metadata_ready(void* user_data, grpc_error* error);
@@ -62,7 +62,7 @@ struct call_data {
 
   ~call_data() { GRPC_ERROR_UNREF(recv_initial_metadata_error); }
 
-  grpc_call_combiner* call_combiner;
+  grpc_core::CallCombiner* call_combiner;
   // State for handling send_initial_metadata ops.
   grpc_linked_mdelem method;
   grpc_linked_mdelem scheme;
@@ -107,7 +107,8 @@ static grpc_error* client_filter_incoming_metadata(grpc_call_element* elem,
      * https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md.
      */
     if (b->idx.named.grpc_status != nullptr ||
-        grpc_mdelem_eq(b->idx.named.status->md, GRPC_MDELEM_STATUS_200)) {
+        grpc_mdelem_static_value_eq(b->idx.named.status->md,
+                                    GRPC_MDELEM_STATUS_200)) {
       grpc_metadata_batch_remove(b, b->idx.named.status);
     } else {
       char* val = grpc_dump_slice(GRPC_MDVALUE(b->idx.named.status->md),
@@ -140,8 +141,9 @@ static grpc_error* client_filter_incoming_metadata(grpc_call_element* elem,
   }
 
   if (b->idx.named.content_type != nullptr) {
-    if (!grpc_mdelem_eq(b->idx.named.content_type->md,
-                        GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)) {
+    if (!grpc_mdelem_static_value_eq(
+            b->idx.named.content_type->md,
+            GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)) {
       if (grpc_slice_buf_start_eq(GRPC_MDVALUE(b->idx.named.content_type->md),
                                   EXPECTED_CONTENT_TYPE,
                                   EXPECTED_CONTENT_TYPE_LENGTH) &&

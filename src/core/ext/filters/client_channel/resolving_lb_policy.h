@@ -23,6 +23,7 @@
 
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
+#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -53,20 +54,24 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
  public:
   // If error is set when this returns, then construction failed, and
   // the caller may not use the new object.
-  ResolvingLoadBalancingPolicy(Args args, TraceFlag* tracer,
-                               UniquePtr<char> target_uri,
-                               UniquePtr<char> child_policy_name,
-                               RefCountedPtr<Config> child_lb_config,
-                               grpc_error** error);
+  ResolvingLoadBalancingPolicy(
+      Args args, TraceFlag* tracer, UniquePtr<char> target_uri,
+      UniquePtr<char> child_policy_name,
+      RefCountedPtr<ParsedLoadBalancingConfig> child_lb_config,
+      grpc_error** error);
 
   // Private ctor, to be used by client_channel only!
   //
   // Synchronous callback that takes the resolver result and sets
   // lb_policy_name and lb_policy_config to point to the right data.
   // Returns true if the service config has changed since the last result.
+  // If the returned service_config_error is not none and lb_policy_name is
+  // empty, it means that we don't have a valid service config to use, and we
+  // should set the channel to be in TRANSIENT_FAILURE.
   typedef bool (*ProcessResolverResultCallback)(
       void* user_data, Resolver::Result* result, const char** lb_policy_name,
-      RefCountedPtr<Config>* lb_policy_config);
+      RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config,
+      grpc_error** service_config_error);
   // If error is set when this returns, then construction failed, and
   // the caller may not use the new object.
   ResolvingLoadBalancingPolicy(
@@ -102,10 +107,10 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   void StartResolvingLocked();
   void OnResolverError(grpc_error* error);
-  void CreateOrUpdateLbPolicyLocked(const char* lb_policy_name,
-                                    RefCountedPtr<Config> lb_policy_config,
-                                    Resolver::Result result,
-                                    TraceStringVector* trace_strings);
+  void CreateOrUpdateLbPolicyLocked(
+      const char* lb_policy_name,
+      RefCountedPtr<ParsedLoadBalancingConfig> lb_policy_config,
+      Resolver::Result result, TraceStringVector* trace_strings);
   OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(
       const char* lb_policy_name, const grpc_channel_args& args,
       TraceStringVector* trace_strings);
@@ -121,7 +126,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   ProcessResolverResultCallback process_resolver_result_ = nullptr;
   void* process_resolver_result_user_data_ = nullptr;
   UniquePtr<char> child_policy_name_;
-  RefCountedPtr<Config> child_lb_config_;
+  RefCountedPtr<ParsedLoadBalancingConfig> child_lb_config_;
 
   // Resolver and associated state.
   OrphanablePtr<Resolver> resolver_;

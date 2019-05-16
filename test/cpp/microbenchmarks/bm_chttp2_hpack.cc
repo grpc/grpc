@@ -36,8 +36,6 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
-auto& force_library_initialization = Library::get();
-
 static grpc_slice MakeSlice(std::vector<uint8_t> bytes) {
   grpc_slice s = grpc_slice_malloc(bytes.size());
   uint8_t* p = GRPC_SLICE_START_PTR(s);
@@ -458,7 +456,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   grpc_chttp2_hpack_parser p;
   grpc_chttp2_hpack_parser_init(&p);
   const int kArenaSize = 4096 * 4096;
-  p.on_header_user_data = gpr_arena_create(kArenaSize);
+  p.on_header_user_data = grpc_core::Arena::Create(kArenaSize);
   p.on_header = OnHeader;
   for (auto slice : init_slices) {
     GPR_ASSERT(GRPC_ERROR_NONE == grpc_chttp2_hpack_parser_parse(&p, slice));
@@ -470,12 +468,12 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
     grpc_core::ExecCtx::Get()->Flush();
     // Recreate arena every 4k iterations to avoid oom
     if (0 == (state.iterations() & 0xfff)) {
-      gpr_arena_destroy((gpr_arena*)p.on_header_user_data);
-      p.on_header_user_data = gpr_arena_create(kArenaSize);
+      static_cast<grpc_core::Arena*>(p.on_header_user_data)->Destroy();
+      p.on_header_user_data = grpc_core::Arena::Create(kArenaSize);
     }
   }
   // Clean up
-  gpr_arena_destroy((gpr_arena*)p.on_header_user_data);
+  static_cast<grpc_core::Arena*>(p.on_header_user_data)->Destroy();
   for (auto slice : init_slices) grpc_slice_unref(slice);
   for (auto slice : benchmark_slices) grpc_slice_unref(slice);
   grpc_chttp2_hpack_parser_destroy(&p);
@@ -778,7 +776,8 @@ static void free_timeout(void* p) { gpr_free(p); }
 // Benchmark the current on_initial_header implementation
 static void OnInitialHeader(void* user_data, grpc_mdelem md) {
   // Setup for benchmark. This will bloat the absolute values of this benchmark
-  grpc_chttp2_incoming_metadata_buffer buffer((gpr_arena*)user_data);
+  grpc_chttp2_incoming_metadata_buffer buffer(
+      static_cast<grpc_core::Arena*>(user_data));
   bool seen_error = false;
 
   // Below here is the code we actually care about benchmarking
@@ -927,6 +926,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();

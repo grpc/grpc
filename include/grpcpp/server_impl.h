@@ -28,6 +28,7 @@
 #include <grpc/compression.h>
 #include <grpc/support/atm.h>
 #include <grpcpp/completion_queue.h>
+#include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
@@ -41,14 +42,16 @@
 struct grpc_server;
 
 namespace grpc {
-
 class AsyncGenericService;
 class ServerContext;
+
+namespace internal {
+class ExternalConnectionAcceptorImpl;
+}  // namespace internal
 
 }  // namespace grpc
 
 namespace grpc_impl {
-
 class HealthCheckServiceInterface;
 class ServerInitializer;
 
@@ -99,7 +102,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   grpc_server* c_server();
 
   /// Returns the health check service.
-  grpc_impl::HealthCheckServiceInterface* GetHealthCheckService() const {
+  grpc::HealthCheckServiceInterface* GetHealthCheckService() const {
     return health_check_service_.get();
   }
 
@@ -183,6 +186,9 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
       std::shared_ptr<std::vector<std::unique_ptr<grpc::ServerCompletionQueue>>>
           sync_server_cqs,
       int min_pollers, int max_pollers, int sync_cq_timeout_msec,
+      std::vector<
+          std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
+          acceptors,
       grpc_resource_quota* server_rq = nullptr,
       std::vector<std::unique_ptr<
           grpc::experimental::ServerInterceptorFactoryInterface>>
@@ -198,6 +204,18 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   void Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) override;
 
   grpc_server* server() override { return server_; }
+
+ protected:
+  /// NOTE: This method is not part of the public API for this class.
+  void set_health_check_service(
+      std::unique_ptr<grpc::HealthCheckServiceInterface> service) {
+    health_check_service_ = std::move(service);
+  }
+
+  /// NOTE: This method is not part of the public API for this class.
+  bool health_check_service_disabled() const {
+    return health_check_service_disabled_;
+  }
 
  private:
   std::vector<
@@ -268,6 +286,9 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
 
   grpc_impl::ServerInitializer* initializer();
 
+  std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
+      acceptors_;
+
   // A vector of interceptor factory objects.
   // This should be destroyed after health_check_service_ and this requirement
   // is satisfied by declaring interceptor_creators_ before
@@ -333,7 +354,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
 
   std::unique_ptr<grpc_impl::ServerInitializer> server_initializer_;
 
-  std::unique_ptr<grpc_impl::HealthCheckServiceInterface> health_check_service_;
+  std::unique_ptr<grpc::HealthCheckServiceInterface> health_check_service_;
   bool health_check_service_disabled_;
 
   // When appropriate, use a default callback generic service to handle

@@ -135,7 +135,8 @@ typedef NS_ENUM(NSUInteger, GRPCErrorCode) {
 
   /**
    * The server is currently unavailable. This is most likely a transient condition and may be
-   * corrected by retrying with a backoff.
+   * corrected by retrying with a backoff. Note that it is not always safe to retry
+   * non-idempotent operations.
    */
   GRPCErrorCodeUnavailable = 14,
 
@@ -182,6 +183,12 @@ extern NSString *const kGRPCTrailersKey;
  */
 - (void)didCloseWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
                                error:(nullable NSError *)error;
+
+/**
+ * Issued when flow control is enabled for the call and a message written with writeData: method of
+ * GRPCCall2 is passed to gRPC core with SEND_MESSAGE operation.
+ */
+- (void)didWriteData;
 
 @end
 
@@ -262,6 +269,14 @@ extern NSString *const kGRPCTrailersKey;
  * trailers to the client. The method must only be called once and after start is called.
  */
 - (void)finish;
+
+/**
+ * Tell gRPC to receive the next N gRPC message from gRPC core.
+ *
+ * This method should only be used when flow control is enabled. When flow control is not enabled,
+ * this method is a no-op.
+ */
+- (void)receiveNextMessages:(NSUInteger)numberOfMessages;
 
 /**
  * Get a copy of the original call options.

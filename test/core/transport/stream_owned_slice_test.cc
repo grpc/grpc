@@ -32,14 +32,11 @@ int main(int argc, char** argv) {
   uint8_t buffer[] = "abc123";
   grpc_stream_refcount r;
   GRPC_STREAM_REF_INIT(&r, 1, do_nothing, nullptr, "test");
-  GPR_ASSERT(r.refs.count == 1);
   grpc_slice slice =
       grpc_slice_from_stream_owned_buffer(&r, buffer, sizeof(buffer));
   GPR_ASSERT(GRPC_SLICE_START_PTR(slice) == buffer);
   GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == sizeof(buffer));
-  GPR_ASSERT(r.refs.count == 2);
   grpc_slice_unref(slice);
-  GPR_ASSERT(r.refs.count == 1);
 
   grpc_shutdown();
   return 0;

@@ -55,22 +55,23 @@ class ProtoBufMethod : public grpc_generator::Method {
     return method_->output_type()->file()->name();
   }
 
-  bool get_module_and_message_path_input(grpc::string* str,
-                                         grpc::string generator_file_name,
-                                         bool generate_in_pb2_grpc,
-                                         grpc::string import_prefix) const {
+  // TODO(https://github.com/grpc/grpc/issues/18800): Clean this up.
+  bool get_module_and_message_path_input(
+      grpc::string* str, grpc::string generator_file_name,
+      bool generate_in_pb2_grpc, grpc::string import_prefix,
+      const std::vector<grpc::string>& prefixes_to_filter) const final {
     return grpc_python_generator::GetModuleAndMessagePath(
         method_->input_type(), str, generator_file_name, generate_in_pb2_grpc,
-        import_prefix);
+        import_prefix, prefixes_to_filter);
   }
 
-  bool get_module_and_message_path_output(grpc::string* str,
-                                          grpc::string generator_file_name,
-                                          bool generate_in_pb2_grpc,
-                                          grpc::string import_prefix) const {
+  bool get_module_and_message_path_output(
+      grpc::string* str, grpc::string generator_file_name,
+      bool generate_in_pb2_grpc, grpc::string import_prefix,
+      const std::vector<grpc::string>& prefixes_to_filter) const final {
     return grpc_python_generator::GetModuleAndMessagePath(
         method_->output_type(), str, generator_file_name, generate_in_pb2_grpc,
-        import_prefix);
+        import_prefix, prefixes_to_filter);
   }
 
   bool NoStreaming() const {

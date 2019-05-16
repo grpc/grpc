@@ -22,6 +22,8 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 
+#include "test/cpp/util/test_config.h"
+
 // In some distros, gflags is in the namespace google, and in some others,
 // in gflags. This hack is enabling us to find both.
 namespace google {}
@@ -67,7 +69,7 @@ TEST(GoldenMockFileTest, TestGeneratedMockFile) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  ParseCommandLineFlags(&argc, &argv, true);
+  grpc::testing::InitTest(&argc, &argv, true);
   if (FLAGS_generated_file_path.empty()) {
     FLAGS_generated_file_path = "gens/src/proto/grpc/testing/";
   }

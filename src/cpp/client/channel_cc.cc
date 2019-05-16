@@ -150,9 +150,9 @@ internal::Call Channel::CreateCallInternal(const internal::RpcMethod& method,
   return internal::Call(c_call, this, cq, info);
 }
 
-internal::Call Channel::CreateCall(const internal::RpcMethod& method,
-                                   ClientContext* context,
-                                   CompletionQueue* cq) {
+::grpc::internal::Call Channel::CreateCall(const internal::RpcMethod& method,
+                                           ClientContext* context,
+                                           CompletionQueue* cq) {
   return CreateCallInternal(method, context, cq, 0);
 }
 

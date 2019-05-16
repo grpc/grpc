@@ -48,7 +48,7 @@ alts_shared_resource_dedicated* grpc_alts_get_shared_resource_dedicated(void);
 
 /**
  * This method destroys the alts_shared_resource_dedicated object
- * shared by all TSI handshakes. The applicaiton is responsible for
+ * shared by all TSI handshakes. The application is responsible for
  * invoking the API before calling grpc_shutdown().
  */
 void grpc_alts_shared_resource_dedicated_shutdown();

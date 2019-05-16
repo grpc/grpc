@@ -130,7 +130,7 @@ class RawEnd2EndTest : public ::testing::Test {
 
   void ResetStub() {
     ChannelArguments args;
-    std::shared_ptr<Channel> channel = CreateChannel(
+    std::shared_ptr<Channel> channel = grpc::CreateChannel(
         server_address_.str(), grpc::InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }

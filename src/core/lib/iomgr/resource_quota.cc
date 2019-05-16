@@ -32,6 +32,7 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 grpc_core::TraceFlag grpc_resource_quota_trace(false, "resource_quota");
 
@@ -316,7 +317,7 @@ static bool rq_alloc(grpc_resource_quota* resource_quota) {
   while ((resource_user = rulist_pop_head(resource_quota,
                                           GRPC_RULIST_AWAITING_ALLOCATION))) {
     gpr_mu_lock(&resource_user->mu);
-    if (grpc_resource_quota_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
       gpr_log(GPR_INFO,
               "RQ: check allocation for user %p shutdown=%" PRIdPTR
               " free_pool=%" PRId64,
@@ -342,14 +343,14 @@ static bool rq_alloc(grpc_resource_quota* resource_quota) {
       resource_user->free_pool = 0;
       resource_quota->free_pool -= amt;
       rq_update_estimate(resource_quota);
-      if (grpc_resource_quota_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
         gpr_log(GPR_INFO,
                 "RQ %s %s: grant alloc %" PRId64
                 " bytes; rq_free_pool -> %" PRId64,
                 resource_quota->name, resource_user->name, amt,
                 resource_quota->free_pool);
       }
-    } else if (grpc_resource_quota_trace.enabled() &&
+    } else if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace) &&
                resource_user->free_pool >= 0) {
       gpr_log(GPR_INFO, "RQ %s %s: discard already satisfied alloc request",
               resource_quota->name, resource_user->name);
@@ -381,7 +382,7 @@ static bool rq_reclaim_from_per_user_free_pool(
       resource_user->free_pool = 0;
       resource_quota->free_pool += amt;
       rq_update_estimate(resource_quota);
-      if (grpc_resource_quota_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
         gpr_log(GPR_INFO,
                 "RQ %s %s: reclaim_from_per_user_free_pool %" PRId64
                 " bytes; rq_free_pool -> %" PRId64,
@@ -391,7 +392,7 @@ static bool rq_reclaim_from_per_user_free_pool(
       gpr_mu_unlock(&resource_user->mu);
       return true;
     } else {
-      if (grpc_resource_quota_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
         gpr_log(GPR_INFO,
                 "RQ %s %s: failed to reclaim_from_per_user_free_pool; "
                 "free_pool = %" PRId64 "; rq_free_pool = %" PRId64,
@@ -411,7 +412,7 @@ static bool rq_reclaim(grpc_resource_quota* resource_quota, bool destructive) {
                                  : GRPC_RULIST_RECLAIMER_BENIGN;
   grpc_resource_user* resource_user = rulist_pop_head(resource_quota, list);
   if (resource_user == nullptr) return false;
-  if (grpc_resource_quota_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
     gpr_log(GPR_INFO, "RQ %s %s: initiate %s reclamation", resource_quota->name,
             resource_user->name, destructive ? "destructive" : "benign");
   }
@@ -430,41 +431,43 @@ static bool rq_reclaim(grpc_resource_quota* resource_quota, bool destructive) {
  * ru_slice: a slice implementation that is backed by a grpc_resource_user
  */
 
-typedef struct {
-  grpc_slice_refcount base;
-  gpr_refcount refs;
-  grpc_resource_user* resource_user;
-  size_t size;
-} ru_slice_refcount;
+namespace grpc_core {
 
-static void ru_slice_ref(void* p) {
-  ru_slice_refcount* rc = static_cast<ru_slice_refcount*>(p);
-  gpr_ref(&rc->refs);
-}
-
-static void ru_slice_unref(void* p) {
-  ru_slice_refcount* rc = static_cast<ru_slice_refcount*>(p);
-  if (gpr_unref(&rc->refs)) {
-    grpc_resource_user_free(rc->resource_user, rc->size);
+class RuSliceRefcount {
+ public:
+  static void Destroy(void* p) {
+    auto* rc = static_cast<RuSliceRefcount*>(p);
+    rc->~RuSliceRefcount();
     gpr_free(rc);
   }
-}
+  RuSliceRefcount(grpc_resource_user* resource_user, size_t size)
+      : base_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this,
+              &base_),
+        resource_user_(resource_user),
+        size_(size) {
+    // Nothing to do here.
+  }
+  ~RuSliceRefcount() { grpc_resource_user_free(resource_user_, size_); }
 
-static const grpc_slice_refcount_vtable ru_slice_vtable = {
-    ru_slice_ref, ru_slice_unref, grpc_slice_default_eq_impl,
-    grpc_slice_default_hash_impl};
+  grpc_slice_refcount* base_refcount() { return &base_; }
+
+ private:
+  grpc_slice_refcount base_;
+  RefCount refs_;
+  grpc_resource_user* resource_user_;
+  size_t size_;
+};
+
+}  // namespace grpc_core
 
 static grpc_slice ru_slice_create(grpc_resource_user* resource_user,
                                   size_t size) {
-  ru_slice_refcount* rc = static_cast<ru_slice_refcount*>(
-      gpr_malloc(sizeof(ru_slice_refcount) + size));
-  rc->base.vtable = &ru_slice_vtable;
-  rc->base.sub_refcount = &rc->base;
-  gpr_ref_init(&rc->refs, 1);
-  rc->resource_user = resource_user;
-  rc->size = size;
+  auto* rc = static_cast<grpc_core::RuSliceRefcount*>(
+      gpr_malloc(sizeof(grpc_core::RuSliceRefcount) + size));
+  new (rc) grpc_core::RuSliceRefcount(resource_user, size);
   grpc_slice slice;
-  slice.refcount = &rc->base;
+
+  slice.refcount = rc->base_refcount();
   slice.data.refcounted.bytes = reinterpret_cast<uint8_t*>(rc + 1);
   slice.data.refcounted.length = size;
   return slice;
@@ -540,7 +543,7 @@ static void ru_post_destructive_reclaimer(void* ru, grpc_error* error) {
 }
 
 static void ru_shutdown(void* ru, grpc_error* error) {
-  if (grpc_resource_quota_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
     gpr_log(GPR_INFO, "RU shutdown %p", ru);
   }
   grpc_resource_user* resource_user = static_cast<grpc_resource_user*>(ru);
@@ -882,7 +885,7 @@ static void resource_user_alloc_locked(grpc_resource_user* resource_user,
                                        grpc_closure* optional_on_done) {
   ru_ref_by(resource_user, static_cast<gpr_atm>(size));
   resource_user->free_pool -= static_cast<int64_t>(size);
-  if (grpc_resource_quota_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
     gpr_log(GPR_INFO, "RQ %s %s: alloc %" PRIdPTR "; free_pool -> %" PRId64,
             resource_user->resource_quota->name, resource_user->name, size,
             resource_user->free_pool);
@@ -941,7 +944,7 @@ void grpc_resource_user_free(grpc_resource_user* resource_user, size_t size) {
   GPR_ASSERT(prior >= static_cast<long>(size));
   bool was_zero_or_negative = resource_user->free_pool <= 0;
   resource_user->free_pool += static_cast<int64_t>(size);
-  if (grpc_resource_quota_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
     gpr_log(GPR_INFO, "RQ %s %s: free %" PRIdPTR "; free_pool -> %" PRId64,
             resource_user->resource_quota->name, resource_user->name, size,
             resource_user->free_pool);
@@ -967,7 +970,7 @@ void grpc_resource_user_post_reclaimer(grpc_resource_user* resource_user,
 }
 
 void grpc_resource_user_finish_reclamation(grpc_resource_user* resource_user) {
-  if (grpc_resource_quota_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
     gpr_log(GPR_INFO, "RQ %s %s: reclamation complete",
             resource_user->resource_quota->name, resource_user->name);
   }

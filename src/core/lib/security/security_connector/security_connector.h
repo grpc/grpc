@@ -102,7 +102,7 @@ class grpc_channel_security_connector : public grpc_security_connector {
                                grpc_auth_context* auth_context,
                                grpc_closure* on_call_host_checked,
                                grpc_error** error) GRPC_ABSTRACT;
-  /// Cancels a pending asychronous call to
+  /// Cancels a pending asynchronous call to
   /// grpc_channel_security_connector_check_call_host() with
   /// \a on_call_host_checked as its callback.
   virtual void cancel_check_call_host(grpc_closure* on_call_host_checked,

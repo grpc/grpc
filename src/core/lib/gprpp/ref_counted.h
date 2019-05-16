@@ -123,6 +123,22 @@ class RefCount {
     RefNonZero();
   }
 
+  bool RefIfNonZero() { return value_.IncrementIfNonzero(); }
+
+  bool RefIfNonZero(const DebugLocation& location, const char* reason) {
+#ifndef NDEBUG
+    if (location.Log() && trace_flag_ != nullptr && trace_flag_->enabled()) {
+      const RefCount::Value old_refs = get();
+      gpr_log(GPR_INFO,
+              "%s:%p %s:%d ref_if_non_zero "
+              "%" PRIdPTR " -> %" PRIdPTR " %s",
+              trace_flag_->name(), this, location.file(), location.line(),
+              old_refs, old_refs + 1, reason);
+    }
+#endif
+    return RefIfNonZero();
+  }
+
   // Decrements the ref-count and returns true if the ref-count reaches 0.
   bool Unref() {
     const Value prior = value_.FetchSub(1, MemoryOrder::ACQ_REL);
@@ -164,7 +180,7 @@ class RefCount {
 // So, use NonPolymorphicRefCount only when both of the following conditions
 // are guaranteed to hold:
 // (a) Child is a concrete leaf class in RefCounted<Child>, and
-// (b) you are gauranteed to call Unref only on concrete leaf classes and not
+// (b) you are guaranteed to call Unref only on concrete leaf classes and not
 //     their parents.
 //
 // The following example is illegal, because calling Unref() will not call
@@ -195,12 +211,12 @@ class RefCounted : public Impl {
   // private, since it will only be used by RefCountedPtr<>, which is a
   // friend of this class.
   void Unref() {
-    if (refs_.Unref()) {
+    if (GPR_UNLIKELY(refs_.Unref())) {
       Delete(static_cast<Child*>(this));
     }
   }
   void Unref(const DebugLocation& location, const char* reason) {
-    if (refs_.Unref(location, reason)) {
+    if (GPR_UNLIKELY(refs_.Unref(location, reason))) {
       Delete(static_cast<Child*>(this));
     }
   }

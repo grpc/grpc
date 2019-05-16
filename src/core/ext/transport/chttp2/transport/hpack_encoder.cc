@@ -56,7 +56,7 @@
 /* don't consider adding anything bigger than this to the hpack table */
 #define MAX_DECODER_SPACE_USAGE 512
 
-static grpc_slice_refcount terminal_slice_refcount = {nullptr, nullptr};
+static grpc_slice_refcount terminal_slice_refcount;
 static const grpc_slice terminal_slice = {
     &terminal_slice_refcount, /* refcount */
     {{0, nullptr}}            /* data.refcounted */
@@ -461,7 +461,7 @@ static void hpack_enc(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
         "Reserved header (colon-prefixed) happening after regular ones.");
   }
 
-  if (grpc_http_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     char* k = grpc_slice_to_c_string(GRPC_MDKEY(elem));
     char* v = nullptr;
     if (grpc_is_binary_header(GRPC_MDKEY(elem))) {
@@ -660,7 +660,7 @@ void grpc_chttp2_hpack_compressor_set_max_table_size(
     }
   }
   c->advertise_table_size_change = 1;
-  if (grpc_http_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO, "set max table size from encoder to %d", max_table_size);
   }
 }
