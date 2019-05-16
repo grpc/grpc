@@ -332,13 +332,7 @@ class ServiceA final {
     ExperimentalWithCallbackMethod_MethodA1() {
       ::grpc::Service::experimental().MarkMethodCallback(0,
         new ::grpc::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
-          [this](::grpc::ServerContext* context,
-                 const ::grpc::testing::Request* request,
-                 ::grpc::testing::Response* response,
-                 ::grpc::experimental::ServerCallbackRpcController* controller) {
-                   return this->MethodA1(context, request, response, controller);
-                 }));
-    }
+          [this] { return this->MethodA1(); }));}
     void SetMessageAllocatorFor_MethodA1(
         ::grpc::experimental::MessageAllocator< ::grpc::testing::Request, ::grpc::testing::Response>* allocator) {
       static_cast<::grpc::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>*>(
@@ -353,7 +347,9 @@ class ServiceA final {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual void MethodA1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, ::grpc::experimental::ServerCallbackRpcController* controller) { controller->Finish(::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "")); }
+    virtual ::grpc::experimental::ServerUnaryReactor< ::grpc::testing::Request, ::grpc::testing::Response>* MethodA1() {
+      return new ::grpc::internal::UnimplementedUnaryReactor<
+        ::grpc::testing::Request, ::grpc::testing::Response>;}
   };
   template <class BaseClass>
   class ExperimentalWithCallbackMethod_MethodA2 : public BaseClass {
@@ -578,12 +574,7 @@ class ServiceA final {
     ExperimentalWithRawCallbackMethod_MethodA1() {
       ::grpc::Service::experimental().MarkMethodRawCallback(0,
         new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
-          [this](::grpc::ServerContext* context,
-                 const ::grpc::ByteBuffer* request,
-                 ::grpc::ByteBuffer* response,
-                 ::grpc::experimental::ServerCallbackRpcController* controller) {
-                   this->MethodA1(context, request, response, controller);
-                 }));
+          [this] { return this->MethodA1(); }));
     }
     ~ExperimentalWithRawCallbackMethod_MethodA1() override {
       BaseClassMustBeDerivedFromService(this);
@@ -593,7 +584,9 @@ class ServiceA final {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual void MethodA1(::grpc::ServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response, ::grpc::experimental::ServerCallbackRpcController* controller) { controller->Finish(::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "")); }
+    virtual ::grpc::experimental::ServerUnaryReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>* MethodA1() {
+      return new ::grpc::internal::UnimplementedUnaryReactor<
+        ::grpc::ByteBuffer, ::grpc::ByteBuffer>;}
   };
   template <class BaseClass>
   class ExperimentalWithRawCallbackMethod_MethodA2 : public BaseClass {
@@ -810,13 +803,7 @@ class ServiceB final {
     ExperimentalWithCallbackMethod_MethodB1() {
       ::grpc::Service::experimental().MarkMethodCallback(0,
         new ::grpc::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
-          [this](::grpc::ServerContext* context,
-                 const ::grpc::testing::Request* request,
-                 ::grpc::testing::Response* response,
-                 ::grpc::experimental::ServerCallbackRpcController* controller) {
-                   return this->MethodB1(context, request, response, controller);
-                 }));
-    }
+          [this] { return this->MethodB1(); }));}
     void SetMessageAllocatorFor_MethodB1(
         ::grpc::experimental::MessageAllocator< ::grpc::testing::Request, ::grpc::testing::Response>* allocator) {
       static_cast<::grpc::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>*>(
@@ -831,7 +818,9 @@ class ServiceB final {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual void MethodB1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, ::grpc::experimental::ServerCallbackRpcController* controller) { controller->Finish(::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "")); }
+    virtual ::grpc::experimental::ServerUnaryReactor< ::grpc::testing::Request, ::grpc::testing::Response>* MethodB1() {
+      return new ::grpc::internal::UnimplementedUnaryReactor<
+        ::grpc::testing::Request, ::grpc::testing::Response>;}
   };
   typedef ExperimentalWithCallbackMethod_MethodB1<Service > ExperimentalCallbackService;
   template <class BaseClass>
@@ -879,12 +868,7 @@ class ServiceB final {
     ExperimentalWithRawCallbackMethod_MethodB1() {
       ::grpc::Service::experimental().MarkMethodRawCallback(0,
         new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
-          [this](::grpc::ServerContext* context,
-                 const ::grpc::ByteBuffer* request,
-                 ::grpc::ByteBuffer* response,
-                 ::grpc::experimental::ServerCallbackRpcController* controller) {
-                   this->MethodB1(context, request, response, controller);
-                 }));
+          [this] { return this->MethodB1(); }));
     }
     ~ExperimentalWithRawCallbackMethod_MethodB1() override {
       BaseClassMustBeDerivedFromService(this);
@@ -894,7 +878,9 @@ class ServiceB final {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual void MethodB1(::grpc::ServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response, ::grpc::experimental::ServerCallbackRpcController* controller) { controller->Finish(::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "")); }
+    virtual ::grpc::experimental::ServerUnaryReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>* MethodB1() {
+      return new ::grpc::internal::UnimplementedUnaryReactor<
+        ::grpc::ByteBuffer, ::grpc::ByteBuffer>;}
   };
   template <class BaseClass>
   class WithStreamedUnaryMethod_MethodB1 : public BaseClass {
