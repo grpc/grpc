@@ -272,7 +272,7 @@ class ServerBuilder {
         grpc::experimental::CallbackGenericService* service);
 
     enum class ExternalConnectionType {
-      CONNECTION_FROM_FD = 0  // in the form of a file descriptor
+      FROM_FD = 0  // in the form of a file descriptor
     };
 
     /// Register an acceptor to handle the externally accepted connection in

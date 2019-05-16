@@ -46,8 +46,8 @@ ExternalConnectionAcceptorImpl::ExternalConnectionAcceptorImpl(
     ServerBuilder::experimental_type::ExternalConnectionType type,
     std::shared_ptr<ServerCredentials> creds)
     : name_(name), creds_(std::move(creds)) {
-  GPR_ASSERT(type == ServerBuilder::experimental_type::ExternalConnectionType::
-                         CONNECTION_FROM_FD);
+  GPR_ASSERT(type ==
+             ServerBuilder::experimental_type::ExternalConnectionType::FROM_FD);
 }
 
 std::unique_ptr<experimental::ExternalConnectionAcceptor>
