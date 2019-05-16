@@ -36,10 +36,8 @@ class CallbackStreamingTestService
     : public EchoTestService::ExperimentalCallbackService {
  public:
   CallbackStreamingTestService() {}
-  void Echo(ServerContext* context, const EchoRequest* request,
-            EchoResponse* response,
-            experimental::ServerCallbackRpcController* controller) override;
 
+  experimental::ServerUnaryReactor<EchoRequest, EchoResponse>* Echo() override;
   experimental::ServerBidiReactor<EchoRequest, EchoResponse>* BidiStream()
       override;
 };

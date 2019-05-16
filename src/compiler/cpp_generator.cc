@@ -922,14 +922,11 @@ void PrintHeaderServerCallbackMethodsHelper(
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
-    printer->Print(
-        *vars,
-        "virtual void $Method$("
-        "::grpc::ServerContext* context, const $RealRequest$* request, "
-        "$RealResponse$* response, "
-        "::grpc::experimental::ServerCallbackRpcController* "
-        "controller) { controller->Finish(::grpc::Status("
-        "::grpc::StatusCode::UNIMPLEMENTED, \"\")); }\n");
+    printer->Print(*vars,
+                   "virtual ::grpc::experimental::ServerUnaryReactor< "
+                   "$RealRequest$, $RealResponse$>* $Method$() {\n"
+                   "  return new ::grpc::internal::UnimplementedUnaryReactor<\n"
+                   "    $RealRequest$, $RealResponse$>;}\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(
         *vars,
@@ -1007,14 +1004,7 @@ void PrintHeaderServerMethodCallback(
         "  ::grpc::Service::experimental().MarkMethodCallback($Idx$,\n"
         "    new ::grpc::internal::CallbackUnaryHandler< "
         "$RealRequest$, $RealResponse$>(\n"
-        "      [this](::grpc::ServerContext* context,\n"
-        "             const $RealRequest$* request,\n"
-        "             $RealResponse$* response,\n"
-        "             ::grpc::experimental::ServerCallbackRpcController* "
-        "controller) {\n"
-        "               return this->$"
-        "Method$(context, request, response, controller);\n"
-        "             }));\n}\n");
+        "      [this] { return this->$Method$(); }));}\n");
     printer->Print(*vars,
                    "void SetMessageAllocatorFor_$Method$(\n"
                    "    ::grpc::experimental::MessageAllocator< "
@@ -1081,14 +1071,7 @@ void PrintHeaderServerMethodRawCallback(
         "  ::grpc::Service::experimental().MarkMethodRawCallback($Idx$,\n"
         "    new ::grpc::internal::CallbackUnaryHandler< "
         "$RealRequest$, $RealResponse$>(\n"
-        "      [this](::grpc::ServerContext* context,\n"
-        "             const $RealRequest$* request,\n"
-        "             $RealResponse$* response,\n"
-        "             ::grpc::experimental::ServerCallbackRpcController* "
-        "controller) {\n"
-        "               this->$"
-        "Method$(context, request, response, controller);\n"
-        "             }));\n");
+        "      [this] { return this->$Method$(); }));\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(
         *vars,

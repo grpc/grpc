@@ -40,6 +40,8 @@ namespace internal {
 
 // Forward declarations
 template <class Request, class Response>
+class CallbackUnaryHandler;
+template <class Request, class Response>
 class CallbackClientStreamingHandler;
 template <class Request, class Response>
 class CallbackServerStreamingHandler;
@@ -54,6 +56,8 @@ class ServerReactor {
 
  private:
   friend class ::grpc::ServerContext;
+  template <class Request, class Response>
+  friend class CallbackUnaryHandler;
   template <class Request, class Response>
   friend class CallbackClientStreamingHandler;
   template <class Request, class Response>
@@ -101,68 +105,31 @@ namespace experimental {
 
 // Forward declarations
 template <class Request, class Response>
+class ServerUnaryReactor;
+template <class Request, class Response>
 class ServerReadReactor;
 template <class Request, class Response>
 class ServerWriteReactor;
 template <class Request, class Response>
 class ServerBidiReactor;
 
-// For unary RPCs, the exposed controller class is only an interface
-// and the actual implementation is an internal class.
-class ServerCallbackRpcController {
+// NOTE: The actual call/stream object classes are provided as API only to
+// support mocking. There are no implementations of these class interfaces in
+// the API.
+class ServerCallbackUnary {
  public:
-  virtual ~ServerCallbackRpcController() = default;
-
-  // The method handler must call this function when it is done so that
-  // the library knows to free its resources
+  virtual ~ServerCallbackUnary() {}
   virtual void Finish(Status s) = 0;
-
-  // Allow the method handler to push out the initial metadata before
-  // the response and status are ready
-  virtual void SendInitialMetadata(std::function<void(bool)>) = 0;
-
-  /// SetCancelCallback passes in a callback to be called when the RPC is
-  /// canceled for whatever reason (streaming calls have OnCancel instead). This
-  /// is an advanced and uncommon use with several important restrictions. This
-  /// function may not be called more than once on the same RPC.
-  ///
-  /// If code calls SetCancelCallback on an RPC, it must also call
-  /// ClearCancelCallback before calling Finish on the RPC controller. That
-  /// method makes sure that no cancellation callback is executed for this RPC
-  /// beyond the point of its return. ClearCancelCallback may be called even if
-  /// SetCancelCallback was not called for this RPC, and it may be called
-  /// multiple times. It _must_ be called if SetCancelCallback was called for
-  /// this RPC.
-  ///
-  /// The callback should generally be lightweight and nonblocking and primarily
-  /// concerned with clearing application state related to the RPC or causing
-  /// operations (such as cancellations) to happen on dependent RPCs.
-  ///
-  /// If the RPC is already canceled at the time that SetCancelCallback is
-  /// called, the callback is invoked immediately.
-  ///
-  /// The cancellation callback may be executed concurrently with the method
-  /// handler that invokes it but will certainly not issue or execute after the
-  /// return of ClearCancelCallback. If ClearCancelCallback is invoked while the
-  /// callback is already executing, the callback will complete its execution
-  /// before ClearCancelCallback takes effect.
-  ///
-  /// To preserve the orderings described above, the callback may be called
-  /// under a lock that is also used for ClearCancelCallback and
-  /// ServerContext::IsCancelled, so the callback CANNOT call either of those
-  /// operations on this RPC or any other function that causes those operations
-  /// to be called before the callback completes.
-  virtual void SetCancelCallback(std::function<void()> callback) = 0;
-  virtual void ClearCancelCallback() = 0;
-
-  // NOTE: This is an API for advanced users who need custom allocators.
-  // Get and maybe mutate the allocator state associated with the current RPC.
+  virtual void SendInitialMetadata() = 0;
   virtual RpcAllocatorState* GetRpcAllocatorState() = 0;
+
+ protected:
+  template <class Request, class Response>
+  void BindReactor(ServerUnaryReactor<Request, Response>* reactor) {
+    reactor->BindCall(this);
+  }
 };
 
-// NOTE: The actual streaming object classes are provided
-// as API only to support mocking. There are no implementations of
-// these class interfaces in the API.
 template <class Request>
 class ServerCallbackReader {
  public:
@@ -428,9 +395,77 @@ class ServerWriteReactor : public internal::ServerReactor {
   ServerCallbackWriter<Response>* writer_;
 };
 
+/// \a ServerUnaryReactor is a reactor-based interface for a unary RPC.
+template <class Request, class Response>
+class ServerUnaryReactor : public internal::ServerReactor {
+ public:
+  ~ServerUnaryReactor() = default;
+
+  /// The following operation initiations are exactly like ServerBidiReactor.
+  void StartSendInitialMetadata() { call_->SendInitialMetadata(); }
+  void Finish(Status s) { call_->Finish(std::move(s)); }
+
+  /// Similar to ServerBidiReactor::OnStarted, except that this also provides
+  /// the request object sent by the client and the response object that the
+  /// stream fills in before calling Finish. (It must be filled in if status
+  /// is OK, but it may be filled in otherwise.)
+  ///
+  /// \param[in] context The context object now associated with this RPC
+  /// \param[in] req The request object sent by the client
+  /// \param[in] resp The response object to be used by this RPC
+  virtual void OnStarted(ServerContext* context, const Request* req,
+                         Response* resp) {}
+
+  /// The following notifications are exactly like ServerBidiReactor.
+  virtual void OnSendInitialMetadataDone(bool ok) {}
+  void OnDone() override {}
+  void OnCancel() override {}
+
+  // NOTE: This is an API for advanced users who need custom allocators.
+  // Get and maybe mutate the allocator state associated with the current RPC.
+  virtual RpcAllocatorState* GetRpcAllocatorState() {
+    return call_->GetRpcAllocatorState();
+  }
+
+ private:
+  friend class ServerCallbackUnary;
+  void BindCall(ServerCallbackUnary* call) { call_ = call; }
+
+  ServerCallbackUnary* call_;
+};
+
+template <typename Request, typename Response, typename F>
+inline ServerUnaryReactor<Request, Response>* ServeRpc(F&& func) {
+  // TODO(vjpai): Specialize this to prevent counting OnCancel conditions
+  class SimpleUnaryReactor final
+      : public ServerUnaryReactor<Request, Response> {
+   public:
+    explicit SimpleUnaryReactor(F&& func) : on_started_func_(std::move(func)) {}
+
+   private:
+    void OnStarted(ServerContext* context, const Request* req,
+                   Response* resp) override {
+      on_started_func_(context, req, resp, this);
+    }
+
+    F on_started_func_;
+  };
+  return new SimpleUnaryReactor(std::move(func));
+}
+
 }  // namespace experimental
 
 namespace internal {
+
+template <class Request, class Response>
+class UnimplementedUnaryReactor
+    : public experimental::ServerUnaryReactor<Request, Response> {
+ public:
+  void OnDone() override { delete this; }
+  void OnStarted(ServerContext*, const Request*, Response*) override {
+    this->Finish(Status(StatusCode::UNIMPLEMENTED, ""));
+  }
+};
 
 template <class Request, class Response>
 class UnimplementedReadReactor
@@ -466,10 +501,10 @@ template <class RequestType, class ResponseType>
 class CallbackUnaryHandler : public MethodHandler {
  public:
   CallbackUnaryHandler(
-      std::function<void(ServerContext*, const RequestType*, ResponseType*,
-                         experimental::ServerCallbackRpcController*)>
+      std::function<
+          experimental::ServerUnaryReactor<RequestType, ResponseType>*()>
           func)
-      : func_(func) {}
+      : func_(std::move(func)) {}
 
   void SetMessageAllocator(
       experimental::MessageAllocator<RequestType, ResponseType>* allocator) {
@@ -482,20 +517,29 @@ class CallbackUnaryHandler : public MethodHandler {
     auto* allocator_state =
         static_cast<experimental::MessageHolder<RequestType, ResponseType>*>(
             param.internal_data);
-    auto* controller = new (g_core_codegen_interface->grpc_call_arena_alloc(
-        param.call->call(), sizeof(ServerCallbackRpcControllerImpl)))
-        ServerCallbackRpcControllerImpl(param.server_context, param.call,
-                                        allocator_state,
-                                        std::move(param.call_requester));
-    Status status = param.status;
-    if (status.ok()) {
-      // Call the actual function handler and expect the user to call finish
-      CatchingCallback(func_, param.server_context, controller->request(),
-                       controller->response(), controller);
-    } else {
-      // if deserialization failed, we need to fail the call
-      controller->Finish(status);
+    experimental::ServerUnaryReactor<RequestType, ResponseType>* reactor =
+        param.status.ok()
+            ? CatchingReactorCreator<
+                  experimental::ServerUnaryReactor<RequestType, ResponseType>>(
+                  func_)
+            : nullptr;
+
+    if (reactor == nullptr) {
+      // if deserialization or reactor creator failed, we need to fail the call
+      reactor = new UnimplementedUnaryReactor<RequestType, ResponseType>;
     }
+
+    auto* call = new (g_core_codegen_interface->grpc_call_arena_alloc(
+        param.call->call(), sizeof(ServerCallbackUnaryImpl)))
+        ServerCallbackUnaryImpl(param.server_context, param.call,
+                                allocator_state,
+                                std::move(param.call_requester), reactor);
+
+    call->BindReactor(reactor);
+    reactor->OnStarted(param.server_context, call->request(), call->response());
+    // The earliest that OnCancel can be called is after OnStarted is done.
+    reactor->MaybeCallOnCancel();
+    call->MaybeDone();
   }
 
   void* Deserialize(grpc_call* call, grpc_byte_buffer* req, Status* status,
@@ -525,21 +569,18 @@ class CallbackUnaryHandler : public MethodHandler {
   }
 
  private:
-  std::function<void(ServerContext*, const RequestType*, ResponseType*,
-                     experimental::ServerCallbackRpcController*)>
+  std::function<experimental::ServerUnaryReactor<RequestType, ResponseType>*()>
       func_;
   experimental::MessageAllocator<RequestType, ResponseType>* allocator_ =
       nullptr;
 
-  // The implementation class of ServerCallbackRpcController is a private member
-  // of CallbackUnaryHandler since it is never exposed anywhere, and this allows
-  // it to take advantage of CallbackUnaryHandler's friendships.
-  class ServerCallbackRpcControllerImpl
-      : public experimental::ServerCallbackRpcController {
+  class ServerCallbackUnaryImpl : public experimental::ServerCallbackUnary {
    public:
     void Finish(Status s) override {
       finish_tag_.Set(call_.call(), [this](bool) { MaybeDone(); },
                       &finish_ops_);
+      finish_ops_.set_core_cq_tag(&finish_tag_);
+
       if (!ctx_->sent_initial_metadata_) {
         finish_ops_.SendInitialMetadata(&ctx_->initial_metadata_,
                                         ctx_->initial_metadata_flags());
@@ -559,14 +600,12 @@ class CallbackUnaryHandler : public MethodHandler {
       call_.PerformOps(&finish_ops_);
     }
 
-    void SendInitialMetadata(std::function<void(bool)> f) override {
+    void SendInitialMetadata() override {
       GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
       callbacks_outstanding_++;
-      // TODO(vjpai): Consider taking f as a move-capture if we adopt C++14
-      //              and if performance of this operation matters
       meta_tag_.Set(call_.call(),
-                    [this, f](bool ok) {
-                      f(ok);
+                    [this](bool ok) {
+                      reactor_->OnSendInitialMetadataDone(ok);
                       MaybeDone();
                     },
                     &meta_ops_);
@@ -580,15 +619,6 @@ class CallbackUnaryHandler : public MethodHandler {
       call_.PerformOps(&meta_ops_);
     }
 
-    // Neither SetCancelCallback nor ClearCancelCallback should affect the
-    // callbacks_outstanding_ count since they are paired and both must precede
-    // the invocation of Finish (if they are used at all)
-    void SetCancelCallback(std::function<void()> callback) override {
-      ctx_->SetCancelCallback(std::move(callback));
-    }
-
-    void ClearCancelCallback() override { ctx_->ClearCancelCallback(); }
-
     experimental::RpcAllocatorState* GetRpcAllocatorState() override {
       return allocator_state_;
     }
@@ -596,15 +626,17 @@ class CallbackUnaryHandler : public MethodHandler {
    private:
     friend class CallbackUnaryHandler<RequestType, ResponseType>;
 
-    ServerCallbackRpcControllerImpl(
+    ServerCallbackUnaryImpl(
         ServerContext* ctx, Call* call,
         experimental::MessageHolder<RequestType, ResponseType>* allocator_state,
-        std::function<void()> call_requester)
+        std::function<void()> call_requester,
+        experimental::ServerUnaryReactor<RequestType, ResponseType>* reactor)
         : ctx_(ctx),
           call_(*call),
           allocator_state_(allocator_state),
-          call_requester_(std::move(call_requester)) {
-      ctx_->BeginCompletionOp(call, [this](bool) { MaybeDone(); }, nullptr);
+          call_requester_(std::move(call_requester)),
+          reactor_(reactor) {
+      ctx_->BeginCompletionOp(call, [this](bool) { MaybeDone(); }, reactor);
     }
 
     const RequestType* request() { return allocator_state_->request(); }
@@ -612,10 +644,11 @@ class CallbackUnaryHandler : public MethodHandler {
 
     void MaybeDone() {
       if (--callbacks_outstanding_ == 0) {
+        reactor_->OnDone();
         grpc_call* call = call_.call();
         auto call_requester = std::move(call_requester_);
         allocator_state_->Release();
-        this->~ServerCallbackRpcControllerImpl();  // explicitly call destructor
+        this->~ServerCallbackUnaryImpl();  // explicitly call destructor
         g_core_codegen_interface->grpc_call_unref(call);
         call_requester();
       }
@@ -633,8 +666,9 @@ class CallbackUnaryHandler : public MethodHandler {
     experimental::MessageHolder<RequestType, ResponseType>* const
         allocator_state_;
     std::function<void()> call_requester_;
+    experimental::ServerUnaryReactor<RequestType, ResponseType>* reactor_;
     std::atomic_int callbacks_outstanding_{
-        2};  // reserve for Finish and CompletionOp
+        3};  // reserve for OnStarted, Finish, and CompletionOp
   };
 };
 

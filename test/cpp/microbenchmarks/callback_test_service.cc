@@ -46,17 +46,21 @@ int GetIntValueFromMetadata(
 }
 }  // namespace
 
-void CallbackStreamingTestService::Echo(
-    ServerContext* context, const EchoRequest* request, EchoResponse* response,
-    experimental::ServerCallbackRpcController* controller) {
-  int response_msgs_size = GetIntValueFromMetadata(
-      kServerMessageSize, context->client_metadata(), 0);
-  if (response_msgs_size > 0) {
-    response->set_message(std::string(response_msgs_size, 'a'));
-  } else {
-    response->set_message("");
-  }
-  controller->Finish(Status::OK);
+experimental::ServerUnaryReactor<EchoRequest, EchoResponse>*
+CallbackStreamingTestService::Echo() {
+  return experimental::ServeRpc<EchoRequest, EchoResponse>(
+      [](ServerContext* context, const EchoRequest* request,
+         EchoResponse* response,
+         experimental::ServerUnaryReactor<EchoRequest, EchoResponse>* reactor) {
+        int response_msgs_size = GetIntValueFromMetadata(
+            kServerMessageSize, context->client_metadata(), 0);
+        if (response_msgs_size > 0) {
+          response->set_message(std::string(response_msgs_size, 'a'));
+        } else {
+          response->set_message("");
+        }
+        reactor->Finish(Status::OK);
+      });
 }
 
 experimental::ServerBidiReactor<EchoRequest, EchoResponse>*

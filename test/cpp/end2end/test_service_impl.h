@@ -47,13 +47,6 @@ typedef enum {
   CANCEL_AFTER_PROCESSING
 } ServerTryCancelRequestPhase;
 
-typedef enum {
-  DO_NOT_USE_CALLBACK = 0,
-  MAYBE_USE_CALLBACK_EARLY_CANCEL,
-  MAYBE_USE_CALLBACK_LATE_CANCEL,
-  MAYBE_USE_CALLBACK_NO_CANCEL,
-} ServerUseCancelCallback;
-
 class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   TestServiceImpl() : signal_client_(false), host_() {}
@@ -98,14 +91,10 @@ class CallbackTestServiceImpl
   explicit CallbackTestServiceImpl(const grpc::string& host)
       : signal_client_(false), host_(new grpc::string(host)) {}
 
-  void Echo(ServerContext* context, const EchoRequest* request,
-            EchoResponse* response,
-            experimental::ServerCallbackRpcController* controller) override;
+  experimental::ServerUnaryReactor<EchoRequest, EchoResponse>* Echo() override;
 
-  void CheckClientInitialMetadata(
-      ServerContext* context, const SimpleRequest* request,
-      SimpleResponse* response,
-      experimental::ServerCallbackRpcController* controller) override;
+  experimental::ServerUnaryReactor<SimpleRequest, SimpleResponse>*
+  CheckClientInitialMetadata() override;
 
   experimental::ServerReadReactor<EchoRequest, EchoResponse>* RequestStream()
       override;
@@ -123,15 +112,6 @@ class CallbackTestServiceImpl
   }
 
  private:
-  struct CancelState {
-    std::atomic_bool callback_invoked{false};
-  };
-  void EchoNonDelayed(ServerContext* context, const EchoRequest* request,
-                      EchoResponse* response,
-                      experimental::ServerCallbackRpcController* controller,
-                      CancelState* cancel_state);
-
-  Alarm alarm_;
   bool signal_client_;
   std::mutex mu_;
   std::unique_ptr<grpc::string> host_;
