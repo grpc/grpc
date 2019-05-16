@@ -45,7 +45,7 @@ class ClientChannelGlobalParsedConfig : public ServiceConfig::ParsedConfig {
   };
 
   ClientChannelGlobalParsedConfig(
-      RefCountedPtr<ParsedLoadBalancingConfig> parsed_lb_config,
+      RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config,
       UniquePtr<char> parsed_deprecated_lb_policy,
       const Optional<RetryThrottling>& retry_throttling,
       const char* health_check_service_name)
@@ -58,7 +58,7 @@ class ClientChannelGlobalParsedConfig : public ServiceConfig::ParsedConfig {
     return retry_throttling_;
   }
 
-  RefCountedPtr<ParsedLoadBalancingConfig> parsed_lb_config() const {
+  RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config() const {
     return parsed_lb_config_;
   }
 
@@ -71,7 +71,7 @@ class ClientChannelGlobalParsedConfig : public ServiceConfig::ParsedConfig {
   }
 
  private:
-  RefCountedPtr<ParsedLoadBalancingConfig> parsed_lb_config_;
+  RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config_;
   UniquePtr<char> parsed_deprecated_lb_policy_;
   Optional<RetryThrottling> retry_throttling_;
   const char* health_check_service_name_;
