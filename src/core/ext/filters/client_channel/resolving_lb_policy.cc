@@ -106,7 +106,8 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
       RefCountedPtr<ResolvingLoadBalancingPolicy> parent)
       : parent_(std::move(parent)) {}
 
-  Subchannel* CreateSubchannel(const grpc_channel_args& args) override {
+  RefCountedPtr<SubchannelInterface> CreateSubchannel(
+      const grpc_channel_args& args) override {
     if (parent_->resolver_ == nullptr) return nullptr;  // Shutting down.
     if (!CalledByCurrentChild() && !CalledByPendingChild()) return nullptr;
     return parent_->channel_control_helper()->CreateSubchannel(args);
@@ -536,7 +537,7 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   if (process_resolver_result_ != nullptr) {
     grpc_error* service_config_error = GRPC_ERROR_NONE;
     service_config_changed = process_resolver_result_(
-        process_resolver_result_user_data_, &result, &lb_policy_name,
+        process_resolver_result_user_data_, result, &lb_policy_name,
         &lb_policy_config, &service_config_error);
     if (service_config_error != GRPC_ERROR_NONE) {
       service_config_error_string =
