@@ -21,7 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
@@ -205,6 +204,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Requests that the resolver re-resolve.
     virtual void RequestReresolution() GRPC_ABSTRACT;
 
+// FIXME: add method to log channel trace event
+
     GRPC_ABSTRACT_BASE_CLASS
   };
 
@@ -265,20 +266,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Resets connection backoff.
   virtual void ResetBackoffLocked() GRPC_ABSTRACT;
 
-  /// Populates child_subchannels and child_channels with the uuids of this
-  /// LB policy's referenced children.
-  ///
-  /// This is not invoked from the client_channel's combiner. The
-  /// implementation is responsible for providing its own synchronization.
-  virtual void FillChildRefsForChannelz(
-      channelz::ChildRefsList* child_subchannels,
-      channelz::ChildRefsList* child_channels) GRPC_ABSTRACT;
-
-  void set_channelz_node(
-      RefCountedPtr<channelz::ClientChannelNode> channelz_node) {
-    channelz_node_ = std::move(channelz_node);
-  }
-
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
   void Orphan() override;
@@ -327,10 +314,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     return channel_control_helper_.get();
   }
 
-  channelz::ClientChannelNode* channelz_node() const {
-    return channelz_node_.get();
-  }
-
   /// Shuts down the policy.
   virtual void ShutdownLocked() GRPC_ABSTRACT;
 
@@ -343,8 +326,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   grpc_pollset_set* interested_parties_;
   /// Channel control helper.
   UniquePtr<ChannelControlHelper> channel_control_helper_;
-  /// Channelz node.
-  RefCountedPtr<channelz::ClientChannelNode> channelz_node_;
 };
 
 }  // namespace grpc_core

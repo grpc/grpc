@@ -122,13 +122,6 @@ class ChannelData {
     channelz_node_ = node;
     resolving_lb_policy_->set_channelz_node(node->Ref());
   }
-  void FillChildRefsForChannelz(channelz::ChildRefsList* child_subchannels,
-                                channelz::ChildRefsList* child_channels) {
-    if (resolving_lb_policy_ != nullptr) {
-      resolving_lb_policy_->FillChildRefsForChannelz(child_subchannels,
-                                                     child_channels);
-    }
-  }
 
   bool deadline_checking_enabled() const { return deadline_checking_enabled_; }
   bool enable_retries() const { return enable_retries_; }
@@ -949,6 +942,9 @@ class ChannelData::ClientChannelControlHelper
                              "ClientChannelControlHelper");
   }
 
+// FIXME: when creating a subchannel, need to call AddChildSubchannel()
+// on parent channelz node, and then need to call
+// RemoveChildSubchannel() when unreffing the last ref from this channel
   Subchannel* CreateSubchannel(const grpc_channel_args& args) override {
     grpc_arg arg = SubchannelPoolInterface::CreateChannelArg(
         chand_->subchannel_pool_.get());
@@ -960,6 +956,7 @@ class ChannelData::ClientChannelControlHelper
     return subchannel;
   }
 
+// FIXME: need a way to set GRPC_ARG_CHANNELZ_PARENT_UUID for child channels
   grpc_channel* CreateChannel(const char* target,
                               const grpc_channel_args& args) override {
     return chand_->client_channel_factory_->CreateChannel(target, &args);
@@ -3429,14 +3426,6 @@ void grpc_client_channel_set_channelz_node(
     grpc_channel_element* elem, grpc_core::channelz::ClientChannelNode* node) {
   auto* chand = static_cast<ChannelData*>(elem->channel_data);
   chand->set_channelz_node(node);
-}
-
-void grpc_client_channel_populate_child_refs(
-    grpc_channel_element* elem,
-    grpc_core::channelz::ChildRefsList* child_subchannels,
-    grpc_core::channelz::ChildRefsList* child_channels) {
-  auto* chand = static_cast<ChannelData*>(elem->channel_data);
-  chand->FillChildRefsForChannelz(child_subchannels, child_channels);
 }
 
 grpc_connectivity_state grpc_client_channel_check_connectivity_state(

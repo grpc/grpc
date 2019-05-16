@@ -110,7 +110,7 @@ grpc_channel* grpc_channel_create_with_builder(
   bool channelz_enabled = GRPC_ENABLE_CHANNELZ_DEFAULT;
   size_t channel_tracer_max_memory =
       GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT;
-  bool internal_channel = false;
+  intptr_t channelz_parent_uuid = 0;
   // this creates the default ChannelNode. Different types of channels may
   // override this to ensure a correct ChannelNode is created.
   grpc_core::channelz::ChannelNodeCreationFunc channel_node_create_func =
@@ -164,9 +164,9 @@ grpc_channel* grpc_channel_create_with_builder(
       channel_node_create_func =
           reinterpret_cast<grpc_core::channelz::ChannelNodeCreationFunc>(
               args->args[i].value.pointer.p);
-    } else if (0 == strcmp(args->args[i].key,
-                           GRPC_ARG_CHANNELZ_CHANNEL_IS_INTERNAL_CHANNEL)) {
-      internal_channel = grpc_channel_arg_get_bool(&args->args[i], false);
+    } else if (0 == strcmp(args->args[i].key, GRPC_ARG_CHANNELZ_PARENT_UUID)) {
+      channelz_parent_uuid = static_cast<intptr_t>(
+          grpc_channel_arg_get_integer(&args->args[i], {0, 1, INT_MAX}));
     }
   }
 
@@ -175,7 +175,7 @@ grpc_channel* grpc_channel_create_with_builder(
   // bookkeeping for server channels occurs in src/core/lib/surface/server.cc
   if (channelz_enabled && channel->is_client) {
     channel->channelz_channel = channel_node_create_func(
-        channel, channel_tracer_max_memory, !internal_channel);
+        channel, channel_tracer_max_memory, channelz_parent_uuid);
     channel->channelz_channel->AddTraceEvent(
         grpc_core::channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Channel created"));

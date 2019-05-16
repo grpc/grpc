@@ -141,9 +141,6 @@ class GrpcLb : public LoadBalancingPolicy {
 
   void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
-  void FillChildRefsForChannelz(
-      channelz::ChildRefsList* child_subchannels,
-      channelz::ChildRefsList* child_channels) override;
 
  private:
   /// Contains a call to the LB server and all the data related to the call.
@@ -348,8 +345,6 @@ class GrpcLb : public LoadBalancingPolicy {
 
   // The channel for communicating with the LB server.
   grpc_channel* lb_channel_ = nullptr;
-  // Uuid of the lb channel. Used for channelz.
-  gpr_atm lb_channel_uuid_ = 0;
   // Response generator to inject address updates into lb_channel_.
   RefCountedPtr<FakeResolverResponseGenerator> response_generator_;
 
@@ -385,9 +380,6 @@ class GrpcLb : public LoadBalancingPolicy {
   grpc_connectivity_state lb_channel_connectivity_ = GRPC_CHANNEL_IDLE;
   grpc_closure lb_channel_on_connectivity_changed_;
 
-  // Lock held when modifying the value of child_policy_ or
-  // pending_child_policy_.
-  gpr_mu child_policy_mu_;
   // The child policy to use for the backends.
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
   // When switching child policies, the new policy will be stored here
@@ -650,7 +642,6 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
     grpc_pollset_set_del_pollset_set(
         parent_->child_policy_->interested_parties(),
         parent_->interested_parties());
-    MutexLock lock(&parent_->child_policy_mu_);
     parent_->child_policy_ = std::move(parent_->pending_child_policy_);
   } else if (!CalledByCurrentChild()) {
     // This request is from an outdated child, so ignore it.
@@ -1283,7 +1274,6 @@ GrpcLb::GrpcLb(Args args)
   GRPC_CLOSURE_INIT(&lb_channel_on_connectivity_changed_,
                     &GrpcLb::OnBalancerChannelConnectivityChangedLocked, this,
                     grpc_combiner_scheduler(args.combiner));
-  gpr_mu_init(&child_policy_mu_);
   // Record server name.
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
   const char* server_uri = grpc_channel_arg_get_string(arg);
@@ -1309,7 +1299,6 @@ GrpcLb::GrpcLb(Args args)
 GrpcLb::~GrpcLb() {
   gpr_free((void*)server_name_);
   grpc_channel_args_destroy(args_);
-  gpr_mu_destroy(&child_policy_mu_);
 }
 
 void GrpcLb::ShutdownLocked() {
@@ -1330,11 +1319,8 @@ void GrpcLb::ShutdownLocked() {
     grpc_pollset_set_del_pollset_set(
         pending_child_policy_->interested_parties(), interested_parties());
   }
-  {
-    MutexLock lock(&child_policy_mu_);
-    child_policy_.reset();
-    pending_child_policy_.reset();
-  }
+  child_policy_.reset();
+  pending_child_policy_.reset();
   // We destroy the LB channel here instead of in our destructor because
   // destroying the channel triggers a last callback to
   // OnBalancerChannelConnectivityChangedLocked(), and we need to be
@@ -1359,29 +1345,6 @@ void GrpcLb::ResetBackoffLocked() {
   }
   if (pending_child_policy_ != nullptr) {
     pending_child_policy_->ResetBackoffLocked();
-  }
-}
-
-void GrpcLb::FillChildRefsForChannelz(
-    channelz::ChildRefsList* child_subchannels,
-    channelz::ChildRefsList* child_channels) {
-  {
-    // Delegate to the child policy to fill the children subchannels.
-    // This must be done holding child_policy_mu_, since this method
-    // does not run in the combiner.
-    MutexLock lock(&child_policy_mu_);
-    if (child_policy_ != nullptr) {
-      child_policy_->FillChildRefsForChannelz(child_subchannels,
-                                              child_channels);
-    }
-    if (pending_child_policy_ != nullptr) {
-      pending_child_policy_->FillChildRefsForChannelz(child_subchannels,
-                                                      child_channels);
-    }
-  }
-  gpr_atm uuid = gpr_atm_no_barrier_load(&lb_channel_uuid_);
-  if (uuid != 0) {
-    child_channels->push_back(uuid);
   }
 }
 
@@ -1759,15 +1722,10 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
       gpr_log(GPR_INFO, "[grpclb %p] Creating new %schild policy %s", this,
               child_policy_ == nullptr ? "" : "pending ", child_policy_name);
     }
-    auto new_policy =
-        CreateChildPolicyLocked(child_policy_name, update_args.args);
     // Swap the policy into place.
     auto& lb_policy =
         child_policy_ == nullptr ? child_policy_ : pending_child_policy_;
-    {
-      MutexLock lock(&child_policy_mu_);
-      lb_policy = std::move(new_policy);
-    }
+    lb_policy = CreateChildPolicyLocked(child_policy_name, update_args.args);
     policy_to_update = lb_policy.get();
   } else {
     // Cases 2a and 3a: update an existing policy.

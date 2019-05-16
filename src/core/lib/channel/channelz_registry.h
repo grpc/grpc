@@ -104,6 +104,7 @@ class ChannelzRegistry {
 
   // protects members
   gpr_mu mu_;
+  // TODO(roth): Change this to use a map instead, so compaction is a non-issue.
   InlinedVector<BaseNode*, 20> entities_;
   intptr_t uuid_generator_ = 0;
   int num_empty_slots_ = 0;

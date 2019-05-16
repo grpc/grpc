@@ -29,24 +29,22 @@
 
 namespace grpc_core {
 namespace channelz {
-namespace {
 
-void* client_channel_channelz_copy(void* p) { return p; }
+//
+// ClientChannelNode
+//
 
-void client_channel_channelz_destroy(void* p) {}
-
-int client_channel_channelz_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
-
-}  // namespace
-
-static const grpc_arg_pointer_vtable client_channel_channelz_vtable = {
-    client_channel_channelz_copy, client_channel_channelz_destroy,
-    client_channel_channelz_cmp};
+RefCountedPtr<ChannelNode> ClientChannelNode::MakeClientChannelNode(
+    grpc_channel* channel, size_t channel_tracer_max_nodes,
+    bool is_top_level_channel) {
+  return MakeRefCounted<ClientChannelNode>(channel, channel_tracer_max_nodes,
+                                           is_top_level_channel);
+}
 
 ClientChannelNode::ClientChannelNode(grpc_channel* channel,
                                      size_t channel_tracer_max_nodes,
-                                     bool is_top_level_channel)
-    : ChannelNode(channel, channel_tracer_max_nodes, is_top_level_channel) {
+                                     intptr_t parent_uuid)
+    : ChannelNode(channel, channel_tracer_max_nodes, parent_uuid) {
   client_channel_ =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
   GPR_ASSERT(client_channel_->filter == &grpc_client_channel_filter);
@@ -68,36 +66,16 @@ void ClientChannelNode::PopulateConnectivityState(grpc_json* json) {
                          false);
 }
 
-void ClientChannelNode::PopulateChildRefs(grpc_json* json) {
-  ChildRefsList child_subchannels;
-  ChildRefsList child_channels;
-  grpc_json* json_iterator = nullptr;
-  grpc_client_channel_populate_child_refs(client_channel_, &child_subchannels,
-                                          &child_channels);
-  if (!child_subchannels.empty()) {
-    grpc_json* array_parent = grpc_json_create_child(
-        nullptr, json, "subchannelRef", nullptr, GRPC_JSON_ARRAY, false);
-    for (size_t i = 0; i < child_subchannels.size(); ++i) {
-      json_iterator =
-          grpc_json_create_child(json_iterator, array_parent, nullptr, nullptr,
-                                 GRPC_JSON_OBJECT, false);
-      grpc_json_add_number_string_child(json_iterator, nullptr, "subchannelId",
-                                        child_subchannels[i]);
-    }
-  }
-  if (!child_channels.empty()) {
-    grpc_json* array_parent = grpc_json_create_child(
-        nullptr, json, "channelRef", nullptr, GRPC_JSON_ARRAY, false);
-    json_iterator = nullptr;
-    for (size_t i = 0; i < child_channels.size(); ++i) {
-      json_iterator =
-          grpc_json_create_child(json_iterator, array_parent, nullptr, nullptr,
-                                 GRPC_JSON_OBJECT, false);
-      grpc_json_add_number_string_child(json_iterator, nullptr, "channelId",
-                                        child_channels[i]);
-    }
-  }
-}
+namespace {
+
+void* client_channel_channelz_copy(void* p) { return p; }
+void client_channel_channelz_destroy(void* p) {}
+int client_channel_channelz_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
+const grpc_arg_pointer_vtable client_channel_channelz_vtable = {
+    client_channel_channelz_copy, client_channel_channelz_destroy,
+    client_channel_channelz_cmp};
+
+}  // namespace
 
 grpc_arg ClientChannelNode::CreateChannelArg() {
   return grpc_channel_arg_pointer_create(
@@ -106,12 +84,9 @@ grpc_arg ClientChannelNode::CreateChannelArg() {
       &client_channel_channelz_vtable);
 }
 
-RefCountedPtr<ChannelNode> ClientChannelNode::MakeClientChannelNode(
-    grpc_channel* channel, size_t channel_tracer_max_nodes,
-    bool is_top_level_channel) {
-  return MakeRefCounted<ClientChannelNode>(channel, channel_tracer_max_nodes,
-                                           is_top_level_channel);
-}
+//
+// SubchannelNode
+//
 
 SubchannelNode::SubchannelNode(Subchannel* subchannel,
                                size_t channel_tracer_max_nodes)

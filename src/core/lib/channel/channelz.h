@@ -26,8 +26,10 @@
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
@@ -36,9 +38,8 @@
 #define GRPC_ARG_CHANNELZ_CHANNEL_NODE_CREATION_FUNC \
   "grpc.channelz_channel_node_creation_func"
 
-// Channel arg key to signal that the channel is an internal channel.
-#define GRPC_ARG_CHANNELZ_CHANNEL_IS_INTERNAL_CHANNEL \
-  "grpc.channelz_channel_is_internal_channel"
+// Channel arg key to encode the channelz uuid of the channel's parent.
+#define GRPC_ARG_CHANNELZ_PARENT_UUID "grpc.channelz_parent_uuid"
 
 /** This is the default value for whether or not to enable channelz. If
  * GRPC_ARG_ENABLE_CHANNELZ is set, it will override this default value. */
@@ -149,28 +150,25 @@ class ChannelNode : public BaseNode {
  public:
   static RefCountedPtr<ChannelNode> MakeChannelNode(
       grpc_channel* channel, size_t channel_tracer_max_nodes,
-      bool is_top_level_channel);
+      intptr_t parent_uuid);
 
   ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
-              bool is_top_level_channel);
+              intptr_t parent_uuid);
   ~ChannelNode() override;
 
   grpc_json* RenderJson() override;
 
-  // template methods. RenderJSON uses these methods to render its JSON
-  // representation. These are virtual so that children classes may provide
-  // their specific mechanism for populating these parts of the channelz
-  // object.
+  // Template method used by RenderJSON().  Subclasses can override this
+  // for populating the connectivity state info in the JSON output.
   //
-  // ChannelNode does not have a notion of connectivity state or child refs,
-  // so it leaves these implementations blank.
+  // ChannelNode does not have a notion of connectivity state, so the
+  // default implementation does nothing.
   //
   // This is utilizing the template method design pattern.
   //
-  // TODO(ncteisen): remove these template methods in favor of manual traversal
+  // TODO(ncteisen): Remove this template method in favor of manual traversal
   // and mutation of the grpc_json object.
   virtual void PopulateConnectivityState(grpc_json* json) {}
-  virtual void PopulateChildRefs(grpc_json* json) {}
 
   void MarkChannelDestroyed() {
     GPR_ASSERT(channel_ != nullptr);
@@ -193,13 +191,28 @@ class ChannelNode : public BaseNode {
   void RecordCallFailed() { call_counter_.RecordCallFailed(); }
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
 
+  void AddChildChannel(intptr_t child_uuid);
+  void RemoveChildChannel(intptr_t child_uuid);
+
+  void AddChildSubchannel(intptr_t child_uuid);
+  void RemoveChildSubchannel(intptr_t child_uuid);
+
  private:
+  void PopulateChildRefs(grpc_json* json);
+
   // to allow the channel trace test to access trace_.
   friend class testing::ChannelNodePeer;
   grpc_channel* channel_ = nullptr;
   UniquePtr<char> target_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
+  const intptr_t parent_uuid_;
+  Mutex child_mu_;  // Guards child maps below.
+  // TODO(roth): We don't actually use the values here, only the keys, so
+  // these should be sets instead of maps, but we don't currently have a set
+  // implementation.  Change this if/when we have one.
+  Map<intptr_t, bool> child_channels_;
+  Map<intptr_t, bool> child_subchannels_;
 };
 
 // Handles channelz bookkeeping for servers
@@ -287,8 +300,9 @@ class ListenSocketNode : public BaseNode {
 
 // Creation functions
 
-typedef RefCountedPtr<ChannelNode> (*ChannelNodeCreationFunc)(grpc_channel*,
-                                                              size_t, bool);
+typedef RefCountedPtr<ChannelNode> (*ChannelNodeCreationFunc)(
+    grpc_channel* channel, size_t channel_tracer_max_nodes,
+    intptr_t parent_uuid);
 
 }  // namespace channelz
 }  // namespace grpc_core

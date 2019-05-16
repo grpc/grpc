@@ -38,16 +38,15 @@ class ClientChannelNode : public ChannelNode {
  public:
   static RefCountedPtr<ChannelNode> MakeClientChannelNode(
       grpc_channel* channel, size_t channel_tracer_max_nodes,
-      bool is_top_level_channel);
+      intptr_t parent_uuid);
 
   ClientChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
-                    bool is_top_level_channel);
+                    intptr_t parent_uuid);
   virtual ~ClientChannelNode() {}
 
-  // Overriding template methods from ChannelNode to render information that
+  // Overriding template method from ChannelNode to render information that
   // only ClientChannelNode knows about.
   void PopulateConnectivityState(grpc_json* json) override;
-  void PopulateChildRefs(grpc_json* json) override;
 
   // Helper to create a channel arg to ensure this type of ChannelNode is
   // created.
@@ -85,12 +84,12 @@ class SubchannelNode : public BaseNode {
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
 
  private:
+  void PopulateConnectivityState(grpc_json* json);
+
   Subchannel* subchannel_;
   UniquePtr<char> target_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
-
-  void PopulateConnectivityState(grpc_json* json);
 };
 
 }  // namespace channelz
