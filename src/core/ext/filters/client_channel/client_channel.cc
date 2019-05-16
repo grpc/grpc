@@ -121,7 +121,9 @@ class ChannelData {
 
   void set_channelz_node(channelz::ClientChannelNode* node) {
     channelz_node_ = node;
-    resolving_lb_policy_->set_channelz_node(node->Ref());
+// FIXME: remove this once we have a method to log a channel trace event
+// from the helper
+    resolving_lb_policy_->set_channelz_node(node);
   }
 
   bool deadline_checking_enabled() const { return deadline_checking_enabled_; }
@@ -269,6 +271,7 @@ class ChannelData {
   UniquePtr<char> health_check_service_name_;
   RefCountedPtr<ServiceConfig> saved_service_config_;
   bool received_first_resolver_result_ = false;
+  Map<Subchannel*, int> subchannel_refcount_map_;
 
   //
   // Fields accessed from both data plane and control plane combiners.
@@ -943,12 +946,36 @@ void ChannelData::ExternalConnectivityWatcher::WatchConnectivityStateLocked(
 // control plane combiner.
 class ChannelData::GrpcSubchannel : public SubchannelInterface {
  public:
-  GrpcSubchannel(Subchannel* subchannel,
-                 UniquePtr<char> health_check_service_name)
-      : subchannel_(subchannel),
-        health_check_service_name_(std::move(health_check_service_name)) {}
+  GrpcSubchannel(ChannelData* chand, Subchannel* subchannel,
+                 UniquePtr<char> health_check_service_name) {
+      : chand_(chand), subchannel_(subchannel),
+        health_check_service_name_(std::move(health_check_service_name)) {
+    auto* subchannel_node = subchannel_->channelz_node();
+    if (subchannel_node != nullptr) {
+      intptr_t subchannel_uuid = subchannel_node->uuid();
+      auto it = chand_->subchannel_refcount_map_.find(subchannel_);
+      if (it == chand_->subchannel_refcount_map_.end()) {
+        chand_->channelz_node_->AddChildSubchannel(subchannel_uuid);
+        it = chand_->subchannel_refcount_map_.emplace(subchannel_, 0).first;
+      }
+      ++it->second;
+    }
+  }
 
-  ~GrpcSubchannel() { GRPC_SUBCHANNEL_UNREF(subchannel_, "unref from LB"); }
+  ~GrpcSubchannel() {
+    auto* subchannel_node = subchannel_->channelz_node();
+    if (subchannel_node != nullptr) {
+      intptr_t subchannel_uuid = subchannel_node->uuid();
+      auto it = chand_->subchannel_refcount_map_.find(subchannel_);
+      GPR_ASSERT(it != chand_->subchannel_refcount_map_.end());
+      --it->second;
+      if (it->second == 0) {
+        chand_->channelz_node_->RemoveChildSubchannel(subchannel_uuid);
+        chand_->subchannel_refcount_map_.erase(it);
+      }
+    }
+    GRPC_SUBCHANNEL_UNREF(subchannel_, "unref from LB");
+  }
 
   grpc_connectivity_state CheckConnectivityState(
       RefCountedPtr<ConnectedSubchannel>* connected_subchannel) override {
@@ -1009,6 +1036,7 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
     RefCountedPtr<GrpcSubchannel> parent_;
   };
 
+  ChannelData* chand_;
   Subchannel* subchannel_;
   UniquePtr<char> health_check_service_name_;
   // Maps from the address of the wrapper watcher passed to us to the
@@ -1035,9 +1063,6 @@ class ChannelData::ClientChannelControlHelper
                              "ClientChannelControlHelper");
   }
 
-// FIXME: when creating a subchannel, need to call AddChildSubchannel()
-// on parent channelz node, and then need to call
-// RemoveChildSubchannel() when unreffing the last ref from this channel
   RefCountedPtr<SubchannelInterface> CreateSubchannel(
       const grpc_channel_args& args) override {
     bool inhibit_health_checking = grpc_channel_arg_get_bool(
@@ -1056,7 +1081,7 @@ class ChannelData::ClientChannelControlHelper
         chand_->client_channel_factory_->CreateSubchannel(new_args);
     grpc_channel_args_destroy(new_args);
     if (subchannel == nullptr) return nullptr;
-    return MakeRefCounted<GrpcSubchannel>(subchannel,
+    return MakeRefCounted<GrpcSubchannel>(chand_, subchannel,
                                           std::move(health_check_service_name));
   }
 

@@ -91,9 +91,9 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   void ResetBackoffLocked() override;
 
-  void FillChildRefsForChannelz(
-      channelz::ChildRefsList* child_subchannels,
-      channelz::ChildRefsList* child_channels) override;
+  void set_channelz_node(channelz::ClientChannelNode* channelz_node) {
+    channelz_node_ = channelz_node;
+  }
 
  private:
   using TraceStringVector = InlinedVector<char*, 3>;
@@ -128,6 +128,8 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   void* process_resolver_result_user_data_ = nullptr;
   UniquePtr<char> child_policy_name_;
   RefCountedPtr<ParsedLoadBalancingConfig> child_lb_config_;
+  // Set shortly after construction time.
+  channelz::ClientChannelNode* channelz_node_ = nullptr;
 
   // Resolver and associated state.
   OrphanablePtr<Resolver> resolver_;
@@ -137,9 +139,6 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   // Child LB policy.
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
   OrphanablePtr<LoadBalancingPolicy> pending_lb_policy_;
-  // Lock held when modifying the value of child_policy_ or
-  // pending_child_policy_.
-  gpr_mu lb_policy_mu_;
 };
 
 }  // namespace grpc_core
