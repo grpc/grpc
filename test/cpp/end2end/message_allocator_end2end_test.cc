@@ -346,6 +346,7 @@ class ArenaAllocatorTest : public MessageAllocatorEnd2endTestBase {
         set_response(
             google::protobuf::Arena::CreateMessage<EchoResponse>(&arena_));
       }
+      void Release() override { delete this; }
       void FreeRequest() override { GPR_ASSERT(0); }
 
      private:
