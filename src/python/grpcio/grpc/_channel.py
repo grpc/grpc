@@ -1000,6 +1000,11 @@ def _unsubscribe(state, callback):
                 break
 
 
+def _unsubscribe_all(state):
+    with state.lock:
+        del state.callbacks_and_connectivities[:]
+
+
 def _augment_options(base_options, compression):
     compression_option = _compression.create_channel_option(compression)
     return tuple(base_options) + compression_option + ((
@@ -1067,6 +1072,7 @@ class Channel(grpc.Channel):
             _common.encode(method), request_serializer, response_deserializer)
 
     def _close(self):
+        _unsubscribe_all(self._connectivity_state)
         self._channel.close(cygrpc.StatusCode.cancelled, 'Channel closed!')
         cygrpc.fork_unregister_channel(self)
         _moot(self._connectivity_state)
