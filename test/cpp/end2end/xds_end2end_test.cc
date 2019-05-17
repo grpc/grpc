@@ -1387,7 +1387,7 @@ class SingleBalancerWithClientLoadReportingTest : public XdsEnd2endTest {
 int main(int argc, char** argv) {
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
-  gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "1");
+  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
   grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
