@@ -28,7 +28,6 @@
 #include <grpcpp/support/config.h>
 
 namespace grpc_impl {
-
 /// Create a new \a Channel pointing to \a target.
 ///
 /// \param target The URI of the endpoint to connect to.

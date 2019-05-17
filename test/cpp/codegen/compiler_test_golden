@@ -42,6 +42,8 @@
 
 namespace grpc_impl {
 class Channel;
+class CompletionQueue;
+class ServerCompletionQueue;
 }  // namespace grpc_impl
 
 namespace grpc {
@@ -49,8 +51,9 @@ namespace experimental {
 template <typename RequestT, typename ResponseT>
 class MessageAllocator;
 }  // namespace experimental
-class CompletionQueue;
-class ServerCompletionQueue;
+}  // namespace grpc_impl
+
+namespace grpc {
 class ServerContext;
 }  // namespace grpc
 
