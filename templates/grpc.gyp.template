@@ -64,7 +64,7 @@
       ],
       'cflags_cc': [
         '-Werror',
-        '-std=c++11',
+        '-std=c++17',
       ],
       'include_dirs': [
         '.',
@@ -127,7 +127,7 @@
               '${item}',
               % endfor
               '-stdlib=libc++',
-              '-std=c++11',
+              '-std=c++17',
               '-Wno-error=deprecated-declarations',
             ],
             % endif

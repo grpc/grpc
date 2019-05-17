@@ -191,12 +191,6 @@
   TMPOUT = `mktemp /tmp/test-out-XXXXXX`
   endif
 
-  CHECK_NO_CXX14_COMPAT_WORKS_CMD = $(CC) -std=c++11 -Werror -Wno-c++14-compat -o $(TMPOUT) -c test/build/no-c++14-compat.cc
-  HAS_WORKING_NO_CXX14_COMPAT = $(shell $(CHECK_NO_CXX14_COMPAT_WORKS_CMD) 2> /dev/null && echo true || echo false)
-  ifeq ($(HAS_WORKING_NO_CXX14_COMPAT),true)
-  W_NO_CXX14_COMPAT=-Wno-c++14-compat
-  endif
-
   %for warning in CHECK_WARNINGS:
   ${warning_var('CHECK_%s_WORKS_CMD', warning)} = $(CC) -std=c99 -Werror -W${warning} -o $(TMPOUT) -c test/build/${warning}.c
   ${warning_var('HAS_WORKING_%s', warning)} = $(shell $(${warning_var('CHECK_%s_WORKS_CMD', warning)}) 2> /dev/null && echo true || echo false)
@@ -217,7 +211,7 @@
   HOST_LDXX ?= $(LDXX)
 
   CFLAGS += -std=c99 -Wsign-conversion -Wconversion ${' '.join(warning_var('$(W_%s)', warning) for warning in PREFERRED_WARNINGS)}
-  CXXFLAGS += -std=c++11
+  CXXFLAGS += -std=c++17
   ifeq ($(SYSTEM),Darwin)
   CXXFLAGS += -stdlib=libc++
   endif

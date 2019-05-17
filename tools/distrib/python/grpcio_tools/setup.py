@@ -69,7 +69,7 @@ BUILD_WITH_CYTHON = os.environ.get('GRPC_PYTHON_BUILD_WITH_CYTHON', False)
 EXTRA_ENV_COMPILE_ARGS = os.environ.get('GRPC_PYTHON_CFLAGS', None)
 EXTRA_ENV_LINK_ARGS = os.environ.get('GRPC_PYTHON_LDFLAGS', None)
 if EXTRA_ENV_COMPILE_ARGS is None:
-    EXTRA_ENV_COMPILE_ARGS = '-std=c++11'
+    EXTRA_ENV_COMPILE_ARGS = '-std=c++17'
     if 'win32' in sys.platform:
         if sys.version_info < (3, 5):
             # We use define flags here and don't directly add to DEFINE_MACROS below to
