@@ -1,4 +1,4 @@
-﻿#region Copyright notice and license
+#region Copyright notice and license
 // Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +21,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Grpc.Core;
+using Grpc.Core.Utils;
 using Grpc.Reflection;
 using Grpc.Reflection.V1Alpha;
 using NUnit.Framework;
