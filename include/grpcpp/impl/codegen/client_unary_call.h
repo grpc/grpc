@@ -27,9 +27,7 @@
 
 namespace grpc {
 
-class Channel;
 class ClientContext;
-class CompletionQueue;
 
 namespace internal {
 class RpcMethod;

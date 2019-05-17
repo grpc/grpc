@@ -28,8 +28,6 @@
 
 namespace grpc {
 
-class CompletionQueue;
-
 namespace internal {
 /// Common interface for all client side asynchronous streaming.
 class ClientAsyncStreamingInterface {

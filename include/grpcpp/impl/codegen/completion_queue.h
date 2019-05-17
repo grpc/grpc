@@ -16,28 +16,10 @@
  *
  */
 
-/// A completion queue implements a concurrent producer-consumer queue, with
-/// two main API-exposed methods: \a Next and \a AsyncNext. These
-/// methods are the essential component of the gRPC C++ asynchronous API.
-/// There is also a \a Shutdown method to indicate that a given completion queue
-/// will no longer have regular events. This must be called before the
-/// completion queue is destroyed.
-/// All completion queue APIs are thread-safe and may be used concurrently with
-/// any other completion queue API invocation; it is acceptable to have
-/// multiple threads calling \a Next or \a AsyncNext on the same or different
-/// completion queues, or to call these methods concurrently with a \a Shutdown
-/// elsewhere.
-/// \remark{All other API calls on completion queue should be completed before
-/// a completion queue destructor is called.}
 #ifndef GRPCPP_IMPL_CODEGEN_COMPLETION_QUEUE_H
 #define GRPCPP_IMPL_CODEGEN_COMPLETION_QUEUE_H
 
-#include <grpc/impl/codegen/atm.h>
-#include <grpcpp/impl/codegen/completion_queue_tag.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
-#include <grpcpp/impl/codegen/grpc_library.h>
-#include <grpcpp/impl/codegen/status.h>
-#include <grpcpp/impl/codegen/time.h>
+#include <grpcpp/impl/codegen/completion_queue_impl.h>
 
 namespace grpc {
 
