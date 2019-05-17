@@ -175,11 +175,13 @@ void FakeResolverResponseGenerator::SetResponseLocked(void* arg,
   resolver->next_result_ = std::move(closure_arg->result);
   resolver->has_next_result_ = true;
   resolver->MaybeSendResultLocked();
+  closure_arg->generator->Unref();
   Delete(closure_arg);
 }
 
 void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
   if (resolver_ != nullptr) {
+    Ref().release();  // ref to be held by closure
     SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
     closure_arg->generator = this;
     closure_arg->result = std::move(result);
