@@ -52,6 +52,8 @@ template <typename RequestT, typename ResponseT>
 class MessageAllocator;
 }  // namespace experimental
 class Channel;
+class CompletionQueue;
+class ServerCompletionQueue;
 class ServerContext;
 }  // namespace grpc
 
