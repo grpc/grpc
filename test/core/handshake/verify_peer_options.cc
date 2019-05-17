@@ -16,6 +16,7 @@
  *
  */
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
