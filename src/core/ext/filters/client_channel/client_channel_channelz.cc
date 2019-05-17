@@ -30,54 +30,6 @@
 namespace grpc_core {
 namespace channelz {
 
-//
-// ClientChannelNode
-//
-
-RefCountedPtr<ChannelNode> ClientChannelNode::MakeClientChannelNode(
-    UniquePtr<char> target, size_t channel_tracer_max_nodes,
-    intptr_t parent_uuid) {
-  return MakeRefCounted<ClientChannelNode>(
-      std::move(target), channel_tracer_max_nodes, parent_uuid);
-}
-
-ClientChannelNode::ClientChannelNode(UniquePtr<char> target,
-                                     size_t channel_tracer_max_nodes,
-                                     intptr_t parent_uuid)
-    : ChannelNode(std::move(target), channel_tracer_max_nodes, parent_uuid) {}
-
-void ClientChannelNode::PopulateConnectivityState(grpc_json* json) {
-  grpc_connectivity_state state =
-      connectivity_state_.Load(MemoryOrder::RELAXED);
-  json = grpc_json_create_child(nullptr, json, "state", nullptr,
-                                GRPC_JSON_OBJECT, false);
-  grpc_json_create_child(nullptr, json, "state",
-                         grpc_connectivity_state_name(state), GRPC_JSON_STRING,
-                         false);
-}
-
-namespace {
-
-void* client_channel_channelz_copy(void* p) { return p; }
-void client_channel_channelz_destroy(void* p) {}
-int client_channel_channelz_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
-const grpc_arg_pointer_vtable client_channel_channelz_vtable = {
-    client_channel_channelz_copy, client_channel_channelz_destroy,
-    client_channel_channelz_cmp};
-
-}  // namespace
-
-grpc_arg ClientChannelNode::CreateChannelArg() {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_CHANNELZ_CHANNEL_NODE_CREATION_FUNC),
-      reinterpret_cast<void*>(MakeClientChannelNode),
-      &client_channel_channelz_vtable);
-}
-
-//
-// SubchannelNode
-//
-
 SubchannelNode::SubchannelNode(Subchannel* subchannel,
                                size_t channel_tracer_max_nodes)
     : BaseNode(EntityType::kSubchannel),

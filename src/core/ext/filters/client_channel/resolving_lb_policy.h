@@ -91,7 +91,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   void ResetBackoffLocked() override;
 
-  void set_channelz_node(channelz::ClientChannelNode* channelz_node) {
+  void set_channelz_node(channelz::ChannelNode* channelz_node) {
     channelz_node_ = channelz_node;
   }
 
@@ -129,7 +129,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   UniquePtr<char> child_policy_name_;
   RefCountedPtr<ParsedLoadBalancingConfig> child_lb_config_;
   // Set shortly after construction time.
-  channelz::ClientChannelNode* channelz_node_ = nullptr;
+  channelz::ChannelNode* channelz_node_ = nullptr;
 
   // Resolver and associated state.
   OrphanablePtr<Resolver> resolver_;

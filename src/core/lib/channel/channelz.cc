@@ -41,6 +41,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
@@ -149,13 +150,6 @@ void CallCountingHelper::PopulateCallCounts(grpc_json* json) {
 // ChannelNode
 //
 
-RefCountedPtr<ChannelNode> ChannelNode::MakeChannelNode(
-    UniquePtr<char> target, size_t channel_tracer_max_nodes,
-    intptr_t parent_uuid) {
-  return MakeRefCounted<grpc_core::channelz::ChannelNode>(
-      std::move(target), channel_tracer_max_nodes, parent_uuid);
-}
-
 ChannelNode::ChannelNode(UniquePtr<char> target,
                          size_t channel_tracer_max_nodes, intptr_t parent_uuid)
     : BaseNode(parent_uuid == 0 ? EntityType::kTopLevelChannel
@@ -198,9 +192,20 @@ grpc_json* ChannelNode::RenderJson() {
                                            GRPC_JSON_OBJECT, false);
   json = data;
   json_iterator = nullptr;
-  // template method. Child classes may override this to add their specific
-  // functionality.
-  PopulateConnectivityState(json);
+  // connectivity state
+  // If low-order bit is on, then the field is set.
+  int state_field = connectivity_state_.Load(MemoryOrder::RELAXED);
+  if ((state_field & 1) != 0) {
+    grpc_connectivity_state state =
+        static_cast<grpc_connectivity_state>(state_field >> 1);
+    json = grpc_json_create_child(nullptr, json, "state", nullptr,
+                                  GRPC_JSON_OBJECT, false);
+    grpc_json_create_child(nullptr, json, "state",
+                           grpc_connectivity_state_name(state),
+                           GRPC_JSON_STRING, false);
+  }
+  json = data;
+  json_iterator = nullptr;
   // populate the target.
   GPR_ASSERT(target_.get() != nullptr);
   grpc_json_create_child(nullptr, json, "target", target_.get(),
@@ -246,6 +251,12 @@ void ChannelNode::PopulateChildRefs(grpc_json* json) {
                                         p.first);
     }
   }
+}
+
+void ChannelNode::SetConnectivityState(grpc_connectivity_state state) {
+  // Store with low-order bit set to indicate that the field is set.
+  intptr_t state_field = (state << 1) + 1;
+  connectivity_state_.Store(state_field, MemoryOrder::RELAXED);
 }
 
 void ChannelNode::AddChildChannel(intptr_t child_uuid) {

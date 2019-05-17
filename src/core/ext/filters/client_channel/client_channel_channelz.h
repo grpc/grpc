@@ -33,35 +33,6 @@ class Subchannel;
 
 namespace channelz {
 
-// Subtype of ChannelNode that overrides and provides client_channel specific
-// functionality like querying for connectivity_state and subchannel data.
-class ClientChannelNode : public ChannelNode {
- public:
-  static RefCountedPtr<ChannelNode> MakeClientChannelNode(
-      UniquePtr<char> target, size_t channel_tracer_max_nodes,
-      intptr_t parent_uuid);
-
-  ClientChannelNode(UniquePtr<char> target, size_t channel_tracer_max_nodes,
-                    intptr_t parent_uuid);
-  virtual ~ClientChannelNode() {}
-
-  // Overriding template method from ChannelNode to render information that
-  // only ClientChannelNode knows about.
-  void PopulateConnectivityState(grpc_json* json) override;
-
-  void set_connectivity_state(grpc_connectivity_state state) {
-    connectivity_state_.Store(state, MemoryOrder::RELAXED);
-  }
-
-  // Helper to create a channel arg to ensure this type of ChannelNode is
-  // created.
-  static grpc_arg CreateChannelArg();
-
- private:
-  Atomic<grpc_connectivity_state> connectivity_state_{GRPC_CHANNEL_IDLE};
-};
-
-// Handles channelz bookkeeping for sockets
 class SubchannelNode : public BaseNode {
  public:
   SubchannelNode(Subchannel* subchannel, size_t channel_tracer_max_nodes);

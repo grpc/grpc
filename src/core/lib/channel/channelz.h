@@ -34,10 +34,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 
-// Channel arg key for channelz node factory.
-#define GRPC_ARG_CHANNELZ_CHANNEL_NODE_CREATION_FUNC \
-  "grpc.channelz_channel_node_creation_func"
-
 // Channel arg key for channelz node.
 #define GRPC_ARG_CHANNELZ_CHANNEL_NODE "grpc.channelz_channel_node"
 
@@ -151,10 +147,6 @@ class CallCountingHelper {
 // Handles channelz bookkeeping for channels
 class ChannelNode : public BaseNode {
  public:
-  static RefCountedPtr<ChannelNode> MakeChannelNode(
-      UniquePtr<char> target, size_t channel_tracer_max_nodes,
-      intptr_t parent_uuid);
-
   ChannelNode(UniquePtr<char> target, size_t channel_tracer_max_nodes,
               intptr_t parent_uuid);
   ~ChannelNode() override;
@@ -187,6 +179,8 @@ class ChannelNode : public BaseNode {
   void RecordCallFailed() { call_counter_.RecordCallFailed(); }
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
 
+  void SetConnectivityState(grpc_connectivity_state state);
+
   void AddChildChannel(intptr_t child_uuid);
   void RemoveChildChannel(intptr_t child_uuid);
 
@@ -203,6 +197,10 @@ class ChannelNode : public BaseNode {
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
   const intptr_t parent_uuid_;
+
+  // First bit indicates whether the value is set.  Remaining bits are a
+  // grpc_connectivity_state value.
+  Atomic<int> connectivity_state_{0};
 
   Mutex child_mu_;  // Guards child maps below.
   // TODO(roth): We don't actually use the values here, only the keys, so
@@ -294,12 +292,6 @@ class ListenSocketNode : public BaseNode {
  private:
   UniquePtr<char> local_addr_;
 };
-
-// Creation functions
-
-typedef RefCountedPtr<ChannelNode> (*ChannelNodeCreationFunc)(
-    UniquePtr<char> target, size_t channel_tracer_max_nodes,
-    intptr_t parent_uuid);
 
 }  // namespace channelz
 }  // namespace grpc_core

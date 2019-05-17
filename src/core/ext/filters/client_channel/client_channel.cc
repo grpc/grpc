@@ -238,7 +238,7 @@ class ChannelData {
   ClientChannelFactory* client_channel_factory_;
   UniquePtr<char> server_name_;
   RefCountedPtr<ServiceConfig> default_service_config_;
-  channelz::ClientChannelNode* channelz_node_;
+  channelz::ChannelNode* channelz_node_;
 
   //
   // Fields used in the data plane.  Guarded by data_plane_combiner.
@@ -702,7 +702,7 @@ class ChannelData::ConnectivityStateAndPickerSetter {
     // Update connectivity state here, while holding control plane combiner.
     grpc_connectivity_state_set(&chand->state_tracker_, state, reason);
     if (chand->channelz_node_ != nullptr) {
-      chand->channelz_node_->set_connectivity_state(state);
+      chand->channelz_node_->SetConnectivityState(state);
       chand->channelz_node_->AddTraceEvent(
           channelz::ChannelTrace::Severity::Info,
           grpc_slice_from_static_string(
@@ -1154,12 +1154,11 @@ RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
   return GlobalSubchannelPool::instance();
 }
 
-channelz::ClientChannelNode* GetChannelzNode(
-    const grpc_channel_args* args) {
+channelz::ChannelNode* GetChannelzNode(const grpc_channel_args* args) {
   const grpc_arg* arg =
       grpc_channel_args_find(args, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
   if (arg != nullptr && arg->type == GRPC_ARG_POINTER) {
-    return static_cast<channelz::ClientChannelNode*>(arg->value.pointer.p);
+    return static_cast<channelz::ChannelNode*>(arg->value.pointer.p);
   }
   return nullptr;
 }

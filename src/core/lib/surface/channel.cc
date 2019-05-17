@@ -203,7 +203,7 @@ int channelz_node_cmp(void* p1, void* p2) { return GPR_ICMP(p1, p2); }
 const grpc_arg_pointer_vtable channelz_node_arg_vtable = {
     channelz_node_copy, channelz_node_destroy, channelz_node_cmp};
 
-void UpdateBuilderArgsForChannelz(grpc_channel_stack_builder* builder) {
+void CreateChannelzNode(grpc_channel_stack_builder* builder) {
   const grpc_channel_args* args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   // Check whether channelz is enabled.
@@ -219,24 +219,11 @@ void UpdateBuilderArgsForChannelz(grpc_channel_stack_builder* builder) {
   const intptr_t channelz_parent_uuid = grpc_channel_arg_get_integer(
       grpc_channel_args_find(args, GRPC_ARG_CHANNELZ_PARENT_UUID),
       {0, 1, INT_MAX});
-  // This creates the default ChannelNode. Different types of channels may
-  // override this to ensure a correct ChannelNode is created.
-  grpc_core::channelz::ChannelNodeCreationFunc channel_node_create_func =
-      grpc_core::channelz::ChannelNode::MakeChannelNode;
-  const grpc_arg* create_func_arg = grpc_channel_args_find(
-      args, GRPC_ARG_CHANNELZ_CHANNEL_NODE_CREATION_FUNC);
-  if (create_func_arg != nullptr) {
-    GPR_ASSERT(create_func_arg->type == GRPC_ARG_POINTER);
-    GPR_ASSERT(create_func_arg->value.pointer.p != nullptr);
-    channel_node_create_func =
-        reinterpret_cast<grpc_core::channelz::ChannelNodeCreationFunc>(
-            create_func_arg->value.pointer.p);
-  }
   // Create the channelz node.
   // We only need to do this for clients here. For servers, this will be
   // done in src/core/lib/surface/server.cc.
   grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_node =
-      channel_node_create_func(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ChannelNode>(
           grpc_core::UniquePtr<char>(gpr_strdup(
               grpc_channel_stack_builder_get_target(builder))),
           channel_tracer_max_memory, channelz_parent_uuid);
@@ -249,10 +236,7 @@ void UpdateBuilderArgsForChannelz(grpc_channel_stack_builder* builder) {
   grpc_arg new_arg = grpc_channel_arg_pointer_create(
       const_cast<char*>(GRPC_ARG_CHANNELZ_CHANNEL_NODE),
       channelz_node.get(), &channelz_node_arg_vtable);
-  const char* args_to_remove[] = {
-      GRPC_ARG_CHANNELZ_CHANNEL_NODE_CREATION_FUNC,
-      GRPC_ARG_CHANNELZ_PARENT_UUID,
-  };
+  const char* args_to_remove[] = {GRPC_ARG_CHANNELZ_PARENT_UUID};
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
       args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &new_arg, 1);
   grpc_channel_stack_builder_set_channel_arguments(builder, new_args);
@@ -284,7 +268,7 @@ grpc_channel* grpc_channel_create(const char* target,
     return nullptr;
   }
   if (grpc_channel_stack_type_is_client(channel_stack_type)) {
-    UpdateBuilderArgsForChannelz(builder);
+    CreateChannelzNode(builder);
   }
   return grpc_channel_create_with_builder(builder, channel_stack_type);
 }
