@@ -82,10 +82,8 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
   // Attempt to connect to the backend.  Has no effect if already connected.
   virtual void AttemptToConnect() GRPC_ABSTRACT;
 
-  // TODO(roth): These methods should be removed from this interface to
-  // bettter hide grpc-specific functionality from the LB policy API.
-// FIXME: remove
-  virtual channelz::SubchannelNode* channelz_node() GRPC_ABSTRACT;
+  // TODO(roth): This method should be removed as part of moving the
+  // backoff code from subchannel to LB policy.
   virtual void ResetBackoff() GRPC_ABSTRACT;
 
   GRPC_ABSTRACT_BASE_CLASS

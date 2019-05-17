@@ -999,11 +999,6 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
 
   void AttemptToConnect() override { subchannel_->AttemptToConnect(); }
 
-// FIXME: remove
-  channelz::SubchannelNode* channelz_node() override {
-    return subchannel_->channelz_node();
-  }
-
   void ResetBackoff() override { subchannel_->ResetBackoff(); }
 
  private:
