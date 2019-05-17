@@ -204,7 +204,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Requests that the resolver re-resolve.
     virtual void RequestReresolution() GRPC_ABSTRACT;
 
-// FIXME: add method to log channel trace event
+    /// Adds a trace message associated with the channel.
+    enum TraceSeverity { INFO, WARNING, ERROR };
+    virtual void AddTraceEvent(TraceSeverity severity, const char* message)
+        GRPC_ABSTRACT;
 
     GRPC_ABSTRACT_BASE_CLASS
   };

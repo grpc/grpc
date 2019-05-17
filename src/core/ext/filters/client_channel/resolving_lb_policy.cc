@@ -427,11 +427,9 @@ ResolvingLoadBalancingPolicy::CreateLbPolicyLocked(
           lb_policy_name, std::move(lb_policy_args));
   if (GPR_UNLIKELY(lb_policy == nullptr)) {
     gpr_log(GPR_ERROR, "could not create LB policy \"%s\"", lb_policy_name);
-    if (channelz_node_ != nullptr) {
-      char* str;
-      gpr_asprintf(&str, "Could not create LB policy \"%s\"", lb_policy_name);
-      trace_strings->push_back(str);
-    }
+    char* str;
+    gpr_asprintf(&str, "Could not create LB policy \"%s\"", lb_policy_name);
+    trace_strings->push_back(str);
     return nullptr;
   }
   helper->set_child(lb_policy.get());
@@ -439,11 +437,9 @@ ResolvingLoadBalancingPolicy::CreateLbPolicyLocked(
     gpr_log(GPR_INFO, "resolving_lb=%p: created new LB policy \"%s\" (%p)",
             this, lb_policy_name, lb_policy.get());
   }
-  if (channelz_node_ != nullptr) {
-    char* str;
-    gpr_asprintf(&str, "Created new LB policy \"%s\"", lb_policy_name);
-    trace_strings->push_back(str);
-  }
+  char* str;
+  gpr_asprintf(&str, "Created new LB policy \"%s\"", lb_policy_name);
+  trace_strings->push_back(str);
   grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
                                    interested_parties());
   return lb_policy;
@@ -473,11 +469,10 @@ void ResolvingLoadBalancingPolicy::ConcatenateAndAddChannelTraceLocked(
       is_first = false;
       gpr_strvec_add(&v, (*trace_strings)[i]);
     }
-    char* flat;
-    size_t flat_len = 0;
-    flat = gpr_strvec_flatten(&v, &flat_len);
-    channelz_node_->AddTraceEvent(channelz::ChannelTrace::Severity::Info,
-                                  grpc_slice_new(flat, flat_len, gpr_free));
+    size_t len = 0;
+    char* message = gpr_strvec_flatten(&v, &len);
+    channel_control_helper()->AddTraceEvent(ChannelControlHelper::INFO,
+                                            message);
     gpr_strvec_destroy(&v);
   }
 }
@@ -531,21 +526,20 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
                                  std::move(result), &trace_strings);
   }
   // Add channel trace event.
-  if (channelz_node_ != nullptr) {
-    if (service_config_changed) {
-      // TODO(ncteisen): might be worth somehow including a snippet of the
-      // config in the trace, at the risk of bloating the trace logs.
-      trace_strings.push_back(gpr_strdup("Service config changed"));
-    }
-    if (service_config_error_string != nullptr) {
-      trace_strings.push_back(service_config_error_string);
-      service_config_error_string = nullptr;
-    }
-    MaybeAddTraceMessagesForAddressChangesLocked(resolution_contains_addresses,
-                                                 &trace_strings);
-    ConcatenateAndAddChannelTraceLocked(&trace_strings);
+  if (service_config_changed) {
+    // TODO(ncteisen): might be worth somehow including a snippet of the
+    // config in the trace, at the risk of bloating the trace logs.
+    trace_strings.push_back(gpr_strdup("Service config changed"));
   }
-  gpr_free(service_config_error_string);
+  if (service_config_error_string != nullptr) {
+    trace_strings.push_back(service_config_error_string);
+    service_config_error_string = nullptr;
+  } else {
+    gpr_free(service_config_error_string);
+  }
+  MaybeAddTraceMessagesForAddressChangesLocked(resolution_contains_addresses,
+                                               &trace_strings);
+  ConcatenateAndAddChannelTraceLocked(&trace_strings);
 }
 
 }  // namespace grpc_core

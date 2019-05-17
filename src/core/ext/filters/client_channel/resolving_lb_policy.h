@@ -21,7 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
@@ -91,10 +90,6 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   void ResetBackoffLocked() override;
 
-  void set_channelz_node(channelz::ChannelNode* channelz_node) {
-    channelz_node_ = channelz_node;
-  }
-
  private:
   using TraceStringVector = InlinedVector<char*, 3>;
 
@@ -128,8 +123,6 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   void* process_resolver_result_user_data_ = nullptr;
   UniquePtr<char> child_policy_name_;
   RefCountedPtr<ParsedLoadBalancingConfig> child_lb_config_;
-  // Set shortly after construction time.
-  channelz::ChannelNode* channelz_node_ = nullptr;
 
   // Resolver and associated state.
   OrphanablePtr<Resolver> resolver_;

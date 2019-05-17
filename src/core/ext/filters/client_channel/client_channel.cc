@@ -1082,7 +1082,6 @@ class ChannelData::ClientChannelControlHelper
                                           std::move(health_check_service_name));
   }
 
-// FIXME: need a way to set GRPC_ARG_CHANNELZ_PARENT_UUID for child channels
   grpc_channel* CreateChannel(const char* target,
                               const grpc_channel_args& args) override {
     return chand_->client_channel_factory_->CreateChannel(target, &args);
@@ -1111,7 +1110,23 @@ class ChannelData::ClientChannelControlHelper
   // No-op -- we should never get this from ResolvingLoadBalancingPolicy.
   void RequestReresolution() override {}
 
+  void AddTraceEvent(TraceSeverity severity, const char* message) override {
+    if (chand_->channelz_node_ != nullptr) {
+      chand_->channelz_node_->AddTraceEvent(
+          ConvertSeverityEnum(severity),
+          grpc_slice_from_copied_string(message));
+    }
+    gpr_free(const_cast<char*>(message));
+  }
+
  private:
+  static channelz::ChannelTrace::Severity ConvertSeverityEnum(
+      TraceSeverity severity) {
+    if (severity == INFO) return channelz::ChannelTrace::Info;
+    if (severity == WARNING) return channelz::ChannelTrace::Warning;
+    return channelz::ChannelTrace::Error;
+  }
+
   ChannelData* chand_;
 };
 
@@ -1249,8 +1264,6 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
   } else {
     grpc_pollset_set_add_pollset_set(resolving_lb_policy_->interested_parties(),
                                      interested_parties_);
-// FIXME: remove
-    resolving_lb_policy_->set_channelz_node(channelz_node_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO, "chand=%p: created resolving_lb_policy=%p", this,
               resolving_lb_policy_.get());
