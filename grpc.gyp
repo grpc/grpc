@@ -71,7 +71,7 @@
     ],
     'cflags_cc': [
       '-Werror',
-      '-std=c++11',
+      '-std=c++1y',
     ],
     'include_dirs': [
       '.',
@@ -155,7 +155,7 @@
             '-Ithird_party/nanopb',
             '-DPB_FIELD_32BIT',
             '-stdlib=libc++',
-            '-std=c++11',
+            '-std=c++1y',
             '-Wno-error=deprecated-declarations',
           ],
         },

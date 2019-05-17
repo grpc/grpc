@@ -562,13 +562,10 @@ class CallbackUnaryHandler : public MethodHandler {
     void SendInitialMetadata(std::function<void(bool)> f) override {
       GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
       callbacks_outstanding_++;
-      // TODO(vjpai): Consider taking f as a move-capture if we adopt C++14
-      //              and if performance of this operation matters
-      meta_tag_.Set(call_.call(),
-                    [this, f](bool ok) {
-                      f(ok);
-                      MaybeDone();
-                    },
+      meta_tag_.Set(call_.call(), [ this, f = std::move(f) ](bool ok) {
+        f(ok);
+        MaybeDone();
+      },
                     &meta_ops_);
       meta_ops_.SendInitialMetadata(&ctx_->initial_metadata_,
                                     ctx_->initial_metadata_flags());

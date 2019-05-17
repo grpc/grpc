@@ -146,7 +146,7 @@ include(cmake/nanopb.cmake)
 
 if(NOT MSVC)
   set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -std=c99")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y")
 endif()
 
 if(_gRPC_PLATFORM_MAC)

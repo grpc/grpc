@@ -27,7 +27,7 @@ import jobset
 extra_args = [
     '-x',
     'c++',
-    '-std=c++11',
+    '-std=c++1y',
 ]
 with open('.clang_complete') as f:
     for line in f:
