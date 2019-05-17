@@ -96,16 +96,15 @@ grpc_error* ServiceConfig::ParseGlobalParams(const grpc_json* json_tree) {
     if (parser_error != GRPC_ERROR_NONE) {
       error_list.push_back(parser_error);
     }
-    parsed_global_service_config_objects_.push_back(std::move(parsed_obj));
+    parsed_global_configs_.push_back(std::move(parsed_obj));
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR("Global Params", &error_list);
 }
 
-grpc_error* ServiceConfig::ParseJsonMethodConfigToServiceConfigObjectsTable(
+grpc_error* ServiceConfig::ParseJsonMethodConfigToServiceConfigVectorTable(
     const grpc_json* json,
-    SliceHashTable<const ServiceConfigObjectsVector*>::Entry* entries,
-    size_t* idx) {
-  auto objs_vector = MakeUnique<ServiceConfigObjectsVector>();
+    SliceHashTable<const ParsedConfigVector*>::Entry* entries, size_t* idx) {
+  auto objs_vector = MakeUnique<ParsedConfigVector>();
   InlinedVector<grpc_error*, 4> error_list;
   for (size_t i = 0; i < g_registered_parsers->size(); i++) {
     grpc_error* parser_error = GRPC_ERROR_NONE;
@@ -116,10 +115,10 @@ grpc_error* ServiceConfig::ParseJsonMethodConfigToServiceConfigObjectsTable(
     }
     objs_vector->push_back(std::move(parsed_obj));
   }
-  service_config_objects_vectors_storage_.push_back(std::move(objs_vector));
+  parsed_method_config_vectors_storage_.push_back(std::move(objs_vector));
   const auto* vector_ptr =
-      service_config_objects_vectors_storage_
-          [service_config_objects_vectors_storage_.size() - 1]
+      parsed_method_config_vectors_storage_
+          [parsed_method_config_vectors_storage_.size() - 1]
               .get();
   // Construct list of paths.
   InlinedVector<UniquePtr<char>, 10> paths;
@@ -160,7 +159,7 @@ wrap_error:
 grpc_error* ServiceConfig::ParsePerMethodParams(const grpc_json* json_tree) {
   GPR_DEBUG_ASSERT(json_tree_->type == GRPC_JSON_OBJECT);
   GPR_DEBUG_ASSERT(json_tree_->key == nullptr);
-  SliceHashTable<const ServiceConfigObjectsVector*>::Entry* entries = nullptr;
+  SliceHashTable<const ParsedConfigVector*>::Entry* entries = nullptr;
   size_t num_entries = 0;
   InlinedVector<grpc_error*, 4> error_list;
   for (grpc_json* field = json_tree->child; field != nullptr;
@@ -187,14 +186,13 @@ grpc_error* ServiceConfig::ParsePerMethodParams(const grpc_json* json_tree) {
         }
         num_entries += static_cast<size_t>(count);
       }
-      entries = static_cast<
-          SliceHashTable<const ServiceConfigObjectsVector*>::Entry*>(gpr_zalloc(
-          num_entries *
-          sizeof(SliceHashTable<const ServiceConfigObjectsVector*>::Entry)));
+      entries = static_cast<SliceHashTable<const ParsedConfigVector*>::Entry*>(
+          gpr_zalloc(num_entries *
+                     sizeof(SliceHashTable<const ParsedConfigVector*>::Entry)));
       size_t idx = 0;
       for (grpc_json* method = field->child; method != nullptr;
            method = method->next) {
-        grpc_error* error = ParseJsonMethodConfigToServiceConfigObjectsTable(
+        grpc_error* error = ParseJsonMethodConfigToServiceConfigVectorTable(
             method, entries, &idx);
         if (error != GRPC_ERROR_NONE) {
           error_list.push_back(error);
@@ -206,9 +204,9 @@ grpc_error* ServiceConfig::ParsePerMethodParams(const grpc_json* json_tree) {
     }
   }
   if (entries != nullptr) {
-    parsed_method_service_config_objects_table_ =
-        SliceHashTable<const ServiceConfigObjectsVector*>::Create(
-            num_entries, entries, nullptr);
+    parsed_method_configs_table_ =
+        SliceHashTable<const ParsedConfigVector*>::Create(num_entries, entries,
+                                                          nullptr);
     gpr_free(entries);
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR("Method Params", &error_list);
@@ -287,12 +285,12 @@ UniquePtr<char> ServiceConfig::ParseJsonMethodName(grpc_json* json,
   return UniquePtr<char>(path);
 }
 
-const ServiceConfig::ServiceConfigObjectsVector*
-ServiceConfig::GetMethodServiceConfigObjectsVector(const grpc_slice& path) {
-  if (parsed_method_service_config_objects_table_.get() == nullptr) {
+const ServiceConfig::ParsedConfigVector*
+ServiceConfig::GetMethodParsedConfigVector(const grpc_slice& path) {
+  if (parsed_method_configs_table_.get() == nullptr) {
     return nullptr;
   }
-  const auto* value = parsed_method_service_config_objects_table_->Get(path);
+  const auto* value = parsed_method_configs_table_->Get(path);
   // If we didn't find a match for the path, try looking for a wildcard
   // entry (i.e., change "/service/method" to "/service/*").
   if (value == nullptr) {
@@ -305,7 +303,7 @@ ServiceConfig::GetMethodServiceConfigObjectsVector(const grpc_slice& path) {
     buf[len + 1] = '\0';
     grpc_slice wildcard_path = grpc_slice_from_copied_string(buf);
     gpr_free(buf);
-    value = parsed_method_service_config_objects_table_->Get(wildcard_path);
+    value = parsed_method_configs_table_->Get(wildcard_path);
     grpc_slice_unref_internal(wildcard_path);
     gpr_free(path_str);
     if (value == nullptr) return nullptr;

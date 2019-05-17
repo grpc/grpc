@@ -88,7 +88,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
   static constexpr int kNumPreallocatedParsers = 4;
   typedef InlinedVector<UniquePtr<ParsedConfig>, kNumPreallocatedParsers>
-      ServiceConfigObjectsVector;
+      ParsedConfigVector;
 
   /// When a service config is applied to a call in the client_channel_filter,
   /// we create an instance of this object and store it in the call_data for
@@ -102,25 +102,25 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
         : service_config_(std::move(svc_cfg)) {
       if (service_config_ != nullptr) {
         method_params_vector_ =
-            service_config_->GetMethodServiceConfigObjectsVector(path);
+            service_config_->GetMethodParsedConfigVector(path);
       }
     }
 
     ServiceConfig* service_config() { return service_config_.get(); }
 
-    ParsedConfig* GetMethodParsedObject(size_t index) const {
+    ParsedConfig* GetMethodParsedConfig(size_t index) const {
       return method_params_vector_ != nullptr
                  ? (*method_params_vector_)[index].get()
                  : nullptr;
     }
 
-    ParsedConfig* GetGlobalParsedObject(size_t index) const {
-      return service_config_->GetParsedGlobalServiceConfigObject(index);
+    ParsedConfig* GetGlobalParsedConfig(size_t index) const {
+      return service_config_->GetGlobalParsedConfig(index);
     }
 
    private:
     RefCountedPtr<ServiceConfig> service_config_;
-    const ServiceConfigObjectsVector* method_params_vector_ = nullptr;
+    const ParsedConfigVector* method_params_vector_ = nullptr;
   };
 
   /// Creates a new service config from parsing \a json_string.
@@ -132,25 +132,24 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
   const char* service_config_json() const { return service_config_json_.get(); }
 
-  /// Retrieves the parsed global service config object at index \a index. The
+  /// Retrieves the global parsed config at index \a index. The
   /// lifetime of the returned object is tied to the lifetime of the
   /// ServiceConfig object.
-  ParsedConfig* GetParsedGlobalServiceConfigObject(size_t index) {
-    GPR_DEBUG_ASSERT(index < parsed_global_service_config_objects_.size());
-    return parsed_global_service_config_objects_[index].get();
+  ParsedConfig* GetGlobalParsedConfig(size_t index) {
+    GPR_DEBUG_ASSERT(index < parsed_global_configs_.size());
+    return parsed_global_configs_[index].get();
   }
 
-  /// Retrieves the vector of method service config objects for a given path \a
-  /// path. The lifetime of the returned vector and contained objects is tied to
-  /// the lifetime of the ServiceConfig object.
-  const ServiceConfigObjectsVector* GetMethodServiceConfigObjectsVector(
-      const grpc_slice& path);
+  /// Retrieves the vector of parsed configs for the method identified
+  /// by \a path.  The lifetime of the returned vector and contained objects
+  /// is tied to the lifetime of the ServiceConfig object.
+  const ParsedConfigVector* GetMethodParsedConfigVector(const grpc_slice& path);
 
   /// Globally register a service config parser. On successful registration, it
   /// returns the index at which the parser was registered. On failure, -1 is
   /// returned. Each new service config update will go through all the
   /// registered parser. Each parser is responsible for reading the service
-  /// config json and returning a parsed object. This parsed object can later be
+  /// config json and returning a parsed config. This parsed config can later be
   /// retrieved using the same index that was returned at registration time.
   static size_t RegisterParser(UniquePtr<Parser> parser);
 
@@ -180,26 +179,25 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   static UniquePtr<char> ParseJsonMethodName(grpc_json* json,
                                              grpc_error** error);
 
-  grpc_error* ParseJsonMethodConfigToServiceConfigObjectsTable(
+  grpc_error* ParseJsonMethodConfigToServiceConfigVectorTable(
       const grpc_json* json,
-      SliceHashTable<const ServiceConfigObjectsVector*>::Entry* entries,
-      size_t* idx);
+      SliceHashTable<const ParsedConfigVector*>::Entry* entries, size_t* idx);
 
   UniquePtr<char> service_config_json_;
   UniquePtr<char> json_string_;  // Underlying storage for json_tree.
   grpc_json* json_tree_;
 
   InlinedVector<UniquePtr<ParsedConfig>, kNumPreallocatedParsers>
-      parsed_global_service_config_objects_;
-  // A map from the method name to the service config objects vector. Note that
-  // we are using a raw pointer and not a unique pointer so that we can use the
-  // same vector for multiple names.
-  RefCountedPtr<SliceHashTable<const ServiceConfigObjectsVector*>>
-      parsed_method_service_config_objects_table_;
+      parsed_global_configs_;
+  // A map from the method name to the parsed config vector. Note that we are
+  // using a raw pointer and not a unique pointer so that we can use the same
+  // vector for multiple names.
+  RefCountedPtr<SliceHashTable<const ParsedConfigVector*>>
+      parsed_method_configs_table_;
   // Storage for all the vectors that are being used in
-  // parsed_method_service_config_objects_table_.
-  InlinedVector<UniquePtr<ServiceConfigObjectsVector>, 32>
-      service_config_objects_vectors_storage_;
+  // parsed_method_configs_table_.
+  InlinedVector<UniquePtr<ParsedConfigVector>, 32>
+      parsed_method_config_vectors_storage_;
 };
 
 }  // namespace grpc_core

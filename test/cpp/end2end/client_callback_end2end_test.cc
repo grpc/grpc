@@ -104,10 +104,6 @@ class ClientCallbackEnd2endTest
     // TODO(vjpai): Support testing of AuthMetadataProcessor
 
     if (GetParam().protocol == Protocol::TCP) {
-      if (!grpc_iomgr_run_in_background()) {
-        do_not_test_ = true;
-        return;
-      }
       picked_port_ = grpc_pick_unused_port_or_die();
       server_address_ << "localhost:" << picked_port_;
       builder.AddListeningPort(server_address_.str(), server_creds);
@@ -133,6 +129,10 @@ class ClientCallbackEnd2endTest
 
     server_ = builder.BuildAndStart();
     is_server_started_ = true;
+    if (GetParam().protocol == Protocol::TCP &&
+        !grpc_iomgr_run_in_background()) {
+      do_not_test_ = true;
+    }
   }
 
   void ResetStub() {
