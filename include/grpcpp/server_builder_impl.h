@@ -45,8 +45,6 @@ class ServerCredentials;
 namespace grpc {
 
 class AsyncGenericService;
-class CompletionQueue;
-class ServerCompletionQueue;
 class Service;
 namespace testing {
 class ServerBuilderPluginTest;

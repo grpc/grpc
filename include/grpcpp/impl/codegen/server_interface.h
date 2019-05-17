@@ -30,12 +30,14 @@
 
 namespace grpc_impl {
 
+class Channel;
+class CompletionQueue;
+class ServerCompletionQueue;
 class ServerCredentials;
 }  // namespace grpc_impl
 namespace grpc {
 
 class AsyncGenericService;
-class Channel;
 class GenericServerContext;
 class ServerCompletionQueue;
 class ServerContext;
