@@ -1234,24 +1234,30 @@ grpc_channel_args* BuildBalancerChannelArgs(
       GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
   };
   // Channel args to add.
-  const grpc_arg args_to_add[] = {
-      // The fake resolver response generator, which we use to inject
-      // address updates into the LB channel.
+  InlinedVector<grpc_arg, 3> args_to_add;
+  // The fake resolver response generator, which we use to inject
+  // address updates into the LB channel.
+  args_to_add.emplace_back(
       grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
-          response_generator),
-      // A channel arg indicating the target is a grpclb load balancer.
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER), 1),
-// FIXME
-      // A channel arg indicating this is an internal channels, aka it is
-      // owned by components in Core, not by the user application.
-//      grpc_channel_arg_integer_create(
-//          const_cast<char*>(GRPC_ARG_CHANNELZ_CHANNEL_IS_INTERNAL_CHANNEL), 1),
-  };
+          response_generator));
+  // A channel arg indicating the target is a grpclb load balancer.
+  args_to_add.emplace_back(grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER), 1));
+  // The parent channel's channelz uuid.
+  channelz::ChannelNode* channelz_node = nullptr;
+  const grpc_arg* arg =
+      grpc_channel_args_find(args, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
+  if (arg != nullptr && arg->type == GRPC_ARG_POINTER &&
+      arg->value.pointer.p != nullptr) {
+    channelz_node = static_cast<channelz::ChannelNode*>(arg->value.pointer.p);
+    args_to_add.emplace_back(grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_CHANNELZ_PARENT_UUID),
+                          channelz_node->uuid()));
+  }
   // Construct channel args.
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
-      args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), args_to_add,
-      GPR_ARRAY_SIZE(args_to_add));
+      args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), args_to_add.data(),
+      args_to_add.size());
   // Make any necessary modifications for security.
   return grpc_lb_policy_grpclb_modify_lb_channel_args(addresses, new_args);
 }
