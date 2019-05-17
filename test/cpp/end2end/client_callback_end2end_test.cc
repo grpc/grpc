@@ -379,7 +379,7 @@ TEST_P(ClientCallbackEnd2endTest, SimpleRpcUnderLock) {
   ResetStub();
   std::mutex mu;
   std::condition_variable cv;
-  bool done;
+  bool done = false;
   EchoRequest request;
   request.set_message("Hello locked world.");
   EchoResponse response;
