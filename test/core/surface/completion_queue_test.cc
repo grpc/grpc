@@ -388,9 +388,9 @@ static void test_callback(void) {
     static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
       gpr_mu_lock(&shutdown_mu);
       *static_cast<ShutdownCallback*>(cb)->done_ = static_cast<bool>(ok);
-      gpr_mu_unlock(&shutdown_mu);
       // Signal when the shutdown callback is completed.
       gpr_cv_signal(&shutdown_cv);
+      gpr_mu_unlock(&shutdown_mu);
     }
 
    private:
@@ -469,17 +469,18 @@ static void test_callback(void) {
       gpr_mu_unlock(&shutdown_mu);
     }
 
-    gpr_mu_lock(&mu);
     // Run the assertions to check if the test ran successfully.
     GPR_ASSERT(sumtags == counter);
     GPR_ASSERT(got_shutdown);
-    gpr_mu_unlock(&mu);
+    gpr_mu_lock(&shutdown_mu);
     got_shutdown = false;
+    gpr_mu_unlock(&shutdown_mu);
   }
-  gpr_mu_destroy(&mu);
-  gpr_mu_destroy(&shutdown_mu);
+
   gpr_cv_destroy(&cv);
   gpr_cv_destroy(&shutdown_cv);
+  gpr_mu_destroy(&mu);
+  gpr_mu_destroy(&shutdown_mu);
 }
 
 struct thread_state {
