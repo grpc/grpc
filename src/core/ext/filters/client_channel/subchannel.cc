@@ -433,7 +433,8 @@ class Subchannel::HealthWatcherMap::HealthWatcher
       : subchannel_(c),
         health_check_service_name_(std::move(health_check_service_name)),
         state_(subchannel_state == GRPC_CHANNEL_READY ? GRPC_CHANNEL_CONNECTING
-                                                      : subchannel_state) {
+                                                      : subchannel_state),
+        pending_state_(state_) {
     GRPC_SUBCHANNEL_WEAK_REF(subchannel_, "health_watcher");
     GRPC_CLOSURE_INIT(&on_health_changed_, OnHealthChanged, this,
                       grpc_schedule_on_exec_ctx);
@@ -503,7 +504,8 @@ class Subchannel::HealthWatcherMap::HealthWatcher
         health_check_service_name_.get(), subchannel_->connected_subchannel_,
         subchannel_->pollset_set_, subchannel_->channelz_node_);
     Ref().release();  // Ref for health callback tracked manually.
-    health_check_client_->NotifyOnHealthChange(&state_, &on_health_changed_);
+    health_check_client_->NotifyOnHealthChange(&pending_state_,
+                                               &on_health_changed_);
   }
 
   static void OnHealthChanged(void* arg, grpc_error* error) {
@@ -511,12 +513,13 @@ class Subchannel::HealthWatcherMap::HealthWatcher
     Subchannel* c = self->subchannel_;
     {
       MutexLock lock(&c->mu_);
+      self->state_ = self->pending_state_;
       if (self->state_ != GRPC_CHANNEL_SHUTDOWN &&
           self->health_check_client_ != nullptr) {
         self->watcher_list_.NotifyLocked(c, self->state_);
         // Renew watch.
         self->health_check_client_->NotifyOnHealthChange(
-            &self->state_, &self->on_health_changed_);
+            &self->pending_state_, &self->on_health_changed_);
         return;  // So we don't unref below.
       }
     }
@@ -530,6 +533,9 @@ class Subchannel::HealthWatcherMap::HealthWatcher
   OrphanablePtr<HealthCheckClient> health_check_client_;
   grpc_closure on_health_changed_;
   grpc_connectivity_state state_;
+  // pending_state_ is written by the HealthCheckClient before it calls
+  // back to us, so it is modified without holding the subchannel lock.
+  grpc_connectivity_state pending_state_;
   ConnectivityStateWatcherList watcher_list_;
 };
 
