@@ -1028,7 +1028,7 @@ grpc_cc_library(
         "src/core/lib/uri/uri_parser.h",
     ],
     external_deps = [
-        "zlib",
+        "protobuf_zlib",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
