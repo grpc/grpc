@@ -23,13 +23,14 @@ ulimit -a
 pip install google-api-python-client oauth2client --user python
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
 
+# TODO(jtattermusch): --filter_pr_tests temporarily disabled on mac due to https://github.com/grpc/grpc/issues/18968
 # If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
-if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
-  brew update
-  brew install jq || brew upgrade jq
-  ghprbTargetBranch=$(curl -s https://api.github.com/repos/grpc/grpc/pulls/$KOKORO_GITHUB_PULL_REQUEST_NUMBER | jq -r .base.ref)
-  export RUN_TESTS_FLAGS="$RUN_TESTS_FLAGS --filter_pr_tests --base_branch origin/$ghprbTargetBranch"
-fi
+#if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
+#  brew update
+#  brew install jq || brew upgrade jq
+#  ghprbTargetBranch=$(curl -s https://api.github.com/repos/grpc/grpc/pulls/$KOKORO_GITHUB_PULL_REQUEST_NUMBER | jq -r .base.ref)
+#  export RUN_TESTS_FLAGS="$RUN_TESTS_FLAGS --filter_pr_tests --base_branch origin/$ghprbTargetBranch"
+#fi
 
 set +ex  # rvm script is very verbose and exits with errorcode
 # Advice from https://github.com/Homebrew/homebrew-cask/issues/8629#issuecomment-68641176
