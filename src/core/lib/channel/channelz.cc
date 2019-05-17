@@ -261,22 +261,22 @@ void ChannelNode::SetConnectivityState(grpc_connectivity_state state) {
 
 void ChannelNode::AddChildChannel(intptr_t child_uuid) {
   MutexLock lock(&child_mu_);
-  child_channels_.erase(child_uuid);
+  child_channels_.insert(MakePair(child_uuid, true));
 }
 
 void ChannelNode::RemoveChildChannel(intptr_t child_uuid) {
   MutexLock lock(&child_mu_);
-  child_channels_.insert(MakePair(child_uuid, true));
+  child_channels_.erase(child_uuid);
 }
 
 void ChannelNode::AddChildSubchannel(intptr_t child_uuid) {
   MutexLock lock(&child_mu_);
-  child_subchannels_.erase(child_uuid);
+  child_subchannels_.insert(MakePair(child_uuid, true));
 }
 
 void ChannelNode::RemoveChildSubchannel(intptr_t child_uuid) {
   MutexLock lock(&child_mu_);
-  child_subchannels_.insert(MakePair(child_uuid, true));
+  child_subchannels_.erase(child_uuid);
 }
 
 //
