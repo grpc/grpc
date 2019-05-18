@@ -150,9 +150,8 @@ GlobalSubchannelPool::~GlobalSubchannelPool() {
 }
 
 void GlobalSubchannelPool::UnrefSubchannelMap() {
-  static bool unreffed = false;
-  if (unreffed) return;
-  unreffed = true;
+  if (unreffed_map) return;
+  unreffed_map = true;
   grpc_avl_unref(subchannel_map_, pollset_set_);
 }
 
