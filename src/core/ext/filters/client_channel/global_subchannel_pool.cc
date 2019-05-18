@@ -57,6 +57,7 @@ class GlobalSubchannelPool::Sweeper : public InternallyRefCounted<Sweeper> {
   void Orphan() override {
     {
       MutexLock lock(&mu_);
+      gpr_log(GPR_ERROR, "=== in orphan() shutdown=%d", (int)(shutdown_));
       if (!shutdown_) {
         shutdown_ = true;
         grpc_timer_cancel(&next_sweep_timer_);
@@ -92,6 +93,7 @@ class GlobalSubchannelPool::Sweeper : public InternallyRefCounted<Sweeper> {
   static void SweepUnusedSubchannels(void* arg, grpc_error* error) {
     Sweeper* sweeper = static_cast<Sweeper*>(arg);
     ReleasableMutexLock lock(&sweeper->mu_);
+    gpr_log(GPR_ERROR, "=== gsp, shutdown=%d, error=%p", (int)(sweeper->shutdown_), error);
     if (sweeper->shutdown_ || error != GRPC_ERROR_NONE) {
       if (!sweeper->shutdown_) {
         sweeper->shutdown_ = true;
@@ -139,6 +141,7 @@ GlobalSubchannelPool::GlobalSubchannelPool() {
 }
 
 GlobalSubchannelPool::~GlobalSubchannelPool() {
+  gpr_log(GPR_ERROR, "=== gsp dtor");
   UnrefSubchannelMap();
   if (pollset_set_ != nullptr) {
     grpc_client_channel_stop_backup_polling(pollset_set_);
