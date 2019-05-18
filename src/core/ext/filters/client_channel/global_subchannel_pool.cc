@@ -139,7 +139,6 @@ GlobalSubchannelPool::GlobalSubchannelPool() {
 }
 
 GlobalSubchannelPool::~GlobalSubchannelPool() {
-  UnrefSubchannelMap();
   if (pollset_set_ != nullptr) {
     grpc_client_channel_stop_backup_polling(pollset_set_);
     grpc_pollset_set_destroy(pollset_set_);
@@ -147,8 +146,6 @@ GlobalSubchannelPool::~GlobalSubchannelPool() {
 }
 
 void GlobalSubchannelPool::UnrefSubchannelMap() {
-  if (unreffed_map) return;
-  unreffed_map = true;
   grpc_avl_unref(subchannel_map_, pollset_set_);
 }
 

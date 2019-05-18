@@ -86,7 +86,6 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   static const grpc_avl_vtable subchannel_avl_vtable_;
   // A map from subchannel key to subchannel.
   grpc_avl subchannel_map_;
-  bool unreffed_map = false;
   // To protect subchannel_map_.
   Mutex mu_;
 
