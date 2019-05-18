@@ -17,6 +17,7 @@
 #endregion
 
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace Grpc.Core
@@ -30,7 +31,7 @@ namespace Grpc.Core
         /// <summary>
         /// Read all results from the specified stream reader.
         /// </summary>
-        public async static IAsyncEnumerable<T> ReadAllAsync<T>(this IAsyncStreamReader<T> streamReader, CancellationToken cancellationToken = default)
+        public async static IAsyncEnumerable<T> ReadAllAsync<T>(this IAsyncStreamReader<T> streamReader, [EnumeratorCancellation]CancellationToken cancellationToken = default)
         {
             if (streamReader == null)
             {
