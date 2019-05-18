@@ -57,8 +57,10 @@ class GlobalSubchannelPool::Sweeper : public InternallyRefCounted<Sweeper> {
   void Orphan() override {
     {
       MutexLock lock(&mu_);
-      shutdown_ = true;
-      grpc_timer_cancel(&next_sweep_timer_);
+      if (!shutdown_) {
+        shutdown_ = true;
+        grpc_timer_cancel(&next_sweep_timer_);
+      }
     }
     Unref();  // Drop initial ref.
   }
@@ -91,7 +93,13 @@ class GlobalSubchannelPool::Sweeper : public InternallyRefCounted<Sweeper> {
     Sweeper* sweeper = static_cast<Sweeper*>(arg);
     ReleasableMutexLock lock(&sweeper->mu_);
     if (sweeper->shutdown_ || error != GRPC_ERROR_NONE) {
-      lock.Unlock();
+      if (!sweeper->shutdown_) {
+        sweeper->shutdown_ = true;
+        lock.Unlock();
+        sweeper->subchannel_pool_->UnrefSubchannelMap();
+      } else {
+        lock.Unlock();
+      }
       sweeper->Unref();
       return;
     }
@@ -131,11 +139,18 @@ GlobalSubchannelPool::GlobalSubchannelPool() {
 }
 
 GlobalSubchannelPool::~GlobalSubchannelPool() {
-  grpc_avl_unref(subchannel_map_, pollset_set_);
+  UnrefSubchannelMap();
   if (pollset_set_ != nullptr) {
     grpc_client_channel_stop_backup_polling(pollset_set_);
     grpc_pollset_set_destroy(pollset_set_);
   }
+}
+
+void GlobalSubchannelPool::UnrefSubchannelMap() {
+  static bool unreffed = false;
+  if (unreffed) return;
+  unreffed = true;
+  grpc_avl_unref(subchannel_map_, pollset_set_);
 }
 
 void GlobalSubchannelPool::Init() {
@@ -205,6 +220,7 @@ Subchannel* GlobalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
         if (old_map.root == subchannel_map_.root) {
           GPR_SWAP(grpc_avl, new_map, subchannel_map_);
           c = constructed;
+          c->set_subchannel_pool(Ref());
         }
       }
       if (c != nullptr) {
@@ -310,11 +326,11 @@ long sck_avl_compare(void* a, void* b, void* unused) {
 
 void scv_avl_destroy(void* p, void* user_data) {
   Subchannel* c = static_cast<Subchannel*>(p);
-  GRPC_SUBCHANNEL_UNREF(c, "global_subchannel_pool");
   grpc_pollset_set* pollset_set = static_cast<grpc_pollset_set*>(user_data);
   if (pollset_set != nullptr) {
     grpc_pollset_set_del_pollset_set(c->pollset_set(), pollset_set);
   }
+  GRPC_SUBCHANNEL_UNREF(c, "global_subchannel_pool");
 }
 
 void* scv_avl_copy(void* p, void* unused) {
