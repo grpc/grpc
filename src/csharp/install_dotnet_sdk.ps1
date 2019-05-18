@@ -13,4 +13,4 @@ $InstallScriptPath = Join-Path  "$env:TEMP" 'dotnet-install.ps1'
 # Download install script
 Write-Host "Downloading install script: $InstallScriptUrl => $InstallScriptPath"
 Invoke-WebRequest -Uri $InstallScriptUrl -OutFile $InstallScriptPath
-&$InstallScriptPath -Version 2.1.504
+&$InstallScriptPath -Version 3.0.100-preview6-011895
