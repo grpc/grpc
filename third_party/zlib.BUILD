@@ -1,5 +1,5 @@
 cc_library(
-    name = "zlib",
+    name = "z",
     srcs = [
         "adler32.c",
         "compress.c",
