@@ -100,7 +100,8 @@ class GlobalSubchannelPool::Sweeper : public InternallyRefCounted<Sweeper> {
       if (!sweeper->shutdown_) {
         sweeper->shutdown_ = true;
         lock.Unlock();
-        sweeper->subchannel_pool_->UnrefSubchannelMap();
+        grpc_avl_unref(sweeper->subchannel_pool_->subchannel_map_,
+                       sweeper->subchannel_pool_->pollset_set_);
       } else {
         lock.Unlock();
       }
@@ -297,10 +298,6 @@ void GlobalSubchannelPool::UnregisterUnusedSubchannels(
       grpc_avl_unref(old_map, nullptr);
     }
   }
-}
-
-void GlobalSubchannelPool::UnrefSubchannelMap() {
-  grpc_avl_unref(subchannel_map_, pollset_set_);
 }
 
 RefCountedPtr<GlobalSubchannelPool>* GlobalSubchannelPool::instance_ = nullptr;

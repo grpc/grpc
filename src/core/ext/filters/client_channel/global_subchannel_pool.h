@@ -76,8 +76,6 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
 
   void UnregisterUnusedSubchannels(const UnusedSubchanels& unused_subchannels);
 
-  void UnrefSubchannelMap();
-
   // The singleton instance. (It's a pointer to RefCountedPtr so that this
   // non-local static object can be trivially destructible.)
   static RefCountedPtr<GlobalSubchannelPool>* instance_;
