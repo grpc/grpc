@@ -93,6 +93,10 @@ class GlobalSubchannelPool::Sweeper : public InternallyRefCounted<Sweeper> {
     Sweeper* sweeper = static_cast<Sweeper*>(arg);
     ReleasableMutexLock lock(&sweeper->mu_);
     if (sweeper->shutdown_ || error != GRPC_ERROR_NONE) {
+      // If shutdown_ is false and error is non-null, the sweep timer was
+      // cancelled due to timer system shutdown. We unref the subchannel map at
+      // this point to break any circular refcounting between the subchannels
+      // and the global subchannel pool.
       if (!sweeper->shutdown_) {
         sweeper->shutdown_ = true;
         lock.Unlock();
@@ -143,10 +147,6 @@ GlobalSubchannelPool::~GlobalSubchannelPool() {
     grpc_client_channel_stop_backup_polling(pollset_set_);
     grpc_pollset_set_destroy(pollset_set_);
   }
-}
-
-void GlobalSubchannelPool::UnrefSubchannelMap() {
-  grpc_avl_unref(subchannel_map_, pollset_set_);
 }
 
 void GlobalSubchannelPool::Init() {
@@ -297,6 +297,10 @@ void GlobalSubchannelPool::UnregisterUnusedSubchannels(
       grpc_avl_unref(old_map, nullptr);
     }
   }
+}
+
+void GlobalSubchannelPool::UnrefSubchannelMap() {
+  grpc_avl_unref(subchannel_map_, pollset_set_);
 }
 
 RefCountedPtr<GlobalSubchannelPool>* GlobalSubchannelPool::instance_ = nullptr;
