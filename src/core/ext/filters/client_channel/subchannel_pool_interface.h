@@ -66,8 +66,7 @@ class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
   // Registers a subchannel against a key. Returns the subchannel registered
   // with \a key, which may be different from \a constructed because we reuse
   // (instead of update) any existing subchannel already registered with \a key.
-  // Sets the subchannel pool in the subchannel if the subchannel is responsible
-  // to unregister itself when it's not used by anyone.
+  // Sets the subchannel pool in the subchannel.
   virtual Subchannel* RegisterSubchannel(SubchannelKey* key,
                                          Subchannel* constructed) GRPC_ABSTRACT;
 
