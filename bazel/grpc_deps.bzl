@@ -115,9 +115,9 @@ def grpc_deps():
             url = "https://boringssl.googlesource.com/boringssl/+archive/afc30d43eef92979b05776ec0963c9cede5fb80f.tar.gz",
         )
 
-    if "zlib" not in native.existing_rules():
+    if "com_github_madler_zlib" not in native.existing_rules():
         http_archive(
-            name = "zlib",
+            name = "com_github_madler_zlib",
             build_file = "@com_github_grpc_grpc//third_party:zlib.BUILD",
             sha256 = "6d4d6640ca3121620995ee255945161821218752b551a1a180f4215f7d124d45",
             strip_prefix = "zlib-cacf7f1d4e3d44d871b605da3b647f07d718623f",
@@ -127,7 +127,19 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "152c7feac61cfb19bb2fe0bc54525083f19be4107ffd3555b2ce7ed53123cd34",            strip_prefix = "protobuf-c40018e52dce3757a1f586ebe27755cb27aa3ba3",            url = "https://github.com/google/protobuf/archive/c40018e52dce3757a1f586ebe27755cb27aa3ba3.tar.gz",        )
+            sha256 = "152c7feac61cfb19bb2fe0bc54525083f19be4107ffd3555b2ce7ed53123cd34",
+            strip_prefix = "protobuf-c40018e52dce3757a1f586ebe27755cb27aa3ba3",
+            url = "https://github.com/google/protobuf/archive/c40018e52dce3757a1f586ebe27755cb27aa3ba3.tar.gz",
+        )
+
+    if "zlib" not in native.existing_rules():
+        http_archive(
+            name = "zlib",
+            build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
+            sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
+            strip_prefix = "zlib-1.2.11",
+            urls = ["https://zlib.net/zlib-1.2.11.tar.gz"],
+        )
 
     if "com_github_nanopb_nanopb" not in native.existing_rules():
         http_archive(
