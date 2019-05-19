@@ -33,7 +33,7 @@ def grpc_deps():
 
     native.bind(
         name = "protobuf_zlib",
-        actual = "@com_github_madler_zlib//:zlib",
+        actual = "@com_github_madler_zlib//:z",
     )
 
     native.bind(
