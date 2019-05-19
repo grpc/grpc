@@ -45,8 +45,9 @@ _TWISTED_CONSTANTLY_DEP_NAME = 'com_github_twisted_constantly'
 _GRPC_DEP_NAMES = [
     'upb',
     'boringssl',
-    'zlib',
+    'com_github_madler_zlib',
     'com_google_protobuf',
+    'zlib',
     'com_github_google_googletest',
     'com_github_gflags_gflags',
     'com_github_nanopb_nanopb',
