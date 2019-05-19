@@ -41,13 +41,13 @@ _YAML_PYYAML_DEP_NAME = 'com_github_yaml_pyyaml'
 _TWISTED_INCREMENTAL_DEP_NAME = 'com_github_twisted_incremental'
 _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME = 'com_github_zopefoundation_zope_interface'
 _TWISTED_CONSTANTLY_DEP_NAME = 'com_github_twisted_constantly'
+_PROTOUBF_ZLIB_DEP_NAME = 'zlib'
 
 _GRPC_DEP_NAMES = [
     'upb',
     'boringssl',
     'com_github_madler_zlib',
     'com_google_protobuf',
-    'zlib',
     'com_github_google_googletest',
     'com_github_gflags_gflags',
     'com_github_nanopb_nanopb',
@@ -62,6 +62,7 @@ _GRPC_DEP_NAMES = [
     _TWISTED_INCREMENTAL_DEP_NAME,
     _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME,
     _TWISTED_CONSTANTLY_DEP_NAME,
+    _PROTOUBF_ZLIB_DEP_NAME,
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
@@ -72,6 +73,7 @@ _GRPC_BAZEL_ONLY_DEPS = [
     _TWISTED_INCREMENTAL_DEP_NAME,
     _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME,
     _TWISTED_CONSTANTLY_DEP_NAME,
+    _PROTOUBF_ZLIB_DEP_NAME,
 ]
 
 
