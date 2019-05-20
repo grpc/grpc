@@ -22,7 +22,6 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 #include <grpcpp/grpcpp.h>
-#include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/resource_quota.h>
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/channel/channel_args.h"
