@@ -140,7 +140,7 @@
     s.name     = 'gRPC-C++'
     # TODO (mxyan): use version that match gRPC version when pod is stabilized
     # version = '${settings.version}'
-    version = '${modify_podspec_version_string('0.0.8', settings.version)}'
+    version = '${modify_podspec_version_string('0.0.9', settings.version)}'
     s.version  = version
     s.summary  = 'gRPC C++ library'
     s.homepage = 'https://grpc.io'
@@ -188,7 +188,7 @@
     s.default_subspecs = 'Interface', 'Implementation'
 
     # Certificates, to be able to establish TLS connections:
-    s.resource_bundles = { 'gRPCCertificates' => ['etc/roots.pem'] }
+    s.resource_bundles = { 'gRPCCertificates-Cpp' => ['etc/roots.pem'] }
 
     s.header_mappings_dir = 'include/grpcpp'
 
