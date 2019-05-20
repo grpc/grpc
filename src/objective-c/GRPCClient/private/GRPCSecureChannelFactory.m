@@ -61,8 +61,7 @@
     NSBundle *resourceBundle = [NSBundle
         bundleWithURL:[[bundle resourceURL] URLByAppendingPathComponent:resourceBundlePath]];
     NSString *path = [resourceBundle pathForResource:rootsPEM ofType:@"pem"];
-    setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR,
-           [path cStringUsingEncoding:NSUTF8StringEncoding], 1);
+    setenv("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH", [path cStringUsingEncoding:NSUTF8StringEncoding], 1);
   });
 
   NSData *rootsASCII = nil;
