@@ -21,7 +21,6 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Grpc.Core;
-using Grpc.Core.Utils;
 using Grpc.Reflection;
 using Grpc.Reflection.V1Alpha;
 using NUnit.Framework;

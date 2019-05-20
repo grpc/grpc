@@ -18,7 +18,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Grpc.Core.Utils
@@ -29,40 +28,11 @@ namespace Grpc.Core.Utils
     public static class AsyncStreamExtensions
     {
         /// <summary>
-        /// Advances the stream reader to the next element in the sequence, returning the result asynchronously.
-        /// </summary>
-        /// <typeparam name="T">The message type.</typeparam>
-        /// <param name="streamReader">The stream reader.</param>
-        /// <returns>
-        /// Task containing the result of the operation: true if the reader was successfully advanced
-        /// to the next element; false if the reader has passed the end of the sequence.
-        /// </returns>
-        public static Task<bool> MoveNext<T>(this IAsyncStreamReader<T> streamReader)
-            where T : class
-        {
-            if (streamReader == null)
-            {
-                throw new ArgumentNullException(nameof(streamReader));
-            }
-
-            return streamReader.MoveNext(CancellationToken.None);
-        }
-
-        /// <summary>
         /// Reads the entire stream and executes an async action for each element.
         /// </summary>
         public static async Task ForEachAsync<T>(this IAsyncStreamReader<T> streamReader, Func<T, Task> asyncAction)
             where T : class
         {
-            if (streamReader == null)
-            {
-                throw new ArgumentNullException(nameof(streamReader));
-            }
-            if (asyncAction == null)
-            {
-                throw new ArgumentNullException(nameof(asyncAction));
-            }
-
             while (await streamReader.MoveNext().ConfigureAwait(false))
             {
                 await asyncAction(streamReader.Current).ConfigureAwait(false);
@@ -75,11 +45,6 @@ namespace Grpc.Core.Utils
         public static async Task<List<T>> ToListAsync<T>(this IAsyncStreamReader<T> streamReader)
             where T : class
         {
-            if (streamReader == null)
-            {
-                throw new ArgumentNullException(nameof(streamReader));
-            }
-
             var result = new List<T>();
             while (await streamReader.MoveNext().ConfigureAwait(false))
             {
@@ -95,15 +60,6 @@ namespace Grpc.Core.Utils
         public static async Task WriteAllAsync<T>(this IClientStreamWriter<T> streamWriter, IEnumerable<T> elements, bool complete = true)
             where T : class
         {
-            if (streamWriter == null)
-            {
-                throw new ArgumentNullException(nameof(streamWriter));
-            }
-            if (elements == null)
-            {
-                throw new ArgumentNullException(nameof(elements));
-            }
-
             foreach (var element in elements)
             {
                 await streamWriter.WriteAsync(element).ConfigureAwait(false);
@@ -120,15 +76,6 @@ namespace Grpc.Core.Utils
         public static async Task WriteAllAsync<T>(this IServerStreamWriter<T> streamWriter, IEnumerable<T> elements)
             where T : class
         {
-            if (streamWriter == null)
-            {
-                throw new ArgumentNullException(nameof(streamWriter));
-            }
-            if (elements == null)
-            {
-                throw new ArgumentNullException(nameof(elements));
-            }
-
             foreach (var element in elements)
             {
                 await streamWriter.WriteAsync(element).ConfigureAwait(false);
