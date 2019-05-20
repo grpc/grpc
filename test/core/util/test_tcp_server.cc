@@ -95,13 +95,17 @@ static void finish_pollset(void* arg, grpc_error* error) {
 
 void test_tcp_server_destroy(test_tcp_server* server) {
   grpc_core::ExecCtx exec_ctx;
+  gpr_timespec shutdown_deadline;
   grpc_closure do_nothing_cb;
   grpc_tcp_server_unref(server->tcp_server);
   GRPC_CLOSURE_INIT(&do_nothing_cb, do_nothing, nullptr,
                     grpc_schedule_on_exec_ctx);
+  shutdown_deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                   gpr_time_from_seconds(5, GPR_TIMESPAN));
   grpc_core::ExecCtx::Get()->Flush();
-  while (!server->shutdown) {
-    test_tcp_server_poll(server, 100);
+  while (!server->shutdown &&
+         gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), shutdown_deadline) < 0) {
+    test_tcp_server_poll(server, 1000);
   }
   grpc_pollset_shutdown(server->pollset,
                         GRPC_CLOSURE_CREATE(finish_pollset, server->pollset,
