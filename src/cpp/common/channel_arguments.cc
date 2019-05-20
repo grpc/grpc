@@ -31,18 +31,13 @@
 
 namespace grpc_impl {
 
-namespace {
-::grpc::internal::GrpcLibraryInitializer g_gli_initializer;
-}  // namespace
-
 ChannelArguments::ChannelArguments() {
-  g_gli_initializer.summon();
   // This will be ignored if used on the server side.
   SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, "grpc-c++/" + grpc::Version());
 }
 
 ChannelArguments::ChannelArguments(const ChannelArguments& other)
-    : ::grpc::GrpcLibraryCodegen(), strings_(other.strings_) {
+    : strings_(other.strings_) {
   args_.reserve(other.args_.size());
   auto list_it_dst = strings_.begin();
   auto list_it_src = other.strings_.begin();
@@ -222,18 +217,22 @@ void ChannelArguments::SetChannelArgs(grpc_channel_args* channel_args) const {
   }
 }
 
-grpc::string
-ChannelArguments::experimental_type::ValidateAndSetServiceConfigJSON(
+}  // namespace grpc_impl
+
+namespace grpc {
+namespace experimental {
+grpc::string ValidateServiceConfigJSON(
     const grpc::string& service_config_json) {
+  grpc_init();
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_core::ServiceConfig::Create(service_config_json.c_str(), &error);
+  grpc::string return_value;
   if (error != GRPC_ERROR_NONE) {
-    grpc::string return_value = grpc_error_string(error);
+    return_value = grpc_error_string(error);
     GRPC_ERROR_UNREF(error);
-    return return_value;
   }
-  args_->SetServiceConfigJSON(service_config_json);
-  return "";
+  grpc_shutdown();
+  return return_value;
 }
-
-}  // namespace grpc_impl
+}  // namespace experimental
+}  // namespace grpc

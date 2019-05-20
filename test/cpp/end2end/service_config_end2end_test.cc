@@ -231,9 +231,10 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
 
   std::shared_ptr<Channel> BuildChannelWithDefaultServiceConfig() {
     ChannelArguments args;
-    EXPECT_THAT(args.experimental().ValidateAndSetServiceConfigJSON(
+    EXPECT_THAT(grpc::experimental::ValidateServiceConfigJSON(
                     ValidDefaultServiceConfig()),
                 ::testing::StrEq(""));
+    args.SetServiceConfigJSON(ValidDefaultServiceConfig());
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());
     return ::grpc::CreateCustomChannel("fake:///", creds_, args);
@@ -242,7 +243,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   std::shared_ptr<Channel> BuildChannelWithInvalidDefaultServiceConfig() {
     ChannelArguments args;
     EXPECT_THAT(
-        args.experimental().ValidateAndSetServiceConfigJSON(
+        grpc::experimental::ValidateServiceConfigJSON(
             InvalidDefaultServiceConfig()),
         ::testing::HasSubstr("failed to parse JSON for service config"));
     args.SetServiceConfigJSON(InvalidDefaultServiceConfig());

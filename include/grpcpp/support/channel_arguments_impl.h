@@ -31,6 +31,15 @@ namespace grpc {
 namespace testing {
 class ChannelArgumentsTest;
 }  // namespace testing
+
+namespace experimental {
+/// Validates \a service_config_json. If valid, returns an empty string.
+/// Otherwise, returns the validation error.
+/// TODO(yashykt): Promote it to out of experimental once it is proved useful
+/// and gRFC is accepted.
+grpc::string ValidateServiceConfigJSON(const grpc::string& service_config_json);
+}  // namespace experimental
+
 }  // namespace grpc
 
 namespace grpc_impl {
@@ -40,27 +49,8 @@ class SecureChannelCredentials;
 /// Options for channel creation. The user can use generic setters to pass
 /// key value pairs down to C channel creation code. For gRPC related options,
 /// concrete setters are provided.
-/// This class derives from GrpcLibraryCodegen so that gRPC is initialized
-/// before ValidateAndSetServiceConfigJSON is used. (Service config validation
-/// methods are registered at initialization.)
-class ChannelArguments : private ::grpc::GrpcLibraryCodegen {
+class ChannelArguments {
  public:
-  /// NOTE: class experimental_type is not part of the public API of this class.
-  /// TODO(yashykt): Integrate into public API when this is no longer
-  /// experimental.
-  class experimental_type {
-   public:
-    explicit experimental_type(ChannelArguments* args) : args_(args) {}
-
-    /// Validates \a service_config_json. If valid, sets the service config and
-    /// returns an empty string. If invalid, returns the validation error.
-    grpc::string ValidateAndSetServiceConfigJSON(
-        const grpc::string& service_config_json);
-
-   private:
-    ChannelArguments* args_;
-  };
-
   ChannelArguments();
   ~ChannelArguments();
 
@@ -143,11 +133,6 @@ class ChannelArguments : private ::grpc::GrpcLibraryCodegen {
     out.args = args_.empty() ? NULL : const_cast<grpc_arg*>(&args_[0]);
     return out;
   }
-
-  /// NOTE: The function experimental() is not stable public API. It is a view
-  /// to the experimental components of this class. It may be changed or removed
-  /// at any time.
-  experimental_type experimental() { return experimental_type(this); }
 
  private:
   friend class grpc_impl::SecureChannelCredentials;
