@@ -35,6 +35,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "client_channel_stress_test",
     srcs = ["client_channel_stress_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",

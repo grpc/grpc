@@ -4566,7 +4566,7 @@ targets:
   - grpc
   - gpr
 - name: client_channel_stress_test
-  gtest: false
+  gtest: true
   cpu_cost: 10.0
   build: test
   language: c++

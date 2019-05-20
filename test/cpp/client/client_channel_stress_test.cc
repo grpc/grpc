@@ -36,6 +36,8 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include <gtest/gtest.h>
+
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
@@ -131,50 +133,8 @@ class BalancerServiceImpl : public LoadBalancer::Service {
   const std::vector<int> all_backend_ports_;
 };
 
-class ClientChannelStressTest {
- public:
-  void Run() {
-    EnableDefaultHealthCheckService(true);
-    Start();
-    // Keep updating resolution for the test duration.
-    gpr_log(GPR_INFO, "Start updating resolution.");
-    const auto wait_duration =
-        std::chrono::milliseconds(kResolutionUpdateIntervalMs);
-    std::vector<AddressData> addresses;
-    auto start_time = std::chrono::steady_clock::now();
-    while (true) {
-      if (std::chrono::duration_cast<std::chrono::seconds>(
-              std::chrono::steady_clock::now() - start_time)
-              .count() > kTestDurationSec) {
-        break;
-      }
-      // Generate a random subset of balancers and backends.
-      addresses.clear();
-      for (const auto& balancer_server : balancer_servers_) {
-        // Select each address with probability of 0.8.
-        if (std::rand() % 10 < 8) {
-          addresses.emplace_back(AddressData{balancer_server.port_, true, ""});
-        }
-      }
-      for (const auto& backend_server : backend_servers_) {
-        // Select each address with probability of 0.8.
-        if (std::rand() % 10 < 8) {
-          addresses.emplace_back(AddressData{backend_server.port_, false, ""});
-        }
-      }
-      std::shuffle(addresses.begin(), addresses.end(),
-                   std::mt19937(std::random_device()()));
-      // Choose which client handle to update.
-      ClientHandle* client_handle =
-          client_handles_[std::rand() % client_handles_.size()].get();
-      SetNextResolution(client_handle, addresses);
-      std::this_thread::sleep_for(wait_duration);
-    }
-    gpr_log(GPR_INFO, "Finish updating resolution.");
-    Shutdown();
-  }
-
- private:
+class ClientChannelStressTest : public ::testing::Test {
+ protected:
   template <typename T>
   struct ServerThread {
     explicit ServerThread(const grpc::string& type,
@@ -363,15 +323,59 @@ class ClientChannelStressTest {
   std::vector<std::thread> client_threads_;
 };
 
+// Run this through gtest because it depends on TestServiceImpl, which
+// uses gtest constructs like EXPECT_*() mactos.  If we don't initialize
+// gtest, this caueses tsan failures.
+TEST_F(ClientChannelStressTest, Run) {
+  EnableDefaultHealthCheckService(true);
+  Start();
+  // Keep updating resolution for the test duration.
+  gpr_log(GPR_INFO, "Start updating resolution.");
+  const auto wait_duration =
+      std::chrono::milliseconds(kResolutionUpdateIntervalMs);
+  std::vector<AddressData> addresses;
+  auto start_time = std::chrono::steady_clock::now();
+  while (true) {
+    if (std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::steady_clock::now() - start_time)
+            .count() > kTestDurationSec) {
+      break;
+    }
+    // Generate a random subset of balancers and backends.
+    addresses.clear();
+    for (const auto& balancer_server : balancer_servers_) {
+      // Select each address with probability of 0.8.
+      if (std::rand() % 10 < 8) {
+        addresses.emplace_back(AddressData{balancer_server.port_, true, ""});
+      }
+    }
+    for (const auto& backend_server : backend_servers_) {
+      // Select each address with probability of 0.8.
+      if (std::rand() % 10 < 8) {
+        addresses.emplace_back(AddressData{backend_server.port_, false, ""});
+      }
+    }
+    std::shuffle(addresses.begin(), addresses.end(),
+                 std::mt19937(std::random_device()()));
+    // Choose which client handle to update.
+    ClientHandle* client_handle =
+        client_handles_[std::rand() % client_handles_.size()].get();
+    SetNextResolution(client_handle, addresses);
+    std::this_thread::sleep_for(wait_duration);
+  }
+  gpr_log(GPR_INFO, "Finish updating resolution.");
+  Shutdown();
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);
-  grpc::testing::ClientChannelStressTest test;
-  test.Run();
+  int ret = RUN_ALL_TESTS();
   grpc_shutdown();
-  return 0;
+  return ret;
 }
