@@ -376,9 +376,7 @@ static void test_callback(void) {
 
   LOG_TEST("test_callback");
 
-  gpr_mu_lock(&shutdown_mu);
   bool got_shutdown = false;
-  gpr_mu_unlock(&shutdown_mu);
   class ShutdownCallback : public grpc_experimental_completion_queue_functor {
    public:
     ShutdownCallback(bool* done) : done_(done) {
@@ -405,9 +403,7 @@ static void test_callback(void) {
   for (size_t pidx = 0; pidx < GPR_ARRAY_SIZE(polling_types); pidx++) {
     int sumtags = 0;
     int counter = 0;
-    gpr_mu_lock(&mu);
     cb_counter = 0;
-    gpr_mu_unlock(&mu);
     {
       // reset exec_ctx types
       grpc_core::ExecCtx exec_ctx;
@@ -472,9 +468,7 @@ static void test_callback(void) {
     // Run the assertions to check if the test ran successfully.
     GPR_ASSERT(sumtags == counter);
     GPR_ASSERT(got_shutdown);
-    gpr_mu_lock(&shutdown_mu);
     got_shutdown = false;
-    gpr_mu_unlock(&shutdown_mu);
   }
 
   gpr_cv_destroy(&cv);
