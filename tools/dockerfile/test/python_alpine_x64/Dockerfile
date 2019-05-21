@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3.3
+FROM alpine:3.9
+
+ENV PY_BINARY "python3.6"
 
 # Install Git and basic packages.
 RUN apk update && apk add \
@@ -32,14 +34,21 @@ RUN apk update && apk add \
   strace \
   python-dev \
   py-pip \
+  python3-dev \
   unzip \
   wget \
   zip
 
-# Install Python packages from PyPI
-RUN pip install --upgrade pip==10.0.1
-RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.0.post1 six==1.10.0
+# Install Python 2 for tooling code.
+RUN pip install --upgrade pip==10.0.1 && \
+	pip install virtualenv futures==2.2.0 enum34==1.0.4 \
+		protobuf==3.5.0.post1 six==1.10.0
+
+# Install Python 3 packages from PyPI
+RUN python3 -m ensurepip && \
+	python3 -m pip install --upgrade pip==10.0.1 && \
+	python3 -m pip install virtualenv && \
+	python3 -m pip install protobuf==3.5.0.post1 six==1.10.0
 
 # Google Cloud platform API libraries
 RUN pip install --upgrade google-api-python-client oauth2client

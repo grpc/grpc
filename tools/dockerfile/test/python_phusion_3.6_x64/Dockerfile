@@ -11,9 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+FROM phusion/baseimage:0.11
 
-FROM debian:stretch
-  
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
   autoconf \
@@ -57,16 +56,11 @@ RUN pip install --upgrade google-api-python-client oauth2client
 RUN apt-get update && apt-get install -y python2.7 python-all-dev
 RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
 
-# Add Debian 'testing' repository
-RUN echo 'deb http://ftp.de.debian.org/debian testing main' >> /etc/apt/sources.list
-RUN echo 'APT::Default-Release "stable";' | tee -a /etc/apt/apt.conf.d/00local
-
 
 RUN mkdir /var/local/jenkins
 
 # Define the default command.
 CMD ["bash"]
 
-
-RUN apt-get update && apt-get -t testing install -y python3.6 python3-all-dev
+RUN apt-get install -y python3.6
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3.6

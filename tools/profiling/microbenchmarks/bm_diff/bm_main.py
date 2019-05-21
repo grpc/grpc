@@ -15,6 +15,9 @@
 # limitations under the License.
 """ Runs the entire bm_*.py pipeline, and possible comments on the PR """
 
+# TODO(https://github.com/grpc/grpc/issues/19083): Remove dependency on Python
+# 2.
+
 import bm_constants
 import bm_build
 import bm_run

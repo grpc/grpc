@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# TODO(https://github.com/grpc/grpc/issues/19083): Remove Python 2 dependency.
+
 for p in python2.7 python2.6 python2 python not_found ; do 
 
   python=$(which $p || echo not_found)

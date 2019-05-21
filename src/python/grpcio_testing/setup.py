@@ -66,6 +66,15 @@ except ImportError:
         'preprocess': _NoOpCommand,
     }
 
+CLASSIFIERS = [
+    'Development Status :: 5 - Production/Stable',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.5',
+    'Programming Language :: Python :: 3.6',
+    'License :: OSI Approved :: Apache Software License',
+]
+
 setuptools.setup(
     name='grpcio-testing',
     version=grpc_version.VERSION,
@@ -74,6 +83,7 @@ setuptools.setup(
     long_description=open(_README_PATH, 'r').read(),
     author='The gRPC Authors',
     author_email='grpc-io@googlegroups.com',
+    classifiers=CLASSIFIERS,
     url='https://grpc.io',
     package_dir=PACKAGE_DIRECTORIES,
     packages=setuptools.find_packages('.'),

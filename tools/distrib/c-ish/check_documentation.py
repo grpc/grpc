@@ -17,6 +17,9 @@
 # check for directory level 'README.md' files
 # check that all implementation and interface files have a \file doxygen comment
 
+# TODO(https://github.com/grpc/grpc/issues/19083): Remove dependency on Python
+# 2.
+
 import os
 import sys
 

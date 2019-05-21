@@ -15,6 +15,9 @@
 
 # Defines languages, runtimes and releases for backward compatibility testing
 
+# TODO(https://github.com/grpc/grpc/issues/19083): Remove dependency on Python
+# 2.
+
 from collections import OrderedDict
 
 

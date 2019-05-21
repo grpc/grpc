@@ -14,6 +14,9 @@
 # limitations under the License.
 """Definition of targets to build artifacts."""
 
+# TODO(https://github.com/grpc/grpc/issues/19083): Remove dependency on Python
+# 2.
+
 import os.path
 import random
 import string
@@ -160,7 +163,7 @@ class PythonArtifact:
                 docker_base_image='quay.io/pypa/manylinux1_i686'
                 if self.arch == 'x86' else 'quay.io/pypa/manylinux1_x86_64')
         elif self.platform == 'windows':
-            if 'Python27' in self.py_version or 'Python34' in self.py_version:
+            if 'Python34' in self.py_version:
                 environ['EXT_COMPILER'] = 'mingw32'
             else:
                 environ['EXT_COMPILER'] = 'msvc'
@@ -360,38 +363,22 @@ def targets():
         CSharpExtArtifact('linux', 'android', arch_abi='armeabi-v7a'),
         CSharpExtArtifact('linux', 'android', arch_abi='x86'),
         CSharpExtArtifact('macos', 'ios'),
-        PythonArtifact('linux', 'x86', 'cp27-cp27m'),
-        PythonArtifact('linux', 'x86', 'cp27-cp27mu'),
-        PythonArtifact('linux', 'x86', 'cp34-cp34m'),
         PythonArtifact('linux', 'x86', 'cp35-cp35m'),
         PythonArtifact('linux', 'x86', 'cp36-cp36m'),
         PythonArtifact('linux', 'x86', 'cp37-cp37m'),
-        PythonArtifact('linux_extra', 'armv7', '2.7'),
-        PythonArtifact('linux_extra', 'armv7', '3.4'),
         PythonArtifact('linux_extra', 'armv7', '3.5'),
         PythonArtifact('linux_extra', 'armv7', '3.6'),
-        PythonArtifact('linux_extra', 'armv6', '2.7'),
-        PythonArtifact('linux_extra', 'armv6', '3.4'),
         PythonArtifact('linux_extra', 'armv6', '3.5'),
         PythonArtifact('linux_extra', 'armv6', '3.6'),
-        PythonArtifact('linux', 'x64', 'cp27-cp27m'),
-        PythonArtifact('linux', 'x64', 'cp27-cp27mu'),
-        PythonArtifact('linux', 'x64', 'cp34-cp34m'),
         PythonArtifact('linux', 'x64', 'cp35-cp35m'),
         PythonArtifact('linux', 'x64', 'cp36-cp36m'),
         PythonArtifact('linux', 'x64', 'cp37-cp37m'),
-        PythonArtifact('macos', 'x64', 'python2.7'),
-        PythonArtifact('macos', 'x64', 'python3.4'),
         PythonArtifact('macos', 'x64', 'python3.5'),
         PythonArtifact('macos', 'x64', 'python3.6'),
         PythonArtifact('macos', 'x64', 'python3.7'),
-        PythonArtifact('windows', 'x86', 'Python27_32bits'),
-        PythonArtifact('windows', 'x86', 'Python34_32bits'),
         PythonArtifact('windows', 'x86', 'Python35_32bits'),
         PythonArtifact('windows', 'x86', 'Python36_32bits'),
         PythonArtifact('windows', 'x86', 'Python37_32bits'),
-        PythonArtifact('windows', 'x64', 'Python27'),
-        PythonArtifact('windows', 'x64', 'Python34'),
         PythonArtifact('windows', 'x64', 'Python35'),
         PythonArtifact('windows', 'x64', 'Python36'),
         PythonArtifact('windows', 'x64', 'Python37'),

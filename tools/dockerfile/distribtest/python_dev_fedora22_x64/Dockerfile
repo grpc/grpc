@@ -14,10 +14,11 @@
 
 FROM fedora:22
 
-RUN yum clean all && yum update -y && yum install -y python python-pip
-RUN pip install virtualenv
+RUN yum clean all && yum update -y && yum install -y python3 python-pip
+RUN python3 -m ensurepip
+RUN python3 -m pip install virtualenv
 
 RUN yum groupinstall -y "Development Tools"
 RUN yum install -y redhat-rpm-config
 RUN yum install -y gcc-c++
-RUN yum install -y python2-devel
+RUN yum install -y python3-devel

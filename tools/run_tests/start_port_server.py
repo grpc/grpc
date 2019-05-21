@@ -23,6 +23,9 @@ The path to this file is called out in test/core/util/port.c, and printed as
 an error message to users.
 """
 
+# TODO(https://github.com/grpc/grpc/issues/19083): Remove dependencies on Python
+# 2.
+
 import python_utils.start_port_server as start_port_server
 
 start_port_server.start_port_server()

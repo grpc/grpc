@@ -33,7 +33,7 @@ DOCKER_IMAGE_NAME=$(basename "$DOCKERFILE_DIR")_$(sha1sum "$DOCKERFILE_DIR/Docke
 if [ "$DOCKERHUB_ORGANIZATION" != "" ]
 then
   DOCKER_IMAGE_NAME=$DOCKERHUB_ORGANIZATION/$DOCKER_IMAGE_NAME
-  time docker pull "$DOCKER_IMAGE_NAME"
+  time docker pull "$DOCKER_IMAGE_NAME" || time docker build -t "$DOCKER_IMAGE_NAME" "$DOCKERFILE_DIR"
 else
   # Make sure docker image has been built. Should be instantaneous if so.
   docker build -t "$DOCKER_IMAGE_NAME" "$DOCKERFILE_DIR"

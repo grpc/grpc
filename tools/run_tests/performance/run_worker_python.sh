@@ -17,4 +17,7 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
+# TODO(https://github.com/grpc/grpc/issues/19083): Remove dependencies on Python
+# 2.
+
 PYTHONPATH=src/python/grpcio_tests:src/python/gens py27_native/bin/python src/python/grpcio_tests/tests/qps/qps_worker.py "$@"

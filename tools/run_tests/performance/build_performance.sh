@@ -69,6 +69,8 @@ do
     tools/run_tests/performance/build_performance_node.sh
     ;;
   "python")
+    # TODO(https://github.com/grpc/grpc/issues/19083): Remove dependency on
+    # Python 2.
     # python workers are only run with python2.7 and building with multiple python versions is costly
     python tools/run_tests/run_tests.py -l "$language" -c "$CONFIG" --compiler python2.7 --build_only -j 8
     ;;
