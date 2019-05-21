@@ -96,7 +96,7 @@ def collect_latency(bm_name, args):
                     '--benchmark_filter=^%s$' % line,
                     '--benchmark_min_time=0.05'
                 ],
-                environ={'LATENCY_TRACE': '%s.trace' % fnize(line)},
+                environ={'GRPC_LATENCY_TRACE': '%s.trace' % fnize(line)},
                 shortname='profile-%s' % fnize(line)))
         profile_analysis.append(
             jobset.JobSpec(
