@@ -13,7 +13,7 @@ build --host_platform=//third_party/toolchains:rbe_windows
 build --platforms=//third_party/toolchains:rbe_windows
 
 build --shell_executable=C:\\tools\\msys64\\usr\\bin\\bash.exe
-build --python_path=C:\\Python27\\python.exe
+build --python_path=C:\\Python35\\python.exe
 
 build --spawn_strategy=remote
 build --strategy=Javac=remote

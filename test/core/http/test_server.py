@@ -15,6 +15,9 @@
 
 """Server for httpcli_test"""
 
+# TODO(https://github.com/grpc/grpc/issues/19083): Remove dependency on Python
+# 2.
+
 import argparse
 import BaseHTTPServer
 import os

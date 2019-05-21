@@ -15,7 +15,7 @@ Installation
 ------------
 
 The gRPC Python tools package is available for Linux, Mac OS X, and Windows
-running Python 2.7.
+running Python 3.5+.
 
 Installing From PyPI
 ~~~~~~~~~~~~~~~~~~~~

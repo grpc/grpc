@@ -12,22 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Note: You'll need to enable vsyscall emulation in your kernel to run this image
+# locally.
 FROM centos:6
 
 RUN yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
 
-# Vanilla CentOS6 only has python 2.6 and we don't support that.
+# This repo only supports up to Python 3.4.
 RUN yum -y install yum -y install https://centos6.iuscommunity.org/ius-release.rpm
-RUN yum install -y python27
-
-# Override python2.6
-RUN ln -s /usr/bin/python2.7 /usr/local/bin/python
-RUN ln -s /usr/bin/python2.7 /usr/local/bin/python2
+RUN yum install -y python34
 
 # Install pip
-RUN curl https://bootstrap.pypa.io/get-pip.py | python -
+RUN python3 -m ensurepip
 
 # "which" command required by python's run_distrib_test.sh
 RUN yum install -y which
 
-RUN pip install virtualenv
+RUN python3 -m pip install virtualenv

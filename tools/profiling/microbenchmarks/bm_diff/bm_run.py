@@ -15,6 +15,9 @@
 # limitations under the License.
 """ Python utility to run opt and counters benchmarks and save json output """
 
+# TODO(https://github.com/grpc/grpc/issues/19083): Remove dependency on Python
+# 2.
+
 import bm_constants
 
 import argparse

@@ -15,6 +15,9 @@
 # limitations under the License.
 """ Python utility to build opt and counters benchmarks """
 
+# TODO(https://github.com/grpc/grpc/issues/19083): Remove dependency on Python
+# 2.
+
 import bm_constants
 
 import argparse

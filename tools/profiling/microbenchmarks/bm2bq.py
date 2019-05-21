@@ -17,6 +17,9 @@
 # Convert google-benchmark json output to something that can be uploaded to
 # BigQuery
 
+# TODO(https://github.com/grpc/grpc/issues/19083): Remove dependency on Python
+# 2.
+
 import sys
 import json
 import csv

@@ -157,11 +157,11 @@ curl https://bootstrap.pypa.io/get-pip.py | $VENV_PYTHON
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
 pip_install_dir() {
-  PWD=$(pwd)
-  cd "$1"
-  ($VENV_PYTHON setup.py build_ext -c "$TOOLCHAIN" || true)
-  $VENV_PYTHON -m pip install --no-deps .
-  cd "$PWD"
+  (
+    cd "$1"
+    ($VENV_PYTHON setup.py build_ext -c "$TOOLCHAIN" || true)
+    $VENV_PYTHON -m pip install --no-deps .
+  )
 }
 
 case "$VENV" in

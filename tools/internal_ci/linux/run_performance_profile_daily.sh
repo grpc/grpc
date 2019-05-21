@@ -17,6 +17,9 @@ set -ex
 
 cd $(dirname $0)/../../..
 
+# TODO(https://github.com/grpc/grpc/issues/19083): Remove dependency on Python
+# 2.
+
 # try to use pypy for generating reports
 # each trace dumps 7-8gig of text to disk, and processing this into a report is
 # heavyweight - so any speed boost is worthwhile

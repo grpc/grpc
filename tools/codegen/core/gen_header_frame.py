@@ -19,6 +19,9 @@
    Write a set of strings containing a hpack encoded http2 frame that
    represents said headers."""
 
+# TODO(https://github.com/grpc/grpc/issues/19083): Remove dependency on Python
+# 2.
+
 import json
 import sys
 import argparse

@@ -14,6 +14,9 @@
 # limitations under the License.
 """Generates the appropriate JSON data for LB interop test scenarios."""
 
+# TODO(https://github.com/grpc/grpc/issues/19083): Remove dependency on Python
+# 2.
+
 import json
 import os
 import yaml

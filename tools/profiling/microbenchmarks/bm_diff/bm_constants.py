@@ -15,6 +15,9 @@
 # limitations under the License.
 """ Configurable constants for the bm_*.py family """
 
+# TODO(https://github.com/grpc/grpc/issues/19083): Remove dependency on Python
+# 2.
+
 _AVAILABLE_BENCHMARK_TESTS = [
     'bm_fullstack_unary_ping_pong', 'bm_fullstack_streaming_ping_pong',
     'bm_fullstack_streaming_pump', 'bm_closure', 'bm_cq', 'bm_call_create',

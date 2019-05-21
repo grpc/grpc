@@ -752,14 +752,12 @@ class PythonLanguage(object):
 
     def _python_manager_name(self):
         """Choose the docker image to use based on python version."""
-        if self.args.compiler in [
-                'python2.7', 'python3.5', 'python3.6', 'python3.7'
-        ]:
+        if self.args.compiler in ['python3.5', 'python3.7']:
             return 'stretch_' + self.args.compiler[len('python'):]
+        elif self.args.compiler == 'python3.6':
+            return 'phusion_' + self.args.compiler[len('python'):]
         elif self.args.compiler == 'python_alpine':
             return 'alpine'
-        elif self.args.compiler == 'python3.4':
-            return 'jessie'
         else:
             return 'stretch_3.7'
 
@@ -799,18 +797,6 @@ class PythonLanguage(object):
         config_vars = _PythonConfigVars(
             shell, builder, builder_prefix_arguments, venv_relative_python,
             toolchain, runner, test_command, args.iomgr_platform)
-        python27_config = _python_config_generator(
-            name='py27',
-            major='2',
-            minor='7',
-            bits=bits,
-            config_vars=config_vars)
-        python34_config = _python_config_generator(
-            name='py34',
-            major='3',
-            minor='4',
-            bits=bits,
-            config_vars=config_vars)
         python35_config = _python_config_generator(
             name='py35',
             major='3',
@@ -829,8 +815,6 @@ class PythonLanguage(object):
             minor='7',
             bits=bits,
             config_vars=config_vars)
-        pypy27_config = _pypy_config_generator(
-            name='pypy', major='2', config_vars=config_vars)
         pypy32_config = _pypy_config_generator(
             name='pypy3', major='3', config_vars=config_vars)
 
@@ -838,30 +822,19 @@ class PythonLanguage(object):
             if os.name == 'nt':
                 return (python35_config,)
             else:
-                return (
-                    python27_config,
-                    python37_config,
-                )
-        elif args.compiler == 'python2.7':
-            return (python27_config,)
-        elif args.compiler == 'python3.4':
-            return (python34_config,)
+                return (python37_config,)
         elif args.compiler == 'python3.5':
             return (python35_config,)
         elif args.compiler == 'python3.6':
             return (python36_config,)
         elif args.compiler == 'python3.7':
             return (python37_config,)
-        elif args.compiler == 'pypy':
-            return (pypy27_config,)
         elif args.compiler == 'pypy3':
             return (pypy32_config,)
         elif args.compiler == 'python_alpine':
-            return (python27_config,)
+            return (python36_config,)
         elif args.compiler == 'all_the_cpythons':
             return (
-                python27_config,
-                python34_config,
                 python35_config,
                 python36_config,
                 python37_config,
@@ -1340,9 +1313,9 @@ argp.add_argument(
     choices=[
         'default', 'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3', 'gcc7.2',
         'gcc_musl', 'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7', 'clang7.0',
-        'python2.7', 'python3.4', 'python3.5', 'python3.6', 'python3.7', 'pypy',
-        'pypy3', 'python_alpine', 'all_the_cpythons', 'electron1.3',
-        'electron1.6', 'coreclr', 'cmake', 'cmake_vs2015', 'cmake_vs2017'
+        'python3.5', 'python3.6', 'python3.7', 'pypy3', 'python_alpine',
+        'all_the_cpythons', 'electron1.3', 'electron1.6', 'coreclr', 'cmake',
+        'cmake_vs2015', 'cmake_vs2017'
     ],
     default='default',
     help=

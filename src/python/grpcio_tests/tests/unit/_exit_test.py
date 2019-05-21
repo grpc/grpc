@@ -138,7 +138,6 @@ class ExitTest(unittest.TestCase):
             stderr=sys.stderr)
         interrupt_and_wait(process)
 
-    @unittest.skipIf(six.PY2, 'https://github.com/grpc/grpc/issues/6999')
     @unittest.skipIf(os.name == 'nt',
                      'os.kill does not have required permission on Windows')
     def test_in_flight_unary_stream_call(self):
@@ -157,7 +156,6 @@ class ExitTest(unittest.TestCase):
             stderr=sys.stderr)
         interrupt_and_wait(process)
 
-    @unittest.skipIf(six.PY2, 'https://github.com/grpc/grpc/issues/6999')
     @unittest.skipIf(os.name == 'nt',
                      'os.kill does not have required permission on Windows')
     def test_in_flight_stream_stream_call(self):
@@ -167,7 +165,6 @@ class ExitTest(unittest.TestCase):
             stderr=sys.stderr)
         interrupt_and_wait(process)
 
-    @unittest.skipIf(six.PY2, 'https://github.com/grpc/grpc/issues/6999')
     @unittest.skipIf(os.name == 'nt',
                      'os.kill does not have required permission on Windows')
     def test_in_flight_partial_unary_stream_call(self):
@@ -188,7 +185,6 @@ class ExitTest(unittest.TestCase):
             stderr=sys.stderr)
         interrupt_and_wait(process)
 
-    @unittest.skipIf(six.PY2, 'https://github.com/grpc/grpc/issues/6999')
     @unittest.skipIf(os.name == 'nt',
                      'os.kill does not have required permission on Windows')
     def test_in_flight_partial_stream_stream_call(self):

@@ -14,6 +14,9 @@
 # limitations under the License.
 """Manage TCP ports for unit tests; started by run_tests.py"""
 
+# TODO(https://github.com/grpc/grpc/issues/19083): Remove dependency on Python
+# 2.
+
 from __future__ import print_function
 
 import argparse

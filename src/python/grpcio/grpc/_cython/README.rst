@@ -16,10 +16,6 @@ See the wonderful `Cython website`_.
 Why Cython?
 -----------
 
-- **Python 2 and 3 support**
-  Cython generated C code has precompiler macros to target both Python 2 and
-  Python 3 C APIs, even while acting as a superset of just the Python 2
-  language (e.g. using ``basestring``).
 - **Significantly less semantic noise**
   A lot of CPython code is just glue, especially human-error-prone
   ``Py_INCREF``-ing and ``Py_DECREF``-ing around error handlers and such.

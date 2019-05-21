@@ -16,6 +16,9 @@
 # Reads stdin to find chttp2_refcount log lines, and prints reference leaks
 # to stdout
 
+# TODO(https://github.com/grpc/grpc/issues/19083): Remove dependency on Python
+# 2.
+
 import collections
 import sys
 import re

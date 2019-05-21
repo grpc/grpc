@@ -49,7 +49,7 @@ def _create_build_map():
 
     if set(target_build_map.keys()).intersection(label_build_map.keys()):
         raise Exception('Target names need to be distinct from label names')
-    return dict(target_build_map.items() + label_build_map.items())
+    return dict(target_build_map, **label_build_map)
 
 
 _BUILD_MAP = _create_build_map()

@@ -15,6 +15,9 @@
 # limitations under the License.
 """ Computes the diff between two bm runs and outputs significant results """
 
+# TODO(https://github.com/grpc/grpc/issues/19083): Remove dependency on Python
+# 2.
+
 import bm_constants
 import bm_speedup
 

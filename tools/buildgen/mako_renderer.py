@@ -18,6 +18,9 @@ Just a wrapper around the mako rendering library.
 
 """
 
+# TODO(https://github.com/grpc/grpc/issues/19083): Remove dependency on Python
+# 2.
+
 import getopt
 import imp
 import os
