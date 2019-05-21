@@ -30,6 +30,7 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount;
 

@@ -4368,6 +4368,25 @@
       "gpr", 
       "grpc", 
       "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util", 
+      "test_tcp_server"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "port_sharing_end2end_test", 
+    "src": [
+      "test/cpp/end2end/port_sharing_end2end_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc++", 
       "grpc++_proto_reflection_desc_db", 
       "grpc++_reflection", 
       "grpc++_test_util", 
@@ -9254,7 +9273,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_channel"
+      "grpc_client_channel", 
+      "grpc_resolver_dns_selection"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h", 
@@ -9284,7 +9304,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_channel"
+      "grpc_client_channel", 
+      "grpc_resolver_dns_selection"
     ], 
     "headers": [], 
     "is_filegroup": true, 
@@ -9292,6 +9313,24 @@
     "name": "grpc_resolver_dns_native", 
     "src": [
       "src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base"
+    ], 
+    "headers": [
+      "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_resolver_dns_selection", 
+    "src": [
+      "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc", 
+      "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -10367,6 +10406,7 @@
       "src/cpp/client/create_channel_internal.h", 
       "src/cpp/common/channel_filter.h", 
       "src/cpp/server/dynamic_thread_pool.h", 
+      "src/cpp/server/external_connection_acceptor_impl.h", 
       "src/cpp/server/health/default_health_check_service.h", 
       "src/cpp/server/thread_pool_interface.h", 
       "src/cpp/thread_manager/thread_manager.h"
@@ -10511,6 +10551,8 @@
       "src/cpp/server/create_default_thread_pool.cc", 
       "src/cpp/server/dynamic_thread_pool.cc", 
       "src/cpp/server/dynamic_thread_pool.h", 
+      "src/cpp/server/external_connection_acceptor_impl.cc", 
+      "src/cpp/server/external_connection_acceptor_impl.h", 
       "src/cpp/server/health/default_health_check_service.cc", 
       "src/cpp/server/health/default_health_check_service.h", 
       "src/cpp/server/health/health_check_service.cc", 
