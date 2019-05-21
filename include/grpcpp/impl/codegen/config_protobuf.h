@@ -78,7 +78,7 @@ namespace grpc {
 namespace protobuf {
 
 typedef GRPC_CUSTOM_MESSAGE Message;
-typedef GRPC_CUSTOM_MESSAGE MessageLite;
+typedef GRPC_CUSTOM_MESSAGELITE MessageLite;
 typedef GRPC_CUSTOM_PROTOBUF_INT64 int64;
 
 typedef GRPC_CUSTOM_DESCRIPTOR Descriptor;
