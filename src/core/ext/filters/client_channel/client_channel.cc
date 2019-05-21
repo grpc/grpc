@@ -966,22 +966,16 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
   void WatchConnectivityState(
       grpc_connectivity_state initial_state,
       UniquePtr<ConnectivityStateWatcher> watcher) override {
-    auto& watcher_wrapper = watcher_map_[watcher.get()];
-    GPR_ASSERT(watcher_wrapper == nullptr);
-    watcher_wrapper = New<WatcherWrapper>(std::move(watcher), Ref());
     subchannel_->WatchConnectivityState(
         initial_state,
         UniquePtr<char>(gpr_strdup(health_check_service_name_.get())),
-        UniquePtr<Subchannel::ConnectivityStateWatcher>(watcher_wrapper));
+        std::move(watcher));
   }
 
   void CancelConnectivityStateWatch(
       ConnectivityStateWatcher* watcher) override {
-    auto it = watcher_map_.find(watcher);
-    GPR_ASSERT(it != watcher_map_.end());
     subchannel_->CancelConnectivityStateWatch(health_check_service_name_.get(),
-                                              it->second);
-    watcher_map_.erase(it);
+                                              watcher);
   }
 
   void AttemptToConnect() override { subchannel_->AttemptToConnect(); }
@@ -993,37 +987,8 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
   void ResetBackoff() override { subchannel_->ResetBackoff(); }
 
  private:
-  class WatcherWrapper : public Subchannel::ConnectivityStateWatcher {
-   public:
-    WatcherWrapper(
-        UniquePtr<SubchannelInterface::ConnectivityStateWatcher> watcher,
-        RefCountedPtr<GrpcSubchannel> parent)
-        : watcher_(std::move(watcher)), parent_(std::move(parent)) {}
-
-    void OnConnectivityStateChange(
-        grpc_connectivity_state new_state,
-        RefCountedPtr<ConnectedSubchannel> connected_subchannel) override {
-      watcher_->OnConnectivityStateChange(new_state,
-                                          std::move(connected_subchannel));
-    }
-
-    grpc_pollset_set* interested_parties() override {
-      return watcher_->interested_parties();
-    }
-
-   private:
-    UniquePtr<SubchannelInterface::ConnectivityStateWatcher> watcher_;
-    RefCountedPtr<GrpcSubchannel> parent_;
-  };
-
   Subchannel* subchannel_;
   UniquePtr<char> health_check_service_name_;
-  // Maps from the address of the wrapper watcher passed to us to the
-  // address of the real watcher passed to the underlying Subchannel.
-  // This is needed so that when the LB policy calls
-  // CancelConnectivityStateWatch() with the wrapper watcher, we know the
-  // corresponding real watcher to cancel on the underlying subchannel.
-  Map<ConnectivityStateWatcher*, WatcherWrapper*> watcher_map_;
 };
 
 //

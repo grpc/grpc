@@ -21,11 +21,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 
 namespace grpc_core {
+
+class ConnectedSubchannel;
 
 class SubchannelInterface : public RefCounted<SubchannelInterface> {
  public:
