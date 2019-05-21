@@ -194,6 +194,9 @@ BOOL isRemoteInteropTest(NSString *host) {
 }
 
 - (void)setUp {
+  setenv("GRPC_VERBOSITY", "DEBUG", 1);
+  setenv("GRPC_TRACE", "http", 1);
+
   self.continueAfterFailure = NO;
 
   [GRPCCall resetHostSettings];
