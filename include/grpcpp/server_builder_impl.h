@@ -38,25 +38,46 @@ struct grpc_resource_quota;
 
 namespace grpc_impl {
 
-class CompletionQueue;
 class ResourceQuota;
-class Server;
-class ServerCompletionQueue;
 class ServerCredentials;
 }  // namespace grpc_impl
+
 namespace grpc {
 
 class AsyncGenericService;
+class CompletionQueue;
+class ServerCompletionQueue;
 class Service;
-
 namespace testing {
 class ServerBuilderPluginTest;
 }  // namespace testing
 
+namespace internal {
+class ExternalConnectionAcceptorImpl;
+}  // namespace internal
+
 namespace experimental {
 class CallbackGenericService;
-}
+
+// EXPERIMENTAL API:
+// Interface for a grpc server to build transports with connections created out
+// of band.
+// See ServerBuilder's AddExternalConnectionAcceptor API.
+class ExternalConnectionAcceptor {
+ public:
+  struct NewConnectionParameters {
+    int fd = -1;
+    ByteBuffer read_buffer;  // data intended for the grpc server
+  };
+  virtual ~ExternalConnectionAcceptor() {}
+  // If called before grpc::Server is started or after it is shut down, the new
+  // connection will be closed.
+  virtual void HandleNewConnection(NewConnectionParameters* p) = 0;
+};
+
+}  // namespace experimental
 }  // namespace grpc
+
 namespace grpc_impl {
 
 /// A builder class for the creation and startup of \a grpc::Server instances.
@@ -134,7 +155,7 @@ class ServerBuilder {
   /// not polling the completion queue frequently) will have a significantly
   /// negative performance impact and hence should not be used in production
   /// use cases.
-  std::unique_ptr<grpc_impl::ServerCompletionQueue> AddCompletionQueue(
+  std::unique_ptr<grpc::ServerCompletionQueue> AddCompletionQueue(
       bool is_frequently_polled = true);
 
   //////////////////////////////////////////////////////////////////////////////
@@ -249,6 +270,18 @@ class ServerBuilder {
     ServerBuilder& RegisterCallbackGenericService(
         grpc::experimental::CallbackGenericService* service);
 
+    enum class ExternalConnectionType {
+      FROM_FD = 0  // in the form of a file descriptor
+    };
+
+    /// Register an acceptor to handle the externally accepted connection in
+    /// grpc server. The returned acceptor can be used to pass the connection
+    /// to grpc server, where a channel will be created with the provided
+    /// server credentials.
+    std::unique_ptr<grpc::experimental::ExternalConnectionAcceptor>
+    AddExternalConnectionAcceptor(ExternalConnectionType type,
+                                  std::shared_ptr<ServerCredentials> creds);
+
    private:
     ServerBuilder* builder_;
   };
@@ -328,7 +361,7 @@ class ServerBuilder {
   SyncServerSettings sync_server_settings_;
 
   /// List of completion queues added via \a AddCompletionQueue method.
-  std::vector<grpc_impl::ServerCompletionQueue*> cqs_;
+  std::vector<grpc::ServerCompletionQueue*> cqs_;
 
   std::shared_ptr<grpc_impl::ServerCredentials> creds_;
   std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>> plugins_;
@@ -348,6 +381,8 @@ class ServerBuilder {
   std::vector<
       std::unique_ptr<grpc::experimental::ServerInterceptorFactoryInterface>>
       interceptor_creators_;
+  std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
+      acceptors_;
 };
 
 }  // namespace grpc_impl

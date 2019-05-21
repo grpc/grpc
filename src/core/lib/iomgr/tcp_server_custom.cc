@@ -233,6 +233,7 @@ static void finish_accept(grpc_tcp_listener* sp, grpc_custom_socket* socket) {
   acceptor->from_server = sp->server;
   acceptor->port_index = sp->port_index;
   acceptor->fd_index = 0;
+  acceptor->external_connection = false;
   sp->server->on_accept_cb(sp->server->on_accept_cb_arg, ep, nullptr, acceptor);
   gpr_free(peer_name_string);
 }
@@ -456,16 +457,17 @@ static void tcp_server_shutdown_listeners(grpc_tcp_server* s) {
   }
 }
 
+static grpc_core::TcpServerFdHandler* tcp_server_create_fd_handler(
+    grpc_tcp_server* s) {
+  return nullptr;
+}
+
 grpc_tcp_server_vtable custom_tcp_server_vtable = {
-    tcp_server_create,
-    tcp_server_start,
-    tcp_server_add_port,
-    tcp_server_port_fd_count,
-    tcp_server_port_fd,
-    tcp_server_ref,
-    tcp_server_shutdown_starting_add,
-    tcp_server_unref,
-    tcp_server_shutdown_listeners};
+    tcp_server_create,        tcp_server_start,
+    tcp_server_add_port,      tcp_server_create_fd_handler,
+    tcp_server_port_fd_count, tcp_server_port_fd,
+    tcp_server_ref,           tcp_server_shutdown_starting_add,
+    tcp_server_unref,         tcp_server_shutdown_listeners};
 
 #ifdef GRPC_UV_TEST
 grpc_tcp_server_vtable* default_tcp_server_vtable = &custom_tcp_server_vtable;

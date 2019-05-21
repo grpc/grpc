@@ -29,8 +29,6 @@
 
 namespace grpc_impl {
 
-class Channel;
-
 class SecureChannelCredentials final : public ChannelCredentials {
  public:
   explicit SecureChannelCredentials(grpc_channel_credentials* c_creds);

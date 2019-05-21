@@ -2779,6 +2779,56 @@
   {
     "deps": [
       "benchmark", 
+      "bm_callback_test_service_impl", 
+      "gpr", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_benchmark", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [
+      "test/cpp/microbenchmarks/callback_streaming_ping_pong.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_callback_streaming_ping_pong", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_callback_streaming_ping_pong.cc", 
+      "test/cpp/microbenchmarks/callback_streaming_ping_pong.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "bm_callback_test_service_impl", 
+      "gpr", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_benchmark", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [
+      "test/cpp/microbenchmarks/callback_unary_ping_pong.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_callback_unary_ping_pong", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_callback_unary_ping_pong.cc", 
+      "test/cpp/microbenchmarks/callback_unary_ping_pong.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
       "gpr", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
@@ -4309,6 +4359,25 @@
     "name": "orphanable_test", 
     "src": [
       "test/core/gprpp/orphanable_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util", 
+      "test_tcp_server"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "port_sharing_end2end_test", 
+    "src": [
+      "test/cpp/end2end/port_sharing_end2end_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -6625,6 +6694,33 @@
     "type": "lib"
   }, 
   {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_benchmark", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [
+      "src/proto/grpc/testing/echo.grpc.pb.h", 
+      "src/proto/grpc/testing/echo.pb.h", 
+      "src/proto/grpc/testing/echo_mock.grpc.pb.h", 
+      "test/cpp/microbenchmarks/callback_test_service.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_callback_test_service_impl", 
+    "src": [
+      "test/cpp/microbenchmarks/callback_test_service.cc", 
+      "test/cpp/microbenchmarks/callback_test_service.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
     "deps": [], 
     "headers": [
       "test/cpp/naming/dns_test_util.h"
@@ -8574,6 +8670,7 @@
       "src/core/lib/slice/slice_hash_table.h", 
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.h", 
+      "src/core/lib/slice/slice_utils.h", 
       "src/core/lib/slice/slice_weak_hash_table.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
@@ -8730,6 +8827,7 @@
       "src/core/lib/slice/slice_hash_table.h", 
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.h", 
+      "src/core/lib/slice/slice_utils.h", 
       "src/core/lib/slice/slice_weak_hash_table.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
@@ -9180,8 +9278,7 @@
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h", 
-      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h", 
-      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.h"
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
@@ -9197,8 +9294,6 @@
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc", 
-      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.cc", 
-      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.h", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc"
     ], 
@@ -10038,7 +10133,6 @@
       "include/grpcpp/impl/codegen/client_interceptor.h", 
       "include/grpcpp/impl/codegen/client_unary_call.h", 
       "include/grpcpp/impl/codegen/completion_queue.h", 
-      "include/grpcpp/impl/codegen/completion_queue_impl.h", 
       "include/grpcpp/impl/codegen/completion_queue_tag.h", 
       "include/grpcpp/impl/codegen/config.h", 
       "include/grpcpp/impl/codegen/core_codegen_interface.h", 
@@ -10116,7 +10210,6 @@
       "include/grpcpp/impl/codegen/client_interceptor.h", 
       "include/grpcpp/impl/codegen/client_unary_call.h", 
       "include/grpcpp/impl/codegen/completion_queue.h", 
-      "include/grpcpp/impl/codegen/completion_queue_impl.h", 
       "include/grpcpp/impl/codegen/completion_queue_tag.h", 
       "include/grpcpp/impl/codegen/config.h", 
       "include/grpcpp/impl/codegen/core_codegen_interface.h", 
@@ -10245,7 +10338,6 @@
       "include/grpcpp/alarm.h", 
       "include/grpcpp/alarm_impl.h", 
       "include/grpcpp/channel.h", 
-      "include/grpcpp/channel_impl.h", 
       "include/grpcpp/client_context.h", 
       "include/grpcpp/completion_queue.h", 
       "include/grpcpp/create_channel.h", 
@@ -10314,6 +10406,7 @@
       "src/cpp/client/create_channel_internal.h", 
       "src/cpp/common/channel_filter.h", 
       "src/cpp/server/dynamic_thread_pool.h", 
+      "src/cpp/server/external_connection_acceptor_impl.h", 
       "src/cpp/server/health/default_health_check_service.h", 
       "src/cpp/server/thread_pool_interface.h", 
       "src/cpp/thread_manager/thread_manager.h"
@@ -10370,7 +10463,6 @@
       "include/grpcpp/alarm.h", 
       "include/grpcpp/alarm_impl.h", 
       "include/grpcpp/channel.h", 
-      "include/grpcpp/channel_impl.h", 
       "include/grpcpp/client_context.h", 
       "include/grpcpp/completion_queue.h", 
       "include/grpcpp/create_channel.h", 
@@ -10459,6 +10551,8 @@
       "src/cpp/server/create_default_thread_pool.cc", 
       "src/cpp/server/dynamic_thread_pool.cc", 
       "src/cpp/server/dynamic_thread_pool.h", 
+      "src/cpp/server/external_connection_acceptor_impl.cc", 
+      "src/cpp/server/external_connection_acceptor_impl.h", 
       "src/cpp/server/health/default_health_check_service.cc", 
       "src/cpp/server/health/default_health_check_service.h", 
       "src/cpp/server/health/health_check_service.cc", 

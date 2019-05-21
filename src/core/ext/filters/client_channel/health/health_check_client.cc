@@ -323,6 +323,11 @@ void HealthCheckClient::CallState::StartCall() {
   grpc_error* error = GRPC_ERROR_NONE;
   call_ = health_check_client_->connected_subchannel_->CreateCall(args, &error)
               .release();
+  // Register after-destruction callback.
+  GRPC_CLOSURE_INIT(&after_call_stack_destruction_, AfterCallStackDestruction,
+                    this, grpc_schedule_on_exec_ctx);
+  call_->SetAfterCallStackDestroy(&after_call_stack_destruction_);
+  // Check if creation failed.
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
             "HealthCheckClient %p CallState %p: error creating health "
@@ -338,10 +343,6 @@ void HealthCheckClient::CallState::StartCall() {
         GRPC_ERROR_NONE);
     return;
   }
-  // Register after-destruction callback.
-  GRPC_CLOSURE_INIT(&after_call_stack_destruction_, AfterCallStackDestruction,
-                    this, grpc_schedule_on_exec_ctx);
-  call_->SetAfterCallStackDestroy(&after_call_stack_destruction_);
   // Initialize payload and batch.
   payload_.context = context_;
   batch_.payload = &payload_;

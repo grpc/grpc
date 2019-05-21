@@ -310,7 +310,7 @@ class grpc_ssl_server_security_connector
  private:
   /* Attempts to fetch the server certificate config if a callback is available.
    * Current certificate config will continue to be used if the callback returns
-   * an error. Returns true if new credentials were sucessfully loaded. */
+   * an error. Returns true if new credentials were successfully loaded. */
   bool try_fetch_ssl_server_credentials() {
     grpc_ssl_server_certificate_config* certificate_config = nullptr;
     bool status;

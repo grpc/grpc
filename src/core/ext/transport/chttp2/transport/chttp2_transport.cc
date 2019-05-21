@@ -1720,7 +1720,7 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
 }
 
 static void cancel_pings(grpc_chttp2_transport* t, grpc_error* error) {
-  /* callback remaining pings: they're not allowed to call into the transpot,
+  /* callback remaining pings: they're not allowed to call into the transport,
      and maybe they hold resources that need to be freed */
   grpc_chttp2_ping_queue* pq = &t->ping_queue;
   GPR_ASSERT(error != GRPC_ERROR_NONE);
@@ -2262,7 +2262,7 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
   if (closed_read) {
     for (int i = 0; i < 2; i++) {
       if (s->published_metadata[i] == GRPC_METADATA_NOT_PUBLISHED) {
-        s->published_metadata[i] = GPRC_METADATA_PUBLISHED_AT_CLOSE;
+        s->published_metadata[i] = GRPC_METADATA_PUBLISHED_AT_CLOSE;
       }
     }
     grpc_chttp2_maybe_complete_recv_initial_metadata(t, s);
