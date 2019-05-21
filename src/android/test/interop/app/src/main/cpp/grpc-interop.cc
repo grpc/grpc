@@ -45,9 +45,10 @@ std::shared_ptr<grpc::testing::InteropClient> GetClient(const char* host,
     credentials = grpc::InsecureChannelCredentials();
   }
 
+  grpc::testing::ChannelCreationFunc channel_creation_func = 
+      std::bind(grpc::CreateChannel, host_port, credentials);
   return std::shared_ptr<grpc::testing::InteropClient>(
-      new grpc::testing::InteropClient(
-          grpc::CreateChannel(host_port, credentials), true, false));
+      new grpc::testing::InteropClient(channel_creation_func, true, false));
 }
 
 extern "C" JNIEXPORT jboolean JNICALL

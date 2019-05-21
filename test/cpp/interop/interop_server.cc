@@ -317,25 +317,25 @@ class TestServiceImpl : public TestService::Service {
 };
 
 void grpc::testing::interop::RunServer(
-    std::shared_ptr<ServerCredentials> creds) {
+    const std::shared_ptr<ServerCredentials>& creds) {
   RunServer(creds, FLAGS_port, nullptr, nullptr);
 }
 
 void grpc::testing::interop::RunServer(
-    std::shared_ptr<ServerCredentials> creds,
+    const std::shared_ptr<ServerCredentials>& creds,
     std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>>
         server_options) {
   RunServer(creds, FLAGS_port, nullptr, std::move(server_options));
 }
 
 void grpc::testing::interop::RunServer(
-    std::shared_ptr<ServerCredentials> creds, const int port,
+    const std::shared_ptr<ServerCredentials>& creds, const int port,
     ServerStartedCondition* server_started_condition) {
   RunServer(creds, port, server_started_condition, nullptr);
 }
 
 void grpc::testing::interop::RunServer(
-    std::shared_ptr<ServerCredentials> creds, const int port,
+    const std::shared_ptr<ServerCredentials>& creds, const int port,
     ServerStartedCondition* server_started_condition,
     std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>>
         server_options) {

@@ -36,8 +36,6 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
-auto& force_library_initialization = Library::get();
-
 ////////////////////////////////////////////////////////////////////////////////
 // Helper classes
 //
@@ -54,9 +52,11 @@ class DummyEndpoint : public grpc_endpoint {
                                                    destroy,
                                                    get_resource_user,
                                                    get_peer,
-                                                   get_fd};
+                                                   get_fd,
+                                                   can_track_err};
     grpc_endpoint::vtable = &my_vtable;
-    ru_ = grpc_resource_user_create(Library::get().rq(), "dummy_endpoint");
+    ru_ = grpc_resource_user_create(LibraryInitializer::get().rq(),
+                                    "dummy_endpoint");
   }
 
   void PushInput(grpc_slice slice) {
@@ -91,16 +91,14 @@ class DummyEndpoint : public grpc_endpoint {
   }
 
   static void read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                   grpc_closure* cb) {
+                   grpc_closure* cb, bool urgent) {
     static_cast<DummyEndpoint*>(ep)->QueueRead(slices, cb);
   }
 
   static void write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb) {
+                    grpc_closure* cb, void* arg) {
     GRPC_CLOSURE_SCHED(cb, GRPC_ERROR_NONE);
   }
-
-  static grpc_workqueue* get_workqueue(grpc_endpoint* ep) { return nullptr; }
 
   static void add_to_pollset(grpc_endpoint* ep, grpc_pollset* pollset) {}
 
@@ -125,6 +123,7 @@ class DummyEndpoint : public grpc_endpoint {
   }
   static char* get_peer(grpc_endpoint* ep) { return gpr_strdup("test"); }
   static int get_fd(grpc_endpoint* ep) { return 0; }
+  static bool can_track_err(grpc_endpoint* ep) { return false; }
 };
 
 class Fixture {
@@ -193,13 +192,13 @@ class Stream {
   Stream(Fixture* f) : f_(f) {
     stream_size_ = grpc_transport_stream_size(f->transport());
     stream_ = gpr_malloc(stream_size_);
-    arena_ = gpr_arena_create(4096);
+    arena_ = grpc_core::Arena::Create(4096);
   }
 
   ~Stream() {
     gpr_event_wait(&done_, gpr_inf_future(GPR_CLOCK_REALTIME));
     gpr_free(stream_);
-    gpr_arena_destroy(arena_);
+    arena_->Destroy();
   }
 
   void Init(benchmark::State& state) {
@@ -208,8 +207,8 @@ class Stream {
     gpr_event_init(&done_);
     memset(stream_, 0, stream_size_);
     if ((state.iterations() & 0xffff) == 0) {
-      gpr_arena_destroy(arena_);
-      arena_ = gpr_arena_create(4096);
+      arena_->Destroy();
+      arena_ = grpc_core::Arena::Create(4096);
     }
     grpc_transport_init_stream(f_->transport(),
                                static_cast<grpc_stream*>(stream_), &refcount_,
@@ -245,7 +244,7 @@ class Stream {
 
   Fixture* f_;
   grpc_stream_refcount refcount_;
-  gpr_arena* arena_;
+  grpc_core::Arena* arena_;
   size_t stream_size_;
   void* stream_;
   grpc_closure* destroy_closure_ = nullptr;
@@ -262,7 +261,7 @@ static void BM_StreamCreateDestroy(benchmark::State& state) {
   Fixture f(grpc::ChannelArguments(), true);
   Stream s(&f);
   grpc_transport_stream_op_batch op;
-  grpc_transport_stream_op_batch_payload op_payload;
+  grpc_transport_stream_op_batch_payload op_payload(nullptr);
   memset(&op, 0, sizeof(op));
   op.cancel_stream = true;
   op.payload = &op_payload;
@@ -308,8 +307,7 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
   Fixture f(grpc::ChannelArguments(), true);
   Stream s(&f);
   grpc_transport_stream_op_batch op;
-  grpc_transport_stream_op_batch_payload op_payload;
-  memset(&op_payload, 0, sizeof(op_payload));
+  grpc_transport_stream_op_batch_payload op_payload(nullptr);
   std::unique_ptr<Closure> start;
   std::unique_ptr<Closure> done;
 
@@ -360,8 +358,7 @@ static void BM_TransportEmptyOp(benchmark::State& state) {
   Stream s(&f);
   s.Init(state);
   grpc_transport_stream_op_batch op;
-  grpc_transport_stream_op_batch_payload op_payload;
-  memset(&op_payload, 0, sizeof(op_payload));
+  grpc_transport_stream_op_batch_payload op_payload(nullptr);
   auto reset_op = [&]() {
     memset(&op, 0, sizeof(op));
     op.payload = &op_payload;
@@ -393,8 +390,7 @@ static void BM_TransportStreamSend(benchmark::State& state) {
   auto s = std::unique_ptr<Stream>(new Stream(&f));
   s->Init(state);
   grpc_transport_stream_op_batch op;
-  grpc_transport_stream_op_batch_payload op_payload;
-  memset(&op_payload, 0, sizeof(op_payload));
+  grpc_transport_stream_op_batch_payload op_payload(nullptr);
   auto reset_op = [&]() {
     memset(&op, 0, sizeof(op));
     op.payload = &op_payload;
@@ -526,8 +522,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
   Fixture f(grpc::ChannelArguments(), true);
   Stream s(&f);
   s.Init(state);
-  grpc_transport_stream_op_batch_payload op_payload;
-  memset(&op_payload, 0, sizeof(op_payload));
+  grpc_transport_stream_op_batch_payload op_payload(nullptr);
   grpc_transport_stream_op_batch op;
   grpc_core::OrphanablePtr<grpc_core::ByteStream> recv_stream;
   grpc_slice incoming_data = CreateIncomingDataSlice(state.range(0), 16384);
@@ -646,6 +641,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();

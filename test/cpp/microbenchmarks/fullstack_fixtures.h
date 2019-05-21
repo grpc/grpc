@@ -48,6 +48,7 @@ namespace testing {
 
 class FixtureConfiguration {
  public:
+  virtual ~FixtureConfiguration() {}
   virtual void ApplyCommonChannelArguments(ChannelArguments* c) const {
     c->SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX);
     c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
@@ -85,8 +86,8 @@ class FullstackFixture : public BaseFixture {
     ChannelArguments args;
     config.ApplyCommonChannelArguments(&args);
     if (address.length() > 0) {
-      channel_ =
-          CreateCustomChannel(address, InsecureChannelCredentials(), args);
+      channel_ = ::grpc::CreateCustomChannel(
+          address, InsecureChannelCredentials(), args);
     } else {
       channel_ = server_->InProcessChannel(args);
     }
@@ -199,7 +200,7 @@ class EndpointPairFixture : public BaseFixture {
       }
 
       grpc_server_setup_transport(server_->c_server(), server_transport_,
-                                  nullptr, server_args);
+                                  nullptr, server_args, nullptr);
       grpc_chttp2_transport_start_reading(server_transport_, nullptr, nullptr);
     }
 
@@ -217,7 +218,10 @@ class EndpointPairFixture : public BaseFixture {
           "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport_);
       grpc_chttp2_transport_start_reading(client_transport_, nullptr, nullptr);
 
-      channel_ = CreateChannelInternal("", channel);
+      channel_ = CreateChannelInternal(
+          "", channel,
+          std::vector<std::unique_ptr<
+              experimental::ClientInterceptorFactoryInterface>>());
     }
   }
 
@@ -295,8 +299,8 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
 
   static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats* stats) {
     grpc_endpoint_pair p;
-    grpc_passthru_endpoint_create(&p.client, &p.server, Library::get().rq(),
-                                  stats);
+    grpc_passthru_endpoint_create(&p.client, &p.server,
+                                  LibraryInitializer::get().rq(), stats);
     return p;
   }
 };

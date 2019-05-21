@@ -65,18 +65,13 @@ def encode(s):
     if isinstance(s, bytes):
         return s
     else:
-        return s.encode('ascii')
+        return s.encode('utf8')
 
 
 def decode(b):
-    if isinstance(b, str):
-        return b
-    else:
-        try:
-            return b.decode('utf8')
-        except UnicodeDecodeError:
-            _LOGGER.exception('Invalid encoding on %s', b)
-            return b.decode('latin1')
+    if isinstance(b, bytes):
+        return b.decode('utf-8', 'replace')
+    return b
 
 
 def _transform(message, transformer, exception_message):

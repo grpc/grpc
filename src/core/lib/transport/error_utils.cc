@@ -26,8 +26,9 @@
 
 static grpc_error* recursively_find_error_with_field(grpc_error* error,
                                                      grpc_error_ints which) {
+  intptr_t unused;
   // If the error itself has a status code, return it.
-  if (grpc_error_get_int(error, which, nullptr)) {
+  if (grpc_error_get_int(error, which, &unused)) {
     return error;
   }
   if (grpc_error_is_special(error)) return nullptr;
@@ -47,6 +48,18 @@ void grpc_error_get_status(grpc_error* error, grpc_millis deadline,
                            grpc_status_code* code, grpc_slice* slice,
                            grpc_http2_error_code* http_error,
                            const char** error_string) {
+  // Fast path: We expect no error.
+  if (GPR_LIKELY(error == GRPC_ERROR_NONE)) {
+    if (code != nullptr) *code = GRPC_STATUS_OK;
+    if (slice != nullptr) {
+      grpc_error_get_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, slice);
+    }
+    if (http_error != nullptr) {
+      *http_error = GRPC_HTTP2_NO_ERROR;
+    }
+    return;
+  }
+
   // Start with the parent error and recurse through the tree of children
   // until we find the first one that has a status code.
   grpc_error* found_error =
@@ -102,7 +115,8 @@ void grpc_error_get_status(grpc_error* error, grpc_millis deadline,
 }
 
 bool grpc_error_has_clear_grpc_status(grpc_error* error) {
-  if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, nullptr)) {
+  intptr_t unused;
+  if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &unused)) {
     return true;
   }
   uint8_t slot = error->first_err;

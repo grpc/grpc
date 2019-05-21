@@ -32,7 +32,7 @@ The command line tool should support the following things:
 
 To use the tool, you need to get the grpc repository and make sure your system
 has the prerequisites for building grpc from source, given in the [installation
-instructions](https://github.com/grpc/grpc/blob/master/INSTALL.md).
+instructions](../BUILDING.md).
 
 In order to build the grpc command line tool from a fresh clone of the grpc
 repository, you need to run the following command to update submodules:
@@ -41,11 +41,15 @@ repository, you need to run the following command to update submodules:
 git submodule update --init
 ```
 
-You also need to have the gflags library installed on your system. On Linux
-systems, gflags can be installed with the following command:
-
+You also need to have the gflags library installed on your system. gflags can be
+installed with the following command:
+Linux:
 ```
 sudo apt-get install libgflags-dev
+```
+Mac systems with Homebrew:
+```
+brew install gflags
 ```
 
 Once the prerequisites are satisfied, you can build the command line tool with

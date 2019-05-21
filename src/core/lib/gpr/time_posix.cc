@@ -108,6 +108,9 @@ static gpr_timespec now_impl(gpr_clock_type clock) {
   now.clock_type = clock;
   switch (clock) {
     case GPR_CLOCK_REALTIME:
+      // gettimeofday(...) function may return with a value whose tv_usec is
+      // greater than 1e6 on iOS The case is resolved with the guard at end of
+      // this function.
       gettimeofday(&now_tv, nullptr);
       now.tv_sec = now_tv.tv_sec;
       now.tv_nsec = now_tv.tv_usec * 1000;
@@ -124,6 +127,16 @@ static gpr_timespec now_impl(gpr_clock_type clock) {
       abort();
   }
 
+  // Guard the tv_nsec field in valid range for all clock types
+  while (GPR_UNLIKELY(now.tv_nsec >= 1e9)) {
+    now.tv_sec++;
+    now.tv_nsec -= 1e9;
+  }
+  while (GPR_UNLIKELY(now.tv_nsec < 0)) {
+    now.tv_sec--;
+    now.tv_nsec += 1e9;
+  }
+
   return now;
 }
 #endif
@@ -133,12 +146,18 @@ gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type) = now_impl;
 #ifdef GPR_LOW_LEVEL_COUNTERS
 gpr_atm gpr_now_call_count;
 #endif
-
 gpr_timespec gpr_now(gpr_clock_type clock_type) {
 #ifdef GPR_LOW_LEVEL_COUNTERS
   __atomic_fetch_add(&gpr_now_call_count, 1, __ATOMIC_RELAXED);
 #endif
-  return gpr_now_impl(clock_type);
+  // validate clock type
+  GPR_ASSERT(clock_type == GPR_CLOCK_MONOTONIC ||
+             clock_type == GPR_CLOCK_REALTIME ||
+             clock_type == GPR_CLOCK_PRECISE);
+  gpr_timespec ts = gpr_now_impl(clock_type);
+  // tv_nsecs must be in the range [0, 1e9).
+  GPR_ASSERT(ts.tv_nsec >= 0 && ts.tv_nsec < 1e9);
+  return ts;
 }
 
 void gpr_sleep_until(gpr_timespec until) {

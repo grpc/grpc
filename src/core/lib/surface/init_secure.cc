@@ -74,8 +74,8 @@ void grpc_register_security_filters(void) {
                                    maybe_prepend_client_auth_filter, nullptr);
   grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX - 1,
                                    maybe_prepend_client_auth_filter, nullptr);
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX - 1,
                                    maybe_prepend_server_auth_filter, nullptr);
 }
 
-void grpc_security_init() { grpc_security_register_handshaker_factories(); }
+void grpc_security_init() { grpc_core::SecurityRegisterHandshakerFactories(); }

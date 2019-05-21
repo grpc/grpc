@@ -283,7 +283,7 @@ static void test_stress(int amount_of_stress) {
 }
 
 int main(int argc, char* argv[]) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
 
   test_get();
   test_ll();

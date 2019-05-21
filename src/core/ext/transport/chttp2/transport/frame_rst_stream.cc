@@ -32,7 +32,7 @@ grpc_slice grpc_chttp2_rst_stream_create(uint32_t id, uint32_t code,
                                          grpc_transport_one_way_stats* stats) {
   static const size_t frame_size = 13;
   grpc_slice slice = GRPC_SLICE_MALLOC(frame_size);
-  stats->framing_bytes += frame_size;
+  if (stats != nullptr) stats->framing_bytes += frame_size;
   uint8_t* p = GRPC_SLICE_START_PTR(slice);
 
   // Frame size.
@@ -74,10 +74,11 @@ grpc_error* grpc_chttp2_rst_stream_parser_begin_frame(
 grpc_error* grpc_chttp2_rst_stream_parser_parse(void* parser,
                                                 grpc_chttp2_transport* t,
                                                 grpc_chttp2_stream* s,
-                                                grpc_slice slice, int is_last) {
-  uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
-  uint8_t* const end = GRPC_SLICE_END_PTR(slice);
-  uint8_t* cur = beg;
+                                                const grpc_slice& slice,
+                                                int is_last) {
+  const uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
+  const uint8_t* const end = GRPC_SLICE_END_PTR(slice);
+  const uint8_t* cur = beg;
   grpc_chttp2_rst_stream_parser* p =
       static_cast<grpc_chttp2_rst_stream_parser*>(parser);
 

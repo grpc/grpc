@@ -44,7 +44,7 @@ namespace grpc {
 namespace testing {
 
 static std::unique_ptr<BenchmarkService::Stub> BenchmarkStubCreator(
-    std::shared_ptr<Channel> ch) {
+    const std::shared_ptr<Channel>& ch) {
   return BenchmarkService::NewStub(ch);
 }
 
@@ -192,7 +192,7 @@ class SynchronousStreamingClient : public SynchronousClient {
     new (&context_[thread_idx]) ClientContext();
   }
 
-  void CleanupAllStreams(std::function<void(size_t)> cleaner) {
+  void CleanupAllStreams(const std::function<void(size_t)>& cleaner) {
     std::vector<std::thread> cleanup_threads;
     for (size_t i = 0; i < num_threads_; i++) {
       cleanup_threads.emplace_back([this, i, cleaner] {

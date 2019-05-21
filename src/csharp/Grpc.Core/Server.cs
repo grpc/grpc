@@ -29,7 +29,7 @@ using Grpc.Core.Utils;
 namespace Grpc.Core
 {
     /// <summary>
-    /// gRPC server. A single server can server arbitrary number of services and can listen on more than one ports.
+    /// gRPC server. A single server can serve an arbitrary number of services and can listen on more than one port.
     /// </summary>
     public class Server
     {
@@ -257,7 +257,7 @@ namespace Grpc.Core
             lock (myLock)
             {
                 GrpcPreconditions.CheckState(!startRequested);
-                foreach (var entry in serviceDefinition.CallHandlers)
+                foreach (var entry in serviceDefinition.GetCallHandlers())
                 {
                     callHandlers.Add(entry.Key, entry.Value);
                 }

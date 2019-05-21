@@ -23,8 +23,8 @@
 
 #include <stddef.h>
 
-#include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 /** Populate \a resolved_addr from \a uri, whose path is expected to contain a
  * unix socket path. Returns true upon success. */
@@ -46,5 +46,8 @@ bool grpc_parse_ipv4_hostport(const char* hostport, grpc_resolved_address* addr,
                               bool log_errors);
 bool grpc_parse_ipv6_hostport(const char* hostport, grpc_resolved_address* addr,
                               bool log_errors);
+
+/* Converts named or numeric port to a uint16 suitable for use in a sockaddr. */
+uint16_t grpc_strhtons(const char* port);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PARSE_ADDRESS_H */

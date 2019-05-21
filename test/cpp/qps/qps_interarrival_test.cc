@@ -28,7 +28,8 @@
 using grpc::testing::InterarrivalTimer;
 using grpc::testing::RandomDistInterface;
 
-static void RunTest(RandomDistInterface&& r, int threads, std::string title) {
+static void RunTest(RandomDistInterface&& r, int threads,
+                    const std::string& title) {
   InterarrivalTimer timer;
   timer.init(r, threads);
   grpc_histogram* h(grpc_histogram_create(0.01, 60e9));

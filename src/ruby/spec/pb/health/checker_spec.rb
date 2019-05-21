@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'grpc'
+require 'spec_helper'
 require 'grpc/health/v1/health_pb'
 require 'grpc/health/checker'
 require 'open3'

@@ -27,6 +27,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -67,8 +68,7 @@ static void timer_callback(void* arg, grpc_error* error) {
     error = grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Deadline Exceeded"),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_DEADLINE_EXCEEDED);
-    grpc_call_combiner_cancel(deadline_state->call_combiner,
-                              GRPC_ERROR_REF(error));
+    deadline_state->call_combiner->Cancel(GRPC_ERROR_REF(error));
     GRPC_CLOSURE_INIT(&deadline_state->timer_callback,
                       send_cancel_op_in_call_combiner, elem,
                       grpc_schedule_on_exec_ctx);
@@ -123,32 +123,40 @@ static void cancel_timer_if_needed(grpc_deadline_state* deadline_state) {
     deadline_state->timer_state = GRPC_DEADLINE_STATE_FINISHED;
     grpc_timer_cancel(&deadline_state->timer);
   } else {
-    // timer was either in STATE_INITAL (nothing to cancel)
+    // timer was either in STATE_INITIAL (nothing to cancel)
     // OR in STATE_FINISHED (again nothing to cancel)
   }
 }
 
-// Callback run when the call is complete.
-static void on_complete(void* arg, grpc_error* error) {
+// Callback run when we receive trailing metadata.
+static void recv_trailing_metadata_ready(void* arg, grpc_error* error) {
   grpc_deadline_state* deadline_state = static_cast<grpc_deadline_state*>(arg);
   cancel_timer_if_needed(deadline_state);
-  // Invoke the next callback.
-  GRPC_CLOSURE_RUN(deadline_state->next_on_complete, GRPC_ERROR_REF(error));
+  // Invoke the original callback.
+  GRPC_CLOSURE_RUN(deadline_state->original_recv_trailing_metadata_ready,
+                   GRPC_ERROR_REF(error));
 }
 
-// Inject our own on_complete callback into op.
-static void inject_on_complete_cb(grpc_deadline_state* deadline_state,
-                                  grpc_transport_stream_op_batch* op) {
-  deadline_state->next_on_complete = op->on_complete;
-  GRPC_CLOSURE_INIT(&deadline_state->on_complete, on_complete, deadline_state,
+// Inject our own recv_trailing_metadata_ready callback into op.
+static void inject_recv_trailing_metadata_ready(
+    grpc_deadline_state* deadline_state, grpc_transport_stream_op_batch* op) {
+  deadline_state->original_recv_trailing_metadata_ready =
+      op->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
+  GRPC_CLOSURE_INIT(&deadline_state->recv_trailing_metadata_ready,
+                    recv_trailing_metadata_ready, deadline_state,
                     grpc_schedule_on_exec_ctx);
-  op->on_complete = &deadline_state->on_complete;
+  op->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
+      &deadline_state->recv_trailing_metadata_ready;
 }
 
 // Callback and associated state for starting the timer after call stack
 // initialization has been completed.
 struct start_timer_after_init_state {
-  bool in_call_combiner;
+  start_timer_after_init_state(grpc_call_element* elem, grpc_millis deadline)
+      : elem(elem), deadline(deadline) {}
+  ~start_timer_after_init_state() { start_timer_if_needed(elem, deadline); }
+
+  bool in_call_combiner = false;
   grpc_call_element* elem;
   grpc_millis deadline;
   grpc_closure closure;
@@ -167,20 +175,16 @@ static void start_timer_after_init(void* arg, grpc_error* error) {
                              "scheduling deadline timer");
     return;
   }
-  start_timer_if_needed(state->elem, state->deadline);
-  gpr_free(state);
+  grpc_core::Delete(state);
   GRPC_CALL_COMBINER_STOP(deadline_state->call_combiner,
                           "done scheduling deadline timer");
 }
 
-void grpc_deadline_state_init(grpc_call_element* elem,
-                              grpc_call_stack* call_stack,
-                              grpc_call_combiner* call_combiner,
-                              grpc_millis deadline) {
-  grpc_deadline_state* deadline_state =
-      static_cast<grpc_deadline_state*>(elem->call_data);
-  deadline_state->call_stack = call_stack;
-  deadline_state->call_combiner = call_combiner;
+grpc_deadline_state::grpc_deadline_state(grpc_call_element* elem,
+                                         grpc_call_stack* call_stack,
+                                         grpc_core::CallCombiner* call_combiner,
+                                         grpc_millis deadline)
+    : call_stack(call_stack), call_combiner(call_combiner) {
   // Deadline will always be infinite on servers, so the timer will only be
   // set on clients with a finite deadline.
   if (deadline != GRPC_MILLIS_INF_FUTURE) {
@@ -192,21 +196,14 @@ void grpc_deadline_state_init(grpc_call_element* elem,
     // create a closure to start the timer, and we schedule that closure
     // to be run after call stack initialization is done.
     struct start_timer_after_init_state* state =
-        static_cast<struct start_timer_after_init_state*>(
-            gpr_zalloc(sizeof(*state)));
-    state->elem = elem;
-    state->deadline = deadline;
+        grpc_core::New<start_timer_after_init_state>(elem, deadline);
     GRPC_CLOSURE_INIT(&state->closure, start_timer_after_init, state,
                       grpc_schedule_on_exec_ctx);
     GRPC_CLOSURE_SCHED(&state->closure, GRPC_ERROR_NONE);
   }
 }
 
-void grpc_deadline_state_destroy(grpc_call_element* elem) {
-  grpc_deadline_state* deadline_state =
-      static_cast<grpc_deadline_state*>(elem->call_data);
-  cancel_timer_if_needed(deadline_state);
-}
+grpc_deadline_state::~grpc_deadline_state() { cancel_timer_if_needed(this); }
 
 void grpc_deadline_state_reset(grpc_call_element* elem,
                                grpc_millis new_deadline) {
@@ -226,7 +223,7 @@ void grpc_deadline_state_client_start_transport_stream_op_batch(
     // Make sure we know when the call is complete, so that we can cancel
     // the timer.
     if (op->recv_trailing_metadata) {
-      inject_on_complete_cb(deadline_state, op);
+      inject_recv_trailing_metadata_ready(deadline_state, op);
     }
   }
 }
@@ -265,8 +262,8 @@ typedef struct server_call_data {
 // Constructor for call_data.  Used for both client and server filters.
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
-  grpc_deadline_state_init(elem, args->call_stack, args->call_combiner,
-                           args->deadline);
+  new (elem->call_data) grpc_deadline_state(
+      elem, args->call_stack, args->call_combiner, args->deadline);
   return GRPC_ERROR_NONE;
 }
 
@@ -274,7 +271,9 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
 static void destroy_call_elem(grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {
-  grpc_deadline_state_destroy(elem);
+  grpc_deadline_state* deadline_state =
+      static_cast<grpc_deadline_state*>(elem->call_data);
+  deadline_state->~grpc_deadline_state();
 }
 
 // Method for starting a call op for client filter.
@@ -322,7 +321,7 @@ static void server_start_transport_stream_op_batch(
     // the client never sends trailing metadata, because this is the
     // hook that tells us when the call is complete on the server side.
     if (op->recv_trailing_metadata) {
-      inject_on_complete_cb(&calld->base.deadline_state, op);
+      inject_recv_trailing_metadata_ready(&calld->base.deadline_state, op);
     }
   }
   // Chain to next filter.

@@ -3,6 +3,16 @@ config_setting(
     values = {"cpu": "darwin"},
 )
 
+config_setting(
+    name = "darwin_x86_64",
+    values = {"cpu": "darwin_x86_64"},
+)
+
+config_setting(
+    name = "windows",
+    values = {"cpu": "x64_windows"},
+)
+
 # Android is not officially supported through C++.
 # This just helps with the build for now.
 config_setting(
@@ -49,6 +59,8 @@ genrule(
         ":ios_armv7s": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
         ":ios_arm64": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
         ":darwin": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
+        ":darwin_x86_64": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
+        ":windows": ["@com_github_grpc_grpc//third_party/cares:config_windows/ares_config.h"],
         ":android": ["@com_github_grpc_grpc//third_party/cares:config_android/ares_config.h"],
         "//conditions:default": ["@com_github_grpc_grpc//third_party/cares:config_linux/ares_config.h"],
     }),
@@ -100,6 +112,7 @@ cc_library(
         "ares_send.c",
         "ares_strcasecmp.c",
         "ares_strdup.c",
+        "ares_strsplit.c",
         "ares_strerror.c",
         "ares_timeout.c",
         "ares_version.c",
@@ -129,7 +142,9 @@ cc_library(
         "ares_setup.h",
         "ares_strcasecmp.h",
         "ares_strdup.h",
+        "ares_strsplit.h",
         "ares_version.h",
+        "ares_writev.h",
         "bitncmp.h",
         "config-win32.h",
         "nameser.h",
@@ -138,12 +153,25 @@ cc_library(
     copts = [
         "-D_GNU_SOURCE",
         "-D_HAS_EXCEPTIONS=0",
-        "-DNOMINMAX",
         "-DHAVE_CONFIG_H",
-    ],
+    ] + select({
+        ":windows": [
+            "-DNOMINMAX",
+            "-D_CRT_SECURE_NO_DEPRECATE",
+            "-D_CRT_NONSTDC_NO_DEPRECATE",
+            "-D_WIN32_WINNT=0x0600",
+        ],
+        "//conditions:default": [],
+    }),
+    defines = ["CARES_STATICLIB"],
     includes = ["."],
+    linkopts = select({
+        ":windows": ["-defaultlib:ws2_32.lib"],
+        "//conditions:default": [],
+    }),
     linkstatic = 1,
     visibility = [
         "//visibility:public",
     ],
+    alwayslink = 1,
 )

@@ -47,9 +47,9 @@ typedef struct {
 } trickle_endpoint;
 
 static void te_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb) {
+                    grpc_closure* cb, bool urgent) {
   trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
-  grpc_endpoint_read(te->wrapped, slices, cb);
+  grpc_endpoint_read(te->wrapped, slices, cb, urgent);
 }
 
 static void maybe_call_write_cb_locked(trickle_endpoint* te) {
@@ -62,7 +62,7 @@ static void maybe_call_write_cb_locked(trickle_endpoint* te) {
 }
 
 static void te_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                     grpc_closure* cb) {
+                     grpc_closure* cb, void* arg) {
   trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   gpr_mu_lock(&te->mu);
   GPR_ASSERT(te->write_cb == nullptr);
@@ -131,6 +131,8 @@ static int te_get_fd(grpc_endpoint* ep) {
   return grpc_endpoint_get_fd(te->wrapped);
 }
 
+static bool te_can_track_err(grpc_endpoint* ep) { return false; }
+
 static void te_finish_write(void* arg, grpc_error* error) {
   trickle_endpoint* te = static_cast<trickle_endpoint*>(arg);
   gpr_mu_lock(&te->mu);
@@ -148,7 +150,8 @@ static const grpc_endpoint_vtable vtable = {te_read,
                                             te_destroy,
                                             te_get_resource_user,
                                             te_get_peer,
-                                            te_get_fd};
+                                            te_get_fd,
+                                            te_can_track_err};
 
 grpc_endpoint* grpc_trickle_endpoint_create(grpc_endpoint* wrap,
                                             double bytes_per_second) {
@@ -186,7 +189,8 @@ size_t grpc_trickle_endpoint_trickle(grpc_endpoint* ep) {
       te->last_write = now;
       grpc_endpoint_write(
           te->wrapped, &te->writing_buffer,
-          GRPC_CLOSURE_CREATE(te_finish_write, te, grpc_schedule_on_exec_ctx));
+          GRPC_CLOSURE_CREATE(te_finish_write, te, grpc_schedule_on_exec_ctx),
+          nullptr);
       maybe_call_write_cb_locked(te);
     }
   }

@@ -23,8 +23,8 @@
 
 #include <stdbool.h>
 
-/* Timer Manager tries to keep one thread waiting for the next timeout at all
-   times */
+/* Timer Manager tries to keep only one thread waiting for the next timeout at
+   all times, and thus effectively preventing the thundering herd problem. */
 
 void grpc_timer_manager_init(void);
 void grpc_timer_manager_shutdown(void);

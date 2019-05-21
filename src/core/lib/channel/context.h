@@ -35,15 +35,15 @@ typedef enum {
   /// Reserved for traffic_class_context.
   GRPC_CONTEXT_TRAFFIC,
 
-  /// Value is a \a grpc_grpclb_client_stats.
-  GRPC_GRPCLB_CLIENT_STATS,
+  /// Holds a pointer to ServiceConfig::CallData associated with this call.
+  GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA,
 
   GRPC_CONTEXT_COUNT
 } grpc_context_index;
 
-typedef struct {
-  void* value;
-  void (*destroy)(void*);
-} grpc_call_context_element;
+struct grpc_call_context_element {
+  void* value = nullptr;
+  void (*destroy)(void*) = nullptr;
+};
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CONTEXT_H */

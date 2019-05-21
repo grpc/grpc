@@ -34,7 +34,7 @@ namespace Grpc.Testing {
             "U2VjdXJpdHlQYXJhbXMSEwoLdXNlX3Rlc3RfY2EYASABKAgSHAoUc2VydmVy",
             "X2hvc3Rfb3ZlcnJpZGUYAiABKAkSEQoJY3JlZF90eXBlGAMgASgJIk0KCkNo",
             "YW5uZWxBcmcSDAoEbmFtZRgBIAEoCRITCglzdHJfdmFsdWUYAiABKAlIABIT",
-            "CglpbnRfdmFsdWUYAyABKAVIAEIHCgV2YWx1ZSLvBAoMQ2xpZW50Q29uZmln",
+            "CglpbnRfdmFsdWUYAyABKAVIAEIHCgV2YWx1ZSKiBQoMQ2xpZW50Q29uZmln",
             "EhYKDnNlcnZlcl90YXJnZXRzGAEgAygJEi0KC2NsaWVudF90eXBlGAIgASgO",
             "MhguZ3JwYy50ZXN0aW5nLkNsaWVudFR5cGUSNQoPc2VjdXJpdHlfcGFyYW1z",
             "GAMgASgLMhwuZ3JwYy50ZXN0aW5nLlNlY3VyaXR5UGFyYW1zEiQKHG91dHN0",
@@ -48,59 +48,61 @@ namespace Grpc.Testing {
             "GA4gASgFEhgKEG90aGVyX2NsaWVudF9hcGkYDyABKAkSLgoMY2hhbm5lbF9h",
             "cmdzGBAgAygLMhguZ3JwYy50ZXN0aW5nLkNoYW5uZWxBcmcSFgoOdGhyZWFk",
             "c19wZXJfY3EYESABKAUSGwoTbWVzc2FnZXNfcGVyX3N0cmVhbRgSIAEoBRIY",
-            "ChB1c2VfY29hbGVzY2VfYXBpGBMgASgIIjgKDENsaWVudFN0YXR1cxIoCgVz",
-            "dGF0cxgBIAEoCzIZLmdycGMudGVzdGluZy5DbGllbnRTdGF0cyIVCgRNYXJr",
-            "Eg0KBXJlc2V0GAEgASgIImgKCkNsaWVudEFyZ3MSKwoFc2V0dXAYASABKAsy",
-            "Gi5ncnBjLnRlc3RpbmcuQ2xpZW50Q29uZmlnSAASIgoEbWFyaxgCIAEoCzIS",
-            "LmdycGMudGVzdGluZy5NYXJrSABCCQoHYXJndHlwZSL9AgoMU2VydmVyQ29u",
-            "ZmlnEi0KC3NlcnZlcl90eXBlGAEgASgOMhguZ3JwYy50ZXN0aW5nLlNlcnZl",
-            "clR5cGUSNQoPc2VjdXJpdHlfcGFyYW1zGAIgASgLMhwuZ3JwYy50ZXN0aW5n",
-            "LlNlY3VyaXR5UGFyYW1zEgwKBHBvcnQYBCABKAUSHAoUYXN5bmNfc2VydmVy",
-            "X3RocmVhZHMYByABKAUSEgoKY29yZV9saW1pdBgIIAEoBRIzCg5wYXlsb2Fk",
-            "X2NvbmZpZxgJIAEoCzIbLmdycGMudGVzdGluZy5QYXlsb2FkQ29uZmlnEhEK",
-            "CWNvcmVfbGlzdBgKIAMoBRIYChBvdGhlcl9zZXJ2ZXJfYXBpGAsgASgJEhYK",
-            "DnRocmVhZHNfcGVyX2NxGAwgASgFEhwKE3Jlc291cmNlX3F1b3RhX3NpemUY",
-            "6QcgASgFEi8KDGNoYW5uZWxfYXJncxjqByADKAsyGC5ncnBjLnRlc3Rpbmcu",
-            "Q2hhbm5lbEFyZyJoCgpTZXJ2ZXJBcmdzEisKBXNldHVwGAEgASgLMhouZ3Jw",
-            "Yy50ZXN0aW5nLlNlcnZlckNvbmZpZ0gAEiIKBG1hcmsYAiABKAsyEi5ncnBj",
-            "LnRlc3RpbmcuTWFya0gAQgkKB2FyZ3R5cGUiVQoMU2VydmVyU3RhdHVzEigK",
-            "BXN0YXRzGAEgASgLMhkuZ3JwYy50ZXN0aW5nLlNlcnZlclN0YXRzEgwKBHBv",
-            "cnQYAiABKAUSDQoFY29yZXMYAyABKAUiDQoLQ29yZVJlcXVlc3QiHQoMQ29y",
-            "ZVJlc3BvbnNlEg0KBWNvcmVzGAEgASgFIgYKBFZvaWQi/QEKCFNjZW5hcmlv",
-            "EgwKBG5hbWUYASABKAkSMQoNY2xpZW50X2NvbmZpZxgCIAEoCzIaLmdycGMu",
-            "dGVzdGluZy5DbGllbnRDb25maWcSEwoLbnVtX2NsaWVudHMYAyABKAUSMQoN",
-            "c2VydmVyX2NvbmZpZxgEIAEoCzIaLmdycGMudGVzdGluZy5TZXJ2ZXJDb25m",
-            "aWcSEwoLbnVtX3NlcnZlcnMYBSABKAUSFgoOd2FybXVwX3NlY29uZHMYBiAB",
-            "KAUSGQoRYmVuY2htYXJrX3NlY29uZHMYByABKAUSIAoYc3Bhd25fbG9jYWxf",
-            "d29ya2VyX2NvdW50GAggASgFIjYKCVNjZW5hcmlvcxIpCglzY2VuYXJpb3MY",
-            "ASADKAsyFi5ncnBjLnRlc3RpbmcuU2NlbmFyaW8ihAQKFVNjZW5hcmlvUmVz",
-            "dWx0U3VtbWFyeRILCgNxcHMYASABKAESGwoTcXBzX3Blcl9zZXJ2ZXJfY29y",
-            "ZRgCIAEoARIaChJzZXJ2ZXJfc3lzdGVtX3RpbWUYAyABKAESGAoQc2VydmVy",
-            "X3VzZXJfdGltZRgEIAEoARIaChJjbGllbnRfc3lzdGVtX3RpbWUYBSABKAES",
-            "GAoQY2xpZW50X3VzZXJfdGltZRgGIAEoARISCgpsYXRlbmN5XzUwGAcgASgB",
-            "EhIKCmxhdGVuY3lfOTAYCCABKAESEgoKbGF0ZW5jeV85NRgJIAEoARISCgps",
-            "YXRlbmN5Xzk5GAogASgBEhMKC2xhdGVuY3lfOTk5GAsgASgBEhgKEHNlcnZl",
-            "cl9jcHVfdXNhZ2UYDCABKAESJgoec3VjY2Vzc2Z1bF9yZXF1ZXN0c19wZXJf",
-            "c2Vjb25kGA0gASgBEiIKGmZhaWxlZF9yZXF1ZXN0c19wZXJfc2Vjb25kGA4g",
-            "ASgBEiAKGGNsaWVudF9wb2xsc19wZXJfcmVxdWVzdBgPIAEoARIgChhzZXJ2",
-            "ZXJfcG9sbHNfcGVyX3JlcXVlc3QYECABKAESIgoac2VydmVyX3F1ZXJpZXNf",
-            "cGVyX2NwdV9zZWMYESABKAESIgoaY2xpZW50X3F1ZXJpZXNfcGVyX2NwdV9z",
-            "ZWMYEiABKAEigwMKDlNjZW5hcmlvUmVzdWx0EigKCHNjZW5hcmlvGAEgASgL",
-            "MhYuZ3JwYy50ZXN0aW5nLlNjZW5hcmlvEi4KCWxhdGVuY2llcxgCIAEoCzIb",
-            "LmdycGMudGVzdGluZy5IaXN0b2dyYW1EYXRhEi8KDGNsaWVudF9zdGF0cxgD",
-            "IAMoCzIZLmdycGMudGVzdGluZy5DbGllbnRTdGF0cxIvCgxzZXJ2ZXJfc3Rh",
-            "dHMYBCADKAsyGS5ncnBjLnRlc3RpbmcuU2VydmVyU3RhdHMSFAoMc2VydmVy",
-            "X2NvcmVzGAUgAygFEjQKB3N1bW1hcnkYBiABKAsyIy5ncnBjLnRlc3Rpbmcu",
-            "U2NlbmFyaW9SZXN1bHRTdW1tYXJ5EhYKDmNsaWVudF9zdWNjZXNzGAcgAygI",
-            "EhYKDnNlcnZlcl9zdWNjZXNzGAggAygIEjkKD3JlcXVlc3RfcmVzdWx0cxgJ",
-            "IAMoCzIgLmdycGMudGVzdGluZy5SZXF1ZXN0UmVzdWx0Q291bnQqQQoKQ2xp",
-            "ZW50VHlwZRIPCgtTWU5DX0NMSUVOVBAAEhAKDEFTWU5DX0NMSUVOVBABEhAK",
-            "DE9USEVSX0NMSUVOVBACKlsKClNlcnZlclR5cGUSDwoLU1lOQ19TRVJWRVIQ",
-            "ABIQCgxBU1lOQ19TRVJWRVIQARIYChRBU1lOQ19HRU5FUklDX1NFUlZFUhAC",
-            "EhAKDE9USEVSX1NFUlZFUhADKnIKB1JwY1R5cGUSCQoFVU5BUlkQABINCglT",
-            "VFJFQU1JTkcQARIZChVTVFJFQU1JTkdfRlJPTV9DTElFTlQQAhIZChVTVFJF",
-            "QU1JTkdfRlJPTV9TRVJWRVIQAxIXChNTVFJFQU1JTkdfQk9USF9XQVlTEARi",
-            "BnByb3RvMw=="));
+            "ChB1c2VfY29hbGVzY2VfYXBpGBMgASgIEjEKKW1lZGlhbl9sYXRlbmN5X2Nv",
+            "bGxlY3Rpb25faW50ZXJ2YWxfbWlsbGlzGBQgASgFIjgKDENsaWVudFN0YXR1",
+            "cxIoCgVzdGF0cxgBIAEoCzIZLmdycGMudGVzdGluZy5DbGllbnRTdGF0cyIV",
+            "CgRNYXJrEg0KBXJlc2V0GAEgASgIImgKCkNsaWVudEFyZ3MSKwoFc2V0dXAY",
+            "ASABKAsyGi5ncnBjLnRlc3RpbmcuQ2xpZW50Q29uZmlnSAASIgoEbWFyaxgC",
+            "IAEoCzISLmdycGMudGVzdGluZy5NYXJrSABCCQoHYXJndHlwZSL9AgoMU2Vy",
+            "dmVyQ29uZmlnEi0KC3NlcnZlcl90eXBlGAEgASgOMhguZ3JwYy50ZXN0aW5n",
+            "LlNlcnZlclR5cGUSNQoPc2VjdXJpdHlfcGFyYW1zGAIgASgLMhwuZ3JwYy50",
+            "ZXN0aW5nLlNlY3VyaXR5UGFyYW1zEgwKBHBvcnQYBCABKAUSHAoUYXN5bmNf",
+            "c2VydmVyX3RocmVhZHMYByABKAUSEgoKY29yZV9saW1pdBgIIAEoBRIzCg5w",
+            "YXlsb2FkX2NvbmZpZxgJIAEoCzIbLmdycGMudGVzdGluZy5QYXlsb2FkQ29u",
+            "ZmlnEhEKCWNvcmVfbGlzdBgKIAMoBRIYChBvdGhlcl9zZXJ2ZXJfYXBpGAsg",
+            "ASgJEhYKDnRocmVhZHNfcGVyX2NxGAwgASgFEhwKE3Jlc291cmNlX3F1b3Rh",
+            "X3NpemUY6QcgASgFEi8KDGNoYW5uZWxfYXJncxjqByADKAsyGC5ncnBjLnRl",
+            "c3RpbmcuQ2hhbm5lbEFyZyJoCgpTZXJ2ZXJBcmdzEisKBXNldHVwGAEgASgL",
+            "MhouZ3JwYy50ZXN0aW5nLlNlcnZlckNvbmZpZ0gAEiIKBG1hcmsYAiABKAsy",
+            "Ei5ncnBjLnRlc3RpbmcuTWFya0gAQgkKB2FyZ3R5cGUiVQoMU2VydmVyU3Rh",
+            "dHVzEigKBXN0YXRzGAEgASgLMhkuZ3JwYy50ZXN0aW5nLlNlcnZlclN0YXRz",
+            "EgwKBHBvcnQYAiABKAUSDQoFY29yZXMYAyABKAUiDQoLQ29yZVJlcXVlc3Qi",
+            "HQoMQ29yZVJlc3BvbnNlEg0KBWNvcmVzGAEgASgFIgYKBFZvaWQi/QEKCFNj",
+            "ZW5hcmlvEgwKBG5hbWUYASABKAkSMQoNY2xpZW50X2NvbmZpZxgCIAEoCzIa",
+            "LmdycGMudGVzdGluZy5DbGllbnRDb25maWcSEwoLbnVtX2NsaWVudHMYAyAB",
+            "KAUSMQoNc2VydmVyX2NvbmZpZxgEIAEoCzIaLmdycGMudGVzdGluZy5TZXJ2",
+            "ZXJDb25maWcSEwoLbnVtX3NlcnZlcnMYBSABKAUSFgoOd2FybXVwX3NlY29u",
+            "ZHMYBiABKAUSGQoRYmVuY2htYXJrX3NlY29uZHMYByABKAUSIAoYc3Bhd25f",
+            "bG9jYWxfd29ya2VyX2NvdW50GAggASgFIjYKCVNjZW5hcmlvcxIpCglzY2Vu",
+            "YXJpb3MYASADKAsyFi5ncnBjLnRlc3RpbmcuU2NlbmFyaW8ihAQKFVNjZW5h",
+            "cmlvUmVzdWx0U3VtbWFyeRILCgNxcHMYASABKAESGwoTcXBzX3Blcl9zZXJ2",
+            "ZXJfY29yZRgCIAEoARIaChJzZXJ2ZXJfc3lzdGVtX3RpbWUYAyABKAESGAoQ",
+            "c2VydmVyX3VzZXJfdGltZRgEIAEoARIaChJjbGllbnRfc3lzdGVtX3RpbWUY",
+            "BSABKAESGAoQY2xpZW50X3VzZXJfdGltZRgGIAEoARISCgpsYXRlbmN5XzUw",
+            "GAcgASgBEhIKCmxhdGVuY3lfOTAYCCABKAESEgoKbGF0ZW5jeV85NRgJIAEo",
+            "ARISCgpsYXRlbmN5Xzk5GAogASgBEhMKC2xhdGVuY3lfOTk5GAsgASgBEhgK",
+            "EHNlcnZlcl9jcHVfdXNhZ2UYDCABKAESJgoec3VjY2Vzc2Z1bF9yZXF1ZXN0",
+            "c19wZXJfc2Vjb25kGA0gASgBEiIKGmZhaWxlZF9yZXF1ZXN0c19wZXJfc2Vj",
+            "b25kGA4gASgBEiAKGGNsaWVudF9wb2xsc19wZXJfcmVxdWVzdBgPIAEoARIg",
+            "ChhzZXJ2ZXJfcG9sbHNfcGVyX3JlcXVlc3QYECABKAESIgoac2VydmVyX3F1",
+            "ZXJpZXNfcGVyX2NwdV9zZWMYESABKAESIgoaY2xpZW50X3F1ZXJpZXNfcGVy",
+            "X2NwdV9zZWMYEiABKAEigwMKDlNjZW5hcmlvUmVzdWx0EigKCHNjZW5hcmlv",
+            "GAEgASgLMhYuZ3JwYy50ZXN0aW5nLlNjZW5hcmlvEi4KCWxhdGVuY2llcxgC",
+            "IAEoCzIbLmdycGMudGVzdGluZy5IaXN0b2dyYW1EYXRhEi8KDGNsaWVudF9z",
+            "dGF0cxgDIAMoCzIZLmdycGMudGVzdGluZy5DbGllbnRTdGF0cxIvCgxzZXJ2",
+            "ZXJfc3RhdHMYBCADKAsyGS5ncnBjLnRlc3RpbmcuU2VydmVyU3RhdHMSFAoM",
+            "c2VydmVyX2NvcmVzGAUgAygFEjQKB3N1bW1hcnkYBiABKAsyIy5ncnBjLnRl",
+            "c3RpbmcuU2NlbmFyaW9SZXN1bHRTdW1tYXJ5EhYKDmNsaWVudF9zdWNjZXNz",
+            "GAcgAygIEhYKDnNlcnZlcl9zdWNjZXNzGAggAygIEjkKD3JlcXVlc3RfcmVz",
+            "dWx0cxgJIAMoCzIgLmdycGMudGVzdGluZy5SZXF1ZXN0UmVzdWx0Q291bnQq",
+            "VgoKQ2xpZW50VHlwZRIPCgtTWU5DX0NMSUVOVBAAEhAKDEFTWU5DX0NMSUVO",
+            "VBABEhAKDE9USEVSX0NMSUVOVBACEhMKD0NBTExCQUNLX0NMSUVOVBADKnAK",
+            "ClNlcnZlclR5cGUSDwoLU1lOQ19TRVJWRVIQABIQCgxBU1lOQ19TRVJWRVIQ",
+            "ARIYChRBU1lOQ19HRU5FUklDX1NFUlZFUhACEhAKDE9USEVSX1NFUlZFUhAD",
+            "EhMKD0NBTExCQUNLX1NFUlZFUhAEKnIKB1JwY1R5cGUSCQoFVU5BUlkQABIN",
+            "CglTVFJFQU1JTkcQARIZChVTVFJFQU1JTkdfRlJPTV9DTElFTlQQAhIZChVT",
+            "VFJFQU1JTkdfRlJPTV9TRVJWRVIQAxIXChNTVFJFQU1JTkdfQk9USF9XQVlT",
+            "EARiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Grpc.Testing.PayloadsReflection.Descriptor, global::Grpc.Testing.StatsReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Grpc.Testing.ClientType), typeof(global::Grpc.Testing.ServerType), typeof(global::Grpc.Testing.RpcType), }, new pbr::GeneratedClrTypeInfo[] {
@@ -109,7 +111,7 @@ namespace Grpc.Testing {
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.LoadParams), global::Grpc.Testing.LoadParams.Parser, new[]{ "ClosedLoop", "Poisson" }, new[]{ "Load" }, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.SecurityParams), global::Grpc.Testing.SecurityParams.Parser, new[]{ "UseTestCa", "ServerHostOverride", "CredType" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ChannelArg), global::Grpc.Testing.ChannelArg.Parser, new[]{ "Name", "StrValue", "IntValue" }, new[]{ "Value" }, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientConfig), global::Grpc.Testing.ClientConfig.Parser, new[]{ "ServerTargets", "ClientType", "SecurityParams", "OutstandingRpcsPerChannel", "ClientChannels", "AsyncClientThreads", "RpcType", "LoadParams", "PayloadConfig", "HistogramParams", "CoreList", "CoreLimit", "OtherClientApi", "ChannelArgs", "ThreadsPerCq", "MessagesPerStream", "UseCoalesceApi" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientConfig), global::Grpc.Testing.ClientConfig.Parser, new[]{ "ServerTargets", "ClientType", "SecurityParams", "OutstandingRpcsPerChannel", "ClientChannels", "AsyncClientThreads", "RpcType", "LoadParams", "PayloadConfig", "HistogramParams", "CoreList", "CoreLimit", "OtherClientApi", "ChannelArgs", "ThreadsPerCq", "MessagesPerStream", "UseCoalesceApi", "MedianLatencyCollectionIntervalMillis" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientStatus), global::Grpc.Testing.ClientStatus.Parser, new[]{ "Stats" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Mark), global::Grpc.Testing.Mark.Parser, new[]{ "Reset" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientArgs), global::Grpc.Testing.ClientArgs.Parser, new[]{ "Setup", "Mark" }, new[]{ "Argtype" }, null, null),
@@ -140,6 +142,7 @@ namespace Grpc.Testing {
     /// used for some language-specific variants
     /// </summary>
     [pbr::OriginalName("OTHER_CLIENT")] OtherClient = 2,
+    [pbr::OriginalName("CALLBACK_CLIENT")] CallbackClient = 3,
   }
 
   public enum ServerType {
@@ -150,6 +153,7 @@ namespace Grpc.Testing {
     /// used for some language-specific variants
     /// </summary>
     [pbr::OriginalName("OTHER_SERVER")] OtherServer = 3,
+    [pbr::OriginalName("CALLBACK_SERVER")] CallbackServer = 4,
   }
 
   public enum RpcType {
@@ -1039,14 +1043,14 @@ namespace Grpc.Testing {
     public ClientConfig(ClientConfig other) : this() {
       serverTargets_ = other.serverTargets_.Clone();
       clientType_ = other.clientType_;
-      SecurityParams = other.securityParams_ != null ? other.SecurityParams.Clone() : null;
+      securityParams_ = other.securityParams_ != null ? other.securityParams_.Clone() : null;
       outstandingRpcsPerChannel_ = other.outstandingRpcsPerChannel_;
       clientChannels_ = other.clientChannels_;
       asyncClientThreads_ = other.asyncClientThreads_;
       rpcType_ = other.rpcType_;
-      LoadParams = other.loadParams_ != null ? other.LoadParams.Clone() : null;
-      PayloadConfig = other.payloadConfig_ != null ? other.PayloadConfig.Clone() : null;
-      HistogramParams = other.histogramParams_ != null ? other.HistogramParams.Clone() : null;
+      loadParams_ = other.loadParams_ != null ? other.loadParams_.Clone() : null;
+      payloadConfig_ = other.payloadConfig_ != null ? other.payloadConfig_.Clone() : null;
+      histogramParams_ = other.histogramParams_ != null ? other.histogramParams_.Clone() : null;
       coreList_ = other.coreList_.Clone();
       coreLimit_ = other.coreLimit_;
       otherClientApi_ = other.otherClientApi_;
@@ -1054,6 +1058,7 @@ namespace Grpc.Testing {
       threadsPerCq_ = other.threadsPerCq_;
       messagesPerStream_ = other.messagesPerStream_;
       useCoalesceApi_ = other.useCoalesceApi_;
+      medianLatencyCollectionIntervalMillis_ = other.medianLatencyCollectionIntervalMillis_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1278,6 +1283,21 @@ namespace Grpc.Testing {
       }
     }
 
+    /// <summary>Field number for the "median_latency_collection_interval_millis" field.</summary>
+    public const int MedianLatencyCollectionIntervalMillisFieldNumber = 20;
+    private int medianLatencyCollectionIntervalMillis_;
+    /// <summary>
+    /// If 0, disabled. Else, specifies the period between gathering latency
+    /// medians in milliseconds.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int MedianLatencyCollectionIntervalMillis {
+      get { return medianLatencyCollectionIntervalMillis_; }
+      set {
+        medianLatencyCollectionIntervalMillis_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as ClientConfig);
@@ -1308,6 +1328,7 @@ namespace Grpc.Testing {
       if (ThreadsPerCq != other.ThreadsPerCq) return false;
       if (MessagesPerStream != other.MessagesPerStream) return false;
       if (UseCoalesceApi != other.UseCoalesceApi) return false;
+      if (MedianLatencyCollectionIntervalMillis != other.MedianLatencyCollectionIntervalMillis) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1331,6 +1352,7 @@ namespace Grpc.Testing {
       if (ThreadsPerCq != 0) hash ^= ThreadsPerCq.GetHashCode();
       if (MessagesPerStream != 0) hash ^= MessagesPerStream.GetHashCode();
       if (UseCoalesceApi != false) hash ^= UseCoalesceApi.GetHashCode();
+      if (MedianLatencyCollectionIntervalMillis != 0) hash ^= MedianLatencyCollectionIntervalMillis.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1403,6 +1425,10 @@ namespace Grpc.Testing {
         output.WriteRawTag(152, 1);
         output.WriteBool(UseCoalesceApi);
       }
+      if (MedianLatencyCollectionIntervalMillis != 0) {
+        output.WriteRawTag(160, 1);
+        output.WriteInt32(MedianLatencyCollectionIntervalMillis);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1456,6 +1482,9 @@ namespace Grpc.Testing {
       if (UseCoalesceApi != false) {
         size += 2 + 1;
       }
+      if (MedianLatencyCollectionIntervalMillis != 0) {
+        size += 2 + pb::CodedOutputStream.ComputeInt32Size(MedianLatencyCollectionIntervalMillis);
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -1473,7 +1502,7 @@ namespace Grpc.Testing {
       }
       if (other.securityParams_ != null) {
         if (securityParams_ == null) {
-          securityParams_ = new global::Grpc.Testing.SecurityParams();
+          SecurityParams = new global::Grpc.Testing.SecurityParams();
         }
         SecurityParams.MergeFrom(other.SecurityParams);
       }
@@ -1491,19 +1520,19 @@ namespace Grpc.Testing {
       }
       if (other.loadParams_ != null) {
         if (loadParams_ == null) {
-          loadParams_ = new global::Grpc.Testing.LoadParams();
+          LoadParams = new global::Grpc.Testing.LoadParams();
         }
         LoadParams.MergeFrom(other.LoadParams);
       }
       if (other.payloadConfig_ != null) {
         if (payloadConfig_ == null) {
-          payloadConfig_ = new global::Grpc.Testing.PayloadConfig();
+          PayloadConfig = new global::Grpc.Testing.PayloadConfig();
         }
         PayloadConfig.MergeFrom(other.PayloadConfig);
       }
       if (other.histogramParams_ != null) {
         if (histogramParams_ == null) {
-          histogramParams_ = new global::Grpc.Testing.HistogramParams();
+          HistogramParams = new global::Grpc.Testing.HistogramParams();
         }
         HistogramParams.MergeFrom(other.HistogramParams);
       }
@@ -1524,6 +1553,9 @@ namespace Grpc.Testing {
       if (other.UseCoalesceApi != false) {
         UseCoalesceApi = other.UseCoalesceApi;
       }
+      if (other.MedianLatencyCollectionIntervalMillis != 0) {
+        MedianLatencyCollectionIntervalMillis = other.MedianLatencyCollectionIntervalMillis;
+      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -1540,14 +1572,14 @@ namespace Grpc.Testing {
             break;
           }
           case 16: {
-            clientType_ = (global::Grpc.Testing.ClientType) input.ReadEnum();
+            ClientType = (global::Grpc.Testing.ClientType) input.ReadEnum();
             break;
           }
           case 26: {
             if (securityParams_ == null) {
-              securityParams_ = new global::Grpc.Testing.SecurityParams();
+              SecurityParams = new global::Grpc.Testing.SecurityParams();
             }
-            input.ReadMessage(securityParams_);
+            input.ReadMessage(SecurityParams);
             break;
           }
           case 32: {
@@ -1563,28 +1595,28 @@ namespace Grpc.Testing {
             break;
           }
           case 64: {
-            rpcType_ = (global::Grpc.Testing.RpcType) input.ReadEnum();
+            RpcType = (global::Grpc.Testing.RpcType) input.ReadEnum();
             break;
           }
           case 82: {
             if (loadParams_ == null) {
-              loadParams_ = new global::Grpc.Testing.LoadParams();
+              LoadParams = new global::Grpc.Testing.LoadParams();
             }
-            input.ReadMessage(loadParams_);
+            input.ReadMessage(LoadParams);
             break;
           }
           case 90: {
             if (payloadConfig_ == null) {
-              payloadConfig_ = new global::Grpc.Testing.PayloadConfig();
+              PayloadConfig = new global::Grpc.Testing.PayloadConfig();
             }
-            input.ReadMessage(payloadConfig_);
+            input.ReadMessage(PayloadConfig);
             break;
           }
           case 98: {
             if (histogramParams_ == null) {
-              histogramParams_ = new global::Grpc.Testing.HistogramParams();
+              HistogramParams = new global::Grpc.Testing.HistogramParams();
             }
-            input.ReadMessage(histogramParams_);
+            input.ReadMessage(HistogramParams);
             break;
           }
           case 106:
@@ -1614,6 +1646,10 @@ namespace Grpc.Testing {
           }
           case 152: {
             UseCoalesceApi = input.ReadBool();
+            break;
+          }
+          case 160: {
+            MedianLatencyCollectionIntervalMillis = input.ReadInt32();
             break;
           }
         }
@@ -1647,7 +1683,7 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ClientStatus(ClientStatus other) : this() {
-      Stats = other.stats_ != null ? other.Stats.Clone() : null;
+      stats_ = other.stats_ != null ? other.stats_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1729,7 +1765,7 @@ namespace Grpc.Testing {
       }
       if (other.stats_ != null) {
         if (stats_ == null) {
-          stats_ = new global::Grpc.Testing.ClientStats();
+          Stats = new global::Grpc.Testing.ClientStats();
         }
         Stats.MergeFrom(other.Stats);
       }
@@ -1746,9 +1782,9 @@ namespace Grpc.Testing {
             break;
           case 10: {
             if (stats_ == null) {
-              stats_ = new global::Grpc.Testing.ClientStats();
+              Stats = new global::Grpc.Testing.ClientStats();
             }
-            input.ReadMessage(stats_);
+            input.ReadMessage(Stats);
             break;
           }
         }
@@ -2122,11 +2158,11 @@ namespace Grpc.Testing {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ServerConfig(ServerConfig other) : this() {
       serverType_ = other.serverType_;
-      SecurityParams = other.securityParams_ != null ? other.SecurityParams.Clone() : null;
+      securityParams_ = other.securityParams_ != null ? other.securityParams_.Clone() : null;
       port_ = other.port_;
       asyncServerThreads_ = other.asyncServerThreads_;
       coreLimit_ = other.coreLimit_;
-      PayloadConfig = other.payloadConfig_ != null ? other.PayloadConfig.Clone() : null;
+      payloadConfig_ = other.payloadConfig_ != null ? other.payloadConfig_.Clone() : null;
       coreList_ = other.coreList_.Clone();
       otherServerApi_ = other.otherServerApi_;
       threadsPerCq_ = other.threadsPerCq_;
@@ -2431,7 +2467,7 @@ namespace Grpc.Testing {
       }
       if (other.securityParams_ != null) {
         if (securityParams_ == null) {
-          securityParams_ = new global::Grpc.Testing.SecurityParams();
+          SecurityParams = new global::Grpc.Testing.SecurityParams();
         }
         SecurityParams.MergeFrom(other.SecurityParams);
       }
@@ -2446,7 +2482,7 @@ namespace Grpc.Testing {
       }
       if (other.payloadConfig_ != null) {
         if (payloadConfig_ == null) {
-          payloadConfig_ = new global::Grpc.Testing.PayloadConfig();
+          PayloadConfig = new global::Grpc.Testing.PayloadConfig();
         }
         PayloadConfig.MergeFrom(other.PayloadConfig);
       }
@@ -2473,14 +2509,14 @@ namespace Grpc.Testing {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            serverType_ = (global::Grpc.Testing.ServerType) input.ReadEnum();
+            ServerType = (global::Grpc.Testing.ServerType) input.ReadEnum();
             break;
           }
           case 18: {
             if (securityParams_ == null) {
-              securityParams_ = new global::Grpc.Testing.SecurityParams();
+              SecurityParams = new global::Grpc.Testing.SecurityParams();
             }
-            input.ReadMessage(securityParams_);
+            input.ReadMessage(SecurityParams);
             break;
           }
           case 32: {
@@ -2497,9 +2533,9 @@ namespace Grpc.Testing {
           }
           case 74: {
             if (payloadConfig_ == null) {
-              payloadConfig_ = new global::Grpc.Testing.PayloadConfig();
+              PayloadConfig = new global::Grpc.Testing.PayloadConfig();
             }
-            input.ReadMessage(payloadConfig_);
+            input.ReadMessage(PayloadConfig);
             break;
           }
           case 82:
@@ -2758,7 +2794,7 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ServerStatus(ServerStatus other) : this() {
-      Stats = other.stats_ != null ? other.Stats.Clone() : null;
+      stats_ = other.stats_ != null ? other.stats_.Clone() : null;
       port_ = other.port_;
       cores_ = other.cores_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
@@ -2888,7 +2924,7 @@ namespace Grpc.Testing {
       }
       if (other.stats_ != null) {
         if (stats_ == null) {
-          stats_ = new global::Grpc.Testing.ServerStats();
+          Stats = new global::Grpc.Testing.ServerStats();
         }
         Stats.MergeFrom(other.Stats);
       }
@@ -2911,9 +2947,9 @@ namespace Grpc.Testing {
             break;
           case 10: {
             if (stats_ == null) {
-              stats_ = new global::Grpc.Testing.ServerStats();
+              Stats = new global::Grpc.Testing.ServerStats();
             }
-            input.ReadMessage(stats_);
+            input.ReadMessage(Stats);
             break;
           }
           case 16: {
@@ -3293,9 +3329,9 @@ namespace Grpc.Testing {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Scenario(Scenario other) : this() {
       name_ = other.name_;
-      ClientConfig = other.clientConfig_ != null ? other.ClientConfig.Clone() : null;
+      clientConfig_ = other.clientConfig_ != null ? other.clientConfig_.Clone() : null;
       numClients_ = other.numClients_;
-      ServerConfig = other.serverConfig_ != null ? other.ServerConfig.Clone() : null;
+      serverConfig_ = other.serverConfig_ != null ? other.serverConfig_.Clone() : null;
       numServers_ = other.numServers_;
       warmupSeconds_ = other.warmupSeconds_;
       benchmarkSeconds_ = other.benchmarkSeconds_;
@@ -3548,7 +3584,7 @@ namespace Grpc.Testing {
       }
       if (other.clientConfig_ != null) {
         if (clientConfig_ == null) {
-          clientConfig_ = new global::Grpc.Testing.ClientConfig();
+          ClientConfig = new global::Grpc.Testing.ClientConfig();
         }
         ClientConfig.MergeFrom(other.ClientConfig);
       }
@@ -3557,7 +3593,7 @@ namespace Grpc.Testing {
       }
       if (other.serverConfig_ != null) {
         if (serverConfig_ == null) {
-          serverConfig_ = new global::Grpc.Testing.ServerConfig();
+          ServerConfig = new global::Grpc.Testing.ServerConfig();
         }
         ServerConfig.MergeFrom(other.ServerConfig);
       }
@@ -3590,9 +3626,9 @@ namespace Grpc.Testing {
           }
           case 18: {
             if (clientConfig_ == null) {
-              clientConfig_ = new global::Grpc.Testing.ClientConfig();
+              ClientConfig = new global::Grpc.Testing.ClientConfig();
             }
-            input.ReadMessage(clientConfig_);
+            input.ReadMessage(ClientConfig);
             break;
           }
           case 24: {
@@ -3601,9 +3637,9 @@ namespace Grpc.Testing {
           }
           case 34: {
             if (serverConfig_ == null) {
-              serverConfig_ = new global::Grpc.Testing.ServerConfig();
+              ServerConfig = new global::Grpc.Testing.ServerConfig();
             }
-            input.ReadMessage(serverConfig_);
+            input.ReadMessage(ServerConfig);
             break;
           }
           case 40: {
@@ -4422,12 +4458,12 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ScenarioResult(ScenarioResult other) : this() {
-      Scenario = other.scenario_ != null ? other.Scenario.Clone() : null;
-      Latencies = other.latencies_ != null ? other.Latencies.Clone() : null;
+      scenario_ = other.scenario_ != null ? other.scenario_.Clone() : null;
+      latencies_ = other.latencies_ != null ? other.latencies_.Clone() : null;
       clientStats_ = other.clientStats_.Clone();
       serverStats_ = other.serverStats_.Clone();
       serverCores_ = other.serverCores_.Clone();
-      Summary = other.summary_ != null ? other.Summary.Clone() : null;
+      summary_ = other.summary_ != null ? other.summary_.Clone() : null;
       clientSuccess_ = other.clientSuccess_.Clone();
       serverSuccess_ = other.serverSuccess_.Clone();
       requestResults_ = other.requestResults_.Clone();
@@ -4660,13 +4696,13 @@ namespace Grpc.Testing {
       }
       if (other.scenario_ != null) {
         if (scenario_ == null) {
-          scenario_ = new global::Grpc.Testing.Scenario();
+          Scenario = new global::Grpc.Testing.Scenario();
         }
         Scenario.MergeFrom(other.Scenario);
       }
       if (other.latencies_ != null) {
         if (latencies_ == null) {
-          latencies_ = new global::Grpc.Testing.HistogramData();
+          Latencies = new global::Grpc.Testing.HistogramData();
         }
         Latencies.MergeFrom(other.Latencies);
       }
@@ -4675,7 +4711,7 @@ namespace Grpc.Testing {
       serverCores_.Add(other.serverCores_);
       if (other.summary_ != null) {
         if (summary_ == null) {
-          summary_ = new global::Grpc.Testing.ScenarioResultSummary();
+          Summary = new global::Grpc.Testing.ScenarioResultSummary();
         }
         Summary.MergeFrom(other.Summary);
       }
@@ -4695,16 +4731,16 @@ namespace Grpc.Testing {
             break;
           case 10: {
             if (scenario_ == null) {
-              scenario_ = new global::Grpc.Testing.Scenario();
+              Scenario = new global::Grpc.Testing.Scenario();
             }
-            input.ReadMessage(scenario_);
+            input.ReadMessage(Scenario);
             break;
           }
           case 18: {
             if (latencies_ == null) {
-              latencies_ = new global::Grpc.Testing.HistogramData();
+              Latencies = new global::Grpc.Testing.HistogramData();
             }
-            input.ReadMessage(latencies_);
+            input.ReadMessage(Latencies);
             break;
           }
           case 26: {
@@ -4722,9 +4758,9 @@ namespace Grpc.Testing {
           }
           case 50: {
             if (summary_ == null) {
-              summary_ = new global::Grpc.Testing.ScenarioResultSummary();
+              Summary = new global::Grpc.Testing.ScenarioResultSummary();
             }
-            input.ReadMessage(summary_);
+            input.ReadMessage(Summary);
             break;
           }
           case 58:

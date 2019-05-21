@@ -28,13 +28,19 @@ namespace Grpc.Core.Internal
     internal static class MarshalUtils
     {
         static readonly Encoding EncodingUTF8 = System.Text.Encoding.UTF8;
-        static readonly Encoding EncodingASCII = System.Text.Encoding.ASCII;
 
         /// <summary>
         /// Converts <c>IntPtr</c> pointing to a UTF-8 encoded byte array to <c>string</c>.
         /// </summary>
         public static string PtrToStringUTF8(IntPtr ptr, int len)
         {
+            if (len == 0)
+            {
+                return "";
+            }
+
+            // TODO(jtattermusch): once Span dependency is added,
+            // use Span-based API to decode the string without copying the buffer.
             var bytes = new byte[len];
             Marshal.Copy(ptr, bytes, 0, len);
             return EncodingUTF8.GetString(bytes);
@@ -54,22 +60,6 @@ namespace Grpc.Core.Internal
         public static string GetStringUTF8(byte[] bytes)
         {
             return EncodingUTF8.GetString(bytes);
-        }
-
-        /// <summary>
-        /// Returns byte array containing ASCII encoding of given string.
-        /// </summary>
-        public static byte[] GetBytesASCII(string str)
-        {
-            return EncodingASCII.GetBytes(str);
-        }
-
-        /// <summary>
-        /// Get string from an ASCII encoded byte array.
-        /// </summary>
-        public static string GetStringASCII(byte[] bytes)
-        {
-            return EncodingASCII.GetString(bytes);
         }
     }
 }

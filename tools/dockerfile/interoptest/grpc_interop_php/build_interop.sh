@@ -28,12 +28,13 @@ cp -r /var/local/jenkins/service_account $HOME || true
 
 cd /var/local/git/grpc
 
-# gRPC core and protobuf need to be installed
-make install
+# Install gRPC C core and build codegen plugins
+make -j4 install_c plugins
 
-(cd src/php/ext/grpc && phpize && ./configure && make)
+(cd src/php/ext/grpc && phpize && ./configure && make -j4)
 
-(cd third_party/protobuf && make install)
+# Install protobuf (need access to protoc)
+(cd third_party/protobuf && make -j4 install)
 
 (cd src/php && php -d extension=ext/grpc/modules/grpc.so /usr/local/bin/composer install)
 

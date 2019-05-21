@@ -42,13 +42,7 @@ RUN pip install virtualenv
 RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.0.post1 six==1.10.0
 
 # Google Cloud platform API libraries
-RUN pip install --upgrade google-api-python-client
-
-# Prepare ccache
-RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
-RUN ln -s /usr/bin/ccache /usr/local/bin/g++
-RUN ln -s /usr/bin/ccache /usr/local/bin/cc
-RUN ln -s /usr/bin/ccache /usr/local/bin/c++
+RUN pip install --upgrade google-api-python-client oauth2client
 
 RUN mkdir -p /var/local/jenkins
 

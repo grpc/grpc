@@ -86,9 +86,8 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
                     grpc_schedule_on_exec_ctx);
 
   grpc_error* error = GRPC_ERROR_NONE;
-  if (grpc_call_credentials_get_request_metadata(creds, &request.pops, null_ctx,
-                                                 &request.md_array,
-                                                 &request.closure, &error)) {
+  if (creds->get_request_metadata(&request.pops, null_ctx, &request.md_array,
+                                  &request.closure, &error)) {
     // Synchronous result; invoke callback directly.
     on_oauth2_response(&request, error);
     GRPC_ERROR_UNREF(error);

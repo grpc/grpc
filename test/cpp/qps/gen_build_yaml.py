@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
 import json
 import pipes
 import shutil
@@ -68,62 +69,66 @@ def maybe_exclude_gcov(scenario_json):
     return ['gcov']
   return []
 
-print yaml.dump({
-  'tests': [
-    {
-      'name': 'json_run_localhost',
-      'shortname': 'json_run_localhost:%s' % scenario_json['name'],
-      'args': ['--scenarios_json', _scenario_json_string(scenario_json, False)],
-      'ci_platforms': ['linux'],
-      'platforms': ['linux'],
-      'flaky': False,
-      'language': 'c++',
-      'boringssl': True,
-      'defaults': 'boringssl',
-      'cpu_cost': guess_cpu(scenario_json, False),
-      'exclude_configs': ['tsan', 'asan'] + maybe_exclude_gcov(scenario_json),
-      'timeout_seconds': 2*60,
-      'excluded_poll_engines': scenario_json.get('EXCLUDED_POLL_ENGINES', []),
-      'auto_timeout_scaling': False
-    }
-    for scenario_json in scenario_config.CXXLanguage().scenarios()
-    if 'scalable' in scenario_json.get('CATEGORIES', [])
-  ] + [
-    {
-      'name': 'qps_json_driver',
-      'shortname': 'qps_json_driver:inproc_%s' % scenario_json['name'],
-      'args': ['--run_inproc', '--scenarios_json', _scenario_json_string(scenario_json, False)],
-      'ci_platforms': ['linux'],
-      'platforms': ['linux'],
-      'flaky': False,
-      'language': 'c++',
-      'boringssl': True,
-      'defaults': 'boringssl',
-      'cpu_cost': guess_cpu(scenario_json, False),
-      'exclude_configs': ['tsan', 'asan'],
-      'timeout_seconds': 6*60,
-      'excluded_poll_engines': scenario_json.get('EXCLUDED_POLL_ENGINES', [])
-    }
-    for scenario_json in scenario_config.CXXLanguage().scenarios()
-    if 'inproc' in scenario_json.get('CATEGORIES', [])
-  ] + [
-    {
-      'name': 'json_run_localhost',
-      'shortname': 'json_run_localhost:%s_low_thread_count' % scenario_json['name'],
-      'args': ['--scenarios_json', _scenario_json_string(scenario_json, True)],
-      'ci_platforms': ['linux'],
-      'platforms': ['linux'],
-      'flaky': False,
-      'language': 'c++',
-      'boringssl': True,
-      'defaults': 'boringssl',
-      'cpu_cost': guess_cpu(scenario_json, True),
-      'exclude_configs': sorted(c for c in configs_from_yaml if c not in ('tsan', 'asan')),
-      'timeout_seconds': 10*60,
-      'excluded_poll_engines': scenario_json.get('EXCLUDED_POLL_ENGINES', []),
-      'auto_timeout_scaling': False
-   }
-    for scenario_json in scenario_config.CXXLanguage().scenarios()
-    if 'scalable' in scenario_json.get('CATEGORIES', [])
-  ]
-})
+def generate_yaml():
+  return {
+    'tests': [
+      {
+        'name': 'json_run_localhost',
+        'shortname': 'json_run_localhost:%s' % scenario_json['name'],
+        'args': ['--scenarios_json', _scenario_json_string(scenario_json, False)],
+        'ci_platforms': ['linux'],
+        'platforms': ['linux'],
+        'flaky': False,
+        'language': 'c++',
+        'boringssl': True,
+        'defaults': 'boringssl',
+        'cpu_cost': guess_cpu(scenario_json, False),
+        'exclude_configs': ['tsan', 'asan'] + maybe_exclude_gcov(scenario_json),
+        'timeout_seconds': 2*60,
+        'excluded_poll_engines': scenario_json.get('EXCLUDED_POLL_ENGINES', []),
+        'auto_timeout_scaling': False
+      }
+      for scenario_json in scenario_config.CXXLanguage().scenarios()
+      if 'scalable' in scenario_json.get('CATEGORIES', [])
+    ] + [
+      {
+        'name': 'qps_json_driver',
+        'shortname': 'qps_json_driver:inproc_%s' % scenario_json['name'],
+        'args': ['--run_inproc', '--scenarios_json', _scenario_json_string(scenario_json, False)],
+        'ci_platforms': ['linux'],
+        'platforms': ['linux'],
+        'flaky': False,
+        'language': 'c++',
+        'boringssl': True,
+        'defaults': 'boringssl',
+        'cpu_cost': guess_cpu(scenario_json, False),
+        'exclude_configs': ['tsan', 'asan'],
+        'timeout_seconds': 6*60,
+        'excluded_poll_engines': scenario_json.get('EXCLUDED_POLL_ENGINES', [])
+      }
+      for scenario_json in scenario_config.CXXLanguage().scenarios()
+      if 'inproc' in scenario_json.get('CATEGORIES', [])
+    ] + [
+      {
+        'name': 'json_run_localhost',
+        'shortname': 'json_run_localhost:%s_low_thread_count' % scenario_json['name'],
+        'args': ['--scenarios_json', _scenario_json_string(scenario_json, True)],
+        'ci_platforms': ['linux'],
+        'platforms': ['linux'],
+        'flaky': False,
+        'language': 'c++',
+        'boringssl': True,
+        'defaults': 'boringssl',
+        'cpu_cost': guess_cpu(scenario_json, True),
+        'exclude_configs': sorted(c for c in configs_from_yaml if c not in ('tsan', 'asan')),
+        'timeout_seconds': 10*60,
+        'excluded_poll_engines': scenario_json.get('EXCLUDED_POLL_ENGINES', []),
+        'auto_timeout_scaling': False
+     }
+      for scenario_json in scenario_config.CXXLanguage().scenarios()
+      if 'scalable' in scenario_json.get('CATEGORIES', [])
+    ]
+  }
+
+
+print(yaml.dump(generate_yaml()))

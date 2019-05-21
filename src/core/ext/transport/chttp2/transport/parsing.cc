@@ -28,6 +28,7 @@
 
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/slice/slice_utils.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_conversion.h"
@@ -45,14 +46,14 @@ static grpc_error* init_goaway_parser(grpc_chttp2_transport* t);
 static grpc_error* init_skip_frame_parser(grpc_chttp2_transport* t,
                                           int is_header);
 
-static grpc_error* parse_frame_slice(grpc_chttp2_transport* t, grpc_slice slice,
-                                     int is_last);
+static grpc_error* parse_frame_slice(grpc_chttp2_transport* t,
+                                     const grpc_slice& slice, int is_last);
 
 grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
-                                     grpc_slice slice) {
-  uint8_t* beg = GRPC_SLICE_START_PTR(slice);
-  uint8_t* end = GRPC_SLICE_END_PTR(slice);
-  uint8_t* cur = beg;
+                                     const grpc_slice& slice) {
+  const uint8_t* beg = GRPC_SLICE_START_PTR(slice);
+  const uint8_t* end = GRPC_SLICE_END_PTR(slice);
+  const uint8_t* cur = beg;
   grpc_error* err;
 
   if (cur == end) return GRPC_ERROR_NONE;
@@ -304,7 +305,7 @@ static grpc_error* init_frame_parser(grpc_chttp2_transport* t) {
     case GRPC_CHTTP2_FRAME_GOAWAY:
       return init_goaway_parser(t);
     default:
-      if (grpc_http_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
         gpr_log(GPR_ERROR, "Unknown frame type %02x", t->incoming_frame_type);
       }
       return init_skip_frame_parser(t, 0);
@@ -312,7 +313,7 @@ static grpc_error* init_frame_parser(grpc_chttp2_transport* t) {
 }
 
 static grpc_error* skip_parser(void* parser, grpc_chttp2_transport* t,
-                               grpc_chttp2_stream* s, grpc_slice slice,
+                               grpc_chttp2_stream* s, const grpc_slice& slice,
                                int is_last) {
   return GRPC_ERROR_NONE;
 }
@@ -368,6 +369,7 @@ static grpc_error* init_data_frame_parser(grpc_chttp2_transport* t) {
         &s->data_parser, t->incoming_frame_flags, s->id, s);
   }
 error_handler:
+  intptr_t unused;
   if (err == GRPC_ERROR_NONE) {
     t->incoming_stream = s;
     /* t->parser = grpc_chttp2_data_parser_parse;*/
@@ -375,7 +377,7 @@ error_handler:
     t->parser_data = &s->data_parser;
     t->ping_state.last_ping_sent_time = GRPC_MILLIS_INF_PAST;
     return GRPC_ERROR_NONE;
-  } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, nullptr)) {
+  } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, &unused)) {
     /* handle stream errors by closing the stream */
     if (s != nullptr) {
       grpc_chttp2_mark_stream_closed(t, s, true, false, err);
@@ -399,7 +401,7 @@ static void on_initial_header(void* tp, grpc_mdelem md) {
   grpc_chttp2_stream* s = t->incoming_stream;
   GPR_ASSERT(s != nullptr);
 
-  if (grpc_http_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     char* key = grpc_slice_to_c_string(GRPC_MDKEY(md));
     char* value =
         grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -409,13 +411,15 @@ static void on_initial_header(void* tp, grpc_mdelem md) {
     gpr_free(value);
   }
 
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) &&
-      !grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {
+  // If md.payload == GRPC_MDELEM_GRPC_STATUS_1 or GRPC_MDELEM_GRPC_STATUS_2,
+  // then we have seen an error. In fact, if it is a GRPC_STATUS and it's
+  // not equal to GRPC_MDELEM_GRPC_STATUS_0, then we have seen an error.
+  if (grpc_slice_eq_static_interned(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) &&
+      !grpc_mdelem_static_value_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {
     /* TODO(ctiller): check for a status like " 0" */
     s->seen_error = true;
-  }
-
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT)) {
+  } else if (grpc_slice_eq_static_interned(GRPC_MDKEY(md),
+                                           GRPC_MDSTR_GRPC_TIMEOUT)) {
     grpc_millis* cached_timeout =
         static_cast<grpc_millis*>(grpc_mdelem_get_user_data(md, free_timeout));
     grpc_millis timeout;
@@ -442,34 +446,35 @@ static void on_initial_header(void* tp, grpc_mdelem md) {
           &s->metadata_buffer[0], grpc_core::ExecCtx::Get()->Now() + timeout);
     }
     GRPC_MDELEM_UNREF(md);
+    return;
+  }
+
+  const size_t new_size = s->metadata_buffer[0].size + GRPC_MDELEM_LENGTH(md);
+  const size_t metadata_size_limit =
+      t->settings[GRPC_ACKED_SETTINGS]
+                 [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
+  if (new_size > metadata_size_limit) {
+    gpr_log(GPR_DEBUG,
+            "received initial metadata size exceeds limit (%" PRIuPTR
+            " vs. %" PRIuPTR ")",
+            new_size, metadata_size_limit);
+    grpc_chttp2_cancel_stream(
+        t, s,
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                               "received initial metadata size exceeds limit"),
+                           GRPC_ERROR_INT_GRPC_STATUS,
+                           GRPC_STATUS_RESOURCE_EXHAUSTED));
+    grpc_chttp2_parsing_become_skip_parser(t);
+    s->seen_error = true;
+    GRPC_MDELEM_UNREF(md);
   } else {
-    const size_t new_size = s->metadata_buffer[0].size + GRPC_MDELEM_LENGTH(md);
-    const size_t metadata_size_limit =
-        t->settings[GRPC_ACKED_SETTINGS]
-                   [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
-    if (new_size > metadata_size_limit) {
-      gpr_log(GPR_DEBUG,
-              "received initial metadata size exceeds limit (%" PRIuPTR
-              " vs. %" PRIuPTR ")",
-              new_size, metadata_size_limit);
-      grpc_chttp2_cancel_stream(
-          t, s,
-          grpc_error_set_int(
-              GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "received initial metadata size exceeds limit"),
-              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED));
+    grpc_error* error =
+        grpc_chttp2_incoming_metadata_buffer_add(&s->metadata_buffer[0], md);
+    if (error != GRPC_ERROR_NONE) {
+      grpc_chttp2_cancel_stream(t, s, error);
       grpc_chttp2_parsing_become_skip_parser(t);
       s->seen_error = true;
       GRPC_MDELEM_UNREF(md);
-    } else {
-      grpc_error* error =
-          grpc_chttp2_incoming_metadata_buffer_add(&s->metadata_buffer[0], md);
-      if (error != GRPC_ERROR_NONE) {
-        grpc_chttp2_cancel_stream(t, s, error);
-        grpc_chttp2_parsing_become_skip_parser(t);
-        s->seen_error = true;
-        GRPC_MDELEM_UNREF(md);
-      }
     }
   }
 }
@@ -481,7 +486,7 @@ static void on_trailing_header(void* tp, grpc_mdelem md) {
   grpc_chttp2_stream* s = t->incoming_stream;
   GPR_ASSERT(s != nullptr);
 
-  if (grpc_http_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     char* key = grpc_slice_to_c_string(GRPC_MDKEY(md));
     char* value =
         grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -491,8 +496,11 @@ static void on_trailing_header(void* tp, grpc_mdelem md) {
     gpr_free(value);
   }
 
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) &&
-      !grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {
+  // If md.payload == GRPC_MDELEM_GRPC_STATUS_1 or GRPC_MDELEM_GRPC_STATUS_2,
+  // then we have seen an error. In fact, if it is a GRPC_STATUS and it's
+  // not equal to GRPC_MDELEM_GRPC_STATUS_0, then we have seen an error.
+  if (grpc_slice_eq_static_interned(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) &&
+      !grpc_mdelem_static_value_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {
     /* TODO(ctiller): check for a status like " 0" */
     s->seen_error = true;
   }
@@ -598,6 +606,9 @@ static grpc_error* init_header_frame_parser(grpc_chttp2_transport* t,
           gpr_log(GPR_ERROR, "grpc_chttp2_stream not accepted"));
       return init_skip_frame_parser(t, 1);
     }
+    if (t->channelz_socket != nullptr) {
+      t->channelz_socket->RecordStreamStartedFromRemote();
+    }
   } else {
     t->incoming_stream = s;
   }
@@ -611,6 +622,9 @@ static grpc_error* init_header_frame_parser(grpc_chttp2_transport* t,
   }
   t->parser = grpc_chttp2_header_parser_parse;
   t->parser_data = &t->hpack_parser;
+  if (t->header_eof) {
+    s->eos_received = true;
+  }
   switch (s->header_frames_received) {
     case 0:
       if (t->is_client && t->header_eof) {
@@ -721,14 +735,15 @@ static grpc_error* init_settings_frame_parser(grpc_chttp2_transport* t) {
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error* parse_frame_slice(grpc_chttp2_transport* t, grpc_slice slice,
-                                     int is_last) {
+static grpc_error* parse_frame_slice(grpc_chttp2_transport* t,
+                                     const grpc_slice& slice, int is_last) {
   grpc_chttp2_stream* s = t->incoming_stream;
   grpc_error* err = t->parser(t->parser_data, t, s, slice, is_last);
+  intptr_t unused;
   if (GPR_LIKELY(err == GRPC_ERROR_NONE)) {
     return err;
-  } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, nullptr)) {
-    if (grpc_http_trace.enabled()) {
+  } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, &unused)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
       const char* msg = grpc_error_string(err);
       gpr_log(GPR_ERROR, "%s", msg);
     }

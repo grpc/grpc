@@ -28,7 +28,10 @@
 
 // gRPC currently can't depend on libstdc++, so we can't use "= 0" for
 // pure virtual methods.  Instead, we use this macro.
-#define GRPC_ABSTRACT \
-  { GPR_ASSERT(false); }
+#define GRPC_ABSTRACT                                                        \
+  {                                                                          \
+    gpr_log(GPR_ERROR, "Function marked GRPC_ABSTRACT was not implemented"); \
+    GPR_ASSERT(false);                                                       \
+  }
 
 #endif /* GRPC_CORE_LIB_GPRPP_ABSTRACT_H */

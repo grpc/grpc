@@ -254,7 +254,7 @@ static void test_cmp_extreme(void) {
 }
 
 int main(int argc, char* argv[]) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
 
   test_values();
   test_add_sub();

@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\Grpc.Core\Common.csproj.include" />
+
+  <PropertyGroup>
+    <Authors>The gRPC Authors</Authors>
+    <Copyright>Copyright 2019 The gRPC Authors</Copyright>
+    <Description>gRPC C# Surface API</Description>
+    <PackageIconUrl>https://github.com/grpc/grpc.github.io/raw/master/img/grpc_square_reverse_4x.png</PackageIconUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
+    <PackageTags>gRPC RPC HTTP/2</PackageTags>
+    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;netstandard1.5;netstandard2.0</TargetFrameworks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <DefineConstants>$(DefineConstants);GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY</DefineConstants>
+  </PropertyGroup>
+
+  <Import Project="..\Grpc.Core\SourceLink.csproj.include" />
+
+  <ItemGroup>
+    <PackageReference Include="System.Interactive.Async" Version="3.2.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <PackageReference Include="System.Memory" Version="4.5.2" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
+    <Reference Include="System" />
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+
+</Project>

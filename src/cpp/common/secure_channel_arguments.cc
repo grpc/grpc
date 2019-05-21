@@ -21,7 +21,7 @@
 #include <grpc/grpc_security.h>
 #include "src/core/lib/channel/channel_args.h"
 
-namespace grpc {
+namespace grpc_impl {
 
 void ChannelArguments::SetSslTargetNameOverride(const grpc::string& name) {
   SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, name);
@@ -36,4 +36,4 @@ grpc::string ChannelArguments::GetSslTargetNameOverride() const {
   return "";
 }
 
-}  // namespace grpc
+}  // namespace grpc_impl

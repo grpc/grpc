@@ -72,7 +72,8 @@ static void target_service_account_destroy(
 static const grpc_alts_credentials_options_vtable vtable = {
     alts_client_options_copy, alts_client_options_destroy};
 
-grpc_alts_credentials_options* grpc_alts_credentials_client_options_create() {
+grpc_alts_credentials_options* grpc_alts_credentials_client_options_create(
+    void) {
   auto client_options = static_cast<grpc_alts_credentials_client_options*>(
       gpr_zalloc(sizeof(grpc_alts_credentials_client_options)));
   client_options->base.vtable = &vtable;

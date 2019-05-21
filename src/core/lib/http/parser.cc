@@ -300,7 +300,7 @@ static grpc_error* addbyte(grpc_http_parser* parser, uint8_t byte,
     case GRPC_HTTP_FIRST_LINE:
     case GRPC_HTTP_HEADERS:
       if (parser->cur_line_length >= GRPC_HTTP_PARSER_MAX_HEADER_LENGTH) {
-        if (grpc_http1_trace.enabled())
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_http1_trace))
           gpr_log(GPR_ERROR, "HTTP header max line length (%d) exceeded",
                   GRPC_HTTP_PARSER_MAX_HEADER_LENGTH);
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -351,7 +351,8 @@ void grpc_http_response_destroy(grpc_http_response* response) {
   gpr_free(response->hdrs);
 }
 
-grpc_error* grpc_http_parser_parse(grpc_http_parser* parser, grpc_slice slice,
+grpc_error* grpc_http_parser_parse(grpc_http_parser* parser,
+                                   const grpc_slice& slice,
                                    size_t* start_of_body) {
   for (size_t i = 0; i < GRPC_SLICE_LENGTH(slice); i++) {
     bool found_body_start = false;

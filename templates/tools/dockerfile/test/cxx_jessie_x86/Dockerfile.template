@@ -15,6 +15,7 @@
   # limitations under the License.
   
   FROM 32bit/debian:jessie
+  RUN sed -i '/deb http:\/\/http.debian.net\/debian jessie-updates main/d' /etc/apt/sources.list
   
   <%include file="../../apt_get_basic.include"/>
   <%include file="../../gcp_api_libraries.include"/>

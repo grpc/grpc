@@ -125,7 +125,7 @@ class CheckCallAfterFinishedService
     fail 'shouldnt reuse service' unless @server_side_call.nil?
     @server_side_call = call
     # iterate through requests so call can complete
-    call.each_remote_read.each { |r| p r }
+    call.each_remote_read.each { |r| GRPC.logger.info(r) }
     EchoMsg.new
   end
 
@@ -138,7 +138,7 @@ class CheckCallAfterFinishedService
   def a_bidi_rpc(requests, call)
     fail 'shouldnt reuse service' unless @server_side_call.nil?
     @server_side_call = call
-    requests.each { |r| p r }
+    requests.each { |r| GRPC.logger.info(r) }
     [EchoMsg.new, EchoMsg.new]
   end
 end
@@ -340,6 +340,28 @@ describe GRPC::RpcServer do
         end
         @srv.stop
         t.join
+      end
+
+      it 'should return UNIMPLEMENTED on unimplemented ' \
+         'methods for client_streamer', server: true do
+        @srv.handle(EchoService)
+        t = Thread.new { @srv.run }
+        @srv.wait_till_running
+        blk = proc do
+          stub = EchoStub.new(@host, :this_channel_is_insecure, **client_opts)
+          requests = [EchoMsg.new, EchoMsg.new]
+          stub.a_client_streaming_rpc_unimplemented(requests)
+        end
+
+        begin
+          expect(&blk).to raise_error do |error|
+            expect(error).to be_a(GRPC::BadStatus)
+            expect(error.code).to eq(GRPC::Core::StatusCodes::UNIMPLEMENTED)
+          end
+        ensure
+          @srv.stop # should be call not to crash
+          t.join
+        end
       end
 
       it 'should handle multiple sequential requests', server: true do
@@ -560,7 +582,7 @@ describe GRPC::RpcServer do
           'connect_k1' => 'connect_v1'
         }
         wanted_md.each do |key, value|
-          puts "key: #{key}"
+          GRPC.logger.info("key: #{key}")
           expect(op.metadata[key]).to eq(value)
         end
         @srv.stop

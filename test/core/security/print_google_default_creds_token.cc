@@ -96,11 +96,10 @@ int main(int argc, char** argv) {
                     grpc_schedule_on_exec_ctx);
 
   error = GRPC_ERROR_NONE;
-  if (grpc_call_credentials_get_request_metadata(
-          (reinterpret_cast<grpc_composite_channel_credentials*>(creds))
-              ->call_creds,
-          &sync.pops, context, &sync.md_array, &sync.on_request_metadata,
-          &error)) {
+  if (reinterpret_cast<grpc_composite_channel_credentials*>(creds)
+          ->mutable_call_creds()
+          ->get_request_metadata(&sync.pops, context, &sync.md_array,
+                                 &sync.on_request_metadata, &error)) {
     // Synchronous response.  Invoke callback directly.
     on_metadata_response(&sync, error);
     GRPC_ERROR_UNREF(error);

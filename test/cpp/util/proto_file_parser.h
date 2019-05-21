@@ -36,7 +36,7 @@ class ProtoFileParser {
   // The parser will search proto files using the server reflection service
   // provided on the given channel. The given protofiles in a source tree rooted
   // from proto_path will also be searched.
-  ProtoFileParser(std::shared_ptr<grpc::Channel> channel,
+  ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
                   const grpc::string& proto_path,
                   const grpc::string& protofiles);
 
@@ -53,21 +53,49 @@ class ProtoFileParser {
   // used as the argument of Stub::Call()
   grpc::string GetFormattedMethodName(const grpc::string& method);
 
-  grpc::string GetSerializedProtoFromMethod(
-      const grpc::string& method, const grpc::string& text_format_proto,
-      bool is_request);
+  /// Converts a text or json string to its binary proto representation for the
+  /// given method's input or return type.
+  /// \param method the name of the method (does not need to be fully qualified
+  ///        name)
+  /// \param formatted_proto the text- or json-formatted proto string
+  /// \param is_request if \c true the resolved type is that of the input
+  ///        parameter of the method, otherwise it is the output type
+  /// \param is_json_format if \c true the \c formatted_proto is treated as a
+  ///        json-formatted proto, otherwise it is treated as a text-formatted
+  ///        proto
+  /// \return the serialised binary proto represenation of \c formatted_proto
+  grpc::string GetSerializedProtoFromMethod(const grpc::string& method,
+                                            const grpc::string& formatted_proto,
+                                            bool is_request,
+                                            bool is_json_format);
 
-  grpc::string GetTextFormatFromMethod(const grpc::string& method,
-                                       const grpc::string& serialized_proto,
-                                       bool is_request);
-
+  /// Converts a text or json string to its proto representation for the given
+  /// message type.
+  /// \param formatted_proto the text- or json-formatted proto string
+  /// \return the serialised binary proto represenation of \c formatted_proto
   grpc::string GetSerializedProtoFromMessageType(
       const grpc::string& message_type_name,
-      const grpc::string& text_format_proto);
+      const grpc::string& formatted_proto, bool is_json_format);
 
-  grpc::string GetTextFormatFromMessageType(
+  /// Converts a binary proto string to its text or json string representation
+  /// for the given method's input or return type.
+  /// \param method the name of the method (does not need to be a fully
+  ///        qualified name)
+  /// \param the serialised binary proto representation of type
+  ///        \c message_type_name
+  /// \return the text- or json-formatted proto string of \c serialized_proto
+  grpc::string GetFormattedStringFromMethod(
+      const grpc::string& method, const grpc::string& serialized_proto,
+      bool is_request, bool is_json_format);
+
+  /// Converts a binary proto string to its text or json string representation
+  /// for the given message type.
+  /// \param the serialised binary proto representation of type
+  ///        \c message_type_name
+  /// \return the text- or json-formatted proto string of \c serialized_proto
+  grpc::string GetFormattedStringFromMessageType(
       const grpc::string& message_type_name,
-      const grpc::string& serialized_proto);
+      const grpc::string& serialized_proto, bool is_json_format);
 
   bool IsStreaming(const grpc::string& method, bool is_request);
 

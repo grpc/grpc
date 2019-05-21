@@ -132,10 +132,10 @@ finalized and implemented in modern browsers
 
 Versioning
 
-* Special headers may be introduced to support features that may break compatiblity.
+* Special headers may be introduced to support features that may break compatibility.
 
 ---
 
 Browser-specific features
 
-* For features that are unique to browser or HTML clients, check the [spec doc](https://github.com/grpc/grpc-web/blob/master/PROTOCOL-WEB.md) published in the grpc/grpc-web repo.
+* For features that are unique to browser or HTML clients, check the [spec doc](https://github.com/grpc/grpc-web/blob/master/BROWSER-FEATURES.md) published in the grpc/grpc-web repo.

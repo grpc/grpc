@@ -45,16 +45,6 @@ static void call_destroy_func(grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {}
 
-static void call_func(grpc_call_element* elem,
-                      grpc_transport_stream_op_batch* op) {}
-
-static void channel_func(grpc_channel_element* elem, grpc_transport_op* op) {
-  if (op->disconnect_with_error != GRPC_ERROR_NONE) {
-    GRPC_ERROR_UNREF(op->disconnect_with_error);
-  }
-  GRPC_CLOSURE_SCHED(op->on_consumed, GRPC_ERROR_NONE);
-}
-
 bool g_replacement_fn_called = false;
 bool g_original_fn_called = false;
 void set_arg_once_fn(grpc_channel_stack* channel_stack,
@@ -77,8 +67,8 @@ static void test_channel_stack_builder_filter_replace(void) {
 }
 
 const grpc_channel_filter replacement_filter = {
-    call_func,
-    channel_func,
+    grpc_call_next_op,
+    grpc_channel_next_op,
     0,
     call_init_func,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
@@ -90,8 +80,8 @@ const grpc_channel_filter replacement_filter = {
     "filter_name"};
 
 const grpc_channel_filter original_filter = {
-    call_func,
-    channel_func,
+    grpc_call_next_op,
+    grpc_channel_next_op,
     0,
     call_init_func,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
@@ -132,7 +122,7 @@ static void init_plugin(void) {
 static void destroy_plugin(void) {}
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_register_plugin(init_plugin, destroy_plugin);
   grpc_init();
   test_channel_stack_builder_filter_replace();

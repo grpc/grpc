@@ -22,7 +22,6 @@ namespace Grpc.Core.Interceptors
 {
     /// <summary>
     /// Provides extension methods to make it easy to register interceptors on Channel objects.
-    /// This is an EXPERIMENTAL API.
     /// </summary>
     public static class ChannelExtensions
     {

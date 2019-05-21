@@ -24,14 +24,12 @@ namespace Grpc.Core.Interceptors
 {
     /// <summary>
     /// Extends the ServerServiceDefinition class to add methods used to register interceptors on the server side.
-    /// This is an EXPERIMENTAL API.
     /// </summary>
     public static class ServerServiceDefinitionExtensions
     {
         /// <summary>
         /// Returns a <see cref="Grpc.Core.ServerServiceDefinition" /> instance that
         /// intercepts incoming calls to the underlying service handler through the given interceptor.
-        /// This is an EXPERIMENTAL API.
         /// </summary>
         /// <param name="serverServiceDefinition">The <see cref="Grpc.Core.ServerServiceDefinition" /> instance to register interceptors on.</param>
         /// <param name="interceptor">The interceptor to intercept the incoming invocations with.</param>
@@ -46,13 +44,15 @@ namespace Grpc.Core.Interceptors
         {
             GrpcPreconditions.CheckNotNull(serverServiceDefinition, nameof(serverServiceDefinition));
             GrpcPreconditions.CheckNotNull(interceptor, nameof(interceptor));
-            return new ServerServiceDefinition(serverServiceDefinition.CallHandlers.ToDictionary(x => x.Key, x => x.Value.Intercept(interceptor)));
+
+            var binder = new InterceptingServiceBinder(interceptor);
+            serverServiceDefinition.BindService(binder);
+            return binder.GetInterceptedServerServiceDefinition();
         }
 
         /// <summary>
         /// Returns a <see cref="Grpc.Core.ServerServiceDefinition" /> instance that
         /// intercepts incoming calls to the underlying service handler through the given interceptors.
-        /// This is an EXPERIMENTAL API.
         /// </summary>
         /// <param name="serverServiceDefinition">The <see cref="Grpc.Core.ServerServiceDefinition" /> instance to register interceptors on.</param>
         /// <param name="interceptors">
@@ -77,6 +77,53 @@ namespace Grpc.Core.Interceptors
             }
 
             return serverServiceDefinition;
+        }
+
+        /// <summary>
+        /// Helper for creating <c>ServerServiceDefinition</c> with intercepted handlers.
+        /// </summary>
+        private class InterceptingServiceBinder : ServiceBinderBase
+        {
+            readonly ServerServiceDefinition.Builder builder = ServerServiceDefinition.CreateBuilder();
+            readonly Interceptor interceptor;
+
+            public InterceptingServiceBinder(Interceptor interceptor)
+            {
+                this.interceptor = GrpcPreconditions.CheckNotNull(interceptor, nameof(interceptor));
+            }
+
+            internal ServerServiceDefinition GetInterceptedServerServiceDefinition()
+            {
+                return builder.Build();
+            }
+
+            public override void AddMethod<TRequest, TResponse>(
+                Method<TRequest, TResponse> method,
+                UnaryServerMethod<TRequest, TResponse> handler)
+            {
+                builder.AddMethod(method, (request, context) => interceptor.UnaryServerHandler(request, context, handler));
+            }
+
+            public override void AddMethod<TRequest, TResponse>(
+                Method<TRequest, TResponse> method,
+                ClientStreamingServerMethod<TRequest, TResponse> handler)
+            {
+                builder.AddMethod(method, (requestStream, context) => interceptor.ClientStreamingServerHandler(requestStream, context, handler));
+            }
+
+            public override void AddMethod<TRequest, TResponse>(
+                Method<TRequest, TResponse> method,
+                ServerStreamingServerMethod<TRequest, TResponse> handler)
+            {
+                builder.AddMethod(method, (request, responseStream, context) => interceptor.ServerStreamingServerHandler(request, responseStream, context, handler));
+            }
+
+            public override void AddMethod<TRequest, TResponse>(
+                Method<TRequest, TResponse> method,
+                DuplexStreamingServerMethod<TRequest, TResponse> handler)
+            {
+                builder.AddMethod(method, (requestStream, responseStream, context) => interceptor.DuplexStreamingServerHandler(requestStream, responseStream, context, handler));
+            }
         }
     }
 }

@@ -9,7 +9,8 @@ gRPC PHP installation instructions for Google Cloud Platform is in
 
 ## Environment
 
-###Prerequisite:
+### Prerequisite:
+
 * `php` 5.5 or above, 7.0 or above
 * `pecl`
 * `composer`

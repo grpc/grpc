@@ -32,6 +32,7 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 grpc_core::TraceFlag grpc_resource_quota_trace(false, "resource_quota");
 
@@ -90,11 +91,15 @@ struct grpc_resource_user {
   grpc_closure_list on_allocated;
   /* True if we are currently trying to allocate from the quota, false if not */
   bool allocating;
-  /* How many bytes of allocations are outstanding */
+  /* The amount of memory (in bytes) that has been requested from this user
+   * asynchronously but hasn't been granted yet. */
   int64_t outstanding_allocations;
   /* True if we are currently trying to add ourselves to the non-free quota
      list, false otherwise */
   bool added_to_free_pool;
+
+  /* The number of threads currently allocated to this resource user */
+  gpr_atm num_threads_allocated;
 
   /* Reclaimers: index 0 is the benign reclaimer, 1 is the destructive reclaimer
    */
@@ -132,15 +137,39 @@ struct grpc_resource_quota {
   int64_t size;
   /* Amount of free memory in the resource quota */
   int64_t free_pool;
+  /* Used size of memory in the resource quota. Updated as soon as the resource
+   * users start to allocate or free the memory. */
+  gpr_atm used;
 
   gpr_atm last_size;
 
+  /* Mutex to protect max_threads and num_threads_allocated */
+  /* Note: We could have used gpr_atm for max_threads and num_threads_allocated
+   * and avoid having this mutex; but in that case, each invocation of the
+   * function grpc_resource_user_allocate_threads() would have had to do at
+   * least two atomic loads (for max_threads and num_threads_allocated) followed
+   * by a CAS (on num_threads_allocated).
+   * Moreover, we expect grpc_resource_user_allocate_threads() to be often
+   * called concurrently thereby increasing the chances of failing the CAS
+   * operation. This additional complexity is not worth the tiny perf gain we
+   * may (or may not) have by using atomics */
+  gpr_mu thread_count_mu;
+
+  /* Max number of threads allowed */
+  int max_threads;
+
+  /* Number of threads currently allocated via this resource_quota object */
+  int num_threads_allocated;
+
   /* Has rq_step been scheduled to occur? */
   bool step_scheduled;
+
   /* Are we currently reclaiming memory */
   bool reclaiming;
+
   /* Closure around rq_step */
   grpc_closure rq_step_closure;
+
   /* Closure around rq_reclamation_done */
   grpc_closure rq_reclamation_done_closure;
 
@@ -288,7 +317,7 @@ static bool rq_alloc(grpc_resource_quota* resource_quota) {
   while ((resource_user = rulist_pop_head(resource_quota,
                                           GRPC_RULIST_AWAITING_ALLOCATION))) {
     gpr_mu_lock(&resource_user->mu);
-    if (grpc_resource_quota_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
       gpr_log(GPR_INFO,
               "RQ: check allocation for user %p shutdown=%" PRIdPTR
               " free_pool=%" PRId64,
@@ -314,14 +343,14 @@ static bool rq_alloc(grpc_resource_quota* resource_quota) {
       resource_user->free_pool = 0;
       resource_quota->free_pool -= amt;
       rq_update_estimate(resource_quota);
-      if (grpc_resource_quota_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
         gpr_log(GPR_INFO,
                 "RQ %s %s: grant alloc %" PRId64
                 " bytes; rq_free_pool -> %" PRId64,
                 resource_quota->name, resource_user->name, amt,
                 resource_quota->free_pool);
       }
-    } else if (grpc_resource_quota_trace.enabled() &&
+    } else if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace) &&
                resource_user->free_pool >= 0) {
       gpr_log(GPR_INFO, "RQ %s %s: discard already satisfied alloc request",
               resource_quota->name, resource_user->name);
@@ -347,12 +376,13 @@ static bool rq_reclaim_from_per_user_free_pool(
   while ((resource_user = rulist_pop_head(resource_quota,
                                           GRPC_RULIST_NON_EMPTY_FREE_POOL))) {
     gpr_mu_lock(&resource_user->mu);
+    resource_user->added_to_free_pool = false;
     if (resource_user->free_pool > 0) {
       int64_t amt = resource_user->free_pool;
       resource_user->free_pool = 0;
       resource_quota->free_pool += amt;
       rq_update_estimate(resource_quota);
-      if (grpc_resource_quota_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
         gpr_log(GPR_INFO,
                 "RQ %s %s: reclaim_from_per_user_free_pool %" PRId64
                 " bytes; rq_free_pool -> %" PRId64,
@@ -362,6 +392,13 @@ static bool rq_reclaim_from_per_user_free_pool(
       gpr_mu_unlock(&resource_user->mu);
       return true;
     } else {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+        gpr_log(GPR_INFO,
+                "RQ %s %s: failed to reclaim_from_per_user_free_pool; "
+                "free_pool = %" PRId64 "; rq_free_pool = %" PRId64,
+                resource_quota->name, resource_user->name,
+                resource_user->free_pool, resource_quota->free_pool);
+      }
       gpr_mu_unlock(&resource_user->mu);
     }
   }
@@ -375,7 +412,7 @@ static bool rq_reclaim(grpc_resource_quota* resource_quota, bool destructive) {
                                  : GRPC_RULIST_RECLAIMER_BENIGN;
   grpc_resource_user* resource_user = rulist_pop_head(resource_quota, list);
   if (resource_user == nullptr) return false;
-  if (grpc_resource_quota_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
     gpr_log(GPR_INFO, "RQ %s %s: initiate %s reclamation", resource_quota->name,
             resource_user->name, destructive ? "destructive" : "benign");
   }
@@ -394,41 +431,43 @@ static bool rq_reclaim(grpc_resource_quota* resource_quota, bool destructive) {
  * ru_slice: a slice implementation that is backed by a grpc_resource_user
  */
 
-typedef struct {
-  grpc_slice_refcount base;
-  gpr_refcount refs;
-  grpc_resource_user* resource_user;
-  size_t size;
-} ru_slice_refcount;
+namespace grpc_core {
 
-static void ru_slice_ref(void* p) {
-  ru_slice_refcount* rc = static_cast<ru_slice_refcount*>(p);
-  gpr_ref(&rc->refs);
-}
-
-static void ru_slice_unref(void* p) {
-  ru_slice_refcount* rc = static_cast<ru_slice_refcount*>(p);
-  if (gpr_unref(&rc->refs)) {
-    grpc_resource_user_free(rc->resource_user, rc->size);
+class RuSliceRefcount {
+ public:
+  static void Destroy(void* p) {
+    auto* rc = static_cast<RuSliceRefcount*>(p);
+    rc->~RuSliceRefcount();
     gpr_free(rc);
   }
-}
+  RuSliceRefcount(grpc_resource_user* resource_user, size_t size)
+      : base_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this,
+              &base_),
+        resource_user_(resource_user),
+        size_(size) {
+    // Nothing to do here.
+  }
+  ~RuSliceRefcount() { grpc_resource_user_free(resource_user_, size_); }
 
-static const grpc_slice_refcount_vtable ru_slice_vtable = {
-    ru_slice_ref, ru_slice_unref, grpc_slice_default_eq_impl,
-    grpc_slice_default_hash_impl};
+  grpc_slice_refcount* base_refcount() { return &base_; }
+
+ private:
+  grpc_slice_refcount base_;
+  RefCount refs_;
+  grpc_resource_user* resource_user_;
+  size_t size_;
+};
+
+}  // namespace grpc_core
 
 static grpc_slice ru_slice_create(grpc_resource_user* resource_user,
                                   size_t size) {
-  ru_slice_refcount* rc = static_cast<ru_slice_refcount*>(
-      gpr_malloc(sizeof(ru_slice_refcount) + size));
-  rc->base.vtable = &ru_slice_vtable;
-  rc->base.sub_refcount = &rc->base;
-  gpr_ref_init(&rc->refs, 1);
-  rc->resource_user = resource_user;
-  rc->size = size;
+  auto* rc = static_cast<grpc_core::RuSliceRefcount*>(
+      gpr_malloc(sizeof(grpc_core::RuSliceRefcount) + size));
+  new (rc) grpc_core::RuSliceRefcount(resource_user, size);
   grpc_slice slice;
-  slice.refcount = &rc->base;
+
+  slice.refcount = rc->base_refcount();
   slice.data.refcounted.bytes = reinterpret_cast<uint8_t*>(rc + 1);
   slice.data.refcounted.length = size;
   return slice;
@@ -504,7 +543,7 @@ static void ru_post_destructive_reclaimer(void* ru, grpc_error* error) {
 }
 
 static void ru_shutdown(void* ru, grpc_error* error) {
-  if (grpc_resource_quota_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
     gpr_log(GPR_INFO, "RU shutdown %p", ru);
   }
   grpc_resource_user* resource_user = static_cast<grpc_resource_user*>(ru);
@@ -524,6 +563,11 @@ static void ru_shutdown(void* ru, grpc_error* error) {
 static void ru_destroy(void* ru, grpc_error* error) {
   grpc_resource_user* resource_user = static_cast<grpc_resource_user*>(ru);
   GPR_ASSERT(gpr_atm_no_barrier_load(&resource_user->refs) == 0);
+  // Free all the remaining thread quota
+  grpc_resource_user_free_threads(resource_user,
+                                  static_cast<int>(gpr_atm_no_barrier_load(
+                                      &resource_user->num_threads_allocated)));
+
   for (int i = 0; i < GRPC_RULIST_COUNT; i++) {
     rulist_remove(resource_user, static_cast<grpc_rulist>(i));
   }
@@ -593,7 +637,11 @@ grpc_resource_quota* grpc_resource_quota_create(const char* name) {
   resource_quota->combiner = grpc_combiner_create();
   resource_quota->free_pool = INT64_MAX;
   resource_quota->size = INT64_MAX;
+  resource_quota->used = 0;
   gpr_atm_no_barrier_store(&resource_quota->last_size, GPR_ATM_MAX);
+  gpr_mu_init(&resource_quota->thread_count_mu);
+  resource_quota->max_threads = INT_MAX;
+  resource_quota->num_threads_allocated = 0;
   resource_quota->step_scheduled = false;
   resource_quota->reclaiming = false;
   gpr_atm_no_barrier_store(&resource_quota->memory_usage_estimation, 0);
@@ -616,8 +664,11 @@ grpc_resource_quota* grpc_resource_quota_create(const char* name) {
 
 void grpc_resource_quota_unref_internal(grpc_resource_quota* resource_quota) {
   if (gpr_unref(&resource_quota->refs)) {
+    // No outstanding thread quota
+    GPR_ASSERT(resource_quota->num_threads_allocated == 0);
     GRPC_COMBINER_UNREF(resource_quota->combiner, "resource_quota");
     gpr_free(resource_quota->name);
+    gpr_mu_destroy(&resource_quota->thread_count_mu);
     gpr_free(resource_quota);
   }
 }
@@ -647,6 +698,15 @@ double grpc_resource_quota_get_memory_pressure(
 }
 
 /* Public API */
+void grpc_resource_quota_set_max_threads(grpc_resource_quota* resource_quota,
+                                         int new_max_threads) {
+  GPR_ASSERT(new_max_threads >= 0);
+  gpr_mu_lock(&resource_quota->thread_count_mu);
+  resource_quota->max_threads = new_max_threads;
+  gpr_mu_unlock(&resource_quota->thread_count_mu);
+}
+
+/* Public API */
 void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
                                 size_t size) {
   grpc_core::ExecCtx exec_ctx;
@@ -669,7 +729,7 @@ size_t grpc_resource_quota_peek_size(grpc_resource_quota* resource_quota) {
  */
 
 grpc_resource_quota* grpc_resource_quota_from_channel_args(
-    const grpc_channel_args* channel_args) {
+    const grpc_channel_args* channel_args, bool create) {
   for (size_t i = 0; i < channel_args->num_args; i++) {
     if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
       if (channel_args->args[i].type == GRPC_ARG_POINTER) {
@@ -681,7 +741,7 @@ grpc_resource_quota* grpc_resource_quota_from_channel_args(
       }
     }
   }
-  return grpc_resource_quota_create(nullptr);
+  return create ? grpc_resource_quota_create(nullptr) : nullptr;
 }
 
 static void* rq_copy(void* rq) {
@@ -731,6 +791,7 @@ grpc_resource_user* grpc_resource_user_create(
   grpc_closure_list_init(&resource_user->on_allocated);
   resource_user->allocating = false;
   resource_user->added_to_free_pool = false;
+  gpr_atm_no_barrier_store(&resource_user->num_threads_allocated, 0);
   resource_user->reclaimers[0] = nullptr;
   resource_user->reclaimers[1] = nullptr;
   resource_user->new_reclaimers[0] = nullptr;
@@ -785,36 +846,105 @@ void grpc_resource_user_shutdown(grpc_resource_user* resource_user) {
   }
 }
 
-void grpc_resource_user_alloc(grpc_resource_user* resource_user, size_t size,
-                              grpc_closure* optional_on_done) {
-  gpr_mu_lock(&resource_user->mu);
+bool grpc_resource_user_allocate_threads(grpc_resource_user* resource_user,
+                                         int thread_count) {
+  GPR_ASSERT(thread_count >= 0);
+  bool is_success = false;
+  gpr_mu_lock(&resource_user->resource_quota->thread_count_mu);
+  grpc_resource_quota* rq = resource_user->resource_quota;
+  if (rq->num_threads_allocated + thread_count <= rq->max_threads) {
+    rq->num_threads_allocated += thread_count;
+    gpr_atm_no_barrier_fetch_add(&resource_user->num_threads_allocated,
+                                 thread_count);
+    is_success = true;
+  }
+  gpr_mu_unlock(&resource_user->resource_quota->thread_count_mu);
+  return is_success;
+}
+
+void grpc_resource_user_free_threads(grpc_resource_user* resource_user,
+                                     int thread_count) {
+  GPR_ASSERT(thread_count >= 0);
+  gpr_mu_lock(&resource_user->resource_quota->thread_count_mu);
+  grpc_resource_quota* rq = resource_user->resource_quota;
+  rq->num_threads_allocated -= thread_count;
+  int old_count = static_cast<int>(gpr_atm_no_barrier_fetch_add(
+      &resource_user->num_threads_allocated, -thread_count));
+  if (old_count < thread_count || rq->num_threads_allocated < 0) {
+    gpr_log(GPR_ERROR,
+            "Releasing more threads (%d) than currently allocated (rq threads: "
+            "%d, ru threads: %d)",
+            thread_count, rq->num_threads_allocated + thread_count, old_count);
+    abort();
+  }
+  gpr_mu_unlock(&resource_user->resource_quota->thread_count_mu);
+}
+
+static void resource_user_alloc_locked(grpc_resource_user* resource_user,
+                                       size_t size,
+                                       grpc_closure* optional_on_done) {
   ru_ref_by(resource_user, static_cast<gpr_atm>(size));
   resource_user->free_pool -= static_cast<int64_t>(size);
-  resource_user->outstanding_allocations += static_cast<int64_t>(size);
-  if (grpc_resource_quota_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
     gpr_log(GPR_INFO, "RQ %s %s: alloc %" PRIdPTR "; free_pool -> %" PRId64,
             resource_user->resource_quota->name, resource_user->name, size,
             resource_user->free_pool);
   }
   if (resource_user->free_pool < 0) {
-    grpc_closure_list_append(&resource_user->on_allocated, optional_on_done,
-                             GRPC_ERROR_NONE);
+    if (optional_on_done != nullptr) {
+      resource_user->outstanding_allocations += static_cast<int64_t>(size);
+      grpc_closure_list_append(&resource_user->on_allocated, optional_on_done,
+                               GRPC_ERROR_NONE);
+    }
     if (!resource_user->allocating) {
       resource_user->allocating = true;
       GRPC_CLOSURE_SCHED(&resource_user->allocate_closure, GRPC_ERROR_NONE);
     }
   } else {
-    resource_user->outstanding_allocations -= static_cast<int64_t>(size);
     GRPC_CLOSURE_SCHED(optional_on_done, GRPC_ERROR_NONE);
   }
+}
+
+bool grpc_resource_user_safe_alloc(grpc_resource_user* resource_user,
+                                   size_t size) {
+  if (gpr_atm_no_barrier_load(&resource_user->shutdown)) return false;
+  gpr_mu_lock(&resource_user->mu);
+  grpc_resource_quota* resource_quota = resource_user->resource_quota;
+  bool cas_success;
+  do {
+    gpr_atm used = gpr_atm_no_barrier_load(&resource_quota->used);
+    gpr_atm new_used = used + size;
+    if (static_cast<size_t>(new_used) >
+        grpc_resource_quota_peek_size(resource_quota)) {
+      gpr_mu_unlock(&resource_user->mu);
+      return false;
+    }
+    cas_success = gpr_atm_full_cas(&resource_quota->used, used, new_used);
+  } while (!cas_success);
+  resource_user_alloc_locked(resource_user, size, nullptr);
+  gpr_mu_unlock(&resource_user->mu);
+  return true;
+}
+
+void grpc_resource_user_alloc(grpc_resource_user* resource_user, size_t size,
+                              grpc_closure* optional_on_done) {
+  // TODO(juanlishen): Maybe return immediately if shutting down. Deferring this
+  // because some tests become flaky after the change.
+  gpr_mu_lock(&resource_user->mu);
+  grpc_resource_quota* resource_quota = resource_user->resource_quota;
+  gpr_atm_no_barrier_fetch_add(&resource_quota->used, size);
+  resource_user_alloc_locked(resource_user, size, optional_on_done);
   gpr_mu_unlock(&resource_user->mu);
 }
 
 void grpc_resource_user_free(grpc_resource_user* resource_user, size_t size) {
   gpr_mu_lock(&resource_user->mu);
+  grpc_resource_quota* resource_quota = resource_user->resource_quota;
+  gpr_atm prior = gpr_atm_no_barrier_fetch_add(&resource_quota->used, -size);
+  GPR_ASSERT(prior >= static_cast<long>(size));
   bool was_zero_or_negative = resource_user->free_pool <= 0;
   resource_user->free_pool += static_cast<int64_t>(size);
-  if (grpc_resource_quota_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
     gpr_log(GPR_INFO, "RQ %s %s: free %" PRIdPTR "; free_pool -> %" PRId64,
             resource_user->resource_quota->name, resource_user->name, size,
             resource_user->free_pool);
@@ -840,7 +970,7 @@ void grpc_resource_user_post_reclaimer(grpc_resource_user* resource_user,
 }
 
 void grpc_resource_user_finish_reclamation(grpc_resource_user* resource_user) {
-  if (grpc_resource_quota_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
     gpr_log(GPR_INFO, "RQ %s %s: reclamation complete",
             resource_user->resource_quota->name, resource_user->name);
   }
@@ -862,6 +992,12 @@ void grpc_resource_user_slice_allocator_init(
 void grpc_resource_user_alloc_slices(
     grpc_resource_user_slice_allocator* slice_allocator, size_t length,
     size_t count, grpc_slice_buffer* dest) {
+  if (gpr_atm_no_barrier_load(&slice_allocator->resource_user->shutdown)) {
+    GRPC_CLOSURE_SCHED(
+        &slice_allocator->on_allocated,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource user shutdown"));
+    return;
+  }
   slice_allocator->length = length;
   slice_allocator->count = count;
   slice_allocator->dest = dest;

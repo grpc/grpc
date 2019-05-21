@@ -28,7 +28,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/service_config.h"
 
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
@@ -142,7 +141,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   run_test(false /* wait_for_ready */, false /* use_service_config */);
   run_test(true /* wait_for_ready */, false /* use_service_config */);
   run_test(true /* wait_for_ready */, true /* use_service_config */);

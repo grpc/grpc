@@ -23,7 +23,7 @@ namespace Grpc.Core.Internal
     /// <summary>
     /// Writes responses asynchronously to an underlying AsyncCallServer object.
     /// </summary>
-    internal class ServerResponseStream<TRequest, TResponse> : IServerStreamWriter<TResponse>, IHasWriteOptions
+    internal class ServerResponseStream<TRequest, TResponse> : IServerStreamWriter<TResponse>, IServerResponseStream
         where TRequest : class
         where TResponse : class
     {

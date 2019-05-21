@@ -23,17 +23,30 @@ mkdir -p build
 cd build
 
 # set to the location where Android SDK is installed
-# e.g. ANDROID_NDK_PATH="$HOME/android-ndk-r16b"
+# e.g. ANDROID_SDK_PATH="$HOME/Android/Sdk"
 
-cmake ../.. \
-  -DCMAKE_SYSTEM_NAME=Android \
-  -DCMAKE_SYSTEM_VERSION=15 \
-  -DCMAKE_ANDROID_ARCH_ABI=armeabi-v7a \
+# set to location where Android NDK is installed, usually a subfolder of Android SDK
+# to install the Android NKD, use the "sdkmanager" tool
+# e.g. ANDROID_NDK_PATH=${ANDROID_SDK_PATH}/ndk-bundle
+
+# set to location of the cmake executable from the Android SDK
+# to install cmake, use the "sdkmanager" tool
+# e.g. ANDROID_SDK_CMAKE=${ANDROID_SDK_PATH}/cmake/3.6.4111459/bin/cmake
+
+# ANDROID_ABI in ('arm64-v8a', 'armeabi-v7a')
+# e.g. ANDROID_ABI=armeabi-v7a
+
+# android-19 corresponds to Kitkat 4.4
+${ANDROID_SDK_CMAKE} ../.. \
+  -DCMAKE_TOOLCHAIN_FILE="${ANDROID_NDK_PATH}/build/cmake/android.toolchain.cmake" \
   -DCMAKE_ANDROID_NDK="${ANDROID_NDK_PATH}" \
   -DCMAKE_ANDROID_STL_TYPE=c++_static \
   -DRUN_HAVE_POSIX_REGEX=0 \
   -DRUN_HAVE_STD_REGEX=0 \
   -DRUN_HAVE_STEADY_CLOCK=0 \
-  -DCMAKE_BUILD_TYPE=Release
+  -DCMAKE_BUILD_TYPE=Release \
+  -DANDROID_PLATFORM=android-19 \
+  -DANDROID_ABI="${ANDROID_ABI}" \
+  -DANDROID_NDK="${ANDROID_NDK_PATH}"
 
 make -j4 grpc_csharp_ext

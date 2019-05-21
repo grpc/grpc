@@ -1,14 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\Grpc.Core\Version.csproj.include" />
   <Import Project="..\Grpc.Core\Common.csproj.include" />
 
   <PropertyGroup>
-    <TargetFrameworks>net45;netcoreapp1.0</TargetFrameworks>
-    <AssemblyName>Grpc.Core.Tests</AssemblyName>
+    <TargetFrameworks>net45;netcoreapp2.1</TargetFrameworks>
     <OutputType>Exe</OutputType>
-    <PackageId>Grpc.Core.Tests</PackageId>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
+    <DefineConstants>$(DefineConstants);GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,8 +18,8 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
-    <PackageReference Include="NUnit" Version="3.6.0" />
-    <PackageReference Include="NUnitLite" Version="3.6.0" />
+    <PackageReference Include="NUnit" Version="3.10.1" />
+    <PackageReference Include="NUnitLite" Version="3.10.1" />
     <PackageReference Include="OpenCover" Version="4.6.519" />
     <PackageReference Include="ReportGenerator" Version="2.4.4.0" />
   </ItemGroup>
@@ -29,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\Grpc.Core\Version.cs" />
+    <Compile Include="..\Grpc.Core.Api\Version.cs" />
   </ItemGroup>
 
 </Project>

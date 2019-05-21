@@ -13,6 +13,7 @@
 # limitations under the License.
 
 if("${gRPC_BENCHMARK_PROVIDER}" STREQUAL "module")
+  set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "Turn off gTest in gBenchmark")
   if(NOT BENCHMARK_ROOT_DIR)
     set(BENCHMARK_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/benchmark)
   endif()
@@ -35,3 +36,4 @@ elseif("${gRPC_BENCHMARK_PROVIDER}" STREQUAL "package")
   endif()
   set(_gRPC_FIND_BENCHMARK "if(NOT benchmark_FOUND)\n  find_package(benchmark CONFIG)\nendif()")
 endif()
+

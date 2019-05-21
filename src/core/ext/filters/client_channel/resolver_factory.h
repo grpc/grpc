@@ -24,11 +24,11 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/resolver.h"
-#include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 
@@ -41,12 +41,14 @@ struct ResolverArgs {
   grpc_pollset_set* pollset_set = nullptr;
   /// The combiner under which all resolver calls will be run.
   grpc_combiner* combiner = nullptr;
+  /// The result handler to be used by the resolver.
+  UniquePtr<Resolver::ResultHandler> result_handler;
 };
 
 class ResolverFactory {
  public:
   /// Returns a new resolver instance.
-  virtual OrphanablePtr<Resolver> CreateResolver(const ResolverArgs& args) const
+  virtual OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const
       GRPC_ABSTRACT;
 
   /// Returns a string representing the default authority to use for this

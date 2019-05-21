@@ -19,41 +19,120 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
-#include "src/core/lib/iomgr/combiner.h"
 
-grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(
-    false, "lb_policy_refcount");
+#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/lib/iomgr/combiner.h"
 
 namespace grpc_core {
 
-LoadBalancingPolicy::LoadBalancingPolicy(const Args& args)
-    : InternallyRefCountedWithTracing(&grpc_trace_lb_policy_refcount),
+DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(false, "lb_policy_refcount");
+
+//
+// LoadBalancingPolicy
+//
+
+LoadBalancingPolicy::LoadBalancingPolicy(Args args, intptr_t initial_refcount)
+    : InternallyRefCounted(&grpc_trace_lb_policy_refcount, initial_refcount),
       combiner_(GRPC_COMBINER_REF(args.combiner, "lb_policy")),
-      client_channel_factory_(args.client_channel_factory),
       interested_parties_(grpc_pollset_set_create()),
-      request_reresolution_(nullptr) {}
+      channel_control_helper_(std::move(args.channel_control_helper)) {}
 
 LoadBalancingPolicy::~LoadBalancingPolicy() {
   grpc_pollset_set_destroy(interested_parties_);
   GRPC_COMBINER_UNREF(combiner_, "lb_policy");
 }
 
-void LoadBalancingPolicy::TryReresolutionLocked(
-    grpc_core::TraceFlag* grpc_lb_trace, grpc_error* error) {
-  if (request_reresolution_ != nullptr) {
-    GRPC_CLOSURE_SCHED(request_reresolution_, error);
-    request_reresolution_ = nullptr;
-    if (grpc_lb_trace->enabled()) {
-      gpr_log(GPR_INFO,
-              "%s %p: scheduling re-resolution closure with error=%s.",
-              grpc_lb_trace->name(), this, grpc_error_string(error));
-    }
-  } else {
-    if (grpc_lb_trace->enabled()) {
-      gpr_log(GPR_INFO, "%s %p: no available re-resolution closure.",
-              grpc_lb_trace->name(), this);
-    }
+void LoadBalancingPolicy::Orphan() {
+  // Invoke ShutdownAndUnrefLocked() inside of the combiner.
+  // TODO(roth): Is this actually needed?  We should already be in the
+  // combiner here.  Note that if we directly call ShutdownLocked(),
+  // then we can probably remove the hack whereby the helper is
+  // destroyed at shutdown instead of at destruction.
+  GRPC_CLOSURE_SCHED(
+      GRPC_CLOSURE_CREATE(&LoadBalancingPolicy::ShutdownAndUnrefLocked, this,
+                          grpc_combiner_scheduler(combiner_)),
+      GRPC_ERROR_NONE);
+}
+
+void LoadBalancingPolicy::ShutdownAndUnrefLocked(void* arg,
+                                                 grpc_error* ignored) {
+  LoadBalancingPolicy* policy = static_cast<LoadBalancingPolicy*>(arg);
+  policy->ShutdownLocked();
+  policy->channel_control_helper_.reset();
+  policy->Unref();
+}
+
+//
+// LoadBalancingPolicy::UpdateArgs
+//
+
+LoadBalancingPolicy::UpdateArgs::UpdateArgs(const UpdateArgs& other) {
+  addresses = other.addresses;
+  config = other.config;
+  args = grpc_channel_args_copy(other.args);
+}
+
+LoadBalancingPolicy::UpdateArgs::UpdateArgs(UpdateArgs&& other) {
+  addresses = std::move(other.addresses);
+  config = std::move(other.config);
+  // TODO(roth): Use std::move() once channel args is converted to C++.
+  args = other.args;
+  other.args = nullptr;
+}
+
+LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
+    const UpdateArgs& other) {
+  addresses = other.addresses;
+  config = other.config;
+  grpc_channel_args_destroy(args);
+  args = grpc_channel_args_copy(other.args);
+  return *this;
+}
+
+LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
+    UpdateArgs&& other) {
+  addresses = std::move(other.addresses);
+  config = std::move(other.config);
+  // TODO(roth): Use std::move() once channel args is converted to C++.
+  grpc_channel_args_destroy(args);
+  args = other.args;
+  other.args = nullptr;
+  return *this;
+}
+
+//
+// LoadBalancingPolicy::QueuePicker
+//
+
+LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
+    PickArgs* pick, grpc_error** error) {
+  // We invoke the parent's ExitIdleLocked() via a closure instead
+  // of doing it directly here, for two reasons:
+  // 1. ExitIdleLocked() may cause the policy's state to change and
+  //    a new picker to be delivered to the channel.  If that new
+  //    picker is delivered before ExitIdleLocked() returns, then by
+  //    the time this function returns, the pick will already have
+  //    been processed, and we'll be trying to re-process the same
+  //    pick again, leading to a crash.
+  // 2. We are currently running in the data plane combiner, but we
+  //    need to bounce into the control plane combiner to call
+  //    ExitIdleLocked().
+  if (!exit_idle_called_) {
+    exit_idle_called_ = true;
+    parent_->Ref().release();  // ref held by closure.
+    GRPC_CLOSURE_SCHED(
+        GRPC_CLOSURE_CREATE(&CallExitIdle, parent_.get(),
+                            grpc_combiner_scheduler(parent_->combiner())),
+        GRPC_ERROR_NONE);
   }
+  return PICK_QUEUE;
+}
+
+void LoadBalancingPolicy::QueuePicker::CallExitIdle(void* arg,
+                                                    grpc_error* error) {
+  LoadBalancingPolicy* parent = static_cast<LoadBalancingPolicy*>(arg);
+  parent->ExitIdleLocked();
+  parent->Unref();
 }
 
 }  // namespace grpc_core

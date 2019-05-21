@@ -28,6 +28,9 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/server.h"
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
@@ -133,25 +136,30 @@ static void test_retry_streaming(grpc_end2end_test_config config) {
   int was_cancelled = 2;
   char* peer;
 
-  grpc_arg arg;
-  arg.type = GRPC_ARG_STRING;
-  arg.key = const_cast<char*>(GRPC_ARG_SERVICE_CONFIG);
-  arg.value.string = const_cast<char*>(
-      "{\n"
-      "  \"methodConfig\": [ {\n"
-      "    \"name\": [\n"
-      "      { \"service\": \"service\", \"method\": \"method\" }\n"
-      "    ],\n"
-      "    \"retryPolicy\": {\n"
-      "      \"maxAttempts\": 3,\n"
-      "      \"initialBackoff\": \"1s\",\n"
-      "      \"maxBackoff\": \"120s\",\n"
-      "      \"backoffMultiplier\": 1.6,\n"
-      "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
-      "    }\n"
-      "  } ]\n"
-      "}");
-  grpc_channel_args client_args = {1, &arg};
+  grpc_arg args[] = {
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
+          1024 * 8),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true),
+      grpc_channel_arg_string_create(
+          const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
+          const_cast<char*>(
+              "{\n"
+              "  \"methodConfig\": [ {\n"
+              "    \"name\": [\n"
+              "      { \"service\": \"service\", \"method\": \"method\" }\n"
+              "    ],\n"
+              "    \"retryPolicy\": {\n"
+              "      \"maxAttempts\": 3,\n"
+              "      \"initialBackoff\": \"1s\",\n"
+              "      \"maxBackoff\": \"120s\",\n"
+              "      \"backoffMultiplier\": 1.6,\n"
+              "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+              "    }\n"
+              "  } ]\n"
+              "}"))};
+  grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
   grpc_end2end_test_fixture f =
       begin_test(config, "retry_streaming", &client_args, nullptr);
 
@@ -161,6 +169,9 @@ static void test_retry_streaming(grpc_end2end_test_config config) {
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                grpc_slice_from_static_string("/service/method"),
                                nullptr, deadline, nullptr);
+  grpc_core::channelz::ChannelNode* channelz_channel =
+      grpc_channel_get_channelz_node(f.client);
+
   GPR_ASSERT(c);
 
   peer = grpc_call_get_peer(c);
@@ -384,6 +395,20 @@ static void test_retry_streaming(grpc_end2end_test_config config) {
   GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 1);
 
+  GPR_ASSERT(channelz_channel != nullptr);
+  char* json = channelz_channel->RenderJsonString();
+  GPR_ASSERT(json != nullptr);
+  gpr_log(GPR_INFO, "%s", json);
+  GPR_ASSERT(nullptr != strstr(json, "\"trace\""));
+  GPR_ASSERT(nullptr != strstr(json, "\"description\":\"Channel created\""));
+  GPR_ASSERT(nullptr != strstr(json, "\"severity\":\"CT_INFO\""));
+  GPR_ASSERT(nullptr != strstr(json, "Resolution event"));
+  GPR_ASSERT(nullptr != strstr(json, "Created new LB policy"));
+  GPR_ASSERT(nullptr != strstr(json, "Service config changed"));
+  GPR_ASSERT(nullptr != strstr(json, "Address list became non-empty"));
+  GPR_ASSERT(nullptr != strstr(json, "Channel state change to CONNECTING"));
+  gpr_free(json);
+
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
@@ -414,6 +439,7 @@ static void test_retry_streaming(grpc_end2end_test_config config) {
 
 void retry_streaming(grpc_end2end_test_config config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
+
   test_retry_streaming(config);
 }
 

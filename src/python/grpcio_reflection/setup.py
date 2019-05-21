@@ -58,7 +58,7 @@ PACKAGE_DIRECTORIES = {
 }
 
 INSTALL_REQUIRES = (
-    'protobuf>=3.5.2.post1',
+    'protobuf>=3.6.0',
     'grpcio>={version}'.format(version=grpc_version.VERSION),
 )
 
@@ -69,7 +69,7 @@ try:
         'grpcio-tools=={version}'.format(version=grpc_version.VERSION),)
     COMMAND_CLASS = {
         # Run preprocess from the repository *before* doing any packaging!
-        'preprocess': _reflection_commands.CopyProtoModules,
+        'preprocess': _reflection_commands.Preprocess,
         'build_package_protos': _reflection_commands.BuildPackageProtos,
     }
 except ImportError:

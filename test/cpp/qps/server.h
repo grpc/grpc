@@ -152,6 +152,7 @@ class Server {
 std::unique_ptr<Server> CreateSynchronousServer(const ServerConfig& config);
 std::unique_ptr<Server> CreateAsyncServer(const ServerConfig& config);
 std::unique_ptr<Server> CreateAsyncGenericServer(const ServerConfig& config);
+std::unique_ptr<Server> CreateCallbackServer(const ServerConfig& config);
 
 }  // namespace testing
 }  // namespace grpc

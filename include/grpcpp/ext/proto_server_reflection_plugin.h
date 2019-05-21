@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,34 +19,17 @@
 #ifndef GRPCPP_EXT_PROTO_SERVER_REFLECTION_PLUGIN_H
 #define GRPCPP_EXT_PROTO_SERVER_REFLECTION_PLUGIN_H
 
-#include <grpcpp/impl/server_builder_plugin.h>
-#include <grpcpp/support/config.h>
-
-namespace grpc {
-class ServerInitializer;
-class ProtoServerReflection;
-}  // namespace grpc
+#include <grpcpp/ext/proto_server_reflection_plugin_impl.h>
 
 namespace grpc {
 namespace reflection {
 
-class ProtoServerReflectionPlugin : public ::grpc::ServerBuilderPlugin {
- public:
-  ProtoServerReflectionPlugin();
-  ::grpc::string name() override;
-  void InitServer(::grpc::ServerInitializer* si) override;
-  void Finish(::grpc::ServerInitializer* si) override;
-  void ChangeArguments(const ::grpc::string& name, void* value) override;
-  bool has_async_methods() const override;
-  bool has_sync_methods() const override;
+typedef ::grpc_impl::reflection::ProtoServerReflectionPlugin
+    ProtoServerReflectionPlugin;
 
- private:
-  std::shared_ptr<grpc::ProtoServerReflection> reflection_service_;
-};
-
-/// Add proto reflection plugin to \a ServerBuilder.
-/// This function should be called at the static initialization time.
-void InitProtoReflectionServerBuilderPlugin();
+static inline void InitProtoReflectionServerBuilderPlugin() {
+  ::grpc_impl::reflection::InitProtoReflectionServerBuilderPlugin();
+}
 
 }  // namespace reflection
 }  // namespace grpc

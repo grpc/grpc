@@ -170,7 +170,7 @@ void test_fails(void) {
         break;
       case GRPC_TIMERS_NOT_CHECKED:
         polling_deadline = 0;
-      /* fall through */
+      // fallthrough
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
         GPR_ASSERT(GRPC_LOG_IF_ERROR(
             "pollset_work",
@@ -191,7 +191,7 @@ static void destroy_pollset(void* p, grpc_error* error) {
 
 int main(int argc, char** argv) {
   grpc_closure destroyed;
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 
   {

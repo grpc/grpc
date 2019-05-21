@@ -19,6 +19,7 @@
 #ifndef NET_GRPC_PHP_GRPC_CHANNEL_H_
 #define NET_GRPC_PHP_GRPC_CHANNEL_H_
 
+#include "channel_credentials.h"
 #include "php_grpc.h"
 
 /* Class entry for the PHP Channel class */
@@ -32,6 +33,8 @@ typedef struct _grpc_channel_wrapper {
   char *creds_hashstr;
   size_t ref_count;
   gpr_mu mu;
+  grpc_channel_args args;
+  wrapped_grpc_channel_credentials *creds;
 } grpc_channel_wrapper;
 
 /* Wrapper struct for grpc_channel that can be associated with a PHP object */

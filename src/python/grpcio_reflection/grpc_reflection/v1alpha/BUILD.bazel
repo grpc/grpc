@@ -1,0 +1,21 @@
+load("//bazel:python_rules.bzl", "py_proto_library")
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+
+package(default_visibility = ["//visibility:public"])
+
+py_proto_library(
+    name = "py_reflection_proto",
+    deps = ["//src/proto/grpc/reflection/v1alpha:reflection_proto_descriptor",],
+)
+
+py_library(
+    name = "grpc_reflection",
+    srcs = ["reflection.py",],
+    deps = [
+        ":py_reflection_proto",
+        "//src/python/grpcio/grpc:grpcio",
+        requirement('protobuf'),
+    ],
+    imports=["../../",],
+)
+

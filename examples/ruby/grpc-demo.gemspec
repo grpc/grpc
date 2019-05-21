@@ -18,6 +18,6 @@ Gem::Specification.new do |s|
   s.platform      = Gem::Platform::RUBY
 
   s.add_dependency 'grpc', '~> 1.0'
-
+  s.add_dependency 'multi_json', '~> 1.13.1'
   s.add_development_dependency 'bundler', '~> 1.7'
 end

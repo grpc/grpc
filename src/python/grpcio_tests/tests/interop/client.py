@@ -54,7 +54,6 @@ def _args():
         help='replace platform root CAs with ca.pem')
     parser.add_argument(
         '--server_host_override',
-        default="foo.test.google.fr",
         type=str,
         help='the server host to which to claim to connect')
     parser.add_argument(
@@ -100,10 +99,13 @@ def _stub(args):
             channel_credentials = grpc.composite_channel_credentials(
                 channel_credentials, call_credentials)
 
-        channel = grpc.secure_channel(target, channel_credentials, ((
-            'grpc.ssl_target_name_override',
-            args.server_host_override,
-        ),))
+        channel_opts = None
+        if args.server_host_override:
+            channel_opts = ((
+                'grpc.ssl_target_name_override',
+                args.server_host_override,
+            ),)
+        channel = grpc.secure_channel(target, channel_credentials, channel_opts)
     else:
         channel = grpc.insecure_channel(target)
     if args.test_case == "unimplemented_service":

@@ -61,10 +61,11 @@ typedef struct grpc_timer_vtable {
 
 /* Initialize *timer. When expired or canceled, closure will be called with
    error set to indicate if it expired (GRPC_ERROR_NONE) or was canceled
-   (GRPC_ERROR_CANCELLED). timer_cb is guaranteed to be called exactly once, and
+   (GRPC_ERROR_CANCELLED). *closure is guaranteed to be called exactly once, and
    application code should check the error to determine how it was invoked. The
    application callback is also responsible for maintaining information about
-   when to free up any user-level state. */
+   when to free up any user-level state. Behavior is undefined for a deadline of
+   GRPC_MILLIS_INF_FUTURE. */
 void grpc_timer_init(grpc_timer* timer, grpc_millis deadline,
                      grpc_closure* closure);
 

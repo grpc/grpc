@@ -21,8 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "third_party/nanopb/pb_decode.h"
-#include "third_party/nanopb/pb_encode.h"
+#include "pb_decode.h"
+#include "pb_encode.h"
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
@@ -112,7 +112,7 @@ bool grpc_gcp_rpc_protocol_versions_encode(
  * The method returns true on success and false otherwise.
  */
 bool grpc_gcp_rpc_protocol_versions_decode(
-    grpc_slice slice, grpc_gcp_rpc_protocol_versions* versions);
+    const grpc_slice& slice, grpc_gcp_rpc_protocol_versions* versions);
 
 /**
  * This method performs a deep copy operation on rpc protocol versions

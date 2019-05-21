@@ -153,9 +153,10 @@ namespace Grpc.IntegrationTesting
         [Test]
         public void MetadataCredentials_InterceptorThrows()
         {
+            var authInterceptorExceptionMessage = "Auth interceptor throws";
             var callCredentials = CallCredentials.FromInterceptor(new AsyncAuthInterceptor((context, metadata) =>
             {
-                throw new Exception("Auth interceptor throws");
+                throw new Exception(authInterceptorExceptionMessage);
             }));
             var channelCredentials = ChannelCredentials.Create(TestCredentials.CreateSslCredentials(), callCredentials);
             channel = new Channel(Host, server.Ports.Single().BoundPort, channelCredentials, options);
@@ -163,6 +164,7 @@ namespace Grpc.IntegrationTesting
 
             var ex = Assert.Throws<RpcException>(() => client.UnaryCall(new SimpleRequest { }));
             Assert.AreEqual(StatusCode.Unavailable, ex.Status.StatusCode);
+            StringAssert.Contains(authInterceptorExceptionMessage, ex.Status.Detail);
         }
 
         private class FakeTestService : TestService.TestServiceBase

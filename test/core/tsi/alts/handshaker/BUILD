@@ -1,5 +1,5 @@
 # Copyright 2018 gRPC authors.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -14,10 +14,10 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
-licenses(["notice"])  # Apache v2 
-         
+licenses(["notice"])  # Apache v2
+
 grpc_package(name = "test/core/tsi/alts/handshaker")
-         
+
 grpc_cc_library(
     name = "alts_handshaker_service_api_test_lib",
     srcs = ["alts_handshaker_service_api_test_lib.cc"],
@@ -25,7 +25,7 @@ grpc_cc_library(
     deps = [
         "//:alts_util",
         "//:grpc",
-    ], 
+    ],
 )
 
 grpc_cc_test(
@@ -34,9 +34,10 @@ grpc_cc_test(
     language = "C++",
     deps = [
         ":alts_handshaker_service_api_test_lib",
+        "//:grpc",
         "//:tsi",
         "//:tsi_interface",
-        "//:grpc",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -47,6 +48,7 @@ grpc_cc_test(
     deps = [
         ":alts_handshaker_service_api_test_lib",
         "//:grpc",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -60,6 +62,7 @@ grpc_cc_test(
         "//:gpr_base",
         "//:grpc",
         "//:tsi",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -71,6 +74,7 @@ grpc_cc_test(
         ":alts_handshaker_service_api_test_lib",
         "//:grpc",
         "//:tsi",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -81,6 +85,6 @@ grpc_cc_test(
     deps = [
         "//:alts_util",
         "//:grpc",
+        "//test/core/util:grpc_test_util",
     ],
 )
-

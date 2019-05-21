@@ -23,8 +23,10 @@
 #include <ctype.h>
 #include <limits.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -53,6 +55,32 @@ typedef struct {
   size_t length;
   char* data;
 } dump_out;
+
+char* gpr_format_timespec(gpr_timespec tm) {
+  char time_buffer[35];
+  char ns_buffer[11];  // '.' + 9 digits of precision
+  struct tm* tm_info = localtime((const time_t*)&tm.tv_sec);
+  strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%dT%H:%M:%S", tm_info);
+  snprintf(ns_buffer, 11, ".%09d", tm.tv_nsec);
+  // This loop trims off trailing zeros by inserting a null character that the
+  // right point. We iterate in chunks of three because we want 0, 3, 6, or 9
+  // fractional digits.
+  for (int i = 7; i >= 1; i -= 3) {
+    if (ns_buffer[i] == '0' && ns_buffer[i + 1] == '0' &&
+        ns_buffer[i + 2] == '0') {
+      ns_buffer[i] = '\0';
+      // Edge case in which all fractional digits were 0.
+      if (i == 1) {
+        ns_buffer[0] = '\0';
+      }
+    } else {
+      break;
+    }
+  }
+  char* full_time_str;
+  gpr_asprintf(&full_time_str, "%s%sZ", time_buffer, ns_buffer);
+  return full_time_str;
+}
 
 static dump_out dump_out_create(void) {
   dump_out r = {0, 0, nullptr};
@@ -304,16 +332,22 @@ void* gpr_memrchr(const void* s, int c, size_t n) {
   return nullptr;
 }
 
-bool gpr_is_true(const char* s) {
-  size_t i;
+bool gpr_parse_bool_value(const char* s, bool* dst) {
+  const char* kTrue[] = {"1", "t", "true", "y", "yes"};
+  const char* kFalse[] = {"0", "f", "false", "n", "no"};
+  static_assert(sizeof(kTrue) == sizeof(kFalse), "true_false_equal");
+
   if (s == nullptr) {
     return false;
   }
-  static const char* truthy[] = {"yes", "true", "1"};
-  for (i = 0; i < GPR_ARRAY_SIZE(truthy); i++) {
-    if (0 == gpr_stricmp(s, truthy[i])) {
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(kTrue); ++i) {
+    if (gpr_stricmp(s, kTrue[i]) == 0) {
+      *dst = true;
+      return true;
+    } else if (gpr_stricmp(s, kFalse[i]) == 0) {
+      *dst = false;
       return true;
     }
   }
-  return false;
+  return false;  // didn't match a legal input
 }

@@ -59,6 +59,10 @@ grpc_completion_queue* CoreCodegen::grpc_completion_queue_create_for_pluck(
   return ::grpc_completion_queue_create_for_pluck(reserved);
 }
 
+void CoreCodegen::grpc_completion_queue_shutdown(grpc_completion_queue* cq) {
+  ::grpc_completion_queue_shutdown(cq);
+}
+
 void CoreCodegen::grpc_completion_queue_destroy(grpc_completion_queue* cq) {
   ::grpc_completion_queue_destroy(cq);
 }
@@ -77,7 +81,7 @@ void CoreCodegen::gpr_free(void* p) { return ::gpr_free(p); }
 void CoreCodegen::grpc_init() { ::grpc_init(); }
 void CoreCodegen::grpc_shutdown() { ::grpc_shutdown(); }
 
-void CoreCodegen::gpr_mu_init(gpr_mu* mu) { ::gpr_mu_init(mu); };
+void CoreCodegen::gpr_mu_init(gpr_mu* mu) { ::gpr_mu_init(mu); }
 void CoreCodegen::gpr_mu_destroy(gpr_mu* mu) { ::gpr_mu_destroy(mu); }
 void CoreCodegen::gpr_mu_lock(gpr_mu* mu) { ::gpr_mu_lock(mu); }
 void CoreCodegen::gpr_mu_unlock(gpr_mu* mu) { ::gpr_mu_unlock(mu); }
@@ -100,6 +104,13 @@ void CoreCodegen::grpc_byte_buffer_destroy(grpc_byte_buffer* bb) {
 
 size_t CoreCodegen::grpc_byte_buffer_length(grpc_byte_buffer* bb) {
   return ::grpc_byte_buffer_length(bb);
+}
+
+grpc_call_error CoreCodegen::grpc_call_start_batch(grpc_call* call,
+                                                   const grpc_op* ops,
+                                                   size_t nops, void* tag,
+                                                   void* reserved) {
+  return ::grpc_call_start_batch(call, ops, nops, tag, reserved);
 }
 
 grpc_call_error CoreCodegen::grpc_call_cancel_with_status(
@@ -126,6 +137,11 @@ void CoreCodegen::grpc_byte_buffer_reader_destroy(
 int CoreCodegen::grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
                                               grpc_slice* slice) {
   return ::grpc_byte_buffer_reader_next(reader, slice);
+}
+
+int CoreCodegen::grpc_byte_buffer_reader_peek(grpc_byte_buffer_reader* reader,
+                                              grpc_slice** slice) {
+  return ::grpc_byte_buffer_reader_peek(reader, slice);
 }
 
 grpc_byte_buffer* CoreCodegen::grpc_raw_byte_buffer_create(grpc_slice* slice,

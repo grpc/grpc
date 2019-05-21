@@ -41,7 +41,7 @@ class ByteBufferTest : public ::testing::Test {};
 TEST_F(ByteBufferTest, CopyCtor) {
   ByteBuffer buffer1;
   EXPECT_FALSE(buffer1.Valid());
-  ByteBuffer buffer2 = buffer1;
+  const ByteBuffer& buffer2 = buffer1;
   EXPECT_FALSE(buffer2.Valid());
 }
 

@@ -23,11 +23,20 @@
 
 #include <stddef.h>
 
+// TODO(juanlishen): The following functions might be simple enough to implement
+// ourselves, so that they don't cause any portability hassle.
+
 /* A wrapper for htons on POSIX and Windows */
 uint16_t grpc_htons(uint16_t hostshort);
 
 /* A wrapper for ntohs on POSIX and WINDOWS */
 uint16_t grpc_ntohs(uint16_t netshort);
+
+/* A wrapper for htonl on POSIX and Windows */
+uint32_t grpc_htonl(uint32_t hostlong);
+
+/* A wrapper for ntohl on POSIX and WINDOWS */
+uint32_t grpc_ntohl(uint32_t netlong);
 
 /* A wrapper for inet_pton on POSIX and WINDOWS */
 int grpc_inet_pton(int af, const char* src, void* dst);

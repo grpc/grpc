@@ -31,7 +31,8 @@ def main():
   argp.add_argument('-t', '--timeout', default=1, type=int,
                     help='Force process exit after this number of seconds.')
   args = argp.parse_args()
-  socket.create_connection([args.server_host, args.server_port])
+  socket.create_connection([args.server_host, args.server_port],
+                           timeout=args.timeout)
 
 if __name__ == '__main__':
   main()

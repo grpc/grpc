@@ -14,15 +14,17 @@
 # limitations under the License.
 """Manage TCP ports for unit tests; started by run_tests.py"""
 
+from __future__ import print_function
+
 import argparse
-from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+from six.moves.BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+from six.moves.socketserver import ThreadingMixIn
 import hashlib
 import os
 import socket
 import sys
 import time
 import random
-from SocketServer import ThreadingMixIn
 import threading
 import platform
 
@@ -32,7 +34,7 @@ import platform
 _MY_VERSION = 20
 
 if len(sys.argv) == 2 and sys.argv[1] == 'dump_version':
-    print _MY_VERSION
+    print(_MY_VERSION)
     sys.exit(0)
 
 argp = argparse.ArgumentParser(description='Server for httpcli_test')
@@ -47,7 +49,7 @@ if args.logfile is not None:
     sys.stderr = open(args.logfile, 'w')
     sys.stdout = sys.stderr
 
-print 'port server running on port %d' % args.port
+print('port server running on port %d' % args.port)
 
 pool = []
 in_use = {}
@@ -74,7 +76,7 @@ def can_connect(port):
     try:
         s.connect(('localhost', port))
         return True
-    except socket.error, e:
+    except socket.error as e:
         return False
     finally:
         s.close()
@@ -86,7 +88,7 @@ def can_bind(port, proto):
     try:
         s.bind(('localhost', port))
         return True
-    except socket.error, e:
+    except socket.error as e:
         return False
     finally:
         s.close()
@@ -95,7 +97,7 @@ def can_bind(port, proto):
 def refill_pool(max_timeout, req):
     """Scan for ports not marked for being in use"""
     chk = [
-        port for port in list(range(1025, 32766))
+        port for port in range(1025, 32766)
         if port not in cronet_restricted_ports
     ]
     random.shuffle(chk)

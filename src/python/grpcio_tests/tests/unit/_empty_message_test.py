@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import unittest
+import logging
 
 import grpc
 
@@ -95,6 +96,7 @@ class EmptyMessageTest(unittest.TestCase):
 
     def tearDown(self):
         self._server.stop(0)
+        self._channel.close()
 
     def testUnaryUnary(self):
         response = self._channel.unary_unary(_UNARY_UNARY)(_REQUEST)
@@ -118,4 +120,5 @@ class EmptyMessageTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)

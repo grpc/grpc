@@ -52,6 +52,7 @@ class CoreCodegenInterface {
       void* reserved) = 0;
   virtual grpc_completion_queue* grpc_completion_queue_create_for_pluck(
       void* reserved) = 0;
+  virtual void grpc_completion_queue_shutdown(grpc_completion_queue* cq) = 0;
   virtual void grpc_completion_queue_destroy(grpc_completion_queue* cq) = 0;
   virtual grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq,
                                                  void* tag,
@@ -91,6 +92,8 @@ class CoreCodegenInterface {
       grpc_byte_buffer_reader* reader) = 0;
   virtual int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
                                            grpc_slice* slice) = 0;
+  virtual int grpc_byte_buffer_reader_peek(grpc_byte_buffer_reader* reader,
+                                           grpc_slice** slice) = 0;
 
   virtual grpc_byte_buffer* grpc_raw_byte_buffer_create(grpc_slice* slice,
                                                         size_t nslices) = 0;
@@ -100,6 +103,9 @@ class CoreCodegenInterface {
   virtual grpc_slice grpc_slice_new_with_len(void* p, size_t len,
                                              void (*destroy)(void*,
                                                              size_t)) = 0;
+  virtual grpc_call_error grpc_call_start_batch(grpc_call* call,
+                                                const grpc_op* ops, size_t nops,
+                                                void* tag, void* reserved) = 0;
   virtual grpc_call_error grpc_call_cancel_with_status(grpc_call* call,
                                                        grpc_status_code status,
                                                        const char* description,
@@ -141,6 +147,15 @@ extern CoreCodegenInterface* g_core_codegen_interface;
       grpc::g_core_codegen_interface->assert_fail(#x, __FILE__, __LINE__); \
     }                                                                      \
   } while (0)
+
+/// Codegen specific version of \a GPR_DEBUG_ASSERT.
+#ifndef NDEBUG
+#define GPR_CODEGEN_DEBUG_ASSERT(x) GPR_CODEGEN_ASSERT(x)
+#else
+#define GPR_CODEGEN_DEBUG_ASSERT(x) \
+  do {                              \
+  } while (0)
+#endif
 
 }  // namespace grpc
 

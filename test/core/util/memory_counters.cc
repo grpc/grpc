@@ -16,12 +16,18 @@
  *
  */
 
+#include <inttypes.h>
 #include <stdint.h>
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
+#include "src/core/lib/gpr/alloc.h"
+#include "src/core/lib/surface/init.h"
 #include "test/core/util/memory_counters.h"
 
 static struct grpc_memory_counters g_memory_counters;
@@ -42,19 +48,18 @@ static void guard_free(void* vptr);
 #endif
 
 static void* guard_malloc(size_t size) {
-  size_t* ptr;
   if (!size) return nullptr;
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_absolute, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_absolute, (gpr_atm)1);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_relative, (gpr_atm)1);
-  ptr = static_cast<size_t*>(g_old_allocs.malloc_fn(size + sizeof(size)));
-  *ptr++ = size;
-  return ptr;
+  void* ptr = g_old_allocs.malloc_fn(
+      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size)) + size);
+  *static_cast<size_t*>(ptr) = size;
+  return static_cast<char*>(ptr) + GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
 }
 
 static void* guard_realloc(void* vptr, size_t size) {
-  size_t* ptr = static_cast<size_t*>(vptr);
   if (vptr == nullptr) {
     return guard_malloc(size);
   }
@@ -62,21 +67,25 @@ static void* guard_realloc(void* vptr, size_t size) {
     guard_free(vptr);
     return nullptr;
   }
-  --ptr;
+  void* ptr =
+      static_cast<char*>(vptr) - GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_absolute, (gpr_atm)size);
-  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, -(gpr_atm)*ptr);
+  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative,
+                       -*static_cast<gpr_atm*>(ptr));
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_absolute, (gpr_atm)1);
-  ptr = static_cast<size_t*>(g_old_allocs.realloc_fn(ptr, size + sizeof(size)));
-  *ptr++ = size;
-  return ptr;
+  ptr = g_old_allocs.realloc_fn(
+      ptr, GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size)) + size);
+  *static_cast<size_t*>(ptr) = size;
+  return static_cast<char*>(ptr) + GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
 }
 
 static void guard_free(void* vptr) {
-  size_t* ptr = static_cast<size_t*>(vptr);
-  if (!vptr) return;
-  --ptr;
-  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, -(gpr_atm)*ptr);
+  if (vptr == nullptr) return;
+  void* ptr =
+      static_cast<char*>(vptr) - GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size_t));
+  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative,
+                       -*static_cast<gpr_atm*>(ptr));
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_relative, -(gpr_atm)1);
   g_old_allocs.free_fn(ptr);
 }
@@ -106,3 +115,29 @@ struct grpc_memory_counters grpc_memory_counters_snapshot() {
       NO_BARRIER_LOAD(&g_memory_counters.total_allocs_absolute);
   return counters;
 }
+
+namespace grpc_core {
+namespace testing {
+
+LeakDetector::LeakDetector(bool enable) : enabled_(enable) {
+  if (enabled_) {
+    grpc_memory_counters_init();
+  }
+}
+
+LeakDetector::~LeakDetector() {
+  // Wait for grpc_shutdown() to finish its async work.
+  grpc_maybe_wait_for_async_shutdown();
+  if (enabled_) {
+    struct grpc_memory_counters counters = grpc_memory_counters_snapshot();
+    if (counters.total_size_relative != 0) {
+      gpr_log(GPR_ERROR, "Leaking %" PRIuPTR " bytes",
+              static_cast<uintptr_t>(counters.total_size_relative));
+      GPR_ASSERT(0);
+    }
+    grpc_memory_counters_destroy();
+  }
+}
+
+}  // namespace testing
+}  // namespace grpc_core

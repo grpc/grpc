@@ -21,30 +21,102 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/gpr/spinlock.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/closure.h"
 
-typedef enum {
-  GRPC_EXECUTOR_SHORT,
-  GRPC_EXECUTOR_LONG
-} grpc_executor_job_length;
+namespace grpc_core {
 
-/** Initialize the global executor.
- *
- * This mechanism is meant to outsource work (grpc_closure instances) to a
- * thread, for those cases where blocking isn't an option but there isn't a
- * non-blocking solution available. */
-void grpc_executor_init();
+struct ThreadState {
+  gpr_mu mu;
+  size_t id;         // For debugging purposes
+  const char* name;  // Thread state name
+  gpr_cv cv;
+  grpc_closure_list elems;
+  size_t depth;  // Number of closures in the closure list
+  bool shutdown;
+  bool queued_long_job;
+  grpc_core::Thread thd;
+};
 
-grpc_closure_scheduler* grpc_executor_scheduler(grpc_executor_job_length);
+enum class ExecutorType {
+  DEFAULT = 0,
+  RESOLVER,
 
-/** Shutdown the executor, running all pending work as part of the call */
-void grpc_executor_shutdown();
+  NUM_EXECUTORS  // Add new values above this
+};
 
-/** Is the executor multi-threaded? */
-bool grpc_executor_is_threaded();
+enum class ExecutorJobType {
+  SHORT = 0,
+  LONG,
+  NUM_JOB_TYPES  // Add new values above this
+};
 
-/* enable/disable threading - must be called after grpc_executor_init and before
-   grpc_executor_shutdown */
-void grpc_executor_set_threading(bool enable);
+class Executor {
+ public:
+  Executor(const char* executor_name);
+
+  void Init();
+
+  /** Is the executor multi-threaded? */
+  bool IsThreaded() const;
+
+  /* Enable/disable threading - must be called after Init and Shutdown(). Never
+   * call SetThreading(false) in the middle of an application */
+  void SetThreading(bool threading);
+
+  /** Shutdown the executor, running all pending work as part of the call */
+  void Shutdown();
+
+  /** Enqueue the closure onto the executor. is_short is true if the closure is
+   * a short job (i.e expected to not block and complete quickly) */
+  void Enqueue(grpc_closure* closure, grpc_error* error, bool is_short);
+
+  // TODO(sreek): Currently we have two executors (available globally): The
+  // default executor and the resolver executor.
+  //
+  // Some of the functions below operate on the DEFAULT executor only while some
+  // operate of ALL the executors. This is a bit confusing and should be cleaned
+  // up in future (where we make all the following functions take ExecutorType
+  // and/or JobType)
+
+  // Initialize ALL the executors
+  static void InitAll();
+
+  // Shutdown ALL the executors
+  static void ShutdownAll();
+
+  // Set the threading mode for ALL the executors
+  static void SetThreadingAll(bool enable);
+
+  // Set the threading mode for ALL the executors
+  static void SetThreadingDefault(bool enable);
+
+  // Get the DEFAULT executor scheduler for the given job_type
+  static grpc_closure_scheduler* Scheduler(ExecutorJobType job_type);
+
+  // Get the executor scheduler for a given executor_type and a job_type
+  static grpc_closure_scheduler* Scheduler(ExecutorType executor_type,
+                                           ExecutorJobType job_type);
+
+  // Return if a given executor is running in threaded mode (i.e if
+  // SetThreading(true) was called previously on that executor)
+  static bool IsThreaded(ExecutorType executor_type);
+
+  // Return if the DEFAULT executor is threaded
+  static bool IsThreadedDefault();
+
+ private:
+  static size_t RunClosures(const char* executor_name, grpc_closure_list list);
+  static void ThreadMain(void* arg);
+
+  const char* name_;
+  ThreadState* thd_state_;
+  size_t max_threads_;
+  gpr_atm num_threads_;
+  gpr_spinlock adding_thread_lock_;
+};
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_IOMGR_EXECUTOR_H */

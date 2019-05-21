@@ -63,7 +63,7 @@ inline grpc::string GetPHPServiceFilename(
 }
 
 // Get leading or trailing comments in a string. Comment lines start with "// ".
-// Leading detached comments are put in in front of leading comments.
+// Leading detached comments are put in front of leading comments.
 template <typename DescriptorType>
 inline grpc::string GetPHPComments(const DescriptorType* desc,
                                    grpc::string prefix) {

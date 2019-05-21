@@ -24,7 +24,6 @@ namespace Grpc.Core.Interceptors
 {
     /// <summary>
     /// Extends the CallInvoker class to provide the interceptor facility on the client side.
-    /// This is an EXPERIMENTAL API.
     /// </summary>
     public static class CallInvokerExtensions
     {

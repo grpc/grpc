@@ -14,6 +14,7 @@
 
 # This is the base Docker image we use for running tests on RBE
 FROM gcr.io/cloud-marketplace/google/rbe-debian8@sha256:1ede2a929b44d629ec5abe86eee6d7ffea1d5a4d247489a8867d46cfde3e38bd
+RUN sed -i '/deb http:\/\/httpredir.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
@@ -52,7 +53,7 @@ RUN apt-get update && apt-get install -y time && apt-get clean
 
 # Google Cloud platform API libraries
 RUN apt-get update && apt-get install -y python-pip && apt-get clean
-RUN pip install --upgrade google-api-python-client
+RUN pip install --upgrade google-api-python-client oauth2client
 
 #====================
 # Python dependencies

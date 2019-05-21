@@ -121,7 +121,7 @@ static void append_error(internal_request* req, grpc_error* error) {
 }
 
 static void do_read(internal_request* req) {
-  grpc_endpoint_read(req->ep, &req->incoming, &req->on_read);
+  grpc_endpoint_read(req->ep, &req->incoming, &req->on_read, /*urgent=*/true);
 }
 
 static void on_read(void* user_data, grpc_error* error) {
@@ -163,7 +163,7 @@ static void done_write(void* arg, grpc_error* error) {
 static void start_write(internal_request* req) {
   grpc_slice_ref_internal(req->request_text);
   grpc_slice_buffer_add(&req->outgoing, req->request_text);
-  grpc_endpoint_write(req->ep, &req->outgoing, &req->done_write);
+  grpc_endpoint_write(req->ep, &req->outgoing, &req->done_write, nullptr);
 }
 
 static void on_handshake_done(void* arg, grpc_endpoint* ep) {
@@ -229,7 +229,8 @@ static void internal_request_begin(grpc_httpcli_context* context,
                                    const grpc_httpcli_request* request,
                                    grpc_millis deadline, grpc_closure* on_done,
                                    grpc_httpcli_response* response,
-                                   const char* name, grpc_slice request_text) {
+                                   const char* name,
+                                   const grpc_slice& request_text) {
   internal_request* req =
       static_cast<internal_request*>(gpr_malloc(sizeof(internal_request)));
   memset(req, 0, sizeof(*req));

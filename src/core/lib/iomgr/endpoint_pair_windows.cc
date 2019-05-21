@@ -41,7 +41,7 @@ static void create_sockets(SOCKET sv[2]) {
   int addr_len = sizeof(addr);
 
   lst_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
-                       WSA_FLAG_OVERLAPPED);
+                       grpc_get_default_wsa_socket_flags());
   GPR_ASSERT(lst_sock != INVALID_SOCKET);
 
   memset(&addr, 0, sizeof(addr));
@@ -54,7 +54,7 @@ static void create_sockets(SOCKET sv[2]) {
              SOCKET_ERROR);
 
   cli_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
-                       WSA_FLAG_OVERLAPPED);
+                       grpc_get_default_wsa_socket_flags());
   GPR_ASSERT(cli_sock != INVALID_SOCKET);
 
   GPR_ASSERT(WSAConnect(cli_sock, (grpc_sockaddr*)&addr, addr_len, NULL, NULL,

@@ -105,6 +105,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of TestService</summary>
+    [grpc::BindServiceMethod(typeof(TestService), "BindService")]
     public abstract partial class TestServiceBase
     {
       /// <summary>
@@ -539,6 +540,22 @@ namespace Grpc.Testing {
           .AddMethod(__Method_UnimplementedCall, serviceImpl.UnimplementedCall).Build();
     }
 
+    /// <summary>Register service method with a service binder with or without implementation. Useful when customizing the  service binding logic.
+    /// Note: this method is part of an experimental API that can change or be removed without any prior notice.</summary>
+    /// <param name="serviceBinder">Service methods will be bound by calling <c>AddMethod</c> on this object.</param>
+    /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
+    public static void BindService(grpc::ServiceBinderBase serviceBinder, TestServiceBase serviceImpl)
+    {
+      serviceBinder.AddMethod(__Method_EmptyCall, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty>(serviceImpl.EmptyCall));
+      serviceBinder.AddMethod(__Method_UnaryCall, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse>(serviceImpl.UnaryCall));
+      serviceBinder.AddMethod(__Method_CacheableUnaryCall, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse>(serviceImpl.CacheableUnaryCall));
+      serviceBinder.AddMethod(__Method_StreamingOutputCall, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse>(serviceImpl.StreamingOutputCall));
+      serviceBinder.AddMethod(__Method_StreamingInputCall, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Grpc.Testing.StreamingInputCallRequest, global::Grpc.Testing.StreamingInputCallResponse>(serviceImpl.StreamingInputCall));
+      serviceBinder.AddMethod(__Method_FullDuplexCall, serviceImpl == null ? null : new grpc::DuplexStreamingServerMethod<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse>(serviceImpl.FullDuplexCall));
+      serviceBinder.AddMethod(__Method_HalfDuplexCall, serviceImpl == null ? null : new grpc::DuplexStreamingServerMethod<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse>(serviceImpl.HalfDuplexCall));
+      serviceBinder.AddMethod(__Method_UnimplementedCall, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty>(serviceImpl.UnimplementedCall));
+    }
+
   }
   /// <summary>
   /// A simple service NOT implemented at servers so clients can test for
@@ -564,6 +581,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of UnimplementedService</summary>
+    [grpc::BindServiceMethod(typeof(UnimplementedService), "BindService")]
     public abstract partial class UnimplementedServiceBase
     {
       /// <summary>
@@ -661,6 +679,15 @@ namespace Grpc.Testing {
           .AddMethod(__Method_UnimplementedCall, serviceImpl.UnimplementedCall).Build();
     }
 
+    /// <summary>Register service method with a service binder with or without implementation. Useful when customizing the  service binding logic.
+    /// Note: this method is part of an experimental API that can change or be removed without any prior notice.</summary>
+    /// <param name="serviceBinder">Service methods will be bound by calling <c>AddMethod</c> on this object.</param>
+    /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
+    public static void BindService(grpc::ServiceBinderBase serviceBinder, UnimplementedServiceBase serviceImpl)
+    {
+      serviceBinder.AddMethod(__Method_UnimplementedCall, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty>(serviceImpl.UnimplementedCall));
+    }
+
   }
   /// <summary>
   /// A service used to control reconnect server.
@@ -694,6 +721,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Base class for server-side implementations of ReconnectService</summary>
+    [grpc::BindServiceMethod(typeof(ReconnectService), "BindService")]
     public abstract partial class ReconnectServiceBase
     {
       public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.Empty> Start(global::Grpc.Testing.ReconnectParams request, grpc::ServerCallContext context)
@@ -777,6 +805,16 @@ namespace Grpc.Testing {
       return grpc::ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_Start, serviceImpl.Start)
           .AddMethod(__Method_Stop, serviceImpl.Stop).Build();
+    }
+
+    /// <summary>Register service method with a service binder with or without implementation. Useful when customizing the  service binding logic.
+    /// Note: this method is part of an experimental API that can change or be removed without any prior notice.</summary>
+    /// <param name="serviceBinder">Service methods will be bound by calling <c>AddMethod</c> on this object.</param>
+    /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
+    public static void BindService(grpc::ServiceBinderBase serviceBinder, ReconnectServiceBase serviceImpl)
+    {
+      serviceBinder.AddMethod(__Method_Start, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Grpc.Testing.ReconnectParams, global::Grpc.Testing.Empty>(serviceImpl.Start));
+      serviceBinder.AddMethod(__Method_Stop, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Grpc.Testing.Empty, global::Grpc.Testing.ReconnectInfo>(serviceImpl.Stop));
     }
 
   }

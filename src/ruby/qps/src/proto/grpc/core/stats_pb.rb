@@ -4,22 +4,24 @@
 require 'google/protobuf'
 
 Google::Protobuf::DescriptorPool.generated_pool.build do
-  add_message "grpc.core.Bucket" do
-    optional :start, :double, 1
-    optional :count, :uint64, 2
-  end
-  add_message "grpc.core.Histogram" do
-    repeated :buckets, :message, 1, "grpc.core.Bucket"
-  end
-  add_message "grpc.core.Metric" do
-    optional :name, :string, 1
-    oneof :value do
-      optional :count, :uint64, 10
-      optional :histogram, :message, 11, "grpc.core.Histogram"
+  add_file("src/proto/grpc/core/stats.proto", :syntax => :proto3) do
+    add_message "grpc.core.Bucket" do
+      optional :start, :double, 1
+      optional :count, :uint64, 2
     end
-  end
-  add_message "grpc.core.Stats" do
-    repeated :metrics, :message, 1, "grpc.core.Metric"
+    add_message "grpc.core.Histogram" do
+      repeated :buckets, :message, 1, "grpc.core.Bucket"
+    end
+    add_message "grpc.core.Metric" do
+      optional :name, :string, 1
+      oneof :value do
+        optional :count, :uint64, 10
+        optional :histogram, :message, 11, "grpc.core.Histogram"
+      end
+    end
+    add_message "grpc.core.Stats" do
+      repeated :metrics, :message, 1, "grpc.core.Metric"
+    end
   end
 end
 

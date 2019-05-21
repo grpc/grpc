@@ -42,14 +42,54 @@
 
 #if defined(ADDRESS_SORTING_WINDOWS)
 
+#include <errno.h>
+#include <inttypes.h>
+#include <limits.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
 
-/* TODO : Add address sorting functionality to work on windows. */
+static bool windows_source_addr_factory_get_source_addr(
+    address_sorting_source_addr_factory* factory,
+    const address_sorting_address* dest_addr,
+    address_sorting_address* source_addr) {
+  bool source_addr_exists = false;
+  SOCKET s = socket(((struct sockaddr_in6*)dest_addr)->sin6_family, SOCK_DGRAM,
+                    IPPROTO_UDP);
+  if (s != INVALID_SOCKET) {
+    if (connect(s, (struct sockaddr*)dest_addr, (int)dest_addr->len) == 0) {
+      address_sorting_address found_source_addr;
+      memset(&found_source_addr, 0, sizeof(found_source_addr));
+      found_source_addr.len = sizeof(found_source_addr.addr);
+      if (getsockname(s, (struct sockaddr*)&found_source_addr.addr,
+                      (socklen_t*)&found_source_addr.len) == 0) {
+        source_addr_exists = true;
+        *source_addr = found_source_addr;
+      }
+    }
+    closesocket(s);
+  }
+  return source_addr_exists;
+}
+
+static void windows_source_addr_factory_destroy(
+    address_sorting_source_addr_factory* self) {
+  free(self);
+}
+
+static const address_sorting_source_addr_factory_vtable
+    windows_source_addr_factory_vtable = {
+        windows_source_addr_factory_get_source_addr,
+        windows_source_addr_factory_destroy,
+};
 
 address_sorting_source_addr_factory*
 address_sorting_create_source_addr_factory_for_current_platform() {
-  abort();
-  return NULL;
+  address_sorting_source_addr_factory* factory =
+      malloc(sizeof(address_sorting_source_addr_factory));
+  memset(factory, 0, sizeof(address_sorting_source_addr_factory));
+  factory->vtable = &windows_source_addr_factory_vtable;
+  return factory;
 }
 
 #endif  // defined(ADDRESS_SORTING_WINDOWS)

@@ -27,27 +27,55 @@ namespace grpc_core {
 namespace internal {
 
 /**
- * Unsafe, use for testing only. It allows the caller to change the way the
- * ALTS TSI handshaker schedules handshaker requests.
- */
-void alts_tsi_handshaker_set_client_for_testing(alts_tsi_handshaker* handshaker,
-                                                alts_handshaker_client* client);
+ * Unsafe, use for testing only. */
 
 alts_handshaker_client* alts_tsi_handshaker_get_client_for_testing(
     alts_tsi_handshaker* handshaker);
 
-/* For testing only. */
 bool alts_tsi_handshaker_get_has_sent_start_message_for_testing(
     alts_tsi_handshaker* handshaker);
+
+void alts_tsi_handshaker_set_client_vtable_for_testing(
+    alts_tsi_handshaker* handshaker, alts_handshaker_client_vtable* vtable);
 
 bool alts_tsi_handshaker_get_is_client_for_testing(
     alts_tsi_handshaker* handshaker);
 
-void alts_tsi_handshaker_set_recv_bytes_for_testing(
-    alts_tsi_handshaker* handshaker, grpc_slice* slice);
+void alts_handshaker_client_set_grpc_caller_for_testing(
+    alts_handshaker_client* client, alts_grpc_caller caller);
 
-grpc_slice alts_tsi_handshaker_get_recv_bytes_for_testing(
-    alts_tsi_handshaker* handshaker);
+grpc_byte_buffer* alts_handshaker_client_get_send_buffer_for_testing(
+    alts_handshaker_client* client);
+
+grpc_byte_buffer** alts_handshaker_client_get_recv_buffer_addr_for_testing(
+    alts_handshaker_client* client);
+
+grpc_metadata_array* alts_handshaker_client_get_initial_metadata_for_testing(
+    alts_handshaker_client* client);
+
+void alts_handshaker_client_set_recv_bytes_for_testing(
+    alts_handshaker_client* client, grpc_slice* recv_bytes);
+
+void alts_handshaker_client_check_fields_for_testing(
+    alts_handshaker_client* client, tsi_handshaker_on_next_done_cb cb,
+    void* user_data, bool has_sent_start_message, grpc_slice* recv_bytes);
+
+void alts_handshaker_client_set_fields_for_testing(
+    alts_handshaker_client* client, alts_tsi_handshaker* handshaker,
+    tsi_handshaker_on_next_done_cb cb, void* user_data,
+    grpc_byte_buffer* recv_buffer, grpc_status_code status);
+
+void alts_handshaker_client_set_vtable_for_testing(
+    alts_handshaker_client* client, alts_handshaker_client_vtable* vtable);
+
+alts_tsi_handshaker* alts_handshaker_client_get_handshaker_for_testing(
+    alts_handshaker_client* client);
+
+void alts_handshaker_client_set_cb_for_testing(
+    alts_handshaker_client* client, tsi_handshaker_on_next_done_cb cb);
+
+grpc_closure* alts_handshaker_client_get_closure_for_testing(
+    alts_handshaker_client* client);
 
 }  // namespace internal
 }  // namespace grpc_core

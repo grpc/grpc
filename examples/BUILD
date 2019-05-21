@@ -17,6 +17,8 @@ licenses(["notice"])  # 3-clause BSD
 package(default_visibility = ["//visibility:public"])
 
 load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
+load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+load("//bazel:python_rules.bzl", "py_proto_library")
 
 grpc_proto_library(
     name = "auth_sample",
@@ -28,9 +30,23 @@ grpc_proto_library(
     srcs = ["protos/hellostreamingworld.proto"],
 )
 
-grpc_proto_library(
-    name = "helloworld",
+# The following three rules demonstrate the usage of the cc_grpc_library rule in
+# in a mode compatible with the native proto_library and cc_proto_library rules.
+proto_library(
+    name = "helloworld_proto",
     srcs = ["protos/helloworld.proto"],
+)
+
+cc_proto_library(
+    name = "helloworld_cc_proto",
+    deps = [":helloworld_proto"],
+)
+
+cc_grpc_library(
+    name = "helloworld_cc_grpc",
+    srcs = [":helloworld_proto"],
+    grpc_only = True,
+    deps = [":helloworld_cc_proto"],
 )
 
 grpc_proto_library(
@@ -38,16 +54,180 @@ grpc_proto_library(
     srcs = ["protos/route_guide.proto"],
 )
 
+grpc_proto_library(
+    name = "keyvaluestore",
+    srcs = ["protos/keyvaluestore.proto"],
+)
+
+proto_library(
+    name = "helloworld_proto_descriptor",
+    srcs = ["protos/helloworld.proto"],
+)
+
+py_proto_library(
+    name = "py_helloworld",
+    deps = [":helloworld_proto_descriptor"],
+)
+
 cc_binary(
     name = "greeter_client",
     srcs = ["cpp/helloworld/greeter_client.cc"],
     defines = ["BAZEL_BUILD"],
-    deps = [":helloworld", "//:grpc++"],
+    deps = [
+        ":helloworld_cc_grpc",
+        "//:grpc++",
+    ],
+)
+
+cc_binary(
+    name = "greeter_async_client",
+    srcs = ["cpp/helloworld/greeter_async_client.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":helloworld_cc_grpc",
+        "//:grpc++",
+    ],
+)
+
+cc_binary(
+    name = "greeter_async_client2",
+    srcs = ["cpp/helloworld/greeter_async_client2.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":helloworld_cc_grpc",
+        "//:grpc++",
+    ],
 )
 
 cc_binary(
     name = "greeter_server",
     srcs = ["cpp/helloworld/greeter_server.cc"],
     defines = ["BAZEL_BUILD"],
-    deps = [":helloworld", "//:grpc++"],
+    deps = [
+        ":helloworld_cc_grpc",
+        "//:grpc++",
+    ],
+)
+
+cc_binary(
+    name = "greeter_async_server",
+    srcs = ["cpp/helloworld/greeter_async_server.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":helloworld_cc_grpc",
+        "//:grpc++",
+    ],
+)
+
+cc_binary(
+    name = "metadata_client",
+    srcs = ["cpp/metadata/greeter_client.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":helloworld_cc_grpc",
+        "//:grpc++",
+    ],
+)
+
+cc_binary(
+    name = "metadata_server",
+    srcs = ["cpp/metadata/greeter_server.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":helloworld_cc_grpc",
+        "//:grpc++",
+    ],
+)
+
+cc_binary(
+    name = "lb_client",
+    srcs = ["cpp/load_balancing/greeter_client.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":helloworld_cc_grpc",
+        "//:grpc++",
+    ],
+)
+
+cc_binary(
+    name = "lb_server",
+    srcs = ["cpp/load_balancing/greeter_server.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":helloworld_cc_grpc",
+        "//:grpc++",
+    ],
+)
+
+cc_binary(
+    name = "compression_client",
+    srcs = ["cpp/compression/greeter_client.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":helloworld_cc_grpc",
+        "//:grpc++",
+    ],
+)
+
+cc_binary(
+    name = "compression_server",
+    srcs = ["cpp/compression/greeter_server.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":helloworld_cc_grpc",
+        "//:grpc++",
+    ],
+)
+
+cc_binary(
+    name = "keyvaluestore_client",
+    srcs = [
+        "cpp/keyvaluestore/caching_interceptor.h",
+        "cpp/keyvaluestore/client.cc",
+    ],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":keyvaluestore",
+        "//:grpc++",
+    ],
+)
+
+cc_binary(
+    name = "keyvaluestore_server",
+    srcs = ["cpp/keyvaluestore/server.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":keyvaluestore",
+        "//:grpc++",
+    ],
+)
+
+cc_binary(
+    name = "route_guide_client",
+    srcs = [
+        "cpp/route_guide/helper.cc",
+        "cpp/route_guide/helper.h",
+        "cpp/route_guide/route_guide_client.cc",
+    ],
+    data = ["cpp/route_guide/route_guide_db.json"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":route_guide",
+        "//:grpc++",
+    ],
+)
+
+cc_binary(
+    name = "route_guide_server",
+    srcs = [
+        "cpp/route_guide/helper.cc",
+        "cpp/route_guide/helper.h",
+        "cpp/route_guide/route_guide_server.cc",
+    ],
+    data = ["cpp/route_guide/route_guide_db.json"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":route_guide",
+        "//:grpc++",
+    ],
 )

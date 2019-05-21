@@ -42,16 +42,16 @@ const int kLargeRequestSize = 271828;
 const int kLargeResponseSize = 314159;
 }  // namespace
 
-Http2Client::ServiceStub::ServiceStub(std::shared_ptr<Channel> channel)
-    : channel_(channel) {
+Http2Client::ServiceStub::ServiceStub(const std::shared_ptr<Channel>& channel)
+    : channel_(std::move(channel)) {
   stub_ = TestService::NewStub(channel);
 }
 
 TestService::Stub* Http2Client::ServiceStub::Get() { return stub_.get(); }
 
-Http2Client::Http2Client(std::shared_ptr<Channel> channel)
+Http2Client::Http2Client(const std::shared_ptr<Channel>& channel)
     : serviceStub_(channel),
-      channel_(channel),
+      channel_(std::move(channel)),
       defaultRequest_(BuildDefaultRequest()) {}
 
 bool Http2Client::AssertStatusCode(const Status& s, StatusCode expected_code) {
@@ -140,7 +140,8 @@ bool Http2Client::DoPing() {
   return true;
 }
 
-void Http2Client::MaxStreamsWorker(std::shared_ptr<grpc::Channel> channel) {
+void Http2Client::MaxStreamsWorker(
+    const std::shared_ptr<grpc::Channel>& channel) {
   SimpleResponse response;
   AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
   GPR_ASSERT(response.payload().body() ==

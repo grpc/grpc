@@ -15,31 +15,6 @@
 require 'etc'
 require 'mkmf'
 
-LIBDIR = RbConfig::CONFIG['libdir']
-INCLUDEDIR = RbConfig::CONFIG['includedir']
-
-HEADER_DIRS = [
-  # Search /opt/local (Mac source install)
-  '/opt/local/include',
-
-  # Search /usr/local (Source install)
-  '/usr/local/include',
-
-  # Check the ruby install locations
-  INCLUDEDIR
-]
-
-LIB_DIRS = [
-  # Search /opt/local (Mac source install)
-  '/opt/local/lib',
-
-  # Search /usr/local (Source install)
-  '/usr/local/lib',
-
-  # Check the ruby install locations
-  LIBDIR
-]
-
 windows = RUBY_PLATFORM =~ /mingw|mswin/
 bsd = RUBY_PLATFORM =~ /bsd/
 
@@ -49,10 +24,18 @@ grpc_config = ENV['GRPC_CONFIG'] || 'opt'
 
 ENV['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
 
-ENV['AR'] = RbConfig::CONFIG['AR'] + ' rcs'
-ENV['CC'] = RbConfig::CONFIG['CC']
-ENV['CXX'] = RbConfig::CONFIG['CXX']
-ENV['LD'] = ENV['CC']
+if ENV['AR'].nil? || ENV['AR'].size == 0
+    ENV['AR'] = RbConfig::CONFIG['AR'] + ' rcs'
+end
+if ENV['CC'].nil? || ENV['CC'].size == 0
+    ENV['CC'] = RbConfig::CONFIG['CC']
+end
+if ENV['CXX'].nil? || ENV['CXX'].size == 0
+    ENV['CXX'] = RbConfig::CONFIG['CXX']
+end
+if ENV['LD'].nil? || ENV['LD'].size == 0
+    ENV['LD'] = ENV['CC']
+end
 
 ENV['AR'] = 'libtool -o' if RUBY_PLATFORM =~ /darwin/
 
@@ -110,7 +93,7 @@ if grpc_config == 'opt'
       o.puts i
     end
     o.puts
-    o.puts 'strip:'
+    o.puts 'strip: $(DLLIB)'
     o.puts "\t$(ECHO) Stripping $(DLLIB)"
     o.puts "\t$(Q) #{strip_tool} $(DLLIB)"
   end

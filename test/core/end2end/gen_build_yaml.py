@@ -35,10 +35,13 @@ default_secure_fixture_options = default_unsecure_fixture_options._replace(
 uds_fixture_options = default_unsecure_fixture_options._replace(
     dns_resolver=False, platforms=['linux', 'mac', 'posix'],
     exclude_iomgrs=['uv'])
+local_fixture_options = default_secure_fixture_options._replace(
+    dns_resolver=False, platforms=['linux', 'mac', 'posix'],
+    exclude_iomgrs=['uv'])
 fd_unsecure_fixture_options = default_unsecure_fixture_options._replace(
     dns_resolver=False, fullstack=False, platforms=['linux', 'mac', 'posix'],
     exclude_iomgrs=['uv'], client_channel=False)
-inproc_fixture_options = default_unsecure_fixture_options._replace(
+inproc_fixture_options = default_secure_fixture_options._replace(
     dns_resolver=False, fullstack=False, name_resolution=False,
     supports_compression=False, is_inproc=True, is_http2=False,
     supports_write_buffering=False, client_channel=False)
@@ -47,7 +50,9 @@ inproc_fixture_options = default_unsecure_fixture_options._replace(
 END2END_FIXTURES = {
     'h2_compress': default_unsecure_fixture_options._replace(enables_compression=True),
     'h2_census': default_unsecure_fixture_options,
-    'h2_load_reporting': default_unsecure_fixture_options,
+     # This cmake target is disabled for now because it depends on OpenCensus,
+     # which is Bazel-only.
+     # 'h2_load_reporting': default_unsecure_fixture_options,
     'h2_fakesec': default_secure_fixture_options._replace(ci_mac=False),
     'h2_fd': fd_unsecure_fixture_options,
     'h2_full': default_unsecure_fixture_options,
@@ -69,6 +74,11 @@ END2END_FIXTURES = {
     'h2_sockpair+trace': socketpair_unsecure_fixture_options._replace(
         ci_mac=False, tracing=True, large_writes=False, exclude_iomgrs=['uv']),
     'h2_ssl': default_secure_fixture_options,
+    'h2_ssl_cred_reload': default_secure_fixture_options,
+    'h2_spiffe': default_secure_fixture_options,
+    'h2_local_uds': local_fixture_options,
+    'h2_local_ipv4': local_fixture_options,
+    'h2_local_ipv6': local_fixture_options,
     'h2_ssl_proxy': default_secure_fixture_options._replace(
         includes_proxy=True, ci_mac=False, exclude_iomgrs=['uv']),
     'h2_uds': uds_fixture_options,
@@ -106,6 +116,7 @@ END2END_TESTS = {
                                                         needs_compression=True),
     'connectivity': connectivity_test_options._replace(needs_names=True,
         proxyable=False, cpu_cost=LOWCPU, exclude_iomgrs=['uv']),
+    'channelz': default_test_options,
     'default_host': default_test_options._replace(
         needs_fullstack=True, needs_dns=True, needs_names=True),
     'call_host_override': default_test_options._replace(
@@ -115,6 +126,7 @@ END2END_TESTS = {
     'empty_batch': default_test_options._replace(cpu_cost=LOWCPU),
     'filter_causes_close': default_test_options._replace(cpu_cost=LOWCPU),
     'filter_call_init_fails': default_test_options,
+    'filter_context': default_test_options,
     'filter_latency': default_test_options._replace(cpu_cost=LOWCPU),
     'filter_status_code': default_test_options._replace(cpu_cost=LOWCPU),
     'graceful_server_shutdown': default_test_options._replace(
@@ -137,12 +149,13 @@ END2END_TESTS = {
         proxyable=False, exclude_iomgrs=['uv'], cpu_cost=LOWCPU),
     'max_message_length': default_test_options._replace(cpu_cost=LOWCPU),
     'negative_deadline': default_test_options,
-    'network_status_change': default_test_options._replace(cpu_cost=LOWCPU),
     'no_error_on_hotpath': default_test_options._replace(proxyable=False),
     'no_logging': default_test_options._replace(traceable=False),
     'no_op': default_test_options,
     'payload': default_test_options,
-    'load_reporting_hook': default_test_options,
+    # This cmake target is disabled for now because it depends on OpenCensus,
+    # which is Bazel-only.
+    # 'load_reporting_hook': default_test_options,
     'ping_pong_streaming': default_test_options._replace(cpu_cost=LOWCPU),
     'ping': connectivity_test_options._replace(proxyable=False,
                                                cpu_cost=LOWCPU),
@@ -272,13 +285,11 @@ def main():
   sec_deps = [
     'grpc_test_util',
     'grpc',
-    'gpr_test_util',
     'gpr'
   ]
   unsec_deps = [
     'grpc_test_util_unsecure',
     'grpc_unsecure',
-    'gpr_test_util',
     'gpr'
   ]
   json = {

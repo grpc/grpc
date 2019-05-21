@@ -105,7 +105,7 @@ static grpc_error* maybe_link_callout(grpc_metadata_batch* batch,
     return GRPC_ERROR_NONE;
   }
   if (batch->idx.array[idx] == nullptr) {
-    if (grpc_static_callout_is_default[idx]) ++batch->list.default_count;
+    ++batch->list.default_count;
     batch->idx.array[idx] = storage;
     return GRPC_ERROR_NONE;
   }
@@ -121,7 +121,7 @@ static void maybe_unlink_callout(grpc_metadata_batch* batch,
   if (idx == GRPC_BATCH_CALLOUTS_COUNT) {
     return;
   }
-  if (grpc_static_callout_is_default[idx]) --batch->list.default_count;
+  --batch->list.default_count;
   GPR_ASSERT(batch->idx.array[idx] != nullptr);
   batch->idx.array[idx] = nullptr;
 }
@@ -139,6 +139,7 @@ static void link_head(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
   GPR_ASSERT(!GRPC_MDISNULL(storage->md));
   storage->prev = nullptr;
   storage->next = list->head;
+  storage->reserved = nullptr;
   if (list->head != nullptr) {
     list->head->prev = storage;
   } else {
@@ -226,7 +227,7 @@ void grpc_metadata_batch_remove(grpc_metadata_batch* batch,
 }
 
 void grpc_metadata_batch_set_value(grpc_linked_mdelem* storage,
-                                   grpc_slice value) {
+                                   const grpc_slice& value) {
   grpc_mdelem old_mdelem = storage->md;
   grpc_mdelem new_mdelem = grpc_mdelem_from_slices(
       grpc_slice_ref_internal(GRPC_MDKEY(old_mdelem)), value);

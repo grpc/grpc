@@ -23,9 +23,10 @@ make progress on one of the steps involved in name resolution, TCP connection
 establishment or TLS handshake. This may be used as the initial state for channels upon
 creation.
 
-READY: The channel has successfully established a connection all the way
-through TLS handshake (or equivalent) and all subsequent attempt to communicate
-have succeeded (or are pending without any known failure ).
+READY: The channel has successfully established a connection all the way through
+TLS handshake (or equivalent) and protocol-level (HTTP/2, etc) handshaking, and
+all subsequent attempt to communicate have succeeded (or are pending without any
+known failure).
 
 TRANSIENT_FAILURE: There has been some transient failure (such as a TCP 3-way
 handshake timing out or a socket error). Channels in this state will eventually
@@ -42,7 +43,7 @@ connection because of a lack of new or pending RPCs. New RPCs  MAY be created
 in this state. Any attempt to start an RPC on the channel will push the channel
 out of this state to connecting. When there has been no RPC activity on a channel
 for a specified IDLE_TIMEOUT, i.e., no new or pending (active) RPCs for this
-period, channels that are READY or CONNECTING switch to IDLE. Additionaly,
+period, channels that are READY or CONNECTING switch to IDLE. Additionally,
 channels that receive a GOAWAY when there are no active or pending RPCs should
 also switch to IDLE to avoid connection overload at servers that are attempting
 to shed connections. We will use a default IDLE_TIMEOUT of 300 seconds (5 minutes).
@@ -52,8 +53,8 @@ immediately. Pending RPCs may continue running till the application cancels them
 Channels may enter this state either because the application explicitly requested
 a shutdown or if a non-recoverable error has happened during attempts to connect
 communicate . (As of 6/12/2015, there are no known errors (while connecting or
-communicating) that are classified as non-recoverable) 
-Channels that enter this state never leave this state. 
+communicating) that are classified as non-recoverable.)  Channels that enter this
+state never leave this state.
 
 The following table lists the legal transitions from one state to another and
 corresponding reasons. Empty cells denote disallowed transitions.

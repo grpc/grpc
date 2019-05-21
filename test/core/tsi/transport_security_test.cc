@@ -381,7 +381,7 @@ static void test_handshaker_invalid_state(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   test_peer_matches_name();
   test_result_strings();
   test_protector_invalid_args();

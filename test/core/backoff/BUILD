@@ -33,7 +33,6 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )

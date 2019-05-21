@@ -24,7 +24,16 @@ var parseArgs = require('minimist');
 var path = require('path');
 var _ = require('lodash');
 var grpc = require('grpc');
-var routeguide = grpc.load(PROTO_PATH).routeguide;
+var protoLoader = require('@grpc/proto-loader');
+var packageDefinition = protoLoader.loadSync(
+    PROTO_PATH,
+    {keepCase: true,
+     longs: String,
+     enums: String,
+     defaults: true,
+     oneofs: true
+    });
+var routeguide = grpc.loadPackageDefinition(packageDefinition).routeguide;
 var client = new routeguide.RouteGuide('localhost:50051',
                                        grpc.credentials.createInsecure());
 

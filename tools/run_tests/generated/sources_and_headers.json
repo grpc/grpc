@@ -4,7 +4,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -21,7 +20,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -36,7 +36,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -53,7 +52,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -70,7 +68,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -87,7 +84,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -102,8 +100,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
-      "grpc"
+      "grpc", 
+      "grpc_test_util"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -118,7 +116,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util", 
       "test_tcp_server"
@@ -166,7 +163,22 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "buffer_list_test", 
+    "src": [
+      "test/core/iomgr/buffer_list_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -198,7 +210,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -215,7 +226,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -232,7 +242,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -249,7 +258,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -266,7 +274,23 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "close_fd_test", 
+    "src": [
+      "test/core/bad_connection/close_fd_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -282,7 +306,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -299,7 +322,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -316,7 +338,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -333,7 +354,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -350,7 +370,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -367,7 +386,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -384,7 +402,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -401,7 +418,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -418,7 +434,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -435,7 +450,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -452,16 +466,15 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "ev_epollsig_linux_test", 
+    "name": "ev_epollex_linux_test", 
     "src": [
-      "test/core/iomgr/ev_epollsig_linux_test.cc"
+      "test/core/iomgr/ev_epollex_linux_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -469,7 +482,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -486,8 +498,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
+      "grpc_test_util", 
       "transport_security_test_lib"
     ], 
     "headers": [], 
@@ -503,7 +515,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -520,7 +531,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -537,7 +547,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -554,7 +563,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -571,7 +579,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -588,7 +595,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -605,7 +611,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -620,7 +627,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -637,7 +643,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -652,7 +659,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -667,7 +675,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -682,7 +691,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -697,7 +707,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -712,7 +723,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -727,7 +739,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -742,7 +755,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -757,7 +771,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -772,7 +787,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -787,7 +803,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -802,7 +819,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -817,7 +835,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -832,7 +851,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -849,7 +867,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -866,7 +883,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -883,7 +899,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -900,7 +915,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -917,7 +931,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -934,7 +947,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -951,7 +963,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -984,7 +995,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1001,7 +1011,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1018,7 +1027,22 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "grpc_ipv6_loopback_available_test", 
+    "src": [
+      "test/core/iomgr/grpc_ipv6_loopback_available_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1035,7 +1059,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1068,7 +1091,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1085,7 +1107,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1118,14 +1139,13 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "handshake_client", 
+    "name": "handshake_client_ssl", 
     "src": [
       "test/core/handshake/client_ssl.cc"
     ], 
@@ -1135,7 +1155,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1144,7 +1163,7 @@
     ], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "handshake_server", 
+    "name": "handshake_server_ssl", 
     "src": [
       "test/core/handshake/server_ssl.cc", 
       "test/core/handshake/server_ssl_common.cc", 
@@ -1156,7 +1175,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1170,6 +1188,22 @@
       "test/core/handshake/readahead_handshaker_server_ssl.cc", 
       "test/core/handshake/server_ssl_common.cc", 
       "test/core/handshake/server_ssl_common.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "handshake_verify_peer_options", 
+    "src": [
+      "test/core/handshake/verify_peer_options.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1192,7 +1226,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1209,7 +1242,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1226,7 +1258,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1243,7 +1274,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1260,7 +1290,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1277,7 +1306,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1294,7 +1322,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1311,7 +1338,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1328,7 +1354,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1345,7 +1370,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1362,7 +1386,25 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/end2end/end2end_tests.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "inproc_callback_test", 
+    "src": [
+      "test/core/end2end/end2end_tests.h", 
+      "test/core/end2end/inproc_callback_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1379,7 +1421,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1396,7 +1437,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1413,7 +1453,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1430,7 +1469,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1447,7 +1485,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1464,7 +1501,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1481,7 +1517,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1498,7 +1533,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1515,14 +1549,13 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "memory_profile_client", 
+    "name": "memory_usage_client", 
     "src": [
       "test/core/memory_usage/client.cc"
     ], 
@@ -1532,14 +1565,13 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "memory_profile_server", 
+    "name": "memory_usage_server", 
     "src": [
       "test/core/memory_usage/server.cc"
     ], 
@@ -1549,14 +1581,13 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "memory_profile_test", 
+    "name": "memory_usage_test", 
     "src": [
       "test/core/memory_usage/memory_usage_test.cc"
     ], 
@@ -1566,7 +1597,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1583,7 +1613,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1600,7 +1629,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1617,7 +1645,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -1632,7 +1661,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1649,7 +1677,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1666,7 +1693,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1683,7 +1709,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1700,7 +1725,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1717,7 +1741,22 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "parse_address_with_named_scope_id_test", 
+    "src": [
+      "test/core/client_channel/parse_address_with_named_scope_id_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1734,7 +1773,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1751,7 +1789,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1768,31 +1805,13 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "pollset_set_test", 
-    "src": [
-      "test/core/iomgr/pollset_set_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "resolve_address_posix_test", 
+    "name": "resolve_address_using_ares_resolver_posix_test", 
     "src": [
       "test/core/iomgr/resolve_address_posix_test.cc"
     ], 
@@ -1802,14 +1821,13 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "resolve_address_test", 
+    "name": "resolve_address_using_ares_resolver_test", 
     "src": [
       "test/core/iomgr/resolve_address_test.cc"
     ], 
@@ -1819,7 +1837,38 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "resolve_address_using_native_resolver_posix_test", 
+    "src": [
+      "test/core/iomgr/resolve_address_posix_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "resolve_address_using_native_resolver_test", 
+    "src": [
+      "test/core/iomgr/resolve_address_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1836,7 +1885,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1853,7 +1901,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1870,7 +1917,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1887,7 +1933,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1904,7 +1949,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1921,7 +1965,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1938,7 +1981,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1955,7 +1997,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1972,7 +2013,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1989,7 +2029,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2006,7 +2045,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2023,7 +2061,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2040,7 +2077,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2057,8 +2093,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
+      "grpc_test_util", 
       "transport_security_test_lib"
     ], 
     "headers": [], 
@@ -2074,7 +2110,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2091,7 +2126,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2108,7 +2142,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2125,7 +2158,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2142,7 +2174,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2159,7 +2190,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2176,7 +2206,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2193,7 +2222,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2210,7 +2238,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2227,7 +2254,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2244,7 +2270,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2261,7 +2286,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2278,7 +2302,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2295,7 +2318,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2312,7 +2334,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2329,7 +2350,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2346,7 +2366,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2363,7 +2382,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2380,24 +2398,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "wakeup_fd_cv_test", 
-    "src": [
-      "test/core/iomgr/wakeup_fd_cv_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_test_util_unsecure", 
@@ -2433,8 +2433,8 @@
     "deps": [
       "alts_test_util", 
       "gpr", 
-      "gpr_test_util", 
-      "grpc"
+      "grpc", 
+      "grpc_test_util"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -2625,7 +2625,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -2644,7 +2643,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -2663,7 +2661,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2680,7 +2677,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -2700,7 +2696,27 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_benchmark", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_alarm", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_alarm.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -2722,7 +2738,27 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_benchmark", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_byte_buffer", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_byte_buffer.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -2743,8 +2779,78 @@
   {
     "deps": [
       "benchmark", 
+      "bm_callback_test_service_impl", 
       "gpr", 
-      "gpr_test_util", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_benchmark", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [
+      "test/cpp/microbenchmarks/callback_streaming_ping_pong.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_callback_streaming_ping_pong", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_callback_streaming_ping_pong.cc", 
+      "test/cpp/microbenchmarks/callback_streaming_ping_pong.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "bm_callback_test_service_impl", 
+      "gpr", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_benchmark", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [
+      "test/cpp/microbenchmarks/callback_unary_ping_pong.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_callback_unary_ping_pong", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_callback_unary_ping_pong.cc", 
+      "test/cpp/microbenchmarks/callback_unary_ping_pong.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_benchmark", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_channel", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_channel.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -2766,7 +2872,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -2788,7 +2893,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -2810,7 +2914,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -2832,7 +2935,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -2854,7 +2956,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -2876,7 +2977,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -2901,7 +3001,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -2926,7 +3025,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -2948,7 +3046,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -2973,7 +3070,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -2995,7 +3091,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -3015,8 +3110,28 @@
   }, 
   {
     "deps": [
+      "benchmark", 
       "gpr", 
-      "gpr_test_util", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_benchmark", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_timer", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_timer.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -3065,13 +3180,12 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
-      "grpc++_channelz_proto", 
       "grpc++_test", 
       "grpc++_test_util", 
-      "grpc_test_util"
+      "grpc_test_util", 
+      "grpcpp_channelz_proto"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -3086,7 +3200,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test", 
@@ -3099,6 +3212,46 @@
     "name": "channelz_registry_test", 
     "src": [
       "test/core/channel/channelz_registry_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util", 
+      "grpcpp_channelz", 
+      "grpcpp_channelz_proto"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "channelz_service_test", 
+    "src": [
+      "test/cpp/end2end/channelz_service_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test", 
+      "grpc++_test_util", 
+      "grpc_test_util", 
+      "grpcpp_channelz_proto"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "channelz_test", 
+    "src": [
+      "test/core/channel/channelz_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3136,7 +3289,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -3153,7 +3305,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -3173,7 +3324,25 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "client_callback_end2end_test", 
+    "src": [
+      "test/cpp/end2end/client_callback_end2end_test.cc", 
+      "test/cpp/end2end/interceptors_util.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -3196,7 +3365,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -3215,9 +3383,9 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
@@ -3234,7 +3402,28 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/cpp/end2end/interceptors_util.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "client_interceptors_end2end_test", 
+    "src": [
+      "test/cpp/end2end/client_interceptors_end2end_test.cc", 
+      "test/cpp/end2end/interceptors_util.cc", 
+      "test/cpp/end2end/interceptors_util.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -3334,6 +3523,22 @@
     "deps": [
       "gpr", 
       "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "context_list_test", 
+    "src": [
+      "test/core/transport/chttp2/context_list_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
       "grpc++"
     ], 
     "headers": [], 
@@ -3349,7 +3554,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc_test_util"
@@ -3367,7 +3571,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc_test_util"
@@ -3400,7 +3603,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc_test_util"
@@ -3418,18 +3620,21 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
-    "headers": [], 
+    "headers": [
+      "test/cpp/end2end/interceptors_util.h"
+    ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "end2end_test", 
     "src": [
-      "test/cpp/end2end/end2end_test.cc"
+      "test/cpp/end2end/end2end_test.cc", 
+      "test/cpp/end2end/interceptors_util.cc", 
+      "test/cpp/end2end/interceptors_util.h"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3456,7 +3661,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -3475,7 +3679,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -3494,7 +3697,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -3513,8 +3715,39 @@
   {
     "deps": [
       "gpr", 
+      "grpc_test_util_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "global_config_env_test", 
+    "src": [
+      "test/core/gprpp/global_config_env_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_test_util_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "global_config_test", 
+    "src": [
+      "test/core/gprpp/global_config_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc", 
-      "grpc++"
+      "grpc++", 
+      "grpc++_test_config"
     ], 
     "headers": [
       "src/proto/grpc/testing/compiler_test.grpc.pb.h", 
@@ -3566,6 +3799,27 @@
   }, 
   {
     "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/gprpp/map_tester.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc_core_map_test", 
+    "src": [
+      "test/core/gprpp/map_test.cc", 
+      "test/core/gprpp/map_tester.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
       "grpc_plugin_support"
     ], 
     "headers": [], 
@@ -3588,6 +3842,22 @@
     "name": "grpc_csharp_plugin", 
     "src": [
       "src/compiler/csharp_plugin.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc_linux_system_roots_test", 
+    "src": [
+      "test/core/security/linux_system_roots_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3665,7 +3935,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_codegen_proto", 
@@ -3716,7 +3985,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -3739,7 +4007,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test", 
@@ -3761,7 +4028,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test", 
@@ -3783,7 +4049,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -3819,7 +4084,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -3838,7 +4102,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test", 
@@ -3857,7 +4120,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_core_stats", 
@@ -3879,7 +4141,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -3899,7 +4160,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -3920,7 +4180,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++_test_config", 
       "grpc_test_util"
@@ -3938,7 +4197,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -3958,27 +4216,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "lb_load_data_store"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "lb_load_data_store_test", 
-    "src": [
-      "test/cpp/server/load_reporter/load_data_store_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test", 
@@ -3990,6 +4227,24 @@
     "name": "memory_test", 
     "src": [
       "test/core/gprpp/memory_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "message_allocator_end2end_test", 
+    "src": [
+      "test/cpp/end2end/message_allocator_end2end_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4020,7 +4275,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -4044,7 +4298,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -4077,7 +4330,24 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "optional_test", 
+    "src": [
+      "test/core/gprpp/optional_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc", 
       "grpc++", 
       "grpc++_test", 
@@ -4096,7 +4366,25 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util", 
+      "test_tcp_server"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "port_sharing_end2end_test", 
+    "src": [
+      "test/cpp/end2end/port_sharing_end2end_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc", 
       "grpc++", 
       "grpc++_proto_reflection_desc_db", 
@@ -4134,7 +4422,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -4155,7 +4442,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_core_stats", 
@@ -4177,7 +4463,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_core_stats", 
@@ -4199,7 +4484,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_core_stats", 
@@ -4226,7 +4510,24 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "raw_end2end_test", 
+    "src": [
+      "test/cpp/end2end/raw_end2end_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -4256,7 +4557,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -4288,7 +4588,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test", 
@@ -4307,7 +4606,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test", 
@@ -4326,7 +4624,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -4343,7 +4640,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -4362,7 +4658,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_core_stats", 
@@ -4384,7 +4679,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -4403,7 +4697,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_test_util_unsecure", 
@@ -4429,7 +4722,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_test_util_unsecure", 
@@ -4455,7 +4747,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test", 
@@ -4474,7 +4765,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -4493,9 +4783,9 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
@@ -4512,7 +4802,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -4531,7 +4820,28 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/cpp/end2end/interceptors_util.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "server_interceptors_end2end_test", 
+    "src": [
+      "test/cpp/end2end/interceptors_util.cc", 
+      "test/cpp/end2end/interceptors_util.h", 
+      "test/cpp/end2end/server_interceptors_end2end_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_test_util_unsecure", 
@@ -4557,7 +4867,42 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "service_config_end2end_test", 
+    "src": [
+      "test/cpp/end2end/service_config_end2end_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "service_config_test", 
+    "src": [
+      "test/core/client_channel/service_config_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -4576,7 +4921,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -4593,7 +4937,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -4610,7 +4953,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++_test_util", 
       "grpc_test_util"
@@ -4656,7 +4998,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -4675,7 +5016,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -4738,7 +5078,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_test_util_unsecure", 
@@ -4757,7 +5096,24 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "time_change_test", 
+    "src": [
+      "test/cpp/end2end/time_change_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -4792,7 +5148,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -4804,6 +5159,28 @@
     "name": "writes_per_rpc_test", 
     "src": [
       "test/cpp/performance/writes_per_rpc_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h", 
+      "src/proto/grpc/lb/v1/load_balancer.pb.h", 
+      "src/proto/grpc/lb/v1/load_balancer_mock.grpc.pb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "xds_end2end_test", 
+    "src": [
+      "test/cpp/end2end/xds_end2end_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4865,707 +5242,6 @@
   {
     "deps": [
       "boringssl", 
-      "boringssl_crypto_test_data_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_crypto_test_data", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_asn1_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_asn1_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_base64_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_base64_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_bio_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_bio_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_buf_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_buf_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_bytestring_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_bytestring_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_chacha_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_chacha_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_aead_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_aead_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_cipher_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_cipher_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_cmac_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_cmac_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_compiler_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_compiler_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_constant_time_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_constant_time_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_ed25519_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_ed25519_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_spake25519_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_spake25519_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util", 
-      "boringssl_x25519_test_lib"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_x25519_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_dh_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_dh_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_digest_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_digest_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_dsa_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_dsa_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_ecdh_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_ecdh_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_err_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_err_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_evp_extra_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_evp_extra_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_evp_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_evp_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_pbkdf_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_pbkdf_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_scrypt_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_scrypt_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_aes_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_aes_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_bn_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_bn_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_ec_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_ec_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_p256-x86_64_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_p256-x86_64_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_ecdsa_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_ecdsa_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_gcm_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_gcm_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_ctrdrbg_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_ctrdrbg_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_hkdf_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_hkdf_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_hmac_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_hmac_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_lhash_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_lhash_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_obj_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_obj_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_pkcs7_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_pkcs7_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_pkcs12_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_pkcs12_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_pkcs8_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_pkcs8_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_poly1305_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_poly1305_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_pool_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_pool_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_refcount_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_refcount_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_rsa_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_rsa_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_self_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_self_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_file_test_gtest_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_file_test_gtest", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_gtest_main_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_gtest_main", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util", 
-      "boringssl_thread_test_lib"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_thread_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util", 
-      "boringssl_x509_test_lib"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_x509_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_tab_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_tab_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util", 
-      "boringssl_v3name_test_lib"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_v3name_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_span_test_lib", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_span_test", 
-    "src": [], 
-    "third_party": true, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_ssl_test_lib", 
       "boringssl_test_util"
     ], 
     "headers": [], 
@@ -5578,9 +5254,23 @@
   }, 
   {
     "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_crypto_test", 
+    "src": [
+      "src/boringssl/crypto_test_data.cc"
+    ], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
       "bad_client_test", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -5598,7 +5288,6 @@
     "deps": [
       "bad_client_test", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -5616,7 +5305,6 @@
     "deps": [
       "bad_client_test", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -5634,7 +5322,6 @@
     "deps": [
       "bad_client_test", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -5652,7 +5339,6 @@
     "deps": [
       "bad_client_test", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -5670,7 +5356,6 @@
     "deps": [
       "bad_client_test", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -5688,7 +5373,6 @@
     "deps": [
       "bad_client_test", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -5706,7 +5390,6 @@
     "deps": [
       "bad_client_test", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -5724,7 +5407,6 @@
     "deps": [
       "bad_client_test", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -5742,7 +5424,6 @@
     "deps": [
       "bad_client_test", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -5760,7 +5441,6 @@
     "deps": [
       "bad_client_test", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -5778,7 +5458,6 @@
     "deps": [
       "bad_ssl_test_server", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -5795,7 +5474,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -5813,7 +5491,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -5831,7 +5508,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -5849,7 +5525,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -5867,7 +5542,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -5885,7 +5559,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -5903,7 +5576,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -5921,7 +5593,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -5939,7 +5610,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -5957,7 +5627,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -5975,16 +5644,15 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_ipv4_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_load_reporting.cc"
+      "test/core/end2end/fixtures/h2_local_ipv4.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5993,7 +5661,40 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_local_ipv6_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_local_ipv6.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_tests", 
+      "gpr", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_local_uds_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_local_uds.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_tests", 
+      "gpr", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6011,7 +5712,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6029,7 +5729,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6047,7 +5746,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6065,7 +5763,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6083,7 +5780,23 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_spiffe_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_spiffe.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_tests", 
+      "gpr", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6101,7 +5814,23 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_ssl_cred_reload_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_ssl_cred_reload.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_tests", 
+      "gpr", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6119,7 +5848,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6137,7 +5865,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6155,7 +5882,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6173,7 +5899,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6191,7 +5916,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6209,7 +5933,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6227,7 +5950,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6245,7 +5967,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6263,7 +5984,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6281,7 +6001,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6299,25 +6018,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_load_reporting.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "end2end_nosec_tests", 
-      "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6335,7 +6035,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6353,7 +6052,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6371,7 +6069,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6389,7 +6086,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6405,26 +6101,8 @@
   }, 
   {
     "deps": [
-      "end2end_nosec_tests", 
+      "dns_test_util", 
       "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "inproc_nosec_test", 
-    "src": [
-      "test/core/end2end/fixtures/inproc.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -6443,8 +6121,8 @@
   }, 
   {
     "deps": [
+      "dns_test_util", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -6464,7 +6142,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -6484,7 +6161,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -6504,7 +6180,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -6524,7 +6199,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -6543,8 +6217,27 @@
   }, 
   {
     "deps": [
+      "dns_test_util", 
       "gpr", 
-      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_config", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "cancel_ares_query_test", 
+    "src": [
+      "test/cpp/naming/cancel_ares_query_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6562,7 +6255,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6580,7 +6272,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6598,7 +6289,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6616,7 +6306,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6634,7 +6323,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6652,7 +6340,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6670,7 +6357,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6688,7 +6374,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6706,7 +6391,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6724,7 +6408,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6742,7 +6425,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6760,7 +6442,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6778,7 +6459,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6827,6 +6507,16 @@
     "type": "lib"
   }, 
   {
+    "deps": [], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "cxxabi", 
+    "src": [], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
     "deps": [
       "gpr_base"
     ], 
@@ -6840,23 +6530,6 @@
   }, 
   {
     "deps": [
-      "gpr"
-    ], 
-    "headers": [
-      "test/core/util/test_config.h"
-    ], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "gpr_test_util", 
-    "src": [
-      "test/core/util/test_config.cc", 
-      "test/core/util/test_config.h"
-    ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
       "census", 
       "gpr", 
       "grpc_base", 
@@ -6865,6 +6538,7 @@
       "grpc_lb_policy_grpclb_secure", 
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
+      "grpc_lb_policy_xds_secure", 
       "grpc_max_age_filter", 
       "grpc_message_size_filter", 
       "grpc_resolver_dns_ares", 
@@ -6873,7 +6547,6 @@
       "grpc_resolver_sockaddr", 
       "grpc_secure", 
       "grpc_server_backward_compatibility", 
-      "grpc_server_load_reporting", 
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_chttp2_server_insecure", 
@@ -6895,7 +6568,6 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_server_load_reporting", 
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_cronet_client_secure"
     ], 
@@ -6912,20 +6584,6 @@
   {
     "deps": [
       "gpr", 
-      "grpc"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "grpc_dll", 
-    "src": [], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util_base"
     ], 
@@ -6951,7 +6609,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_base", 
       "grpc_unsecure"
     ], 
@@ -6973,6 +6630,7 @@
       "grpc_lb_policy_grpclb", 
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
+      "grpc_lb_policy_xds", 
       "grpc_max_age_filter", 
       "grpc_message_size_filter", 
       "grpc_resolver_dns_ares", 
@@ -6980,7 +6638,6 @@
       "grpc_resolver_fake", 
       "grpc_resolver_sockaddr", 
       "grpc_server_backward_compatibility", 
-      "grpc_server_load_reporting", 
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_server_insecure", 
       "grpc_transport_inproc", 
@@ -7000,7 +6657,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util", 
       "test_tcp_server"
@@ -7021,7 +6677,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -7034,6 +6689,48 @@
     "src": [
       "test/core/util/test_tcp_server.cc", 
       "test/core/util/test_tcp_server.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_benchmark", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [
+      "src/proto/grpc/testing/echo.grpc.pb.h", 
+      "src/proto/grpc/testing/echo.pb.h", 
+      "src/proto/grpc/testing/echo_mock.grpc.pb.h", 
+      "test/cpp/microbenchmarks/callback_test_service.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_callback_test_service_impl", 
+    "src": [
+      "test/cpp/microbenchmarks/callback_test_service.cc", 
+      "test/cpp/microbenchmarks/callback_test_service.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "test/cpp/naming/dns_test_util.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "dns_test_util", 
+    "src": [
+      "test/cpp/naming/dns_test_util.cc", 
+      "test/cpp/naming/dns_test_util.h"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -7127,6 +6824,7 @@
     "headers": [
       "include/grpc++/support/error_details.h", 
       "include/grpcpp/support/error_details.h", 
+      "include/grpcpp/support/error_details_impl.h", 
       "src/proto/grpc/status/status.grpc.pb.h", 
       "src/proto/grpc/status/status.pb.h", 
       "src/proto/grpc/status/status_mock.grpc.pb.h"
@@ -7137,6 +6835,7 @@
     "src": [
       "include/grpc++/support/error_details.h", 
       "include/grpcpp/support/error_details.h", 
+      "include/grpcpp/support/error_details_impl.h", 
       "src/cpp/util/error_details.cc"
     ], 
     "third_party": false, 
@@ -7171,6 +6870,7 @@
     "headers": [
       "include/grpc++/ext/proto_server_reflection_plugin.h", 
       "include/grpcpp/ext/proto_server_reflection_plugin.h", 
+      "include/grpcpp/ext/proto_server_reflection_plugin_impl.h", 
       "src/cpp/ext/proto_server_reflection.h"
     ], 
     "is_filegroup": false, 
@@ -7179,6 +6879,7 @@
     "src": [
       "include/grpc++/ext/proto_server_reflection_plugin.h", 
       "include/grpcpp/ext/proto_server_reflection_plugin.h", 
+      "include/grpcpp/ext/proto_server_reflection_plugin_impl.h", 
       "src/cpp/ext/proto_server_reflection.cc", 
       "src/cpp/ext/proto_server_reflection.h", 
       "src/cpp/ext/proto_server_reflection_plugin.cc"
@@ -7227,6 +6928,10 @@
       "src/proto/grpc/testing/echo_messages.pb.h", 
       "src/proto/grpc/testing/echo_messages_mock.grpc.pb.h", 
       "src/proto/grpc/testing/echo_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/simple_messages.grpc.pb.h", 
+      "src/proto/grpc/testing/simple_messages.pb.h", 
+      "src/proto/grpc/testing/simple_messages_mock.grpc.pb.h", 
+      "test/cpp/end2end/test_health_check_service_impl.h", 
       "test/cpp/end2end/test_service_impl.h", 
       "test/cpp/util/byte_buffer_proto_helper.h", 
       "test/cpp/util/channel_trace_proto_helper.h", 
@@ -7239,6 +6944,8 @@
     "language": "c++", 
     "name": "grpc++_test_util", 
     "src": [
+      "test/cpp/end2end/test_health_check_service_impl.cc", 
+      "test/cpp/end2end/test_health_check_service_impl.h", 
       "test/cpp/end2end/test_service_impl.cc", 
       "test/cpp/end2end/test_service_impl.h", 
       "test/cpp/util/byte_buffer_proto_helper.cc", 
@@ -7280,6 +6987,10 @@
       "src/proto/grpc/testing/echo_messages.pb.h", 
       "src/proto/grpc/testing/echo_messages_mock.grpc.pb.h", 
       "src/proto/grpc/testing/echo_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/simple_messages.grpc.pb.h", 
+      "src/proto/grpc/testing/simple_messages.pb.h", 
+      "src/proto/grpc/testing/simple_messages_mock.grpc.pb.h", 
+      "test/cpp/end2end/test_health_check_service_impl.h", 
       "test/cpp/end2end/test_service_impl.h", 
       "test/cpp/util/byte_buffer_proto_helper.h", 
       "test/cpp/util/string_ref_helper.h", 
@@ -7289,6 +7000,8 @@
     "language": "c++", 
     "name": "grpc++_test_util_unsecure", 
     "src": [
+      "test/cpp/end2end/test_health_check_service_impl.cc", 
+      "test/cpp/end2end/test_health_check_service_impl.h", 
       "test/cpp/end2end/test_service_impl.cc", 
       "test/cpp/end2end/test_service_impl.h", 
       "test/cpp/util/byte_buffer_proto_helper.cc", 
@@ -7447,6 +7160,30 @@
     "deps": [
       "grpc", 
       "grpc++", 
+      "grpcpp_channelz_proto"
+    ], 
+    "headers": [
+      "include/grpcpp/ext/channelz_service_plugin.h", 
+      "include/grpcpp/ext/channelz_service_plugin_impl.h", 
+      "src/cpp/server/channelz/channelz_service.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpcpp_channelz", 
+    "src": [
+      "include/grpcpp/ext/channelz_service_plugin.h", 
+      "include/grpcpp/ext/channelz_service_plugin_impl.h", 
+      "src/cpp/server/channelz/channelz_service.cc", 
+      "src/cpp/server/channelz/channelz_service.h", 
+      "src/cpp/server/channelz/channelz_service_plugin.cc"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "grpc", 
+      "grpc++", 
       "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util"
@@ -7500,7 +7237,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -7555,7 +7291,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -7599,23 +7334,6 @@
   }, 
   {
     "deps": [
-      "grpc++"
-    ], 
-    "headers": [
-      "src/cpp/server/load_reporter/load_data_store.h"
-    ], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "lb_load_data_store", 
-    "src": [
-      "src/cpp/server/load_reporter/load_data_store.cc", 
-      "src/cpp/server/load_reporter/load_data_store.h"
-    ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
       "grpc", 
       "grpc++", 
       "grpc++_core_stats", 
@@ -7650,6 +7368,7 @@
       "test/cpp/qps/histogram.h", 
       "test/cpp/qps/interarrival.h", 
       "test/cpp/qps/parse_json.h", 
+      "test/cpp/qps/qps_server_builder.h", 
       "test/cpp/qps/qps_worker.h", 
       "test/cpp/qps/report.h", 
       "test/cpp/qps/server.h", 
@@ -7664,6 +7383,7 @@
       "test/cpp/qps/benchmark_config.h", 
       "test/cpp/qps/client.h", 
       "test/cpp/qps/client_async.cc", 
+      "test/cpp/qps/client_callback.cc", 
       "test/cpp/qps/client_sync.cc", 
       "test/cpp/qps/driver.cc", 
       "test/cpp/qps/driver.h", 
@@ -7671,12 +7391,15 @@
       "test/cpp/qps/interarrival.h", 
       "test/cpp/qps/parse_json.cc", 
       "test/cpp/qps/parse_json.h", 
+      "test/cpp/qps/qps_server_builder.cc", 
+      "test/cpp/qps/qps_server_builder.h", 
       "test/cpp/qps/qps_worker.cc", 
       "test/cpp/qps/qps_worker.h", 
       "test/cpp/qps/report.cc", 
       "test/cpp/qps/report.h", 
       "test/cpp/qps/server.h", 
       "test/cpp/qps/server_async.cc", 
+      "test/cpp/qps/server_callback.cc", 
       "test/cpp/qps/server_sync.cc", 
       "test/cpp/qps/stats.h", 
       "test/cpp/qps/usage_timer.cc", 
@@ -7897,678 +7620,12 @@
     "type": "lib"
   }, 
   {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_crypto_test_data_lib", 
-    "src": [
-      "src/boringssl/crypto_test_data.cc"
-    ], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_asn1_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_base64_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_bio_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_buf_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_bytestring_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_chacha_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_aead_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_cipher_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_cmac_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_compiler_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_constant_time_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_ed25519_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_spake25519_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_x25519_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_dh_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_digest_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_dsa_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_ecdh_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_err_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_evp_extra_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_evp_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_pbkdf_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_scrypt_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_aes_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_bn_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_ec_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_p256-x86_64_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_ecdsa_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_gcm_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_ctrdrbg_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_hkdf_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_hmac_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_lhash_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_obj_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_pkcs7_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_pkcs12_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_pkcs8_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_poly1305_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_pool_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_refcount_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_rsa_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_self_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_file_test_gtest_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_gtest_main_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_thread_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_x509_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_tab_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_v3name_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_span_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "boringssl", 
-      "boringssl_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "boringssl_ssl_test_lib", 
-    "src": [], 
-    "third_party": true, 
-    "type": "lib"
-  }, 
-  {
     "deps": [], 
     "headers": [
       "third_party/benchmark/include/benchmark/benchmark.h", 
-      "third_party/benchmark/include/benchmark/benchmark_api.h", 
-      "third_party/benchmark/include/benchmark/reporter.h", 
       "third_party/benchmark/src/arraysize.h", 
       "third_party/benchmark/src/benchmark_api_internal.h", 
+      "third_party/benchmark/src/benchmark_register.h", 
       "third_party/benchmark/src/check.h", 
       "third_party/benchmark/src/colorprint.h", 
       "third_party/benchmark/src/commandlineflags.h", 
@@ -8580,14 +7637,35 @@
       "third_party/benchmark/src/mutex.h", 
       "third_party/benchmark/src/re.h", 
       "third_party/benchmark/src/sleep.h", 
-      "third_party/benchmark/src/stat.h", 
+      "third_party/benchmark/src/statistics.h", 
       "third_party/benchmark/src/string_util.h", 
-      "third_party/benchmark/src/sysinfo.h", 
+      "third_party/benchmark/src/thread_manager.h", 
+      "third_party/benchmark/src/thread_timer.h", 
       "third_party/benchmark/src/timers.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "benchmark", 
+    "src": [], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "third_party/upb/google/protobuf/descriptor.upb.h", 
+      "third_party/upb/upb/decode.h", 
+      "third_party/upb/upb/def.h", 
+      "third_party/upb/upb/encode.h", 
+      "third_party/upb/upb/handlers.h", 
+      "third_party/upb/upb/msg.h", 
+      "third_party/upb/upb/msgfactory.h", 
+      "third_party/upb/upb/sink.h", 
+      "third_party/upb/upb/upb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "upb", 
     "src": [], 
     "third_party": false, 
     "type": "lib"
@@ -8635,6 +7713,7 @@
       "third_party/cares/cares/ares_setup.h", 
       "third_party/cares/cares/ares_strcasecmp.h", 
       "third_party/cares/cares/ares_strdup.h", 
+      "third_party/cares/cares/ares_strsplit.h", 
       "third_party/cares/cares/ares_version.h", 
       "third_party/cares/cares/bitncmp.h", 
       "third_party/cares/cares/config-win32.h", 
@@ -8654,7 +7733,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -8674,7 +7752,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -8694,7 +7771,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -8723,6 +7799,7 @@
       "test/core/end2end/tests/cancel_in_a_vacuum.cc", 
       "test/core/end2end/tests/cancel_test_helpers.h", 
       "test/core/end2end/tests/cancel_with_status.cc", 
+      "test/core/end2end/tests/channelz.cc", 
       "test/core/end2end/tests/compressed_payload.cc", 
       "test/core/end2end/tests/connectivity.cc", 
       "test/core/end2end/tests/default_host.cc", 
@@ -8730,6 +7807,7 @@
       "test/core/end2end/tests/empty_batch.cc", 
       "test/core/end2end/tests/filter_call_init_fails.cc", 
       "test/core/end2end/tests/filter_causes_close.cc", 
+      "test/core/end2end/tests/filter_context.cc", 
       "test/core/end2end/tests/filter_latency.cc", 
       "test/core/end2end/tests/filter_status_code.cc", 
       "test/core/end2end/tests/graceful_server_shutdown.cc", 
@@ -8739,13 +7817,11 @@
       "test/core/end2end/tests/invoke_large_request.cc", 
       "test/core/end2end/tests/keepalive_timeout.cc", 
       "test/core/end2end/tests/large_metadata.cc", 
-      "test/core/end2end/tests/load_reporting_hook.cc", 
       "test/core/end2end/tests/max_concurrent_streams.cc", 
       "test/core/end2end/tests/max_connection_age.cc", 
       "test/core/end2end/tests/max_connection_idle.cc", 
       "test/core/end2end/tests/max_message_length.cc", 
       "test/core/end2end/tests/negative_deadline.cc", 
-      "test/core/end2end/tests/network_status_change.cc", 
       "test/core/end2end/tests/no_error_on_hotpath.cc", 
       "test/core/end2end/tests/no_logging.cc", 
       "test/core/end2end/tests/no_op.cc", 
@@ -8795,7 +7871,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -8823,6 +7898,7 @@
       "test/core/end2end/tests/cancel_in_a_vacuum.cc", 
       "test/core/end2end/tests/cancel_test_helpers.h", 
       "test/core/end2end/tests/cancel_with_status.cc", 
+      "test/core/end2end/tests/channelz.cc", 
       "test/core/end2end/tests/compressed_payload.cc", 
       "test/core/end2end/tests/connectivity.cc", 
       "test/core/end2end/tests/default_host.cc", 
@@ -8830,6 +7906,7 @@
       "test/core/end2end/tests/empty_batch.cc", 
       "test/core/end2end/tests/filter_call_init_fails.cc", 
       "test/core/end2end/tests/filter_causes_close.cc", 
+      "test/core/end2end/tests/filter_context.cc", 
       "test/core/end2end/tests/filter_latency.cc", 
       "test/core/end2end/tests/filter_status_code.cc", 
       "test/core/end2end/tests/graceful_server_shutdown.cc", 
@@ -8839,13 +7916,11 @@
       "test/core/end2end/tests/invoke_large_request.cc", 
       "test/core/end2end/tests/keepalive_timeout.cc", 
       "test/core/end2end/tests/large_metadata.cc", 
-      "test/core/end2end/tests/load_reporting_hook.cc", 
       "test/core/end2end/tests/max_concurrent_streams.cc", 
       "test/core/end2end/tests/max_connection_age.cc", 
       "test/core/end2end/tests/max_connection_idle.cc", 
       "test/core/end2end/tests/max_message_length.cc", 
       "test/core/end2end/tests/negative_deadline.cc", 
-      "test/core/end2end/tests/network_status_change.cc", 
       "test/core/end2end/tests/no_error_on_hotpath.cc", 
       "test/core/end2end/tests/no_logging.cc", 
       "test/core/end2end/tests/no_op.cc", 
@@ -8920,6 +7995,7 @@
       "alts_util", 
       "gpr", 
       "grpc_base", 
+      "grpc_shadow_boringssl", 
       "grpc_transport_chttp2_client_insecure", 
       "tsi", 
       "tsi_interface"
@@ -8932,7 +8008,7 @@
       "src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h", 
       "src/core/tsi/alts/frame_protector/frame_handler.h", 
       "src/core/tsi/alts/handshaker/alts_handshaker_client.h", 
-      "src/core/tsi/alts/handshaker/alts_tsi_event.h", 
+      "src/core/tsi/alts/handshaker/alts_shared_resource.h", 
       "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h", 
       "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h", 
       "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h", 
@@ -8963,8 +8039,8 @@
       "src/core/tsi/alts/frame_protector/frame_handler.h", 
       "src/core/tsi/alts/handshaker/alts_handshaker_client.cc", 
       "src/core/tsi/alts/handshaker/alts_handshaker_client.h", 
-      "src/core/tsi/alts/handshaker/alts_tsi_event.cc", 
-      "src/core/tsi/alts/handshaker/alts_tsi_event.h", 
+      "src/core/tsi/alts/handshaker/alts_shared_resource.cc", 
+      "src/core/tsi/alts/handshaker/alts_shared_resource.h", 
       "src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc", 
       "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h", 
       "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h", 
@@ -9029,8 +8105,7 @@
   {
     "deps": [
       "gpr", 
-      "grpc_base", 
-      "nanopb"
+      "grpc_base"
     ], 
     "headers": [
       "include/grpc/census.h"
@@ -9040,7 +8115,7 @@
     "name": "census", 
     "src": [
       "include/grpc/census.h", 
-      "src/core/ext/census/grpc_context.cc"
+      "src/core/ext/filters/census/grpc_context.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -9072,7 +8147,6 @@
     "name": "gpr_base", 
     "src": [
       "src/core/lib/gpr/alloc.cc", 
-      "src/core/lib/gpr/arena.cc", 
       "src/core/lib/gpr/atm.cc", 
       "src/core/lib/gpr/cpu_iphone.cc", 
       "src/core/lib/gpr/cpu_linux.cc", 
@@ -9105,7 +8179,9 @@
       "src/core/lib/gpr/tmpfile_posix.cc", 
       "src/core/lib/gpr/tmpfile_windows.cc", 
       "src/core/lib/gpr/wrap_memcpy.cc", 
+      "src/core/lib/gprpp/arena.cc", 
       "src/core/lib/gprpp/fork.cc", 
+      "src/core/lib/gprpp/global_config_env.cc", 
       "src/core/lib/gprpp/thd_posix.cc", 
       "src/core/lib/gprpp/thd_windows.cc", 
       "src/core/lib/profiling/basic_timers.cc", 
@@ -9136,6 +8212,7 @@
       "include/grpc/support/sync_windows.h", 
       "include/grpc/support/thd_id.h", 
       "include/grpc/support/time.h", 
+      "src/core/lib/gpr/alloc.h", 
       "src/core/lib/gpr/arena.h", 
       "src/core/lib/gpr/env.h", 
       "src/core/lib/gpr/host_port.h", 
@@ -9152,12 +8229,18 @@
       "src/core/lib/gpr/tmpfile.h", 
       "src/core/lib/gpr/useful.h", 
       "src/core/lib/gprpp/abstract.h", 
+      "src/core/lib/gprpp/arena.h", 
       "src/core/lib/gprpp/atomic.h", 
-      "src/core/lib/gprpp/atomic_with_atm.h", 
-      "src/core/lib/gprpp/atomic_with_std.h", 
       "src/core/lib/gprpp/fork.h", 
+      "src/core/lib/gprpp/global_config.h", 
+      "src/core/lib/gprpp/global_config_custom.h", 
+      "src/core/lib/gprpp/global_config_env.h", 
+      "src/core/lib/gprpp/global_config_generic.h", 
       "src/core/lib/gprpp/manual_constructor.h", 
+      "src/core/lib/gprpp/map.h", 
       "src/core/lib/gprpp/memory.h", 
+      "src/core/lib/gprpp/pair.h", 
+      "src/core/lib/gprpp/sync.h", 
       "src/core/lib/gprpp/thd.h", 
       "src/core/lib/profiling/timers.h"
     ], 
@@ -9182,6 +8265,7 @@
       "include/grpc/support/sync_windows.h", 
       "include/grpc/support/thd_id.h", 
       "include/grpc/support/time.h", 
+      "src/core/lib/gpr/alloc.h", 
       "src/core/lib/gpr/arena.h", 
       "src/core/lib/gpr/env.h", 
       "src/core/lib/gpr/host_port.h", 
@@ -9198,12 +8282,18 @@
       "src/core/lib/gpr/tmpfile.h", 
       "src/core/lib/gpr/useful.h", 
       "src/core/lib/gprpp/abstract.h", 
+      "src/core/lib/gprpp/arena.h", 
       "src/core/lib/gprpp/atomic.h", 
-      "src/core/lib/gprpp/atomic_with_atm.h", 
-      "src/core/lib/gprpp/atomic_with_std.h", 
       "src/core/lib/gprpp/fork.h", 
+      "src/core/lib/gprpp/global_config.h", 
+      "src/core/lib/gprpp/global_config_custom.h", 
+      "src/core/lib/gprpp/global_config_env.h", 
+      "src/core/lib/gprpp/global_config_generic.h", 
       "src/core/lib/gprpp/manual_constructor.h", 
+      "src/core/lib/gprpp/map.h", 
       "src/core/lib/gprpp/memory.h", 
+      "src/core/lib/gprpp/pair.h", 
+      "src/core/lib/gprpp/sync.h", 
       "src/core/lib/gprpp/thd.h", 
       "src/core/lib/profiling/timers.h"
     ], 
@@ -9220,6 +8310,7 @@
       "include/grpc/impl/codegen/fork.h", 
       "include/grpc/impl/codegen/gpr_slice.h", 
       "include/grpc/impl/codegen/gpr_types.h", 
+      "include/grpc/impl/codegen/log.h", 
       "include/grpc/impl/codegen/port_platform.h", 
       "include/grpc/impl/codegen/sync.h", 
       "include/grpc/impl/codegen/sync_custom.h", 
@@ -9238,6 +8329,7 @@
       "include/grpc/impl/codegen/fork.h", 
       "include/grpc/impl/codegen/gpr_slice.h", 
       "include/grpc/impl/codegen/gpr_types.h", 
+      "include/grpc/impl/codegen/log.h", 
       "include/grpc/impl/codegen/port_platform.h", 
       "include/grpc/impl/codegen/sync.h", 
       "include/grpc/impl/codegen/sync_custom.h", 
@@ -9296,13 +8388,14 @@
       "src/core/lib/channel/channel_stack.cc", 
       "src/core/lib/channel/channel_stack_builder.cc", 
       "src/core/lib/channel/channel_trace.cc", 
+      "src/core/lib/channel/channelz.cc", 
       "src/core/lib/channel/channelz_registry.cc", 
       "src/core/lib/channel/connected_channel.cc", 
       "src/core/lib/channel/handshaker.cc", 
-      "src/core/lib/channel/handshaker_factory.cc", 
       "src/core/lib/channel/handshaker_registry.cc", 
       "src/core/lib/channel/status_util.cc", 
       "src/core/lib/compression/compression.cc", 
+      "src/core/lib/compression/compression_args.cc", 
       "src/core/lib/compression/compression_internal.cc", 
       "src/core/lib/compression/message_compress.cc", 
       "src/core/lib/compression/stream_compression.cc", 
@@ -9313,16 +8406,19 @@
       "src/core/lib/http/format_request.cc", 
       "src/core/lib/http/httpcli.cc", 
       "src/core/lib/http/parser.cc", 
+      "src/core/lib/iomgr/buffer_list.cc", 
       "src/core/lib/iomgr/call_combiner.cc", 
+      "src/core/lib/iomgr/cfstream_handle.cc", 
       "src/core/lib/iomgr/combiner.cc", 
       "src/core/lib/iomgr/endpoint.cc", 
+      "src/core/lib/iomgr/endpoint_cfstream.cc", 
       "src/core/lib/iomgr/endpoint_pair_posix.cc", 
       "src/core/lib/iomgr/endpoint_pair_uv.cc", 
       "src/core/lib/iomgr/endpoint_pair_windows.cc", 
       "src/core/lib/iomgr/error.cc", 
+      "src/core/lib/iomgr/error_cfstream.cc", 
       "src/core/lib/iomgr/ev_epoll1_linux.cc", 
       "src/core/lib/iomgr/ev_epollex_linux.cc", 
-      "src/core/lib/iomgr/ev_epollsig_linux.cc", 
       "src/core/lib/iomgr/ev_poll_posix.cc", 
       "src/core/lib/iomgr/ev_posix.cc", 
       "src/core/lib/iomgr/ev_windows.cc", 
@@ -9333,17 +8429,20 @@
       "src/core/lib/iomgr/gethostname_fallback.cc", 
       "src/core/lib/iomgr/gethostname_host_name_max.cc", 
       "src/core/lib/iomgr/gethostname_sysconf.cc", 
+      "src/core/lib/iomgr/grpc_if_nametoindex_posix.cc", 
+      "src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc", 
+      "src/core/lib/iomgr/internal_errqueue.cc", 
       "src/core/lib/iomgr/iocp_windows.cc", 
       "src/core/lib/iomgr/iomgr.cc", 
       "src/core/lib/iomgr/iomgr_custom.cc", 
       "src/core/lib/iomgr/iomgr_internal.cc", 
       "src/core/lib/iomgr/iomgr_posix.cc", 
+      "src/core/lib/iomgr/iomgr_posix_cfstream.cc", 
       "src/core/lib/iomgr/iomgr_uv.cc", 
       "src/core/lib/iomgr/iomgr_windows.cc", 
       "src/core/lib/iomgr/is_epollexclusive_available.cc", 
       "src/core/lib/iomgr/load_file.cc", 
       "src/core/lib/iomgr/lockfree_event.cc", 
-      "src/core/lib/iomgr/network_status_tracker.cc", 
       "src/core/lib/iomgr/polling_entity.cc", 
       "src/core/lib/iomgr/pollset.cc", 
       "src/core/lib/iomgr/pollset_custom.cc", 
@@ -9367,6 +8466,7 @@
       "src/core/lib/iomgr/socket_utils_windows.cc", 
       "src/core/lib/iomgr/socket_windows.cc", 
       "src/core/lib/iomgr/tcp_client.cc", 
+      "src/core/lib/iomgr/tcp_client_cfstream.cc", 
       "src/core/lib/iomgr/tcp_client_custom.cc", 
       "src/core/lib/iomgr/tcp_client_posix.cc", 
       "src/core/lib/iomgr/tcp_client_windows.cc", 
@@ -9391,7 +8491,6 @@
       "src/core/lib/iomgr/udp_server.cc", 
       "src/core/lib/iomgr/unix_sockets_posix.cc", 
       "src/core/lib/iomgr/unix_sockets_posix_noop.cc", 
-      "src/core/lib/iomgr/wakeup_fd_cv.cc", 
       "src/core/lib/iomgr/wakeup_fd_eventfd.cc", 
       "src/core/lib/iomgr/wakeup_fd_nospecial.cc", 
       "src/core/lib/iomgr/wakeup_fd_pipe.cc", 
@@ -9431,13 +8530,13 @@
       "src/core/lib/transport/metadata.cc", 
       "src/core/lib/transport/metadata_batch.cc", 
       "src/core/lib/transport/pid_controller.cc", 
-      "src/core/lib/transport/service_config.cc", 
       "src/core/lib/transport/static_metadata.cc", 
       "src/core/lib/transport/status_conversion.cc", 
       "src/core/lib/transport/status_metadata.cc", 
       "src/core/lib/transport/timeout_encoding.cc", 
       "src/core/lib/transport/transport.cc", 
-      "src/core/lib/transport/transport_op_string.cc"
+      "src/core/lib/transport/transport_op_string.cc", 
+      "src/core/lib/uri/uri_parser.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -9467,6 +8566,7 @@
       "src/core/lib/channel/channel_stack.h", 
       "src/core/lib/channel/channel_stack_builder.h", 
       "src/core/lib/channel/channel_trace.h", 
+      "src/core/lib/channel/channelz.h", 
       "src/core/lib/channel/channelz_registry.h", 
       "src/core/lib/channel/connected_channel.h", 
       "src/core/lib/channel/context.h", 
@@ -9475,6 +8575,7 @@
       "src/core/lib/channel/handshaker_registry.h", 
       "src/core/lib/channel/status_util.h", 
       "src/core/lib/compression/algorithm_metadata.h", 
+      "src/core/lib/compression/compression_args.h", 
       "src/core/lib/compression/compression_internal.h", 
       "src/core/lib/compression/message_compress.h", 
       "src/core/lib/compression/stream_compression.h", 
@@ -9484,6 +8585,7 @@
       "src/core/lib/debug/stats_data.h", 
       "src/core/lib/gprpp/debug_location.h", 
       "src/core/lib/gprpp/inlined_vector.h", 
+      "src/core/lib/gprpp/optional.h", 
       "src/core/lib/gprpp/orphanable.h", 
       "src/core/lib/gprpp/ref_counted.h", 
       "src/core/lib/gprpp/ref_counted_ptr.h", 
@@ -9491,21 +8593,27 @@
       "src/core/lib/http/httpcli.h", 
       "src/core/lib/http/parser.h", 
       "src/core/lib/iomgr/block_annotate.h", 
+      "src/core/lib/iomgr/buffer_list.h", 
       "src/core/lib/iomgr/call_combiner.h", 
+      "src/core/lib/iomgr/cfstream_handle.h", 
       "src/core/lib/iomgr/closure.h", 
       "src/core/lib/iomgr/combiner.h", 
+      "src/core/lib/iomgr/dynamic_annotations.h", 
       "src/core/lib/iomgr/endpoint.h", 
+      "src/core/lib/iomgr/endpoint_cfstream.h", 
       "src/core/lib/iomgr/endpoint_pair.h", 
       "src/core/lib/iomgr/error.h", 
+      "src/core/lib/iomgr/error_cfstream.h", 
       "src/core/lib/iomgr/error_internal.h", 
       "src/core/lib/iomgr/ev_epoll1_linux.h", 
       "src/core/lib/iomgr/ev_epollex_linux.h", 
-      "src/core/lib/iomgr/ev_epollsig_linux.h", 
       "src/core/lib/iomgr/ev_poll_posix.h", 
       "src/core/lib/iomgr/ev_posix.h", 
       "src/core/lib/iomgr/exec_ctx.h", 
       "src/core/lib/iomgr/executor.h", 
       "src/core/lib/iomgr/gethostname.h", 
+      "src/core/lib/iomgr/grpc_if_nametoindex.h", 
+      "src/core/lib/iomgr/internal_errqueue.h", 
       "src/core/lib/iomgr/iocp_windows.h", 
       "src/core/lib/iomgr/iomgr.h", 
       "src/core/lib/iomgr/iomgr_custom.h", 
@@ -9515,7 +8623,6 @@
       "src/core/lib/iomgr/load_file.h", 
       "src/core/lib/iomgr/lockfree_event.h", 
       "src/core/lib/iomgr/nameser.h", 
-      "src/core/lib/iomgr/network_status_tracker.h", 
       "src/core/lib/iomgr/polling_entity.h", 
       "src/core/lib/iomgr/pollset.h", 
       "src/core/lib/iomgr/pollset_custom.h", 
@@ -9552,7 +8659,6 @@
       "src/core/lib/iomgr/timer_manager.h", 
       "src/core/lib/iomgr/udp_server.h", 
       "src/core/lib/iomgr/unix_sockets_posix.h", 
-      "src/core/lib/iomgr/wakeup_fd_cv.h", 
       "src/core/lib/iomgr/wakeup_fd_pipe.h", 
       "src/core/lib/iomgr/wakeup_fd_posix.h", 
       "src/core/lib/json/json.h", 
@@ -9564,6 +8670,7 @@
       "src/core/lib/slice/slice_hash_table.h", 
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.h", 
+      "src/core/lib/slice/slice_utils.h", 
       "src/core/lib/slice/slice_weak_hash_table.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
@@ -9586,13 +8693,13 @@
       "src/core/lib/transport/metadata.h", 
       "src/core/lib/transport/metadata_batch.h", 
       "src/core/lib/transport/pid_controller.h", 
-      "src/core/lib/transport/service_config.h", 
       "src/core/lib/transport/static_metadata.h", 
       "src/core/lib/transport/status_conversion.h", 
       "src/core/lib/transport/status_metadata.h", 
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.h", 
-      "src/core/lib/transport/transport_impl.h"
+      "src/core/lib/transport/transport_impl.h", 
+      "src/core/lib/uri/uri_parser.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
@@ -9616,6 +8723,7 @@
       "src/core/lib/channel/channel_stack.h", 
       "src/core/lib/channel/channel_stack_builder.h", 
       "src/core/lib/channel/channel_trace.h", 
+      "src/core/lib/channel/channelz.h", 
       "src/core/lib/channel/channelz_registry.h", 
       "src/core/lib/channel/connected_channel.h", 
       "src/core/lib/channel/context.h", 
@@ -9624,6 +8732,7 @@
       "src/core/lib/channel/handshaker_registry.h", 
       "src/core/lib/channel/status_util.h", 
       "src/core/lib/compression/algorithm_metadata.h", 
+      "src/core/lib/compression/compression_args.h", 
       "src/core/lib/compression/compression_internal.h", 
       "src/core/lib/compression/message_compress.h", 
       "src/core/lib/compression/stream_compression.h", 
@@ -9633,6 +8742,7 @@
       "src/core/lib/debug/stats_data.h", 
       "src/core/lib/gprpp/debug_location.h", 
       "src/core/lib/gprpp/inlined_vector.h", 
+      "src/core/lib/gprpp/optional.h", 
       "src/core/lib/gprpp/orphanable.h", 
       "src/core/lib/gprpp/ref_counted.h", 
       "src/core/lib/gprpp/ref_counted_ptr.h", 
@@ -9640,21 +8750,27 @@
       "src/core/lib/http/httpcli.h", 
       "src/core/lib/http/parser.h", 
       "src/core/lib/iomgr/block_annotate.h", 
+      "src/core/lib/iomgr/buffer_list.h", 
       "src/core/lib/iomgr/call_combiner.h", 
+      "src/core/lib/iomgr/cfstream_handle.h", 
       "src/core/lib/iomgr/closure.h", 
       "src/core/lib/iomgr/combiner.h", 
+      "src/core/lib/iomgr/dynamic_annotations.h", 
       "src/core/lib/iomgr/endpoint.h", 
+      "src/core/lib/iomgr/endpoint_cfstream.h", 
       "src/core/lib/iomgr/endpoint_pair.h", 
       "src/core/lib/iomgr/error.h", 
+      "src/core/lib/iomgr/error_cfstream.h", 
       "src/core/lib/iomgr/error_internal.h", 
       "src/core/lib/iomgr/ev_epoll1_linux.h", 
       "src/core/lib/iomgr/ev_epollex_linux.h", 
-      "src/core/lib/iomgr/ev_epollsig_linux.h", 
       "src/core/lib/iomgr/ev_poll_posix.h", 
       "src/core/lib/iomgr/ev_posix.h", 
       "src/core/lib/iomgr/exec_ctx.h", 
       "src/core/lib/iomgr/executor.h", 
       "src/core/lib/iomgr/gethostname.h", 
+      "src/core/lib/iomgr/grpc_if_nametoindex.h", 
+      "src/core/lib/iomgr/internal_errqueue.h", 
       "src/core/lib/iomgr/iocp_windows.h", 
       "src/core/lib/iomgr/iomgr.h", 
       "src/core/lib/iomgr/iomgr_custom.h", 
@@ -9664,7 +8780,6 @@
       "src/core/lib/iomgr/load_file.h", 
       "src/core/lib/iomgr/lockfree_event.h", 
       "src/core/lib/iomgr/nameser.h", 
-      "src/core/lib/iomgr/network_status_tracker.h", 
       "src/core/lib/iomgr/polling_entity.h", 
       "src/core/lib/iomgr/pollset.h", 
       "src/core/lib/iomgr/pollset_custom.h", 
@@ -9701,7 +8816,6 @@
       "src/core/lib/iomgr/timer_manager.h", 
       "src/core/lib/iomgr/udp_server.h", 
       "src/core/lib/iomgr/unix_sockets_posix.h", 
-      "src/core/lib/iomgr/wakeup_fd_cv.h", 
       "src/core/lib/iomgr/wakeup_fd_pipe.h", 
       "src/core/lib/iomgr/wakeup_fd_posix.h", 
       "src/core/lib/json/json.h", 
@@ -9713,6 +8827,7 @@
       "src/core/lib/slice/slice_hash_table.h", 
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.h", 
+      "src/core/lib/slice/slice_utils.h", 
       "src/core/lib/slice/slice_weak_hash_table.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
@@ -9735,39 +8850,13 @@
       "src/core/lib/transport/metadata.h", 
       "src/core/lib/transport/metadata_batch.h", 
       "src/core/lib/transport/pid_controller.h", 
-      "src/core/lib/transport/service_config.h", 
       "src/core/lib/transport/static_metadata.h", 
       "src/core/lib/transport/status_conversion.h", 
       "src/core/lib/transport/status_metadata.h", 
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.h", 
-      "src/core/lib/transport/transport_impl.h"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_base_headers", 
-      "grpc_base_headers"
-    ], 
-    "headers": [
-      "src/core/lib/iomgr/cfstream_handle.h", 
-      "src/core/lib/iomgr/endpoint_cfstream.h", 
-      "src/core/lib/iomgr/error_cfstream.h"
-    ], 
-    "is_filegroup": true, 
-    "language": "c", 
-    "name": "grpc_cfstream", 
-    "src": [
-      "src/core/lib/iomgr/cfstream_handle.cc", 
-      "src/core/lib/iomgr/cfstream_handle.h", 
-      "src/core/lib/iomgr/endpoint_cfstream.cc", 
-      "src/core/lib/iomgr/endpoint_cfstream.h", 
-      "src/core/lib/iomgr/error_cfstream.cc", 
-      "src/core/lib/iomgr/error_cfstream.h", 
-      "src/core/lib/iomgr/tcp_client_cfstream.cc"
+      "src/core/lib/transport/transport_impl.h", 
+      "src/core/lib/uri/uri_parser.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -9794,29 +8883,36 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_deadline_filter"
+      "grpc_deadline_filter", 
+      "health_proto"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/backup_poller.h", 
       "src/core/ext/filters/client_channel/client_channel.h", 
+      "src/core/ext/filters/client_channel/client_channel_channelz.h", 
       "src/core/ext/filters/client_channel/client_channel_factory.h", 
       "src/core/ext/filters/client_channel/connector.h", 
+      "src/core/ext/filters/client_channel/global_subchannel_pool.h", 
+      "src/core/ext/filters/client_channel/health/health_check_client.h", 
       "src/core/ext/filters/client_channel/http_connect_handshaker.h", 
       "src/core/ext/filters/client_channel/http_proxy.h", 
       "src/core/ext/filters/client_channel/lb_policy.h", 
       "src/core/ext/filters/client_channel/lb_policy_factory.h", 
       "src/core/ext/filters/client_channel/lb_policy_registry.h", 
-      "src/core/ext/filters/client_channel/method_params.h", 
+      "src/core/ext/filters/client_channel/local_subchannel_pool.h", 
       "src/core/ext/filters/client_channel/parse_address.h", 
       "src/core/ext/filters/client_channel/proxy_mapper.h", 
       "src/core/ext/filters/client_channel/proxy_mapper_registry.h", 
       "src/core/ext/filters/client_channel/resolver.h", 
       "src/core/ext/filters/client_channel/resolver_factory.h", 
       "src/core/ext/filters/client_channel/resolver_registry.h", 
+      "src/core/ext/filters/client_channel/resolver_result_parsing.h", 
+      "src/core/ext/filters/client_channel/resolving_lb_policy.h", 
       "src/core/ext/filters/client_channel/retry_throttle.h", 
+      "src/core/ext/filters/client_channel/server_address.h", 
+      "src/core/ext/filters/client_channel/service_config.h", 
       "src/core/ext/filters/client_channel/subchannel.h", 
-      "src/core/ext/filters/client_channel/subchannel_index.h", 
-      "src/core/ext/filters/client_channel/uri_parser.h"
+      "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
@@ -9827,23 +8923,28 @@
       "src/core/ext/filters/client_channel/channel_connectivity.cc", 
       "src/core/ext/filters/client_channel/client_channel.cc", 
       "src/core/ext/filters/client_channel/client_channel.h", 
+      "src/core/ext/filters/client_channel/client_channel_channelz.cc", 
+      "src/core/ext/filters/client_channel/client_channel_channelz.h", 
       "src/core/ext/filters/client_channel/client_channel_factory.cc", 
       "src/core/ext/filters/client_channel/client_channel_factory.h", 
       "src/core/ext/filters/client_channel/client_channel_plugin.cc", 
       "src/core/ext/filters/client_channel/connector.cc", 
       "src/core/ext/filters/client_channel/connector.h", 
+      "src/core/ext/filters/client_channel/global_subchannel_pool.cc", 
+      "src/core/ext/filters/client_channel/global_subchannel_pool.h", 
+      "src/core/ext/filters/client_channel/health/health_check_client.cc", 
+      "src/core/ext/filters/client_channel/health/health_check_client.h", 
       "src/core/ext/filters/client_channel/http_connect_handshaker.cc", 
       "src/core/ext/filters/client_channel/http_connect_handshaker.h", 
       "src/core/ext/filters/client_channel/http_proxy.cc", 
       "src/core/ext/filters/client_channel/http_proxy.h", 
       "src/core/ext/filters/client_channel/lb_policy.cc", 
       "src/core/ext/filters/client_channel/lb_policy.h", 
-      "src/core/ext/filters/client_channel/lb_policy_factory.cc", 
       "src/core/ext/filters/client_channel/lb_policy_factory.h", 
       "src/core/ext/filters/client_channel/lb_policy_registry.cc", 
       "src/core/ext/filters/client_channel/lb_policy_registry.h", 
-      "src/core/ext/filters/client_channel/method_params.cc", 
-      "src/core/ext/filters/client_channel/method_params.h", 
+      "src/core/ext/filters/client_channel/local_subchannel_pool.cc", 
+      "src/core/ext/filters/client_channel/local_subchannel_pool.h", 
       "src/core/ext/filters/client_channel/parse_address.cc", 
       "src/core/ext/filters/client_channel/parse_address.h", 
       "src/core/ext/filters/client_channel/proxy_mapper.cc", 
@@ -9855,14 +8956,20 @@
       "src/core/ext/filters/client_channel/resolver_factory.h", 
       "src/core/ext/filters/client_channel/resolver_registry.cc", 
       "src/core/ext/filters/client_channel/resolver_registry.h", 
+      "src/core/ext/filters/client_channel/resolver_result_parsing.cc", 
+      "src/core/ext/filters/client_channel/resolver_result_parsing.h", 
+      "src/core/ext/filters/client_channel/resolving_lb_policy.cc", 
+      "src/core/ext/filters/client_channel/resolving_lb_policy.h", 
       "src/core/ext/filters/client_channel/retry_throttle.cc", 
       "src/core/ext/filters/client_channel/retry_throttle.h", 
+      "src/core/ext/filters/client_channel/server_address.cc", 
+      "src/core/ext/filters/client_channel/server_address.h", 
+      "src/core/ext/filters/client_channel/service_config.cc", 
+      "src/core/ext/filters/client_channel/service_config.h", 
       "src/core/ext/filters/client_channel/subchannel.cc", 
       "src/core/ext/filters/client_channel/subchannel.h", 
-      "src/core/ext/filters/client_channel/subchannel_index.cc", 
-      "src/core/ext/filters/client_channel/subchannel_index.h", 
-      "src/core/ext/filters/client_channel/uri_parser.cc", 
-      "src/core/ext/filters/client_channel/uri_parser.h"
+      "src/core/ext/filters/client_channel/subchannel_pool_interface.cc", 
+      "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -9946,6 +9053,7 @@
       "grpc_base", 
       "grpc_client_channel", 
       "grpc_resolver_fake", 
+      "grpclb_proto", 
       "nanopb"
     ], 
     "headers": [
@@ -9953,8 +9061,7 @@
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h", 
-      "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h", 
-      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
@@ -9969,9 +9076,7 @@
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc", 
-      "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h", 
-      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c", 
-      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -9983,6 +9088,7 @@
       "grpc_client_channel", 
       "grpc_resolver_fake", 
       "grpc_secure", 
+      "grpclb_proto", 
       "nanopb"
     ], 
     "headers": [
@@ -9990,8 +9096,7 @@
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h", 
-      "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h", 
-      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
@@ -10006,9 +9111,7 @@
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc", 
-      "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h", 
-      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c", 
-      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -10043,6 +9146,69 @@
     "name": "grpc_lb_policy_round_robin", 
     "src": [
       "src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_client_channel", 
+      "grpc_resolver_fake", 
+      "grpclb_proto", 
+      "nanopb"
+    ], 
+    "headers": [
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_lb_policy_xds", 
+    "src": [
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.cc", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_client_channel", 
+      "grpc_resolver_fake", 
+      "grpc_secure", 
+      "grpclb_proto", 
+      "nanopb"
+    ], 
+    "headers": [
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_lb_policy_xds_secure", 
+    "src": [
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -10116,11 +9282,17 @@
     "name": "grpc_resolver_dns_ares", 
     "src": [
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc", 
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h", 
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc", 
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h", 
-      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc"
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc", 
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc", 
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc", 
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -10181,12 +9353,14 @@
       "alts_tsi", 
       "gpr", 
       "grpc_base", 
+      "grpc_shadow_boringssl", 
       "grpc_transport_chttp2_alpn", 
       "tsi"
     ], 
     "headers": [
       "include/grpc/grpc_security.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds.h", 
       "src/core/lib/security/context/security_context.h", 
       "src/core/lib/security/credentials/alts/alts_credentials.h", 
       "src/core/lib/security/credentials/composite/composite_credentials.h", 
@@ -10197,11 +9371,21 @@
       "src/core/lib/security/credentials/jwt/json_token.h", 
       "src/core/lib/security/credentials/jwt/jwt_credentials.h", 
       "src/core/lib/security/credentials/jwt/jwt_verifier.h", 
+      "src/core/lib/security/credentials/local/local_credentials.h", 
       "src/core/lib/security/credentials/oauth2/oauth2_credentials.h", 
       "src/core/lib/security/credentials/plugin/plugin_credentials.h", 
       "src/core/lib/security/credentials/ssl/ssl_credentials.h", 
-      "src/core/lib/security/security_connector/alts_security_connector.h", 
+      "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h", 
+      "src/core/lib/security/credentials/tls/spiffe_credentials.h", 
+      "src/core/lib/security/security_connector/alts/alts_security_connector.h", 
+      "src/core/lib/security/security_connector/fake/fake_security_connector.h", 
+      "src/core/lib/security/security_connector/load_system_roots.h", 
+      "src/core/lib/security/security_connector/load_system_roots_linux.h", 
+      "src/core/lib/security/security_connector/local/local_security_connector.h", 
       "src/core/lib/security/security_connector/security_connector.h", 
+      "src/core/lib/security/security_connector/ssl/ssl_security_connector.h", 
+      "src/core/lib/security/security_connector/ssl_utils.h", 
+      "src/core/lib/security/security_connector/tls/spiffe_security_connector.h", 
       "src/core/lib/security/transport/auth_filters.h", 
       "src/core/lib/security/transport/secure_endpoint.h", 
       "src/core/lib/security/transport/security_handshaker.h", 
@@ -10215,6 +9399,7 @@
     "src": [
       "include/grpc/grpc_security.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds.h", 
       "src/core/lib/http/httpcli_security_connector.cc", 
       "src/core/lib/security/context/security_context.cc", 
       "src/core/lib/security/context/security_context.h", 
@@ -10238,16 +9423,36 @@
       "src/core/lib/security/credentials/jwt/jwt_credentials.h", 
       "src/core/lib/security/credentials/jwt/jwt_verifier.cc", 
       "src/core/lib/security/credentials/jwt/jwt_verifier.h", 
+      "src/core/lib/security/credentials/local/local_credentials.cc", 
+      "src/core/lib/security/credentials/local/local_credentials.h", 
       "src/core/lib/security/credentials/oauth2/oauth2_credentials.cc", 
       "src/core/lib/security/credentials/oauth2/oauth2_credentials.h", 
       "src/core/lib/security/credentials/plugin/plugin_credentials.cc", 
       "src/core/lib/security/credentials/plugin/plugin_credentials.h", 
       "src/core/lib/security/credentials/ssl/ssl_credentials.cc", 
       "src/core/lib/security/credentials/ssl/ssl_credentials.h", 
-      "src/core/lib/security/security_connector/alts_security_connector.cc", 
-      "src/core/lib/security/security_connector/alts_security_connector.h", 
+      "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc", 
+      "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h", 
+      "src/core/lib/security/credentials/tls/spiffe_credentials.cc", 
+      "src/core/lib/security/credentials/tls/spiffe_credentials.h", 
+      "src/core/lib/security/security_connector/alts/alts_security_connector.cc", 
+      "src/core/lib/security/security_connector/alts/alts_security_connector.h", 
+      "src/core/lib/security/security_connector/fake/fake_security_connector.cc", 
+      "src/core/lib/security/security_connector/fake/fake_security_connector.h", 
+      "src/core/lib/security/security_connector/load_system_roots.h", 
+      "src/core/lib/security/security_connector/load_system_roots_fallback.cc", 
+      "src/core/lib/security/security_connector/load_system_roots_linux.cc", 
+      "src/core/lib/security/security_connector/load_system_roots_linux.h", 
+      "src/core/lib/security/security_connector/local/local_security_connector.cc", 
+      "src/core/lib/security/security_connector/local/local_security_connector.h", 
       "src/core/lib/security/security_connector/security_connector.cc", 
       "src/core/lib/security/security_connector/security_connector.h", 
+      "src/core/lib/security/security_connector/ssl/ssl_security_connector.cc", 
+      "src/core/lib/security/security_connector/ssl/ssl_security_connector.h", 
+      "src/core/lib/security/security_connector/ssl_utils.cc", 
+      "src/core/lib/security/security_connector/ssl_utils.h", 
+      "src/core/lib/security/security_connector/tls/spiffe_security_connector.cc", 
+      "src/core/lib/security/security_connector/tls/spiffe_security_connector.h", 
       "src/core/lib/security/transport/auth_filters.h", 
       "src/core/lib/security/transport/client_auth_filter.cc", 
       "src/core/lib/security/transport/secure_endpoint.cc", 
@@ -10285,22 +9490,15 @@
     "type": "filegroup"
   }, 
   {
-    "deps": [
-      "gpr", 
-      "grpc_base"
-    ], 
+    "deps": [], 
     "headers": [
-      "src/core/ext/filters/load_reporting/server_load_reporting_filter.h", 
-      "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h"
+      "src/core/tsi/grpc_shadow_boringssl.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
-    "name": "grpc_server_load_reporting", 
+    "name": "grpc_shadow_boringssl", 
     "src": [
-      "src/core/ext/filters/load_reporting/server_load_reporting_filter.cc", 
-      "src/core/ext/filters/load_reporting/server_load_reporting_filter.h", 
-      "src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc", 
-      "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h"
+      "src/core/tsi/grpc_shadow_boringssl.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -10309,7 +9507,6 @@
     "deps": [
       "cmdline", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_base", 
       "grpc_client_channel", 
       "grpc_transport_chttp2"
@@ -10318,6 +9515,7 @@
       "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h", 
       "test/core/end2end/cq_verifier.h", 
       "test/core/end2end/fixtures/http_proxy_fixture.h", 
+      "test/core/end2end/fixtures/local_util.h", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.h", 
       "test/core/util/debugger_macros.h", 
@@ -10332,6 +9530,8 @@
       "test/core/util/port_server_client.h", 
       "test/core/util/slice_splitter.h", 
       "test/core/util/subprocess.h", 
+      "test/core/util/test_config.h", 
+      "test/core/util/test_lb_policies.h", 
       "test/core/util/tracer_util.h", 
       "test/core/util/trickle_endpoint.h"
     ], 
@@ -10345,6 +9545,8 @@
       "test/core/end2end/cq_verifier.h", 
       "test/core/end2end/fixtures/http_proxy_fixture.cc", 
       "test/core/end2end/fixtures/http_proxy_fixture.h", 
+      "test/core/end2end/fixtures/local_util.cc", 
+      "test/core/end2end/fixtures/local_util.h", 
       "test/core/end2end/fixtures/proxy.cc", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.cc", 
@@ -10375,6 +9577,10 @@
       "test/core/util/subprocess.h", 
       "test/core/util/subprocess_posix.cc", 
       "test/core/util/subprocess_windows.cc", 
+      "test/core/util/test_config.cc", 
+      "test/core/util/test_config.h", 
+      "test/core/util/test_lb_policies.cc", 
+      "test/core/util/test_lb_policies.h", 
       "test/core/util/tracer_util.cc", 
       "test/core/util/tracer_util.h", 
       "test/core/util/trickle_endpoint.cc", 
@@ -10426,6 +9632,7 @@
       "src/core/ext/transport/chttp2/transport/bin_decoder.h", 
       "src/core/ext/transport/chttp2/transport/bin_encoder.h", 
       "src/core/ext/transport/chttp2/transport/chttp2_transport.h", 
+      "src/core/ext/transport/chttp2/transport/context_list.h", 
       "src/core/ext/transport/chttp2/transport/flow_control.h", 
       "src/core/ext/transport/chttp2/transport/frame.h", 
       "src/core/ext/transport/chttp2/transport/frame_data.h", 
@@ -10455,6 +9662,8 @@
       "src/core/ext/transport/chttp2/transport/chttp2_plugin.cc", 
       "src/core/ext/transport/chttp2/transport/chttp2_transport.cc", 
       "src/core/ext/transport/chttp2/transport/chttp2_transport.h", 
+      "src/core/ext/transport/chttp2/transport/context_list.cc", 
+      "src/core/ext/transport/chttp2/transport/context_list.h", 
       "src/core/ext/transport/chttp2/transport/flow_control.cc", 
       "src/core/ext/transport/chttp2/transport/flow_control.h", 
       "src/core/ext/transport/chttp2/transport/frame.h", 
@@ -10710,6 +9919,46 @@
   }, 
   {
     "deps": [
+      "nanopb"
+    ], 
+    "headers": [
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpclb_proto", 
+    "src": [
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "nanopb"
+    ], 
+    "headers": [
+      "src/core/ext/filters/client_channel/health/health.pb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "health_proto", 
+    "src": [
+      "src/core/ext/filters/client_channel/health/health.pb.c", 
+      "src/core/ext/filters/client_channel/health/health.pb.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
       "nanopb_headers"
     ], 
     "headers": [], 
@@ -10756,12 +10005,13 @@
     "deps": [
       "gpr", 
       "grpc_base", 
+      "grpc_shadow_boringssl", 
       "grpc_trace", 
       "tsi_interface"
     ], 
     "headers": [
-      "src/core/tsi/alts_transport_security.h", 
       "src/core/tsi/fake_transport_security.h", 
+      "src/core/tsi/local_transport_security.h", 
       "src/core/tsi/ssl/session_cache/ssl_session.h", 
       "src/core/tsi/ssl/session_cache/ssl_session_cache.h", 
       "src/core/tsi/ssl_transport_security.h", 
@@ -10772,10 +10022,10 @@
     "language": "c", 
     "name": "tsi", 
     "src": [
-      "src/core/tsi/alts_transport_security.cc", 
-      "src/core/tsi/alts_transport_security.h", 
       "src/core/tsi/fake_transport_security.cc", 
       "src/core/tsi/fake_transport_security.h", 
+      "src/core/tsi/local_transport_security.cc", 
+      "src/core/tsi/local_transport_security.h", 
       "src/core/tsi/ssl/session_cache/ssl_session.h", 
       "src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc", 
       "src/core/tsi/ssl/session_cache/ssl_session_cache.cc", 
@@ -10811,21 +10061,8 @@
     "type": "filegroup"
   }, 
   {
-    "deps": [], 
-    "headers": [
-      "src/proto/grpc/channelz/channelz.grpc.pb.h", 
-      "src/proto/grpc/channelz/channelz.pb.h", 
-      "src/proto/grpc/channelz/channelz_mock.grpc.pb.h"
-    ], 
-    "is_filegroup": true, 
-    "language": "c++", 
-    "name": "grpc++_channelz_proto", 
-    "src": [], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
     "deps": [
+      "grpc++_internal_hdrs_only", 
       "grpc_codegen"
     ], 
     "headers": [
@@ -10859,13 +10096,19 @@
       "include/grpc++/impl/codegen/stub_options.h", 
       "include/grpc++/impl/codegen/sync_stream.h", 
       "include/grpc++/impl/codegen/time.h", 
+      "include/grpcpp/impl/codegen/async_generic_service.h", 
       "include/grpcpp/impl/codegen/async_stream.h", 
       "include/grpcpp/impl/codegen/async_unary_call.h", 
       "include/grpcpp/impl/codegen/byte_buffer.h", 
       "include/grpcpp/impl/codegen/call.h", 
       "include/grpcpp/impl/codegen/call_hook.h", 
+      "include/grpcpp/impl/codegen/call_op_set.h", 
+      "include/grpcpp/impl/codegen/call_op_set_interface.h", 
+      "include/grpcpp/impl/codegen/callback_common.h", 
       "include/grpcpp/impl/codegen/channel_interface.h", 
+      "include/grpcpp/impl/codegen/client_callback.h", 
       "include/grpcpp/impl/codegen/client_context.h", 
+      "include/grpcpp/impl/codegen/client_interceptor.h", 
       "include/grpcpp/impl/codegen/client_unary_call.h", 
       "include/grpcpp/impl/codegen/completion_queue.h", 
       "include/grpcpp/impl/codegen/completion_queue_tag.h", 
@@ -10873,13 +10116,19 @@
       "include/grpcpp/impl/codegen/core_codegen_interface.h", 
       "include/grpcpp/impl/codegen/create_auth_context.h", 
       "include/grpcpp/impl/codegen/grpc_library.h", 
+      "include/grpcpp/impl/codegen/intercepted_channel.h", 
+      "include/grpcpp/impl/codegen/interceptor.h", 
+      "include/grpcpp/impl/codegen/interceptor_common.h", 
+      "include/grpcpp/impl/codegen/message_allocator.h", 
       "include/grpcpp/impl/codegen/metadata_map.h", 
       "include/grpcpp/impl/codegen/method_handler_impl.h", 
       "include/grpcpp/impl/codegen/rpc_method.h", 
       "include/grpcpp/impl/codegen/rpc_service_method.h", 
       "include/grpcpp/impl/codegen/security/auth_context.h", 
       "include/grpcpp/impl/codegen/serialization_traits.h", 
+      "include/grpcpp/impl/codegen/server_callback.h", 
       "include/grpcpp/impl/codegen/server_context.h", 
+      "include/grpcpp/impl/codegen/server_interceptor.h", 
       "include/grpcpp/impl/codegen/server_interface.h", 
       "include/grpcpp/impl/codegen/service_type.h", 
       "include/grpcpp/impl/codegen/slice.h", 
@@ -10924,13 +10173,19 @@
       "include/grpc++/impl/codegen/stub_options.h", 
       "include/grpc++/impl/codegen/sync_stream.h", 
       "include/grpc++/impl/codegen/time.h", 
+      "include/grpcpp/impl/codegen/async_generic_service.h", 
       "include/grpcpp/impl/codegen/async_stream.h", 
       "include/grpcpp/impl/codegen/async_unary_call.h", 
       "include/grpcpp/impl/codegen/byte_buffer.h", 
       "include/grpcpp/impl/codegen/call.h", 
       "include/grpcpp/impl/codegen/call_hook.h", 
+      "include/grpcpp/impl/codegen/call_op_set.h", 
+      "include/grpcpp/impl/codegen/call_op_set_interface.h", 
+      "include/grpcpp/impl/codegen/callback_common.h", 
       "include/grpcpp/impl/codegen/channel_interface.h", 
+      "include/grpcpp/impl/codegen/client_callback.h", 
       "include/grpcpp/impl/codegen/client_context.h", 
+      "include/grpcpp/impl/codegen/client_interceptor.h", 
       "include/grpcpp/impl/codegen/client_unary_call.h", 
       "include/grpcpp/impl/codegen/completion_queue.h", 
       "include/grpcpp/impl/codegen/completion_queue_tag.h", 
@@ -10938,13 +10193,19 @@
       "include/grpcpp/impl/codegen/core_codegen_interface.h", 
       "include/grpcpp/impl/codegen/create_auth_context.h", 
       "include/grpcpp/impl/codegen/grpc_library.h", 
+      "include/grpcpp/impl/codegen/intercepted_channel.h", 
+      "include/grpcpp/impl/codegen/interceptor.h", 
+      "include/grpcpp/impl/codegen/interceptor_common.h", 
+      "include/grpcpp/impl/codegen/message_allocator.h", 
       "include/grpcpp/impl/codegen/metadata_map.h", 
       "include/grpcpp/impl/codegen/method_handler_impl.h", 
       "include/grpcpp/impl/codegen/rpc_method.h", 
       "include/grpcpp/impl/codegen/rpc_service_method.h", 
       "include/grpcpp/impl/codegen/security/auth_context.h", 
       "include/grpcpp/impl/codegen/serialization_traits.h", 
+      "include/grpcpp/impl/codegen/server_callback.h", 
       "include/grpcpp/impl/codegen/server_context.h", 
+      "include/grpcpp/impl/codegen/server_interceptor.h", 
       "include/grpcpp/impl/codegen/server_interface.h", 
       "include/grpcpp/impl/codegen/service_type.h", 
       "include/grpcpp/impl/codegen/slice.h", 
@@ -11000,8 +10261,10 @@
       "gpr", 
       "gpr_base_headers", 
       "grpc++_codegen_base", 
+      "grpc++_internal_hdrs_only", 
       "grpc_base_headers", 
       "grpc_transport_inproc_headers", 
+      "health_proto", 
       "nanopb_headers"
     ], 
     "headers": [
@@ -11051,16 +10314,21 @@
       "include/grpc++/support/sync_stream.h", 
       "include/grpc++/support/time.h", 
       "include/grpcpp/alarm.h", 
+      "include/grpcpp/alarm_impl.h", 
       "include/grpcpp/channel.h", 
       "include/grpcpp/client_context.h", 
       "include/grpcpp/completion_queue.h", 
       "include/grpcpp/create_channel.h", 
+      "include/grpcpp/create_channel_impl.h", 
       "include/grpcpp/create_channel_posix.h", 
+      "include/grpcpp/create_channel_posix_impl.h", 
       "include/grpcpp/ext/health_check_service_server_builder_option.h", 
       "include/grpcpp/generic/async_generic_service.h", 
       "include/grpcpp/generic/generic_stub.h", 
+      "include/grpcpp/generic/generic_stub_impl.h", 
       "include/grpcpp/grpcpp.h", 
       "include/grpcpp/health_check_service_interface.h", 
+      "include/grpcpp/health_check_service_interface_impl.h", 
       "include/grpcpp/impl/call.h", 
       "include/grpcpp/impl/channel_argument_option.h", 
       "include/grpcpp/impl/client_unary_call.h", 
@@ -11071,25 +10339,41 @@
       "include/grpcpp/impl/rpc_service_method.h", 
       "include/grpcpp/impl/serialization_traits.h", 
       "include/grpcpp/impl/server_builder_option.h", 
+      "include/grpcpp/impl/server_builder_option_impl.h", 
       "include/grpcpp/impl/server_builder_plugin.h", 
       "include/grpcpp/impl/server_initializer.h", 
+      "include/grpcpp/impl/server_initializer_impl.h", 
       "include/grpcpp/impl/service_type.h", 
       "include/grpcpp/resource_quota.h", 
+      "include/grpcpp/resource_quota_impl.h", 
       "include/grpcpp/security/auth_context.h", 
       "include/grpcpp/security/auth_metadata_processor.h", 
+      "include/grpcpp/security/auth_metadata_processor_impl.h", 
       "include/grpcpp/security/credentials.h", 
+      "include/grpcpp/security/credentials_impl.h", 
       "include/grpcpp/security/server_credentials.h", 
+      "include/grpcpp/security/server_credentials_impl.h", 
       "include/grpcpp/server.h", 
       "include/grpcpp/server_builder.h", 
+      "include/grpcpp/server_builder_impl.h", 
       "include/grpcpp/server_context.h", 
+      "include/grpcpp/server_impl.h", 
       "include/grpcpp/server_posix.h", 
+      "include/grpcpp/server_posix_impl.h", 
       "include/grpcpp/support/async_stream.h", 
       "include/grpcpp/support/async_unary_call.h", 
       "include/grpcpp/support/byte_buffer.h", 
       "include/grpcpp/support/channel_arguments.h", 
+      "include/grpcpp/support/channel_arguments_impl.h", 
+      "include/grpcpp/support/client_callback.h", 
+      "include/grpcpp/support/client_interceptor.h", 
       "include/grpcpp/support/config.h", 
+      "include/grpcpp/support/interceptor.h", 
+      "include/grpcpp/support/message_allocator.h", 
       "include/grpcpp/support/proto_buffer_reader.h", 
       "include/grpcpp/support/proto_buffer_writer.h", 
+      "include/grpcpp/support/server_callback.h", 
+      "include/grpcpp/support/server_interceptor.h", 
       "include/grpcpp/support/slice.h", 
       "include/grpcpp/support/status.h", 
       "include/grpcpp/support/status_code_enum.h", 
@@ -11100,8 +10384,8 @@
       "src/cpp/client/create_channel_internal.h", 
       "src/cpp/common/channel_filter.h", 
       "src/cpp/server/dynamic_thread_pool.h", 
+      "src/cpp/server/external_connection_acceptor_impl.h", 
       "src/cpp/server/health/default_health_check_service.h", 
-      "src/cpp/server/health/health.pb.h", 
       "src/cpp/server/thread_pool_interface.h", 
       "src/cpp/thread_manager/thread_manager.h"
     ], 
@@ -11155,16 +10439,21 @@
       "include/grpc++/support/sync_stream.h", 
       "include/grpc++/support/time.h", 
       "include/grpcpp/alarm.h", 
+      "include/grpcpp/alarm_impl.h", 
       "include/grpcpp/channel.h", 
       "include/grpcpp/client_context.h", 
       "include/grpcpp/completion_queue.h", 
       "include/grpcpp/create_channel.h", 
+      "include/grpcpp/create_channel_impl.h", 
       "include/grpcpp/create_channel_posix.h", 
+      "include/grpcpp/create_channel_posix_impl.h", 
       "include/grpcpp/ext/health_check_service_server_builder_option.h", 
       "include/grpcpp/generic/async_generic_service.h", 
       "include/grpcpp/generic/generic_stub.h", 
+      "include/grpcpp/generic/generic_stub_impl.h", 
       "include/grpcpp/grpcpp.h", 
       "include/grpcpp/health_check_service_interface.h", 
+      "include/grpcpp/health_check_service_interface_impl.h", 
       "include/grpcpp/impl/call.h", 
       "include/grpcpp/impl/channel_argument_option.h", 
       "include/grpcpp/impl/client_unary_call.h", 
@@ -11175,25 +10464,41 @@
       "include/grpcpp/impl/rpc_service_method.h", 
       "include/grpcpp/impl/serialization_traits.h", 
       "include/grpcpp/impl/server_builder_option.h", 
+      "include/grpcpp/impl/server_builder_option_impl.h", 
       "include/grpcpp/impl/server_builder_plugin.h", 
       "include/grpcpp/impl/server_initializer.h", 
+      "include/grpcpp/impl/server_initializer_impl.h", 
       "include/grpcpp/impl/service_type.h", 
       "include/grpcpp/resource_quota.h", 
+      "include/grpcpp/resource_quota_impl.h", 
       "include/grpcpp/security/auth_context.h", 
       "include/grpcpp/security/auth_metadata_processor.h", 
+      "include/grpcpp/security/auth_metadata_processor_impl.h", 
       "include/grpcpp/security/credentials.h", 
+      "include/grpcpp/security/credentials_impl.h", 
       "include/grpcpp/security/server_credentials.h", 
+      "include/grpcpp/security/server_credentials_impl.h", 
       "include/grpcpp/server.h", 
       "include/grpcpp/server_builder.h", 
+      "include/grpcpp/server_builder_impl.h", 
       "include/grpcpp/server_context.h", 
+      "include/grpcpp/server_impl.h", 
       "include/grpcpp/server_posix.h", 
+      "include/grpcpp/server_posix_impl.h", 
       "include/grpcpp/support/async_stream.h", 
       "include/grpcpp/support/async_unary_call.h", 
       "include/grpcpp/support/byte_buffer.h", 
       "include/grpcpp/support/channel_arguments.h", 
+      "include/grpcpp/support/channel_arguments_impl.h", 
+      "include/grpcpp/support/client_callback.h", 
+      "include/grpcpp/support/client_interceptor.h", 
       "include/grpcpp/support/config.h", 
+      "include/grpcpp/support/interceptor.h", 
+      "include/grpcpp/support/message_allocator.h", 
       "include/grpcpp/support/proto_buffer_reader.h", 
       "include/grpcpp/support/proto_buffer_writer.h", 
+      "include/grpcpp/support/server_callback.h", 
+      "include/grpcpp/support/server_interceptor.h", 
       "include/grpcpp/support/slice.h", 
       "include/grpcpp/support/status.h", 
       "include/grpcpp/support/status_code_enum.h", 
@@ -11203,6 +10508,7 @@
       "include/grpcpp/support/time.h", 
       "src/cpp/client/channel_cc.cc", 
       "src/cpp/client/client_context.cc", 
+      "src/cpp/client/client_interceptor.cc", 
       "src/cpp/client/create_channel.cc", 
       "src/cpp/client/create_channel_internal.cc", 
       "src/cpp/client/create_channel_internal.h", 
@@ -11223,10 +10529,10 @@
       "src/cpp/server/create_default_thread_pool.cc", 
       "src/cpp/server/dynamic_thread_pool.cc", 
       "src/cpp/server/dynamic_thread_pool.h", 
+      "src/cpp/server/external_connection_acceptor_impl.cc", 
+      "src/cpp/server/external_connection_acceptor_impl.h", 
       "src/cpp/server/health/default_health_check_service.cc", 
       "src/cpp/server/health/default_health_check_service.h", 
-      "src/cpp/server/health/health.pb.c", 
-      "src/cpp/server/health/health.pb.h", 
       "src/cpp/server/health/health_check_service.cc", 
       "src/cpp/server/health/health_check_service_server_builder_option.cc", 
       "src/cpp/server/server_builder.cc", 
@@ -11257,6 +10563,20 @@
     "src": [
       "include/grpc++/impl/codegen/config_protobuf.h", 
       "include/grpcpp/impl/codegen/config_protobuf.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "include/grpcpp/impl/codegen/sync.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c++", 
+    "name": "grpc++_internal_hdrs_only", 
+    "src": [
+      "include/grpcpp/impl/codegen/sync.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -11295,6 +10615,20 @@
       "include/grpcpp/test/mock_stream.h", 
       "include/grpcpp/test/server_context_test_spouse.h"
     ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "src/proto/grpc/channelz/channelz.grpc.pb.h", 
+      "src/proto/grpc/channelz/channelz.pb.h", 
+      "src/proto/grpc/channelz/channelz_mock.grpc.pb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c++", 
+    "name": "grpcpp_channelz_proto", 
+    "src": [], 
     "third_party": false, 
     "type": "filegroup"
   }

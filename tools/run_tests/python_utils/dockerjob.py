@@ -20,6 +20,7 @@ import time
 import uuid
 import os
 import subprocess
+import json
 
 import jobset
 
@@ -54,6 +55,25 @@ def docker_mapped_port(cid, port, timeout_seconds=15):
                                                                          cid))
 
 
+def docker_ip_address(cid, timeout_seconds=15):
+    """Get port mapped to internal given internal port for given container."""
+    started = time.time()
+    while time.time() - started < timeout_seconds:
+        cmd = 'docker inspect %s' % cid
+        try:
+            output = subprocess.check_output(cmd, stderr=_DEVNULL, shell=True)
+            json_info = json.loads(output)
+            assert len(json_info) == 1
+            out = json_info[0]['NetworkSettings']['IPAddress']
+            if not out:
+                continue
+            return out
+        except subprocess.CalledProcessError as e:
+            pass
+    raise Exception(
+        'Non-retryable error: Failed to get ip address of container %s.' % cid)
+
+
 def wait_for_healthy(cid, shortname, timeout_seconds):
     """Wait timeout_seconds for the container to become healthy"""
     started = time.time()
@@ -74,10 +94,10 @@ def wait_for_healthy(cid, shortname, timeout_seconds):
                     (shortname, cid))
 
 
-def finish_jobs(jobs):
+def finish_jobs(jobs, suppress_failure=True):
     """Kills given docker containers and waits for corresponding jobs to finish"""
     for job in jobs:
-        job.kill(suppress_failure=True)
+        job.kill(suppress_failure=suppress_failure)
 
     while any(job.is_running() for job in jobs):
         time.sleep(1)
@@ -119,6 +139,9 @@ class DockerJob:
 
     def mapped_port(self, port):
         return docker_mapped_port(self._container_name, port)
+
+    def ip_address(self):
+        return docker_ip_address(self._container_name)
 
     def wait_for_healthy(self, timeout_seconds):
         wait_for_healthy(self._container_name, self._spec.shortname,

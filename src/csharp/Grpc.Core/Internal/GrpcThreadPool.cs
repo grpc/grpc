@@ -189,7 +189,7 @@ namespace Grpc.Core.Internal
                     }
                     catch (Exception e)
                     {
-                        Logger.Error(e, "Exception occured while extracting event from completion registry.");
+                        Logger.Error(e, "Exception occurred while extracting event from completion registry.");
                     }
                 }
             }
@@ -233,7 +233,7 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Exception occured while invoking completion delegate");
+                Logger.Error(e, "Exception occurred while invoking completion delegate");
             }
             finally
             {

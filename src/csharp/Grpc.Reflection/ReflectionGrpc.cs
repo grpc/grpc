@@ -46,6 +46,7 @@ namespace Grpc.Reflection.V1Alpha {
     }
 
     /// <summary>Base class for server-side implementations of ServerReflection</summary>
+    [grpc::BindServiceMethod(typeof(ServerReflection), "BindService")]
     public abstract partial class ServerReflectionBase
     {
       /// <summary>
@@ -121,6 +122,15 @@ namespace Grpc.Reflection.V1Alpha {
     {
       return grpc::ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_ServerReflectionInfo, serviceImpl.ServerReflectionInfo).Build();
+    }
+
+    /// <summary>Register service method with a service binder with or without implementation. Useful when customizing the  service binding logic.
+    /// Note: this method is part of an experimental API that can change or be removed without any prior notice.</summary>
+    /// <param name="serviceBinder">Service methods will be bound by calling <c>AddMethod</c> on this object.</param>
+    /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
+    public static void BindService(grpc::ServiceBinderBase serviceBinder, ServerReflectionBase serviceImpl)
+    {
+      serviceBinder.AddMethod(__Method_ServerReflectionInfo, serviceImpl == null ? null : new grpc::DuplexStreamingServerMethod<global::Grpc.Reflection.V1Alpha.ServerReflectionRequest, global::Grpc.Reflection.V1Alpha.ServerReflectionResponse>(serviceImpl.ServerReflectionInfo));
     }
 
   }

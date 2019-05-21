@@ -14,6 +14,7 @@
 """Common code used throughout tests of gRPC."""
 
 import collections
+import threading
 
 from concurrent import futures
 import grpc
@@ -107,3 +108,28 @@ def test_server(max_workers=10):
     return grpc.server(
         futures.ThreadPoolExecutor(max_workers=max_workers),
         options=(('grpc.so_reuseport', 0),))
+
+
+class WaitGroup(object):
+
+    def __init__(self, n=0):
+        self.count = n
+        self.cv = threading.Condition()
+
+    def add(self, n):
+        self.cv.acquire()
+        self.count += n
+        self.cv.release()
+
+    def done(self):
+        self.cv.acquire()
+        self.count -= 1
+        if self.count == 0:
+            self.cv.notify_all()
+        self.cv.release()
+
+    def wait(self):
+        self.cv.acquire()
+        while self.count > 0:
+            self.cv.wait()
+        self.cv.release()

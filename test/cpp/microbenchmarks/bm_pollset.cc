@@ -40,8 +40,6 @@
 #include <unistd.h>
 #endif
 
-auto& force_library_initialization = Library::get();
-
 static void shutdown_ps(void* ps, grpc_error* error) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(ps));
 }
@@ -146,7 +144,7 @@ static void BM_PollAddFd(benchmark::State& state) {
     grpc_pollset_add_fd(ps, fd);
     grpc_core::ExecCtx::Get()->Flush();
   }
-  grpc_fd_orphan(fd, nullptr, nullptr, false /* already_closed */, "xxx");
+  grpc_fd_orphan(fd, nullptr, nullptr, "xxx");
   grpc_closure shutdown_ps_closure;
   GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps,
                     grpc_schedule_on_exec_ctx);
@@ -242,7 +240,7 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
   while (!done) {
     GRPC_ERROR_UNREF(grpc_pollset_work(ps, nullptr, GRPC_MILLIS_INF_FUTURE));
   }
-  grpc_fd_orphan(wakeup, nullptr, nullptr, false /* already_closed */, "done");
+  grpc_fd_orphan(wakeup, nullptr, nullptr, "done");
   wakeup_fd.read_fd = 0;
   grpc_closure shutdown_ps_closure;
   GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps,
@@ -264,6 +262,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();

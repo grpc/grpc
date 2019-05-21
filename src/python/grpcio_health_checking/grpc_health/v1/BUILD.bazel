@@ -1,0 +1,18 @@
+load("//bazel:python_rules.bzl", "py_proto_library")
+package(default_visibility = ["//visibility:public"])
+
+py_proto_library(
+    name = "py_health_proto",
+    deps = ["//src/proto/grpc/health/v1:health_proto_descriptor",],
+)
+
+py_library(
+    name = "grpc_health",
+    srcs = ["health.py",],
+    deps = [
+        ":py_health_proto",
+        "//src/python/grpcio/grpc:grpcio",
+    ],
+    imports=["../../",],
+)
+

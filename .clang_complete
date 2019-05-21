@@ -14,4 +14,5 @@
 -Ithird_party/cares
 -Ithird_party/googletest/googletest/include
 -Ithird_party/googletest/googlemock/include
+-Ithird_party/nanopb
 

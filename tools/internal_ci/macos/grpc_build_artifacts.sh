@@ -25,6 +25,7 @@ python2.7 -m pip install cython setuptools wheel
 python3.4 -m pip install cython setuptools wheel
 python3.5 -m pip install cython setuptools wheel
 python3.6 -m pip install cython setuptools wheel
+python3.7 -m pip install cython setuptools wheel
 
 # needed to build ruby artifacts
 time bash tools/distrib/build_ruby_environment_macos.sh

@@ -23,8 +23,8 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 grpc_fuzzer(
     name = "alts_credentials_fuzzer",
     srcs = ["alts_credentials_fuzzer.cc"],
-    language = "C++",
     corpus = "corpus/alts_credentials_corpus",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -35,8 +35,8 @@ grpc_fuzzer(
 grpc_fuzzer(
     name = "ssl_server_fuzzer",
     srcs = ["ssl_server_fuzzer.cc"],
-    language = "C++",
     corpus = "corpus/ssl_server_corpus",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -50,8 +50,8 @@ grpc_cc_library(
     srcs = ["oauth2_utils.cc"],
     hdrs = ["oauth2_utils.h"],
     language = "C++",
-    deps = ["//:grpc"],
     visibility = ["//test/cpp:__subpackages__"],
+    deps = ["//:grpc"],
 )
 
 grpc_cc_test(
@@ -61,7 +61,6 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -73,7 +72,6 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -85,7 +83,6 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -97,11 +94,9 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
-
 
 grpc_cc_test(
     name = "secure_endpoint_test",
@@ -111,7 +106,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/iomgr:endpoint_tests",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -123,7 +117,26 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "linux_system_roots_test",
+    srcs = ["linux_system_roots_test.cc"],
+    data = [
+        "//test/core/security/etc:bundle.pem",
+        "//test/core/security/etc:test_roots/cert1.pem",
+        "//test/core/security/etc:test_roots/cert2.pem",
+        "//test/core/security/etc:test_roots/cert3.pem",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -135,9 +148,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
-    ]
+    ],
 )
 
 grpc_cc_binary(
@@ -183,6 +195,7 @@ grpc_cc_test(
         "//:gpr",
         "//:gpr_base",
         "//:grpc",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -195,6 +208,7 @@ grpc_cc_test(
         "//:gpr",
         "//:gpr_base",
         "//:grpc",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -206,6 +220,7 @@ grpc_cc_test(
         "//:alts_util",
         "//:gpr",
         "//:grpc",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -216,9 +231,10 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_base_c", 
+        "//:grpc_base_c",
         "//:grpc_secure",
-        "//:tsi", 
+        "//:tsi",
         "//:tsi_interface",
+        "//test/core/util:grpc_test_util",
     ],
 )

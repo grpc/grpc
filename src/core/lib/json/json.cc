@@ -18,10 +18,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <inttypes.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/lib/json/json.h"
 
@@ -33,29 +35,28 @@ grpc_json* grpc_json_create(grpc_json_type type) {
 }
 
 void grpc_json_destroy(grpc_json* json) {
+  if (json == nullptr) return;
   while (json->child) {
     grpc_json_destroy(json->child);
   }
-
   if (json->next) {
     json->next->prev = json->prev;
   }
-
   if (json->prev) {
     json->prev->next = json->next;
   } else if (json->parent) {
     json->parent->child = json->next;
   }
-
   if (json->owns_value) {
     gpr_free((void*)json->value);
   }
-
   gpr_free(json);
 }
 
 grpc_json* grpc_json_link_child(grpc_json* parent, grpc_json* child,
                                 grpc_json* sibling) {
+  // link child up to parent
+  child->parent = parent;
   // first child case.
   if (parent->child == nullptr) {
     GPR_ASSERT(sibling == nullptr);
@@ -79,8 +80,15 @@ grpc_json* grpc_json_create_child(grpc_json* sibling, grpc_json* parent,
   grpc_json* child = grpc_json_create(type);
   grpc_json_link_child(parent, child, sibling);
   child->owns_value = owns_value;
-  child->parent = parent;
   child->value = value;
   child->key = key;
   return child;
+}
+
+grpc_json* grpc_json_add_number_string_child(grpc_json* parent, grpc_json* it,
+                                             const char* name, int64_t num) {
+  char* num_str;
+  gpr_asprintf(&num_str, "%" PRId64, num);
+  return grpc_json_create_child(it, parent, name, num_str, GRPC_JSON_STRING,
+                                true);
 }

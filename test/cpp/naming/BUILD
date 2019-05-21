@@ -22,17 +22,42 @@ package(
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_py_binary")
-
+load("//bazel:grpc_build_system.bzl", "grpc_py_binary", "grpc_cc_test", "grpc_cc_library")
 load(":generate_resolver_component_tests.bzl", "generate_resolver_component_tests")
 
 # Meant to be invoked only through the top-level shell script driver.
 grpc_py_binary(
     name = "resolver_component_tests_runner",
+    testonly = True,
     srcs = [
         "resolver_component_tests_runner.py",
     ],
-    testonly = True,
+)
+
+grpc_cc_test(
+    name = "cancel_ares_query_test",
+    srcs = ["cancel_ares_query_test.cc"],
+    external_deps = ["gmock"],
+    deps = [
+        ":dns_test_util",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/end2end:cq_verifier",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "dns_test_util",
+    hdrs = ["dns_test_util.h"],
+    srcs = ["dns_test_util.cc"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+    ],
 )
 
 generate_resolver_component_tests()

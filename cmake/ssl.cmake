@@ -17,7 +17,14 @@ if("${gRPC_SSL_PROVIDER}" STREQUAL "module")
     set(BORINGSSL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/boringssl)
   endif()
   if(EXISTS "${BORINGSSL_ROOT_DIR}/CMakeLists.txt")
-    set(OPENSSL_NO_ASM ON)  # make boringssl buildable with Visual Studio
+    if (MSVC AND NOT CMAKE_GENERATOR STREQUAL "Ninja")
+      # Visual Studio build with assembly optimizations is broken,
+      # but it works with Ninja generator.
+      # This will get eventually fixed in cmake, but until then
+      # we need to disable assembly optimizations.
+      # See https://github.com/grpc/grpc/issues/16376
+      set(OPENSSL_NO_ASM ON)
+    endif()
     add_subdirectory(${BORINGSSL_ROOT_DIR} third_party/boringssl)
     if(TARGET ssl)
       set(_gRPC_SSL_LIBRARIES ssl)

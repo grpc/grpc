@@ -115,15 +115,21 @@
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
+#define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
+#include <linux/version.h>
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_PLATFORM_STRING "android"
 #define GPR_ANDROID 1
+// TODO(apolcyn): re-evaluate support for c-ares
+// on android after upgrading our c-ares dependency.
+// See https://github.com/grpc/grpc/issues/18038.
+#define GRPC_ARES 0
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
@@ -139,6 +145,7 @@
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
+#define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
 #elif defined(__linux__)
@@ -165,6 +172,7 @@
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
+#define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
@@ -174,6 +182,7 @@
 #ifdef __GLIBC__
 #define GPR_POSIX_CRASH_HANDLER 1
 #define GPR_LINUX_PTHREAD_NAME 1
+#include <linux/version.h>
 #else /* musl libc */
 #define GPR_MUSL_LIBC_COMPAT 1
 #endif
@@ -187,6 +196,9 @@
 #define GPR_PLATFORM_STRING "ios"
 #define GPR_CPU_IPHONE 1
 #define GPR_PTHREAD_TLS 1
+#define GRPC_CFSTREAM 1
+/* the c-ares resolver isnt safe to enable on iOS */
+#define GRPC_ARES 0
 #else /* TARGET_OS_IPHONE */
 #define GPR_PLATFORM_STRING "osx"
 #ifdef __MAC_OS_X_VERSION_MIN_REQUIRED
@@ -226,8 +238,8 @@
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
+#define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
-/* TODO(mxyan): Remove when CFStream becomes default */
 #ifndef GRPC_CFSTREAM
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
 #endif
@@ -252,6 +264,7 @@
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
+#define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
 #ifdef _LP64
@@ -275,8 +288,52 @@
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
+#define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
+#ifdef _LP64
+#define GPR_ARCH_64 1
+#else /* _LP64 */
+#define GPR_ARCH_32 1
+#endif /* _LP64 */
+#elif defined(__sun) && defined(__SVR4)
+#define GPR_PLATFORM_STRING "solaris"
+#define GPR_SOLARIS 1
+#define GPR_CPU_POSIX 1
+#define GPR_GCC_ATOMIC 1
+#define GPR_GCC_TLS 1
+#define GPR_POSIX_LOG 1
+#define GPR_POSIX_ENV 1
+#define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_STRING 1
+#define GPR_POSIX_SUBPROCESS 1
+#define GPR_POSIX_SYNC 1
+#define GPR_POSIX_TIME 1
+#define GPR_HAS_PTHREAD_H 1
+#define GPR_GETPID_IN_UNISTD_H 1
+#ifdef _LP64
+#define GPR_ARCH_64 1
+#else /* _LP64 */
+#define GPR_ARCH_32 1
+#endif /* _LP64 */
+#elif defined(_AIX)
+#define GPR_PLATFORM_STRING "aix"
+#ifndef _ALL_SOURCE
+#define _ALL_SOURCE
+#endif
+#define GPR_AIX 1
+#define GPR_CPU_POSIX 1
+#define GPR_GCC_ATOMIC 1
+#define GPR_GCC_TLS 1
+#define GPR_POSIX_LOG 1
+#define GPR_POSIX_ENV 1
+#define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_STRING 1
+#define GPR_POSIX_SUBPROCESS 1
+#define GPR_POSIX_SYNC 1
+#define GPR_POSIX_TIME 1
+#define GPR_HAS_PTHREAD_H 1
+#define GPR_GETPID_IN_UNISTD_H 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
@@ -304,12 +361,34 @@
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
+#define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
+#elif defined(__Fuchsia__)
+#define GPR_FUCHSIA 1
+#define GPR_ARCH_64 1
+#define GPR_PLATFORM_STRING "fuchsia"
+#include <features.h>
+// Specifying musl libc affects wrap_memcpy.c. It causes memmove() to be
+// invoked.
+#define GPR_MUSL_LIBC_COMPAT 1
+#define GPR_CPU_POSIX 1
+#define GPR_GCC_ATOMIC 1
+#define GPR_PTHREAD_TLS 1
+#define GPR_POSIX_LOG 1
+#define GPR_POSIX_SYNC 1
+#define GPR_POSIX_ENV 1
+#define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_SUBPROCESS 1
+#define GPR_POSIX_SYNC 1
+#define GPR_POSIX_STRING 1
+#define GPR_POSIX_TIME 1
+#define GPR_HAS_PTHREAD_H 1
+#define GPR_GETPID_IN_UNISTD_H 1
 #else
 #error "Could not auto-detect platform"
 #endif
@@ -420,11 +499,11 @@ typedef unsigned __int64 uint64_t;
 #define GPR_MAX_ALIGNMENT 16
 
 #ifndef GRPC_ARES
-#ifdef GPR_WINDOWS
-#define GRPC_ARES 0
-#else
 #define GRPC_ARES 1
 #endif
+
+#ifndef GRPC_IF_NAMETOINDEX
+#define GRPC_IF_NAMETOINDEX 1
 #endif
 
 #ifndef GRPC_MUST_USE_RESULT
@@ -477,16 +556,65 @@ typedef unsigned __int64 uint64_t;
 #define CENSUSAPI GRPCAPI
 #endif
 
+#ifndef GPR_HAS_ATTRIBUTE
+#ifdef __has_attribute
+#define GPR_HAS_ATTRIBUTE(a) __has_attribute(a)
+#else
+#define GPR_HAS_ATTRIBUTE(a) 0
+#endif
+#endif /* GPR_HAS_ATTRIBUTE */
+
+#ifndef GPR_HAS_FEATURE
+#ifdef __has_feature
+#define GPR_HAS_FEATURE(a) __has_feature(a)
+#else
+#define GPR_HAS_FEATURE(a) 0
+#endif
+#endif /* GPR_HAS_FEATURE */
+
+#ifndef GPR_ATTRIBUTE_NOINLINE
+#if GPR_HAS_ATTRIBUTE(noinline) || (defined(__GNUC__) && !defined(__clang__))
+#define GPR_ATTRIBUTE_NOINLINE __attribute__((noinline))
+#define GPR_HAS_ATTRIBUTE_NOINLINE 1
+#else
+#define GPR_ATTRIBUTE_NOINLINE
+#endif
+#endif /* GPR_ATTRIBUTE_NOINLINE */
+
+#ifndef GPR_ATTRIBUTE_WEAK
+/* Attribute weak is broken on LLVM/windows:
+ * https://bugs.llvm.org/show_bug.cgi?id=37598 */
+#if (GPR_HAS_ATTRIBUTE(weak) || (defined(__GNUC__) && !defined(__clang__))) && \
+    !(defined(__llvm__) && defined(_WIN32))
+#define GPR_ATTRIBUTE_WEAK __attribute__((weak))
+#define GPR_HAS_ATTRIBUTE_WEAK 1
+#else
+#define GPR_ATTRIBUTE_WEAK
+#endif
+#endif /* GPR_ATTRIBUTE_WEAK */
+
 #ifndef GPR_ATTRIBUTE_NO_TSAN /* (1) */
-#if defined(__has_feature)
-#if __has_feature(thread_sanitizer)
+#if GPR_HAS_FEATURE(thread_sanitizer)
 #define GPR_ATTRIBUTE_NO_TSAN __attribute__((no_sanitize("thread")))
-#endif                        /* __has_feature(thread_sanitizer) */
-#endif                        /* defined(__has_feature) */
+#endif                        /* GPR_HAS_FEATURE */
 #ifndef GPR_ATTRIBUTE_NO_TSAN /* (2) */
 #define GPR_ATTRIBUTE_NO_TSAN
 #endif /* GPR_ATTRIBUTE_NO_TSAN (2) */
 #endif /* GPR_ATTRIBUTE_NO_TSAN (1) */
+
+/* GRPC_TSAN_ENABLED will be defined, when compiled with thread sanitizer. */
+#if defined(__SANITIZE_THREAD__)
+#define GRPC_TSAN_ENABLED
+#elif GPR_HAS_FEATURE(thread_sanitizer)
+#define GRPC_TSAN_ENABLED
+#endif
+
+/* GRPC_ASAN_ENABLED will be defined, when compiled with address sanitizer. */
+#if defined(__SANITIZE_ADDRESS__)
+#define GRPC_ASAN_ENABLED
+#elif GPR_HAS_FEATURE(address_sanitizer)
+#define GRPC_ASAN_ENABLED
+#endif
 
 /* GRPC_ALLOW_EXCEPTIONS should be 0 or 1 if exceptions are allowed or not */
 #ifndef GRPC_ALLOW_EXCEPTIONS

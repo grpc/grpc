@@ -174,7 +174,7 @@ class ClientAsyncResponseReader final
   }
 
   void StartCallInternal() {
-    single_buf.SendInitialMetadata(context_->send_initial_metadata_,
+    single_buf.SendInitialMetadata(&context_->send_initial_metadata_,
                                    context_->initial_metadata_flags());
   }
 
@@ -214,7 +214,7 @@ class ServerAsyncResponseWriter final
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     meta_buf_.set_output_tag(tag);
-    meta_buf_.SendInitialMetadata(ctx_->initial_metadata_,
+    meta_buf_.SendInitialMetadata(&ctx_->initial_metadata_,
                                   ctx_->initial_metadata_flags());
     if (ctx_->compression_level_set()) {
       meta_buf_.set_compression_level(ctx_->compression_level());
@@ -240,8 +240,9 @@ class ServerAsyncResponseWriter final
   /// metadata.
   void Finish(const W& msg, const Status& status, void* tag) {
     finish_buf_.set_output_tag(tag);
+    finish_buf_.set_core_cq_tag(&finish_buf_);
     if (!ctx_->sent_initial_metadata_) {
-      finish_buf_.SendInitialMetadata(ctx_->initial_metadata_,
+      finish_buf_.SendInitialMetadata(&ctx_->initial_metadata_,
                                       ctx_->initial_metadata_flags());
       if (ctx_->compression_level_set()) {
         finish_buf_.set_compression_level(ctx_->compression_level());
@@ -250,10 +251,10 @@ class ServerAsyncResponseWriter final
     }
     // The response is dropped if the status is not OK.
     if (status.ok()) {
-      finish_buf_.ServerSendStatus(ctx_->trailing_metadata_,
+      finish_buf_.ServerSendStatus(&ctx_->trailing_metadata_,
                                    finish_buf_.SendMessage(msg));
     } else {
-      finish_buf_.ServerSendStatus(ctx_->trailing_metadata_, status);
+      finish_buf_.ServerSendStatus(&ctx_->trailing_metadata_, status);
     }
     call_.PerformOps(&finish_buf_);
   }
@@ -274,14 +275,14 @@ class ServerAsyncResponseWriter final
     GPR_CODEGEN_ASSERT(!status.ok());
     finish_buf_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
-      finish_buf_.SendInitialMetadata(ctx_->initial_metadata_,
+      finish_buf_.SendInitialMetadata(&ctx_->initial_metadata_,
                                       ctx_->initial_metadata_flags());
       if (ctx_->compression_level_set()) {
         finish_buf_.set_compression_level(ctx_->compression_level());
       }
       ctx_->sent_initial_metadata_ = true;
     }
-    finish_buf_.ServerSendStatus(ctx_->trailing_metadata_, status);
+    finish_buf_.ServerSendStatus(&ctx_->trailing_metadata_, status);
     call_.PerformOps(&finish_buf_);
   }
 

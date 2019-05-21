@@ -101,7 +101,7 @@ void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
 static void chttp2_init_client_simple_ssl_secure_fullstack(
     grpc_end2end_test_fixture* f, grpc_channel_args* client_args) {
   grpc_channel_credentials* ssl_creds =
-      grpc_ssl_credentials_create(nullptr, nullptr, nullptr);
+      grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
   grpc_arg ssl_name_override = {
       GRPC_ARG_STRING,
       const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
   size_t roots_size = strlen(test_root_cert);
   char* roots_filename;
 
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_end2end_tests_pre_init();
 
   /* Set the SSL roots env var. */

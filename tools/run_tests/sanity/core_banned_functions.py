@@ -24,7 +24,8 @@ os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
 # map of banned function signature to whitelist
 BANNED_EXCEPT = {
     'grpc_resource_quota_ref(': ['src/core/lib/iomgr/resource_quota.cc'],
-    'grpc_resource_quota_unref(': ['src/core/lib/iomgr/resource_quota.cc'],
+    'grpc_resource_quota_unref(':
+    ['src/core/lib/iomgr/resource_quota.cc', 'src/core/lib/surface/server.cc'],
     'grpc_slice_buffer_destroy(': ['src/core/lib/slice/slice_buffer.cc'],
     'grpc_slice_buffer_reset_and_unref(':
     ['src/core/lib/slice/slice_buffer.cc'],
@@ -38,6 +39,7 @@ BANNED_EXCEPT = {
     'grpc_wsa_error(': ['src/core/lib/iomgr/error.cc'],
     'grpc_log_if_error(': ['src/core/lib/iomgr/error.cc'],
     'grpc_slice_malloc(': ['src/core/lib/slice/slice.cc'],
+    'grpc_call_cancel_internal(': ['src/core/lib/surface/call.cc'],
     'grpc_closure_create(': ['src/core/lib/iomgr/closure.cc'],
     'grpc_closure_init(': ['src/core/lib/iomgr/closure.cc'],
     'grpc_closure_sched(': ['src/core/lib/iomgr/closure.cc'],

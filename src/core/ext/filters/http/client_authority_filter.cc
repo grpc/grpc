@@ -40,11 +40,12 @@ namespace {
 
 struct call_data {
   grpc_linked_mdelem authority_storage;
-  grpc_call_combiner* call_combiner;
+  grpc_core::CallCombiner* call_combiner;
 };
 
 struct channel_data {
   grpc_slice default_authority;
+  grpc_mdelem default_authority_mdelem;
 };
 
 void authority_start_transport_stream_op_batch(
@@ -59,9 +60,7 @@ void authority_start_transport_stream_op_batch(
       initial_metadata->idx.named.authority == nullptr) {
     grpc_error* error = grpc_metadata_batch_add_head(
         initial_metadata, &calld->authority_storage,
-        grpc_mdelem_from_slices(
-            GRPC_MDSTR_AUTHORITY,
-            grpc_slice_ref_internal(chand->default_authority)));
+        GRPC_MDELEM_REF(chand->default_authority_mdelem));
     if (error != GRPC_ERROR_NONE) {
       grpc_transport_stream_op_batch_finish_with_failure(batch, error,
                                                          calld->call_combiner);
@@ -94,7 +93,7 @@ grpc_error* init_channel_elem(grpc_channel_element* elem,
   if (default_authority_arg == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "GRPC_ARG_DEFAULT_AUTHORITY channel arg. not found. Note that direct "
-        "channels must explicity specify a value for this argument.");
+        "channels must explicitly specify a value for this argument.");
   }
   const char* default_authority_str =
       grpc_channel_arg_get_string(default_authority_arg);
@@ -104,6 +103,8 @@ grpc_error* init_channel_elem(grpc_channel_element* elem,
   }
   chand->default_authority =
       grpc_slice_intern(grpc_slice_from_static_string(default_authority_str));
+  chand->default_authority_mdelem = grpc_mdelem_create(
+      GRPC_MDSTR_AUTHORITY, chand->default_authority, nullptr);
   GPR_ASSERT(!args->is_last);
   return GRPC_ERROR_NONE;
 }
@@ -112,6 +113,7 @@ grpc_error* init_channel_elem(grpc_channel_element* elem,
 void destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   grpc_slice_unref_internal(chand->default_authority);
+  GRPC_MDELEM_UNREF(chand->default_authority_mdelem);
 }
 }  // namespace
 

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 FROM 32bit/debian:jessie
+RUN sed -i '/deb http:\/\/http.debian.net\/debian jessie-updates main/d' /etc/apt/sources.list
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
@@ -51,7 +52,7 @@ RUN apt-get update && apt-get install -y time && apt-get clean
 
 # Google Cloud platform API libraries
 RUN apt-get update && apt-get install -y python-pip && apt-get clean
-RUN pip install --upgrade google-api-python-client
+RUN pip install --upgrade google-api-python-client oauth2client
 
 #====================
 # Python dependencies
@@ -79,7 +80,9 @@ RUN mkdir /var/local/jenkins
 # Use cmake 3.6 from jessie-backports
 # should only be used for images based on debian jessie.
 
-RUN echo "deb http://ftp.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
+RUN echo "deb http://archive.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
+RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf
+RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
 RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
 
 

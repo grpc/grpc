@@ -75,7 +75,10 @@ PHP_METHOD(Server, __construct) {
   if (args_array == NULL) {
     server->wrapped = grpc_server_create(NULL, NULL);
   } else {
-    php_grpc_read_args_array(args_array, &args TSRMLS_CC);
+    if (php_grpc_read_args_array(args_array, &args TSRMLS_CC) == FAILURE) {
+      efree(args.args);
+      return;
+    }
     server->wrapped = grpc_server_create(&args, NULL);
     efree(args.args);
   }

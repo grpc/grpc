@@ -43,7 +43,7 @@ xcodebuild \
     -workspace *.xcworkspace \
     -scheme $SCHEME \
     -destination generic/platform=iOS \
-    -derivedDataPath Build \
+    -derivedDataPath Build/Build \
     CODE_SIGN_IDENTITY="" \
     CODE_SIGNING_REQUIRED=NO \
     | egrep -v "$XCODEBUILD_FILTER" \

@@ -18,6 +18,7 @@
 
 #import "ProtoService.h"
 
+#import <GRPCClient/GRPCCall.h>
 #import <RxLibrary/GRXWriteable.h>
 #import <RxLibrary/GRXWriter.h>
 
@@ -31,6 +32,7 @@
   NSString *_host;
   NSString *_packageName;
   NSString *_serviceName;
+  GRPCCallOptions *_callOptions;
 }
 
 - (instancetype)init {
@@ -40,18 +42,40 @@
 // Designated initializer
 - (instancetype)initWithHost:(NSString *)host
                  packageName:(NSString *)packageName
-                 serviceName:(NSString *)serviceName {
-  if (!host || !serviceName) {
-    [NSException raise:NSInvalidArgumentException
-                format:@"Neither host nor serviceName can be nil."];
+                 serviceName:(NSString *)serviceName
+                 callOptions:(GRPCCallOptions *)callOptions {
+  NSAssert(host.length != 0 && packageName.length != 0 && serviceName.length != 0,
+           @"Invalid parameter.");
+  if (host.length == 0 || packageName.length == 0 || serviceName.length == 0) {
+    return nil;
   }
   if ((self = [super init])) {
     _host = [host copy];
     _packageName = [packageName copy];
     _serviceName = [serviceName copy];
+    _callOptions = [callOptions copy];
   }
   return self;
 }
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wobjc-designated-initializers"
+// Do not call designated initializer here due to nullability incompatibility. This method is from
+// old API and does not assert on nullability of the parameters.
+
+- (instancetype)initWithHost:(NSString *)host
+                 packageName:(NSString *)packageName
+                 serviceName:(NSString *)serviceName {
+  if ((self = [super init])) {
+    _host = [host copy];
+    _packageName = [packageName copy];
+    _serviceName = [serviceName copy];
+    _callOptions = nil;
+  }
+  return self;
+}
+
+#pragma clang diagnostic pop
 
 - (GRPCProtoCall *)RPCToMethod:(NSString *)method
                 requestsWriter:(GRXWriter *)requestsWriter
@@ -65,6 +89,41 @@
                                responseClass:responseClass
                           responsesWriteable:responsesWriteable];
 }
+
+- (GRPCUnaryProtoCall *)RPCToMethod:(NSString *)method
+                            message:(id)message
+                    responseHandler:(id<GRPCProtoResponseHandler>)handler
+                        callOptions:(GRPCCallOptions *)callOptions
+                      responseClass:(Class)responseClass {
+  GRPCProtoMethod *methodName =
+      [[GRPCProtoMethod alloc] initWithPackage:_packageName service:_serviceName method:method];
+  GRPCRequestOptions *requestOptions =
+      [[GRPCRequestOptions alloc] initWithHost:_host
+                                          path:methodName.HTTPPath
+                                        safety:GRPCCallSafetyDefault];
+  return [[GRPCUnaryProtoCall alloc] initWithRequestOptions:requestOptions
+                                                    message:message
+                                            responseHandler:handler
+                                                callOptions:callOptions ?: _callOptions
+                                              responseClass:responseClass];
+}
+
+- (GRPCStreamingProtoCall *)RPCToMethod:(NSString *)method
+                        responseHandler:(id<GRPCProtoResponseHandler>)handler
+                            callOptions:(GRPCCallOptions *)callOptions
+                          responseClass:(Class)responseClass {
+  GRPCProtoMethod *methodName =
+      [[GRPCProtoMethod alloc] initWithPackage:_packageName service:_serviceName method:method];
+  GRPCRequestOptions *requestOptions =
+      [[GRPCRequestOptions alloc] initWithHost:_host
+                                          path:methodName.HTTPPath
+                                        safety:GRPCCallSafetyDefault];
+  return [[GRPCStreamingProtoCall alloc] initWithRequestOptions:requestOptions
+                                                responseHandler:handler
+                                                    callOptions:callOptions ?: _callOptions
+                                                  responseClass:responseClass];
+}
+
 @end
 
 @implementation GRPCProtoService

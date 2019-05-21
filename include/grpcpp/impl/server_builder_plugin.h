@@ -23,11 +23,13 @@
 
 #include <grpcpp/support/config.h>
 
-namespace grpc {
+namespace grpc_impl {
 
+class ChannelArguments;
 class ServerBuilder;
 class ServerInitializer;
-class ChannelArguments;
+}  // namespace grpc_impl
+namespace grpc {
 
 /// This interface is meant for internal usage only. Implementations of this
 /// interface should add themselves to a \a ServerBuilder instance through the
@@ -37,16 +39,17 @@ class ServerBuilderPlugin {
   virtual ~ServerBuilderPlugin() {}
   virtual grpc::string name() = 0;
 
-  /// UpdateServerBuilder will be called at the beginning of
-  /// \a ServerBuilder::BuildAndStart().
-  virtual void UpdateServerBuilder(ServerBuilder* builder) {}
+  /// UpdateServerBuilder will be called at an early stage in
+  /// ServerBuilder::BuildAndStart(), right after the ServerBuilderOptions have
+  /// done their updates.
+  virtual void UpdateServerBuilder(grpc_impl::ServerBuilder* builder) {}
 
   /// InitServer will be called in ServerBuilder::BuildAndStart(), after the
   /// Server instance is created.
-  virtual void InitServer(ServerInitializer* si) = 0;
+  virtual void InitServer(grpc_impl::ServerInitializer* si) = 0;
 
   /// Finish will be called at the end of ServerBuilder::BuildAndStart().
-  virtual void Finish(ServerInitializer* si) = 0;
+  virtual void Finish(grpc_impl::ServerInitializer* si) = 0;
 
   /// ChangeArguments is an interface that can be used in
   /// ServerBuilderOption::UpdatePlugins
@@ -54,7 +57,7 @@ class ServerBuilderPlugin {
 
   /// UpdateChannelArguments will be called in ServerBuilder::BuildAndStart(),
   /// before the Server instance is created.
-  virtual void UpdateChannelArguments(ChannelArguments* args) {}
+  virtual void UpdateChannelArguments(grpc_impl::ChannelArguments* args) {}
 
   virtual bool has_sync_methods() const { return false; }
   virtual bool has_async_methods() const { return false; }

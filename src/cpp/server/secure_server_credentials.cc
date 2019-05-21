@@ -43,9 +43,10 @@ void AuthMetadataProcessorAyncWrapper::Process(
     return;
   }
   if (w->processor_->IsBlocking()) {
-    w->thread_pool_->Add(
-        std::bind(&AuthMetadataProcessorAyncWrapper::InvokeProcessor, w,
-                  context, md, num_md, cb, user_data));
+    w->thread_pool_->Add([w, context, md, num_md, cb, user_data] {
+      w->AuthMetadataProcessorAyncWrapper::InvokeProcessor(context, md, num_md,
+                                                           cb, user_data);
+    });
   } else {
     // invoke directly.
     w->InvokeProcessor(context, md, num_md, cb, user_data);
@@ -60,7 +61,7 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
     metadata.insert(std::make_pair(StringRefFromSlice(&md[i].key),
                                    StringRefFromSlice(&md[i].value)));
   }
-  SecureAuthContext context(ctx, false);
+  SecureAuthContext context(ctx);
   AuthMetadataProcessor::OutputMetadata consumed_metadata;
   AuthMetadataProcessor::OutputMetadata response_metadata;
 
@@ -92,21 +93,25 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
      status.error_message().c_str());
 }
 
+}  // namespace grpc
+
+namespace grpc_impl {
+
 int SecureServerCredentials::AddPortToServer(const grpc::string& addr,
                                              grpc_server* server) {
   return grpc_server_add_secure_http2_port(server, addr.c_str(), creds_);
 }
 
 void SecureServerCredentials::SetAuthMetadataProcessor(
-    const std::shared_ptr<AuthMetadataProcessor>& processor) {
-  auto* wrapper = new AuthMetadataProcessorAyncWrapper(processor);
+    const std::shared_ptr<grpc::AuthMetadataProcessor>& processor) {
+  auto* wrapper = new grpc::AuthMetadataProcessorAyncWrapper(processor);
   grpc_server_credentials_set_auth_metadata_processor(
-      creds_, {AuthMetadataProcessorAyncWrapper::Process,
-               AuthMetadataProcessorAyncWrapper::Destroy, wrapper});
+      creds_, {grpc::AuthMetadataProcessorAyncWrapper::Process,
+               grpc::AuthMetadataProcessorAyncWrapper::Destroy, wrapper});
 }
 
 std::shared_ptr<ServerCredentials> SslServerCredentials(
-    const SslServerCredentialsOptions& options) {
+    const grpc::SslServerCredentialsOptions& options) {
   std::vector<grpc_ssl_pem_key_cert_pair> pem_key_cert_pairs;
   for (auto key_cert_pair = options.pem_key_cert_pairs.begin();
        key_cert_pair != options.pem_key_cert_pairs.end(); key_cert_pair++) {
@@ -139,5 +144,11 @@ std::shared_ptr<ServerCredentials> AltsServerCredentials(
       new SecureServerCredentials(c_creds));
 }
 
+std::shared_ptr<ServerCredentials> LocalServerCredentials(
+    grpc_local_connect_type type) {
+  return std::shared_ptr<ServerCredentials>(
+      new SecureServerCredentials(grpc_local_server_credentials_create(type)));
+}
+
 }  // namespace experimental
-}  // namespace grpc
+}  // namespace grpc_impl

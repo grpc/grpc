@@ -25,13 +25,6 @@ git submodule update --init
 # Build protoc and grpc_cpp_plugin. Codegen is not cross-compiled to Android
 make HAS_SYSTEM_PROTOBUF=false
 
-# TODO(ericgribkoff) Remove when this commit (already in master) is included in
-# next protobuf release
-cd third_party/protobuf
-git fetch
-git cherry-pick 7daa320065f3bea2b54bf983337d1724f153422d -m 1
-
-
 # Build and run interop instrumentation tests on Firebase Test Lab
 
 cd "${REPO_ROOT}/src/android/test/interop/"
@@ -51,7 +44,8 @@ gcloud firebase test android run \
     --device model=Nexus6P,version=24,locale=en,orientation=portrait \
     --device model=Nexus6P,version=23,locale=en,orientation=portrait \
     --device model=Nexus6,version=22,locale=en,orientation=portrait \
-    --device model=Nexus6,version=21,locale=en,orientation=portrait
+    --device model=Nexus6,version=21,locale=en,orientation=portrait \
+    --device model=walleye,version=28,locale=en,orientation=portrait
 
 
 # Build hello world example

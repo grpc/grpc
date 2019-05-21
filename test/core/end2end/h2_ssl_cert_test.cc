@@ -169,8 +169,8 @@ typedef enum { NONE, SELF_SIGNED, SIGNED, BAD_CERT_PAIR } certtype;
       default:                                                               \
         break;                                                               \
     }                                                                        \
-    ssl_creds =                                                              \
-        grpc_ssl_credentials_create(test_root_cert, key_cert_pair, NULL);    \
+    ssl_creds = grpc_ssl_credentials_create(test_root_cert, key_cert_pair,   \
+                                            NULL, NULL);                     \
     grpc_arg ssl_name_override = {                                           \
         GRPC_ARG_STRING,                                                     \
         const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),                \
@@ -358,7 +358,7 @@ int main(int argc, char** argv) {
   size_t roots_size = strlen(test_root_cert);
   char* roots_filename;
 
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   /* Set the SSL roots env var. */
   roots_file =
       gpr_tmpfile("chttp2_simple_ssl_cert_fullstack_test", &roots_filename);

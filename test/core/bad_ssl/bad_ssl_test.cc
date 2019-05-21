@@ -37,7 +37,7 @@ static void* tag(intptr_t t) { return (void*)t; }
 
 static void run_test(const char* target, size_t nops) {
   grpc_channel_credentials* ssl_creds =
-      grpc_ssl_credentials_create(nullptr, nullptr, nullptr);
+      grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
   grpc_channel* channel;
   grpc_call* c;
 

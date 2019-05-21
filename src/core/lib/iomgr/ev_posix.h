@@ -33,7 +33,7 @@ extern grpc_core::TraceFlag grpc_fd_trace;      /* Disabled by default */
 extern grpc_core::TraceFlag grpc_polling_trace; /* Disabled by default */
 
 #define GRPC_FD_TRACE(format, ...)                        \
-  if (grpc_fd_trace.enabled()) {                          \
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_fd_trace)) {           \
     gpr_log(GPR_INFO, "(fd-trace) " format, __VA_ARGS__); \
   }
 
@@ -42,17 +42,20 @@ typedef struct grpc_fd grpc_fd;
 typedef struct grpc_event_engine_vtable {
   size_t pollset_size;
   bool can_track_err;
+  bool run_in_background;
 
   grpc_fd* (*fd_create)(int fd, const char* name, bool track_err);
   int (*fd_wrapped_fd)(grpc_fd* fd);
   void (*fd_orphan)(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
-                    bool already_closed, const char* reason);
+                    const char* reason);
   void (*fd_shutdown)(grpc_fd* fd, grpc_error* why);
   void (*fd_notify_on_read)(grpc_fd* fd, grpc_closure* closure);
   void (*fd_notify_on_write)(grpc_fd* fd, grpc_closure* closure);
   void (*fd_notify_on_error)(grpc_fd* fd, grpc_closure* closure);
+  void (*fd_set_readable)(grpc_fd* fd);
+  void (*fd_set_writable)(grpc_fd* fd);
+  void (*fd_set_error)(grpc_fd* fd);
   bool (*fd_is_shutdown)(grpc_fd* fd);
-  grpc_pollset* (*fd_get_read_notifier_pollset)(grpc_fd* fd);
 
   void (*pollset_init)(grpc_pollset* pollset, gpr_mu** mu);
   void (*pollset_shutdown)(grpc_pollset* pollset, grpc_closure* closure);
@@ -77,8 +80,17 @@ typedef struct grpc_event_engine_vtable {
   void (*pollset_set_add_fd)(grpc_pollset_set* pollset_set, grpc_fd* fd);
   void (*pollset_set_del_fd)(grpc_pollset_set* pollset_set, grpc_fd* fd);
 
+  bool (*is_any_background_poller_thread)(void);
+  void (*shutdown_background_closure)(void);
   void (*shutdown_engine)(void);
+  bool (*add_closure_to_background_poller)(grpc_closure* closure,
+                                           grpc_error* error);
 } grpc_event_engine_vtable;
+
+/* register a new event engine factory */
+void grpc_register_event_engine_factory(
+    const char* name, const grpc_event_engine_vtable* (*factory)(bool),
+    bool add_at_head);
 
 void grpc_event_engine_init(void);
 void grpc_event_engine_shutdown(void);
@@ -93,6 +105,11 @@ const char* grpc_get_poll_strategy_name();
  * fd_notify_on_write.
  */
 bool grpc_event_engine_can_track_errors();
+
+/* Returns true if polling engine runs in the background, false otherwise.
+ * Currently only 'epollbg' runs in the background.
+ */
+bool grpc_event_engine_run_in_background();
 
 /* Create a wrapped file descriptor.
    Requires fd is a non-blocking file descriptor.
@@ -112,7 +129,7 @@ int grpc_fd_wrapped_fd(grpc_fd* fd);
    notify_on_write.
    MUST NOT be called with a pollset lock taken */
 void grpc_fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
-                    bool already_closed, const char* reason);
+                    const char* reason);
 
 /* Has grpc_fd_shutdown been called on an fd? */
 bool grpc_fd_is_shutdown(grpc_fd* fd);
@@ -142,8 +159,20 @@ void grpc_fd_notify_on_write(grpc_fd* fd, grpc_closure* closure);
  * needs to have been set on grpc_fd_create */
 void grpc_fd_notify_on_error(grpc_fd* fd, grpc_closure* closure);
 
-/* Return the read notifier pollset from the fd */
-grpc_pollset* grpc_fd_get_read_notifier_pollset(grpc_fd* fd);
+/* Forcibly set the fd to be readable, resulting in the closure registered with
+ * grpc_fd_notify_on_read being invoked.
+ */
+void grpc_fd_set_readable(grpc_fd* fd);
+
+/* Forcibly set the fd to be writable, resulting in the closure registered with
+ * grpc_fd_notify_on_write being invoked.
+ */
+void grpc_fd_set_writable(grpc_fd* fd);
+
+/* Forcibly set the fd to have errored, resulting in the closure registered with
+ * grpc_fd_notify_on_error being invoked.
+ */
+void grpc_fd_set_error(grpc_fd* fd);
 
 /* pollset_posix functions */
 
@@ -155,13 +184,20 @@ void grpc_pollset_add_fd(grpc_pollset* pollset, struct grpc_fd* fd);
 void grpc_pollset_set_add_fd(grpc_pollset_set* pollset_set, grpc_fd* fd);
 void grpc_pollset_set_del_fd(grpc_pollset_set* pollset_set, grpc_fd* fd);
 
+/* Returns true if the caller is a worker thread for any background poller. */
+bool grpc_is_any_background_poller_thread();
+
+/* Returns true if the closure is registered into the background poller. Note
+ * that the closure may or may not run yet when this function returns, and the
+ * closure should not be blocking or long-running. */
+bool grpc_add_closure_to_background_poller(grpc_closure* closure,
+                                           grpc_error* error);
+
+/* Shut down all the closures registered in the background poller. */
+void grpc_shutdown_background_closure();
+
 /* override to allow tests to hook poll() usage */
 typedef int (*grpc_poll_function_type)(struct pollfd*, nfds_t, int);
 extern grpc_poll_function_type grpc_poll_function;
-
-/* WARNING: The following two functions should be used for testing purposes
- * ONLY */
-void grpc_set_event_engine_test_only(const grpc_event_engine_vtable*);
-const grpc_event_engine_vtable* grpc_get_event_engine_test_only();
 
 #endif /* GRPC_CORE_LIB_IOMGR_EV_POSIX_H */

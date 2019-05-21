@@ -16,7 +16,7 @@
 # This script is invoked by run_interop_tests.py to build the docker image
 # for interop testing. You should never need to call this script on your own.
 
-set -x
+set -ex
 
 # Params:
 #  INTEROP_IMAGE - name of tag of the final interop image
@@ -64,7 +64,13 @@ else
   echo "WARNING: grpc-node not found, it won't be mounted to the docker container."
 fi
 
-mkdir -p /tmp/ccache
+echo "GRPC_DOTNET_ROOT: ${GRPC_DOTNET_ROOT:=$(cd ../grpc-dotnet && pwd)}"
+if [ -n "$GRPC_DOTNET_ROOT" ]
+then
+  MOUNT_ARGS+=" -v $GRPC_DOTNET_ROOT:/var/local/jenkins/grpc-dotnet:ro"
+else
+  echo "WARNING: grpc-dotnet not found, it won't be mounted to the docker container."
+fi
 
 # Mount service account dir if available.
 # If service_directory does not contain the service account JSON file,
@@ -92,9 +98,6 @@ else
   docker build -t "$BASE_IMAGE" --force-rm=true "tools/dockerfile/interoptest/$BASE_NAME" || exit $?
 fi
 
-# Create a local branch so the child Docker script won't complain
-git branch -f jenkins-docker
-
 CONTAINER_NAME="build_${BASE_NAME}_$(uuidgen)"
 
 # Prepare image for interop tests, commit it on success.
@@ -105,14 +108,12 @@ CONTAINER_NAME="build_${BASE_NAME}_$(uuidgen)"
 # shellcheck disable=SC2086
 (docker run \
   --cap-add SYS_PTRACE \
-  -e CCACHE_DIR=/tmp/ccache \
   -e THIS_IS_REALLY_NEEDED='see https://github.com/docker/docker/issues/14203 for why docker is awful' \
   -e THIS_IS_REALLY_NEEDED_ONCE_AGAIN='For issue 4835. See https://github.com/docker/docker/issues/14203 for why docker is awful' \
   -i \
   $TTY_FLAG \
   $MOUNT_ARGS \
   $BUILD_INTEROP_DOCKER_EXTRA_ARGS \
-  -v /tmp/ccache:/tmp/ccache \
   --name="$CONTAINER_NAME" \
   "$BASE_IMAGE" \
   bash -l "/var/local/jenkins/grpc/tools/dockerfile/interoptest/$BASE_NAME/build_interop.sh" \

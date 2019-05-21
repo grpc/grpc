@@ -140,11 +140,13 @@ static void cpu_test(void) {
   }
   fprintf(stderr, "] (%d/%d)\n", cores_seen, ct.ncores);
   fflush(stderr);
+  gpr_mu_destroy(&ct.mu);
+  gpr_cv_destroy(&ct.done_cv);
   gpr_free(ct.used);
 }
 
 int main(int argc, char* argv[]) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   cpu_test();
   return 0;
 }

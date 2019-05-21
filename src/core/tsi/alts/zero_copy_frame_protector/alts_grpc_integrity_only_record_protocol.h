@@ -38,6 +38,8 @@
  *   be used at the client or server side.
  * - is_protect: a flag indicating if the alts_grpc_record_protocol instance
  *   will be used for protect or unprotect.
+ *-  enable_extra_copy: a flag indicating if the instance uses one-copy instead
+ *   of zero-copy in the protect operation.
  * - rp: an alts_grpc_record_protocol instance to be returned from
  *   the method.
  *
@@ -46,7 +48,7 @@
  */
 tsi_result alts_grpc_integrity_only_record_protocol_create(
     gsec_aead_crypter* crypter, size_t overflow_size, bool is_client,
-    bool is_protect, alts_grpc_record_protocol** rp);
+    bool is_protect, bool enable_extra_copy, alts_grpc_record_protocol** rp);
 
 #endif /* GRPC_CORE_TSI_ALTS_ZERO_COPY_FRAME_PROTECTOR_ALTS_GRPC_INTEGRITY_ONLY_RECORD_PROTOCOL_H \
         */

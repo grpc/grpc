@@ -182,7 +182,7 @@ static void ReadAction(void* arg, grpc_error* error) {
                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("Socket closed"), ep));
     EP_UNREF(ep, "read");
   } else {
-    if (read_size < len) {
+    if (read_size < static_cast<CFIndex>(len)) {
       grpc_slice_buffer_trim_end(ep->read_slices, len - read_size, nullptr);
     }
     CallReadCb(ep, GRPC_ERROR_NONE);
@@ -217,7 +217,7 @@ static void WriteAction(void* arg, grpc_error* error) {
     CallWriteCb(ep, error);
     EP_UNREF(ep, "write");
   } else {
-    if (write_size < GRPC_SLICE_LENGTH(slice)) {
+    if (write_size < static_cast<CFIndex>(GRPC_SLICE_LENGTH(slice))) {
       grpc_slice_buffer_undo_take_first(
           ep->write_slices, grpc_slice_sub(slice, write_size, slice_len));
     }
@@ -251,7 +251,7 @@ static void CFStreamReadAllocationDone(void* arg, grpc_error* error) {
 }
 
 static void CFStreamRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                         grpc_closure* cb) {
+                         grpc_closure* cb, bool urgent) {
   CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CFStream endpoint:%p read (%p, %p) length:%zu", ep_impl,
@@ -268,7 +268,7 @@ static void CFStreamRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
 }
 
 static void CFStreamWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                          grpc_closure* cb) {
+                          grpc_closure* cb, void* arg) {
   CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CFStream endpoint:%p write (%p, %p) length:%zu",
@@ -315,6 +315,8 @@ char* CFStreamGetPeer(grpc_endpoint* ep) {
 
 int CFStreamGetFD(grpc_endpoint* ep) { return 0; }
 
+bool CFStreamCanTrackErr(grpc_endpoint* ep) { return false; }
+
 void CFStreamAddToPollset(grpc_endpoint* ep, grpc_pollset* pollset) {}
 void CFStreamAddToPollsetSet(grpc_endpoint* ep, grpc_pollset_set* pollset) {}
 void CFStreamDeleteFromPollsetSet(grpc_endpoint* ep,
@@ -329,7 +331,8 @@ static const grpc_endpoint_vtable vtable = {CFStreamRead,
                                             CFStreamDestroy,
                                             CFStreamGetResourceUser,
                                             CFStreamGetPeer,
-                                            CFStreamGetFD};
+                                            CFStreamGetFD,
+                                            CFStreamCanTrackErr};
 
 grpc_endpoint* grpc_cfstream_endpoint_create(
     CFReadStreamRef read_stream, CFWriteStreamRef write_stream,

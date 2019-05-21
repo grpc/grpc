@@ -29,6 +29,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error_cfstream.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
@@ -52,62 +53,72 @@ CFStreamHandle* CFStreamHandle::CreateStreamHandle(
 void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
                                   CFStreamEventType type,
                                   void* client_callback_info) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
+  grpc_error* error;
+  CFErrorRef stream_error;
   CFStreamHandle* handle = static_cast<CFStreamHandle*>(client_callback_info);
-  CFSTREAM_HANDLE_REF(handle, "read callback");
-  dispatch_async(
-      dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        grpc_core::ExecCtx exec_ctx;
-        if (grpc_tcp_trace.enabled()) {
-          gpr_log(GPR_DEBUG, "CFStream ReadCallback (%p, %p, %lu, %p)", handle,
-                  stream, type, client_callback_info);
-        }
-        switch (type) {
-          case kCFStreamEventOpenCompleted:
-            handle->open_event_.SetReady();
-            break;
-          case kCFStreamEventHasBytesAvailable:
-          case kCFStreamEventEndEncountered:
-            handle->read_event_.SetReady();
-            break;
-          case kCFStreamEventErrorOccurred:
-            handle->open_event_.SetReady();
-            handle->read_event_.SetReady();
-            break;
-          default:
-            GPR_UNREACHABLE_CODE(return );
-        }
-        CFSTREAM_HANDLE_UNREF(handle, "read callback");
-      });
+  if (grpc_tcp_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "CFStream ReadCallback (%p, %p, %lu, %p)", handle,
+            stream, type, client_callback_info);
+  }
+  switch (type) {
+    case kCFStreamEventOpenCompleted:
+      handle->open_event_.SetReady();
+      break;
+    case kCFStreamEventHasBytesAvailable:
+    case kCFStreamEventEndEncountered:
+      handle->read_event_.SetReady();
+      break;
+    case kCFStreamEventErrorOccurred:
+      stream_error = CFReadStreamCopyError(stream);
+      error = grpc_error_set_int(
+          GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "read error"),
+          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+      CFRelease(stream_error);
+      handle->open_event_.SetShutdown(GRPC_ERROR_REF(error));
+      handle->write_event_.SetShutdown(GRPC_ERROR_REF(error));
+      handle->read_event_.SetShutdown(GRPC_ERROR_REF(error));
+      GRPC_ERROR_UNREF(error);
+      break;
+    default:
+      GPR_UNREACHABLE_CODE(return );
+  }
 }
 void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
                                    CFStreamEventType type,
                                    void* clientCallBackInfo) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
+  grpc_error* error;
+  CFErrorRef stream_error;
   CFStreamHandle* handle = static_cast<CFStreamHandle*>(clientCallBackInfo);
-  CFSTREAM_HANDLE_REF(handle, "write callback");
-  dispatch_async(
-      dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        grpc_core::ExecCtx exec_ctx;
-        if (grpc_tcp_trace.enabled()) {
-          gpr_log(GPR_DEBUG, "CFStream WriteCallback (%p, %p, %lu, %p)", handle,
-                  stream, type, clientCallBackInfo);
-        }
-        switch (type) {
-          case kCFStreamEventOpenCompleted:
-            handle->open_event_.SetReady();
-            break;
-          case kCFStreamEventCanAcceptBytes:
-          case kCFStreamEventEndEncountered:
-            handle->write_event_.SetReady();
-            break;
-          case kCFStreamEventErrorOccurred:
-            handle->open_event_.SetReady();
-            handle->write_event_.SetReady();
-            break;
-          default:
-            GPR_UNREACHABLE_CODE(return );
-        }
-        CFSTREAM_HANDLE_UNREF(handle, "write callback");
-      });
+  if (grpc_tcp_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "CFStream WriteCallback (%p, %p, %lu, %p)", handle,
+            stream, type, clientCallBackInfo);
+  }
+  switch (type) {
+    case kCFStreamEventOpenCompleted:
+      handle->open_event_.SetReady();
+      break;
+    case kCFStreamEventCanAcceptBytes:
+    case kCFStreamEventEndEncountered:
+      handle->write_event_.SetReady();
+      break;
+    case kCFStreamEventErrorOccurred:
+      stream_error = CFWriteStreamCopyError(stream);
+      error = grpc_error_set_int(
+          GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "write error"),
+          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+      CFRelease(stream_error);
+      handle->open_event_.SetShutdown(GRPC_ERROR_REF(error));
+      handle->write_event_.SetShutdown(GRPC_ERROR_REF(error));
+      handle->read_event_.SetShutdown(GRPC_ERROR_REF(error));
+      GRPC_ERROR_UNREF(error);
+      break;
+    default:
+      GPR_UNREACHABLE_CODE(return );
+  }
 }
 
 CFStreamHandle::CFStreamHandle(CFReadStreamRef read_stream,
@@ -116,6 +127,7 @@ CFStreamHandle::CFStreamHandle(CFReadStreamRef read_stream,
   open_event_.InitEvent();
   read_event_.InitEvent();
   write_event_.InitEvent();
+  dispatch_queue_ = dispatch_queue_create(nullptr, DISPATCH_QUEUE_SERIAL);
   CFStreamClientContext ctx = {0, static_cast<void*>(this),
                                CFStreamHandle::Retain, CFStreamHandle::Release,
                                nil};
@@ -129,10 +141,8 @@ CFStreamHandle::CFStreamHandle(CFReadStreamRef read_stream,
       kCFStreamEventOpenCompleted | kCFStreamEventCanAcceptBytes |
           kCFStreamEventErrorOccurred | kCFStreamEventEndEncountered,
       CFStreamHandle::WriteCallback, &ctx);
-  CFReadStreamScheduleWithRunLoop(read_stream, CFRunLoopGetMain(),
-                                  kCFRunLoopCommonModes);
-  CFWriteStreamScheduleWithRunLoop(write_stream, CFRunLoopGetMain(),
-                                   kCFRunLoopCommonModes);
+  CFReadStreamSetDispatchQueue(read_stream, dispatch_queue_);
+  CFWriteStreamSetDispatchQueue(write_stream, dispatch_queue_);
 }
 
 CFStreamHandle::~CFStreamHandle() {
@@ -181,5 +191,12 @@ void CFStreamHandle::Unref(const char* file, int line, const char* reason) {
     delete this;
   }
 }
+
+#else
+
+/* Creating a dummy function so that the grpc_cfstream library will be
+ * non-empty.
+ */
+void CFStreamDummy() {}
 
 #endif

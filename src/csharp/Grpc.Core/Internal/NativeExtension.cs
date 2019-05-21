@@ -43,6 +43,9 @@ namespace Grpc.Core.Internal
             // to make sure we don't lose any logs.
             NativeLogRedirector.Redirect(this.nativeMethods);
 
+            // Initialize
+            NativeCallbackDispatcher.Init(this.nativeMethods);
+
             DefaultSslRootsOverride.Override(this.nativeMethods);
 
             Logger.Debug("gRPC native library loaded successfully.");
@@ -83,13 +86,13 @@ namespace Grpc.Core.Internal
             // See https://github.com/grpc/grpc/pull/7303 for one option.
             var assemblyDirectory = Path.GetDirectoryName(GetAssemblyPath());
 
-            // With old-style VS projects, the native libraries get copied using a .targets rule to the build output folder
+            // With "classic" VS projects, the native libraries get copied using a .targets rule to the build output folder
             // alongside the compiled assembly.
             // With dotnet cli projects targeting net45 framework, the native libraries (just the required ones)
             // are similarly copied to the built output folder, through the magic of Microsoft.NETCore.Platforms.
             var classicPath = Path.Combine(assemblyDirectory, GetNativeLibraryFilename());
 
-            // With dotnet cli project targeting netcoreapp1.0, projects will use Grpc.Core assembly directly in the location where it got restored
+            // With dotnet cli project targeting netcoreappX.Y, projects will use Grpc.Core assembly directly in the location where it got restored
             // by nuget. We locate the native libraries based on known structure of Grpc.Core nuget package.
             // When "dotnet publish" is used, the runtimes directory is copied next to the published assemblies.
             string runtimesDirectory = string.Format("runtimes/{0}/native", GetPlatformString());
@@ -106,7 +109,15 @@ namespace Grpc.Core.Internal
         /// </summary>
         private static NativeMethods LoadNativeMethods()
         {
-            return PlatformApis.IsUnity ? LoadNativeMethodsUnity() : new NativeMethods(LoadUnmanagedLibrary());
+            if (PlatformApis.IsUnity)
+            {
+                return LoadNativeMethodsUnity();
+            }
+            if (PlatformApis.IsXamarin)
+            {
+                return LoadNativeMethodsXamarin();
+            }
+            return new NativeMethods(LoadUnmanagedLibrary());
         }
 
         /// <summary>
@@ -128,10 +139,24 @@ namespace Grpc.Core.Internal
             }
         }
 
+        /// <summary>
+        /// Return native method delegates when running on the Xamarin platform.
+        /// WARNING: Xamarin support is experimental and work-in-progress. Don't expect it to work.
+        /// </summary>
+        private static NativeMethods LoadNativeMethodsXamarin()
+        {
+            if (PlatformApis.IsXamarinAndroid)
+            {
+                return new NativeMethods(new NativeMethods.DllImportsFromSharedLib());
+            }
+            // not tested yet
+            return new NativeMethods(new NativeMethods.DllImportsFromStaticLib());
+        }
+
         private static string GetAssemblyPath()
         {
             var assembly = typeof(NativeExtension).GetTypeInfo().Assembly;
-#if NETSTANDARD1_5
+#if NETSTANDARD1_5 || NETSTANDARD2_0
             // Assembly.EscapedCodeBase does not exist under CoreCLR, but assemblies imported from a nuget package
             // don't seem to be shadowed by DNX-based projects at all.
             return assembly.Location;
@@ -150,7 +175,7 @@ namespace Grpc.Core.Internal
 #endif
         }
 
-#if !NETSTANDARD1_5
+#if !NETSTANDARD1_5 && !NETSTANDARD2_0
         private static bool IsFileUri(string uri)
         {
             return uri.ToLowerInvariant().StartsWith(Uri.UriSchemeFile);

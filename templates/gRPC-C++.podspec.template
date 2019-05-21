@@ -49,6 +49,7 @@
     out = grpc_lib_files(filegroups, ("grpc++_codegen_proto", "grpc++_config_proto"), ("headers", "src", "public_headers"))
     excl_files = grpc_lib_files(filegroups, ("grpc++_codegen_base",), ("headers", "src", "public_headers"))
     out = [file for file in out if file not in excl_files]
+    out = filter_grpcpp(out)
     return out
 
   def grpcpp_private_files(libs, filegroups):
@@ -95,11 +96,11 @@
     return out
 
   def grpc_test_util_files(libs):
-    out = grpc_lib_files(libs, ("grpc_test_util", "gpr_test_util"), ("src", "headers"))
+    out = grpc_lib_files(libs, ("grpc_test_util",), ("src", "headers"))
     return out
 
   def grpc_test_util_headers(libs):
-    out = grpc_lib_files(libs, ("grpc_test_util", "gpr_test_util"), ("headers",))
+    out = grpc_lib_files(libs, ("grpc_test_util",), ("headers",))
     return out
 
   # Tests subspec is currently disabled since the tests currently use `grpc++` include style instead of `grpcpp`.
@@ -126,12 +127,20 @@
 
   def ruby_multiline_list(files, indent):
     return (',\n' + indent*' ').join('\'%s\'' % f for f in files)
+
+  def modify_podspec_version_string(pod_version, grpc_version):
+    # Append -preX when it is a pre-release
+    if len(str(grpc_version).split('-')) > 1:
+      return pod_version + '-' + str(grpc_version).split('-')[-1]
+    else:
+      return pod_version
+
   %>
   Pod::Spec.new do |s|
     s.name     = 'gRPC-C++'
     # TODO (mxyan): use version that match gRPC version when pod is stabilized
     # version = '${settings.version}'
-    version = '0.0.2'
+    version = '${modify_podspec_version_string('0.0.8', settings.version)}'
     s.version  = version
     s.summary  = 'gRPC C++ library'
     s.homepage = 'https://grpc.io'
@@ -147,6 +156,8 @@
 
     s.ios.deployment_target = '7.0'
     s.osx.deployment_target = '10.9'
+    s.tvos.deployment_target = '10.0'
+
     s.requires_arc = false
 
     name = 'grpcpp'
@@ -176,6 +187,9 @@
 
     s.default_subspecs = 'Interface', 'Implementation'
 
+    # Certificates, to be able to establish TLS connections:
+    s.resource_bundles = { 'gRPCCertificates' => ['etc/roots.pem'] }
+
     s.header_mappings_dir = 'include/grpcpp'
 
     s.subspec 'Interface' do |ss|
@@ -195,10 +209,17 @@
       ss.private_header_files = ${ruby_multiline_list(grpcpp_private_headers(libs, filegroups), 30)}
     end
 
+    s.subspec 'Protobuf' do |ss|
+      ss.header_mappings_dir = 'include/grpcpp'
+      ss.dependency "#{s.name}/Interface", version
+
+      ss.source_files = ${ruby_multiline_list(grpcpp_proto_files(filegroups), 22)}
+    end
+
     s.prepare_command = <<-END_OF_COMMAND
-      find src/cpp/ -type f -exec sed -E -i'.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
-      find src/cpp/ -name "*.back" -type f -delete
-      find src/core/ -regex ".*\.h" -type f -exec sed -E -i'.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
-      find src/core/ -name "*.back" -type f -delete
+      find src/cpp/ -type f ! -path '*.grpc_back' -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(pb(_.*)?\\.h)";#include <nanopb/\\1>;g'
+      find src/cpp/ -type f -path '*.grpc_back' -print0 | xargs -0 rm
+      find src/core/ -type f ! -path '*.grpc_back' -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(pb(_.*)?\\.h)";#include <nanopb/\\1>;g'
+      find src/core/ -type f -path '*.grpc_back' -print0 | xargs -0 rm
     END_OF_COMMAND
   end

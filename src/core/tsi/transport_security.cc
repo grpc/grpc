@@ -213,10 +213,10 @@ tsi_result tsi_handshaker_next(
 
 void tsi_handshaker_shutdown(tsi_handshaker* self) {
   if (self == nullptr || self->vtable == nullptr) return;
-  self->handshake_shutdown = true;
   if (self->vtable->shutdown != nullptr) {
     self->vtable->shutdown(self);
   }
+  self->handshake_shutdown = true;
 }
 
 void tsi_handshaker_destroy(tsi_handshaker* self) {
@@ -337,4 +337,21 @@ tsi_result tsi_construct_peer(size_t property_count, tsi_peer* peer) {
     peer->property_count = property_count;
   }
   return TSI_OK;
+}
+
+const tsi_peer_property* tsi_peer_get_property_by_name(const tsi_peer* peer,
+                                                       const char* name) {
+  size_t i;
+  if (peer == nullptr) return nullptr;
+  for (i = 0; i < peer->property_count; i++) {
+    const tsi_peer_property* property = &peer->properties[i];
+    if (name == nullptr && property->name == nullptr) {
+      return property;
+    }
+    if (name != nullptr && property->name != nullptr &&
+        strcmp(property->name, name) == 0) {
+      return property;
+    }
+  }
+  return nullptr;
 }

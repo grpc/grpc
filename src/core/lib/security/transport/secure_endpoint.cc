@@ -22,6 +22,8 @@
    headers. Therefore, sockaddr.h must always be included first */
 #include <grpc/support/port_platform.h>
 
+#include <new>
+
 #include "src/core/lib/iomgr/sockaddr.h"
 
 #include <grpc/slice.h>
@@ -31,6 +33,7 @@
 #include <grpc/support/sync.h>
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/tsi_error.h"
@@ -40,44 +43,68 @@
 
 #define STAGING_BUFFER_SIZE 8192
 
-typedef struct {
+static void on_read(void* user_data, grpc_error* error);
+
+namespace {
+struct secure_endpoint {
+  secure_endpoint(const grpc_endpoint_vtable* vtable,
+                  tsi_frame_protector* protector,
+                  tsi_zero_copy_grpc_protector* zero_copy_protector,
+                  grpc_endpoint* transport, grpc_slice* leftover_slices,
+                  size_t leftover_nslices)
+      : wrapped_ep(transport),
+        protector(protector),
+        zero_copy_protector(zero_copy_protector) {
+    base.vtable = vtable;
+    gpr_mu_init(&protector_mu);
+    GRPC_CLOSURE_INIT(&on_read, ::on_read, this, grpc_schedule_on_exec_ctx);
+    grpc_slice_buffer_init(&source_buffer);
+    grpc_slice_buffer_init(&leftover_bytes);
+    for (size_t i = 0; i < leftover_nslices; i++) {
+      grpc_slice_buffer_add(&leftover_bytes,
+                            grpc_slice_ref_internal(leftover_slices[i]));
+    }
+    grpc_slice_buffer_init(&output_buffer);
+    gpr_ref_init(&ref, 1);
+  }
+
+  ~secure_endpoint() {
+    grpc_endpoint_destroy(wrapped_ep);
+    tsi_frame_protector_destroy(protector);
+    tsi_zero_copy_grpc_protector_destroy(zero_copy_protector);
+    grpc_slice_buffer_destroy_internal(&source_buffer);
+    grpc_slice_buffer_destroy_internal(&leftover_bytes);
+    grpc_slice_unref_internal(read_staging_buffer);
+    grpc_slice_unref_internal(write_staging_buffer);
+    grpc_slice_buffer_destroy_internal(&output_buffer);
+    gpr_mu_destroy(&protector_mu);
+  }
+
   grpc_endpoint base;
   grpc_endpoint* wrapped_ep;
   struct tsi_frame_protector* protector;
   struct tsi_zero_copy_grpc_protector* zero_copy_protector;
   gpr_mu protector_mu;
   /* saved upper level callbacks and user_data. */
-  grpc_closure* read_cb;
-  grpc_closure* write_cb;
+  grpc_closure* read_cb = nullptr;
+  grpc_closure* write_cb = nullptr;
   grpc_closure on_read;
-  grpc_slice_buffer* read_buffer;
+  grpc_slice_buffer* read_buffer = nullptr;
   grpc_slice_buffer source_buffer;
   /* saved handshaker leftover data to unprotect. */
   grpc_slice_buffer leftover_bytes;
   /* buffers for read and write */
-  grpc_slice read_staging_buffer;
-
-  grpc_slice write_staging_buffer;
+  grpc_slice read_staging_buffer = GRPC_SLICE_MALLOC(STAGING_BUFFER_SIZE);
+  grpc_slice write_staging_buffer = GRPC_SLICE_MALLOC(STAGING_BUFFER_SIZE);
   grpc_slice_buffer output_buffer;
 
   gpr_refcount ref;
-} secure_endpoint;
+};
+}  // namespace
 
 grpc_core::TraceFlag grpc_trace_secure_endpoint(false, "secure_endpoint");
 
-static void destroy(secure_endpoint* secure_ep) {
-  secure_endpoint* ep = secure_ep;
-  grpc_endpoint_destroy(ep->wrapped_ep);
-  tsi_frame_protector_destroy(ep->protector);
-  tsi_zero_copy_grpc_protector_destroy(ep->zero_copy_protector);
-  grpc_slice_buffer_destroy_internal(&ep->leftover_bytes);
-  grpc_slice_unref_internal(ep->read_staging_buffer);
-  grpc_slice_unref_internal(ep->write_staging_buffer);
-  grpc_slice_buffer_destroy_internal(&ep->output_buffer);
-  grpc_slice_buffer_destroy_internal(&ep->source_buffer);
-  gpr_mu_destroy(&ep->protector_mu);
-  gpr_free(ep);
-}
+static void destroy(secure_endpoint* ep) { grpc_core::Delete(ep); }
 
 #ifndef NDEBUG
 #define SECURE_ENDPOINT_UNREF(ep, reason) \
@@ -86,7 +113,7 @@ static void destroy(secure_endpoint* secure_ep) {
   secure_endpoint_ref((ep), (reason), __FILE__, __LINE__)
 static void secure_endpoint_unref(secure_endpoint* ep, const char* reason,
                                   const char* file, int line) {
-  if (grpc_trace_secure_endpoint.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint)) {
     gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "SECENDP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep, reason, val,
@@ -99,7 +126,7 @@ static void secure_endpoint_unref(secure_endpoint* ep, const char* reason,
 
 static void secure_endpoint_ref(secure_endpoint* ep, const char* reason,
                                 const char* file, int line) {
-  if (grpc_trace_secure_endpoint.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint)) {
     gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "SECENDP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep, reason, val,
@@ -128,7 +155,7 @@ static void flush_read_staging_buffer(secure_endpoint* ep, uint8_t** cur,
 }
 
 static void call_read_cb(secure_endpoint* ep, grpc_error* error) {
-  if (grpc_trace_secure_endpoint.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint)) {
     size_t i;
     for (i = 0; i < ep->read_buffer->count; i++) {
       char* data = grpc_dump_slice(ep->read_buffer->slices[i],
@@ -228,7 +255,7 @@ static void on_read(void* user_data, grpc_error* error) {
 }
 
 static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
-                          grpc_closure* cb) {
+                          grpc_closure* cb, bool urgent) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
   ep->read_cb = cb;
   ep->read_buffer = slices;
@@ -242,7 +269,7 @@ static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
     return;
   }
 
-  grpc_endpoint_read(ep->wrapped_ep, &ep->source_buffer, &ep->on_read);
+  grpc_endpoint_read(ep->wrapped_ep, &ep->source_buffer, &ep->on_read, urgent);
 }
 
 static void flush_write_staging_buffer(secure_endpoint* ep, uint8_t** cur,
@@ -254,7 +281,7 @@ static void flush_write_staging_buffer(secure_endpoint* ep, uint8_t** cur,
 }
 
 static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
-                           grpc_closure* cb) {
+                           grpc_closure* cb, void* arg) {
   GPR_TIMER_SCOPE("secure_endpoint.endpoint_write", 0);
 
   unsigned i;
@@ -265,7 +292,7 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
 
   grpc_slice_buffer_reset_and_unref_internal(&ep->output_buffer);
 
-  if (grpc_trace_secure_endpoint.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint)) {
     for (i = 0; i < slices->count; i++) {
       char* data =
           grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -342,7 +369,7 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
     return;
   }
 
-  grpc_endpoint_write(ep->wrapped_ep, &ep->output_buffer, cb);
+  grpc_endpoint_write(ep->wrapped_ep, &ep->output_buffer, cb, arg);
 }
 
 static void endpoint_shutdown(grpc_endpoint* secure_ep, grpc_error* why) {
@@ -389,6 +416,11 @@ static grpc_resource_user* endpoint_get_resource_user(
   return grpc_endpoint_get_resource_user(ep->wrapped_ep);
 }
 
+static bool endpoint_can_track_err(grpc_endpoint* secure_ep) {
+  secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
+  return grpc_endpoint_can_track_err(ep->wrapped_ep);
+}
+
 static const grpc_endpoint_vtable vtable = {endpoint_read,
                                             endpoint_write,
                                             endpoint_add_to_pollset,
@@ -398,32 +430,16 @@ static const grpc_endpoint_vtable vtable = {endpoint_read,
                                             endpoint_destroy,
                                             endpoint_get_resource_user,
                                             endpoint_get_peer,
-                                            endpoint_get_fd};
+                                            endpoint_get_fd,
+                                            endpoint_can_track_err};
 
 grpc_endpoint* grpc_secure_endpoint_create(
     struct tsi_frame_protector* protector,
     struct tsi_zero_copy_grpc_protector* zero_copy_protector,
     grpc_endpoint* transport, grpc_slice* leftover_slices,
     size_t leftover_nslices) {
-  size_t i;
-  secure_endpoint* ep =
-      static_cast<secure_endpoint*>(gpr_malloc(sizeof(secure_endpoint)));
-  ep->base.vtable = &vtable;
-  ep->wrapped_ep = transport;
-  ep->protector = protector;
-  ep->zero_copy_protector = zero_copy_protector;
-  grpc_slice_buffer_init(&ep->leftover_bytes);
-  for (i = 0; i < leftover_nslices; i++) {
-    grpc_slice_buffer_add(&ep->leftover_bytes,
-                          grpc_slice_ref_internal(leftover_slices[i]));
-  }
-  ep->write_staging_buffer = GRPC_SLICE_MALLOC(STAGING_BUFFER_SIZE);
-  ep->read_staging_buffer = GRPC_SLICE_MALLOC(STAGING_BUFFER_SIZE);
-  grpc_slice_buffer_init(&ep->output_buffer);
-  grpc_slice_buffer_init(&ep->source_buffer);
-  ep->read_buffer = nullptr;
-  GRPC_CLOSURE_INIT(&ep->on_read, on_read, ep, grpc_schedule_on_exec_ctx);
-  gpr_mu_init(&ep->protector_mu);
-  gpr_ref_init(&ep->ref, 1);
+  secure_endpoint* ep = grpc_core::New<secure_endpoint>(
+      &vtable, protector, zero_copy_protector, transport, leftover_slices,
+      leftover_nslices);
   return &ep->base;
 }

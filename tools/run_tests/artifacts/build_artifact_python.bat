@@ -22,6 +22,10 @@ pip install -rrequirements.txt
 
 set GRPC_PYTHON_BUILD_WITH_CYTHON=1
 
+@rem Allow build_ext to build C/C++ files in parallel
+@rem by enabling a monkeypatch. It speeds up the build a lot.
+set GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=2
+
 mkdir -p %ARTIFACTS_OUT%
 set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 

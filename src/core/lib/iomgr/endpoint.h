@@ -33,10 +33,13 @@
 
 typedef struct grpc_endpoint grpc_endpoint;
 typedef struct grpc_endpoint_vtable grpc_endpoint_vtable;
+class Timestamps;
 
 struct grpc_endpoint_vtable {
-  void (*read)(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb);
-  void (*write)(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb);
+  void (*read)(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
+               bool urgent);
+  void (*write)(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
+                void* arg);
   void (*add_to_pollset)(grpc_endpoint* ep, grpc_pollset* pollset);
   void (*add_to_pollset_set)(grpc_endpoint* ep, grpc_pollset_set* pollset);
   void (*delete_from_pollset_set)(grpc_endpoint* ep, grpc_pollset_set* pollset);
@@ -45,6 +48,7 @@ struct grpc_endpoint_vtable {
   grpc_resource_user* (*get_resource_user)(grpc_endpoint* ep);
   char* (*get_peer)(grpc_endpoint* ep);
   int (*get_fd)(grpc_endpoint* ep);
+  bool (*can_track_err)(grpc_endpoint* ep);
 };
 
 /* When data is available on the connection, calls the callback with slices.
@@ -53,7 +57,7 @@ struct grpc_endpoint_vtable {
    Valid slices may be placed into \a slices even when the callback is
    invoked with error != GRPC_ERROR_NONE. */
 void grpc_endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                        grpc_closure* cb);
+                        grpc_closure* cb, bool urgent);
 
 char* grpc_endpoint_get_peer(grpc_endpoint* ep);
 
@@ -70,9 +74,11 @@ int grpc_endpoint_get_fd(grpc_endpoint* ep);
    \a slices may be mutated at will by the endpoint until cb is called.
    No guarantee is made to the content of slices after a write EXCEPT that
    it is a valid slice buffer.
+   \a arg is platform specific. It is currently only used by TCP on linux
+   platforms as an argument that would be forwarded to the timestamps callback.
    */
 void grpc_endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                         grpc_closure* cb);
+                         grpc_closure* cb, void* arg);
 
 /* Causes any pending and future read/write callbacks to run immediately with
    success==0 */
@@ -90,6 +96,8 @@ void grpc_endpoint_delete_from_pollset_set(grpc_endpoint* ep,
                                            grpc_pollset_set* pollset_set);
 
 grpc_resource_user* grpc_endpoint_get_resource_user(grpc_endpoint* endpoint);
+
+bool grpc_endpoint_can_track_err(grpc_endpoint* ep);
 
 struct grpc_endpoint {
   const grpc_endpoint_vtable* vtable;

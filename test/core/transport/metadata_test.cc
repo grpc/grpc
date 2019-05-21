@@ -27,6 +27,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_table.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -288,12 +289,34 @@ static void test_user_data_works(void) {
   grpc_shutdown();
 }
 
+static void test_user_data_works_for_allocated_md(void) {
+  int* ud1;
+  int* ud2;
+  grpc_mdelem md;
+  gpr_log(GPR_INFO, "test_user_data_works");
+
+  grpc_init();
+  grpc_core::ExecCtx exec_ctx;
+  ud1 = static_cast<int*>(gpr_malloc(sizeof(int)));
+  *ud1 = 1;
+  ud2 = static_cast<int*>(gpr_malloc(sizeof(int)));
+  *ud2 = 2;
+  md = grpc_mdelem_from_slices(grpc_slice_from_static_string("abc"),
+                               grpc_slice_from_static_string("123"));
+  grpc_mdelem_set_user_data(md, gpr_free, ud1);
+  grpc_mdelem_set_user_data(md, gpr_free, ud2);
+  GPR_ASSERT(grpc_mdelem_get_user_data(md, gpr_free) == ud1);
+  GRPC_MDELEM_UNREF(md);
+
+  grpc_shutdown();
+}
+
 static void verify_ascii_header_size(const char* key, const char* value,
                                      bool intern_key, bool intern_value) {
   grpc_mdelem elem = grpc_mdelem_from_slices(
       maybe_intern(grpc_slice_from_static_string(key), intern_key),
       maybe_intern(grpc_slice_from_static_string(value), intern_value));
-  size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem, false);
+  size_t elem_size = grpc_chttp2_get_size_in_hpack_table(elem, false);
   size_t expected_size = 32 + strlen(key) + strlen(value);
   GPR_ASSERT(expected_size == elem_size);
   GRPC_MDELEM_UNREF(elem);
@@ -307,7 +330,7 @@ static void verify_binary_header_size(const char* key, const uint8_t* value,
       maybe_intern(grpc_slice_from_static_buffer(value, value_len),
                    intern_value));
   GPR_ASSERT(grpc_is_binary_header(GRPC_MDKEY(elem)));
-  size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem, false);
+  size_t elem_size = grpc_chttp2_get_size_in_hpack_table(elem, false);
   grpc_slice value_slice = grpc_slice_from_copied_buffer(
       reinterpret_cast<const char*>(value), value_len);
   grpc_slice base64_encoded = grpc_chttp2_base64_encode(value_slice);
@@ -369,7 +392,7 @@ static void test_copied_static_metadata(bool dup_key, bool dup_value) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_no_op();
   for (int k = 0; k <= 1; k++) {
@@ -385,6 +408,7 @@ int main(int argc, char** argv) {
   test_create_many_persistant_metadata();
   test_things_stick_around();
   test_user_data_works();
+  test_user_data_works_for_allocated_md();
   grpc_shutdown();
   return 0;
 }

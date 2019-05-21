@@ -652,7 +652,7 @@ The test
 downloaded from https://console.developers.google.com. Alternately, if using a
 usable auth implementation, it may specify the file location in the environment
 variable GOOGLE_APPLICATION_CREDENTIALS
-- optionally uses the flag `--oauth_scope` for the oauth scope if implementator
+- optionally uses the flag `--oauth_scope` for the oauth scope if implementer
 wishes to use service account credential instead of JWT credential. For testing
 against grpc-test.sandbox.googleapis.com, oauth scope
 "https://www.googleapis.com/auth/xapi.zoo" should be used.
@@ -679,6 +679,81 @@ Client asserts:
 by the auth library. The client can optionally check the username matches the
 email address in the key file.
 
+### google_default_credentials
+
+Similar to the other auth tests, this test should only be run against prod
+servers. Different from some of the other auth tests however, this test
+may be also run from outside of GCP.
+
+This test verifies unary calls succeed when the client uses
+GoogleDefaultCredentials. The path to a service account key file in the
+GOOGLE_APPLICATION_CREDENTIALS environment variable may or may not be
+provided by the test runner. For example, the test runner might set
+this environment when outside of GCP but keep it unset when on GCP.
+
+The test uses `--default_service_account` with GCE service account email.
+
+Server features:
+* [UnaryCall][]
+* [Echo Authenticated Username][]
+
+Procedure:
+ 1. Client configures the channel to use GoogleDefaultCredentials
+     * Note: the term `GoogleDefaultCredentials` within the context
+       of this test description refers to an API which encapsulates
+       both "transport credentials" and "call credentials" and which
+       is capable of transport creds auto-selection (including ALTS).
+       Similar APIs involving only auto-selection of OAuth mechanisms
+       might work for this test but aren't the intended subjects.
+ 2. Client calls UnaryCall with:
+
+    ```
+    {
+      fill_username: true
+    }
+    ```
+
+Client asserts:
+* call was successful
+* received SimpleResponse.username matches the value of
+  `--default_service_account`
+
+### compute_engine_channel_credentials
+
+Similar to the other auth tests, this test should only be run against prod
+servers. Note that this test may only be ran on GCP.
+
+This test verifies unary calls succeed when the client uses
+ComputeEngineChannelCredentials. All that is needed by the test environment
+is for the client to be running on GCP.
+
+The test uses `--default_service_account` with GCE service account email. This
+email must identify the default service account of the GCP VM that the test
+is running on.
+
+Server features:
+* [UnaryCall][]
+* [Echo Authenticated Username][]
+
+Procedure:
+ 1. Client configures the channel to use ComputeEngineChannelCredentials
+     * Note: the term `ComputeEngineChannelCredentials` within the context
+       of this test description refers to an API which encapsulates
+       both "transport credentials" and "call credentials" and which
+       is capable of transport creds auto-selection (including ALTS).
+       The exact name of the API may vary per language.
+ 2. Client calls UnaryCall with:
+
+    ```
+    {
+      fill_username: true
+    }
+    ```
+
+Client asserts:
+* call was successful
+* received SimpleResponse.username matches the value of
+  `--default_service_account`
 
 ### custom_metadata
 
@@ -783,6 +858,32 @@ Client asserts:
   and 2
 * received status message is the same as the sent message for both Procedure
   steps 1 and 2
+
+### special_status_message
+
+This test verifies Unicode and whitespace is correctly processed in status
+message. "\t" is horizontal tab. "\r" is carriage return.  "\n" is line feed.
+
+Server features:
+* [UnaryCall][]
+* [Echo Status][]
+
+Procedure:
+ 1. Client calls UnaryCall with:
+
+    ```
+    {
+      response_status:{
+        code: 2
+        message: "\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n"
+      }
+    }
+    ```
+
+Client asserts:
+* received status code is the same as the sent code for Procedure step 1
+* received status message is the same as the sent message for Procedure step 1,
+  including all whitespace characters
 
 ### unimplemented_method
 
@@ -898,6 +999,30 @@ Status: TODO
 
 This test verifies that a client sending faster than a server can drain sees
 pushback (i.e., attempts to send succeed only after appropriate delays).
+
+### Experimental Tests
+
+These tests are not yet standardized, and are not yet implemented in all
+languages. Therefore they are not part of our interop matrix.
+
+#### rpc_soak
+
+The client performs many large_unary RPCs in sequence over the same channel. 
+The number of RPCs is configured by the experimental flag, `soak_iterations`.
+
+#### channel_soak
+
+The client performs many large_unary RPCs in sequence. Before each RPC, it 
+tears down and rebuilds the channel. The number of RPCs is configured by 
+the experimental flag, `soak_iterations`.
+
+This tests puts stress on several gRPC components; the resolver, the load 
+balancer, and the RPC hotpath.
+
+#### long_lived_channel
+
+The client performs a number of large_unary RPCs over a single long-lived 
+channel with a fixed but configurable interval between each RPC.
 
 ### TODO Tests
 

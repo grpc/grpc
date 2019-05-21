@@ -41,17 +41,23 @@ some configuration as environment variables that can be set.
   - bdp_estimator - traces behavior of bdp estimation logic
   - call_combiner - traces call combiner state
   - call_error - traces the possible errors contributing to final call status
+  - cares_resolver - traces operations of the c-ares based DNS resolver
+  - cares_address_sorting - traces operations of the c-ares based DNS
+    resolver's resolved address sorter
   - channel - traces operations on the C core channel stack
-  - client_channel - traces client channel activity, including resolver
-    and load balancing policy interaction
+  - client_channel_call - traces client channel call batch activity
+  - client_channel_routing - traces client channel call routing, including
+    resolver and load balancing policy interaction
   - compression - traces compression operations
   - connectivity_state - traces connectivity state changes to channels
+  - cronet - traces state in the cronet transport engine
   - executor - traces grpc's internal thread pool ('the executor')
   - fd_trace - traces fd create(), shutdown() and close() calls for channel fds.
     Also traces epoll fd create()/close() calls in epollex polling engine
     traces epoll-fd creation/close calls for epollex polling engine
   - glb - traces the grpclb load balancer
   - handshaker - traces handshaking state
+  - health_check_client - traces health checking client code
   - http - traces state in the http2 transport engine
   - http2_stream_state - traces all http2 stream state mutations.
   - http1 - traces HTTP/1.x operations performed by gRPC
@@ -113,15 +119,16 @@ some configuration as environment variables that can be set.
   - ERROR - log only errors
 
 * GRPC_TRACE_FUZZER
-  if set, the fuzzers will output trace (it is usually supressed).
+  if set, the fuzzers will output trace (it is usually suppressed).
 
 * GRPC_DNS_RESOLVER
   Declares which DNS resolver to use. The default is ares if gRPC is built with
   c-ares support. Otherwise, the value of this environment variable is ignored.
   Available DNS resolver include:
-  - native (default)- a DNS resolver based around getaddrinfo(), creates a new thread to
+  - ares (default on most platforms except iOS, Android or Node)- a DNS
+    resolver based around the c-ares library
+  - native - a DNS resolver based around getaddrinfo(), creates a new thread to
     perform name resolution
-  - ares - a DNS resolver based around the c-ares library
 
 * GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS
   Default: 5000
@@ -135,3 +142,7 @@ some configuration as environment variables that can be set.
   if set, flow control will be effectively disabled. Max out all values and
   assume the remote peer does the same. Thus we can ignore any flow control
   bookkeeping, error checking, and decision making
+
+* grpc_cfstream
+  set to 1 to turn on CFStream experiment. With this experiment gRPC uses CFStream API to make TCP
+  connections. The option is only available on iOS platform and when macro GRPC_CFSTREAM is defined.

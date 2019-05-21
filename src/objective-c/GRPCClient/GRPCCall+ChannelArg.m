@@ -18,6 +18,7 @@
 
 #import "GRPCCall+ChannelArg.h"
 
+#import "private/GRPCChannelPool.h"
 #import "private/GRPCHost.h"
 
 #import <grpc/impl/codegen/compression_types.h>
@@ -31,11 +32,11 @@
 
 + (void)setResponseSizeLimit:(NSUInteger)limit forHost:(nonnull NSString *)host {
   GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
-  hostConfig.responseSizeLimitOverride = @(limit);
+  hostConfig.responseSizeLimitOverride = limit;
 }
 
 + (void)closeOpenConnections {
-  [GRPCHost flushChannelCache];
+  [[GRPCChannelPool sharedInstance] disconnectAllChannels];
 }
 
 + (void)setDefaultCompressMethod:(GRPCCompressAlgorithm)algorithm forhost:(nonnull NSString *)host {
@@ -62,6 +63,21 @@
   GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
   hostConfig.keepaliveInterval = interval;
   hostConfig.keepaliveTimeout = timeout;
+}
+
++ (void)enableRetry:(BOOL)enabled forHost:(nonnull NSString *)host {
+  GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
+  hostConfig.retryEnabled = enabled;
+}
+
++ (void)setMinConnectTimeout:(unsigned int)timeout
+              initialBackoff:(unsigned int)initialBackoff
+                  maxBackoff:(unsigned int)maxBackoff
+                     forHost:(nonnull NSString *)host {
+  GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
+  hostConfig.minConnectTimeout = timeout;
+  hostConfig.initialConnectBackoff = initialBackoff;
+  hostConfig.maxConnectBackoff = maxBackoff;
 }
 
 @end

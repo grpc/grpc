@@ -124,7 +124,7 @@ static void test_create_channel_stack(void) {
       gpr_now(GPR_CLOCK_MONOTONIC), /* start_time */
       GRPC_MILLIS_INF_FUTURE,       /* deadline */
       nullptr,                      /* arena */
-      nullptr                       /* call_combiner */
+      nullptr,                      /* call_combiner */
   };
   grpc_error* error =
       grpc_call_stack_init(channel_stack, 1, free_call, call_stack, &args);
@@ -147,7 +147,7 @@ static void test_create_channel_stack(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_create_channel_stack();
   grpc_shutdown();

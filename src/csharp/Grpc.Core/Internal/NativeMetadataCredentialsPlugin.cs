@@ -23,8 +23,6 @@ using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
-    internal delegate void NativeMetadataInterceptor(IntPtr statePtr, IntPtr serviceUrlPtr, IntPtr methodNamePtr, IntPtr callbackPtr, IntPtr userDataPtr, bool isDestroy);
-
     internal class NativeMetadataCredentialsPlugin
     {
         const string GetMetadataExceptionStatusMsg = "Exception occurred in metadata credentials plugin.";
@@ -33,18 +31,14 @@ namespace Grpc.Core.Internal
         static readonly NativeMethods Native = NativeMethods.Get();
 
         AsyncAuthInterceptor interceptor;
-        GCHandle gcHandle;
-        NativeMetadataInterceptor nativeInterceptor;
         CallCredentialsSafeHandle credentials;
+        NativeCallbackRegistration callbackRegistration;
 
         public NativeMetadataCredentialsPlugin(AsyncAuthInterceptor interceptor)
         {
             this.interceptor = GrpcPreconditions.CheckNotNull(interceptor, "interceptor");
-            this.nativeInterceptor = NativeMetadataInterceptorHandler;
-
-            // Make sure the callback doesn't get garbage collected until it is destroyed.
-            this.gcHandle = GCHandle.Alloc(this.nativeInterceptor, GCHandleType.Normal);
-            this.credentials = Native.grpcsharp_metadata_credentials_create_from_plugin(nativeInterceptor);
+            this.callbackRegistration = NativeCallbackDispatcher.RegisterCallback(HandleUniversalCallback);
+            this.credentials = Native.grpcsharp_metadata_credentials_create_from_plugin(this.callbackRegistration.Tag);
         }
 
         public CallCredentialsSafeHandle Credentials
@@ -52,11 +46,17 @@ namespace Grpc.Core.Internal
             get { return credentials; }
         }
 
-        private void NativeMetadataInterceptorHandler(IntPtr statePtr, IntPtr serviceUrlPtr, IntPtr methodNamePtr, IntPtr callbackPtr, IntPtr userDataPtr, bool isDestroy)
+        private int HandleUniversalCallback(IntPtr arg0, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4, IntPtr arg5)
+        {
+            NativeMetadataInterceptorHandler(arg0, arg1, arg2, arg3, arg4 != IntPtr.Zero);
+            return 0;
+        }
+
+        private void NativeMetadataInterceptorHandler(IntPtr serviceUrlPtr, IntPtr methodNamePtr, IntPtr callbackPtr, IntPtr userDataPtr, bool isDestroy)
         {
             if (isDestroy)
             {
-                gcHandle.Free();
+                this.callbackRegistration.Dispose();
                 return;
             }
 
@@ -68,8 +68,8 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, GetMetadataExceptionStatusMsg);
-                Logger.Error(e, GetMetadataExceptionLogMsg);
+                // eat the exception, we must not throw when inside callback from native code.
+                Logger.Error(e, "Exception occurred while invoking native metadata interceptor handler.");
             }
         }
 
@@ -87,7 +87,8 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, GetMetadataExceptionStatusMsg);
+                string detail = GetMetadataExceptionStatusMsg + " " + e.ToString();
+                Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, detail);
                 Logger.Error(e, GetMetadataExceptionLogMsg);
             }
         }

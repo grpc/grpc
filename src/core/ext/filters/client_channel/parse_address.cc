@@ -19,6 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/parse_address.h"
+#include "src/core/lib/iomgr/grpc_if_nametoindex.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 
@@ -34,6 +35,11 @@
 
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+
+#ifdef GRPC_POSIX_SOCKET
+#include <errno.h>
+#include <net/if.h>
+#endif
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
@@ -69,7 +75,12 @@ bool grpc_parse_ipv4_hostport(const char* hostport, grpc_resolved_address* addr,
   // Split host and port.
   char* host;
   char* port;
-  if (!gpr_split_host_port(hostport, &host, &port)) return false;
+  if (!gpr_split_host_port(hostport, &host, &port)) {
+    if (log_errors) {
+      gpr_log(GPR_ERROR, "Failed gpr_split_host_port(%s, ...)", hostport);
+    }
+    return false;
+  }
   // Parse IP address.
   memset(addr, 0, sizeof(*addr));
   addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
@@ -115,7 +126,12 @@ bool grpc_parse_ipv6_hostport(const char* hostport, grpc_resolved_address* addr,
   // Split host and port.
   char* host;
   char* port;
-  if (!gpr_split_host_port(hostport, &host, &port)) return false;
+  if (!gpr_split_host_port(hostport, &host, &port)) {
+    if (log_errors) {
+      gpr_log(GPR_ERROR, "Failed gpr_split_host_port(%s, ...)", hostport);
+    }
+    return false;
+  }
   // Parse IP address.
   memset(addr, 0, sizeof(*addr));
   addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
@@ -125,27 +141,44 @@ bool grpc_parse_ipv6_hostport(const char* hostport, grpc_resolved_address* addr,
   char* host_end = static_cast<char*>(gpr_memrchr(host, '%', strlen(host)));
   if (host_end != nullptr) {
     GPR_ASSERT(host_end >= host);
-    char host_without_scope[GRPC_INET6_ADDRSTRLEN];
+    char host_without_scope[GRPC_INET6_ADDRSTRLEN + 1];
     size_t host_without_scope_len = static_cast<size_t>(host_end - host);
     uint32_t sin6_scope_id = 0;
+    if (host_without_scope_len > GRPC_INET6_ADDRSTRLEN) {
+      if (log_errors) {
+        gpr_log(
+            GPR_ERROR,
+            "invalid ipv6 address length %zu. Length cannot be greater than "
+            "GRPC_INET6_ADDRSTRLEN i.e %d)",
+            host_without_scope_len, GRPC_INET6_ADDRSTRLEN);
+      }
+      goto done;
+    }
     strncpy(host_without_scope, host, host_without_scope_len);
     host_without_scope[host_without_scope_len] = '\0';
     if (grpc_inet_pton(GRPC_AF_INET6, host_without_scope, &in6->sin6_addr) ==
         0) {
-      gpr_log(GPR_ERROR, "invalid ipv6 address: '%s'", host_without_scope);
+      if (log_errors) {
+        gpr_log(GPR_ERROR, "invalid ipv6 address: '%s'", host_without_scope);
+      }
       goto done;
     }
     if (gpr_parse_bytes_to_uint32(host_end + 1,
                                   strlen(host) - host_without_scope_len - 1,
                                   &sin6_scope_id) == 0) {
-      gpr_log(GPR_ERROR, "invalid ipv6 scope id: '%s'", host_end + 1);
-      goto done;
+      if ((sin6_scope_id = grpc_if_nametoindex(host_end + 1)) == 0) {
+        gpr_log(GPR_ERROR,
+                "Invalid interface name: '%s'. "
+                "Non-numeric and failed if_nametoindex.",
+                host_end + 1);
+        goto done;
+      }
     }
     // Handle "sin6_scope_id" being type "u_long". See grpc issue #10027.
     in6->sin6_scope_id = sin6_scope_id;
   } else {
     if (grpc_inet_pton(GRPC_AF_INET6, host, &in6->sin6_addr) == 0) {
-      gpr_log(GPR_ERROR, "invalid ipv6 address: '%s'", host);
+      if (log_errors) gpr_log(GPR_ERROR, "invalid ipv6 address: '%s'", host);
       goto done;
     }
   }
@@ -189,4 +222,13 @@ bool grpc_parse_uri(const grpc_uri* uri, grpc_resolved_address* resolved_addr) {
   }
   gpr_log(GPR_ERROR, "Can't parse scheme '%s'", uri->scheme);
   return false;
+}
+
+uint16_t grpc_strhtons(const char* port) {
+  if (strcmp(port, "http") == 0) {
+    return htons(80);
+  } else if (strcmp(port, "https") == 0) {
+    return htons(443);
+  }
+  return htons(static_cast<unsigned short>(atoi(port)));
 }

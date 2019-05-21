@@ -15,6 +15,13 @@
 
 # Creates a performance worker on GCE to be used on Kokoro.
 
+# IMPORTANT: Instructions for updating
+# If the VM configuration / installed software is updated,
+# - all existing performance worker VMs need to be updated to reflect the changes
+# - a new GCE image named "grpc-performance-kokoro-v1" needs to be created,
+#   incrementing the version number.
+# - kokoro jobs need to be reconfigured to use the new image version
+
 set -ex
 
 cd "$(dirname "$0")"
@@ -30,7 +37,7 @@ gcloud compute instances create "$INSTANCE_NAME" \
     --zone "$ZONE" \
     --machine-type $MACHINE_TYPE \
     --image-project ubuntu-os-cloud \
-    --image-family ubuntu-1710 \
+    --image-family ubuntu-1804-lts \
     --boot-disk-size 300 \
     --scopes https://www.googleapis.com/auth/bigquery \
     --tags=allow-ssh

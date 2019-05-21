@@ -15,8 +15,8 @@
 
 cdef class Operation:
 
-  cdef void c(self)
-  cdef void un_c(self)
+  cdef void c(self) except *
+  cdef void un_c(self) except *
 
   # TODO(https://github.com/grpc/grpc/issues/7950): Eliminate this!
   cdef grpc_op c_op
@@ -29,8 +29,8 @@ cdef class SendInitialMetadataOperation(Operation):
   cdef grpc_metadata *_c_initial_metadata
   cdef size_t _c_initial_metadata_count
 
-  cdef void c(self)
-  cdef void un_c(self)
+  cdef void c(self) except *
+  cdef void un_c(self) except *
 
 
 cdef class SendMessageOperation(Operation):
@@ -39,16 +39,16 @@ cdef class SendMessageOperation(Operation):
   cdef readonly int _flags
   cdef grpc_byte_buffer *_c_message_byte_buffer
 
-  cdef void c(self)
-  cdef void un_c(self)
+  cdef void c(self) except *
+  cdef void un_c(self) except *
 
 
 cdef class SendCloseFromClientOperation(Operation):
 
   cdef readonly int _flags
 
-  cdef void c(self)
-  cdef void un_c(self)
+  cdef void c(self) except *
+  cdef void un_c(self) except *
 
 
 cdef class SendStatusFromServerOperation(Operation):
@@ -61,8 +61,8 @@ cdef class SendStatusFromServerOperation(Operation):
   cdef size_t _c_trailing_metadata_count
   cdef grpc_slice _c_details
 
-  cdef void c(self)
-  cdef void un_c(self)
+  cdef void c(self) except *
+  cdef void un_c(self) except *
 
 
 cdef class ReceiveInitialMetadataOperation(Operation):
@@ -71,8 +71,8 @@ cdef class ReceiveInitialMetadataOperation(Operation):
   cdef tuple _initial_metadata
   cdef grpc_metadata_array _c_initial_metadata
 
-  cdef void c(self)
-  cdef void un_c(self)
+  cdef void c(self) except *
+  cdef void un_c(self) except *
 
 
 cdef class ReceiveMessageOperation(Operation):
@@ -81,8 +81,8 @@ cdef class ReceiveMessageOperation(Operation):
   cdef grpc_byte_buffer *_c_message_byte_buffer
   cdef bytes _message
 
-  cdef void c(self)
-  cdef void un_c(self)
+  cdef void c(self) except *
+  cdef void un_c(self) except *
 
 
 cdef class ReceiveStatusOnClientOperation(Operation):
@@ -97,8 +97,8 @@ cdef class ReceiveStatusOnClientOperation(Operation):
   cdef str _details
   cdef str _error_string
 
-  cdef void c(self)
-  cdef void un_c(self)
+  cdef void c(self) except *
+  cdef void un_c(self) except *
 
 
 cdef class ReceiveCloseOnServerOperation(Operation):
@@ -107,5 +107,5 @@ cdef class ReceiveCloseOnServerOperation(Operation):
   cdef object _cancelled
   cdef int _c_cancelled
 
-  cdef void c(self)
-  cdef void un_c(self)
+  cdef void c(self) except *
+  cdef void un_c(self) except *

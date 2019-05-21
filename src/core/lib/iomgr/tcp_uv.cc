@@ -33,7 +33,6 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_custom.h"
-#include "src/core/lib/iomgr/network_status_tracker.h"
 #include "src/core/lib/iomgr/resolve_address_custom.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/iomgr/tcp_custom.h"

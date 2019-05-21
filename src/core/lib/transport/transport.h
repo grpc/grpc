@@ -24,12 +24,13 @@
 #include <stddef.h>
 
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/gpr/arena.h"
+#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -51,7 +52,7 @@ typedef struct grpc_stream grpc_stream;
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_stream_refcount;
 
 typedef struct grpc_stream_refcount {
-  gpr_refcount refs;
+  grpc_core::RefCount refs;
   grpc_closure destroy;
 #ifndef NDEBUG
   const char* object_type;
@@ -63,34 +64,60 @@ typedef struct grpc_stream_refcount {
 void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
                           grpc_iomgr_cb_func cb, void* cb_arg,
                           const char* object_type);
-void grpc_stream_ref(grpc_stream_refcount* refcount, const char* reason);
-void grpc_stream_unref(grpc_stream_refcount* refcount, const char* reason);
 #define GRPC_STREAM_REF_INIT(rc, ir, cb, cb_arg, objtype) \
   grpc_stream_ref_init(rc, ir, cb, cb_arg, objtype)
 #else
 void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
                           grpc_iomgr_cb_func cb, void* cb_arg);
-void grpc_stream_ref(grpc_stream_refcount* refcount);
-void grpc_stream_unref(grpc_stream_refcount* refcount);
 #define GRPC_STREAM_REF_INIT(rc, ir, cb, cb_arg, objtype) \
   grpc_stream_ref_init(rc, ir, cb, cb_arg)
 #endif
+
+#ifndef NDEBUG
+inline void grpc_stream_ref(grpc_stream_refcount* refcount,
+                            const char* reason) {
+  if (grpc_trace_stream_refcount.enabled()) {
+    gpr_log(GPR_DEBUG, "%s %p:%p REF %s", refcount->object_type, refcount,
+            refcount->destroy.cb_arg, reason);
+  }
+#else
+inline void grpc_stream_ref(grpc_stream_refcount* refcount) {
+#endif
+  refcount->refs.RefNonZero();
+}
+
+void grpc_stream_destroy(grpc_stream_refcount* refcount);
+
+#ifndef NDEBUG
+inline void grpc_stream_unref(grpc_stream_refcount* refcount,
+                              const char* reason) {
+  if (grpc_trace_stream_refcount.enabled()) {
+    gpr_log(GPR_DEBUG, "%s %p:%p UNREF %s", refcount->object_type, refcount,
+            refcount->destroy.cb_arg, reason);
+  }
+#else
+inline void grpc_stream_unref(grpc_stream_refcount* refcount) {
+#endif
+  if (GPR_UNLIKELY(refcount->refs.Unref())) {
+    grpc_stream_destroy(refcount);
+  }
+}
 
 /* Wrap a buffer that is owned by some stream object into a slice that shares
    the same refcount */
 grpc_slice grpc_slice_from_stream_owned_buffer(grpc_stream_refcount* refcount,
                                                void* buffer, size_t length);
 
-typedef struct {
-  uint64_t framing_bytes;
-  uint64_t data_bytes;
-  uint64_t header_bytes;
-} grpc_transport_one_way_stats;
+struct grpc_transport_one_way_stats {
+  uint64_t framing_bytes = 0;
+  uint64_t data_bytes = 0;
+  uint64_t header_bytes = 0;
+};
 
-typedef struct grpc_transport_stream_stats {
+struct grpc_transport_stream_stats {
   grpc_transport_one_way_stats incoming;
   grpc_transport_one_way_stats outgoing;
-} grpc_transport_stream_stats;
+};
 
 void grpc_transport_move_one_way_stats(grpc_transport_one_way_stats* from,
                                        grpc_transport_one_way_stats* to);
@@ -111,24 +138,41 @@ void grpc_transport_move_stats(grpc_transport_stream_stats* from,
 // currently handling the batch).  Once a filter or transport passes control
 // of the batch to the next handler, it cannot depend on the contents of
 // this struct anymore, because the next handler may reuse it.
-typedef struct {
-  void* extra_arg;
+struct grpc_handler_private_op_data {
+  void* extra_arg = nullptr;
   grpc_closure closure;
-} grpc_handler_private_op_data;
+  grpc_handler_private_op_data() { memset(&closure, 0, sizeof(closure)); }
+};
 
 typedef struct grpc_transport_stream_op_batch_payload
     grpc_transport_stream_op_batch_payload;
 
 /* Transport stream op: a set of operations to perform on a transport
    against a single stream */
-typedef struct grpc_transport_stream_op_batch {
-  /** Should be enqueued when all requested operations (excluding recv_message
-      and recv_initial_metadata which have their own closures) in a given batch
-      have been completed. */
-  grpc_closure* on_complete;
+struct grpc_transport_stream_op_batch {
+  grpc_transport_stream_op_batch()
+      : send_initial_metadata(false),
+        send_trailing_metadata(false),
+        send_message(false),
+        recv_initial_metadata(false),
+        recv_message(false),
+        recv_trailing_metadata(false),
+        cancel_stream(false),
+        is_traced(false) {}
+
+  /** Should be scheduled when all of the non-recv operations in the batch
+      are complete.
+
+      The recv ops (recv_initial_metadata, recv_message, and
+      recv_trailing_metadata) each have their own callbacks.  If a batch
+      contains both recv ops and non-recv ops, on_complete should be
+      scheduled as soon as the non-recv ops are complete, regardless of
+      whether or not the recv ops are complete.  If a batch contains
+      only recv ops, on_complete can be null. */
+  grpc_closure* on_complete = nullptr;
 
   /** Values for the stream op (fields set are determined by flags above) */
-  grpc_transport_stream_op_batch_payload* payload;
+  grpc_transport_stream_op_batch_payload* payload = nullptr;
 
   /** Send initial metadata to the peer, from the provided metadata batch. */
   bool send_initial_metadata : 1;
@@ -149,35 +193,44 @@ typedef struct grpc_transport_stream_op_batch {
    */
   bool recv_trailing_metadata : 1;
 
-  /** Collect any stats into provided buffer, zero internal stat counters */
-  bool collect_stats : 1;
-
   /** Cancel this stream with the provided error */
   bool cancel_stream : 1;
+
+  /** Is this stream traced */
+  bool is_traced : 1;
 
   /***************************************************************************
    * remaining fields are initialized and used at the discretion of the
    * current handler of the op */
 
   grpc_handler_private_op_data handler_private;
-} grpc_transport_stream_op_batch;
+};
 
 struct grpc_transport_stream_op_batch_payload {
+  explicit grpc_transport_stream_op_batch_payload(
+      grpc_call_context_element* context)
+      : context(context) {}
+  ~grpc_transport_stream_op_batch_payload() {
+    // We don't really own `send_message`, so release ownership and let the
+    // owner clean the data.
+    send_message.send_message.release();
+  }
+
   struct {
-    grpc_metadata_batch* send_initial_metadata;
+    grpc_metadata_batch* send_initial_metadata = nullptr;
     /** Iff send_initial_metadata != NULL, flags associated with
         send_initial_metadata: a bitfield of GRPC_INITIAL_METADATA_xxx */
-    uint32_t send_initial_metadata_flags;
+    uint32_t send_initial_metadata_flags = 0;
     // If non-NULL, will be set by the transport to the peer string (a char*).
     // The transport retains ownership of the string.
     // Note: This pointer may be used by the transport after the
     // send_initial_metadata op is completed.  It must remain valid
     // until the call is destroyed.
-    gpr_atm* peer_string;
+    gpr_atm* peer_string = nullptr;
   } send_initial_metadata;
 
   struct {
-    grpc_metadata_batch* send_trailing_metadata;
+    grpc_metadata_batch* send_trailing_metadata = nullptr;
   } send_trailing_metadata;
 
   struct {
@@ -189,41 +242,40 @@ struct grpc_transport_stream_op_batch_payload {
   } send_message;
 
   struct {
-    grpc_metadata_batch* recv_initial_metadata;
+    grpc_metadata_batch* recv_initial_metadata = nullptr;
     // Flags are used only on the server side.  If non-null, will be set to
     // a bitfield of the GRPC_INITIAL_METADATA_xxx macros (e.g., to
     // indicate if the call is idempotent).
-    uint32_t* recv_flags;
+    uint32_t* recv_flags = nullptr;
     /** Should be enqueued when initial metadata is ready to be processed. */
-    grpc_closure* recv_initial_metadata_ready;
+    grpc_closure* recv_initial_metadata_ready = nullptr;
     // If not NULL, will be set to true if trailing metadata is
     // immediately available.  This may be a signal that we received a
     // Trailers-Only response.
-    bool* trailing_metadata_available;
+    bool* trailing_metadata_available = nullptr;
     // If non-NULL, will be set by the transport to the peer string (a char*).
     // The transport retains ownership of the string.
     // Note: This pointer may be used by the transport after the
     // recv_initial_metadata op is completed.  It must remain valid
     // until the call is destroyed.
-    gpr_atm* peer_string;
+    gpr_atm* peer_string = nullptr;
   } recv_initial_metadata;
 
   struct {
     // Will be set by the transport to point to the byte stream
     // containing a received message.
     // Will be NULL if trailing metadata is received instead of a message.
-    grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message;
+    grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message = nullptr;
     /** Should be enqueued when one message is ready to be processed. */
-    grpc_closure* recv_message_ready;
+    grpc_closure* recv_message_ready = nullptr;
   } recv_message;
 
   struct {
-    grpc_metadata_batch* recv_trailing_metadata;
+    grpc_metadata_batch* recv_trailing_metadata = nullptr;
+    grpc_transport_stream_stats* collect_stats = nullptr;
+    /** Should be enqueued when initial metadata is ready to be processed. */
+    grpc_closure* recv_trailing_metadata_ready = nullptr;
   } recv_trailing_metadata;
-
-  struct {
-    grpc_transport_stream_stats* collect_stats;
-  } collect_stats;
 
   /** Forcefully close this stream.
       The HTTP2 semantics should be:
@@ -238,7 +290,7 @@ struct grpc_transport_stream_op_batch_payload {
   struct {
     // Error contract: the transport that gets this op must cause cancel_error
     //                 to be unref'ed after processing it
-    grpc_error* cancel_error;
+    grpc_error* cancel_error = GRPC_ERROR_NONE;
   } cancel_stream;
 
   /* Indexes correspond to grpc_context_index enum values */
@@ -248,38 +300,40 @@ struct grpc_transport_stream_op_batch_payload {
 /** Transport op: a set of operations to perform on a transport as a whole */
 typedef struct grpc_transport_op {
   /** Called when processing of this op is done. */
-  grpc_closure* on_consumed;
+  grpc_closure* on_consumed = nullptr;
   /** connectivity monitoring - set connectivity_state to NULL to unsubscribe */
-  grpc_closure* on_connectivity_state_change;
-  grpc_connectivity_state* connectivity_state;
+  grpc_closure* on_connectivity_state_change = nullptr;
+  grpc_connectivity_state* connectivity_state = nullptr;
   /** should the transport be disconnected
    * Error contract: the transport that gets this op must cause
    *                 disconnect_with_error to be unref'ed after processing it */
-  grpc_error* disconnect_with_error;
+  grpc_error* disconnect_with_error = nullptr;
   /** what should the goaway contain?
    * Error contract: the transport that gets this op must cause
    *                 goaway_error to be unref'ed after processing it */
-  grpc_error* goaway_error;
+  grpc_error* goaway_error = nullptr;
   /** set the callback for accepting new streams;
       this is a permanent callback, unlike the other one-shot closures.
       If true, the callback is set to set_accept_stream_fn, with its
       user_data argument set to set_accept_stream_user_data */
-  bool set_accept_stream;
+  bool set_accept_stream = false;
   void (*set_accept_stream_fn)(void* user_data, grpc_transport* transport,
-                               const void* server_data);
-  void* set_accept_stream_user_data;
+                               const void* server_data) = nullptr;
+  void* set_accept_stream_user_data = nullptr;
   /** add this transport to a pollset */
-  grpc_pollset* bind_pollset;
+  grpc_pollset* bind_pollset = nullptr;
   /** add this transport to a pollset_set */
-  grpc_pollset_set* bind_pollset_set;
+  grpc_pollset_set* bind_pollset_set = nullptr;
   /** send a ping, if either on_initiate or on_ack is not NULL */
   struct {
     /** Ping may be delayed by the transport, on_initiate callback will be
         called when the ping is actually being sent. */
-    grpc_closure* on_initiate;
+    grpc_closure* on_initiate = nullptr;
     /** Called when the ping ack is received */
-    grpc_closure* on_ack;
+    grpc_closure* on_ack = nullptr;
   } send_ping;
+  // If true, will reset the channel's connection backoff.
+  bool reset_connect_backoff = false;
 
   /***************************************************************************
    * remaining fields are initialized and used at the discretion of the
@@ -304,7 +358,8 @@ size_t grpc_transport_stream_size(grpc_transport* transport);
                    supplied from the accept_stream callback function */
 int grpc_transport_init_stream(grpc_transport* transport, grpc_stream* stream,
                                grpc_stream_refcount* refcount,
-                               const void* server_data, gpr_arena* arena);
+                               const void* server_data,
+                               grpc_core::Arena* arena);
 
 void grpc_transport_set_pops(grpc_transport* transport, grpc_stream* stream,
                              grpc_polling_entity* pollent);
@@ -325,7 +380,7 @@ void grpc_transport_destroy_stream(grpc_transport* transport,
 
 void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_transport_stream_op_batch* op, grpc_error* error,
-    grpc_call_combiner* call_combiner);
+    grpc_core::CallCombiner* call_combiner);
 
 char* grpc_transport_stream_op_batch_string(grpc_transport_stream_op_batch* op);
 char* grpc_transport_op_string(grpc_transport_op* op);

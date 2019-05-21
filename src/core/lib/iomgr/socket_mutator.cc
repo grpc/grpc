@@ -57,7 +57,7 @@ int grpc_socket_mutator_compare(grpc_socket_mutator* a,
 
 void grpc_socket_mutator_unref(grpc_socket_mutator* mutator) {
   if (gpr_unref(&mutator->refcount)) {
-    mutator->vtable->destory(mutator);
+    mutator->vtable->destroy(mutator);
   }
 }
 

@@ -27,26 +27,18 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-void grpc_chttp2_incoming_metadata_buffer_init(
-    grpc_chttp2_incoming_metadata_buffer* buffer, gpr_arena* arena) {
-  buffer->arena = arena;
-  grpc_metadata_batch_init(&buffer->batch);
-  buffer->batch.deadline = GRPC_MILLIS_INF_FUTURE;
-}
-
-void grpc_chttp2_incoming_metadata_buffer_destroy(
-    grpc_chttp2_incoming_metadata_buffer* buffer) {
-  grpc_metadata_batch_destroy(&buffer->batch);
-}
-
 grpc_error* grpc_chttp2_incoming_metadata_buffer_add(
     grpc_chttp2_incoming_metadata_buffer* buffer, grpc_mdelem elem) {
   buffer->size += GRPC_MDELEM_LENGTH(elem);
-  return grpc_metadata_batch_add_tail(
-      &buffer->batch,
-      static_cast<grpc_linked_mdelem*>(
-          gpr_arena_alloc(buffer->arena, sizeof(grpc_linked_mdelem))),
-      elem);
+  grpc_linked_mdelem* storage;
+  if (buffer->count < buffer->kPreallocatedMDElem) {
+    storage = &buffer->preallocated_mdelems[buffer->count];
+    buffer->count++;
+  } else {
+    storage = static_cast<grpc_linked_mdelem*>(
+        buffer->arena->Alloc(sizeof(grpc_linked_mdelem)));
+  }
+  return grpc_metadata_batch_add_tail(&buffer->batch, storage, elem);
 }
 
 grpc_error* grpc_chttp2_incoming_metadata_buffer_replace_or_add(

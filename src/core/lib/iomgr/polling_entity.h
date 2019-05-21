@@ -34,13 +34,13 @@ typedef enum grpc_pollset_tag {
  * functions that accept a pollset XOR a pollset_set to do so through an
  * abstract interface. No ownership is taken. */
 
-typedef struct grpc_polling_entity {
+struct grpc_polling_entity {
   union {
-    grpc_pollset* pollset;
+    grpc_pollset* pollset = nullptr;
     grpc_pollset_set* pollset_set;
   } pollent;
-  grpc_pollset_tag tag;
-} grpc_polling_entity;
+  grpc_pollset_tag tag = GRPC_POLLS_NONE;
+};
 
 grpc_polling_entity grpc_polling_entity_create_from_pollset_set(
     grpc_pollset_set* pollset_set);

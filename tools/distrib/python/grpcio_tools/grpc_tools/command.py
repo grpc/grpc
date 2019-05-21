@@ -21,7 +21,7 @@ import setuptools
 from grpc_tools import protoc
 
 
-def build_package_protos(package_root):
+def build_package_protos(package_root, strict_mode=False):
     proto_files = []
     inclusion_root = os.path.abspath(package_root)
     for root, _, files in os.walk(inclusion_root):
@@ -42,17 +42,21 @@ def build_package_protos(package_root):
             '--grpc_python_out={}'.format(inclusion_root),
         ] + [proto_file]
         if protoc.main(command) != 0:
-            sys.stderr.write('warning: {} failed'.format(command))
+            if strict_mode:
+                raise Exception('error: {} failed'.format(command))
+            else:
+                sys.stderr.write('warning: {} failed'.format(command))
 
 
 class BuildPackageProtos(setuptools.Command):
     """Command to generate project *_pb2.py modules from proto files."""
 
     description = 'build grpc protobuf modules'
-    user_options = []
+    user_options = [('strict-mode', 's',
+                     'exit with non-zero value if the proto compiling fails.')]
 
     def initialize_options(self):
-        pass
+        self.strict_mode = False
 
     def finalize_options(self):
         pass
@@ -62,4 +66,5 @@ class BuildPackageProtos(setuptools.Command):
         # directory is provided as an 'include' directory. We assume it's the '' key
         # to `self.distribution.package_dir` (and get a key error if it's not
         # there).
-        build_package_protos(self.distribution.package_dir[''])
+        build_package_protos(self.distribution.package_dir[''],
+                             self.strict_mode)

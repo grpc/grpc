@@ -31,24 +31,19 @@
 // protected destructor.
 #define GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE \
   template <typename T>                           \
-  friend void Delete(T*);
+  friend void grpc_core::Delete(T*);
 // Add this to a class that want to use New(), but has a private or
 // protected constructor.
 #define GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW \
   template <typename T, typename... Args>      \
-  friend T* New(Args&&...);
+  friend T* grpc_core::New(Args&&...);
 
 namespace grpc_core {
-
-// The alignment of memory returned by gpr_malloc().
-constexpr size_t kAlignmentForDefaultAllocationInBytes = 8;
 
 // Alternative to new, since we cannot use it (for fear of libstdc++)
 template <typename T, typename... Args>
 inline T* New(Args&&... args) {
-  void* p = alignof(T) > kAlignmentForDefaultAllocationInBytes
-                ? gpr_malloc_aligned(sizeof(T), alignof(T))
-                : gpr_malloc(sizeof(T));
+  void* p = gpr_malloc(sizeof(T));
   return new (p) T(std::forward<Args>(args)...);
 }
 
@@ -57,11 +52,7 @@ template <typename T>
 inline void Delete(T* p) {
   if (p == nullptr) return;
   p->~T();
-  if (alignof(T) > kAlignmentForDefaultAllocationInBytes) {
-    gpr_free_aligned(p);
-  } else {
-    gpr_free(p);
-  }
+  gpr_free(p);
 }
 
 template <typename T>

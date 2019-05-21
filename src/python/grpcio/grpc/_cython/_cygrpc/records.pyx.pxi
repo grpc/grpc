@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from libc.stdint cimport intptr_t
-
 
 cdef bytes _slice_bytes(grpc_slice slice):
   cdef void *start = grpc_slice_start_ptr(slice)
@@ -110,6 +108,11 @@ class OperationType:
   receive_status_on_client = GRPC_OP_RECV_STATUS_ON_CLIENT
   receive_close_on_server = GRPC_OP_RECV_CLOSE_ON_SERVER
 
+GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM= (
+  _GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM)
+
+GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY = (
+  _GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY)
 
 class CompressionAlgorithm:
   none = GRPC_COMPRESS_NONE
@@ -127,14 +130,14 @@ class CompressionLevel:
 cdef class CallDetails:
 
   def __cinit__(self):
-    grpc_init()
+    fork_handlers_and_grpc_init()
     with nogil:
       grpc_call_details_init(&self.c_details)
 
   def __dealloc__(self):
     with nogil:
       grpc_call_details_destroy(&self.c_details)
-    grpc_shutdown()
+    grpc_shutdown_blocking()
 
   @property
   def method(self):

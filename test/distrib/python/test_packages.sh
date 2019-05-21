@@ -28,14 +28,23 @@ else
   echo "Testing Python source distribution"
   ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio-[0-9]*.tar.gz)
   TOOLS_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio-tools-[0-9]*.tar.gz)
-  HEALTH_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio-health-checking-[0-9]*.tar.gz)
-  REFLECTION_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio-reflection-[0-9]*.tar.gz)
 fi
+
+HEALTH_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio-health-checking-[0-9]*.tar.gz)
+REFLECTION_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio-reflection-[0-9]*.tar.gz)
+TESTING_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio-testing-[0-9]*.tar.gz)
 
 VIRTUAL_ENV=$(mktemp -d)
 virtualenv "$VIRTUAL_ENV"
 PYTHON=$VIRTUAL_ENV/bin/python
-"$PYTHON" -m pip install --upgrade six pip
+"$PYTHON" -m pip install --upgrade six pip wheel
+
+function validate_wheel_hashes() {
+  for file in "$@"; do
+    "$PYTHON" -m wheel unpack "$file" -d /tmp || return 1
+  done
+  return 0
+}
 
 function at_least_one_installs() {
   for file in "$@"; do
@@ -48,18 +57,24 @@ function at_least_one_installs() {
 
 
 #
+# Validate the files in wheel matches their hashes and size in RECORD
+#
+
+if [[ "$1" == "binary" ]]; then
+  validate_wheel_hashes "${ARCHIVES[@]}"
+  validate_wheel_hashes "${TOOLS_ARCHIVES[@]}"
+fi
+
+
+#
 # Install our distributions in order of dependencies
 #
 
 at_least_one_installs "${ARCHIVES[@]}"
 at_least_one_installs "${TOOLS_ARCHIVES[@]}"
-
-if [[ "$1" == "source" ]]
-then
-  echo "Testing Python health and reflection packages"
-  at_least_one_installs "${HEALTH_ARCHIVES[@]}"
-  at_least_one_installs "${REFLECTION_ARCHIVES[@]}"
-fi
+at_least_one_installs "${HEALTH_ARCHIVES[@]}"
+at_least_one_installs "${REFLECTION_ARCHIVES[@]}"
+at_least_one_installs "${TESTING_ARCHIVES[@]}"
 
 
 #

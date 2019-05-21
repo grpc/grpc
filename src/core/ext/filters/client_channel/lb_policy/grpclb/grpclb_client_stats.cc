@@ -25,6 +25,8 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/sync.h"
+
 namespace grpc_core {
 
 void GrpcLbClientStats::AddCallStarted() {
@@ -43,11 +45,12 @@ void GrpcLbClientStats::AddCallFinished(
   }
 }
 
-void GrpcLbClientStats::AddCallDroppedLocked(char* token) {
+void GrpcLbClientStats::AddCallDropped(const char* token) {
   // Increment num_calls_started and num_calls_finished.
   gpr_atm_full_fetch_add(&num_calls_started_, (gpr_atm)1);
   gpr_atm_full_fetch_add(&num_calls_finished_, (gpr_atm)1);
   // Record the drop.
+  MutexLock lock(&drop_count_mu_);
   if (drop_token_counts_ == nullptr) {
     drop_token_counts_.reset(New<DroppedCallCounts>());
   }
@@ -69,7 +72,7 @@ void AtomicGetAndResetCounter(int64_t* value, gpr_atm* counter) {
 
 }  // namespace
 
-void GrpcLbClientStats::GetLocked(
+void GrpcLbClientStats::Get(
     int64_t* num_calls_started, int64_t* num_calls_finished,
     int64_t* num_calls_finished_with_client_failed_to_send,
     int64_t* num_calls_finished_known_received,
@@ -80,6 +83,7 @@ void GrpcLbClientStats::GetLocked(
                            &num_calls_finished_with_client_failed_to_send_);
   AtomicGetAndResetCounter(num_calls_finished_known_received,
                            &num_calls_finished_known_received_);
+  MutexLock lock(&drop_count_mu_);
   *drop_token_counts = std::move(drop_token_counts_);
 }
 

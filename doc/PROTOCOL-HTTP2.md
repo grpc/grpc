@@ -61,6 +61,8 @@ the form shown above.
 
 If **Timeout** is omitted a server should assume an infinite timeout. Client implementations are free to send a default minimum timeout based on their deployment requirements.
 
+If **Content-Type** does not begin with "application/grpc", gRPC servers SHOULD respond with HTTP status of 415 (Unsupported Media Type).  This will prevent other HTTP/2 clients from interpreting a gRPC error response, which uses status 200 (OK), as successful.
+
 **Custom-Metadata** is an arbitrary set of key-value pairs defined by the application layer. Header names starting with "grpc-" but not listed here are reserved for future GRPC use and should not be used by applications as **Custom-Metadata**.
 
 Note that HTTP2 does not allow arbitrary octet sequences for header values so binary header values must be encoded using Base64 as per https://tools.ietf.org/html/rfc4648#section-4. Implementations MUST accept padded and un-padded values and should emit un-padded values. Applications define binary headers by having their names end with "-bin". Runtime libraries use this suffix to detect binary headers and properly apply base64 encoding & decoding as headers are sent and received.
@@ -92,7 +94,7 @@ The repeated sequence of **Length-Prefixed-Message** items is delivered in DATA 
 
 * **Length-Prefixed-Message** → Compressed-Flag Message-Length Message
 * <a name="compressed-flag"></a>**Compressed-Flag** → 0 / 1   # encoded as 1 byte unsigned integer
-* **Message-Length** → {_length of Message_}  # encoded as 4 byte unsigned integer
+* **Message-Length** → {_length of Message_}  # encoded as 4 byte unsigned integer (big endian)
 * **Message** → \*{binary octet}
 
 A **Compressed-Flag** value of 1 indicates that the binary octet sequence of **Message** is compressed using the mechanism declared by the **Message-Encoding** header. A value of 0 indicates that no encoding of **Message** bytes has occurred. Compression contexts are NOT maintained over message boundaries, implementations must create a new context for each message in the stream. If the **Message-Encoding** header is omitted then the **Compressed-Flag** must be 0.
@@ -255,5 +257,3 @@ to be used.
 * **Service-Name** → ?( {_proto package name_} "." ) {_service name_}
 * **Message-Type** → {_fully qualified proto message name_}
 * **Content-Type** → "application/grpc+proto"
-
-

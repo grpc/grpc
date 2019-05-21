@@ -128,14 +128,16 @@ def _flatten_result_inplace(scenario_result):
 
 def _populate_metadata_inplace(scenario_result):
     """Populates metadata based on environment variables set by Jenkins."""
-    # NOTE: Grabbing the Jenkins environment variables will only work if the
-    # driver is running locally on the same machine where Jenkins has started
+    # NOTE: Grabbing the Kokoro environment variables will only work if the
+    # driver is running locally on the same machine where Kokoro has started
     # the job. For our setup, this is currently the case, so just assume that.
-    build_number = os.getenv('BUILD_NUMBER')
-    build_url = os.getenv('BUILD_URL')
-    job_name = os.getenv('JOB_NAME')
-    git_commit = os.getenv('GIT_COMMIT')
+    build_number = os.getenv('KOKORO_BUILD_NUMBER')
+    build_url = 'https://source.cloud.google.com/results/invocations/%s' % os.getenv(
+        'KOKORO_BUILD_ID')
+    job_name = os.getenv('KOKORO_JOB_NAME')
+    git_commit = os.getenv('KOKORO_GIT_COMMIT')
     # actual commit is the actual head of PR that is getting tested
+    # TODO(jtattermusch): unclear how to obtain on Kokoro
     git_actual_commit = os.getenv('ghprbActualCommit')
 
     utc_timestamp = str(calendar.timegm(time.gmtime()))

@@ -42,11 +42,11 @@ struct call_data {
   // State for intercepting send_initial_metadata.
   grpc_closure on_complete_for_send;
   grpc_closure* original_on_complete_for_send;
-  bool send_initial_metadata_succeeded;
+  bool send_initial_metadata_succeeded = false;
   // State for intercepting recv_initial_metadata.
   grpc_closure recv_initial_metadata_ready;
   grpc_closure* original_recv_initial_metadata_ready;
-  bool recv_initial_metadata_succeeded;
+  bool recv_initial_metadata_succeeded = false;
 };
 
 }  // namespace
@@ -70,16 +70,8 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
 
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  // Get stats object from context and take a ref.
   GPR_ASSERT(args->context != nullptr);
-  if (args->context[GRPC_GRPCLB_CLIENT_STATS].value != nullptr) {
-    calld->client_stats = static_cast<grpc_core::GrpcLbClientStats*>(
-                              args->context[GRPC_GRPCLB_CLIENT_STATS].value)
-                              ->Ref();
-    // Record call started.
-    calld->client_stats->AddCallStarted();
-  }
+  new (elem->call_data) call_data();
   return GRPC_ERROR_NONE;
 }
 
@@ -93,34 +85,43 @@ static void destroy_call_elem(grpc_call_element* elem,
     calld->client_stats->AddCallFinished(
         !calld->send_initial_metadata_succeeded /* client_failed_to_send */,
         calld->recv_initial_metadata_succeeded /* known_received */);
-    // All done, so unref the stats object.
-    // TODO(roth): Eliminate this once filter stack is converted to C++.
-    calld->client_stats.reset();
   }
+  calld->~call_data();
 }
 
 static void start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   GPR_TIMER_SCOPE("clr_start_transport_stream_op_batch", 0);
-  if (calld->client_stats != nullptr) {
-    // Intercept send_initial_metadata.
-    if (batch->send_initial_metadata) {
-      calld->original_on_complete_for_send = batch->on_complete;
-      GRPC_CLOSURE_INIT(&calld->on_complete_for_send, on_complete_for_send,
-                        calld, grpc_schedule_on_exec_ctx);
-      batch->on_complete = &calld->on_complete_for_send;
+  // Handle send_initial_metadata.
+  if (batch->send_initial_metadata) {
+    // Grab client stats object from user_data for LB token metadata.
+    grpc_linked_mdelem* lb_token =
+        batch->payload->send_initial_metadata.send_initial_metadata->idx.named
+            .lb_token;
+    if (lb_token != nullptr) {
+      grpc_core::GrpcLbClientStats* client_stats =
+          static_cast<grpc_core::GrpcLbClientStats*>(grpc_mdelem_get_user_data(
+              lb_token->md, grpc_core::GrpcLbClientStats::Destroy));
+      if (client_stats != nullptr) {
+        calld->client_stats = client_stats->Ref();
+        // Intercept completion.
+        calld->original_on_complete_for_send = batch->on_complete;
+        GRPC_CLOSURE_INIT(&calld->on_complete_for_send, on_complete_for_send,
+                          calld, grpc_schedule_on_exec_ctx);
+        batch->on_complete = &calld->on_complete_for_send;
+      }
     }
-    // Intercept recv_initial_metadata.
-    if (batch->recv_initial_metadata) {
-      calld->original_recv_initial_metadata_ready =
-          batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
-      GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
-                        recv_initial_metadata_ready, calld,
-                        grpc_schedule_on_exec_ctx);
-      batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
-          &calld->recv_initial_metadata_ready;
-    }
+  }
+  // Intercept completion of recv_initial_metadata.
+  if (batch->recv_initial_metadata) {
+    calld->original_recv_initial_metadata_ready =
+        batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
+    GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
+                      recv_initial_metadata_ready, calld,
+                      grpc_schedule_on_exec_ctx);
+    batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
+        &calld->recv_initial_metadata_ready;
   }
   // Chain to next filter.
   grpc_call_next_op(elem, batch);

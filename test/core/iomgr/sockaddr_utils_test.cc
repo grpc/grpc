@@ -270,7 +270,7 @@ static void test_sockaddr_set_get_port(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
 
   test_sockaddr_is_v4mapped();
   test_sockaddr_to_v4mapped();

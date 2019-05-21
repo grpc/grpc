@@ -13,8 +13,6 @@
 # limitations under the License.
 """Run a group of subprocesses and then finish."""
 
-from __future__ import print_function
-
 import logging
 import multiprocessing
 import os
@@ -118,7 +116,7 @@ def eintr_be_gone(fn):
     while True:
         try:
             return fn()
-        except IOError, e:
+        except IOError as e:
             if e.errno != errno.EINTR:
                 raise
 
@@ -144,7 +142,7 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
                      if do_newline or explanatory_text is not None else ''))
             sys.stdout.flush()
             return
-        except IOError, e:
+        except IOError as e:
             if e.errno != errno.EINTR:
                 raise
 
@@ -176,13 +174,15 @@ class JobSpec(object):
                  timeout_retries=0,
                  kill_handler=None,
                  cpu_cost=1.0,
-                 verbose_success=False):
+                 verbose_success=False,
+                 logfilename=None):
         """
     Arguments:
       cmdline: a list of arguments to pass as the command line
       environ: a dictionary of environment variables to set in the child process
       kill_handler: a handler that will be called whenever job.kill() is invoked
       cpu_cost: number of cores per second this job needs
+      logfilename: use given file to store job's output, rather than using a temporary file
     """
         if environ is None:
             environ = {}
@@ -197,6 +197,11 @@ class JobSpec(object):
         self.kill_handler = kill_handler
         self.cpu_cost = cpu_cost
         self.verbose_success = verbose_success
+        self.logfilename = logfilename
+        if self.logfilename and self.flake_retries != 0 and self.timeout_retries != 0:
+            # Forbidden to avoid overwriting the test log when retrying.
+            raise Exception(
+                'Cannot use custom logfile when retries are enabled')
 
     def identity(self):
         return '%r %r' % (self.cmdline, self.environ)
@@ -261,7 +266,15 @@ class Job(object):
         return self._spec
 
     def start(self):
-        self._tempfile = tempfile.TemporaryFile()
+        if self._spec.logfilename:
+            # make sure the log directory exists
+            logfile_dir = os.path.dirname(
+                os.path.abspath(self._spec.logfilename))
+            if not os.path.exists(logfile_dir):
+                os.makedirs(logfile_dir)
+            self._logfile = open(self._spec.logfilename, 'w+')
+        else:
+            self._logfile = tempfile.TemporaryFile()
         env = dict(os.environ)
         env.update(self._spec.environ)
         env.update(self._add_env)
@@ -277,7 +290,7 @@ class Job(object):
             measure_cpu_costs = False
         try_start = lambda: subprocess.Popen(args=cmdline,
                                              stderr=subprocess.STDOUT,
-                                             stdout=self._tempfile,
+                                             stdout=self._logfile,
                                              cwd=self._spec.cwd,
                                              shell=self._spec.shell,
                                              env=env)
@@ -300,7 +313,7 @@ class Job(object):
         """Poll current state of the job. Prints messages at completion."""
 
         def stdout(self=self):
-            stdout = read_from_start(self._tempfile)
+            stdout = read_from_start(self._logfile)
             self.result.message = stdout[-_MAX_RESULT_SIZE:]
             return stdout
 

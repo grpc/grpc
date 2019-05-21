@@ -1,0 +1,76 @@
+html, body
+{
+    margin: 0;
+    font-family: sans-serif;
+}
+
+a, a:visited, a:link, a:active {
+    color: #2da6b0;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #2da6b0;
+    text-decoration: underline;
+}
+
+#topbar {
+    background-color: #2da6b0;
+    height: 60px;
+    margin:auto;
+}
+
+#topbar .title {
+    position: relative;
+    top: 24px;
+    left: 24px;
+    color: white;
+    font-family: sans-serif;
+    font-weight: bold;
+}
+
+#main {
+    max-width:1100px;
+    margin:auto;
+}
+
+#main h2 {
+    text-align: left;
+}
+
+#main table {
+    width:100%;
+    border-collapse: collapse;
+    font-size: small;
+    font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', Courier, monospace;
+}
+#main table tr td {
+    border: solid black 1px;
+    padding: 5px;
+}
+
+#main table tr td.hash {
+    text-align: right;
+    border-left: none;
+    font-size: x-small;
+}
+
+#main table tr td.name {
+    text-align: left;
+    border-right: none;
+}
+
+p.description
+{
+    font-size: smaller;
+}
+
+#metadata {
+    margin-top: 15px;
+    padding: 15px;
+    font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', Courier, monospace;
+}
+
+#metadata span.fieldname {
+    font-family: sans-serif;
+}

@@ -55,7 +55,7 @@ class ProtoServerReflectionTest : public ::testing::Test {
   void ResetStub() {
     string target = "dns:localhost:" + to_string(port_);
     std::shared_ptr<Channel> channel =
-        CreateChannel(target, InsecureChannelCredentials());
+        grpc::CreateChannel(target, InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
     desc_db_.reset(new ProtoReflectionDescriptorDatabase(channel));
     desc_pool_.reset(new protobuf::DescriptorPool(desc_db_.get()));
@@ -144,7 +144,7 @@ TEST_F(ProtoServerReflectionTest, CheckResponseWithLocalDescriptorPool) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

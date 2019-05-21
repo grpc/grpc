@@ -15,6 +15,7 @@
 
 import socket
 import time
+import logging
 import unittest
 
 import grpc
@@ -97,7 +98,10 @@ class ReconnectTest(unittest.TestCase):
         server.add_insecure_port('[::]:{}'.format(port))
         server.start()
         self.assertEqual(_RESPONSE, multi_callable(_REQUEST))
+        server.stop(None)
+        channel.close()
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)

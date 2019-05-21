@@ -79,7 +79,10 @@ void UpdateActions(
     std::unordered_map<grpc::string, std::function<bool()>>* actions) {}
 
 std::shared_ptr<Channel> CreateChannelForTestCase(
-    const grpc::string& test_case) {
+    const grpc::string& test_case,
+    std::vector<
+        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+        interceptor_creators) {
   GPR_ASSERT(FLAGS_server_port);
   const int host_port_buf_size = 1024;
   char host_port[host_port_buf_size];
@@ -88,28 +91,34 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
 
   std::shared_ptr<CallCredentials> creds;
   if (test_case == "compute_engine_creds") {
-    GPR_ASSERT(FLAGS_use_tls);
-    creds = GoogleComputeEngineCredentials();
-    GPR_ASSERT(creds);
+    creds = FLAGS_custom_credentials_type == "google_default_credentials"
+                ? nullptr
+                : GoogleComputeEngineCredentials();
   } else if (test_case == "jwt_token_creds") {
-    GPR_ASSERT(FLAGS_use_tls);
     grpc::string json_key = GetServiceAccountJsonKey();
     std::chrono::seconds token_lifetime = std::chrono::hours(1);
-    creds =
-        ServiceAccountJWTAccessCredentials(json_key, token_lifetime.count());
-    GPR_ASSERT(creds);
+    creds = FLAGS_custom_credentials_type == "google_default_credentials"
+                ? nullptr
+                : ServiceAccountJWTAccessCredentials(json_key,
+                                                     token_lifetime.count());
   } else if (test_case == "oauth2_auth_token") {
-    grpc::string raw_token = GetOauth2AccessToken();
-    creds = AccessTokenCredentials(raw_token);
-    GPR_ASSERT(creds);
+    creds = FLAGS_custom_credentials_type == "google_default_credentials"
+                ? nullptr
+                : AccessTokenCredentials(GetOauth2AccessToken());
   }
   if (FLAGS_custom_credentials_type.empty()) {
     transport_security security_type =
         FLAGS_use_alts ? ALTS : (FLAGS_use_tls ? TLS : INSECURE);
     return CreateTestChannel(host_port, FLAGS_server_host_override,
-                             security_type, !FLAGS_use_test_ca, creds);
+                             security_type, !FLAGS_use_test_ca, creds,
+                             std::move(interceptor_creators));
   } else {
-    return CreateTestChannel(host_port, FLAGS_custom_credentials_type, creds);
+    if (interceptor_creators.empty()) {
+      return CreateTestChannel(host_port, FLAGS_custom_credentials_type, creds);
+    } else {
+      return CreateTestChannel(host_port, FLAGS_custom_credentials_type, creds,
+                               std::move(interceptor_creators));
+    }
   }
 }
 

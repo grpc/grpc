@@ -28,11 +28,10 @@
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config.h>
 
+#include "src/cpp/server/load_reporter/constants.h"
+
 namespace grpc {
 namespace load_reporter {
-
-constexpr char kInvalidLbId[] = "<INVALID_LBID_238dsb234890rb>";
-constexpr uint8_t kLbIdLen = 8;
 
 // The load data storage is organized in hierarchy. The LoadDataStore is the
 // top-level data store. In LoadDataStore, for each host we keep a
@@ -68,12 +67,15 @@ class CallMetricValue {
 // The key of a load record.
 class LoadRecordKey {
  public:
-  explicit LoadRecordKey(grpc::string lb_id, grpc::string lb_tag,
-                         grpc::string user_id, grpc::string client_ip_hex)
+  LoadRecordKey(grpc::string lb_id, grpc::string lb_tag, grpc::string user_id,
+                grpc::string client_ip_hex)
       : lb_id_(std::move(lb_id)),
         lb_tag_(std::move(lb_tag)),
         user_id_(std::move(user_id)),
         client_ip_hex_(std::move(client_ip_hex)) {}
+
+  // Parses the input client_ip_and_token to set client IP, LB ID, and LB tag.
+  LoadRecordKey(const grpc::string& client_ip_and_token, grpc::string user_id);
 
   grpc::string ToString() const {
     return "[lb_id_=" + lb_id_ + ", lb_tag_=" + lb_tag_ +
@@ -85,6 +87,9 @@ class LoadRecordKey {
     return lb_id_ == other.lb_id_ && lb_tag_ == other.lb_tag_ &&
            user_id_ == other.user_id_ && client_ip_hex_ == other.client_ip_hex_;
   }
+
+  // Gets the client IP bytes in network order (i.e., big-endian).
+  grpc::string GetClientIpBytes() const;
 
   // Getters.
   const grpc::string& lb_id() const { return lb_id_; }
@@ -119,14 +124,17 @@ class LoadRecordKey {
 class LoadRecordValue {
  public:
   explicit LoadRecordValue(uint64_t start_count = 0, uint64_t ok_count = 0,
-                           uint64_t error_count = 0, double bytes_sent = 0,
-                           double bytes_recv = 0, double latency_ms = 0)
+                           uint64_t error_count = 0, uint64_t bytes_sent = 0,
+                           uint64_t bytes_recv = 0, uint64_t latency_ms = 0)
       : start_count_(start_count),
         ok_count_(ok_count),
         error_count_(error_count),
         bytes_sent_(bytes_sent),
         bytes_recv_(bytes_recv),
         latency_ms_(latency_ms) {}
+
+  LoadRecordValue(grpc::string metric_name, uint64_t num_calls,
+                  double total_metric_value);
 
   void MergeFrom(const LoadRecordValue& other) {
     start_count_ += other.start_count_;
@@ -152,7 +160,8 @@ class LoadRecordValue {
            ", error_count_=" + grpc::to_string(error_count_) +
            ", bytes_sent_=" + grpc::to_string(bytes_sent_) +
            ", bytes_recv_=" + grpc::to_string(bytes_recv_) +
-           ", latency_ms_=" + grpc::to_string(latency_ms_) + "]";
+           ", latency_ms_=" + grpc::to_string(latency_ms_) + ", " +
+           grpc::to_string(call_metrics_.size()) + " other call metric(s)]";
   }
 
   bool InsertCallMetric(const grpc::string& metric_name,
@@ -164,9 +173,9 @@ class LoadRecordValue {
   uint64_t start_count() const { return start_count_; }
   uint64_t ok_count() const { return ok_count_; }
   uint64_t error_count() const { return error_count_; }
-  double bytes_sent() const { return bytes_sent_; }
-  double bytes_recv() const { return bytes_recv_; }
-  double latency_ms() const { return latency_ms_; }
+  uint64_t bytes_sent() const { return bytes_sent_; }
+  uint64_t bytes_recv() const { return bytes_recv_; }
+  uint64_t latency_ms() const { return latency_ms_; }
   const std::unordered_map<grpc::string, CallMetricValue>& call_metrics()
       const {
     return call_metrics_;
@@ -176,9 +185,9 @@ class LoadRecordValue {
   uint64_t start_count_ = 0;
   uint64_t ok_count_ = 0;
   uint64_t error_count_ = 0;
-  double bytes_sent_ = 0;
-  double bytes_recv_ = 0;
-  double latency_ms_ = 0;
+  uint64_t bytes_sent_ = 0;
+  uint64_t bytes_recv_ = 0;
+  uint64_t latency_ms_ = 0;
   std::unordered_map<grpc::string, CallMetricValue> call_metrics_;
 };
 

@@ -24,8 +24,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
@@ -222,7 +222,7 @@ static grpc_channel_credentials* read_ssl_channel_creds(input_stream* inp) {
   grpc_channel_credentials* creds = grpc_ssl_credentials_create(
       root_certs,
       private_key != nullptr && certs != nullptr ? &key_cert_pair : nullptr,
-      nullptr);
+      nullptr, nullptr);
   cred_artifact_ctx_finish(&ctx);
   return creds;
 }
@@ -325,7 +325,7 @@ typedef struct addr_req {
   char* addr;
   grpc_closure* on_done;
   grpc_resolved_addresses** addrs;
-  grpc_lb_addresses** lb_addrs;
+  grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses;
 } addr_req;
 
 static void finish_resolve(void* arg, grpc_error* error) {
@@ -340,11 +340,12 @@ static void finish_resolve(void* arg, grpc_error* error) {
           gpr_malloc(sizeof(*addrs->addrs)));
       addrs->addrs[0].len = 0;
       *r->addrs = addrs;
-    } else if (r->lb_addrs != nullptr) {
-      grpc_lb_addresses* lb_addrs = grpc_lb_addresses_create(1, nullptr);
-      grpc_lb_addresses_set_address(lb_addrs, 0, nullptr, 0, false, nullptr,
-                                    nullptr);
-      *r->lb_addrs = lb_addrs;
+    } else if (r->addresses != nullptr) {
+      *r->addresses = grpc_core::MakeUnique<grpc_core::ServerAddressList>();
+      grpc_resolved_address dummy_resolved_address;
+      memset(&dummy_resolved_address, 0, sizeof(dummy_resolved_address));
+      dummy_resolved_address.len = 0;
+      (*r->addresses)->emplace_back(dummy_resolved_address, nullptr);
     }
     GRPC_CLOSURE_SCHED(r->on_done, GRPC_ERROR_NONE);
   } else {
@@ -354,18 +355,17 @@ static void finish_resolve(void* arg, grpc_error* error) {
   }
 
   gpr_free(r->addr);
-  gpr_free(r);
+  grpc_core::Delete(r);
 }
 
 void my_resolve_address(const char* addr, const char* default_port,
                         grpc_pollset_set* interested_parties,
                         grpc_closure* on_done,
-                        grpc_resolved_addresses** addresses) {
-  addr_req* r = static_cast<addr_req*>(gpr_malloc(sizeof(*r)));
+                        grpc_resolved_addresses** addrs) {
+  addr_req* r = grpc_core::New<addr_req>();
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
-  r->addrs = addresses;
-  r->lb_addrs = nullptr;
+  r->addrs = addrs;
   grpc_timer_init(
       &r->timer, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
       GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx));
@@ -374,22 +374,25 @@ void my_resolve_address(const char* addr, const char* default_port,
 static grpc_address_resolver_vtable fuzzer_resolver = {my_resolve_address,
                                                        nullptr};
 
-grpc_ares_request* my_dns_lookup_ares(const char* dns_server, const char* addr,
-                                      const char* default_port,
-                                      grpc_pollset_set* interested_parties,
-                                      grpc_closure* on_done,
-                                      grpc_lb_addresses** lb_addrs,
-                                      bool check_grpclb,
-                                      char** service_config_json) {
+grpc_ares_request* my_dns_lookup_ares_locked(
+    const char* dns_server, const char* addr, const char* default_port,
+    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses,
+    bool check_grpclb, char** service_config_json, int query_timeout,
+    grpc_combiner* combiner) {
   addr_req* r = static_cast<addr_req*>(gpr_malloc(sizeof(*r)));
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
   r->addrs = nullptr;
-  r->lb_addrs = lb_addrs;
+  r->addresses = addresses;
   grpc_timer_init(
       &r->timer, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
       GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx));
   return nullptr;
+}
+
+static void my_cancel_ares_request_locked(grpc_ares_request* request) {
+  GPR_ASSERT(request == nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -418,7 +421,7 @@ static void do_connect(void* arg, grpc_error* error) {
 
     grpc_transport* transport =
         grpc_create_chttp2_transport(nullptr, server, false);
-    grpc_server_setup_transport(g_server, transport, nullptr, nullptr);
+    grpc_server_setup_transport(g_server, transport, nullptr, nullptr, nullptr);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
 
     GRPC_CLOSURE_SCHED(fc->closure, GRPC_ERROR_NONE);
@@ -703,10 +706,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_timer_manager_set_threading(false);
   {
     grpc_core::ExecCtx exec_ctx;
-    grpc_executor_set_threading(false);
+    grpc_core::Executor::SetThreadingAll(false);
   }
   grpc_set_resolver_impl(&fuzzer_resolver);
-  grpc_dns_lookup_ares = my_dns_lookup_ares;
+  grpc_dns_lookup_ares_locked = my_dns_lookup_ares_locked;
+  grpc_cancel_ares_request_locked = my_cancel_ares_request_locked;
 
   GPR_ASSERT(g_channel == nullptr);
   GPR_ASSERT(g_server == nullptr);
@@ -1048,6 +1052,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
           op->reserved = nullptr;
           op->flags = grpc_fuzzer_get_next_uint32(&inp);
         }
+        if (g_channel == nullptr) ok = false;
         if (ok) {
           validator* v = make_finished_batch_validator(g_active_call, has_ops);
           g_active_call->pending_ops++;
@@ -1195,6 +1200,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
   grpc_resource_quota_unref(g_resource_quota);
 
-  grpc_shutdown();
+  grpc_shutdown_blocking();
   return 0;
 }

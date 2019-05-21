@@ -16,8 +16,13 @@
     <PackageReference Include="Grpc" Version="__GRPC_NUGET_VERSION__" />
     <PackageReference Include="Grpc.Auth" Version="__GRPC_NUGET_VERSION__" />
     <PackageReference Include="Grpc.Tools" Version="__GRPC_NUGET_VERSION__" />
+    <PackageReference Include="Google.Protobuf" Version="3.7.0" />
   </ItemGroup>
   
+  <ItemGroup>
+    <Protobuf Include="**\*.proto" />
+  </ItemGroup>
+
   <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
     <!-- Workaround for https://github.com/dotnet/sdk/issues/335 -->
     <FrameworkPathOverride Condition="Exists('/usr/lib/mono/4.5-api')">/usr/lib/mono/4.5-api</FrameworkPathOverride>

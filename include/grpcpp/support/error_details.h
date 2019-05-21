@@ -19,7 +19,7 @@
 #ifndef GRPCPP_SUPPORT_ERROR_DETAILS_H
 #define GRPCPP_SUPPORT_ERROR_DETAILS_H
 
-#include <grpcpp/support/status.h>
+#include <grpcpp/support/error_details_impl.h>
 
 namespace google {
 namespace rpc {
@@ -29,17 +29,15 @@ class Status;
 
 namespace grpc {
 
-/// Map a \a grpc::Status to a \a google::rpc::Status.
-/// The given \a to object will be cleared.
-/// On success, returns status with OK.
-/// Returns status with \a INVALID_ARGUMENT, if failed to deserialize.
-/// Returns status with \a FAILED_PRECONDITION, if \a to is nullptr.
-Status ExtractErrorDetails(const Status& from, ::google::rpc::Status* to);
+static inline Status ExtractErrorDetails(const Status& from,
+                                         ::google::rpc::Status* to) {
+  return ::grpc_impl::ExtractErrorDetails(from, to);
+}
 
-/// Map \a google::rpc::Status to a \a grpc::Status.
-/// Returns OK on success.
-/// Returns status with \a FAILED_PRECONDITION if \a to is nullptr.
-Status SetErrorDetails(const ::google::rpc::Status& from, Status* to);
+static inline Status SetErrorDetails(const ::google::rpc::Status& from,
+                                     Status* to) {
+  return ::grpc_impl::SetErrorDetails(from, to);
+}
 
 }  // namespace grpc
 

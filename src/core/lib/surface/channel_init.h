@@ -45,6 +45,11 @@ void grpc_channel_init_init(void);
 /// registration order (in the case of a tie).
 /// Stages are registered against one of the pre-determined channel stack
 /// types.
+/// If the channel stack type is GRPC_CLIENT_SUBCHANNEL, the caller should
+/// ensure that subchannels with different filter lists will always have
+/// different channel args. This requires setting a channel arg in case the
+/// registration function relies on some condition other than channel args to
+/// decide whether to add a filter or not.
 void grpc_channel_init_register_stage(grpc_channel_stack_type type,
                                       int priority,
                                       grpc_channel_init_stage stage_fn,

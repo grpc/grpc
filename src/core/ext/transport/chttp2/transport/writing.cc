@@ -18,12 +18,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/transport/chttp2/transport/context_list.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 
 #include <limits.h>
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -51,7 +53,8 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   }
   if (!grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_INFLIGHT])) {
     /* ping already in-flight: wait */
-    if (grpc_http_trace.enabled() || grpc_bdp_estimator_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
+        GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
       gpr_log(GPR_INFO, "%s: Ping delayed [%p]: already pinging",
               t->is_client ? "CLIENT" : "SERVER", t->peer_string);
     }
@@ -60,7 +63,8 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   if (t->ping_state.pings_before_data_required == 0 &&
       t->ping_policy.max_pings_without_data != 0) {
     /* need to receive something of substance before sending a ping again */
-    if (grpc_http_trace.enabled() || grpc_bdp_estimator_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
+        GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
       gpr_log(GPR_INFO, "%s: Ping delayed [%p]: too many recent pings: %d/%d",
               t->is_client ? "CLIENT" : "SERVER", t->peer_string,
               t->ping_state.pings_before_data_required,
@@ -80,7 +84,8 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
 
   if (next_allowed_ping > now) {
     /* not enough elapsed time between successive pings */
-    if (grpc_http_trace.enabled() || grpc_bdp_estimator_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
+        GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
       gpr_log(GPR_INFO,
               "%s: Ping delayed [%p]: not enough time elapsed since last ping. "
               " Last ping %f: Next ping %f: Now %f",
@@ -106,8 +111,9 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
                         grpc_chttp2_ping_create(false, pq->inflight_id));
   GRPC_STATS_INC_HTTP2_PINGS_SENT();
   t->ping_state.last_ping_sent_time = now;
-  if (grpc_http_trace.enabled() || grpc_bdp_estimator_trace.enabled()) {
-    gpr_log(GPR_INFO, "%s: Ping sent [%p]: %d/%d",
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
+      GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
+    gpr_log(GPR_INFO, "%s: Ping sent [%s]: %d/%d",
             t->is_client ? "CLIENT" : "SERVER", t->peer_string,
             t->ping_state.pings_before_data_required,
             t->ping_policy.max_pings_without_data);
@@ -139,31 +145,31 @@ static bool update_list(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
 
 static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                          const char* staller) {
-  gpr_log(
-      GPR_DEBUG,
-      "%s:%p stream %d stalled by %s [fc:pending=%" PRIdPTR
-      ":pending-compressed=%" PRIdPTR ":flowed=%" PRId64
-      ":peer_initwin=%d:t_win=%" PRId64 ":s_win=%d:s_delta=%" PRId64 "]",
-      t->peer_string, t, s->id, staller, s->flow_controlled_buffer.length,
-      s->compressed_data_buffer.length, s->flow_controlled_bytes_flowed,
-      t->settings[GRPC_ACKED_SETTINGS]
-                 [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
-      t->flow_control->remote_window(),
-      static_cast<uint32_t> GPR_MAX(
-          0,
-          s->flow_control->remote_window_delta() +
-              (int64_t)t->settings[GRPC_PEER_SETTINGS]
-                                  [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]),
-      s->flow_control->remote_window_delta());
-}
-
-static bool stream_ref_if_not_destroyed(gpr_refcount* r) {
-  gpr_atm count;
-  do {
-    count = gpr_atm_acq_load(&r->count);
-    if (count == 0) return false;
-  } while (!gpr_atm_rel_cas(&r->count, count, count + 1));
-  return true;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_flowctl_trace)) {
+    gpr_log(
+        GPR_DEBUG,
+        "%s:%p stream %d moved to stalled list by %s. This is FULLY expected "
+        "to happen in a healthy program that is not seeing flow control stalls."
+        " However, if you know that there are unwanted stalls, here is some "
+        "helpful data: [fc:pending=%" PRIdPTR ":pending-compressed=%" PRIdPTR
+        ":flowed=%" PRId64 ":peer_initwin=%d:t_win=%" PRId64
+        ":s_win=%d:s_delta=%" PRId64 "]",
+        t->peer_string, t, s->id, staller, s->flow_controlled_buffer.length,
+        s->stream_compression_method ==
+                GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS
+            ? 0
+            : s->compressed_data_buffer.length,
+        s->flow_controlled_bytes_flowed,
+        t->settings[GRPC_ACKED_SETTINGS]
+                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
+        t->flow_control->remote_window(),
+        static_cast<uint32_t> GPR_MAX(
+            0,
+            s->flow_control->remote_window_delta() +
+                (int64_t)t->settings[GRPC_PEER_SETTINGS]
+                                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]),
+        s->flow_control->remote_window_delta());
+  }
 }
 
 /* How many bytes would we like to put on the wire during a single syscall */
@@ -248,7 +254,7 @@ class WriteContext {
     while (grpc_chttp2_list_pop_stalled_by_transport(t_, &s)) {
       if (t_->closed_with_error == GRPC_ERROR_NONE &&
           grpc_chttp2_list_add_writable_stream(t_, s)) {
-        if (!stream_ref_if_not_destroyed(&s->refcount->refs)) {
+        if (!s->refcount->refs.RefIfNonZero()) {
           grpc_chttp2_list_remove_writable_stream(t_, s);
         }
       }
@@ -328,7 +334,23 @@ class DataSendContext {
 
   bool AnyOutgoing() const { return max_outgoing() > 0; }
 
+  void FlushUncompressedBytes() {
+    uint32_t send_bytes = static_cast<uint32_t> GPR_MIN(
+        max_outgoing(), s_->flow_controlled_buffer.length);
+    is_last_frame_ = send_bytes == s_->flow_controlled_buffer.length &&
+                     s_->fetching_send_message == nullptr &&
+                     s_->send_trailing_metadata != nullptr &&
+                     grpc_metadata_batch_is_empty(s_->send_trailing_metadata);
+    grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, send_bytes,
+                            is_last_frame_, &s_->stats.outgoing, &t_->outbuf);
+    s_->flow_control->SentData(send_bytes);
+    s_->sending_bytes += send_bytes;
+  }
+
   void FlushCompressedBytes() {
+    GPR_DEBUG_ASSERT(s_->stream_compression_method !=
+                     GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS);
+
     uint32_t send_bytes = static_cast<uint32_t> GPR_MIN(
         max_outgoing(), s_->compressed_data_buffer.length);
     bool is_last_data_frame =
@@ -363,6 +385,9 @@ class DataSendContext {
   }
 
   void CompressMoreBytes() {
+    GPR_DEBUG_ASSERT(s_->stream_compression_method !=
+                     GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS);
+
     if (s_->stream_compression_ctx == nullptr) {
       s_->stream_compression_ctx =
           grpc_stream_compression_context_create(s_->stream_compression_method);
@@ -420,7 +445,7 @@ class StreamWriteContext {
     // https://github.com/grpc/proposal/blob/master/A6-client-retries.md#when-retries-are-valid
     if (!t_->is_client && s_->fetching_send_message == nullptr &&
         s_->flow_controlled_buffer.length == 0 &&
-        s_->compressed_data_buffer.length == 0 &&
+        compressed_data_buffer_len() == 0 &&
         s_->send_trailing_metadata != nullptr &&
         is_default_initial_metadata(s_->send_initial_metadata)) {
       ConvertInitialMetadataToTrailingMetadata();
@@ -449,6 +474,13 @@ class StreamWriteContext {
         "send_initial_metadata_finished");
   }
 
+  bool compressed_data_buffer_len() {
+    return s_->stream_compression_method ==
+                   GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS
+               ? 0
+               : s_->compressed_data_buffer.length;
+  }
+
   void FlushWindowUpdates() {
     /* send any window updates */
     const uint32_t stream_announce = s_->flow_control->MaybeSendUpdate();
@@ -465,7 +497,7 @@ class StreamWriteContext {
     if (!s_->sent_initial_metadata) return;
 
     if (s_->flow_controlled_buffer.length == 0 &&
-        s_->compressed_data_buffer.length == 0) {
+        compressed_data_buffer_len() == 0) {
       return;  // early out: nothing to do
     }
 
@@ -482,13 +514,21 @@ class StreamWriteContext {
       return;  // early out: nothing to do
     }
 
-    while ((s_->flow_controlled_buffer.length > 0 ||
-            s_->compressed_data_buffer.length > 0) &&
-           data_send_context.max_outgoing() > 0) {
-      if (s_->compressed_data_buffer.length > 0) {
-        data_send_context.FlushCompressedBytes();
-      } else {
-        data_send_context.CompressMoreBytes();
+    if (s_->stream_compression_method ==
+        GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS) {
+      while (s_->flow_controlled_buffer.length > 0 &&
+             data_send_context.max_outgoing() > 0) {
+        data_send_context.FlushUncompressedBytes();
+      }
+    } else {
+      while ((s_->flow_controlled_buffer.length > 0 ||
+              s_->compressed_data_buffer.length > 0) &&
+             data_send_context.max_outgoing() > 0) {
+        if (s_->compressed_data_buffer.length > 0) {
+          data_send_context.FlushCompressedBytes();
+        } else {
+          data_send_context.CompressMoreBytes();
+        }
       }
     }
     write_context_->ResetPingClock();
@@ -498,7 +538,7 @@ class StreamWriteContext {
     data_send_context.CallCallbacks();
     stream_became_writable_ = true;
     if (s_->flow_controlled_buffer.length > 0 ||
-        s_->compressed_data_buffer.length > 0) {
+        compressed_data_buffer_len() > 0) {
       GRPC_CHTTP2_STREAM_REF(s_, "chttp2_writing:fork");
       grpc_chttp2_list_add_writable_stream(t_, s_);
     }
@@ -511,7 +551,7 @@ class StreamWriteContext {
     if (s_->send_trailing_metadata == nullptr) return;
     if (s_->fetching_send_message != nullptr) return;
     if (s_->flow_controlled_buffer.length != 0) return;
-    if (s_->compressed_data_buffer.length != 0) return;
+    if (compressed_data_buffer_len() != 0) return;
 
     GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "sending trailing_metadata"));
     if (grpc_metadata_batch_is_empty(s_->send_trailing_metadata)) {
@@ -564,6 +604,7 @@ class StreamWriteContext {
   void SentLastFrame() {
     s_->send_trailing_metadata = nullptr;
     s_->sent_trailing_metadata = true;
+    s_->eos_sent = true;
 
     if (!t_->is_client && !s_->read_closed) {
       grpc_slice_buffer_add(
@@ -599,11 +640,18 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
      (according to available window sizes) and add to the output buffer */
   while (grpc_chttp2_stream* s = ctx.NextStream()) {
     StreamWriteContext stream_ctx(&ctx, s);
+    size_t orig_len = t->outbuf.length;
     stream_ctx.FlushInitialMetadata();
     stream_ctx.FlushWindowUpdates();
     stream_ctx.FlushData();
     stream_ctx.FlushTrailingMetadata();
-
+    if (t->outbuf.length > orig_len) {
+      /* Add this stream to the list of the contexts to be traced at TCP */
+      s->byte_counter += t->outbuf.length - orig_len;
+      if (s->traced && grpc_endpoint_can_track_err(t->ep)) {
+        grpc_core::ContextList::Append(&t->cl, s);
+      }
+    }
     if (stream_ctx.stream_became_writable()) {
       if (!grpc_chttp2_list_add_writing_stream(t, s)) {
         /* already in writing list: drop ref */
@@ -626,6 +674,11 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
 void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error* error) {
   GPR_TIMER_SCOPE("grpc_chttp2_end_write", 0);
   grpc_chttp2_stream* s;
+
+  if (t->channelz_socket != nullptr) {
+    t->channelz_socket->RecordMessagesSent(t->num_messages_in_next_write);
+  }
+  t->num_messages_in_next_write = 0;
 
   while (grpc_chttp2_list_pop_writing_stream(t, &s)) {
     if (s->sending_bytes != 0) {

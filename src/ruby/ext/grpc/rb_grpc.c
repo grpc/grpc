@@ -23,9 +23,13 @@
 
 #include <math.h>
 #include <ruby/vm.h>
+#include <stdbool.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include "rb_call.h"
 #include "rb_call_credentials.h"
@@ -255,7 +259,22 @@ static void Init_grpc_time_consts() {
   id_tv_nsec = rb_intern("tv_nsec");
 }
 
-static void grpc_rb_shutdown(void) { grpc_shutdown(); }
+#if GPR_WINDOWS
+static void grpc_ruby_set_init_pid(void) {}
+static bool grpc_ruby_forked_after_init(void) { return false; }
+#else
+static pid_t grpc_init_pid;
+
+static void grpc_ruby_set_init_pid(void) {
+  GPR_ASSERT(grpc_init_pid == 0);
+  grpc_init_pid = getpid();
+}
+
+static bool grpc_ruby_forked_after_init(void) {
+  GPR_ASSERT(grpc_init_pid != 0);
+  return grpc_init_pid != getpid();
+}
+#endif
 
 /* Initialize the GRPC module structs */
 
@@ -275,28 +294,17 @@ VALUE sym_metadata = Qundef;
 
 static gpr_once g_once_init = GPR_ONCE_INIT;
 
-static void grpc_ruby_once_init_internal() {
-  grpc_init();
-  atexit(grpc_rb_shutdown);
+void grpc_ruby_fork_guard() {
+  if (grpc_ruby_forked_after_init()) {
+    rb_raise(rb_eRuntimeError, "grpc cannot be used before and after forking");
+  }
 }
 
 static VALUE bg_thread_init_rb_mu = Qundef;
 static int bg_thread_init_done = 0;
 
-void grpc_ruby_once_init() {
-  /* ruby_vm_at_exit doesn't seem to be working. It would crash once every
-   * blue moon, and some users are getting it repeatedly. See the discussions
-   *  - https://github.com/grpc/grpc/pull/5337
-   *  - https://bugs.ruby-lang.org/issues/12095
-   *
-   * In order to still be able to handle the (unlikely) situation where the
-   * extension is loaded by a first Ruby VM that is subsequently destroyed,
-   * then loaded again by another VM within the same process, we need to
-   * schedule our initialization and destruction only once.
-   */
-  gpr_once_init(&g_once_init, grpc_ruby_once_init_internal);
-
-  // Avoid calling calling into ruby library (when creating threads here)
+static void grpc_ruby_init_threads() {
+  // Avoid calling into ruby library (when creating threads here)
   // in gpr_once_init. In general, it appears to be unsafe to call
   // into the ruby library while holding a non-ruby mutex, because a gil yield
   // could end up trying to lock onto that same mutex and deadlocking.
@@ -307,6 +315,27 @@ void grpc_ruby_once_init() {
     bg_thread_init_done = 1;
   }
   rb_mutex_unlock(bg_thread_init_rb_mu);
+}
+
+static int64_t g_grpc_ruby_init_count;
+
+void grpc_ruby_init() {
+  gpr_once_init(&g_once_init, grpc_ruby_set_init_pid);
+  grpc_init();
+  grpc_ruby_init_threads();
+  // (only gpr_log after logging has been initialized)
+  gpr_log(GPR_DEBUG,
+          "GRPC_RUBY: grpc_ruby_init - prev g_grpc_ruby_init_count:%" PRId64,
+          g_grpc_ruby_init_count++);
+}
+
+void grpc_ruby_shutdown() {
+  GPR_ASSERT(g_grpc_ruby_init_count > 0);
+  if (!grpc_ruby_forked_after_init()) grpc_shutdown();
+  gpr_log(
+      GPR_DEBUG,
+      "GRPC_RUBY: grpc_ruby_shutdown - prev g_grpc_ruby_init_count:%" PRId64,
+      g_grpc_ruby_init_count--);
 }
 
 void Init_grpc_c() {

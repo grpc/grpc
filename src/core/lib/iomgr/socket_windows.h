@@ -32,6 +32,10 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 
+#ifndef WSA_FLAG_NO_HANDLE_INHERIT
+#define WSA_FLAG_NO_HANDLE_INHERIT 0x80
+#endif
+
 /* This holds the data for an outstanding read or write on a socket.
    The mutex to protect the concurrent access to that data is the one
    inside the winsocket wrapper. */
@@ -92,6 +96,8 @@ typedef struct grpc_winsocket {
    it will be responsible for closing it. */
 grpc_winsocket* grpc_winsocket_create(SOCKET socket, const char* name);
 
+SOCKET grpc_winsocket_wrapped_socket(grpc_winsocket* socket);
+
 /* Initiate an asynchronous shutdown of the socket. Will call off any pending
    operation to cancel them. */
 void grpc_winsocket_shutdown(grpc_winsocket* socket);
@@ -107,6 +113,14 @@ void grpc_socket_notify_on_read(grpc_winsocket* winsocket,
 
 void grpc_socket_become_ready(grpc_winsocket* winsocket,
                               grpc_winsocket_callback_info* ci);
+
+/* Returns true if this system can create AF_INET6 sockets bound to ::1.
+   The value is probed once, and cached for the life of the process. */
+int grpc_ipv6_loopback_available(void);
+
+void grpc_wsa_socket_flags_init();
+
+DWORD grpc_get_default_wsa_socket_flags();
 
 #endif
 

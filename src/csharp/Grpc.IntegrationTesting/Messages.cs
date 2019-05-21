@@ -77,7 +77,6 @@ namespace Grpc.Testing {
   }
   #region Enums
   /// <summary>
-  /// DEPRECATED, don't use. To be removed shortly.
   /// The type of payload that should be returned.
   /// </summary>
   public enum PayloadType {
@@ -269,7 +268,6 @@ namespace Grpc.Testing {
     public const int TypeFieldNumber = 1;
     private global::Grpc.Testing.PayloadType type_ = 0;
     /// <summary>
-    /// DEPRECATED, don't use. To be removed shortly.
     /// The type of data in body.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -381,7 +379,7 @@ namespace Grpc.Testing {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            type_ = (global::Grpc.Testing.PayloadType) input.ReadEnum();
+            Type = (global::Grpc.Testing.PayloadType) input.ReadEnum();
             break;
           }
           case 18: {
@@ -585,12 +583,12 @@ namespace Grpc.Testing {
     public SimpleRequest(SimpleRequest other) : this() {
       responseType_ = other.responseType_;
       responseSize_ = other.responseSize_;
-      Payload = other.payload_ != null ? other.Payload.Clone() : null;
+      payload_ = other.payload_ != null ? other.payload_.Clone() : null;
       fillUsername_ = other.fillUsername_;
       fillOauthScope_ = other.fillOauthScope_;
-      ResponseCompressed = other.responseCompressed_ != null ? other.ResponseCompressed.Clone() : null;
-      ResponseStatus = other.responseStatus_ != null ? other.ResponseStatus.Clone() : null;
-      ExpectCompressed = other.expectCompressed_ != null ? other.ExpectCompressed.Clone() : null;
+      responseCompressed_ = other.responseCompressed_ != null ? other.responseCompressed_.Clone() : null;
+      responseStatus_ = other.responseStatus_ != null ? other.responseStatus_.Clone() : null;
+      expectCompressed_ = other.expectCompressed_ != null ? other.expectCompressed_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -603,7 +601,6 @@ namespace Grpc.Testing {
     public const int ResponseTypeFieldNumber = 1;
     private global::Grpc.Testing.PayloadType responseType_ = 0;
     /// <summary>
-    /// DEPRECATED, don't use. To be removed shortly.
     /// Desired payload type in the response from the server.
     /// If response_type is RANDOM, server randomly chooses one from other formats.
     /// </summary>
@@ -847,7 +844,7 @@ namespace Grpc.Testing {
       }
       if (other.payload_ != null) {
         if (payload_ == null) {
-          payload_ = new global::Grpc.Testing.Payload();
+          Payload = new global::Grpc.Testing.Payload();
         }
         Payload.MergeFrom(other.Payload);
       }
@@ -859,19 +856,19 @@ namespace Grpc.Testing {
       }
       if (other.responseCompressed_ != null) {
         if (responseCompressed_ == null) {
-          responseCompressed_ = new global::Grpc.Testing.BoolValue();
+          ResponseCompressed = new global::Grpc.Testing.BoolValue();
         }
         ResponseCompressed.MergeFrom(other.ResponseCompressed);
       }
       if (other.responseStatus_ != null) {
         if (responseStatus_ == null) {
-          responseStatus_ = new global::Grpc.Testing.EchoStatus();
+          ResponseStatus = new global::Grpc.Testing.EchoStatus();
         }
         ResponseStatus.MergeFrom(other.ResponseStatus);
       }
       if (other.expectCompressed_ != null) {
         if (expectCompressed_ == null) {
-          expectCompressed_ = new global::Grpc.Testing.BoolValue();
+          ExpectCompressed = new global::Grpc.Testing.BoolValue();
         }
         ExpectCompressed.MergeFrom(other.ExpectCompressed);
       }
@@ -887,7 +884,7 @@ namespace Grpc.Testing {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            responseType_ = (global::Grpc.Testing.PayloadType) input.ReadEnum();
+            ResponseType = (global::Grpc.Testing.PayloadType) input.ReadEnum();
             break;
           }
           case 16: {
@@ -896,9 +893,9 @@ namespace Grpc.Testing {
           }
           case 26: {
             if (payload_ == null) {
-              payload_ = new global::Grpc.Testing.Payload();
+              Payload = new global::Grpc.Testing.Payload();
             }
-            input.ReadMessage(payload_);
+            input.ReadMessage(Payload);
             break;
           }
           case 32: {
@@ -911,23 +908,23 @@ namespace Grpc.Testing {
           }
           case 50: {
             if (responseCompressed_ == null) {
-              responseCompressed_ = new global::Grpc.Testing.BoolValue();
+              ResponseCompressed = new global::Grpc.Testing.BoolValue();
             }
-            input.ReadMessage(responseCompressed_);
+            input.ReadMessage(ResponseCompressed);
             break;
           }
           case 58: {
             if (responseStatus_ == null) {
-              responseStatus_ = new global::Grpc.Testing.EchoStatus();
+              ResponseStatus = new global::Grpc.Testing.EchoStatus();
             }
-            input.ReadMessage(responseStatus_);
+            input.ReadMessage(ResponseStatus);
             break;
           }
           case 66: {
             if (expectCompressed_ == null) {
-              expectCompressed_ = new global::Grpc.Testing.BoolValue();
+              ExpectCompressed = new global::Grpc.Testing.BoolValue();
             }
-            input.ReadMessage(expectCompressed_);
+            input.ReadMessage(ExpectCompressed);
             break;
           }
         }
@@ -964,7 +961,7 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public SimpleResponse(SimpleResponse other) : this() {
-      Payload = other.payload_ != null ? other.Payload.Clone() : null;
+      payload_ = other.payload_ != null ? other.payload_.Clone() : null;
       username_ = other.username_;
       oauthScope_ = other.oauthScope_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
@@ -1098,7 +1095,7 @@ namespace Grpc.Testing {
       }
       if (other.payload_ != null) {
         if (payload_ == null) {
-          payload_ = new global::Grpc.Testing.Payload();
+          Payload = new global::Grpc.Testing.Payload();
         }
         Payload.MergeFrom(other.Payload);
       }
@@ -1121,9 +1118,9 @@ namespace Grpc.Testing {
             break;
           case 10: {
             if (payload_ == null) {
-              payload_ = new global::Grpc.Testing.Payload();
+              Payload = new global::Grpc.Testing.Payload();
             }
-            input.ReadMessage(payload_);
+            input.ReadMessage(Payload);
             break;
           }
           case 18: {
@@ -1168,8 +1165,8 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public StreamingInputCallRequest(StreamingInputCallRequest other) : this() {
-      Payload = other.payload_ != null ? other.Payload.Clone() : null;
-      ExpectCompressed = other.expectCompressed_ != null ? other.ExpectCompressed.Clone() : null;
+      payload_ = other.payload_ != null ? other.payload_.Clone() : null;
+      expectCompressed_ = other.expectCompressed_ != null ? other.expectCompressed_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1280,13 +1277,13 @@ namespace Grpc.Testing {
       }
       if (other.payload_ != null) {
         if (payload_ == null) {
-          payload_ = new global::Grpc.Testing.Payload();
+          Payload = new global::Grpc.Testing.Payload();
         }
         Payload.MergeFrom(other.Payload);
       }
       if (other.expectCompressed_ != null) {
         if (expectCompressed_ == null) {
-          expectCompressed_ = new global::Grpc.Testing.BoolValue();
+          ExpectCompressed = new global::Grpc.Testing.BoolValue();
         }
         ExpectCompressed.MergeFrom(other.ExpectCompressed);
       }
@@ -1303,16 +1300,16 @@ namespace Grpc.Testing {
             break;
           case 10: {
             if (payload_ == null) {
-              payload_ = new global::Grpc.Testing.Payload();
+              Payload = new global::Grpc.Testing.Payload();
             }
-            input.ReadMessage(payload_);
+            input.ReadMessage(Payload);
             break;
           }
           case 18: {
             if (expectCompressed_ == null) {
-              expectCompressed_ = new global::Grpc.Testing.BoolValue();
+              ExpectCompressed = new global::Grpc.Testing.BoolValue();
             }
-            input.ReadMessage(expectCompressed_);
+            input.ReadMessage(ExpectCompressed);
             break;
           }
         }
@@ -1486,7 +1483,7 @@ namespace Grpc.Testing {
     public ResponseParameters(ResponseParameters other) : this() {
       size_ = other.size_;
       intervalUs_ = other.intervalUs_;
-      Compressed = other.compressed_ != null ? other.Compressed.Clone() : null;
+      compressed_ = other.compressed_ != null ? other.compressed_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1627,7 +1624,7 @@ namespace Grpc.Testing {
       }
       if (other.compressed_ != null) {
         if (compressed_ == null) {
-          compressed_ = new global::Grpc.Testing.BoolValue();
+          Compressed = new global::Grpc.Testing.BoolValue();
         }
         Compressed.MergeFrom(other.Compressed);
       }
@@ -1652,9 +1649,9 @@ namespace Grpc.Testing {
           }
           case 26: {
             if (compressed_ == null) {
-              compressed_ = new global::Grpc.Testing.BoolValue();
+              Compressed = new global::Grpc.Testing.BoolValue();
             }
-            input.ReadMessage(compressed_);
+            input.ReadMessage(Compressed);
             break;
           }
         }
@@ -1693,8 +1690,8 @@ namespace Grpc.Testing {
     public StreamingOutputCallRequest(StreamingOutputCallRequest other) : this() {
       responseType_ = other.responseType_;
       responseParameters_ = other.responseParameters_.Clone();
-      Payload = other.payload_ != null ? other.Payload.Clone() : null;
-      ResponseStatus = other.responseStatus_ != null ? other.ResponseStatus.Clone() : null;
+      payload_ = other.payload_ != null ? other.payload_.Clone() : null;
+      responseStatus_ = other.responseStatus_ != null ? other.responseStatus_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1707,7 +1704,6 @@ namespace Grpc.Testing {
     public const int ResponseTypeFieldNumber = 1;
     private global::Grpc.Testing.PayloadType responseType_ = 0;
     /// <summary>
-    /// DEPRECATED, don't use. To be removed shortly.
     /// Desired payload type in the response from the server.
     /// If response_type is RANDOM, the payload from each response in the stream
     /// might be of different types. This is to simulate a mixed type of payload
@@ -1850,13 +1846,13 @@ namespace Grpc.Testing {
       responseParameters_.Add(other.responseParameters_);
       if (other.payload_ != null) {
         if (payload_ == null) {
-          payload_ = new global::Grpc.Testing.Payload();
+          Payload = new global::Grpc.Testing.Payload();
         }
         Payload.MergeFrom(other.Payload);
       }
       if (other.responseStatus_ != null) {
         if (responseStatus_ == null) {
-          responseStatus_ = new global::Grpc.Testing.EchoStatus();
+          ResponseStatus = new global::Grpc.Testing.EchoStatus();
         }
         ResponseStatus.MergeFrom(other.ResponseStatus);
       }
@@ -1872,7 +1868,7 @@ namespace Grpc.Testing {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            responseType_ = (global::Grpc.Testing.PayloadType) input.ReadEnum();
+            ResponseType = (global::Grpc.Testing.PayloadType) input.ReadEnum();
             break;
           }
           case 18: {
@@ -1881,16 +1877,16 @@ namespace Grpc.Testing {
           }
           case 26: {
             if (payload_ == null) {
-              payload_ = new global::Grpc.Testing.Payload();
+              Payload = new global::Grpc.Testing.Payload();
             }
-            input.ReadMessage(payload_);
+            input.ReadMessage(Payload);
             break;
           }
           case 58: {
             if (responseStatus_ == null) {
-              responseStatus_ = new global::Grpc.Testing.EchoStatus();
+              ResponseStatus = new global::Grpc.Testing.EchoStatus();
             }
-            input.ReadMessage(responseStatus_);
+            input.ReadMessage(ResponseStatus);
             break;
           }
         }
@@ -1927,7 +1923,7 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public StreamingOutputCallResponse(StreamingOutputCallResponse other) : this() {
-      Payload = other.payload_ != null ? other.Payload.Clone() : null;
+      payload_ = other.payload_ != null ? other.payload_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -2012,7 +2008,7 @@ namespace Grpc.Testing {
       }
       if (other.payload_ != null) {
         if (payload_ == null) {
-          payload_ = new global::Grpc.Testing.Payload();
+          Payload = new global::Grpc.Testing.Payload();
         }
         Payload.MergeFrom(other.Payload);
       }
@@ -2029,9 +2025,9 @@ namespace Grpc.Testing {
             break;
           case 10: {
             if (payload_ == null) {
-              payload_ = new global::Grpc.Testing.Payload();
+              Payload = new global::Grpc.Testing.Payload();
             }
-            input.ReadMessage(payload_);
+            input.ReadMessage(Payload);
             break;
           }
         }

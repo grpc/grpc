@@ -134,8 +134,7 @@ static void grpc_rb_call_credentials_plugin_destroy(void* state) {
   // Not sure what needs to be done here
 }
 
-/* Destroys the credentials instances. */
-static void grpc_rb_call_credentials_free(void* p) {
+static void grpc_rb_call_credentials_free_internal(void* p) {
   grpc_rb_call_credentials* wrapper;
   if (p == NULL) {
     return;
@@ -143,8 +142,13 @@ static void grpc_rb_call_credentials_free(void* p) {
   wrapper = (grpc_rb_call_credentials*)p;
   grpc_call_credentials_release(wrapper->wrapped);
   wrapper->wrapped = NULL;
-
   xfree(p);
+}
+
+/* Destroys the credentials instances. */
+static void grpc_rb_call_credentials_free(void* p) {
+  grpc_rb_call_credentials_free_internal(p);
+  grpc_ruby_shutdown();
 }
 
 /* Protects the mark object from GC */
@@ -175,6 +179,7 @@ static rb_data_type_t grpc_rb_call_credentials_data_type = {
 /* Allocates CallCredentials instances.
    Provides safe initial defaults for the instance fields. */
 static VALUE grpc_rb_call_credentials_alloc(VALUE cls) {
+  grpc_ruby_init();
   grpc_rb_call_credentials* wrapper = ALLOC(grpc_rb_call_credentials);
   wrapper->wrapped = NULL;
   wrapper->mark = Qnil;
@@ -211,8 +216,6 @@ static VALUE grpc_rb_call_credentials_init(VALUE self, VALUE proc) {
   grpc_rb_call_credentials* wrapper = NULL;
   grpc_call_credentials* creds = NULL;
   grpc_metadata_credentials_plugin plugin;
-
-  grpc_ruby_once_init();
 
   TypedData_Get_Struct(self, grpc_rb_call_credentials,
                        &grpc_rb_call_credentials_data_type, wrapper);

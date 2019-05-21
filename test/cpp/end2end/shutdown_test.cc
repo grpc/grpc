@@ -86,7 +86,7 @@ class ShutdownTest : public ::testing::TestWithParam<string> {
     ChannelArguments args;
     auto channel_creds =
         GetCredentialsProvider()->GetChannelCredentials(GetParam(), &args);
-    channel_ = CreateCustomChannel(target, channel_creds, args);
+    channel_ = ::grpc::CreateCustomChannel(target, channel_creds, args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
@@ -164,7 +164,7 @@ TEST_P(ShutdownTest, ShutdownTest) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

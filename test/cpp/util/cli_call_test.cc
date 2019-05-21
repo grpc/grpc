@@ -74,8 +74,8 @@ class CliCallTest : public ::testing::Test {
   void TearDown() override { server_->Shutdown(); }
 
   void ResetStub() {
-    channel_ =
-        CreateChannel(server_address_.str(), InsecureChannelCredentials());
+    channel_ = grpc::CreateChannel(server_address_.str(),
+                                   InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
@@ -122,7 +122,7 @@ TEST_F(CliCallTest, SimpleRpc) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

@@ -40,15 +40,14 @@ class TestAuthPropertyIterator : public AuthPropertyIterator {
 class AuthPropertyIteratorTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    ctx_ = grpc_auth_context_create(nullptr);
-    grpc_auth_context_add_cstring_property(ctx_, "name", "chapi");
-    grpc_auth_context_add_cstring_property(ctx_, "name", "chapo");
-    grpc_auth_context_add_cstring_property(ctx_, "foo", "bar");
-    EXPECT_EQ(1,
-              grpc_auth_context_set_peer_identity_property_name(ctx_, "name"));
+    ctx_ = grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+    grpc_auth_context_add_cstring_property(ctx_.get(), "name", "chapi");
+    grpc_auth_context_add_cstring_property(ctx_.get(), "name", "chapo");
+    grpc_auth_context_add_cstring_property(ctx_.get(), "foo", "bar");
+    EXPECT_EQ(1, grpc_auth_context_set_peer_identity_property_name(ctx_.get(),
+                                                                   "name"));
   }
-  void TearDown() override { grpc_auth_context_release(ctx_); }
-  grpc_auth_context* ctx_;
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx_;
 };
 
 TEST_F(AuthPropertyIteratorTest, DefaultCtor) {
@@ -59,7 +58,7 @@ TEST_F(AuthPropertyIteratorTest, DefaultCtor) {
 
 TEST_F(AuthPropertyIteratorTest, GeneralTest) {
   grpc_auth_property_iterator c_iter =
-      grpc_auth_context_property_iterator(ctx_);
+      grpc_auth_context_property_iterator(ctx_.get());
   const grpc_auth_property* property =
       grpc_auth_property_iterator_next(&c_iter);
   TestAuthPropertyIterator iter(property, &c_iter);

@@ -37,8 +37,8 @@ class CFStreamHandle final {
   static CFStreamHandle* CreateStreamHandle(CFReadStreamRef read_stream,
                                             CFWriteStreamRef write_stream);
   ~CFStreamHandle();
-  CFStreamHandle(const CFReadStreamRef& ref) = delete;
-  CFStreamHandle(CFReadStreamRef&& ref) = delete;
+  CFStreamHandle(const CFStreamHandle& ref) = delete;
+  CFStreamHandle(CFStreamHandle&& ref) = delete;
   CFStreamHandle& operator=(const CFStreamHandle& rhs) = delete;
 
   void NotifyOnOpen(grpc_closure* closure);
@@ -61,6 +61,8 @@ class CFStreamHandle final {
   grpc_core::LockfreeEvent open_event_;
   grpc_core::LockfreeEvent read_event_;
   grpc_core::LockfreeEvent write_event_;
+
+  dispatch_queue_t dispatch_queue_;
 
   gpr_refcount refcount_;
 };

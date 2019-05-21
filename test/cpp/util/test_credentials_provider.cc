@@ -24,6 +24,7 @@
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <grpcpp/security/server_credentials.h>
 
 #include "test/core/end2end/data/ssl_test_data.h"
 
@@ -62,7 +63,9 @@ class DefaultCredentialsProvider : public CredentialsProvider {
     } else if (type == grpc::testing::kTlsCredentialsType) {
       SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
       args->SetSslTargetNameOverride("foo.test.google.fr");
-      return SslCredentials(ssl_opts);
+      return grpc::SslCredentials(ssl_opts);
+    } else if (type == grpc::testing::kGoogleDefaultCredentialsType) {
+      return grpc::GoogleDefaultCredentials();
     } else {
       std::unique_lock<std::mutex> lock(mu_);
       auto it(std::find(added_secure_type_names_.begin(),

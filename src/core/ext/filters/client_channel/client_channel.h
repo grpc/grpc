@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -39,6 +40,14 @@ extern grpc_core::TraceFlag grpc_client_channel_trace;
 
 extern const grpc_channel_filter grpc_client_channel_filter;
 
+void grpc_client_channel_set_channelz_node(
+    grpc_channel_element* elem, grpc_core::channelz::ClientChannelNode* node);
+
+void grpc_client_channel_populate_child_refs(
+    grpc_channel_element* elem,
+    grpc_core::channelz::ChildRefsList* child_subchannels,
+    grpc_core::channelz::ChildRefsList* child_channels);
+
 grpc_connectivity_state grpc_client_channel_check_connectivity_state(
     grpc_channel_element* elem, int try_to_connect);
 
@@ -51,7 +60,7 @@ void grpc_client_channel_watch_connectivity_state(
     grpc_closure* watcher_timer_init);
 
 /* Debug helper: pull the subchannel call from a call stack element */
-grpc_subchannel_call* grpc_client_channel_get_subchannel_call(
-    grpc_call_element* elem);
+grpc_core::RefCountedPtr<grpc_core::SubchannelCall>
+grpc_client_channel_get_subchannel_call(grpc_call_element* elem);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_H */

@@ -28,8 +28,8 @@ extern const grpc_channel_filter grpc_client_auth_filter;
 extern const grpc_channel_filter grpc_server_auth_filter;
 
 void grpc_auth_metadata_context_build(
-    const char* url_scheme, grpc_slice call_host, grpc_slice call_method,
-    grpc_auth_context* auth_context,
+    const char* url_scheme, const grpc_slice& call_host,
+    const grpc_slice& call_method, grpc_auth_context* auth_context,
     grpc_auth_metadata_context* auth_md_context);
 
 void grpc_auth_metadata_context_reset(grpc_auth_metadata_context* context);

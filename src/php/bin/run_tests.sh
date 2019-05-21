@@ -22,9 +22,17 @@ cd src/php/bin
 source ./determine_extension_dir.sh
 # in some jenkins macos machine, somehow the PHP build script can't find libgrpc.dylib
 export DYLD_LIBRARY_PATH=$root/libs/$CONFIG
-php $extension_dir -d max_execution_time=300 $(which phpunit) -v --debug \
+$(which php) $extension_dir -d max_execution_time=300 $(which phpunit) -v --debug \
   --exclude-group persistent_list_bound_tests ../tests/unit_tests
 
-php $extension_dir -d max_execution_time=300 $(which phpunit) -v --debug \
+$(which php) $extension_dir -d max_execution_time=300 $(which phpunit) -v --debug \
   ../tests/unit_tests/PersistentChannelTests
 
+export ZEND_DONT_UNLOAD_MODULES=1
+export USE_ZEND_ALLOC=0
+# Detect whether valgrind is executable
+if [ -x "$(command -v valgrind)" ]; then
+  $(which valgrind) --error-exitcode=10 --leak-check=yes \
+    $(which php) $extension_dir -d max_execution_time=300 \
+    ../tests/MemoryLeakTest/MemoryLeakTest.php
+fi

@@ -20,6 +20,32 @@
 
 #include "test/cpp/microbenchmarks/helpers.h"
 
+static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
+static LibraryInitializer* g_libraryInitializer;
+
+LibraryInitializer::LibraryInitializer() {
+  GPR_ASSERT(g_libraryInitializer == nullptr);
+  g_libraryInitializer = this;
+
+  g_gli_initializer.summon();
+#ifdef GPR_LOW_LEVEL_COUNTERS
+  grpc_memory_counters_init();
+#endif
+  init_lib_.init();
+  rq_ = grpc_resource_quota_create("bm");
+}
+
+LibraryInitializer::~LibraryInitializer() {
+  g_libraryInitializer = nullptr;
+  init_lib_.shutdown();
+  grpc_resource_quota_unref(rq_);
+}
+
+LibraryInitializer& LibraryInitializer::get() {
+  GPR_ASSERT(g_libraryInitializer != nullptr);
+  return *g_libraryInitializer;
+}
+
 void TrackCounters::Finish(benchmark::State& state) {
   std::ostringstream out;
   for (const auto& l : labels_) {
@@ -38,6 +64,7 @@ void TrackCounters::AddLabel(const grpc::string& label) {
 }
 
 void TrackCounters::AddToLabel(std::ostream& out, benchmark::State& state) {
+#ifdef GRPC_COLLECT_STATS
   grpc_stats_data stats_end;
   grpc_stats_collect(&stats_end);
   grpc_stats_data stats;
@@ -53,6 +80,7 @@ void TrackCounters::AddToLabel(std::ostream& out, benchmark::State& state) {
         << " " << grpc_stats_histogram_name[i] << "-99p:"
         << grpc_stats_histo_percentile(&stats, (grpc_stats_histograms)i, 99.0);
   }
+#endif
 #ifdef GPR_LOW_LEVEL_COUNTERS
   grpc_memory_counters counters_at_end = grpc_memory_counters_snapshot();
   out << " locks/iter:"

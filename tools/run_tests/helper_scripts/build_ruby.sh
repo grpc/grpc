@@ -23,3 +23,6 @@ cd "$(dirname "$0")/../../.."
 
 rm -rf ./tmp
 rake compile
+
+# build grpc_ruby_plugin
+make grpc_ruby_plugin -j8
