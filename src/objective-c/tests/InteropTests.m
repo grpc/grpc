@@ -1103,15 +1103,6 @@ BOOL isRemoteInteropTest(NSString *host) {
   [self testRPCWithCompressMethod:GRPCCompressGzip];
 }
 
-- (void)testStreamGzipCompressedUnaryRPC {
-  // This test needs to be disabled for remote test because interop server grpc-test
-  // does not support compression.
-  if (isRemoteInteropTest([[self class] host])) {
-    return;
-  }
-  XCTAssertNotNil([[self class] host]);
-  [self testRPCWithCompressMethod:GRPCStreamCompressGzip];
-}
 
 - (void)testDeflateCompressedUnaryRPC {
   // This test needs to be disabled for remote test because interop server grpc-test
