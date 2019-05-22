@@ -130,5 +130,8 @@ then
   cp -r src/python/grpcio_status/dist/* "$ARTIFACT_DIR"
 fi
 
+"${PIP}" install twine
+
+twine check dist/* tools/distrib/python/grpcio_tools/dist/*
 cp -r dist/* "$ARTIFACT_DIR"
 cp -r tools/distrib/python/grpcio_tools/dist/* "$ARTIFACT_DIR"
