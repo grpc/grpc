@@ -43,6 +43,8 @@ message HealthCheckResponse {
 
 service Health {
   rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
+
+  rpc Watch(HealthCheckRequest) returns (stream HealthCheckResponse);
 }
 ```
 
@@ -68,3 +70,8 @@ matching semantics that both the client and server agree upon.
 A client can declare the server as unhealthy if the rpc is not finished after
 some amount of time. The client should be able to handle the case where server
 does not have the Health service.
+
+A client can call the `Watch` method to perform a streaming health-check.
+The server will immediately send back a message indicating the current
+serving status.  It will then subsequently send a new message whenever
+the service's serving status changes.
