@@ -166,6 +166,9 @@ class TagCallback : public grpc_experimental_completion_queue_functor {
   int* iter_;
 };
 
+static gpr_mu shutdown_mu;
+static gpr_cv shutdown_cv;
+
 // Check if completion queue is shut down
 class ShutdownCallback : public grpc_experimental_completion_queue_functor {
  public:
@@ -174,7 +177,10 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
   }
   ~ShutdownCallback() {}
   static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
+    gpr_mu_lock(&shutdown_mu);
     *static_cast<ShutdownCallback*>(cb)->done_ = static_cast<bool>(ok);
+    gpr_cv_signal(&shutdown_cv);
+    gpr_mu_unlock(&shutdown_mu);
   }
 
  private:
@@ -185,6 +191,8 @@ static void BM_Callback_CQ_Pass1Core(benchmark::State& state) {
   TrackCounters track_counters;
   int iteration = 0;
   TagCallback tag_cb(&iteration);
+  gpr_mu_init(&shutdown_mu);
+  gpr_cv_init(&shutdown_cv);
   bool got_shutdown = false;
   ShutdownCallback shutdown_cb(&got_shutdown);
   grpc_completion_queue* cc =
@@ -198,9 +206,19 @@ static void BM_Callback_CQ_Pass1Core(benchmark::State& state) {
                    nullptr, &completion);
   }
   shutdown_and_destroy(cc);
+
+  gpr_mu_lock(&shutdown_mu);
+  while (!got_shutdown) {
+    // Wait for the shutdown callback to complete.
+    gpr_cv_wait(&shutdown_cv, &shutdown_mu,
+                gpr_inf_future(GPR_CLOCK_REALTIME));
+  }
+  gpr_mu_unlock(&shutdown_mu);
   GPR_ASSERT(got_shutdown);
   GPR_ASSERT(iteration == static_cast<int>(state.iterations()));
   track_counters.Finish(state);
+  gpr_cv_destroy(&shutdown_cv);
+  gpr_mu_destroy(&shutdown_mu);
 }
 BENCHMARK(BM_Callback_CQ_Pass1Core);
 
