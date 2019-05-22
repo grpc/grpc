@@ -25,7 +25,7 @@ if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ] && [ -n "$RUN_TESTS_FLAGS" ]; the
   sudo apt-get update
   sudo apt-get install -y jq
   pull_info=$(curl -s https://api.github.com/repos/grpc/grpc/pulls/$KOKORO_GITHUB_PULL_REQUEST_NUMBER)
-  if [ echo "${pull_info}" | jq 'has("base")' != "true" || echo "${pull_info}" | jq '.base | has("ref")' != "true" ]; then
+  if [[ $(echo "${pull_info}" | jq 'has("base")') != "true" || $(echo "${pull_info}" | jq '.base | has("ref")') != "true" ]]; then
     echo "PR info did not contain the base ref." >/dev/stderr
     echo "${pull_info}"
     exit 1
