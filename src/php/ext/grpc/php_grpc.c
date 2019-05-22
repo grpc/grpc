@@ -205,7 +205,9 @@ void register_fork_handlers() {
 
 void apply_ini_settings() {
   if (GRPC_G(enable_fork_support)) {
-    putenv("GRPC_ENABLE_FORK_SUPPORT=1");
+    char *enable_str = malloc(sizeof("GRPC_ENABLE_FORK_SUPPORT=1"));
+    strcpy(enable_str, "GRPC_ENABLE_FORK_SUPPORT=1");
+    putenv(enable_str);
   }
 
   if (GRPC_G(poll_strategy)) {
