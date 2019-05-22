@@ -34,10 +34,10 @@ class BenchmarkCallbackServiceImpl final
     : public BenchmarkService::ExperimentalCallbackService {
  public:
   ::grpc::experimental::ServerUnaryReactor<SimpleRequest, SimpleResponse>*
-  UnaryCall() override {
+  UnaryCall(ServerContext* context) override {
     return experimental::ServeRpc<SimpleRequest, SimpleResponse>(
-        [](ServerContext* context, const SimpleRequest* request,
-           SimpleResponse* response,
+        context,
+        [](const SimpleRequest* request, SimpleResponse* response,
            experimental::ServerUnaryReactor<SimpleRequest, SimpleResponse>*
                reactor) {
           auto s = SetResponse(request, response);
@@ -47,13 +47,13 @@ class BenchmarkCallbackServiceImpl final
 
   ::grpc::experimental::ServerBidiReactor<::grpc::testing::SimpleRequest,
                                           ::grpc::testing::SimpleResponse>*
-  StreamingCall() override {
+  StreamingCall(ServerContext*) override {
     class Reactor
         : public ::grpc::experimental::ServerBidiReactor<
               ::grpc::testing::SimpleRequest, ::grpc::testing::SimpleResponse> {
      public:
       Reactor() {}
-      void OnStarted(ServerContext* context) override { StartRead(&request_); }
+      void OnStarted() override { StartRead(&request_); }
 
       void OnReadDone(bool ok) override {
         if (!ok) {

@@ -278,9 +278,7 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// ok to call any operation initiation method. An RPC is considered started
   /// after the server has received all initial metadata from the client, which
   /// is a result of the client calling StartCall().
-  ///
-  /// \param[in] context The context object now associated with this RPC
-  virtual void OnStarted(ServerContext* context) {}
+  virtual void OnStarted() {}
 
   /// Notifies the application that an explicit StartSendInitialMetadata
   /// operation completed. Not used when the sending of initial metadata
@@ -337,9 +335,8 @@ class ServerReadReactor : public internal::ServerReactor {
   /// the response object that the stream fills in before calling Finish.
   /// (It must be filled in if status is OK, but it may be filled in otherwise.)
   ///
-  /// \param[in] context The context object now associated with this RPC
   /// \param[in] resp The response object to be used by this RPC
-  virtual void OnStarted(ServerContext* context, Response* resp) {}
+  virtual void OnStarted(Response* resp) {}
 
   /// The following notifications are exactly like ServerBidiReactor.
   virtual void OnSendInitialMetadataDone(bool ok) {}
@@ -378,9 +375,8 @@ class ServerWriteReactor : public internal::ServerReactor {
   /// Similar to ServerBidiReactor::OnStarted, except that this also provides
   /// the request object sent by the client.
   ///
-  /// \param[in] context The context object now associated with this RPC
   /// \param[in] req The request object sent by the client
-  virtual void OnStarted(ServerContext* context, const Request* req) {}
+  virtual void OnStarted(const Request* req) {}
 
   /// The following notifications are exactly like ServerBidiReactor.
   virtual void OnSendInitialMetadataDone(bool ok) {}
@@ -410,11 +406,9 @@ class ServerUnaryReactor : public internal::ServerReactor {
   /// stream fills in before calling Finish. (It must be filled in if status
   /// is OK, but it may be filled in otherwise.)
   ///
-  /// \param[in] context The context object now associated with this RPC
   /// \param[in] req The request object sent by the client
   /// \param[in] resp The response object to be used by this RPC
-  virtual void OnStarted(ServerContext* context, const Request* req,
-                         Response* resp) {}
+  virtual void OnStarted(const Request* req, Response* resp) {}
 
   /// The following notifications are exactly like ServerBidiReactor.
   virtual void OnSendInitialMetadataDone(bool ok) {}
@@ -435,7 +429,8 @@ class ServerUnaryReactor : public internal::ServerReactor {
 };
 
 template <typename Request, typename Response, typename F>
-ServerUnaryReactor<Request, Response>* ServeRpc(F&& func) {
+ServerUnaryReactor<Request, Response>* ServeRpc(ServerContext* context,
+                                                F&& func) {
   // TODO(vjpai): Specialize this to prevent counting OnCancel conditions
   class SimpleUnaryReactor final
       : public ServerUnaryReactor<Request, Response> {
@@ -443,15 +438,16 @@ ServerUnaryReactor<Request, Response>* ServeRpc(F&& func) {
     explicit SimpleUnaryReactor(F&& func) : on_started_func_(std::move(func)) {}
 
    private:
-    void OnStarted(ServerContext* context, const Request* req,
-                   Response* resp) override {
-      on_started_func_(context, req, resp, this);
+    void OnStarted(const Request* req, Response* resp) override {
+      on_started_func_(req, resp, this);
     }
-    void OnDone() override { delete this; }
+    void OnDone() override { this->~SimpleUnaryReactor(); }
 
     F on_started_func_;
   };
-  return new SimpleUnaryReactor(std::forward<F>(func));
+  return new (g_core_codegen_interface->grpc_call_arena_alloc(
+      context->c_call(), sizeof(SimpleUnaryReactor)))
+      SimpleUnaryReactor(std::forward<F>(func));
 }
 
 }  // namespace experimental
@@ -463,7 +459,7 @@ class UnimplementedUnaryReactor
     : public experimental::ServerUnaryReactor<Request, Response> {
  public:
   void OnDone() override { delete this; }
-  void OnStarted(ServerContext*, const Request*, Response*) override {
+  void OnStarted(const Request*, Response*) override {
     this->Finish(Status(StatusCode::UNIMPLEMENTED, ""));
   }
 };
@@ -473,7 +469,7 @@ class UnimplementedReadReactor
     : public experimental::ServerReadReactor<Request, Response> {
  public:
   void OnDone() override { delete this; }
-  void OnStarted(ServerContext*, Response*) override {
+  void OnStarted(Response*) override {
     this->Finish(Status(StatusCode::UNIMPLEMENTED, ""));
   }
 };
@@ -483,7 +479,7 @@ class UnimplementedWriteReactor
     : public experimental::ServerWriteReactor<Request, Response> {
  public:
   void OnDone() override { delete this; }
-  void OnStarted(ServerContext*, const Request*) override {
+  void OnStarted(const Request*) override {
     this->Finish(Status(StatusCode::UNIMPLEMENTED, ""));
   }
 };
@@ -493,7 +489,7 @@ class UnimplementedBidiReactor
     : public experimental::ServerBidiReactor<Request, Response> {
  public:
   void OnDone() override { delete this; }
-  void OnStarted(ServerContext*) override {
+  void OnStarted() override {
     this->Finish(Status(StatusCode::UNIMPLEMENTED, ""));
   }
 };
@@ -501,10 +497,9 @@ class UnimplementedBidiReactor
 template <class RequestType, class ResponseType>
 class CallbackUnaryHandler : public MethodHandler {
  public:
-  CallbackUnaryHandler(
-      std::function<
-          experimental::ServerUnaryReactor<RequestType, ResponseType>*()>
-          func)
+  explicit CallbackUnaryHandler(std::function<experimental::ServerUnaryReactor<
+                                    RequestType, ResponseType>*(ServerContext*)>
+                                    func)
       : func_(std::move(func)) {}
 
   void SetMessageAllocator(
@@ -522,7 +517,7 @@ class CallbackUnaryHandler : public MethodHandler {
         param.status.ok()
             ? CatchingReactorCreator<
                   experimental::ServerUnaryReactor<RequestType, ResponseType>>(
-                  func_)
+                  func_, param.server_context)
             : nullptr;
 
     if (reactor == nullptr) {
@@ -537,7 +532,7 @@ class CallbackUnaryHandler : public MethodHandler {
                                 std::move(param.call_requester), reactor);
 
     call->BindReactor(reactor);
-    reactor->OnStarted(param.server_context, call->request(), call->response());
+    reactor->OnStarted(call->request(), call->response());
     // The earliest that OnCancel can be called is after OnStarted is done.
     reactor->MaybeCallOnCancel();
     call->MaybeDone();
@@ -570,7 +565,8 @@ class CallbackUnaryHandler : public MethodHandler {
   }
 
  private:
-  std::function<experimental::ServerUnaryReactor<RequestType, ResponseType>*()>
+  std::function<experimental::ServerUnaryReactor<RequestType, ResponseType>*(
+      ServerContext*)>
       func_;
   experimental::MessageAllocator<RequestType, ResponseType>* allocator_ =
       nullptr;
@@ -676,9 +672,9 @@ class CallbackUnaryHandler : public MethodHandler {
 template <class RequestType, class ResponseType>
 class CallbackClientStreamingHandler : public MethodHandler {
  public:
-  CallbackClientStreamingHandler(
-      std::function<
-          experimental::ServerReadReactor<RequestType, ResponseType>*()>
+  explicit CallbackClientStreamingHandler(
+      std::function<experimental::ServerReadReactor<RequestType, ResponseType>*(
+          ServerContext*)>
           func)
       : func_(std::move(func)) {}
   void RunHandler(const HandlerParameter& param) final {
@@ -689,7 +685,7 @@ class CallbackClientStreamingHandler : public MethodHandler {
         param.status.ok()
             ? CatchingReactorCreator<
                   experimental::ServerReadReactor<RequestType, ResponseType>>(
-                  func_)
+                  func_, param.server_context)
             : nullptr;
 
     if (reactor == nullptr) {
@@ -703,14 +699,15 @@ class CallbackClientStreamingHandler : public MethodHandler {
                                  std::move(param.call_requester), reactor);
 
     reader->BindReactor(reactor);
-    reactor->OnStarted(param.server_context, reader->response());
+    reactor->OnStarted(reader->response());
     // The earliest that OnCancel can be called is after OnStarted is done.
     reactor->MaybeCallOnCancel();
     reader->MaybeDone();
   }
 
  private:
-  std::function<experimental::ServerReadReactor<RequestType, ResponseType>*()>
+  std::function<experimental::ServerReadReactor<RequestType, ResponseType>*(
+      ServerContext*)>
       func_;
 
   class ServerCallbackReaderImpl
@@ -820,9 +817,9 @@ class CallbackClientStreamingHandler : public MethodHandler {
 template <class RequestType, class ResponseType>
 class CallbackServerStreamingHandler : public MethodHandler {
  public:
-  CallbackServerStreamingHandler(
-      std::function<
-          experimental::ServerWriteReactor<RequestType, ResponseType>*()>
+  explicit CallbackServerStreamingHandler(
+      std::function<experimental::ServerWriteReactor<
+          RequestType, ResponseType>*(ServerContext*)>
           func)
       : func_(std::move(func)) {}
   void RunHandler(const HandlerParameter& param) final {
@@ -833,7 +830,7 @@ class CallbackServerStreamingHandler : public MethodHandler {
         param.status.ok()
             ? CatchingReactorCreator<
                   experimental::ServerWriteReactor<RequestType, ResponseType>>(
-                  func_)
+                  func_, param.server_context)
             : nullptr;
 
     if (reactor == nullptr) {
@@ -847,7 +844,7 @@ class CallbackServerStreamingHandler : public MethodHandler {
                                  static_cast<RequestType*>(param.request),
                                  std::move(param.call_requester), reactor);
     writer->BindReactor(reactor);
-    reactor->OnStarted(param.server_context, writer->request());
+    reactor->OnStarted(writer->request());
     // The earliest that OnCancel can be called is after OnStarted is done.
     reactor->MaybeCallOnCancel();
     writer->MaybeDone();
@@ -869,7 +866,8 @@ class CallbackServerStreamingHandler : public MethodHandler {
   }
 
  private:
-  std::function<experimental::ServerWriteReactor<RequestType, ResponseType>*()>
+  std::function<experimental::ServerWriteReactor<RequestType, ResponseType>*(
+      ServerContext*)>
       func_;
 
   class ServerCallbackWriterImpl
@@ -998,9 +996,9 @@ class CallbackServerStreamingHandler : public MethodHandler {
 template <class RequestType, class ResponseType>
 class CallbackBidiHandler : public MethodHandler {
  public:
-  CallbackBidiHandler(
-      std::function<
-          experimental::ServerBidiReactor<RequestType, ResponseType>*()>
+  explicit CallbackBidiHandler(
+      std::function<experimental::ServerBidiReactor<RequestType, ResponseType>*(
+          ServerContext*)>
           func)
       : func_(std::move(func)) {}
   void RunHandler(const HandlerParameter& param) final {
@@ -1010,7 +1008,7 @@ class CallbackBidiHandler : public MethodHandler {
         param.status.ok()
             ? CatchingReactorCreator<
                   experimental::ServerBidiReactor<RequestType, ResponseType>>(
-                  func_)
+                  func_, param.server_context)
             : nullptr;
 
     if (reactor == nullptr) {
@@ -1025,14 +1023,15 @@ class CallbackBidiHandler : public MethodHandler {
                                        reactor);
 
     stream->BindReactor(reactor);
-    reactor->OnStarted(param.server_context);
+    reactor->OnStarted();
     // The earliest that OnCancel can be called is after OnStarted is done.
     reactor->MaybeCallOnCancel();
     stream->MaybeDone();
   }
 
  private:
-  std::function<experimental::ServerBidiReactor<RequestType, ResponseType>*()>
+  std::function<experimental::ServerBidiReactor<RequestType, ResponseType>*(
+      ServerContext*)>
       func_;
 
   class ServerCallbackReaderWriterImpl

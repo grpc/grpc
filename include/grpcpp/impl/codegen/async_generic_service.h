@@ -86,35 +86,17 @@ class AsyncGenericService final {
 namespace experimental {
 
 /// \a ServerGenericBidiReactor is the reactor class for bidi streaming RPCs
-/// invoked on a CallbackGenericService. The API difference relative to
-/// ServerBidiReactor is that the argument to OnStarted is a
-/// GenericServerContext rather than a ServerContext. All other reaction and
-/// operation initiation APIs are the same as ServerBidiReactor.
-class ServerGenericBidiReactor
-    : public ServerBidiReactor<ByteBuffer, ByteBuffer> {
- public:
-  /// Similar to ServerBidiReactor::OnStarted except for argument type.
-  ///
-  /// \param[in] context The context object associated with this RPC.
-  virtual void OnStarted(GenericServerContext* context) {}
-
- private:
-  void OnStarted(ServerContext* ctx) final {
-    OnStarted(static_cast<GenericServerContext*>(ctx));
-  }
-};
+/// invoked on a CallbackGenericService. It is just a ServerBidi reactor with
+/// ByteBuffer arguments.
+using ServerGenericBidiReactor = ServerBidiReactor<ByteBuffer, ByteBuffer>;
 
 }  // namespace experimental
 
 namespace internal {
-class UnimplementedGenericBidiReactor
-    : public experimental::ServerGenericBidiReactor {
- public:
-  void OnDone() override { delete this; }
-  void OnStarted(GenericServerContext*) override {
-    this->Finish(Status(StatusCode::UNIMPLEMENTED, ""));
-  }
-};
+
+using UnimplementedGenericBidiReactor =
+    UnimplementedBidiReactor<ByteBuffer, ByteBuffer>;
+
 }  // namespace internal
 
 namespace experimental {
@@ -130,7 +112,7 @@ class CallbackGenericService {
   /// The "method handler" for the generic API. This function should be
   /// overridden to return a ServerGenericBidiReactor that implements the
   /// application-level interface for this RPC.
-  virtual ServerGenericBidiReactor* CreateReactor() {
+  virtual ServerGenericBidiReactor* CreateReactor(GenericServerContext* ctx) {
     return new internal::UnimplementedGenericBidiReactor;
   }
 
@@ -139,7 +121,9 @@ class CallbackGenericService {
 
   internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>* Handler() {
     return new internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>(
-        [this] { return CreateReactor(); });
+        [this](ServerContext* ctx) {
+          return CreateReactor(static_cast<GenericServerContext*>(ctx));
+        });
   }
 
   grpc_impl::Server* server_{nullptr};

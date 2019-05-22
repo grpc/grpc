@@ -37,9 +37,10 @@ class CallbackStreamingTestService
  public:
   CallbackStreamingTestService() {}
 
-  experimental::ServerUnaryReactor<EchoRequest, EchoResponse>* Echo() override;
-  experimental::ServerBidiReactor<EchoRequest, EchoResponse>* BidiStream()
-      override;
+  experimental::ServerUnaryReactor<EchoRequest, EchoResponse>* Echo(
+      ServerContext* context) override;
+  experimental::ServerBidiReactor<EchoRequest, EchoResponse>* BidiStream(
+      ServerContext* context) override;
 };
 }  // namespace testing
 }  // namespace grpc
