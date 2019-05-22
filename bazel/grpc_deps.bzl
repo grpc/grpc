@@ -209,14 +209,15 @@ def grpc_deps():
             strip_prefix = "opencensus-cpp-9b1e354e89bf3d92aedc00af45b418ce870f3d77",
             url = "https://github.com/census-instrumentation/opencensus-cpp/archive/9b1e354e89bf3d92aedc00af45b418ce870f3d77.tar.gz",
         )
-
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            sha256 = "0e749a8973968397f849a3b42e28ee9c85dc418c2477954c2a6a4495f323241d",
-            strip_prefix = "upb-ed9faae0993704b033c594b072d65e1bf19207fa",
-            url = "https://github.com/google/upb/archive/ed9faae0993704b033c594b072d65e1bf19207fa.tar.gz",
+            sha256 = "34136146171af0214bc5578bd22adace4c5a98fd00cff758eb57b7151cd16b51",
+            strip_prefix = "upb-d16bf99ac4658793748cda3251226059892b3b7b",
+            url = "https://github.com/google/upb/archive/d16bf99ac4658793748cda3251226059892b3b7b.tar.gz",
         )
+        load("@upb//bazel:workspace_deps.bzl", "upb_deps")
+        upb_deps()
 
 # TODO: move some dependencies from "grpc_deps" here?
 def grpc_test_only_deps():
