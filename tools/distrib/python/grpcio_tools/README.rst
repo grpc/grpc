@@ -17,8 +17,8 @@ Installation
 The gRPC Python tools package is available for Linux, Mac OS X, and Windows
 running Python 2.7.
 
-From PyPI
-~~~~~~~~~
+Installing From PyPI
+~~~~~~~~~~~~~~~~~~~~
 
 If you are installing locally...
 
@@ -50,8 +50,8 @@ You might also need to install Cython to handle installation via the source
 distribution if gRPC Python's system coverage with wheels does not happen to
 include your system.
 
-From Source
-~~~~~~~~~~~
+Installing From Source
+~~~~~~~~~~~~~~~~~~~~~~
 
 Building from source requires that you have the Python headers (usually a
 package named :code:`python-dev`) and Cython installed. It further requires a
