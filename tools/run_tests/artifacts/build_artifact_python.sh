@@ -131,7 +131,7 @@ then
 fi
 
 # Ensure the generated artifacts are valid.
-"${PIP}" install twine
+"${PYTHON}" -m pip install twine
 "${PYTHON}" -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
 
 cp -r dist/* "$ARTIFACT_DIR"
