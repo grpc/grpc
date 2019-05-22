@@ -130,8 +130,9 @@ then
   cp -r src/python/grpcio_status/dist/* "$ARTIFACT_DIR"
 fi
 
+# Ensure the generated artifacts are valid.
 "${PIP}" install twine
+"${PYTHON}" -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
 
-twine check dist/* tools/distrib/python/grpcio_tools/dist/*
 cp -r dist/* "$ARTIFACT_DIR"
 cp -r tools/distrib/python/grpcio_tools/dist/* "$ARTIFACT_DIR"
