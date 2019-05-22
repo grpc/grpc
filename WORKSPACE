@@ -65,3 +65,13 @@ rbe_autoconfig(
         },
     ),
 )
+
+git_repository(
+    name = "upb",
+    commit = "d16bf99ac4658793748cda3251226059892b3b7b",
+    remote = "https://github.com/protocolbuffers/upb.git",
+)
+
+load("//third_party/upb/bazel:workspace_deps.bzl", "upb_deps")
+
+upb_deps()
