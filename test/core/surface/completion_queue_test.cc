@@ -360,7 +360,7 @@ static void test_pluck_after_shutdown(void) {
 
 static void test_callback(void) {
   grpc_completion_queue* cc;
-  void* tags[128];
+  static void* tags[128];
   grpc_cq_completion completions[GPR_ARRAY_SIZE(tags)];
   grpc_cq_polling_type polling_types[] = {
       GRPC_CQ_DEFAULT_POLLING, GRPC_CQ_NON_LISTENING, GRPC_CQ_NON_POLLING};
