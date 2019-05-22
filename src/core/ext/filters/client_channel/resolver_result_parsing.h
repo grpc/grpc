@@ -37,14 +37,14 @@
 namespace grpc_core {
 namespace internal {
 
-class ClientChannelGlobalParsedObject : public ServiceConfig::ParsedConfig {
+class ClientChannelGlobalParsedConfig : public ServiceConfig::ParsedConfig {
  public:
   struct RetryThrottling {
     intptr_t max_milli_tokens = 0;
     intptr_t milli_token_ratio = 0;
   };
 
-  ClientChannelGlobalParsedObject(
+  ClientChannelGlobalParsedConfig(
       RefCountedPtr<ParsedLoadBalancingConfig> parsed_lb_config,
       UniquePtr<char> parsed_deprecated_lb_policy,
       const Optional<RetryThrottling>& retry_throttling,
@@ -77,7 +77,7 @@ class ClientChannelGlobalParsedObject : public ServiceConfig::ParsedConfig {
   const char* health_check_service_name_;
 };
 
-class ClientChannelMethodParsedObject : public ServiceConfig::ParsedConfig {
+class ClientChannelMethodParsedConfig : public ServiceConfig::ParsedConfig {
  public:
   struct RetryPolicy {
     int max_attempts = 0;
@@ -87,7 +87,7 @@ class ClientChannelMethodParsedObject : public ServiceConfig::ParsedConfig {
     StatusCodeSet retryable_status_codes;
   };
 
-  ClientChannelMethodParsedObject(grpc_millis timeout,
+  ClientChannelMethodParsedConfig(grpc_millis timeout,
                                   const Optional<bool>& wait_for_ready,
                                   UniquePtr<RetryPolicy> retry_policy)
       : timeout_(timeout),
@@ -116,64 +116,6 @@ class ClientChannelServiceConfigParser : public ServiceConfig::Parser {
 
   static size_t ParserIndex();
   static void Register();
-};
-
-// TODO(yashykt): It would be cleaner to move this logic to the client_channel
-// code. A container of processed fields from the resolver result. Simplifies
-// the usage of resolver result.
-class ProcessedResolverResult {
- public:
-  // Processes the resolver result and populates the relative members
-  // for later consumption.
-  ProcessedResolverResult(const Resolver::Result& resolver_result);
-
-  // Getters. Any managed object's ownership is transferred.
-  const char* service_config_json() { return service_config_json_; }
-
-  RefCountedPtr<ServiceConfig> service_config() { return service_config_; }
-
-  UniquePtr<char> lb_policy_name() { return std::move(lb_policy_name_); }
-  RefCountedPtr<ParsedLoadBalancingConfig> lb_policy_config() {
-    return lb_policy_config_;
-  }
-
-  Optional<ClientChannelGlobalParsedObject::RetryThrottling>
-  retry_throttle_data() {
-    return retry_throttle_data_;
-  }
-
-  const char* health_check_service_name() { return health_check_service_name_; }
-
- private:
-  // Finds the service config; extracts LB config and (maybe) retry throttle
-  // params from it.
-  void ProcessServiceConfig(
-      const Resolver::Result& resolver_result,
-      const ClientChannelGlobalParsedObject* parsed_object);
-
-  // Extracts the LB policy.
-  void ProcessLbPolicy(const Resolver::Result& resolver_result,
-                       const ClientChannelGlobalParsedObject* parsed_object);
-
-  // Parses the service config. Intended to be used by
-  // ServiceConfig::ParseGlobalParams.
-  static void ParseServiceConfig(const grpc_json* field,
-                                 ProcessedResolverResult* parsing_state);
-  // Parses the LB config from service config.
-  void ParseLbConfigFromServiceConfig(const grpc_json* field);
-  // Parses the retry throttle parameters from service config.
-  void ParseRetryThrottleParamsFromServiceConfig(const grpc_json* field);
-
-  // Service config.
-  const char* service_config_json_ = nullptr;
-  RefCountedPtr<ServiceConfig> service_config_;
-  // LB policy.
-  UniquePtr<char> lb_policy_name_;
-  RefCountedPtr<ParsedLoadBalancingConfig> lb_policy_config_;
-  // Retry throttle data.
-  Optional<ClientChannelGlobalParsedObject::RetryThrottling>
-      retry_throttle_data_;
-  const char* health_check_service_name_ = nullptr;
 };
 
 }  // namespace internal

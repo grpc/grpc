@@ -44,4 +44,9 @@ void gpr_setenv(const char* name, const char* value) {
   GPR_ASSERT(res == 0);
 }
 
+void gpr_unsetenv(const char* name) {
+  int res = unsetenv(name);
+  GPR_ASSERT(res == 0);
+}
+
 #endif /* GPR_POSIX_ENV */

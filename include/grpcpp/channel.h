@@ -26,6 +26,7 @@
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/channel_interface.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
+#include <grpcpp/impl/codegen/completion_queue.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/impl/codegen/sync.h>
@@ -66,8 +67,8 @@ class Channel final : public ChannelInterface,
   friend void experimental::ChannelResetConnectionBackoff(Channel* channel);
   friend std::shared_ptr<Channel> CreateChannelInternal(
       const grpc::string& host, grpc_channel* c_channel,
-      std::vector<
-          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      std::vector<std::unique_ptr<
+          ::grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators);
   friend class internal::InterceptedChannel;
   Channel(const grpc::string& host, grpc_channel* c_channel,

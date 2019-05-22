@@ -30,6 +30,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/slice/slice_utils.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_metadata;
 
@@ -138,7 +139,7 @@ bool grpc_mdelem_eq(grpc_mdelem a, grpc_mdelem b);
  * grpc_mdelem_eq and remove unnecessary checks. */
 inline bool grpc_mdelem_static_value_eq(grpc_mdelem a, grpc_mdelem b_static) {
   if (a.payload == b_static.payload) return true;
-  return grpc_slice_eq(GRPC_MDVALUE(a), GRPC_MDVALUE(b_static));
+  return grpc_slice_eq_static_interned(GRPC_MDVALUE(a), GRPC_MDVALUE(b_static));
 }
 
 /* Mutator and accessor for grpc_mdelem user data. The destructor function

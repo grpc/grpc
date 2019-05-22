@@ -23,15 +23,15 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  # version = '1.21.0-dev'
-  version = '0.0.8-dev'
+  # version = '1.22.0-dev'
+  version = '0.0.9-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  grpc_version = '1.21.0-dev'
+  grpc_version = '1.22.0-dev'
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
@@ -72,7 +72,7 @@ Pod::Spec.new do |s|
   s.default_subspecs = 'Interface', 'Implementation'
 
   # Certificates, to be able to establish TLS connections:
-  s.resource_bundles = { 'gRPCCertificates' => ['etc/roots.pem'] }
+  s.resource_bundles = { 'gRPCCertificates-Cpp' => ['etc/roots.pem'] }
 
   s.header_mappings_dir = 'include/grpcpp'
 
@@ -116,12 +116,14 @@ Pod::Spec.new do |s|
                       'include/grpcpp/security/auth_metadata_processor.h',
                       'include/grpcpp/security/auth_metadata_processor_impl.h',
                       'include/grpcpp/security/credentials.h',
+                      'include/grpcpp/security/credentials_impl.h',
                       'include/grpcpp/security/server_credentials.h',
                       'include/grpcpp/security/server_credentials_impl.h',
                       'include/grpcpp/server.h',
                       'include/grpcpp/server_builder.h',
                       'include/grpcpp/server_builder_impl.h',
                       'include/grpcpp/server_context.h',
+                      'include/grpcpp/server_impl.h',
                       'include/grpcpp/server_posix.h',
                       'include/grpcpp/server_posix_impl.h',
                       'include/grpcpp/support/async_stream.h',
@@ -203,6 +205,7 @@ Pod::Spec.new do |s|
                       'src/cpp/client/create_channel_internal.h',
                       'src/cpp/common/channel_filter.h',
                       'src/cpp/server/dynamic_thread_pool.h',
+                      'src/cpp/server/external_connection_acceptor_impl.h',
                       'src/cpp/server/health/default_health_check_service.h',
                       'src/cpp/server/thread_pool_interface.h',
                       'src/cpp/thread_manager/thread_manager.h',
@@ -234,6 +237,7 @@ Pod::Spec.new do |s|
                       'src/cpp/server/channel_argument_option.cc',
                       'src/cpp/server/create_default_thread_pool.cc',
                       'src/cpp/server/dynamic_thread_pool.cc',
+                      'src/cpp/server/external_connection_acceptor_impl.cc',
                       'src/cpp/server/health/default_health_check_service.cc',
                       'src/cpp/server/health/health_check_service.cc',
                       'src/cpp/server/health/health_check_service_server_builder_option.cc',
@@ -268,6 +272,10 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/arena.h',
                       'src/core/lib/gprpp/atomic.h',
                       'src/core/lib/gprpp/fork.h',
+                      'src/core/lib/gprpp/global_config.h',
+                      'src/core/lib/gprpp/global_config_custom.h',
+                      'src/core/lib/gprpp/global_config_env.h',
+                      'src/core/lib/gprpp/global_config_generic.h',
                       'src/core/lib/gprpp/manual_constructor.h',
                       'src/core/lib/gprpp/map.h',
                       'src/core/lib/gprpp/memory.h',
@@ -510,6 +518,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice_hash_table.h',
                       'src/core/lib/slice/slice_internal.h',
                       'src/core/lib/slice/slice_string_helpers.h',
+                      'src/core/lib/slice/slice_utils.h',
                       'src/core/lib/slice/slice_weak_hash_table.h',
                       'src/core/lib/surface/api_trace.h',
                       'src/core/lib/surface/call.h',
@@ -554,6 +563,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
+                      'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h',
                       'src/core/ext/filters/max_age/max_age_filter.h',
                       'src/core/ext/filters/message_size/message_size_filter.h',
                       'src/core/ext/filters/http/client_authority_filter.h',
@@ -567,6 +577,7 @@ Pod::Spec.new do |s|
                               'src/cpp/client/create_channel_internal.h',
                               'src/cpp/common/channel_filter.h',
                               'src/cpp/server/dynamic_thread_pool.h',
+                              'src/cpp/server/external_connection_acceptor_impl.h',
                               'src/cpp/server/health/default_health_check_service.h',
                               'src/cpp/server/thread_pool_interface.h',
                               'src/cpp/thread_manager/thread_manager.h',
@@ -590,6 +601,10 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/arena.h',
                               'src/core/lib/gprpp/atomic.h',
                               'src/core/lib/gprpp/fork.h',
+                              'src/core/lib/gprpp/global_config.h',
+                              'src/core/lib/gprpp/global_config_custom.h',
+                              'src/core/lib/gprpp/global_config_env.h',
+                              'src/core/lib/gprpp/global_config_generic.h',
                               'src/core/lib/gprpp/manual_constructor.h',
                               'src/core/lib/gprpp/map.h',
                               'src/core/lib/gprpp/memory.h',
@@ -707,6 +722,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/slice_hash_table.h',
                               'src/core/lib/slice/slice_internal.h',
                               'src/core/lib/slice/slice_string_helpers.h',
+                              'src/core/lib/slice/slice_utils.h',
                               'src/core/lib/slice/slice_weak_hash_table.h',
                               'src/core/lib/surface/api_trace.h',
                               'src/core/lib/surface/call.h',

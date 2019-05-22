@@ -26,14 +26,24 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/memory.h"
 
 /*
  * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
  *       AROUND VERY SPECIFIC USE CASES.
  */
+
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+#define GRPC_ENABLE_FORK_SUPPORT_DEFAULT true
+#else
+#define GRPC_ENABLE_FORK_SUPPORT_DEFAULT false
+#endif  // GRPC_ENABLE_FORK_SUPPORT
+
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_enable_fork_support,
+                              GRPC_ENABLE_FORK_SUPPORT_DEFAULT,
+                              "Enable folk support");
 
 namespace grpc_core {
 namespace internal {
@@ -158,34 +168,7 @@ class ThreadState {
 
 void Fork::GlobalInit() {
   if (!override_enabled_) {
-#ifdef GRPC_ENABLE_FORK_SUPPORT
-    support_enabled_ = true;
-#endif
-    bool env_var_set = false;
-    char* env = gpr_getenv("GRPC_ENABLE_FORK_SUPPORT");
-    if (env != nullptr) {
-      static const char* truthy[] = {"yes",  "Yes",  "YES", "true",
-                                     "True", "TRUE", "1"};
-      static const char* falsey[] = {"no",    "No",    "NO", "false",
-                                     "False", "FALSE", "0"};
-      for (size_t i = 0; i < GPR_ARRAY_SIZE(truthy); i++) {
-        if (0 == strcmp(env, truthy[i])) {
-          support_enabled_ = true;
-          env_var_set = true;
-          break;
-        }
-      }
-      if (!env_var_set) {
-        for (size_t i = 0; i < GPR_ARRAY_SIZE(falsey); i++) {
-          if (0 == strcmp(env, falsey[i])) {
-            support_enabled_ = false;
-            env_var_set = true;
-            break;
-          }
-        }
-      }
-      gpr_free(env);
-    }
+    support_enabled_ = GPR_GLOBAL_CONFIG_GET(grpc_enable_fork_support);
   }
   if (support_enabled_) {
     exec_ctx_state_ = grpc_core::New<internal::ExecCtxState>();
@@ -260,7 +243,7 @@ void Fork::AwaitThreads() {
 
 internal::ExecCtxState* Fork::exec_ctx_state_ = nullptr;
 internal::ThreadState* Fork::thread_state_ = nullptr;
-bool Fork::support_enabled_ = false;
+std::atomic<bool> Fork::support_enabled_;
 bool Fork::override_enabled_ = false;
 Fork::child_postfork_func Fork::reset_child_polling_engine_ = nullptr;
 }  // namespace grpc_core

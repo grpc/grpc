@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.21.0-dev'
+  version = '1.22.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -208,6 +208,10 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/arena.h',
                       'src/core/lib/gprpp/atomic.h',
                       'src/core/lib/gprpp/fork.h',
+                      'src/core/lib/gprpp/global_config.h',
+                      'src/core/lib/gprpp/global_config_custom.h',
+                      'src/core/lib/gprpp/global_config_env.h',
+                      'src/core/lib/gprpp/global_config_generic.h',
                       'src/core/lib/gprpp/manual_constructor.h',
                       'src/core/lib/gprpp/map.h',
                       'src/core/lib/gprpp/memory.h',
@@ -250,6 +254,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/wrap_memcpy.cc',
                       'src/core/lib/gprpp/arena.cc',
                       'src/core/lib/gprpp/fork.cc',
+                      'src/core/lib/gprpp/global_config_env.cc',
                       'src/core/lib/gprpp/thd_posix.cc',
                       'src/core/lib/gprpp/thd_windows.cc',
                       'src/core/lib/profiling/basic_timers.cc',
@@ -489,6 +494,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice_hash_table.h',
                       'src/core/lib/slice/slice_internal.h',
                       'src/core/lib/slice/slice_string_helpers.h',
+                      'src/core/lib/slice/slice_utils.h',
                       'src/core/lib/slice/slice_weak_hash_table.h',
                       'src/core/lib/surface/api_trace.h',
                       'src/core/lib/surface/call.h',
@@ -533,6 +539,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
+                      'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h',
                       'src/core/ext/filters/max_age/max_age_filter.h',
                       'src/core/ext/filters/message_size/message_size_filter.h',
                       'src/core/ext/filters/http/client_authority_filter.h',
@@ -854,12 +861,15 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc',
+                      'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc',
+                      'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc',
+                      'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc',
                       'src/core/ext/filters/census/grpc_context.cc',
@@ -890,6 +900,10 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/arena.h',
                               'src/core/lib/gprpp/atomic.h',
                               'src/core/lib/gprpp/fork.h',
+                              'src/core/lib/gprpp/global_config.h',
+                              'src/core/lib/gprpp/global_config_custom.h',
+                              'src/core/lib/gprpp/global_config_env.h',
+                              'src/core/lib/gprpp/global_config_generic.h',
                               'src/core/lib/gprpp/manual_constructor.h',
                               'src/core/lib/gprpp/map.h',
                               'src/core/lib/gprpp/memory.h',
@@ -1132,6 +1146,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/slice_hash_table.h',
                               'src/core/lib/slice/slice_internal.h',
                               'src/core/lib/slice/slice_string_helpers.h',
+                              'src/core/lib/slice/slice_utils.h',
                               'src/core/lib/slice/slice_weak_hash_table.h',
                               'src/core/lib/surface/api_trace.h',
                               'src/core/lib/surface/call.h',
@@ -1176,6 +1191,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
+                              'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h',
                               'src/core/ext/filters/max_age/max_age_filter.h',
                               'src/core/ext/filters/message_size/message_size_filter.h',
                               'src/core/ext/filters/http/client_authority_filter.h',

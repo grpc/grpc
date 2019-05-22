@@ -74,11 +74,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gandalf"
+g_stands_for = "gale"
 
 core_version = "7.0.0"
 
-version = "1.21.0-dev"
+version = "1.22.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -141,6 +141,7 @@ GRPCXX_SRCS = [
     "src/cpp/server/channel_argument_option.cc",
     "src/cpp/server/create_default_thread_pool.cc",
     "src/cpp/server/dynamic_thread_pool.cc",
+    "src/cpp/server/external_connection_acceptor_impl.cc",
     "src/cpp/server/health/default_health_check_service.cc",
     "src/cpp/server/health/health_check_service.cc",
     "src/cpp/server/health/health_check_service_server_builder_option.cc",
@@ -160,6 +161,7 @@ GRPCXX_HDRS = [
     "src/cpp/client/create_channel_internal.h",
     "src/cpp/common/channel_filter.h",
     "src/cpp/server/dynamic_thread_pool.h",
+    "src/cpp/server/external_connection_acceptor_impl.h",
     "src/cpp/server/health/default_health_check_service.h",
     "src/cpp/server/thread_pool_interface.h",
     "src/cpp/thread_manager/thread_manager.h",
@@ -252,9 +254,11 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/security/auth_metadata_processor.h",
     "include/grpcpp/security/auth_metadata_processor_impl.h",
     "include/grpcpp/security/credentials.h",
+    "include/grpcpp/security/credentials_impl.h",
     "include/grpcpp/security/server_credentials.h",
     "include/grpcpp/security/server_credentials_impl.h",
     "include/grpcpp/server.h",
+    "include/grpcpp/server_impl.h",
     "include/grpcpp/server_builder.h",
     "include/grpcpp/server_builder_impl.h",
     "include/grpcpp/server_context.h",
@@ -431,6 +435,7 @@ grpc_cc_library(
         "src/compiler/config.h",
         "src/compiler/cpp_generator.h",
         "src/compiler/cpp_generator_helpers.h",
+        "src/compiler/cpp_plugin.h",
         "src/compiler/csharp_generator.h",
         "src/compiler/csharp_generator_helpers.h",
         "src/compiler/generator_helpers.h",
@@ -576,6 +581,7 @@ grpc_cc_library(
         "src/core/lib/gpr/wrap_memcpy.cc",
         "src/core/lib/gprpp/arena.cc",
         "src/core/lib/gprpp/fork.cc",
+        "src/core/lib/gprpp/global_config_env.cc",
         "src/core/lib/gprpp/thd_posix.cc",
         "src/core/lib/gprpp/thd_windows.cc",
         "src/core/lib/profiling/basic_timers.cc",
@@ -602,6 +608,10 @@ grpc_cc_library(
         "src/core/lib/gprpp/arena.h",
         "src/core/lib/gprpp/atomic.h",
         "src/core/lib/gprpp/fork.h",
+        "src/core/lib/gprpp/global_config_custom.h",
+        "src/core/lib/gprpp/global_config_env.h",
+        "src/core/lib/gprpp/global_config_generic.h",
+        "src/core/lib/gprpp/global_config.h",
         "src/core/lib/gprpp/manual_constructor.h",
         "src/core/lib/gprpp/map.h",
         "src/core/lib/gprpp/memory.h",
@@ -988,6 +998,7 @@ grpc_cc_library(
         "src/core/lib/slice/slice_hash_table.h",
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
+        "src/core/lib/slice/slice_utils.h",
         "src/core/lib/slice/slice_weak_hash_table.h",
         "src/core/lib/surface/api_trace.h",
         "src/core/lib/surface/call.h",
@@ -1553,6 +1564,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_resolver_dns_selection",
+    srcs = [
+        "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_resolver_dns_native",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc",
@@ -1561,6 +1586,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_resolver_dns_selection",
     ],
 )
 
@@ -1569,10 +1595,12 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc",
+        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc",
+        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc",
     ],
@@ -1588,6 +1616,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_resolver_dns_selection",
     ],
 )
 

@@ -32,4 +32,5 @@ std::shared_ptr<Channel> CreateChannelInternal(
   return std::shared_ptr<Channel>(
       new Channel(host, c_channel, std::move(interceptor_creators)));
 }
+
 }  // namespace grpc

@@ -33,6 +33,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
@@ -370,7 +371,7 @@ class XdsEnd2endTest : public ::testing::Test {
             client_load_reporting_interval_seconds) {
     // Make the backup poller poll very frequently in order to pick up
     // updates from all the subchannels's FDs.
-    gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "1");
+    GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
   }
 
   void SetUp() override {
@@ -1012,6 +1013,22 @@ TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerCallFails) {
   // succeeds.
   CheckRpcSendOk(/* times */ 1, /* timeout_ms */ 1000,
                  /* wait_for_ready */ false);
+}
+
+TEST_F(SingleBalancerTest, FallbackIfResponseReceivedButChildNotReady) {
+  const int kFallbackTimeoutMs = 500 * grpc_test_slowdown_factor();
+  ResetStub(kFallbackTimeoutMs);
+  SetNextResolution({backends_[0]->port_}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannelAllBalancers();
+  // Send a serverlist that only contains an unreachable backend before fallback
+  // timeout.
+  ScheduleResponseForBalancer(0,
+                              BalancerServiceImpl::BuildResponseForBackends(
+                                  {grpc_pick_unused_port_or_die()}, {}),
+                              0);
+  // Because no child policy is ready before fallback timeout, we enter fallback
+  // mode.
+  WaitForBackend(0);
 }
 
 TEST_F(SingleBalancerTest, FallbackModeIsExitedWhenBalancerSaysToDropAllCalls) {

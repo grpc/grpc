@@ -29,9 +29,9 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -40,6 +40,10 @@
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
+
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_abort_on_leaks, false,
+                              "A debugging aid to cause a call to abort() when "
+                              "gRPC objects are leaked past grpc_shutdown()");
 
 static gpr_mu g_mu;
 static gpr_cv g_rcv;
@@ -186,8 +190,5 @@ void grpc_iomgr_unregister_object(grpc_iomgr_object* obj) {
 }
 
 bool grpc_iomgr_abort_on_leaks(void) {
-  char* env = gpr_getenv("GRPC_ABORT_ON_LEAKS");
-  bool should_we = gpr_is_true(env);
-  gpr_free(env);
-  return should_we;
+  return GPR_GLOBAL_CONFIG_GET(grpc_abort_on_leaks);
 }

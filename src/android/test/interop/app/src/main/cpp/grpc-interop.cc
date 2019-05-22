@@ -18,8 +18,8 @@
 
 #include <grpcpp/grpcpp.h>
 #include <jni.h>
-#include <src/core/lib/gpr/env.h>
 
+#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "test/cpp/interop/interop_client.h"
 
 extern "C" JNIEXPORT void JNICALL
@@ -28,7 +28,7 @@ Java_io_grpc_interop_cpp_InteropActivity_configureSslRoots(JNIEnv* env,
                                                            jstring path_raw) {
   const char* path = env->GetStringUTFChars(path_raw, (jboolean*)0);
 
-  gpr_setenv("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH", path);
+  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, path);
 }
 
 std::shared_ptr<grpc::testing::InteropClient> GetClient(const char* host,
@@ -45,7 +45,7 @@ std::shared_ptr<grpc::testing::InteropClient> GetClient(const char* host,
     credentials = grpc::InsecureChannelCredentials();
   }
 
-  grpc::testing::ChannelCreationFunc channel_creation_func = 
+  grpc::testing::ChannelCreationFunc channel_creation_func =
       std::bind(grpc::CreateChannel, host_port, credentials);
   return std::shared_ptr<grpc::testing::InteropClient>(
       new grpc::testing::InteropClient(channel_creation_func, true, false));

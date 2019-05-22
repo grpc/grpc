@@ -942,13 +942,17 @@ src/core/ext/filters/client_channel/resolver/README.md \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h \
+src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc \
+src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
+src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc \
+src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h \
 src/core/ext/filters/client_channel/resolver/dns/native/README.md \
 src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
 src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
@@ -1165,6 +1169,11 @@ src/core/lib/gprpp/atomic.h \
 src/core/lib/gprpp/debug_location.h \
 src/core/lib/gprpp/fork.cc \
 src/core/lib/gprpp/fork.h \
+src/core/lib/gprpp/global_config.h \
+src/core/lib/gprpp/global_config_custom.h \
+src/core/lib/gprpp/global_config_env.cc \
+src/core/lib/gprpp/global_config_env.h \
+src/core/lib/gprpp/global_config_generic.h \
 src/core/lib/gprpp/inlined_vector.h \
 src/core/lib/gprpp/manual_constructor.h \
 src/core/lib/gprpp/map.h \
@@ -1440,6 +1449,7 @@ src/core/lib/slice/slice_intern.cc \
 src/core/lib/slice/slice_internal.h \
 src/core/lib/slice/slice_string_helpers.cc \
 src/core/lib/slice/slice_string_helpers.h \
+src/core/lib/slice/slice_utils.h \
 src/core/lib/slice/slice_weak_hash_table.h \
 src/core/lib/surface/README.md \
 src/core/lib/surface/api_trace.cc \

@@ -13,8 +13,8 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 7.0.0
-  g_stands_for: gandalf
-  version: 1.21.0-dev
+  g_stands_for: gale
+  version: 1.22.0-dev
 filegroups:
 - name: alts_proto
   headers:
@@ -148,6 +148,7 @@ filegroups:
   - src/core/lib/gpr/wrap_memcpy.cc
   - src/core/lib/gprpp/arena.cc
   - src/core/lib/gprpp/fork.cc
+  - src/core/lib/gprpp/global_config_env.cc
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/profiling/basic_timers.cc
@@ -194,6 +195,10 @@ filegroups:
   - src/core/lib/gprpp/arena.h
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/fork.h
+  - src/core/lib/gprpp/global_config.h
+  - src/core/lib/gprpp/global_config_custom.h
+  - src/core/lib/gprpp/global_config_env.h
+  - src/core/lib/gprpp/global_config_generic.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/map.h
   - src/core/lib/gprpp/memory.h
@@ -520,6 +525,7 @@ filegroups:
   - src/core/lib/slice/slice_hash_table.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/slice/slice_utils.h
   - src/core/lib/slice/slice_weak_hash_table.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
@@ -778,16 +784,19 @@ filegroups:
   src:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
   plugin: grpc_resolver_dns_ares
   uses:
   - grpc_base
   - grpc_client_channel
+  - grpc_resolver_dns_selection
 - name: grpc_resolver_dns_native
   src:
   - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
@@ -795,6 +804,14 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
+  - grpc_resolver_dns_selection
+- name: grpc_resolver_dns_selection
+  headers:
+  - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h
+  src:
+  - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc
+  uses:
+  - grpc_base
 - name: grpc_resolver_fake
   headers:
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
@@ -1376,12 +1393,14 @@ filegroups:
   - include/grpcpp/security/auth_metadata_processor.h
   - include/grpcpp/security/auth_metadata_processor_impl.h
   - include/grpcpp/security/credentials.h
+  - include/grpcpp/security/credentials_impl.h
   - include/grpcpp/security/server_credentials.h
   - include/grpcpp/security/server_credentials_impl.h
   - include/grpcpp/server.h
   - include/grpcpp/server_builder.h
   - include/grpcpp/server_builder_impl.h
   - include/grpcpp/server_context.h
+  - include/grpcpp/server_impl.h
   - include/grpcpp/server_posix.h
   - include/grpcpp/server_posix_impl.h
   - include/grpcpp/support/async_stream.h
@@ -1409,6 +1428,7 @@ filegroups:
   - src/cpp/client/create_channel_internal.h
   - src/cpp/common/channel_filter.h
   - src/cpp/server/dynamic_thread_pool.h
+  - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
@@ -1433,6 +1453,7 @@ filegroups:
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
   - src/cpp/server/dynamic_thread_pool.cc
+  - src/cpp/server/external_connection_acceptor_impl.cc
   - src/cpp/server/health/default_health_check_service.cc
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
@@ -1666,6 +1687,31 @@ libs:
   - grpc_test_util
   - grpc
   - gpr
+- name: bm_callback_test_service_impl
+  build: test
+  language: c++
+  headers:
+  - test/cpp/microbenchmarks/callback_test_service.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - test/cpp/microbenchmarks/callback_test_service.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
+  - gpr
+  - grpc++_test_config
+  defaults: benchmark
+- name: dns_test_util
+  build: private
+  language: c++
+  headers:
+  - test/cpp/naming/dns_test_util.h
+  src:
+  - test/cpp/naming/dns_test_util.cc
 - name: grpc++
   build: all
   language: c++
@@ -4025,6 +4071,52 @@ targets:
   - linux
   - posix
   uses_polling: false
+- name: bm_callback_streaming_ping_pong
+  build: test
+  language: c++
+  headers:
+  - test/cpp/microbenchmarks/callback_streaming_ping_pong.h
+  src:
+  - test/cpp/microbenchmarks/bm_callback_streaming_ping_pong.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
+  - gpr
+  - grpc++_test_config
+  - bm_callback_test_service_impl
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - mac
+  - linux
+  - posix
+- name: bm_callback_unary_ping_pong
+  build: test
+  language: c++
+  headers:
+  - test/cpp/microbenchmarks/callback_unary_ping_pong.h
+  src:
+  - test/cpp/microbenchmarks/bm_callback_unary_ping_pong.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
+  - gpr
+  - grpc++_test_config
+  - bm_callback_test_service_impl
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: bm_channel
   build: test
   language: c++
@@ -4723,6 +4815,24 @@ targets:
   - grpc++
   - grpc
   - gpr
+- name: global_config_env_test
+  build: test
+  language: c++
+  src:
+  - test/core/gprpp/global_config_env_test.cc
+  deps:
+  - gpr
+  - grpc_test_util_unsecure
+  uses_polling: false
+- name: global_config_test
+  build: test
+  language: c++
+  src:
+  - test/core/gprpp/global_config_test.cc
+  deps:
+  - gpr
+  - grpc_test_util_unsecure
+  uses_polling: false
 - name: golden_file_test
   gtest: true
   build: test
@@ -5157,6 +5267,19 @@ targets:
   - gpr
   uses:
   - grpc++_test
+- name: port_sharing_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/port_sharing_end2end_test.cc
+  deps:
+  - test_tcp_server
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
 - name: proto_server_reflection_test
   gtest: true
   build: test
@@ -5494,6 +5617,18 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
+  - gpr
+- name: service_config_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/service_config_end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
   - gpr
 - name: service_config_test
   gtest: true

@@ -640,7 +640,7 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
   // If this request is from the pending child policy, ignore it until
   // it reports READY, at which point we swap it into place.
   if (CalledByPendingChild()) {
-    if (grpc_lb_glb_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
       gpr_log(GPR_INFO,
               "[grpclb %p helper %p] pending child policy %p reports state=%s",
               parent_.get(), this, parent_->pending_child_policy_.get(),
@@ -682,7 +682,7 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
   if (parent_->serverlist_ == nullptr ||
       (!parent_->serverlist_->ContainsAllDropEntries() &&
        state != GRPC_CHANNEL_READY)) {
-    if (grpc_lb_glb_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
       gpr_log(GPR_INFO,
               "[grpclb %p helper %p] state=%s passing child picker %p as-is",
               parent_.get(), this, grpc_connectivity_state_name(state),
@@ -692,7 +692,7 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
     return;
   }
   // Cases 2 and 3a: wrap picker from the child in our own picker.
-  if (grpc_lb_glb_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     gpr_log(GPR_INFO, "[grpclb %p helper %p] state=%s wrapping child picker %p",
             parent_.get(), this, grpc_connectivity_state_name(state),
             picker.get());
@@ -715,7 +715,7 @@ void GrpcLb::Helper::RequestReresolution() {
           ? parent_->pending_child_policy_.get()
           : parent_->child_policy_.get();
   if (child_ != latest_child_policy) return;
-  if (grpc_lb_glb_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     gpr_log(GPR_INFO,
             "[grpclb %p] Re-resolution requested from %schild policy (%p).",
             parent_.get(), CalledByPendingChild() ? "pending " : "", child_);
@@ -802,7 +802,7 @@ void GrpcLb::BalancerCallState::Orphan() {
 
 void GrpcLb::BalancerCallState::StartQuery() {
   GPR_ASSERT(lb_call_ != nullptr);
-  if (grpc_lb_glb_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     gpr_log(GPR_INFO, "[grpclb %p] lb_calld=%p: Starting LB call %p",
             grpclb_policy_.get(), this, lb_call_);
   }
@@ -1009,7 +1009,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
       lb_calld->client_stats_report_interval_ = GPR_MAX(
           GPR_MS_PER_SEC, grpc_grpclb_duration_to_millis(
                               &initial_response->client_stats_report_interval));
-      if (grpc_lb_glb_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
         gpr_log(GPR_INFO,
                 "[grpclb %p] lb_calld=%p: Received initial LB response "
                 "message; client load reporting interval = %" PRId64
@@ -1017,7 +1017,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
                 grpclb_policy, lb_calld,
                 lb_calld->client_stats_report_interval_);
       }
-    } else if (grpc_lb_glb_trace.enabled()) {
+    } else if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
       gpr_log(GPR_INFO,
               "[grpclb %p] lb_calld=%p: Received initial LB response message; "
               "client load reporting NOT enabled",
@@ -1030,7 +1030,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
     // Have seen initial response, look for serverlist.
     GPR_ASSERT(lb_calld->lb_call_ != nullptr);
     auto serverlist_wrapper = MakeRefCounted<Serverlist>(serverlist);
-    if (grpc_lb_glb_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
       UniquePtr<char> serverlist_text = serverlist_wrapper->AsText();
       gpr_log(GPR_INFO,
               "[grpclb %p] lb_calld=%p: Serverlist with %" PRIuPTR
@@ -1051,7 +1051,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
     // Check if the serverlist differs from the previous one.
     if (grpclb_policy->serverlist_ != nullptr &&
         *grpclb_policy->serverlist_ == *serverlist_wrapper) {
-      if (grpc_lb_glb_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
         gpr_log(GPR_INFO,
                 "[grpclb %p] lb_calld=%p: Incoming server list identical to "
                 "current, ignoring.",
@@ -1129,7 +1129,7 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   GrpcLb* grpclb_policy = lb_calld->grpclb_policy();
   GPR_ASSERT(lb_calld->lb_call_ != nullptr);
-  if (grpc_lb_glb_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     char* status_details =
         grpc_slice_to_c_string(lb_calld->lb_call_status_details_);
     gpr_log(GPR_INFO,
@@ -1291,7 +1291,7 @@ GrpcLb::GrpcLb(Args args)
   grpc_uri* uri = grpc_uri_parse(server_uri, true);
   GPR_ASSERT(uri->path[0] != '\0');
   server_name_ = gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path);
-  if (grpc_lb_glb_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     gpr_log(GPR_INFO,
             "[grpclb %p] Will use '%s' as the server name for LB request.",
             this, server_name_);
@@ -1535,7 +1535,7 @@ void GrpcLb::StartBalancerCallLocked() {
   // Init the LB call data.
   GPR_ASSERT(lb_calld_ == nullptr);
   lb_calld_ = MakeOrphanable<BalancerCallState>(Ref());
-  if (grpc_lb_glb_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     gpr_log(GPR_INFO,
             "[grpclb %p] Query for backends (lb_channel: %p, lb_calld: %p)",
             this, lb_channel_, lb_calld_.get());
@@ -1545,7 +1545,7 @@ void GrpcLb::StartBalancerCallLocked() {
 
 void GrpcLb::StartBalancerCallRetryTimerLocked() {
   grpc_millis next_try = lb_call_backoff_.NextAttemptTime();
-  if (grpc_lb_glb_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     gpr_log(GPR_INFO, "[grpclb %p] Connection to LB server lost...", this);
     grpc_millis timeout = next_try - ExecCtx::Get()->Now();
     if (timeout > 0) {
@@ -1572,7 +1572,7 @@ void GrpcLb::OnBalancerCallRetryTimerLocked(void* arg, grpc_error* error) {
   grpclb_policy->retry_timer_callback_pending_ = false;
   if (!grpclb_policy->shutting_down_ && error == GRPC_ERROR_NONE &&
       grpclb_policy->lb_calld_ == nullptr) {
-    if (grpc_lb_glb_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
       gpr_log(GPR_INFO, "[grpclb %p] Restarting call to LB server",
               grpclb_policy);
     }
@@ -1656,7 +1656,7 @@ OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
     return nullptr;
   }
   helper->set_child(lb_policy.get());
-  if (grpc_lb_glb_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     gpr_log(GPR_INFO, "[grpclb %p] Created new child policy %s (%p)", this,
             name, lb_policy.get());
   }
@@ -1755,7 +1755,7 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
     // Cases 1, 2b, and 3b: create a new child policy.
     // If child_policy_ is null, we set it (case 1), else we set
     // pending_child_policy_ (cases 2b and 3b).
-    if (grpc_lb_glb_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
       gpr_log(GPR_INFO, "[grpclb %p] Creating new %schild policy %s", this,
               child_policy_ == nullptr ? "" : "pending ", child_policy_name);
     }
@@ -1779,7 +1779,7 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
   }
   GPR_ASSERT(policy_to_update != nullptr);
   // Update the policy.
-  if (grpc_lb_glb_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     gpr_log(GPR_INFO, "[grpclb %p] Updating %schild policy %p", this,
             policy_to_update == pending_child_policy_.get() ? "pending " : "",
             policy_to_update);

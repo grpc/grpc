@@ -20,16 +20,17 @@
 #define GRPCPP_CREATE_CHANNEL_H
 
 #include <grpcpp/create_channel_impl.h>
+#include <grpcpp/support/channel_arguments.h>
 
 namespace grpc {
 
-static inline std::shared_ptr<Channel> CreateChannel(
+static inline std::shared_ptr<::grpc::Channel> CreateChannel(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds) {
   return ::grpc_impl::CreateChannelImpl(target, creds);
 }
 
-static inline std::shared_ptr<Channel> CreateCustomChannel(
+static inline std::shared_ptr<::grpc::Channel> CreateCustomChannel(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds,
     const ChannelArguments& args) {
@@ -38,7 +39,8 @@ static inline std::shared_ptr<Channel> CreateCustomChannel(
 
 namespace experimental {
 
-static inline std::shared_ptr<Channel> CreateCustomChannelWithInterceptors(
+static inline std::shared_ptr<::grpc::Channel>
+CreateCustomChannelWithInterceptors(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds,
     const ChannelArguments& args,
