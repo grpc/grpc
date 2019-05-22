@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "include/grpc/impl/codegen/log.h"
+#include <grpc/impl/codegen/log.h>
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
