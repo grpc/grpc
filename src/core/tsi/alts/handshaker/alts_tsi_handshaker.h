@@ -30,7 +30,7 @@
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 
-#define TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY "service_accont"
+#define TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY "service_account"
 #define TSI_ALTS_CERTIFICATE_TYPE "ALTS"
 #define TSI_ALTS_RPC_VERSIONS "rpc_versions"
 
