@@ -24,7 +24,13 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ] && [ -n "$RUN_TESTS_FLAGS" ]; then
   sudo apt-get update
   sudo apt-get install -y jq
-  ghprbTargetBranch=$(curl -s https://api.github.com/repos/grpc/grpc/pulls/$KOKORO_GITHUB_PULL_REQUEST_NUMBER | jq -r .base.ref)
+  pull_info=$(curl -s https://api.github.com/repos/grpc/grpc/pulls/$KOKORO_GITHUB_PULL_REQUEST_NUMBER)
+  if [ echo "${pull_info}" | jq 'has("base")' != "true" || echo "${pull_info}" | jq 'base | has("ref")' != "true"]; then
+    echo "PR info did not contain the base ref." >/dev/stderr
+    echo "${pull_info}"
+    exit 1
+  fi
+  ghprbTargetBranch=$(echo "${pull_info}" | jq -r .base.ref)
   export RUN_TESTS_FLAGS="$RUN_TESTS_FLAGS --filter_pr_tests --base_branch origin/$ghprbTargetBranch"
 fi
 
