@@ -210,8 +210,7 @@ static void BM_Callback_CQ_Pass1Core(benchmark::State& state) {
   gpr_mu_lock(&shutdown_mu);
   while (!got_shutdown) {
     // Wait for the shutdown callback to complete.
-    gpr_cv_wait(&shutdown_cv, &shutdown_mu,
-                gpr_inf_future(GPR_CLOCK_REALTIME));
+    gpr_cv_wait(&shutdown_cv, &shutdown_mu, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_unlock(&shutdown_mu);
   GPR_ASSERT(got_shutdown);
