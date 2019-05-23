@@ -53,12 +53,6 @@
  *  (OK, Cancelled, Unknown). */
 #define NUM_CACHED_STATUS_ELEMS 3
 
-typedef struct registered_call {
-  grpc_mdelem path;
-  grpc_mdelem authority;
-  struct registered_call* next;
-} registered_call;
-
 #define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack*)((c) + 1))
 
 static void destroy_channel(void* arg, grpc_error* error);

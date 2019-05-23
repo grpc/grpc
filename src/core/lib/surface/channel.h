@@ -85,7 +85,12 @@ void grpc_channel_internal_unref(grpc_channel* channel);
 grpc_compression_options grpc_channel_compression_options(
     const grpc_channel* channel);
 
-struct registered_call;
+typedef struct registered_call {
+  grpc_mdelem path;
+  grpc_mdelem authority;
+  struct registered_call* next;
+} registered_call;
+
 struct grpc_channel {
   int is_client;
   grpc_compression_options compression_options;
