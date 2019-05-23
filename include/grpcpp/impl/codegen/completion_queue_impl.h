@@ -186,8 +186,8 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   /// within the \a deadline).  A \a tag points to an arbitrary location usually
   /// employed to uniquely identify an event.
   ///
-  /// \param tag [out] Upon sucess, updated to point to the event's tag.
-  /// \param ok [out] Upon sucess, true if a successful event, false otherwise
+  /// \param tag [out] Upon success, updated to point to the event's tag.
+  /// \param ok [out] Upon success, true if a successful event, false otherwise
   ///        See documentation for CompletionQueue::Next for explanation of ok
   /// \param deadline [in] How long to block in wait for an event.
   ///
@@ -206,8 +206,8 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   /// employed to uniquely identify an event.
   ///
   /// \param f [in] Function to execute before calling AsyncNext on this queue.
-  /// \param tag [out] Upon sucess, updated to point to the event's tag.
-  /// \param ok [out] Upon sucess, true if read a regular event, false
+  /// \param tag [out] Upon success, updated to point to the event's tag.
+  /// \param ok [out] Upon success, true if read a regular event, false
   /// otherwise.
   /// \param deadline [in] How long to block in wait for an event.
   ///
