@@ -428,6 +428,7 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
   chand->max_connection_idle = DEFAULT_MAX_CONNECTION_IDLE_MS == INT_MAX
                                    ? GRPC_MILLIS_INF_FUTURE
                                    : DEFAULT_MAX_CONNECTION_IDLE_MS;
+  chand->connectivity_state = GRPC_CHANNEL_IDLE;
   chand->idle_state = MAX_IDLE_STATE_INIT;
   gpr_atm_no_barrier_store(&chand->last_enter_idle_time_millis, GPR_ATM_MIN);
   for (size_t i = 0; i < args->channel_args->num_args; ++i) {
