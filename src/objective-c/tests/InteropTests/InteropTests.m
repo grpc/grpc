@@ -36,8 +36,8 @@
 #import <grpc/grpc.h>
 #import <grpc/support/log.h>
 
-#import "InteropTestsBlockCallbacks.h"
 #import "../EnableCronet.h"
+#import "InteropTestsBlockCallbacks.h"
 
 #define TEST_TIMEOUT 32
 

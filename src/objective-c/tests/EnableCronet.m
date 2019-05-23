@@ -18,8 +18,8 @@
 
 #ifdef GRPC_COMPILE_WITH_CRONET
 
-#import <Cronet/Cronet.h>
 #import "EnableCronet.h"
+#import <Cronet/Cronet.h>
 
 void enableCronet(void) {
   static dispatch_once_t enableCronet;

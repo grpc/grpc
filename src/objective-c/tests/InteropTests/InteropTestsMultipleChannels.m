@@ -26,8 +26,8 @@
 #import <RemoteTest/Test.pbrpc.h>
 #import <RxLibrary/GRXBufferedPipe.h>
 
-#import "InteropTestsBlockCallbacks.h"
 #import "../EnableCronet.h"
+#import "InteropTestsBlockCallbacks.h"
 
 #define NSStringize_helper(x) #x
 #define NSStringize(x) @NSStringize_helper(x)
@@ -67,8 +67,6 @@ static const NSTimeInterval TEST_TIMEOUT = 8000;
 }
 @end
 
-
-
 @interface InteropTestsMultipleChannels : XCTestCase
 
 @end
@@ -96,7 +94,6 @@ dispatch_once_t initCronet;
   options.transportType = GRPCTransportTypeCronet;
   // Cronet stack with remote host
   _remoteCronetService = [RMTTestService serviceWithHost:kRemoteSSLHost callOptions:options];
-
 
   // Local stack with no SSL
   options = [[GRPCMutableCallOptions alloc] init];
@@ -134,42 +131,54 @@ dispatch_once_t initCronet;
     XCTAssertEqualObjects(message, expectedResponse);
   };
 
-  GRPCUnaryProtoCall *callRemote = [_remoteService emptyCallWithMessage:request
-                       responseHandler:[[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
-                                                                                           messageCallback:messageHandler
-                                                                                             closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
-                                                                                               XCTAssertNil(error);
-                                                                                               [expectRemote fulfill];
-                                                                                             }
-                                                                                      writeMessageCallback:nil]
-                           callOptions:nil];
-  GRPCUnaryProtoCall *callCronet = [_remoteCronetService emptyCallWithMessage:request
-                             responseHandler:[[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
-                                                                                                 messageCallback:messageHandler
-                                                                                                   closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
-                                                                                                     XCTAssertNil(error);
-                                                                                                     [expectCronetRemote fulfill];
-                                                                                                   }
-                                                                                            writeMessageCallback:nil]
-                                 callOptions:nil];
-  GRPCUnaryProtoCall *callCleartext = [_localCleartextService emptyCallWithMessage:request
-                               responseHandler:[[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
-                                                                                                   messageCallback:messageHandler
-                                                                                                     closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
-                                                                                                       XCTAssertNil(error);
-                                                                                                       [expectCleartext fulfill];
-                                                                                                     }
-                                                                                              writeMessageCallback:nil]
-                                   callOptions:nil];
-  GRPCUnaryProtoCall *callSSL = [_localSSLService emptyCallWithMessage:request
-                         responseHandler:[[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
-                                                                                             messageCallback:messageHandler
-                                                                                               closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
-                                                                                                 XCTAssertNil(error);
-                                                                                                 [expectSSL fulfill];
-                                                                                               }
-                                                                                        writeMessageCallback:nil]
-                             callOptions:nil];
+  GRPCUnaryProtoCall *callRemote = [_remoteService
+      emptyCallWithMessage:request
+           responseHandler:[[InteropTestsBlockCallbacks alloc]
+                               initWithInitialMetadataCallback:nil
+                                               messageCallback:messageHandler
+                                                 closeCallback:^(NSDictionary *trailingMetadata,
+                                                                 NSError *error) {
+                                                   XCTAssertNil(error);
+                                                   [expectRemote fulfill];
+                                                 }
+                                          writeMessageCallback:nil]
+               callOptions:nil];
+  GRPCUnaryProtoCall *callCronet = [_remoteCronetService
+      emptyCallWithMessage:request
+           responseHandler:[[InteropTestsBlockCallbacks alloc]
+                               initWithInitialMetadataCallback:nil
+                                               messageCallback:messageHandler
+                                                 closeCallback:^(NSDictionary *trailingMetadata,
+                                                                 NSError *error) {
+                                                   XCTAssertNil(error);
+                                                   [expectCronetRemote fulfill];
+                                                 }
+                                          writeMessageCallback:nil]
+               callOptions:nil];
+  GRPCUnaryProtoCall *callCleartext = [_localCleartextService
+      emptyCallWithMessage:request
+           responseHandler:[[InteropTestsBlockCallbacks alloc]
+                               initWithInitialMetadataCallback:nil
+                                               messageCallback:messageHandler
+                                                 closeCallback:^(NSDictionary *trailingMetadata,
+                                                                 NSError *error) {
+                                                   XCTAssertNil(error);
+                                                   [expectCleartext fulfill];
+                                                 }
+                                          writeMessageCallback:nil]
+               callOptions:nil];
+  GRPCUnaryProtoCall *callSSL = [_localSSLService
+      emptyCallWithMessage:request
+           responseHandler:[[InteropTestsBlockCallbacks alloc]
+                               initWithInitialMetadataCallback:nil
+                                               messageCallback:messageHandler
+                                                 closeCallback:^(NSDictionary *trailingMetadata,
+                                                                 NSError *error) {
+                                                   XCTAssertNil(error);
+                                                   [expectSSL fulfill];
+                                                 }
+                                          writeMessageCallback:nil]
+               callOptions:nil];
   [callRemote start];
   [callCronet start];
   [callCleartext start];
@@ -219,42 +228,58 @@ dispatch_once_t initCronet;
     }
   };
 
-  calls[0] = [_remoteService fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
-                                                                                                        messageCallback:^(id message) {
-                                                                                                          handler(0, message);
-                                                                                                        }
-                                                                                                          closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
-                                                                                                            XCTAssertNil(error);
-                                                                                                            [expectRemote fulfill];
-                                                                                                          } writeMessageCallback:nil]
-                                        callOptions:nil];
-  calls[1] = [_remoteCronetService fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
-                                                                                                                                             messageCallback:^(id message) {
-                                                                                                                                               handler(1, message);
-                                                                                                                                             }
-                                                                                                                                               closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
-                                                                                                                                                 XCTAssertNil(error);
-                                                                                                                                                 [expectCronetRemote fulfill];
-                                                                                                                                               } writeMessageCallback:nil]
-                                                                             callOptions:nil];
-  calls[2] = [_localCleartextService fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
-                                                                                                                                             messageCallback:^(id message) {
-                                                                                                                                               handler(2, message);
-                                                                                                                                             }
-                                                                                                                                               closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
-                                                                                                                                                 XCTAssertNil(error);
-                                                                                                                                                 [expectCleartext fulfill];
-                                                                                                                                               } writeMessageCallback:nil]
-                                                                             callOptions:nil];
-  calls[3] = [_localSSLService fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
-                                                                                                                                             messageCallback:^(id message) {
-                                                                                                                                               handler(3, message);
-                                                                                                                                             }
-                                                                                                                                               closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
-                                                                                                                                                 XCTAssertNil(error);
-                                                                                                                                                 [expectSSL fulfill];
-                                                                                                                                               } writeMessageCallback:nil]
-                                                                             callOptions:nil];
+  calls[0] = [_remoteService
+      fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
+                                            initWithInitialMetadataCallback:nil
+                                            messageCallback:^(id message) {
+                                              handler(0, message);
+                                            }
+                                            closeCallback:^(NSDictionary *trailingMetadata,
+                                                            NSError *error) {
+                                              XCTAssertNil(error);
+                                              [expectRemote fulfill];
+                                            }
+                                            writeMessageCallback:nil]
+                            callOptions:nil];
+  calls[1] = [_remoteCronetService
+      fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
+                                            initWithInitialMetadataCallback:nil
+                                            messageCallback:^(id message) {
+                                              handler(1, message);
+                                            }
+                                            closeCallback:^(NSDictionary *trailingMetadata,
+                                                            NSError *error) {
+                                              XCTAssertNil(error);
+                                              [expectCronetRemote fulfill];
+                                            }
+                                            writeMessageCallback:nil]
+                            callOptions:nil];
+  calls[2] = [_localCleartextService
+      fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
+                                            initWithInitialMetadataCallback:nil
+                                            messageCallback:^(id message) {
+                                              handler(2, message);
+                                            }
+                                            closeCallback:^(NSDictionary *trailingMetadata,
+                                                            NSError *error) {
+                                              XCTAssertNil(error);
+                                              [expectCleartext fulfill];
+                                            }
+                                            writeMessageCallback:nil]
+                            callOptions:nil];
+  calls[3] = [_localSSLService
+      fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
+                                            initWithInitialMetadataCallback:nil
+                                            messageCallback:^(id message) {
+                                              handler(3, message);
+                                            }
+                                            closeCallback:^(NSDictionary *trailingMetadata,
+                                                            NSError *error) {
+                                              XCTAssertNil(error);
+                                              [expectSSL fulfill];
+                                            }
+                                            writeMessageCallback:nil]
+                            callOptions:nil];
   for (int i = 0; i < 4; i++) {
     [calls[i] start];
     [calls[i] writeMessage:requests[0]];
