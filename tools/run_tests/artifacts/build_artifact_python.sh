@@ -131,8 +131,10 @@ then
 fi
 
 # Ensure the generated artifacts are valid.
-"${PYTHON}" -m pip install twine
-"${PYTHON}" -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
+"${PYTHON}" -m virtualenv venv
+venv/bin/python -m pip install twine
+venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
+rm -rf venv/
 
 cp -r dist/* "$ARTIFACT_DIR"
 cp -r tools/distrib/python/grpcio_tools/dist/* "$ARTIFACT_DIR"
