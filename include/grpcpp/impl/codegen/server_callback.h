@@ -417,7 +417,7 @@ class ServerUnaryReactor : public internal::ServerReactor {
 
   // NOTE: This is an API for advanced users who need custom allocators.
   // Get and maybe mutate the allocator state associated with the current RPC.
-  virtual RpcAllocatorState* GetRpcAllocatorState() {
+  RpcAllocatorState* GetRpcAllocatorState() {
     return call_->GetRpcAllocatorState();
   }
 
