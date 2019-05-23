@@ -26,6 +26,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/slice_buffer.h>
 
+#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
@@ -33,7 +34,10 @@
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 
-/* --- Util. --- */
+GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_default_ssl_roots_file_path);
+GPR_GLOBAL_CONFIG_DECLARE_BOOL(grpc_not_use_system_ssl_roots);
+
+/* --- Util --- */
 
 /* --- URL schemes. --- */
 #define GRPC_SSL_URL_SCHEME "https"

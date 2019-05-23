@@ -29,12 +29,12 @@
 
 namespace grpc {
 
-class CompletionQueue;
 typedef ClientAsyncReaderWriter<ByteBuffer, ByteBuffer>
     GenericClientAsyncReaderWriter;
 typedef ClientAsyncResponseReader<ByteBuffer> GenericClientAsyncResponseReader;
 }  // namespace grpc
 namespace grpc_impl {
+class CompletionQueue;
 
 /// Generic stubs provide a type-unsafe interface to call gRPC methods
 /// by name.
