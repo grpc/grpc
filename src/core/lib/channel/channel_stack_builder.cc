@@ -19,6 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/surface/channel.h"
 
 #include <string.h>
 
@@ -289,7 +290,8 @@ grpc_error* grpc_channel_stack_builder_finish(
   size_t channel_stack_size = grpc_channel_stack_size(filters, num_filters);
 
   // allocate memory, with prefix_bytes followed by channel_stack_size
-  *result = gpr_zalloc(prefix_bytes + channel_stack_size);
+  *result = gpr_malloc(prefix_bytes + channel_stack_size);
+  reinterpret_cast<grpc_channel*>(*result)->channelz_channel.release();
   // fetch a pointer to the channel stack
   grpc_channel_stack* channel_stack = reinterpret_cast<grpc_channel_stack*>(
       static_cast<char*>(*result) + prefix_bytes);

@@ -59,21 +59,6 @@ typedef struct registered_call {
   struct registered_call* next;
 } registered_call;
 
-struct grpc_channel {
-  int is_client;
-  grpc_compression_options compression_options;
-
-  gpr_atm call_size_estimate;
-  grpc_resource_user* resource_user;
-
-  gpr_mu registered_call_mu;
-  registered_call* registered_calls;
-
-  grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_channel;
-
-  char* target;
-};
-
 #define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack*)((c) + 1))
 
 static void destroy_channel(void* arg, grpc_error* error);

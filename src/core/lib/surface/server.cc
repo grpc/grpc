@@ -1166,6 +1166,7 @@ void grpc_server_setup_transport(
   chand->server = s;
   server_ref(s);
   chand->channel = channel;
+  chand->socket_node.release();
   chand->socket_node = std::move(socket_node);
 
   size_t cq_idx;

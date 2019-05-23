@@ -85,4 +85,20 @@ void grpc_channel_internal_unref(grpc_channel* channel);
 grpc_compression_options grpc_channel_compression_options(
     const grpc_channel* channel);
 
+struct registered_call;
+struct grpc_channel {
+  int is_client;
+  grpc_compression_options compression_options;
+
+  gpr_atm call_size_estimate;
+  grpc_resource_user* resource_user;
+
+  gpr_mu registered_call_mu;
+  registered_call* registered_calls;
+
+  grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_channel;
+
+  char* target;
+};
+
 #endif /* GRPC_CORE_LIB_SURFACE_CHANNEL_H */
