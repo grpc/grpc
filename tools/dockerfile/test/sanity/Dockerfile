@@ -97,10 +97,13 @@ ENV CLANG_TIDY=clang-tidy
 #========================
 # Bazel installation
 
+# Must be in sync with tools/bazel.sh
+ENV BAZEL_VERSION 0.24.1
+
 RUN apt-get update && apt-get install -y wget && apt-get clean
-RUN wget https://github.com/bazelbuild/bazel/releases/download/0.23.2/bazel-0.23.2-installer-linux-x86_64.sh && \
-  bash ./bazel-0.23.2-installer-linux-x86_64.sh && \
-  rm bazel-0.23.2-installer-linux-x86_64.sh
+RUN wget "https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION/bazel-$BAZEL_VERSION-installer-linux-x86_64.sh" && \
+  bash ./bazel-$BAZEL_VERSION-installer-linux-x86_64.sh && \
+  rm bazel-$BAZEL_VERSION-installer-linux-x86_64.sh
 
 
 # Define the default command.
