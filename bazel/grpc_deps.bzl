@@ -216,8 +216,13 @@ def grpc_deps():
             strip_prefix = "upb-d16bf99ac4658793748cda3251226059892b3b7b",
             url = "https://github.com/google/upb/archive/d16bf99ac4658793748cda3251226059892b3b7b.tar.gz",
         )
-        load("@upb//bazel:workspace_deps.bzl", "upb_deps")
-        upb_deps()
+    if "data_plane_api" not in native.existing_rules():
+        http_archive(
+            name = "data_plane_api",
+            sha256 = "9b9e0e3882df11f1a174aac7d78c2238a8bfbadad271b673f351a86137613cde",
+            strip_prefix = "data-plane-api-911001cdca003337bdb93fab32740cde61bafee3",
+            url = "https://github.com/envoyproxy/data-plane-api/archive/911001cdca003337bdb93fab32740cde61bafee3.tar.gz",
+        )
 
 # TODO: move some dependencies from "grpc_deps" here?
 def grpc_test_only_deps():

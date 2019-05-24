@@ -33,6 +33,8 @@ load(
     "grpc_proto_plugin",
 )
 
+load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library")
+
 config_setting(
     name = "grpc_no_ares",
     values = {"define": "grpc_no_ares=true"},
@@ -2363,17 +2365,28 @@ grpc_cc_library(
     ],
 )
 
+upb_proto_library(
+    name = "upb_load_report",
+    deps = "@data_plane_api//envoy/api/v2/endpoint:load_report.proto"
+)
+
+
+upb_proto_library(
+    name = "upb_lrs",
+    deps = "@data_plane_api//envoy/service/load_stats/v2:lrs.proto"
+)
+
 #TODO: Get this into build.yaml once we start using it.
 grpc_cc_library(
     name = "envoy_lrs_upb",
-    srcs = [
-        "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c",
-        "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h",
-        "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h",
-    ],
+#    srcs = [
+#        "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c",
+#        "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c",
+#    ],
+#    hdrs = [
+#        "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h",
+#        "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h",
+#    ],
     language = "c++",
     external_deps = [
         "upb_lib",
@@ -2382,6 +2395,8 @@ grpc_cc_library(
         ":envoy_core_upb",
         ":google_api_upb",
         ":proto_gen_validate_upb",
+        ":upb_load_report",
+        ":upb_lrs"
     ],
     tags = ["no_windows"],
 )

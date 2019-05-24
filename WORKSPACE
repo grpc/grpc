@@ -65,3 +65,10 @@ rbe_autoconfig(
         },
     ),
 )
+
+
+load("@upb//bazel:workspace_deps.bzl", "upb_deps")
+upb_deps()
+
+load("@data_plane_api//bazel:repositories.bzl", "api_dependencies")
+api_dependencies()
