@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>grpc &#8212; gRPC Python 1.20.0 documentation</title>
+    <title>grpc &#8212; gRPC Python 1.21.1 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -31,7 +31,7 @@
 
 
 
-<p class="blurb">1.20.0</p>
+<p class="blurb">1.21.1</p>
 
 
 
@@ -111,6 +111,7 @@
 <span class="kn">import</span> <span class="nn">six</span>
 
 <span class="kn">from</span> <span class="nn">grpc._cython</span> <span class="k">import</span> <span class="n">cygrpc</span> <span class="k">as</span> <span class="n">_cygrpc</span>
+<span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_compression</span>
 
 <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NullHandler</span><span class="p">())</span>
 
@@ -503,6 +504,8 @@
 <span class="sd">      credentials: An optional CallCredentials for the RPC.</span>
 <span class="sd">      wait_for_ready: This is an EXPERIMENTAL argument. An optional flag t</span>
 <span class="sd">        enable wait for ready mechanism.</span>
+<span class="sd">      compression: An element of grpc.compression, e.g.</span>
+<span class="sd">        grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
 <span class="sd">    &quot;&quot;&quot;</span></div>
 
 
@@ -759,7 +762,8 @@
                  <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                 <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Synchronously invokes the underlying RPC.</span>
 
 <span class="sd">        Args:</span>
@@ -771,6 +775,8 @@
 <span class="sd">          credentials: An optional CallCredentials for the RPC.</span>
 <span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
 <span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">          compression: An element of grpc.compression, e.g.</span>
+<span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">          The response value for the RPC.</span>
@@ -788,7 +794,8 @@
                   <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                   <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                   <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                  <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                  <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Synchronously invokes the underlying RPC.</span>
 
 <span class="sd">        Args:</span>
@@ -800,6 +807,8 @@
 <span class="sd">          credentials: An optional CallCredentials for the RPC.</span>
 <span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
 <span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">          compression: An element of grpc.compression, e.g.</span>
+<span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">          The response value for the RPC and a Call value for the RPC.</span>
@@ -817,7 +826,8 @@
                <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-               <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+               <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Asynchronously invokes the underlying RPC.</span>
 
 <span class="sd">        Args:</span>
@@ -829,6 +839,8 @@
 <span class="sd">          credentials: An optional CallCredentials for the RPC.</span>
 <span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
 <span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">          compression: An element of grpc.compression, e.g.</span>
+<span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            An object that is both a Call for the RPC and a Future.</span>
@@ -849,7 +861,8 @@
                  <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                 <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Invokes the underlying RPC.</span>
 
 <span class="sd">        Args:</span>
@@ -861,6 +874,8 @@
 <span class="sd">          credentials: An optional CallCredentials for the RPC.</span>
 <span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
 <span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">          compression: An element of grpc.compression, e.g.</span>
+<span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            An object that is both a Call for the RPC and an iterator of</span>
@@ -880,7 +895,8 @@
                  <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                 <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Synchronously invokes the underlying RPC.</span>
 
 <span class="sd">        Args:</span>
@@ -893,6 +909,8 @@
 <span class="sd">          credentials: An optional CallCredentials for the RPC.</span>
 <span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
 <span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">          compression: An element of grpc.compression, e.g.</span>
+<span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">          The response value for the RPC.</span>
@@ -910,7 +928,8 @@
                   <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                   <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                   <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                  <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                  <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Synchronously invokes the underlying RPC on the client.</span>
 
 <span class="sd">        Args:</span>
@@ -923,6 +942,8 @@
 <span class="sd">          credentials: An optional CallCredentials for the RPC.</span>
 <span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
 <span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">          compression: An element of grpc.compression, e.g.</span>
+<span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">          The response value for the RPC and a Call object for the RPC.</span>
@@ -940,7 +961,8 @@
                <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-               <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+               <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Asynchronously invokes the underlying RPC on the client.</span>
 
 <span class="sd">        Args:</span>
@@ -952,6 +974,8 @@
 <span class="sd">          credentials: An optional CallCredentials for the RPC.</span>
 <span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
 <span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">          compression: An element of grpc.compression, e.g.</span>
+<span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            An object that is both a Call for the RPC and a Future.</span>
@@ -972,7 +996,8 @@
                  <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                 <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Invokes the underlying RPC on the client.</span>
 
 <span class="sd">        Args:</span>
@@ -984,6 +1009,8 @@
 <span class="sd">          credentials: An optional CallCredentials for the RPC.</span>
 <span class="sd">          wait_for_ready: This is an EXPERIMENTAL argument. An optional</span>
 <span class="sd">            flag to enable wait for ready mechanism</span>
+<span class="sd">          compression: An element of grpc.compression, e.g.</span>
+<span class="sd">            grpc.compression.Gzip. This is an EXPERIMENTAL option.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            An object that is both a Call for the RPC and an iterator of</span>
@@ -1187,6 +1214,17 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
+<div class="viewcode-block" id="ServicerContext.set_compression"><a class="viewcode-back" href="../grpc.html#grpc.ServicerContext.set_compression">[docs]</a>    <span class="k">def</span> <span class="nf">set_compression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compression</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the compression algorithm to be used for the entire call.</span>
+
+<span class="sd">        This is an EXPERIMENTAL method.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          compression: An element of grpc.compression, e.g.</span>
+<span class="sd">            grpc.compression.Gzip.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
 <div class="viewcode-block" id="ServicerContext.send_initial_metadata"><a class="viewcode-back" href="../grpc.html#grpc.ServicerContext.send_initial_metadata">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span> <span class="nf">send_initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_metadata</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Sends the initial metadata value to the client.</span>
@@ -1271,6 +1309,16 @@
 <span class="sd">        Args:</span>
 <span class="sd">          details: A UTF-8-encodable string to be sent to the client upon</span>
 <span class="sd">            termination of the RPC.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ServicerContext.disable_next_message_compression"><a class="viewcode-back" href="../grpc.html#grpc.ServicerContext.disable_next_message_compression">[docs]</a>    <span class="k">def</span> <span class="nf">disable_next_message_compression</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Disables compression for the next response message.</span>
+
+<span class="sd">        This is an EXPERIMENTAL method.</span>
+
+<span class="sd">        This method will override any compression configuration set during</span>
+<span class="sd">        server creation or set on the call.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 
@@ -1772,7 +1820,7 @@
     <span class="k">return</span> <span class="n">_utilities</span><span class="o">.</span><span class="n">channel_ready_future</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="insecure_channel"><a class="viewcode-back" href="../grpc.html#grpc.insecure_channel">[docs]</a><span class="k">def</span> <span class="nf">insecure_channel</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="insecure_channel"><a class="viewcode-back" href="../grpc.html#grpc.insecure_channel">[docs]</a><span class="k">def</span> <span class="nf">insecure_channel</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Creates an insecure Channel to a server.</span>
 
 <span class="sd">    The returned Channel is thread-safe.</span>
@@ -1781,15 +1829,18 @@
 <span class="sd">      target: The server address</span>
 <span class="sd">      options: An optional list of key-value pairs (channel args</span>
 <span class="sd">        in gRPC Core runtime) to configure the channel.</span>
+<span class="sd">      compression: An optional value indicating the compression method to be</span>
+<span class="sd">        used over the lifetime of the channel. This is an EXPERIMENTAL option.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      A Channel.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_channel</span>  <span class="c1"># pylint: disable=cyclic-import</span>
-    <span class="k">return</span> <span class="n">_channel</span><span class="o">.</span><span class="n">Channel</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_channel</span><span class="o">.</span><span class="n">Channel</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="p">()</span>
+                            <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">compression</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="secure_channel"><a class="viewcode-back" href="../grpc.html#grpc.secure_channel">[docs]</a><span class="k">def</span> <span class="nf">secure_channel</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">credentials</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="secure_channel"><a class="viewcode-back" href="../grpc.html#grpc.secure_channel">[docs]</a><span class="k">def</span> <span class="nf">secure_channel</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">credentials</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Creates a secure Channel to a server.</span>
 
 <span class="sd">    The returned Channel is thread-safe.</span>
@@ -1799,13 +1850,15 @@
 <span class="sd">      credentials: A ChannelCredentials instance.</span>
 <span class="sd">      options: An optional list of key-value pairs (channel args</span>
 <span class="sd">        in gRPC Core runtime) to configure the channel.</span>
+<span class="sd">      compression: An optional value indicating the compression method to be</span>
+<span class="sd">        used over the lifetime of the channel. This is an EXPERIMENTAL option.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      A Channel.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_channel</span>  <span class="c1"># pylint: disable=cyclic-import</span>
     <span class="k">return</span> <span class="n">_channel</span><span class="o">.</span><span class="n">Channel</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span>
-                            <span class="n">credentials</span><span class="o">.</span><span class="n">_credentials</span><span class="p">)</span></div>
+                            <span class="n">credentials</span><span class="o">.</span><span class="n">_credentials</span><span class="p">,</span> <span class="n">compression</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="intercept_channel"><a class="viewcode-back" href="../grpc.html#grpc.intercept_channel">[docs]</a><span class="k">def</span> <span class="nf">intercept_channel</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="o">*</span><span class="n">interceptors</span><span class="p">):</span>
@@ -1840,7 +1893,8 @@
            <span class="n">handlers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
            <span class="n">interceptors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
            <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-           <span class="n">maximum_concurrent_rpcs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+           <span class="n">maximum_concurrent_rpcs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+           <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Creates a Server with which RPCs can be serviced.</span>
 
 <span class="sd">    Args:</span>
@@ -1858,6 +1912,9 @@
 <span class="sd">      maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server</span>
 <span class="sd">        will service before returning RESOURCE_EXHAUSTED status, or None to</span>
 <span class="sd">        indicate no limit.</span>
+<span class="sd">      compression: An element of grpc.compression, e.g.</span>
+<span class="sd">        grpc.compression.Gzip. This compression algorithm will be used for the</span>
+<span class="sd">        lifetime of the server unless overridden. This is an EXPERIMENTAL option.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      A Server object.</span>
@@ -1867,7 +1924,7 @@
                                  <span class="k">if</span> <span class="n">handlers</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">handlers</span><span class="p">,</span> <span class="p">()</span>
                                  <span class="k">if</span> <span class="n">interceptors</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">interceptors</span><span class="p">,</span> <span class="p">()</span>
                                  <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span>
-                                 <span class="n">maximum_concurrent_rpcs</span><span class="p">)</span></div>
+                                 <span class="n">maximum_concurrent_rpcs</span><span class="p">,</span> <span class="n">compression</span><span class="p">)</span></div>
 
 
 <span class="nd">@contextlib</span><span class="o">.</span><span class="n">contextmanager</span>
@@ -1876,6 +1933,16 @@
     <span class="n">context</span> <span class="o">=</span> <span class="n">_server</span><span class="o">.</span><span class="n">_Context</span><span class="p">(</span><span class="n">rpc_event</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">)</span>
     <span class="k">yield</span> <span class="n">context</span>
     <span class="n">context</span><span class="o">.</span><span class="n">_finalize_state</span><span class="p">()</span>  <span class="c1"># pylint: disable=protected-access</span>
+
+
+<div class="viewcode-block" id="Compression"><a class="viewcode-back" href="../grpc.html#grpc.Compression">[docs]</a><span class="k">class</span> <span class="nc">Compression</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Indicates the compression method to be used for an RPC.</span>
+
+<span class="sd">       This enumeration is part of an EXPERIMENTAL API.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">NoCompression</span> <span class="o">=</span> <span class="n">_compression</span><span class="o">.</span><span class="n">NoCompression</span>
+    <span class="n">Deflate</span> <span class="o">=</span> <span class="n">_compression</span><span class="o">.</span><span class="n">Deflate</span>
+    <span class="n">Gzip</span> <span class="o">=</span> <span class="n">_compression</span><span class="o">.</span><span class="n">Gzip</span></div>
 
 
 <span class="c1">###################################  __all__  #################################</span>
@@ -1895,6 +1962,7 @@
     <span class="s1">&#39;AuthMetadataContext&#39;</span><span class="p">,</span>
     <span class="s1">&#39;AuthMetadataPluginCallback&#39;</span><span class="p">,</span>
     <span class="s1">&#39;AuthMetadataPlugin&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Compression&#39;</span><span class="p">,</span>
     <span class="s1">&#39;ClientCallDetails&#39;</span><span class="p">,</span>
     <span class="s1">&#39;ServerCertificateConfiguration&#39;</span><span class="p">,</span>
     <span class="s1">&#39;ServerCredentials&#39;</span><span class="p">,</span>
