@@ -332,7 +332,7 @@ initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
   }
 }
 
-- (void)writeData:(id )data {
+- (void)writeData:(id)data {
   if (_writeDataHook) {
     _writeDataHook(data, _manager);
   }
@@ -356,7 +356,7 @@ initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
   }
 }
 
-- (void)didReceiveData:(id )data {
+- (void)didReceiveData:(id)data {
   if (_responseDataHook) {
     _responseDataHook(data, _manager);
   }
