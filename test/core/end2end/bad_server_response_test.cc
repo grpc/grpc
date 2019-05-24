@@ -250,7 +250,7 @@ static void actually_poll_server(void* arg) {
     if (done || gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) < 0) {
       break;
     }
-    test_tcp_server_poll(pa->server, 1);
+    test_tcp_server_poll(pa->server, 1000);
   }
   gpr_event_set(pa->signal_when_done, (void*)1);
   gpr_free(pa);

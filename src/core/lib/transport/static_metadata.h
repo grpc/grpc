@@ -29,6 +29,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <cstdint>
+
 #include "src/core/lib/transport/metadata.h"
 
 #define GRPC_STATIC_MDSTR_COUNT 107
@@ -263,7 +265,8 @@ extern grpc_slice_refcount
    (slice).refcount->GetType() == grpc_slice_refcount::Type::STATIC)
 
 #define GRPC_STATIC_METADATA_INDEX(static_slice) \
-  ((int)((static_slice).refcount - grpc_static_metadata_refcounts))
+  (static_cast<intptr_t>(                        \
+      ((static_slice).refcount - grpc_static_metadata_refcounts)))
 
 #define GRPC_STATIC_MDELEM_COUNT 86
 extern grpc_mdelem_data grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];
@@ -527,7 +530,7 @@ extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
 #define GRPC_MDELEM_ACCEPT_ENCODING_IDENTITY_COMMA_GZIP \
   (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[85], GRPC_MDELEM_STORAGE_STATIC))
 
-grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b);
+grpc_mdelem grpc_static_mdelem_for_static_strings(intptr_t a, intptr_t b);
 typedef enum {
   GRPC_BATCH_PATH,
   GRPC_BATCH_METHOD,
@@ -586,11 +589,11 @@ typedef union {
   } named;
 } grpc_metadata_batch_callouts;
 
-#define GRPC_BATCH_INDEX_OF(slice)                      \
-  (GRPC_IS_STATIC_METADATA_STRING((slice))              \
-       ? (grpc_metadata_batch_callouts_index)GPR_CLAMP( \
-             GRPC_STATIC_METADATA_INDEX((slice)), 0,    \
-             GRPC_BATCH_CALLOUTS_COUNT)                 \
+#define GRPC_BATCH_INDEX_OF(slice)                                        \
+  (GRPC_IS_STATIC_METADATA_STRING((slice))                                \
+       ? static_cast<grpc_metadata_batch_callouts_index>(                 \
+             GPR_CLAMP(GRPC_STATIC_METADATA_INDEX((slice)), 0,            \
+                       static_cast<intptr_t>(GRPC_BATCH_CALLOUTS_COUNT))) \
        : GRPC_BATCH_CALLOUTS_COUNT)
 
 extern const uint8_t grpc_static_accept_encoding_metadata[8];

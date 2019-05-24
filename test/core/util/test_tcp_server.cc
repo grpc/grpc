@@ -77,11 +77,11 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
   gpr_log(GPR_INFO, "test tcp server listening on 0.0.0.0:%d", port);
 }
 
-void test_tcp_server_poll(test_tcp_server* server, int seconds) {
+void test_tcp_server_poll(test_tcp_server* server, int milliseconds) {
   grpc_pollset_worker* worker = nullptr;
   grpc_core::ExecCtx exec_ctx;
   grpc_millis deadline = grpc_timespec_to_millis_round_up(
-      grpc_timeout_seconds_to_deadline(seconds));
+      grpc_timeout_milliseconds_to_deadline(milliseconds));
   gpr_mu_lock(server->mu);
   GRPC_LOG_IF_ERROR("pollset_work",
                     grpc_pollset_work(server->pollset, &worker, deadline));
@@ -102,9 +102,10 @@ void test_tcp_server_destroy(test_tcp_server* server) {
                     grpc_schedule_on_exec_ctx);
   shutdown_deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                    gpr_time_from_seconds(5, GPR_TIMESPAN));
+  grpc_core::ExecCtx::Get()->Flush();
   while (!server->shutdown &&
          gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), shutdown_deadline) < 0) {
-    test_tcp_server_poll(server, 1);
+    test_tcp_server_poll(server, 1000);
   }
   grpc_pollset_shutdown(server->pollset,
                         GRPC_CLOSURE_CREATE(finish_pollset, server->pollset,

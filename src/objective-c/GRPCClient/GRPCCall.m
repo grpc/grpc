@@ -61,6 +61,15 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)receiveNextMessages:(NSUInteger)numberOfMessages;
 
+- (instancetype)initWithHost:(NSString *)host
+                        path:(NSString *)path
+                  callSafety:(GRPCCallSafety)safety
+              requestsWriter:(GRXWriter *)requestsWriter
+                 callOptions:(GRPCCallOptions *)callOptions
+                   writeDone:(void (^)(void))writeDone;
+
+- (void)receiveNextMessages:(NSUInteger)numberOfMessages;
+
 @end
 
 @implementation GRPCRequestOptions
@@ -233,6 +242,33 @@ const char *kCFStreamVarName = "grpc_cfstream";
       [copiedFirstInterceptor receiveNextMessages:numberOfMessages];
     });
   }
+}
+
+- (void)issueDidWriteData {
+  @synchronized(self) {
+    if (_callOptions.flowControlEnabled && [_handler respondsToSelector:@selector(didWriteData)]) {
+      dispatch_async(_dispatchQueue, ^{
+        id<GRPCResponseHandler> copiedHandler = nil;
+        @synchronized(self) {
+          copiedHandler = self->_handler;
+        };
+        [copiedHandler didWriteData];
+      });
+    }
+  }
+}
+
+- (void)receiveNextMessages:(NSUInteger)numberOfMessages {
+  // branching based on _callOptions.flowControlEnabled is handled inside _call
+  GRPCCall *copiedCall = nil;
+  @synchronized(self) {
+    copiedCall = _call;
+    if (copiedCall == nil) {
+      _pendingReceiveNextMessages += numberOfMessages;
+      return;
+    }
+  }
+  [copiedCall receiveNextMessages:numberOfMessages];
 }
 
 @end

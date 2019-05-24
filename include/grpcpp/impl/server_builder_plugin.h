@@ -25,12 +25,11 @@
 
 namespace grpc_impl {
 
+class ChannelArguments;
 class ServerBuilder;
 class ServerInitializer;
 }  // namespace grpc_impl
 namespace grpc {
-
-class ChannelArguments;
 
 /// This interface is meant for internal usage only. Implementations of this
 /// interface should add themselves to a \a ServerBuilder instance through the
@@ -58,7 +57,7 @@ class ServerBuilderPlugin {
 
   /// UpdateChannelArguments will be called in ServerBuilder::BuildAndStart(),
   /// before the Server instance is created.
-  virtual void UpdateChannelArguments(ChannelArguments* args) {}
+  virtual void UpdateChannelArguments(grpc_impl::ChannelArguments* args) {}
 
   virtual bool has_sync_methods() const { return false; }
   virtual bool has_async_methods() const { return false; }

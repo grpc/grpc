@@ -205,11 +205,15 @@ void register_fork_handlers() {
 
 void apply_ini_settings() {
   if (GRPC_G(enable_fork_support)) {
-    setenv("GRPC_ENABLE_FORK_SUPPORT", "1", 1 /* overwrite? */);
+    putenv("GRPC_ENABLE_FORK_SUPPORT=1");
   }
 
   if (GRPC_G(poll_strategy)) {
-    setenv("GRPC_POLL_STRATEGY", GRPC_G(poll_strategy), 1 /* overwrite? */);
+    char *poll_str = malloc(sizeof("GRPC_POLL_STRATEGY=") +
+                            strlen(GRPC_G(poll_strategy)));
+    strcpy(poll_str, "GRPC_POLL_STRATEGY=");
+    strcat(poll_str, GRPC_G(poll_strategy));
+    putenv(poll_str);
   }
 }
 

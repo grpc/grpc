@@ -62,32 +62,6 @@ void LoadBalancingPolicy::ShutdownAndUnrefLocked(void* arg,
   policy->Unref();
 }
 
-grpc_json* LoadBalancingPolicy::ParseLoadBalancingConfig(
-    const grpc_json* lb_config_array) {
-  if (lb_config_array == nullptr || lb_config_array->type != GRPC_JSON_ARRAY) {
-    return nullptr;
-  }
-  // Find the first LB policy that this client supports.
-  for (const grpc_json* lb_config = lb_config_array->child;
-       lb_config != nullptr; lb_config = lb_config->next) {
-    if (lb_config->type != GRPC_JSON_OBJECT) return nullptr;
-    grpc_json* policy = nullptr;
-    for (grpc_json* field = lb_config->child; field != nullptr;
-         field = field->next) {
-      if (field->key == nullptr || field->type != GRPC_JSON_OBJECT)
-        return nullptr;
-      if (policy != nullptr) return nullptr;  // Violate "oneof" type.
-      policy = field;
-    }
-    if (policy == nullptr) return nullptr;
-    // If we support this policy, then select it.
-    if (LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(policy->key)) {
-      return policy;
-    }
-  }
-  return nullptr;
-}
-
 //
 // LoadBalancingPolicy::UpdateArgs
 //

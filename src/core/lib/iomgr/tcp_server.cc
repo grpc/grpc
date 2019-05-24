@@ -41,6 +41,11 @@ grpc_error* grpc_tcp_server_add_port(grpc_tcp_server* s,
   return grpc_tcp_server_impl->add_port(s, addr, out_port);
 }
 
+grpc_core::TcpServerFdHandler* grpc_tcp_server_create_fd_handler(
+    grpc_tcp_server* s) {
+  return grpc_tcp_server_impl->create_fd_handler(s);
+}
+
 unsigned grpc_tcp_server_port_fd_count(grpc_tcp_server* s,
                                        unsigned port_index) {
   return grpc_tcp_server_impl->port_fd_count(s, port_index);

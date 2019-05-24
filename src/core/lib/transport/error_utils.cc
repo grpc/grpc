@@ -48,6 +48,18 @@ void grpc_error_get_status(grpc_error* error, grpc_millis deadline,
                            grpc_status_code* code, grpc_slice* slice,
                            grpc_http2_error_code* http_error,
                            const char** error_string) {
+  // Fast path: We expect no error.
+  if (GPR_LIKELY(error == GRPC_ERROR_NONE)) {
+    if (code != nullptr) *code = GRPC_STATUS_OK;
+    if (slice != nullptr) {
+      grpc_error_get_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, slice);
+    }
+    if (http_error != nullptr) {
+      *http_error = GRPC_HTTP2_NO_ERROR;
+    }
+    return;
+  }
+
   // Start with the parent error and recurse through the tree of children
   // until we find the first one that has a status code.
   grpc_error* found_error =

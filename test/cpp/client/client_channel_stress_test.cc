@@ -268,8 +268,8 @@ class ClientChannelStressTest {
                     response_generator_.get());
     std::ostringstream uri;
     uri << "fake:///servername_not_used";
-    channel_ =
-        CreateCustomChannel(uri.str(), InsecureChannelCredentials(), args);
+    channel_ = ::grpc::CreateCustomChannel(uri.str(),
+                                           InsecureChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 

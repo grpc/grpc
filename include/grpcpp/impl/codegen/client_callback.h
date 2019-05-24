@@ -29,11 +29,13 @@
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/status.h>
 
+namespace grpc_impl {
+class Channel;
+}
+
 namespace grpc {
 
-class Channel;
 class ClientContext;
-class CompletionQueue;
 
 namespace internal {
 class RpcMethod;
@@ -174,6 +176,8 @@ class ClientCallbackUnary {
 // StartWrite, or AddHold operations on the streaming object. Note that none of
 // the classes are pure; all reactions have a default empty reaction so that the
 // user class only needs to override those classes that it cares about.
+// The reactor must be passed to the stub invocation before any of the below
+// operations can be called.
 
 /// \a ClientBidiReactor is the interface for a bidirectional streaming RPC.
 template <class Request, class Response>

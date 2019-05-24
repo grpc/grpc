@@ -384,9 +384,9 @@ static const uint8_t elem_idxs[] = {
     52, 53, 54, 76,  69, 55,  56,  70, 58,  78,  80, 81, 82, 83, 59, 64,
     60, 75, 72, 255, 85, 255, 255, 68, 255, 255, 0};
 
-grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b) {
+grpc_mdelem grpc_static_mdelem_for_static_strings(intptr_t a, intptr_t b) {
   if (a == -1 || b == -1) return GRPC_MDNULL;
-  uint32_t k = (uint32_t)(a * 107 + b);
+  uint32_t k = static_cast<uint32_t>(a * 107 + b);
   uint32_t h = elems_phash(k);
   return h < GPR_ARRAY_SIZE(elem_keys) && elem_keys[h] == k &&
                  elem_idxs[h] != 255

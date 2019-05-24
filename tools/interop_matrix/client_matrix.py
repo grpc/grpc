@@ -100,6 +100,7 @@ LANG_RELEASE_MATRIX = {
         ('v1.17.1', ReleaseInfo()),
         ('v1.18.0', ReleaseInfo()),
         ('v1.19.0', ReleaseInfo()),
+        ('v1.20.0', ReleaseInfo()),
     ]),
     'go':
     OrderedDict([
@@ -121,6 +122,8 @@ LANG_RELEASE_MATRIX = {
         ('v1.16.0', ReleaseInfo(runtime_subset=['go1.8'])),
         ('v1.17.0', ReleaseInfo(runtime_subset=['go1.11'])),
         ('v1.18.0', ReleaseInfo(runtime_subset=['go1.11'])),
+        ('v1.19.0', ReleaseInfo(runtime_subset=['go1.11'])),
+        ('v1.20.0', ReleaseInfo(runtime_subset=['go1.11'])),
     ]),
     'java':
     OrderedDict([
@@ -167,6 +170,7 @@ LANG_RELEASE_MATRIX = {
         ('v1.17.1', ReleaseInfo(testcases_file='python__v1.11.1')),
         ('v1.18.0', ReleaseInfo()),
         ('v1.19.0', ReleaseInfo()),
+        ('v1.20.0', ReleaseInfo()),
     ]),
     'node':
     OrderedDict([
@@ -265,7 +269,8 @@ LANG_RELEASE_MATRIX = {
         ('v1.15.0', ReleaseInfo(testcases_file='csharp__v1.3.9')),
         ('v1.16.0', ReleaseInfo(testcases_file='csharp__v1.3.9')),
         ('v1.17.1', ReleaseInfo(testcases_file='csharp__v1.3.9')),
-        ('v1.18.0', ReleaseInfo()),
-        ('v1.19.0', ReleaseInfo()),
+        ('v1.18.0', ReleaseInfo(testcases_file='csharp__v1.18.0')),
+        ('v1.19.0', ReleaseInfo(testcases_file='csharp__v1.18.0')),
+        ('v1.20.0', ReleaseInfo()),
     ]),
 }

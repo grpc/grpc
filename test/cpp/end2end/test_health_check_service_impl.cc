@@ -54,6 +54,7 @@ Status HealthCheckServiceImpl::Watch(
       }
       if (response.status() != last_state) {
         writer->Write(response, ::grpc::WriteOptions());
+        last_state = response.status();
       }
     }
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),

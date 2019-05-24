@@ -54,6 +54,9 @@ void grpc_ares_ev_driver_on_queries_complete_locked(
 /* Shutdown all the grpc_fds used by \a ev_driver */
 void grpc_ares_ev_driver_shutdown_locked(grpc_ares_ev_driver* ev_driver);
 
+/* Exposed in this header for C-core tests only */
+extern void (*grpc_ares_test_only_inject_config)(ares_channel channel);
+
 namespace grpc_core {
 
 /* A wrapped fd that integrates with the grpc iomgr of the current platform.

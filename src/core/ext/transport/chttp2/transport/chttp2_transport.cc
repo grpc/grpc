@@ -655,11 +655,12 @@ grpc_chttp2_stream::Reffer::Reffer(grpc_chttp2_stream* s) {
 grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
                                        grpc_stream_refcount* refcount,
                                        const void* server_data,
-                                       gpr_arena* arena)
+                                       grpc_core::Arena* arena)
     : t(t),
       refcount(refcount),
       reffer(this),
-      metadata_buffer{{arena}, {arena}} {
+      metadata_buffer{grpc_chttp2_incoming_metadata_buffer(arena),
+                      grpc_chttp2_incoming_metadata_buffer(arena)} {
   if (server_data) {
     id = static_cast<uint32_t>((uintptr_t)server_data);
     *t->accepting_stream = this;
@@ -678,8 +679,6 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
   grpc_slice_buffer_init(&frame_storage);
   grpc_slice_buffer_init(&unprocessed_incoming_frames_buffer);
   grpc_slice_buffer_init(&flow_controlled_buffer);
-  grpc_slice_buffer_init(&compressed_data_buffer);
-  grpc_slice_buffer_init(&decompressed_data_buffer);
 
   GRPC_CLOSURE_INIT(&complete_fetch_locked, ::complete_fetch_locked, this,
                     grpc_combiner_scheduler(t->combiner));
@@ -703,8 +702,13 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
 
   grpc_slice_buffer_destroy_internal(&unprocessed_incoming_frames_buffer);
   grpc_slice_buffer_destroy_internal(&frame_storage);
-  grpc_slice_buffer_destroy_internal(&compressed_data_buffer);
-  grpc_slice_buffer_destroy_internal(&decompressed_data_buffer);
+  if (stream_compression_method != GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS) {
+    grpc_slice_buffer_destroy_internal(&compressed_data_buffer);
+  }
+  if (stream_decompression_method !=
+      GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS) {
+    grpc_slice_buffer_destroy_internal(&decompressed_data_buffer);
+  }
 
   grpc_chttp2_list_remove_stalled_by_transport(t, this);
   grpc_chttp2_list_remove_stalled_by_stream(t, this);
@@ -740,7 +744,7 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
 
 static int init_stream(grpc_transport* gt, grpc_stream* gs,
                        grpc_stream_refcount* refcount, const void* server_data,
-                       gpr_arena* arena) {
+                       grpc_core::Arena* arena) {
   GPR_TIMER_SCOPE("init_stream", 0);
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
   new (gs) grpc_chttp2_stream(t, refcount, server_data, arena);
@@ -758,12 +762,15 @@ static void destroy_stream(grpc_transport* gt, grpc_stream* gs,
   GPR_TIMER_SCOPE("destroy_stream", 0);
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
   grpc_chttp2_stream* s = reinterpret_cast<grpc_chttp2_stream*>(gs);
-
-  if (s->stream_compression_ctx != nullptr) {
+  if (s->stream_compression_method !=
+          GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS &&
+      s->stream_compression_ctx != nullptr) {
     grpc_stream_compression_context_destroy(s->stream_compression_ctx);
     s->stream_compression_ctx = nullptr;
   }
-  if (s->stream_decompression_ctx != nullptr) {
+  if (s->stream_decompression_method !=
+          GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS &&
+      s->stream_decompression_ctx != nullptr) {
     grpc_stream_compression_context_destroy(s->stream_decompression_ctx);
     s->stream_decompression_ctx = nullptr;
   }
@@ -1242,7 +1249,7 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
     return;
   }
   closure->next_data.scratch -= CLOSURE_BARRIER_FIRST_REF_BIT;
-  if (grpc_http_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     const char* errstr = grpc_error_string(error);
     gpr_log(
         GPR_INFO,
@@ -1394,7 +1401,7 @@ static void perform_stream_op_locked(void* stream_op,
 
   s->context = op->payload->context;
   s->traced = op->is_traced;
-  if (grpc_http_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     char* str = grpc_transport_stream_op_batch_string(op);
     gpr_log(GPR_INFO, "perform_stream_op_locked: %s; on_complete = %p", str,
             op->on_complete);
@@ -1441,7 +1448,12 @@ static void perform_stream_op_locked(void* stream_op,
             true, &s->stream_compression_method) == 0) {
       s->stream_compression_method = GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS;
     }
-
+    if (s->stream_compression_method !=
+        GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS) {
+      s->uncompressed_data_size = 0;
+      s->stream_compression_ctx = nullptr;
+      grpc_slice_buffer_init(&s->compressed_data_buffer);
+    }
     s->send_initial_metadata_finished = add_closure_barrier(on_complete);
     s->send_initial_metadata =
         op_payload->send_initial_metadata.send_initial_metadata;
@@ -1693,7 +1705,7 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
     }
   }
 
-  if (grpc_http_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     char* str = grpc_transport_stream_op_batch_string(op);
     gpr_log(GPR_INFO, "perform_stream_op[s=%p]: %s", s, str);
     gpr_free(str);
@@ -1708,7 +1720,7 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
 }
 
 static void cancel_pings(grpc_chttp2_transport* t, grpc_error* error) {
-  /* callback remaining pings: they're not allowed to call into the transpot,
+  /* callback remaining pings: they're not allowed to call into the transport,
      and maybe they hold resources that need to be freed */
   grpc_chttp2_ping_queue* pq = &t->ping_queue;
   GPR_ASSERT(error != GRPC_ERROR_NONE);
@@ -1860,7 +1872,7 @@ static void perform_transport_op_locked(void* stream_op,
 
 static void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
-  if (grpc_http_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     char* msg = grpc_transport_op_string(op);
     gpr_log(GPR_INFO, "perform_transport_op[t=%p]: %s", t, msg);
     gpr_free(msg);
@@ -1997,27 +2009,39 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
         !s->seen_error && s->recv_trailing_metadata_finished != nullptr) {
       /* Maybe some SYNC_FLUSH data is left in frame_storage. Consume them and
        * maybe decompress the next 5 bytes in the stream. */
-      bool end_of_context;
-      if (!s->stream_decompression_ctx) {
-        s->stream_decompression_ctx = grpc_stream_compression_context_create(
-            s->stream_decompression_method);
-      }
-      if (!grpc_stream_decompress(
-              s->stream_decompression_ctx, &s->frame_storage,
-              &s->unprocessed_incoming_frames_buffer, nullptr,
-              GRPC_HEADER_SIZE_IN_BYTES, &end_of_context)) {
-        grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
-        grpc_slice_buffer_reset_and_unref_internal(
-            &s->unprocessed_incoming_frames_buffer);
-        s->seen_error = true;
-      } else {
+      if (s->stream_decompression_method ==
+          GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS) {
+        grpc_slice_buffer_move_first(&s->frame_storage,
+                                     GRPC_HEADER_SIZE_IN_BYTES,
+                                     &s->unprocessed_incoming_frames_buffer);
         if (s->unprocessed_incoming_frames_buffer.length > 0) {
           s->unprocessed_incoming_frames_decompressed = true;
           pending_data = true;
         }
-        if (end_of_context) {
-          grpc_stream_compression_context_destroy(s->stream_decompression_ctx);
-          s->stream_decompression_ctx = nullptr;
+      } else {
+        bool end_of_context;
+        if (!s->stream_decompression_ctx) {
+          s->stream_decompression_ctx = grpc_stream_compression_context_create(
+              s->stream_decompression_method);
+        }
+        if (!grpc_stream_decompress(
+                s->stream_decompression_ctx, &s->frame_storage,
+                &s->unprocessed_incoming_frames_buffer, nullptr,
+                GRPC_HEADER_SIZE_IN_BYTES, &end_of_context)) {
+          grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
+          grpc_slice_buffer_reset_and_unref_internal(
+              &s->unprocessed_incoming_frames_buffer);
+          s->seen_error = true;
+        } else {
+          if (s->unprocessed_incoming_frames_buffer.length > 0) {
+            s->unprocessed_incoming_frames_decompressed = true;
+            pending_data = true;
+          }
+          if (end_of_context) {
+            grpc_stream_compression_context_destroy(
+                s->stream_decompression_ctx);
+            s->stream_decompression_ctx = nullptr;
+          }
         }
       }
     }
@@ -2238,7 +2262,7 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
   if (closed_read) {
     for (int i = 0; i < 2; i++) {
       if (s->published_metadata[i] == GRPC_METADATA_NOT_PUBLISHED) {
-        s->published_metadata[i] = GPRC_METADATA_PUBLISHED_AT_CLOSE;
+        s->published_metadata[i] = GRPC_METADATA_PUBLISHED_AT_CLOSE;
       }
     }
     grpc_chttp2_maybe_complete_recv_initial_metadata(t, s);
@@ -2595,7 +2619,7 @@ static void schedule_bdp_ping_locked(grpc_chttp2_transport* t) {
 
 static void start_bdp_ping_locked(void* tp, grpc_error* error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
-  if (grpc_http_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO, "%s: Start BDP ping err=%s", t->peer_string,
             grpc_error_string(error));
   }
@@ -2611,7 +2635,7 @@ static void start_bdp_ping_locked(void* tp, grpc_error* error) {
 
 static void finish_bdp_ping_locked(void* tp, grpc_error* error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
-  if (grpc_http_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO, "%s: Complete BDP ping err=%s", t->peer_string,
             grpc_error_string(error));
   }
@@ -2743,7 +2767,7 @@ static void start_keepalive_ping_locked(void* arg, grpc_error* error) {
   if (t->channelz_socket != nullptr) {
     t->channelz_socket->RecordKeepaliveSent();
   }
-  if (grpc_http_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO, "%s: Start keepalive ping", t->peer_string);
   }
   GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive watchdog");
@@ -2756,7 +2780,7 @@ static void finish_keepalive_ping_locked(void* arg, grpc_error* error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
   if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_PINGING) {
     if (error == GRPC_ERROR_NONE) {
-      if (grpc_http_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
         gpr_log(GPR_INFO, "%s: Finish keepalive ping", t->peer_string);
       }
       t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_WAITING;
@@ -2940,6 +2964,8 @@ bool Chttp2IncomingByteStream::Next(size_t max_size_hint,
 }
 
 void Chttp2IncomingByteStream::MaybeCreateStreamDecompressionCtx() {
+  GPR_DEBUG_ASSERT(stream_->stream_decompression_method !=
+                   GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS);
   if (!stream_->stream_decompression_ctx) {
     stream_->stream_decompression_ctx = grpc_stream_compression_context_create(
         stream_->stream_decompression_method);
@@ -2950,7 +2976,9 @@ grpc_error* Chttp2IncomingByteStream::Pull(grpc_slice* slice) {
   GPR_TIMER_SCOPE("incoming_byte_stream_pull", 0);
   grpc_error* error;
   if (stream_->unprocessed_incoming_frames_buffer.length > 0) {
-    if (!stream_->unprocessed_incoming_frames_decompressed) {
+    if (!stream_->unprocessed_incoming_frames_decompressed &&
+        stream_->stream_decompression_method !=
+            GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS) {
       bool end_of_context;
       MaybeCreateStreamDecompressionCtx();
       if (!grpc_stream_decompress(stream_->stream_decompression_ctx,
@@ -3062,7 +3090,7 @@ static void benign_reclaimer_locked(void* arg, grpc_error* error) {
       grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
     /* Channel with no active streams: send a goaway to try and make it
      * disconnect cleanly */
-    if (grpc_resource_quota_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
       gpr_log(GPR_INFO, "HTTP2: %s - send goaway to free memory",
               t->peer_string);
     }
@@ -3070,7 +3098,8 @@ static void benign_reclaimer_locked(void* arg, grpc_error* error) {
                 grpc_error_set_int(
                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("Buffers full"),
                     GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_ENHANCE_YOUR_CALM));
-  } else if (error == GRPC_ERROR_NONE && grpc_resource_quota_trace.enabled()) {
+  } else if (error == GRPC_ERROR_NONE &&
+             GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
     gpr_log(GPR_INFO,
             "HTTP2: %s - skip benign reclamation, there are still %" PRIdPTR
             " streams",
@@ -3091,7 +3120,7 @@ static void destructive_reclaimer_locked(void* arg, grpc_error* error) {
   if (error == GRPC_ERROR_NONE && n > 0) {
     grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(
         grpc_chttp2_stream_map_rand(&t->stream_map));
-    if (grpc_resource_quota_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
       gpr_log(GPR_INFO, "HTTP2: %s - abandon stream id %d", t->peer_string,
               s->id);
     }

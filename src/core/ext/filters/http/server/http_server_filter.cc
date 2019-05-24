@@ -61,7 +61,7 @@ struct call_data {
     }
   }
 
-  grpc_call_combiner* call_combiner;
+  grpc_core::CallCombiner* call_combiner;
 
   // Outgoing headers to add to send_initial_metadata.
   grpc_linked_mdelem status;

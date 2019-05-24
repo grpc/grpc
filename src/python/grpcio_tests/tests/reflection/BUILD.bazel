@@ -14,6 +14,7 @@ py_test(
         "//src/python/grpcio_tests/tests/unit:test_common",
         "//src/proto/grpc/testing:py_empty_proto",
         "//src/proto/grpc/testing/proto2:empty2_extensions_proto",
+        "//src/proto/grpc/testing/proto2:empty2_proto",
         requirement('protobuf'),
     ],
     imports=["../../",],
