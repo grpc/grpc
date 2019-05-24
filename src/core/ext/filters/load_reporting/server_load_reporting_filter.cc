@@ -293,7 +293,9 @@ grpc_filtered_mdelem ServerLoadReportingCallData::SendTrailingMetadataFilter(
     }
     const double* cost_entry_ptr =
         reinterpret_cast<const double*>(GRPC_SLICE_START_PTR(value));
-    double cost_value = *cost_entry_ptr++;
+    double cost_value;
+    memcpy(&cost_value, cost_entry_ptr, sizeof(double));
+    cost_entry_ptr++;
     const char* cost_name = reinterpret_cast<const char*>(cost_entry_ptr);
     const size_t cost_name_len = cost_entry_size - sizeof(double);
     opencensus::stats::Record(
