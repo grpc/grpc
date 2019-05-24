@@ -71,7 +71,7 @@ std::shared_ptr<grpc::Channel> CreateCustomChannelWithInterceptors(
         interceptor_creators) {
   return creds ? creds->CreateChannelWithInterceptors(
                      target, args, std::move(interceptor_creators))
-               : ::grpc::CreateChannelInternal(
+               : grpc::CreateChannelInternal(
                      "",
                      grpc_lame_client_channel_create(
                          nullptr, GRPC_STATUS_INVALID_ARGUMENT,

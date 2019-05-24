@@ -42,8 +42,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/surface/completion_queue.h"
 
-void grpc::experimental::ChannelResetConnectionBackoff(
-    ::grpc::Channel* channel) {
+void ::grpc::experimental::ChannelResetConnectionBackoff(Channel* channel) {
   grpc_impl::experimental::ChannelResetConnectionBackoff(channel);
 }
 
@@ -156,7 +155,7 @@ void ChannelResetConnectionBackoff(Channel* channel) {
 
 ::grpc::internal::Call Channel::CreateCall(
     const ::grpc::internal::RpcMethod& method, ::grpc::ClientContext* context,
-    ::grpc::CompletionQueue* cq) {
+    CompletionQueue* cq) {
   return CreateCallInternal(method, context, cq, 0);
 }
 

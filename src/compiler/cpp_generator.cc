@@ -155,7 +155,6 @@ grpc::string GetHeaderIncludes(grpc_generator::File* file,
                   params.grpc_search_path);
     printer->Print(vars, "\n");
     printer->Print(vars, "namespace grpc_impl {\n");
-    printer->Print(vars, "class Channel;\n");
     printer->Print(vars, "class CompletionQueue;\n");
     printer->Print(vars, "class ServerCompletionQueue;\n");
     printer->Print(vars, "}  // namespace grpc_impl\n\n");
@@ -164,8 +163,6 @@ grpc::string GetHeaderIncludes(grpc_generator::File* file,
     printer->Print(vars, "template <typename RequestT, typename ResponseT>\n");
     printer->Print(vars, "class MessageAllocator;\n");
     printer->Print(vars, "}  // namespace experimental\n");
-    printer->Print(vars, "}  // namespace grpc_impl\n\n");
-    printer->Print(vars, "namespace grpc {\n");
     printer->Print(vars, "class ServerContext;\n");
     printer->Print(vars, "}  // namespace grpc\n\n");
 

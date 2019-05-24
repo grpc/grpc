@@ -43,14 +43,17 @@
 struct grpc_server;
 
 namespace grpc {
-
 class AsyncGenericService;
 class ServerContext;
+
+namespace internal {
+class ExternalConnectionAcceptorImpl;
+}  // namespace internal
 
 }  // namespace grpc
 
 namespace grpc_impl {
-
+class HealthCheckServiceInterface;
 class ServerInitializer;
 
 /// Represents a gRPC server.
@@ -184,6 +187,9 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
       std::shared_ptr<std::vector<std::unique_ptr<grpc::ServerCompletionQueue>>>
           sync_server_cqs,
       int min_pollers, int max_pollers, int sync_cq_timeout_msec,
+      std::vector<
+          std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
+          acceptors,
       grpc_resource_quota* server_rq = nullptr,
       std::vector<std::unique_ptr<
           grpc::experimental::ServerInterceptorFactoryInterface>>
@@ -280,6 +286,9 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   grpc::CompletionQueue* CallbackCQ() override;
 
   grpc_impl::ServerInitializer* initializer();
+
+  std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
+      acceptors_;
 
   // A vector of interceptor factory objects.
   // This should be destroyed after health_check_service_ and this requirement

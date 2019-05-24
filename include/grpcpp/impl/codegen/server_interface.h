@@ -30,9 +30,9 @@
 
 namespace grpc_impl {
 
+class Channel;
 class CompletionQueue;
 class ServerCompletionQueue;
-class Channel;
 class ServerCredentials;
 }  // namespace grpc_impl
 namespace grpc {

@@ -102,6 +102,7 @@ void test_tcp_server_destroy(test_tcp_server* server) {
                     grpc_schedule_on_exec_ctx);
   shutdown_deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                    gpr_time_from_seconds(5, GPR_TIMESPAN));
+  grpc_core::ExecCtx::Get()->Flush();
   while (!server->shutdown &&
          gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), shutdown_deadline) < 0) {
     test_tcp_server_poll(server, 1000);

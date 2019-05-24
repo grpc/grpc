@@ -225,14 +225,14 @@ class Chttp2IncomingByteStream : public ByteStream {
   // TODO(roth): When I converted this class to C++, I wanted to make it
   // inherit from RefCounted or InternallyRefCounted instead of continuing
   // to use its own custom ref-counting code.  However, that would require
-  // using multiple inheritence, which sucks in general.  And to make matters
+  // using multiple inheritance, which sucks in general.  And to make matters
   // worse, it causes problems with our New<> and Delete<> wrappers.
   // Specifically, unless RefCounted is first in the list of parent classes,
   // it will see a different value of the address of the object than the one
   // we actually allocated, in which case gpr_free() will be called on a
   // different address than the one we got from gpr_malloc(), thus causing a
   // crash.  Given the fragility of depending on that, as well as a desire to
-  // avoid multiple inheritence in general, I've decided to leave this
+  // avoid multiple inheritance in general, I've decided to leave this
   // alone for now.  We can revisit this once we're able to link against
   // libc++, at which point we can eliminate New<> and Delete<> and
   // switch to std::shared_ptr<>.
@@ -499,7 +499,7 @@ typedef enum {
   GRPC_METADATA_NOT_PUBLISHED,
   GRPC_METADATA_SYNTHESIZED_FROM_FAKE,
   GRPC_METADATA_PUBLISHED_FROM_WIRE,
-  GPRC_METADATA_PUBLISHED_AT_CLOSE
+  GRPC_METADATA_PUBLISHED_AT_CLOSE
 } grpc_published_metadata_method;
 
 struct grpc_chttp2_stream {
