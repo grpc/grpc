@@ -224,6 +224,12 @@ def grpc_deps():
             url = "https://github.com/envoyproxy/data-plane-api/archive/911001cdca003337bdb93fab32740cde61bafee3.tar.gz",
         )
 
+    if "io_bazel_rules_go" not in native.existing_rules():
+        http_archive(
+            name = "io_bazel_rules_go",
+            urls = ["https://github.com/bazelbuild/rules_go/releases/download/0.18.5/rules_go-0.18.5.tar.gz"],
+            sha256 = "a82a352bffae6bee4e95f68a8d80a70e87f42c4741e6a448bec11998fcc82329",
+        )
 # TODO: move some dependencies from "grpc_deps" here?
 def grpc_test_only_deps():
     """Internal, not intended for use by packages that are consuming grpc.

@@ -72,3 +72,7 @@ upb_deps()
 
 load("@data_plane_api//bazel:repositories.bzl", "api_dependencies")
 api_dependencies()
+
+load("@io_bazel_rules_go//go:deps.bzl", "go_rules_dependencies", "go_register_toolchains")
+go_rules_dependencies()
+go_register_toolchains()
