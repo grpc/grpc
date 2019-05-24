@@ -217,21 +217,3 @@ void ChannelArguments::SetChannelArgs(grpc_channel_args* channel_args) const {
 }
 
 }  // namespace grpc_impl
-
-namespace grpc {
-namespace experimental {
-grpc::string ValidateServiceConfigJSON(
-    const grpc::string& service_config_json) {
-  grpc_init();
-  grpc_error* error = GRPC_ERROR_NONE;
-  grpc_core::ServiceConfig::Create(service_config_json.c_str(), &error);
-  grpc::string return_value;
-  if (error != GRPC_ERROR_NONE) {
-    return_value = grpc_error_string(error);
-    GRPC_ERROR_UNREF(error);
-  }
-  grpc_shutdown();
-  return return_value;
-}
-}  // namespace experimental
-}  // namespace grpc

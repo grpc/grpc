@@ -31,15 +31,6 @@ namespace grpc {
 namespace testing {
 class ChannelArgumentsTest;
 }  // namespace testing
-
-namespace experimental {
-/// Validates \a service_config_json. If valid, returns an empty string.
-/// Otherwise, returns the validation error.
-/// TODO(yashykt): Promote it to out of experimental once it is proved useful
-/// and gRFC is accepted.
-grpc::string ValidateServiceConfigJSON(const grpc::string& service_config_json);
-}  // namespace experimental
-
 }  // namespace grpc
 
 namespace grpc_impl {
