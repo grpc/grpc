@@ -810,9 +810,7 @@ TEST_P(HybridEnd2endTest, CallbackGenericEcho) {
         }
 
        private:
-        void OnStarted() override {
-          StartRead(&request_);
-        }
+        void OnStarted() override { StartRead(&request_); }
         void OnDone() override { delete this; }
         void OnReadDone(bool ok) override {
           if (!ok) {

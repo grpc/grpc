@@ -332,9 +332,6 @@ class ServerContext {
 
   uint32_t initial_metadata_flags() const { return 0; }
 
-  void SetCancelCallback(std::function<void()> callback);
-  void ClearCancelCallback();
-
   experimental::ServerRpcInfo* set_server_rpc_info(
       const char* method, internal::RpcMethod::RpcType type,
       const std::vector<
