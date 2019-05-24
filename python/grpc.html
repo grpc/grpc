@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>gRPC &#8212; gRPC Python 1.20.0 documentation</title>
+    <title>gRPC &#8212; gRPC Python 1.21.1 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -33,7 +33,7 @@
 
 
 
-<p class="blurb">1.20.0</p>
+<p class="blurb">1.21.1</p>
 
 
 
@@ -68,6 +68,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#service-side-interceptor">Service-Side Interceptor</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#multi-callable-interfaces">Multi-Callable Interfaces</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#future-interfaces">Future Interfaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compression">Compression</a></li>
 </ul>
 </li>
 </ul>
@@ -138,7 +139,7 @@ Or, if you would like dive in with more extensive usage of gRPC Python, check <a
 <h3>Create Client<a class="headerlink" href="#create-client" title="Permalink to this headline">¶</a></h3>
 <dl class="function">
 <dt id="grpc.insecure_channel">
-<code class="descclassname">grpc.</code><code class="descname">insecure_channel</code><span class="sig-paren">(</span><em>target</em>, <em>options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#insecure_channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.insecure_channel" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">grpc.</code><code class="descname">insecure_channel</code><span class="sig-paren">(</span><em>target</em>, <em>options=None</em>, <em>compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#insecure_channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.insecure_channel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates an insecure Channel to a server.</p>
 <p>The returned Channel is thread-safe.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -149,6 +150,8 @@ Or, if you would like dive in with more extensive usage of gRPC Python, check <a
 <li><strong>target</strong> – The server address</li>
 <li><strong>options</strong> – An optional list of key-value pairs (channel args
 in gRPC Core runtime) to configure the channel.</li>
+<li><strong>compression</strong> – An optional value indicating the compression method to be
+used over the lifetime of the channel. This is an EXPERIMENTAL option.</li>
 </ul>
 </td>
 </tr>
@@ -161,7 +164,7 @@ in gRPC Core runtime) to configure the channel.</li>
 
 <dl class="function">
 <dt id="grpc.secure_channel">
-<code class="descclassname">grpc.</code><code class="descname">secure_channel</code><span class="sig-paren">(</span><em>target</em>, <em>credentials</em>, <em>options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#secure_channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.secure_channel" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">grpc.</code><code class="descname">secure_channel</code><span class="sig-paren">(</span><em>target</em>, <em>credentials</em>, <em>options=None</em>, <em>compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#secure_channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.secure_channel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a secure Channel to a server.</p>
 <p>The returned Channel is thread-safe.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -173,6 +176,8 @@ in gRPC Core runtime) to configure the channel.</li>
 <li><strong>credentials</strong> – A ChannelCredentials instance.</li>
 <li><strong>options</strong> – An optional list of key-value pairs (channel args
 in gRPC Core runtime) to configure the channel.</li>
+<li><strong>compression</strong> – An optional value indicating the compression method to be
+used over the lifetime of the channel. This is an EXPERIMENTAL option.</li>
 </ul>
 </td>
 </tr>
@@ -332,7 +337,7 @@ authorization header, for example
 <h3>Create Server<a class="headerlink" href="#create-server" title="Permalink to this headline">¶</a></h3>
 <dl class="function">
 <dt id="grpc.server">
-<code class="descclassname">grpc.</code><code class="descname">server</code><span class="sig-paren">(</span><em>thread_pool</em>, <em>handlers=None</em>, <em>interceptors=None</em>, <em>options=None</em>, <em>maximum_concurrent_rpcs=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.server" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">grpc.</code><code class="descname">server</code><span class="sig-paren">(</span><em>thread_pool</em>, <em>handlers=None</em>, <em>interceptors=None</em>, <em>options=None</em>, <em>maximum_concurrent_rpcs=None</em>, <em>compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.server" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a Server with which RPCs can be serviced.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -353,6 +358,9 @@ to configure the channel.</li>
 <li><strong>maximum_concurrent_rpcs</strong> – The maximum number of concurrent RPCs this server
 will service before returning RESOURCE_EXHAUSTED status, or None to
 indicate no limit.</li>
+<li><strong>compression</strong> – An element of grpc.compression, e.g.
+grpc.compression.Gzip. This compression algorithm will be used for the
+lifetime of the server unless overridden. This is an EXPERIMENTAL option.</li>
 </ul>
 </td>
 </tr>
@@ -1330,6 +1338,13 @@ the service-side of the RPC.</p>
 enable wait for ready mechanism.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="grpc.ClientCallDetails.compression">
+<code class="descname">compression</code><a class="headerlink" href="#grpc.ClientCallDetails.compression" title="Permalink to this definition">¶</a></dt>
+<dd><p>An element of grpc.compression, e.g.
+grpc.compression.Gzip. This is an EXPERIMENTAL option.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -1576,6 +1591,15 @@ RPC to the gRPC runtime.</td>
 </dd></dl>
 
 <dl class="method">
+<dt id="grpc.ServicerContext.disable_next_message_compression">
+<code class="descname">disable_next_message_compression</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.disable_next_message_compression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.disable_next_message_compression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disables compression for the next response message.</p>
+<p>This is an EXPERIMENTAL method.</p>
+<p>This method will override any compression configuration set during
+server creation or set on the call.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="grpc.ServicerContext.invocation_metadata">
 <code class="descname">invocation_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.invocation_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.invocation_metadata" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accesses the metadata from the sent by the client.</p>
@@ -1665,6 +1689,22 @@ the gRPC runtime to determine the status code of the RPC.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>code</strong> – A StatusCode object to be sent to the client.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.ServicerContext.set_compression">
+<code class="descname">set_compression</code><span class="sig-paren">(</span><em>compression</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.set_compression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.set_compression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the compression algorithm to be used for the entire call.</p>
+<p>This is an EXPERIMENTAL method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>compression</strong> – An element of grpc.compression, e.g.
+grpc.compression.Gzip.</td>
 </tr>
 </tbody>
 </table>
@@ -1891,7 +1931,7 @@ interceptor chooses to service this RPC, or None otherwise.</p>
 <dd><p>Affords invoking a unary-unary RPC from client-side.</p>
 <dl class="method">
 <dt id="grpc.UnaryUnaryMultiCallable.__call__">
-<code class="descname">__call__</code><span class="sig-paren">(</span><em>request</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>request</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em>, <em>compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Synchronously invokes the underlying RPC.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1906,6 +1946,8 @@ service-side of the RPC.</li>
 <li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
 <li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
 flag to enable wait for ready mechanism</li>
+<li><strong>compression</strong> – An element of grpc.compression, e.g.
+grpc.compression.Gzip. This is an EXPERIMENTAL option.</li>
 </ul>
 </td>
 </tr>
@@ -1923,7 +1965,7 @@ metadata, status code, and details.</p>
 
 <dl class="method">
 <dt id="grpc.UnaryUnaryMultiCallable.future">
-<code class="descname">future</code><span class="sig-paren">(</span><em>request</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable.future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable.future" title="Permalink to this definition">¶</a></dt>
+<code class="descname">future</code><span class="sig-paren">(</span><em>request</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em>, <em>compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable.future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable.future" title="Permalink to this definition">¶</a></dt>
 <dd><p>Asynchronously invokes the underlying RPC.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1938,6 +1980,8 @@ service-side of the RPC.</li>
 <li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
 <li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
 flag to enable wait for ready mechanism</li>
+<li><strong>compression</strong> – An element of grpc.compression, e.g.
+grpc.compression.Gzip. This is an EXPERIMENTAL option.</li>
 </ul>
 </td>
 </tr>
@@ -1954,7 +1998,7 @@ the returned Call-Future’s exception value will be an RpcError.</p>
 
 <dl class="method">
 <dt id="grpc.UnaryUnaryMultiCallable.with_call">
-<code class="descname">with_call</code><span class="sig-paren">(</span><em>request</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable.with_call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable.with_call" title="Permalink to this definition">¶</a></dt>
+<code class="descname">with_call</code><span class="sig-paren">(</span><em>request</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em>, <em>compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable.with_call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable.with_call" title="Permalink to this definition">¶</a></dt>
 <dd><p>Synchronously invokes the underlying RPC.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1969,6 +2013,8 @@ service-side of the RPC.</li>
 <li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
 <li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
 flag to enable wait for ready mechanism</li>
+<li><strong>compression</strong> – An element of grpc.compression, e.g.
+grpc.compression.Gzip. This is an EXPERIMENTAL option.</li>
 </ul>
 </td>
 </tr>
@@ -1992,7 +2038,7 @@ metadata, status code, and details.</p>
 <dd><p>Affords invoking a unary-stream RPC from client-side.</p>
 <dl class="method">
 <dt id="grpc.UnaryStreamMultiCallable.__call__">
-<code class="descname">__call__</code><span class="sig-paren">(</span><em>request</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>request</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em>, <em>compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Invokes the underlying RPC.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2007,6 +2053,8 @@ service-side of the RPC.</li>
 <li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
 <li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
 flag to enable wait for ready mechanism</li>
+<li><strong>compression</strong> – An element of grpc.compression, e.g.
+grpc.compression.Gzip. This is an EXPERIMENTAL option.</li>
 </ul>
 </td>
 </tr>
@@ -2028,7 +2076,7 @@ RPC with non-OK status.</p>
 <dd><p>Affords invoking a stream-unary RPC from client-side.</p>
 <dl class="method">
 <dt id="grpc.StreamUnaryMultiCallable.__call__">
-<code class="descname">__call__</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em>, <em>compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Synchronously invokes the underlying RPC.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2044,6 +2092,8 @@ service-side of the RPC.</li>
 <li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
 <li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
 flag to enable wait for ready mechanism</li>
+<li><strong>compression</strong> – An element of grpc.compression, e.g.
+grpc.compression.Gzip. This is an EXPERIMENTAL option.</li>
 </ul>
 </td>
 </tr>
@@ -2061,7 +2111,7 @@ such as metadata, code, and details.</p>
 
 <dl class="method">
 <dt id="grpc.StreamUnaryMultiCallable.future">
-<code class="descname">future</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable.future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable.future" title="Permalink to this definition">¶</a></dt>
+<code class="descname">future</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em>, <em>compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable.future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable.future" title="Permalink to this definition">¶</a></dt>
 <dd><p>Asynchronously invokes the underlying RPC on the client.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2076,6 +2126,8 @@ service-side of the RPC.</li>
 <li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
 <li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
 flag to enable wait for ready mechanism</li>
+<li><strong>compression</strong> – An element of grpc.compression, e.g.
+grpc.compression.Gzip. This is an EXPERIMENTAL option.</li>
 </ul>
 </td>
 </tr>
@@ -2092,7 +2144,7 @@ be an RpcError.</p>
 
 <dl class="method">
 <dt id="grpc.StreamUnaryMultiCallable.with_call">
-<code class="descname">with_call</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable.with_call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable.with_call" title="Permalink to this definition">¶</a></dt>
+<code class="descname">with_call</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em>, <em>compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable.with_call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable.with_call" title="Permalink to this definition">¶</a></dt>
 <dd><p>Synchronously invokes the underlying RPC on the client.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2108,6 +2160,8 @@ service-side of the RPC.</li>
 <li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
 <li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
 flag to enable wait for ready mechanism</li>
+<li><strong>compression</strong> – An element of grpc.compression, e.g.
+grpc.compression.Gzip. This is an EXPERIMENTAL option.</li>
 </ul>
 </td>
 </tr>
@@ -2131,7 +2185,7 @@ metadata, status code, and details.</p>
 <dd><p>Affords invoking a stream-stream RPC on client-side.</p>
 <dl class="method">
 <dt id="grpc.StreamStreamMultiCallable.__call__">
-<code class="descname">__call__</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em>, <em>compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Invokes the underlying RPC on the client.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2146,6 +2200,8 @@ service-side of the RPC.</li>
 <li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
 <li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
 flag to enable wait for ready mechanism</li>
+<li><strong>compression</strong> – An element of grpc.compression, e.g.
+grpc.compression.Gzip. This is an EXPERIMENTAL option.</li>
 </ul>
 </td>
 </tr>
@@ -2376,6 +2432,16 @@ does not terminate within the allotted time.</li>
 </table>
 </dd></dl>
 
+</dd></dl>
+
+</div>
+<div class="section" id="compression">
+<h3>Compression<a class="headerlink" href="#compression" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="grpc.Compression">
+<em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">Compression</code><a class="reference internal" href="_modules/grpc.html#Compression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Compression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indicates the compression method to be used for an RPC.</p>
+<p>This enumeration is part of an EXPERIMENTAL API.</p>
 </dd></dl>
 
 </div>
