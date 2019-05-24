@@ -433,7 +433,9 @@ class CallOpRecvMessage {
         message_(nullptr),
         allow_not_getting_message_(false) {}
 
-  void RecvMessage(R* message) { message_ = message; }
+  void RecvMessage(R* message) {
+    message_ = message;
+  }
 
   // Do not change status if no message is received.
   void AllowNoMessage() { allow_not_getting_message_ = true; }
@@ -468,7 +470,6 @@ class CallOpRecvMessage {
         *status = false;
       }
     }
-    message_ = nullptr;
   }
 
   void SetInterceptionHookPoint(
@@ -565,7 +566,6 @@ class CallOpGenericRecvMessage {
         *status = false;
       }
     }
-    deserialize_.reset();
   }
 
   void SetInterceptionHookPoint(
@@ -580,6 +580,7 @@ class CallOpGenericRecvMessage {
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
     if (!got_message) interceptor_methods->SetRecvMessage(nullptr, nullptr);
+    deserialize_.reset();
   }
   void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
     hijacked_ = true;
