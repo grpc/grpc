@@ -40,8 +40,9 @@
 #import "test/core/util/test_config.h"
 
 #define GRPC_SHADOW_BORINGSSL_SYMBOLS
-#import <openssl_grpc/ssl.h>"
 #import "src/core/tsi/grpc_shadow_boringssl.h"
+
+#import <openssl_grpc/ssl.h>
 
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
