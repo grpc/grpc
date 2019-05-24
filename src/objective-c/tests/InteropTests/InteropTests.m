@@ -36,7 +36,7 @@
 #import <grpc/grpc.h>
 #import <grpc/support/log.h>
 
-#import "../EnableCronet.h"
+#import "../ConfigureCronet.h"
 #import "InteropTestsBlockCallbacks.h"
 
 #define TEST_TIMEOUT 32
@@ -115,7 +115,7 @@ BOOL isRemoteInteropTest(NSString *host) {
 + (void)setUp {
   NSLog(@"InteropTest Started, class: %@", [[self class] description]);
 #ifdef GRPC_COMPILE_WITH_CRONET
-  enableCronet();
+  configureCronet();
   if ([self useCronet]) {
     [GRPCCall useCronetWithEngine:[Cronet getGlobalEngine]];
   }

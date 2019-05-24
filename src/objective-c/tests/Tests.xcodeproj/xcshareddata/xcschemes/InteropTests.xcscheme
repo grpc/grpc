@@ -86,7 +86,7 @@
       </MacroExpansion>
    </ProfileAction>
    <AnalyzeAction
-      buildConfiguration = "Debug">
+      buildConfiguration = "Cronet">
    </AnalyzeAction>
    <ArchiveAction
       buildConfiguration = "Release"

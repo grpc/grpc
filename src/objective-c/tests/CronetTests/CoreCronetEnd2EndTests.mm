@@ -49,7 +49,7 @@
 #import <Cronet/Cronet.h>
 #include <grpc/grpc_cronet.h>
 
-#import "../EnableCronet.h"
+#import "../ConfigureCronet.h"
 
 typedef struct fullstack_secure_fixture_data {
   char *localaddr;
@@ -178,7 +178,7 @@ static char *roots_filename;
 
   grpc_init();
 
-  enableCronet();
+  configureCronet();
 }
 
 // The tearDown() function is run after all test cases finish running

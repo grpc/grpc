@@ -18,13 +18,13 @@
 
 #ifdef GRPC_COMPILE_WITH_CRONET
 
-#import "EnableCronet.h"
+#import "ConfigureCronet.h"
 #import <Cronet/Cronet.h>
 
-void enableCronet(void) {
-  static dispatch_once_t enableCronet;
-  dispatch_once(&enableCronet, ^{
-    NSLog(@"enableCronet()");
+void configureCronet(void) {
+  static dispatch_once_t configureCronet;
+  dispatch_once(&configureCronet, ^{
+    NSLog(@"configureCronet()");
     [Cronet setHttp2Enabled:YES];
     [Cronet setSslKeyLogFileName:@"Documents/key"];
     [Cronet enableTestCertVerifierForTesting];

@@ -26,7 +26,7 @@
 #import <RemoteTest/Test.pbrpc.h>
 #import <RxLibrary/GRXBufferedPipe.h>
 
-#import "../EnableCronet.h"
+#import "../ConfigureCronet.h"
 #import "InteropTestsBlockCallbacks.h"
 
 #define NSStringize_helper(x) #x
@@ -87,7 +87,7 @@ dispatch_once_t initCronet;
 
   _remoteService = [RMTTestService serviceWithHost:kRemoteSSLHost callOptions:nil];
 
-  enableCronet();
+  configureCronet();
 
   // Default stack with remote host
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
