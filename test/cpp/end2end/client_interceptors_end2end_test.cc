@@ -502,12 +502,12 @@ class BidiStreamingRpcHijackingInterceptorFactory
 class LoggingInterceptor : public experimental::Interceptor {
  public:
   LoggingInterceptor(experimental::ClientRpcInfo* info) : info_(info) {
-       pre_send_initial_metadata_ = false;
-       pre_send_message_count_ = 0;
-      pre_send_close_ = false;
-       post_recv_initial_metadata_ = false;
-      post_recv_message_count_ = 0;
-       post_recv_status_ = false;
+    pre_send_initial_metadata_ = false;
+    pre_send_message_count_ = 0;
+    pre_send_close_ = false;
+    post_recv_initial_metadata_ = false;
+    post_recv_message_count_ = 0;
+    post_recv_status_ = false;
   }
 
   virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
@@ -540,7 +540,7 @@ class LoggingInterceptor : public experimental::Interceptor {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_CLOSE)) {
       // Got nothing to do here for now
-      pre_send_close_ = true;      
+      pre_send_close_ = true;
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA)) {
@@ -553,7 +553,7 @@ class LoggingInterceptor : public experimental::Interceptor {
             experimental::InterceptionHookPoints::POST_RECV_MESSAGE)) {
       EchoResponse* resp =
           static_cast<EchoResponse*>(methods->GetRecvMessage());
-      if(resp != nullptr) {
+      if (resp != nullptr) {
         EXPECT_TRUE(resp->message().find("Hello") == 0u);
         post_recv_message_count_++;
       }
@@ -590,19 +590,19 @@ class LoggingInterceptor : public experimental::Interceptor {
   }
 
   static void VerifyClientStreamingCall() {
-    VerifyCallCommon();    
+    VerifyCallCommon();
     EXPECT_EQ(pre_send_message_count_, kNumStreamingMessages);
     EXPECT_EQ(post_recv_message_count_, 1);
   }
 
   static void VerifyServerStreamingCall() {
-    VerifyCallCommon();    
+    VerifyCallCommon();
     EXPECT_EQ(pre_send_message_count_, 1);
     EXPECT_EQ(post_recv_message_count_, kNumStreamingMessages);
   }
 
   static void VerifyBidiStreamingCall() {
-    VerifyCallCommon();    
+    VerifyCallCommon();
     EXPECT_EQ(pre_send_message_count_, kNumStreamingMessages);
     EXPECT_EQ(post_recv_message_count_, kNumStreamingMessages);
   }

@@ -433,9 +433,7 @@ class CallOpRecvMessage {
         message_(nullptr),
         allow_not_getting_message_(false) {}
 
-  void RecvMessage(R* message) {
-    message_ = message;
-  }
+  void RecvMessage(R* message) { message_ = message; }
 
   // Do not change status if no message is received.
   void AllowNoMessage() { allow_not_getting_message_ = true; }
