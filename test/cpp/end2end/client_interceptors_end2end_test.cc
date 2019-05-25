@@ -501,7 +501,7 @@ class BidiStreamingRpcHijackingInterceptorFactory
 
 class LoggingInterceptor : public experimental::Interceptor {
  public:
-  LoggingInterceptor(experimental::ClientRpcInfo* info) : info_(info) {
+  LoggingInterceptor(experimental::ClientRpcInfo* info) {
     pre_send_initial_metadata_ = false;
     pre_send_message_count_ = 0;
     pre_send_close_ = false;
@@ -608,7 +608,6 @@ class LoggingInterceptor : public experimental::Interceptor {
   }
 
  private:
-  experimental::ClientRpcInfo* info_;
   static bool pre_send_initial_metadata_;
   static int pre_send_message_count_;
   static bool pre_send_close_;
