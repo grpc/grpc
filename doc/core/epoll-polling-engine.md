@@ -49,7 +49,7 @@ This means that for every incoming new channel, all the threads waiting on all t
 Example 2: New Incoming-channel fds on server
 
 * Currently, every new incoming channel's `fd` (i.e the socket `fd` that is returned by doing an `accept()` on the new incoming channel) is added to all the server completion queues' pollsets [^5]).
-* Clearly, this would also cause all thundering herd problem for every read onthat fd
+* Clearly, this would also cause all thundering herd problem for every read on that fd
 
 There are other scenarios especially on the client side where an fd can end up being on multiple pollsets which would cause thundering herds on the clients.
 
