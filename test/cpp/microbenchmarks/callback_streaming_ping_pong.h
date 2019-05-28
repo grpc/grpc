@@ -115,7 +115,7 @@ class BidiClient
   int msgs_size_;
   std::mutex mu;
   std::condition_variable cv;
-  bool done;
+  bool done = false;
 };
 
 template <class Fixture, class ClientContextMutator, class ServerContextMutator>

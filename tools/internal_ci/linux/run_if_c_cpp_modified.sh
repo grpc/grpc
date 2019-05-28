@@ -20,13 +20,11 @@ set -ex
 # Enter the gRPC repo root
 cd $(dirname $0)/../../..
 
-# TODO(jtattermusch): the "ghprbTargetBranch" is Jenkins specific and probably
-# does not work on kokoro?
 AFFECTS_C_CPP=`python -c 'import os; \
                import sys; \
                sys.path.insert(0, "tools/run_tests/python_utils"); \
                import filter_pull_request_tests as filter; \
-               github_target_branch = os.environ.get("ghprbTargetBranch"); \
+               github_target_branch = os.environ.get("KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH"); \
                print(filter.affects_c_cpp("origin/%s" % github_target_branch))'`
 
 if [ $AFFECTS_C_CPP == "False" ] ; then

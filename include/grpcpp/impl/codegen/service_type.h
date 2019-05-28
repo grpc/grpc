@@ -29,12 +29,11 @@
 namespace grpc_impl {
 
 class Server;
+class CompletionQueue;
 }  // namespace grpc_impl
 namespace grpc {
 
-class CompletionQueue;
 class ServerInterface;
-class ServerCompletionQueue;
 class ServerContext;
 
 namespace internal {
