@@ -2262,7 +2262,7 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
   if (closed_read) {
     for (int i = 0; i < 2; i++) {
       if (s->published_metadata[i] == GRPC_METADATA_NOT_PUBLISHED) {
-        s->published_metadata[i] = GPRC_METADATA_PUBLISHED_AT_CLOSE;
+        s->published_metadata[i] = GRPC_METADATA_PUBLISHED_AT_CLOSE;
       }
     }
     grpc_chttp2_maybe_complete_recv_initial_metadata(t, s);

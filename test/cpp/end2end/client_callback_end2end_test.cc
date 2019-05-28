@@ -104,10 +104,6 @@ class ClientCallbackEnd2endTest
     // TODO(vjpai): Support testing of AuthMetadataProcessor
 
     if (GetParam().protocol == Protocol::TCP) {
-      if (!grpc_iomgr_run_in_background()) {
-        do_not_test_ = true;
-        return;
-      }
       picked_port_ = grpc_pick_unused_port_or_die();
       server_address_ << "localhost:" << picked_port_;
       builder.AddListeningPort(server_address_.str(), server_creds);
@@ -133,6 +129,10 @@ class ClientCallbackEnd2endTest
 
     server_ = builder.BuildAndStart();
     is_server_started_ = true;
+    if (GetParam().protocol == Protocol::TCP &&
+        !grpc_iomgr_run_in_background()) {
+      do_not_test_ = true;
+    }
   }
 
   void ResetStub() {
@@ -372,6 +372,34 @@ TEST_P(ClientCallbackEnd2endTest, SimpleRpc) {
   MAYBE_SKIP_TEST;
   ResetStub();
   SendRpcs(1, false);
+}
+
+TEST_P(ClientCallbackEnd2endTest, SimpleRpcUnderLock) {
+  MAYBE_SKIP_TEST;
+  ResetStub();
+  std::mutex mu;
+  std::condition_variable cv;
+  bool done = false;
+  EchoRequest request;
+  request.set_message("Hello locked world.");
+  EchoResponse response;
+  ClientContext cli_ctx;
+  {
+    std::lock_guard<std::mutex> l(mu);
+    stub_->experimental_async()->Echo(
+        &cli_ctx, &request, &response,
+        [&mu, &cv, &done, &request, &response](Status s) {
+          std::lock_guard<std::mutex> l(mu);
+          EXPECT_TRUE(s.ok());
+          EXPECT_EQ(request.message(), response.message());
+          done = true;
+          cv.notify_one();
+        });
+  }
+  std::unique_lock<std::mutex> l(mu);
+  while (!done) {
+    cv.wait(l);
+  }
 }
 
 TEST_P(ClientCallbackEnd2endTest, SequentialRpcs) {
