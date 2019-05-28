@@ -141,6 +141,16 @@ inline bool grpc_mdelem_static_value_eq(grpc_mdelem a, grpc_mdelem b_static) {
   if (a.payload == b_static.payload) return true;
   return grpc_slice_eq_static_interned(GRPC_MDVALUE(a), GRPC_MDVALUE(b_static));
 }
+#define GRPC_MDISNULL(md) (GRPC_MDELEM_DATA(md) == NULL)
+
+inline bool grpc_mdelem_both_interned_eq(grpc_mdelem a_interned,
+                                         grpc_mdelem b_interned) {
+  GPR_DEBUG_ASSERT(GRPC_MDELEM_IS_INTERNED(a_interned) ||
+                   GRPC_MDISNULL(a_interned));
+  GPR_DEBUG_ASSERT(GRPC_MDELEM_IS_INTERNED(b_interned) ||
+                   GRPC_MDISNULL(b_interned));
+  return a_interned.payload == b_interned.payload;
+}
 
 /* Mutator and accessor for grpc_mdelem user data. The destructor function
    is used as a type tag and is checked during user_data fetch. */
@@ -167,6 +177,23 @@ struct UserData {
   Mutex mu_user_data;
   grpc_core::Atomic<destroy_user_data_func> destroy_user_data;
   grpc_core::Atomic<void*> data;
+};
+
+class StaticMetadata {
+ public:
+  StaticMetadata(const grpc_slice& key, const grpc_slice& value)
+      : kv_({key, value}), hash_(0) {}
+
+  const grpc_mdelem_data& data() const { return kv_; }
+
+  void HashInit();
+  uint32_t hash() { return hash_; }
+
+ private:
+  grpc_mdelem_data kv_;
+
+  /* private only data */
+  uint32_t hash_;
 };
 
 class InternedMetadata {
@@ -227,8 +254,8 @@ class InternedMetadata {
   grpc_slice value_;
 
   /* private only data */
-  grpc_core::Atomic<intptr_t> refcnt_;
   uint32_t hash_;
+  grpc_core::Atomic<intptr_t> refcnt_;
 
   UserData user_data_;
 
@@ -344,7 +371,6 @@ inline void grpc_mdelem_unref(grpc_mdelem gmd) {
 }
 
 #define GRPC_MDNULL GRPC_MAKE_MDELEM(NULL, GRPC_MDELEM_STORAGE_EXTERNAL)
-#define GRPC_MDISNULL(md) (GRPC_MDELEM_DATA(md) == NULL)
 
 /* We add 32 bytes of padding as per RFC-7540 section 6.5.2. */
 #define GRPC_MDELEM_LENGTH(e)                                                  \
