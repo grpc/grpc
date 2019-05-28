@@ -77,6 +77,24 @@ class ServerReactor {
   std::atomic_int on_cancel_conditions_remaining_{2};
 };
 
+template <class Request, class Response>
+class DefaultMessageHolder
+    : public experimental::MessageHolder<Request, Response> {
+ public:
+  DefaultMessageHolder() {
+    this->set_request(&request_obj_);
+    this->set_response(&response_obj_);
+  }
+  void Release() override {
+    // the object is allocated in the call arena.
+    this->~DefaultMessageHolder<Request, Response>();
+  }
+
+ private:
+  Request request_obj_;
+  Response response_obj_;
+};
+
 }  // namespace internal
 
 namespace experimental {
@@ -138,12 +156,8 @@ class ServerCallbackRpcController {
   virtual void ClearCancelCallback() = 0;
 
   // NOTE: This is an API for advanced users who need custom allocators.
-  // Optionally deallocate request early to reduce the size of working set.
-  // A custom MessageAllocator needs to be registered to make use of this.
-  virtual void FreeRequest() = 0;
-  // NOTE: This is an API for advanced users who need custom allocators.
   // Get and maybe mutate the allocator state associated with the current RPC.
-  virtual void* GetAllocatorState() = 0;
+  virtual RpcAllocatorState* GetRpcAllocatorState() = 0;
 };
 
 // NOTE: The actual streaming object classes are provided
@@ -465,13 +479,13 @@ class CallbackUnaryHandler : public MethodHandler {
   void RunHandler(const HandlerParameter& param) final {
     // Arena allocate a controller structure (that includes request/response)
     g_core_codegen_interface->grpc_call_ref(param.call->call());
-    auto* allocator_info =
-        static_cast<experimental::RpcAllocatorInfo<RequestType, ResponseType>*>(
+    auto* allocator_state =
+        static_cast<experimental::MessageHolder<RequestType, ResponseType>*>(
             param.internal_data);
     auto* controller = new (g_core_codegen_interface->grpc_call_arena_alloc(
         param.call->call(), sizeof(ServerCallbackRpcControllerImpl)))
         ServerCallbackRpcControllerImpl(param.server_context, param.call,
-                                        allocator_info, allocator_,
+                                        allocator_state,
                                         std::move(param.call_requester));
     Status status = param.status;
     if (status.ok()) {
@@ -489,36 +503,24 @@ class CallbackUnaryHandler : public MethodHandler {
     ByteBuffer buf;
     buf.set_buffer(req);
     RequestType* request = nullptr;
-    experimental::RpcAllocatorInfo<RequestType, ResponseType>* allocator_info =
-        new (g_core_codegen_interface->grpc_call_arena_alloc(
-            call, sizeof(*allocator_info)))
-            experimental::RpcAllocatorInfo<RequestType, ResponseType>();
+    experimental::MessageHolder<RequestType, ResponseType>* allocator_state =
+        nullptr;
     if (allocator_ != nullptr) {
-      allocator_->AllocateMessages(allocator_info);
+      allocator_state = allocator_->AllocateMessages();
     } else {
-      allocator_info->request =
-          new (g_core_codegen_interface->grpc_call_arena_alloc(
-              call, sizeof(RequestType))) RequestType();
-      allocator_info->response =
-          new (g_core_codegen_interface->grpc_call_arena_alloc(
-              call, sizeof(ResponseType))) ResponseType();
+      allocator_state = new (g_core_codegen_interface->grpc_call_arena_alloc(
+          call, sizeof(DefaultMessageHolder<RequestType, ResponseType>)))
+          DefaultMessageHolder<RequestType, ResponseType>();
     }
-    *handler_data = allocator_info;
-    request = allocator_info->request;
+    *handler_data = allocator_state;
+    request = allocator_state->request();
     *status = SerializationTraits<RequestType>::Deserialize(&buf, request);
     buf.Release();
     if (status->ok()) {
       return request;
     }
     // Clean up on deserialization failure.
-    if (allocator_ != nullptr) {
-      allocator_->DeallocateMessages(allocator_info);
-    } else {
-      allocator_info->request->~RequestType();
-      allocator_info->response->~ResponseType();
-      allocator_info->request = nullptr;
-      allocator_info->response = nullptr;
-    }
+    allocator_state->Release();
     return nullptr;
   }
 
@@ -548,9 +550,8 @@ class CallbackUnaryHandler : public MethodHandler {
       }
       // The response is dropped if the status is not OK.
       if (s.ok()) {
-        finish_ops_.ServerSendStatus(
-            &ctx_->trailing_metadata_,
-            finish_ops_.SendMessagePtr(allocator_info_->response));
+        finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_,
+                                     finish_ops_.SendMessagePtr(response()));
       } else {
         finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
       }
@@ -588,14 +589,8 @@ class CallbackUnaryHandler : public MethodHandler {
 
     void ClearCancelCallback() override { ctx_->ClearCancelCallback(); }
 
-    void FreeRequest() override {
-      if (allocator_ != nullptr) {
-        allocator_->DeallocateRequest(allocator_info_);
-      }
-    }
-
-    void* GetAllocatorState() override {
-      return allocator_info_->allocator_state;
+    experimental::RpcAllocatorState* GetRpcAllocatorState() override {
+      return allocator_state_;
     }
 
    private:
@@ -603,35 +598,23 @@ class CallbackUnaryHandler : public MethodHandler {
 
     ServerCallbackRpcControllerImpl(
         ServerContext* ctx, Call* call,
-        experimental::RpcAllocatorInfo<RequestType, ResponseType>*
-            allocator_info,
-        experimental::MessageAllocator<RequestType, ResponseType>* allocator,
+        experimental::MessageHolder<RequestType, ResponseType>* allocator_state,
         std::function<void()> call_requester)
         : ctx_(ctx),
           call_(*call),
-          allocator_info_(allocator_info),
-          allocator_(allocator),
+          allocator_state_(allocator_state),
           call_requester_(std::move(call_requester)) {
       ctx_->BeginCompletionOp(call, [this](bool) { MaybeDone(); }, nullptr);
     }
 
-    const RequestType* request() { return allocator_info_->request; }
-    ResponseType* response() { return allocator_info_->response; }
+    const RequestType* request() { return allocator_state_->request(); }
+    ResponseType* response() { return allocator_state_->response(); }
 
     void MaybeDone() {
       if (--callbacks_outstanding_ == 0) {
         grpc_call* call = call_.call();
         auto call_requester = std::move(call_requester_);
-        if (allocator_ != nullptr) {
-          allocator_->DeallocateMessages(allocator_info_);
-        } else {
-          if (allocator_info_->request != nullptr) {
-            allocator_info_->request->~RequestType();
-          }
-          if (allocator_info_->response != nullptr) {
-            allocator_info_->response->~ResponseType();
-          }
-        }
+        allocator_state_->Release();
         this->~ServerCallbackRpcControllerImpl();  // explicitly call destructor
         g_core_codegen_interface->grpc_call_unref(call);
         call_requester();
@@ -647,8 +630,8 @@ class CallbackUnaryHandler : public MethodHandler {
 
     ServerContext* ctx_;
     Call call_;
-    experimental::RpcAllocatorInfo<RequestType, ResponseType>* allocator_info_;
-    experimental::MessageAllocator<RequestType, ResponseType>* allocator_;
+    experimental::MessageHolder<RequestType, ResponseType>* const
+        allocator_state_;
     std::function<void()> call_requester_;
     std::atomic_int callbacks_outstanding_{
         2};  // reserve for Finish and CompletionOp

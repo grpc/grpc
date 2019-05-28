@@ -24,7 +24,7 @@ Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
   # version = '1.22.0-dev'
-  version = '0.0.8-dev'
+  version = '0.0.9-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -72,7 +72,7 @@ Pod::Spec.new do |s|
   s.default_subspecs = 'Interface', 'Implementation'
 
   # Certificates, to be able to establish TLS connections:
-  s.resource_bundles = { 'gRPCCertificates' => ['etc/roots.pem'] }
+  s.resource_bundles = { 'gRPCCertificates-Cpp' => ['etc/roots.pem'] }
 
   s.header_mappings_dir = 'include/grpcpp'
 
@@ -82,6 +82,7 @@ Pod::Spec.new do |s|
     ss.source_files = 'include/grpcpp/alarm.h',
                       'include/grpcpp/alarm_impl.h',
                       'include/grpcpp/channel.h',
+                      'include/grpcpp/channel_impl.h',
                       'include/grpcpp/client_context.h',
                       'include/grpcpp/completion_queue.h',
                       'include/grpcpp/create_channel.h',
@@ -147,6 +148,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/support/stub_options.h',
                       'include/grpcpp/support/sync_stream.h',
                       'include/grpcpp/support/time.h',
+                      'include/grpcpp/support/validate_service_config.h',
                       'include/grpcpp/impl/codegen/async_generic_service.h',
                       'include/grpcpp/impl/codegen/async_stream.h',
                       'include/grpcpp/impl/codegen/async_unary_call.h',
@@ -162,6 +164,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/client_interceptor.h',
                       'include/grpcpp/impl/codegen/client_unary_call.h',
                       'include/grpcpp/impl/codegen/completion_queue.h',
+                      'include/grpcpp/impl/codegen/completion_queue_impl.h',
                       'include/grpcpp/impl/codegen/completion_queue_tag.h',
                       'include/grpcpp/impl/codegen/config.h',
                       'include/grpcpp/impl/codegen/core_codegen_interface.h',
@@ -205,6 +208,7 @@ Pod::Spec.new do |s|
                       'src/cpp/client/create_channel_internal.h',
                       'src/cpp/common/channel_filter.h',
                       'src/cpp/server/dynamic_thread_pool.h',
+                      'src/cpp/server/external_connection_acceptor_impl.h',
                       'src/cpp/server/health/default_health_check_service.h',
                       'src/cpp/server/thread_pool_interface.h',
                       'src/cpp/thread_manager/thread_manager.h',
@@ -231,11 +235,13 @@ Pod::Spec.new do |s|
                       'src/cpp/common/core_codegen.cc',
                       'src/cpp/common/resource_quota_cc.cc',
                       'src/cpp/common/rpc_method.cc',
+                      'src/cpp/common/validate_service_config.cc',
                       'src/cpp/common/version_cc.cc',
                       'src/cpp/server/async_generic_service.cc',
                       'src/cpp/server/channel_argument_option.cc',
                       'src/cpp/server/create_default_thread_pool.cc',
                       'src/cpp/server/dynamic_thread_pool.cc',
+                      'src/cpp/server/external_connection_acceptor_impl.cc',
                       'src/cpp/server/health/default_health_check_service.cc',
                       'src/cpp/server/health/health_check_service.cc',
                       'src/cpp/server/health/health_check_service_server_builder_option.cc',
@@ -561,6 +567,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
+                      'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h',
                       'src/core/ext/filters/max_age/max_age_filter.h',
                       'src/core/ext/filters/message_size/message_size_filter.h',
                       'src/core/ext/filters/http/client_authority_filter.h',
@@ -574,6 +581,7 @@ Pod::Spec.new do |s|
                               'src/cpp/client/create_channel_internal.h',
                               'src/cpp/common/channel_filter.h',
                               'src/cpp/server/dynamic_thread_pool.h',
+                              'src/cpp/server/external_connection_acceptor_impl.h',
                               'src/cpp/server/health/default_health_check_service.h',
                               'src/cpp/server/thread_pool_interface.h',
                               'src/cpp/thread_manager/thread_manager.h',

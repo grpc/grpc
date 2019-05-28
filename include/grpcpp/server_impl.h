@@ -27,6 +27,7 @@
 
 #include <grpc/compression.h>
 #include <grpc/support/atm.h>
+#include <grpcpp/channel.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/call.h>
@@ -42,14 +43,17 @@
 struct grpc_server;
 
 namespace grpc {
-
 class AsyncGenericService;
 class ServerContext;
+
+namespace internal {
+class ExternalConnectionAcceptorImpl;
+}  // namespace internal
 
 }  // namespace grpc
 
 namespace grpc_impl {
-
+class HealthCheckServiceInterface;
 class ServerInitializer;
 
 /// Represents a gRPC server.
@@ -104,7 +108,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   }
 
   /// Establish a channel for in-process communication
-  std::shared_ptr<grpc::Channel> InProcessChannel(
+  std::shared_ptr<::grpc::Channel> InProcessChannel(
       const grpc::ChannelArguments& args);
 
   /// NOTE: class experimental_type is not part of the public API of this class.
@@ -116,7 +120,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
 
     /// Establish a channel for in-process communication with client
     /// interceptors
-    std::shared_ptr<grpc::Channel> InProcessChannelWithInterceptors(
+    std::shared_ptr<::grpc::Channel> InProcessChannelWithInterceptors(
         const grpc::ChannelArguments& args,
         std::vector<std::unique_ptr<
             grpc::experimental::ClientInterceptorFactoryInterface>>
@@ -183,6 +187,9 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
       std::shared_ptr<std::vector<std::unique_ptr<grpc::ServerCompletionQueue>>>
           sync_server_cqs,
       int min_pollers, int max_pollers, int sync_cq_timeout_msec,
+      std::vector<
+          std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
+          acceptors,
       grpc_resource_quota* server_rq = nullptr,
       std::vector<std::unique_ptr<
           grpc::experimental::ServerInterceptorFactoryInterface>>
@@ -279,6 +286,9 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   grpc::CompletionQueue* CallbackCQ() override;
 
   grpc_impl::ServerInitializer* initializer();
+
+  std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
+      acceptors_;
 
   // A vector of interceptor factory objects.
   // This should be destroyed after health_check_service_ and this requirement

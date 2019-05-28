@@ -1161,7 +1161,7 @@ static void test_get_well_known_google_credentials_file_path(void) {
   GPR_ASSERT(path != nullptr);
   gpr_free(path);
 #if defined(GPR_POSIX_ENV) || defined(GPR_LINUX_ENV)
-  unsetenv("HOME");
+  gpr_unsetenv("HOME");
   path = grpc_get_well_known_google_credentials_file_path();
   GPR_ASSERT(path == nullptr);
   gpr_setenv("HOME", home);

@@ -17,6 +17,9 @@ import os
 
 import setuptools
 
+_PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
+_README_PATH = os.path.join(_PACKAGE_PATH, 'README.rst')
+
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -83,6 +86,7 @@ setuptools.setup(
     name='grpcio-health-checking',
     version=grpc_version.VERSION,
     description='Standard Health Checking Service for gRPC',
+    long_description=open(_README_PATH, 'r').read(),
     author='The gRPC Authors',
     author_email='grpc-io@googlegroups.com',
     url='https://grpc.io',

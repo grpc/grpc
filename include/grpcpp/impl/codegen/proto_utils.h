@@ -42,7 +42,7 @@ extern CoreCodegenInterface* g_core_codegen_interface;
 
 // ProtoBufferWriter must be a subclass of ::protobuf::io::ZeroCopyOutputStream.
 template <class ProtoBufferWriter, class T>
-Status GenericSerialize(const grpc::protobuf::Message& msg, ByteBuffer* bb,
+Status GenericSerialize(const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
                         bool* own_buffer) {
   static_assert(std::is_base_of<protobuf::io::ZeroCopyOutputStream,
                                 ProtoBufferWriter>::value,
@@ -68,7 +68,8 @@ Status GenericSerialize(const grpc::protobuf::Message& msg, ByteBuffer* bb,
 
 // BufferReader must be a subclass of ::protobuf::io::ZeroCopyInputStream.
 template <class ProtoBufferReader, class T>
-Status GenericDeserialize(ByteBuffer* buffer, grpc::protobuf::Message* msg) {
+Status GenericDeserialize(ByteBuffer* buffer,
+                          grpc::protobuf::MessageLite* msg) {
   static_assert(std::is_base_of<protobuf::io::ZeroCopyInputStream,
                                 ProtoBufferReader>::value,
                 "ProtoBufferReader must be a subclass of "
@@ -102,15 +103,17 @@ Status GenericDeserialize(ByteBuffer* buffer, grpc::protobuf::Message* msg) {
 // objects and grpc_byte_buffers. More information about SerializationTraits can
 // be found in include/grpcpp/impl/codegen/serialization_traits.h.
 template <class T>
-class SerializationTraits<T, typename std::enable_if<std::is_base_of<
-                                 grpc::protobuf::Message, T>::value>::type> {
+class SerializationTraits<
+    T, typename std::enable_if<
+           std::is_base_of<grpc::protobuf::MessageLite, T>::value>::type> {
  public:
-  static Status Serialize(const grpc::protobuf::Message& msg, ByteBuffer* bb,
-                          bool* own_buffer) {
+  static Status Serialize(const grpc::protobuf::MessageLite& msg,
+                          ByteBuffer* bb, bool* own_buffer) {
     return GenericSerialize<ProtoBufferWriter, T>(msg, bb, own_buffer);
   }
 
-  static Status Deserialize(ByteBuffer* buffer, grpc::protobuf::Message* msg) {
+  static Status Deserialize(ByteBuffer* buffer,
+                            grpc::protobuf::MessageLite* msg) {
     return GenericDeserialize<ProtoBufferReader, T>(buffer, msg);
   }
 };
