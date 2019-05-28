@@ -119,8 +119,8 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       SslServerCredentialsOptions ssl_opts;
       ssl_opts.pem_root_certs = "";
       if (!custom_server_key_.empty() && !custom_server_cert_.empty()) {
-        SslServerCredentialsOptions::PemKeyCertPair pkcp = {custom_server_key_,
-                                                            custom_server_cert_};
+        SslServerCredentialsOptions::PemKeyCertPair pkcp = {
+            custom_server_key_, custom_server_cert_};
         ssl_opts.pem_key_cert_pairs.push_back(pkcp);
       } else {
         SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
