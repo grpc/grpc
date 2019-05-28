@@ -66,7 +66,6 @@ GPR_GLOBAL_CONFIG_DEFINE_INT32(
     "turn off the backup polls.");
 
 void grpc_client_channel_global_init_backup_polling() {
-  printf("grpc_client_channel_global_init_backup_polling\n");
   gpr_once_init(&g_once, [] { gpr_mu_init(&g_poller_mu); });
   int32_t poll_interval_ms =
       GPR_GLOBAL_CONFIG_GET(grpc_client_channel_backup_poll_interval_ms);
