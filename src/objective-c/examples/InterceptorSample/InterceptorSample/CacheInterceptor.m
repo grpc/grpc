@@ -145,6 +145,10 @@
   ResponseCacheEntry *response = nil;
   @synchronized(self) {
     response = [_cache objectForKey:request];
+    if ([response.deadline timeIntervalSinceNow] < 0) {
+      [_cache removeObjectForKey:request];
+      response = nil;
+    }
   }
   return response;
 }

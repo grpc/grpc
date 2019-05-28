@@ -1360,7 +1360,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsMultipleChannels/Pods-InteropTestsMultipleChannels-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-InteropTestsMultipleChannels/Pods-InteropTestsMultipleChannels-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-iOS/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
@@ -1369,7 +1369,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsMultipleChannels/Pods-InteropTestsMultipleChannels-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-InteropTestsMultipleChannels/Pods-InteropTestsMultipleChannels-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		1EAF0CBDBFAB18D4DA64535D /* [CP] Copy Pods Resources */ = {
@@ -1378,7 +1378,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-ChannelTests/Pods-ChannelTests-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-ChannelTests/Pods-ChannelTests-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-iOS/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
@@ -1387,7 +1387,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-ChannelTests/Pods-ChannelTests-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-ChannelTests/Pods-ChannelTests-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		252A376345E38FD452A89C3D /* [CP] Check Pods Manifest.lock */ = {
@@ -1432,7 +1432,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsRemoteWithCronet/Pods-InteropTestsRemoteWithCronet-frameworks.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-InteropTestsRemoteWithCronet/Pods-InteropTestsRemoteWithCronet-frameworks.sh",
 				"${PODS_ROOT}/CronetFramework/Cronet.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
@@ -1441,7 +1441,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsRemoteWithCronet/Pods-InteropTestsRemoteWithCronet-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-InteropTestsRemoteWithCronet/Pods-InteropTestsRemoteWithCronet-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		452FDC3918FEC23ECAFD31EC /* [CP] Copy Pods Resources */ = {
@@ -1449,21 +1449,17 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputFileListPaths = (
-			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-MacTests/Pods-MacTests-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-MacTests/Pods-MacTests-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-macOS/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-			);
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/gRPCCertificates.bundle",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-MacTests/Pods-MacTests-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-MacTests/Pods-MacTests-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		483CDBBAEAEFCB530ADDDDD5 /* [CP] Check Pods Manifest.lock */ = {
@@ -1508,7 +1504,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsLocalSSLCFStream/Pods-InteropTestsLocalSSLCFStream-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-InteropTestsLocalSSLCFStream/Pods-InteropTestsLocalSSLCFStream-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-iOS/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
@@ -1517,7 +1513,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsLocalSSLCFStream/Pods-InteropTestsLocalSSLCFStream-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-InteropTestsLocalSSLCFStream/Pods-InteropTestsLocalSSLCFStream-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		5C20DCCB71C3991E6FE78C22 /* [CP] Check Pods Manifest.lock */ = {
@@ -1544,7 +1540,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsLocalSSL/Pods-InteropTestsLocalSSL-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-InteropTestsLocalSSL/Pods-InteropTestsLocalSSL-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-iOS/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
@@ -1553,7 +1549,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsLocalSSL/Pods-InteropTestsLocalSSL-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-InteropTestsLocalSSL/Pods-InteropTestsLocalSSL-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		6BA6D00B1816306453BF82D4 /* [CP] Copy Pods Resources */ = {
@@ -1562,7 +1558,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsCallOptions/Pods-InteropTestsCallOptions-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-InteropTestsCallOptions/Pods-InteropTestsCallOptions-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-iOS/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
@@ -1571,7 +1567,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsCallOptions/Pods-InteropTestsCallOptions-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-InteropTestsCallOptions/Pods-InteropTestsCallOptions-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		7418AC7B3844B29E48D24FC7 /* [CP] Check Pods Manifest.lock */ = {
@@ -1616,7 +1612,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsLocalCleartext/Pods-InteropTestsLocalCleartext-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-InteropTestsLocalCleartext/Pods-InteropTestsLocalCleartext-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-iOS/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
@@ -1625,7 +1621,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsLocalCleartext/Pods-InteropTestsLocalCleartext-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-InteropTestsLocalCleartext/Pods-InteropTestsLocalCleartext-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		8C1ED025E07C4D457C355336 /* [CP] Check Pods Manifest.lock */ = {
@@ -1652,7 +1648,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsMultipleChannels/Pods-InteropTestsMultipleChannels-frameworks.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-InteropTestsMultipleChannels/Pods-InteropTestsMultipleChannels-frameworks.sh",
 				"${PODS_ROOT}/CronetFramework/Cronet.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
@@ -1661,7 +1657,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsMultipleChannels/Pods-InteropTestsMultipleChannels-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-InteropTestsMultipleChannels/Pods-InteropTestsMultipleChannels-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		914ADDD7106BA9BB8A7E569F /* [CP] Check Pods Manifest.lock */ = {
@@ -1688,7 +1684,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsRemoteCFStream/Pods-InteropTestsRemoteCFStream-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-InteropTestsRemoteCFStream/Pods-InteropTestsRemoteCFStream-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-iOS/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
@@ -1697,7 +1693,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsRemoteCFStream/Pods-InteropTestsRemoteCFStream-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-InteropTestsRemoteCFStream/Pods-InteropTestsRemoteCFStream-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		9AD0B5E94F2AA5962EA6AA36 /* [CP] Copy Pods Resources */ = {
@@ -1706,7 +1702,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-UnitTests/Pods-UnitTests-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-UnitTests/Pods-UnitTests-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-iOS/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
@@ -1715,7 +1711,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-UnitTests/Pods-UnitTests-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-UnitTests/Pods-UnitTests-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		A023FB55205A7EA37D413549 /* [CP] Copy Pods Resources */ = {
@@ -1724,7 +1720,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsLocalCleartextCFStream/Pods-InteropTestsLocalCleartextCFStream-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-InteropTestsLocalCleartextCFStream/Pods-InteropTestsLocalCleartextCFStream-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-iOS/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
@@ -1733,7 +1729,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsLocalCleartextCFStream/Pods-InteropTestsLocalCleartextCFStream-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-InteropTestsLocalCleartextCFStream/Pods-InteropTestsLocalCleartextCFStream-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		A441F71824DCB9D0CA297748 /* [CP] Copy Pods Resources */ = {
@@ -1742,7 +1738,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-AllTests/Pods-AllTests-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-AllTests/Pods-AllTests-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-iOS/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
@@ -1751,7 +1747,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-AllTests/Pods-AllTests-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-AllTests/Pods-AllTests-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		A686B9967BB4CB81B1CBF8F8 /* [CP] Embed Pods Frameworks */ = {
@@ -1760,7 +1756,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-CronetUnitTests/Pods-CronetUnitTests-frameworks.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-CronetUnitTests/Pods-CronetUnitTests-frameworks.sh",
 				"${PODS_ROOT}/CronetFramework/Cronet.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
@@ -1769,7 +1765,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-CronetUnitTests/Pods-CronetUnitTests-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-CronetUnitTests/Pods-CronetUnitTests-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		B2986CEEE8CDD4901C97598B /* [CP] Check Pods Manifest.lock */ = {
@@ -1813,21 +1809,17 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputFileListPaths = (
-			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-APIv2Tests/Pods-APIv2Tests-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-APIv2Tests/Pods-APIv2Tests-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-iOS/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-			);
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/gRPCCertificates.bundle",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-APIv2Tests/Pods-APIv2Tests-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-APIv2Tests/Pods-APIv2Tests-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		C2E09DC4BD239F71160F0CC1 /* [CP] Copy Pods Resources */ = {
@@ -1836,7 +1828,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsRemote/Pods-InteropTestsRemote-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-InteropTestsRemote/Pods-InteropTestsRemote-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-iOS/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
@@ -1845,7 +1837,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsRemote/Pods-InteropTestsRemote-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-InteropTestsRemote/Pods-InteropTestsRemote-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		C977426A8727267BBAC7D48E /* [CP] Copy Pods Resources */ = {
@@ -1854,7 +1846,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-RxLibraryUnitTests/Pods-RxLibraryUnitTests-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-RxLibraryUnitTests/Pods-RxLibraryUnitTests-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-iOS/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
@@ -1863,7 +1855,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-RxLibraryUnitTests/Pods-RxLibraryUnitTests-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-RxLibraryUnitTests/Pods-RxLibraryUnitTests-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		DB4D0E73C229F2FF3B364AB3 /* [CP] Copy Pods Resources */ = {
@@ -1872,7 +1864,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsRemoteWithCronet/Pods-InteropTestsRemoteWithCronet-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-InteropTestsRemoteWithCronet/Pods-InteropTestsRemoteWithCronet-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-iOS/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
@@ -1881,7 +1873,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsRemoteWithCronet/Pods-InteropTestsRemoteWithCronet-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-InteropTestsRemoteWithCronet/Pods-InteropTestsRemoteWithCronet-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		E5B20F69559C6AE299DFEA7C /* [CP] Check Pods Manifest.lock */ = {
@@ -1912,7 +1904,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-CoreCronetEnd2EndTests/Pods-CoreCronetEnd2EndTests-frameworks.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-CoreCronetEnd2EndTests/Pods-CoreCronetEnd2EndTests-frameworks.sh",
 				"${PODS_ROOT}/CronetFramework/Cronet.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
@@ -1921,7 +1913,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-CoreCronetEnd2EndTests/Pods-CoreCronetEnd2EndTests-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-CoreCronetEnd2EndTests/Pods-CoreCronetEnd2EndTests-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		EDDD3FA856BCA3443ED36D1E /* [CP] Check Pods Manifest.lock */ = {

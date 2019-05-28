@@ -177,7 +177,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (instancetype) new NS_UNAVAILABLE;
 
-- (nullable instancetype)initWithNextInerceptor:(id<GRPCInterceptorInterface>)nextInterceptor
+- (nullable instancetype)initWithNextInterceptor:(id<GRPCInterceptorInterface>)nextInterceptor
     NS_DESIGNATED_INITIALIZER;
 
 /** Set the previous interceptor in the chain. Can only be set once. */

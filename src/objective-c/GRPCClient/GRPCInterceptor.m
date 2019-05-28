@@ -25,7 +25,7 @@
   id<GRPCResponseHandler> _previousInterceptor;
 }
 
-- (instancetype)initWithNextInerceptor:(id<GRPCInterceptorInterface>)nextInterceptor {
+- (instancetype)initWithNextInterceptor:(id<GRPCInterceptorInterface>)nextInterceptor {
   if ((self = [super init])) {
     _nextInterceptor = nextInterceptor;
   }
@@ -44,49 +44,39 @@
 
 - (void)startNextInterceptorWithRequest:(GRPCRequestOptions *)requestOptions
                             callOptions:(GRPCCallOptions *)callOptions {
-  if ([_nextInterceptor respondsToSelector:@selector(startWithRequestOptions:callOptions:)]) {
-    id<GRPCInterceptorInterface> copiedNextInterceptor = _nextInterceptor;
-    dispatch_async(copiedNextInterceptor.requestDispatchQueue, ^{
-      [copiedNextInterceptor startWithRequestOptions:requestOptions callOptions:callOptions];
-    });
-  }
+  id<GRPCInterceptorInterface> copiedNextInterceptor = _nextInterceptor;
+  dispatch_async(copiedNextInterceptor.requestDispatchQueue, ^{
+    [copiedNextInterceptor startWithRequestOptions:requestOptions callOptions:callOptions];
+  });
 }
 
 - (void)writeNextInterceptorWithData:(id)data {
-  if ([_nextInterceptor respondsToSelector:@selector(writeData:)]) {
-    id<GRPCInterceptorInterface> copiedNextInterceptor = _nextInterceptor;
-    dispatch_async(copiedNextInterceptor.requestDispatchQueue, ^{
-      [copiedNextInterceptor writeData:data];
-    });
-  }
+  id<GRPCInterceptorInterface> copiedNextInterceptor = _nextInterceptor;
+  dispatch_async(copiedNextInterceptor.requestDispatchQueue, ^{
+    [copiedNextInterceptor writeData:data];
+  });
 }
 
 - (void)finishNextInterceptor {
-  if ([_nextInterceptor respondsToSelector:@selector(finish)]) {
-    id<GRPCInterceptorInterface> copiedNextInterceptor = _nextInterceptor;
-    dispatch_async(copiedNextInterceptor.requestDispatchQueue, ^{
-      [copiedNextInterceptor finish];
-    });
-  }
+  id<GRPCInterceptorInterface> copiedNextInterceptor = _nextInterceptor;
+  dispatch_async(copiedNextInterceptor.requestDispatchQueue, ^{
+    [copiedNextInterceptor finish];
+  });
 }
 
 - (void)cancelNextInterceptor {
-  if ([_nextInterceptor respondsToSelector:@selector(cancel)]) {
-    id<GRPCInterceptorInterface> copiedNextInterceptor = _nextInterceptor;
-    dispatch_async(copiedNextInterceptor.requestDispatchQueue, ^{
-      [copiedNextInterceptor cancel];
-    });
-  }
+  id<GRPCInterceptorInterface> copiedNextInterceptor = _nextInterceptor;
+  dispatch_async(copiedNextInterceptor.requestDispatchQueue, ^{
+    [copiedNextInterceptor cancel];
+  });
 }
 
 /** Notify the next interceptor in the chain to receive more messages */
 - (void)receiveNextInterceptorMessages:(NSUInteger)numberOfMessages {
-  if ([_nextInterceptor respondsToSelector:@selector(receiveNextMessages:)]) {
-    id<GRPCInterceptorInterface> copiedNextInterceptor = _nextInterceptor;
-    dispatch_async(copiedNextInterceptor.requestDispatchQueue, ^{
-      [copiedNextInterceptor receiveNextMessages:numberOfMessages];
-    });
-  }
+  id<GRPCInterceptorInterface> copiedNextInterceptor = _nextInterceptor;
+  dispatch_async(copiedNextInterceptor.requestDispatchQueue, ^{
+    [copiedNextInterceptor receiveNextMessages:numberOfMessages];
+  });
 }
 
 // Methods to forward GRPCResponseHandler callbacks to the previous object
