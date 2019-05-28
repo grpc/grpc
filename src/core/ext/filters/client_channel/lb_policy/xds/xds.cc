@@ -338,8 +338,6 @@ class XdsLb : public LoadBalancingPolicy {
         : parent_(std::move(parent)) {}
 
     Subchannel* CreateSubchannel(const grpc_channel_args& args) override;
-    grpc_channel* CreateChannel(const char* target,
-                                const grpc_channel_args& args) override;
     void UpdateState(grpc_connectivity_state state,
                      UniquePtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
@@ -378,8 +376,6 @@ class XdsLb : public LoadBalancingPolicy {
             : entry_(std::move(entry)) {}
 
         Subchannel* CreateSubchannel(const grpc_channel_args& args) override;
-        grpc_channel* CreateChannel(const char* target,
-                                    const grpc_channel_args& args) override;
         void UpdateState(grpc_connectivity_state state,
                          UniquePtr<SubchannelPicker> picker) override;
         void RequestReresolution() override;
@@ -592,15 +588,6 @@ Subchannel* XdsLb::FallbackHelper::CreateSubchannel(
   return parent_->channel_control_helper()->CreateSubchannel(args);
 }
 
-grpc_channel* XdsLb::FallbackHelper::CreateChannel(
-    const char* target, const grpc_channel_args& args) {
-  if (parent_->shutting_down_ ||
-      (!CalledByPendingFallback() && !CalledByCurrentFallback())) {
-    return nullptr;
-  }
-  return parent_->channel_control_helper()->CreateChannel(target, args);
-}
-
 void XdsLb::FallbackHelper::UpdateState(grpc_connectivity_state state,
                                         UniquePtr<SubchannelPicker> picker) {
   if (parent_->shutting_down_) return;
@@ -722,7 +709,7 @@ ServerAddressList ProcessServerlist(const xds_grpclb_serverlist* serverlist) {
 
 XdsLb::BalancerChannelState::BalancerChannelState(
     const char* balancer_name, const grpc_channel_args& args,
-    grpc_core::RefCountedPtr<grpc_core::XdsLb> parent_xdslb_policy)
+    RefCountedPtr<XdsLb> parent_xdslb_policy)
     : InternallyRefCounted<BalancerChannelState>(&grpc_lb_xds_trace),
       xdslb_policy_(std::move(parent_xdslb_policy)),
       lb_call_backoff_(
@@ -735,8 +722,7 @@ XdsLb::BalancerChannelState::BalancerChannelState(
   GRPC_CLOSURE_INIT(&on_connectivity_changed_,
                     &XdsLb::BalancerChannelState::OnConnectivityChangedLocked,
                     this, grpc_combiner_scheduler(xdslb_policy_->combiner()));
-  channel_ = xdslb_policy_->channel_control_helper()->CreateChannel(
-      balancer_name, args);
+  channel_ = CreateXdsBalancerChannel(balancer_name, args);
   GPR_ASSERT(channel_ != nullptr);
   StartCallLocked();
 }
@@ -1325,7 +1311,7 @@ grpc_channel_args* BuildBalancerChannelArgs(const grpc_channel_args* args) {
       // factory will re-add this arg with the right value.
       GRPC_ARG_SERVER_URI,
       // The LB channel should use the authority indicated by the target
-      // authority table (see \a grpc_lb_policy_xds_modify_lb_channel_args),
+      // authority table (see \a ModifyXdsBalancerChannelArgs),
       // as opposed to the authority from the parent channel.
       GRPC_ARG_DEFAULT_AUTHORITY,
       // Just as for \a GRPC_ARG_DEFAULT_AUTHORITY, the LB channel should be
@@ -1348,7 +1334,7 @@ grpc_channel_args* BuildBalancerChannelArgs(const grpc_channel_args* args) {
       args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), args_to_add,
       GPR_ARRAY_SIZE(args_to_add));
   // Make any necessary modifications for security.
-  return grpc_lb_policy_xds_modify_lb_channel_args(new_args);
+  return ModifyXdsBalancerChannelArgs(new_args);
 }
 
 //
@@ -2008,15 +1994,6 @@ Subchannel* XdsLb::LocalityMap::LocalityEntry::Helper::CreateSubchannel(
     return nullptr;
   }
   return entry_->parent_->channel_control_helper()->CreateSubchannel(args);
-}
-
-grpc_channel* XdsLb::LocalityMap::LocalityEntry::Helper::CreateChannel(
-    const char* target, const grpc_channel_args& args) {
-  if (entry_->parent_->shutting_down_ ||
-      (!CalledByPendingChild() && !CalledByCurrentChild())) {
-    return nullptr;
-  }
-  return entry_->parent_->channel_control_helper()->CreateChannel(target, args);
 }
 
 void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(

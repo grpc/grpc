@@ -294,8 +294,6 @@ class GrpcLb : public LoadBalancingPolicy {
         : parent_(std::move(parent)) {}
 
     Subchannel* CreateSubchannel(const grpc_channel_args& args) override;
-    grpc_channel* CreateChannel(const char* target,
-                                const grpc_channel_args& args) override;
     void UpdateState(grpc_connectivity_state state,
                      UniquePtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
@@ -623,15 +621,6 @@ Subchannel* GrpcLb::Helper::CreateSubchannel(const grpc_channel_args& args) {
     return nullptr;
   }
   return parent_->channel_control_helper()->CreateSubchannel(args);
-}
-
-grpc_channel* GrpcLb::Helper::CreateChannel(const char* target,
-                                            const grpc_channel_args& args) {
-  if (parent_->shutting_down_ ||
-      (!CalledByPendingChild() && !CalledByCurrentChild())) {
-    return nullptr;
-  }
-  return parent_->channel_control_helper()->CreateChannel(target, args);
 }
 
 void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
@@ -1232,7 +1221,7 @@ grpc_channel_args* BuildBalancerChannelArgs(
       // the LB channel.
       GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
       // The LB channel should use the authority indicated by the target
-      // authority table (see \a grpc_lb_policy_grpclb_modify_lb_channel_args),
+      // authority table (see \a ModifyGrpclbBalancerChannelArgs),
       // as opposed to the authority from the parent channel.
       GRPC_ARG_DEFAULT_AUTHORITY,
       // Just as for \a GRPC_ARG_DEFAULT_AUTHORITY, the LB channel should be
@@ -1259,7 +1248,7 @@ grpc_channel_args* BuildBalancerChannelArgs(
       args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), args_to_add,
       GPR_ARRAY_SIZE(args_to_add));
   // Make any necessary modifications for security.
-  return grpc_lb_policy_grpclb_modify_lb_channel_args(addresses, new_args);
+  return ModifyGrpclbBalancerChannelArgs(addresses, new_args);
 }
 
 //
@@ -1464,8 +1453,7 @@ void GrpcLb::ProcessAddressesAndChannelArgsLocked(
   if (lb_channel_ == nullptr) {
     char* uri_str;
     gpr_asprintf(&uri_str, "fake:///%s", server_name_);
-    lb_channel_ =
-        channel_control_helper()->CreateChannel(uri_str, *lb_channel_args);
+    lb_channel_ = CreateGrpclbBalancerChannel(uri_str, *lb_channel_args);
     GPR_ASSERT(lb_channel_ != nullptr);
     grpc_core::channelz::ChannelNode* channel_node =
         grpc_channel_get_channelz_node(lb_channel_);

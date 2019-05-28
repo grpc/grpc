@@ -322,10 +322,6 @@ class FakeClientChannelFactory : public grpc_core::ClientChannelFactory {
       const grpc_channel_args* args) override {
     return nullptr;
   }
-  grpc_channel* CreateChannel(const char* target,
-                              const grpc_channel_args* args) override {
-    return nullptr;
-  }
 };
 
 static grpc_arg StringArg(const char* key, const char* value) {
