@@ -1040,7 +1040,8 @@ include/grpcpp/support/status_code_enum.h \
 include/grpcpp/support/string_ref.h \
 include/grpcpp/support/stub_options.h \
 include/grpcpp/support/sync_stream.h \
-include/grpcpp/support/time.h
+include/grpcpp/support/time.h \
+include/grpcpp/support/validate_service_config.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

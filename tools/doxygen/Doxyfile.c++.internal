@@ -1043,6 +1043,7 @@ include/grpcpp/support/string_ref.h \
 include/grpcpp/support/stub_options.h \
 include/grpcpp/support/sync_stream.h \
 include/grpcpp/support/time.h \
+include/grpcpp/support/validate_service_config.h \
 src/core/ext/filters/client_channel/health/health.pb.c \
 src/core/ext/filters/client_channel/health/health.pb.h \
 src/core/ext/transport/inproc/inproc_transport.h \
@@ -1245,6 +1246,7 @@ src/cpp/common/secure_auth_context.cc \
 src/cpp/common/secure_auth_context.h \
 src/cpp/common/secure_channel_arguments.cc \
 src/cpp/common/secure_create_auth_context.cc \
+src/cpp/common/validate_service_config.cc \
 src/cpp/common/version_cc.cc \
 src/cpp/server/async_generic_service.cc \
 src/cpp/server/channel_argument_option.cc \

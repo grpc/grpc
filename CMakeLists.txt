@@ -3043,6 +3043,7 @@ add_library(grpc++
   src/cpp/common/core_codegen.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
+  src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/channel_argument_option.cc
@@ -3218,6 +3219,7 @@ foreach(_hdr
   include/grpcpp/support/stub_options.h
   include/grpcpp/support/sync_stream.h
   include/grpcpp/support/time.h
+  include/grpcpp/support/validate_service_config.h
   include/grpc/support/alloc.h
   include/grpc/support/atm.h
   include/grpc/support/atm_gcc_atomic.h
@@ -3440,6 +3442,7 @@ add_library(grpc++_cronet
   src/cpp/common/core_codegen.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
+  src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/channel_argument_option.cc
@@ -3835,6 +3838,7 @@ foreach(_hdr
   include/grpcpp/support/stub_options.h
   include/grpcpp/support/sync_stream.h
   include/grpcpp/support/time.h
+  include/grpcpp/support/validate_service_config.h
   include/grpc/support/alloc.h
   include/grpc/support/atm.h
   include/grpc/support/atm_gcc_atomic.h
@@ -4652,6 +4656,7 @@ add_library(grpc++_unsecure
   src/cpp/common/core_codegen.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
+  src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/channel_argument_option.cc
@@ -4826,6 +4831,7 @@ foreach(_hdr
   include/grpcpp/support/stub_options.h
   include/grpcpp/support/sync_stream.h
   include/grpcpp/support/time.h
+  include/grpcpp/support/validate_service_config.h
   include/grpc/support/alloc.h
   include/grpc/support/atm.h
   include/grpc/support/atm_gcc_atomic.h
