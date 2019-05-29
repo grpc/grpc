@@ -40,8 +40,43 @@ typedef enum {
   GRPC_NUM_CHANNEL_STACK_TYPES
 } grpc_channel_stack_type;
 
-bool grpc_channel_stack_type_is_client(grpc_channel_stack_type type);
+inline bool grpc_channel_stack_type_is_client(grpc_channel_stack_type type) {
+  GPR_DEBUG_ASSERT(type >= GRPC_CLIENT_CHANNEL &&
+                   type < GRPC_NUM_CHANNEL_STACK_TYPES);
+  switch (type) {
+    case GRPC_CLIENT_CHANNEL:
+      return true;
+    case GRPC_CLIENT_SUBCHANNEL:
+      return true;
+    case GRPC_CLIENT_LAME_CHANNEL:
+      return true;
+    case GRPC_CLIENT_DIRECT_CHANNEL:
+      return true;
+    case GRPC_SERVER_CHANNEL:
+      return false;
+    case GRPC_NUM_CHANNEL_STACK_TYPES:
+      return true;
+  }
+}
 
-const char* grpc_channel_stack_type_string(grpc_channel_stack_type type);
+inline const char* grpc_channel_stack_type_string(
+    grpc_channel_stack_type type) {
+  GPR_DEBUG_ASSERT(type >= GRPC_CLIENT_CHANNEL &&
+                   type < GRPC_NUM_CHANNEL_STACK_TYPES);
+  switch (type) {
+    case GRPC_CLIENT_CHANNEL:
+      return "CLIENT_CHANNEL";
+    case GRPC_CLIENT_SUBCHANNEL:
+      return "CLIENT_SUBCHANNEL";
+    case GRPC_SERVER_CHANNEL:
+      return "SERVER_CHANNEL";
+    case GRPC_CLIENT_LAME_CHANNEL:
+      return "CLIENT_LAME_CHANNEL";
+    case GRPC_CLIENT_DIRECT_CHANNEL:
+      return "CLIENT_DIRECT_CHANNEL";
+    case GRPC_NUM_CHANNEL_STACK_TYPES:
+      return "UNKNOWN";
+  }
+}
 
 #endif /* GRPC_CORE_LIB_SURFACE_CHANNEL_STACK_TYPE_H */
