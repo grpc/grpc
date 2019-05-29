@@ -26,6 +26,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/impl/codegen/status_code_enum.h>
 #include <grpcpp/resource_quota.h>
 #include <grpcpp/security/auth_metadata_processor.h>
 #include <grpcpp/security/credentials.h>
@@ -1888,7 +1889,8 @@ TEST_P(SecureEnd2endTest, AuthMetadataPluginWithDeadline) {
 
   Status s = stub_->Echo(&context, request, &response);
   if (!s.ok()) {
-    EXPECT_EQ(StatusCode::UNAVAILABLE, s.error_code());
+    EXPECT_TRUE(s.error_code() == StatusCode::DEADLINE_EXCEEDED ||
+                s.error_code() == StatusCode::UNAVAILABLE);
   }
 }
 
@@ -1905,14 +1907,15 @@ TEST_P(SecureEnd2endTest, AuthMetadataPluginWithCancel) {
                                             true, delay))));
   request.set_message("Hello");
 
-  std::thread cancel_thread([&context] {
+  std::thread cancel_thread([&] {
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                  gpr_time_from_millis(delay, GPR_TIMESPAN)));
     context.TryCancel();
   });
   Status s = stub_->Echo(&context, request, &response);
   if (!s.ok()) {
-    EXPECT_EQ(StatusCode::UNAVAILABLE, s.error_code());
+    EXPECT_TRUE(s.error_code() == StatusCode::CANCELLED ||
+                s.error_code() == StatusCode::UNAVAILABLE);
   }
   cancel_thread.join();
 }
