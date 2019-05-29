@@ -53,6 +53,8 @@ static void server_on_recv_initial_metadata(void* ptr, grpc_error* error);
 static void server_recv_trailing_metadata_ready(void* user_data,
                                                 grpc_error* error);
 
+static void channel_connectivity_changed(void* cd, grpc_error* error);
+
 namespace {
 struct listener {
   void* arg;
@@ -99,19 +101,25 @@ struct channel_registered_method {
 };
 
 struct channel_data {
-  grpc_server* server;
-  grpc_connectivity_state connectivity_state;
-  grpc_channel* channel;
+  grpc_server* server = nullptr;
+  grpc_connectivity_state connectivity_state = GRPC_CHANNEL_IDLE;
+  grpc_channel* channel = nullptr;
   size_t cq_idx;
   /* linked list of all channels on a server */
-  channel_data* next;
-  channel_data* prev;
-  channel_registered_method* registered_methods;
+  channel_data* next = this;
+  channel_data* prev = this;
+  channel_registered_method* registered_methods = nullptr;
   uint32_t registered_method_slots;
   uint32_t registered_method_max_probes;
   grpc_closure finish_destroy_channel_closure;
-  grpc_closure channel_connectivity_changed;
+  grpc_closure chan_connectivity_changed;
   grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> socket_node;
+
+  channel_data() {
+    GRPC_CLOSURE_INIT(&this->chan_connectivity_changed,
+                      channel_connectivity_changed, this,
+                      grpc_schedule_on_exec_ctx);
+  }
 };
 
 typedef struct shutdown_tag {
@@ -892,7 +900,7 @@ static void channel_connectivity_changed(void* cd, grpc_error* error) {
   grpc_server* server = chand->server;
   if (chand->connectivity_state != GRPC_CHANNEL_SHUTDOWN) {
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
-    op->on_connectivity_state_change = &chand->channel_connectivity_changed;
+    op->on_connectivity_state_change = &chand->chan_connectivity_changed;
     op->connectivity_state = &chand->connectivity_state;
     grpc_channel_next_op(grpc_channel_stack_element(
                              grpc_channel_get_channel_stack(chand->channel), 0),
@@ -927,14 +935,8 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   GPR_ASSERT(args->is_first);
   GPR_ASSERT(!args->is_last);
-  chand->server = nullptr;
-  chand->channel = nullptr;
-  chand->next = chand->prev = chand;
-  chand->registered_methods = nullptr;
-  chand->connectivity_state = GRPC_CHANNEL_IDLE;
-  GRPC_CLOSURE_INIT(&chand->channel_connectivity_changed,
-                    channel_connectivity_changed, chand,
-                    grpc_schedule_on_exec_ctx);
+
+  new (chand) channel_data();
   return GRPC_ERROR_NONE;
 }
 
@@ -1158,15 +1160,15 @@ void grpc_server_setup_transport(
   uint32_t max_probes = 0;
   grpc_transport_op* op = nullptr;
 
-  channel = grpc_channel_create(nullptr, args, GRPC_SERVER_CHANNEL, transport,
-                                resource_user);
+  channel = grpc_channel_create(nullptr, args,
+                                grpc_channel_stack_type::GRPC_SERVER_CHANNEL,
+                                transport, resource_user);
   chand = static_cast<channel_data*>(
       grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0)
           ->channel_data);
   chand->server = s;
   server_ref(s);
   chand->channel = channel;
-  chand->socket_node.release();
   chand->socket_node = std::move(socket_node);
 
   size_t cq_idx;
@@ -1233,7 +1235,7 @@ void grpc_server_setup_transport(
   op->set_accept_stream = true;
   op->set_accept_stream_fn = accept_stream;
   op->set_accept_stream_user_data = chand;
-  op->on_connectivity_state_change = &chand->channel_connectivity_changed;
+  op->on_connectivity_state_change = &chand->chan_connectivity_changed;
   op->connectivity_state = &chand->connectivity_state;
   if (gpr_atm_acq_load(&s->shutdown_flag) != 0) {
     op->disconnect_with_error =

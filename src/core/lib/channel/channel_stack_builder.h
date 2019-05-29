@@ -156,9 +156,11 @@ void grpc_channel_stack_builder_iterator_destroy(
 /// Returns the base pointer of the allocated block
 /// \a initial_refs, \a destroy, \a destroy_arg are as per
 /// grpc_channel_stack_init
+struct grpc_channel_builder_args;
 grpc_error* grpc_channel_stack_builder_finish(
     grpc_channel_stack_builder* builder, size_t prefix_bytes, int initial_refs,
-    grpc_iomgr_cb_func destroy, void* destroy_arg, void** result);
+    grpc_iomgr_cb_func destroy, void* destroy_arg, void** result,
+    const grpc_channel_builder_args& cb_args);
 
 /// Destroy the builder without creating a channel stack
 void grpc_channel_stack_builder_destroy(grpc_channel_stack_builder* builder);

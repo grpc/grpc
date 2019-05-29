@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/compression.h>
+
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/channelz.h"
@@ -85,11 +87,16 @@ void grpc_channel_internal_unref(grpc_channel* channel);
 grpc_compression_options grpc_channel_compression_options(
     const grpc_channel* channel);
 
-typedef struct registered_call {
-  grpc_mdelem path;
-  grpc_mdelem authority;
-  struct registered_call* next;
-} registered_call;
+struct registered_call;
+struct grpc_channel_builder_args {
+  int is_client = 0;
+  grpc_resource_user* resource_user = nullptr;
+  char* target = nullptr;
+
+  grpc_channel_builder_args() = default;
+  grpc_channel_builder_args(int client, grpc_resource_user* ru, char* tgt)
+      : is_client(client), resource_user(ru), target(tgt) {}
+};
 
 struct grpc_channel {
   int is_client;
@@ -99,11 +106,19 @@ struct grpc_channel {
   grpc_resource_user* resource_user;
 
   gpr_mu registered_call_mu;
-  registered_call* registered_calls;
+  registered_call* registered_calls = nullptr;
 
   grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_channel;
 
   char* target;
+
+  grpc_channel(const grpc_channel_builder_args& args)
+      : is_client(args.is_client),
+        resource_user(args.resource_user),
+        target(args.target) {
+    gpr_mu_init(&registered_call_mu);
+    grpc_compression_options_init(&compression_options);
+  }
 };
 
 #endif /* GRPC_CORE_LIB_SURFACE_CHANNEL_H */
