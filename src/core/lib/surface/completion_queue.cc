@@ -1356,7 +1356,7 @@ static void cq_finish_shutdown_callback(grpc_completion_queue* cq) {
       GRPC_CLOSURE_CREATE(
           functor_callback, callback,
           grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT)),
-      GRPC_ERROR_REF(GRPC_ERROR_NONE));
+      GRPC_ERROR_NONE);
 }
 
 static void cq_shutdown_callback(grpc_completion_queue* cq) {
