@@ -56,7 +56,7 @@ class LoadBalancingPolicyRegistry {
 
   /// Returns a parsed object of the load balancing policy to be used from a
   /// LoadBalancingConfig array \a json.
-  static RefCountedPtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
+  static RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
       const grpc_json* json, grpc_error** error);
 };
 
