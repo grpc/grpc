@@ -22,6 +22,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/channel_arguments.h>
+#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/cpp/common/secure_auth_context.h"
@@ -224,12 +225,22 @@ std::shared_ptr<grpc_impl::CallCredentials> MetadataCredentialsFromPlugin(
 }  // namespace grpc_impl
 
 namespace grpc {
-
-void MetadataCredentialsPluginWrapper::Destroy(void* wrapper) {
-  if (wrapper == nullptr) return;
+namespace {
+void DeleteWrapper(void* wrapper, grpc_error* ignored) {
   MetadataCredentialsPluginWrapper* w =
       static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
   delete w;
+}
+}  // namespace
+
+void MetadataCredentialsPluginWrapper::Destroy(void* wrapper) {
+  if (wrapper == nullptr) return;
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
+  GRPC_CLOSURE_RUN(GRPC_CLOSURE_CREATE(DeleteWrapper, wrapper,
+                                       grpc_core::Executor::Scheduler(
+                                           grpc_core::ExecutorJobType::SHORT)),
+                   GRPC_ERROR_NONE);
 }
 
 int MetadataCredentialsPluginWrapper::GetMetadata(
