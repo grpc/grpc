@@ -33,7 +33,7 @@ def _generate_py_impl(context):
     includes = [
         file
         for src in context.attr.deps
-        for file in src.proto.transitive_imports
+        for file in src.proto.transitive_imports.to_list()
     ]
     proto_root = get_proto_root(context.label.workspace_root)
     format_str = (_GENERATED_GRPC_PROTO_FORMAT if context.executable.plugin else _GENERATED_PROTO_FORMAT)
