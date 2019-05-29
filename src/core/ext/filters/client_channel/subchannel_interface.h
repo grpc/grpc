@@ -21,12 +21,23 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 
 namespace grpc_core {
 
-class ConnectedSubchannel;
+// TODO(roth): In a subsequent PR, remove this from this API.
+class ConnectedSubchannelInterface
+    : public RefCounted<ConnectedSubchannelInterface> {
+ public:
+  virtual const grpc_channel_args* args() const GRPC_ABSTRACT;
+
+ protected:
+  template <typename TraceFlagT = TraceFlag>
+  explicit ConnectedSubchannelInterface(TraceFlagT* trace_flag = nullptr)
+      : RefCounted<ConnectedSubchannelInterface>(trace_flag) {}
+};
 
 class SubchannelInterface : public RefCounted<SubchannelInterface> {
  public:
@@ -44,7 +55,8 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
     // ref to the connected subchannel.
     virtual void OnConnectivityStateChange(
         grpc_connectivity_state new_state,
-        RefCountedPtr<ConnectedSubchannel> connected_subchannel)  // NOLINT
+        RefCountedPtr<ConnectedSubchannelInterface>
+            connected_subchannel)  // NOLINT
         GRPC_ABSTRACT;
 
     // TODO(roth): Remove this as soon as we move to EventManager-based
@@ -58,7 +70,8 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
 
   // Returns the current connectivity state of the subchannel.
   virtual grpc_connectivity_state CheckConnectivityState(
-      RefCountedPtr<ConnectedSubchannel>* connected_subchannel) GRPC_ABSTRACT;
+      RefCountedPtr<ConnectedSubchannelInterface>* connected_subchannel)
+      GRPC_ABSTRACT;
 
   // Starts watching the subchannel's connectivity state.
   // The first callback to the watcher will be delivered when the

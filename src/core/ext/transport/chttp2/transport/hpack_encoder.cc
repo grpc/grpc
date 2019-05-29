@@ -37,6 +37,7 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
@@ -56,7 +57,10 @@
 /* don't consider adding anything bigger than this to the hpack table */
 #define MAX_DECODER_SPACE_USAGE 512
 
-static grpc_slice_refcount terminal_slice_refcount;
+#define DATA_FRAME_HEADER_SIZE 9
+
+static grpc_slice_refcount terminal_slice_refcount(
+    grpc_slice_refcount::Type::STATIC);
 static const grpc_slice terminal_slice = {
     &terminal_slice_refcount, /* refcount */
     {{0, nullptr}}            /* data.refcounted */
@@ -80,7 +84,8 @@ typedef struct {
   bool use_true_binary_metadata;
 } framer_state;
 
-/* fills p (which is expected to be 9 bytes long) with a data frame header */
+/* fills p (which is expected to be DATA_FRAME_HEADER_SIZE bytes long)
+ * with a data frame header */
 static void fill_header(uint8_t* p, uint8_t type, uint32_t id, size_t len,
                         uint8_t flags) {
   GPR_ASSERT(len < 16777316);
@@ -107,15 +112,17 @@ static void finish_frame(framer_state* st, int is_header_boundary,
       static_cast<uint8_t>(
           (is_last_in_stream ? GRPC_CHTTP2_DATA_FLAG_END_STREAM : 0) |
           (is_header_boundary ? GRPC_CHTTP2_DATA_FLAG_END_HEADERS : 0)));
-  st->stats->framing_bytes += 9;
+  st->stats->framing_bytes += DATA_FRAME_HEADER_SIZE;
   st->is_first_frame = 0;
 }
 
 /* begin a new frame: reserve off header space, remember how many bytes we'd
    output before beginning */
 static void begin_frame(framer_state* st) {
-  st->header_idx =
-      grpc_slice_buffer_add_indexed(st->output, GRPC_SLICE_MALLOC(9));
+  grpc_slice reserved;
+  reserved.refcount = nullptr;
+  reserved.data.inlined.length = DATA_FRAME_HEADER_SIZE;
+  st->header_idx = grpc_slice_buffer_add_indexed(st->output, reserved);
   st->output_length_at_start_of_frame = st->output->length;
 }
 
@@ -188,8 +195,9 @@ static void evict_entry(grpc_chttp2_hpack_compressor* c) {
 static uint32_t prepare_space_for_new_elem(grpc_chttp2_hpack_compressor* c,
                                            size_t elem_size) {
   uint32_t new_index = c->tail_remote_index + c->table_elems + 1;
-  GPR_ASSERT(elem_size < 65536);
+  GPR_DEBUG_ASSERT(elem_size < 65536);
 
+  // TODO(arjunroy): Re-examine semantics
   if (elem_size > c->max_table_size) {
     while (c->table_size > 0) {
       evict_entry(c);
@@ -203,6 +211,7 @@ static uint32_t prepare_space_for_new_elem(grpc_chttp2_hpack_compressor* c,
   while (c->table_size + elem_size > c->max_table_size) {
     evict_entry(c);
   }
+  // TODO(arjunroy): Are we conflating size in bytes vs. membership?
   GPR_ASSERT(c->table_elems < c->max_table_size);
   c->table_elem_size[new_index % c->cap_table_elems] =
       static_cast<uint16_t>(elem_size);
@@ -215,19 +224,19 @@ static uint32_t prepare_space_for_new_elem(grpc_chttp2_hpack_compressor* c,
 // Add a key to the dynamic table. Both key and value will be added to table at
 // the decoder.
 static void add_key_with_index(grpc_chttp2_hpack_compressor* c,
-                               grpc_mdelem elem, uint32_t new_index) {
+                               grpc_mdelem elem, uint32_t new_index,
+                               uint32_t key_hash) {
   if (new_index == 0) {
     return;
   }
 
-  uint32_t key_hash = grpc_slice_hash(GRPC_MDKEY(elem));
-
   /* Store the key into {entries,indices}_keys */
-  if (grpc_slice_eq(c->entries_keys[HASH_FRAGMENT_2(key_hash)],
-                    GRPC_MDKEY(elem))) {
+  if (grpc_slice_static_interned_equal(
+          c->entries_keys[HASH_FRAGMENT_2(key_hash)], GRPC_MDKEY(elem))) {
     c->indices_keys[HASH_FRAGMENT_2(key_hash)] = new_index;
-  } else if (grpc_slice_eq(c->entries_keys[HASH_FRAGMENT_3(key_hash)],
-                           GRPC_MDKEY(elem))) {
+  } else if (grpc_slice_static_interned_equal(
+                 c->entries_keys[HASH_FRAGMENT_3(key_hash)],
+                 GRPC_MDKEY(elem))) {
     c->indices_keys[HASH_FRAGMENT_3(key_hash)] = new_index;
   } else if (c->entries_keys[HASH_FRAGMENT_2(key_hash)].refcount ==
              &terminal_slice_refcount) {
@@ -255,22 +264,20 @@ static void add_key_with_index(grpc_chttp2_hpack_compressor* c,
 
 /* add an element to the decoder table */
 static void add_elem_with_index(grpc_chttp2_hpack_compressor* c,
-                                grpc_mdelem elem, uint32_t new_index) {
+                                grpc_mdelem elem, uint32_t new_index,
+                                uint32_t elem_hash, uint32_t key_hash) {
   if (new_index == 0) {
     return;
   }
-  GPR_ASSERT(GRPC_MDELEM_IS_INTERNED(elem));
-
-  uint32_t key_hash = grpc_slice_hash(GRPC_MDKEY(elem));
-  uint32_t value_hash = grpc_slice_hash(GRPC_MDVALUE(elem));
-  uint32_t elem_hash = GRPC_MDSTR_KV_HASH(key_hash, value_hash);
+  GPR_DEBUG_ASSERT(GRPC_MDELEM_IS_INTERNED(elem));
 
   /* Store this element into {entries,indices}_elem */
-  if (grpc_mdelem_eq(c->entries_elems[HASH_FRAGMENT_2(elem_hash)], elem)) {
+  if (grpc_mdelem_both_interned_eq(c->entries_elems[HASH_FRAGMENT_2(elem_hash)],
+                                   elem)) {
     /* already there: update with new index */
     c->indices_elems[HASH_FRAGMENT_2(elem_hash)] = new_index;
-  } else if (grpc_mdelem_eq(c->entries_elems[HASH_FRAGMENT_3(elem_hash)],
-                            elem)) {
+  } else if (grpc_mdelem_both_interned_eq(
+                 c->entries_elems[HASH_FRAGMENT_3(elem_hash)], elem)) {
     /* already there (cuckoo): update with new index */
     c->indices_elems[HASH_FRAGMENT_3(elem_hash)] = new_index;
   } else if (GRPC_MDISNULL(c->entries_elems[HASH_FRAGMENT_2(elem_hash)])) {
@@ -294,19 +301,19 @@ static void add_elem_with_index(grpc_chttp2_hpack_compressor* c,
     c->indices_elems[HASH_FRAGMENT_3(elem_hash)] = new_index;
   }
 
-  add_key_with_index(c, elem, new_index);
+  add_key_with_index(c, elem, new_index, key_hash);
 }
 
 static void add_elem(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
-                     size_t elem_size) {
+                     size_t elem_size, uint32_t elem_hash, uint32_t key_hash) {
   uint32_t new_index = prepare_space_for_new_elem(c, elem_size);
-  add_elem_with_index(c, elem, new_index);
+  add_elem_with_index(c, elem, new_index, elem_hash, key_hash);
 }
 
 static void add_key(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
-                    size_t elem_size) {
+                    size_t elem_size, uint32_t key_hash) {
   uint32_t new_index = prepare_space_for_new_elem(c, elem_size);
-  add_key_with_index(c, elem, new_index);
+  add_key_with_index(c, elem, new_index, key_hash);
 }
 
 static void emit_indexed(grpc_chttp2_hpack_compressor* c, uint32_t elem_index,
@@ -323,9 +330,14 @@ typedef struct {
   bool insert_null_before_wire_value;
 } wire_value;
 
+template <bool mdkey_definitely_interned>
 static wire_value get_wire_value(grpc_mdelem elem, bool true_binary_enabled) {
   wire_value wire_val;
-  if (grpc_is_binary_header(GRPC_MDKEY(elem))) {
+  bool is_bin_hdr =
+      mdkey_definitely_interned
+          ? grpc_is_refcounted_slice_binary_header(GRPC_MDKEY(elem))
+          : grpc_is_binary_header_internal(GRPC_MDKEY(elem));
+  if (is_bin_hdr) {
     if (true_binary_enabled) {
       GRPC_STATS_INC_HPACK_SEND_BINARY();
       wire_val.huffman_prefix = 0x00;
@@ -363,7 +375,7 @@ static void emit_lithdr_incidx(grpc_chttp2_hpack_compressor* c,
                                framer_state* st) {
   GRPC_STATS_INC_HPACK_SEND_LITHDR_INCIDX();
   uint32_t len_pfx = GRPC_CHTTP2_VARINT_LENGTH(key_index, 2);
-  wire_value value = get_wire_value(elem, st->use_true_binary_metadata);
+  wire_value value = get_wire_value<true>(elem, st->use_true_binary_metadata);
   size_t len_val = wire_value_length(value);
   uint32_t len_val_len;
   GPR_ASSERT(len_val <= UINT32_MAX);
@@ -380,7 +392,7 @@ static void emit_lithdr_noidx(grpc_chttp2_hpack_compressor* c,
                               framer_state* st) {
   GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX();
   uint32_t len_pfx = GRPC_CHTTP2_VARINT_LENGTH(key_index, 4);
-  wire_value value = get_wire_value(elem, st->use_true_binary_metadata);
+  wire_value value = get_wire_value<false>(elem, st->use_true_binary_metadata);
   size_t len_val = wire_value_length(value);
   uint32_t len_val_len;
   GPR_ASSERT(len_val <= UINT32_MAX);
@@ -399,7 +411,7 @@ static void emit_lithdr_incidx_v(grpc_chttp2_hpack_compressor* c,
   GRPC_STATS_INC_HPACK_SEND_LITHDR_INCIDX_V();
   GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
   uint32_t len_key = static_cast<uint32_t> GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
-  wire_value value = get_wire_value(elem, st->use_true_binary_metadata);
+  wire_value value = get_wire_value<true>(elem, st->use_true_binary_metadata);
   uint32_t len_val = static_cast<uint32_t>(wire_value_length(value));
   uint32_t len_key_len = GRPC_CHTTP2_VARINT_LENGTH(len_key, 1);
   uint32_t len_val_len = GRPC_CHTTP2_VARINT_LENGTH(len_val, 1);
@@ -421,7 +433,7 @@ static void emit_lithdr_noidx_v(grpc_chttp2_hpack_compressor* c,
   GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX_V();
   GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
   uint32_t len_key = static_cast<uint32_t> GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
-  wire_value value = get_wire_value(elem, st->use_true_binary_metadata);
+  wire_value value = get_wire_value<false>(elem, st->use_true_binary_metadata);
   uint32_t len_val = static_cast<uint32_t>(wire_value_length(value));
   uint32_t len_key_len = GRPC_CHTTP2_VARINT_LENGTH(len_key, 1);
   uint32_t len_val_len = GRPC_CHTTP2_VARINT_LENGTH(len_val, 1);
@@ -464,7 +476,7 @@ static void hpack_enc(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     char* k = grpc_slice_to_c_string(GRPC_MDKEY(elem));
     char* v = nullptr;
-    if (grpc_is_binary_header(GRPC_MDKEY(elem))) {
+    if (grpc_is_binary_header_internal(GRPC_MDKEY(elem))) {
       v = grpc_dump_slice(GRPC_MDVALUE(elem), GPR_DUMP_HEX);
     } else {
       v = grpc_slice_to_c_string(GRPC_MDVALUE(elem));
@@ -488,27 +500,33 @@ static void hpack_enc(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
     return;
   }
 
-  uint32_t key_hash = grpc_slice_hash(GRPC_MDKEY(elem));
   uint32_t elem_hash = 0;
 
   if (elem_interned) {
-    uint32_t value_hash = grpc_slice_hash(GRPC_MDVALUE(elem));
-    elem_hash = GRPC_MDSTR_KV_HASH(key_hash, value_hash);
+    if (GRPC_MDELEM_STORAGE(elem) == GRPC_MDELEM_STORAGE_INTERNED) {
+      elem_hash =
+          reinterpret_cast<grpc_core::InternedMetadata*>(GRPC_MDELEM_DATA(elem))
+              ->hash();
+    } else {
+      elem_hash =
+          reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(elem))
+              ->hash();
+    }
 
     inc_filter(HASH_FRAGMENT_1(elem_hash), &c->filter_elems_sum,
                c->filter_elems);
 
     /* is this elem currently in the decoders table? */
-
-    if (grpc_mdelem_eq(c->entries_elems[HASH_FRAGMENT_2(elem_hash)], elem) &&
+    if (grpc_mdelem_both_interned_eq(
+            c->entries_elems[HASH_FRAGMENT_2(elem_hash)], elem) &&
         c->indices_elems[HASH_FRAGMENT_2(elem_hash)] > c->tail_remote_index) {
       /* HIT: complete element (first cuckoo hash) */
       emit_indexed(c, dynidx(c, c->indices_elems[HASH_FRAGMENT_2(elem_hash)]),
                    st);
       return;
     }
-
-    if (grpc_mdelem_eq(c->entries_elems[HASH_FRAGMENT_3(elem_hash)], elem) &&
+    if (grpc_mdelem_both_interned_eq(
+            c->entries_elems[HASH_FRAGMENT_3(elem_hash)], elem) &&
         c->indices_elems[HASH_FRAGMENT_3(elem_hash)] > c->tail_remote_index) {
       /* HIT: complete element (second cuckoo hash) */
       emit_indexed(c, dynidx(c, c->indices_elems[HASH_FRAGMENT_3(elem_hash)]),
@@ -527,11 +545,12 @@ static void hpack_enc(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
                                c->filter_elems[HASH_FRAGMENT_1(elem_hash)] >=
                                    c->filter_elems_sum / ONE_ON_ADD_PROBABILITY;
 
+  uint32_t key_hash = GRPC_MDKEY(elem).refcount->Hash(GRPC_MDKEY(elem));
   auto emit_maybe_add = [&should_add_elem, &elem, &st, &c, &indices_key,
-                         &decoder_space_usage] {
+                         &decoder_space_usage, &elem_hash, &key_hash] {
     if (should_add_elem) {
       emit_lithdr_incidx(c, dynidx(c, indices_key), elem, st);
-      add_elem(c, elem, decoder_space_usage);
+      add_elem(c, elem, decoder_space_usage, elem_hash, key_hash);
     } else {
       emit_lithdr_noidx(c, dynidx(c, indices_key), elem, st);
     }
@@ -539,8 +558,8 @@ static void hpack_enc(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
 
   /* no hits for the elem... maybe there's a key? */
   indices_key = c->indices_keys[HASH_FRAGMENT_2(key_hash)];
-  if (grpc_slice_eq(c->entries_keys[HASH_FRAGMENT_2(key_hash)],
-                    GRPC_MDKEY(elem)) &&
+  if (grpc_slice_static_interned_equal(
+          c->entries_keys[HASH_FRAGMENT_2(key_hash)], GRPC_MDKEY(elem)) &&
       indices_key > c->tail_remote_index) {
     /* HIT: key (first cuckoo hash) */
     emit_maybe_add();
@@ -548,8 +567,8 @@ static void hpack_enc(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
   }
 
   indices_key = c->indices_keys[HASH_FRAGMENT_3(key_hash)];
-  if (grpc_slice_eq(c->entries_keys[HASH_FRAGMENT_3(key_hash)],
-                    GRPC_MDKEY(elem)) &&
+  if (grpc_slice_static_interned_equal(
+          c->entries_keys[HASH_FRAGMENT_3(key_hash)], GRPC_MDKEY(elem)) &&
       indices_key > c->tail_remote_index) {
     /* HIT: key (first cuckoo hash) */
     emit_maybe_add();
@@ -565,9 +584,9 @@ static void hpack_enc(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
     emit_lithdr_noidx_v(c, 0, elem, st);
   }
   if (should_add_elem) {
-    add_elem(c, elem, decoder_space_usage);
+    add_elem(c, elem, decoder_space_usage, elem_hash, key_hash);
   } else if (should_add_key) {
-    add_key(c, elem, decoder_space_usage);
+    add_key(c, elem, decoder_space_usage, key_hash);
   }
 }
 
@@ -692,18 +711,18 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
   }
   for (size_t i = 0; i < extra_headers_size; ++i) {
     grpc_mdelem md = *extra_headers[i];
-    uint8_t static_index = grpc_chttp2_get_static_hpack_table_index(md);
+    uintptr_t static_index = grpc_chttp2_get_static_hpack_table_index(md);
     if (static_index) {
-      emit_indexed(c, static_index, &st);
+      emit_indexed(c, static_cast<uint32_t>(static_index), &st);
     } else {
       hpack_enc(c, md, &st);
     }
   }
   grpc_metadata_batch_assert_ok(metadata);
   for (grpc_linked_mdelem* l = metadata->list.head; l; l = l->next) {
-    uint8_t static_index = grpc_chttp2_get_static_hpack_table_index(l->md);
+    uintptr_t static_index = grpc_chttp2_get_static_hpack_table_index(l->md);
     if (static_index) {
-      emit_indexed(c, static_index, &st);
+      emit_indexed(c, static_cast<uint32_t>(static_index), &st);
     } else {
       hpack_enc(c, l->md, &st);
     }
