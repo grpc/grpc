@@ -899,7 +899,7 @@ static int prepare_application_metadata(grpc_call* call, int count,
     if (!GRPC_LOG_IF_ERROR("validate_metadata",
                            grpc_validate_header_key_is_legal(md->key))) {
       break;
-    } else if (!grpc_is_binary_header(md->key) &&
+    } else if (!grpc_is_binary_header_internal(md->key) &&
                !GRPC_LOG_IF_ERROR(
                    "validate_metadata",
                    grpc_validate_header_nonbin_value_is_legal(md->value))) {

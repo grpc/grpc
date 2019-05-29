@@ -394,184 +394,270 @@ grpc_mdelem grpc_static_mdelem_for_static_strings(intptr_t a, intptr_t b) {
   uint32_t h = elems_phash(k);
   return h < GPR_ARRAY_SIZE(elem_keys) && elem_keys[h] == k &&
                  elem_idxs[h] != 255
-             ? GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[elem_idxs[h]],
+             ? GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[elem_idxs[h]].data(),
                                 GRPC_MDELEM_STORAGE_STATIC)
              : GRPC_MDNULL;
 }
 
-grpc_mdelem_data grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {
-    {{&grpc_static_metadata_refcounts[3], {{10, g_bytes + 19}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[1], {{7, g_bytes + 5}}},
-     {&grpc_static_metadata_refcounts[41], {{3, g_bytes + 639}}}},
-    {{&grpc_static_metadata_refcounts[1], {{7, g_bytes + 5}}},
-     {&grpc_static_metadata_refcounts[42], {{4, g_bytes + 642}}}},
-    {{&grpc_static_metadata_refcounts[0], {{5, g_bytes + 0}}},
-     {&grpc_static_metadata_refcounts[43], {{1, g_bytes + 646}}}},
-    {{&grpc_static_metadata_refcounts[0], {{5, g_bytes + 0}}},
-     {&grpc_static_metadata_refcounts[44], {{11, g_bytes + 647}}}},
-    {{&grpc_static_metadata_refcounts[4], {{7, g_bytes + 29}}},
-     {&grpc_static_metadata_refcounts[45], {{4, g_bytes + 658}}}},
-    {{&grpc_static_metadata_refcounts[4], {{7, g_bytes + 29}}},
-     {&grpc_static_metadata_refcounts[46], {{5, g_bytes + 662}}}},
-    {{&grpc_static_metadata_refcounts[2], {{7, g_bytes + 12}}},
-     {&grpc_static_metadata_refcounts[47], {{3, g_bytes + 667}}}},
-    {{&grpc_static_metadata_refcounts[2], {{7, g_bytes + 12}}},
-     {&grpc_static_metadata_refcounts[48], {{3, g_bytes + 670}}}},
-    {{&grpc_static_metadata_refcounts[2], {{7, g_bytes + 12}}},
-     {&grpc_static_metadata_refcounts[49], {{3, g_bytes + 673}}}},
-    {{&grpc_static_metadata_refcounts[2], {{7, g_bytes + 12}}},
-     {&grpc_static_metadata_refcounts[50], {{3, g_bytes + 676}}}},
-    {{&grpc_static_metadata_refcounts[2], {{7, g_bytes + 12}}},
-     {&grpc_static_metadata_refcounts[51], {{3, g_bytes + 679}}}},
-    {{&grpc_static_metadata_refcounts[2], {{7, g_bytes + 12}}},
-     {&grpc_static_metadata_refcounts[52], {{3, g_bytes + 682}}}},
-    {{&grpc_static_metadata_refcounts[2], {{7, g_bytes + 12}}},
-     {&grpc_static_metadata_refcounts[53], {{3, g_bytes + 685}}}},
-    {{&grpc_static_metadata_refcounts[54], {{14, g_bytes + 688}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[16], {{15, g_bytes + 186}}},
-     {&grpc_static_metadata_refcounts[55], {{13, g_bytes + 702}}}},
-    {{&grpc_static_metadata_refcounts[56], {{15, g_bytes + 715}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[57], {{13, g_bytes + 730}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[58], {{6, g_bytes + 743}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[59], {{27, g_bytes + 749}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[60], {{3, g_bytes + 776}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[61], {{5, g_bytes + 779}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[62], {{13, g_bytes + 784}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[63], {{13, g_bytes + 797}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[64], {{19, g_bytes + 810}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[15], {{16, g_bytes + 170}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[65], {{16, g_bytes + 829}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[66], {{14, g_bytes + 845}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[67], {{16, g_bytes + 859}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[68], {{13, g_bytes + 875}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[14], {{12, g_bytes + 158}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[69], {{6, g_bytes + 888}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[70], {{4, g_bytes + 894}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[71], {{4, g_bytes + 898}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[72], {{6, g_bytes + 902}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[73], {{7, g_bytes + 908}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[74], {{4, g_bytes + 915}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[20], {{4, g_bytes + 278}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[75], {{8, g_bytes + 919}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[76], {{17, g_bytes + 927}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[77], {{13, g_bytes + 944}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[78], {{8, g_bytes + 957}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[79], {{19, g_bytes + 965}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[80], {{13, g_bytes + 984}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[81], {{4, g_bytes + 997}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[82], {{8, g_bytes + 1001}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[83], {{12, g_bytes + 1009}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[84], {{18, g_bytes + 1021}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[85], {{19, g_bytes + 1039}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[86], {{5, g_bytes + 1058}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[87], {{7, g_bytes + 1063}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[88], {{7, g_bytes + 1070}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[89], {{11, g_bytes + 1077}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[90], {{6, g_bytes + 1088}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[91], {{10, g_bytes + 1094}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[92], {{25, g_bytes + 1104}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[93], {{17, g_bytes + 1129}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[19], {{10, g_bytes + 268}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[94], {{4, g_bytes + 1146}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[95], {{3, g_bytes + 1150}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[96], {{16, g_bytes + 1153}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[7], {{11, g_bytes + 50}}},
-     {&grpc_static_metadata_refcounts[97], {{1, g_bytes + 1169}}}},
-    {{&grpc_static_metadata_refcounts[7], {{11, g_bytes + 50}}},
-     {&grpc_static_metadata_refcounts[26], {{1, g_bytes + 377}}}},
-    {{&grpc_static_metadata_refcounts[7], {{11, g_bytes + 50}}},
-     {&grpc_static_metadata_refcounts[27], {{1, g_bytes + 378}}}},
-    {{&grpc_static_metadata_refcounts[9], {{13, g_bytes + 77}}},
-     {&grpc_static_metadata_refcounts[98], {{8, g_bytes + 1170}}}},
-    {{&grpc_static_metadata_refcounts[9], {{13, g_bytes + 77}}},
-     {&grpc_static_metadata_refcounts[39], {{4, g_bytes + 624}}}},
-    {{&grpc_static_metadata_refcounts[9], {{13, g_bytes + 77}}},
-     {&grpc_static_metadata_refcounts[38], {{7, g_bytes + 617}}}},
-    {{&grpc_static_metadata_refcounts[5], {{2, g_bytes + 36}}},
-     {&grpc_static_metadata_refcounts[99], {{8, g_bytes + 1178}}}},
-    {{&grpc_static_metadata_refcounts[14], {{12, g_bytes + 158}}},
-     {&grpc_static_metadata_refcounts[100], {{16, g_bytes + 1186}}}},
-    {{&grpc_static_metadata_refcounts[4], {{7, g_bytes + 29}}},
-     {&grpc_static_metadata_refcounts[101], {{4, g_bytes + 1202}}}},
-    {{&grpc_static_metadata_refcounts[1], {{7, g_bytes + 5}}},
-     {&grpc_static_metadata_refcounts[102], {{3, g_bytes + 1206}}}},
-    {{&grpc_static_metadata_refcounts[16], {{15, g_bytes + 186}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[15], {{16, g_bytes + 170}}},
-     {&grpc_static_metadata_refcounts[98], {{8, g_bytes + 1170}}}},
-    {{&grpc_static_metadata_refcounts[15], {{16, g_bytes + 170}}},
-     {&grpc_static_metadata_refcounts[39], {{4, g_bytes + 624}}}},
-    {{&grpc_static_metadata_refcounts[21], {{8, g_bytes + 282}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[103], {{11, g_bytes + 1209}}},
-     {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}},
-    {{&grpc_static_metadata_refcounts[10], {{20, g_bytes + 90}}},
-     {&grpc_static_metadata_refcounts[98], {{8, g_bytes + 1170}}}},
-    {{&grpc_static_metadata_refcounts[10], {{20, g_bytes + 90}}},
-     {&grpc_static_metadata_refcounts[38], {{7, g_bytes + 617}}}},
-    {{&grpc_static_metadata_refcounts[10], {{20, g_bytes + 90}}},
-     {&grpc_static_metadata_refcounts[104], {{16, g_bytes + 1220}}}},
-    {{&grpc_static_metadata_refcounts[10], {{20, g_bytes + 90}}},
-     {&grpc_static_metadata_refcounts[39], {{4, g_bytes + 624}}}},
-    {{&grpc_static_metadata_refcounts[10], {{20, g_bytes + 90}}},
-     {&grpc_static_metadata_refcounts[105], {{13, g_bytes + 1236}}}},
-    {{&grpc_static_metadata_refcounts[10], {{20, g_bytes + 90}}},
-     {&grpc_static_metadata_refcounts[106], {{12, g_bytes + 1249}}}},
-    {{&grpc_static_metadata_refcounts[10], {{20, g_bytes + 90}}},
-     {&grpc_static_metadata_refcounts[107], {{21, g_bytes + 1261}}}},
-    {{&grpc_static_metadata_refcounts[16], {{15, g_bytes + 186}}},
-     {&grpc_static_metadata_refcounts[98], {{8, g_bytes + 1170}}}},
-    {{&grpc_static_metadata_refcounts[16], {{15, g_bytes + 186}}},
-     {&grpc_static_metadata_refcounts[39], {{4, g_bytes + 624}}}},
-    {{&grpc_static_metadata_refcounts[16], {{15, g_bytes + 186}}},
-     {&grpc_static_metadata_refcounts[105], {{13, g_bytes + 1236}}}},
+grpc_core::StaticMetadata grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[3], {{10, g_bytes + 19}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[1], {{7, g_bytes + 5}}},
+        {&grpc_static_metadata_refcounts[41], {{3, g_bytes + 639}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[1], {{7, g_bytes + 5}}},
+        {&grpc_static_metadata_refcounts[42], {{4, g_bytes + 642}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[0], {{5, g_bytes + 0}}},
+        {&grpc_static_metadata_refcounts[43], {{1, g_bytes + 646}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[0], {{5, g_bytes + 0}}},
+        {&grpc_static_metadata_refcounts[44], {{11, g_bytes + 647}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[4], {{7, g_bytes + 29}}},
+        {&grpc_static_metadata_refcounts[45], {{4, g_bytes + 658}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[4], {{7, g_bytes + 29}}},
+        {&grpc_static_metadata_refcounts[46], {{5, g_bytes + 662}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[2], {{7, g_bytes + 12}}},
+        {&grpc_static_metadata_refcounts[47], {{3, g_bytes + 667}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[2], {{7, g_bytes + 12}}},
+        {&grpc_static_metadata_refcounts[48], {{3, g_bytes + 670}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[2], {{7, g_bytes + 12}}},
+        {&grpc_static_metadata_refcounts[49], {{3, g_bytes + 673}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[2], {{7, g_bytes + 12}}},
+        {&grpc_static_metadata_refcounts[50], {{3, g_bytes + 676}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[2], {{7, g_bytes + 12}}},
+        {&grpc_static_metadata_refcounts[51], {{3, g_bytes + 679}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[2], {{7, g_bytes + 12}}},
+        {&grpc_static_metadata_refcounts[52], {{3, g_bytes + 682}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[2], {{7, g_bytes + 12}}},
+        {&grpc_static_metadata_refcounts[53], {{3, g_bytes + 685}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[54], {{14, g_bytes + 688}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[16], {{15, g_bytes + 186}}},
+        {&grpc_static_metadata_refcounts[55], {{13, g_bytes + 702}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[56], {{15, g_bytes + 715}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[57], {{13, g_bytes + 730}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[58], {{6, g_bytes + 743}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[59], {{27, g_bytes + 749}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[60], {{3, g_bytes + 776}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[61], {{5, g_bytes + 779}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[62], {{13, g_bytes + 784}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[63], {{13, g_bytes + 797}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[64], {{19, g_bytes + 810}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[15], {{16, g_bytes + 170}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[65], {{16, g_bytes + 829}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[66], {{14, g_bytes + 845}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[67], {{16, g_bytes + 859}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[68], {{13, g_bytes + 875}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[14], {{12, g_bytes + 158}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[69], {{6, g_bytes + 888}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[70], {{4, g_bytes + 894}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[71], {{4, g_bytes + 898}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[72], {{6, g_bytes + 902}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[73], {{7, g_bytes + 908}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[74], {{4, g_bytes + 915}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[20], {{4, g_bytes + 278}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[75], {{8, g_bytes + 919}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[76], {{17, g_bytes + 927}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[77], {{13, g_bytes + 944}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[78], {{8, g_bytes + 957}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[79], {{19, g_bytes + 965}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[80], {{13, g_bytes + 984}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[81], {{4, g_bytes + 997}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[82], {{8, g_bytes + 1001}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[83], {{12, g_bytes + 1009}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[84], {{18, g_bytes + 1021}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[85], {{19, g_bytes + 1039}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[86], {{5, g_bytes + 1058}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[87], {{7, g_bytes + 1063}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[88], {{7, g_bytes + 1070}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[89], {{11, g_bytes + 1077}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[90], {{6, g_bytes + 1088}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[91], {{10, g_bytes + 1094}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[92], {{25, g_bytes + 1104}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[93], {{17, g_bytes + 1129}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[19], {{10, g_bytes + 268}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[94], {{4, g_bytes + 1146}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[95], {{3, g_bytes + 1150}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[96], {{16, g_bytes + 1153}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[7], {{11, g_bytes + 50}}},
+        {&grpc_static_metadata_refcounts[97], {{1, g_bytes + 1169}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[7], {{11, g_bytes + 50}}},
+        {&grpc_static_metadata_refcounts[26], {{1, g_bytes + 377}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[7], {{11, g_bytes + 50}}},
+        {&grpc_static_metadata_refcounts[27], {{1, g_bytes + 378}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[9], {{13, g_bytes + 77}}},
+        {&grpc_static_metadata_refcounts[98], {{8, g_bytes + 1170}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[9], {{13, g_bytes + 77}}},
+        {&grpc_static_metadata_refcounts[39], {{4, g_bytes + 624}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[9], {{13, g_bytes + 77}}},
+        {&grpc_static_metadata_refcounts[38], {{7, g_bytes + 617}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[5], {{2, g_bytes + 36}}},
+        {&grpc_static_metadata_refcounts[99], {{8, g_bytes + 1178}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[14], {{12, g_bytes + 158}}},
+        {&grpc_static_metadata_refcounts[100], {{16, g_bytes + 1186}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[4], {{7, g_bytes + 29}}},
+        {&grpc_static_metadata_refcounts[101], {{4, g_bytes + 1202}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[1], {{7, g_bytes + 5}}},
+        {&grpc_static_metadata_refcounts[102], {{3, g_bytes + 1206}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[16], {{15, g_bytes + 186}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[15], {{16, g_bytes + 170}}},
+        {&grpc_static_metadata_refcounts[98], {{8, g_bytes + 1170}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[15], {{16, g_bytes + 170}}},
+        {&grpc_static_metadata_refcounts[39], {{4, g_bytes + 624}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[21], {{8, g_bytes + 282}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[103], {{11, g_bytes + 1209}}},
+        {&grpc_static_metadata_refcounts[30], {{0, g_bytes + 381}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[10], {{20, g_bytes + 90}}},
+        {&grpc_static_metadata_refcounts[98], {{8, g_bytes + 1170}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[10], {{20, g_bytes + 90}}},
+        {&grpc_static_metadata_refcounts[38], {{7, g_bytes + 617}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[10], {{20, g_bytes + 90}}},
+        {&grpc_static_metadata_refcounts[104], {{16, g_bytes + 1220}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[10], {{20, g_bytes + 90}}},
+        {&grpc_static_metadata_refcounts[39], {{4, g_bytes + 624}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[10], {{20, g_bytes + 90}}},
+        {&grpc_static_metadata_refcounts[105], {{13, g_bytes + 1236}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[10], {{20, g_bytes + 90}}},
+        {&grpc_static_metadata_refcounts[106], {{12, g_bytes + 1249}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[10], {{20, g_bytes + 90}}},
+        {&grpc_static_metadata_refcounts[107], {{21, g_bytes + 1261}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[16], {{15, g_bytes + 186}}},
+        {&grpc_static_metadata_refcounts[98], {{8, g_bytes + 1170}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[16], {{15, g_bytes + 186}}},
+        {&grpc_static_metadata_refcounts[39], {{4, g_bytes + 624}}}),
+    grpc_core::StaticMetadata(
+        {&grpc_static_metadata_refcounts[16], {{15, g_bytes + 186}}},
+        {&grpc_static_metadata_refcounts[105], {{13, g_bytes + 1236}}}),
 };
 const uint8_t grpc_static_accept_encoding_metadata[8] = {0,  76, 77, 78,
                                                          79, 80, 81, 82};
