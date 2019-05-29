@@ -42,7 +42,7 @@ cdef int _get_metadata(
     grpc_credentials_plugin_metadata_cb cb, void *user_data,
     grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
     size_t *num_creds_md, grpc_status_code *status,
-    const char **error_details) with gil:
+    const char **error_details) except * with gil:
   cdef size_t metadata_count
   cdef grpc_metadata *c_metadata
   def callback(metadata, grpc_status_code status, bytes error_details):
@@ -57,7 +57,7 @@ cdef int _get_metadata(
   return 0  # Asynchronous return
 
 
-cdef void _destroy(void *state) with gil:
+cdef void _destroy(void *state) except * with gil:
   cpython.Py_DECREF(<object>state)
   grpc_shutdown_blocking()
 
