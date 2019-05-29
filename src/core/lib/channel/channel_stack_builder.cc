@@ -270,7 +270,8 @@ void grpc_channel_stack_builder_destroy(grpc_channel_stack_builder* builder) {
 
 grpc_error* grpc_channel_stack_builder_finish(
     grpc_channel_stack_builder* builder, size_t prefix_bytes, int initial_refs,
-    grpc_iomgr_cb_func destroy, void* destroy_arg, void** result) {
+    grpc_iomgr_cb_func destroy, void* destroy_arg, void** result,
+    const grpc_channel_builder_args& cb_args) {
   // count the number of filters
   size_t num_filters = 0;
   for (filter_node* p = builder->begin.next; p != &builder->end; p = p->next) {
@@ -291,7 +292,7 @@ grpc_error* grpc_channel_stack_builder_finish(
 
   // allocate memory, with prefix_bytes followed by channel_stack_size
   *result = gpr_malloc(prefix_bytes + channel_stack_size);
-  reinterpret_cast<grpc_channel*>(*result)->channelz_channel.release();
+  new (reinterpret_cast<grpc_channel*>(*result)) grpc_channel(cb_args);
   // fetch a pointer to the channel stack
   grpc_channel_stack* channel_stack = reinterpret_cast<grpc_channel_stack*>(
       static_cast<char*>(*result) + prefix_bytes);
