@@ -513,7 +513,7 @@ static void publish_call(grpc_server* server, call_data* calld, size_t cq_idx,
   }
 
   grpc_cq_end_op(calld->cq_new, rc->tag, GRPC_ERROR_NONE, done_request_event,
-                 rc, &rc->completion, true);
+                 rc, &rc->completion);
 }
 
 static void publish_new_rpc(void* arg, grpc_error* error) {
