@@ -83,7 +83,7 @@ ConnectedSubchannel::ConnectedSubchannel(
     grpc_channel_stack* channel_stack, const grpc_channel_args* args,
     RefCountedPtr<channelz::SubchannelNode> channelz_subchannel,
     intptr_t socket_uuid)
-    : RefCounted<ConnectedSubchannel>(&grpc_trace_stream_refcount),
+    : ConnectedSubchannelInterface(&grpc_trace_stream_refcount),
       channel_stack_(channel_stack),
       args_(grpc_channel_args_copy(args)),
       channelz_subchannel_(std::move(channelz_subchannel)),
@@ -376,25 +376,17 @@ class Subchannel::ConnectedSubchannelStateWatcher {
 
 void Subchannel::ConnectivityStateWatcherList::AddWatcherLocked(
     UniquePtr<ConnectivityStateWatcher> watcher) {
-  watcher->next_ = head_;
-  head_ = watcher.release();
+  watchers_.insert(MakePair(watcher.get(), std::move(watcher)));
 }
 
 void Subchannel::ConnectivityStateWatcherList::RemoveWatcherLocked(
     ConnectivityStateWatcher* watcher) {
-  for (ConnectivityStateWatcher** w = &head_; *w != nullptr; w = &(*w)->next_) {
-    if (*w == watcher) {
-      *w = watcher->next_;
-      Delete(watcher);
-      return;
-    }
-  }
-  GPR_UNREACHABLE_CODE(return );
+  watchers_.erase(watcher);
 }
 
 void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
     Subchannel* subchannel, grpc_connectivity_state state) {
-  for (ConnectivityStateWatcher* w = head_; w != nullptr; w = w->next_) {
+  for (const auto& p : watchers_) {
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     if (state == GRPC_CHANNEL_READY) {
       connected_subchannel = subchannel->connected_subchannel_;
@@ -407,15 +399,7 @@ void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
     // the notification into the client_channel control-plane combiner
     // before processing it.  But if we ever have any other callers here,
     // we will probably need to change this.
-    w->OnConnectivityStateChange(state, std::move(connected_subchannel));
-  }
-}
-
-void Subchannel::ConnectivityStateWatcherList::Clear() {
-  while (head_ != nullptr) {
-    ConnectivityStateWatcher* next = head_->next_;
-    Delete(head_);
-    head_ = next;
+    p.second->OnConnectivityStateChange(state, std::move(connected_subchannel));
   }
 }
 

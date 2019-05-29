@@ -68,8 +68,9 @@ class PickFirst : public LoadBalancingPolicy {
     PickFirstSubchannelData(
         SubchannelList<PickFirstSubchannelList, PickFirstSubchannelData>*
             subchannel_list,
-        const ServerAddress& address, Subchannel* subchannel)
-        : SubchannelData(subchannel_list, address, subchannel) {}
+        const ServerAddress& address,
+        RefCountedPtr<SubchannelInterface> subchannel)
+        : SubchannelData(subchannel_list, address, std::move(subchannel)) {}
 
     void ProcessConnectivityChangeLocked(
         grpc_connectivity_state connectivity_state) override;
@@ -112,7 +113,8 @@ class PickFirst : public LoadBalancingPolicy {
 
   class Picker : public SubchannelPicker {
    public:
-    explicit Picker(RefCountedPtr<ConnectedSubchannel> connected_subchannel)
+    explicit Picker(
+        RefCountedPtr<ConnectedSubchannelInterface> connected_subchannel)
         : connected_subchannel_(std::move(connected_subchannel)) {}
 
     PickResult Pick(PickArgs args) override {
@@ -123,7 +125,7 @@ class PickFirst : public LoadBalancingPolicy {
     }
 
    private:
-    RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
+    RefCountedPtr<ConnectedSubchannelInterface> connected_subchannel_;
   };
 
   // Helper class to ensure that any function that modifies the child refs
