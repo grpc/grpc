@@ -109,13 +109,12 @@ void StaticMetadata::HashInit() {
 
 AllocatedMetadata::AllocatedMetadata(const grpc_slice& key,
                                      const grpc_slice& value)
-    : key_(grpc_slice_ref_internal(key)),
-      value_(grpc_slice_ref_internal(value)),
-      refcnt_(1) {
+    : RefcountedMdBase(grpc_slice_ref_internal(key),
+                       grpc_slice_ref_internal(value)) {
 #ifndef NDEBUG
   if (grpc_trace_metadata.enabled()) {
-    char* key_str = grpc_slice_to_c_string(key_);
-    char* value_str = grpc_slice_to_c_string(value_);
+    char* key_str = grpc_slice_to_c_string(key);
+    char* value_str = grpc_slice_to_c_string(value);
     gpr_log(GPR_DEBUG, "ELM ALLOC:%p:%" PRIdPTR ": '%s' = '%s'", this,
             RefValue(), key_str, value_str);
     gpr_free(key_str);
@@ -125,8 +124,8 @@ AllocatedMetadata::AllocatedMetadata(const grpc_slice& key,
 }
 
 AllocatedMetadata::~AllocatedMetadata() {
-  grpc_slice_unref_internal(key_);
-  grpc_slice_unref_internal(value_);
+  grpc_slice_unref_internal(key());
+  grpc_slice_unref_internal(value());
   void* user_data = user_data_.data.Load(grpc_core::MemoryOrder::RELAXED);
   if (user_data) {
     destroy_user_data_func destroy_user_data =
@@ -138,15 +137,13 @@ AllocatedMetadata::~AllocatedMetadata() {
 InternedMetadata::InternedMetadata(const grpc_slice& key,
                                    const grpc_slice& value, uint32_t hash,
                                    InternedMetadata* next)
-    : key_(grpc_slice_ref_internal(key)),
-      value_(grpc_slice_ref_internal(value)),
-      hash_(hash),
-      refcnt_(1),
+    : RefcountedMdBase(grpc_slice_ref_internal(key),
+                       grpc_slice_ref_internal(value), hash),
       link_(next) {
 #ifndef NDEBUG
   if (grpc_trace_metadata.enabled()) {
-    char* key_str = grpc_slice_to_c_string(key_);
-    char* value_str = grpc_slice_to_c_string(value_);
+    char* key_str = grpc_slice_to_c_string(key);
+    char* value_str = grpc_slice_to_c_string(value);
     gpr_log(GPR_DEBUG, "ELM   NEW:%p:%" PRIdPTR ": '%s' = '%s'", this,
             RefValue(), key_str, value_str);
     gpr_free(key_str);
@@ -156,8 +153,8 @@ InternedMetadata::InternedMetadata(const grpc_slice& key,
 }
 
 InternedMetadata::~InternedMetadata() {
-  grpc_slice_unref_internal(key_);
-  grpc_slice_unref_internal(value_);
+  grpc_slice_unref_internal(key());
+  grpc_slice_unref_internal(value());
   void* user_data = user_data_.data.Load(grpc_core::MemoryOrder::RELAXED);
   if (user_data) {
     destroy_user_data_func destroy_user_data =
@@ -242,8 +239,8 @@ static int is_mdelem_static(grpc_mdelem e) {
 void InternedMetadata::RefWithShardLocked(mdtab_shard* shard) {
 #ifndef NDEBUG
   if (grpc_trace_metadata.enabled()) {
-    char* key_str = grpc_slice_to_c_string(key_);
-    char* value_str = grpc_slice_to_c_string(value_);
+    char* key_str = grpc_slice_to_c_string(key());
+    char* value_str = grpc_slice_to_c_string(value());
     intptr_t value = RefValue();
     gpr_log(__FILE__, __LINE__, GPR_LOG_SEVERITY_DEBUG,
             "ELM   REF:%p:%" PRIdPTR "->%" PRIdPTR ": '%s' = '%s'", this, value,
@@ -494,6 +491,23 @@ void grpc_mdelem_do_unref(grpc_mdelem gmd DEBUG_ARGS) {
       if (GPR_UNLIKELY(md->Unref(FWD_DEBUG_ARGS))) {
         grpc_core::Delete(md);
       }
+      break;
+    }
+  }
+}
+
+void grpc_mdelem_on_final_unref(grpc_mdelem_data_storage storage, void* ptr,
+                                uint32_t hash DEBUG_ARGS) {
+  switch (storage) {
+    case GRPC_MDELEM_STORAGE_EXTERNAL:
+    case GRPC_MDELEM_STORAGE_STATIC:
+      return;
+    case GRPC_MDELEM_STORAGE_INTERNED: {
+      note_disposed_interned_metadata(hash);
+      break;
+    }
+    case GRPC_MDELEM_STORAGE_ALLOCATED: {
+      grpc_core::Delete(reinterpret_cast<AllocatedMetadata*>(ptr));
       break;
     }
   }
