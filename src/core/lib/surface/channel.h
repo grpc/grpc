@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/compression.h>
+
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/channelz.h"
@@ -78,6 +80,16 @@ size_t grpc_channel_get_call_size_estimate(grpc_channel* channel);
 void grpc_channel_update_call_size_estimate(grpc_channel* channel, size_t size);
 
 struct registered_call;
+struct grpc_channel_builder_args {
+  int is_client = 0;
+  grpc_resource_user* resource_user = nullptr;
+  char* target = nullptr;
+
+  grpc_channel_builder_args() = default;
+  grpc_channel_builder_args(int client, grpc_resource_user* ru, char* tgt)
+      : is_client(client), resource_user(ru), target(tgt) {}
+};
+
 struct grpc_channel {
   int is_client;
   grpc_compression_options compression_options;
@@ -86,12 +98,21 @@ struct grpc_channel {
   grpc_resource_user* resource_user;
 
   gpr_mu registered_call_mu;
-  registered_call* registered_calls;
+  registered_call* registered_calls = nullptr;
 
   grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_channel;
 
   char* target;
+
+  grpc_channel(const grpc_channel_builder_args& args)
+      : is_client(args.is_client),
+        resource_user(args.resource_user),
+        target(args.target) {
+    gpr_mu_init(&registered_call_mu);
+    grpc_compression_options_init(&compression_options);
+  }
 };
+
 #define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack*)((c) + 1))
 
 inline grpc_compression_options grpc_channel_compression_options(

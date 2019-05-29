@@ -58,7 +58,6 @@ typedef struct registered_call {
   grpc_mdelem authority;
   struct registered_call* next;
 } registered_call;
-#define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack*)((c) + 1))
 
 static void destroy_channel(void* arg, grpc_error* error);
 
@@ -71,14 +70,17 @@ grpc_channel* grpc_channel_create_with_builder(
   grpc_resource_user* resource_user =
       grpc_channel_stack_builder_get_resource_user(builder);
   grpc_channel* channel;
-  if (channel_stack_type == GRPC_SERVER_CHANNEL) {
+  if (channel_stack_type == grpc_channel_stack_type::GRPC_SERVER_CHANNEL) {
     GRPC_STATS_INC_SERVER_CHANNELS_CREATED();
   } else {
     GRPC_STATS_INC_CLIENT_CHANNELS_CREATED();
   }
+  grpc_channel_builder_args cb_args(
+      grpc_channel_stack_type_is_client(channel_stack_type), resource_user,
+      target);
   grpc_error* error = grpc_channel_stack_builder_finish(
       builder, sizeof(grpc_channel), 1, destroy_channel, nullptr,
-      reinterpret_cast<void**>(&channel));
+      reinterpret_cast<void**>(&channel), cb_args);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "channel stack builder failed: %s",
             grpc_error_string(error));
@@ -88,9 +90,6 @@ grpc_channel* grpc_channel_create_with_builder(
     return channel;
   }
 
-  channel->target = target;
-  channel->resource_user = resource_user;
-  channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
   bool channelz_enabled = GRPC_ENABLE_CHANNELZ_DEFAULT;
   size_t channel_tracer_max_memory =
       GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT;
@@ -99,15 +98,12 @@ grpc_channel* grpc_channel_create_with_builder(
   // override this to ensure a correct ChannelNode is created.
   grpc_core::channelz::ChannelNodeCreationFunc channel_node_create_func =
       grpc_core::channelz::ChannelNode::MakeChannelNode;
-  gpr_mu_init(&channel->registered_call_mu);
-  channel->registered_calls = nullptr;
 
   gpr_atm_no_barrier_store(
       &channel->call_size_estimate,
       (gpr_atm)CHANNEL_STACK_FROM_CHANNEL(channel)->call_stack_size +
           grpc_call_get_initial_size_estimate());
 
-  grpc_compression_options_init(&channel->compression_options);
   for (size_t i = 0; i < args->num_args; i++) {
     if (0 ==
         strcmp(args->args[i].key, GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL)) {

@@ -1051,14 +1051,15 @@ bool Subchannel::PublishTransportLocked() {
       builder, connecting_result_.channel_args);
   grpc_channel_stack_builder_set_transport(builder,
                                            connecting_result_.transport);
-  if (!grpc_channel_init_create_stack(builder, GRPC_CLIENT_SUBCHANNEL)) {
+  if (!grpc_channel_init_create_stack(
+          builder, grpc_channel_stack_type::GRPC_CLIENT_SUBCHANNEL)) {
     grpc_channel_stack_builder_destroy(builder);
     return false;
   }
   grpc_channel_stack* stk;
   grpc_error* error = grpc_channel_stack_builder_finish(
-      builder, 0, 1, ConnectionDestroy, nullptr,
-      reinterpret_cast<void**>(&stk));
+      builder, 0, 1, ConnectionDestroy, nullptr, reinterpret_cast<void**>(&stk),
+      grpc_channel_builder_args());
   if (error != GRPC_ERROR_NONE) {
     grpc_transport_destroy(connecting_result_.transport);
     gpr_log(GPR_ERROR, "error initializing subchannel stack: %s",
