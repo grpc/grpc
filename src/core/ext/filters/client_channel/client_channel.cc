@@ -964,6 +964,7 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
                  UniquePtr<char> health_check_service_name)
       : chand_(chand), subchannel_(subchannel),
         health_check_service_name_(std::move(health_check_service_name)) {
+    GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "GrpcSubchannel");
     auto* subchannel_node = subchannel_->channelz_node();
     if (subchannel_node != nullptr) {
       intptr_t subchannel_uuid = subchannel_node->uuid();
@@ -989,6 +990,7 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
       }
     }
     GRPC_SUBCHANNEL_UNREF(subchannel_, "unref from LB");
+    GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "GrpcSubchannel");
   }
 
   grpc_connectivity_state CheckConnectivityState(
