@@ -70,7 +70,7 @@ namespace grpc_core {
 
 class SubchannelCall;
 
-class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
+class ConnectedSubchannel : public ConnectedSubchannelInterface {
  public:
   struct CallArgs {
     grpc_polling_entity* pollent;
@@ -97,7 +97,7 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
                                            grpc_error** error);
 
   grpc_channel_stack* channel_stack() const { return channel_stack_; }
-  const grpc_channel_args* args() const { return args_; }
+  const grpc_channel_args* args() const override { return args_; }
   channelz::SubchannelNode* channelz_subchannel() const {
     return channelz_subchannel_.get();
   }

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,25 @@
  *
  */
 
-#ifndef GRPCPP_CHANNEL_H
-#define GRPCPP_CHANNEL_H
+#include <grpc/grpc.h>
+#include <grpcpp/support/validate_service_config.h>
 
-#include <grpcpp/channel_impl.h>
+#include "src/core/ext/filters/client_channel/service_config.h"
 
 namespace grpc {
-
-typedef ::grpc_impl::Channel Channel;
-
 namespace experimental {
-/// Resets the channel's connection backoff.
-/// TODO(roth): Once we see whether this proves useful, either create a gRFC
-/// and change this to be a method of the Channel class, or remove it.
-void ChannelResetConnectionBackoff(Channel* channel);
+grpc::string ValidateServiceConfigJSON(
+    const grpc::string& service_config_json) {
+  grpc_init();
+  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_core::ServiceConfig::Create(service_config_json.c_str(), &error);
+  grpc::string return_value;
+  if (error != GRPC_ERROR_NONE) {
+    return_value = grpc_error_string(error);
+    GRPC_ERROR_UNREF(error);
+  }
+  grpc_shutdown();
+  return return_value;
+}
 }  // namespace experimental
-
 }  // namespace grpc
-
-#endif  // GRPCPP_CHANNEL_H

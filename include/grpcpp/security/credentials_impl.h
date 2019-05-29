@@ -24,6 +24,7 @@
 #include <vector>
 
 #include <grpc/grpc_security_constants.h>
+#include <grpcpp/channel.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/security/auth_context.h>

@@ -268,7 +268,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
                                                     grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   InlinedVector<grpc_error*, 4> error_list;
-  RefCountedPtr<ParsedLoadBalancingConfig> parsed_lb_config;
+  RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config;
   UniquePtr<char> lb_policy_name;
   Optional<ClientChannelGlobalParsedConfig::RetryThrottling> retry_throttling;
   const char* health_check_service_name = nullptr;

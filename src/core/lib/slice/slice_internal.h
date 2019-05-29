@@ -99,11 +99,14 @@ struct grpc_slice_refcount {
   enum class Type {
     STATIC,    // Refcount for a static metadata slice.
     INTERNED,  // Refcount for an interned slice.
+    NOP,       // No-Op
     REGULAR    // Refcount for non-static-metadata, non-interned slices.
   };
   typedef void (*DestroyerFn)(void*);
 
   grpc_slice_refcount() = default;
+
+  explicit grpc_slice_refcount(Type t) : ref_type_(t) {}
 
   explicit grpc_slice_refcount(grpc_slice_refcount* sub) : sub_refcount_(sub) {}
   // Regular constructor for grpc_slice_refcount.
@@ -200,6 +203,7 @@ inline int grpc_slice_refcount::Eq(const grpc_slice& a, const grpc_slice& b) {
       return GRPC_STATIC_METADATA_INDEX(a) == GRPC_STATIC_METADATA_INDEX(b);
     case Type::INTERNED:
       return a.refcount == b.refcount;
+    case Type::NOP:
     case Type::REGULAR:
       break;
   }
@@ -217,6 +221,7 @@ inline uint32_t grpc_slice_refcount::Hash(const grpc_slice& slice) {
     case Type::INTERNED:
       return reinterpret_cast<grpc_core::InternedSliceRefcount*>(slice.refcount)
           ->hash;
+    case Type::NOP:
     case Type::REGULAR:
       break;
   }
@@ -258,6 +263,17 @@ void grpc_slice_buffer_sub_first(grpc_slice_buffer* sb, size_t begin,
 
 /* Check if a slice is interned */
 bool grpc_slice_is_interned(const grpc_slice& slice);
+inline bool grpc_slice_is_interned(const grpc_slice& slice) {
+  return (slice.refcount &&
+          (slice.refcount->GetType() == grpc_slice_refcount::Type::INTERNED ||
+           slice.refcount->GetType() == grpc_slice_refcount::Type::STATIC));
+}
+
+inline bool grpc_slice_static_interned_equal(const grpc_slice& a,
+                                             const grpc_slice& b) {
+  GPR_DEBUG_ASSERT(grpc_slice_is_interned(a) && grpc_slice_is_interned(b));
+  return a.refcount == b.refcount;
+}
 
 void grpc_slice_intern_init(void);
 void grpc_slice_intern_shutdown(void);
@@ -270,6 +286,21 @@ grpc_slice grpc_slice_maybe_static_intern(grpc_slice slice,
                                           bool* returned_slice_is_different);
 uint32_t grpc_static_slice_hash(grpc_slice s);
 int grpc_static_slice_eq(grpc_slice a, grpc_slice b);
+
+inline uint32_t grpc_slice_hash_refcounted(const grpc_slice& s) {
+  GPR_DEBUG_ASSERT(s.refcount != nullptr);
+  return s.refcount->Hash(s);
+}
+
+inline uint32_t grpc_slice_default_hash_internal(const grpc_slice& s) {
+  return gpr_murmur_hash3(GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s),
+                          g_hash_seed);
+}
+
+inline uint32_t grpc_slice_hash_internal(const grpc_slice& s) {
+  return s.refcount == nullptr ? grpc_slice_default_hash_internal(s)
+                               : grpc_slice_hash_refcounted(s);
+}
 
 // Returns the memory used by this slice, not counting the slice structure
 // itself. This means that inlined and slices from static strings will return
