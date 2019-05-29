@@ -105,7 +105,7 @@ LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
 //
 
 LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
-    PickArgs* pick, grpc_error** error) {
+    PickArgs args) {
   // We invoke the parent's ExitIdleLocked() via a closure instead
   // of doing it directly here, for two reasons:
   // 1. ExitIdleLocked() may cause the policy's state to change and
@@ -125,7 +125,9 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
                             grpc_combiner_scheduler(parent_->combiner())),
         GRPC_ERROR_NONE);
   }
-  return PICK_QUEUE;
+  PickResult result;
+  result.type = PickResult::PICK_QUEUE;
+  return result;
 }
 
 void LoadBalancingPolicy::QueuePicker::CallExitIdle(void* arg,
@@ -133,6 +135,18 @@ void LoadBalancingPolicy::QueuePicker::CallExitIdle(void* arg,
   LoadBalancingPolicy* parent = static_cast<LoadBalancingPolicy*>(arg);
   parent->ExitIdleLocked();
   parent->Unref();
+}
+
+//
+// LoadBalancingPolicy::TransientFailurePicker
+//
+
+LoadBalancingPolicy::PickResult
+LoadBalancingPolicy::TransientFailurePicker::Pick(PickArgs args) {
+  PickResult result;
+  result.type = PickResult::PICK_TRANSIENT_FAILURE;
+  result.error = GRPC_ERROR_REF(error_);
+  return result;
 }
 
 }  // namespace grpc_core
