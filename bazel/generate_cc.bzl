@@ -41,11 +41,11 @@ def _join_directories(directories):
 
 def generate_cc_impl(ctx):
     """Implementation of the generate_cc rule."""
-    protos = [f for src in ctx.attr.srcs for f in src.proto.check_deps_sources]
+    protos = [f for src in ctx.attr.srcs for f in src.proto.check_deps_sources.to_list()]
     includes = [
         f
         for src in ctx.attr.srcs
-        for f in src.proto.transitive_imports
+        for f in src.proto.transitive_imports.to_list()
     ]
     outs = []
     proto_root = get_proto_root(
@@ -128,7 +128,7 @@ def generate_cc_impl(ctx):
             arguments += ["-I{0}".format(f + "/../..")]
             well_known_proto_files = [
                 f
-                for f in ctx.attr.well_known_protos.files
+                for f in ctx.attr.well_known_protos.files.to_list()
             ]
 
     ctx.actions.run(
