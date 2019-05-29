@@ -613,26 +613,26 @@ CallbackTestServiceImpl::CheckClientInitialMetadata(ServerContext* context) {
 
 experimental::ServerReadReactor<EchoRequest, EchoResponse>*
 CallbackTestServiceImpl::RequestStream(ServerContext* context) {
-
-      // If 'server_try_cancel' is set in the metadata, the RPC is cancelled by
-      // the server by calling ServerContext::TryCancel() depending on the
-      // value:
-      //   CANCEL_BEFORE_PROCESSING: The RPC is cancelled before the server
-      //   reads any message from the client CANCEL_DURING_PROCESSING: The RPC
-      //   is cancelled while the server is reading messages from the client
-      //   CANCEL_AFTER_PROCESSING: The RPC is cancelled after the server reads
-      //   all the messages from the client
+  // If 'server_try_cancel' is set in the metadata, the RPC is cancelled by
+  // the server by calling ServerContext::TryCancel() depending on the
+  // value:
+  //   CANCEL_BEFORE_PROCESSING: The RPC is cancelled before the server
+  //   reads any message from the client CANCEL_DURING_PROCESSING: The RPC
+  //   is cancelled while the server is reading messages from the client
+  //   CANCEL_AFTER_PROCESSING: The RPC is cancelled after the server reads
+  //   all the messages from the client
   int server_try_cancel = GetIntValueFromMetadata(
-          kServerTryCancelRequest, context->client_metadata(), DO_NOT_CANCEL);
+      kServerTryCancelRequest, context->client_metadata(), DO_NOT_CANCEL);
   if (server_try_cancel == CANCEL_BEFORE_PROCESSING) {
     ServerTryCancelNonblocking(context);
-    return nullptr; // the reactor is not important since the RPC is canceled
+    return nullptr;  // the reactor is not important since the RPC is canceled
   }
-  
+
   class Reactor : public ::grpc::experimental::ServerReadReactor<EchoRequest,
                                                                  EchoResponse> {
    public:
-    explicit Reactor(ServerContext* ctx, int server_try_cancel) : ctx_(ctx), server_try_cancel_(server_try_cancel) {
+    explicit Reactor(ServerContext* ctx, int server_try_cancel)
+        : ctx_(ctx), server_try_cancel_(server_try_cancel) {
       EXPECT_NE(server_try_cancel, CANCEL_BEFORE_PROCESSING);
     }
     void OnStarted(EchoResponse* response) override {
@@ -641,13 +641,12 @@ CallbackTestServiceImpl::RequestStream(ServerContext* context) {
 
       response->set_message("");
 
-        if (server_try_cancel_ == CANCEL_DURING_PROCESSING) {
-          ctx_->TryCancel();
-          // Don't wait for it here
-        }
-        response_ = response;
-        StartRead(&request_);
-
+      if (server_try_cancel_ == CANCEL_DURING_PROCESSING) {
+        ctx_->TryCancel();
+        // Don't wait for it here
+      }
+      response_ = response;
+      StartRead(&request_);
 
       on_started_done_ = true;
     }
@@ -703,25 +702,26 @@ CallbackTestServiceImpl::RequestStream(ServerContext* context) {
 // TODO(yangg) make it generic by adding a parameter into EchoRequest
 experimental::ServerWriteReactor<EchoRequest, EchoResponse>*
 CallbackTestServiceImpl::ResponseStream(ServerContext* context) {
-      // If 'server_try_cancel' is set in the metadata, the RPC is cancelled by
-      // the server by calling ServerContext::TryCancel() depending on the
-      // value:
-      //   CANCEL_BEFORE_PROCESSING: The RPC is cancelled before the server
-      //   reads any message from the client CANCEL_DURING_PROCESSING: The RPC
-      //   is cancelled while the server is reading messages from the client
-      //   CANCEL_AFTER_PROCESSING: The RPC is cancelled after the server reads
-      //   all the messages from the client
+  // If 'server_try_cancel' is set in the metadata, the RPC is cancelled by
+  // the server by calling ServerContext::TryCancel() depending on the
+  // value:
+  //   CANCEL_BEFORE_PROCESSING: The RPC is cancelled before the server
+  //   reads any message from the client CANCEL_DURING_PROCESSING: The RPC
+  //   is cancelled while the server is reading messages from the client
+  //   CANCEL_AFTER_PROCESSING: The RPC is cancelled after the server reads
+  //   all the messages from the client
   int server_try_cancel = GetIntValueFromMetadata(
-          kServerTryCancelRequest, context->client_metadata(), DO_NOT_CANCEL);
+      kServerTryCancelRequest, context->client_metadata(), DO_NOT_CANCEL);
   if (server_try_cancel == CANCEL_BEFORE_PROCESSING) {
     ServerTryCancelNonblocking(context);
   }
-  
+
   class Reactor
       : public ::grpc::experimental::ServerWriteReactor<EchoRequest,
                                                         EchoResponse> {
    public:
-    Reactor(ServerContext* ctx, int server_try_cancel) : ctx_(ctx), server_try_cancel_(server_try_cancel) {}
+    Reactor(ServerContext* ctx, int server_try_cancel)
+        : ctx_(ctx), server_try_cancel_(server_try_cancel) {}
     void OnStarted(const EchoRequest* request) override {
       // Assign request_ as late as possible to increase likelihood of
       // catching any races
@@ -732,7 +732,7 @@ CallbackTestServiceImpl::ResponseStream(ServerContext* context) {
           kServerResponseStreamsToSend, ctx_->client_metadata(),
           kServerDefaultResponseStreamsToSend);
       if (server_try_cancel_ == CANCEL_DURING_PROCESSING) {
-	ctx_->TryCancel();
+        ctx_->TryCancel();
       }
       if (server_try_cancel_ != CANCEL_BEFORE_PROCESSING) {
         request_ = request;
