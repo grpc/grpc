@@ -471,7 +471,7 @@ void ResolvingLoadBalancingPolicy::ConcatenateAndAddChannelTraceLocked(
     }
     size_t len = 0;
     char* message = gpr_strvec_flatten(&v, &len);
-    channel_control_helper()->AddTraceEvent(ChannelControlHelper::INFO,
+    channel_control_helper()->AddTraceEvent(ChannelControlHelper::TRACE_INFO,
                                             message);
     gpr_strvec_destroy(&v);
   }

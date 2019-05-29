@@ -1107,8 +1107,8 @@ class ChannelData::ClientChannelControlHelper
  private:
   static channelz::ChannelTrace::Severity ConvertSeverityEnum(
       TraceSeverity severity) {
-    if (severity == INFO) return channelz::ChannelTrace::Info;
-    if (severity == WARNING) return channelz::ChannelTrace::Warning;
+    if (severity == TRACE_INFO) return channelz::ChannelTrace::Info;
+    if (severity == TRACE_WARNING) return channelz::ChannelTrace::Warning;
     return channelz::ChannelTrace::Error;
   }
 
