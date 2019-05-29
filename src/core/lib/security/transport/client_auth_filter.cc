@@ -112,6 +112,20 @@ struct call_data {
 
 }  // namespace
 
+void grpc_auth_metadata_context_copy(grpc_auth_metadata_context* from,
+                                     grpc_auth_metadata_context* to) {
+  grpc_auth_metadata_context_reset(to);
+  to->channel_auth_context = from->channel_auth_context;
+  if (to->channel_auth_context != nullptr) {
+    const_cast<grpc_auth_context*>(to->channel_auth_context)
+        ->Ref(DEBUG_LOCATION, "grpc_auth_metadata_context_copy")
+        .release();
+  }
+  to->service_url =
+      (from->service_url == nullptr) ? nullptr : strdup(from->service_url);
+  to->method_name =
+      (from->method_name == nullptr) ? nullptr : strdup(from->method_name);
+}
 void grpc_auth_metadata_context_reset(
     grpc_auth_metadata_context* auth_md_context) {
   if (auth_md_context->service_url != nullptr) {
@@ -160,6 +174,8 @@ static void on_credentials_metadata(void* arg, grpc_error* input_error) {
   if (error == GRPC_ERROR_NONE) {
     grpc_call_next_op(elem, batch);
   } else {
+    error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
+                               GRPC_STATUS_UNAVAILABLE);
     grpc_transport_stream_op_batch_finish_with_failure(batch, error,
                                                        calld->call_combiner);
   }

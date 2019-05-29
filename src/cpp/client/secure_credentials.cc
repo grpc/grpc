@@ -22,6 +22,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/channel_arguments.h>
+#include "src/core/lib/security/transport/auth_filters.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/cpp/common/secure_auth_context.h"
 
@@ -247,10 +248,13 @@ int MetadataCredentialsPluginWrapper::GetMetadata(
     return true;
   }
   if (w->plugin_->IsBlocking()) {
+    grpc_auth_metadata_context context_copy = grpc_auth_metadata_context();
+    grpc_auth_metadata_context_copy(&context, &context_copy);
     // Asynchronous return.
-    w->thread_pool_->Add([w, context, cb, user_data] {
+    w->thread_pool_->Add([w, context_copy, cb, user_data]() mutable {
       w->MetadataCredentialsPluginWrapper::InvokePlugin(
-          context, cb, user_data, nullptr, nullptr, nullptr, nullptr);
+          context_copy, cb, user_data, nullptr, nullptr, nullptr, nullptr);
+      grpc_auth_metadata_context_reset(&context_copy);
     });
     return 0;
   } else {
