@@ -83,8 +83,9 @@ class RoundRobin : public LoadBalancingPolicy {
     RoundRobinSubchannelData(
         SubchannelList<RoundRobinSubchannelList, RoundRobinSubchannelData>*
             subchannel_list,
-        const ServerAddress& address, Subchannel* subchannel)
-        : SubchannelData(subchannel_list, address, subchannel) {}
+        const ServerAddress& address,
+        RefCountedPtr<SubchannelInterface> subchannel)
+        : SubchannelData(subchannel_list, address, std::move(subchannel)) {}
 
     grpc_connectivity_state connectivity_state() const {
       return last_connectivity_state_;
@@ -156,7 +157,7 @@ class RoundRobin : public LoadBalancingPolicy {
     RoundRobin* parent_;
 
     size_t last_picked_index_;
-    InlinedVector<RefCountedPtr<ConnectedSubchannel>, 10> subchannels_;
+    InlinedVector<RefCountedPtr<ConnectedSubchannelInterface>, 10> subchannels_;
   };
 
   // Helper class to ensure that any function that modifies the child refs
