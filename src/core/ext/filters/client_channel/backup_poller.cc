@@ -77,8 +77,6 @@ void grpc_client_channel_global_init_backup_polling() {
   } else {
     g_poll_interval_ms = poll_interval_ms;
   }
-  printf("grpc_client_channel_global_init_backup_polling: %d\n",
-         g_poll_interval_ms);
 }
 
 static void backup_poller_shutdown_unref(backup_poller* p) {
