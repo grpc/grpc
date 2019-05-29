@@ -214,6 +214,8 @@ LANG_RELEASE_MATRIX = {
          ReleaseInfo(patch=[
              'tools/dockerfile/interoptest/grpc_interop_ruby/build_interop.sh',
          ])),
+        ('v1.19.0', ReleaseInfo()),
+        ('v1.20.0', ReleaseInfo()),
         # TODO: https://github.com/grpc/grpc/issues/18262.
         # If you are not encountering the error in above issue
         # go ahead and upload the docker image for new releases.
