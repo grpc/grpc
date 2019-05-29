@@ -99,7 +99,7 @@ struct batch_control {
   } completion_data;
   grpc_closure start_batch;
   grpc_closure finish_batch;
-  grpc_core::Atomic<uintptr_t> steps_to_complete;
+  grpc_core::Atomic<intptr_t> steps_to_complete;
   gpr_atm batch_error = reinterpret_cast<gpr_atm>(GRPC_ERROR_NONE);
   void set_num_steps_to_complete(uintptr_t steps) {
     steps_to_complete.Store(steps, grpc_core::MemoryOrder::RELEASE);
