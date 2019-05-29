@@ -37,6 +37,7 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
@@ -329,9 +330,14 @@ typedef struct {
   bool insert_null_before_wire_value;
 } wire_value;
 
+template <bool mdkey_definitely_interned>
 static wire_value get_wire_value(grpc_mdelem elem, bool true_binary_enabled) {
   wire_value wire_val;
-  if (grpc_is_binary_header(GRPC_MDKEY(elem))) {
+  bool is_bin_hdr =
+      mdkey_definitely_interned
+          ? grpc_is_refcounted_slice_binary_header(GRPC_MDKEY(elem))
+          : grpc_is_binary_header_internal(GRPC_MDKEY(elem));
+  if (is_bin_hdr) {
     if (true_binary_enabled) {
       GRPC_STATS_INC_HPACK_SEND_BINARY();
       wire_val.huffman_prefix = 0x00;
@@ -369,7 +375,7 @@ static void emit_lithdr_incidx(grpc_chttp2_hpack_compressor* c,
                                framer_state* st) {
   GRPC_STATS_INC_HPACK_SEND_LITHDR_INCIDX();
   uint32_t len_pfx = GRPC_CHTTP2_VARINT_LENGTH(key_index, 2);
-  wire_value value = get_wire_value(elem, st->use_true_binary_metadata);
+  wire_value value = get_wire_value<true>(elem, st->use_true_binary_metadata);
   size_t len_val = wire_value_length(value);
   uint32_t len_val_len;
   GPR_ASSERT(len_val <= UINT32_MAX);
@@ -386,7 +392,7 @@ static void emit_lithdr_noidx(grpc_chttp2_hpack_compressor* c,
                               framer_state* st) {
   GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX();
   uint32_t len_pfx = GRPC_CHTTP2_VARINT_LENGTH(key_index, 4);
-  wire_value value = get_wire_value(elem, st->use_true_binary_metadata);
+  wire_value value = get_wire_value<false>(elem, st->use_true_binary_metadata);
   size_t len_val = wire_value_length(value);
   uint32_t len_val_len;
   GPR_ASSERT(len_val <= UINT32_MAX);
@@ -405,7 +411,7 @@ static void emit_lithdr_incidx_v(grpc_chttp2_hpack_compressor* c,
   GRPC_STATS_INC_HPACK_SEND_LITHDR_INCIDX_V();
   GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
   uint32_t len_key = static_cast<uint32_t> GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
-  wire_value value = get_wire_value(elem, st->use_true_binary_metadata);
+  wire_value value = get_wire_value<true>(elem, st->use_true_binary_metadata);
   uint32_t len_val = static_cast<uint32_t>(wire_value_length(value));
   uint32_t len_key_len = GRPC_CHTTP2_VARINT_LENGTH(len_key, 1);
   uint32_t len_val_len = GRPC_CHTTP2_VARINT_LENGTH(len_val, 1);
@@ -427,7 +433,7 @@ static void emit_lithdr_noidx_v(grpc_chttp2_hpack_compressor* c,
   GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX_V();
   GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
   uint32_t len_key = static_cast<uint32_t> GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
-  wire_value value = get_wire_value(elem, st->use_true_binary_metadata);
+  wire_value value = get_wire_value<false>(elem, st->use_true_binary_metadata);
   uint32_t len_val = static_cast<uint32_t>(wire_value_length(value));
   uint32_t len_key_len = GRPC_CHTTP2_VARINT_LENGTH(len_key, 1);
   uint32_t len_val_len = GRPC_CHTTP2_VARINT_LENGTH(len_val, 1);
@@ -470,7 +476,7 @@ static void hpack_enc(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     char* k = grpc_slice_to_c_string(GRPC_MDKEY(elem));
     char* v = nullptr;
-    if (grpc_is_binary_header(GRPC_MDKEY(elem))) {
+    if (grpc_is_binary_header_internal(GRPC_MDKEY(elem))) {
       v = grpc_dump_slice(GRPC_MDVALUE(elem), GPR_DUMP_HEX);
     } else {
       v = grpc_slice_to_c_string(GRPC_MDVALUE(elem));

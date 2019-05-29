@@ -29,7 +29,8 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/validate_metadata.h"
 
-static grpc_error* conforms_to(grpc_slice slice, const uint8_t* legal_bits,
+static grpc_error* conforms_to(const grpc_slice& slice,
+                               const uint8_t* legal_bits,
                                const char* err_desc) {
   const uint8_t* p = GRPC_SLICE_START_PTR(slice);
   const uint8_t* e = GRPC_SLICE_END_PTR(slice);
@@ -57,7 +58,7 @@ static int error2int(grpc_error* error) {
   return r;
 }
 
-grpc_error* grpc_validate_header_key_is_legal(grpc_slice slice) {
+grpc_error* grpc_validate_header_key_is_legal(const grpc_slice& slice) {
   static const uint8_t legal_header_bits[256 / 8] = {
       0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0xff, 0x03, 0x00, 0x00, 0x00,
       0x80, 0xfe, 0xff, 0xff, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -77,7 +78,8 @@ int grpc_header_key_is_legal(grpc_slice slice) {
   return error2int(grpc_validate_header_key_is_legal(slice));
 }
 
-grpc_error* grpc_validate_header_nonbin_value_is_legal(grpc_slice slice) {
+grpc_error* grpc_validate_header_nonbin_value_is_legal(
+    const grpc_slice& slice) {
   static const uint8_t legal_header_bits[256 / 8] = {
       0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
       0xff, 0xff, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -89,7 +91,11 @@ int grpc_header_nonbin_value_is_legal(grpc_slice slice) {
   return error2int(grpc_validate_header_nonbin_value_is_legal(slice));
 }
 
+int grpc_is_binary_header_internal(const grpc_slice& slice) {
+  return grpc_key_is_binary_header(GRPC_SLICE_START_PTR(slice),
+                                   GRPC_SLICE_LENGTH(slice));
+}
+
 int grpc_is_binary_header(grpc_slice slice) {
-  if (GRPC_SLICE_LENGTH(slice) < 5) return 0;
-  return 0 == memcmp(GRPC_SLICE_END_PTR(slice) - 4, "-bin", 4);
+  return grpc_is_binary_header_internal(slice);
 }

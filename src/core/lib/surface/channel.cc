@@ -59,23 +59,6 @@ typedef struct registered_call {
   struct registered_call* next;
 } registered_call;
 
-struct grpc_channel {
-  int is_client;
-  grpc_compression_options compression_options;
-
-  gpr_atm call_size_estimate;
-  grpc_resource_user* resource_user;
-
-  gpr_mu registered_call_mu;
-  registered_call* registered_calls;
-
-  grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_channel;
-
-  char* target;
-};
-
-#define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack*)((c) + 1))
-
 static void destroy_channel(void* arg, grpc_error* error);
 
 grpc_channel* grpc_channel_create_with_builder(
@@ -212,11 +195,6 @@ static grpc_channel_args* build_channel_args(
         const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), default_authority);
   }
   return grpc_channel_args_copy_and_add(input_args, new_args, num_new_args);
-}
-
-grpc_core::channelz::ChannelNode* grpc_channel_get_channelz_node(
-    grpc_channel* channel) {
-  return channel->channelz_channel.get();
 }
 
 grpc_channel* grpc_channel_create(const char* target,
@@ -421,21 +399,6 @@ grpc_call* grpc_channel_create_registered_call(
   return call;
 }
 
-#ifndef NDEBUG
-#define REF_REASON reason
-#define REF_ARG , const char* reason
-#else
-#define REF_REASON ""
-#define REF_ARG
-#endif
-void grpc_channel_internal_ref(grpc_channel* c REF_ARG) {
-  GRPC_CHANNEL_STACK_REF(CHANNEL_STACK_FROM_CHANNEL(c), REF_REASON);
-}
-
-void grpc_channel_internal_unref(grpc_channel* c REF_ARG) {
-  GRPC_CHANNEL_STACK_UNREF(CHANNEL_STACK_FROM_CHANNEL(c), REF_REASON);
-}
-
 static void destroy_channel(void* arg, grpc_error* error) {
   grpc_channel* channel = static_cast<grpc_channel*>(arg);
   if (channel->channelz_channel != nullptr) {
@@ -475,25 +438,9 @@ void grpc_channel_destroy(grpc_channel* channel) {
   GRPC_CHANNEL_INTERNAL_UNREF(channel, "channel");
 }
 
-grpc_channel_stack* grpc_channel_get_channel_stack(grpc_channel* channel) {
-  return CHANNEL_STACK_FROM_CHANNEL(channel);
-}
-
-grpc_compression_options grpc_channel_compression_options(
-    const grpc_channel* channel) {
-  return channel->compression_options;
-}
-
-grpc_mdelem grpc_channel_get_reffed_status_elem(grpc_channel* channel, int i) {
+grpc_mdelem grpc_channel_get_reffed_status_elem_slowpath(grpc_channel* channel,
+                                                         int i) {
   char tmp[GPR_LTOA_MIN_BUFSIZE];
-  switch (i) {
-    case 0:
-      return GRPC_MDELEM_GRPC_STATUS_0;
-    case 1:
-      return GRPC_MDELEM_GRPC_STATUS_1;
-    case 2:
-      return GRPC_MDELEM_GRPC_STATUS_2;
-  }
   gpr_ltoa(i, tmp);
   return grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_STATUS,
                                  grpc_slice_from_copied_string(tmp));
