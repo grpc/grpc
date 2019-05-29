@@ -210,7 +210,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)forwardPreviousInterceptorWithInitialMetadata:(nullable NSDictionary *)initialMetadata;
 
 /** Forward a received message to the previous interceptor in the chain */
-- (void)forwardPreviousIntercetporWithData:(nullable id)data;
+- (void)forwardPreviousInterceptorWithData:(nullable id)data;
 
 /** Forward call close and trailing metadata to the previous interceptor in the chain */
 - (void)forwardPreviousInterceptorCloseWithTrailingMetadata:

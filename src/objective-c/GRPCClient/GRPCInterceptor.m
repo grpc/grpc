@@ -92,7 +92,7 @@
 }
 
 /** Forward a received message to the previous interceptor in the chain */
-- (void)forwardPreviousIntercetporWithData:(id)data {
+- (void)forwardPreviousInterceptorWithData:(id)data {
   if ([_previousInterceptor respondsToSelector:@selector(didReceiveData:)]) {
     id<GRPCResponseHandler> copiedPreviousInterceptor = _previousInterceptor;
     dispatch_async(copiedPreviousInterceptor.dispatchQueue, ^{
@@ -194,7 +194,7 @@
 }
 
 - (void)didReceiveData:(id)data {
-  [_manager forwardPreviousIntercetporWithData:data];
+  [_manager forwardPreviousInterceptorWithData:data];
 }
 
 - (void)didCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {

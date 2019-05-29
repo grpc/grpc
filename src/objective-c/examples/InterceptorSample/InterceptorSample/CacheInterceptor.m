@@ -167,7 +167,8 @@
   dispatch_queue_t _dispatchQueue;
 
   BOOL _cacheable;
-  BOOL _messageSeen;
+  BOOL _writeMessageSeen;
+  BOOL _readMessageSeen;
   GRPCCallOptions *_callOptions;
   GRPCRequestOptions *_requestOptions;
   id _requestMessage;
@@ -193,7 +194,8 @@
     _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
 
     _cacheable = YES;
-    _messageSeen = NO;
+    _writeMessageSeen = NO;
+    _readMessageSeen = NO;
     _request = nil;
     _response = nil;
   }
@@ -202,9 +204,7 @@
 
 - (void)startWithRequestOptions:(GRPCRequestOptions *)requestOptions
                     callOptions:(GRPCCallOptions *)callOptions {
-  NSLog(@"start");
   if (requestOptions.safety != GRPCCallSafetyCacheableRequest) {
-    NSLog(@"no cache");
     _cacheable = NO;
     [_manager startNextInterceptorWithRequest:requestOptions callOptions:callOptions];
   } else {
@@ -214,21 +214,19 @@
 }
 
 - (void)writeData:(id)data {
-  NSLog(@"writeData");
   if (!_cacheable) {
     [_manager writeNextInterceptorWithData:data];
   } else {
-    NSAssert(!_messageSeen, @"CacheInterceptor does not support streaming call");
-    if (_messageSeen) {
+    NSAssert(!_writeMessageSeen, @"CacheInterceptor does not support streaming call");
+    if (_writeMessageSeen) {
       NSLog(@"CacheInterceptor does not support streaming call");
     }
-    _messageSeen = YES;
+    _writeMessageSeen = YES;
     _requestMessage = [data copy];
   }
 }
 
 - (void)finish {
-  NSLog(@"finish");
   if (!_cacheable) {
     [_manager finishNextInterceptor];
   } else {
@@ -236,14 +234,13 @@
     _request.path = _requestOptions.path;
     _request.message = [_requestMessage copy];
     _response = [[_context getCachedResponseForRequest:_request] copy];
-    NSLog(@"Read cache for %@", _request);
     if (!_response) {
       [_manager startNextInterceptorWithRequest:_requestOptions callOptions:_callOptions];
       [_manager writeNextInterceptorWithData:_requestMessage];
       [_manager finishNextInterceptor];
     } else {
       [_manager forwardPreviousInterceptorWithInitialMetadata:_response.headers];
-      [_manager forwardPreviousIntercetporWithData:_response.message];
+      [_manager forwardPreviousInterceptorWithData:_response.message];
       [_manager forwardPreviousInterceptorCloseWithTrailingMetadata:_response.trailers error:nil];
       [_manager shutDown];
     }
@@ -251,7 +248,6 @@
 }
 
 - (void)didReceiveInitialMetadata:(NSDictionary *)initialMetadata {
-  NSLog(@"initialMetadata");
   if (_cacheable) {
     NSDate *deadline = nil;
     for (NSString *key in initialMetadata) {
@@ -286,15 +282,18 @@
 }
 
 - (void)didReceiveData:(id)data {
-  NSLog(@"receiveData");
   if (_cacheable) {
+    NSAssert(!_readMessageSeen, @"CacheInterceptor does not support streaming call");
+    if (_readMessageSeen) {
+      NSLog(@"CacheInterceptor does not support streaming call");
+    }
+    _readMessageSeen = YES;
     _response.message = [data copy];
   }
-  [_manager forwardPreviousIntercetporWithData:data];
+  [_manager forwardPreviousInterceptorWithData:data];
 }
 
 - (void)didCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
-  NSLog(@"close");
   if (error == nil && _cacheable) {
     _response.trailers = [trailingMetadata copy];
     [_context setCachedResponse:_response forRequest:_request];

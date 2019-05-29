@@ -68,8 +68,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
                  callOptions:(GRPCCallOptions *)callOptions
                    writeDone:(void (^)(void))writeDone;
 
-- (void)receiveNextMessages:(NSUInteger)numberOfMessages;
-
 @end
 
 @implementation GRPCRequestOptions
