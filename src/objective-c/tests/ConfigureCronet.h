@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,19 @@
  *
  */
 
-#import <Foundation/Foundation.h>
+#ifdef GRPC_COMPILE_WITH_CRONET
 
-@interface Tests : NSObject
-@end
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-@implementation Tests
-@end
+/**
+ * Enable Cronet for once.
+ */
+void configureCronet(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

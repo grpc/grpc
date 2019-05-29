@@ -57,7 +57,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   ResolvingLoadBalancingPolicy(
       Args args, TraceFlag* tracer, UniquePtr<char> target_uri,
       UniquePtr<char> child_policy_name,
-      RefCountedPtr<ParsedLoadBalancingConfig> child_lb_config,
+      RefCountedPtr<LoadBalancingPolicy::Config> child_lb_config,
       grpc_error** error);
 
   // Private ctor, to be used by client_channel only!
@@ -69,8 +69,9 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   // empty, it means that we don't have a valid service config to use, and we
   // should set the channel to be in TRANSIENT_FAILURE.
   typedef bool (*ProcessResolverResultCallback)(
-      void* user_data, Resolver::Result* result, const char** lb_policy_name,
-      RefCountedPtr<ParsedLoadBalancingConfig>* lb_policy_config,
+      void* user_data, const Resolver::Result& result,
+      const char** lb_policy_name,
+      RefCountedPtr<LoadBalancingPolicy::Config>* lb_policy_config,
       grpc_error** service_config_error);
   // If error is set when this returns, then construction failed, and
   // the caller may not use the new object.
@@ -109,7 +110,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   void OnResolverError(grpc_error* error);
   void CreateOrUpdateLbPolicyLocked(
       const char* lb_policy_name,
-      RefCountedPtr<ParsedLoadBalancingConfig> lb_policy_config,
+      RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
       Resolver::Result result, TraceStringVector* trace_strings);
   OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(
       const char* lb_policy_name, const grpc_channel_args& args,
@@ -126,7 +127,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   ProcessResolverResultCallback process_resolver_result_ = nullptr;
   void* process_resolver_result_user_data_ = nullptr;
   UniquePtr<char> child_policy_name_;
-  RefCountedPtr<ParsedLoadBalancingConfig> child_lb_config_;
+  RefCountedPtr<LoadBalancingPolicy::Config> child_lb_config_;
 
   // Resolver and associated state.
   OrphanablePtr<Resolver> resolver_;

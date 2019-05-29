@@ -120,10 +120,12 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
           cb_(cb),
           user_data_(user_data) {}
 
-    PickResult Pick(PickArgs* pick, grpc_error** error) override {
-      PickResult result = delegate_picker_->Pick(pick, error);
-      if (result == PICK_COMPLETE && pick->connected_subchannel != nullptr) {
-        New<TrailingMetadataHandler>(pick, cb_, user_data_);  // deletes itself
+    PickResult Pick(PickArgs args) override {
+      PickResult result = delegate_picker_->Pick(args);
+      if (result.type == PickResult::PICK_COMPLETE &&
+          result.connected_subchannel != nullptr) {
+        new (args.call_state->Alloc(sizeof(TrailingMetadataHandler)))
+            TrailingMetadataHandler(&result, cb_, user_data_);
       }
       return result;
     }
@@ -141,7 +143,8 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
         InterceptRecvTrailingMetadataCallback cb, void* user_data)
         : parent_(std::move(parent)), cb_(cb), user_data_(user_data) {}
 
-    Subchannel* CreateSubchannel(const grpc_channel_args& args) override {
+    RefCountedPtr<SubchannelInterface> CreateSubchannel(
+        const grpc_channel_args& args) override {
       return parent_->channel_control_helper()->CreateSubchannel(args);
     }
 
@@ -164,35 +167,27 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
 
   class TrailingMetadataHandler {
    public:
-    TrailingMetadataHandler(PickArgs* pick,
+    TrailingMetadataHandler(PickResult* result,
                             InterceptRecvTrailingMetadataCallback cb,
                             void* user_data)
         : cb_(cb), user_data_(user_data) {
-      GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
-                        RecordRecvTrailingMetadata, this,
-                        grpc_schedule_on_exec_ctx);
-      pick->recv_trailing_metadata_ready = &recv_trailing_metadata_ready_;
-      pick->original_recv_trailing_metadata_ready =
-          &original_recv_trailing_metadata_ready_;
-      pick->recv_trailing_metadata = &recv_trailing_metadata_;
+      result->recv_trailing_metadata_ready = &RecordRecvTrailingMetadata;
+      result->recv_trailing_metadata_ready_user_data = this;
     }
 
    private:
-    static void RecordRecvTrailingMetadata(void* arg, grpc_error* err) {
+    static void RecordRecvTrailingMetadata(
+        void* arg, grpc_metadata_batch* recv_trailing_metadata,
+        CallState* call_state) {
       TrailingMetadataHandler* self =
           static_cast<TrailingMetadataHandler*>(arg);
-      GPR_ASSERT(self->recv_trailing_metadata_ != nullptr);
+      GPR_ASSERT(recv_trailing_metadata != nullptr);
       self->cb_(self->user_data_);
-      GRPC_CLOSURE_SCHED(self->original_recv_trailing_metadata_ready_,
-                         GRPC_ERROR_REF(err));
-      Delete(self);
+      self->~TrailingMetadataHandler();
     }
 
     InterceptRecvTrailingMetadataCallback cb_;
     void* user_data_;
-    grpc_closure recv_trailing_metadata_ready_;
-    grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
-    grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
   };
 };
 

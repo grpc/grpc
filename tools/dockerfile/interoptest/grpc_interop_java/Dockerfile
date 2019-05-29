@@ -15,19 +15,11 @@
 FROM debian:jessie
 
 
-# Install JDK 8
-#
-RUN echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections && \
-  echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee /etc/apt/sources.list.d/webupd8team-java.list && \
-  echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list && \
-  apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886 && \
-  apt-get update && apt-get -y install oracle-java8-installer && \
-  apt-get clean && rm -r /var/cache/oracle-jdk8-installer/
-
-ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
-ENV PATH $PATH:$JAVA_HOME/bin
-
-
+RUN echo "deb http://archive.debian.org/debian/ jessie-backports main contrib non-free" > /etc/apt/sources.list.d/jessie-backports.list && \
+    echo 'Acquire::Check-Valid-Until no;' > /etc/apt/apt.conf.d/99no-check-valid-until && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends -t jessie-backports openjdk-8-jdk-headless && \
+    apt-get clean
 
 # Define the default command.
 CMD ["bash"]

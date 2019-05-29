@@ -85,7 +85,7 @@ static grpc_error* process_plugin_result(
                              grpc_validate_header_key_is_legal(md[i].key))) {
         seen_illegal_header = true;
         break;
-      } else if (!grpc_is_binary_header(md[i].key) &&
+      } else if (!grpc_is_binary_header_internal(md[i].key) &&
                  !GRPC_LOG_IF_ERROR(
                      "validate_metadata_from_plugin",
                      grpc_validate_header_nonbin_value_is_legal(md[i].value))) {

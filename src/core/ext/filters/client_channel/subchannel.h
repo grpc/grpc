@@ -23,6 +23,7 @@
 
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/connector.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -69,7 +70,7 @@ namespace grpc_core {
 
 class SubchannelCall;
 
-class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
+class ConnectedSubchannel : public ConnectedSubchannelInterface {
  public:
   struct CallArgs {
     grpc_polling_entity* pollent;
@@ -96,7 +97,7 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
                                            grpc_error** error);
 
   grpc_channel_stack* channel_stack() const { return channel_stack_; }
-  const grpc_channel_args* args() const { return args_; }
+  const grpc_channel_args* args() const override { return args_; }
   channelz::SubchannelNode* channelz_subchannel() const {
     return channelz_subchannel_.get();
   }
@@ -176,37 +177,9 @@ class SubchannelCall {
 // A subchannel that knows how to connect to exactly one target address. It
 // provides a target for load balancing.
 class Subchannel {
- private:
-  class ConnectivityStateWatcherList;  // Forward declaration.
-
  public:
-  class ConnectivityStateWatcher {
-   public:
-    virtual ~ConnectivityStateWatcher() = default;
-
-    // Will be invoked whenever the subchannel's connectivity state
-    // changes.  There will be only one invocation of this method on a
-    // given watcher instance at any given time.
-    //
-    // When the state changes to READY, connected_subchannel will
-    // contain a ref to the connected subchannel.  When it changes from
-    // READY to some other state, the implementation must release its
-    // ref to the connected subchannel.
-    virtual void OnConnectivityStateChange(
-        grpc_connectivity_state new_state,
-        RefCountedPtr<ConnectedSubchannel> connected_subchannel)  // NOLINT
-        GRPC_ABSTRACT;
-
-    virtual grpc_pollset_set* interested_parties() GRPC_ABSTRACT;
-
-    GRPC_ABSTRACT_BASE_CLASS
-
-   private:
-    // For access to next_.
-    friend class Subchannel::ConnectivityStateWatcherList;
-
-    ConnectivityStateWatcher* next_ = nullptr;
-  };
+  typedef SubchannelInterface::ConnectivityStateWatcher
+      ConnectivityStateWatcher;
 
   // The ctor and dtor are not intended to use directly.
   Subchannel(SubchannelKey* key, grpc_connector* connector,
@@ -296,12 +269,15 @@ class Subchannel {
     // Notifies all watchers in the list about a change to state.
     void NotifyLocked(Subchannel* subchannel, grpc_connectivity_state state);
 
-    void Clear();
+    void Clear() { watchers_.clear(); }
 
-    bool empty() const { return head_ == nullptr; }
+    bool empty() const { return watchers_.empty(); }
 
    private:
-    ConnectivityStateWatcher* head_ = nullptr;
+    // TODO(roth): This could be a set instead of a map if we had a set
+    // implementation.
+    Map<ConnectivityStateWatcher*, UniquePtr<ConnectivityStateWatcher>>
+        watchers_;
   };
 
   // A map that tracks ConnectivityStateWatchers using a particular health

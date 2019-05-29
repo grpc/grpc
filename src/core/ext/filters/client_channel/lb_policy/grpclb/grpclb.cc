@@ -118,19 +118,19 @@ namespace {
 
 constexpr char kGrpclb[] = "grpclb";
 
-class ParsedGrpcLbConfig : public ParsedLoadBalancingConfig {
+class ParsedGrpcLbConfig : public LoadBalancingPolicy::Config {
  public:
   explicit ParsedGrpcLbConfig(
-      RefCountedPtr<ParsedLoadBalancingConfig> child_policy)
+      RefCountedPtr<LoadBalancingPolicy::Config> child_policy)
       : child_policy_(std::move(child_policy)) {}
   const char* name() const override { return kGrpclb; }
 
-  RefCountedPtr<ParsedLoadBalancingConfig> child_policy() const {
+  RefCountedPtr<LoadBalancingPolicy::Config> child_policy() const {
     return child_policy_;
   }
 
  private:
-  RefCountedPtr<ParsedLoadBalancingConfig> child_policy_;
+  RefCountedPtr<LoadBalancingPolicy::Config> child_policy_;
 };
 
 class GrpcLb : public LoadBalancingPolicy {
@@ -274,7 +274,7 @@ class GrpcLb : public LoadBalancingPolicy {
           child_picker_(std::move(child_picker)),
           client_stats_(std::move(client_stats)) {}
 
-    PickResult Pick(PickArgs* pick, grpc_error** error) override;
+    PickResult Pick(PickArgs args) override;
 
    private:
     // Storing the address for logging, but not holding a ref.
@@ -293,7 +293,8 @@ class GrpcLb : public LoadBalancingPolicy {
     explicit Helper(RefCountedPtr<GrpcLb> parent)
         : parent_(std::move(parent)) {}
 
-    Subchannel* CreateSubchannel(const grpc_channel_args& args) override;
+    RefCountedPtr<SubchannelInterface> CreateSubchannel(
+        const grpc_channel_args& args) override;
     void UpdateState(grpc_connectivity_state state,
                      UniquePtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
@@ -392,7 +393,7 @@ class GrpcLb : public LoadBalancingPolicy {
   // until it reports READY, at which point it will be moved to child_policy_.
   OrphanablePtr<LoadBalancingPolicy> pending_child_policy_;
   // The child policy config.
-  RefCountedPtr<ParsedLoadBalancingConfig> child_policy_config_;
+  RefCountedPtr<LoadBalancingPolicy::Config> child_policy_config_;
   // Child policy in state READY.
   bool child_policy_ready_ = false;
 };
@@ -559,7 +560,8 @@ const char* GrpcLb::Serverlist::ShouldDrop() {
 // GrpcLb::Picker
 //
 
-GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs* pick, grpc_error** error) {
+GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
+  PickResult result;
   // Check if we should drop the call.
   const char* drop_token = serverlist_->ShouldDrop();
   if (drop_token != nullptr) {
@@ -571,26 +573,28 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs* pick, grpc_error** error) {
     if (client_stats_ != nullptr) {
       client_stats_->AddCallDropped(drop_token);
     }
-    return PICK_COMPLETE;
+    result.type = PickResult::PICK_COMPLETE;
+    return result;
   }
   // Forward pick to child policy.
-  PickResult result = child_picker_->Pick(pick, error);
+  result = child_picker_->Pick(args);
   // If pick succeeded, add LB token to initial metadata.
-  if (result == PickResult::PICK_COMPLETE &&
-      pick->connected_subchannel != nullptr) {
+  if (result.type == PickResult::PICK_COMPLETE &&
+      result.connected_subchannel != nullptr) {
     const grpc_arg* arg = grpc_channel_args_find(
-        pick->connected_subchannel->args(), GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN);
+        result.connected_subchannel->args(), GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN);
     if (arg == nullptr) {
       gpr_log(GPR_ERROR,
-              "[grpclb %p picker %p] No LB token for connected subchannel "
-              "pick %p",
-              parent_, this, pick);
+              "[grpclb %p picker %p] No LB token for connected subchannel %p",
+              parent_, this, result.connected_subchannel.get());
       abort();
     }
     grpc_mdelem lb_token = {reinterpret_cast<uintptr_t>(arg->value.pointer.p)};
     GPR_ASSERT(!GRPC_MDISNULL(lb_token));
+    grpc_linked_mdelem* mdelem_storage = static_cast<grpc_linked_mdelem*>(
+        args.call_state->Alloc(sizeof(grpc_linked_mdelem)));
     GPR_ASSERT(grpc_metadata_batch_add_tail(
-                   pick->initial_metadata, &pick->lb_token_mdelem_storage,
+                   args.initial_metadata, mdelem_storage,
                    GRPC_MDELEM_REF(lb_token)) == GRPC_ERROR_NONE);
     GrpcLbClientStats* client_stats = static_cast<GrpcLbClientStats*>(
         grpc_mdelem_get_user_data(lb_token, GrpcLbClientStats::Destroy));
@@ -615,7 +619,8 @@ bool GrpcLb::Helper::CalledByCurrentChild() const {
   return child_ == parent_->child_policy_.get();
 }
 
-Subchannel* GrpcLb::Helper::CreateSubchannel(const grpc_channel_args& args) {
+RefCountedPtr<SubchannelInterface> GrpcLb::Helper::CreateSubchannel(
+    const grpc_channel_args& args) {
   if (parent_->shutting_down_ ||
       (!CalledByPendingChild() && !CalledByCurrentChild())) {
     return nullptr;
@@ -1788,15 +1793,15 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 
   const char* name() const override { return kGrpclb; }
 
-  RefCountedPtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
+  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
       const grpc_json* json, grpc_error** error) const override {
     GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
     if (json == nullptr) {
-      return RefCountedPtr<ParsedLoadBalancingConfig>(
+      return RefCountedPtr<LoadBalancingPolicy::Config>(
           New<ParsedGrpcLbConfig>(nullptr));
     }
     InlinedVector<grpc_error*, 2> error_list;
-    RefCountedPtr<ParsedLoadBalancingConfig> child_policy;
+    RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
     for (const grpc_json* field = json->child; field != nullptr;
          field = field->next) {
       if (field->key == nullptr) continue;
@@ -1814,7 +1819,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
       }
     }
     if (error_list.empty()) {
-      return RefCountedPtr<ParsedLoadBalancingConfig>(
+      return RefCountedPtr<LoadBalancingPolicy::Config>(
           New<ParsedGrpcLbConfig>(std::move(child_policy)));
     } else {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR("GrpcLb Parser", &error_list);

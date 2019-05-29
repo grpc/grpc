@@ -14,7 +14,11 @@
 
 <%include file="../../debian_jessie_header.include"/>
 
-<%include file="java_deps.include"/>
+RUN echo "deb http://archive.debian.org/debian/ jessie-backports main contrib non-free" > /etc/apt/sources.list.d/jessie-backports.list && ${'\\'}
+    echo 'Acquire::Check-Valid-Until no;' > /etc/apt/apt.conf.d/99no-check-valid-until && ${'\\'}
+    apt-get update && ${'\\'}
+    apt-get install -y --no-install-recommends -t jessie-backports openjdk-8-jdk-headless && ${'\\'}
+    apt-get clean
 
 # Define the default command.
 CMD ["bash"]
