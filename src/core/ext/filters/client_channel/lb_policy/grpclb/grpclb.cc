@@ -1235,6 +1235,9 @@ grpc_channel_args* BuildBalancerChannelArgs(
       // treated as a stand-alone channel and not inherit this argument from the
       // args of the parent channel.
       GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
+      // Don't want to pass down channelz node from parent; the balancer
+      // channel will get its own.
+      GRPC_ARG_CHANNELZ_CHANNEL_NODE,
   };
   // Channel args to add.
   InlinedVector<grpc_arg, 3> args_to_add;
