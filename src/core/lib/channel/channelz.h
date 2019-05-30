@@ -153,18 +153,6 @@ class ChannelNode : public BaseNode {
 
   grpc_json* RenderJson() override;
 
-  // Template method used by RenderJSON().  Subclasses can override this
-  // for populating the connectivity state info in the JSON output.
-  //
-  // ChannelNode does not have a notion of connectivity state, so the
-  // default implementation does nothing.
-  //
-  // This is utilizing the template method design pattern.
-  //
-  // TODO(ncteisen): Remove this template method in favor of manual traversal
-  // and mutation of the grpc_json object.
-  virtual void PopulateConnectivityState(grpc_json* json) {}
-
   // proxy methods to composed classes.
   void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
     trace_.AddTraceEvent(severity, data);
