@@ -539,7 +539,7 @@ XdsLb::PickResult XdsLb::Picker::Pick(PickArgs args) {
   PickResult result = PickFromLocality(key, args);
   // If pick succeeded, add client stats.
   if (result.type == PickResult::PICK_COMPLETE &&
-      result.connected_subchannel != nullptr && client_stats_ != nullptr) {
+      result.subchannel != nullptr && client_stats_ != nullptr) {
     // TODO(roth): Add support for client stats.
   }
   return result;

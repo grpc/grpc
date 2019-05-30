@@ -159,6 +159,9 @@ class ChannelData {
     return service_config_;
   }
 
+  RefCountedPtr<ConnectedSubchannel> GetConnectedSubchannel(
+      SubchannelInterface* subchannel) const;
+
   grpc_connectivity_state CheckConnectivityState(bool try_to_connect);
   void AddExternalConnectivityWatcher(grpc_polling_entity pollent,
                                       grpc_connectivity_state* state,
@@ -971,39 +974,57 @@ void ChannelData::ExternalConnectivityWatcher::WatchConnectivityStateLocked(
 // control plane combiner.
 class ChannelData::GrpcSubchannel : public SubchannelInterface {
  public:
-  GrpcSubchannel(Subchannel* subchannel,
+  GrpcSubchannel(ChannelData* chand, Subchannel* subchannel,
                  UniquePtr<char> health_check_service_name)
-      : subchannel_(subchannel),
-        health_check_service_name_(std::move(health_check_service_name)) {}
+      : chand_(chand),
+        subchannel_(subchannel),
+        health_check_service_name_(std::move(health_check_service_name)) {
+    GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "GrpcSubchannel");
+  }
 
-  ~GrpcSubchannel() { GRPC_SUBCHANNEL_UNREF(subchannel_, "unref from LB"); }
+  ~GrpcSubchannel() {
+    GRPC_SUBCHANNEL_UNREF(subchannel_, "unref from LB");
+    GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "GrpcSubchannel");
+  }
 
-  grpc_connectivity_state CheckConnectivityState(
-      RefCountedPtr<ConnectedSubchannelInterface>* connected_subchannel)
-      override {
-    RefCountedPtr<ConnectedSubchannel> tmp;
-    auto retval = subchannel_->CheckConnectivityState(
-        health_check_service_name_.get(), &tmp);
-    *connected_subchannel = std::move(tmp);
-    return retval;
+  grpc_connectivity_state CheckConnectivityState() override {
+    RefCountedPtr<ConnectedSubchannel> connected_subchannel;
+    grpc_connectivity_state connectivity_state =
+        subchannel_->CheckConnectivityState(health_check_service_name_.get(),
+                                            &connected_subchannel);
+    if (connected_subchannel_ != connected_subchannel) {
+      connected_subchannel_ = std::move(connected_subchannel);
+      New<ConnectedSubchannelCopier>(Ref());  // Deletes itself.
+    }
+    return connectivity_state;
   }
 
   void WatchConnectivityState(
       grpc_connectivity_state initial_state,
       UniquePtr<ConnectivityStateWatcher> watcher) override {
+    auto& watcher_wrapper = watcher_map_[watcher.get()];
+    GPR_ASSERT(watcher_wrapper == nullptr);
+    watcher_wrapper = New<WatcherWrapper>(std::move(watcher), Ref());
     subchannel_->WatchConnectivityState(
         initial_state,
         UniquePtr<char>(gpr_strdup(health_check_service_name_.get())),
-        std::move(watcher));
+        UniquePtr<Subchannel::ConnectivityStateWatcher>(watcher_wrapper));
   }
 
   void CancelConnectivityStateWatch(
       ConnectivityStateWatcher* watcher) override {
+    auto it = watcher_map_.find(watcher);
+    GPR_ASSERT(it != watcher_map_.end());
     subchannel_->CancelConnectivityStateWatch(health_check_service_name_.get(),
-                                              watcher);
+                                              it->second);
+    watcher_map_.erase(it);
   }
 
   void AttemptToConnect() override { subchannel_->AttemptToConnect(); }
+
+  const grpc_channel_args* channel_args() override {
+    return subchannel_->channel_args();
+  }
 
   channelz::SubchannelNode* channelz_node() override {
     return subchannel_->channelz_node();
@@ -1011,9 +1032,88 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
 
   void ResetBackoff() override { subchannel_->ResetBackoff(); }
 
+  // Caller must be holding the control-plane combiner.
+  ConnectedSubchannel* connected_subchannel() const {
+    return connected_subchannel_.get();
+  }
+
+  // Caller must be holding the data-plane combiner.
+  ConnectedSubchannel* connected_subchannel_in_data_plane() const {
+    return connected_subchannel_in_data_plane_.get();
+  }
+
  private:
+  // We wrap the watcher passed to us from the LB policy inside of this
+  // one before passing it to the underlying subchannel.  This allows us
+  // to set the connected subchannel before passing the result back to
+  // the LB policy.
+  class WatcherWrapper : public Subchannel::ConnectivityStateWatcher {
+   public:
+    WatcherWrapper(
+        UniquePtr<SubchannelInterface::ConnectivityStateWatcher> watcher,
+        RefCountedPtr<GrpcSubchannel> parent)
+        : watcher_(std::move(watcher)), parent_(std::move(parent)) {}
+
+    void OnConnectivityStateChange(
+        grpc_connectivity_state new_state,
+        RefCountedPtr<ConnectedSubchannel> connected_subchannel) override {
+      if (parent_->connected_subchannel_ != connected_subchannel) {
+        parent_->connected_subchannel_ = std::move(connected_subchannel);
+        New<ConnectedSubchannelCopier>(parent_);  // Deletes itself.
+      }
+      watcher_->OnConnectivityStateChange(new_state);
+    }
+
+    grpc_pollset_set* interested_parties() override {
+      return watcher_->interested_parties();
+    }
+
+   private:
+    UniquePtr<SubchannelInterface::ConnectivityStateWatcher> watcher_;
+    RefCountedPtr<GrpcSubchannel> parent_;
+  };
+
+  // Fire-and-forget class that hops into the data plane combiner to set
+  // the connected_subchannel_in_data_plane_ field.
+  class ConnectedSubchannelCopier {
+   public:
+    explicit ConnectedSubchannelCopier(RefCountedPtr<GrpcSubchannel> parent)
+        : parent_(std::move(parent)),
+          connected_subchannel_(parent_->connected_subchannel_) {
+      GRPC_CLOSURE_INIT(&closure_, SetConnectedSubchannelInDataPlane, this,
+                        grpc_combiner_scheduler(
+                            parent_->chand_->data_plane_combiner_));
+      GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
+    }
+
+   private:
+    static void SetConnectedSubchannelInDataPlane(void *arg,
+                                                  grpc_error* error) {
+      ConnectedSubchannelCopier* self =
+          static_cast<ConnectedSubchannelCopier*>(arg);
+      self->parent_->connected_subchannel_in_data_plane_ =
+          std::move(self->connected_subchannel_);
+      Delete(self);
+    }
+
+    RefCountedPtr<GrpcSubchannel> parent_;
+    RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
+    grpc_closure closure_;
+  };
+
+  ChannelData* chand_;
   Subchannel* subchannel_;
   UniquePtr<char> health_check_service_name_;
+  // Maps from the address of the watcher passed to us by the LB policy
+  // to the address of the WrapperWatcher that we passed to the underlying
+  // subchannel.  This is needed so that when the LB policy calls
+  // CancelConnectivityStateWatch() with its watcher, we know the
+  // corresponding WrapperWatcher to cancel on the underlying subchannel.
+  Map<ConnectivityStateWatcher*, WatcherWrapper*> watcher_map_;
+  // To be accessed only in the control plane combiner.
+  RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
+  // To be accessed only in the data plane combiner.
+  RefCountedPtr<ConnectedSubchannel> connected_subchannel_in_data_plane_;
 };
 
 //
@@ -1050,7 +1150,7 @@ class ChannelData::ClientChannelControlHelper
         chand_->client_channel_factory_->CreateSubchannel(new_args);
     grpc_channel_args_destroy(new_args);
     if (subchannel == nullptr) return nullptr;
-    return MakeRefCounted<GrpcSubchannel>(subchannel,
+    return MakeRefCounted<GrpcSubchannel>(chand_, subchannel,
                                           std::move(health_check_service_name));
   }
 
@@ -1403,9 +1503,13 @@ grpc_error* ChannelData::DoPingLocked(grpc_transport_op* op) {
   }
   LoadBalancingPolicy::PickResult result =
       picker_->Pick(LoadBalancingPolicy::PickArgs());
-  if (result.connected_subchannel != nullptr) {
-    ConnectedSubchannel* connected_subchannel =
-        static_cast<ConnectedSubchannel*>(result.connected_subchannel.get());
+  ConnectedSubchannel* connected_subchannel = nullptr;
+  if (result.subchannel != nullptr) {
+    GrpcSubchannel* subchannel =
+        static_cast<GrpcSubchannel*>(result.subchannel.get());
+    connected_subchannel = subchannel->connected_subchannel();
+  }
+  if (connected_subchannel != nullptr) {
     connected_subchannel->Ping(op->send_ping.on_initiate, op->send_ping.on_ack);
   } else {
     if (result.error == GRPC_ERROR_NONE) {
@@ -1520,6 +1624,15 @@ void ChannelData::RemoveQueuedPick(QueuedPick* to_remove,
       return;
     }
   }
+}
+
+RefCountedPtr<ConnectedSubchannel> ChannelData::GetConnectedSubchannel(
+    SubchannelInterface* subchannel) const {
+  GrpcSubchannel* grpc_subchannel = static_cast<GrpcSubchannel*>(subchannel);
+  ConnectedSubchannel* connected_subchannel =
+      grpc_subchannel->connected_subchannel_in_data_plane();
+  if (connected_subchannel == nullptr) return nullptr;
+  return connected_subchannel->Ref();
 }
 
 void ChannelData::TryToConnectLocked(void* arg, grpc_error* error_ignored) {
@@ -3449,10 +3562,9 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
   auto result = chand->picker()->Pick(pick_args);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO,
-            "chand=%p calld=%p: LB pick returned %s (connected_subchannel=%p, "
-            "error=%s)",
+            "chand=%p calld=%p: LB pick returned %s (subchannel=%p, error=%s)",
             chand, calld, PickResultTypeName(result.type),
-            result.connected_subchannel.get(), grpc_error_string(result.error));
+            result.subchannel.get(), grpc_error_string(result.error));
   }
   switch (result.type) {
     case LoadBalancingPolicy::PickResult::PICK_TRANSIENT_FAILURE: {
@@ -3494,11 +3606,20 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
       break;
     default:  // PICK_COMPLETE
       // Handle drops.
-      if (GPR_UNLIKELY(result.connected_subchannel == nullptr)) {
+      if (GPR_UNLIKELY(result.subchannel == nullptr)) {
         result.error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Call dropped by load balancing policy");
+      } else {
+        // Grab a ref to the connected subchannel while we're still
+        // holding the data plane combiner.
+        calld->connected_subchannel_ =
+            chand->GetConnectedSubchannel(result.subchannel.get());
+        if (calld->connected_subchannel_ == nullptr) {
+// FIXME: what if LB policy requested a trailing metadata callback?
+          if (!calld->pick_queued_) calld->AddCallToQueuedPicksLocked(elem);
+          break;
+        }
       }
-      calld->connected_subchannel_ = std::move(result.connected_subchannel);
       calld->lb_recv_trailing_metadata_ready_ =
           result.recv_trailing_metadata_ready;
       calld->lb_recv_trailing_metadata_ready_user_data_ =

@@ -23,7 +23,6 @@
 
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/connector.h"
-#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -70,7 +69,7 @@ namespace grpc_core {
 
 class SubchannelCall;
 
-class ConnectedSubchannel : public ConnectedSubchannelInterface {
+class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
  public:
   struct CallArgs {
     grpc_polling_entity* pollent;
@@ -97,7 +96,7 @@ class ConnectedSubchannel : public ConnectedSubchannelInterface {
                                            grpc_error** error);
 
   grpc_channel_stack* channel_stack() const { return channel_stack_; }
-  const grpc_channel_args* args() const override { return args_; }
+  const grpc_channel_args* args() const { return args_; }
   channelz::SubchannelNode* channelz_subchannel() const {
     return channelz_subchannel_.get();
   }
@@ -178,8 +177,27 @@ class SubchannelCall {
 // provides a target for load balancing.
 class Subchannel {
  public:
-  typedef SubchannelInterface::ConnectivityStateWatcher
-      ConnectivityStateWatcher;
+  class ConnectivityStateWatcher {
+   public:
+    virtual ~ConnectivityStateWatcher() = default;
+
+    // Will be invoked whenever the subchannel's connectivity state
+    // changes.  There will be only one invocation of this method on a
+    // given watcher instance at any given time.
+    //
+    // When the state changes to READY, connected_subchannel will
+    // contain a ref to the connected subchannel.  When it changes from
+    // READY to some other state, the implementation must release its
+    // ref to the connected subchannel.
+    virtual void OnConnectivityStateChange(
+        grpc_connectivity_state new_state,
+        RefCountedPtr<ConnectedSubchannel> connected_subchannel)  // NOLINT
+        GRPC_ABSTRACT;
+
+    virtual grpc_pollset_set* interested_parties() GRPC_ABSTRACT;
+
+    GRPC_ABSTRACT_BASE_CLASS
+  };
 
   // The ctor and dtor are not intended to use directly.
   Subchannel(SubchannelKey* key, grpc_connector* connector,
@@ -205,6 +223,8 @@ class Subchannel {
   // Gets the string representing the subchannel address.
   // Caller doesn't take ownership.
   const char* GetTargetAddress();
+
+  const grpc_channel_args* channel_args() const { return args_; }
 
   channelz::SubchannelNode* channelz_node();
 

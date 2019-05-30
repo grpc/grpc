@@ -83,7 +83,7 @@ ConnectedSubchannel::ConnectedSubchannel(
     grpc_channel_stack* channel_stack, const grpc_channel_args* args,
     RefCountedPtr<channelz::SubchannelNode> channelz_subchannel,
     intptr_t socket_uuid)
-    : ConnectedSubchannelInterface(&grpc_trace_stream_refcount),
+    : RefCounted<ConnectedSubchannel>(&grpc_trace_stream_refcount),
       channel_stack_(channel_stack),
       args_(grpc_channel_args_copy(args)),
       channelz_subchannel_(std::move(channelz_subchannel)),

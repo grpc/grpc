@@ -113,19 +113,18 @@ class PickFirst : public LoadBalancingPolicy {
 
   class Picker : public SubchannelPicker {
    public:
-    explicit Picker(
-        RefCountedPtr<ConnectedSubchannelInterface> connected_subchannel)
-        : connected_subchannel_(std::move(connected_subchannel)) {}
+    explicit Picker(RefCountedPtr<SubchannelInterface> subchannel)
+        : subchannel_(std::move(subchannel)) {}
 
-    PickResult Pick(PickArgs args) override {
+    PickResult Pick(PickArgs pick) override {
       PickResult result;
       result.type = PickResult::PICK_COMPLETE;
-      result.connected_subchannel = connected_subchannel_;
+      result.subchannel = subchannel_;
       return result;
     }
 
    private:
-    RefCountedPtr<ConnectedSubchannelInterface> connected_subchannel_;
+    RefCountedPtr<SubchannelInterface> subchannel_;
   };
 
   // Helper class to ensure that any function that modifies the child refs
@@ -410,7 +409,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         if (connectivity_state == GRPC_CHANNEL_READY) {
           p->channel_control_helper()->UpdateState(
               GRPC_CHANNEL_READY, UniquePtr<SubchannelPicker>(New<Picker>(
-                                      connected_subchannel()->Ref())));
+                                      subchannel()->Ref())));
         } else {  // CONNECTING
           p->channel_control_helper()->UpdateState(
               connectivity_state,
@@ -507,7 +506,7 @@ void PickFirst::PickFirstSubchannelData::ProcessUnselectedReadyLocked() {
   p->selected_ = this;
   p->channel_control_helper()->UpdateState(
       GRPC_CHANNEL_READY,
-      UniquePtr<SubchannelPicker>(New<Picker>(connected_subchannel()->Ref())));
+      UniquePtr<SubchannelPicker>(New<Picker>(subchannel()->Ref())));
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_INFO, "Pick First %p selected subchannel %p", p, subchannel());
   }
