@@ -54,6 +54,10 @@ namespace grpc_core {
 
 namespace channelz {
 
+// Helpers for getting and setting GRPC_ARG_CHANNELZ_PARENT_UUID.
+grpc_arg MakeParentUuidArg(intptr_t parent_uuid);
+intptr_t GetParentUuidFromArgs(const grpc_channel_args& args);
+
 // TODO(ncteisen), this only contains the uuids of the children for now,
 // since that is all that is strictly needed. In a future enhancement we will
 // add human readable names as in the channelz.proto

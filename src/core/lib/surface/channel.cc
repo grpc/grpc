@@ -194,9 +194,8 @@ void CreateChannelzNode(grpc_channel_stack_builder* builder) {
       grpc_channel_args_find(args,
                              GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
       {GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT, 0, INT_MAX});
-  const intptr_t channelz_parent_uuid = grpc_channel_arg_get_integer(
-      grpc_channel_args_find(args, GRPC_ARG_CHANNELZ_PARENT_UUID),
-      {0, 1, INT_MAX});
+  const intptr_t channelz_parent_uuid =
+      grpc_core::channelz::GetParentUuidFromArgs(*args);
   // Create the channelz node.
   // We only need to do this for clients here. For servers, this will be
   // done in src/core/lib/surface/server.cc.

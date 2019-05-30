@@ -48,6 +48,40 @@ namespace grpc_core {
 namespace channelz {
 
 //
+// channel arg code
+//
+
+namespace {
+
+void* parent_uuid_copy(void* p) { return p; }
+void parent_uuid_destroy(void* p) {}
+int parent_uuid_cmp(void* p1, void* p2) { return GPR_ICMP(p1, p2); }
+const grpc_arg_pointer_vtable parent_uuid_vtable = {
+    parent_uuid_copy, parent_uuid_destroy, parent_uuid_cmp};
+
+}  // namespace
+
+grpc_arg MakeParentUuidArg(intptr_t parent_uuid) {
+  // We would ideally like to store the uuid in an integer argument.
+  // Unfortunately, that won't work, because intptr_t (the type used for
+  // uuids) doesn't fit in an int (the type used for integer args).
+  // So instead, we use a hack to store it as a pointer, because
+  // intptr_t should be the same size as void*.
+  static_assert(sizeof(intptr_t) <= sizeof(void*),
+                "can't fit intptr_t inside of void*");
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_ARG_CHANNELZ_PARENT_UUID),
+      reinterpret_cast<void*>(parent_uuid), &parent_uuid_vtable);
+}
+
+intptr_t GetParentUuidFromArgs(const grpc_channel_args& args) {
+  const grpc_arg* arg =
+      grpc_channel_args_find(&args, GRPC_ARG_CHANNELZ_PARENT_UUID);
+  if (arg == nullptr || arg->type != GRPC_ARG_POINTER) return 0;
+  return reinterpret_cast<intptr_t>(arg->value.pointer.p);
+}
+
+//
 // BaseNode
 //
 
