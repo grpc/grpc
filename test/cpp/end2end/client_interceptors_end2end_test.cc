@@ -499,6 +499,10 @@ class BidiStreamingRpcHijackingInterceptorFactory
   }
 };
 
+// The logging interceptor is for testing purposes only. It is used to verify
+// that all the appropriate hook points are invoked for an RPC. The counts are
+// reset each time a new object of LoggingInterceptor is created, so only a
+// single RPC should be made on the channel before calling the Verify methods.
 class LoggingInterceptor : public experimental::Interceptor {
  public:
   LoggingInterceptor(experimental::ClientRpcInfo* info) {
