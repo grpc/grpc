@@ -259,6 +259,8 @@ int MetadataCredentialsPluginWrapper::GetMetadata(
     return true;
   }
   if (w->plugin_->IsBlocking()) {
+    // The internals of context may be destroyed if GetMetadata is cancelled.
+    // Make a copy for InvokePlugin.
     grpc_auth_metadata_context context_copy = grpc_auth_metadata_context();
     grpc_auth_metadata_context_copy(&context, &context_copy);
     // Asynchronous return.
