@@ -962,7 +962,8 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
  public:
   GrpcSubchannel(ChannelData* chand, Subchannel* subchannel,
                  UniquePtr<char> health_check_service_name)
-      : chand_(chand), subchannel_(subchannel),
+      : chand_(chand),
+        subchannel_(subchannel),
         health_check_service_name_(std::move(health_check_service_name)) {
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "GrpcSubchannel");
     auto* subchannel_node = subchannel_->channelz_node();

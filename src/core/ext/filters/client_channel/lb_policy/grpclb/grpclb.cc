@@ -1255,7 +1255,7 @@ grpc_channel_args* BuildBalancerChannelArgs(
     channelz_node = static_cast<channelz::ChannelNode*>(arg->value.pointer.p);
     args_to_add.emplace_back(grpc_channel_arg_integer_create(
         const_cast<char*>(GRPC_ARG_CHANNELZ_PARENT_UUID),
-                          channelz_node->uuid()));
+        channelz_node->uuid()));
   }
   // Construct channel args.
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(

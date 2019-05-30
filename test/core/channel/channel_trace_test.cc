@@ -21,9 +21,9 @@
 
 #include <gtest/gtest.h>
 
-#include <grpc/support/string_util.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"

@@ -123,9 +123,9 @@ grpc_channel* grpc_channel_create_with_builder(
     } else if (0 == strcmp(args->args[i].key, GRPC_ARG_CHANNELZ_CHANNEL_NODE)) {
       GPR_ASSERT(args->args[i].type == GRPC_ARG_POINTER);
       GPR_ASSERT(args->args[i].value.pointer.p != nullptr);
-      channel->channelz_node =
-          static_cast<grpc_core::channelz::ChannelNode*>(
-              args->args[i].value.pointer.p)->Ref();
+      channel->channelz_node = static_cast<grpc_core::channelz::ChannelNode*>(
+                                   args->args[i].value.pointer.p)
+                                   ->Ref();
     }
   }
 
@@ -202,8 +202,8 @@ void CreateChannelzNode(grpc_channel_stack_builder* builder) {
   // done in src/core/lib/surface/server.cc.
   grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_node =
       grpc_core::MakeRefCounted<grpc_core::channelz::ChannelNode>(
-          grpc_core::UniquePtr<char>(gpr_strdup(
-              grpc_channel_stack_builder_get_target(builder))),
+          grpc_core::UniquePtr<char>(
+              gpr_strdup(grpc_channel_stack_builder_get_target(builder))),
           channel_tracer_max_memory, channelz_parent_uuid);
   channelz_node->AddTraceEvent(
       grpc_core::channelz::ChannelTrace::Severity::Info,
@@ -212,8 +212,8 @@ void CreateChannelzNode(grpc_channel_stack_builder* builder) {
   // We remove the args for the factory and the parent uuid, since we no
   // longer need them.
   grpc_arg new_arg = grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_CHANNELZ_CHANNEL_NODE),
-      channelz_node.get(), &channelz_node_arg_vtable);
+      const_cast<char*>(GRPC_ARG_CHANNELZ_CHANNEL_NODE), channelz_node.get(),
+      &channelz_node_arg_vtable);
   const char* args_to_remove[] = {GRPC_ARG_CHANNELZ_PARENT_UUID};
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
       args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &new_arg, 1);

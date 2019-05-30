@@ -1324,7 +1324,7 @@ grpc_channel_args* BuildBalancerChannelArgs(const grpc_channel_args* args) {
     channelz_node = static_cast<channelz::ChannelNode*>(arg->value.pointer.p);
     args_to_add.emplace_back(grpc_channel_arg_integer_create(
         const_cast<char*>(GRPC_ARG_CHANNELZ_PARENT_UUID),
-                          channelz_node->uuid()));
+        channelz_node->uuid()));
   }
   // Construct channel args.
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
@@ -1702,9 +1702,7 @@ void XdsLb::LocalityMap::UpdateLocked(
   PruneLocalities(locality_serverlist);
 }
 
-void XdsLb::LocalityMap::ShutdownLocked() {
-  map_.clear();
-}
+void XdsLb::LocalityMap::ShutdownLocked() { map_.clear(); }
 
 void XdsLb::LocalityMap::ResetBackoffLocked() {
   for (auto& p : map_) {
