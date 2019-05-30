@@ -649,7 +649,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)dealloc {
   [GRPCConnectivityMonitor unregisterObserver:self];
-  
+
   __block GRPCWrappedCall *wrappedCall = _wrappedCall;
   dispatch_async(_callQueue, ^{
     wrappedCall = nil;
