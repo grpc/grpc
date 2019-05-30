@@ -89,6 +89,7 @@ some configuration as environment variables that can be set.
   - pending_tags - traces still-in-progress tags on completion queues
   - polling - traces the selected polling engine
   - polling_api - traces the api calls to polling engine
+  - subchannel
   - queue_refcount
   - error_refcount
   - stream_refcount
