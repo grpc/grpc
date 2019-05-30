@@ -117,13 +117,13 @@ void ChannelzRegistry::InternalUnregister(intptr_t uuid) {
   MaybePerformCompactionLocked();
 }
 
-BaseNode* ChannelzRegistry::InternalGet(intptr_t uuid) {
+RefCountedPtr<BaseNode> ChannelzRegistry::InternalGet(intptr_t uuid) {
   MutexLock lock(&mu_);
   if (uuid < 1 || uuid > uuid_generator_) {
     return nullptr;
   }
   int idx = FindByUuidLocked(uuid, true);
-  return idx < 0 ? nullptr : entities_[idx];
+  return idx < 0 ? nullptr : entities_[idx]->Ref();
 }
 
 char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
@@ -234,7 +234,7 @@ char* grpc_channelz_get_servers(intptr_t start_server_id) {
 }
 
 char* grpc_channelz_get_server(intptr_t server_id) {
-  grpc_core::channelz::BaseNode* server_node =
+  grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> server_node =
       grpc_core::channelz::ChannelzRegistry::Get(server_id);
   if (server_node == nullptr ||
       server_node->type() !=
@@ -254,7 +254,7 @@ char* grpc_channelz_get_server(intptr_t server_id) {
 char* grpc_channelz_get_server_sockets(intptr_t server_id,
                                        intptr_t start_socket_id,
                                        intptr_t max_results) {
-  grpc_core::channelz::BaseNode* base_node =
+  grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> base_node =
       grpc_core::channelz::ChannelzRegistry::Get(server_id);
   if (base_node == nullptr ||
       base_node->type() != grpc_core::channelz::BaseNode::EntityType::kServer) {
@@ -263,12 +263,12 @@ char* grpc_channelz_get_server_sockets(intptr_t server_id,
   // This cast is ok since we have just checked to make sure base_node is
   // actually a server node
   grpc_core::channelz::ServerNode* server_node =
-      static_cast<grpc_core::channelz::ServerNode*>(base_node);
+      static_cast<grpc_core::channelz::ServerNode*>(base_node.get());
   return server_node->RenderServerSockets(start_socket_id, max_results);
 }
 
 char* grpc_channelz_get_channel(intptr_t channel_id) {
-  grpc_core::channelz::BaseNode* channel_node =
+  grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> channel_node =
       grpc_core::channelz::ChannelzRegistry::Get(channel_id);
   if (channel_node == nullptr ||
       (channel_node->type() !=
@@ -288,7 +288,7 @@ char* grpc_channelz_get_channel(intptr_t channel_id) {
 }
 
 char* grpc_channelz_get_subchannel(intptr_t subchannel_id) {
-  grpc_core::channelz::BaseNode* subchannel_node =
+  grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> subchannel_node =
       grpc_core::channelz::ChannelzRegistry::Get(subchannel_id);
   if (subchannel_node == nullptr ||
       subchannel_node->type() !=
@@ -306,7 +306,7 @@ char* grpc_channelz_get_subchannel(intptr_t subchannel_id) {
 }
 
 char* grpc_channelz_get_socket(intptr_t socket_id) {
-  grpc_core::channelz::BaseNode* socket_node =
+  grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> socket_node =
       grpc_core::channelz::ChannelzRegistry::Get(socket_id);
   if (socket_node == nullptr ||
       socket_node->type() !=
