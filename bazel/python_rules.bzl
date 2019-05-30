@@ -163,7 +163,7 @@ def py_proto_library(
         _generate_py(
             name = codegen_grpc_target,
             deps = deps,
-            plugin = "//:grpc_python_plugin",
+            plugin = Label("//:grpc_python_plugin"),
             well_known_protos = well_known_protos,
             **kwargs
         )
@@ -180,7 +180,7 @@ def py_proto_library(
     else:
         native.py_library(
             name = name,
-            srcs = [":{}".format(codegen_target), ":{}".format(codegen_target)],
+            srcs = [":{}".format(codegen_target)],
             deps = [requirement("protobuf")],
             **kwargs
         )
