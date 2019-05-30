@@ -74,7 +74,7 @@
  *                                  receiveNextMessages
  *                               didReceiveInitialMetadata
  *                                    didReceiveData
- *                                     didWriteData
+ *                                     didWriteData                   receiveNextmessages
  *           writeData  -----             -----                 ----  didReceiveInitialMetadata
  * receiveNextMessages |     |           |     |               |    | didReceiveData
  *                     |     V           |     V               |    V didWriteData
