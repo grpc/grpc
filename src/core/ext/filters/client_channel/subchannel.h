@@ -68,6 +68,8 @@
 
 namespace grpc_core {
 
+extern DebugOnlyTraceFlag grpc_trace_subchannel;
+
 class SubchannelCall;
 
 class ConnectedSubchannel : public ConnectedSubchannelInterface {
