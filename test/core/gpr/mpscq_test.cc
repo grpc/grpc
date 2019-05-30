@@ -55,6 +55,7 @@ static void test_serial(void) {
     GPR_ASSERT(n->i == i);
     gpr_free(n);
   }
+  gpr_mpscq_destroy(&q);
 }
 
 typedef struct {
