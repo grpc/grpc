@@ -255,7 +255,7 @@ void ChannelNode::PopulateChildRefs(grpc_json* json) {
 
 void ChannelNode::SetConnectivityState(grpc_connectivity_state state) {
   // Store with low-order bit set to indicate that the field is set.
-  intptr_t state_field = (state << 1) + 1;
+  int state_field = (state << 1) + 1;
   connectivity_state_.Store(state_field, MemoryOrder::RELAXED);
 }
 
