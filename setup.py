@@ -299,9 +299,13 @@ PACKAGE_DIRECTORIES = {
 
 INSTALL_REQUIRES = (
     "six>=1.5.2",
-    "futures>=2.2.0; python_version<'3.2'",
-    "enum34>=1.0.4; python_version<'3.4'",
 )
+
+if not (PY3 and sys.version_info.minor >= 2):
+  INSTALL_REQUIRES += ("futures>=2.2.0; python_version<'3.2'",)
+
+if not (PY3 and sys.version_info.minor > 4):
+  INSTALL_REQUIRES += ("enum34>=1.0.4; python_version<'3.4'",)
 
 SETUP_REQUIRES = INSTALL_REQUIRES + (
     'Sphinx~=1.8.1',
