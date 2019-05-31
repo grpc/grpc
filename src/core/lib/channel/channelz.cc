@@ -46,12 +46,9 @@
 namespace grpc_core {
 namespace channelz {
 
-BaseNode::BaseNode(EntityType type) : type_(type), uuid_(-1) {
-  // The registry will set uuid_ under its lock.
-  ChannelzRegistry::Register(this);
-}
-
-BaseNode::~BaseNode() { ChannelzRegistry::Unregister(uuid_); }
+//
+// BaseNode
+//
 
 char* BaseNode::RenderJsonString() {
   grpc_json* json = RenderJson();
@@ -60,6 +57,10 @@ char* BaseNode::RenderJsonString() {
   grpc_json_destroy(json);
   return json_str;
 }
+
+//
+// CallCountingHelper
+//
 
 CallCountingHelper::CallCountingHelper() {
   num_cores_ = GPR_MAX(1, gpr_cpu_num_cores());
@@ -137,10 +138,22 @@ void CallCountingHelper::PopulateCallCounts(grpc_json* json) {
   }
 }
 
-ChannelNode::ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
+//
+// ChannelNode
+//
+
+RefCountedPtr<ChannelNode> ChannelNode::MakeChannelNode(
+    grpc_channel* channel, size_t channel_tracer_max_nodes,
+    bool is_top_level_channel) {
+  return ChannelzRegistry::CreateNode<ChannelNode>(
+      channel, channel_tracer_max_nodes, is_top_level_channel);
+}
+
+ChannelNode::ChannelNode(intptr_t uuid, grpc_channel* channel,
+                         size_t channel_tracer_max_nodes,
                          bool is_top_level_channel)
-    : BaseNode(is_top_level_channel ? EntityType::kTopLevelChannel
-                                    : EntityType::kInternalChannel),
+    : BaseNode(uuid, is_top_level_channel ? EntityType::kTopLevelChannel
+                                          : EntityType::kInternalChannel),
       channel_(channel),
       target_(UniquePtr<char>(grpc_channel_get_target(channel_))),
       trace_(channel_tracer_max_nodes) {}
@@ -189,15 +202,13 @@ grpc_json* ChannelNode::RenderJson() {
   return top_level_json;
 }
 
-RefCountedPtr<ChannelNode> ChannelNode::MakeChannelNode(
-    grpc_channel* channel, size_t channel_tracer_max_nodes,
-    bool is_top_level_channel) {
-  return MakeRefCounted<grpc_core::channelz::ChannelNode>(
-      channel, channel_tracer_max_nodes, is_top_level_channel);
-}
+//
+// ServerNode
+//
 
-ServerNode::ServerNode(grpc_server* server, size_t channel_tracer_max_nodes)
-    : BaseNode(EntityType::kServer),
+ServerNode::ServerNode(intptr_t uuid, grpc_server* server,
+                       size_t channel_tracer_max_nodes)
+    : BaseNode(uuid, EntityType::kServer),
       server_(server),
       trace_(channel_tracer_max_nodes) {}
 
@@ -281,8 +292,14 @@ grpc_json* ServerNode::RenderJson() {
   return top_level_json;
 }
 
-static void PopulateSocketAddressJson(grpc_json* json, const char* name,
-                                      const char* addr_str) {
+//
+// SocketNode
+//
+
+namespace {
+
+void PopulateSocketAddressJson(grpc_json* json, const char* name,
+                               const char* addr_str) {
   if (addr_str == nullptr) return;
   grpc_json* json_iterator = nullptr;
   json_iterator = grpc_json_create_child(json_iterator, json, name, nullptr,
@@ -312,7 +329,6 @@ static void PopulateSocketAddressJson(grpc_json* json, const char* name,
                                            b64_host, GRPC_JSON_STRING, true);
     gpr_free(host);
     gpr_free(port);
-
   } else if (uri != nullptr && strcmp(uri->scheme, "unix") == 0) {
     json_iterator = grpc_json_create_child(json_iterator, json, "uds_address",
                                            nullptr, GRPC_JSON_OBJECT, false);
@@ -332,8 +348,11 @@ static void PopulateSocketAddressJson(grpc_json* json, const char* name,
   grpc_uri_destroy(uri);
 }
 
-SocketNode::SocketNode(UniquePtr<char> local, UniquePtr<char> remote)
-    : BaseNode(EntityType::kSocket),
+}  // namespace
+
+SocketNode::SocketNode(intptr_t uuid, UniquePtr<char> local,
+                       UniquePtr<char> remote)
+    : BaseNode(uuid, EntityType::kSocket),
       local_(std::move(local)),
       remote_(std::move(remote)) {}
 
@@ -448,8 +467,12 @@ grpc_json* SocketNode::RenderJson() {
   return top_level_json;
 }
 
-ListenSocketNode::ListenSocketNode(UniquePtr<char> local_addr)
-    : BaseNode(EntityType::kSocket), local_addr_(std::move(local_addr)) {}
+//
+// ListenSocketNode
+//
+
+ListenSocketNode::ListenSocketNode(intptr_t uuid, UniquePtr<char> local_addr)
+    : BaseNode(uuid, EntityType::kSocket), local_addr_(std::move(local_addr)) {}
 
 grpc_json* ListenSocketNode::RenderJson() {
   // We need to track these three json objects to build our object

@@ -40,8 +40,8 @@ class ClientChannelNode : public ChannelNode {
       grpc_channel* channel, size_t channel_tracer_max_nodes,
       bool is_top_level_channel);
 
-  ClientChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
-                    bool is_top_level_channel);
+  ClientChannelNode(intptr_t uuid, grpc_channel* channel,
+                    size_t channel_tracer_max_nodes, bool is_top_level_channel);
   virtual ~ClientChannelNode() {}
 
   // Overriding template methods from ChannelNode to render information that
@@ -60,7 +60,8 @@ class ClientChannelNode : public ChannelNode {
 // Handles channelz bookkeeping for sockets
 class SubchannelNode : public BaseNode {
  public:
-  SubchannelNode(Subchannel* subchannel, size_t channel_tracer_max_nodes);
+  SubchannelNode(intptr_t uuid, Subchannel* subchannel,
+                 size_t channel_tracer_max_nodes);
   ~SubchannelNode() override;
 
   void MarkSubchannelDestroyed() {
