@@ -454,11 +454,8 @@ template <typename Request, typename Response, typename Function>
 ServerUnaryReactor<Request, Response>* MakeReactor(
     ServerContext* context, Function&& func,
     typename std::enable_if<std::is_same<
-        decltype(
-            func(static_cast<const Request*>(nullptr),
-                 static_cast<Response*>(nullptr),
-                 static_cast<ServerUnaryReactor<Request, Response>*>(nullptr))),
-        void>::value>::type* = nullptr) {
+    typename std::result_of<Function(const Request*, Response*, ServerUnaryReactor<Request, Response>*)>::type,
+    void>::value>::type* = nullptr) {
   // TODO(vjpai): Specialize this to prevent counting OnCancel conditions
   class SimpleUnaryReactor final
       : public ServerUnaryReactor<Request, Response> {
@@ -482,10 +479,9 @@ ServerUnaryReactor<Request, Response>* MakeReactor(
 template <typename Request, typename Response, typename Function>
 ServerUnaryReactor<Request, Response>* MakeReactor(
     ServerContext* context, Function&& func,
-    typename std::enable_if<
-        std::is_same<decltype(func(static_cast<const Request*>(nullptr),
-                                   static_cast<Response*>(nullptr))),
-                     Status>::value>::type* = nullptr) {
+    typename std::enable_if<std::is_same<
+    typename std::result_of<Function(const Request*, Response*)>::type,
+    Status>::value>::type* = nullptr) {
   // TODO(vjpai): Specialize this to prevent counting OnCancel conditions
   class ReallySimpleUnaryReactor final
       : public ServerUnaryReactor<Request, Response> {
