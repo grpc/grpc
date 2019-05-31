@@ -68,8 +68,9 @@ class PickFirst : public LoadBalancingPolicy {
     PickFirstSubchannelData(
         SubchannelList<PickFirstSubchannelList, PickFirstSubchannelData>*
             subchannel_list,
-        const ServerAddress& address, Subchannel* subchannel)
-        : SubchannelData(subchannel_list, address, subchannel) {}
+        const ServerAddress& address,
+        RefCountedPtr<SubchannelInterface> subchannel)
+        : SubchannelData(subchannel_list, address, std::move(subchannel)) {}
 
     void ProcessConnectivityChangeLocked(
         grpc_connectivity_state connectivity_state) override;
@@ -112,16 +113,19 @@ class PickFirst : public LoadBalancingPolicy {
 
   class Picker : public SubchannelPicker {
    public:
-    explicit Picker(RefCountedPtr<ConnectedSubchannel> connected_subchannel)
+    explicit Picker(
+        RefCountedPtr<ConnectedSubchannelInterface> connected_subchannel)
         : connected_subchannel_(std::move(connected_subchannel)) {}
 
-    PickResult Pick(PickArgs* pick, grpc_error** error) override {
-      pick->connected_subchannel = connected_subchannel_;
-      return PICK_COMPLETE;
+    PickResult Pick(PickArgs args) override {
+      PickResult result;
+      result.type = PickResult::PICK_COMPLETE;
+      result.connected_subchannel = connected_subchannel_;
+      return result;
     }
 
    private:
-    RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
+    RefCountedPtr<ConnectedSubchannelInterface> connected_subchannel_;
   };
 
   // Helper class to ensure that any function that modifies the child refs
@@ -527,7 +531,7 @@ void PickFirst::PickFirstSubchannelData::
   }
 }
 
-class ParsedPickFirstConfig : public ParsedLoadBalancingConfig {
+class ParsedPickFirstConfig : public LoadBalancingPolicy::Config {
  public:
   const char* name() const override { return kPickFirst; }
 };
@@ -545,12 +549,12 @@ class PickFirstFactory : public LoadBalancingPolicyFactory {
 
   const char* name() const override { return kPickFirst; }
 
-  RefCountedPtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
+  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
       const grpc_json* json, grpc_error** error) const override {
     if (json != nullptr) {
       GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
     }
-    return RefCountedPtr<ParsedLoadBalancingConfig>(
+    return RefCountedPtr<LoadBalancingPolicy::Config>(
         New<ParsedPickFirstConfig>());
   }
 };

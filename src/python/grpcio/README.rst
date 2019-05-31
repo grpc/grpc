@@ -3,13 +3,21 @@ gRPC Python
 
 Package for gRPC Python.
 
+Supported Python Versions
+-------------------------
+Python >= 3.5
+
+Deprecated Python Versions
+--------------------------
+Python == 2.7. Python 2.7 support will be removed on January 1, 2020.
+
 Installation
 ------------
 
 gRPC Python is available for Linux, macOS, and Windows.
 
-From PyPI
-~~~~~~~~~
+Installing From PyPI
+~~~~~~~~~~~~~~~~~~~~
 
 If you are installing locally...
 
@@ -37,8 +45,8 @@ n.b. On Windows and on Mac OS X one *must* have a recent release of :code:`pip`
 to retrieve the proper wheel from PyPI. Be sure to upgrade to the latest
 version!
 
-From Source
-~~~~~~~~~~~
+Installing From Source
+~~~~~~~~~~~~~~~~~~~~~~
 
 Building from source requires that you have the Python headers (usually a
 package named :code:`python-dev`).

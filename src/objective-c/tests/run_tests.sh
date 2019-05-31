@@ -43,121 +43,13 @@ XCODEBUILD_FILTER='(^CompileC |^Ld |^ *[^ ]*clang |^ *cd |^ *export |^Libtool |^
 
 echo "TIME:  $(date)"
 
-# Retry the test for up to 3 times when return code is 65, due to Xcode issue:
-# http://www.openradar.me/29785686
-# The issue seems to be a connectivity issue to Xcode simulator so only retry
-# the first xcodebuild command
-retries=0
-while [ $retries -lt 3 ]; do
-  return_code=0
-  out=$(xcodebuild \
-        -workspace Tests.xcworkspace \
-        -scheme AllTests \
-        -destination name="iPhone 8" \
-        HOST_PORT_LOCALSSL=localhost:5051 \
-        HOST_PORT_LOCAL=localhost:5050 \
-        HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
-        test 2>&1 \
-        | egrep -v "$XCODEBUILD_FILTER" \
-        | egrep -v '^$' \
-        | egrep -v "(GPBDictionary|GPBArray)" - ) || return_code=$?
-  if [ $return_code == 65 ] && [[ $out == *"DTXProxyChannel error 1"* ]]; then
-    echo "$out"
-    echo "Failed with code 65 (DTXProxyChannel error 1); retry."
-    retries=$(($retries+1))
-  elif [ $return_code == 0 ]; then
-    echo "$out"
-    break
-  else
-    echo "$out"
-    echo "Failed with code $return_code."
-    exit 1
-  fi
-done
-if [ $retries == 3 ]; then
-  echo "Failed with code 65 for 3 times; abort."
-  exit 1
-fi
-
-echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
-    -scheme CoreCronetEnd2EndTests \
-    -destination name="iPhone 8" \
-    test \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' \
-    | egrep -v "(GPBDictionary|GPBArray)" -
-
-echo "TIME:  $(date)"
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme CoreCronetEnd2EndTests_Asan \
-    -destination name="iPhone 6" \
-    test \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' \
-    | egrep -v "(GPBDictionary|GPBArray)" -
-
-echo "TIME:  $(date)"
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme CoreCronetEnd2EndTests_Tsan \
-    -destination name="iPhone 6" \
-    test \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' \
-    | egrep -v "(GPBDictionary|GPBArray)" -
-
-echo "TIME:  $(date)"
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme CronetUnitTests \
-    -destination name="iPhone 8" \
-    test \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' \
-    | egrep -v "(GPBDictionary|GPBArray)" -
-
-echo "TIME:  $(date)"
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme InteropTestsRemoteWithCronet \
-    -destination name="iPhone 8" \
-    HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
-    test \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' \
-    | egrep -v "(GPBDictionary|GPBArray)" -
-
-echo "TIME:  $(date)"
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme InteropTestsRemoteCFStream \
-    -destination name="iPhone 8" \
-    HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
-    test \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' \
-    | egrep -v "(GPBDictionary|GPBArray)" -
-
-echo "TIME:  $(date)"
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme InteropTestsLocalCleartextCFStream \
-    -destination name="iPhone 8" \
-    HOST_PORT_LOCAL=localhost:5050 \
-    test \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' \
-    | egrep -v "(GPBDictionary|GPBArray)" -
-
-echo "TIME:  $(date)"
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme InteropTestsLocalSSLCFStream \
+    -scheme InteropTests \
     -destination name="iPhone 8" \
     HOST_PORT_LOCALSSL=localhost:5051 \
+    HOST_PORT_LOCAL=localhost:5050 \
+    HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
@@ -168,6 +60,9 @@ xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme UnitTests \
     -destination name="iPhone 8" \
+    HOST_PORT_LOCALSSL=localhost:5051 \
+    HOST_PORT_LOCAL=localhost:5050 \
+    HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
@@ -176,18 +71,9 @@ xcodebuild \
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
-    -scheme ChannelTests \
+    -scheme CronetTests \
     -destination name="iPhone 8" \
-    test \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' \
-    | egrep -v "(GPBDictionary|GPBArray)" -
-
-echo "TIME:  $(date)"
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme APIv2Tests \
-    -destination name="iPhone 8" \
+    HOST_PORT_LOCALSSL=localhost:5051 \
     HOST_PORT_LOCAL=localhost:5050 \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
     test \

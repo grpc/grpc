@@ -137,6 +137,7 @@ GRPCXX_SRCS = [
     "src/cpp/common/resource_quota_cc.cc",
     "src/cpp/common/rpc_method.cc",
     "src/cpp/common/version_cc.cc",
+    "src/cpp/common/validate_service_config.cc",    
     "src/cpp/server/async_generic_service.cc",
     "src/cpp/server/channel_argument_option.cc",
     "src/cpp/server/create_default_thread_pool.cc",
@@ -286,6 +287,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/support/stub_options.h",
     "include/grpcpp/support/sync_stream.h",
     "include/grpcpp/support/time.h",
+    "include/grpcpp/support/validate_service_config.h",    
 ]
 
 grpc_cc_library(
@@ -1141,6 +1143,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/server_address.h",
         "src/core/ext/filters/client_channel/service_config.h",
         "src/core/ext/filters/client_channel/subchannel.h",
+        "src/core/ext/filters/client_channel/subchannel_interface.h",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.h",
     ],
     language = "c++",

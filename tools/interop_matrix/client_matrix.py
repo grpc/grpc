@@ -37,12 +37,8 @@ def get_runtimes_for_lang_release(lang, release):
     """Get list of valid runtimes for given release of lang."""
     runtimes = list(LANG_RUNTIME_MATRIX[lang])
     release_info = LANG_RELEASE_MATRIX[lang].get(release)
-    if release_info and release_info.runtime_subset:
-        runtimes = list(release_info.runtime_subset)
-
-    # check that all selected runtimes are valid for given language
-    for runtime in runtimes:
-        assert runtime in LANG_RUNTIME_MATRIX[lang]
+    if release_info and release_info.runtimes:
+        runtimes = list(release_info.runtimes)
     return runtimes
 
 
@@ -55,11 +51,11 @@ def should_build_docker_interop_image_from_release_tag(lang):
     return True
 
 
-# Dictionary of runtimes per language
+# Dictionary of default runtimes per language
 LANG_RUNTIME_MATRIX = {
     'cxx': ['cxx'],  # This is actually debian8.
     'go': ['go1.8', 'go1.11'],
-    'java': ['java_oracle8'],
+    'java': ['java'],
     'python': ['python'],
     'node': ['node'],
     'ruby': ['ruby'],
@@ -71,9 +67,9 @@ LANG_RUNTIME_MATRIX = {
 class ReleaseInfo:
     """Info about a single release of a language"""
 
-    def __init__(self, patch=[], runtime_subset=[], testcases_file=None):
+    def __init__(self, patch=[], runtimes=[], testcases_file=None):
         self.patch = patch
-        self.runtime_subset = runtime_subset
+        self.runtimes = runtimes
         self.testcases_file = testcases_file
 
 
@@ -104,50 +100,51 @@ LANG_RELEASE_MATRIX = {
     ]),
     'go':
     OrderedDict([
-        ('v1.0.5', ReleaseInfo(runtime_subset=['go1.8'])),
-        ('v1.2.1', ReleaseInfo(runtime_subset=['go1.8'])),
-        ('v1.3.0', ReleaseInfo(runtime_subset=['go1.8'])),
-        ('v1.4.2', ReleaseInfo(runtime_subset=['go1.8'])),
-        ('v1.5.2', ReleaseInfo(runtime_subset=['go1.8'])),
-        ('v1.6.0', ReleaseInfo(runtime_subset=['go1.8'])),
-        ('v1.7.4', ReleaseInfo(runtime_subset=['go1.8'])),
-        ('v1.8.2', ReleaseInfo(runtime_subset=['go1.8'])),
-        ('v1.9.2', ReleaseInfo(runtime_subset=['go1.8'])),
-        ('v1.10.1', ReleaseInfo(runtime_subset=['go1.8'])),
-        ('v1.11.3', ReleaseInfo(runtime_subset=['go1.8'])),
-        ('v1.12.2', ReleaseInfo(runtime_subset=['go1.8'])),
-        ('v1.13.0', ReleaseInfo(runtime_subset=['go1.8'])),
-        ('v1.14.0', ReleaseInfo(runtime_subset=['go1.8'])),
-        ('v1.15.0', ReleaseInfo(runtime_subset=['go1.8'])),
-        ('v1.16.0', ReleaseInfo(runtime_subset=['go1.8'])),
-        ('v1.17.0', ReleaseInfo(runtime_subset=['go1.11'])),
-        ('v1.18.0', ReleaseInfo(runtime_subset=['go1.11'])),
-        ('v1.19.0', ReleaseInfo(runtime_subset=['go1.11'])),
-        ('v1.20.0', ReleaseInfo(runtime_subset=['go1.11'])),
+        ('v1.0.5', ReleaseInfo(runtimes=['go1.8'])),
+        ('v1.2.1', ReleaseInfo(runtimes=['go1.8'])),
+        ('v1.3.0', ReleaseInfo(runtimes=['go1.8'])),
+        ('v1.4.2', ReleaseInfo(runtimes=['go1.8'])),
+        ('v1.5.2', ReleaseInfo(runtimes=['go1.8'])),
+        ('v1.6.0', ReleaseInfo(runtimes=['go1.8'])),
+        ('v1.7.4', ReleaseInfo(runtimes=['go1.8'])),
+        ('v1.8.2', ReleaseInfo(runtimes=['go1.8'])),
+        ('v1.9.2', ReleaseInfo(runtimes=['go1.8'])),
+        ('v1.10.1', ReleaseInfo(runtimes=['go1.8'])),
+        ('v1.11.3', ReleaseInfo(runtimes=['go1.8'])),
+        ('v1.12.2', ReleaseInfo(runtimes=['go1.8'])),
+        ('v1.13.0', ReleaseInfo(runtimes=['go1.8'])),
+        ('v1.14.0', ReleaseInfo(runtimes=['go1.8'])),
+        ('v1.15.0', ReleaseInfo(runtimes=['go1.8'])),
+        ('v1.16.0', ReleaseInfo(runtimes=['go1.8'])),
+        ('v1.17.0', ReleaseInfo(runtimes=['go1.11'])),
+        ('v1.18.0', ReleaseInfo(runtimes=['go1.11'])),
+        ('v1.19.0', ReleaseInfo(runtimes=['go1.11'])),
+        ('v1.20.0', ReleaseInfo(runtimes=['go1.11'])),
+        ('v1.21.0', ReleaseInfo(runtimes=['go1.11'])),
     ]),
     'java':
     OrderedDict([
-        ('v1.0.3', ReleaseInfo()),
-        ('v1.1.2', ReleaseInfo()),
-        ('v1.2.0', ReleaseInfo()),
-        ('v1.3.1', ReleaseInfo()),
-        ('v1.4.0', ReleaseInfo()),
-        ('v1.5.0', ReleaseInfo()),
-        ('v1.6.1', ReleaseInfo()),
-        ('v1.7.0', ReleaseInfo()),
-        ('v1.8.0', ReleaseInfo()),
-        ('v1.9.1', ReleaseInfo()),
-        ('v1.10.1', ReleaseInfo()),
-        ('v1.11.0', ReleaseInfo()),
-        ('v1.12.0', ReleaseInfo()),
-        ('v1.13.1', ReleaseInfo()),
-        ('v1.14.0', ReleaseInfo()),
-        ('v1.15.0', ReleaseInfo()),
-        ('v1.16.1', ReleaseInfo()),
-        ('v1.17.1', ReleaseInfo()),
-        ('v1.18.0', ReleaseInfo()),
-        ('v1.19.0', ReleaseInfo()),
-        ('v1.20.0', ReleaseInfo()),
+        ('v1.0.3', ReleaseInfo(runtimes=['java_oracle8'])),
+        ('v1.1.2', ReleaseInfo(runtimes=['java_oracle8'])),
+        ('v1.2.0', ReleaseInfo(runtimes=['java_oracle8'])),
+        ('v1.3.1', ReleaseInfo(runtimes=['java_oracle8'])),
+        ('v1.4.0', ReleaseInfo(runtimes=['java_oracle8'])),
+        ('v1.5.0', ReleaseInfo(runtimes=['java_oracle8'])),
+        ('v1.6.1', ReleaseInfo(runtimes=['java_oracle8'])),
+        ('v1.7.0', ReleaseInfo(runtimes=['java_oracle8'])),
+        ('v1.8.0', ReleaseInfo(runtimes=['java_oracle8'])),
+        ('v1.9.1', ReleaseInfo(runtimes=['java_oracle8'])),
+        ('v1.10.1', ReleaseInfo(runtimes=['java_oracle8'])),
+        ('v1.11.0', ReleaseInfo(runtimes=['java_oracle8'])),
+        ('v1.12.0', ReleaseInfo(runtimes=['java_oracle8'])),
+        ('v1.13.1', ReleaseInfo(runtimes=['java_oracle8'])),
+        ('v1.14.0', ReleaseInfo(runtimes=['java_oracle8'])),
+        ('v1.15.0', ReleaseInfo(runtimes=['java_oracle8'])),
+        ('v1.16.1', ReleaseInfo(runtimes=['java_oracle8'])),
+        ('v1.17.1', ReleaseInfo(runtimes=['java_oracle8'])),
+        ('v1.18.0', ReleaseInfo(runtimes=['java_oracle8'])),
+        ('v1.19.0', ReleaseInfo(runtimes=['java_oracle8'])),
+        ('v1.20.0', ReleaseInfo(runtimes=['java_oracle8'])),
     ]),
     'python':
     OrderedDict([
@@ -217,6 +214,8 @@ LANG_RELEASE_MATRIX = {
          ReleaseInfo(patch=[
              'tools/dockerfile/interoptest/grpc_interop_ruby/build_interop.sh',
          ])),
+        ('v1.19.0', ReleaseInfo()),
+        ('v1.20.0', ReleaseInfo()),
         # TODO: https://github.com/grpc/grpc/issues/18262.
         # If you are not encountering the error in above issue
         # go ahead and upload the docker image for new releases.

@@ -18,11 +18,17 @@ load("//bazel:grpc_build_system.bzl", "grpc_proto_library", "grpc_package")
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 load("//bazel:python_rules.bzl", "py_proto_library")
 
-grpc_package(name = "testing", visibility = "public")
+grpc_package(
+    name = "testing",
+    visibility = "public",
+)
 
 exports_files([
     "echo.proto",
     "echo_messages.proto",
+    "test.proto",
+    "empty.proto",
+    "messages.proto",
 ])
 
 grpc_proto_library(
@@ -50,9 +56,11 @@ grpc_proto_library(
 grpc_proto_library(
     name = "echo_proto",
     srcs = ["echo.proto"],
-    deps = ["echo_messages_proto",
-            "simple_messages_proto"],
     generate_mocks = True,
+    deps = [
+        "echo_messages_proto",
+        "simple_messages_proto",
+    ],
 )
 
 grpc_proto_library(
@@ -102,7 +110,7 @@ grpc_proto_library(
     name = "benchmark_service_proto",
     srcs = ["benchmark_service.proto"],
     deps = [
-      "messages_proto",
+        "messages_proto",
     ],
 )
 
@@ -110,7 +118,7 @@ grpc_proto_library(
     name = "report_qps_scenario_service_proto",
     srcs = ["report_qps_scenario_service.proto"],
     deps = [
-      "control_proto",
+        "control_proto",
     ],
 )
 
@@ -118,7 +126,7 @@ grpc_proto_library(
     name = "worker_service_proto",
     srcs = ["worker_service.proto"],
     deps = [
-      "control_proto",
+        "control_proto",
     ],
 )
 
@@ -134,7 +142,7 @@ grpc_proto_library(
     has_services = False,
     deps = [
         "//src/proto/grpc/core:stats_proto",
-    ]
+    ],
 )
 
 grpc_proto_library(
@@ -190,6 +198,5 @@ py_proto_library(
     name = "py_test_proto",
     deps = [
         ":test_proto_descriptor",
-    ]
+    ],
 )
-
