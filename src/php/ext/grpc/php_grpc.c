@@ -203,9 +203,11 @@ void register_fork_handlers() {
   }
 }
 
-void apply_ini_settings() {
+void apply_ini_settings(TSRMLS_D) {
   if (GRPC_G(enable_fork_support)) {
-    putenv("GRPC_ENABLE_FORK_SUPPORT=1");
+    char *enable_str = malloc(sizeof("GRPC_ENABLE_FORK_SUPPORT=1"));
+    strcpy(enable_str, "GRPC_ENABLE_FORK_SUPPORT=1");
+    putenv(enable_str);
   }
 
   if (GRPC_G(poll_strategy)) {
@@ -390,7 +392,7 @@ PHP_MINFO_FUNCTION(grpc) {
  */
 PHP_RINIT_FUNCTION(grpc) {
   if (!GRPC_G(initialized)) {
-    apply_ini_settings();
+    apply_ini_settings(TSRMLS_C);
     grpc_init();
     register_fork_handlers();
     grpc_php_init_completion_queue(TSRMLS_C);

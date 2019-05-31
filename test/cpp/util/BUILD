@@ -75,6 +75,7 @@ grpc_cc_library(
         "test_credentials_provider.h",
     ],
     external_deps = [
+        "gflags",
         "protobuf",
     ],
     deps = [

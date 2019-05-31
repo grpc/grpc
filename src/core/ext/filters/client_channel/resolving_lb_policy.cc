@@ -106,7 +106,8 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
       RefCountedPtr<ResolvingLoadBalancingPolicy> parent)
       : parent_(std::move(parent)) {}
 
-  Subchannel* CreateSubchannel(const grpc_channel_args& args) override {
+  RefCountedPtr<SubchannelInterface> CreateSubchannel(
+      const grpc_channel_args& args) override {
     if (parent_->resolver_ == nullptr) return nullptr;  // Shutting down.
     if (!CalledByCurrentChild() && !CalledByPendingChild()) return nullptr;
     return parent_->channel_control_helper()->CreateSubchannel(args);
@@ -184,7 +185,7 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
 ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
     Args args, TraceFlag* tracer, UniquePtr<char> target_uri,
     UniquePtr<char> child_policy_name,
-    RefCountedPtr<ParsedLoadBalancingConfig> child_lb_config,
+    RefCountedPtr<LoadBalancingPolicy::Config> child_lb_config,
     grpc_error** error)
     : LoadBalancingPolicy(std::move(args)),
       tracer_(tracer),
@@ -333,7 +334,7 @@ void ResolvingLoadBalancingPolicy::OnResolverError(grpc_error* error) {
 
 void ResolvingLoadBalancingPolicy::CreateOrUpdateLbPolicyLocked(
     const char* lb_policy_name,
-    RefCountedPtr<ParsedLoadBalancingConfig> lb_policy_config,
+    RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
     Resolver::Result result, TraceStringVector* trace_strings) {
   // If the child policy name changes, we need to create a new child
   // policy.  When this happens, we leave child_policy_ as-is and store
@@ -530,13 +531,13 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   const bool resolution_contains_addresses = result.addresses.size() > 0;
   // Process the resolver result.
   const char* lb_policy_name = nullptr;
-  RefCountedPtr<ParsedLoadBalancingConfig> lb_policy_config;
+  RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config;
   bool service_config_changed = false;
   char* service_config_error_string = nullptr;
   if (process_resolver_result_ != nullptr) {
     grpc_error* service_config_error = GRPC_ERROR_NONE;
     service_config_changed = process_resolver_result_(
-        process_resolver_result_user_data_, &result, &lb_policy_name,
+        process_resolver_result_user_data_, result, &lb_policy_name,
         &lb_policy_config, &service_config_error);
     if (service_config_error != GRPC_ERROR_NONE) {
       service_config_error_string =

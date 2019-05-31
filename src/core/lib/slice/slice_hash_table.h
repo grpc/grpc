@@ -138,7 +138,7 @@ SliceHashTable<T>::~SliceHashTable() {
 
 template <typename T>
 void SliceHashTable<T>::Add(const grpc_slice& key, T& value) {
-  const size_t hash = grpc_slice_hash(key);
+  const size_t hash = grpc_slice_hash_internal(key);
   for (size_t offset = 0; offset < size_; ++offset) {
     const size_t idx = (hash + offset) % size_;
     if (!entries_[idx].is_set) {
@@ -156,7 +156,7 @@ void SliceHashTable<T>::Add(const grpc_slice& key, T& value) {
 
 template <typename T>
 const T* SliceHashTable<T>::Get(const grpc_slice& key) const {
-  const size_t hash = grpc_slice_hash(key);
+  const size_t hash = grpc_slice_hash_internal(key);
   // We cap the number of probes at the max number recorded when
   // populating the table.
   for (size_t offset = 0; offset <= max_num_probes_; ++offset) {

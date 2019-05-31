@@ -36,6 +36,7 @@
 #include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
+#include <grpcpp/support/validate_service_config.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
@@ -231,6 +232,9 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
 
   std::shared_ptr<Channel> BuildChannelWithDefaultServiceConfig() {
     ChannelArguments args;
+    EXPECT_THAT(grpc::experimental::ValidateServiceConfigJSON(
+                    ValidDefaultServiceConfig()),
+                ::testing::StrEq(""));
     args.SetServiceConfigJSON(ValidDefaultServiceConfig());
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());
@@ -239,6 +243,10 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
 
   std::shared_ptr<Channel> BuildChannelWithInvalidDefaultServiceConfig() {
     ChannelArguments args;
+    EXPECT_THAT(
+        grpc::experimental::ValidateServiceConfigJSON(
+            InvalidDefaultServiceConfig()),
+        ::testing::HasSubstr("failed to parse JSON for service config"));
     args.SetServiceConfigJSON(InvalidDefaultServiceConfig());
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());

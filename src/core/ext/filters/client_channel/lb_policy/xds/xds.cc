@@ -120,11 +120,11 @@ constexpr char kXds[] = "xds_experimental";
 constexpr char kDefaultLocalityName[] = "xds_default_locality";
 constexpr uint32_t kDefaultLocalityWeight = 3;
 
-class ParsedXdsConfig : public ParsedLoadBalancingConfig {
+class ParsedXdsConfig : public LoadBalancingPolicy::Config {
  public:
   ParsedXdsConfig(const char* balancer_name,
-                  RefCountedPtr<ParsedLoadBalancingConfig> child_policy,
-                  RefCountedPtr<ParsedLoadBalancingConfig> fallback_policy)
+                  RefCountedPtr<LoadBalancingPolicy::Config> child_policy,
+                  RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy)
       : balancer_name_(balancer_name),
         child_policy_(std::move(child_policy)),
         fallback_policy_(std::move(fallback_policy)) {}
@@ -133,18 +133,18 @@ class ParsedXdsConfig : public ParsedLoadBalancingConfig {
 
   const char* balancer_name() const { return balancer_name_; };
 
-  RefCountedPtr<ParsedLoadBalancingConfig> child_policy() const {
+  RefCountedPtr<LoadBalancingPolicy::Config> child_policy() const {
     return child_policy_;
   }
 
-  RefCountedPtr<ParsedLoadBalancingConfig> fallback_policy() const {
+  RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy() const {
     return fallback_policy_;
   }
 
  private:
   const char* balancer_name_ = nullptr;
-  RefCountedPtr<ParsedLoadBalancingConfig> child_policy_;
-  RefCountedPtr<ParsedLoadBalancingConfig> fallback_policy_;
+  RefCountedPtr<LoadBalancingPolicy::Config> child_policy_;
+  RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy_;
 };
 
 class XdsLb : public LoadBalancingPolicy {
@@ -300,9 +300,7 @@ class XdsLb : public LoadBalancingPolicy {
    public:
     explicit PickerRef(UniquePtr<SubchannelPicker> picker)
         : picker_(std::move(picker)) {}
-    PickResult Pick(PickArgs* pick, grpc_error** error) {
-      return picker_->Pick(pick, error);
-    }
+    PickResult Pick(PickArgs args) { return picker_->Pick(args); }
 
    private:
     UniquePtr<SubchannelPicker> picker_;
@@ -322,12 +320,11 @@ class XdsLb : public LoadBalancingPolicy {
         : client_stats_(std::move(client_stats)),
           pickers_(std::move(pickers)) {}
 
-    PickResult Pick(PickArgs* pick, grpc_error** error) override;
+    PickResult Pick(PickArgs args) override;
 
    private:
     // Calls the picker of the locality that the key falls within
-    PickResult PickFromLocality(const uint32_t key, PickArgs* pick,
-                                grpc_error** error);
+    PickResult PickFromLocality(const uint32_t key, PickArgs args);
     RefCountedPtr<XdsLbClientStats> client_stats_;
     PickerList pickers_;
   };
@@ -337,7 +334,8 @@ class XdsLb : public LoadBalancingPolicy {
     explicit FallbackHelper(RefCountedPtr<XdsLb> parent)
         : parent_(std::move(parent)) {}
 
-    Subchannel* CreateSubchannel(const grpc_channel_args& args) override;
+    RefCountedPtr<SubchannelInterface> CreateSubchannel(
+        const grpc_channel_args& args) override;
     grpc_channel* CreateChannel(const char* target,
                                 const grpc_channel_args& args) override;
     void UpdateState(grpc_connectivity_state state,
@@ -363,7 +361,7 @@ class XdsLb : public LoadBalancingPolicy {
       ~LocalityEntry() = default;
 
       void UpdateLocked(xds_grpclb_serverlist* serverlist,
-                        ParsedLoadBalancingConfig* child_policy_config,
+                        LoadBalancingPolicy::Config* child_policy_config,
                         const grpc_channel_args* args);
       void ShutdownLocked();
       void ResetBackoffLocked();
@@ -377,7 +375,8 @@ class XdsLb : public LoadBalancingPolicy {
         explicit Helper(RefCountedPtr<LocalityEntry> entry)
             : entry_(std::move(entry)) {}
 
-        Subchannel* CreateSubchannel(const grpc_channel_args& args) override;
+        RefCountedPtr<SubchannelInterface> CreateSubchannel(
+            const grpc_channel_args& args) override;
         grpc_channel* CreateChannel(const char* target,
                                     const grpc_channel_args& args) override;
         void UpdateState(grpc_connectivity_state state,
@@ -410,7 +409,7 @@ class XdsLb : public LoadBalancingPolicy {
     };
 
     void UpdateLocked(const LocalityList& locality_list,
-                      ParsedLoadBalancingConfig* child_policy_config,
+                      LoadBalancingPolicy::Config* child_policy_config,
                       const grpc_channel_args* args, XdsLb* parent);
     void ShutdownLocked();
     void ResetBackoffLocked();
@@ -493,9 +492,8 @@ class XdsLb : public LoadBalancingPolicy {
   // 1. The fallback timer fires, we enter fallback mode.
   // 2. Before the fallback timer fires, the LB channel becomes
   // TRANSIENT_FAILURE or the LB call fails, we enter fallback mode.
-  // 3. Before the fallback timer fires, we receive a response from the
-  // balancer, we cancel the fallback timer and use the response to update the
-  // locality map.
+  // 3. Before the fallback timer fires, if any child policy in the locality map
+  // becomes READY, we cancel the fallback timer.
   bool fallback_at_startup_checks_pending_ = false;
   // Timeout in milliseconds for before using fallback backend addresses.
   // 0 means not using fallback.
@@ -507,7 +505,7 @@ class XdsLb : public LoadBalancingPolicy {
   grpc_closure lb_on_fallback_;
 
   // The policy to use for the fallback backends.
-  RefCountedPtr<ParsedLoadBalancingConfig> fallback_policy_config_;
+  RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy_config_;
   // Lock held when modifying the value of fallback_policy_ or
   // pending_fallback_policy_.
   Mutex fallback_policy_mu_;
@@ -516,7 +514,7 @@ class XdsLb : public LoadBalancingPolicy {
   OrphanablePtr<LoadBalancingPolicy> pending_fallback_policy_;
 
   // The policy to use for the backends.
-  RefCountedPtr<ParsedLoadBalancingConfig> child_policy_config_;
+  RefCountedPtr<LoadBalancingPolicy::Config> child_policy_config_;
   // Map of policies to use in the backend
   LocalityMap locality_map_;
   // TODO(mhaidry) : Add support for multiple maps of localities
@@ -531,25 +529,24 @@ class XdsLb : public LoadBalancingPolicy {
 // XdsLb::Picker
 //
 
-XdsLb::PickResult XdsLb::Picker::Pick(PickArgs* pick, grpc_error** error) {
+XdsLb::PickResult XdsLb::Picker::Pick(PickArgs args) {
   // TODO(roth): Add support for drop handling.
   // Generate a random number between 0 and the total weight
   const uint32_t key =
       (rand() * pickers_[pickers_.size() - 1].first) / RAND_MAX;
   // Forward pick to whichever locality maps to the range in which the
   // random number falls in.
-  PickResult result = PickFromLocality(key, pick, error);
+  PickResult result = PickFromLocality(key, args);
   // If pick succeeded, add client stats.
-  if (result == PickResult::PICK_COMPLETE &&
-      pick->connected_subchannel != nullptr && client_stats_ != nullptr) {
+  if (result.type == PickResult::PICK_COMPLETE &&
+      result.connected_subchannel != nullptr && client_stats_ != nullptr) {
     // TODO(roth): Add support for client stats.
   }
   return result;
 }
 
 XdsLb::PickResult XdsLb::Picker::PickFromLocality(const uint32_t key,
-                                                  PickArgs* pick,
-                                                  grpc_error** error) {
+                                                  PickArgs args) {
   size_t mid = 0;
   size_t start_index = 0;
   size_t end_index = pickers_.size() - 1;
@@ -567,7 +564,7 @@ XdsLb::PickResult XdsLb::Picker::PickFromLocality(const uint32_t key,
   }
   if (index == 0) index = start_index;
   GPR_ASSERT(pickers_[index].first > key);
-  return pickers_[index].second->Pick(pick, error);
+  return pickers_[index].second->Pick(args);
 }
 
 //
@@ -584,7 +581,7 @@ bool XdsLb::FallbackHelper::CalledByCurrentFallback() const {
   return child_ == parent_->fallback_policy_.get();
 }
 
-Subchannel* XdsLb::FallbackHelper::CreateSubchannel(
+RefCountedPtr<SubchannelInterface> XdsLb::FallbackHelper::CreateSubchannel(
     const grpc_channel_args& args) {
   if (parent_->shutting_down_ ||
       (!CalledByPendingFallback() && !CalledByCurrentFallback())) {
@@ -1197,9 +1194,6 @@ void XdsLb::BalancerChannelState::BalancerCallState::
         xds_grpclb_destroy_serverlist(
             xdslb_policy->locality_serverlist_[0]->serverlist);
       } else {
-        // This is the first serverlist we've received, don't enter fallback
-        // mode.
-        xdslb_policy->MaybeCancelFallbackAtStartupChecks();
         // Initialize locality serverlist, currently the list only handles
         // one child.
         xdslb_policy->locality_serverlist_.emplace_back(
@@ -1748,7 +1742,7 @@ void XdsLb::LocalityMap::PruneLocalities(const LocalityList& locality_list) {
 
 void XdsLb::LocalityMap::UpdateLocked(
     const LocalityList& locality_serverlist,
-    ParsedLoadBalancingConfig* child_policy_config,
+    LoadBalancingPolicy::Config* child_policy_config,
     const grpc_channel_args* args, XdsLb* parent) {
   if (parent->shutting_down_) return;
   for (size_t i = 0; i < locality_serverlist.size(); i++) {
@@ -1843,7 +1837,7 @@ XdsLb::LocalityMap::LocalityEntry::CreateChildPolicyLocked(
 
 void XdsLb::LocalityMap::LocalityEntry::UpdateLocked(
     xds_grpclb_serverlist* serverlist,
-    ParsedLoadBalancingConfig* child_policy_config,
+    LoadBalancingPolicy::Config* child_policy_config,
     const grpc_channel_args* args_in) {
   if (parent_->shutting_down_) return;
   // Construct update args.
@@ -2005,7 +1999,8 @@ bool XdsLb::LocalityMap::LocalityEntry::Helper::CalledByCurrentChild() const {
   return child_ == entry_->child_policy_.get();
 }
 
-Subchannel* XdsLb::LocalityMap::LocalityEntry::Helper::CreateSubchannel(
+RefCountedPtr<SubchannelInterface>
+XdsLb::LocalityMap::LocalityEntry::Helper::CreateSubchannel(
     const grpc_channel_args& args) {
   if (entry_->parent_->shutting_down_ ||
       (!CalledByPendingChild() && !CalledByCurrentChild())) {
@@ -2046,7 +2041,10 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
     return;
   }
   // At this point, child_ must be the current child policy.
-  if (state == GRPC_CHANNEL_READY) entry_->parent_->MaybeExitFallbackMode();
+  if (state == GRPC_CHANNEL_READY) {
+    entry_->parent_->MaybeCancelFallbackAtStartupChecks();
+    entry_->parent_->MaybeExitFallbackMode();
+  }
   // If we are in fallback mode, ignore update request from the child policy.
   if (entry_->parent_->fallback_policy_ != nullptr) return;
   GPR_ASSERT(entry_->parent_->lb_chand_ != nullptr);
@@ -2159,7 +2157,7 @@ class XdsFactory : public LoadBalancingPolicyFactory {
 
   const char* name() const override { return kXds; }
 
-  RefCountedPtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
+  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
       const grpc_json* json, grpc_error** error) const override {
     GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
     if (json == nullptr) {
@@ -2175,8 +2173,8 @@ class XdsFactory : public LoadBalancingPolicyFactory {
 
     InlinedVector<grpc_error*, 3> error_list;
     const char* balancer_name = nullptr;
-    RefCountedPtr<ParsedLoadBalancingConfig> child_policy;
-    RefCountedPtr<ParsedLoadBalancingConfig> fallback_policy;
+    RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
+    RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy;
     for (const grpc_json* field = json->child; field != nullptr;
          field = field->next) {
       if (field->key == nullptr) continue;
@@ -2222,7 +2220,7 @@ class XdsFactory : public LoadBalancingPolicyFactory {
           "field:balancerName error:not found"));
     }
     if (error_list.empty()) {
-      return RefCountedPtr<ParsedLoadBalancingConfig>(New<ParsedXdsConfig>(
+      return RefCountedPtr<LoadBalancingPolicy::Config>(New<ParsedXdsConfig>(
           balancer_name, std::move(child_policy), std::move(fallback_policy)));
     } else {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR("Xds Parser", &error_list);
