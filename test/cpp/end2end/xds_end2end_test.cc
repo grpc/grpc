@@ -50,10 +50,9 @@
 #include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 
-//#include "envoy/api/v2/core/address.proto.h"
-#include "envoy/api/v2/eds.grpc.pb.h"
-//#include "envoy/api/v2/discovery.pb.h"
-
+#include "src/proto/grpc/lb/v2/eds.grpc.pb.h"
+//#include "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h"
+#include "upb/upb.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -77,14 +76,19 @@
 
 using std::chrono::system_clock;
 
-using ::envoy::api::v2::DiscoveryRequest;
-using ::envoy::api::v2::DiscoveryResponse;
-using ::envoy::api::v2::ClusterLoadAssignment;
-using ::envoy::service::discovery::v2::grpc::EndpointDiscoveryService;
+using grpc::lb::v2::ClusterLoadAssignment;
+using grpc::lb::v2::DiscoveryRequest;
+using grpc::lb::v2::DiscoveryResponse;
+using grpc::lb::v2::EndpointDiscoveryService;
 
 namespace grpc {
 namespace testing {
 namespace {
+
+constexpr char kEdsTypeUrl[] =
+    "type.googleapis.com/grpc.lb.v2.ClusterLoadAssignment";
+
+static upb::Arena g_arena;
 
 template <typename ServiceType>
 class CountedService : public ServiceType {
@@ -166,12 +170,6 @@ class BackendServiceImpl : public BackendService {
   std::set<grpc::string> clients_;
 };
 
-grpc::string Ip4ToPackedString(const char* ip_str) {
-  struct in_addr ip4;
-  GPR_ASSERT(inet_pton(AF_INET, ip_str, &ip4) == 1);
-  return grpc::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
-}
-
 struct ClientStats {
   size_t num_calls_started = 0;
   size_t num_calls_finished = 0;
@@ -204,14 +202,15 @@ struct ClientStats {
 class BalancerServiceImpl : public BalancerService {
  public:
   using Stream = ServerReaderWriter<DiscoveryResponse, DiscoveryRequest>;
-  using ResponseDelayPair = std::pair<LoadBalanceResponse, int>;
+  using ResponseDelayPair = std::pair<DiscoveryResponse, int>;
 
   explicit BalancerServiceImpl(int client_load_reporting_interval_seconds)
       : client_load_reporting_interval_seconds_(
-            client_load_reporting_interval_seconds) {}
+            client_load_reporting_interval_seconds) {
+    gpr_log(GPR_INFO, "%d", client_load_reporting_interval_seconds_);
+  }
 
-  Status StreamEndpoints(ServerContext* context,
-                                   Stream* stream) override {
+  Status StreamEndpoints(ServerContext* context, Stream* stream) override {
     // TODO(juanlishen): Clean up the scoping.
     gpr_log(GPR_INFO, "LB[%p]: EDS starts", this);
     {
@@ -249,7 +248,7 @@ class BalancerServiceImpl : public BalancerService {
     return Status::OK;
   }
 
-  void add_response(const LoadBalanceResponse& response, int send_after_ms) {
+  void add_response(const DiscoveryResponse& response, int send_after_ms) {
     grpc::internal::MutexLock lock(&mu_);
     responses_and_delays_.push_back(std::make_pair(response, send_after_ms));
   }
@@ -262,10 +261,14 @@ class BalancerServiceImpl : public BalancerService {
   }
 
   static DiscoveryResponse BuildResponseForBackends(
-      const std::vector<int>& backend_ports) {
+      const std::vector<int>& backend_ports,
+      const std::map<grpc::string, size_t>& drop_token_counts) {
     ClusterLoadAssignment assignment;
     assignment.set_cluster_name("service name");
     auto* endpoints = assignment.add_endpoints();
+    auto* lb_weight = endpoints->mutable_load_balancing_weight();
+    lb_weight->set_value(3);
+    endpoints->set_priority(0);
     auto* locality = endpoints->mutable_locality();
     locality->set_region("region name");
     for (const int& backend_port : backend_ports) {
@@ -273,15 +276,16 @@ class BalancerServiceImpl : public BalancerService {
       auto* endpoint = lb_endpoints->mutable_endpoint();
       auto* address = endpoint->mutable_address();
       auto* socket_address = address->mutable_socket_address();
-      socket_address->set_address(Ip4ToPackedString("127.0.0.1"));
+      socket_address->set_address("127.0.0.1");
       socket_address->set_port_value(backend_port);
-      static int token_count = 0;
-      char* token;
-      gpr_asprintf(&token, "token%03d", ++token_count);
-      server->set_load_balance_token(token);
-      gpr_free(token);
+      //      static int token_count = 0;
+      //      char* token;
+      //      gpr_asprintf(&token, "token%03d", ++token_count);
+      //      server->set_load_balance_token(token);
+      //      gpr_free(token);
     }
     DiscoveryResponse response;
+    response.set_type_url(kEdsTypeUrl);
     response.add_resources()->PackFrom(assignment);
     return response;
   }
@@ -299,7 +303,7 @@ class BalancerServiceImpl : public BalancerService {
   }
 
  private:
-  void SendResponse(Stream* stream, const LoadBalanceResponse& response,
+  void SendResponse(Stream* stream, const DiscoveryResponse& response,
                     int delay_ms) {
     gpr_log(GPR_INFO, "LB[%p]: sleeping for %d ms...", this, delay_ms);
     if (delay_ms > 0) {
@@ -311,6 +315,7 @@ class BalancerServiceImpl : public BalancerService {
     stream->Write(response);
   }
 
+  const int client_load_reporting_interval_seconds_;
   std::vector<ResponseDelayPair> responses_and_delays_;
   grpc::internal::Mutex mu_;
   grpc::internal::CondVar serverlist_cond_;
@@ -545,8 +550,7 @@ class XdsEnd2endTest : public ::testing::Test {
     return backend_ports;
   }
 
-  void ScheduleResponseForBalancer(size_t i,
-                                   const LoadBalanceResponse& response,
+  void ScheduleResponseForBalancer(size_t i, const DiscoveryResponse& response,
                                    int delay_ms) {
     balancers_[i]->service_.add_response(response, delay_ms);
   }
@@ -768,7 +772,7 @@ TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
   const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
   const int kCallDeadlineMs = kServerlistDelayMs * 2;
   // First response is an empty serverlist, sent right away.
-  ScheduleResponseForBalancer(0, LoadBalanceResponse(), 0);
+  ScheduleResponseForBalancer(0, DiscoveryResponse(), 0);
   // Send non-empty serverlist only after kServerlistDelayMs
   ScheduleResponseForBalancer(
       0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),

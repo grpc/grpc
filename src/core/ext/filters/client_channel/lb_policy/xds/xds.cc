@@ -613,7 +613,7 @@ XdsLb::BalancerChannelState::BalancerCallState::BalancerCallState(
   lb_call_ = grpc_channel_create_pollset_set_call(
       lb_chand_->channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
       xdslb_policy()->interested_parties(),
-      GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V1_DOT_LOADBALANCER_SLASH_BALANCELOAD,
+      GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V2_DOT_ENDPOINTDISCOVERYSERVICE_SLASH_STREAMENDPOINTS,
       nullptr, deadline, nullptr);
   // Init the LB call request payload.
   grpc_slice request_payload_slice =
@@ -830,7 +830,8 @@ void XdsLb::BalancerChannelState::BalancerCallState::
   grpc_byte_buffer_destroy(lb_calld->recv_message_payload_);
   lb_calld->recv_message_payload_ = nullptr;
   // Parse the response.
-  UniquePtr<XdsLoadUpdateArgs> update_args = XdsResponseDecodeAndParse(response_slice);
+  UniquePtr<XdsLoadUpdateArgs> update_args =
+      XdsResponseDecodeAndParse(response_slice);
   if (update_args == nullptr) {
     char* response_slice_str =
         grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
@@ -850,7 +851,7 @@ void XdsLb::BalancerChannelState::BalancerCallState::
               "[xdslb %p] Locality %" PRIuPTR " contains %" PRIuPTR
               " server addresses",
               xdslb_policy, i, locality.serverlist->size());
-      for (size_t j = 0; j < locality.serverlist->size(); ++i) {
+      for (size_t j = 0; j < locality.serverlist->size(); ++j) {
         char* ipport;
         grpc_sockaddr_to_string(&ipport, &(*locality.serverlist)[j].address(),
                                 false);
@@ -911,6 +912,8 @@ void XdsLb::BalancerChannelState::BalancerCallState::
         MakeUnique<LocalityServerlistEntry>());
     xdslb_policy->locality_serverlist_[0]->locality_key =
         gpr_strdup(kDefaultLocalityName);
+    xdslb_policy->locality_serverlist_[0]->locality_weight =
+        update_args->localities[0].lb_weight;
   }
   // and update the copy in the XdsLb instance. This
   // serverlist instance will be destroyed either upon the next

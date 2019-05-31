@@ -31,9 +31,9 @@
 #include "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h"
 #include "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h"
 #include "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h"
+#include "src/core/ext/upb-generated/google/protobuf/any.upb.h"
 #include "src/core/ext/upb-generated/google/protobuf/struct.upb.h"
 #include "src/core/ext/upb-generated/google/protobuf/wrappers.upb.h"
-#include "src/core/ext/upb-generated/google/protobuf/any.upb.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "upb/upb.h"
 

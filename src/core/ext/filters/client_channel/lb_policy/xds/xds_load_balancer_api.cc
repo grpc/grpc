@@ -22,15 +22,15 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/gpr/murmur_hash.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 
 namespace grpc_core {
 
 namespace {
 
 constexpr char kEdsTypeUrl[] =
-    "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
+    "type.googleapis.com/grpc.lb.v2.ClusterLoadAssignment";
 constexpr char kEndpointRequired[] = "endpointRequired";
 
 }  // namespace
@@ -50,8 +50,8 @@ grpc_slice XdsRequestCreateAndEncode(const char* service_name) {
   XdsValue* value =
       google_protobuf_Struct_FieldsEntry_mutable_value(field, arena.ptr());
   google_protobuf_Value_set_bool_value(value, true);
-  envoy_api_v2_DiscoveryRequest_add_resource_names(request, upb_strview_makez(service_name),
-                                                   arena.ptr());
+  envoy_api_v2_DiscoveryRequest_add_resource_names(
+      request, upb_strview_makez(service_name), arena.ptr());
   envoy_api_v2_DiscoveryRequest_set_type_url(
       request, upb_strview_make(kEdsTypeUrl, strlen(kEdsTypeUrl)));
   // Encode the request.
@@ -98,23 +98,25 @@ XdsLocalityUpdateArgs LocalityParse(
   const XdsLocality* locality =
       envoy_api_v2_endpoint_LocalityLbEndpoints_locality(locality_lb_endpoints);
   size_t size;
-  char* serialized_locality = envoy_api_v2_core_Locality_serialize(locality, arena.ptr(), &size);
-  grpc_slice serialized_locality_slice = grpc_slice_from_copied_buffer(serialized_locality, size);
+  char* serialized_locality =
+      envoy_api_v2_core_Locality_serialize(locality, arena.ptr(), &size);
+  grpc_slice serialized_locality_slice =
+      grpc_slice_from_copied_buffer(serialized_locality, size);
   update_args.locality_name = serialized_locality_slice;
   // Parse the addresses.
-  const XdsLbEndpoint* const * lb_endpoints =
+  const XdsLbEndpoint* const* lb_endpoints =
       envoy_api_v2_endpoint_LocalityLbEndpoints_lb_endpoints(
           locality_lb_endpoints, &size);
   for (size_t i = 0; i < size; ++i) {
     ServerAddressParseAndAppend(lb_endpoints[i], update_args.serverlist.get());
   }
-  // Parse the lb_weight and priority.
-  const google_protobuf_UInt32Value* lb_weight =
-      envoy_api_v2_endpoint_LocalityLbEndpoints_load_balancing_weight(
-          locality_lb_endpoints);
-  update_args.lb_weight = google_protobuf_UInt32Value_value(lb_weight);
-  update_args.priority =
-      envoy_api_v2_endpoint_LocalityLbEndpoints_priority(locality_lb_endpoints);
+  //  // Parse the lb_weight and priority.
+  //  const google_protobuf_UInt32Value* lb_weight =
+  //      envoy_api_v2_endpoint_LocalityLbEndpoints_load_balancing_weight(
+  //          locality_lb_endpoints);
+  //  update_args.lb_weight = google_protobuf_UInt32Value_value(lb_weight);
+  //  update_args.priority =
+  //      envoy_api_v2_endpoint_LocalityLbEndpoints_priority(locality_lb_endpoints);
   return update_args;
 }
 
@@ -124,11 +126,9 @@ UniquePtr<XdsLoadUpdateArgs> XdsResponseDecodeAndParse(
     const grpc_slice& encoded_response) {
   upb::Arena arena;
   // Decode the response.
-  const XdsDiscoveryResponse* response =
-      envoy_api_v2_DiscoveryResponse_parse(
-          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(encoded_response)),
-                           GRPC_SLICE_LENGTH(encoded_response),
-          arena.ptr());
+  const XdsDiscoveryResponse* response = envoy_api_v2_DiscoveryResponse_parse(
+      reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(encoded_response)),
+      GRPC_SLICE_LENGTH(encoded_response), arena.ptr());
   // Parse the response.
   if (response == nullptr) return nullptr;
   // Check the type_url of the response.
@@ -140,7 +140,7 @@ UniquePtr<XdsLoadUpdateArgs> XdsResponseDecodeAndParse(
   }
   // Get the resources from the response.
   size_t size;
-  const google_protobuf_Any* const * resources =
+  const google_protobuf_Any* const* resources =
       envoy_api_v2_DiscoveryResponse_resources(response, &size);
   if (size < 1) {
     gpr_log(GPR_ERROR, "EDS response contains 0 resource.");
@@ -158,8 +158,9 @@ UniquePtr<XdsLoadUpdateArgs> XdsResponseDecodeAndParse(
       google_protobuf_Any_value(resources[0]);
   XdsClusterLoadAssignment* cluster_load_assignment =
       envoy_api_v2_ClusterLoadAssignment_parse(
-          encoded_cluster_load_assignment.data, encoded_cluster_load_assignment.size, arena.ptr());
-  const XdsLocalityLbEndpoints* const * endpoints =
+          encoded_cluster_load_assignment.data,
+          encoded_cluster_load_assignment.size, arena.ptr());
+  const XdsLocalityLbEndpoints* const* endpoints =
       envoy_api_v2_ClusterLoadAssignment_endpoints(cluster_load_assignment,
                                                    &size);
   for (size_t i = 0; i < size; ++i) {
