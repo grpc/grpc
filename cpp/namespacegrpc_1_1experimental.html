@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.20.0</span>
+   &#160;<span id="projectnumber">1.22.0-dev</span>
    </div>
   </td>
  </tr>
@@ -65,6 +65,7 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Data Structures</a> &#124;
+<a href="#typedef-members">Typedefs</a> &#124;
 <a href="#enum-members">Enumerations</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
@@ -77,14 +78,8 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc_1_1experimental_1_1_alts_credentials_options.html">AltsCredentialsOptions</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Options used to build AltsCredentials.  <a href="structgrpc_1_1experimental_1_1_alts_credentials_options.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc_1_1experimental_1_1_alts_server_credentials_options.html">AltsServerCredentialsOptions</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Options to create <a class="el" href="classgrpc_1_1_server_credentials.html" title="Wrapper around grpc_server_credentials, a way to authenticate a server. ">ServerCredentials</a> with ALTS.  <a href="structgrpc_1_1experimental_1_1_alts_server_credentials_options.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_callback_generic_service.html">CallbackGenericService</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><em><a class="el" href="classgrpc_1_1experimental_1_1_callback_generic_service.html" title="CallbackGenericService is the base class for generic services implemented using the callback API and ...">CallbackGenericService</a></em> is the base class for generic services implemented using the callback API and registered through the <a class="el" href="classgrpc_1_1_server_builder.html" title="A builder class for the creation and startup of grpc::Server instances. ">ServerBuilder</a> using RegisterCallbackGenericService.  <a href="classgrpc_1_1experimental_1_1_callback_generic_service.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><em><a class="el" href="classgrpc_1_1experimental_1_1_callback_generic_service.html" title="CallbackGenericService is the base class for generic services implemented using the callback API and ...">CallbackGenericService</a></em> is the base class for generic services implemented using the callback API and registered through the ServerBuilder using RegisterCallbackGenericService.  <a href="classgrpc_1_1experimental_1_1_callback_generic_service.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html">ClientBidiReactor</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><em><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html" title="ClientBidiReactor is the interface for a bidirectional streaming RPC. ">ClientBidiReactor</a></em> is the interface for a bidirectional streaming RPC.  <a href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#details">More...</a><br /></td></tr>
@@ -92,6 +87,8 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_callback_reader.html">ClientCallbackReader</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_callback_reader_writer.html">ClientCallbackReaderWriter</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_callback_unary.html">ClientCallbackUnary</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_callback_writer.html">ClientCallbackWriter</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -102,14 +99,25 @@ Data Structures</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_rpc_info.html">ClientRpcInfo</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_unary_reactor.html">ClientUnaryReactor</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><em><a class="el" href="classgrpc_1_1experimental_1_1_client_unary_reactor.html" title="ClientUnaryReactor is a reactor-style interface for a unary RPC. ">ClientUnaryReactor</a></em> is a reactor-style interface for a unary RPC.  <a href="classgrpc_1_1experimental_1_1_client_unary_reactor.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html">ClientWriteReactor</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><em><a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html" title="ClientWriteReactor is the interface for a client-streaming RPC. ">ClientWriteReactor</a></em> is the interface for a client-streaming RPC.  <a href="classgrpc_1_1experimental_1_1_client_write_reactor.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_external_connection_acceptor.html">ExternalConnectionAcceptor</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_interceptor.html">Interceptor</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Interface for an interceptor.  <a href="classgrpc_1_1experimental_1_1_interceptor.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html">InterceptorBatchMethods</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Class that is passed as an argument to the <em>Intercept</em> method of the application's <em><a class="el" href="classgrpc_1_1experimental_1_1_interceptor.html" title="Interface for an interceptor. ">Interceptor</a></em> interface implementation.  <a href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_message_allocator.html">MessageAllocator</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_message_holder.html">MessageHolder</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_rpc_allocator_state.html">RpcAllocatorState</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html">ServerBidiReactor</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><em><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC. ">ServerBidiReactor</a></em> is the interface for a bidirectional streaming RPC.  <a href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#details">More...</a><br /></td></tr>
@@ -134,8 +142,15 @@ Data Structures</h2></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html" title="ServerRpcInfo represents the state of a particular RPC as it appears to an interceptor. ">ServerRpcInfo</a> represents the state of a particular RPC as it appears to an interceptor.  <a href="classgrpc_1_1experimental_1_1_server_rpc_info.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_write_reactor.html">ServerWriteReactor</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><em><a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html" title="ServerReadReactor is the interface for a client-streaming RPC. ">ServerReadReactor</a></em> is the interface for a server-streaming RPC.  <a href="classgrpc_1_1experimental_1_1_server_write_reactor.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><em><a class="el" href="classgrpc_1_1experimental_1_1_server_write_reactor.html" title="ServerWriteReactor is the interface for a server-streaming RPC. ">ServerWriteReactor</a></em> is the interface for a server-streaming RPC.  <a href="classgrpc_1_1experimental_1_1_server_write_reactor.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
+Typedefs</h2></td></tr>
+<tr class="memitem:ab381bbcb87e572c667736fb1b8dd39ff"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="structgrpc__impl_1_1experimental_1_1_alts_credentials_options.html">grpc_impl::experimental::AltsCredentialsOptions</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#ab381bbcb87e572c667736fb1b8dd39ff">AltsCredentialsOptions</a></td></tr>
+<tr class="separator:ab381bbcb87e572c667736fb1b8dd39ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9a810faa605d3b09b75d729596b33473"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="structgrpc__impl_1_1experimental_1_1_alts_server_credentials_options.html">grpc_impl::experimental::AltsServerCredentialsOptions</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#a9a810faa605d3b09b75d729596b33473">AltsServerCredentialsOptions</a></td></tr>
+<tr class="separator:a9a810faa605d3b09b75d729596b33473"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
 Enumerations</h2></td></tr>
@@ -164,33 +179,50 @@ Enumerations</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:ab4c7e40417b37179d52667f3208f69a3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#ab4c7e40417b37179d52667f3208f69a3">ChannelResetConnectionBackoff</a> (<a class="el" href="classgrpc_1_1_channel.html">Channel</a> *channel)</td></tr>
+<tr class="memitem:ab4c7e40417b37179d52667f3208f69a3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#ab4c7e40417b37179d52667f3208f69a3">ChannelResetConnectionBackoff</a> (<a class="el" href="namespacegrpc.html#a3c981ec4941ef822eb01ac99da53ca88">Channel</a> *channel)</td></tr>
 <tr class="memdesc:ab4c7e40417b37179d52667f3208f69a3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resets the channel's connection backoff.  <a href="#ab4c7e40417b37179d52667f3208f69a3">More...</a><br /></td></tr>
 <tr class="separator:ab4c7e40417b37179d52667f3208f69a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:add75d935f9366cf23255959e0baaeff5"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel.html">Channel</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#add75d935f9366cf23255959e0baaeff5">CreateCustomChannelWithInterceptors</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;target, const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt; &amp;creds, const <a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> &amp;args, std::vector&lt; std::unique_ptr&lt; <a class="el" href="classgrpc_1_1experimental_1_1_client_interceptor_factory_interface.html">experimental::ClientInterceptorFactoryInterface</a> &gt;&gt; interceptor_creators)</td></tr>
-<tr class="memdesc:add75d935f9366cf23255959e0baaeff5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new <em>custom</em> <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel. ">Channel</a></em> pointing to <em>target</em> with <em>interceptors</em> being invoked per call.  <a href="#add75d935f9366cf23255959e0baaeff5">More...</a><br /></td></tr>
-<tr class="separator:add75d935f9366cf23255959e0baaeff5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abf863776469f08e69e7ca6e82246fd7a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#abf863776469f08e69e7ca6e82246fd7a">RegisterGlobalClientInterceptorFactory</a> (<a class="el" href="classgrpc_1_1experimental_1_1_client_interceptor_factory_interface.html">ClientInterceptorFactoryInterface</a> *factory)</td></tr>
 <tr class="separator:abf863776469f08e69e7ca6e82246fd7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a06e8ad17f59ec479769f014e79a4b068"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#a06e8ad17f59ec479769f014e79a4b068">TestOnlyResetGlobalClientInterceptorFactory</a> ()</td></tr>
 <tr class="separator:a06e8ad17f59ec479769f014e79a4b068"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad871e11876b9e9893ee4f57fc283abfb"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#ad871e11876b9e9893ee4f57fc283abfb">AltsCredentials</a> (const <a class="el" href="structgrpc_1_1experimental_1_1_alts_credentials_options.html">AltsCredentialsOptions</a> &amp;options)</td></tr>
-<tr class="memdesc:ad871e11876b9e9893ee4f57fc283abfb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds ALTS Credentials given ALTS specific options.  <a href="#ad871e11876b9e9893ee4f57fc283abfb">More...</a><br /></td></tr>
-<tr class="separator:ad871e11876b9e9893ee4f57fc283abfb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9354c3cab0a74d9d405c00781f789507"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#a9354c3cab0a74d9d405c00781f789507">LocalCredentials</a> (<a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a> type)</td></tr>
-<tr class="memdesc:a9354c3cab0a74d9d405c00781f789507"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds Local Credentials.  <a href="#a9354c3cab0a74d9d405c00781f789507">More...</a><br /></td></tr>
-<tr class="separator:a9354c3cab0a74d9d405c00781f789507"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abfae1568a31fb0a10b4d973953ddc3b2"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#abfae1568a31fb0a10b4d973953ddc3b2">AltsServerCredentials</a> (const <a class="el" href="structgrpc_1_1experimental_1_1_alts_server_credentials_options.html">AltsServerCredentialsOptions</a> &amp;options)</td></tr>
-<tr class="memdesc:abfae1568a31fb0a10b4d973953ddc3b2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds ALTS <a class="el" href="classgrpc_1_1_server_credentials.html" title="Wrapper around grpc_server_credentials, a way to authenticate a server. ">ServerCredentials</a> given ALTS specific options.  <a href="#abfae1568a31fb0a10b4d973953ddc3b2">More...</a><br /></td></tr>
-<tr class="separator:abfae1568a31fb0a10b4d973953ddc3b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6076d466bcfdcb7d7678c2dcafe01f5f"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#a6076d466bcfdcb7d7678c2dcafe01f5f">LocalServerCredentials</a> (<a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a> type)</td></tr>
-<tr class="memdesc:a6076d466bcfdcb7d7678c2dcafe01f5f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds Local <a class="el" href="classgrpc_1_1_server_credentials.html" title="Wrapper around grpc_server_credentials, a way to authenticate a server. ">ServerCredentials</a>.  <a href="#a6076d466bcfdcb7d7678c2dcafe01f5f">More...</a><br /></td></tr>
-<tr class="separator:a6076d466bcfdcb7d7678c2dcafe01f5f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0cb1bfe493c15e98a47e0c1291d3abfb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#a0cb1bfe493c15e98a47e0c1291d3abfb">ValidateServiceConfigJSON</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;service_config_json)</td></tr>
+<tr class="memdesc:a0cb1bfe493c15e98a47e0c1291d3abfb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Validates <em>service_config_json</em>.  <a href="#a0cb1bfe493c15e98a47e0c1291d3abfb">More...</a><br /></td></tr>
+<tr class="separator:a0cb1bfe493c15e98a47e0c1291d3abfb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><a class="el" href="classgrpc_1_1experimental_1_1_client_rpc_info.html">ClientRpcInfo</a> represents the state of a particular RPC as it appears to an interceptor. </p>
 <p>It is created and owned by the library and passed to the CreateClientInterceptor method of the application's <a class="el" href="classgrpc_1_1experimental_1_1_client_interceptor_factory_interface.html">ClientInterceptorFactoryInterface</a> implementation </p>
-</div><h2 class="groupheader">Enumeration Type Documentation</h2>
+</div><h2 class="groupheader">Typedef Documentation</h2>
+<a id="ab381bbcb87e572c667736fb1b8dd39ff"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab381bbcb87e572c667736fb1b8dd39ff">&#9670;&nbsp;</a></span>AltsCredentialsOptions</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef ::<a class="el" href="structgrpc__impl_1_1experimental_1_1_alts_credentials_options.html">grpc_impl::experimental::AltsCredentialsOptions</a> <a class="el" href="namespacegrpc_1_1experimental.html#ab381bbcb87e572c667736fb1b8dd39ff">grpc::experimental::AltsCredentialsOptions</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a9a810faa605d3b09b75d729596b33473"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9a810faa605d3b09b75d729596b33473">&#9670;&nbsp;</a></span>AltsServerCredentialsOptions</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef ::<a class="el" href="structgrpc__impl_1_1experimental_1_1_alts_server_credentials_options.html">grpc_impl::experimental::AltsServerCredentialsOptions</a> <a class="el" href="namespacegrpc_1_1experimental.html#a9a810faa605d3b09b75d729596b33473">grpc::experimental::AltsServerCredentialsOptions</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Enumeration Type Documentation</h2>
 <a id="a03d3481b2c4146f53e90966d4a0fd8a1"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a03d3481b2c4146f53e90966d4a0fd8a1">&#9670;&nbsp;</a></span>InterceptionHookPoints</h2>
 
@@ -243,46 +275,6 @@ Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
-<a id="ad871e11876b9e9893ee4f57fc283abfb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad871e11876b9e9893ee4f57fc283abfb">&#9670;&nbsp;</a></span>AltsCredentials()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a>&gt; grpc::experimental::AltsCredentials </td>
-          <td>(</td>
-          <td class="paramtype">const <a class="el" href="structgrpc_1_1experimental_1_1_alts_credentials_options.html">AltsCredentialsOptions</a> &amp;&#160;</td>
-          <td class="paramname"><em>options</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Builds ALTS Credentials given ALTS specific options. </p>
-
-</div>
-</div>
-<a id="abfae1568a31fb0a10b4d973953ddc3b2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abfae1568a31fb0a10b4d973953ddc3b2">&#9670;&nbsp;</a></span>AltsServerCredentials()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a>&gt; grpc::experimental::AltsServerCredentials </td>
-          <td>(</td>
-          <td class="paramtype">const <a class="el" href="structgrpc_1_1experimental_1_1_alts_server_credentials_options.html">AltsServerCredentialsOptions</a> &amp;&#160;</td>
-          <td class="paramname"><em>options</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Builds ALTS <a class="el" href="classgrpc_1_1_server_credentials.html" title="Wrapper around grpc_server_credentials, a way to authenticate a server. ">ServerCredentials</a> given ALTS specific options. </p>
-
-</div>
-</div>
 <a id="ab4c7e40417b37179d52667f3208f69a3"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab4c7e40417b37179d52667f3208f69a3">&#9670;&nbsp;</a></span>ChannelResetConnectionBackoff()</h2>
 
@@ -292,7 +284,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="memname">void grpc::experimental::ChannelResetConnectionBackoff </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_channel.html">Channel</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="namespacegrpc.html#a3c981ec4941ef822eb01ac99da53ca88">Channel</a> *&#160;</td>
           <td class="paramname"><em>channel</em></td><td>)</td>
           <td></td>
         </tr>
@@ -300,98 +292,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Resets the channel's connection backoff. </p>
-<p>TODO(roth): Once we see whether this proves useful, either create a gRFC and change this to be a method of the <a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel. ">Channel</a> class, or remove it. </p>
-
-</div>
-</div>
-<a id="add75d935f9366cf23255959e0baaeff5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#add75d935f9366cf23255959e0baaeff5">&#9670;&nbsp;</a></span>CreateCustomChannelWithInterceptors()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel.html">Channel</a> &gt; grpc::experimental::CreateCustomChannelWithInterceptors </td>
-          <td>(</td>
-          <td class="paramtype">const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;&#160;</td>
-          <td class="paramname"><em>target</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt; &amp;&#160;</td>
-          <td class="paramname"><em>creds</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const <a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> &amp;&#160;</td>
-          <td class="paramname"><em>args</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::vector&lt; std::unique_ptr&lt; <a class="el" href="classgrpc_1_1experimental_1_1_client_interceptor_factory_interface.html">experimental::ClientInterceptorFactoryInterface</a> &gt;&gt;&#160;</td>
-          <td class="paramname"><em>interceptor_creators</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Create a new <em>custom</em> <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel. ">Channel</a></em> pointing to <em>target</em> with <em>interceptors</em> being invoked per call. </p>
-<dl class="section warning"><dt>Warning</dt><dd>For advanced use and testing ONLY. Override default channel arguments only if necessary.</dd></dl>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">target</td><td>The URI of the endpoint to connect to. </td></tr>
-    <tr><td class="paramname">creds</td><td>Credentials to use for the created channel. If it does not hold an object or is invalid, a lame channel (one on which all operations fail) is returned. </td></tr>
-    <tr><td class="paramname">args</td><td>Options for channel creation. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a id="a9354c3cab0a74d9d405c00781f789507"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9354c3cab0a74d9d405c00781f789507">&#9670;&nbsp;</a></span>LocalCredentials()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a>&gt; grpc::experimental::LocalCredentials </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a>&#160;</td>
-          <td class="paramname"><em>type</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Builds Local Credentials. </p>
-
-</div>
-</div>
-<a id="a6076d466bcfdcb7d7678c2dcafe01f5f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6076d466bcfdcb7d7678c2dcafe01f5f">&#9670;&nbsp;</a></span>LocalServerCredentials()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a>&gt; grpc::experimental::LocalServerCredentials </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a>&#160;</td>
-          <td class="paramname"><em>type</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Builds Local <a class="el" href="classgrpc_1_1_server_credentials.html" title="Wrapper around grpc_server_credentials, a way to authenticate a server. ">ServerCredentials</a>. </p>
+<p>TODO(roth): Once we see whether this proves useful, either create a gRFC and change this to be a method of the Channel class, or remove it. </p>
 
 </div>
 </div>
@@ -430,10 +331,31 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a0cb1bfe493c15e98a47e0c1291d3abfb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0cb1bfe493c15e98a47e0c1291d3abfb">&#9670;&nbsp;</a></span>ValidateServiceConfigJSON()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> grpc::experimental::ValidateServiceConfigJSON </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;&#160;</td>
+          <td class="paramname"><em>service_config_json</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Validates <em>service_config_json</em>. </p>
+<p>If valid, returns an empty string. Otherwise, returns the validation error. TODO(yashykt): Promote it to out of experimental once it is proved useful and gRFC is accepted. </p>
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 31 2019 16:39:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

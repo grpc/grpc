@@ -6,5 +6,6 @@ var searchData=
   ['default_5flevel',['default_level',['../structgrpc__compression__options.html#a13e56a1d6b97fe62dbc431891d8248a7',1,'grpc_compression_options']]],
   ['delete_5fon_5ffinalize_5f',['delete_on_finalize_',['../classgrpc_1_1_server_interface_1_1_base_async_request.html#a4d7982938885fca52a1c4547208f40b8',1,'grpc::ServerInterface::BaseAsyncRequest']]],
   ['destroy',['destroy',['../structgrpc__arg__pointer__vtable.html#a40604c374509e651a2f3c74b6dd81961',1,'grpc_arg_pointer_vtable']]],
+  ['do_5fnot_5fuse_5fsth_5f',['do_not_use_sth_',['../classgrpc_1_1internal_1_1_mutex.html#a0efca899f4e6a94e93e4d5e7c8413945',1,'grpc::internal::Mutex']]],
   ['done_5fintercepting_5f',['done_intercepting_',['../classgrpc_1_1_server_interface_1_1_base_async_request.html#a6e2125fceb15e9c6673b02ad870a0025',1,'grpc::ServerInterface::BaseAsyncRequest']]]
 ];

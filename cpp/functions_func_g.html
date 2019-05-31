@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.20.0</span>
+   &#160;<span id="projectnumber">1.22.0-dev</span>
    </div>
   </td>
  </tr>
@@ -63,10 +63,13 @@ $(function() {
 
 <h3><a id="index_g"></a>- g -</h3><ul>
 <li>GenericAsyncRequest()
-: <a class="el" href="classgrpc_1_1_server_interface_1_1_generic_async_request.html#a3aac8f4a693835e4b2d444105fa748f6">grpc::ServerInterface::GenericAsyncRequest</a>
+: <a class="el" href="classgrpc_1_1_server_interface_1_1_generic_async_request.html#a8799df3ba590d3dfe870d4717782d040">grpc::ServerInterface::GenericAsyncRequest</a>
 </li>
 <li>GenericStub()
-: <a class="el" href="classgrpc_1_1_generic_stub.html#a1523f381907ac18b841bb4064f2a3b88">grpc::GenericStub</a>
+: <a class="el" href="classgrpc__impl_1_1_generic_stub.html#a845478d70b6b6e39af717c0b8e78ab79">grpc_impl::GenericStub</a>
+</li>
+<li>get()
+: <a class="el" href="classgrpc_1_1internal_1_1_mutex.html#a4c8e13bdd59a7080413d0696c2c6efa5">grpc::internal::Mutex</a>
 </li>
 <li>get_buffer_hint()
 : <a class="el" href="classgrpc_1_1_write_options.html#a432f0759e437909f8cc30c6262b97faf">grpc::WriteOptions</a>
@@ -77,8 +80,11 @@ $(function() {
 <li>GetBinaryErrorDetails()
 : <a class="el" href="classgrpc_1_1internal_1_1_metadata_map.html#a6b40fab5c95ebebb1b820fd1c3a18605">grpc::internal::MetadataMap</a>
 </li>
+<li>GetHandler()
+: <a class="el" href="classgrpc_1_1_service_1_1experimental__type.html#ad54ed055f038170939a2c4452b80d418">grpc::Service::experimental_type</a>
+</li>
 <li>GetHealthCheckService()
-: <a class="el" href="classgrpc_1_1_server.html#a8ca33dab1210bf57468e44d000b138ee">grpc::Server</a>
+: <a class="el" href="classgrpc__impl_1_1_server.html#ab2c3843e0f3ce782fb02931d30920aa8">grpc_impl::Server</a>
 </li>
 <li>GetInterceptedChannel()
 : <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a993f12c0d1a9e5dce038b66c58728e82">grpc::experimental::InterceptorBatchMethods</a>
@@ -86,10 +92,10 @@ $(function() {
 , <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#a1e23ff14548292c4ae13e383d0232800">grpc::internal::InterceptorBatchMethodsImpl</a>
 </li>
 <li>GetLoadBalancingPolicyName()
-: <a class="el" href="classgrpc_1_1_channel.html#a2cfba5ae4aae03ca016f902b2070a8a8">grpc::Channel</a>
+: <a class="el" href="classgrpc__impl_1_1_channel.html#ab13b29f95aa15b8dd29b29d277db585e">grpc_impl::Channel</a>
 </li>
 <li>GetMetadata()
-: <a class="el" href="classgrpc_1_1_metadata_credentials_plugin.html#af39ac20596099995ddb1a80462ac2f0a">grpc::MetadataCredentialsPlugin</a>
+: <a class="el" href="classgrpc__impl_1_1_metadata_credentials_plugin.html#aed091a8b91ae1bf588f3dd992ea6dffd">grpc_impl::MetadataCredentialsPlugin</a>
 </li>
 <li>GetPeerIdentity()
 : <a class="el" href="classgrpc_1_1_auth_context.html#a56a84468c1c3814a185cb6a2a3badf99">grpc::AuthContext</a>
@@ -116,6 +122,9 @@ $(function() {
 : <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a661e6372647f1639783b046d728599fa">grpc::experimental::InterceptorBatchMethods</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a4dc85e0f1a3cdb0c95f04994d443f81f">grpc::internal::CancelInterceptorBatchMethods</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#afe82d67dfd4604d3e97c5fa12392058d">grpc::internal::InterceptorBatchMethodsImpl</a>
+</li>
+<li>GetRpcAllocatorState()
+: <a class="el" href="classgrpc_1_1experimental_1_1_server_callback_rpc_controller.html#a4bc084be1aeee4efa3641cd0bcadc061">grpc::experimental::ServerCallbackRpcController</a>
 </li>
 <li>GetSendInitialMetadata()
 : <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a0ccf0466aa5e7827ba465e8e23aee89b">grpc::experimental::InterceptorBatchMethods</a>
@@ -154,18 +163,18 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_client_context.html#a572f9fb786e1dfc3129a04183d9f1882">grpc::ClientContext</a>
 </li>
 <li>GetServiceConfigJSON()
-: <a class="el" href="classgrpc_1_1_channel.html#adeb2242c598bcc5179c90148eb0e289f">grpc::Channel</a>
+: <a class="el" href="classgrpc__impl_1_1_channel.html#a8594374437d86214ec5e03a80cd1bd11">grpc_impl::Channel</a>
 </li>
 <li>GetServiceList()
-: <a class="el" href="classgrpc_1_1_server_initializer.html#ad1b815f68a8685b76f7d93a808f17b47">grpc::ServerInitializer</a>
+: <a class="el" href="classgrpc__impl_1_1_server_initializer.html#a8d5853b623ead537214c673ee82c2b75">grpc_impl::ServerInitializer</a>
 </li>
 <li>GetState()
-: <a class="el" href="classgrpc_1_1_channel.html#a646d7a9d01f22037a72092d3a0bf159c">grpc::Channel</a>
-, <a class="el" href="classgrpc_1_1_channel_interface.html#a68e987e7b87ca5a2668419736f9ee9b1">grpc::ChannelInterface</a>
+: <a class="el" href="classgrpc_1_1_channel_interface.html#a68e987e7b87ca5a2668419736f9ee9b1">grpc::ChannelInterface</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_intercepted_channel.html#ab7073fa3f0de1369f7201c1ce1630970">grpc::internal::InterceptedChannel</a>
+, <a class="el" href="classgrpc__impl_1_1_channel.html#a26d3eb40a00bc1ab58eb0752579c12d0">grpc_impl::Channel</a>
 </li>
 <li>GetType()
-: <a class="el" href="classgrpc_1_1_metadata_credentials_plugin.html#ad9a7f5fb8a373bf3680938511cedaf7c">grpc::MetadataCredentialsPlugin</a>
+: <a class="el" href="classgrpc__impl_1_1_metadata_credentials_plugin.html#ac064c256ad6577cd200df972d56c24bf">grpc_impl::MetadataCredentialsPlugin</a>
 </li>
 <li>gpr_cv_broadcast()
 : <a class="el" href="classgrpc_1_1_core_codegen_interface.html#af431262b66f404f23117c13535036d3d">grpc::CoreCodegenInterface</a>
@@ -327,7 +336,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 31 2019 16:39:28 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

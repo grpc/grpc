@@ -1,7 +1,4 @@
 var searchData=
 [
-  ['staticslice',['StaticSlice',['../classgrpc_1_1_slice.html#a61a6b4f8f10e5b90a99a5d09b8fdc498',1,'grpc::Slice']]],
-  ['statuscode',['StatusCode',['../namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43b',1,'grpc']]],
-  ['stealref',['StealRef',['../classgrpc_1_1_slice.html#a13fbbec0e9121a8b948d563f9730d75a',1,'grpc::Slice']]],
-  ['syncserveroption',['SyncServerOption',['../classgrpc_1_1_server_builder.html#aff66bd93cba7d4240a64550fe1fca88d',1,'grpc::ServerBuilder']]]
+  ['rpctype',['RpcType',['../classgrpc_1_1internal_1_1_rpc_method.html#a40ce84e3569f6a327468ae59f04c7dd1',1,'grpc::internal::RpcMethod']]]
 ];

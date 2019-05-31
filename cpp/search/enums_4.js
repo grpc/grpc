@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['rpctype',['RpcType',['../classgrpc_1_1internal_1_1_rpc_method.html#a40ce84e3569f6a327468ae59f04c7dd1',1,'grpc::internal::RpcMethod']]]
+  ['nextstatus',['NextStatus',['../classgrpc__impl_1_1_completion_queue.html#a09994ef9bb9a1166dc00277a41038eb6',1,'grpc_impl::CompletionQueue']]]
 ];

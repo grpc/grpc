@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.20.0</span>
+   &#160;<span id="projectnumber">1.22.0-dev</span>
    </div>
   </td>
  </tr>
@@ -75,8 +75,8 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a8d7796c42ff7c9a69e550f5cb0374b25"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a8d7796c42ff7c9a69e550f5cb0374b25">BaseAsyncRequest</a> (<a class="el" href="classgrpc_1_1_server_interface.html">ServerInterface</a> *<a class="el" href="classgrpc_1_1_server_interface.html#a8e9cf80377d3fd1f110089ad16ec79e7">server</a>, <a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *context, <a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html">internal::ServerAsyncStreamingInterface</a> *stream, <a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *call_cq, <a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> *notification_cq, void *tag, bool delete_on_finalize)</td></tr>
-<tr class="separator:a8d7796c42ff7c9a69e550f5cb0374b25"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8c9eded6ce0b46c9ecc8b0bd12fc120b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a8c9eded6ce0b46c9ecc8b0bd12fc120b">BaseAsyncRequest</a> (<a class="el" href="classgrpc_1_1_server_interface.html">ServerInterface</a> *<a class="el" href="classgrpc_1_1_server_interface.html#a8e9cf80377d3fd1f110089ad16ec79e7">server</a>, <a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *context, <a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html">internal::ServerAsyncStreamingInterface</a> *stream, ::<a class="el" href="classgrpc__impl_1_1_completion_queue.html">grpc_impl::CompletionQueue</a> *call_cq, ::<a class="el" href="classgrpc__impl_1_1_server_completion_queue.html">grpc_impl::ServerCompletionQueue</a> *notification_cq, void *tag, bool delete_on_finalize)</td></tr>
+<tr class="separator:a8c9eded6ce0b46c9ecc8b0bd12fc120b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3977611e5acdeaab9ebb464565db4f80"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a3977611e5acdeaab9ebb464565db4f80">~BaseAsyncRequest</a> ()</td></tr>
 <tr class="separator:a3977611e5acdeaab9ebb464565db4f80"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a097df5db59705c330ac2b2860c915a41"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a097df5db59705c330ac2b2860c915a41">FinalizeResult</a> (void **tag, bool *status) override</td></tr>
@@ -94,10 +94,10 @@ Protected Attributes</h2></td></tr>
 <tr class="separator:a04daf9d2fca21bc2bb78cc7823f2f118"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:add862faed53637cbaee7fc0fb2f146a9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html">internal::ServerAsyncStreamingInterface</a> *const&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#add862faed53637cbaee7fc0fb2f146a9">stream_</a></td></tr>
 <tr class="separator:add862faed53637cbaee7fc0fb2f146a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1372192c43404f40e7046aab632569ab"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *const&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a1372192c43404f40e7046aab632569ab">call_cq_</a></td></tr>
-<tr class="separator:a1372192c43404f40e7046aab632569ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a60cef9055431a6387b0cc5dc4deba8a9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> *const&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a60cef9055431a6387b0cc5dc4deba8a9">notification_cq_</a></td></tr>
-<tr class="separator:a60cef9055431a6387b0cc5dc4deba8a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a75d8c92b99181559ea98823e276d308f"><td class="memItemLeft" align="right" valign="top">::<a class="el" href="classgrpc__impl_1_1_completion_queue.html">grpc_impl::CompletionQueue</a> *const&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a75d8c92b99181559ea98823e276d308f">call_cq_</a></td></tr>
+<tr class="separator:a75d8c92b99181559ea98823e276d308f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a958c362ff3f3076a78f2871aeac4f8e3"><td class="memItemLeft" align="right" valign="top">::<a class="el" href="classgrpc__impl_1_1_server_completion_queue.html">grpc_impl::ServerCompletionQueue</a> *const&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a958c362ff3f3076a78f2871aeac4f8e3">notification_cq_</a></td></tr>
+<tr class="separator:a958c362ff3f3076a78f2871aeac4f8e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ace41bf173c28a84f9f9311cc4fafef9d"><td class="memItemLeft" align="right" valign="top">void *const&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#ace41bf173c28a84f9f9311cc4fafef9d">tag_</a></td></tr>
 <tr class="separator:ace41bf173c28a84f9f9311cc4fafef9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4d7982938885fca52a1c4547208f40b8"><td class="memItemLeft" align="right" valign="top">const bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a4d7982938885fca52a1c4547208f40b8">delete_on_finalize_</a></td></tr>
@@ -112,8 +112,8 @@ Protected Attributes</h2></td></tr>
 <tr class="separator:a6e2125fceb15e9c6673b02ad870a0025"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a8d7796c42ff7c9a69e550f5cb0374b25"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8d7796c42ff7c9a69e550f5cb0374b25">&#9670;&nbsp;</a></span>BaseAsyncRequest()</h2>
+<a id="a8c9eded6ce0b46c9ecc8b0bd12fc120b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8c9eded6ce0b46c9ecc8b0bd12fc120b">&#9670;&nbsp;</a></span>BaseAsyncRequest()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -139,13 +139,13 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *&#160;</td>
+          <td class="paramtype">::<a class="el" href="classgrpc__impl_1_1_completion_queue.html">grpc_impl::CompletionQueue</a> *&#160;</td>
           <td class="paramname"><em>call_cq</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> *&#160;</td>
+          <td class="paramtype">::<a class="el" href="classgrpc__impl_1_1_server_completion_queue.html">grpc_impl::ServerCompletionQueue</a> *&#160;</td>
           <td class="paramname"><em>notification_cq</em>, </td>
         </tr>
         <tr>
@@ -269,8 +269,8 @@ Protected Attributes</h2></td></tr>
 
 </div>
 </div>
-<a id="a1372192c43404f40e7046aab632569ab"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1372192c43404f40e7046aab632569ab">&#9670;&nbsp;</a></span>call_cq_</h2>
+<a id="a75d8c92b99181559ea98823e276d308f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a75d8c92b99181559ea98823e276d308f">&#9670;&nbsp;</a></span>call_cq_</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -279,7 +279,7 @@ Protected Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a>* const grpc::ServerInterface::BaseAsyncRequest::call_cq_</td>
+          <td class="memname">::<a class="el" href="classgrpc__impl_1_1_completion_queue.html">grpc_impl::CompletionQueue</a>* const grpc::ServerInterface::BaseAsyncRequest::call_cq_</td>
         </tr>
       </table>
   </td>
@@ -401,8 +401,8 @@ Protected Attributes</h2></td></tr>
 
 </div>
 </div>
-<a id="a60cef9055431a6387b0cc5dc4deba8a9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a60cef9055431a6387b0cc5dc4deba8a9">&#9670;&nbsp;</a></span>notification_cq_</h2>
+<a id="a958c362ff3f3076a78f2871aeac4f8e3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a958c362ff3f3076a78f2871aeac4f8e3">&#9670;&nbsp;</a></span>notification_cq_</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -411,7 +411,7 @@ Protected Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a>* const grpc::ServerInterface::BaseAsyncRequest::notification_cq_</td>
+          <td class="memname">::<a class="el" href="classgrpc__impl_1_1_server_completion_queue.html">grpc_impl::ServerCompletionQueue</a>* const grpc::ServerInterface::BaseAsyncRequest::notification_cq_</td>
         </tr>
       </table>
   </td>
@@ -495,7 +495,7 @@ Protected Attributes</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 31 2019 16:39:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

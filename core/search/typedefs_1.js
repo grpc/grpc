@@ -39,8 +39,6 @@ var searchData=
   ['grpc_5fserver_5fcredentials',['grpc_server_credentials',['../grpc__security_8h.html#aa724192e56fdc03827846f16752deccc',1,'grpc_security.h']]],
   ['grpc_5fslice',['grpc_slice',['../impl_2codegen_2slice_8h.html#a2a5f8eaa5d8784bfec46ac983644dca2',1,'slice.h']]],
   ['grpc_5fslice_5fbuffer',['grpc_slice_buffer',['../impl_2codegen_2slice_8h.html#a96ab1e43093bbd3fa178ae2e819863e4',1,'slice.h']]],
-  ['grpc_5fslice_5frefcount',['grpc_slice_refcount',['../impl_2codegen_2slice_8h.html#acb7fc89ea8343fde6d0c09f1ea70dbc4',1,'slice.h']]],
-  ['grpc_5fslice_5frefcount_5fvtable',['grpc_slice_refcount_vtable',['../impl_2codegen_2slice_8h.html#a0ba9a84b74d6308678a2f53212b5b3fd',1,'slice.h']]],
   ['grpc_5fsocket_5ffactory',['grpc_socket_factory',['../grpc__types_8h.html#a6bb7fdad6ac88edb9468eb46c801ddb0',1,'grpc_types.h']]],
   ['grpc_5fsocket_5fmutator',['grpc_socket_mutator',['../grpc__types_8h.html#a72c4781284bb0c964d281e6e46cf4a90',1,'grpc_types.h']]],
   ['grpc_5fssl_5froots_5foverride_5fcallback',['grpc_ssl_roots_override_callback',['../grpc__security_8h.html#a81799db566912702502c280b163b12bc',1,'grpc_security.h']]],

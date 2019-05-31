@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.20.0</span>
+   &#160;<span id="projectnumber">1.22.0-dev</span>
    </div>
   </td>
  </tr>
@@ -63,8 +63,9 @@ $(function() {
 
 <h3><a id="index_w"></a>- w -</h3><ul>
 <li>Wait()
-: <a class="el" href="classgrpc_1_1_server.html#a79f3e43452fd885df4002ed541d8ca7c">grpc::Server</a>
+: <a class="el" href="classgrpc_1_1internal_1_1_cond_var.html#a5799b41212b05122c2797e2d0487da46">grpc::internal::CondVar</a>
 , <a class="el" href="classgrpc_1_1_server_interface.html#ac36477b6a7593a4e4608c7eb712b0d70">grpc::ServerInterface</a>
+, <a class="el" href="classgrpc__impl_1_1_server.html#abec9fff8bfbec4ee8b2c20488a5c1d5a">grpc_impl::Server</a>
 </li>
 <li>WaitForConnected()
 : <a class="el" href="classgrpc_1_1_channel_interface.html#a31d360cd218614814d68e01e07ce55cc">grpc::ChannelInterface</a>
@@ -79,9 +80,12 @@ $(function() {
 <li>WaitForStateChange()
 : <a class="el" href="classgrpc_1_1_channel_interface.html#a70567e7ea3d1a967ecf5ecdc220ac27e">grpc::ChannelInterface</a>
 </li>
+<li>WaitUntil()
+: <a class="el" href="classgrpc_1_1internal_1_1_cond_var.html#ad7f1985510b62bda2f58ce0f872e265d">grpc::internal::CondVar</a>
+</li>
 <li>Write()
 : <a class="el" href="classgrpc_1_1_client_async_reader_writer.html#a07bcc3a0737c3bee3ef50def89af5fc7">grpc::ClientAsyncReaderWriter&lt; W, R &gt;</a>
-, <a class="el" href="classgrpc_1_1_client_async_writer.html#a0e981b6dcce663e655edf305573f2f30">grpc::ClientAsyncWriter&lt; W &gt;</a>
+, <a class="el" href="classgrpc_1_1_client_async_writer.html#a3f3d8e3e47b7181f7312fd6e3eb32674">grpc::ClientAsyncWriter&lt; W &gt;</a>
 , <a class="el" href="classgrpc_1_1_client_reader_writer.html#ae30b0e18622f4132b1c7654e24605d53">grpc::ClientReaderWriter&lt; W, R &gt;</a>
 , <a class="el" href="classgrpc_1_1_client_writer.html#ad6b1906d4f9cb0a14431aeb310e6674b">grpc::ClientWriter&lt; W &gt;</a>
 , <a class="el" href="classgrpc_1_1experimental_1_1_client_callback_reader_writer.html#ada238d8a75d01a38850f9d177369a5a5">grpc::experimental::ClientCallbackReaderWriter&lt; Request, Response &gt;</a>
@@ -114,7 +118,7 @@ $(function() {
 , <a class="el" href="classgrpc_1_1internal_1_1_writer_interface.html#a3308bfe1558e317e5fa3530f74c63ce6">grpc::internal::WriterInterface&lt; W &gt;</a>
 </li>
 <li>WriteOptions()
-: <a class="el" href="classgrpc_1_1_write_options.html#a6a4e429313200ed6c017c5d306e26e93">grpc::WriteOptions</a>
+: <a class="el" href="classgrpc_1_1_write_options.html#a4d7753bbd8d9d61e2c6d3e49e29be021">grpc::WriteOptions</a>
 </li>
 <li>WritesDone()
 : <a class="el" href="classgrpc_1_1_client_async_reader_writer.html#af3e090a0801f6bc524f959cd93e4cddc">grpc::ClientAsyncReaderWriter&lt; W, R &gt;</a>
@@ -134,7 +138,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 31 2019 16:39:28 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

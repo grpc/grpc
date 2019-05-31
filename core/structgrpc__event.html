@@ -117,7 +117,7 @@ Data Fields</h2></td></tr>
 </div><div class="memdoc">
 
 <p>The tag passed to grpc_call_start_batch etc to start this operation. </p>
-<p>Only GRPC_OP_COMPLETE has a tag. </p>
+<p>Only* GRPC_OP_COMPLETE has a tag. For all other grpc_completion_type values, tag is uninitialized. </p>
 
 </div>
 </div>
@@ -143,7 +143,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 17 2019 12:09:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 31 2019 16:39:26 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

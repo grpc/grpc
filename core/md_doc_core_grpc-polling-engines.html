@@ -225,7 +225,7 @@ $(function() {
 <li>There cannot be two <code>Pollable</code>s of type PO_FD for the same fd</li>
 </ul>
 </li>
-<li>Why do we need <code>Pollable</code> of type PO_FD and PO_EMTPY ?<ul>
+<li>Why do we need <code>Pollable</code> of type PO_FD and PO_EMPTY ?<ul>
 <li>The main reason is the Sync client API<ul>
 <li>We create one new completion queue per call. If we didn’t have PO_EMPTY and PO_FD type pollables, then every call on a given channel will effectively have to create a <code>Pollable</code> and hence an epollset. This is because every completion queue automatically creates a pollset and the channel fd will have to be put in that pollset. This clearly requires an epollset to put that fd. Creating an epollset per call (even if we delete the epollset once the call is completed) would mean a lot of sys calls to create/delete epoll fds. This is clearly not a good idea.</li>
 <li>With these new types of <code>Pollable</code>s, all pollsets (corresponding to the new per-call completion queue) will initially point to PO_EMPTY global epollset. Then once the channel fd is added to the pollset, the pollset will point to the <code>Pollable</code> of type PO_FD containing just that fd (i.e it will reuse the existing <code>Pollable</code>). This way, the epoll fd creation/deletion churn is avoided.</li>
@@ -253,7 +253,7 @@ $(function() {
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 17 2019 12:09:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 31 2019 16:39:26 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

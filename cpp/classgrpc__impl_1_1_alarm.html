@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.20.0</span>
+   &#160;<span id="projectnumber">1.22.0-dev</span>
    </div>
   </td>
  </tr>
@@ -88,11 +88,11 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a9f34dc0e71a9ff3a59e8eb2437cd16b5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroy the given completion queue alarm, cancelling it in the process.  <a href="#a9f34dc0e71a9ff3a59e8eb2437cd16b5">More...</a><br /></td></tr>
 <tr class="separator:a9f34dc0e71a9ff3a59e8eb2437cd16b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aec1e4de4038eaac76c5cf29db1ec6b58"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:aec1e4de4038eaac76c5cf29db1ec6b58"><td class="memTemplItemLeft" align="right" valign="top">&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_alarm.html#aec1e4de4038eaac76c5cf29db1ec6b58">Alarm</a> (::<a class="el" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a> *cq, const T &amp;deadline, void *tag)</td></tr>
+<tr class="memitem:aec1e4de4038eaac76c5cf29db1ec6b58"><td class="memTemplItemLeft" align="right" valign="top">&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_alarm.html#aec1e4de4038eaac76c5cf29db1ec6b58">Alarm</a> (::<a class="el" href="namespacegrpc.html#a9b59ae504113bf341ba9d1ae404b0cda">grpc::CompletionQueue</a> *cq, const T &amp;deadline, void *tag)</td></tr>
 <tr class="memdesc:aec1e4de4038eaac76c5cf29db1ec6b58"><td class="mdescLeft">&#160;</td><td class="mdescRight">DEPRECATED: Create and set a completion queue alarm instance associated to <em>cq</em>.  <a href="#aec1e4de4038eaac76c5cf29db1ec6b58">More...</a><br /></td></tr>
 <tr class="separator:aec1e4de4038eaac76c5cf29db1ec6b58"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4b6abc2040ec07dd2450d0b143a55de0"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:a4b6abc2040ec07dd2450d0b143a55de0"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_alarm.html#a4b6abc2040ec07dd2450d0b143a55de0">Set</a> (::<a class="el" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a> *cq, const T &amp;deadline, void *tag)</td></tr>
+<tr class="memitem:a4b6abc2040ec07dd2450d0b143a55de0"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_alarm.html#a4b6abc2040ec07dd2450d0b143a55de0">Set</a> (::<a class="el" href="namespacegrpc.html#a9b59ae504113bf341ba9d1ae404b0cda">grpc::CompletionQueue</a> *cq, const T &amp;deadline, void *tag)</td></tr>
 <tr class="memdesc:a4b6abc2040ec07dd2450d0b143a55de0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Trigger an alarm instance on completion queue <em>cq</em> at the specified time.  <a href="#a4b6abc2040ec07dd2450d0b143a55de0">More...</a><br /></td></tr>
 <tr class="separator:a4b6abc2040ec07dd2450d0b143a55de0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a98b656ff248f7d1b9334414a4d2369cb"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_alarm.html#a98b656ff248f7d1b9334414a4d2369cb">Alarm</a> (const <a class="el" href="classgrpc__impl_1_1_alarm.html">Alarm</a> &amp;)=delete</td></tr>
@@ -165,7 +165,7 @@ template&lt;typename T &gt; </div>
         <tr>
           <td class="memname">grpc_impl::Alarm::Alarm </td>
           <td>(</td>
-          <td class="paramtype">::<a class="el" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a> *&#160;</td>
+          <td class="paramtype">::<a class="el" href="namespacegrpc.html#a9b59ae504113bf341ba9d1ae404b0cda">grpc::CompletionQueue</a> *&#160;</td>
           <td class="paramname"><em>cq</em>, </td>
         </tr>
         <tr>
@@ -370,7 +370,7 @@ template&lt;typename T &gt; </div>
         <tr>
           <td class="memname">void grpc_impl::Alarm::Set </td>
           <td>(</td>
-          <td class="paramtype">::<a class="el" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a> *&#160;</td>
+          <td class="paramtype">::<a class="el" href="namespacegrpc.html#a9b59ae504113bf341ba9d1ae404b0cda">grpc::CompletionQueue</a> *&#160;</td>
           <td class="paramname"><em>cq</em>, </td>
         </tr>
         <tr>
@@ -409,7 +409,7 @@ template&lt;typename T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 31 2019 16:39:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

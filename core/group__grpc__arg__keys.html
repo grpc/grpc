@@ -276,7 +276,7 @@ Macros</h2></td></tr>
 <tr class="memdesc:ga247ed6771077938be12ab24790a95732"><td class="mdescLeft">&#160;</td><td class="mdescRight">If set, the channel's resolver is allowed to query for SRV records.  <a href="#ga247ed6771077938be12ab24790a95732">More...</a><br /></td></tr>
 <tr class="separator:ga247ed6771077938be12ab24790a95732"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gad0e9ad7630f67bcd1d631435860a53d4"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gad0e9ad7630f67bcd1d631435860a53d4">GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS</a>&#160;&#160;&#160;&quot;grpc.dns_ares_query_timeout&quot;</td></tr>
-<tr class="memdesc:gad0e9ad7630f67bcd1d631435860a53d4"><td class="mdescLeft">&#160;</td><td class="mdescRight">If set, determines the number of milliseconds that the c-ares based DNS resolver will wait on queries before cancelling them.  <a href="#gad0e9ad7630f67bcd1d631435860a53d4">More...</a><br /></td></tr>
+<tr class="memdesc:gad0e9ad7630f67bcd1d631435860a53d4"><td class="mdescLeft">&#160;</td><td class="mdescRight">If set, determines an upper bound on the number of milliseconds that the c-ares based DNS resolver will wait on queries before cancelling them.  <a href="#gad0e9ad7630f67bcd1d631435860a53d4">More...</a><br /></td></tr>
 <tr class="separator:gad0e9ad7630f67bcd1d631435860a53d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaa49ebd41af390c78a2c0ed94b74abfbc"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaa49ebd41af390c78a2c0ed94b74abfbc">GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL</a>&#160;&#160;&#160;&quot;grpc.use_local_subchannel_pool&quot;</td></tr>
 <tr class="memdesc:gaa49ebd41af390c78a2c0ed94b74abfbc"><td class="mdescLeft">&#160;</td><td class="mdescRight">If set, uses a local subchannel pool within the channel.  <a href="#gaa49ebd41af390c78a2c0ed94b74abfbc">More...</a><br /></td></tr>
@@ -385,8 +385,8 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>If set, determines the number of milliseconds that the c-ares based DNS resolver will wait on queries before cancelling them. </p>
-<p>The default value is 10000. Setting this to "0" will disable c-ares query timeouts entirely. </p>
+<p>If set, determines an upper bound on the number of milliseconds that the c-ares based DNS resolver will wait on queries before cancelling them. </p>
+<p>The default value is 120,000. Setting this to "0" will disable the overall timeout entirely. Note that this doesn't include internal c-ares timeouts/backoff/retry logic, and so the actual DNS resolution may time out sooner than the value specified here. </p>
 
 </div>
 </div>
@@ -1511,7 +1511,7 @@ Macros</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 17 2019 12:09:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 31 2019 16:39:26 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

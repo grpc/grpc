@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.20.0</span>
+   &#160;<span id="projectnumber">1.22.0-dev</span>
    </div>
   </td>
  </tr>
@@ -145,8 +145,8 @@ Friends</h2></td></tr>
 <tr class="separator:a1cc35b5d4492397bf75bf6c08367a58b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8edbec79fc5ad7456e57c0f513451e2f"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a8edbec79fc5ad7456e57c0f513451e2f">::grpc::ServerInterface</a></td></tr>
 <tr class="separator:a8edbec79fc5ad7456e57c0f513451e2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8c3fa4c066981aae114e41c3f9340144"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a8c3fa4c066981aae114e41c3f9340144">::grpc::Server</a></td></tr>
-<tr class="separator:a8c3fa4c066981aae114e41c3f9340144"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3e6ceb26728f815024f4e836b9ffd56f"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a3e6ceb26728f815024f4e836b9ffd56f">::grpc_impl::Server</a></td></tr>
+<tr class="separator:a3e6ceb26728f815024f4e836b9ffd56f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a774bb57486686958c67f29072de768ed"><td class="memTemplParams" colspan="2">template&lt;class W , class R &gt; </td></tr>
 <tr class="memitem:a774bb57486686958c67f29072de768ed"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a774bb57486686958c67f29072de768ed">::grpc::ServerAsyncReader</a></td></tr>
 <tr class="separator:a774bb57486686958c67f29072de768ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -208,7 +208,7 @@ Friends</h2></td></tr>
 <li>Access metadata coming from the client.</li>
 <li>Get performance metrics (ie, census).</li>
 </ul>
-<p>Context settings are only relevant to the call handler they are supplied to, that is to say, they aren't sticky across multiple calls. Some of these settings, such as the compression options, can be made persistent at server construction time by specifying the appropriate <em><a class="el" href="classgrpc_1_1_channel_arguments.html" title="Options for channel creation. ">ChannelArguments</a></em> to a <em><a class="el" href="classgrpc_1_1_server_builder.html" title="A builder class for the creation and startup of grpc::Server instances. ">grpc::ServerBuilder</a></em>, via <em><a class="el" href="classgrpc_1_1_server_builder.html#aefdac3407920a99d119c946d255b100c" title="Add a channel argument (an escape hatch to tuning core library parameters directly) ...">ServerBuilder::AddChannelArgument</a></em>.</p>
+<p>Context settings are only relevant to the call handler they are supplied to, that is to say, they aren't sticky across multiple calls. Some of these settings, such as the compression options, can be made persistent at server construction time by specifying the appropriate <em>ChannelArguments</em> to a <em><a class="el" href="namespacegrpc.html#a7b50d12b234e25308abf40024b860737">grpc::ServerBuilder</a></em>, via <em><a class="el" href="classgrpc__impl_1_1_server_builder.html#ad2ed9b377fb7395b8d79de33aeb66723" title="Add a channel argument (an escape hatch to tuning core library parameters directly) ...">ServerBuilder::AddChannelArgument</a></em>.</p>
 <dl class="section warning"><dt>Warning</dt><dd><a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext allows the person implementing a service handler to: ">ServerContext</a> instances should <em>not</em> be reused across rpcs. </dd></dl>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a10f47e15934195dcaed6b756498b8fff"></a>
@@ -999,28 +999,6 @@ template&lt;class Streamer , bool WriteNeeded&gt; </div>
 
 </div>
 </div>
-<a id="a8c3fa4c066981aae114e41c3f9340144"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8c3fa4c066981aae114e41c3f9340144">&#9670;&nbsp;</a></span>::grpc::Server</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1_server.html">grpc::Server</a></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a id="a774bb57486686958c67f29072de768ed"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a774bb57486686958c67f29072de768ed">&#9670;&nbsp;</a></span>::grpc::ServerAsyncReader</h2>
 
@@ -1231,6 +1209,28 @@ template&lt;class W &gt; </div>
 
 </div>
 </div>
+<a id="a3e6ceb26728f815024f4e836b9ffd56f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3e6ceb26728f815024f4e836b9ffd56f">&#9670;&nbsp;</a></span>::grpc_impl::Server</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class ::<a class="el" href="classgrpc__impl_1_1_server.html">grpc_impl::Server</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a91a3296cb8faa9b7afad2f0db836df4d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a91a3296cb8faa9b7afad2f0db836df4d">&#9670;&nbsp;</a></span>internal::ErrorMethodHandler</h2>
 
@@ -1261,7 +1261,7 @@ template&lt;StatusCode code&gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 31 2019 16:39:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

@@ -156,7 +156,7 @@ Enumerations</h2></td></tr>
 <p>Means some invariants expected by underlying system has been broken. If you see one of these errors, something is very broken. </p>
 </td></tr>
 <tr><td class="fieldname"><a id="a35ab2a68917eb836de84cb23253108ebaad91b67998cb5df7bc6821e362189e79"></a>GRPC_STATUS_UNAVAILABLE&#160;</td><td class="fielddoc"><p>The service is currently unavailable. </p>
-<p>This is a most likely a transient condition and may be corrected by retrying with a backoff.</p>
+<p>This is a most likely a transient condition and may be corrected by retrying with a backoff. Note that it is not always safe to retry non-idempotent operations.</p>
 <p>WARNING: Although data MIGHT not have been transmitted when this status occurs, there is NOT A GUARANTEE that the server has not seen anything. So in general it is unsafe to retry on this status code if the call is non-idempotent.</p>
 <p>See litmus test above for deciding between FAILED_PRECONDITION, ABORTED, and UNAVAILABLE. </p>
 </td></tr>
@@ -171,7 +171,7 @@ Enumerations</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 17 2019 12:09:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 31 2019 16:39:26 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

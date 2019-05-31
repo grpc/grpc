@@ -27,7 +27,6 @@ var searchData=
   ['statuscodes_2emd',['statuscodes.md',['../statuscodes_8md.html',1,'']]],
   ['string',['string',['../uniongrpc__arg_1_1grpc__arg__value.html#afd7cc41a1d8dd36aba15faa4a6c426e2',1,'grpc_arg::grpc_arg_value']]],
   ['string_5futil_2eh',['string_util.h',['../string__util_8h.html',1,'']]],
-  ['sub_5frefcount',['sub_refcount',['../structgrpc__slice__refcount.html#a113ae62eac88e4180feb9ecc80e0f2f9',1,'grpc_slice_refcount']]],
   ['success',['success',['../structgrpc__tls__server__authorization__check__arg.html#a4b61309fca075f7d93d3a4325728bb7f',1,'grpc_tls_server_authorization_check_arg::success()'],['../structgrpc__event.html#a99d4215e5df50869af320b1cca5540db',1,'grpc_event::success()']]],
   ['sync_2eh',['sync.h',['../impl_2codegen_2sync_8h.html',1,'(Global Namespace)'],['../support_2sync_8h.html',1,'(Global Namespace)']]],
   ['sync_5fcustom_2eh',['sync_custom.h',['../impl_2codegen_2sync__custom_8h.html',1,'(Global Namespace)'],['../support_2sync__custom_8h.html',1,'(Global Namespace)']]],
