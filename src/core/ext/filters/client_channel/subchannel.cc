@@ -75,8 +75,7 @@
 
 namespace grpc_core {
 
-DebugOnlyTraceFlag grpc_trace_subchannel(false,
-                                              "subchannel");
+DebugOnlyTraceFlag grpc_trace_subchannel(false, "subchannel");
 
 //
 // ConnectedSubchannel
