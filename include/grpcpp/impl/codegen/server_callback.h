@@ -428,14 +428,36 @@ class ServerUnaryReactor : public internal::ServerReactor {
   ServerCallbackUnary* call_;
 };
 
-template <typename Request, typename Response, typename F>
-ServerUnaryReactor<Request, Response>* ServeRpc(ServerContext* context,
-                                                F&& func) {
+/// MakeReactor is a free function to make a simple ServerUnaryReactor that
+/// causes the invocation of a function. There are two overloaded variants,
+/// depending on the parameters and return type of the function being invoked.
+/// The variant is selected using a simple template-based specialization.
+///
+/// \param context [in] The ServerContext created by the library for this RPC
+/// \param func [in] A function that will be executed when this RPC is being
+///        served. It can be of two acceptable signatures:
+///           1. void(const Request*, Response*,
+///                   ServerUnaryReactor<Request,Response>*)
+///              In this form, func is responsible or invoking (or causing the
+///              invocation of) Finish on the reactor in the 3rd argument.
+///              This form gives maximum flexibility since the reactor can be
+///              passed to other operations that may execute after a delay.
+///           2. Status(const Request*, Response*)
+///              In this form, func returns the Status of the RPC; the library
+///              never exposes the reactor to func and directly Finish'es the
+///              RPC with the Status returned. In this form, the function may
+///              not execute any delaying operations (such as a child RPC).
+///
+/// \return A pointer to a ServerUnaryReactor<Request,Response> that executes
+///         the given function when the RPC is invoked.
+template <typename Request, typename Response, typename Function>
+ServerUnaryReactor<Request, Response>* MakeReactor(ServerContext* context,
+                                                   Function&& func, typename std::enable_if<std::is_same<decltype(func(static_cast<const Request*>(nullptr),static_cast<Response*>(nullptr),static_cast<ServerUnaryReactor<Request,Response>*>(nullptr))), void>::value>::type* = nullptr) {
   // TODO(vjpai): Specialize this to prevent counting OnCancel conditions
   class SimpleUnaryReactor final
       : public ServerUnaryReactor<Request, Response> {
    public:
-    explicit SimpleUnaryReactor(F&& func) : on_started_func_(std::move(func)) {}
+    explicit SimpleUnaryReactor(Function&& func) : on_started_func_(std::move(func)) {}
 
    private:
     void OnStarted(const Request* req, Response* resp) override {
@@ -443,11 +465,33 @@ ServerUnaryReactor<Request, Response>* ServeRpc(ServerContext* context,
     }
     void OnDone() override { this->~SimpleUnaryReactor(); }
 
-    F on_started_func_;
+    Function on_started_func_;
   };
   return new (g_core_codegen_interface->grpc_call_arena_alloc(
       context->c_call(), sizeof(SimpleUnaryReactor)))
-      SimpleUnaryReactor(std::forward<F>(func));
+      SimpleUnaryReactor(std::forward<Function>(func));
+}
+
+template <typename Request, typename Response, typename Function>
+ServerUnaryReactor<Request, Response>* MakeReactor(ServerContext* context,
+                                                   Function&& func, typename std::enable_if<std::is_same<decltype(func(static_cast<const Request*>(nullptr),static_cast<Response*>(nullptr))), Status>::value>::type* = nullptr) {
+  // TODO(vjpai): Specialize this to prevent counting OnCancel conditions
+  class ReallySimpleUnaryReactor final
+      : public ServerUnaryReactor<Request, Response> {
+   public:
+    explicit ReallySimpleUnaryReactor(Function&& func) : on_started_func_(std::move(func)) {}
+
+   private:
+    void OnStarted(const Request* req, Response* resp) override {
+      this->Finish(on_started_func_(req, resp));
+    }
+    void OnDone() override { this->~ReallySimpleUnaryReactor(); }
+
+    Function on_started_func_;
+  };
+  return new (g_core_codegen_interface->grpc_call_arena_alloc(
+      context->c_call(), sizeof(ReallySimpleUnaryReactor)))
+      ReallySimpleUnaryReactor(std::forward<Function>(func));
 }
 
 }  // namespace experimental
@@ -499,8 +543,8 @@ class CallbackUnaryHandler : public MethodHandler {
  public:
   explicit CallbackUnaryHandler(std::function<experimental::ServerUnaryReactor<
                                     RequestType, ResponseType>*(ServerContext*)>
-                                    func)
-      : func_(std::move(func)) {}
+                                    get_reactor)
+      : get_reactor_(std::move(get_reactor)) {}
 
   void SetMessageAllocator(
       experimental::MessageAllocator<RequestType, ResponseType>* allocator) {
@@ -517,7 +561,7 @@ class CallbackUnaryHandler : public MethodHandler {
         param.status.ok()
             ? CatchingReactorCreator<
                   experimental::ServerUnaryReactor<RequestType, ResponseType>>(
-                  func_, param.server_context)
+                  get_reactor_, param.server_context)
             : nullptr;
 
     if (reactor == nullptr) {
@@ -567,7 +611,7 @@ class CallbackUnaryHandler : public MethodHandler {
  private:
   std::function<experimental::ServerUnaryReactor<RequestType, ResponseType>*(
       ServerContext*)>
-      func_;
+      get_reactor_;
   experimental::MessageAllocator<RequestType, ResponseType>* allocator_ =
       nullptr;
 
@@ -675,8 +719,8 @@ class CallbackClientStreamingHandler : public MethodHandler {
   explicit CallbackClientStreamingHandler(
       std::function<experimental::ServerReadReactor<RequestType, ResponseType>*(
           ServerContext*)>
-          func)
-      : func_(std::move(func)) {}
+          get_reactor)
+      : get_reactor_(std::move(get_reactor)) {}
   void RunHandler(const HandlerParameter& param) final {
     // Arena allocate a reader structure (that includes response)
     g_core_codegen_interface->grpc_call_ref(param.call->call());
@@ -685,7 +729,7 @@ class CallbackClientStreamingHandler : public MethodHandler {
         param.status.ok()
             ? CatchingReactorCreator<
                   experimental::ServerReadReactor<RequestType, ResponseType>>(
-                  func_, param.server_context)
+                  get_reactor_, param.server_context)
             : nullptr;
 
     if (reactor == nullptr) {
@@ -708,7 +752,7 @@ class CallbackClientStreamingHandler : public MethodHandler {
  private:
   std::function<experimental::ServerReadReactor<RequestType, ResponseType>*(
       ServerContext*)>
-      func_;
+      get_reactor_;
 
   class ServerCallbackReaderImpl
       : public experimental::ServerCallbackReader<RequestType> {
@@ -820,8 +864,8 @@ class CallbackServerStreamingHandler : public MethodHandler {
   explicit CallbackServerStreamingHandler(
       std::function<experimental::ServerWriteReactor<
           RequestType, ResponseType>*(ServerContext*)>
-          func)
-      : func_(std::move(func)) {}
+          get_reactor)
+      : get_reactor_(std::move(get_reactor)) {}
   void RunHandler(const HandlerParameter& param) final {
     // Arena allocate a writer structure
     g_core_codegen_interface->grpc_call_ref(param.call->call());
@@ -830,7 +874,7 @@ class CallbackServerStreamingHandler : public MethodHandler {
         param.status.ok()
             ? CatchingReactorCreator<
                   experimental::ServerWriteReactor<RequestType, ResponseType>>(
-                  func_, param.server_context)
+                  get_reactor_, param.server_context)
             : nullptr;
 
     if (reactor == nullptr) {
@@ -868,7 +912,7 @@ class CallbackServerStreamingHandler : public MethodHandler {
  private:
   std::function<experimental::ServerWriteReactor<RequestType, ResponseType>*(
       ServerContext*)>
-      func_;
+      get_reactor_;
 
   class ServerCallbackWriterImpl
       : public experimental::ServerCallbackWriter<ResponseType> {
@@ -999,8 +1043,8 @@ class CallbackBidiHandler : public MethodHandler {
   explicit CallbackBidiHandler(
       std::function<experimental::ServerBidiReactor<RequestType, ResponseType>*(
           ServerContext*)>
-          func)
-      : func_(std::move(func)) {}
+          get_reactor)
+      : get_reactor_(std::move(get_reactor)) {}
   void RunHandler(const HandlerParameter& param) final {
     g_core_codegen_interface->grpc_call_ref(param.call->call());
 
@@ -1008,7 +1052,7 @@ class CallbackBidiHandler : public MethodHandler {
         param.status.ok()
             ? CatchingReactorCreator<
                   experimental::ServerBidiReactor<RequestType, ResponseType>>(
-                  func_, param.server_context)
+                  get_reactor_, param.server_context)
             : nullptr;
 
     if (reactor == nullptr) {
@@ -1032,7 +1076,7 @@ class CallbackBidiHandler : public MethodHandler {
  private:
   std::function<experimental::ServerBidiReactor<RequestType, ResponseType>*(
       ServerContext*)>
-      func_;
+      get_reactor_;
 
   class ServerCallbackReaderWriterImpl
       : public experimental::ServerCallbackReaderWriter<RequestType,

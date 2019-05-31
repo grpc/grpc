@@ -72,7 +72,7 @@ class CallbackTestServiceImpl
 
   experimental::ServerUnaryReactor<EchoRequest, EchoResponse>* Echo(
       ServerContext* context) override {
-    return experimental::ServeRpc<EchoRequest, EchoResponse>(
+    return experimental::MakeReactor<EchoRequest, EchoResponse>(
         context,
         [this](const EchoRequest* request, EchoResponse* response,
                experimental::ServerUnaryReactor<EchoRequest, EchoResponse>*
