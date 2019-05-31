@@ -126,6 +126,14 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
   }
 }
 
+static inline HashTable* php_grpc_zend_new_array(uint nSize) {
+    HashTable *ht = emalloc(sizeof(HashTable));
+    zend_hash_init(ht, nSize, NULL, ZVAL_PTR_DTOR, 0);
+
+    return ht;
+}
+
+#define php_grpc_zend_hash_copy zend_hash_copy
 #define php_grpc_zend_hash_del zend_hash_del
 #define php_grpc_zend_resource zend_rsrc_list_entry
 
@@ -249,9 +257,17 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
   }
 }
 
+#define php_grpc_zend_new_array zend_new_array
+
+static inline void php_grpc_zend_hash_copy(HashTable *target, HashTable *source,
+                    copy_ctor_func_t pCopyConstructor, void *tmp, uint size) {
+  zend_hash_copy(target, source, pCopyConstructor);
+}
+
 static inline int php_grpc_zend_hash_del(HashTable *ht, char *key, int len) {
   return zend_hash_str_del(ht, key, len - 1);
 }
+
 #define php_grpc_zend_resource zend_resource
 
 #define PHP_GRPC_BVAL_IS_TRUE(zv) Z_TYPE_P(zv) == IS_TRUE

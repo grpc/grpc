@@ -314,8 +314,8 @@ PHP_METHOD(Channel, __construct) {
                          "Channel expects a string and an array", 1 TSRMLS_CC);
     return;
   }
-  array_hash = zend_new_array(zend_hash_num_elements(Z_ARRVAL_P(args_array)));
-  zend_hash_copy(array_hash, Z_ARRVAL_P(args_array), (copy_ctor_func_t) zval_add_ref);
+  array_hash = php_grpc_zend_new_array(zend_hash_num_elements(Z_ARRVAL_P(args_array)));
+  php_grpc_zend_hash_copy(array_hash, Z_ARRVAL_P(args_array), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval*));
   if (php_grpc_zend_hash_find(array_hash, "credentials", sizeof("credentials"),
                               (void **)&creds_obj) == SUCCESS) {
     if (Z_TYPE_P(creds_obj) == IS_NULL) {
