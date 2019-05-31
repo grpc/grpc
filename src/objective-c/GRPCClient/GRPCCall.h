@@ -174,7 +174,7 @@ extern NSString *const kGRPCTrailersKey;
  * interceptor, implement didReceiveData: instead. To implement an interceptor, please leave this
  * method unimplemented and implement didReceiveData: method instead. If this method and
  * didReceiveRawMessage are implemented at the same time, implementation of this method will be
- * ingored.
+ * ignored.
  *
  * Issued when a message is received from the server. The message is the raw data received from the
  * server, with decompression and without proto deserialization.
