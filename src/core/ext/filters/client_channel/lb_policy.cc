@@ -62,32 +62,6 @@ void LoadBalancingPolicy::ShutdownAndUnrefLocked(void* arg,
   policy->Unref();
 }
 
-grpc_json* LoadBalancingPolicy::ParseLoadBalancingConfig(
-    const grpc_json* lb_config_array) {
-  if (lb_config_array == nullptr || lb_config_array->type != GRPC_JSON_ARRAY) {
-    return nullptr;
-  }
-  // Find the first LB policy that this client supports.
-  for (const grpc_json* lb_config = lb_config_array->child;
-       lb_config != nullptr; lb_config = lb_config->next) {
-    if (lb_config->type != GRPC_JSON_OBJECT) return nullptr;
-    grpc_json* policy = nullptr;
-    for (grpc_json* field = lb_config->child; field != nullptr;
-         field = field->next) {
-      if (field->key == nullptr || field->type != GRPC_JSON_OBJECT)
-        return nullptr;
-      if (policy != nullptr) return nullptr;  // Violate "oneof" type.
-      policy = field;
-    }
-    if (policy == nullptr) return nullptr;
-    // If we support this policy, then select it.
-    if (LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(policy->key)) {
-      return policy;
-    }
-  }
-  return nullptr;
-}
-
 //
 // LoadBalancingPolicy::UpdateArgs
 //
@@ -131,7 +105,7 @@ LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
 //
 
 LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
-    PickArgs* pick, grpc_error** error) {
+    PickArgs args) {
   // We invoke the parent's ExitIdleLocked() via a closure instead
   // of doing it directly here, for two reasons:
   // 1. ExitIdleLocked() may cause the policy's state to change and
@@ -151,7 +125,9 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
                             grpc_combiner_scheduler(parent_->combiner())),
         GRPC_ERROR_NONE);
   }
-  return PICK_QUEUE;
+  PickResult result;
+  result.type = PickResult::PICK_QUEUE;
+  return result;
 }
 
 void LoadBalancingPolicy::QueuePicker::CallExitIdle(void* arg,
@@ -159,6 +135,18 @@ void LoadBalancingPolicy::QueuePicker::CallExitIdle(void* arg,
   LoadBalancingPolicy* parent = static_cast<LoadBalancingPolicy*>(arg);
   parent->ExitIdleLocked();
   parent->Unref();
+}
+
+//
+// LoadBalancingPolicy::TransientFailurePicker
+//
+
+LoadBalancingPolicy::PickResult
+LoadBalancingPolicy::TransientFailurePicker::Pick(PickArgs args) {
+  PickResult result;
+  result.type = PickResult::PICK_TRANSIENT_FAILURE;
+  result.error = GRPC_ERROR_REF(error_);
+  return result;
 }
 
 }  // namespace grpc_core

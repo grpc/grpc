@@ -32,8 +32,6 @@
 namespace grpc {
 namespace testing {
 
-auto& force_library_initialization = Library::get();
-
 struct TimerClosure {
   grpc_timer timer;
   grpc_closure closure;
@@ -111,6 +109,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();

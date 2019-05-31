@@ -315,11 +315,11 @@ typedef struct {
 #define GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS "grpc.grpclb_call_timeout_ms"
 /* Timeout in milliseconds to wait for the serverlist from the grpclb load
    balancer before using fallback backend addresses from the resolver.
-   If 0, fallback will never be used. Default value is 10000. */
+   If 0, enter fallback mode immediately. Default value is 10000. */
 #define GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS "grpc.grpclb_fallback_timeout_ms"
 /* Timeout in milliseconds to wait for the serverlist from the xDS load
    balancer before using fallback backend addresses from the resolver.
-   If 0, fallback will never be used. Default value is 10000. */
+   If 0, enter fallback mode immediately. Default value is 10000. */
 #define GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS "grpc.xds_fallback_timeout_ms"
 /** If non-zero, grpc server's cronet compression workaround will be enabled */
 #define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \
@@ -359,10 +359,12 @@ typedef struct {
  * load balancing policy. Note that this only works with the "ares"
  * DNS resolver, and isn't supported by the "native" DNS resolver. */
 #define GRPC_ARG_DNS_ENABLE_SRV_QUERIES "grpc.dns_enable_srv_queries"
-/** If set, determines the number of milliseconds that the c-ares based
- * DNS resolver will wait on queries before cancelling them. The default value
- * is 10000. Setting this to "0" will disable c-ares query timeouts
- * entirely. */
+/** If set, determines an upper bound on the number of milliseconds that the
+ * c-ares based DNS resolver will wait on queries before cancelling them.
+ * The default value is 120,000. Setting this to "0" will disable the
+ * overall timeout entirely. Note that this doesn't include internal c-ares
+ * timeouts/backoff/retry logic, and so the actual DNS resolution may time out
+ * sooner than the value specified here. */
 #define GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS "grpc.dns_ares_query_timeout"
 /** If set, uses a local subchannel pool within the channel. Otherwise, uses the
  * global subchannel pool. */
@@ -494,7 +496,8 @@ typedef struct grpc_event {
       field is guaranteed to be 0 */
   int success;
   /** The tag passed to grpc_call_start_batch etc to start this operation.
-      Only GRPC_OP_COMPLETE has a tag. */
+      *Only* GRPC_OP_COMPLETE has a tag. For all other grpc_completion_type
+      values, tag is uninitialized. */
   void* tag;
 } grpc_event;
 

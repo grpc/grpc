@@ -72,7 +72,7 @@ struct call_data {
     GRPC_ERROR_UNREF(cancel_error);
   }
 
-  grpc_call_combiner* call_combiner;
+  grpc_core::CallCombiner* call_combiner;
   grpc_linked_mdelem compression_algorithm_storage;
   grpc_linked_mdelem stream_compression_algorithm_storage;
   grpc_linked_mdelem accept_encoding_storage;
@@ -249,7 +249,7 @@ static void finish_send_message(grpc_call_element* elem) {
   bool did_compress = grpc_msg_compress(calld->message_compression_algorithm,
                                         &calld->slices, &tmp);
   if (did_compress) {
-    if (grpc_compression_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
       const char* algo_name;
       const size_t before_size = calld->slices.length;
       const size_t after_size = tmp.length;
@@ -265,7 +265,7 @@ static void finish_send_message(grpc_call_element* elem) {
     grpc_slice_buffer_swap(&calld->slices, &tmp);
     send_flags |= GRPC_WRITE_INTERNAL_COMPRESS;
   } else {
-    if (grpc_compression_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
       const char* algo_name;
       GPR_ASSERT(grpc_message_compression_algorithm_name(
           calld->message_compression_algorithm, &algo_name));

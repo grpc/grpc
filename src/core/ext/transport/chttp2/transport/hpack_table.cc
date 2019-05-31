@@ -29,6 +29,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/murmur_hash.h"
+#include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 extern grpc_core::TraceFlag grpc_http_trace;
@@ -247,7 +248,7 @@ void grpc_chttp2_hptbl_set_max_bytes(grpc_chttp2_hptbl* tbl,
   if (tbl->max_bytes == max_bytes) {
     return;
   }
-  if (grpc_http_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO, "Update hpack parser max size to %d", max_bytes);
   }
   while (tbl->mem_used > max_bytes) {
@@ -270,7 +271,7 @@ grpc_error* grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl* tbl,
     gpr_free(msg);
     return err;
   }
-  if (grpc_http_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO, "Update hpack parser table size to %d", bytes);
   }
   while (tbl->mem_used > bytes) {
@@ -375,23 +376,15 @@ static size_t get_base64_encoded_size(size_t raw_length) {
 
 size_t grpc_chttp2_get_size_in_hpack_table(grpc_mdelem elem,
                                            bool use_true_binary_metadata) {
-  size_t overhead_and_key = 32 + GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
+  const uint8_t* key_buf = GRPC_SLICE_START_PTR(GRPC_MDKEY(elem));
+  size_t key_len = GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
+  size_t overhead_and_key = 32 + key_len;
   size_t value_len = GRPC_SLICE_LENGTH(GRPC_MDVALUE(elem));
-  if (grpc_is_binary_header(GRPC_MDKEY(elem))) {
+  if (grpc_key_is_binary_header(key_buf, key_len)) {
     return overhead_and_key + (use_true_binary_metadata
                                    ? value_len + 1
                                    : get_base64_encoded_size(value_len));
   } else {
     return overhead_and_key + value_len;
   }
-}
-
-uint8_t grpc_chttp2_get_static_hpack_table_index(grpc_mdelem md) {
-  if (GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC) {
-    uint8_t index = GRPC_MDELEM_DATA(md) - grpc_static_mdelem_table;
-    if (index < GRPC_CHTTP2_LAST_STATIC_ENTRY) {
-      return index + 1;  // Hpack static metadata element indices start at 1
-    }
-  }
-  return 0;
 }

@@ -35,6 +35,7 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/http2_errors.h"
 
 typedef enum {
@@ -624,10 +625,10 @@ static const uint8_t inverse_base64[256] = {
 /* emission helpers */
 static grpc_error* on_hdr(grpc_chttp2_hpack_parser* p, grpc_mdelem md,
                           int add_to_table) {
-  if (grpc_http_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     char* k = grpc_slice_to_c_string(GRPC_MDKEY(md));
     char* v = nullptr;
-    if (grpc_is_binary_header(GRPC_MDKEY(md))) {
+    if (grpc_is_binary_header_internal(GRPC_MDKEY(md))) {
       v = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX);
     } else {
       v = grpc_slice_to_c_string(GRPC_MDVALUE(md));
@@ -994,7 +995,7 @@ static grpc_error* parse_lithdr_nvridx_v(grpc_chttp2_hpack_parser* p,
 /* finish parsing a max table size change */
 static grpc_error* finish_max_tbl_size(grpc_chttp2_hpack_parser* p,
                                        const uint8_t* cur, const uint8_t* end) {
-  if (grpc_http_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO, "MAX TABLE SIZE: %d", p->index);
   }
   grpc_error* err =
@@ -1494,7 +1495,13 @@ static grpc_error* parse_key_string(grpc_chttp2_hpack_parser* p,
 /* check if a key represents a binary header or not */
 
 static bool is_binary_literal_header(grpc_chttp2_hpack_parser* p) {
-  return grpc_is_binary_header(
+  /* We know that either argument here is a reference counter slice.
+   * 1. If a result of grpc_slice_from_static_buffer, the refcount is set to
+   *    NoopRefcount.
+   * 2. If it's p->key.data.referenced, then p->key.copied was set to false,
+   *    which occurs in begin_parse_string() - where the refcount is set to
+   *    p->current_slice_refcount, which is not null. */
+  return grpc_is_refcounted_slice_binary_header(
       p->key.copied ? grpc_slice_from_static_buffer(p->key.data.copied.str,
                                                     p->key.data.copied.length)
                     : p->key.data.referenced);
@@ -1511,7 +1518,15 @@ static grpc_error* is_binary_indexed_header(grpc_chttp2_hpack_parser* p,
                            static_cast<intptr_t>(p->index)),
         GRPC_ERROR_INT_SIZE, static_cast<intptr_t>(p->table.num_ents));
   }
-  *is = grpc_is_binary_header(GRPC_MDKEY(elem));
+  /* We know that GRPC_MDKEY(elem) points to a reference counted slice since:
+   * 1. elem was a result of grpc_chttp2_hptbl_lookup
+   * 2. An item in this table is either static (see entries with
+   *    index < GRPC_CHTTP2_LAST_STATIC_ENTRY or added via
+   *    grpc_chttp2_hptbl_add).
+   * 3. If added via grpc_chttp2_hptbl_add, the entry is either static or
+   *    interned.
+   * 4. Both static and interned element slices have non-null refcounts. */
+  *is = grpc_is_refcounted_slice_binary_header(GRPC_MDKEY(elem));
   return GRPC_ERROR_NONE;
 }
 
@@ -1615,6 +1630,12 @@ static void parse_stream_compression_md(grpc_chttp2_transport* t,
           &s->stream_decompression_method) == 0) {
     s->stream_decompression_method =
         GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS;
+  }
+
+  if (s->stream_decompression_method !=
+      GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS) {
+    s->stream_decompression_ctx = nullptr;
+    grpc_slice_buffer_init(&s->decompressed_data_buffer);
   }
 }
 

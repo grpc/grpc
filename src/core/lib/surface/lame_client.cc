@@ -39,7 +39,7 @@ namespace grpc_core {
 namespace {
 
 struct CallData {
-  grpc_call_combiner* call_combiner;
+  grpc_core::CallCombiner* call_combiner;
   grpc_linked_mdelem status;
   grpc_linked_mdelem details;
   grpc_core::Atomic<bool> filled_metadata;

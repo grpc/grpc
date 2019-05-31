@@ -138,7 +138,7 @@ static void teardown() {
  Setup:
   The benchmark framework ensures that none of the threads proceed beyond the
   state.KeepRunning() call unless all the threads have called state.keepRunning
-  atleast once.  So it is safe to do the initialization in one of the threads
+  at least once.  So it is safe to do the initialization in one of the threads
   before state.KeepRunning() is called.
 
  Teardown:

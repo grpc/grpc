@@ -19,8 +19,41 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/channel/channel_stack.h"
 
 extern const grpc_channel_filter grpc_message_size_filter;
+
+namespace grpc_core {
+
+class MessageSizeParsedConfig : public ServiceConfig::ParsedConfig {
+ public:
+  struct message_size_limits {
+    int max_send_size;
+    int max_recv_size;
+  };
+
+  MessageSizeParsedConfig(int max_send_size, int max_recv_size) {
+    limits_.max_send_size = max_send_size;
+    limits_.max_recv_size = max_recv_size;
+  }
+
+  const message_size_limits& limits() const { return limits_; }
+
+ private:
+  message_size_limits limits_;
+};
+
+class MessageSizeParser : public ServiceConfig::Parser {
+ public:
+  UniquePtr<ServiceConfig::ParsedConfig> ParsePerMethodParams(
+      const grpc_json* json, grpc_error** error) override;
+
+  static void Register();
+
+  static size_t ParserIndex();
+};
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_MESSAGE_SIZE_MESSAGE_SIZE_FILTER_H */

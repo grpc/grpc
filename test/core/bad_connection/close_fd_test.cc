@@ -39,7 +39,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -328,7 +327,6 @@ static void _test_close_before_server_recv(fd_type fdtype) {
    */
   if (event.type == GRPC_QUEUE_TIMEOUT) {
     GPR_ASSERT(event.success == 0);
-    GPR_ASSERT(event.tag == nullptr);
     /* status is not initialized */
     GPR_ASSERT(status == GRPC_STATUS__DO_NOT_USE);
   } else {
@@ -531,7 +529,6 @@ static void _test_close_before_server_send(fd_type fdtype) {
   } else {
     GPR_ASSERT(event.type == GRPC_QUEUE_TIMEOUT);
     GPR_ASSERT(event.success == 0);
-    GPR_ASSERT(event.tag == nullptr);
     /* status is not initialized */
     GPR_ASSERT(status == GRPC_STATUS__DO_NOT_USE);
   }
@@ -664,7 +661,6 @@ static void _test_close_before_client_send(fd_type fdtype) {
       g_ctx.cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
   GPR_ASSERT(event.success == 0);
   GPR_ASSERT(event.type == GRPC_QUEUE_TIMEOUT);
-  GPR_ASSERT(event.tag == nullptr);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -720,13 +716,11 @@ static void _test_close_before_call_create(fd_type fdtype) {
       g_ctx.client_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
   GPR_ASSERT(event.type == GRPC_QUEUE_TIMEOUT);
   GPR_ASSERT(event.success == 0);
-  GPR_ASSERT(event.tag == nullptr);
 
   event = grpc_completion_queue_next(
       g_ctx.cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
   GPR_ASSERT(event.type == GRPC_QUEUE_TIMEOUT);
   GPR_ASSERT(event.success == 0);
-  GPR_ASSERT(event.tag == nullptr);
 
   grpc_call_unref(call);
   end_test();

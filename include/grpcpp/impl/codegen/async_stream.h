@@ -28,8 +28,6 @@
 
 namespace grpc {
 
-class CompletionQueue;
-
 namespace internal {
 /// Common interface for all client side asynchronous streaming.
 class ClientAsyncStreamingInterface {
@@ -1099,7 +1097,7 @@ class ServerAsyncReaderWriter final
   }
 
  private:
-  friend class ::grpc::Server;
+  friend class ::grpc_impl::Server;
 
   void BindCall(::grpc::internal::Call* call) override { call_ = *call; }
 

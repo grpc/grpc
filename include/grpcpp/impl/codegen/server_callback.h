@@ -28,6 +28,7 @@
 #include <grpcpp/impl/codegen/callback_common.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
+#include <grpcpp/impl/codegen/message_allocator.h>
 #include <grpcpp/impl/codegen/server_context.h>
 #include <grpcpp/impl/codegen/server_interface.h>
 #include <grpcpp/impl/codegen/status.h>
@@ -74,6 +75,24 @@ class ServerReactor {
   }
 
   std::atomic_int on_cancel_conditions_remaining_{2};
+};
+
+template <class Request, class Response>
+class DefaultMessageHolder
+    : public experimental::MessageHolder<Request, Response> {
+ public:
+  DefaultMessageHolder() {
+    this->set_request(&request_obj_);
+    this->set_response(&response_obj_);
+  }
+  void Release() override {
+    // the object is allocated in the call arena.
+    this->~DefaultMessageHolder<Request, Response>();
+  }
+
+ private:
+  Request request_obj_;
+  Response response_obj_;
 };
 
 }  // namespace internal
@@ -135,6 +154,10 @@ class ServerCallbackRpcController {
   /// to be called before the callback completes.
   virtual void SetCancelCallback(std::function<void()> callback) = 0;
   virtual void ClearCancelCallback() = 0;
+
+  // NOTE: This is an API for advanced users who need custom allocators.
+  // Get and maybe mutate the allocator state associated with the current RPC.
+  virtual RpcAllocatorState* GetRpcAllocatorState() = 0;
 };
 
 // NOTE: The actual streaming object classes are provided
@@ -364,7 +387,7 @@ class ServerReadReactor : public internal::ServerReactor {
   ServerCallbackReader<Request>* reader_;
 };
 
-/// \a ServerReadReactor is the interface for a server-streaming RPC.
+/// \a ServerWriteReactor is the interface for a server-streaming RPC.
 template <class Request, class Response>
 class ServerWriteReactor : public internal::ServerReactor {
  public:
@@ -447,17 +470,24 @@ class CallbackUnaryHandler : public MethodHandler {
                          experimental::ServerCallbackRpcController*)>
           func)
       : func_(func) {}
+
+  void SetMessageAllocator(
+      experimental::MessageAllocator<RequestType, ResponseType>* allocator) {
+    allocator_ = allocator;
+  }
+
   void RunHandler(const HandlerParameter& param) final {
     // Arena allocate a controller structure (that includes request/response)
     g_core_codegen_interface->grpc_call_ref(param.call->call());
+    auto* allocator_state =
+        static_cast<experimental::MessageHolder<RequestType, ResponseType>*>(
+            param.internal_data);
     auto* controller = new (g_core_codegen_interface->grpc_call_arena_alloc(
         param.call->call(), sizeof(ServerCallbackRpcControllerImpl)))
-        ServerCallbackRpcControllerImpl(
-            param.server_context, param.call,
-            static_cast<RequestType*>(param.request),
-            std::move(param.call_requester));
+        ServerCallbackRpcControllerImpl(param.server_context, param.call,
+                                        allocator_state,
+                                        std::move(param.call_requester));
     Status status = param.status;
-
     if (status.ok()) {
       // Call the actual function handler and expect the user to call finish
       CatchingCallback(func_, param.server_context, controller->request(),
@@ -468,18 +498,29 @@ class CallbackUnaryHandler : public MethodHandler {
     }
   }
 
-  void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
-                    Status* status) final {
+  void* Deserialize(grpc_call* call, grpc_byte_buffer* req, Status* status,
+                    void** handler_data) final {
     ByteBuffer buf;
     buf.set_buffer(req);
-    auto* request = new (g_core_codegen_interface->grpc_call_arena_alloc(
-        call, sizeof(RequestType))) RequestType();
+    RequestType* request = nullptr;
+    experimental::MessageHolder<RequestType, ResponseType>* allocator_state =
+        nullptr;
+    if (allocator_ != nullptr) {
+      allocator_state = allocator_->AllocateMessages();
+    } else {
+      allocator_state = new (g_core_codegen_interface->grpc_call_arena_alloc(
+          call, sizeof(DefaultMessageHolder<RequestType, ResponseType>)))
+          DefaultMessageHolder<RequestType, ResponseType>();
+    }
+    *handler_data = allocator_state;
+    request = allocator_state->request();
     *status = SerializationTraits<RequestType>::Deserialize(&buf, request);
     buf.Release();
     if (status->ok()) {
       return request;
     }
-    request->~RequestType();
+    // Clean up on deserialization failure.
+    allocator_state->Release();
     return nullptr;
   }
 
@@ -487,6 +528,8 @@ class CallbackUnaryHandler : public MethodHandler {
   std::function<void(ServerContext*, const RequestType*, ResponseType*,
                      experimental::ServerCallbackRpcController*)>
       func_;
+  experimental::MessageAllocator<RequestType, ResponseType>* allocator_ =
+      nullptr;
 
   // The implementation class of ServerCallbackRpcController is a private member
   // of CallbackUnaryHandler since it is never exposed anywhere, and this allows
@@ -508,7 +551,7 @@ class CallbackUnaryHandler : public MethodHandler {
       // The response is dropped if the status is not OK.
       if (s.ok()) {
         finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_,
-                                     finish_ops_.SendMessagePtr(&resp_));
+                                     finish_ops_.SendMessagePtr(response()));
       } else {
         finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
       }
@@ -546,28 +589,32 @@ class CallbackUnaryHandler : public MethodHandler {
 
     void ClearCancelCallback() override { ctx_->ClearCancelCallback(); }
 
+    experimental::RpcAllocatorState* GetRpcAllocatorState() override {
+      return allocator_state_;
+    }
+
    private:
     friend class CallbackUnaryHandler<RequestType, ResponseType>;
 
-    ServerCallbackRpcControllerImpl(ServerContext* ctx, Call* call,
-                                    const RequestType* req,
-                                    std::function<void()> call_requester)
+    ServerCallbackRpcControllerImpl(
+        ServerContext* ctx, Call* call,
+        experimental::MessageHolder<RequestType, ResponseType>* allocator_state,
+        std::function<void()> call_requester)
         : ctx_(ctx),
           call_(*call),
-          req_(req),
+          allocator_state_(allocator_state),
           call_requester_(std::move(call_requester)) {
       ctx_->BeginCompletionOp(call, [this](bool) { MaybeDone(); }, nullptr);
     }
 
-    ~ServerCallbackRpcControllerImpl() { req_->~RequestType(); }
-
-    const RequestType* request() { return req_; }
-    ResponseType* response() { return &resp_; }
+    const RequestType* request() { return allocator_state_->request(); }
+    ResponseType* response() { return allocator_state_->response(); }
 
     void MaybeDone() {
       if (--callbacks_outstanding_ == 0) {
         grpc_call* call = call_.call();
         auto call_requester = std::move(call_requester_);
+        allocator_state_->Release();
         this->~ServerCallbackRpcControllerImpl();  // explicitly call destructor
         g_core_codegen_interface->grpc_call_unref(call);
         call_requester();
@@ -583,8 +630,8 @@ class CallbackUnaryHandler : public MethodHandler {
 
     ServerContext* ctx_;
     Call call_;
-    const RequestType* req_;
-    ResponseType resp_;
+    experimental::MessageHolder<RequestType, ResponseType>* const
+        allocator_state_;
     std::function<void()> call_requester_;
     std::atomic_int callbacks_outstanding_{
         2};  // reserve for Finish and CompletionOp
@@ -771,8 +818,8 @@ class CallbackServerStreamingHandler : public MethodHandler {
     writer->MaybeDone();
   }
 
-  void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
-                    Status* status) final {
+  void* Deserialize(grpc_call* call, grpc_byte_buffer* req, Status* status,
+                    void** handler_data) final {
     ByteBuffer buf;
     buf.set_buffer(req);
     auto* request = new (g_core_codegen_interface->grpc_call_arena_alloc(

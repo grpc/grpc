@@ -35,6 +35,7 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
+#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -277,7 +278,7 @@ int main(int argc, char** argv) {
   GPR_ASSERT(roots_file != nullptr);
   GPR_ASSERT(fwrite(test_root_cert, 1, roots_size, roots_file) == roots_size);
   fclose(roots_file);
-  gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, roots_filename);
+  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, roots_filename);
   grpc_init();
   for (size_t ind = 0; ind < sizeof(configs) / sizeof(*configs); ind++) {
     grpc_end2end_tests(argc, argv, configs[ind]);

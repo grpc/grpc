@@ -20,6 +20,7 @@
 
 #include <string.h>
 
+#include <grpc/impl/codegen/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -94,7 +95,7 @@ void HandshakeManager::ShutdownAllPending(grpc_error* why) {
 }
 
 void HandshakeManager::Add(RefCountedPtr<Handshaker> handshaker) {
-  if (grpc_handshaker_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)) {
     gpr_log(
         GPR_INFO,
         "handshake_manager %p: adding handshaker %s [%p] at index %" PRIuPTR,
@@ -125,7 +126,7 @@ void HandshakeManager::Shutdown(grpc_error* why) {
 // on_handshake_done callback.
 // Returns true if we've scheduled the on_handshake_done callback.
 bool HandshakeManager::CallNextHandshakerLocked(grpc_error* error) {
-  if (grpc_handshaker_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)) {
     char* args_str = HandshakerArgsString(&args_);
     gpr_log(GPR_INFO,
             "handshake_manager %p: error=%s shutdown=%d index=%" PRIuPTR
@@ -159,7 +160,7 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error* error) {
         args_.read_buffer = nullptr;
       }
     }
-    if (grpc_handshaker_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)) {
       gpr_log(GPR_INFO,
               "handshake_manager %p: handshaking complete -- scheduling "
               "on_handshake_done with error=%s",
@@ -172,7 +173,7 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error* error) {
     is_shutdown_ = true;
   } else {
     auto handshaker = handshakers_[index_];
-    if (grpc_handshaker_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)) {
       gpr_log(
           GPR_INFO,
           "handshake_manager %p: calling handshaker %s [%p] at index %" PRIuPTR,
@@ -226,6 +227,11 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
     args_.read_buffer =
         static_cast<grpc_slice_buffer*>(gpr_malloc(sizeof(*args_.read_buffer)));
     grpc_slice_buffer_init(args_.read_buffer);
+    if (acceptor != nullptr && acceptor->external_connection &&
+        acceptor->pending_data != nullptr) {
+      grpc_slice_buffer_swap(args_.read_buffer,
+                             &(acceptor->pending_data->data.raw.slice_buffer));
+    }
     // Initialize state needed for calling handshakers.
     acceptor_ = acceptor;
     GRPC_CLOSURE_INIT(&call_next_handshaker_,

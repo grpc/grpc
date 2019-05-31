@@ -123,7 +123,7 @@ typedef struct shutdown_tag {
 typedef enum {
   /* waiting for metadata */
   NOT_STARTED,
-  /* inital metadata read, not flow controlled in yet */
+  /* initial metadata read, not flow controlled in yet */
   PENDING,
   /* flow controlled in, on completion queue */
   ACTIVATED,
@@ -190,7 +190,7 @@ struct call_data {
   grpc_closure publish;
 
   call_data* pending_next = nullptr;
-  grpc_call_combiner* call_combiner;
+  grpc_core::CallCombiner* call_combiner;
 };
 
 struct request_matcher {
@@ -347,8 +347,8 @@ static void channel_broadcaster_shutdown(channel_broadcaster* cb,
  */
 
 static void request_matcher_init(request_matcher* rm, grpc_server* server) {
-  memset(rm, 0, sizeof(*rm));
   rm->server = server;
+  rm->pending_head = rm->pending_tail = nullptr;
   rm->requests_per_cq = static_cast<gpr_locked_mpscq*>(
       gpr_malloc(sizeof(*rm->requests_per_cq) * server->cq_count));
   for (size_t i = 0; i < server->cq_count; i++) {
@@ -464,7 +464,8 @@ static void destroy_channel(channel_data* chand, grpc_error* error) {
   GRPC_CLOSURE_INIT(&chand->finish_destroy_channel_closure,
                     finish_destroy_channel, chand, grpc_schedule_on_exec_ctx);
 
-  if (grpc_server_channel_trace.enabled() && error != GRPC_ERROR_NONE) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_server_channel_trace) &&
+      error != GRPC_ERROR_NONE) {
     const char* msg = grpc_error_string(error);
     gpr_log(GPR_INFO, "Disconnected client: %s", msg);
   }
@@ -512,7 +513,7 @@ static void publish_call(grpc_server* server, call_data* calld, size_t cq_idx,
   }
 
   grpc_cq_end_op(calld->cq_new, rc->tag, GRPC_ERROR_NONE, done_request_event,
-                 rc, &rc->completion);
+                 rc, &rc->completion, true);
 }
 
 static void publish_new_rpc(void* arg, grpc_error* error) {
@@ -601,8 +602,9 @@ static void finish_start_new_rpc(
       break;
     case GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER: {
       grpc_op op;
-      memset(&op, 0, sizeof(op));
       op.op = GRPC_OP_RECV_MESSAGE;
+      op.flags = 0;
+      op.reserved = nullptr;
       op.data.recv_message.recv_message = &calld->payload;
       GRPC_CLOSURE_INIT(&calld->publish, publish_new_rpc, elem,
                         grpc_schedule_on_exec_ctx);
@@ -623,8 +625,8 @@ static void start_new_rpc(grpc_call_element* elem) {
   if (chand->registered_methods && calld->path_set && calld->host_set) {
     /* TODO(ctiller): unify these two searches */
     /* check for an exact match with host */
-    hash = GRPC_MDSTR_KV_HASH(grpc_slice_hash(calld->host),
-                              grpc_slice_hash(calld->path));
+    hash = GRPC_MDSTR_KV_HASH(grpc_slice_hash_internal(calld->host),
+                              grpc_slice_hash_internal(calld->path));
     for (i = 0; i <= chand->registered_method_max_probes; i++) {
       rm = &chand->registered_methods[(hash + i) %
                                       chand->registered_method_slots];
@@ -642,7 +644,7 @@ static void start_new_rpc(grpc_call_element* elem) {
       return;
     }
     /* check for a wildcard method definition (no host set) */
-    hash = GRPC_MDSTR_KV_HASH(0, grpc_slice_hash(calld->path));
+    hash = GRPC_MDSTR_KV_HASH(0, grpc_slice_hash_internal(calld->path));
     for (i = 0; i <= chand->registered_method_max_probes; i++) {
       rm = &chand->registered_methods[(hash + i) %
                                       chand->registered_method_slots];
@@ -1098,20 +1100,6 @@ void* grpc_server_register_method(
   return m;
 }
 
-static void start_listeners(void* s, grpc_error* error) {
-  grpc_server* server = static_cast<grpc_server*>(s);
-  for (listener* l = server->listeners; l; l = l->next) {
-    l->start(server, l->arg, server->pollsets, server->pollset_count);
-  }
-
-  gpr_mu_lock(&server->mu_global);
-  server->starting = false;
-  gpr_cv_signal(&server->starting_cv);
-  gpr_mu_unlock(&server->mu_global);
-
-  server_unref(server);
-}
-
 void grpc_server_start(grpc_server* server) {
   size_t i;
   grpc_core::ExecCtx exec_ctx;
@@ -1133,13 +1121,18 @@ void grpc_server_start(grpc_server* server) {
     request_matcher_init(&rm->matcher, server);
   }
 
-  server_ref(server);
+  gpr_mu_lock(&server->mu_global);
   server->starting = true;
-  GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_CREATE(
-          start_listeners, server,
-          grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT)),
-      GRPC_ERROR_NONE);
+  gpr_mu_unlock(&server->mu_global);
+
+  for (listener* l = server->listeners; l; l = l->next) {
+    l->start(server, l->arg, server->pollsets, server->pollset_count);
+  }
+
+  gpr_mu_lock(&server->mu_global);
+  server->starting = false;
+  gpr_cv_signal(&server->starting_cv);
+  gpr_mu_unlock(&server->mu_global);
 }
 
 void grpc_server_get_pollsets(grpc_server* server, grpc_pollset*** pollsets,
@@ -1207,8 +1200,8 @@ void grpc_server_setup_transport(
         has_host = false;
       }
       method = grpc_slice_intern(grpc_slice_from_static_string(rm->method));
-      hash = GRPC_MDSTR_KV_HASH(has_host ? grpc_slice_hash(host) : 0,
-                                grpc_slice_hash(method));
+      hash = GRPC_MDSTR_KV_HASH(has_host ? grpc_slice_hash_internal(host) : 0,
+                                grpc_slice_hash_internal(method));
       for (probes = 0; chand->registered_methods[(hash + probes) % slots]
                            .server_registered_method != nullptr;
            probes++)

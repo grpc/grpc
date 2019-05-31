@@ -23,15 +23,15 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  # version = '1.21.0-dev'
-  version = '0.0.8-dev'
+  # version = '1.22.0-dev'
+  version = '0.0.9-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  grpc_version = '1.21.0-dev'
+  grpc_version = '1.22.0-dev'
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
@@ -72,7 +72,7 @@ Pod::Spec.new do |s|
   s.default_subspecs = 'Interface', 'Implementation'
 
   # Certificates, to be able to establish TLS connections:
-  s.resource_bundles = { 'gRPCCertificates' => ['etc/roots.pem'] }
+  s.resource_bundles = { 'gRPCCertificates-Cpp' => ['etc/roots.pem'] }
 
   s.header_mappings_dir = 'include/grpcpp'
 
@@ -82,6 +82,7 @@ Pod::Spec.new do |s|
     ss.source_files = 'include/grpcpp/alarm.h',
                       'include/grpcpp/alarm_impl.h',
                       'include/grpcpp/channel.h',
+                      'include/grpcpp/channel_impl.h',
                       'include/grpcpp/client_context.h',
                       'include/grpcpp/completion_queue.h',
                       'include/grpcpp/create_channel.h',
@@ -116,22 +117,26 @@ Pod::Spec.new do |s|
                       'include/grpcpp/security/auth_metadata_processor.h',
                       'include/grpcpp/security/auth_metadata_processor_impl.h',
                       'include/grpcpp/security/credentials.h',
+                      'include/grpcpp/security/credentials_impl.h',
                       'include/grpcpp/security/server_credentials.h',
                       'include/grpcpp/security/server_credentials_impl.h',
                       'include/grpcpp/server.h',
                       'include/grpcpp/server_builder.h',
                       'include/grpcpp/server_builder_impl.h',
                       'include/grpcpp/server_context.h',
+                      'include/grpcpp/server_impl.h',
                       'include/grpcpp/server_posix.h',
                       'include/grpcpp/server_posix_impl.h',
                       'include/grpcpp/support/async_stream.h',
                       'include/grpcpp/support/async_unary_call.h',
                       'include/grpcpp/support/byte_buffer.h',
                       'include/grpcpp/support/channel_arguments.h',
+                      'include/grpcpp/support/channel_arguments_impl.h',
                       'include/grpcpp/support/client_callback.h',
                       'include/grpcpp/support/client_interceptor.h',
                       'include/grpcpp/support/config.h',
                       'include/grpcpp/support/interceptor.h',
+                      'include/grpcpp/support/message_allocator.h',
                       'include/grpcpp/support/proto_buffer_reader.h',
                       'include/grpcpp/support/proto_buffer_writer.h',
                       'include/grpcpp/support/server_callback.h',
@@ -143,6 +148,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/support/stub_options.h',
                       'include/grpcpp/support/sync_stream.h',
                       'include/grpcpp/support/time.h',
+                      'include/grpcpp/support/validate_service_config.h',
                       'include/grpcpp/impl/codegen/async_generic_service.h',
                       'include/grpcpp/impl/codegen/async_stream.h',
                       'include/grpcpp/impl/codegen/async_unary_call.h',
@@ -158,6 +164,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/client_interceptor.h',
                       'include/grpcpp/impl/codegen/client_unary_call.h',
                       'include/grpcpp/impl/codegen/completion_queue.h',
+                      'include/grpcpp/impl/codegen/completion_queue_impl.h',
                       'include/grpcpp/impl/codegen/completion_queue_tag.h',
                       'include/grpcpp/impl/codegen/config.h',
                       'include/grpcpp/impl/codegen/core_codegen_interface.h',
@@ -166,6 +173,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/intercepted_channel.h',
                       'include/grpcpp/impl/codegen/interceptor.h',
                       'include/grpcpp/impl/codegen/interceptor_common.h',
+                      'include/grpcpp/impl/codegen/message_allocator.h',
                       'include/grpcpp/impl/codegen/metadata_map.h',
                       'include/grpcpp/impl/codegen/method_handler_impl.h',
                       'include/grpcpp/impl/codegen/rpc_method.h',
@@ -200,6 +208,7 @@ Pod::Spec.new do |s|
                       'src/cpp/client/create_channel_internal.h',
                       'src/cpp/common/channel_filter.h',
                       'src/cpp/server/dynamic_thread_pool.h',
+                      'src/cpp/server/external_connection_acceptor_impl.h',
                       'src/cpp/server/health/default_health_check_service.h',
                       'src/cpp/server/thread_pool_interface.h',
                       'src/cpp/thread_manager/thread_manager.h',
@@ -226,11 +235,13 @@ Pod::Spec.new do |s|
                       'src/cpp/common/core_codegen.cc',
                       'src/cpp/common/resource_quota_cc.cc',
                       'src/cpp/common/rpc_method.cc',
+                      'src/cpp/common/validate_service_config.cc',
                       'src/cpp/common/version_cc.cc',
                       'src/cpp/server/async_generic_service.cc',
                       'src/cpp/server/channel_argument_option.cc',
                       'src/cpp/server/create_default_thread_pool.cc',
                       'src/cpp/server/dynamic_thread_pool.cc',
+                      'src/cpp/server/external_connection_acceptor_impl.cc',
                       'src/cpp/server/health/default_health_check_service.cc',
                       'src/cpp/server/health/health_check_service.cc',
                       'src/cpp/server/health/health_check_service_server_builder_option.cc',
@@ -262,8 +273,13 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/tmpfile.h',
                       'src/core/lib/gpr/useful.h',
                       'src/core/lib/gprpp/abstract.h',
+                      'src/core/lib/gprpp/arena.h',
                       'src/core/lib/gprpp/atomic.h',
                       'src/core/lib/gprpp/fork.h',
+                      'src/core/lib/gprpp/global_config.h',
+                      'src/core/lib/gprpp/global_config_custom.h',
+                      'src/core/lib/gprpp/global_config_env.h',
+                      'src/core/lib/gprpp/global_config_generic.h',
                       'src/core/lib/gprpp/manual_constructor.h',
                       'src/core/lib/gprpp/map.h',
                       'src/core/lib/gprpp/memory.h',
@@ -383,6 +399,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/server_address.h',
                       'src/core/ext/filters/client_channel/service_config.h',
                       'src/core/ext/filters/client_channel/subchannel.h',
+                      'src/core/ext/filters/client_channel/subchannel_interface.h',
                       'src/core/ext/filters/client_channel/subchannel_pool_interface.h',
                       'src/core/ext/filters/deadline/deadline_filter.h',
                       'src/core/ext/filters/client_channel/health/health.pb.h',
@@ -431,12 +448,15 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/block_annotate.h',
                       'src/core/lib/iomgr/buffer_list.h',
                       'src/core/lib/iomgr/call_combiner.h',
+                      'src/core/lib/iomgr/cfstream_handle.h',
                       'src/core/lib/iomgr/closure.h',
                       'src/core/lib/iomgr/combiner.h',
                       'src/core/lib/iomgr/dynamic_annotations.h',
                       'src/core/lib/iomgr/endpoint.h',
+                      'src/core/lib/iomgr/endpoint_cfstream.h',
                       'src/core/lib/iomgr/endpoint_pair.h',
                       'src/core/lib/iomgr/error.h',
+                      'src/core/lib/iomgr/error_cfstream.h',
                       'src/core/lib/iomgr/error_internal.h',
                       'src/core/lib/iomgr/ev_epoll1_linux.h',
                       'src/core/lib/iomgr/ev_epollex_linux.h',
@@ -503,6 +523,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice_hash_table.h',
                       'src/core/lib/slice/slice_internal.h',
                       'src/core/lib/slice/slice_string_helpers.h',
+                      'src/core/lib/slice/slice_utils.h',
                       'src/core/lib/slice/slice_weak_hash_table.h',
                       'src/core/lib/surface/api_trace.h',
                       'src/core/lib/surface/call.h',
@@ -547,6 +568,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
+                      'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h',
                       'src/core/ext/filters/max_age/max_age_filter.h',
                       'src/core/ext/filters/message_size/message_size_filter.h',
                       'src/core/ext/filters/http/client_authority_filter.h',
@@ -560,6 +582,7 @@ Pod::Spec.new do |s|
                               'src/cpp/client/create_channel_internal.h',
                               'src/cpp/common/channel_filter.h',
                               'src/cpp/server/dynamic_thread_pool.h',
+                              'src/cpp/server/external_connection_acceptor_impl.h',
                               'src/cpp/server/health/default_health_check_service.h',
                               'src/cpp/server/thread_pool_interface.h',
                               'src/cpp/thread_manager/thread_manager.h',
@@ -580,8 +603,13 @@ Pod::Spec.new do |s|
                               'src/core/lib/gpr/tmpfile.h',
                               'src/core/lib/gpr/useful.h',
                               'src/core/lib/gprpp/abstract.h',
+                              'src/core/lib/gprpp/arena.h',
                               'src/core/lib/gprpp/atomic.h',
                               'src/core/lib/gprpp/fork.h',
+                              'src/core/lib/gprpp/global_config.h',
+                              'src/core/lib/gprpp/global_config_custom.h',
+                              'src/core/lib/gprpp/global_config_env.h',
+                              'src/core/lib/gprpp/global_config_generic.h',
                               'src/core/lib/gprpp/manual_constructor.h',
                               'src/core/lib/gprpp/map.h',
                               'src/core/lib/gprpp/memory.h',
@@ -624,12 +652,15 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/block_annotate.h',
                               'src/core/lib/iomgr/buffer_list.h',
                               'src/core/lib/iomgr/call_combiner.h',
+                              'src/core/lib/iomgr/cfstream_handle.h',
                               'src/core/lib/iomgr/closure.h',
                               'src/core/lib/iomgr/combiner.h',
                               'src/core/lib/iomgr/dynamic_annotations.h',
                               'src/core/lib/iomgr/endpoint.h',
+                              'src/core/lib/iomgr/endpoint_cfstream.h',
                               'src/core/lib/iomgr/endpoint_pair.h',
                               'src/core/lib/iomgr/error.h',
+                              'src/core/lib/iomgr/error_cfstream.h',
                               'src/core/lib/iomgr/error_internal.h',
                               'src/core/lib/iomgr/ev_epoll1_linux.h',
                               'src/core/lib/iomgr/ev_epollex_linux.h',
@@ -696,6 +727,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/slice_hash_table.h',
                               'src/core/lib/slice/slice_internal.h',
                               'src/core/lib/slice/slice_string_helpers.h',
+                              'src/core/lib/slice/slice_utils.h',
                               'src/core/lib/slice/slice_weak_hash_table.h',
                               'src/core/lib/surface/api_trace.h',
                               'src/core/lib/surface/call.h',

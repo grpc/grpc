@@ -26,7 +26,9 @@
 
 #include <utility>
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/cpp/server/external_connection_acceptor_impl.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc_impl {
@@ -112,6 +114,19 @@ ServerBuilder& ServerBuilder::experimental_type::RegisterCallbackGenericService(
     builder_->callback_generic_service_ = service;
   }
   return *builder_;
+}
+
+std::unique_ptr<grpc::experimental::ExternalConnectionAcceptor>
+ServerBuilder::experimental_type::AddExternalConnectionAcceptor(
+    experimental_type::ExternalConnectionType type,
+    std::shared_ptr<ServerCredentials> creds) {
+  grpc::string name_prefix("external:");
+  char count_str[GPR_LTOA_MIN_BUFSIZE];
+  gpr_ltoa(static_cast<long>(builder_->acceptors_.size()), count_str);
+  builder_->acceptors_.emplace_back(
+      std::make_shared<grpc::internal::ExternalConnectionAcceptorImpl>(
+          name_prefix.append(count_str), type, creds));
+  return builder_->acceptors_.back()->GetAcceptor();
 }
 
 ServerBuilder& ServerBuilder::SetOption(
@@ -307,8 +322,8 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   std::unique_ptr<grpc::Server> server(new grpc::Server(
       max_receive_message_size_, &args, sync_server_cqs,
       sync_server_settings_.min_pollers, sync_server_settings_.max_pollers,
-      sync_server_settings_.cq_timeout_msec, resource_quota_,
-      std::move(interceptor_creators_)));
+      sync_server_settings_.cq_timeout_msec, std::move(acceptors_),
+      resource_quota_, std::move(interceptor_creators_)));
 
   grpc_impl::ServerInitializer* initializer = server->initializer();
 

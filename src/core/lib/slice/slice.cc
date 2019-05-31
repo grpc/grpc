@@ -68,7 +68,8 @@ void grpc_slice_unref(grpc_slice slice) {
 
 /* grpc_slice_from_static_string support structure - a refcount that does
    nothing */
-static grpc_slice_refcount NoopRefcount;
+static grpc_slice_refcount NoopRefcount =
+    grpc_slice_refcount(grpc_slice_refcount::Type::NOP);
 
 size_t grpc_slice_memory_usage(grpc_slice s) {
   if (s.refcount == nullptr || s.refcount == &NoopRefcount) {
@@ -408,6 +409,31 @@ int grpc_slice_eq(grpc_slice a, grpc_slice b) {
     return a.refcount->Eq(a, b);
   }
   return grpc_slice_default_eq_impl(a, b);
+}
+
+int grpc_slice_differs_refcounted(const grpc_slice& a,
+                                  const grpc_slice& b_not_inline) {
+  size_t a_len;
+  const uint8_t* a_ptr;
+  if (a.refcount) {
+    a_len = a.data.refcounted.length;
+    a_ptr = a.data.refcounted.bytes;
+  } else {
+    a_len = a.data.inlined.length;
+    a_ptr = &a.data.inlined.bytes[0];
+  }
+  if (a_len != b_not_inline.data.refcounted.length) {
+    return true;
+  }
+  if (a_len == 0) {
+    return false;
+  }
+  // This check *must* occur after the a_len == 0 check
+  // to retain compatibility with grpc_slice_eq.
+  if (a_ptr == nullptr) {
+    return true;
+  }
+  return memcmp(a_ptr, b_not_inline.data.refcounted.bytes, a_len);
 }
 
 int grpc_slice_cmp(grpc_slice a, grpc_slice b) {

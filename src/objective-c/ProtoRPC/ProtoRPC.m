@@ -72,6 +72,7 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 
 - (void)start {
   [_call start];
+  [_call receiveNextMessage];
   [_call writeMessage:_message];
   [_call finish];
 }
@@ -197,6 +198,17 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
   [copiedCall finish];
 }
 
+- (void)receiveNextMessage {
+  [self receiveNextMessages:1];
+}
+- (void)receiveNextMessages:(NSUInteger)numberOfMessages {
+  GRPCCall2 *copiedCall;
+  @synchronized(self) {
+    copiedCall = _call;
+  }
+  [copiedCall receiveNextMessages:numberOfMessages];
+}
+
 - (void)didReceiveInitialMetadata:(NSDictionary *)initialMetadata {
   @synchronized(self) {
     if (initialMetadata != nil &&
@@ -257,6 +269,20 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
       });
     }
     _call = nil;
+  }
+}
+
+- (void)didWriteData {
+  @synchronized(self) {
+    if ([_handler respondsToSelector:@selector(didWriteMessage)]) {
+      dispatch_async(_dispatchQueue, ^{
+        id<GRPCProtoResponseHandler> copiedHandler = nil;
+        @synchronized(self) {
+          copiedHandler = self->_handler;
+        }
+        [copiedHandler didWriteMessage];
+      });
+    }
   }
 }
 

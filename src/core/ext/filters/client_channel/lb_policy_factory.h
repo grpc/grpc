@@ -37,9 +37,12 @@ class LoadBalancingPolicyFactory {
   /// Caller does NOT take ownership of result.
   virtual const char* name() const GRPC_ABSTRACT;
 
+  virtual RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
+      const grpc_json* json, grpc_error** error) const GRPC_ABSTRACT;
+
   virtual ~LoadBalancingPolicyFactory() {}
 
-  GRPC_ABSTRACT_BASE_CLASS
+  GRPC_ABSTRACT_BASE_CLASS;
 };
 
 }  // namespace grpc_core

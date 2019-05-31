@@ -38,7 +38,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 
-const char* gpr_getenv_silent(const char* name, char** dst) {
+static const char* gpr_getenv_silent(const char* name, char** dst) {
   const char* insecure_func_used = nullptr;
   char* result = nullptr;
 #if defined(GPR_BACKWARDS_COMPATIBILITY_MODE)
@@ -76,6 +76,11 @@ char* gpr_getenv(const char* name) {
 
 void gpr_setenv(const char* name, const char* value) {
   int res = setenv(name, value, 1);
+  GPR_ASSERT(res == 0);
+}
+
+void gpr_unsetenv(const char* name) {
+  int res = unsetenv(name);
   GPR_ASSERT(res == 0);
 }
 

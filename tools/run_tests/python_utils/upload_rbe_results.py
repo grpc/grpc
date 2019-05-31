@@ -146,6 +146,8 @@ if __name__ == "__main__":
     invocation_id = args.invocation_id or _get_invocation_id()
     resultstore_actions = _get_resultstore_data(api_key, invocation_id)
 
+    # google.devtools.resultstore.v2.Action schema:
+    # https://github.com/googleapis/googleapis/blob/master/google/devtools/resultstore/v2/action.proto
     bq_rows = []
     for index, action in enumerate(resultstore_actions):
         # Filter out non-test related data, such as build results.
@@ -186,6 +188,8 @@ if __name__ == "__main__":
                 resultstore_actions[index - 1]['timing']['startTime']
             }
         elif 'testSuite' not in action['testAction']:
+            continue
+        elif 'tests' not in action['testAction']['testSuite']:
             continue
         else:
             test_cases = action['testAction']['testSuite']['tests'][0][
