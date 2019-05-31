@@ -118,7 +118,6 @@ namespace {
 
 constexpr char kXds[] = "xds_experimental";
 constexpr char kDefaultLocalityName[] = "xds_default_locality";
-constexpr uint32_t kDefaultLocalityWeight = 3;
 
 class ParsedXdsConfig : public LoadBalancingPolicy::Config {
  public:
@@ -1121,8 +1120,8 @@ void XdsLb::BalancerChannelState::BalancerCallState::
   if (update_args->localities[0].serverlist->empty()) {
     xdslb_policy->MaybeExitFallbackMode();
   }
-  // Initialize locality_serverlist_ if necessary. Currently the list only handles
-  // one child.
+  // Initialize locality_serverlist_ if necessary. Currently the list only
+  // handles one child.
   if (xdslb_policy->locality_serverlist_.empty()) {
     xdslb_policy->locality_serverlist_.emplace_back(
         MakeUnique<LocalityServerlistEntry>());
@@ -1134,11 +1133,8 @@ void XdsLb::BalancerChannelState::BalancerCallState::
   // Update the locality_serverlist_ with the new serverlist and LB weight.
   xdslb_policy->locality_serverlist_[0]->serverlist =
       std::move(update_args->localities[0].serverlist);
-  // TODO(juanlishen): Figure out what to do when lb weight is not set.
   xdslb_policy->locality_serverlist_[0]->locality_weight =
-      update_args->localities[0].lb_weight != 0
-          ? update_args->localities[0].lb_weight
-          : kDefaultLocalityWeight;
+      update_args->localities[0].lb_weight;
   // Update the locality map.
   xdslb_policy->locality_map_.UpdateLocked(
       xdslb_policy->locality_serverlist_,

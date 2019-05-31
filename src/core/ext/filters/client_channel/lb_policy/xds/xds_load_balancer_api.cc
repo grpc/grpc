@@ -115,9 +115,10 @@ XdsLocalityUpdateArgs LocalityParse(
   const google_protobuf_UInt32Value* lb_weight =
       envoy_api_v2_endpoint_LocalityLbEndpoints_load_balancing_weight(
           locality_lb_endpoints);
-  if (lb_weight != nullptr) {
-    update_args.lb_weight = google_protobuf_UInt32Value_value(lb_weight);
-  }
+  // If LB weight is not specified, the default weight 0 is used, which means
+  // this locality is assigned no load.
+  update_args.lb_weight =
+      lb_weight != nullptr ? google_protobuf_UInt32Value_value(lb_weight) : 0;
   update_args.priority =
       envoy_api_v2_endpoint_LocalityLbEndpoints_priority(locality_lb_endpoints);
   return update_args;
