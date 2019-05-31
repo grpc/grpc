@@ -47,12 +47,8 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
-#include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
-
 #include "src/proto/grpc/lb/v2/eds.grpc.pb.h"
-//#include "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h"
-#include "upb/upb.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -74,6 +70,10 @@
 //   2) the retry timer is active. Again, the weak reference it holds should
 //   prevent a premature call to \a glb_destroy.
 
+namespace grpc {
+namespace testing {
+namespace {
+
 using std::chrono::system_clock;
 
 using grpc::lb::v2::ClusterLoadAssignment;
@@ -81,14 +81,8 @@ using grpc::lb::v2::DiscoveryRequest;
 using grpc::lb::v2::DiscoveryResponse;
 using grpc::lb::v2::EndpointDiscoveryService;
 
-namespace grpc {
-namespace testing {
-namespace {
-
 constexpr char kEdsTypeUrl[] =
     "type.googleapis.com/grpc.lb.v2.ClusterLoadAssignment";
-
-static upb::Arena g_arena;
 
 template <typename ServiceType>
 class CountedService : public ServiceType {
@@ -206,9 +200,7 @@ class BalancerServiceImpl : public BalancerService {
 
   explicit BalancerServiceImpl(int client_load_reporting_interval_seconds)
       : client_load_reporting_interval_seconds_(
-            client_load_reporting_interval_seconds) {
-    gpr_log(GPR_INFO, "%d", client_load_reporting_interval_seconds_);
-  }
+            client_load_reporting_interval_seconds) {}
 
   Status StreamEndpoints(ServerContext* context, Stream* stream) override {
     // TODO(juanlishen): Clean up the scoping.
@@ -223,9 +215,7 @@ class BalancerServiceImpl : public BalancerService {
                 context->client_metadata().end());
       DiscoveryRequest request;
       std::vector<ResponseDelayPair> responses_and_delays;
-      if (!stream->Read(&request)) {
-        goto done;
-      }
+      if (!stream->Read(&request)) goto done;
       IncreaseRequestCount();
       gpr_log(GPR_INFO, "LB[%p]: received initial message '%s'", this,
               request.DebugString().c_str());
@@ -241,7 +231,9 @@ class BalancerServiceImpl : public BalancerService {
         grpc::internal::MutexLock lock(&mu_);
         serverlist_cond_.WaitUntil(&mu_, [this] { return serverlist_done_; });
       }
-      // TODO(juanlishen): Use LRS to receive load report.
+      if (client_load_reporting_interval_seconds_ > 0) {
+        // TODO(juanlishen): Use LRS to receive load report.
+      }
     }
   done:
     gpr_log(GPR_INFO, "LB[%p]: done", this);
@@ -266,11 +258,9 @@ class BalancerServiceImpl : public BalancerService {
     ClusterLoadAssignment assignment;
     assignment.set_cluster_name("service name");
     auto* endpoints = assignment.add_endpoints();
-    auto* lb_weight = endpoints->mutable_load_balancing_weight();
-    lb_weight->set_value(3);
+    endpoints->mutable_load_balancing_weight()->set_value(3);
     endpoints->set_priority(0);
-    auto* locality = endpoints->mutable_locality();
-    locality->set_region("region name");
+    endpoints->mutable_locality()->set_region("region name");
     for (const int& backend_port : backend_ports) {
       auto* lb_endpoints = endpoints->add_lb_endpoints();
       auto* endpoint = lb_endpoints->mutable_endpoint();
@@ -278,11 +268,7 @@ class BalancerServiceImpl : public BalancerService {
       auto* socket_address = address->mutable_socket_address();
       socket_address->set_address("127.0.0.1");
       socket_address->set_port_value(backend_port);
-      //      static int token_count = 0;
-      //      char* token;
-      //      gpr_asprintf(&token, "token%03d", ++token_count);
-      //      server->set_load_balance_token(token);
-      //      gpr_free(token);
+      // TODO(juanlishen): Figure out where to set LB token.
     }
     DiscoveryResponse response;
     response.set_type_url(kEdsTypeUrl);
@@ -772,7 +758,8 @@ TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
   const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
   const int kCallDeadlineMs = kServerlistDelayMs * 2;
   // First response is an empty serverlist, sent right away.
-  ScheduleResponseForBalancer(0, DiscoveryResponse(), 0);
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends({}, {}), 0);
   // Send non-empty serverlist only after kServerlistDelayMs
   ScheduleResponseForBalancer(
       0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),

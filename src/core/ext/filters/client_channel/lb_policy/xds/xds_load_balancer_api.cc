@@ -22,7 +22,6 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h"
-#include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 
 namespace grpc_core {
@@ -41,13 +40,13 @@ grpc_slice XdsRequestCreateAndEncode(const char* service_name) {
   XdsDiscoveryRequest* request = envoy_api_v2_DiscoveryRequest_new(arena.ptr());
   XdsNode* node =
       envoy_api_v2_DiscoveryRequest_mutable_node(request, arena.ptr());
-  XdsStruct* metadata =
+  google_protobuf_Struct* metadata =
       envoy_api_v2_core_Node_mutable_metadata(node, arena.ptr());
-  XdsFieldsEntry* field =
+  google_protobuf_Struct_FieldsEntry* field =
       google_protobuf_Struct_add_fields(metadata, arena.ptr());
   google_protobuf_Struct_FieldsEntry_set_key(
       field, upb_strview_make(kEndpointRequired, strlen(kEndpointRequired)));
-  XdsValue* value =
+  google_protobuf_Value* value =
       google_protobuf_Struct_FieldsEntry_mutable_value(field, arena.ptr());
   google_protobuf_Value_set_bool_value(value, true);
   envoy_api_v2_DiscoveryRequest_add_resource_names(
@@ -80,7 +79,7 @@ void ServerAddressParseAndAppend(const XdsLbEndpoint* lb_endpoint,
   }
   // Populate grpc_resolved_address.
   grpc_resolved_address addr;
-  char* address_str = static_cast<char*>(gpr_malloc(address_strview.size));
+  char* address_str = static_cast<char*>(gpr_malloc(address_strview.size + 1));
   memcpy(address_str, address_strview.data, address_strview.size);
   address_str[address_strview.size] = '\0';
   grpc_string_to_sockaddr(&addr, address_str, port);
@@ -94,15 +93,17 @@ XdsLocalityUpdateArgs LocalityParse(
   upb::Arena arena;
   XdsLocalityUpdateArgs update_args;
   update_args.serverlist = MakeUnique<ServerAddressList>();
-  // Parse locality_name.
+  // Find locality and serialize it to have a hash value to use as
+  // locality_name.
+  // TODO(juanlishen): Figure out if we want to use readable string or
+  // serialized object as locality name.
   const XdsLocality* locality =
       envoy_api_v2_endpoint_LocalityLbEndpoints_locality(locality_lb_endpoints);
   size_t size;
   char* serialized_locality =
       envoy_api_v2_core_Locality_serialize(locality, arena.ptr(), &size);
-  grpc_slice serialized_locality_slice =
+  update_args.locality_name =
       grpc_slice_from_copied_buffer(serialized_locality, size);
-  update_args.locality_name = serialized_locality_slice;
   // Parse the addresses.
   const XdsLbEndpoint* const* lb_endpoints =
       envoy_api_v2_endpoint_LocalityLbEndpoints_lb_endpoints(
@@ -110,13 +111,15 @@ XdsLocalityUpdateArgs LocalityParse(
   for (size_t i = 0; i < size; ++i) {
     ServerAddressParseAndAppend(lb_endpoints[i], update_args.serverlist.get());
   }
-  //  // Parse the lb_weight and priority.
-  //  const google_protobuf_UInt32Value* lb_weight =
-  //      envoy_api_v2_endpoint_LocalityLbEndpoints_load_balancing_weight(
-  //          locality_lb_endpoints);
-  //  update_args.lb_weight = google_protobuf_UInt32Value_value(lb_weight);
-  //  update_args.priority =
-  //      envoy_api_v2_endpoint_LocalityLbEndpoints_priority(locality_lb_endpoints);
+  // Parse the lb_weight and priority.
+  const google_protobuf_UInt32Value* lb_weight =
+      envoy_api_v2_endpoint_LocalityLbEndpoints_load_balancing_weight(
+          locality_lb_endpoints);
+  if (lb_weight != nullptr) {
+    update_args.lb_weight = google_protobuf_UInt32Value_value(lb_weight);
+  }
+  update_args.priority =
+      envoy_api_v2_endpoint_LocalityLbEndpoints_priority(locality_lb_endpoints);
   return update_args;
 }
 

@@ -93,8 +93,8 @@ class ServerAddress {
 
 typedef InlinedVector<ServerAddress, 1> ServerAddressList;
 
-bool ServerAddressListEqual(const ServerAddressList* a,
-                            const ServerAddressList* b);
+bool ServerAddressListEquals(const ServerAddressList* a,
+                             const ServerAddressList* b);
 
 }  // namespace grpc_core
 

@@ -37,9 +37,10 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "upb/upb.h"
 
-#define XDS_SERVICE_NAME_MAX_LENGTH 128
-
 namespace grpc_core {
+
+// TODO(juanlishen): Figure out if we want to keep this constraint.
+#define XDS_SERVICE_NAME_MAX_LENGTH 128
 
 typedef grpc_lb_v1_LoadBalanceRequest xds_grpclb_request;
 
@@ -53,9 +54,6 @@ using XdsEndpoint = envoy_api_v2_endpoint_Endpoint;
 using XdsAddress = envoy_api_v2_core_Address;
 using XdsSocketAddress = envoy_api_v2_core_SocketAddress;
 using XdsNode = envoy_api_v2_core_Node;
-using XdsStruct = google_protobuf_Struct;
-using XdsFieldsEntry = google_protobuf_Struct_FieldsEntry;
-using XdsValue = google_protobuf_Value;
 
 struct XdsLocalityUpdateArgs {
   grpc_slice locality_name;

@@ -307,7 +307,7 @@ class XdsLb : public LoadBalancingPolicy {
           : parent_(std::move(parent)), locality_weight_(locality_weight) {}
       ~LocalityEntry() = default;
 
-      void UpdateLocked(ServerAddressList* serverlist,
+      void UpdateLocked(ServerAddressList serverlist,
                         LoadBalancingPolicy::Config* child_policy_config,
                         const grpc_channel_args* args);
       void ShutdownLocked();
@@ -371,12 +371,12 @@ class XdsLb : public LoadBalancingPolicy {
   };
 
   struct LocalityServerlistEntry {
-    ~LocalityServerlistEntry() { gpr_free(locality_key); }
+    ~LocalityServerlistEntry() { gpr_free(locality_name); }
 
+    char* locality_name;
     uint32_t locality_weight;
-    char* locality_key;
-    // The deserialized response from the balancer. May be nullptr until one
-    // such response has arrived.
+    // The parsed serverlist response from the balancer. May be nullptr until
+    // one such response has arrived.
     UniquePtr<ServerAddressList> serverlist;
   };
 
@@ -402,7 +402,7 @@ class XdsLb : public LoadBalancingPolicy {
   // Callback to enter fallback mode.
   static void OnFallbackTimerLocked(void* arg, grpc_error* error);
 
-  // Who the client is trying to communicate with.
+  // Name of the service to connect to.
   const char* service_name_ = nullptr;
 
   // Name of the balancer to connect to.
@@ -610,6 +610,7 @@ XdsLb::BalancerChannelState::BalancerCallState::BalancerCallState(
       xdslb_policy()->lb_call_timeout_ms_ == 0
           ? GRPC_MILLIS_INF_FUTURE
           : ExecCtx::Get()->Now() + xdslb_policy()->lb_call_timeout_ms_;
+  // Create an LB call with the specified method name.
   lb_call_ = grpc_channel_create_pollset_set_call(
       lb_chand_->channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
       xdslb_policy()->interested_parties(),
@@ -822,6 +823,7 @@ void XdsLb::BalancerChannelState::BalancerCallState::
     lb_calld->Unref(DEBUG_LOCATION, "on_message_received");
     return;
   }
+  lb_calld->seen_response_ = true;
   // Read the response.
   grpc_byte_buffer_reader bbr;
   grpc_byte_buffer_reader_init(&bbr, lb_calld->recv_message_payload_);
@@ -888,7 +890,7 @@ void XdsLb::BalancerChannelState::BalancerCallState::
   }
   // Ignore indentical update.
   if (!xdslb_policy->locality_serverlist_.empty() &&
-      ServerAddressListEqual(
+      ServerAddressListEquals(
           xdslb_policy->locality_serverlist_[0]->serverlist.get(),
           update_args->localities[0].serverlist.get())) {
     if (grpc_lb_xds_trace.enabled()) {
@@ -910,16 +912,21 @@ void XdsLb::BalancerChannelState::BalancerCallState::
      * one child */
     xdslb_policy->locality_serverlist_.emplace_back(
         MakeUnique<LocalityServerlistEntry>());
-    xdslb_policy->locality_serverlist_[0]->locality_key =
+    // TODO(juanlishen): Figure out if we want to use readable string or
+    // serialized object as locality name.
+    xdslb_policy->locality_serverlist_[0]->locality_name =
         gpr_strdup(kDefaultLocalityName);
-    xdslb_policy->locality_serverlist_[0]->locality_weight =
-        update_args->localities[0].lb_weight;
   }
   // and update the copy in the XdsLb instance. This
   // serverlist instance will be destroyed either upon the next
   // update or when the XdsLb instance is destroyed.
   xdslb_policy->locality_serverlist_[0]->serverlist =
       std::move(update_args->localities[0].serverlist);
+  // TODO(juanlishen): Figure out what to do when lb weight is not set.
+  xdslb_policy->locality_serverlist_[0]->locality_weight =
+      update_args->localities[0].lb_weight != 0
+          ? update_args->localities[0].lb_weight
+          : kDefaultLocalityWeight;
   xdslb_policy->locality_map_.UpdateLocked(
       xdslb_policy->locality_serverlist_,
       xdslb_policy->child_policy_config_.get(), xdslb_policy->args_,
@@ -1258,7 +1265,7 @@ void XdsLb::LocalityMap::PruneLocalities(const LocalityList& locality_list) {
   for (auto iter = map_.begin(); iter != map_.end();) {
     bool found = false;
     for (size_t i = 0; i < locality_list.size(); i++) {
-      if (!gpr_stricmp(locality_list[i]->locality_key, iter->first.get())) {
+      if (!gpr_stricmp(locality_list[i]->locality_name, iter->first.get())) {
         found = true;
       }
     }
@@ -1277,7 +1284,7 @@ void XdsLb::LocalityMap::UpdateLocked(
   if (parent->shutting_down_) return;
   for (size_t i = 0; i < locality_serverlist.size(); i++) {
     UniquePtr<char> locality_name(
-        gpr_strdup(locality_serverlist[i]->locality_key));
+        gpr_strdup(locality_serverlist[i]->locality_name));
     auto iter = map_.find(locality_name);
     if (iter == map_.end()) {
       OrphanablePtr<LocalityEntry> new_entry = MakeOrphanable<LocalityEntry>(
@@ -1285,12 +1292,12 @@ void XdsLb::LocalityMap::UpdateLocked(
       MutexLock lock(&child_refs_mu_);
       iter = map_.emplace(std::move(locality_name), std::move(new_entry)).first;
     }
-    // Don't create new child policies if not directed to
+    // Don't create new child policies if not directed to.
     // Keep a copy of serverlist in locality_serverlist_ so that we can
     // compare it with the future ones.
     ServerAddressList* serverlist =
         parent->locality_serverlist_[i]->serverlist.get();
-    iter->second->UpdateLocked(serverlist, child_policy_config, args);
+    iter->second->UpdateLocked(*serverlist, child_policy_config, args);
   }
   PruneLocalities(locality_serverlist);
 }
@@ -1366,22 +1373,16 @@ XdsLb::LocalityMap::LocalityEntry::CreateChildPolicyLocked(
 }
 
 void XdsLb::LocalityMap::LocalityEntry::UpdateLocked(
-    ServerAddressList* serverlist,
+    ServerAddressList serverlist,
     LoadBalancingPolicy::Config* child_policy_config,
     const grpc_channel_args* args_in) {
   if (parent_->shutting_down_) return;
-  // This should never be invoked if we do not have serverlist_, as fallback
-  // mode is disabled for xDS plugin.
-  // TODO(juanlishen): Change this as part of implementing fallback mode.
-  GPR_ASSERT(serverlist != nullptr);
-  GPR_ASSERT(!serverlist->empty());
   // Construct update args.
   UpdateArgs update_args;
-  update_args.addresses = *serverlist;
+  update_args.addresses = std::move(serverlist);
   update_args.config =
       child_policy_config == nullptr ? nullptr : child_policy_config->Ref();
   update_args.args = CreateChildPolicyArgsLocked(args_in);
-
   // If the child policy name changes, we need to create a new child
   // policy.  When this happens, we leave child_policy_ as-is and store
   // the new child policy in pending_child_policy_.  Once the new child
