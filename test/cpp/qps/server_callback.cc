@@ -36,8 +36,7 @@ class BenchmarkCallbackServiceImpl final
   ::grpc::experimental::ServerUnaryReactor<SimpleRequest, SimpleResponse>*
   UnaryCall(ServerContext* context) override {
     return experimental::MakeReactor<SimpleRequest, SimpleResponse>(
-        context,
-        [](const SimpleRequest* request, SimpleResponse* response) {
+        context, [](const SimpleRequest* request, SimpleResponse* response) {
           return SetResponse(request, response);
         });
   }

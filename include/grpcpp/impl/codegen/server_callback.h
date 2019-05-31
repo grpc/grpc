@@ -451,13 +451,20 @@ class ServerUnaryReactor : public internal::ServerReactor {
 /// \return A pointer to a ServerUnaryReactor<Request,Response> that executes
 ///         the given function when the RPC is invoked.
 template <typename Request, typename Response, typename Function>
-ServerUnaryReactor<Request, Response>* MakeReactor(ServerContext* context,
-                                                   Function&& func, typename std::enable_if<std::is_same<decltype(func(static_cast<const Request*>(nullptr),static_cast<Response*>(nullptr),static_cast<ServerUnaryReactor<Request,Response>*>(nullptr))), void>::value>::type* = nullptr) {
+ServerUnaryReactor<Request, Response>* MakeReactor(
+    ServerContext* context, Function&& func,
+    typename std::enable_if<std::is_same<
+        decltype(
+            func(static_cast<const Request*>(nullptr),
+                 static_cast<Response*>(nullptr),
+                 static_cast<ServerUnaryReactor<Request, Response>*>(nullptr))),
+        void>::value>::type* = nullptr) {
   // TODO(vjpai): Specialize this to prevent counting OnCancel conditions
   class SimpleUnaryReactor final
       : public ServerUnaryReactor<Request, Response> {
    public:
-    explicit SimpleUnaryReactor(Function&& func) : on_started_func_(std::move(func)) {}
+    explicit SimpleUnaryReactor(Function&& func)
+        : on_started_func_(std::move(func)) {}
 
    private:
     void OnStarted(const Request* req, Response* resp) override {
@@ -473,13 +480,18 @@ ServerUnaryReactor<Request, Response>* MakeReactor(ServerContext* context,
 }
 
 template <typename Request, typename Response, typename Function>
-ServerUnaryReactor<Request, Response>* MakeReactor(ServerContext* context,
-                                                   Function&& func, typename std::enable_if<std::is_same<decltype(func(static_cast<const Request*>(nullptr),static_cast<Response*>(nullptr))), Status>::value>::type* = nullptr) {
+ServerUnaryReactor<Request, Response>* MakeReactor(
+    ServerContext* context, Function&& func,
+    typename std::enable_if<
+        std::is_same<decltype(func(static_cast<const Request*>(nullptr),
+                                   static_cast<Response*>(nullptr))),
+                     Status>::value>::type* = nullptr) {
   // TODO(vjpai): Specialize this to prevent counting OnCancel conditions
   class ReallySimpleUnaryReactor final
       : public ServerUnaryReactor<Request, Response> {
    public:
-    explicit ReallySimpleUnaryReactor(Function&& func) : on_started_func_(std::move(func)) {}
+    explicit ReallySimpleUnaryReactor(Function&& func)
+        : on_started_func_(std::move(func)) {}
 
    private:
     void OnStarted(const Request* req, Response* resp) override {
