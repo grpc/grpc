@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
@@ -47,7 +48,7 @@ namespace Grpc.Core
         /// <param name="callInvoker">The <c>CallInvoker</c> for remote call invocation.</param>
         public LiteClientBase(CallInvoker callInvoker)
         {
-            this.callInvoker = callInvoker;
+            this.callInvoker = GrpcPreconditions.CheckNotNull(callInvoker, nameof(callInvoker));
         }
 
         /// <summary>
