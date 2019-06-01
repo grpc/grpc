@@ -36,6 +36,7 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/env.h"
@@ -378,10 +379,10 @@ static bool read_channel_args(grpc_chttp2_transport* t,
   if (channelz_enabled) {
     // TODO(ncteisen): add an API to endpoint to query for local addr, and pass
     // it in here, so SocketNode knows its own address.
-    t->channelz_socket =
-        grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
-            grpc_core::UniquePtr<char>(),
-            grpc_core::UniquePtr<char>(gpr_strdup(t->peer_string)));
+    t->channelz_socket = grpc_core::channelz::ChannelzRegistry::CreateNode<
+        grpc_core::channelz::SocketNode>(
+        grpc_core::UniquePtr<char>(),
+        grpc_core::UniquePtr<char>(gpr_strdup(t->peer_string)));
   }
   return enable_bdp;
 }

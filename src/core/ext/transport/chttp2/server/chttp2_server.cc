@@ -35,6 +35,7 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/gpr/host_port.h"
@@ -415,7 +416,8 @@ grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
   arg = grpc_channel_args_find(args, GRPC_ARG_ENABLE_CHANNELZ);
   if (grpc_channel_arg_get_bool(arg, GRPC_ENABLE_CHANNELZ_DEFAULT)) {
     state->channelz_listen_socket =
-        grpc_core::MakeRefCounted<grpc_core::channelz::ListenSocketNode>(
+        grpc_core::channelz::ChannelzRegistry::CreateNode<
+            grpc_core::channelz::ListenSocketNode>(
             grpc_core::UniquePtr<char>(gpr_strdup(addr)));
     socket_uuid = state->channelz_listen_socket->uuid();
   }

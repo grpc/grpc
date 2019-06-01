@@ -33,6 +33,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
@@ -200,7 +201,8 @@ void CreateChannelzNode(grpc_channel_stack_builder* builder) {
   // We only need to do this for clients here. For servers, this will be
   // done in src/core/lib/surface/server.cc.
   grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_node =
-      grpc_core::MakeRefCounted<grpc_core::channelz::ChannelNode>(
+      grpc_core::channelz::ChannelzRegistry::CreateNode<
+          grpc_core::channelz::ChannelNode>(
           grpc_core::UniquePtr<char>(
               gpr_strdup(grpc_channel_stack_builder_get_target(builder))),
           channel_tracer_max_memory, channelz_parent_uuid);

@@ -34,7 +34,8 @@ namespace channelz {
 
 class SubchannelNode : public BaseNode {
  public:
-  SubchannelNode(Subchannel* subchannel, size_t channel_tracer_max_nodes);
+  SubchannelNode(intptr_t uuid, Subchannel* subchannel,
+                 size_t channel_tracer_max_nodes);
   ~SubchannelNode() override;
 
   void MarkSubchannelDestroyed() {

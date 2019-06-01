@@ -23,7 +23,9 @@
 
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/timer.h"
 
 #include <stdint.h>
 
@@ -44,72 +46,90 @@ class ChannelzRegistry {
   // To be called in grpc_shutdown();
   static void Shutdown();
 
-  static void Register(BaseNode* node) {
-    return Default()->InternalRegister(node);
+  template <typename NodeType, typename... Args>
+  static RefCountedPtr<NodeType> CreateNode(Args&&... args) {
+    return (*registry_)->CreateNode<NodeType>(std::forward<Args>(args)...);
   }
-  static void Unregister(intptr_t uuid) { Default()->InternalUnregister(uuid); }
+
   static RefCountedPtr<BaseNode> Get(intptr_t uuid) {
-    return Default()->InternalGet(uuid);
+    return (*registry_)->Get(uuid);
   }
 
   // Returns the allocated JSON string that represents the proto
   // GetTopChannelsResponse as per channelz.proto.
   static char* GetTopChannels(intptr_t start_channel_id) {
-    return Default()->InternalGetTopChannels(start_channel_id);
+    return (*registry_)->GetTopChannels(start_channel_id);
   }
 
   // Returns the allocated JSON string that represents the proto
   // GetServersResponse as per channelz.proto.
   static char* GetServers(intptr_t start_server_id) {
-    return Default()->InternalGetServers(start_server_id);
+    return (*registry_)->GetServers(start_server_id);
   }
 
   // Test only helper function to dump the JSON representation to std out.
   // This can aid in debugging channelz code.
-  static void LogAllEntities() { Default()->InternalLogAllEntities(); }
+  static void LogAllEntities() { (*registry_)->LogAllEntities(); }
 
  private:
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
   friend class testing::ChannelzRegistryPeer;
 
-  ChannelzRegistry();
-  ~ChannelzRegistry();
+  class Registry : public InternallyRefCounted<Registry> {
+   public:
+    Registry();
 
-  // Returned the singleton instance of ChannelzRegistry;
-  static ChannelzRegistry* Default();
+    void Orphan() override;
 
-  // globally registers an Entry. Returns its unique uuid
-  void InternalRegister(BaseNode* node);
+    template <typename NodeType, typename... Args>
+    RefCountedPtr<NodeType> CreateNode(Args&&... args) {
+      MutexLock lock(&mu_);
+      const intptr_t uuid = ++uuid_generator_;
+      auto node = MakeRefCounted<NodeType>(uuid, std::forward<Args>(args)...);
+      entities_.push_back(node);
+      return node;
+    }
 
-  // globally unregisters the object that is associated to uuid. Also does
-  // sanity check that an object doesn't try to unregister the wrong type.
-  void InternalUnregister(intptr_t uuid);
+    // Returns a ref to the node for uuid, or nullptr if there is no
+    // node for uuid.
+    RefCountedPtr<BaseNode> Get(intptr_t uuid);
 
-  // if object with uuid has previously been registered as the correct type,
-  // returns the node associated with that uuid. Else returns nullptr.
-  RefCountedPtr<BaseNode> InternalGet(intptr_t uuid);
+    char* GetTopChannels(intptr_t start_channel_id);
+    char* GetServers(intptr_t start_server_id);
 
-  char* InternalGetTopChannels(intptr_t start_channel_id);
-  char* InternalGetServers(intptr_t start_server_id);
+    void LogAllEntities();
 
-  // If entities_ has over a certain threshold of empty slots, it will
-  // compact the vector and move all used slots to the front.
-  void MaybePerformCompactionLocked();
+   private:
+    friend class testing::ChannelzRegistryPeer;
 
-  // Performs binary search on entities_ to find the index with that uuid.
-  // If direct_hit_needed, then will return -1 in case of absence.
-  // Else, will return idx of the first uuid higher than the target.
-  int FindByUuidLocked(intptr_t uuid, bool direct_hit_needed);
+    static void OnGarbageCollectionTimer(void* arg, grpc_error* error);
 
-  void InternalLogAllEntities();
+    void DoGarbageCollectionLocked();
+    void MaybeRemoveUnusedNodeLocked(size_t idx);
 
-  // protects members
-  gpr_mu mu_;
-  // TODO(roth): Change this to use a map instead, so compaction is a non-issue.
-  InlinedVector<BaseNode*, 20> entities_;
-  intptr_t uuid_generator_ = 0;
-  int num_empty_slots_ = 0;
+    // If entities_ has over a certain threshold of empty slots, it will
+    // compact the vector and move all used slots to the front.
+    void MaybePerformCompactionLocked();
+
+    // Performs binary search on entities_ to find the index with that uuid.
+    // If direct_hit_needed, then will return -1 in case of absence.
+    // Else, will return idx of the first uuid higher than the target.
+    int FindByUuidLocked(intptr_t uuid, bool direct_hit_needed);
+
+    // protects members
+    Mutex mu_;
+    // TODO(roth): Once the erase() bug has been fixed in our Map<>
+    // implementation, change this to use a map so that we can eliminate
+    // the need for compaction.
+    InlinedVector<RefCountedPtr<BaseNode>, 20> entities_;
+    int num_empty_slots_ = 0;
+    intptr_t uuid_generator_ = 0;
+    bool shutdown_ = false;
+    grpc_timer gc_timer_;
+    grpc_closure gc_closure_;
+  };
+
+  // The singleton Registry instance.
+  static OrphanablePtr<Registry>* registry_;
 };
 
 }  // namespace channelz

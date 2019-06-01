@@ -31,6 +31,7 @@
 #include <utility>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/mpscq.h"
@@ -1037,9 +1038,8 @@ grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
     size_t channel_tracer_max_memory = grpc_channel_arg_get_integer(
         arg,
         {GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT, 0, INT_MAX});
-    server->channelz_server =
-        grpc_core::MakeRefCounted<grpc_core::channelz::ServerNode>(
-            server, channel_tracer_max_memory);
+    server->channelz_server = grpc_core::channelz::ChannelzRegistry::CreateNode<
+        grpc_core::channelz::ServerNode>(server, channel_tracer_max_memory);
     server->channelz_server->AddTraceEvent(
         grpc_core::channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Server created"));
