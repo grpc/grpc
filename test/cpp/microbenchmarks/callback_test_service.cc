@@ -49,8 +49,7 @@ int GetIntValueFromMetadata(
 experimental::ServerUnaryReactor<EchoRequest, EchoResponse>*
 CallbackStreamingTestService::Echo(ServerContext* context) {
   return experimental::MakeReactor<EchoRequest, EchoResponse>(
-      context,
-      [context](const EchoRequest* request, EchoResponse* response) -> Status {
+      context, [context](const EchoRequest* request, EchoResponse* response) {
         int response_msgs_size = GetIntValueFromMetadata(
             kServerMessageSize, context->client_metadata(), 0);
         if (response_msgs_size > 0) {

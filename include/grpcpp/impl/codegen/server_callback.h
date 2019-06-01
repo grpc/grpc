@@ -482,7 +482,9 @@ template <typename Request, typename Response, typename Function>
 ServerUnaryReactor<Request, Response>* MakeReactor(
     ServerContext* context, Function&& func,
     typename std::enable_if<std::is_same<
-        typename std::result_of<Function(const Request*, Response*)>::type,
+        typename std::remove_const<
+            typename std::remove_reference<typename std::result_of<
+                Function(const Request*, Response*)>::type>::type>::type,
         Status>::value>::type* = nullptr) {
   // TODO(vjpai): Specialize this to prevent counting OnCancel conditions
   class ReallySimpleUnaryReactor final
