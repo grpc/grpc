@@ -174,7 +174,7 @@ TEST(ChannelTracerTest, ComplexTest) {
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
   ChannelFixture channel1(kEventListMemoryLimit);
-  RefCountedPtr<ChannelNode> sc1 = MakeRefCounted<ChannelNode>(
+  RefCountedPtr<ChannelNode> sc1 = ChannelzRegistry::CreateNode<ChannelNode>(
       UniquePtr<char>(gpr_strdup("fake_target")), kEventListMemoryLimit, 0);
   ChannelNodePeer sc1_peer(sc1.get());
   tracer.AddTraceEventWithReference(
@@ -193,7 +193,7 @@ TEST(ChannelTracerTest, ComplexTest) {
   AddSimpleTrace(&tracer);
   ValidateChannelTrace(&tracer, 5);
   ChannelFixture channel2(kEventListMemoryLimit);
-  RefCountedPtr<ChannelNode> sc2 = MakeRefCounted<ChannelNode>(
+  RefCountedPtr<ChannelNode> sc2 = ChannelzRegistry::CreateNode<ChannelNode>(
       UniquePtr<char>(gpr_strdup("fake_target")), kEventListMemoryLimit, 0);
   tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Info,
@@ -222,7 +222,7 @@ TEST(ChannelTracerTest, TestNesting) {
   AddSimpleTrace(&tracer);
   ValidateChannelTrace(&tracer, 2);
   ChannelFixture channel1(kEventListMemoryLimit);
-  RefCountedPtr<ChannelNode> sc1 = MakeRefCounted<ChannelNode>(
+  RefCountedPtr<ChannelNode> sc1 = ChannelzRegistry::CreateNode<ChannelNode>(
       UniquePtr<char>(gpr_strdup("fake_target")), kEventListMemoryLimit, 0);
   ChannelNodePeer sc1_peer(sc1.get());
   tracer.AddTraceEventWithReference(
@@ -231,7 +231,7 @@ TEST(ChannelTracerTest, TestNesting) {
   ValidateChannelTrace(&tracer, 3);
   AddSimpleTrace(sc1_peer.trace());
   ChannelFixture channel2(kEventListMemoryLimit);
-  RefCountedPtr<ChannelNode> conn1 = MakeRefCounted<ChannelNode>(
+  RefCountedPtr<ChannelNode> conn1 = ChannelzRegistry::CreateNode<ChannelNode>(
       UniquePtr<char>(gpr_strdup("fake_target")), kEventListMemoryLimit, 0);
   ChannelNodePeer conn1_peer(conn1.get());
   // nesting one level deeper.
@@ -245,7 +245,7 @@ TEST(ChannelTracerTest, TestNesting) {
   ValidateChannelTrace(&tracer, 5);
   ValidateChannelTrace(conn1_peer.trace(), 1);
   ChannelFixture channel3(kEventListMemoryLimit);
-  RefCountedPtr<ChannelNode> sc2 = MakeRefCounted<ChannelNode>(
+  RefCountedPtr<ChannelNode> sc2 = ChannelzRegistry::CreateNode<ChannelNode>(
       UniquePtr<char>(gpr_strdup("fake_target")), kEventListMemoryLimit, 0);
   tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Info,
