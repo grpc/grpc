@@ -159,6 +159,8 @@ class TestTcpServer {
     gpr_log(GPR_INFO, "Got incoming connection! from %s", peer);
     gpr_free(peer);
     EXPECT_FALSE(acceptor->external_connection);
+    listener_fd_ = grpc_tcp_server_port_fd(
+        acceptor->from_server, acceptor->port_index, acceptor->fd_index);
     gpr_free(acceptor);
     grpc_tcp_destroy_and_release_fd(tcp, &fd_, &on_fd_released_);
   }
@@ -166,6 +168,7 @@ class TestTcpServer {
   void OnFdReleased(grpc_error* err) {
     EXPECT_EQ(GRPC_ERROR_NONE, err);
     experimental::ExternalConnectionAcceptor::NewConnectionParameters p;
+    p.listener_fd = listener_fd_;
     p.fd = fd_;
     if (queue_data_) {
       char buf[1024];
@@ -176,14 +179,15 @@ class TestTcpServer {
       Slice data(buf, read_bytes);
       p.read_buffer = ByteBuffer(&data, 1);
     }
-    gpr_log(GPR_INFO, "Handing off fd %d with data size %d", fd_,
-            static_cast<int>(p.read_buffer.Length()));
+    gpr_log(GPR_INFO, "Handing off fd %d with data size %d from listener fd %d",
+            fd_, static_cast<int>(p.read_buffer.Length()), listener_fd_);
     connection_acceptor_->HandleNewConnection(&p);
   }
 
   std::mutex mu_;
   bool shutdown_;
 
+  int listener_fd_;
   int fd_;
   bool queue_data_;
 
