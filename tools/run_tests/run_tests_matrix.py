@@ -249,7 +249,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         configs=['dbg'],
         platforms=['macos'],
         labels=['basictests', 'multilang'],
-        extra_args=extra_args + os.getenv('GRPC_OBJC_TEST_EXTRA_ARGS', '.*'),
+        extra_args=extra_args + [os.getenv('GRPC_OBJC_TEST_EXTRA_ARGS', '.*')],
         inner_jobs=inner_jobs,
         timeout_seconds=_OBJC_RUNTESTS_TIMEOUT)
 
