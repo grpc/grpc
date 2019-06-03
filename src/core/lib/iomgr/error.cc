@@ -447,13 +447,17 @@ grpc_error* grpc_error_set_int(grpc_error* src, grpc_error_ints which,
 typedef struct {
   grpc_status_code code;
   const char* msg;
+  size_t len;
 } special_error_status_map;
-static const special_error_status_map error_status_map[] = {
-    {GRPC_STATUS_OK, ""},                               // GRPC_ERROR_NONE
-    {GRPC_STATUS_INVALID_ARGUMENT, ""},                 // GRPC_ERROR_RESERVED_1
-    {GRPC_STATUS_RESOURCE_EXHAUSTED, "Out of memory"},  // GRPC_ERROR_OOM
-    {GRPC_STATUS_INVALID_ARGUMENT, ""},                 // GRPC_ERROR_RESERVED_2
-    {GRPC_STATUS_CANCELLED, "Cancelled"},               // GRPC_ERROR_CANCELLED
+
+const special_error_status_map error_status_map[] = {
+    {GRPC_STATUS_OK, "", 0},                // GRPC_ERROR_NONE
+    {GRPC_STATUS_INVALID_ARGUMENT, "", 0},  // GRPC_ERROR_RESERVED_1
+    {GRPC_STATUS_RESOURCE_EXHAUSTED, "Out of memory",
+     strlen("Out of memory")},              // GRPC_ERROR_OOM
+    {GRPC_STATUS_INVALID_ARGUMENT, "", 0},  // GRPC_ERROR_RESERVED_2
+    {GRPC_STATUS_CANCELLED, "Cancelled",
+     strlen("Cancelled")},  // GRPC_ERROR_CANCELLED
 };
 
 bool grpc_error_get_int(grpc_error* err, grpc_error_ints which, intptr_t* p) {
@@ -483,8 +487,12 @@ bool grpc_error_get_str(grpc_error* err, grpc_error_strs which,
                         grpc_slice* str) {
   if (grpc_error_is_special(err)) {
     if (which != GRPC_ERROR_STR_GRPC_MESSAGE) return false;
-    *str = grpc_slice_from_static_string(
-        error_status_map[reinterpret_cast<size_t>(err)].msg);
+    const special_error_status_map& msg =
+        error_status_map[reinterpret_cast<size_t>(err)];
+    str->refcount = &grpc_core::kNoopRefcount;
+    str->data.refcounted.bytes =
+        reinterpret_cast<uint8_t*>(const_cast<char*>(msg.msg));
+    str->data.refcounted.length = msg.len;
     return true;
   }
   uint8_t slot = err->strs[which];
