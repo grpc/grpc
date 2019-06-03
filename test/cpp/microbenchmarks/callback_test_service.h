@@ -37,8 +37,11 @@ class CallbackStreamingTestService
  public:
   CallbackStreamingTestService() {}
 
-  experimental::ServerUnaryReactor<EchoRequest, EchoResponse>* Echo(
-      ServerContext* context) override;
+  void Echo(ServerContext* context, const EchoRequest* request,
+            EchoResponse* response,
+            experimental::ServerUnaryReactor<EchoRequest, EchoResponse>**
+                reactor) override;
+
   experimental::ServerBidiReactor<EchoRequest, EchoResponse>* BidiStream(
       ServerContext* context) override;
 };

@@ -924,12 +924,14 @@ void PrintHeaderServerCallbackMethodsHelper(
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
-    printer->Print(*vars,
-                   "virtual ::grpc::experimental::ServerUnaryReactor< "
-                   "$RealRequest$, $RealResponse$>* "
-                   "$Method$(::grpc::ServerContext* context) {\n"
-                   "  return new ::grpc::internal::UnimplementedUnaryReactor<\n"
-                   "    $RealRequest$, $RealResponse$>;}\n");
+    printer->Print(
+        *vars,
+        "virtual void "
+        "$Method$(::grpc::ServerContext* context, const $Request$* request, "
+        "$Response$* response, ::grpc::experimental::ServerUnaryReactor< "
+        "$RealRequest$, $RealResponse$>** reactor) {\n"
+        "  *reactor = new ::grpc::internal::UnimplementedUnaryReactor<\n"
+        "    $RealRequest$, $RealResponse$>;}\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(
         *vars,
@@ -1010,8 +1012,11 @@ void PrintHeaderServerMethodCallback(
         "  ::grpc::Service::experimental().MarkMethodCallback($Idx$,\n"
         "    new ::grpc::internal::CallbackUnaryHandler< "
         "$RealRequest$, $RealResponse$>(\n"
-        "      [this](::grpc::ServerContext* context) { return "
-        "this->$Method$(context); }));}\n");
+        "      [this](::grpc::ServerContext* context, const $RealRequest$* "
+        "request, "
+        "$RealResponse$* response, ::grpc::experimental::ServerUnaryReactor< "
+        "$RealRequest$, $RealResponse$>** reactor) { return "
+        "this->$Method$(context, request, response, reactor); }));}\n");
     printer->Print(*vars,
                    "void SetMessageAllocatorFor_$Method$(\n"
                    "    ::grpc::experimental::MessageAllocator< "
@@ -1081,8 +1086,11 @@ void PrintHeaderServerMethodRawCallback(
         "  ::grpc::Service::experimental().MarkMethodRawCallback($Idx$,\n"
         "    new ::grpc::internal::CallbackUnaryHandler< "
         "$RealRequest$, $RealResponse$>(\n"
-        "      [this](::grpc::ServerContext* context) { return "
-        "this->$Method$(context); }));\n");
+        "      [this](::grpc::ServerContext* context, const $RealRequest$* "
+        "request, "
+        "$RealResponse$* response, ::grpc::experimental::ServerUnaryReactor< "
+        "$RealRequest$, $RealResponse$>** reactor) { return "
+        "this->$Method$(context, request, response, reactor); }));\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(
         *vars,

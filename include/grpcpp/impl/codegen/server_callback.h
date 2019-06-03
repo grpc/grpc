@@ -549,15 +549,6 @@ class ServerUnaryReactor : public internal::ServerReactor {
     }
   }
 
-  /// Similar to ServerBidiReactor::OnStarted, except that this also provides
-  /// the request object sent by the client and the response object that the
-  /// stream fills in before calling Finish. (It must be filled in if status
-  /// is OK, but it may be filled in otherwise.)
-  ///
-  /// \param[in] req The request object sent by the client
-  /// \param[in] resp The response object to be used by this RPC
-  virtual void OnStarted(const Request* req, Response* resp) {}
-
   /// The following notifications are exactly like ServerBidiReactor.
   virtual void OnSendInitialMetadataDone(bool ok) {}
   void OnDone() override {}
@@ -614,23 +605,16 @@ ServerUnaryReactor<Request, Response>* MakeReactor(
     ServerContext* context, Function&& func,
     typename std::enable_if<
         std::is_same<typename std::result_of<Function(
-                         const Request*, Response*,
                          ServerUnaryReactor<Request, Response>*)>::type,
                      void>::value>::type* = nullptr) {
   // TODO(vjpai): Specialize this to prevent counting OnCancel conditions
   class SimpleUnaryReactor final
       : public ServerUnaryReactor<Request, Response> {
    public:
-    explicit SimpleUnaryReactor(Function&& func)
-        : on_started_func_(std::move(func)) {}
+    explicit SimpleUnaryReactor(Function&& func) { func(this); }
 
    private:
-    void OnStarted(const Request* req, Response* resp) override {
-      on_started_func_(req, resp, this);
-    }
     void OnDone() override { this->~SimpleUnaryReactor(); }
-
-    Function on_started_func_;
   };
   return new (g_core_codegen_interface->grpc_call_arena_alloc(
       context->c_call(), sizeof(SimpleUnaryReactor)))
@@ -641,24 +625,19 @@ template <typename Request, typename Response, typename Function>
 ServerUnaryReactor<Request, Response>* MakeReactor(
     ServerContext* context, Function&& func,
     typename std::enable_if<std::is_same<
-        Status,
-        typename std::remove_const<typename std::remove_reference<
-            typename std::result_of<Function(const Request*, Response*)>::
-                type>::type>::type>::value>::type* = nullptr) {
+        Status, typename std::remove_const<typename std::remove_reference<
+                    typename std::result_of<Function()>::type>::type>::type>::
+                                value>::type* = nullptr) {
   // TODO(vjpai): Specialize this to prevent counting OnCancel conditions
   class ReallySimpleUnaryReactor final
       : public ServerUnaryReactor<Request, Response> {
    public:
-    explicit ReallySimpleUnaryReactor(Function&& func)
-        : on_started_func_(std::move(func)) {}
+    explicit ReallySimpleUnaryReactor(Function&& func) {
+      this->Finish(std::move(func()));
+    }
 
    private:
-    void OnStarted(const Request* req, Response* resp) override {
-      this->Finish(on_started_func_(req, resp));
-    }
     void OnDone() override { this->~ReallySimpleUnaryReactor(); }
-
-    Function on_started_func_;
   };
   return new (g_core_codegen_interface->grpc_call_arena_alloc(
       context->c_call(), sizeof(ReallySimpleUnaryReactor)))
@@ -716,9 +695,11 @@ class UnimplementedBidiReactor
 template <class RequestType, class ResponseType>
 class CallbackUnaryHandler : public MethodHandler {
  public:
-  explicit CallbackUnaryHandler(std::function<experimental::ServerUnaryReactor<
-                                    RequestType, ResponseType>*(ServerContext*)>
-                                    get_reactor)
+  explicit CallbackUnaryHandler(
+      std::function<
+          void(ServerContext*, const RequestType*, ResponseType*,
+               experimental::ServerUnaryReactor<RequestType, ResponseType>**)>
+          get_reactor)
       : get_reactor_(std::move(get_reactor)) {}
 
   void SetMessageAllocator(
@@ -732,27 +713,26 @@ class CallbackUnaryHandler : public MethodHandler {
     auto* allocator_state =
         static_cast<experimental::MessageHolder<RequestType, ResponseType>*>(
             param.internal_data);
-    experimental::ServerUnaryReactor<RequestType, ResponseType>* reactor =
-        param.status.ok()
-            ? CatchingReactorCreator<
-                  experimental::ServerUnaryReactor<RequestType, ResponseType>>(
-                  get_reactor_, param.server_context)
-            : nullptr;
+    auto* call = new (g_core_codegen_interface->grpc_call_arena_alloc(
+        param.call->call(), sizeof(ServerCallbackUnaryImpl)))
+        ServerCallbackUnaryImpl(param.server_context, param.call,
+                                allocator_state,
+                                std::move(param.call_requester));
+    experimental::ServerUnaryReactor<RequestType, ResponseType>* reactor;
+    if (param.status.ok()) {
+      CatchingReactorGetter(&reactor, get_reactor_, param.server_context,
+                            call->request(), call->response());
+    } else {
+      reactor = nullptr;
+    }
 
     if (reactor == nullptr) {
       // if deserialization or reactor creator failed, we need to fail the call
       reactor = new UnimplementedUnaryReactor<RequestType, ResponseType>;
     }
 
-    auto* call = new (g_core_codegen_interface->grpc_call_arena_alloc(
-        param.call->call(), sizeof(ServerCallbackUnaryImpl)))
-        ServerCallbackUnaryImpl(param.server_context, param.call,
-                                allocator_state,
-                                std::move(param.call_requester), reactor);
-
-    call->BindReactor(reactor);
-    reactor->OnStarted(call->request(), call->response());
-    // The earliest that OnCancel can be called is after OnStarted is done.
+    call->SetupReactor(reactor);
+    // The earliest that OnCancel can be called is after setup is done
     reactor->MaybeCallOnCancel();
     call->MaybeDone();
   }
@@ -784,8 +764,9 @@ class CallbackUnaryHandler : public MethodHandler {
   }
 
  private:
-  std::function<experimental::ServerUnaryReactor<RequestType, ResponseType>*(
-      ServerContext*)>
+  std::function<void(
+      ServerContext*, const RequestType*, ResponseType*,
+      experimental::ServerUnaryReactor<RequestType, ResponseType>**)>
       get_reactor_;
   experimental::MessageAllocator<RequestType, ResponseType>* allocator_ =
       nullptr;
@@ -845,14 +826,17 @@ class CallbackUnaryHandler : public MethodHandler {
     ServerCallbackUnaryImpl(
         ServerContext* ctx, Call* call,
         experimental::MessageHolder<RequestType, ResponseType>* allocator_state,
-        std::function<void()> call_requester,
-        experimental::ServerUnaryReactor<RequestType, ResponseType>* reactor)
+        std::function<void()> call_requester)
         : ctx_(ctx),
           call_(*call),
           allocator_state_(allocator_state),
-          call_requester_(std::move(call_requester)),
-          reactor_(reactor) {
-      ctx_->BeginCompletionOp(call, [this](bool) { MaybeDone(); }, reactor);
+          call_requester_(std::move(call_requester)) {}
+
+    void SetupReactor(
+        experimental::ServerUnaryReactor<RequestType, ResponseType>* reactor) {
+      reactor_ = reactor;
+      ctx_->BeginCompletionOp(&call_, [this](bool) { MaybeDone(); }, reactor);
+      BindReactor(reactor);
     }
 
     const RequestType* request() { return allocator_state_->request(); }
@@ -903,7 +887,7 @@ class CallbackClientStreamingHandler : public MethodHandler {
     experimental::ServerReadReactor<RequestType, ResponseType>* reactor =
         param.status.ok()
             ? CatchingReactorCreator<
-                  experimental::ServerReadReactor<RequestType, ResponseType>>(
+                  experimental::ServerReadReactor<RequestType, ResponseType>*>(
                   get_reactor_, param.server_context)
             : nullptr;
 
@@ -1048,7 +1032,7 @@ class CallbackServerStreamingHandler : public MethodHandler {
     experimental::ServerWriteReactor<RequestType, ResponseType>* reactor =
         param.status.ok()
             ? CatchingReactorCreator<
-                  experimental::ServerWriteReactor<RequestType, ResponseType>>(
+                  experimental::ServerWriteReactor<RequestType, ResponseType>*>(
                   get_reactor_, param.server_context)
             : nullptr;
 
@@ -1226,7 +1210,7 @@ class CallbackBidiHandler : public MethodHandler {
     experimental::ServerBidiReactor<RequestType, ResponseType>* reactor =
         param.status.ok()
             ? CatchingReactorCreator<
-                  experimental::ServerBidiReactor<RequestType, ResponseType>>(
+                  experimental::ServerBidiReactor<RequestType, ResponseType>*>(
                   get_reactor_, param.server_context)
             : nullptr;
 

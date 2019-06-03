@@ -411,18 +411,16 @@ Status TestServiceImpl::BidiStream(
   return Status::OK;
 }
 
-experimental::ServerUnaryReactor<EchoRequest, EchoResponse>*
-CallbackTestServiceImpl::Echo(ServerContext* context) {
+void CallbackTestServiceImpl::Echo(
+    ServerContext* context, const EchoRequest* request, EchoResponse* response,
+    experimental::ServerUnaryReactor<EchoRequest, EchoResponse>** reactor) {
   class Reactor
       : public ::grpc::experimental::ServerUnaryReactor<EchoRequest,
                                                         EchoResponse> {
    public:
-    Reactor(CallbackTestServiceImpl* service, ServerContext* ctx)
-        : service_(service), ctx_(ctx) {}
-    void OnStarted(const EchoRequest* request,
-                   EchoResponse* response) override {
-      req_ = request;
-      resp_ = response;
+    Reactor(CallbackTestServiceImpl* service, ServerContext* ctx,
+            const EchoRequest* request, EchoResponse* response)
+        : service_(service), ctx_(ctx), req_(request), resp_(response) {
       if (request->has_param() && request->param().server_sleep_us() > 0) {
         // Set an alarm for that much time
         alarm_.experimental().Set(
@@ -433,14 +431,14 @@ CallbackTestServiceImpl::Echo(ServerContext* context) {
       } else {
         NonDelayed(true);
       }
-      on_started_done_ = true;
+      started_ = true;
     }
     void OnSendInitialMetadataDone(bool ok) override {
       EXPECT_TRUE(ok);
       initial_metadata_sent_ = true;
     }
     void OnCancel() override {
-      EXPECT_TRUE(on_started_done_);
+      EXPECT_TRUE(started_);
       EXPECT_TRUE(ctx_->IsCancelled());
       // do the actual finish in the main handler only but use this as a chance
       // to cancel any alarms.
@@ -580,35 +578,32 @@ CallbackTestServiceImpl::Echo(ServerContext* context) {
     EchoResponse* resp_;
     Alarm alarm_;
     bool initial_metadata_sent_{false};
-    bool on_started_done_{false};
+    bool started_{false};
   };
 
-  return new Reactor(this, context);
+  *reactor = new Reactor(this, context, request, response);
 }
 
-experimental::ServerUnaryReactor<SimpleRequest, SimpleResponse>*
-CallbackTestServiceImpl::CheckClientInitialMetadata(ServerContext* context) {
+void CallbackTestServiceImpl::CheckClientInitialMetadata(
+    ServerContext* context, const SimpleRequest*, SimpleResponse*,
+    experimental::ServerUnaryReactor<SimpleRequest, SimpleResponse>** reactor) {
   class Reactor
       : public ::grpc::experimental::ServerUnaryReactor<SimpleRequest,
                                                         SimpleResponse> {
    public:
-    explicit Reactor(ServerContext* ctx) : ctx_(ctx) {}
-    void OnStarted(const SimpleRequest*, SimpleResponse*) override {
-      EXPECT_EQ(MetadataMatchCount(ctx_->client_metadata(),
+    explicit Reactor(ServerContext* ctx) {
+      EXPECT_EQ(MetadataMatchCount(ctx->client_metadata(),
                                    kCheckClientInitialMetadataKey,
                                    kCheckClientInitialMetadataVal),
                 1);
-      EXPECT_EQ(1u,
-                ctx_->client_metadata().count(kCheckClientInitialMetadataKey));
+      EXPECT_EQ(ctx->client_metadata().count(kCheckClientInitialMetadataKey),
+                1u);
       Finish(Status::OK);
     }
     void OnDone() override { delete this; }
-
-   private:
-    ServerContext* ctx_;
   };
 
-  return new Reactor(context);
+  *reactor = new Reactor(context);
 }
 
 experimental::ServerReadReactor<EchoRequest, EchoResponse>*
