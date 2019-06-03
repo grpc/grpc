@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,11 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_COMPILER_CSHARP_GENERATOR_H
-#define GRPC_INTERNAL_COMPILER_CSHARP_GENERATOR_H
+#import <UIKit/UIKit.h>
+#import "AppDelegate.h"
 
-#include "src/compiler/config.h"
-
-#include <google/protobuf/compiler/csharp/csharp_names.h>
-
-namespace grpc_csharp_generator {
-
-grpc::string GetServices(const grpc::protobuf::FileDescriptor* file,
-                         bool generate_client, bool generate_server,
-                         bool internal_access, bool lite_client);
-
-}  // namespace grpc_csharp_generator
-
-#endif  // GRPC_INTERNAL_COMPILER_CSHARP_GENERATOR_H
+int main(int argc, char* argv[]) {
+  @autoreleasepool {
+    return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));
+  }
+}

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,27 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_COMPILER_CSHARP_GENERATOR_H
-#define GRPC_INTERNAL_COMPILER_CSHARP_GENERATOR_H
+#import <GRPCClient/GRPCInterceptor.h>
 
-#include "src/compiler/config.h"
+NS_ASSUME_NONNULL_BEGIN
 
-#include <google/protobuf/compiler/csharp/csharp_names.h>
+@interface GRPCCall2Internal : NSObject<GRPCInterceptorInterface>
 
-namespace grpc_csharp_generator {
+- (instancetype)init;
 
-grpc::string GetServices(const grpc::protobuf::FileDescriptor* file,
-                         bool generate_client, bool generate_server,
-                         bool internal_access, bool lite_client);
+- (void)setResponseHandler:(id<GRPCResponseHandler>)responseHandler;
 
-}  // namespace grpc_csharp_generator
+- (void)startWithRequestOptions:(GRPCRequestOptions *)requestOptions
+                    callOptions:(nullable GRPCCallOptions *)callOptions;
 
-#endif  // GRPC_INTERNAL_COMPILER_CSHARP_GENERATOR_H
+- (void)writeData:(NSData *)data;
+
+- (void)finish;
+
+- (void)cancel;
+
+- (void)receiveNextMessages:(NSUInteger)numberOfMessages;
+
+@end
+
+NS_ASSUME_NONNULL_END
