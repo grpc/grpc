@@ -183,25 +183,7 @@ ChannelNode::ChannelNode(intptr_t uuid, UniquePtr<char> target,
                                       : EntityType::kInternalChannel),
       target_(std::move(target)),
       trace_(channel_tracer_max_nodes),
-      parent_uuid_(parent_uuid) {
-  if (parent_uuid > 0) {
-    RefCountedPtr<BaseNode> parent_node = ChannelzRegistry::Get(parent_uuid);
-    if (parent_node != nullptr) {
-      ChannelNode* parent = static_cast<ChannelNode*>(parent_node.get());
-      parent->AddChildChannel(uuid);
-    }
-  }
-}
-
-ChannelNode::~ChannelNode() {
-  if (parent_uuid_ > 0) {
-    RefCountedPtr<BaseNode> parent_node = ChannelzRegistry::Get(parent_uuid_);
-    if (parent_node != nullptr) {
-      ChannelNode* parent = static_cast<ChannelNode*>(parent_node.get());
-      parent->RemoveChildChannel(uuid());
-    }
-  }
-}
+      parent_uuid_(parent_uuid) {}
 
 grpc_json* ChannelNode::RenderJson() {
   // We need to track these three json objects to build our object

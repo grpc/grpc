@@ -151,7 +151,8 @@ class ChannelNode : public BaseNode {
  public:
   ChannelNode(intptr_t uuid, UniquePtr<char> target,
               size_t channel_tracer_max_nodes, intptr_t parent_uuid);
-  ~ChannelNode() override;
+
+  intptr_t parent_uuid() const { return parent_uuid_; }
 
   grpc_json* RenderJson() override;
 
