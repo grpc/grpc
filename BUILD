@@ -137,7 +137,7 @@ GRPCXX_SRCS = [
     "src/cpp/common/resource_quota_cc.cc",
     "src/cpp/common/rpc_method.cc",
     "src/cpp/common/version_cc.cc",
-    "src/cpp/common/validate_service_config.cc",    
+    "src/cpp/common/validate_service_config.cc",
     "src/cpp/server/async_generic_service.cc",
     "src/cpp/server/channel_argument_option.cc",
     "src/cpp/server/create_default_thread_pool.cc",
@@ -287,7 +287,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/support/stub_options.h",
     "include/grpcpp/support/sync_stream.h",
     "include/grpcpp/support/time.h",
-    "include/grpcpp/support/validate_service_config.h",    
+    "include/grpcpp/support/validate_service_config.h",
 ]
 
 grpc_cc_library(
@@ -611,14 +611,15 @@ grpc_cc_library(
         "src/core/lib/gprpp/arena.h",
         "src/core/lib/gprpp/atomic.h",
         "src/core/lib/gprpp/fork.h",
+        "src/core/lib/gprpp/global_config.h",
         "src/core/lib/gprpp/global_config_custom.h",
         "src/core/lib/gprpp/global_config_env.h",
         "src/core/lib/gprpp/global_config_generic.h",
-        "src/core/lib/gprpp/global_config.h",
         "src/core/lib/gprpp/manual_constructor.h",
         "src/core/lib/gprpp/map.h",
         "src/core/lib/gprpp/memory.h",
         "src/core/lib/gprpp/pair.h",
+        "src/core/lib/gprpp/string_view.h",
         "src/core/lib/gprpp/sync.h",
         "src/core/lib/gprpp/thd.h",
         "src/core/lib/profiling/timers.h",
@@ -627,6 +628,7 @@ grpc_cc_library(
     public_hdrs = GPR_PUBLIC_HDRS,
     deps = [
         "gpr_codegen",
+        "grpc_codegen",
     ],
 )
 
@@ -2379,16 +2381,16 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h",
         "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h",
     ],
-    language = "c++",
     external_deps = [
         "upb_lib",
     ],
+    language = "c++",
+    tags = ["no_windows"],
     deps = [
         ":envoy_core_upb",
         ":google_api_upb",
         ":proto_gen_validate_upb",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_library(
@@ -2417,13 +2419,13 @@ grpc_cc_library(
         "upb_lib",
     ],
     language = "c++",
+    tags = ["no_windows"],
     deps = [
         ":envoy_core_upb",
         ":envoy_type_upb",
         ":google_api_upb",
         ":proto_gen_validate_upb",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_library(

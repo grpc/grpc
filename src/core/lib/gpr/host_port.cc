@@ -27,6 +27,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/string_view.h"
 
 int gpr_join_host_port(char** out, const char* host, int port) {
   if (host[0] != '[' && strchr(host, ':') != nullptr) {
@@ -38,61 +39,55 @@ int gpr_join_host_port(char** out, const char* host, int port) {
   }
 }
 
-int gpr_split_host_port(const char* name, char** host, char** port) {
-  const char* host_start;
-  size_t host_len;
-  const char* port_start;
-
-  *host = nullptr;
-  *port = nullptr;
-
+bool gpr_split_host_port(grpc_core::string_view name,
+                         grpc_core::string_view* host,
+                         grpc_core::string_view* port) {
   if (name[0] == '[') {
     /* Parse a bracketed host, typically an IPv6 literal. */
-    const char* rbracket = strchr(name, ']');
-    if (rbracket == nullptr) {
+    const size_t rbracket = name.find(']', 1);
+    if (rbracket == grpc_core::string_view::npos) {
       /* Unmatched [ */
-      return 0;
+      return false;
     }
-    if (rbracket[1] == '\0') {
+    if (rbracket == name.size() - 1) {
       /* ]<end> */
-      port_start = nullptr;
-    } else if (rbracket[1] == ':') {
+      port->clear();
+    } else if (name[rbracket + 1] == ':') {
       /* ]:<port?> */
-      port_start = rbracket + 2;
+      *port = name.substr(rbracket + 2, name.size() - rbracket - 2);
     } else {
       /* ]<invalid> */
-      return 0;
+      return false;
     }
-    host_start = name + 1;
-    host_len = static_cast<size_t>(rbracket - host_start);
-    if (memchr(host_start, ':', host_len) == nullptr) {
+    *host = name.substr(1, rbracket - 1);
+    if (host->find(':') == grpc_core::string_view::npos) {
       /* Require all bracketed hosts to contain a colon, because a hostname or
          IPv4 address should never use brackets. */
-      return 0;
+      host->clear();
+      return false;
     }
   } else {
-    const char* colon = strchr(name, ':');
-    if (colon != nullptr && strchr(colon + 1, ':') == nullptr) {
+    size_t colon = name.find(':');
+    if (colon != grpc_core::string_view::npos &&
+        name.find(':', colon + 1) == grpc_core::string_view::npos) {
       /* Exactly 1 colon.  Split into host:port. */
-      host_start = name;
-      host_len = static_cast<size_t>(colon - name);
-      port_start = colon + 1;
+      *host = name.substr(0, colon);
+      *port = name.substr(colon + 1, name.size() - colon - 1);
     } else {
       /* 0 or 2+ colons.  Bare hostname or IPv6 litearal. */
-      host_start = name;
-      host_len = strlen(name);
-      port_start = nullptr;
+      *host = name;
+      port->clear();
     }
   }
+  return true;
+}
 
-  /* Allocate return values. */
-  *host = static_cast<char*>(gpr_malloc(host_len + 1));
-  memcpy(*host, host_start, host_len);
-  (*host)[host_len] = '\0';
-
-  if (port_start != nullptr) {
-    *port = gpr_strdup(port_start);
-  }
-
-  return 1;
+bool gpr_split_host_port(grpc_core::string_view name, char** host,
+                         char** port) {
+  grpc_core::string_view host_view;
+  grpc_core::string_view port_view;
+  const bool ret = gpr_split_host_port(name, &host_view, &port_view);
+  *host = host_view.empty() ? nullptr : host_view.dup();
+  *port = port_view.empty() ? nullptr : port_view.dup();
+  return ret;
 }
