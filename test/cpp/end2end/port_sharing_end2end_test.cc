@@ -187,13 +187,13 @@ class TestTcpServer {
   std::mutex mu_;
   bool shutdown_;
 
-  int listener_fd_;
-  int fd_;
-  bool queue_data_;
+  int listener_fd_ = -1;
+  int fd_ = -1;
+  bool queue_data_ = false;
 
   grpc_closure on_fd_released_;
   std::thread running_thread_;
-  int port_;
+  int port_ = -1;
   grpc::string address_;
   std::unique_ptr<experimental::ExternalConnectionAcceptor>
       connection_acceptor_;
