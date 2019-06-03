@@ -1152,7 +1152,8 @@ def aggregate_http2_results(stdout):
     }
 
 
-# A dictionary of prod servers to test.
+# A dictionary of prod servers to test against.
+# See go/grpc-interop-tests (internal-only) for details.
 prod_servers = {
     'default': 'grpc-test.sandbox.googleapis.com',
     'gateway_v4': 'grpc-test4.sandbox.googleapis.com',
