@@ -826,9 +826,7 @@ CallbackTestServiceImpl::BidiStream(ServerContext* context) {
         StartRead(&request_);
       }
     }
-    void OnStarted() override {
-      on_started_done_ = true;
-    }
+    void OnStarted() override { on_started_done_ = true; }
     void OnDone() override { delete this; }
     void OnCancel() override {
       EXPECT_TRUE(on_started_done_);
