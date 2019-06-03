@@ -23,6 +23,7 @@
 
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -85,7 +86,7 @@ class ChannelzRegistry {
       MutexLock lock(&mu_);
       const intptr_t uuid = ++uuid_generator_;
       auto node = MakeRefCounted<NodeType>(uuid, std::forward<Args>(args)...);
-      entities_.push_back(node);
+      node_map_[uuid] = node;
       return node;
     }
 
@@ -104,24 +105,15 @@ class ChannelzRegistry {
     static void OnGarbageCollectionTimer(void* arg, grpc_error* error);
 
     void DoGarbageCollectionLocked();
-    void MaybeRemoveUnusedNodeLocked(size_t idx);
 
-    // If entities_ has over a certain threshold of empty slots, it will
-    // compact the vector and move all used slots to the front.
-    void MaybePerformCompactionLocked();
-
-    // Performs binary search on entities_ to find the index with that uuid.
-    // If direct_hit_needed, then will return -1 in case of absence.
-    // Else, will return idx of the first uuid higher than the target.
-    int FindByUuidLocked(intptr_t uuid, bool direct_hit_needed);
+    // Returns an iterator pointing to the first entry greater than or
+    // equal to uuid.
+    Map<intptr_t, RefCountedPtr<BaseNode>>::iterator FindUuidOrNext(
+        intptr_t uuid);
 
     // protects members
     Mutex mu_;
-    // TODO(roth): Once the erase() bug has been fixed in our Map<>
-    // implementation, change this to use a map so that we can eliminate
-    // the need for compaction.
-    InlinedVector<RefCountedPtr<BaseNode>, 20> entities_;
-    int num_empty_slots_ = 0;
+    Map<intptr_t, RefCountedPtr<BaseNode>> node_map_;
     intptr_t uuid_generator_ = 0;
     bool shutdown_ = false;
     grpc_timer gc_timer_;

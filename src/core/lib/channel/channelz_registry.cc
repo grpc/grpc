@@ -96,34 +96,12 @@ void ChannelzRegistry::Registry::OnGarbageCollectionTimer(void* arg,
 }
 
 void ChannelzRegistry::Registry::DoGarbageCollectionLocked() {
-  for (size_t i = 0; i < entities_.size(); ++i) {
-    MaybeRemoveUnusedNodeLocked(i);
-  }
-  MaybePerformCompactionLocked();
-}
-
-void ChannelzRegistry::Registry::MaybeRemoveUnusedNodeLocked(size_t idx) {
-  if (entities_[idx] != nullptr && entities_[idx]->HasOnlyOneRef()) {
-    entities_[idx].reset();
-    ++num_empty_slots_;
-  }
-}
-
-void ChannelzRegistry::Registry::MaybePerformCompactionLocked() {
-  constexpr double kEmptinessTheshold = 1. / 3;
-  double emptiness_ratio =
-      double(num_empty_slots_) / double(entities_.capacity());
-  if (emptiness_ratio > kEmptinessTheshold) {
-    int front = 0;
-    for (size_t i = 0; i < entities_.size(); ++i) {
-      if (entities_[i] != nullptr) {
-        entities_[front++] = entities_[i];
-      }
+  for (auto it = node_map_.begin(); it != node_map_.end();) {
+    if (it->second->HasOnlyOneRef()) {
+      it = node_map_.erase(it);
+    } else {
+      ++it;
     }
-    for (int i = 0; i < num_empty_slots_; ++i) {
-      entities_.pop_back();
-    }
-    num_empty_slots_ = 0;
   }
 }
 
@@ -132,37 +110,22 @@ RefCountedPtr<BaseNode> ChannelzRegistry::Registry::Get(intptr_t uuid) {
   if (uuid < 1 || uuid > uuid_generator_) {
     return nullptr;
   }
-  int idx = FindByUuidLocked(uuid, true);
-  if (idx < 0) return nullptr;
-  MaybeRemoveUnusedNodeLocked(idx);
-  return entities_[idx];
+  auto it = node_map_.find(uuid);
+  if (it == node_map_.end()) return nullptr;
+  if (it->second->HasOnlyOneRef()) {
+    node_map_.erase(it);
+    return nullptr;
+  }
+  return it->second;
 }
 
-int ChannelzRegistry::Registry::FindByUuidLocked(intptr_t target_uuid,
-                                                 bool direct_hit_needed) {
-  int left = 0;
-  int right = int(entities_.size() - 1);
-  while (left <= right) {
-    int true_middle = left + (right - left) / 2;
-    int first_non_null = true_middle;
-    while (first_non_null < right && entities_[first_non_null] == nullptr) {
-      first_non_null++;
-    }
-    if (entities_[first_non_null] == nullptr) {
-      right = true_middle - 1;
-      continue;
-    }
-    intptr_t uuid = entities_[first_non_null]->uuid();
-    if (uuid == target_uuid) {
-      return int(first_non_null);
-    }
-    if (uuid < target_uuid) {
-      left = first_non_null + 1;
-    } else {
-      right = true_middle - 1;
-    }
-  }
-  return direct_hit_needed ? -1 : left;
+Map<intptr_t, RefCountedPtr<BaseNode>>::iterator
+ChannelzRegistry::Registry::FindUuidOrNext(intptr_t uuid) {
+  return std::find_if(
+      node_map_.begin(), node_map_.end(),
+      [uuid](const Pair<intptr_t, RefCountedPtr<BaseNode>>& p) {
+        return p.first >= uuid;
+      });
 }
 
 char* ChannelzRegistry::Registry::GetTopChannels(intptr_t start_channel_id) {
@@ -173,12 +136,13 @@ char* ChannelzRegistry::Registry::GetTopChannels(intptr_t start_channel_id) {
   InlinedVector<RefCountedPtr<BaseNode>, 10> top_level_channels;
   {
     MutexLock lock(&mu_);
-    int start_idx = GPR_MAX(FindByUuidLocked(start_channel_id, false), 0);
-    for (size_t i = start_idx; i < entities_.size(); ++i) {
-      MaybeRemoveUnusedNodeLocked(i);
-      if (entities_[i] != nullptr &&
-          entities_[i]->type() == BaseNode::EntityType::kTopLevelChannel &&
-          entities_[i]->uuid() >= start_channel_id) {
+    for (auto it = FindUuidOrNext(start_channel_id); it != node_map_.end();) {
+      auto& node = it->second;
+      if (node->HasOnlyOneRef()) {
+        it = node_map_.erase(it);
+        continue;
+      }
+      if (node->type() == channelz::BaseNode::EntityType::kTopLevelChannel) {
         // check if we are over pagination limit to determine if we need to set
         // the "end" element. If we don't go through this block, we know that
         // when the loop terminates, we have <= to kPaginationLimit.
@@ -186,8 +150,9 @@ char* ChannelzRegistry::Registry::GetTopChannels(intptr_t start_channel_id) {
           reached_pagination_limit = true;
           break;
         }
-        top_level_channels.push_back(entities_[i]);
+        top_level_channels.push_back(node);
       }
+      ++it;
     }
   }
   if (!top_level_channels.empty()) {
@@ -217,12 +182,13 @@ char* ChannelzRegistry::Registry::GetServers(intptr_t start_server_id) {
   InlinedVector<RefCountedPtr<BaseNode>, 10> servers;
   {
     MutexLock lock(&mu_);
-    int start_idx = GPR_MAX(FindByUuidLocked(start_server_id, false), 0);
-    for (size_t i = start_idx; i < entities_.size(); ++i) {
-      MaybeRemoveUnusedNodeLocked(i);
-      if (entities_[i] != nullptr &&
-          entities_[i]->type() == BaseNode::EntityType::kServer &&
-          entities_[i]->uuid() >= start_server_id) {
+    for (auto it = FindUuidOrNext(start_server_id); it != node_map_.end();) {
+      auto& node = it->second;
+      if (node->HasOnlyOneRef()) {
+        it = node_map_.erase(it);
+        continue;
+      }
+      if (node->type() == channelz::BaseNode::EntityType::kServer) {
         // check if we are over pagination limit to determine if we need to set
         // the "end" element. If we don't go through this block, we know that
         // when the loop terminates, we have <= to kPaginationLimit.
@@ -230,8 +196,9 @@ char* ChannelzRegistry::Registry::GetServers(intptr_t start_server_id) {
           reached_pagination_limit = true;
           break;
         }
-        servers.push_back(entities_[i]);
+        servers.push_back(node);
       }
+      ++it;
     }
   }
   if (!servers.empty()) {
@@ -255,13 +222,16 @@ char* ChannelzRegistry::Registry::GetServers(intptr_t start_server_id) {
 
 void ChannelzRegistry::Registry::LogAllEntities() {
   MutexLock lock(&mu_);
-  for (size_t i = 0; i < entities_.size(); ++i) {
-    MaybeRemoveUnusedNodeLocked(i);
-    if (entities_[i] != nullptr) {
-      char* json = entities_[i]->RenderJsonString();
-      gpr_log(GPR_INFO, "%s", json);
-      gpr_free(json);
+  for (auto it = node_map_.begin(); it != node_map_.end();) {
+    auto& node = it->second;
+    if (node->HasOnlyOneRef()) {
+      it = node_map_.erase(it);
+      continue;
     }
+    char* json = node->RenderJsonString();
+    gpr_log(GPR_INFO, "%s", json);
+    gpr_free(json);
+    ++it;
   }
 }
 
