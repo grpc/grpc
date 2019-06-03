@@ -102,39 +102,33 @@ class grpc_fake_channel_security_connector final
         tsi_create_fake_handshaker(/*is_client=*/true), this));
   }
 
-  bool check_call_host(const char* host, grpc_auth_context* auth_context,
+  bool check_call_host(grpc_core::string_view host,
+                       grpc_auth_context* auth_context,
                        grpc_closure* on_call_host_checked,
                        grpc_error** error) override {
-    char* authority_hostname = nullptr;
-    char* authority_ignored_port = nullptr;
-    char* target_hostname = nullptr;
-    char* target_ignored_port = nullptr;
+    grpc_core::string_view authority_hostname;
+    grpc_core::string_view authority_ignored_port;
+    grpc_core::string_view target_hostname;
+    grpc_core::string_view target_ignored_port;
     gpr_split_host_port(host, &authority_hostname, &authority_ignored_port);
     gpr_split_host_port(target_, &target_hostname, &target_ignored_port);
     if (target_name_override_ != nullptr) {
-      char* fake_security_target_name_override_hostname = nullptr;
-      char* fake_security_target_name_override_ignored_port = nullptr;
+      grpc_core::string_view fake_security_target_name_override_hostname;
+      grpc_core::string_view fake_security_target_name_override_ignored_port;
       gpr_split_host_port(target_name_override_,
                           &fake_security_target_name_override_hostname,
                           &fake_security_target_name_override_ignored_port);
-      if (strcmp(authority_hostname,
-                 fake_security_target_name_override_hostname) != 0) {
+      if (authority_hostname != fake_security_target_name_override_hostname) {
         gpr_log(GPR_ERROR,
                 "Authority (host) '%s' != Fake Security Target override '%s'",
-                host, fake_security_target_name_override_hostname);
+                host.data(), target_name_override_);
         abort();
       }
-      gpr_free(fake_security_target_name_override_hostname);
-      gpr_free(fake_security_target_name_override_ignored_port);
-    } else if (strcmp(authority_hostname, target_hostname) != 0) {
-      gpr_log(GPR_ERROR, "Authority (host) '%s' != Target '%s'",
-              authority_hostname, target_hostname);
+    } else if (authority_hostname != target_hostname) {
+      gpr_log(GPR_ERROR, "Authority (host) '%s' != Target '%s'", host.data(),
+              target_);
       abort();
     }
-    gpr_free(authority_hostname);
-    gpr_free(authority_ignored_port);
-    gpr_free(target_hostname);
-    gpr_free(target_ignored_port);
     return true;
   }
 

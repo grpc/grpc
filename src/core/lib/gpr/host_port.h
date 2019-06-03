@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/gprpp/string_view.h"
+
 /** Given a host and port, creates a newly-allocated string of the form
    "host:port" or "[ho:st]:port", depending on whether the host contains colons
    like an IPv6 literal.  If the host is already bracketed, then additional
@@ -34,10 +36,22 @@
 int gpr_join_host_port(char** out, const char* host, int port);
 
 /** Given a name in the form "host:port" or "[ho:st]:port", split into hostname
-   and port number, into newly allocated strings, which must later be
-   destroyed using gpr_free().
-   Return 1 on success, 0 on failure. Guarantees *host and *port == NULL on
-   failure. */
-int gpr_split_host_port(const char* name, char** host, char** port);
+   and port number.
+
+   There are two variants of this method:
+   1) string_view ouptut: port and host are returned as views on name.
+   2) char* output: port and host are copied into newly allocated strings,
+                    which must later be destroyed using gpr_free().
+
+   Prefer variant (1) over (2), because no allocation or copy is performed in
+   variant (1).  Use (2) only when interacting with C API that mandate
+   null-terminated strings.
+
+   Return true on success, false on failure. Guarantees *host and *port are
+   cleared on failure. */
+bool gpr_split_host_port(grpc_core::string_view name,
+                         grpc_core::string_view* host,
+                         grpc_core::string_view* port);
+bool gpr_split_host_port(grpc_core::string_view name, char** host, char** port);
 
 #endif /* GRPC_CORE_LIB_GPR_HOST_PORT_H */

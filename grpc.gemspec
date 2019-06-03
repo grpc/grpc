@@ -348,6 +348,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/orphanable.h )
   s.files += %w( src/core/lib/gprpp/ref_counted.h )
   s.files += %w( src/core/lib/gprpp/ref_counted_ptr.h )
+  s.files += %w( src/core/lib/gprpp/string_view.h )
   s.files += %w( src/core/lib/http/format_request.h )
   s.files += %w( src/core/lib/http/httpcli.h )
   s.files += %w( src/core/lib/http/parser.h )

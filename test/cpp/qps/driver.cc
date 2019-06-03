@@ -52,15 +52,10 @@ using std::vector;
 namespace grpc {
 namespace testing {
 static std::string get_host(const std::string& worker) {
-  char* host;
-  char* port;
-
+  grpc_core::string_view host;
+  grpc_core::string_view port;
   gpr_split_host_port(worker.c_str(), &host, &port);
-  const string s(host);
-
-  gpr_free(host);
-  gpr_free(port);
-  return s;
+  return std::string(host.data(), host.size());
 }
 
 static deque<string> get_workers(const string& env_name) {
