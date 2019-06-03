@@ -78,7 +78,7 @@ g_stands_for = "gandalf"
 
 core_version = "7.0.0"
 
-version = "1.21.2"
+version = "1.21.3-pre1"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
