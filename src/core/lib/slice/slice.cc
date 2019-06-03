@@ -68,8 +68,7 @@ void grpc_slice_unref(grpc_slice slice) {
 
 /* grpc_slice_from_static_string support structure - a refcount that does
    nothing */
-static grpc_slice_refcount NoopRefcount =
-    grpc_slice_refcount(grpc_slice_refcount::Type::NOP);
+grpc_slice_refcount NoopRefcount(grpc_slice_refcount::Type::NOP);
 
 size_t grpc_slice_memory_usage(grpc_slice s) {
   if (s.refcount == nullptr || s.refcount == &NoopRefcount) {

@@ -272,4 +272,11 @@ inline bool grpc_log_if_error(const char* what, grpc_error* error,
 #define GRPC_LOG_IF_ERROR(what, error) \
   (grpc_log_if_error((what), (error), __FILE__, __LINE__))
 
+typedef struct {
+  grpc_status_code code;
+  const char* msg;
+  size_t len;
+} special_error_status_map;
+extern const special_error_status_map error_status_map[];
+
 #endif /* GRPC_CORE_LIB_IOMGR_ERROR_H */
