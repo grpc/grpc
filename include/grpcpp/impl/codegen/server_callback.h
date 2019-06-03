@@ -211,13 +211,19 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// Send any initial metadata stored in the RPC context. If not invoked,
   /// any initial metadata will be passed along with the first Write or the
   /// Finish (if there are no writes).
-  void StartSendInitialMetadata() { stream_->SendInitialMetadata(); }
+  void StartSendInitialMetadata() {
+    if (stream_ != nullptr) {
+      stream_->SendInitialMetadata();
+    } else {
+      send_initial_metadata_wanted_ = true;
+    }
+  }
 
   /// Initiate a read operation.
   ///
   /// \param[out] req Where to eventually store the read message. Valid when
   ///                 the library calls OnReadDone
-  void StartRead(Request* req) { stream_->Read(req); }
+  void StartRead(Request* req) { if (stream_ != nullptr) {stream_->Read(req); } else { read_wanted_ = req;}}
 
   /// Initiate a write operation.
   ///
@@ -233,7 +239,12 @@ class ServerBidiReactor : public internal::ServerReactor {
   ///                 application regains ownership of resp.
   /// \param[in] options The WriteOptions to use for writing this message
   void StartWrite(const Response* resp, WriteOptions options) {
+    if (stream_ != nullptr) {
     stream_->Write(resp, std::move(options));
+    } else {
+      write_wanted_ = resp;
+      write_options_wanted_ = std::move(options);
+    }
   }
 
   /// Initiate a write operation with specified options and final RPC Status,
@@ -251,7 +262,14 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// \param[in] s The status outcome of this RPC
   void StartWriteAndFinish(const Response* resp, WriteOptions options,
                            Status s) {
+    if (stream_ != nullptr) {
     stream_->WriteAndFinish(resp, std::move(options), std::move(s));
+    } else {
+      write_and_finish_wanted_ = true;
+      write_wanted_ = resp;
+      write_options_wanted_ = std::move(options);
+      status_wanted_ = std::move(s);
+    }
   }
 
   /// Inform system of a planned write operation with specified options, but
@@ -272,7 +290,7 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// cancelled.
   ///
   /// \param[in] s The status outcome of this RPC
-  void Finish(Status s) { stream_->Finish(std::move(s)); }
+  void Finish(Status s) { if (stream_ != nullptr) {stream_->Finish(std::move(s)); } else {finish_wanted_ = true; status_wanted_ = std::move(s);}}
 
   /// Notify the application that a streaming RPC has started and that it is now
   /// ok to call any operation initiation method. An RPC is considered started
@@ -315,9 +333,32 @@ class ServerBidiReactor : public internal::ServerReactor {
   friend class ServerCallbackReaderWriter<Request, Response>;
   void BindStream(ServerCallbackReaderWriter<Request, Response>* stream) {
     stream_ = stream;
-  }
+    if (send_initial_metadata_wanted_) {
+      stream_->SendInitialMetadata();
+    }    
+    if (read_wanted_ != nullptr) {
+      stream_->Read(read_wanted_);
+    }
+    if (write_and_finish_wanted_) {
+      stream_->WriteAndFinish(write_wanted_, std::move(write_options_wanted_), std::move(status_wanted_));
+    } else {
+      if (write_wanted_ != nullptr) {
+	stream_->Write(write_wanted_, std::move(write_options_wanted_));
+      }
+      if (finish_wanted_) {
+      stream_->Finish(std::move(status_wanted_));
+      }
+    }
+  } 
 
-  ServerCallbackReaderWriter<Request, Response>* stream_;
+  ServerCallbackReaderWriter<Request, Response>* stream_ = nullptr;
+  bool send_initial_metadata_wanted_ = false;
+  bool write_and_finish_wanted_ = false;
+  bool finish_wanted_ = false;
+  Request* read_wanted_ = nullptr;
+  const Response* write_wanted_ = nullptr;
+  WriteOptions write_options_wanted_;
+  Status status_wanted_;
 };
 
 /// \a ServerReadReactor is the interface for a client-streaming RPC.
@@ -327,9 +368,9 @@ class ServerReadReactor : public internal::ServerReactor {
   ~ServerReadReactor() = default;
 
   /// The following operation initiations are exactly like ServerBidiReactor.
-  void StartSendInitialMetadata() { reader_->SendInitialMetadata(); }
-  void StartRead(Request* req) { reader_->Read(req); }
-  void Finish(Status s) { reader_->Finish(std::move(s)); }
+  void StartSendInitialMetadata() { if (reader_ != nullptr) {reader_->SendInitialMetadata(); } else {send_initial_metadata_wanted_ = true;}}
+  void StartRead(Request* req) { if (reader_ != nullptr) {reader_->Read(req); } else { read_wanted_ = req;}}
+  void Finish(Status s) { if (reader_ != nullptr) {reader_->Finish(std::move(s));} else {finish_wanted_ = true; status_wanted_ = std::move(s);} }
 
   /// Similar to ServerBidiReactor::OnStarted, except that this also provides
   /// the response object that the stream fills in before calling Finish.
@@ -346,9 +387,23 @@ class ServerReadReactor : public internal::ServerReactor {
 
  private:
   friend class ServerCallbackReader<Request>;
-  void BindReader(ServerCallbackReader<Request>* reader) { reader_ = reader; }
+  void BindReader(ServerCallbackReader<Request>* reader) { reader_ = reader;
+    if (send_initial_metadata_wanted_) {
+      reader_->SendInitialMetadata();
+    }    
+    if (read_wanted_ != nullptr) {
+      reader_->Read(read_wanted_);
+    }
+      if (finish_wanted_) {
+      reader_->Finish(std::move(status_wanted_));
+      }
+  }
 
-  ServerCallbackReader<Request>* reader_;
+  ServerCallbackReader<Request>* reader_ = nullptr;
+  bool send_initial_metadata_wanted_ = false;
+  bool finish_wanted_ = false;
+  Request* read_wanted_ = nullptr;
+  Status status_wanted_;
 };
 
 /// \a ServerWriteReactor is the interface for a server-streaming RPC.
@@ -358,19 +413,38 @@ class ServerWriteReactor : public internal::ServerReactor {
   ~ServerWriteReactor() = default;
 
   /// The following operation initiations are exactly like ServerBidiReactor.
-  void StartSendInitialMetadata() { writer_->SendInitialMetadata(); }
+  void StartSendInitialMetadata() { if (writer_ != nullptr) {writer_->SendInitialMetadata(); } else {send_initial_metadata_wanted_ = true;}}
   void StartWrite(const Response* resp) { StartWrite(resp, WriteOptions()); }
   void StartWrite(const Response* resp, WriteOptions options) {
-    writer_->Write(resp, std::move(options));
+    if (writer_ != nullptr) {
+      writer_->Write(resp, std::move(options));
+    } else {
+      write_wanted_ = resp;
+      write_options_wanted_ = std::move(options);
+    }      
   }
   void StartWriteAndFinish(const Response* resp, WriteOptions options,
                            Status s) {
+    if (writer_ != nullptr) {
     writer_->WriteAndFinish(resp, std::move(options), std::move(s));
+    } else {
+      write_and_finish_wanted_ = true;
+      write_wanted_ = resp;
+      write_options_wanted_ = std::move(options);
+      status_wanted_ = std::move(s);
+    }
   }
   void StartWriteLast(const Response* resp, WriteOptions options) {
     StartWrite(resp, std::move(options.set_last_message()));
   }
-  void Finish(Status s) { writer_->Finish(std::move(s)); }
+  void Finish(Status s) {
+    if (writer_ != nullptr) {
+      writer_->Finish(std::move(s));
+    } else {
+      finish_wanted_ = true;
+      status_wanted_ = std::move(s);
+    }
+  }
 
   /// Similar to ServerBidiReactor::OnStarted, except that this also provides
   /// the request object sent by the client.
@@ -386,20 +460,39 @@ class ServerWriteReactor : public internal::ServerReactor {
 
  private:
   friend class ServerCallbackWriter<Response>;
-  void BindWriter(ServerCallbackWriter<Response>* writer) { writer_ = writer; }
+  void BindWriter(ServerCallbackWriter<Response>* writer) { writer_ = writer;
+    if (send_initial_metadata_wanted_) {
+      writer_->SendInitialMetadata();
+    }    
+    if (write_and_finish_wanted_) {
+      writer_->WriteAndFinish(write_wanted_, std::move(write_options_wanted_), std::move(status_wanted_));
+    } else {
+      if (write_wanted_ != nullptr) {
+	writer_->Write(write_wanted_, std::move(write_options_wanted_));
+      }
+      if (finish_wanted_) {
+      writer_->Finish(std::move(status_wanted_));
+      }
+    }
+  }
 
-  ServerCallbackWriter<Response>* writer_;
+  ServerCallbackWriter<Response>* writer_ = nullptr;
+  bool send_initial_metadata_wanted_ = false;
+  bool write_and_finish_wanted_ = false;
+  bool finish_wanted_ = false;
+  const Response* write_wanted_ = nullptr;
+  WriteOptions write_options_wanted_;
+  Status status_wanted_;
 };
 
-/// \a ServerUnaryReactor is a reactor-based interface for a unary RPC.
 template <class Request, class Response>
 class ServerUnaryReactor : public internal::ServerReactor {
  public:
   ~ServerUnaryReactor() = default;
 
   /// The following operation initiations are exactly like ServerBidiReactor.
-  void StartSendInitialMetadata() { call_->SendInitialMetadata(); }
-  void Finish(Status s) { call_->Finish(std::move(s)); }
+  void StartSendInitialMetadata() { if (call_ != nullptr) {call_->SendInitialMetadata(); } else {send_initial_metadata_wanted_ = true;}}
+  void Finish(Status s) { if (call_ != nullptr) {call_->Finish(std::move(s)); } else {finish_wanted_ = true; status_wanted_ = std::move(s);}}
 
   /// Similar to ServerBidiReactor::OnStarted, except that this also provides
   /// the request object sent by the client and the response object that the
@@ -423,9 +516,19 @@ class ServerUnaryReactor : public internal::ServerReactor {
 
  private:
   friend class ServerCallbackUnary;
-  void BindCall(ServerCallbackUnary* call) { call_ = call; }
+  void BindCall(ServerCallbackUnary* call) { call_ = call;
+    if (send_initial_metadata_wanted_) {
+      call_->SendInitialMetadata();
+    }    
+      if (finish_wanted_) {
+      call_->Finish(std::move(status_wanted_));
+      }
+  }
 
-  ServerCallbackUnary* call_;
+  ServerCallbackUnary* call_ = nullptr;
+  bool send_initial_metadata_wanted_ = false;
+  bool finish_wanted_ = false;
+  Status status_wanted_;
 };
 
 /// MakeReactor is a free function to make a simple ServerUnaryReactor that
@@ -514,40 +617,36 @@ template <class Request, class Response>
 class UnimplementedUnaryReactor
     : public experimental::ServerUnaryReactor<Request, Response> {
  public:
+  UnimplementedUnaryReactor() {this->Finish(Status(StatusCode::UNIMPLEMENTED, ""));}
+  
   void OnDone() override { delete this; }
-  void OnStarted(const Request*, Response*) override {
-    this->Finish(Status(StatusCode::UNIMPLEMENTED, ""));
-  }
 };
 
 template <class Request, class Response>
 class UnimplementedReadReactor
     : public experimental::ServerReadReactor<Request, Response> {
  public:
+  UnimplementedReadReactor() {this->Finish(Status(StatusCode::UNIMPLEMENTED, ""));}
+  
   void OnDone() override { delete this; }
-  void OnStarted(Response*) override {
-    this->Finish(Status(StatusCode::UNIMPLEMENTED, ""));
-  }
 };
 
 template <class Request, class Response>
 class UnimplementedWriteReactor
     : public experimental::ServerWriteReactor<Request, Response> {
  public:
+  UnimplementedWriteReactor() {this->Finish(Status(StatusCode::UNIMPLEMENTED, ""));}
+  
   void OnDone() override { delete this; }
-  void OnStarted(const Request*) override {
-    this->Finish(Status(StatusCode::UNIMPLEMENTED, ""));
-  }
 };
 
 template <class Request, class Response>
 class UnimplementedBidiReactor
     : public experimental::ServerBidiReactor<Request, Response> {
  public:
+  UnimplementedBidiReactor() {this->Finish(Status(StatusCode::UNIMPLEMENTED, ""));}
+  
   void OnDone() override { delete this; }
-  void OnStarted() override {
-    this->Finish(Status(StatusCode::UNIMPLEMENTED, ""));
-  }
 };
 
 template <class RequestType, class ResponseType>

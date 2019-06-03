@@ -804,8 +804,7 @@ CallbackTestServiceImpl::BidiStream(ServerContext* context) {
   class Reactor : public ::grpc::experimental::ServerBidiReactor<EchoRequest,
                                                                  EchoResponse> {
    public:
-    explicit Reactor(ServerContext* ctx) : ctx_(ctx) {}
-    void OnStarted() override {
+    explicit Reactor(ServerContext* ctx) : ctx_(ctx) {
       // If 'server_try_cancel' is set in the metadata, the RPC is cancelled by
       // the server by calling ServerContext::TryCancel() depending on the
       // value:
@@ -826,6 +825,8 @@ CallbackTestServiceImpl::BidiStream(ServerContext* context) {
         }
         StartRead(&request_);
       }
+    }
+    void OnStarted() override {
       on_started_done_ = true;
     }
     void OnDone() override { delete this; }
