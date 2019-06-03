@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.20.0</span>
+   &#160;<span id="projectnumber">1.22.0-dev</span>
    </div>
   </td>
  </tr>
@@ -111,7 +111,7 @@ $(function() {
 <div class="fragment"><div class="line">$ grpc_cli call localhost:50051 SayHello &quot;name: &#39;gRPC CLI&#39;&quot;</div></div><!-- fragment --><p>output: </p><div class="fragment"><div class="line">message: &quot;Hello gRPC CLI&quot;</div></div><!-- fragment --><h2>Use Server Reflection in a C++ client</h2>
 <p>Server Reflection can be used by clients to get information about gRPC services at runtime. We've provided a descriptor database called <a href="../test/cpp/util/proto_reflection_descriptor_database.h">grpc::ProtoReflectionDescriptorDatabase</a> which implements the <a href="https://developers.google.com/protocol-buffers/docs/reference/cpp/google.protobuf.descriptor_database#DescriptorDatabase">google::protobuf::DescriptorDatabase</a> interface. It manages the communication between clients and reflection services and the storage of received information. Clients can use it as using a local descriptor database.</p>
 <ul>
-<li>To use Server Reflection with grpc::ProtoReflectionDescriptorDatabase, first initialize an instance with a <a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel. ">grpc::Channel</a>.</li>
+<li>To use Server Reflection with grpc::ProtoReflectionDescriptorDatabase, first initialize an instance with a <a class="el" href="namespacegrpc.html#a3c981ec4941ef822eb01ac99da53ca88">grpc::Channel</a>.</li>
 </ul>
 <div class="fragment"><div class="line">{c++}</div><div class="line">  std::shared_ptr&lt;grpc::Channel&gt; channel =</div><div class="line">      grpc::CreateChannel(server_address, server_cred);</div><div class="line">  grpc::ProtoReflectionDescriptorDatabase reflection_db(channel);</div></div><!-- fragment --><ul>
 <li>Then use this instance to feed a <a href="https://developers.google.com/protocol-buffers/docs/reference/cpp/google.protobuf.descriptor#DescriptorPool">google::protobuf::DescriptorPool</a>.</li>
@@ -133,7 +133,7 @@ $(function() {
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 31 2019 16:39:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

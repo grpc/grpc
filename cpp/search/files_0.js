@@ -11,5 +11,6 @@ var searchData=
   ['atm_5fgcc_5fsync_2eh',['atm_gcc_sync.h',['../impl_2codegen_2atm__gcc__sync_8h.html',1,'(Global Namespace)'],['../support_2atm__gcc__sync_8h.html',1,'(Global Namespace)']]],
   ['atm_5fwindows_2eh',['atm_windows.h',['../impl_2codegen_2atm__windows_8h.html',1,'(Global Namespace)'],['../support_2atm__windows_8h.html',1,'(Global Namespace)']]],
   ['auth_5fcontext_2eh',['auth_context.h',['../grpc_09_09_2impl_2codegen_2security_2auth__context_8h.html',1,'(Global Namespace)'],['../grpc_09_09_2security_2auth__context_8h.html',1,'(Global Namespace)'],['../grpcpp_2impl_2codegen_2security_2auth__context_8h.html',1,'(Global Namespace)'],['../grpcpp_2security_2auth__context_8h.html',1,'(Global Namespace)']]],
-  ['auth_5fmetadata_5fprocessor_2eh',['auth_metadata_processor.h',['../grpc_09_09_2security_2auth__metadata__processor_8h.html',1,'(Global Namespace)'],['../grpcpp_2security_2auth__metadata__processor_8h.html',1,'(Global Namespace)']]]
+  ['auth_5fmetadata_5fprocessor_2eh',['auth_metadata_processor.h',['../grpc_09_09_2security_2auth__metadata__processor_8h.html',1,'(Global Namespace)'],['../grpcpp_2security_2auth__metadata__processor_8h.html',1,'(Global Namespace)']]],
+  ['auth_5fmetadata_5fprocessor_5fimpl_2eh',['auth_metadata_processor_impl.h',['../auth__metadata__processor__impl_8h.html',1,'']]]
 ];

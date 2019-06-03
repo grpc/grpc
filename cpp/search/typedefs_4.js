@@ -6,6 +6,7 @@ var searchData=
   ['genericserverasyncreaderwriter',['GenericServerAsyncReaderWriter',['../namespacegrpc.html#a7b3db9e9e4d0c7faf701c9ebd455196a',1,'grpc']]],
   ['genericserverasyncresponsewriter',['GenericServerAsyncResponseWriter',['../namespacegrpc.html#ad31a4cf505207152c0ffacd00d2120c8',1,'grpc']]],
   ['genericserverasyncwriter',['GenericServerAsyncWriter',['../namespacegrpc.html#a881afd211852397742952ee4058e0f8b',1,'grpc']]],
+  ['genericstub',['GenericStub',['../namespacegrpc.html#ae07513117fb5e9fc1acb5694d882d830',1,'grpc']]],
   ['gpr_5fallocation_5ffunctions',['gpr_allocation_functions',['../alloc_8h.html#a54bbd527f303da4b618adb37ae44efd7',1,'alloc.h']]],
   ['gpr_5fatm',['gpr_atm',['../impl_2codegen_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51',1,'gpr_atm():&#160;atm_gcc_atomic.h'],['../impl_2codegen_2atm__gcc__sync_8h.html#a0a6314f31fcae0666a93961bed98af51',1,'gpr_atm():&#160;atm_gcc_sync.h'],['../impl_2codegen_2atm__windows_8h.html#a0a6314f31fcae0666a93961bed98af51',1,'gpr_atm():&#160;atm_windows.h']]],
   ['gpr_5fcv',['gpr_cv',['../impl_2codegen_2sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885',1,'gpr_cv():&#160;sync_posix.h'],['../impl_2codegen_2sync__windows_8h.html#a81241bed6e85e9b106a1311060a04d9d',1,'gpr_cv():&#160;sync_windows.h']]],
@@ -36,8 +37,6 @@ var searchData=
   ['grpc_5fserver',['grpc_server',['../grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8',1,'grpc_types.h']]],
   ['grpc_5fslice',['grpc_slice',['../grpc_2impl_2codegen_2slice_8h.html#a2a5f8eaa5d8784bfec46ac983644dca2',1,'slice.h']]],
   ['grpc_5fslice_5fbuffer',['grpc_slice_buffer',['../grpc_2impl_2codegen_2slice_8h.html#a96ab1e43093bbd3fa178ae2e819863e4',1,'slice.h']]],
-  ['grpc_5fslice_5frefcount',['grpc_slice_refcount',['../grpc_2impl_2codegen_2slice_8h.html#acb7fc89ea8343fde6d0c09f1ea70dbc4',1,'slice.h']]],
-  ['grpc_5fslice_5frefcount_5fvtable',['grpc_slice_refcount_vtable',['../grpc_2impl_2codegen_2slice_8h.html#a0ba9a84b74d6308678a2f53212b5b3fd',1,'slice.h']]],
   ['grpc_5fsocket_5ffactory',['grpc_socket_factory',['../grpc__types_8h.html#a6bb7fdad6ac88edb9468eb46c801ddb0',1,'grpc_types.h']]],
   ['grpc_5fsocket_5fmutator',['grpc_socket_mutator',['../grpc__types_8h.html#a72c4781284bb0c964d281e6e46cf4a90',1,'grpc_types.h']]]
 ];

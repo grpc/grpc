@@ -79,12 +79,6 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice__refcount__vtable.html">grpc_slice_refcount_vtable</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Slice API.  <a href="structgrpc__slice__refcount__vtable.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice__refcount.html">grpc_slice_refcount</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reference count container for <a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...">grpc_slice</a>.  <a href="structgrpc__slice__refcount.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__slice.html">grpc_slice</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A <a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...">grpc_slice</a> s, if initialized, represents the byte range s.bytes[0..s.length-1].  <a href="structgrpc__slice.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -101,6 +95,7 @@ Data Structures</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
 <tr class="memitem:a6a30245ea694a3915b1413a2f50c9b54"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2slice_8h.html#a6a30245ea694a3915b1413a2f50c9b54">GRPC_SLICE_INLINE_EXTRA_SIZE</a>&#160;&#160;&#160;sizeof(void*)</td></tr>
+<tr class="memdesc:a6a30245ea694a3915b1413a2f50c9b54"><td class="mdescLeft">&#160;</td><td class="mdescRight">Slice API.  <a href="#a6a30245ea694a3915b1413a2f50c9b54">More...</a><br /></td></tr>
 <tr class="separator:a6a30245ea694a3915b1413a2f50c9b54"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae65fc74cb3afbcd3299a1c93f90bae20"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2slice_8h.html#ae65fc74cb3afbcd3299a1c93f90bae20">GRPC_SLICE_INLINED_SIZE</a>&#160;&#160;&#160;(sizeof(size_t) + sizeof(uint8_t*) - 1 + <a class="el" href="impl_2codegen_2slice_8h.html#a6a30245ea694a3915b1413a2f50c9b54">GRPC_SLICE_INLINE_EXTRA_SIZE</a>)</td></tr>
 <tr class="separator:ae65fc74cb3afbcd3299a1c93f90bae20"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -121,12 +116,6 @@ Macros</h2></td></tr>
 Typedefs</h2></td></tr>
 <tr class="memitem:a2a5f8eaa5d8784bfec46ac983644dca2"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2slice_8h.html#a2a5f8eaa5d8784bfec46ac983644dca2">grpc_slice</a></td></tr>
 <tr class="separator:a2a5f8eaa5d8784bfec46ac983644dca2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0ba9a84b74d6308678a2f53212b5b3fd"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="structgrpc__slice__refcount__vtable.html">grpc_slice_refcount_vtable</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2slice_8h.html#a0ba9a84b74d6308678a2f53212b5b3fd">grpc_slice_refcount_vtable</a></td></tr>
-<tr class="memdesc:a0ba9a84b74d6308678a2f53212b5b3fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Slice API.  <a href="#a0ba9a84b74d6308678a2f53212b5b3fd">More...</a><br /></td></tr>
-<tr class="separator:a0ba9a84b74d6308678a2f53212b5b3fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acb7fc89ea8343fde6d0c09f1ea70dbc4"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="structgrpc__slice__refcount.html">grpc_slice_refcount</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2slice_8h.html#acb7fc89ea8343fde6d0c09f1ea70dbc4">grpc_slice_refcount</a></td></tr>
-<tr class="memdesc:acb7fc89ea8343fde6d0c09f1ea70dbc4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reference count container for <a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...">grpc_slice</a>.  <a href="#acb7fc89ea8343fde6d0c09f1ea70dbc4">More...</a><br /></td></tr>
-<tr class="separator:acb7fc89ea8343fde6d0c09f1ea70dbc4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a96ab1e43093bbd3fa178ae2e819863e4"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2slice_8h.html#a96ab1e43093bbd3fa178ae2e819863e4">grpc_slice_buffer</a></td></tr>
 <tr class="memdesc:a96ab1e43093bbd3fa178ae2e819863e4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Represents an expandable array of slices, to be interpreted as a single item.  <a href="#a96ab1e43093bbd3fa178ae2e819863e4">More...</a><br /></td></tr>
 <tr class="separator:a96ab1e43093bbd3fa178ae2e819863e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -175,6 +164,11 @@ Typedefs</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Slice API. </p>
+<p>A slice represents a contiguous reference counted array of bytes. It is cheap to take references to a slice, and it is cheap to create a slice pointing to a subset of another slice.</p>
+<p>The data-structure for slices is exposed here to allow non-gpr code to build slices from whatever data they have available.</p>
+<p>When defining interfaces that handle slices, care should be taken to define reference ownership semantics (who should call unref?) and mutability constraints (is the callee allowed to modify the slice?) </p>
 
 </div>
 </div>
@@ -305,46 +299,10 @@ Typedefs</h2></td></tr>
 
 </div>
 </div>
-<a id="acb7fc89ea8343fde6d0c09f1ea70dbc4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acb7fc89ea8343fde6d0c09f1ea70dbc4">&#9670;&nbsp;</a></span>grpc_slice_refcount</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef struct <a class="el" href="structgrpc__slice__refcount.html">grpc_slice_refcount</a>  <a class="el" href="structgrpc__slice__refcount.html">grpc_slice_refcount</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Reference count container for <a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1]. ...">grpc_slice</a>. </p>
-<p>Contains function pointers to increment and decrement reference counts. Implementations should cleanup when the reference count drops to zero. Typically client code should not touch this, and use grpc_slice_malloc, grpc_slice_new, or grpc_slice_new_with_len instead. </p>
-
-</div>
-</div>
-<a id="a0ba9a84b74d6308678a2f53212b5b3fd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0ba9a84b74d6308678a2f53212b5b3fd">&#9670;&nbsp;</a></span>grpc_slice_refcount_vtable</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef struct <a class="el" href="structgrpc__slice__refcount__vtable.html">grpc_slice_refcount_vtable</a>  <a class="el" href="structgrpc__slice__refcount__vtable.html">grpc_slice_refcount_vtable</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Slice API. </p>
-<p>A slice represents a contiguous reference counted array of bytes. It is cheap to take references to a slice, and it is cheap to create a slice pointing to a subset of another slice.</p>
-<p>The data-structure for slices is exposed here to allow non-gpr code to build slices from whatever data they have available.</p>
-<p>When defining interfaces that handle slices, care should be taken to define reference ownership semantics (who should call unref?) and mutability constraints (is the callee allowed to modify the slice?) </p>
-
-</div>
-</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 17 2019 12:09:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 31 2019 16:39:26 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

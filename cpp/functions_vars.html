@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.20.0</span>
+   &#160;<span id="projectnumber">1.22.0-dev</span>
    </div>
   </td>
  </tr>
@@ -63,11 +63,11 @@ $(function() {
 
 <h3><a id="index_a"></a>- a -</h3><ul>
 <li>addr
-: <a class="el" href="structgrpc_1_1_server_builder_1_1_port.html#a48ca659bcd4106212814803ce666b604">grpc::ServerBuilder::Port</a>
+: <a class="el" href="structgrpc__impl_1_1_server_builder_1_1_port.html#a8f4c7d18434712efbc699e2f1ded5482">grpc_impl::ServerBuilder::Port</a>
 </li>
 <li>algorithm
-: <a class="el" href="classgrpc_1_1_server_builder.html#a27b5a3733140caef60846fc21977d6ba">grpc::ServerBuilder</a>
-, <a class="el" href="structgrpc__compression__options_1_1grpc__compression__options__default__algorithm.html#a3889d2d3a028ca4524606c3d4a206210">grpc_compression_options::grpc_compression_options_default_algorithm</a>
+: <a class="el" href="structgrpc__compression__options_1_1grpc__compression__options__default__algorithm.html#a3889d2d3a028ca4524606c3d4a206210">grpc_compression_options::grpc_compression_options_default_algorithm</a>
+, <a class="el" href="classgrpc__impl_1_1_server_builder.html#ac2db6dc1135723924aa84191e1e30911">grpc_impl::ServerBuilder</a>
 </li>
 <li>args
 : <a class="el" href="structgrpc__channel__args.html#a05aa7aeb14aa9ae5f4d6a34f5c222b76">grpc_channel_args</a>
@@ -100,7 +100,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a54c3a6173cfd54c784475f95d20a77d8">grpc::ServerInterface::BaseAsyncRequest</a>
 </li>
 <li>call_cq_
-: <a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a1372192c43404f40e7046aab632569ab">grpc::ServerInterface::BaseAsyncRequest</a>
+: <a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a75d8c92b99181559ea98823e276d308f">grpc::ServerInterface::BaseAsyncRequest</a>
 </li>
 <li>call_requester
 : <a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a1043accc7322d61b5fdb8c3d2531278a">grpc::internal::MethodHandler::HandlerParameter</a>
@@ -155,7 +155,7 @@ $(function() {
 : <a class="el" href="structgrpc__completion__queue__attributes.html#a0f38aa6990e86d316925b9b9a7db473a">grpc_completion_queue_attributes</a>
 </li>
 <li>creds
-: <a class="el" href="structgrpc_1_1_server_builder_1_1_port.html#a36fb3427af1ad1971cbf63cfa6378973">grpc::ServerBuilder::Port</a>
+: <a class="el" href="structgrpc__impl_1_1_server_builder_1_1_port.html#ad73a8f737058a7353127cc366a2233d3">grpc_impl::ServerBuilder::Port</a>
 </li>
 <li>cs
 : <a class="el" href="structgpr__mu.html#abab5a72a693be27488fb7a9b2cb23e5c">gpr_mu</a>
@@ -187,6 +187,9 @@ $(function() {
 <li>destroy
 : <a class="el" href="structgrpc__arg__pointer__vtable.html#a40604c374509e651a2f3c74b6dd81961">grpc_arg_pointer_vtable</a>
 </li>
+<li>do_not_use_sth_
+: <a class="el" href="classgrpc_1_1internal_1_1_mutex.html#a0efca899f4e6a94e93e4d5e7c8413945">grpc::internal::Mutex</a>
+</li>
 <li>done_intercepting_
 : <a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a6e2125fceb15e9c6673b02ad870a0025">grpc::ServerInterface::BaseAsyncRequest</a>
 </li>
@@ -197,9 +200,6 @@ $(function() {
 <li>enabled_algorithms_bitset
 : <a class="el" href="structgrpc__compression__options.html#a2b584aa8b7ee684f145c75a5035ed800">grpc_compression_options</a>
 </li>
-<li>eq
-: <a class="el" href="structgrpc__slice__refcount__vtable.html#a2a90794c3e3ead5ee4cbe2b492d1788c">grpc_slice_refcount_vtable</a>
-</li>
 <li>error_string
 : <a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__status__on__client.html#a6d5471266248e60c09104ca5bf2e4b63">grpc_op::grpc_op_data::grpc_op_recv_status_on_client</a>
 </li>
@@ -207,6 +207,9 @@ $(function() {
 
 
 <h3><a id="index_f"></a>- f -</h3><ul>
+<li>fd
+: <a class="el" href="structgrpc_1_1experimental_1_1_external_connection_acceptor_1_1_new_connection_parameters.html#a4114f3bc0020a909a13632e4a37d0da8">grpc::experimental::ExternalConnectionAcceptor::NewConnectionParameters</a>
+</li>
 <li>file
 : <a class="el" href="structgpr__log__func__args.html#a7961b2303b10d4f66d1aee6b5857ef89">gpr_log_func_args</a>
 </li>
@@ -239,15 +242,12 @@ $(function() {
 
 
 <h3><a id="index_h"></a>- h -</h3><ul>
-<li>hash
-: <a class="el" href="structgrpc__slice__refcount__vtable.html#a497f51ccb0631966ae530a8e18737da2">grpc_slice_refcount_vtable</a>
-</li>
 <li>hijacked_
 : <a class="el" href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#afbe70b09f5da1ddb9c01779de8fb672d">grpc::internal::CallOpSendInitialMetadata</a>
 </li>
 <li>host
-: <a class="el" href="structgrpc_1_1_server_builder_1_1_named_service.html#a7ade773ace77897e1d291a48f1d46ee9">grpc::ServerBuilder::NamedService</a>
-, <a class="el" href="structgrpc__call__details.html#ae241885cfb88a9036b02df6436437caf">grpc_call_details</a>
+: <a class="el" href="structgrpc__call__details.html#ae241885cfb88a9036b02df6436437caf">grpc_call_details</a>
+, <a class="el" href="structgrpc__impl_1_1_server_builder_1_1_named_service.html#aa0553f85d51dd3d3c7027ffa7b670f96">grpc_impl::ServerBuilder::NamedService</a>
 </li>
 </ul>
 
@@ -273,7 +273,8 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#ad2ac2682076aa69888df07faa62f137e">grpc::ServerInterface::BaseAsyncRequest</a>
 </li>
 <li>internal_data
-: <a class="el" href="structgrpc__metadata.html#af57c3b2e391435caff04793bf30243f0">grpc_metadata</a>
+: <a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a940af1913445d4059385a7980372b602">grpc::internal::MethodHandler::HandlerParameter</a>
+, <a class="el" href="structgrpc__metadata.html#af57c3b2e391435caff04793bf30243f0">grpc_metadata</a>
 </li>
 <li>internal_next
 : <a class="el" href="structgrpc__experimental__completion__queue__functor.html#ae46538af71e1db1da0b2ffc27a3b0da0">grpc_experimental_completion_queue_functor</a>
@@ -283,9 +284,9 @@ $(function() {
 </li>
 <li>is_set
 : <a class="el" href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#a8d0cb47bccc7bcbd4bb77121e7a689c6">grpc::internal::CallOpSendInitialMetadata</a>
-, <a class="el" href="classgrpc_1_1_server_builder.html#ab2b0b337e27ae80796675a3dd224ec3a">grpc::ServerBuilder</a>
 , <a class="el" href="structgrpc__compression__options_1_1grpc__compression__options__default__algorithm.html#a2cb65e409b0c08519a43812baf000888">grpc_compression_options::grpc_compression_options_default_algorithm</a>
 , <a class="el" href="structgrpc__compression__options_1_1grpc__compression__options__default__level.html#ac870ba7683a8da44a3bfb3086553fc60">grpc_compression_options::grpc_compression_options_default_level</a>
+, <a class="el" href="classgrpc__impl_1_1_server_builder.html#a35045db56c039b007371dc24c4e18ae8">grpc_impl::ServerBuilder</a>
 , <a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__initial__metadata_1_1grpc__op__send__initialaea3b3a42c7d59f33d8b29d9f8d06219.html#ae7b5c487af58eeee763326b2374aa3fe">grpc_op::grpc_op_data::grpc_op_send_initial_metadata::grpc_op_send_initial_metadata_maybe_compression_level</a>
 </li>
 </ul>
@@ -310,8 +311,8 @@ $(function() {
 </li>
 <li>level
 : <a class="el" href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#a00956f94efecb56df5d49ba24c39af77">grpc::internal::CallOpSendInitialMetadata</a>
-, <a class="el" href="classgrpc_1_1_server_builder.html#a99bc7fd30172c4e154b6942e1c221a1c">grpc::ServerBuilder</a>
 , <a class="el" href="structgrpc__compression__options_1_1grpc__compression__options__default__level.html#a9ea42c67ca5ad8d21f477370ec370b64">grpc_compression_options::grpc_compression_options_default_level</a>
+, <a class="el" href="classgrpc__impl_1_1_server_builder.html#a2056da96b21166b2954526979905fab2">grpc_impl::ServerBuilder</a>
 , <a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__initial__metadata_1_1grpc__op__send__initialaea3b3a42c7d59f33d8b29d9f8d06219.html#a4f5288a3e97d34f07f98792dda92ae8b">grpc_op::grpc_op_data::grpc_op_send_initial_metadata::grpc_op_send_initial_metadata_maybe_compression_level</a>
 </li>
 <li>line
@@ -346,6 +347,9 @@ $(function() {
 <li>method
 : <a class="el" href="structgrpc__call__details.html#a86024f71c0534c2e454a73f241691717">grpc_call_details</a>
 </li>
+<li>mu_
+: <a class="el" href="classgrpc_1_1internal_1_1_mutex.html#ab42b4f726c5493f927f6bbe9fee74874">grpc::internal::Mutex</a>
+</li>
 </ul>
 
 
@@ -354,7 +358,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_server_interface_1_1_registered_async_request.html#a1537a99e04bf83024dff6165e17e59d4">grpc::ServerInterface::RegisteredAsyncRequest</a>
 </li>
 <li>notification_cq_
-: <a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a60cef9055431a6387b0cc5dc4deba8a9">grpc::ServerInterface::BaseAsyncRequest</a>
+: <a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a958c362ff3f3076a78f2871aeac4f8e3">grpc::ServerInterface::BaseAsyncRequest</a>
 </li>
 <li>npos
 : <a class="el" href="classgrpc_1_1string__ref.html#af30b4be3e59841594b784c537fa68244">grpc::string_ref</a>
@@ -383,17 +387,17 @@ $(function() {
 : <a class="el" href="structgrpc__arg_1_1grpc__arg__value_1_1grpc__arg__pointer.html#ae710895cf375541f68bcf2c46940c63e">grpc_arg::grpc_arg_value::grpc_arg_pointer</a>
 </li>
 <li>pem_cert_chain
-: <a class="el" href="structgrpc_1_1_ssl_credentials_options.html#a01015d8ec7dbf49f2ac3cd21f21d383b">grpc::SslCredentialsOptions</a>
+: <a class="el" href="structgrpc__impl_1_1_ssl_credentials_options.html#aebf33c57acdbc3a11998370cc7b943dd">grpc_impl::SslCredentialsOptions</a>
 </li>
 <li>pem_key_cert_pairs
 : <a class="el" href="structgrpc_1_1_ssl_server_credentials_options.html#a3a042e846edd3d1e2f24e846e36c694d">grpc::SslServerCredentialsOptions</a>
 </li>
 <li>pem_private_key
-: <a class="el" href="structgrpc_1_1_ssl_credentials_options.html#a5b661f8daf02db7283774e0fb9a8979e">grpc::SslCredentialsOptions</a>
+: <a class="el" href="structgrpc__impl_1_1_ssl_credentials_options.html#a3315b434219f4041b502c7fc4363d50f">grpc_impl::SslCredentialsOptions</a>
 </li>
 <li>pem_root_certs
-: <a class="el" href="structgrpc_1_1_ssl_credentials_options.html#a0ce1730020e18d04b6af48c88e069869">grpc::SslCredentialsOptions</a>
-, <a class="el" href="structgrpc_1_1_ssl_server_credentials_options.html#acdde73dba83ee30aeda4a678f5ce8e74">grpc::SslServerCredentialsOptions</a>
+: <a class="el" href="structgrpc_1_1_ssl_server_credentials_options.html#acdde73dba83ee30aeda4a678f5ce8e74">grpc::SslServerCredentialsOptions</a>
+, <a class="el" href="structgrpc__impl_1_1_ssl_credentials_options.html#a0a00552b843196f3e62eb6d904cff8fc">grpc_impl::SslCredentialsOptions</a>
 </li>
 <li>pointer
 : <a class="el" href="uniongrpc__arg_1_1grpc__arg__value.html#aed77f552b492a65ec44d848589b57570">grpc_arg::grpc_arg_value</a>
@@ -407,6 +411,9 @@ $(function() {
 <h3><a id="index_r"></a>- r -</h3><ul>
 <li>raw
 : <a class="el" href="uniongrpc__byte__buffer_1_1grpc__byte__buffer__data.html#a1b18536aa82c2ad37c7a22d4485d280d">grpc_byte_buffer::grpc_byte_buffer_data</a>
+</li>
+<li>read_buffer
+: <a class="el" href="structgrpc_1_1experimental_1_1_external_connection_acceptor_1_1_new_connection_parameters.html#af31347c671e30f59ca66104faf34ff0f">grpc::experimental::ExternalConnectionAcceptor::NewConnectionParameters</a>
 </li>
 <li>realloc_fn
 : <a class="el" href="structgpr__allocation__functions.html#a6e045f05fd723164fb8d6d6eeeed305e">gpr_allocation_functions</a>
@@ -425,9 +432,6 @@ $(function() {
 <li>recv_status_on_client
 : <a class="el" href="uniongrpc__op_1_1grpc__op__data.html#a1bae2dbd6283da5ebecd33489f5e3d37">grpc_op::grpc_op_data</a>
 </li>
-<li>ref
-: <a class="el" href="structgrpc__slice__refcount__vtable.html#ac32e1fb1e52cc844f59e8ab78afff853">grpc_slice_refcount_vtable</a>
-</li>
 <li>refcount
 : <a class="el" href="structgrpc__slice.html#a467ef319d024f1897c7ff3bdadb78493">grpc_slice</a>
 </li>
@@ -441,7 +445,7 @@ $(function() {
 : <a class="el" href="uniongrpc__byte__buffer_1_1grpc__byte__buffer__data.html#a83dbb8e4a7b9660b1d8b3a21b68128c0">grpc_byte_buffer::grpc_byte_buffer_data</a>
 , <a class="el" href="structgrpc__byte__buffer.html#a0945e647b3a7b14083537a6d3e51fde5">grpc_byte_buffer</a>
 , <a class="el" href="structgrpc__call__details.html#a5c323f3f0c94cbb867f13453dd43dd9d">grpc_call_details</a>
-, <a class="el" href="uniongrpc__op_1_1grpc__op__data.html#ad3859f113f08d8564d504161c263bc08">grpc_op::grpc_op_data</a>
+, <a class="el" href="uniongrpc__op_1_1grpc__op__data.html#ada262cf2f51816ed6a9e5b32c41bdf03">grpc_op::grpc_op_data</a>
 , <a class="el" href="structgrpc__op.html#a58d279ba14f133153eb0ee801deb74f5">grpc_op</a>
 </li>
 </ul>
@@ -449,7 +453,7 @@ $(function() {
 
 <h3><a id="index_s"></a>- s -</h3><ul>
 <li>selected_port
-: <a class="el" href="structgrpc_1_1_server_builder_1_1_port.html#a82f41a22f8096e017f08345081141cf1">grpc::ServerBuilder::Port</a>
+: <a class="el" href="structgrpc__impl_1_1_server_builder_1_1_port.html#adf95173d7c1d72fab39adc6d414a221a">grpc_impl::ServerBuilder::Port</a>
 </li>
 <li>send_
 : <a class="el" href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#a20cdbc5d2db285e523f700ff4f535268">grpc::internal::CallOpSendInitialMetadata</a>
@@ -471,7 +475,7 @@ $(function() {
 : <a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a3e6c2bce4e404620dc42c9f2c336a6c6">grpc::internal::MethodHandler::HandlerParameter</a>
 </li>
 <li>service
-: <a class="el" href="structgrpc_1_1_server_builder_1_1_named_service.html#ae9f70f6e8f8f7483bdabee3866e8c443">grpc::ServerBuilder::NamedService</a>
+: <a class="el" href="structgrpc__impl_1_1_server_builder_1_1_named_service.html#acb2c516380e1a70e36a578c55dd51a9b">grpc_impl::ServerBuilder::NamedService</a>
 </li>
 <li>service_config_json
 : <a class="el" href="structgrpc__channel__info.html#a578275f6c9da1610e3bf2f99a89d14ba">grpc_channel_info</a>
@@ -503,9 +507,6 @@ $(function() {
 <li>string
 : <a class="el" href="uniongrpc__arg_1_1grpc__arg__value.html#afd7cc41a1d8dd36aba15faa4a6c426e2">grpc_arg::grpc_arg_value</a>
 </li>
-<li>sub_refcount
-: <a class="el" href="structgrpc__slice__refcount.html#a113ae62eac88e4180feb9ecc80e0f2f9">grpc_slice_refcount</a>
-</li>
 <li>success
 : <a class="el" href="structgrpc__event.html#a99d4215e5df50869af320b1cca5540db">grpc_event</a>
 </li>
@@ -520,7 +521,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#ace41bf173c28a84f9f9311cc4fafef9d">grpc::ServerInterface::BaseAsyncRequest</a>
 </li>
 <li>target_service_accounts
-: <a class="el" href="structgrpc_1_1experimental_1_1_alts_credentials_options.html#a631955176e3f90143b42a89047353bc4">grpc::experimental::AltsCredentialsOptions</a>
+: <a class="el" href="structgrpc__impl_1_1experimental_1_1_alts_credentials_options.html#a51caf7edc34ec2f5c30c6d7aca619e75">grpc_impl::experimental::AltsCredentialsOptions</a>
 </li>
 <li>trailing_metadata
 : <a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__status__on__client.html#ac9335d5e1ce9d7accc13364e1f772253">grpc_op::grpc_op_data::grpc_op_recv_status_on_client</a>
@@ -546,13 +547,6 @@ $(function() {
 </ul>
 
 
-<h3><a id="index_u"></a>- u -</h3><ul>
-<li>unref
-: <a class="el" href="structgrpc__slice__refcount__vtable.html#aff300ff56298de4fd0d497ac005692ad">grpc_slice_refcount_vtable</a>
-</li>
-</ul>
-
-
 <h3><a id="index_v"></a>- v -</h3><ul>
 <li>value
 : <a class="el" href="structgpr__stats__counter.html#ab9338ff7b5fd9f0c0830a8a788aab04a">gpr_stats_counter</a>
@@ -564,7 +558,6 @@ $(function() {
 </li>
 <li>vtable
 : <a class="el" href="structgrpc__arg_1_1grpc__arg__value_1_1grpc__arg__pointer.html#a9ac50b325433ccb4c4a6f617ad4fdd8f">grpc_arg::grpc_arg_value::grpc_arg_pointer</a>
-, <a class="el" href="structgrpc__slice__refcount.html#ab35b82d586e9ca84f9d42af591616f98">grpc_slice_refcount</a>
 </li>
 </ul>
 
@@ -577,7 +570,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 31 2019 16:39:28 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

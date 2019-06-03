@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.20.0</span>
+   &#160;<span id="projectnumber">1.22.0-dev</span>
    </div>
   </td>
  </tr>
@@ -78,6 +78,7 @@ $(function() {
 <code>#include &lt;<a class="el" href="callback__common_8h_source.html">grpcpp/impl/codegen/callback_common.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2config_8h_source.html">grpcpp/impl/codegen/config.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2core__codegen__interface_8h_source.html">grpcpp/impl/codegen/core_codegen_interface.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="impl_2codegen_2message__allocator_8h_source.html">grpcpp/impl/codegen/message_allocator.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2server__context_8h_source.html">grpcpp/impl/codegen/server_context.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2server__interface_8h_source.html">grpcpp/impl/codegen/server_interface.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2status_8h_source.html">grpcpp/impl/codegen/status.h</a>&gt;</code><br />
@@ -86,13 +87,21 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_callback_client_streaming_handler.html">grpc::internal::CallbackClientStreamingHandler&lt; RequestType, ResponseType &gt;</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_callback_server_streaming_handler.html">grpc::internal::CallbackServerStreamingHandler&lt; RequestType, ResponseType &gt;</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_callback_bidi_handler.html">grpc::internal::CallbackBidiHandler&lt; RequestType, ResponseType &gt;</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_server_reactor.html">grpc::internal::ServerReactor</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_default_message_holder.html">grpc::internal::DefaultMessageHolder&lt; Request, Response &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html">grpc::experimental::ServerReadReactor&lt; Request, Response &gt;</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><em><a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html" title="ServerReadReactor is the interface for a client-streaming RPC. ">ServerReadReactor</a></em> is the interface for a client-streaming RPC.  <a href="classgrpc_1_1experimental_1_1_server_read_reactor.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_write_reactor.html">grpc::experimental::ServerWriteReactor&lt; Request, Response &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><em><a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html" title="ServerReadReactor is the interface for a client-streaming RPC. ">ServerReadReactor</a></em> is the interface for a server-streaming RPC.  <a href="classgrpc_1_1experimental_1_1_server_write_reactor.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><em><a class="el" href="classgrpc_1_1experimental_1_1_server_write_reactor.html" title="ServerWriteReactor is the interface for a server-streaming RPC. ">ServerWriteReactor</a></em> is the interface for a server-streaming RPC.  <a href="classgrpc_1_1experimental_1_1_server_write_reactor.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html">grpc::experimental::ServerBidiReactor&lt; Request, Response &gt;</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><em><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC. ">ServerBidiReactor</a></em> is the interface for a bidirectional streaming RPC.  <a href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#details">More...</a><br /></td></tr>
@@ -112,7 +121,7 @@ Data Structures</h2></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><em><a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html" title="ServerReadReactor is the interface for a client-streaming RPC. ">ServerReadReactor</a></em> is the interface for a client-streaming RPC.  <a href="classgrpc_1_1experimental_1_1_server_read_reactor.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_write_reactor.html">grpc::experimental::ServerWriteReactor&lt; Request, Response &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><em><a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html" title="ServerReadReactor is the interface for a client-streaming RPC. ">ServerReadReactor</a></em> is the interface for a server-streaming RPC.  <a href="classgrpc_1_1experimental_1_1_server_write_reactor.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><em><a class="el" href="classgrpc_1_1experimental_1_1_server_write_reactor.html" title="ServerWriteReactor is the interface for a server-streaming RPC. ">ServerWriteReactor</a></em> is the interface for a server-streaming RPC.  <a href="classgrpc_1_1experimental_1_1_server_write_reactor.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_unimplemented_read_reactor.html">grpc::internal::UnimplementedReadReactor&lt; Request, Response &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -144,7 +153,7 @@ Namespaces</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 31 2019 16:39:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

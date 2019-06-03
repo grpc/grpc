@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.20.0</span>
+   &#160;<span id="projectnumber">1.22.0-dev</span>
    </div>
   </td>
  </tr>
@@ -63,10 +63,13 @@ $(function() {
 
 <h3><a id="index_a"></a>- a -</h3><ul>
 <li>AddChannelArgument()
-: <a class="el" href="classgrpc_1_1_server_builder.html#aefdac3407920a99d119c946d255b100c">grpc::ServerBuilder</a>
+: <a class="el" href="classgrpc__impl_1_1_server_builder.html#ad2ed9b377fb7395b8d79de33aeb66723">grpc_impl::ServerBuilder</a>
 </li>
 <li>AddCompletionQueue()
-: <a class="el" href="classgrpc_1_1_server_builder.html#a960d55977e1aef56fd7b582037a01bbd">grpc::ServerBuilder</a>
+: <a class="el" href="classgrpc__impl_1_1_server_builder.html#adbb6da96e1f9d2d9fee2a0cbc9261023">grpc_impl::ServerBuilder</a>
+</li>
+<li>AddExternalConnectionAcceptor()
+: <a class="el" href="classgrpc__impl_1_1_server_builder_1_1experimental__type.html#ab521dff00d2385c4d68a9acc85be0d11">grpc_impl::ServerBuilder::experimental_type</a>
 </li>
 <li>AddHold()
 : <a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#aa9a0fe5ae3e4ac8a19e7b29f150fe48f">grpc::experimental::ClientBidiReactor&lt; Request, Response &gt;</a>
@@ -86,9 +89,9 @@ $(function() {
 : <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#ac56d8536b20c758ba2e9fc430d286f23">grpc::internal::InterceptorBatchMethodsImpl</a>
 </li>
 <li>AddListeningPort()
-: <a class="el" href="classgrpc_1_1_server.html#a8b8678faf043eaecc0fda4ebf526d5db">grpc::Server</a>
-, <a class="el" href="classgrpc_1_1_server_builder.html#a5bf2d8c40e6b4ca170b9ee927d4db326">grpc::ServerBuilder</a>
-, <a class="el" href="classgrpc_1_1_server_interface.html#ae3716834f7d4aec1883e36e99c9c5123">grpc::ServerInterface</a>
+: <a class="el" href="classgrpc_1_1_server_interface.html#abff5950c3060115c7d85f00b4feced64">grpc::ServerInterface</a>
+, <a class="el" href="classgrpc__impl_1_1_server.html#a881ba9c01a60f4ce5d98dfd81462a831">grpc_impl::Server</a>
+, <a class="el" href="classgrpc__impl_1_1_server_builder.html#ad64d81f11dc296605356cc784161b576">grpc_impl::ServerBuilder</a>
 </li>
 <li>AddMetadata()
 : <a class="el" href="classgrpc_1_1_client_context.html#a69a026f073ef5934697568d689440bd4">grpc::ClientContext</a>
@@ -113,7 +116,7 @@ $(function() {
 , <a class="el" href="classgrpc_1_1internal_1_1_call_op_server_send_status.html#a881f48f2e58aad64e86fa1391c3231b4">grpc::internal::CallOpServerSendStatus</a>
 </li>
 <li>AddPort()
-: <a class="el" href="classgrpc_1_1_server_1_1_global_callbacks.html#a81922613de93b0565a282daada8ec12e">grpc::Server::GlobalCallbacks</a>
+: <a class="el" href="classgrpc__impl_1_1_server_1_1_global_callbacks.html#a528b866dc5354a0fa1c822f7ca3a8826">grpc_impl::Server::GlobalCallbacks</a>
 </li>
 <li>AddProperty()
 : <a class="el" href="classgrpc_1_1_auth_context.html#add9dbb40b1a822f683a7ebad71e774f2">grpc::AuthContext</a>
@@ -122,7 +125,10 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_server_context.html#ac30e12c4ee3ca008522b24157f4f886c">grpc::ServerContext</a>
 </li>
 <li>Alarm()
-: <a class="el" href="classgrpc__impl_1_1_alarm.html#a7af4a0f577608f5ddd208cc7b85b500b">grpc_impl::Alarm</a>
+: <a class="el" href="classgrpc__impl_1_1_alarm.html#aec1e4de4038eaac76c5cf29db1ec6b58">grpc_impl::Alarm</a>
+</li>
+<li>AllocateMessages()
+: <a class="el" href="classgrpc_1_1experimental_1_1_message_allocator.html#a9627bd3f63ab330465cd4c155bb8cc00">grpc::experimental::MessageAllocator&lt; RequestT, ResponseT &gt;</a>
 </li>
 <li>AllowNoMessage()
 : <a class="el" href="classgrpc_1_1internal_1_1_call_op_generic_recv_message.html#ad49da2fc6860e1ce453a55268035582f">grpc::internal::CallOpGenericRecvMessage</a>
@@ -132,14 +138,14 @@ $(function() {
 : <a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html#a449d1968bd3f432680b35f66f3586ea1">grpc::internal::RpcServiceMethod</a>
 </li>
 <li>ApplyToCall()
-: <a class="el" href="classgrpc_1_1_call_credentials.html#aa9278e08b5c6144247766c78cf4b53d1">grpc::CallCredentials</a>
+: <a class="el" href="classgrpc__impl_1_1_call_credentials.html#a6b757e177404ee4226ea2c7313e2fba9">grpc_impl::CallCredentials</a>
 </li>
 <li>arr()
 : <a class="el" href="classgrpc_1_1internal_1_1_metadata_map.html#a855ac822480802c3e98dc2a645d01812">grpc::internal::MetadataMap</a>
 </li>
 <li>AsSecureCredentials()
-: <a class="el" href="classgrpc_1_1_call_credentials.html#a2452df1e7847eed5e11588a213f41937">grpc::CallCredentials</a>
-, <a class="el" href="classgrpc_1_1_channel_credentials.html#ac32961bb5ef29ba46bddaeb80fafd551">grpc::ChannelCredentials</a>
+: <a class="el" href="classgrpc__impl_1_1_call_credentials.html#a979f9bb0d97c002a7d8f4213a68186f2">grpc_impl::CallCredentials</a>
+, <a class="el" href="classgrpc__impl_1_1_channel_credentials.html#a4699bf27d3b181fed110afbca4bb9d16">grpc_impl::ChannelCredentials</a>
 </li>
 <li>assert_fail()
 : <a class="el" href="classgrpc_1_1_core_codegen_interface.html#a15cf8da5fe356167811e101ffa1fbf2c">grpc::CoreCodegenInterface</a>
@@ -148,7 +154,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_async_generic_service.html#a8e7ae6f6010c1a6a0c98a7a252001315">grpc::AsyncGenericService</a>
 </li>
 <li>AsyncNext()
-: <a class="el" href="classgrpc_1_1_completion_queue.html#a290ddf3d96e6d1d5886580e60b0602b4">grpc::CompletionQueue</a>
+: <a class="el" href="classgrpc__impl_1_1_completion_queue.html#a24cf4713366562fd4a1ff90434e23829">grpc_impl::CompletionQueue</a>
 </li>
 <li>AsyncNotifyWhenDone()
 : <a class="el" href="classgrpc_1_1_server_context.html#aafcb8e430e3d81bcd3f0a88701a19fba">grpc::ServerContext</a>
@@ -158,13 +164,13 @@ $(function() {
 , <a class="el" href="classgrpc_1_1_server_context.html#a4fab4435aac1be0a92e246507e4167ce">grpc::ServerContext</a>
 </li>
 <li>AuthPropertyIterator()
-: <a class="el" href="classgrpc_1_1_auth_property_iterator.html#aee44bb7255a99611cf490532b7e110d5">grpc::AuthPropertyIterator</a>
+: <a class="el" href="classgrpc_1_1_auth_property_iterator.html#a2885e02ba1b9caad818a1bcdf648d949">grpc::AuthPropertyIterator</a>
 </li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 31 2019 16:39:28 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

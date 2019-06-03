@@ -96,6 +96,7 @@ var searchData=
   ['grpc_5fcustom_5ffiledescriptorproto',['GRPC_CUSTOM_FILEDESCRIPTORPROTO',['../grpcpp_2impl_2codegen_2config__protobuf_8h.html#a7623b094a81b68479ff002b2bc769f2d',1,'config_protobuf.h']]],
   ['grpc_5fcustom_5fjsonutil',['GRPC_CUSTOM_JSONUTIL',['../grpcpp_2impl_2codegen_2config__protobuf_8h.html#ada778ba699b4ea60332c78a9db985a62',1,'config_protobuf.h']]],
   ['grpc_5fcustom_5fmessage',['GRPC_CUSTOM_MESSAGE',['../grpcpp_2impl_2codegen_2config__protobuf_8h.html#a9dada7a420bf3d91c428fa9699bd2ef3',1,'config_protobuf.h']]],
+  ['grpc_5fcustom_5fmessagelite',['GRPC_CUSTOM_MESSAGELITE',['../grpcpp_2impl_2codegen_2config__protobuf_8h.html#a34a671f55cda98f5ab45ff5736d0a724',1,'config_protobuf.h']]],
   ['grpc_5fcustom_5fmethoddescriptor',['GRPC_CUSTOM_METHODDESCRIPTOR',['../grpcpp_2impl_2codegen_2config__protobuf_8h.html#a2581d3be5948aac579632365325add1a',1,'config_protobuf.h']]],
   ['grpc_5fcustom_5fprotobuf_5fint64',['GRPC_CUSTOM_PROTOBUF_INT64',['../grpcpp_2impl_2codegen_2config__protobuf_8h.html#a42a6e2b3f439893077e50cdaa72e98f2',1,'config_protobuf.h']]],
   ['grpc_5fcustom_5fservicedescriptor',['GRPC_CUSTOM_SERVICEDESCRIPTOR',['../grpcpp_2impl_2codegen_2config__protobuf_8h.html#a3baf39e7b8f0ae076975f6d32d1cfb69',1,'config_protobuf.h']]],

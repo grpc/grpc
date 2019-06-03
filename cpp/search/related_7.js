@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['protobufferreader',['ProtoBufferReader',['../classgrpc_1_1_byte_buffer.html#a1278d8ce6e19fac8aabb59d1a17240bf',1,'grpc::ByteBuffer']]],
-  ['protobufferwriter',['ProtoBufferWriter',['../classgrpc_1_1_byte_buffer.html#a2d4cd35e8ba80deb9d72f2f570d71962',1,'grpc::ByteBuffer']]]
+  ['rpcmethodhandler',['RpcMethodHandler',['../classgrpc_1_1_byte_buffer.html#a76b9bb18b02084e9eaa8c9b99c668676',1,'grpc::ByteBuffer']]]
 ];

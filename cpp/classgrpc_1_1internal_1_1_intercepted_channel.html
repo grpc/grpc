@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.20.0</span>
+   &#160;<span id="projectnumber">1.22.0-dev</span>
    </div>
   </td>
  </tr>
@@ -86,10 +86,10 @@ Public Member Functions</h2></td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1_channel_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1_channel_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1_channel_interface.html">grpc::ChannelInterface</a></td></tr>
 <tr class="memitem:a3f5145d4778aa952540dc9983cefe13f inherit pub_methods_classgrpc_1_1_channel_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a3f5145d4778aa952540dc9983cefe13f">~ChannelInterface</a> ()</td></tr>
 <tr class="separator:a3f5145d4778aa952540dc9983cefe13f inherit pub_methods_classgrpc_1_1_channel_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac2e0a00712088ca461359a78eb0e2c69 inherit pub_methods_classgrpc_1_1_channel_interface"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:ac2e0a00712088ca461359a78eb0e2c69 inherit pub_methods_classgrpc_1_1_channel_interface"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#ac2e0a00712088ca461359a78eb0e2c69">NotifyOnStateChange</a> (<a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a> last_observed, T deadline, <a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *cq, void *tag)</td></tr>
-<tr class="memdesc:ac2e0a00712088ca461359a78eb0e2c69 inherit pub_methods_classgrpc_1_1_channel_interface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the <em>tag</em> on <em>cq</em> when the channel state is changed or <em>deadline</em> expires.  <a href="classgrpc_1_1_channel_interface.html#ac2e0a00712088ca461359a78eb0e2c69">More...</a><br /></td></tr>
-<tr class="separator:ac2e0a00712088ca461359a78eb0e2c69 inherit pub_methods_classgrpc_1_1_channel_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2acd32839ec4e5e92fe4b796a913623f inherit pub_methods_classgrpc_1_1_channel_interface"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a2acd32839ec4e5e92fe4b796a913623f inherit pub_methods_classgrpc_1_1_channel_interface"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a2acd32839ec4e5e92fe4b796a913623f">NotifyOnStateChange</a> (<a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a> last_observed, T deadline, ::<a class="el" href="classgrpc__impl_1_1_completion_queue.html">grpc_impl::CompletionQueue</a> *cq, void *tag)</td></tr>
+<tr class="memdesc:a2acd32839ec4e5e92fe4b796a913623f inherit pub_methods_classgrpc_1_1_channel_interface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the <em>tag</em> on <em>cq</em> when the channel state is changed or <em>deadline</em> expires.  <a href="classgrpc_1_1_channel_interface.html#a2acd32839ec4e5e92fe4b796a913623f">More...</a><br /></td></tr>
+<tr class="separator:a2acd32839ec4e5e92fe4b796a913623f inherit pub_methods_classgrpc_1_1_channel_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a70567e7ea3d1a967ecf5ecdc220ac27e inherit pub_methods_classgrpc_1_1_channel_interface"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:a70567e7ea3d1a967ecf5ecdc220ac27e inherit pub_methods_classgrpc_1_1_channel_interface"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a70567e7ea3d1a967ecf5ecdc220ac27e">WaitForStateChange</a> (<a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a> last_observed, T deadline)</td></tr>
 <tr class="memdesc:a70567e7ea3d1a967ecf5ecdc220ac27e inherit pub_methods_classgrpc_1_1_channel_interface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Blocking wait for channel state change or <em>deadline</em> expiration.  <a href="classgrpc_1_1_channel_interface.html#a70567e7ea3d1a967ecf5ecdc220ac27e">More...</a><br /></td></tr>
@@ -194,7 +194,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 31 2019 16:39:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

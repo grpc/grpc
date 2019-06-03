@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.20.0</span>
+   &#160;<span id="projectnumber">1.22.0-dev</span>
    </div>
   </td>
  </tr>
@@ -102,7 +102,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:aa069b33a6b2adc4c84bfdd4d9ffd3693"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indicate that the stream is to be finished and the trailing metadata and RPC status are to be sent.  <a href="#aa069b33a6b2adc4c84bfdd4d9ffd3693">More...</a><br /></td></tr>
 <tr class="separator:aa069b33a6b2adc4c84bfdd4d9ffd3693"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2a3d2a6d7085e921848aa0bdb000a047"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a2a3d2a6d7085e921848aa0bdb000a047">OnStarted</a> (<a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *context)</td></tr>
-<tr class="memdesc:a2a3d2a6d7085e921848aa0bdb000a047"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notify the application that a streaming RPC has started and that it is now ok to call any operation initation method.  <a href="#a2a3d2a6d7085e921848aa0bdb000a047">More...</a><br /></td></tr>
+<tr class="memdesc:a2a3d2a6d7085e921848aa0bdb000a047"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notify the application that a streaming RPC has started and that it is now ok to call any operation initiation method.  <a href="#a2a3d2a6d7085e921848aa0bdb000a047">More...</a><br /></td></tr>
 <tr class="separator:a2a3d2a6d7085e921848aa0bdb000a047"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa3791b138e593af207127c22fc9f549f"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#aa3791b138e593af207127c22fc9f549f">OnSendInitialMetadataDone</a> (bool ok)</td></tr>
 <tr class="memdesc:aa3791b138e593af207127c22fc9f549f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that an explicit StartSendInitialMetadata operation completed.  <a href="#aa3791b138e593af207127c22fc9f549f">More...</a><br /></td></tr>
@@ -364,7 +364,8 @@ template&lt;class Request, class Response&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Notify the application that a streaming RPC has started and that it is now ok to call any operation initation method. </p>
+<p>Notify the application that a streaming RPC has started and that it is now ok to call any operation initiation method. </p>
+<p>An RPC is considered started after the server has received all initial metadata from the client, which is a result of the client calling StartCall().</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">context</td><td>The context object now associated with this RPC </td></tr>
@@ -694,7 +695,7 @@ template&lt;class Request, class Response&gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 31 2019 16:39:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

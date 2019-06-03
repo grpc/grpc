@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['max_5fpollers',['MAX_POLLERS',['../classgrpc_1_1_server_builder.html#aff66bd93cba7d4240a64550fe1fca88da3b9b382bb2f70cabe793e3e3fd325910',1,'grpc::ServerBuilder']]],
-  ['min_5fpollers',['MIN_POLLERS',['../classgrpc_1_1_server_builder.html#aff66bd93cba7d4240a64550fe1fca88da74d9b7562f58282d93a3a0e5fb02ab02',1,'grpc::ServerBuilder']]]
+  ['max_5fpollers',['MAX_POLLERS',['../classgrpc__impl_1_1_server_builder.html#a2df88297f8a97c527e7bb4d6898c5d5da20ca5e9ea66bde1823d7fb96b1d25341',1,'grpc_impl::ServerBuilder']]],
+  ['min_5fpollers',['MIN_POLLERS',['../classgrpc__impl_1_1_server_builder.html#a2df88297f8a97c527e7bb4d6898c5d5dad35d859ab44e2ab4d2e32846acd73840',1,'grpc_impl::ServerBuilder']]]
 ];

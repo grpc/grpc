@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.20.0</span>
+   &#160;<span id="projectnumber">1.22.0-dev</span>
    </div>
   </td>
  </tr>
@@ -121,12 +121,12 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:a4c80fc106b3e6ef41cfca7d8ab8eda43"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc_1_1_server_interface_1_1experimental__registration__interface.html">experimental_registration_interface</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#a4c80fc106b3e6ef41cfca7d8ab8eda43">experimental_registration</a> ()</td></tr>
 <tr class="memdesc:a4c80fc106b3e6ef41cfca7d8ab8eda43"><td class="mdescLeft">&#160;</td><td class="mdescRight">NOTE: The function <a class="el" href="classgrpc_1_1_server_interface.html#a4c80fc106b3e6ef41cfca7d8ab8eda43" title="NOTE: The function experimental_registration() is not stable public API. ">experimental_registration()</a> is not stable public API.  <a href="#a4c80fc106b3e6ef41cfca7d8ab8eda43">More...</a><br /></td></tr>
 <tr class="separator:a4c80fc106b3e6ef41cfca7d8ab8eda43"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae3716834f7d4aec1883e36e99c9c5123"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#ae3716834f7d4aec1883e36e99c9c5123">AddListeningPort</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;addr, <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> *creds)=0</td></tr>
-<tr class="memdesc:ae3716834f7d4aec1883e36e99c9c5123"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tries to bind <em>server</em> to the given <em>addr</em>.  <a href="#ae3716834f7d4aec1883e36e99c9c5123">More...</a><br /></td></tr>
-<tr class="separator:ae3716834f7d4aec1883e36e99c9c5123"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa3931522a05cd6b2783b550b4066a7d9"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#aa3931522a05cd6b2783b550b4066a7d9">Start</a> (<a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> **cqs, size_t num_cqs)=0</td></tr>
-<tr class="memdesc:aa3931522a05cd6b2783b550b4066a7d9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start the server.  <a href="#aa3931522a05cd6b2783b550b4066a7d9">More...</a><br /></td></tr>
-<tr class="separator:aa3931522a05cd6b2783b550b4066a7d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abff5950c3060115c7d85f00b4feced64"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#abff5950c3060115c7d85f00b4feced64">AddListeningPort</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;addr, <a class="el" href="classgrpc__impl_1_1_server_credentials.html">grpc_impl::ServerCredentials</a> *creds)=0</td></tr>
+<tr class="memdesc:abff5950c3060115c7d85f00b4feced64"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tries to bind <em>server</em> to the given <em>addr</em>.  <a href="#abff5950c3060115c7d85f00b4feced64">More...</a><br /></td></tr>
+<tr class="separator:abff5950c3060115c7d85f00b4feced64"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afdee15e5a04e4b0025666f310c101b8b"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#afdee15e5a04e4b0025666f310c101b8b">Start</a> (::<a class="el" href="classgrpc__impl_1_1_server_completion_queue.html">grpc_impl::ServerCompletionQueue</a> **cqs, size_t num_cqs)=0</td></tr>
+<tr class="memdesc:afdee15e5a04e4b0025666f310c101b8b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start the server.  <a href="#afdee15e5a04e4b0025666f310c101b8b">More...</a><br /></td></tr>
+<tr class="separator:afdee15e5a04e4b0025666f310c101b8b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a862fd9a2d64e66447d41d0aba40af2f9"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#a862fd9a2d64e66447d41d0aba40af2f9">ShutdownInternal</a> (<a class="el" href="structgpr__timespec.html">gpr_timespec</a> deadline)=0</td></tr>
 <tr class="separator:a862fd9a2d64e66447d41d0aba40af2f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a89798a3a429531aa38a4afa4844ac7c0"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#a89798a3a429531aa38a4afa4844ac7c0">max_receive_message_size</a> () const =0</td></tr>
@@ -135,13 +135,13 @@ Protected Member Functions</h2></td></tr>
 <tr class="separator:a8e9cf80377d3fd1f110089ad16ec79e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a490b5a44ccd2d419db19d5c336c93680"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#a490b5a44ccd2d419db19d5c336c93680">PerformOpsOnCall</a> (<a class="el" href="classgrpc_1_1internal_1_1_call_op_set_interface.html">internal::CallOpSetInterface</a> *ops, <a class="el" href="classgrpc_1_1internal_1_1_call.html">internal::Call</a> *call)=0</td></tr>
 <tr class="separator:a490b5a44ccd2d419db19d5c336c93680"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9e786d4bd3956e420c08a8f9671cbc00"><td class="memTemplParams" colspan="2">template&lt;class Message &gt; </td></tr>
-<tr class="memitem:a9e786d4bd3956e420c08a8f9671cbc00"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#a9e786d4bd3956e420c08a8f9671cbc00">RequestAsyncCall</a> (<a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html">internal::RpcServiceMethod</a> *method, <a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *context, <a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html">internal::ServerAsyncStreamingInterface</a> *stream, <a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *call_cq, <a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> *notification_cq, void *tag, Message *message)</td></tr>
-<tr class="separator:a9e786d4bd3956e420c08a8f9671cbc00"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3967d9d5d9eb3e622c7703093e2cfcca"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#a3967d9d5d9eb3e622c7703093e2cfcca">RequestAsyncCall</a> (<a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html">internal::RpcServiceMethod</a> *method, <a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *context, <a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html">internal::ServerAsyncStreamingInterface</a> *stream, <a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *call_cq, <a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> *notification_cq, void *tag)</td></tr>
-<tr class="separator:a3967d9d5d9eb3e622c7703093e2cfcca"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af25fd8b6fe3818ca67210f0a96b3076a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#af25fd8b6fe3818ca67210f0a96b3076a">RequestAsyncGenericCall</a> (<a class="el" href="classgrpc_1_1_generic_server_context.html">GenericServerContext</a> *context, <a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html">internal::ServerAsyncStreamingInterface</a> *stream, <a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *call_cq, <a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> *notification_cq, void *tag)</td></tr>
-<tr class="separator:af25fd8b6fe3818ca67210f0a96b3076a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a47227eaa26083533e2ec609c558db074"><td class="memTemplParams" colspan="2">template&lt;class Message &gt; </td></tr>
+<tr class="memitem:a47227eaa26083533e2ec609c558db074"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#a47227eaa26083533e2ec609c558db074">RequestAsyncCall</a> (<a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html">internal::RpcServiceMethod</a> *method, <a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *context, <a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html">internal::ServerAsyncStreamingInterface</a> *stream, ::<a class="el" href="classgrpc__impl_1_1_completion_queue.html">grpc_impl::CompletionQueue</a> *call_cq, ::<a class="el" href="classgrpc__impl_1_1_server_completion_queue.html">grpc_impl::ServerCompletionQueue</a> *notification_cq, void *tag, Message *message)</td></tr>
+<tr class="separator:a47227eaa26083533e2ec609c558db074"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a62a7b963187127ca3905db89c6365c84"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#a62a7b963187127ca3905db89c6365c84">RequestAsyncCall</a> (<a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html">internal::RpcServiceMethod</a> *method, <a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *context, <a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html">internal::ServerAsyncStreamingInterface</a> *stream, ::<a class="el" href="classgrpc__impl_1_1_completion_queue.html">grpc_impl::CompletionQueue</a> *call_cq, ::<a class="el" href="classgrpc__impl_1_1_server_completion_queue.html">grpc_impl::ServerCompletionQueue</a> *notification_cq, void *tag)</td></tr>
+<tr class="separator:a62a7b963187127ca3905db89c6365c84"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a429eed9518e6d9ad8616806e212c7a55"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#a429eed9518e6d9ad8616806e212c7a55">RequestAsyncGenericCall</a> (<a class="el" href="classgrpc_1_1_generic_server_context.html">GenericServerContext</a> *context, <a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html">internal::ServerAsyncStreamingInterface</a> *stream, ::<a class="el" href="classgrpc__impl_1_1_completion_queue.html">grpc_impl::CompletionQueue</a> *call_cq, ::<a class="el" href="classgrpc__impl_1_1_server_completion_queue.html">grpc_impl::ServerCompletionQueue</a> *notification_cq, void *tag)</td></tr>
+<tr class="separator:a429eed9518e6d9ad8616806e212c7a55"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
@@ -175,8 +175,8 @@ Friends</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="ae3716834f7d4aec1883e36e99c9c5123"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae3716834f7d4aec1883e36e99c9c5123">&#9670;&nbsp;</a></span>AddListeningPort()</h2>
+<a id="abff5950c3060115c7d85f00b4feced64"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abff5950c3060115c7d85f00b4feced64">&#9670;&nbsp;</a></span>AddListeningPort()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -193,7 +193,7 @@ Friends</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc__impl_1_1_server_credentials.html">grpc_impl::ServerCredentials</a> *&#160;</td>
           <td class="paramname"><em>creds</em>&#160;</td>
         </tr>
         <tr>
@@ -217,10 +217,10 @@ Friends</h2></td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>bound port number on sucess, 0 on failure.</dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>bound port number on success, 0 on failure.</dd></dl>
 <dl class="section warning"><dt>Warning</dt><dd>It's an error to call this method on an already started server. </dd></dl>
 
-<p>Implemented in <a class="el" href="classgrpc_1_1_server.html#a8b8678faf043eaecc0fda4ebf526d5db">grpc::Server</a>.</p>
+<p>Implemented in <a class="el" href="classgrpc__impl_1_1_server.html#a881ba9c01a60f4ce5d98dfd81462a831">grpc_impl::Server</a>.</p>
 
 </div>
 </div>
@@ -340,7 +340,7 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Register a generic service. </p>
-<p>This call does not take ownership of the service. The service must exist for the lifetime of the <a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">Server</a> instance. </p>
+<p>This call does not take ownership of the service. The service must exist for the lifetime of the Server instance. </p>
 
 </div>
 </div>
@@ -379,14 +379,14 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Register a service. </p>
-<p>This call does not take ownership of the service. The service must exist for the lifetime of the <a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">Server</a> instance. </p>
+<p>This call does not take ownership of the service. The service must exist for the lifetime of the Server instance. </p>
 
-<p>Implemented in <a class="el" href="classgrpc_1_1_server.html#a715df719c9ef4db88a3d4ef10eb8f423">grpc::Server</a>.</p>
+<p>Implemented in <a class="el" href="classgrpc__impl_1_1_server.html#a03c57a05bc540e6056504a40319d6a90">grpc_impl::Server</a>.</p>
 
 </div>
 </div>
-<a id="a9e786d4bd3956e420c08a8f9671cbc00"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9e786d4bd3956e420c08a8f9671cbc00">&#9670;&nbsp;</a></span>RequestAsyncCall() <span class="overload">[1/2]</span></h2>
+<a id="a47227eaa26083533e2ec609c558db074"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a47227eaa26083533e2ec609c558db074">&#9670;&nbsp;</a></span>RequestAsyncCall() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -417,13 +417,13 @@ template&lt;class Message &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *&#160;</td>
+          <td class="paramtype">::<a class="el" href="classgrpc__impl_1_1_completion_queue.html">grpc_impl::CompletionQueue</a> *&#160;</td>
           <td class="paramname"><em>call_cq</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> *&#160;</td>
+          <td class="paramtype">::<a class="el" href="classgrpc__impl_1_1_server_completion_queue.html">grpc_impl::ServerCompletionQueue</a> *&#160;</td>
           <td class="paramname"><em>notification_cq</em>, </td>
         </tr>
         <tr>
@@ -453,8 +453,8 @@ template&lt;class Message &gt; </div>
 
 </div>
 </div>
-<a id="a3967d9d5d9eb3e622c7703093e2cfcca"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3967d9d5d9eb3e622c7703093e2cfcca">&#9670;&nbsp;</a></span>RequestAsyncCall() <span class="overload">[2/2]</span></h2>
+<a id="a62a7b963187127ca3905db89c6365c84"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a62a7b963187127ca3905db89c6365c84">&#9670;&nbsp;</a></span>RequestAsyncCall() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -483,13 +483,13 @@ template&lt;class Message &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *&#160;</td>
+          <td class="paramtype">::<a class="el" href="classgrpc__impl_1_1_completion_queue.html">grpc_impl::CompletionQueue</a> *&#160;</td>
           <td class="paramname"><em>call_cq</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> *&#160;</td>
+          <td class="paramtype">::<a class="el" href="classgrpc__impl_1_1_server_completion_queue.html">grpc_impl::ServerCompletionQueue</a> *&#160;</td>
           <td class="paramname"><em>notification_cq</em>, </td>
         </tr>
         <tr>
@@ -513,8 +513,8 @@ template&lt;class Message &gt; </div>
 
 </div>
 </div>
-<a id="af25fd8b6fe3818ca67210f0a96b3076a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af25fd8b6fe3818ca67210f0a96b3076a">&#9670;&nbsp;</a></span>RequestAsyncGenericCall()</h2>
+<a id="a429eed9518e6d9ad8616806e212c7a55"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a429eed9518e6d9ad8616806e212c7a55">&#9670;&nbsp;</a></span>RequestAsyncGenericCall()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -537,13 +537,13 @@ template&lt;class Message &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *&#160;</td>
+          <td class="paramtype">::<a class="el" href="classgrpc__impl_1_1_completion_queue.html">grpc_impl::CompletionQueue</a> *&#160;</td>
           <td class="paramname"><em>call_cq</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> *&#160;</td>
+          <td class="paramtype">::<a class="el" href="classgrpc__impl_1_1_server_completion_queue.html">grpc_impl::ServerCompletionQueue</a> *&#160;</td>
           <td class="paramname"><em>notification_cq</em>, </td>
         </tr>
         <tr>
@@ -590,7 +590,7 @@ template&lt;class Message &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Implemented in <a class="el" href="classgrpc_1_1_server.html#a01bdfb4554d12a10bdc9cf875ffa74dd">grpc::Server</a>.</p>
+<p>Implemented in <a class="el" href="classgrpc__impl_1_1_server.html#aa9689c77feab97a862edac219fc7f562">grpc_impl::Server</a>.</p>
 
 </div>
 </div>
@@ -626,7 +626,7 @@ template&lt;class T &gt; </div>
 <li>Block until all rpc method handlers invoked automatically by the sync API finish.</li>
 <li>If all pending calls complete (and all their operations are retrieved by Next) before <em>deadline</em> expires, this finishes gracefully. Otherwise, forcefully cancel all pending calls associated with the server after <em>deadline</em> expires. In the case of the sync API, if the RPC function for a streaming call has already been started and takes a week to complete, the RPC function won't be forcefully terminated (since that would leave state corrupt and incomplete) and the method handler will just keep running (which will prevent the server from completing the "join" operation that it needs to do at shutdown time).</li>
 </ol>
-<p>All completion queue associated with the server (for example, for async serving) must be shutdown <em>after</em> this method has returned: See <em><a class="el" href="classgrpc_1_1_server_builder.html#a960d55977e1aef56fd7b582037a01bbd" title="Add a completion queue for handling asynchronous services. ">ServerBuilder::AddCompletionQueue</a></em> for details. They must also be drained (by repeated Next) after being shutdown.</p>
+<p>All completion queue associated with the server (for example, for async serving) must be shutdown <em>after</em> this method has returned: See <em><a class="el" href="classgrpc__impl_1_1_server_builder.html#adbb6da96e1f9d2d9fee2a0cbc9261023" title="Add a completion queue for handling asynchronous services. ">ServerBuilder::AddCompletionQueue</a></em> for details. They must also be drained (by repeated Next) after being shutdown.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">deadline</td><td>How long to wait until pending rpcs are forcefully terminated. </td></tr>
@@ -660,7 +660,7 @@ template&lt;class T &gt; </div>
 </div><div class="memdoc">
 
 <p>Shutdown the server without a deadline and forced cancellation. </p>
-<p>All completion queue associated with the server (for example, for async serving) must be shutdown <em>after</em> this method has returned: See <em><a class="el" href="classgrpc_1_1_server_builder.html#a960d55977e1aef56fd7b582037a01bbd" title="Add a completion queue for handling asynchronous services. ">ServerBuilder::AddCompletionQueue</a></em> for details. </p>
+<p>All completion queue associated with the server (for example, for async serving) must be shutdown <em>after</em> this method has returned: See <em><a class="el" href="classgrpc__impl_1_1_server_builder.html#adbb6da96e1f9d2d9fee2a0cbc9261023" title="Add a completion queue for handling asynchronous services. ">ServerBuilder::AddCompletionQueue</a></em> for details. </p>
 
 </div>
 </div>
@@ -690,8 +690,8 @@ template&lt;class T &gt; </div>
 
 </div>
 </div>
-<a id="aa3931522a05cd6b2783b550b4066a7d9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa3931522a05cd6b2783b550b4066a7d9">&#9670;&nbsp;</a></span>Start()</h2>
+<a id="afdee15e5a04e4b0025666f310c101b8b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afdee15e5a04e4b0025666f310c101b8b">&#9670;&nbsp;</a></span>Start()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -702,7 +702,7 @@ template&lt;class T &gt; </div>
         <tr>
           <td class="memname">virtual void grpc::ServerInterface::Start </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> **&#160;</td>
+          <td class="paramtype">::<a class="el" href="classgrpc__impl_1_1_server_completion_queue.html">grpc_impl::ServerCompletionQueue</a> **&#160;</td>
           <td class="paramname"><em>cqs</em>, </td>
         </tr>
         <tr>
@@ -733,8 +733,6 @@ template&lt;class T &gt; </div>
   </dd>
 </dl>
 
-<p>Implemented in <a class="el" href="classgrpc_1_1_server.html#affff5d179b3a71617cbb02062f49eea4">grpc::Server</a>.</p>
-
 </div>
 </div>
 <a id="ac36477b6a7593a4e4608c7eb712b0d70"></a>
@@ -763,7 +761,7 @@ template&lt;class T &gt; </div>
 <p>Block waiting for all work to complete. </p>
 <dl class="section warning"><dt>Warning</dt><dd>The server must be either shutting down or some other thread must call <em>Shutdown</em> for this function to ever return. </dd></dl>
 
-<p>Implemented in <a class="el" href="classgrpc_1_1_server.html#a79f3e43452fd885df4002ed541d8ca7c">grpc::Server</a>.</p>
+<p>Implemented in <a class="el" href="classgrpc__impl_1_1_server.html#abec9fff8bfbec4ee8b2c20488a5c1d5a">grpc_impl::Server</a>.</p>
 
 </div>
 </div>
@@ -796,7 +794,7 @@ template&lt;class T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 31 2019 16:39:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

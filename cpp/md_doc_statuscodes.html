@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.20.0</span>
+   &#160;<span id="projectnumber">1.22.0-dev</span>
    </div>
   </td>
  </tr>
@@ -98,7 +98,7 @@ $(function() {
 <tr>
 <td>INTERNAL </td><td>13 </td><td>Internal errors. This means that some invariants expected by the underlying system have been broken. This error code is reserved for serious errors. </td><td>500 Internal Server Error </td></tr>
 <tr>
-<td>UNAVAILABLE </td><td>14 </td><td>The service is currently unavailable. This is most likely a transient condition, which can be corrected by retrying with a backoff. </td><td>503 Service Unavailable </td></tr>
+<td>UNAVAILABLE </td><td>14 </td><td>The service is currently unavailable. This is most likely a transient condition, which can be corrected by retrying with a backoff. Note that it is not always safe to retry non-idempotent operations. </td><td>503 Service Unavailable </td></tr>
 <tr>
 <td>DATA_LOSS </td><td>15 </td><td>Unrecoverable data loss or corruption. </td><td>500 Internal Server Error </td></tr>
 </table>
@@ -164,7 +164,7 @@ $(function() {
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 31 2019 16:39:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

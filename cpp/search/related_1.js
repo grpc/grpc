@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['asyncgenericservice',['AsyncGenericService',['../classgrpc_1_1_server.html#afa12bc5912105e1966887391881de595',1,'grpc::Server']]]
+  ['bytebuffer',['ByteBuffer',['../classgrpc_1_1_slice.html#ac6c83f28f4b17ae317094a794e92e99e',1,'grpc::Slice']]]
 ];

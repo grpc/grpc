@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.20.0</span>
+   &#160;<span id="projectnumber">1.22.0-dev</span>
    </div>
   </td>
  </tr>
@@ -81,21 +81,21 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a00ed34821232736bc11777215412386f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac337c61dcb4d6c41e669e510f1faca48"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_plugin.html#ac337c61dcb4d6c41e669e510f1faca48">name</a> ()=0</td></tr>
 <tr class="separator:ac337c61dcb4d6c41e669e510f1faca48"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9d3d5be23a10ea272aeb11118233147d"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_plugin.html#a9d3d5be23a10ea272aeb11118233147d">UpdateServerBuilder</a> (<a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> *builder)</td></tr>
-<tr class="memdesc:a9d3d5be23a10ea272aeb11118233147d"><td class="mdescLeft">&#160;</td><td class="mdescRight">UpdateServerBuilder will be called at an early stage in <a class="el" href="classgrpc_1_1_server_builder.html#aa3966340091070dd68fa831a03e1e6ef" title="Return a running server which is ready for processing calls. ">ServerBuilder::BuildAndStart()</a>, right after the ServerBuilderOptions have done their updates.  <a href="#a9d3d5be23a10ea272aeb11118233147d">More...</a><br /></td></tr>
-<tr class="separator:a9d3d5be23a10ea272aeb11118233147d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aae901e058799d699f029fd80f05b46d1"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_plugin.html#aae901e058799d699f029fd80f05b46d1">InitServer</a> (<a class="el" href="classgrpc_1_1_server_initializer.html">ServerInitializer</a> *si)=0</td></tr>
-<tr class="memdesc:aae901e058799d699f029fd80f05b46d1"><td class="mdescLeft">&#160;</td><td class="mdescRight">InitServer will be called in <a class="el" href="classgrpc_1_1_server_builder.html#aa3966340091070dd68fa831a03e1e6ef" title="Return a running server which is ready for processing calls. ">ServerBuilder::BuildAndStart()</a>, after the <a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">Server</a> instance is created.  <a href="#aae901e058799d699f029fd80f05b46d1">More...</a><br /></td></tr>
-<tr class="separator:aae901e058799d699f029fd80f05b46d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2b70dd8ff457f4e47c4d23acada5bed9"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_plugin.html#a2b70dd8ff457f4e47c4d23acada5bed9">Finish</a> (<a class="el" href="classgrpc_1_1_server_initializer.html">ServerInitializer</a> *si)=0</td></tr>
-<tr class="memdesc:a2b70dd8ff457f4e47c4d23acada5bed9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finish will be called at the end of <a class="el" href="classgrpc_1_1_server_builder.html#aa3966340091070dd68fa831a03e1e6ef" title="Return a running server which is ready for processing calls. ">ServerBuilder::BuildAndStart()</a>.  <a href="#a2b70dd8ff457f4e47c4d23acada5bed9">More...</a><br /></td></tr>
-<tr class="separator:a2b70dd8ff457f4e47c4d23acada5bed9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9520ef7670bfb780caefcac0029bd6b9"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_plugin.html#a9520ef7670bfb780caefcac0029bd6b9">UpdateServerBuilder</a> (<a class="el" href="classgrpc__impl_1_1_server_builder.html">grpc_impl::ServerBuilder</a> *builder)</td></tr>
+<tr class="memdesc:a9520ef7670bfb780caefcac0029bd6b9"><td class="mdescLeft">&#160;</td><td class="mdescRight">UpdateServerBuilder will be called at an early stage in <a class="el" href="classgrpc__impl_1_1_server_builder.html#aa24bf474b499f8a98c3686eb01d90b30" title="Return a running server which is ready for processing calls. ">ServerBuilder::BuildAndStart()</a>, right after the ServerBuilderOptions have done their updates.  <a href="#a9520ef7670bfb780caefcac0029bd6b9">More...</a><br /></td></tr>
+<tr class="separator:a9520ef7670bfb780caefcac0029bd6b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a239127fbc007c28a6a955b23dd7cf088"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_plugin.html#a239127fbc007c28a6a955b23dd7cf088">InitServer</a> (<a class="el" href="classgrpc__impl_1_1_server_initializer.html">grpc_impl::ServerInitializer</a> *si)=0</td></tr>
+<tr class="memdesc:a239127fbc007c28a6a955b23dd7cf088"><td class="mdescLeft">&#160;</td><td class="mdescRight">InitServer will be called in <a class="el" href="classgrpc__impl_1_1_server_builder.html#aa24bf474b499f8a98c3686eb01d90b30" title="Return a running server which is ready for processing calls. ">ServerBuilder::BuildAndStart()</a>, after the Server instance is created.  <a href="#a239127fbc007c28a6a955b23dd7cf088">More...</a><br /></td></tr>
+<tr class="separator:a239127fbc007c28a6a955b23dd7cf088"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ade93d5083f4e8111ed2d0d4d028034ea"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_plugin.html#ade93d5083f4e8111ed2d0d4d028034ea">Finish</a> (<a class="el" href="classgrpc__impl_1_1_server_initializer.html">grpc_impl::ServerInitializer</a> *si)=0</td></tr>
+<tr class="memdesc:ade93d5083f4e8111ed2d0d4d028034ea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finish will be called at the end of <a class="el" href="classgrpc__impl_1_1_server_builder.html#aa24bf474b499f8a98c3686eb01d90b30" title="Return a running server which is ready for processing calls. ">ServerBuilder::BuildAndStart()</a>.  <a href="#ade93d5083f4e8111ed2d0d4d028034ea">More...</a><br /></td></tr>
+<tr class="separator:ade93d5083f4e8111ed2d0d4d028034ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af1a9c6d18ab78065f7e755b61a778635"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_plugin.html#af1a9c6d18ab78065f7e755b61a778635">ChangeArguments</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;<a class="el" href="classgrpc_1_1_server_builder_plugin.html#ac337c61dcb4d6c41e669e510f1faca48">name</a>, void *value)=0</td></tr>
 <tr class="memdesc:af1a9c6d18ab78065f7e755b61a778635"><td class="mdescLeft">&#160;</td><td class="mdescRight">ChangeArguments is an interface that can be used in <a class="el" href="classgrpc__impl_1_1_server_builder_option.html#a491c4fd3611efa69a189f1708a450ccc" title="Alter the ServerBuilderPlugin map that will be added into ServerBuilder. ">ServerBuilderOption::UpdatePlugins</a>.  <a href="#af1a9c6d18ab78065f7e755b61a778635">More...</a><br /></td></tr>
 <tr class="separator:af1a9c6d18ab78065f7e755b61a778635"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a616e24edf3859bb1feb9ec1d4db8dbe7"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_plugin.html#a616e24edf3859bb1feb9ec1d4db8dbe7">UpdateChannelArguments</a> (<a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> *args)</td></tr>
-<tr class="memdesc:a616e24edf3859bb1feb9ec1d4db8dbe7"><td class="mdescLeft">&#160;</td><td class="mdescRight">UpdateChannelArguments will be called in <a class="el" href="classgrpc_1_1_server_builder.html#aa3966340091070dd68fa831a03e1e6ef" title="Return a running server which is ready for processing calls. ">ServerBuilder::BuildAndStart()</a>, before the <a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">Server</a> instance is created.  <a href="#a616e24edf3859bb1feb9ec1d4db8dbe7">More...</a><br /></td></tr>
-<tr class="separator:a616e24edf3859bb1feb9ec1d4db8dbe7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa91db83f71b41361d9ad24fdcafd26b5"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_plugin.html#aa91db83f71b41361d9ad24fdcafd26b5">UpdateChannelArguments</a> (<a class="el" href="classgrpc__impl_1_1_channel_arguments.html">grpc_impl::ChannelArguments</a> *args)</td></tr>
+<tr class="memdesc:aa91db83f71b41361d9ad24fdcafd26b5"><td class="mdescLeft">&#160;</td><td class="mdescRight">UpdateChannelArguments will be called in <a class="el" href="classgrpc__impl_1_1_server_builder.html#aa24bf474b499f8a98c3686eb01d90b30" title="Return a running server which is ready for processing calls. ">ServerBuilder::BuildAndStart()</a>, before the Server instance is created.  <a href="#aa91db83f71b41361d9ad24fdcafd26b5">More...</a><br /></td></tr>
+<tr class="separator:aa91db83f71b41361d9ad24fdcafd26b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a89727883dd80f7a5f8e3d07e7df13f28"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_plugin.html#a89727883dd80f7a5f8e3d07e7df13f28">has_sync_methods</a> () const</td></tr>
 <tr class="separator:a89727883dd80f7a5f8e3d07e7df13f28"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3b62f84342dec96521e69071d9a63988"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_plugin.html#a3b62f84342dec96521e69071d9a63988">has_async_methods</a> () const</td></tr>
@@ -103,7 +103,7 @@ Public Member Functions</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This interface is meant for internal usage only. </p>
-<p>Implementations of this interface should add themselves to a <em><a class="el" href="classgrpc_1_1_server_builder.html" title="A builder class for the creation and startup of grpc::Server instances. ">ServerBuilder</a></em> instance through the <em>InternalAddPluginFactory</em> method. </p>
+<p>Implementations of this interface should add themselves to a <em>ServerBuilder</em> instance through the <em>InternalAddPluginFactory</em> method. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a00ed34821232736bc11777215412386f"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a00ed34821232736bc11777215412386f">&#9670;&nbsp;</a></span>~ServerBuilderPlugin()</h2>
@@ -169,8 +169,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a2b70dd8ff457f4e47c4d23acada5bed9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2b70dd8ff457f4e47c4d23acada5bed9">&#9670;&nbsp;</a></span>Finish()</h2>
+<a id="ade93d5083f4e8111ed2d0d4d028034ea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ade93d5083f4e8111ed2d0d4d028034ea">&#9670;&nbsp;</a></span>Finish()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -181,7 +181,7 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">virtual void grpc::ServerBuilderPlugin::Finish </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_server_initializer.html">ServerInitializer</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc__impl_1_1_server_initializer.html">grpc_impl::ServerInitializer</a> *&#160;</td>
           <td class="paramname"><em>si</em></td><td>)</td>
           <td></td>
         </tr>
@@ -193,7 +193,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Finish will be called at the end of <a class="el" href="classgrpc_1_1_server_builder.html#aa3966340091070dd68fa831a03e1e6ef" title="Return a running server which is ready for processing calls. ">ServerBuilder::BuildAndStart()</a>. </p>
+<p>Finish will be called at the end of <a class="el" href="classgrpc__impl_1_1_server_builder.html#aa24bf474b499f8a98c3686eb01d90b30" title="Return a running server which is ready for processing calls. ">ServerBuilder::BuildAndStart()</a>. </p>
 
 </div>
 </div>
@@ -247,8 +247,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="aae901e058799d699f029fd80f05b46d1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aae901e058799d699f029fd80f05b46d1">&#9670;&nbsp;</a></span>InitServer()</h2>
+<a id="a239127fbc007c28a6a955b23dd7cf088"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a239127fbc007c28a6a955b23dd7cf088">&#9670;&nbsp;</a></span>InitServer()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -259,7 +259,7 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">virtual void grpc::ServerBuilderPlugin::InitServer </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_server_initializer.html">ServerInitializer</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc__impl_1_1_server_initializer.html">grpc_impl::ServerInitializer</a> *&#160;</td>
           <td class="paramname"><em>si</em></td><td>)</td>
           <td></td>
         </tr>
@@ -271,7 +271,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>InitServer will be called in <a class="el" href="classgrpc_1_1_server_builder.html#aa3966340091070dd68fa831a03e1e6ef" title="Return a running server which is ready for processing calls. ">ServerBuilder::BuildAndStart()</a>, after the <a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">Server</a> instance is created. </p>
+<p>InitServer will be called in <a class="el" href="classgrpc__impl_1_1_server_builder.html#aa24bf474b499f8a98c3686eb01d90b30" title="Return a running server which is ready for processing calls. ">ServerBuilder::BuildAndStart()</a>, after the Server instance is created. </p>
 
 </div>
 </div>
@@ -300,8 +300,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a616e24edf3859bb1feb9ec1d4db8dbe7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a616e24edf3859bb1feb9ec1d4db8dbe7">&#9670;&nbsp;</a></span>UpdateChannelArguments()</h2>
+<a id="aa91db83f71b41361d9ad24fdcafd26b5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa91db83f71b41361d9ad24fdcafd26b5">&#9670;&nbsp;</a></span>UpdateChannelArguments()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -312,7 +312,7 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">virtual void grpc::ServerBuilderPlugin::UpdateChannelArguments </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc__impl_1_1_channel_arguments.html">grpc_impl::ChannelArguments</a> *&#160;</td>
           <td class="paramname"><em>args</em></td><td>)</td>
           <td></td>
         </tr>
@@ -324,12 +324,12 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>UpdateChannelArguments will be called in <a class="el" href="classgrpc_1_1_server_builder.html#aa3966340091070dd68fa831a03e1e6ef" title="Return a running server which is ready for processing calls. ">ServerBuilder::BuildAndStart()</a>, before the <a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">Server</a> instance is created. </p>
+<p>UpdateChannelArguments will be called in <a class="el" href="classgrpc__impl_1_1_server_builder.html#aa24bf474b499f8a98c3686eb01d90b30" title="Return a running server which is ready for processing calls. ">ServerBuilder::BuildAndStart()</a>, before the Server instance is created. </p>
 
 </div>
 </div>
-<a id="a9d3d5be23a10ea272aeb11118233147d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9d3d5be23a10ea272aeb11118233147d">&#9670;&nbsp;</a></span>UpdateServerBuilder()</h2>
+<a id="a9520ef7670bfb780caefcac0029bd6b9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9520ef7670bfb780caefcac0029bd6b9">&#9670;&nbsp;</a></span>UpdateServerBuilder()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -340,7 +340,7 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">virtual void grpc::ServerBuilderPlugin::UpdateServerBuilder </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc__impl_1_1_server_builder.html">grpc_impl::ServerBuilder</a> *&#160;</td>
           <td class="paramname"><em>builder</em></td><td>)</td>
           <td></td>
         </tr>
@@ -352,7 +352,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>UpdateServerBuilder will be called at an early stage in <a class="el" href="classgrpc_1_1_server_builder.html#aa3966340091070dd68fa831a03e1e6ef" title="Return a running server which is ready for processing calls. ">ServerBuilder::BuildAndStart()</a>, right after the ServerBuilderOptions have done their updates. </p>
+<p>UpdateServerBuilder will be called at an early stage in <a class="el" href="classgrpc__impl_1_1_server_builder.html#aa24bf474b499f8a98c3686eb01d90b30" title="Return a running server which is ready for processing calls. ">ServerBuilder::BuildAndStart()</a>, right after the ServerBuilderOptions have done their updates. </p>
 
 </div>
 </div>
@@ -362,7 +362,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 17 2019 12:09:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 31 2019 16:39:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>
