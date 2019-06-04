@@ -112,6 +112,19 @@ struct call_data {
 
 }  // namespace
 
+void grpc_auth_metadata_context_copy(grpc_auth_metadata_context* from,
+                                     grpc_auth_metadata_context* to) {
+  grpc_auth_metadata_context_reset(to);
+  to->channel_auth_context = from->channel_auth_context;
+  if (to->channel_auth_context != nullptr) {
+    const_cast<grpc_auth_context*>(to->channel_auth_context)
+        ->Ref(DEBUG_LOCATION, "grpc_auth_metadata_context_copy")
+        .release();
+  }
+  to->service_url = gpr_strdup(from->service_url);
+  to->method_name = gpr_strdup(from->method_name);
+}
+
 void grpc_auth_metadata_context_reset(
     grpc_auth_metadata_context* auth_md_context) {
   if (auth_md_context->service_url != nullptr) {
