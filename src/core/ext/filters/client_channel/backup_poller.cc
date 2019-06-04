@@ -65,8 +65,8 @@ GPR_GLOBAL_CONFIG_DEFINE_INT32(
     "idleness), so that the next RPC on this channel won't fail. Set to 0 to "
     "turn off the backup polls.");
 
-static void init_globals() {
-  gpr_mu_init(&g_poller_mu);
+void grpc_client_channel_global_init_backup_polling() {
+  gpr_once_init(&g_once, [] { gpr_mu_init(&g_poller_mu); });
   int32_t poll_interval_ms =
       GPR_GLOBAL_CONFIG_GET(grpc_client_channel_backup_poll_interval_ms);
   if (poll_interval_ms < 0) {
@@ -153,7 +153,6 @@ static void g_poller_init_locked() {
 
 void grpc_client_channel_start_backup_polling(
     grpc_pollset_set* interested_parties) {
-  gpr_once_init(&g_once, init_globals);
   if (g_poll_interval_ms == 0) {
     return;
   }
