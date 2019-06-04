@@ -374,9 +374,9 @@ class XdsLb : public LoadBalancingPolicy {
           subzone_(std::move(subzone)) {}
 
     bool operator==(const LocalityName& other) const {
-      return strcmp(region_.get(), other.region_.get()) == 0 &&
-             strcmp(zone_.get(), other.zone_.get()) == 0 &&
-             strcmp(subzone_.get(), other.subzone_.get()) == 0;
+      return gpr_stricmp(region_.get(), other.region_.get()) == 0 &&
+             gpr_stricmp(zone_.get(), other.zone_.get()) == 0 &&
+             gpr_stricmp(subzone_.get(), other.subzone_.get()) == 0;
     }
 
    private:
