@@ -341,7 +341,9 @@ TEST_P(CFStreamTest, NetworkFlapRpcsInFlight) {
 
   // Channel should be in READY state after we send some RPCs
   for (int i = 0; i < 10; ++i) {
-    SendAsyncRpc(stub);
+    RequestParams param;
+    param.set_skip_cancelled_check(true);
+    SendAsyncRpc(stub, param);
     ++rpcs_sent;
   }
   EXPECT_TRUE(WaitForChannelReady(channel.get()));
@@ -374,7 +376,9 @@ TEST_P(CFStreamTest, NetworkFlapRpcsInFlight) {
   });
 
   for (int i = 0; i < 100; ++i) {
-    SendAsyncRpc(stub);
+    RequestParams param;
+    param.set_skip_cancelled_check(true);
+    SendAsyncRpc(stub, param);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     ++rpcs_sent;
   }
