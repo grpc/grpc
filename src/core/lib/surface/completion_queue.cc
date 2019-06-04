@@ -88,7 +88,7 @@ typedef struct {
   grpc_closure* shutdown;
 } non_polling_poller;
 
-size_t non_polling_poller_size(void) { return sizeof(non_polling_poller); }
+auto non_polling_poller_size(void) { return sizeof(non_polling_poller); }
 
 void non_polling_poller_init(grpc_pollset* pollset, gpr_mu** mu) {
   non_polling_poller* npp = reinterpret_cast<non_polling_poller*>(pollset);
