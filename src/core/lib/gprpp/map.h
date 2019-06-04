@@ -42,7 +42,7 @@ struct StringLess {
 template <typename T>
 struct RefCountedPtrLess {
   bool operator()(const RefCountedPtr<T>& p1, const RefCountedPtr<T>& p2) {
-    return GPR_ICMP(p1.get(), p2.get());
+    return p1.get() < p2.get();
   }
 };
 
