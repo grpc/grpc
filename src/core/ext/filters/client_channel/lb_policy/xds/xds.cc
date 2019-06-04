@@ -359,11 +359,11 @@ class XdsLb : public LoadBalancingPolicy {
     struct Less {
       bool operator()(const RefCountedPtr<LocalityName>& lhs,
                       const RefCountedPtr<LocalityName>& rhs) {
-        int cmp_result = gpr_stricmp(lhs->region_.get(), rhs->region_.get());
+        int cmp_result = strcmp(lhs->region_.get(), rhs->region_.get());
         if (cmp_result != 0) return cmp_result < 0;
-        cmp_result = gpr_stricmp(lhs->zone_.get(), rhs->zone_.get());
+        cmp_result = strcmp(lhs->zone_.get(), rhs->zone_.get());
         if (cmp_result != 0) return cmp_result < 0;
-        return gpr_stricmp(lhs->subzone_.get(), rhs->subzone_.get()) < 0;
+        return strcmp(lhs->subzone_.get(), rhs->subzone_.get()) < 0;
       }
     };
 
