@@ -168,7 +168,7 @@ class RefCount {
   // However, use of this method for things like having an object check
   // whether it's about to be destroyed are considered an anti-pattern
   // and should be avoided.
-  bool HasOnlyOneRef() const { return value_.Load(MemoryOrder::ACQ_REL) == 1; }
+  bool HasOnlyOneRef() const { return value_.Load(MemoryOrder::SEQ_CST) == 1; }
 
  private:
   Value get() const { return value_.Load(MemoryOrder::RELAXED); }
