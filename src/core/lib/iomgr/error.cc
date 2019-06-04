@@ -477,14 +477,13 @@ grpc_error* grpc_error_set_str(grpc_error* src, grpc_error_strs which,
   return new_err;
 }
 
-extern grpc_slice_refcount NoopRefcount;
 bool grpc_error_get_str(grpc_error* err, grpc_error_strs which,
                         grpc_slice* str) {
   if (grpc_error_is_special(err)) {
     if (which != GRPC_ERROR_STR_GRPC_MESSAGE) return false;
     const special_error_status_map& msg =
         error_status_map[reinterpret_cast<size_t>(err)];
-    str->refcount = &NoopRefcount;
+    str->refcount = &grpc_core::NoopRefcount;
     str->data.refcounted.bytes =
         reinterpret_cast<uint8_t*>(const_cast<char*>(msg.msg));
     str->data.refcounted.length = msg.len;
