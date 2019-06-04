@@ -145,7 +145,7 @@ ENABLE_DOCUMENTATION_BUILD = os.environ.get(
 EXTRA_ENV_COMPILE_ARGS = os.environ.get('GRPC_PYTHON_CFLAGS', None)
 EXTRA_ENV_LINK_ARGS = os.environ.get('GRPC_PYTHON_LDFLAGS', None)
 if EXTRA_ENV_COMPILE_ARGS is None:
-  EXTRA_ENV_COMPILE_ARGS = ' -std=c++11'
+  EXTRA_ENV_COMPILE_ARGS = ' -std=c++1y'
   if 'win32' in sys.platform and sys.version_info < (3, 5):
     EXTRA_ENV_COMPILE_ARGS += ' -D_hypot=hypot'
     # We use define flags here and don't directly add to DEFINE_MACROS below to

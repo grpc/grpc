@@ -218,7 +218,7 @@ class BuildExt(build_ext.build_ext):
             when invoked in C mode. GCC is okay with this, while clang is not.
             """
             cc_test = subprocess.Popen(
-                ['cc', '-x', 'c', '-std=c++11', '-'],
+                ['cc', '-x', 'c', '-std=c++1y', '-'],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)
