@@ -43,15 +43,14 @@ class BenchmarkCallbackServiceImpl final
         [request, response]() { return SetResponse(request, response); });
   }
 
-  ::grpc::experimental::ServerBidiReactor<::grpc::testing::SimpleRequest,
-                                          ::grpc::testing::SimpleResponse>*
-  StreamingCall(ServerContext*) override {
+  void
+  StreamingCall(ServerContext*,   ::grpc::experimental::ServerBidiReactor<::grpc::testing::SimpleRequest,
+                                          ::grpc::testing::SimpleResponse>** reactor) override {
     class Reactor
         : public ::grpc::experimental::ServerBidiReactor<
               ::grpc::testing::SimpleRequest, ::grpc::testing::SimpleResponse> {
      public:
-      Reactor() {}
-      void OnStarted() override { StartRead(&request_); }
+      Reactor() { StartRead(&request_); }
 
       void OnReadDone(bool ok) override {
         if (!ok) {
@@ -80,7 +79,7 @@ class BenchmarkCallbackServiceImpl final
       SimpleRequest request_;
       SimpleResponse response_;
     };
-    return new Reactor;
+    *reactor = new Reactor;
   }
 
  private:

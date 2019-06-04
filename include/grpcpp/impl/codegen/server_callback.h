@@ -189,12 +189,8 @@ class ServerCallbackReaderWriter {
 };
 
 // The following classes are the reactor interfaces that are to be implemented
-// by the user, returned as the result of the method handler for a callback
-// method, and activated by the call to OnStarted. The library guarantees that
-// OnStarted will be called for any reactor that has been created using a
-// method handler registered on a service. No operation initiation method may be
-// called until after the call to OnStarted.
-// Note that none of the classes are pure; all reactions have a default empty
+// by the user, returned as the output parameter of the method handler for a callback
+// method. Note that none of the classes are pure; all reactions have a default empty
 // reaction so that the user class only needs to override those classes that it
 // cares about.
 
@@ -203,9 +199,6 @@ template <class Request, class Response>
 class ServerBidiReactor : public internal::ServerReactor {
  public:
   ~ServerBidiReactor() = default;
-
-  /// Do NOT call any operation initiation method (names that start with Start)
-  /// until after the library has called OnStarted on this object.
 
   /// Send any initial metadata stored in the RPC context. If not invoked,
   /// any initial metadata will be passed along with the first Write or the
@@ -261,8 +254,8 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// both.
   ///
   /// \param[in] resp The message to be written. The library takes temporary
-  ///                 ownership until Onone, at which point the application
-  ///                 regains ownership of resp.
+  ///                 ownership until OnWriteDone, at which point the
+  ///                 application regains ownership of resp.
   /// \param[in] options The WriteOptions to use for writing this message
   /// \param[in] s The status outcome of this RPC
   void StartWriteAndFinish(const Response* resp, WriteOptions options,
@@ -303,12 +296,6 @@ class ServerBidiReactor : public internal::ServerReactor {
       status_wanted_ = std::move(s);
     }
   }
-
-  /// Notify the application that a streaming RPC has started and that it is now
-  /// ok to call any operation initiation method. An RPC is considered started
-  /// after the server has received all initial metadata from the client, which
-  /// is a result of the client calling StartCall().
-  virtual void OnStarted() {}
 
   /// Notifies the application that an explicit StartSendInitialMetadata
   /// operation completed. Not used when the sending of initial metadata
@@ -404,13 +391,6 @@ class ServerReadReactor : public internal::ServerReactor {
     }
   }
 
-  /// Similar to ServerBidiReactor::OnStarted, except that this also provides
-  /// the response object that the stream fills in before calling Finish.
-  /// (It must be filled in if status is OK, but it may be filled in otherwise.)
-  ///
-  /// \param[in] resp The response object to be used by this RPC
-  virtual void OnStarted(Response* resp) {}
-
   /// The following notifications are exactly like ServerBidiReactor.
   virtual void OnSendInitialMetadataDone(bool ok) {}
   virtual void OnReadDone(bool ok) {}
@@ -484,12 +464,6 @@ class ServerWriteReactor : public internal::ServerReactor {
       status_wanted_ = std::move(s);
     }
   }
-
-  /// Similar to ServerBidiReactor::OnStarted, except that this also provides
-  /// the request object sent by the client.
-  ///
-  /// \param[in] req The request object sent by the client
-  virtual void OnStarted(const Request* req) {}
 
   /// The following notifications are exactly like ServerBidiReactor.
   virtual void OnSendInitialMetadataDone(bool ok) {}
@@ -706,11 +680,13 @@ class CallbackUnaryHandler : public MethodHandler {
     auto* allocator_state =
         static_cast<experimental::MessageHolder<RequestType, ResponseType>*>(
             param.internal_data);
+
     auto* call = new (g_core_codegen_interface->grpc_call_arena_alloc(
         param.call->call(), sizeof(ServerCallbackUnaryImpl)))
         ServerCallbackUnaryImpl(param.server_context, param.call,
                                 allocator_state,
                                 std::move(param.call_requester));
+
     experimental::ServerUnaryReactor<RequestType, ResponseType>* reactor;
     if (param.status.ok()) {
       CatchingReactorGetter(&reactor, get_reactor_, param.server_context,
@@ -859,53 +835,50 @@ class CallbackUnaryHandler : public MethodHandler {
     std::function<void()> call_requester_;
     experimental::ServerUnaryReactor<RequestType, ResponseType>* reactor_;
     std::atomic_int callbacks_outstanding_{
-        3};  // reserve for OnStarted, Finish, and CompletionOp
+        3};  // reserve for start, Finish, and CompletionOp
   };
 };
 
 template <class RequestType, class ResponseType>
 class CallbackClientStreamingHandler : public MethodHandler {
  public:
-  explicit CallbackClientStreamingHandler(
-      std::function<experimental::ServerReadReactor<RequestType, ResponseType>*(
-          ServerContext*)>
-          get_reactor)
-      : get_reactor_(std::move(get_reactor)) {}
+  explicit CallbackClientStreamingHandler(std::function<void(ServerContext*, ResponseType*, experimental::ServerReadReactor<RequestType, ResponseType>**)>
+					  get_reactor)
+    : get_reactor_(std::move(get_reactor)) {}
   void RunHandler(const HandlerParameter& param) final {
     // Arena allocate a reader structure (that includes response)
     g_core_codegen_interface->grpc_call_ref(param.call->call());
 
-    experimental::ServerReadReactor<RequestType, ResponseType>* reactor =
-        param.status.ok()
-            ? CatchingReactorCreator<
-                  experimental::ServerReadReactor<RequestType, ResponseType>*>(
-                  get_reactor_, param.server_context)
-            : nullptr;
+    auto* reader = new (g_core_codegen_interface->grpc_call_arena_alloc(
+        param.call->call(), sizeof(ServerCallbackReaderImpl)))
+        ServerCallbackReaderImpl(param.server_context, param.call,
+                                 std::move(param.call_requester));
+
+    experimental::ServerReadReactor<RequestType, ResponseType>* reactor;
+    if (param.status.ok()) {
+      CatchingReactorGetter(&reactor, get_reactor_, param.server_context, reader->response());
+    } else {
+      reactor = nullptr;
+    }
 
     if (reactor == nullptr) {
       // if deserialization or reactor creator failed, we need to fail the call
       reactor = new UnimplementedReadReactor<RequestType, ResponseType>;
     }
 
-    auto* reader = new (g_core_codegen_interface->grpc_call_arena_alloc(
-        param.call->call(), sizeof(ServerCallbackReaderImpl)))
-        ServerCallbackReaderImpl(param.server_context, param.call,
-                                 std::move(param.call_requester), reactor);
-
-    reader->BindReactor(reactor);
-    reactor->OnStarted(reader->response());
-    // The earliest that OnCancel can be called is after OnStarted is done.
+    reader->SetupReactor(reactor);
+    // The earliest that OnCancel can be called is after setup is done.
     reactor->MaybeCallOnCancel();
     reader->MaybeDone();
   }
-
+  
  private:
-  std::function<experimental::ServerReadReactor<RequestType, ResponseType>*(
-      ServerContext*)>
-      get_reactor_;
-
+  std::function<void(ServerContext*, ResponseType*,
+		     experimental::ServerReadReactor<RequestType, ResponseType>**)>
+    get_reactor_;
+  
   class ServerCallbackReaderImpl
-      : public experimental::ServerCallbackReader<RequestType> {
+    : public experimental::ServerCallbackReader<RequestType> {
    public:
     void Finish(Status s) override {
       finish_tag_.Set(call_.call(), [this](bool) { MaybeDone(); },
@@ -958,13 +931,15 @@ class CallbackClientStreamingHandler : public MethodHandler {
     friend class CallbackClientStreamingHandler<RequestType, ResponseType>;
 
     ServerCallbackReaderImpl(
-        ServerContext* ctx, Call* call, std::function<void()> call_requester,
-        experimental::ServerReadReactor<RequestType, ResponseType>* reactor)
+        ServerContext* ctx, Call* call, std::function<void()> call_requester
+        )
         : ctx_(ctx),
           call_(*call),
-          call_requester_(std::move(call_requester)),
-          reactor_(reactor) {
-      ctx_->BeginCompletionOp(call, [this](bool) { MaybeDone(); }, reactor);
+      call_requester_(std::move(call_requester)) {}
+
+    void SetupReactor(experimental::ServerReadReactor<RequestType, ResponseType>* reactor) {
+      reactor_ = reactor;
+      ctx_->BeginCompletionOp(&call_, [this](bool) { MaybeDone(); }, reactor);
       read_tag_.Set(call_.call(),
                     [this](bool ok) {
                       reactor_->OnReadDone(ok);
@@ -1004,7 +979,7 @@ class CallbackClientStreamingHandler : public MethodHandler {
     std::function<void()> call_requester_;
     experimental::ServerReadReactor<RequestType, ResponseType>* reactor_;
     std::atomic_int callbacks_outstanding_{
-        3};  // reserve for OnStarted, Finish, and CompletionOp
+        3};  // reserve for start, Finish, and CompletionOp
   };
 };
 
@@ -1012,34 +987,35 @@ template <class RequestType, class ResponseType>
 class CallbackServerStreamingHandler : public MethodHandler {
  public:
   explicit CallbackServerStreamingHandler(
-      std::function<experimental::ServerWriteReactor<
-          RequestType, ResponseType>*(ServerContext*)>
-          get_reactor)
-      : get_reactor_(std::move(get_reactor)) {}
+					  std::function<void(ServerContext*, const RequestType*, experimental::ServerWriteReactor<
+							     RequestType, ResponseType>**)>
+					  get_reactor)
+    : get_reactor_(std::move(get_reactor)) {}
   void RunHandler(const HandlerParameter& param) final {
     // Arena allocate a writer structure
     g_core_codegen_interface->grpc_call_ref(param.call->call());
 
-    experimental::ServerWriteReactor<RequestType, ResponseType>* reactor =
-        param.status.ok()
-            ? CatchingReactorCreator<
-                  experimental::ServerWriteReactor<RequestType, ResponseType>*>(
-                  get_reactor_, param.server_context)
-            : nullptr;
+    auto* writer = new (g_core_codegen_interface->grpc_call_arena_alloc(
+        param.call->call(), sizeof(ServerCallbackWriterImpl)))
+        ServerCallbackWriterImpl(param.server_context, param.call,
+                                 static_cast<RequestType*>(param.request),
+                                 std::move(param.call_requester));
+
+    experimental::ServerWriteReactor<RequestType, ResponseType>* reactor;
+    if (param.status.ok()) {
+      CatchingReactorGetter(&reactor, 
+			    get_reactor_, param.server_context, writer->request());
+    } else {
+      reactor = nullptr;
+    }
 
     if (reactor == nullptr) {
       // if deserialization or reactor creator failed, we need to fail the call
       reactor = new UnimplementedWriteReactor<RequestType, ResponseType>;
     }
 
-    auto* writer = new (g_core_codegen_interface->grpc_call_arena_alloc(
-        param.call->call(), sizeof(ServerCallbackWriterImpl)))
-        ServerCallbackWriterImpl(param.server_context, param.call,
-                                 static_cast<RequestType*>(param.request),
-                                 std::move(param.call_requester), reactor);
-    writer->BindReactor(reactor);
-    reactor->OnStarted(writer->request());
-    // The earliest that OnCancel can be called is after OnStarted is done.
+    writer->SetupReactor(reactor);
+    // The earliest that OnCancel can be called is after setup is done
     reactor->MaybeCallOnCancel();
     writer->MaybeDone();
   }
@@ -1060,9 +1036,9 @@ class CallbackServerStreamingHandler : public MethodHandler {
   }
 
  private:
-  std::function<experimental::ServerWriteReactor<RequestType, ResponseType>*(
-      ServerContext*)>
-      get_reactor_;
+  std::function<void(ServerContext*, const RequestType*, experimental::ServerWriteReactor<
+		     RequestType, ResponseType>**)>
+    get_reactor_;
 
   class ServerCallbackWriterImpl
       : public experimental::ServerCallbackWriter<ResponseType> {
@@ -1137,14 +1113,15 @@ class CallbackServerStreamingHandler : public MethodHandler {
 
     ServerCallbackWriterImpl(
         ServerContext* ctx, Call* call, const RequestType* req,
-        std::function<void()> call_requester,
-        experimental::ServerWriteReactor<RequestType, ResponseType>* reactor)
+        std::function<void()> call_requester)
         : ctx_(ctx),
           call_(*call),
           req_(req),
-          call_requester_(std::move(call_requester)),
-          reactor_(reactor) {
-      ctx_->BeginCompletionOp(call, [this](bool) { MaybeDone(); }, reactor);
+      call_requester_(std::move(call_requester)) {}
+    
+    void SetupReactor(experimental::ServerWriteReactor<RequestType, ResponseType>* reactor) {
+      reactor_ = reactor;
+      ctx_->BeginCompletionOp(&call_, [this](bool) { MaybeDone(); }, reactor);
       write_tag_.Set(call_.call(),
                      [this](bool ok) {
                        reactor_->OnWriteDone(ok);
@@ -1191,42 +1168,39 @@ template <class RequestType, class ResponseType>
 class CallbackBidiHandler : public MethodHandler {
  public:
   explicit CallbackBidiHandler(
-      std::function<experimental::ServerBidiReactor<RequestType, ResponseType>*(
-          ServerContext*)>
-          get_reactor)
-      : get_reactor_(std::move(get_reactor)) {}
+			       std::function<void(ServerContext*, experimental::ServerBidiReactor<RequestType, ResponseType>**)>
+			       get_reactor)
+    : get_reactor_(std::move(get_reactor)) {}
   void RunHandler(const HandlerParameter& param) final {
     g_core_codegen_interface->grpc_call_ref(param.call->call());
 
-    experimental::ServerBidiReactor<RequestType, ResponseType>* reactor =
-        param.status.ok()
-            ? CatchingReactorCreator<
-                  experimental::ServerBidiReactor<RequestType, ResponseType>*>(
-                  get_reactor_, param.server_context)
-            : nullptr;
+    auto* stream = new (g_core_codegen_interface->grpc_call_arena_alloc(
+        param.call->call(), sizeof(ServerCallbackReaderWriterImpl)))
+        ServerCallbackReaderWriterImpl(param.server_context, param.call,
+                                       std::move(param.call_requester));
+
+    experimental::ServerBidiReactor<RequestType, ResponseType>* reactor;
+    if (param.status.ok()) {
+      CatchingReactorGetter(&reactor, 
+			    get_reactor_, param.server_context);
+    } else {
+      reactor = nullptr;
+    }
 
     if (reactor == nullptr) {
       // if deserialization or reactor creator failed, we need to fail the call
       reactor = new UnimplementedBidiReactor<RequestType, ResponseType>;
     }
 
-    auto* stream = new (g_core_codegen_interface->grpc_call_arena_alloc(
-        param.call->call(), sizeof(ServerCallbackReaderWriterImpl)))
-        ServerCallbackReaderWriterImpl(param.server_context, param.call,
-                                       std::move(param.call_requester),
-                                       reactor);
-
-    stream->BindReactor(reactor);
-    reactor->OnStarted();
-    // The earliest that OnCancel can be called is after OnStarted is done.
+    stream->SetupReactor(reactor);
+    // The earliest that OnCancel can be called is after setup is done.
     reactor->MaybeCallOnCancel();
     stream->MaybeDone();
   }
 
  private:
-  std::function<experimental::ServerBidiReactor<RequestType, ResponseType>*(
-      ServerContext*)>
-      get_reactor_;
+  std::function<void(ServerContext*, experimental::ServerBidiReactor<RequestType, ResponseType>**)>
+    get_reactor_;
 
   class ServerCallbackReaderWriterImpl
       : public experimental::ServerCallbackReaderWriter<RequestType,
@@ -1306,13 +1280,15 @@ class CallbackBidiHandler : public MethodHandler {
     friend class CallbackBidiHandler<RequestType, ResponseType>;
 
     ServerCallbackReaderWriterImpl(
-        ServerContext* ctx, Call* call, std::function<void()> call_requester,
-        experimental::ServerBidiReactor<RequestType, ResponseType>* reactor)
+        ServerContext* ctx, Call* call, std::function<void()> call_requester
+        )
         : ctx_(ctx),
           call_(*call),
-          call_requester_(std::move(call_requester)),
-          reactor_(reactor) {
-      ctx_->BeginCompletionOp(call, [this](bool) { MaybeDone(); }, reactor);
+      call_requester_(std::move(call_requester)) {}
+    
+    void SetupReactor(experimental::ServerBidiReactor<RequestType, ResponseType>* reactor) {
+      reactor_ = reactor;
+      ctx_->BeginCompletionOp(&call_, [this](bool) { MaybeDone(); }, reactor);
       write_tag_.Set(call_.call(),
                      [this](bool ok) {
                        reactor_->OnWriteDone(ok);
@@ -1328,7 +1304,6 @@ class CallbackBidiHandler : public MethodHandler {
                     &read_ops_);
       read_ops_.set_core_cq_tag(&read_tag_);
     }
-    ~ServerCallbackReaderWriterImpl() {}
 
     void MaybeDone() {
       if (--callbacks_outstanding_ == 0) {
