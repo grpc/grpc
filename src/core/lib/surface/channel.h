@@ -104,8 +104,7 @@ struct grpc_channel {
 
   char* target;
   
-  grpc_channel() = default;
-  grpc_channel(const grpc_channel_builder_args& args)
+  explicit grpc_channel(const grpc_channel_builder_args& args)
       : is_client(args.is_client),
         resource_user(args.resource_user),
         target(args.target) {

@@ -57,6 +57,7 @@ inline bool grpc_channel_stack_type_is_client(grpc_channel_stack_type type) {
     case GRPC_NUM_CHANNEL_STACK_TYPES:
       return true;
   }
+  return false;
 }
 
 inline const char* grpc_channel_stack_type_string(
@@ -77,6 +78,7 @@ inline const char* grpc_channel_stack_type_string(
     case GRPC_NUM_CHANNEL_STACK_TYPES:
       return "UNKNOWN";
   }
+  return "UNKNOWN";
 }
 
 #endif /* GRPC_CORE_LIB_SURFACE_CHANNEL_STACK_TYPE_H */
