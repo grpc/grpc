@@ -38,13 +38,6 @@ struct StringLess {
   }
 };
 
-template <typename T>
-struct RefCountedPtrLess {
-  bool operator()(const RefCountedPtr<T>& p1, const RefCountedPtr<T>& p2) {
-    return *p1 < *p2;
-  }
-};
-
 namespace testing {
 class MapTest;
 }

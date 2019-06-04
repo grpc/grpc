@@ -356,6 +356,17 @@ class XdsLb : public LoadBalancingPolicy {
 
   class LocalityName : public RefCounted<LocalityName> {
    public:
+    struct Less {
+      bool operator()(const RefCountedPtr<LocalityName>& lhs,
+                      const RefCountedPtr<LocalityName>& rhs) {
+        int cmp_result = gpr_stricmp(lhs->region_.get(), rhs->region_.get());
+        if (cmp_result != 0) return cmp_result < 0;
+        cmp_result = gpr_stricmp(lhs->zone_.get(), rhs->zone_.get());
+        if (cmp_result != 0) return cmp_result < 0;
+        return gpr_stricmp(lhs->subzone_.get(), rhs->subzone_.get()) < 0;
+      }
+    };
+
     LocalityName(UniquePtr<char> region, UniquePtr<char> zone,
                  UniquePtr<char> subzone)
         : region_(std::move(region)),
@@ -366,14 +377,6 @@ class XdsLb : public LoadBalancingPolicy {
       return strcmp(region_.get(), other.region_.get()) == 0 &&
              strcmp(zone_.get(), other.zone_.get()) == 0 &&
              strcmp(subzone_.get(), other.subzone_.get()) == 0;
-    }
-
-    bool operator<(const LocalityName& other) const {
-      int cmp_result = gpr_stricmp(region_.get(), other.region_.get());
-      if (cmp_result != 0) return cmp_result < 0;
-      cmp_result = gpr_stricmp(zone_.get(), other.zone_.get());
-      if (cmp_result != 0) return cmp_result < 0;
-      return gpr_stricmp(subzone_.get(), other.subzone_.get()) < 0;
     }
 
    private:
@@ -449,7 +452,7 @@ class XdsLb : public LoadBalancingPolicy {
    private:
     void PruneLocalities(const LocalityList& locality_list);
     Map<RefCountedPtr<LocalityName>, OrphanablePtr<LocalityEntry>,
-        RefCountedPtrLess<LocalityName>>
+        LocalityName::Less>
         map_;
     // Lock held while filling child refs for all localities
     // inside the map
