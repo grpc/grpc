@@ -56,7 +56,7 @@ class ThreadManager {
   //    DoWork()
   //
   // If the return value is SHUTDOWN:,
-  //  - ThreadManager WILL NOT call DoWork() and terminates the thead
+  //  - ThreadManager WILL NOT call DoWork() and terminates the thread
   //
   // If the return value is TIMEOUT:,
   //  - ThreadManager WILL NOT call DoWork()
@@ -133,7 +133,7 @@ class ThreadManager {
     grpc_core::Thread thd_;
   };
 
-  // The main funtion in ThreadManager
+  // The main function in ThreadManager
   void MainWorkLoop();
 
   void MarkAsCompleted(WorkerThread* thd);
