@@ -447,9 +447,11 @@ grpc_error* grpc_error_set_int(grpc_error* src, grpc_error_ints which,
 const special_error_status_map error_status_map[] = {
     {GRPC_STATUS_OK, "", 0},                // GRPC_ERROR_NONE
     {GRPC_STATUS_INVALID_ARGUMENT, "", 0},  // GRPC_ERROR_RESERVED_1
-    {GRPC_STATUS_RESOURCE_EXHAUSTED, "Out of memory", 13},  // GRPC_ERROR_OOM
-    {GRPC_STATUS_INVALID_ARGUMENT, "", 0},    // GRPC_ERROR_RESERVED_2
-    {GRPC_STATUS_CANCELLED, "Cancelled", 9},  // GRPC_ERROR_CANCELLED
+    {GRPC_STATUS_RESOURCE_EXHAUSTED, "Out of memory",
+     strlen("Out of memory")},              // GRPC_ERROR_OOM
+    {GRPC_STATUS_INVALID_ARGUMENT, "", 0},  // GRPC_ERROR_RESERVED_2
+    {GRPC_STATUS_CANCELLED, "Cancelled",
+     strlen("Cancelled")},  // GRPC_ERROR_CANCELLED
 };
 
 bool grpc_error_get_int(grpc_error* err, grpc_error_ints which, intptr_t* p) {
