@@ -1801,6 +1801,7 @@ TEST_P(SecureEnd2endTest, AuthMetadataPluginWithDeadline) {
   MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
+  request.mutable_param()->set_skip_cancelled_check(true);
   EchoResponse response;
   ClientContext context;
   const int delay = 100;
@@ -1824,6 +1825,7 @@ TEST_P(SecureEnd2endTest, AuthMetadataPluginWithCancel) {
   MAYBE_SKIP_TEST;
   ResetStub();
   EchoRequest request;
+  request.mutable_param()->set_skip_cancelled_check(true);
   EchoResponse response;
   ClientContext context;
   const int delay = 100;
