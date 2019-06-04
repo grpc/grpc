@@ -45,8 +45,8 @@ namespace testing {
 
 class ChannelzRegistryPeer {
  public:
-  static int num_empty_slots() {
-    return (*ChannelzRegistry::registry_)->num_empty_slots_;
+  static int size() {
+    return (*ChannelzRegistry::registry_)->node_map_.size();
   }
   static void DoGarbageCollection() {
     MutexLock lock(&(*ChannelzRegistry::registry_)->mu_);
@@ -119,13 +119,13 @@ TEST_F(ChannelzRegistryTest, NullIfNotPresentTest) {
   EXPECT_EQ(channelz_channel, retrieved);
 }
 
-TEST_F(ChannelzRegistryTest, TestCompaction) {
+TEST_F(ChannelzRegistryTest, GarbageCollection) {
   const int kLoopIterations = 300;
-  // These channels that will stay in the registry for the duration of the test.
+  // These channels will stay in the registry for the duration of the test.
   std::vector<RefCountedPtr<BaseNode>> even_channels;
   even_channels.reserve(kLoopIterations);
   {
-    // The channels will unregister themselves at the end of the for block.
+    // These channels will be unreffed at the end of this block.
     std::vector<RefCountedPtr<BaseNode>> odd_channels;
     odd_channels.reserve(kLoopIterations);
     for (int i = 0; i < kLoopIterations; i++) {
@@ -134,70 +134,92 @@ TEST_F(ChannelzRegistryTest, TestCompaction) {
       odd_channels.push_back(ChannelzRegistry::CreateNode<BaseNode>(
           BaseNode::EntityType::kTopLevelChannel));
     }
+    // All channels are still in the registry.
+    EXPECT_EQ(2 * kLoopIterations, ChannelzRegistryPeer::size());
   }
-  // without compaction, there would be exactly kLoopIterations empty slots at
-  // this point. However, one of the unregisters should have triggered
-  // compaction.
-  EXPECT_LT(ChannelzRegistryPeer::num_empty_slots(), kLoopIterations);
+  // Run GC.
+  ChannelzRegistryPeer::DoGarbageCollection();
+  // Half of the channels should have been removed.
+  EXPECT_EQ(kLoopIterations, ChannelzRegistryPeer::size());
 }
 
-TEST_F(ChannelzRegistryTest, TestGetAfterCompaction) {
-  const int kLoopIterations = 100;
-  // These channels that will stay in the registry for the duration of the test.
-  std::vector<RefCountedPtr<BaseNode>> even_channels;
-  even_channels.reserve(kLoopIterations);
-  std::vector<intptr_t> odd_uuids;
-  odd_uuids.reserve(kLoopIterations);
-  {
-    // The channels will unregister themselves at the end of the for block.
-    std::vector<RefCountedPtr<BaseNode>> odd_channels;
-    odd_channels.reserve(kLoopIterations);
-    for (int i = 0; i < kLoopIterations; i++) {
-      even_channels.push_back(ChannelzRegistry::CreateNode<BaseNode>(
-          BaseNode::EntityType::kTopLevelChannel));
-      odd_channels.push_back(ChannelzRegistry::CreateNode<BaseNode>(
-          BaseNode::EntityType::kTopLevelChannel));
-      odd_uuids.push_back(odd_channels[i]->uuid());
-    }
-    ChannelzRegistryPeer::DoGarbageCollection();
-  }
+TEST_F(ChannelzRegistryTest, GetAfterUnref) {
+  const int kLoopIterations = 1000;
+  // Add nodes.
+  std::vector<RefCountedPtr<BaseNode>> nodes;
+  std::vector<intptr_t> uuids;
   for (int i = 0; i < kLoopIterations; i++) {
-    RefCountedPtr<BaseNode> retrieved =
-        ChannelzRegistry::Get(even_channels[i]->uuid());
-    EXPECT_EQ(even_channels[i], retrieved);
-    retrieved = ChannelzRegistry::Get(odd_uuids[i]);
+    nodes.push_back(ChannelzRegistry::CreateNode<BaseNode>(
+        BaseNode::EntityType::kTopLevelChannel));
+    uuids.push_back(nodes[i]->uuid());
+  }
+  EXPECT_EQ(kLoopIterations, ChannelzRegistryPeer::size());
+  // Unref nodes.
+  // Note: It's possible that GC will run at this point, which will
+  // eliminate the value of this test.  However, that's unlikely, since
+  // GC runs only once every 5 seconds, and even if it happens, the test
+  // would still fail most of the time if Get() was returning nodes that
+  // had been unreffed.
+  nodes.clear();
+  EXPECT_LE(ChannelzRegistryPeer::size(), kLoopIterations);
+  // Get() should return null for all of them.
+  for (int i = 0; i < kLoopIterations; i++) {
+    RefCountedPtr<BaseNode> retrieved = ChannelzRegistry::Get(uuids[i]);
     EXPECT_EQ(retrieved, nullptr);
   }
 }
 
-TEST_F(ChannelzRegistryTest, TestAddAfterCompaction) {
-  const int kLoopIterations = 100;
-  // These channels that will stay in the registry for the duration of the test.
-  std::vector<RefCountedPtr<BaseNode>> even_channels;
-  even_channels.reserve(kLoopIterations);
-  std::vector<intptr_t> odd_uuids;
-  odd_uuids.reserve(kLoopIterations);
-  {
-    // The channels will unregister themselves at the end of the for block.
-    std::vector<RefCountedPtr<BaseNode>> odd_channels;
-    odd_channels.reserve(kLoopIterations);
-    for (int i = 0; i < kLoopIterations; i++) {
-      even_channels.push_back(ChannelzRegistry::CreateNode<BaseNode>(
-          BaseNode::EntityType::kTopLevelChannel));
-      odd_channels.push_back(ChannelzRegistry::CreateNode<BaseNode>(
-          BaseNode::EntityType::kTopLevelChannel));
-      odd_uuids.push_back(odd_channels[i]->uuid());
-    }
-    ChannelzRegistryPeer::DoGarbageCollection();
-  }
-  std::vector<RefCountedPtr<BaseNode>> more_channels;
-  more_channels.reserve(kLoopIterations);
+TEST_F(ChannelzRegistryTest, GetTopChannelsAfterUnref) {
+  const int kLoopIterations = 1000;
+  // Add nodes.
+  std::vector<RefCountedPtr<BaseNode>> nodes;
+  std::vector<intptr_t> uuids;
   for (int i = 0; i < kLoopIterations; i++) {
-    more_channels.push_back(ChannelzRegistry::CreateNode<BaseNode>(
+    nodes.push_back(ChannelzRegistry::CreateNode<BaseNode>(
         BaseNode::EntityType::kTopLevelChannel));
-    RefCountedPtr<BaseNode> retrieved =
-        ChannelzRegistry::Get(more_channels[i]->uuid());
-    EXPECT_EQ(more_channels[i], retrieved);
+    uuids.push_back(nodes[i]->uuid());
+  }
+  EXPECT_EQ(kLoopIterations, ChannelzRegistryPeer::size());
+  // Unref nodes.
+  // Note: It's possible that GC will run at this point, which will
+  // eliminate the value of this test.  However, that's unlikely, since
+  // GC runs only once every 5 seconds, and even if it happens, the test
+  // would still fail most of the time if GetTopChannels() was returning
+  // nodes that had been unreffed.
+  nodes.clear();
+  EXPECT_LE(ChannelzRegistryPeer::size(), kLoopIterations);
+  // Get() should return null for all of them.
+  for (int i = 0; i < kLoopIterations; i++) {
+    char* top_channels_json = ChannelzRegistry::GetTopChannels(0);
+    EXPECT_STREQ("{\"end\":true}", top_channels_json);
+    gpr_free(top_channels_json);
+  }
+}
+
+TEST_F(ChannelzRegistryTest, GetServersAfterUnref) {
+  const int kLoopIterations = 1000;
+  // Add nodes.
+  std::vector<RefCountedPtr<BaseNode>> nodes;
+  std::vector<intptr_t> uuids;
+  for (int i = 0; i < kLoopIterations; i++) {
+    nodes.push_back(ChannelzRegistry::CreateNode<BaseNode>(
+        BaseNode::EntityType::kServer));
+    uuids.push_back(nodes[i]->uuid());
+  }
+  EXPECT_EQ(kLoopIterations, ChannelzRegistryPeer::size());
+  // Unref nodes.
+  // Note: It's possible that GC will run at this point, which will
+  // eliminate the value of this test.  However, that's unlikely, since
+  // GC runs only once every 5 seconds, and even if it happens, the test
+  // would still fail most of the time if GetServers() was returning nodes
+  // that had been unreffed.
+  nodes.clear();
+  EXPECT_LE(ChannelzRegistryPeer::size(), kLoopIterations);
+  // Get() should return null for all of them.
+  for (int i = 0; i < kLoopIterations; i++) {
+    char* servers_json = ChannelzRegistry::GetServers(0);
+    EXPECT_STREQ("{\"end\":true}", servers_json);
+    gpr_free(servers_json);
   }
 }
 
