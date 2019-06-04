@@ -45,9 +45,7 @@ namespace testing {
 
 class ChannelzRegistryPeer {
  public:
-  static int size() {
-    return (*ChannelzRegistry::registry_)->node_map_.size();
-  }
+  static int size() { return (*ChannelzRegistry::registry_)->node_map_.size(); }
   static void DoGarbageCollection() {
     MutexLock lock(&(*ChannelzRegistry::registry_)->mu_);
     (*ChannelzRegistry::registry_)->DoGarbageCollectionLocked();
@@ -202,8 +200,8 @@ TEST_F(ChannelzRegistryTest, GetServersAfterUnref) {
   std::vector<RefCountedPtr<BaseNode>> nodes;
   std::vector<intptr_t> uuids;
   for (int i = 0; i < kLoopIterations; i++) {
-    nodes.push_back(ChannelzRegistry::CreateNode<BaseNode>(
-        BaseNode::EntityType::kServer));
+    nodes.push_back(
+        ChannelzRegistry::CreateNode<BaseNode>(BaseNode::EntityType::kServer));
     uuids.push_back(nodes[i]->uuid());
   }
   EXPECT_EQ(kLoopIterations, ChannelzRegistryPeer::size());

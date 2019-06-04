@@ -121,11 +121,10 @@ RefCountedPtr<BaseNode> ChannelzRegistry::Registry::Get(intptr_t uuid) {
 
 Map<intptr_t, RefCountedPtr<BaseNode>>::iterator
 ChannelzRegistry::Registry::FindUuidOrNext(intptr_t uuid) {
-  return std::find_if(
-      node_map_.begin(), node_map_.end(),
-      [uuid](const Pair<intptr_t, RefCountedPtr<BaseNode>>& p) {
-        return p.first >= uuid;
-      });
+  return std::find_if(node_map_.begin(), node_map_.end(),
+                      [uuid](const Pair<intptr_t, RefCountedPtr<BaseNode>>& p) {
+                        return p.first >= uuid;
+                      });
 }
 
 char* ChannelzRegistry::Registry::GetTopChannels(intptr_t start_channel_id) {
