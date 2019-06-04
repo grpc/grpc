@@ -101,11 +101,19 @@ class CallbackTestServiceImpl
       experimental::ServerUnaryReactor<SimpleRequest, SimpleResponse>** reactor)
       override;
 
-  void RequestStream(ServerContext* context, EchoResponse* response, experimental::ServerReadReactor<EchoRequest, EchoResponse>** reactor) override;
+  void RequestStream(
+      ServerContext* context, EchoResponse* response,
+      experimental::ServerReadReactor<EchoRequest, EchoResponse>** reactor)
+      override;
 
-  void ResponseStream(ServerContext* context, const EchoRequest* request, experimental::ServerWriteReactor<EchoRequest, EchoResponse>** reactor) override;
+  void ResponseStream(
+      ServerContext* context, const EchoRequest* request,
+      experimental::ServerWriteReactor<EchoRequest, EchoResponse>** reactor)
+      override;
 
-  void BidiStream(ServerContext* context,  experimental::ServerBidiReactor<EchoRequest, EchoResponse>** reactor) override;
+  void BidiStream(ServerContext* context,
+                  experimental::ServerBidiReactor<EchoRequest, EchoResponse>**
+                      reactor) override;
 
   // Unimplemented is left unimplemented to test the returned error.
   bool signal_client() {

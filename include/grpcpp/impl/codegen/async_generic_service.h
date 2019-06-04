@@ -112,8 +112,8 @@ class CallbackGenericService {
   /// The "method handler" for the generic API. This function should be
   /// overridden to provide a ServerGenericBidiReactor that implements the
   /// application-level interface for this RPC.
-  virtual void
-    CreateReactor(GenericServerContext* ctx, ServerGenericBidiReactor** reactor) {
+  virtual void CreateReactor(GenericServerContext* ctx,
+                             ServerGenericBidiReactor** reactor) {
     *reactor = new internal::UnimplementedGenericBidiReactor;
   }
 
@@ -122,9 +122,9 @@ class CallbackGenericService {
 
   internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>* Handler() {
     return new internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>(
-								     [this](ServerContext* ctx, ServerGenericBidiReactor** reactor) {
-								       CreateReactor(static_cast<GenericServerContext*>(ctx), reactor);
-								     });
+        [this](ServerContext* ctx, ServerGenericBidiReactor** reactor) {
+          CreateReactor(static_cast<GenericServerContext*>(ctx), reactor);
+        });
   }
 
   grpc_impl::Server* server_{nullptr};

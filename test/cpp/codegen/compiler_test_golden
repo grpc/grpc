@@ -362,7 +362,7 @@ class ServiceA final {
     ExperimentalWithCallbackMethod_MethodA2() {
       ::grpc::Service::experimental().MarkMethodCallback(1,
         new ::grpc::internal::CallbackClientStreamingHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
-          [this](::grpc::ServerContext* context) { return this->MethodA2(context); }));
+          [this](::grpc::ServerContext* context, ::grpc::testing::Response* response, ::grpc::experimental::ServerReadReactor< ::grpc::testing::Request, ::grpc::testing::Response>** reactor) { return this->MethodA2(context, response, reactor); }));
     }
     ~ExperimentalWithCallbackMethod_MethodA2() override {
       BaseClassMustBeDerivedFromService(this);
@@ -372,8 +372,8 @@ class ServiceA final {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::experimental::ServerReadReactor< ::grpc::testing::Request, ::grpc::testing::Response>* MethodA2(::grpc::ServerContext* context) {
-      return new ::grpc::internal::UnimplementedReadReactor<
+    virtual void MethodA2(::grpc::ServerContext* context, ::grpc::testing::Response* response, ::grpc::experimental::ServerReadReactor< ::grpc::testing::Request, ::grpc::testing::Response>** reactor) {
+      *reactor = new ::grpc::internal::UnimplementedReadReactor<
         ::grpc::testing::Request, ::grpc::testing::Response>;}
   };
   template <class BaseClass>
@@ -384,7 +384,7 @@ class ServiceA final {
     ExperimentalWithCallbackMethod_MethodA3() {
       ::grpc::Service::experimental().MarkMethodCallback(2,
         new ::grpc::internal::CallbackServerStreamingHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
-          [this](::grpc::ServerContext* context) { return this->MethodA3(context); }));
+          [this](::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::experimental::ServerWriteReactor< ::grpc::testing::Request, ::grpc::testing::Response>** reactor ) { return this->MethodA3(context, request, reactor); }));
     }
     ~ExperimentalWithCallbackMethod_MethodA3() override {
       BaseClassMustBeDerivedFromService(this);
@@ -394,8 +394,8 @@ class ServiceA final {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::experimental::ServerWriteReactor< ::grpc::testing::Request, ::grpc::testing::Response>* MethodA3(::grpc::ServerContext* context) {
-      return new ::grpc::internal::UnimplementedWriteReactor<
+    virtual void MethodA3(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::experimental::ServerWriteReactor< ::grpc::testing::Request, ::grpc::testing::Response>** reactor) {
+      *reactor = new ::grpc::internal::UnimplementedWriteReactor<
         ::grpc::testing::Request, ::grpc::testing::Response>;}
   };
   template <class BaseClass>
@@ -406,7 +406,7 @@ class ServiceA final {
     ExperimentalWithCallbackMethod_MethodA4() {
       ::grpc::Service::experimental().MarkMethodCallback(3,
         new ::grpc::internal::CallbackBidiHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
-          [this](::grpc::ServerContext* context) { return this->MethodA4(context); }));
+          [this](::grpc::ServerContext* context, ::grpc::experimental::ServerBidiReactor< ::grpc::testing::Request, ::grpc::testing::Response>** reactor ) { return this->MethodA4(context, reactor); }));
     }
     ~ExperimentalWithCallbackMethod_MethodA4() override {
       BaseClassMustBeDerivedFromService(this);
@@ -416,8 +416,8 @@ class ServiceA final {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::experimental::ServerBidiReactor< ::grpc::testing::Request, ::grpc::testing::Response>* MethodA4(::grpc::ServerContext* context) {
-      return new ::grpc::internal::UnimplementedBidiReactor<
+    virtual void MethodA4(::grpc::ServerContext* context, ::grpc::experimental::ServerBidiReactor< ::grpc::testing::Request, ::grpc::testing::Response>** reactor) {
+      *reactor = new ::grpc::internal::UnimplementedBidiReactor<
         ::grpc::testing::Request, ::grpc::testing::Response>;}
   };
   typedef ExperimentalWithCallbackMethod_MethodA1<ExperimentalWithCallbackMethod_MethodA2<ExperimentalWithCallbackMethod_MethodA3<ExperimentalWithCallbackMethod_MethodA4<Service > > > > ExperimentalCallbackService;
@@ -587,7 +587,7 @@ class ServiceA final {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual void MethodA1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, ::grpc::experimental::ServerUnaryReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>** reactor) {
+    virtual void MethodA1(::grpc::ServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response, ::grpc::experimental::ServerUnaryReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>** reactor) {
       *reactor = new ::grpc::internal::UnimplementedUnaryReactor<
         ::grpc::ByteBuffer, ::grpc::ByteBuffer>;}
   };
@@ -599,7 +599,7 @@ class ServiceA final {
     ExperimentalWithRawCallbackMethod_MethodA2() {
       ::grpc::Service::experimental().MarkMethodRawCallback(1,
         new ::grpc::internal::CallbackClientStreamingHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
-          [this](::grpc::ServerContext* context) { return this->MethodA2(context); }));
+          [this](::grpc::ServerContext* context, ::grpc::ByteBuffer* response,::grpc::experimental::ServerReadReactor<::grpc::ByteBuffer, ::grpc::ByteBuffer>** reactor) { return this->MethodA2(context, response, reactor); }));
     }
     ~ExperimentalWithRawCallbackMethod_MethodA2() override {
       BaseClassMustBeDerivedFromService(this);
@@ -609,8 +609,8 @@ class ServiceA final {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::experimental::ServerReadReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>* MethodA2(::grpc::ServerContext* context) {
-      return new ::grpc::internal::UnimplementedReadReactor<
+    virtual void MethodA2(::grpc::ServerContext* context, ::grpc::ByteBuffer* response, ::grpc::experimental::ServerReadReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>** reactor) {
+      *reactor = new ::grpc::internal::UnimplementedReadReactor<
         ::grpc::ByteBuffer, ::grpc::ByteBuffer>;}
   };
   template <class BaseClass>
@@ -621,7 +621,7 @@ class ServiceA final {
     ExperimentalWithRawCallbackMethod_MethodA3() {
       ::grpc::Service::experimental().MarkMethodRawCallback(2,
         new ::grpc::internal::CallbackServerStreamingHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
-          [this](::grpc::ServerContext* context) { return this->MethodA3(context); }));
+          [this](::grpc::ServerContext* context, const::grpc::ByteBuffer* request, ::grpc::experimental::ServerWriteReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>** reactor) { return this->MethodA3(context, request, reactor); }));
     }
     ~ExperimentalWithRawCallbackMethod_MethodA3() override {
       BaseClassMustBeDerivedFromService(this);
@@ -631,8 +631,8 @@ class ServiceA final {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::experimental::ServerWriteReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>* MethodA3(::grpc::ServerContext* context) {
-      return new ::grpc::internal::UnimplementedWriteReactor<
+    virtual void MethodA3(::grpc::ServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::experimental::ServerWriteReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>** reactor) {
+      *reactor = new ::grpc::internal::UnimplementedWriteReactor<
         ::grpc::ByteBuffer, ::grpc::ByteBuffer>;}
   };
   template <class BaseClass>
@@ -643,7 +643,7 @@ class ServiceA final {
     ExperimentalWithRawCallbackMethod_MethodA4() {
       ::grpc::Service::experimental().MarkMethodRawCallback(3,
         new ::grpc::internal::CallbackBidiHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
-          [this](::grpc::ServerContext* context) { return this->MethodA4(context); }));
+          [this](::grpc::ServerContext* context, ::grpc::experimental::ServerBidiReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>** reactor) { return this->MethodA4(context, reactor); }));
     }
     ~ExperimentalWithRawCallbackMethod_MethodA4() override {
       BaseClassMustBeDerivedFromService(this);
@@ -653,8 +653,8 @@ class ServiceA final {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::experimental::ServerBidiReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>* MethodA4(::grpc::ServerContext* context) {
-      return new ::grpc::internal::UnimplementedBidiReactor<
+    virtual void MethodA4(::grpc::ServerContext* context, ::grpc::experimental::ServerBidiReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>** reactor) {
+      *reactor = new ::grpc::internal::UnimplementedBidiReactor<
         ::grpc::ByteBuffer, ::grpc::ByteBuffer>;}
   };
   template <class BaseClass>
@@ -881,7 +881,7 @@ class ServiceB final {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual void MethodB1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, ::grpc::experimental::ServerUnaryReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>** reactor) {
+    virtual void MethodB1(::grpc::ServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response, ::grpc::experimental::ServerUnaryReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>** reactor) {
       *reactor = new ::grpc::internal::UnimplementedUnaryReactor<
         ::grpc::ByteBuffer, ::grpc::ByteBuffer>;}
   };

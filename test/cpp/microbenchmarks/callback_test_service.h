@@ -43,7 +43,8 @@ class CallbackStreamingTestService
                 reactor) override;
 
   void BidiStream(ServerContext* context,
-		  experimental::ServerBidiReactor<EchoRequest, EchoResponse>** reactor) override;
+                  experimental::ServerBidiReactor<EchoRequest, EchoResponse>**
+                      reactor) override;
 };
 }  // namespace testing
 }  // namespace grpc

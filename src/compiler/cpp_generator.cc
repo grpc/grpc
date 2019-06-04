@@ -927,7 +927,8 @@ void PrintHeaderServerCallbackMethodsHelper(
     printer->Print(
         *vars,
         "virtual void "
-        "$Method$(::grpc::ServerContext* context, const $RealRequest$* request, "
+        "$Method$(::grpc::ServerContext* context, const $RealRequest$* "
+        "request, "
         "$RealResponse$* response, ::grpc::experimental::ServerUnaryReactor< "
         "$RealRequest$, $RealResponse$>** reactor) {\n"
         "  *reactor = new ::grpc::internal::UnimplementedUnaryReactor<\n"
@@ -943,7 +944,8 @@ void PrintHeaderServerCallbackMethodsHelper(
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
-    printer->Print(*vars,
+    printer->Print(
+        *vars,
         "virtual void "
         "$Method$(::grpc::ServerContext* context, "
         "$RealResponse$* response, ::grpc::experimental::ServerReadReactor< "
@@ -961,10 +963,12 @@ void PrintHeaderServerCallbackMethodsHelper(
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
-    printer->Print(*vars,
+    printer->Print(
+        *vars,
         "virtual void "
         "$Method$(::grpc::ServerContext* context, "
-        "const $RealRequest$* request, ::grpc::experimental::ServerWriteReactor< "
+        "const $RealRequest$* request, "
+        "::grpc::experimental::ServerWriteReactor< "
         "$RealRequest$, $RealResponse$>** reactor) {\n"
         "  *reactor = new ::grpc::internal::UnimplementedWriteReactor<\n"
         "    $RealRequest$, $RealResponse$>;}\n");
@@ -979,7 +983,8 @@ void PrintHeaderServerCallbackMethodsHelper(
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
-    printer->Print(*vars,
+    printer->Print(
+        *vars,
         "virtual void "
         "$Method$(::grpc::ServerContext* context, "
         "::grpc::experimental::ServerBidiReactor< "
@@ -1107,8 +1112,9 @@ void PrintHeaderServerMethodRawCallback(
         "    new ::grpc::internal::CallbackClientStreamingHandler< "
         "$RealRequest$, $RealResponse$>(\n"
         "      [this](::grpc::ServerContext* context, $RealResponse$* response,"
-	"::grpc::experimental::ServerReadReactor<$RealRequest$, "
-	"$RealResponse$>** reactor) { return this->$Method$(context, response, reactor); }));\n");
+        "::grpc::experimental::ServerReadReactor<$RealRequest$, "
+        "$RealResponse$>** reactor) { return this->$Method$(context, response, "
+        "reactor); }));\n");
   } else if (ServerOnlyStreaming(method)) {
     printer->Print(
         *vars,
@@ -1116,7 +1122,7 @@ void PrintHeaderServerMethodRawCallback(
         "    new ::grpc::internal::CallbackServerStreamingHandler< "
         "$RealRequest$, $RealResponse$>(\n"
         "      [this](::grpc::ServerContext* context, const"
-	"$RealRequest$* request, ::grpc::experimental::ServerWriteReactor< "
+        "$RealRequest$* request, ::grpc::experimental::ServerWriteReactor< "
         "$RealRequest$, $RealResponse$>** reactor) { return "
         "this->$Method$(context, request, reactor); }));\n");
   } else if (method->BidiStreaming()) {
@@ -1126,7 +1132,7 @@ void PrintHeaderServerMethodRawCallback(
         "    new ::grpc::internal::CallbackBidiHandler< "
         "$RealRequest$, $RealResponse$>(\n"
         "      [this](::grpc::ServerContext* context, "
-	"::grpc::experimental::ServerBidiReactor< "
+        "::grpc::experimental::ServerBidiReactor< "
         "$RealRequest$, $RealResponse$>** reactor) { return "
         "this->$Method$(context, reactor); }));\n");
   }

@@ -62,8 +62,9 @@ void CallbackStreamingTestService::Echo(
       });
 }
 
-void
-CallbackStreamingTestService::BidiStream(ServerContext* context, experimental::ServerBidiReactor<EchoRequest, EchoResponse>** reactor) {
+void CallbackStreamingTestService::BidiStream(
+    ServerContext* context,
+    experimental::ServerBidiReactor<EchoRequest, EchoResponse>** reactor) {
   class Reactor
       : public experimental::ServerBidiReactor<EchoRequest, EchoResponse> {
    public:

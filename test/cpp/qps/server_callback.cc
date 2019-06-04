@@ -43,9 +43,11 @@ class BenchmarkCallbackServiceImpl final
         [request, response]() { return SetResponse(request, response); });
   }
 
-  void
-  StreamingCall(ServerContext*,   ::grpc::experimental::ServerBidiReactor<::grpc::testing::SimpleRequest,
-                                          ::grpc::testing::SimpleResponse>** reactor) override {
+  void StreamingCall(
+      ServerContext*,
+      ::grpc::experimental::ServerBidiReactor<::grpc::testing::SimpleRequest,
+                                              ::grpc::testing::SimpleResponse>**
+          reactor) override {
     class Reactor
         : public ::grpc::experimental::ServerBidiReactor<
               ::grpc::testing::SimpleRequest, ::grpc::testing::SimpleResponse> {

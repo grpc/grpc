@@ -354,7 +354,8 @@ class ServerContext {
     return rpc_info_;
   }
 
-  void set_message_allocator_state(experimental::RpcAllocatorState* allocator_state) {
+  void set_message_allocator_state(
+      experimental::RpcAllocatorState* allocator_state) {
     message_allocator_state_ = allocator_state;
   }
 
