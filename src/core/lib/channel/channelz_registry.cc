@@ -37,6 +37,7 @@ namespace channelz {
 
 namespace {
 const int kPaginationLimit = 100;
+// TODO(roth): Provide a way to force GC when under memory pressure.
 const grpc_millis kSweepIntervalMs = 5000;
 }  // anonymous namespace
 
