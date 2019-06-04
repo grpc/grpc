@@ -76,12 +76,12 @@ class CallbackTestServiceImpl
                 reactor) override {
     *reactor = experimental::MakeReactor<EchoRequest, EchoResponse>(
         context,
-        [this, request,
+        [this, context, request,
          response](experimental::ServerUnaryReactor<EchoRequest, EchoResponse>*
                        reactor) {
           response->set_message(request->message());
           if (allocator_mutator_) {
-            allocator_mutator_(reactor->GetRpcAllocatorState(), request,
+            allocator_mutator_(context->GetRpcAllocatorState(), request,
                                response);
           }
           reactor->Finish(Status::OK);

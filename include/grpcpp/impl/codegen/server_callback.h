@@ -121,7 +121,6 @@ class ServerCallbackUnary {
   virtual ~ServerCallbackUnary() {}
   virtual void Finish(Status s) = 0;
   virtual void SendInitialMetadata() = 0;
-  virtual RpcAllocatorState* GetRpcAllocatorState() = 0;
 
  protected:
   template <class Request, class Response>
@@ -554,12 +553,6 @@ class ServerUnaryReactor : public internal::ServerReactor {
   void OnDone() override {}
   void OnCancel() override {}
 
-  // NOTE: This is an API for advanced users who need custom allocators.
-  // Get and maybe mutate the allocator state associated with the current RPC.
-  RpcAllocatorState* GetRpcAllocatorState() {
-    return call_->GetRpcAllocatorState();
-  }
-
  private:
   friend class ServerCallbackUnary;
   void BindCall(ServerCallbackUnary* call) {
@@ -816,10 +809,6 @@ class CallbackUnaryHandler : public MethodHandler {
       call_.PerformOps(&meta_ops_);
     }
 
-    experimental::RpcAllocatorState* GetRpcAllocatorState() override {
-      return allocator_state_;
-    }
-
    private:
     friend class CallbackUnaryHandler<RequestType, ResponseType>;
 
@@ -830,7 +819,9 @@ class CallbackUnaryHandler : public MethodHandler {
         : ctx_(ctx),
           call_(*call),
           allocator_state_(allocator_state),
-          call_requester_(std::move(call_requester)) {}
+          call_requester_(std::move(call_requester)) {
+      ctx_->set_message_allocator_state(allocator_state);
+    }
 
     void SetupReactor(
         experimental::ServerUnaryReactor<RequestType, ResponseType>* reactor) {

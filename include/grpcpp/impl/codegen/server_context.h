@@ -31,6 +31,7 @@
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/create_auth_context.h>
+#include <grpcpp/impl/codegen/message_allocator.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
 #include <grpcpp/impl/codegen/security/auth_context.h>
 #include <grpcpp/impl/codegen/server_interceptor.h>
@@ -269,6 +270,14 @@ class ServerContext {
   /// Applications never need to call this method.
   grpc_call* c_call() { return call_; }
 
+  /// NOTE: This is an API for advanced users who need custom allocators.
+  /// Get and maybe mutate the allocator state associated with the current RPC.
+  /// Currently only applicable for callback unary RPC methods.
+  /// WARNING: This is experimental API and could be changed or removed.
+  experimental::RpcAllocatorState* GetRpcAllocatorState() {
+    return message_allocator_state_;
+  }
+
  private:
   friend class ::grpc::testing::InteropServerContextInspector;
   friend class ::grpc::testing::ServerContextTestSpouse;
@@ -345,6 +354,10 @@ class ServerContext {
     return rpc_info_;
   }
 
+  void set_message_allocator_state(experimental::RpcAllocatorState* allocator_state) {
+    message_allocator_state_ = allocator_state;
+  }
+
   CompletionOp* completion_op_;
   bool has_notify_when_done_tag_;
   void* async_notify_when_done_tag_;
@@ -369,6 +382,7 @@ class ServerContext {
   bool has_pending_ops_;
 
   experimental::ServerRpcInfo* rpc_info_;
+  experimental::RpcAllocatorState* message_allocator_state_ = nullptr;
 };
 
 }  // namespace grpc
