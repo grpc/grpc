@@ -98,6 +98,7 @@ grpc_channel* grpc_channel_create_with_builder(
   // override this to ensure a correct ChannelNode is created.
   grpc_core::channelz::ChannelNodeCreationFunc channel_node_create_func =
       grpc_core::channelz::ChannelNode::MakeChannelNode;
+  gpr_mu_init(&channel->registered_call_mu);
 
   gpr_atm_no_barrier_store(
       &channel->call_size_estimate,

@@ -103,12 +103,11 @@ struct grpc_channel {
   grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_channel;
 
   char* target;
-  
+
   explicit grpc_channel(const grpc_channel_builder_args& args)
       : is_client(args.is_client),
         resource_user(args.resource_user),
         target(args.target) {
-    gpr_mu_init(&registered_call_mu);
     grpc_compression_options_init(&compression_options);
   }
 };
