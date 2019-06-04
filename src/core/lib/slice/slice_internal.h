@@ -170,6 +170,8 @@ struct grpc_slice_refcount {
 
 namespace grpc_core {
 
+extern grpc_slice_refcount NoopRefcount;
+
 struct InternedSliceRefcount {
   static void Destroy(void* arg) {
     auto* rc = static_cast<InternedSliceRefcount*>(arg);
