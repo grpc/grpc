@@ -57,8 +57,7 @@ static void assert_valid_callouts(grpc_metadata_batch* batch) {
 #ifndef NDEBUG
   for (grpc_linked_mdelem* l = batch->list.head; l != nullptr; l = l->next) {
     grpc_slice key_interned = grpc_slice_intern(GRPC_MDKEY(l->md));
-    grpc_metadata_batch_callouts_index callout_idx =
-        GRPC_BATCH_INDEX_OF(key_interned);
+    intptr_t callout_idx = GRPC_BATCH_INDEX_OF(key_interned);
     if (callout_idx != GRPC_BATCH_CALLOUTS_COUNT) {
       GPR_ASSERT(batch->idx.array[callout_idx] == l);
     }
@@ -99,12 +98,11 @@ static grpc_error* maybe_link_callout(grpc_metadata_batch* batch,
 
 static grpc_error* maybe_link_callout(grpc_metadata_batch* batch,
                                       grpc_linked_mdelem* storage) {
-  grpc_metadata_batch_callouts_index idx =
-      GRPC_BATCH_INDEX_OF(GRPC_MDKEY(storage->md));
-  if (idx == GRPC_BATCH_CALLOUTS_COUNT) {
+  intptr_t idx = GRPC_STATIC_METADATA_INDEX(GRPC_MDKEY(storage->md));
+  if (idx >= GRPC_BATCH_CALLOUTS_COUNT || idx < 0) {
     return GRPC_ERROR_NONE;
   }
-  if (batch->idx.array[idx] == nullptr) {
+  if (GPR_LIKELY(batch->idx.array[idx] == nullptr)) {
     ++batch->list.default_count;
     batch->idx.array[idx] = storage;
     return GRPC_ERROR_NONE;
@@ -116,13 +114,12 @@ static grpc_error* maybe_link_callout(grpc_metadata_batch* batch,
 
 static void maybe_unlink_callout(grpc_metadata_batch* batch,
                                  grpc_linked_mdelem* storage) {
-  grpc_metadata_batch_callouts_index idx =
-      GRPC_BATCH_INDEX_OF(GRPC_MDKEY(storage->md));
-  if (idx == GRPC_BATCH_CALLOUTS_COUNT) {
+  intptr_t idx = GRPC_STATIC_METADATA_INDEX(GRPC_MDKEY(storage->md));
+  if (idx >= GRPC_BATCH_CALLOUTS_COUNT || idx < 0) {
     return;
   }
   --batch->list.default_count;
-  GPR_ASSERT(batch->idx.array[idx] != nullptr);
+  GPR_DEBUG_ASSERT(batch->idx.array[idx] != nullptr);
   batch->idx.array[idx] = nullptr;
 }
 
@@ -166,14 +163,12 @@ grpc_error* grpc_metadata_batch_link_head(grpc_metadata_batch* batch,
 grpc_error* grpc_metadata_batch_add_tail(grpc_metadata_batch* batch,
                                          grpc_linked_mdelem* storage,
                                          grpc_mdelem elem_to_add) {
-  GPR_ASSERT(!GRPC_MDISNULL(elem_to_add));
   storage->md = elem_to_add;
   return grpc_metadata_batch_link_tail(batch, storage);
 }
 
 static void link_tail(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
   assert_valid_list(list);
-  GPR_ASSERT(!GRPC_MDISNULL(storage->md));
   storage->prev = list->tail;
   storage->next = nullptr;
   storage->reserved = nullptr;
@@ -189,6 +184,7 @@ static void link_tail(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
 
 grpc_error* grpc_metadata_batch_link_tail(grpc_metadata_batch* batch,
                                           grpc_linked_mdelem* storage) {
+  GPR_DEBUG_ASSERT(!GRPC_MDISNULL(storage->md));
   assert_valid_callouts(batch);
   grpc_error* err = maybe_link_callout(batch, storage);
   if (err != GRPC_ERROR_NONE) {
