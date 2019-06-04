@@ -118,6 +118,8 @@ TEST_F(ChannelzRegistryTest, NullIfNotPresentTest) {
 }
 
 TEST_F(ChannelzRegistryTest, GarbageCollection) {
+  // Make sure registry starts empty.
+  ChannelzRegistryPeer::DoGarbageCollection();
   const int kLoopIterations = 300;
   // These channels will stay in the registry for the duration of the test.
   std::vector<RefCountedPtr<BaseNode>> even_channels;
@@ -142,8 +144,10 @@ TEST_F(ChannelzRegistryTest, GarbageCollection) {
 }
 
 TEST_F(ChannelzRegistryTest, GetAfterUnref) {
-  const int kLoopIterations = 1000;
+  // Make sure registry starts empty.
+  ChannelzRegistryPeer::DoGarbageCollection();
   // Add nodes.
+  const int kLoopIterations = 1000;
   std::vector<RefCountedPtr<BaseNode>> nodes;
   std::vector<intptr_t> uuids;
   for (int i = 0; i < kLoopIterations; i++) {
@@ -168,8 +172,10 @@ TEST_F(ChannelzRegistryTest, GetAfterUnref) {
 }
 
 TEST_F(ChannelzRegistryTest, GetTopChannelsAfterUnref) {
-  const int kLoopIterations = 1000;
+  // Make sure registry starts empty.
+  ChannelzRegistryPeer::DoGarbageCollection();
   // Add nodes.
+  const int kLoopIterations = 1000;
   std::vector<RefCountedPtr<BaseNode>> nodes;
   std::vector<intptr_t> uuids;
   for (int i = 0; i < kLoopIterations; i++) {
@@ -195,8 +201,10 @@ TEST_F(ChannelzRegistryTest, GetTopChannelsAfterUnref) {
 }
 
 TEST_F(ChannelzRegistryTest, GetServersAfterUnref) {
-  const int kLoopIterations = 1000;
+  // Make sure registry starts empty.
+  ChannelzRegistryPeer::DoGarbageCollection();
   // Add nodes.
+  const int kLoopIterations = 1000;
   std::vector<RefCountedPtr<BaseNode>> nodes;
   std::vector<intptr_t> uuids;
   for (int i = 0; i < kLoopIterations; i++) {
