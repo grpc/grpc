@@ -62,6 +62,7 @@ namespace grpc_impl {
 class CallCredentials;
 class Channel;
 class CompletionQueue;
+class ServerContext;
 }  // namespace grpc_impl
 namespace grpc {
 
@@ -99,7 +100,6 @@ template <class W, class R>
 class ClientAsyncReaderWriter;
 template <class R>
 class ClientAsyncResponseReader;
-class ServerContext;
 
 /// Options for \a ClientContext::FromServerContext specifying which traits from
 /// the \a ServerContext to propagate (copy) from it into a new \a
@@ -192,12 +192,12 @@ class ClientContext {
   /// \return A newly constructed \a ClientContext instance based on \a
   /// server_context, with traits propagated (copied) according to \a options.
   static std::unique_ptr<ClientContext> FromServerContext(
-      const ServerContext& server_context,
+      const ::grpc_impl::ServerContext& server_context,
       PropagationOptions options = PropagationOptions());
 
   /// Add the (\a meta_key, \a meta_value) pair to the metadata associated with
   /// a client call. These are made available at the server side by the \a
-  /// grpc::ServerContext::client_metadata() method.
+  /// grpc_impl::ServerContext::client_metadata() method.
   ///
   /// \warning This method should only be called before invoking the rpc.
   ///
