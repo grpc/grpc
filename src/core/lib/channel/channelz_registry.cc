@@ -138,7 +138,7 @@ char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
   RefCountedPtr<BaseNode> node_after_pagination_limit;
   {
     MutexLock lock(&mu_);
-    int start_idx = GPR_MAX(FindByUuidLocked(start_channel_id, false), 0);
+    const int start_idx = GPR_MAX(FindByUuidLocked(start_channel_id, false), 0);
     for (size_t i = start_idx; i < entities_.size(); ++i) {
       if (entities_[i] != nullptr &&
           entities_[i]->type() ==
@@ -186,7 +186,7 @@ char* ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
   RefCountedPtr<BaseNode> node_after_pagination_limit;
   {
     MutexLock lock(&mu_);
-    int start_idx = GPR_MAX(FindByUuidLocked(start_server_id, false), 0);
+    const int start_idx = GPR_MAX(FindByUuidLocked(start_server_id, false), 0);
     for (size_t i = start_idx; i < entities_.size(); ++i) {
       if (entities_[i] != nullptr &&
           entities_[i]->type() ==
