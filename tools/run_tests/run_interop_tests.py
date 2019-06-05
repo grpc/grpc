@@ -738,6 +738,10 @@ _SERVERS_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++']
 
 _TRANSPORT_SECURITY_OPTIONS = ['tls', 'alts', 'insecure']
 
+_CUSTOM_CREDENTIALS_TYPE_OPTIONS = [
+    'tls', 'google_default_credentials', 'compute_engine_channel_creds'
+]
+
 DOCKER_WORKDIR_ROOT = '/var/local/git/grpc'
 
 
@@ -1152,7 +1156,8 @@ def aggregate_http2_results(stdout):
     }
 
 
-# A dictionary of prod servers to test.
+# A dictionary of prod servers to test against.
+# See go/grpc-interop-tests (internal-only) for details.
 prod_servers = {
     'default': 'grpc-test.sandbox.googleapis.com',
     'gateway_v4': 'grpc-test4.sandbox.googleapis.com',
@@ -1266,6 +1271,14 @@ argp.add_argument(
     nargs='?',
     const=True,
     help='Which transport security mechanism to use.')
+argp.add_argument(
+    '--custom_credentials_type',
+    choices=_CUSTOM_CREDENTIALS_TYPE_OPTIONS,
+    default=_CUSTOM_CREDENTIALS_TYPE_OPTIONS,
+    nargs='+',
+    help=
+    'Credential types to test in the cloud_to_prod setup. Default is to test with all creds types possible.'
+)
 argp.add_argument(
     '--skip_compute_engine_creds',
     default=False,
@@ -1435,23 +1448,20 @@ try:
                 for test_case in _TEST_CASES:
                     if not test_case in language.unimplemented_test_cases():
                         if not test_case in _SKIP_ADVANCED + _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE:
-                            tls_test_job = cloud_to_prod_jobspec(
-                                language,
-                                test_case,
-                                server_host_nickname,
-                                prod_servers[server_host_nickname],
-                                google_default_creds_use_key_file=args.
-                                google_default_creds_use_key_file,
-                                docker_image=docker_images.get(str(language)),
-                                manual_cmd_log=client_manual_cmd_log,
-                                service_account_key_file=args.
-                                service_account_key_file,
-                                transport_security='tls')
-                            jobs.append(tls_test_job)
-                            if str(language) in [
-                                    'c++', 'go', 'java', 'javaokhttp'
-                            ]:
-                                google_default_creds_test_job = cloud_to_prod_jobspec(
+                            for transport_security in args.custom_credentials_type:
+                                # google_default_credentials not yet supported by all languages
+                                if transport_security == 'google_default_credentials' and str(
+                                        language) not in [
+                                            'c++', 'go', 'java', 'javaokhttp'
+                                        ]:
+                                    continue
+                                # compute_engine_channel_creds not yet supported by all languages
+                                if transport_security == 'compute_engine_channel_creds' and str(
+                                        language) not in [
+                                            'go', 'java', 'javaokhttp'
+                                        ]:
+                                    continue
+                                test_job = cloud_to_prod_jobspec(
                                     language,
                                     test_case,
                                     server_host_nickname,
@@ -1463,27 +1473,8 @@ try:
                                     manual_cmd_log=client_manual_cmd_log,
                                     service_account_key_file=args.
                                     service_account_key_file,
-                                    transport_security=
-                                    'google_default_credentials')
-                                jobs.append(google_default_creds_test_job)
-                            if str(language) in ['go', 'java', 'javaokhttp']:
-                                compute_engine_channel_creds_test_job = cloud_to_prod_jobspec(
-                                    language,
-                                    test_case,
-                                    server_host_nickname,
-                                    prod_servers[server_host_nickname],
-                                    google_default_creds_use_key_file=args.
-                                    google_default_creds_use_key_file,
-                                    docker_image=docker_images.get(
-                                        str(language)),
-                                    manual_cmd_log=client_manual_cmd_log,
-                                    service_account_key_file=args.
-                                    service_account_key_file,
-                                    transport_security=
-                                    'compute_engine_channel_creds')
-                                jobs.append(
-                                    compute_engine_channel_creds_test_job)
-
+                                    transport_security=transport_security)
+                                jobs.append(test_job)
             if args.http2_interop:
                 for test_case in _HTTP2_TEST_CASES:
                     test_job = cloud_to_prod_jobspec(
@@ -1515,6 +1506,8 @@ try:
                                 transport_security = 'compute_engine_channel_creds'
                             else:
                                 transport_security = 'tls'
+                            if transport_security not in args.custom_credentials_type:
+                                continue
                             test_job = cloud_to_prod_jobspec(
                                 language,
                                 test_case,
