@@ -27,8 +27,17 @@ BINDIR=../../../bins/$CONFIG
              "interop_server before calling this script."
     exit 1
 }
-$BINDIR/interop_server --port=5050 --max_send_message_size=8388608 &
-$BINDIR/interop_server --port=5051 --max_send_message_size=8388608 --use_tls &
+
+[ -z "$(ps aux |egrep 'port_server\.py.*-p\s32766')" ] && {
+    echo >&2 "Can't find the port server. Start port server with tools/run_tests/start_port_server.py."
+    exit 1
+}
+
+PLAIN_PORT=$(curl localhost:32766/get)
+TLS_PORT=$(curl localhost:32766/get)
+
+$BINDIR/interop_server --port=$PLAIN_PORT --max_send_message_size=8388608 &
+$BINDIR/interop_server --port=$TLS_PORT --max_send_message_size=8388608 --use_tls &
 
 trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
 
@@ -40,8 +49,8 @@ xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme SCHEME \
     -destination name="iPhone 8" \
-    HOST_PORT_LOCALSSL=localhost:5051 \
-    HOST_PORT_LOCAL=localhost:5050 \
+    HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
+    HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
