@@ -30,9 +30,9 @@
 namespace grpc_core {
 namespace channelz {
 
-SubchannelNode::SubchannelNode(intptr_t uuid, Subchannel* subchannel,
+SubchannelNode::SubchannelNode(Subchannel* subchannel,
                                size_t channel_tracer_max_nodes)
-    : BaseNode(uuid, EntityType::kSubchannel),
+    : BaseNode(EntityType::kSubchannel),
       subchannel_(subchannel),
       target_(UniquePtr<char>(gpr_strdup(subchannel_->GetTargetAddress()))),
       trace_(channel_tracer_max_nodes) {}

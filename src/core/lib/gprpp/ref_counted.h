@@ -157,19 +157,6 @@ class RefCount {
     return Unref();
   }
 
-  // Returns true if the ref count is 1.
-  //
-  // Note: Use of this method is discouraged!  Please consider
-  // alternatives before using this.
-  //
-  // Use of this method is required in some rare cases, such as when
-  // registering objects in a global index and removing them when all
-  // refs other than the one held by the index have been released.
-  // However, use of this method for things like having an object check
-  // whether it's about to be destroyed are considered an anti-pattern
-  // and should be avoided.
-  bool HasOnlyOneRef() const { return get() == 1; }
-
  private:
   Value get() const { return value_.Load(MemoryOrder::RELAXED); }
 
@@ -234,18 +221,10 @@ class RefCounted : public Impl {
     }
   }
 
-  // Returns true if the ref count is 1.
-  //
-  // Note: Use of this method is discouraged!  Please consider
-  // alternatives before using this.
-  //
-  // Use of this method is required in some rare cases, such as when
-  // registering objects in a global index and removing them when all
-  // refs other than the one held by the index have been released.
-  // However, use of this method for things like having an object check
-  // whether it's about to be destroyed are considered an anti-pattern
-  // and should be avoided.
-  bool HasOnlyOneRef() const { return refs_.HasOnlyOneRef(); }
+  bool RefIfNonZero() { return refs_.RefIfNonZero(); }
+  bool RefIfNonZero(const DebugLocation& location, const char* reason) {
+    return refs_.RefIfNonZero(location, reason);
+  }
 
   // Not copyable nor movable.
   RefCounted(const RefCounted&) = delete;

@@ -85,11 +85,8 @@ class BaseNode : public RefCounted<BaseNode> {
     kSocket,
   };
 
-  BaseNode(intptr_t uuid, EntityType type) : uuid_(uuid), type_(type) {}
-  virtual ~BaseNode() = default;
-
-  intptr_t uuid() const { return uuid_; }
-  EntityType type() const { return type_; }
+  explicit BaseNode(EntityType type);
+  virtual ~BaseNode();
 
   // All children must implement this function.
   virtual grpc_json* RenderJson() GRPC_ABSTRACT;
@@ -98,9 +95,14 @@ class BaseNode : public RefCounted<BaseNode> {
   // caller.
   char* RenderJsonString();
 
+  EntityType type() const { return type_; }
+  intptr_t uuid() const { return uuid_; }
+
  private:
-  const intptr_t uuid_;
+  // to allow the ChannelzRegistry to set uuid_ under its lock.
+  friend class ChannelzRegistry;
   const EntityType type_;
+  intptr_t uuid_;
 };
 
 // This class is a helper class for channelz entities that deal with Channels,
@@ -149,8 +151,8 @@ class CallCountingHelper {
 // Handles channelz bookkeeping for channels
 class ChannelNode : public BaseNode {
  public:
-  ChannelNode(intptr_t uuid, UniquePtr<char> target,
-              size_t channel_tracer_max_nodes, intptr_t parent_uuid);
+  ChannelNode(UniquePtr<char> target, size_t channel_tracer_max_nodes,
+              intptr_t parent_uuid);
 
   intptr_t parent_uuid() const { return parent_uuid_; }
 
@@ -204,8 +206,7 @@ class ChannelNode : public BaseNode {
 // Handles channelz bookkeeping for servers
 class ServerNode : public BaseNode {
  public:
-  ServerNode(intptr_t uuid, grpc_server* server,
-             size_t channel_tracer_max_nodes);
+  ServerNode(grpc_server* server, size_t channel_tracer_max_nodes);
   ~ServerNode() override;
 
   grpc_json* RenderJson() override;
@@ -236,7 +237,7 @@ class ServerNode : public BaseNode {
 // Handles channelz bookkeeping for sockets
 class SocketNode : public BaseNode {
  public:
-  SocketNode(intptr_t uuid, UniquePtr<char> local, UniquePtr<char> remote);
+  SocketNode(UniquePtr<char> local, UniquePtr<char> remote);
   ~SocketNode() override {}
 
   grpc_json* RenderJson() override;
@@ -276,7 +277,7 @@ class SocketNode : public BaseNode {
 class ListenSocketNode : public BaseNode {
  public:
   // ListenSocketNode takes ownership of host.
-  ListenSocketNode(intptr_t uuid, UniquePtr<char> local_addr);
+  explicit ListenSocketNode(UniquePtr<char> local_addr);
   ~ListenSocketNode() override {}
 
   grpc_json* RenderJson() override;

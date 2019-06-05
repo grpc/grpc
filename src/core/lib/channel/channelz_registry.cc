@@ -18,9 +18,6 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include <algorithm>
-#include <cstring>
-
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/channelz_registry.h"
@@ -32,84 +29,39 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include <cstring>
+
 namespace grpc_core {
 namespace channelz {
-
 namespace {
+
+// singleton instance of the registry.
+ChannelzRegistry* g_channelz_registry = nullptr;
+
 const int kPaginationLimit = 100;
-const grpc_millis kSweepIntervalMs = 5000;
+
 }  // anonymous namespace
 
-//
-// ChannelzRegistry
-//
+void ChannelzRegistry::Init() { g_channelz_registry = New<ChannelzRegistry>(); }
 
-OrphanablePtr<ChannelzRegistry::Registry>* ChannelzRegistry::registry_ =
-    nullptr;
+void ChannelzRegistry::Shutdown() { Delete(g_channelz_registry); }
 
-void ChannelzRegistry::Init() {
-  GPR_ASSERT(registry_ == nullptr);
-  registry_ = New<OrphanablePtr<Registry>>(New<Registry>());
+ChannelzRegistry* ChannelzRegistry::Default() {
+  GPR_DEBUG_ASSERT(g_channelz_registry != nullptr);
+  return g_channelz_registry;
 }
 
-void ChannelzRegistry::Shutdown() {
-  GPR_ASSERT(registry_ != nullptr);
-  Delete(registry_);
-  registry_ = nullptr;
+ChannelzRegistry::ChannelzRegistry() { gpr_mu_init(&mu_); }
+
+ChannelzRegistry::~ChannelzRegistry() { gpr_mu_destroy(&mu_); }
+
+void ChannelzRegistry::InternalRegister(BaseNode* node) {
+  MutexLock lock(&mu_);
+  entities_.push_back(node);
+  node->uuid_ = ++uuid_generator_;
 }
 
-//
-// ChannelzRegistry::Registry
-//
-
-ChannelzRegistry::Registry::Registry() {
-  ExecCtx exec_ctx;
-  Ref().release();  // Ref held by timer callback.
-  GRPC_CLOSURE_INIT(&gc_closure_, &OnGarbageCollectionTimer, this,
-                    grpc_schedule_on_exec_ctx);
-  grpc_timer_init(&gc_timer_, ExecCtx::Get()->Now() + kSweepIntervalMs,
-                  &gc_closure_);
-}
-
-void ChannelzRegistry::Registry::Orphan() {
-  ExecCtx exec_ctx;
-  {
-    MutexLock lock(&mu_);
-    shutdown_ = true;
-    grpc_timer_cancel(&gc_timer_);
-  }
-  Unref();
-}
-
-void ChannelzRegistry::Registry::OnGarbageCollectionTimer(void* arg,
-                                                          grpc_error* error) {
-  Registry* self = static_cast<Registry*>(arg);
-  ReleasableMutexLock lock(&self->mu_);
-  if (error != GRPC_ERROR_NONE || self->shutdown_) {
-    lock.Unlock();
-    self->Unref();
-    return;
-  }
-  self->DoGarbageCollectionLocked();
-  grpc_timer_init(&self->gc_timer_, ExecCtx::Get()->Now() + kSweepIntervalMs,
-                  &self->gc_closure_);
-}
-
-void ChannelzRegistry::Registry::DoGarbageCollectionLocked() {
-  for (size_t i = 0; i < entities_.size(); ++i) {
-    MaybeRemoveUnusedNodeLocked(i);
-  }
-  MaybePerformCompactionLocked();
-}
-
-void ChannelzRegistry::Registry::MaybeRemoveUnusedNodeLocked(size_t idx) {
-  if (entities_[idx] != nullptr && entities_[idx]->HasOnlyOneRef()) {
-    entities_[idx].reset();
-    ++num_empty_slots_;
-  }
-}
-
-void ChannelzRegistry::Registry::MaybePerformCompactionLocked() {
+void ChannelzRegistry::MaybePerformCompactionLocked() {
   constexpr double kEmptinessTheshold = 1. / 3;
   double emptiness_ratio =
       double(num_empty_slots_) / double(entities_.capacity());
@@ -127,19 +79,8 @@ void ChannelzRegistry::Registry::MaybePerformCompactionLocked() {
   }
 }
 
-RefCountedPtr<BaseNode> ChannelzRegistry::Registry::Get(intptr_t uuid) {
-  MutexLock lock(&mu_);
-  if (uuid < 1 || uuid > uuid_generator_) {
-    return nullptr;
-  }
-  int idx = FindByUuidLocked(uuid, true);
-  if (idx < 0) return nullptr;
-  MaybeRemoveUnusedNodeLocked(idx);
-  return entities_[idx];
-}
-
-int ChannelzRegistry::Registry::FindByUuidLocked(intptr_t target_uuid,
-                                                 bool direct_hit_needed) {
+int ChannelzRegistry::FindByUuidLocked(intptr_t target_uuid,
+                                       bool direct_hit_needed) {
   int left = 0;
   int right = int(entities_.size() - 1);
   while (left <= right) {
@@ -165,28 +106,56 @@ int ChannelzRegistry::Registry::FindByUuidLocked(intptr_t target_uuid,
   return direct_hit_needed ? -1 : left;
 }
 
-char* ChannelzRegistry::Registry::GetTopChannels(intptr_t start_channel_id) {
+void ChannelzRegistry::InternalUnregister(intptr_t uuid) {
+  GPR_ASSERT(uuid >= 1);
+  MutexLock lock(&mu_);
+  GPR_ASSERT(uuid <= uuid_generator_);
+  int idx = FindByUuidLocked(uuid, true);
+  GPR_ASSERT(idx >= 0);
+  entities_[idx] = nullptr;
+  num_empty_slots_++;
+  MaybePerformCompactionLocked();
+}
+
+RefCountedPtr<BaseNode> ChannelzRegistry::InternalGet(intptr_t uuid) {
+  MutexLock lock(&mu_);
+  if (uuid < 1 || uuid > uuid_generator_) {
+    return nullptr;
+  }
+  int idx = FindByUuidLocked(uuid, true);
+  if (idx < 0 || entities_[idx] == nullptr) return nullptr;
+  // Found node.  Return only if its refcount is not zero (i.e., when we
+  // know that there is no other thread about to destroy it).
+  if (!entities_[idx]->RefIfNonZero()) return nullptr;
+  return RefCountedPtr<BaseNode>(entities_[idx]);
+}
+
+char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
   grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
   grpc_json* json = top_level_json;
   grpc_json* json_iterator = nullptr;
-  bool reached_pagination_limit = false;
   InlinedVector<RefCountedPtr<BaseNode>, 10> top_level_channels;
+  RefCountedPtr<BaseNode> node_after_pagination_limit;
   {
     MutexLock lock(&mu_);
     int start_idx = GPR_MAX(FindByUuidLocked(start_channel_id, false), 0);
     for (size_t i = start_idx; i < entities_.size(); ++i) {
-      MaybeRemoveUnusedNodeLocked(i);
       if (entities_[i] != nullptr &&
-          entities_[i]->type() == BaseNode::EntityType::kTopLevelChannel &&
-          entities_[i]->uuid() >= start_channel_id) {
-        // check if we are over pagination limit to determine if we need to set
+          entities_[i]->type() ==
+              grpc_core::channelz::BaseNode::EntityType::kTopLevelChannel &&
+          entities_[i]->uuid() >= start_channel_id &&
+          entities_[i]->RefIfNonZero()) {
+        // Check if we are over pagination limit to determine if we need to set
         // the "end" element. If we don't go through this block, we know that
         // when the loop terminates, we have <= to kPaginationLimit.
+        // Note that because we have already increased this node's
+        // refcount, we need to decrease it, but we can't unref while
+        // holding the lock, because this may lead to a deadlock.
         if (top_level_channels.size() == kPaginationLimit) {
-          reached_pagination_limit = true;
+          node_after_pagination_limit.reset(entities_[i]);
           break;
         }
-        top_level_channels.push_back(entities_[i]);
+        top_level_channels.emplace_back(entities_[i]);
       }
     }
   }
@@ -200,7 +169,7 @@ char* ChannelzRegistry::Registry::GetTopChannels(intptr_t start_channel_id) {
           grpc_json_link_child(array_parent, channel_json, json_iterator);
     }
   }
-  if (!reached_pagination_limit) {
+  if (node_after_pagination_limit == nullptr) {
     grpc_json_create_child(nullptr, json, "end", nullptr, GRPC_JSON_TRUE,
                            false);
   }
@@ -209,28 +178,32 @@ char* ChannelzRegistry::Registry::GetTopChannels(intptr_t start_channel_id) {
   return json_str;
 }
 
-char* ChannelzRegistry::Registry::GetServers(intptr_t start_server_id) {
+char* ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
   grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
   grpc_json* json = top_level_json;
   grpc_json* json_iterator = nullptr;
-  bool reached_pagination_limit = false;
   InlinedVector<RefCountedPtr<BaseNode>, 10> servers;
+  RefCountedPtr<BaseNode> node_after_pagination_limit;
   {
     MutexLock lock(&mu_);
     int start_idx = GPR_MAX(FindByUuidLocked(start_server_id, false), 0);
     for (size_t i = start_idx; i < entities_.size(); ++i) {
-      MaybeRemoveUnusedNodeLocked(i);
       if (entities_[i] != nullptr &&
-          entities_[i]->type() == BaseNode::EntityType::kServer &&
-          entities_[i]->uuid() >= start_server_id) {
-        // check if we are over pagination limit to determine if we need to set
+          entities_[i]->type() ==
+              grpc_core::channelz::BaseNode::EntityType::kServer &&
+          entities_[i]->uuid() >= start_server_id &&
+          entities_[i]->RefIfNonZero()) {
+        // Check if we are over pagination limit to determine if we need to set
         // the "end" element. If we don't go through this block, we know that
         // when the loop terminates, we have <= to kPaginationLimit.
+        // Note that because we have already increased this node's
+        // refcount, we need to decrease it, but we can't unref while
+        // holding the lock, because this may lead to a deadlock.
         if (servers.size() == kPaginationLimit) {
-          reached_pagination_limit = true;
+          node_after_pagination_limit.reset(entities_[i]);
           break;
         }
-        servers.push_back(entities_[i]);
+        servers.emplace_back(entities_[i]);
       }
     }
   }
@@ -244,7 +217,7 @@ char* ChannelzRegistry::Registry::GetServers(intptr_t start_server_id) {
           grpc_json_link_child(array_parent, server_json, json_iterator);
     }
   }
-  if (!reached_pagination_limit) {
+  if (node_after_pagination_limit == nullptr) {
     grpc_json_create_child(nullptr, json, "end", nullptr, GRPC_JSON_TRUE,
                            false);
   }
@@ -253,15 +226,20 @@ char* ChannelzRegistry::Registry::GetServers(intptr_t start_server_id) {
   return json_str;
 }
 
-void ChannelzRegistry::Registry::LogAllEntities() {
-  MutexLock lock(&mu_);
-  for (size_t i = 0; i < entities_.size(); ++i) {
-    MaybeRemoveUnusedNodeLocked(i);
-    if (entities_[i] != nullptr) {
-      char* json = entities_[i]->RenderJsonString();
-      gpr_log(GPR_INFO, "%s", json);
-      gpr_free(json);
+void ChannelzRegistry::InternalLogAllEntities() {
+  InlinedVector<RefCountedPtr<BaseNode>, 10> nodes;
+  {
+    MutexLock lock(&mu_);
+    for (size_t i = 0; i < entities_.size(); ++i) {
+      if (entities_[i] != nullptr && entities_[i]->RefIfNonZero()) {
+        nodes.emplace_back(entities_[i]);
+      }
     }
+  }
+  for (size_t i = 0; i < nodes.size(); ++i) {
+    char* json = nodes[i]->RenderJsonString();
+    gpr_log(GPR_INFO, "%s", json);
+    gpr_free(json);
   }
 }
 

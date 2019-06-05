@@ -201,8 +201,7 @@ void CreateChannelzNode(grpc_channel_stack_builder* builder) {
   // We only need to do this for clients here. For servers, this will be
   // done in src/core/lib/surface/server.cc.
   grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_node =
-      grpc_core::channelz::ChannelzRegistry::CreateNode<
-          grpc_core::channelz::ChannelNode>(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ChannelNode>(
           grpc_core::UniquePtr<char>(
               gpr_strdup(grpc_channel_stack_builder_get_target(builder))),
           channel_tracer_max_memory, channelz_parent_uuid);

@@ -85,6 +85,13 @@ intptr_t GetParentUuidFromArgs(const grpc_channel_args& args) {
 // BaseNode
 //
 
+BaseNode::BaseNode(EntityType type) : type_(type), uuid_(-1) {
+  // The registry will set uuid_ under its lock.
+  ChannelzRegistry::Register(this);
+}
+
+BaseNode::~BaseNode() { ChannelzRegistry::Unregister(uuid_); }
+
 char* BaseNode::RenderJsonString() {
   grpc_json* json = RenderJson();
   GPR_ASSERT(json != nullptr);
@@ -177,10 +184,10 @@ void CallCountingHelper::PopulateCallCounts(grpc_json* json) {
 // ChannelNode
 //
 
-ChannelNode::ChannelNode(intptr_t uuid, UniquePtr<char> target,
+ChannelNode::ChannelNode(UniquePtr<char> target,
                          size_t channel_tracer_max_nodes, intptr_t parent_uuid)
-    : BaseNode(uuid, parent_uuid == 0 ? EntityType::kTopLevelChannel
-                                      : EntityType::kInternalChannel),
+    : BaseNode(parent_uuid == 0 ? EntityType::kTopLevelChannel
+                                : EntityType::kInternalChannel),
       target_(std::move(target)),
       trace_(channel_tracer_max_nodes),
       parent_uuid_(parent_uuid) {}
@@ -296,9 +303,8 @@ void ChannelNode::RemoveChildSubchannel(intptr_t child_uuid) {
 // ServerNode
 //
 
-ServerNode::ServerNode(intptr_t uuid, grpc_server* server,
-                       size_t channel_tracer_max_nodes)
-    : BaseNode(uuid, EntityType::kServer),
+ServerNode::ServerNode(grpc_server* server, size_t channel_tracer_max_nodes)
+    : BaseNode(EntityType::kServer),
       server_(server),
       trace_(channel_tracer_max_nodes) {}
 
@@ -440,9 +446,8 @@ void PopulateSocketAddressJson(grpc_json* json, const char* name,
 
 }  // namespace
 
-SocketNode::SocketNode(intptr_t uuid, UniquePtr<char> local,
-                       UniquePtr<char> remote)
-    : BaseNode(uuid, EntityType::kSocket),
+SocketNode::SocketNode(UniquePtr<char> local, UniquePtr<char> remote)
+    : BaseNode(EntityType::kSocket),
       local_(std::move(local)),
       remote_(std::move(remote)) {}
 
@@ -561,8 +566,8 @@ grpc_json* SocketNode::RenderJson() {
 // ListenSocketNode
 //
 
-ListenSocketNode::ListenSocketNode(intptr_t uuid, UniquePtr<char> local_addr)
-    : BaseNode(uuid, EntityType::kSocket), local_addr_(std::move(local_addr)) {}
+ListenSocketNode::ListenSocketNode(UniquePtr<char> local_addr)
+    : BaseNode(EntityType::kSocket), local_addr_(std::move(local_addr)) {}
 
 grpc_json* ListenSocketNode::RenderJson() {
   // We need to track these three json objects to build our object

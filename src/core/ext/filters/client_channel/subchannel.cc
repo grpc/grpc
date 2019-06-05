@@ -37,7 +37,6 @@
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/alloc.h"
@@ -673,9 +672,8 @@ Subchannel::Subchannel(SubchannelKey* key, grpc_connector* connector,
   size_t channel_tracer_max_memory =
       (size_t)grpc_channel_arg_get_integer(arg, options);
   if (channelz_enabled) {
-    channelz_node_ =
-        channelz::ChannelzRegistry::CreateNode<channelz::SubchannelNode>(
-            this, channel_tracer_max_memory);
+    channelz_node_ = MakeRefCounted<channelz::SubchannelNode>(
+        this, channel_tracer_max_memory);
     channelz_node_->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("subchannel created"));
