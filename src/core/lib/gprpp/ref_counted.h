@@ -221,6 +221,11 @@ class RefCounted : public Impl {
     }
   }
 
+  bool RefIfNonZero() { return refs_.RefIfNonZero(); }
+  bool RefIfNonZero(const DebugLocation& location, const char* reason) {
+    return refs_.RefIfNonZero(location, reason);
+  }
+
   // Not copyable nor movable.
   RefCounted(const RefCounted&) = delete;
   RefCounted& operator=(const RefCounted&) = delete;
