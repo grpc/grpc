@@ -199,6 +199,10 @@ class ServerCallbackReaderWriter {
 template <class Request, class Response>
 class ServerBidiReactor : public internal::ServerReactor {
  public:
+  ServerBidiReactor() = default;
+  ServerBidiReactor(const ServerBidiReactor&) = delete;
+  ServerBidiReactor& operator=(const ServerBidiReactor&) = delete;
+
   ~ServerBidiReactor() = default;
 
   /// Send any initial metadata stored in the RPC context. If not invoked,
@@ -408,6 +412,10 @@ class ServerBidiReactor : public internal::ServerReactor {
 template <class Request, class Response>
 class ServerReadReactor : public internal::ServerReactor {
  public:
+  ServerReadReactor() = default;
+  ServerReadReactor(const ServerReadReactor&) = delete;
+  ServerReadReactor& operator=(const ServerReadReactor&) = delete;
+
   ~ServerReadReactor() = default;
 
   /// The following operation initiations are exactly like ServerBidiReactor.
@@ -492,6 +500,10 @@ class ServerReadReactor : public internal::ServerReactor {
 template <class Request, class Response>
 class ServerWriteReactor : public internal::ServerReactor {
  public:
+  ServerWriteReactor() = default;
+  ServerWriteReactor(const ServerWriteReactor&) = delete;
+  ServerWriteReactor& operator=(const ServerWriteReactor&) = delete;
+
   ~ServerWriteReactor() = default;
 
   /// The following operation initiations are exactly like ServerBidiReactor.
@@ -606,6 +618,10 @@ class ServerWriteReactor : public internal::ServerReactor {
 template <class Request, class Response>
 class ServerUnaryReactor : public internal::ServerReactor {
  public:
+  ServerUnaryReactor() = default;
+  ServerUnaryReactor(const ServerUnaryReactor&) = delete;
+  ServerUnaryReactor& operator=(const ServerUnaryReactor&) = delete;
+
   ~ServerUnaryReactor() = default;
 
   /// The following operation initiations are exactly like ServerBidiReactor.
