@@ -145,7 +145,6 @@ class CSharpLanguage:
     def unimplemented_test_cases(self):
         return _SKIP_SERVER_COMPRESSION + \
             _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_SPECIAL_STATUS_MESSAGE + \
             _SKIP_GOOGLE_DEFAULT_CREDS + \
             _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
 
@@ -178,7 +177,6 @@ class CSharpCoreCLRLanguage:
     def unimplemented_test_cases(self):
         return _SKIP_SERVER_COMPRESSION + \
             _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_SPECIAL_STATUS_MESSAGE + \
             _SKIP_GOOGLE_DEFAULT_CREDS + \
             _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
 
@@ -215,7 +213,7 @@ class AspNetCoreLanguage:
             ['cancel_after_first_response', 'ping_pong']
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE
+        return _SKIP_COMPRESSION
 
     def __str__(self):
         return 'aspnetcore'
