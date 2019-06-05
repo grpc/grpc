@@ -802,8 +802,8 @@ class CallbackUnaryHandler : public MethodHandler {
     void SetupReactor(
         experimental::ServerUnaryReactor<RequestType, ResponseType>* reactor) {
       reactor_ = reactor;
+      this->BindReactor(reactor);
       ctx_->BeginCompletionOp(&call_, [this](bool) { MaybeDone(); }, reactor);
-      BindReactor(reactor);
     }
 
     const RequestType* request() { return allocator_state_->request(); }
@@ -942,7 +942,6 @@ class CallbackClientStreamingHandler : public MethodHandler {
     void SetupReactor(
         experimental::ServerReadReactor<RequestType, ResponseType>* reactor) {
       reactor_ = reactor;
-      ctx_->BeginCompletionOp(&call_, [this](bool) { MaybeDone(); }, reactor);
       read_tag_.Set(call_.call(),
                     [this](bool ok) {
                       reactor_->OnReadDone(ok);
@@ -950,6 +949,8 @@ class CallbackClientStreamingHandler : public MethodHandler {
                     },
                     &read_ops_);
       read_ops_.set_core_cq_tag(&read_tag_);
+      this->BindReactor(reactor);
+      ctx_->BeginCompletionOp(&call_, [this](bool) { MaybeDone(); }, reactor);
     }
 
     ~ServerCallbackReaderImpl() {}
@@ -1127,7 +1128,6 @@ class CallbackServerStreamingHandler : public MethodHandler {
     void SetupReactor(
         experimental::ServerWriteReactor<RequestType, ResponseType>* reactor) {
       reactor_ = reactor;
-      ctx_->BeginCompletionOp(&call_, [this](bool) { MaybeDone(); }, reactor);
       write_tag_.Set(call_.call(),
                      [this](bool ok) {
                        reactor_->OnWriteDone(ok);
@@ -1135,6 +1135,8 @@ class CallbackServerStreamingHandler : public MethodHandler {
                      },
                      &write_ops_);
       write_ops_.set_core_cq_tag(&write_tag_);
+      this->BindReactor(reactor);
+      ctx_->BeginCompletionOp(&call_, [this](bool) { MaybeDone(); }, reactor);
     }
     ~ServerCallbackWriterImpl() { req_->~RequestType(); }
 
@@ -1294,7 +1296,6 @@ class CallbackBidiHandler : public MethodHandler {
     void SetupReactor(
         experimental::ServerBidiReactor<RequestType, ResponseType>* reactor) {
       reactor_ = reactor;
-      ctx_->BeginCompletionOp(&call_, [this](bool) { MaybeDone(); }, reactor);
       write_tag_.Set(call_.call(),
                      [this](bool ok) {
                        reactor_->OnWriteDone(ok);
@@ -1309,6 +1310,8 @@ class CallbackBidiHandler : public MethodHandler {
                     },
                     &read_ops_);
       read_ops_.set_core_cq_tag(&read_tag_);
+      this->BindReactor(reactor);
+      ctx_->BeginCompletionOp(&call_, [this](bool) { MaybeDone(); }, reactor);
     }
 
     void MaybeDone() {
