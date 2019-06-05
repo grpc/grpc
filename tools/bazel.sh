@@ -22,7 +22,7 @@
 
 set -e
 
-VERSION=0.24.1
+VERSION=0.26.0
 
 CWD=`pwd`
 BASEURL=https://github.com/bazelbuild/bazel/releases/download/
