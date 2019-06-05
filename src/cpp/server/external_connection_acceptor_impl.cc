@@ -71,7 +71,7 @@ void ExternalConnectionAcceptorImpl::HandleNewConnection(
     return;
   }
   if (handler_) {
-    handler_->Handle(p->fd, p->read_buffer.c_buffer());
+    handler_->Handle(p->listener_fd, p->fd, p->read_buffer.c_buffer());
   }
 }
 

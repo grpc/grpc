@@ -60,7 +60,7 @@ fi
 echo $client_lang
 
 ${GRPC_ROOT}/tools/run_tests/run_interop_tests.py -l $client_lang --use_docker \
-  --cloud_to_prod --prod_servers default gateway_v4 --manual_run
+  --cloud_to_prod --prod_servers default gateway_v4 --manual_run --custom_credentials_type tls
 
 trap cleanup EXIT
 # TODO(adelez): add test auth tests but do not run if not testing on GCE.
