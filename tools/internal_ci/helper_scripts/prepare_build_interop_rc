@@ -30,7 +30,6 @@ git clone --recursive https://github.com/grpc/grpc-node ./../grpc-node
 git clone --recursive https://github.com/grpc/grpc-dart ./../grpc-dart
 git clone --recursive https://github.com/grpc/grpc-dotnet ./../grpc-dotnet
 
-# Download json file.
+# Grab the service account key to run interop tests against prod backends.
 mkdir ~/service_account
-gsutil cp gs://grpc-testing-secrets/interop/service_account/GrpcTesting-726eb1347f15.json ~/service_account
-export GOOGLE_APPLICATION_CREDENTIALS=~/service_account/GrpcTesting-726eb1347f15.json
+cp "${KOKORO_KEYSTORE_DIR}/73836_interop_to_prod_tests_service_account_key" ~/service_account/grpc-testing-ebe7c1ac7381.json || true
