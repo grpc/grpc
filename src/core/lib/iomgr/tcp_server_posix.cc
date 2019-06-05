@@ -572,7 +572,7 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
   explicit ExternalConnectionHandler(grpc_tcp_server* s) : s_(s) {}
 
   // TODO(yangg) resolve duplicate code with on_read
-  void Handle(int fd, grpc_byte_buffer* buf) override {
+  void Handle(int listener_fd, int fd, grpc_byte_buffer* buf) override {
     grpc_pollset* read_notifier_pollset;
     grpc_resolved_address addr;
     char* addr_str;
@@ -606,6 +606,7 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
     acceptor->port_index = -1;
     acceptor->fd_index = -1;
     acceptor->external_connection = true;
+    acceptor->listener_fd = listener_fd;
     acceptor->pending_data = buf;
     s_->on_accept_cb(s_->on_accept_cb_arg,
                      grpc_tcp_create(fdobj, s_->channel_args, addr_str),

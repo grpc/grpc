@@ -41,6 +41,7 @@ typedef struct grpc_tcp_server_acceptor {
   unsigned fd_index;
   /* Data when the connection is passed to tcp_server from external. */
   bool external_connection;
+  int listener_fd;
   grpc_byte_buffer* pending_data;
 } grpc_tcp_server_acceptor;
 
@@ -55,7 +56,8 @@ namespace grpc_core {
 class TcpServerFdHandler {
  public:
   virtual ~TcpServerFdHandler() = default;
-  virtual void Handle(int fd, grpc_byte_buffer* pending_read) GRPC_ABSTRACT;
+  virtual void Handle(int listener_fd, int fd,
+                      grpc_byte_buffer* pending_read) GRPC_ABSTRACT;
 
   GRPC_ABSTRACT_BASE_CLASS;
 };
