@@ -85,7 +85,7 @@ class Channel final : public ::grpc::ChannelInterface,
               interceptor_creators);
 
   ::grpc::internal::Call CreateCall(const ::grpc::internal::RpcMethod& method,
-                                    ::grpc::ClientContext* context,
+                                    ::grpc_impl::ClientContext* context,
                                     ::grpc::CompletionQueue* cq) override;
   void PerformOpsOnCall(::grpc::internal::CallOpSetInterface* ops,
                         ::grpc::internal::Call* call) override;
@@ -100,7 +100,7 @@ class Channel final : public ::grpc::ChannelInterface,
   ::grpc::CompletionQueue* CallbackCQ() override;
 
   ::grpc::internal::Call CreateCallInternal(
-      const ::grpc::internal::RpcMethod& method, ::grpc::ClientContext* context,
+      const ::grpc::internal::RpcMethod& method, ::grpc_impl::ClientContext* context,
       ::grpc::CompletionQueue* cq, size_t interceptor_pos) override;
 
   const grpc::string host_;

@@ -43,11 +43,11 @@ struct census_context;
 
 namespace grpc_impl {
 
+class ClientContext;
 class CompletionQueue;
 class Server;
 }  // namespace grpc_impl
 namespace grpc {
-class ClientContext;
 class GenericServerContext;
 class ServerInterface;
 template <class W, class R>
@@ -306,7 +306,7 @@ class ServerContext {
   friend class ::grpc::internal::CallbackBidiHandler;
   template <StatusCode code>
   friend class internal::ErrorMethodHandler;
-  friend class ::grpc::ClientContext;
+  friend class ::grpc_impl::ClientContext;
   friend class ::grpc::GenericServerContext;
 
   /// Prevent copying.
