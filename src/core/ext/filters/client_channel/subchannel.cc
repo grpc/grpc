@@ -375,7 +375,7 @@ class Subchannel::ConnectedSubchannelStateWatcher {
 //
 
 void Subchannel::ConnectivityStateWatcherList::AddWatcherLocked(
-    UniquePtr<ConnectivityStateWatcher> watcher) {
+    OrphanablePtr<ConnectivityStateWatcher> watcher) {
   watchers_.insert(MakePair(watcher.get(), std::move(watcher)));
 }
 
@@ -436,7 +436,7 @@ class Subchannel::HealthWatcherMap::HealthWatcher
   grpc_connectivity_state state() const { return state_; }
 
   void AddWatcherLocked(grpc_connectivity_state initial_state,
-                        UniquePtr<ConnectivityStateWatcher> watcher) {
+                        OrphanablePtr<ConnectivityStateWatcher> watcher) {
     if (state_ != initial_state) {
       RefCountedPtr<ConnectedSubchannel> connected_subchannel;
       if (state_ == GRPC_CHANNEL_READY) {
@@ -524,7 +524,7 @@ class Subchannel::HealthWatcherMap::HealthWatcher
 void Subchannel::HealthWatcherMap::AddWatcherLocked(
     Subchannel* subchannel, grpc_connectivity_state initial_state,
     UniquePtr<char> health_check_service_name,
-    UniquePtr<ConnectivityStateWatcher> watcher) {
+    OrphanablePtr<ConnectivityStateWatcher> watcher) {
   // If the health check service name is not already present in the map,
   // add it.
   auto it = map_.find(health_check_service_name.get());
@@ -815,7 +815,7 @@ grpc_connectivity_state Subchannel::CheckConnectivityState(
 void Subchannel::WatchConnectivityState(
     grpc_connectivity_state initial_state,
     UniquePtr<char> health_check_service_name,
-    UniquePtr<ConnectivityStateWatcher> watcher) {
+    OrphanablePtr<ConnectivityStateWatcher> watcher) {
   MutexLock lock(&mu_);
   grpc_pollset_set* interested_parties = watcher->interested_parties();
   if (interested_parties != nullptr) {

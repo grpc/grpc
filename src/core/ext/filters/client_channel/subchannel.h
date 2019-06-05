@@ -177,7 +177,8 @@ class SubchannelCall {
 // provides a target for load balancing.
 class Subchannel {
  public:
-  class ConnectivityStateWatcher {
+  class ConnectivityStateWatcher
+      : public InternallyRefCounted<ConnectivityStateWatcher> {
    public:
     virtual ~ConnectivityStateWatcher() = default;
 
@@ -247,7 +248,7 @@ class Subchannel {
   // destroyed or when CancelConnectivityStateWatch() is called.
   void WatchConnectivityState(grpc_connectivity_state initial_state,
                               UniquePtr<char> health_check_service_name,
-                              UniquePtr<ConnectivityStateWatcher> watcher);
+                              OrphanablePtr<ConnectivityStateWatcher> watcher);
 
   // Cancels a connectivity state watch.
   // If the watcher has already been destroyed, this is a no-op.
@@ -283,7 +284,7 @@ class Subchannel {
    public:
     ~ConnectivityStateWatcherList() { Clear(); }
 
-    void AddWatcherLocked(UniquePtr<ConnectivityStateWatcher> watcher);
+    void AddWatcherLocked(OrphanablePtr<ConnectivityStateWatcher> watcher);
     void RemoveWatcherLocked(ConnectivityStateWatcher* watcher);
 
     // Notifies all watchers in the list about a change to state.
@@ -296,7 +297,7 @@ class Subchannel {
    private:
     // TODO(roth): This could be a set instead of a map if we had a set
     // implementation.
-    Map<ConnectivityStateWatcher*, UniquePtr<ConnectivityStateWatcher>>
+    Map<ConnectivityStateWatcher*, OrphanablePtr<ConnectivityStateWatcher>>
         watchers_;
   };
 
@@ -314,7 +315,7 @@ class Subchannel {
     void AddWatcherLocked(Subchannel* subchannel,
                           grpc_connectivity_state initial_state,
                           UniquePtr<char> health_check_service_name,
-                          UniquePtr<ConnectivityStateWatcher> watcher);
+                          OrphanablePtr<ConnectivityStateWatcher> watcher);
     void RemoveWatcherLocked(const char* health_check_service_name,
                              ConnectivityStateWatcher* watcher);
 

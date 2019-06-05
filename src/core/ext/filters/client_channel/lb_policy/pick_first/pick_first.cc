@@ -503,13 +503,13 @@ void PickFirst::PickFirstSubchannelData::ProcessUnselectedReadyLocked() {
     p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
   }
   // Cases 1 and 2.
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
+    gpr_log(GPR_INFO, "Pick First %p selected subchannel %p", p, subchannel());
+  }
   p->selected_ = this;
   p->channel_control_helper()->UpdateState(
       GRPC_CHANNEL_READY,
       UniquePtr<SubchannelPicker>(New<Picker>(subchannel()->Ref())));
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
-    gpr_log(GPR_INFO, "Pick First %p selected subchannel %p", p, subchannel());
-  }
 }
 
 void PickFirst::PickFirstSubchannelData::

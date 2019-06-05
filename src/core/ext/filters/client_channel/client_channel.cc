@@ -743,6 +743,11 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
       : chand_(chand),
         subchannel_(subchannel),
         health_check_service_name_(std::move(health_check_service_name)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+      gpr_log(GPR_INFO,
+              "chand=%p: creating subchannel wrapper %p for subchannel %p",
+              chand, this, subchannel_);
+    }
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "GrpcSubchannel");
   }
 
@@ -769,7 +774,7 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
     subchannel_->WatchConnectivityState(
         initial_state,
         UniquePtr<char>(gpr_strdup(health_check_service_name_.get())),
-        UniquePtr<Subchannel::ConnectivityStateWatcher>(watcher_wrapper));
+        OrphanablePtr<Subchannel::ConnectivityStateWatcher>(watcher_wrapper));
   }
 
   void CancelConnectivityStateWatch(
@@ -819,11 +824,22 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
         RefCountedPtr<GrpcSubchannel> parent)
         : watcher_(std::move(watcher)), parent_(std::move(parent)) {}
 
+    void Orphan() override { Unref(); }
+
     void OnConnectivityStateChange(
         grpc_connectivity_state new_state,
         RefCountedPtr<ConnectedSubchannel> connected_subchannel) override {
-      parent_->MaybeUpdateConnectedSubchannel(std::move(connected_subchannel));
-      watcher_->OnConnectivityStateChange(new_state);
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+        gpr_log(GPR_INFO,
+                "chand=%p: connectivity change for subchannel wrapper %p "
+                "subchannel %p (connected_subchannel=%p state=%s); "
+                "hopping into combiner",
+                parent_->chand_, parent_.get(), parent_->subchannel_,
+                connected_subchannel.get(),
+                grpc_connectivity_state_name(new_state));
+      }
+      // Will delete itself.
+      New<Updater>(Ref(), new_state, std::move(connected_subchannel));
     }
 
     grpc_pollset_set* interested_parties() override {
@@ -831,6 +847,44 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
     }
 
    private:
+    class Updater {
+     public:
+      Updater(RefCountedPtr<WatcherWrapper> parent,
+              grpc_connectivity_state new_state,
+              RefCountedPtr<ConnectedSubchannel> connected_subchannel)
+          : parent_(std::move(parent)), state_(new_state),
+            connected_subchannel_(connected_subchannel) {
+        GRPC_CLOSURE_INIT(&closure_, ApplyUpdateInCallCombiner, this,
+                          grpc_combiner_scheduler(
+                              parent_->parent_->chand_->combiner_));
+        GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
+      }
+
+     private:
+      static void ApplyUpdateInCallCombiner(void* arg, grpc_error* error) {
+        Updater* self = static_cast<Updater*>(arg);
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+          gpr_log(GPR_INFO,
+                  "chand=%p: processing connectivity change in combiner "
+                  "for subchannel wrapper %p subchannel %p "
+                  "(connected_subchannel=%p state=%s)",
+                  self->parent_->parent_->chand_, self->parent_->parent_.get(),
+                  self->parent_->parent_->subchannel_,
+                  self->connected_subchannel_.get(),
+                  grpc_connectivity_state_name(self->state_));
+        }
+        self->parent_->parent_->MaybeUpdateConnectedSubchannel(
+            std::move(self->connected_subchannel_));
+        self->parent_->watcher_->OnConnectivityStateChange(self->state_);
+        Delete(self);
+      }
+
+      RefCountedPtr<WatcherWrapper> parent_;
+      grpc_connectivity_state state_;
+      RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
+      grpc_closure closure_;
+    };
+
     UniquePtr<SubchannelInterface::ConnectivityStateWatcher> watcher_;
     RefCountedPtr<GrpcSubchannel> parent_;
   };

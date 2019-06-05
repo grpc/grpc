@@ -152,31 +152,6 @@ class SubchannelData {
     }
 
    private:
-    // A fire-and-forget class that bounces into the combiner to process
-    // a connectivity state update.
-    class Updater {
-     public:
-      Updater(
-          SubchannelData<SubchannelListType, SubchannelDataType>*
-              subchannel_data,
-          RefCountedPtr<SubchannelList<SubchannelListType, SubchannelDataType>>
-              subchannel_list,
-          grpc_connectivity_state state);
-
-      ~Updater() {
-        subchannel_list_.reset(DEBUG_LOCATION, "Watcher::Updater dtor");
-      }
-
-     private:
-      static void OnUpdateLocked(void* arg, grpc_error* error);
-
-      SubchannelData<SubchannelListType, SubchannelDataType>* subchannel_data_;
-      RefCountedPtr<SubchannelList<SubchannelListType, SubchannelDataType>>
-          subchannel_list_;
-      const grpc_connectivity_state state_;
-      grpc_closure closure_;
-    };
-
     SubchannelData<SubchannelListType, SubchannelDataType>* subchannel_data_;
     RefCountedPtr<SubchannelListType> subchannel_list_;
   };
@@ -284,51 +259,25 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
 template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType, SubchannelDataType>::Watcher::
     OnConnectivityStateChange(grpc_connectivity_state new_state) {
-  // Will delete itself.
-  New<Updater>(subchannel_data_,
-               subchannel_list_->Ref(DEBUG_LOCATION, "Watcher::Updater"),
-               new_state);
-}
-
-template <typename SubchannelListType, typename SubchannelDataType>
-SubchannelData<SubchannelListType, SubchannelDataType>::Watcher::Updater::
-    Updater(
-        SubchannelData<SubchannelListType, SubchannelDataType>* subchannel_data,
-        RefCountedPtr<SubchannelList<SubchannelListType, SubchannelDataType>>
-            subchannel_list,
-        grpc_connectivity_state state)
-    : subchannel_data_(subchannel_data),
-      subchannel_list_(std::move(subchannel_list)),
-      state_(state) {
-  GRPC_CLOSURE_INIT(&closure_, &OnUpdateLocked, this,
-                    grpc_combiner_scheduler(subchannel_list_->combiner_));
-  GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
-}
-
-template <typename SubchannelListType, typename SubchannelDataType>
-void SubchannelData<SubchannelListType, SubchannelDataType>::Watcher::Updater::
-    OnUpdateLocked(void* arg, grpc_error* error) {
-  Updater* self = static_cast<Updater*>(arg);
-  SubchannelData* sd = self->subchannel_data_;
-  if (GRPC_TRACE_FLAG_ENABLED(*sd->subchannel_list_->tracer())) {
+  if (GRPC_TRACE_FLAG_ENABLED(*subchannel_list_->tracer())) {
     gpr_log(GPR_INFO,
             "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
             " (subchannel %p): connectivity changed: state=%s, "
             "shutting_down=%d, pending_watcher=%p",
-            sd->subchannel_list_->tracer()->name(),
-            sd->subchannel_list_->policy(), sd->subchannel_list_, sd->Index(),
-            sd->subchannel_list_->num_subchannels(), sd->subchannel_.get(),
-            grpc_connectivity_state_name(self->state_),
-            sd->subchannel_list_->shutting_down(), sd->pending_watcher_);
+            subchannel_list_->tracer()->name(), subchannel_list_->policy(),
+            subchannel_list_.get(), subchannel_data_->Index(),
+            subchannel_list_->num_subchannels(),
+            subchannel_data_->subchannel_.get(),
+            grpc_connectivity_state_name(new_state),
+            subchannel_list_->shutting_down(),
+            subchannel_data_->pending_watcher_);
   }
-  if (!sd->subchannel_list_->shutting_down() &&
-      sd->pending_watcher_ != nullptr) {
-    sd->connectivity_state_ = self->state_;
+  if (!subchannel_list_->shutting_down() &&
+      subchannel_data_->pending_watcher_ != nullptr) {
+    subchannel_data_->connectivity_state_ = new_state;
     // Call the subclass's ProcessConnectivityChangeLocked() method.
-    sd->ProcessConnectivityChangeLocked(sd->connectivity_state_);
+    subchannel_data_->ProcessConnectivityChangeLocked(new_state);
   }
-  // Clean up.
-  Delete(self);
 }
 
 //
