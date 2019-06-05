@@ -48,7 +48,9 @@ class ChannelzRegistry {
     return Default()->InternalRegister(node);
   }
   static void Unregister(intptr_t uuid) { Default()->InternalUnregister(uuid); }
-  static BaseNode* Get(intptr_t uuid) { return Default()->InternalGet(uuid); }
+  static RefCountedPtr<BaseNode> Get(intptr_t uuid) {
+    return Default()->InternalGet(uuid);
+  }
 
   // Returns the allocated JSON string that represents the proto
   // GetTopChannelsResponse as per channelz.proto.
@@ -86,7 +88,7 @@ class ChannelzRegistry {
 
   // if object with uuid has previously been registered as the correct type,
   // returns the void* associated with that uuid. Else returns nullptr.
-  BaseNode* InternalGet(intptr_t uuid);
+  RefCountedPtr<BaseNode> InternalGet(intptr_t uuid);
 
   char* InternalGetTopChannels(intptr_t start_channel_id);
   char* InternalGetServers(intptr_t start_server_id);
