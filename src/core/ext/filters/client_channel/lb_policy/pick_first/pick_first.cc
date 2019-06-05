@@ -408,8 +408,8 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         // some connectivity state notifications.
         if (connectivity_state == GRPC_CHANNEL_READY) {
           p->channel_control_helper()->UpdateState(
-              GRPC_CHANNEL_READY, UniquePtr<SubchannelPicker>(New<Picker>(
-                                      subchannel()->Ref())));
+              GRPC_CHANNEL_READY,
+              UniquePtr<SubchannelPicker>(New<Picker>(subchannel()->Ref())));
         } else {  // CONNECTING
           p->channel_control_helper()->UpdateState(
               connectivity_state,

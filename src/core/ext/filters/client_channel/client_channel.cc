@@ -852,11 +852,12 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
       Updater(RefCountedPtr<WatcherWrapper> parent,
               grpc_connectivity_state new_state,
               RefCountedPtr<ConnectedSubchannel> connected_subchannel)
-          : parent_(std::move(parent)), state_(new_state),
+          : parent_(std::move(parent)),
+            state_(new_state),
             connected_subchannel_(connected_subchannel) {
-        GRPC_CLOSURE_INIT(&closure_, ApplyUpdateInCallCombiner, this,
-                          grpc_combiner_scheduler(
-                              parent_->parent_->chand_->combiner_));
+        GRPC_CLOSURE_INIT(
+            &closure_, ApplyUpdateInCallCombiner, this,
+            grpc_combiner_scheduler(parent_->parent_->chand_->combiner_));
         GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
       }
 
