@@ -81,6 +81,7 @@ int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
     case GRPC_COMPRESS_ALGORITHMS_COUNT:
       GPR_UNREACHABLE_CODE(return 0);
   }
+  GPR_UNREACHABLE_CODE(return 0);
 }
 
 grpc_compression_algorithm grpc_compression_algorithm_for_level(
