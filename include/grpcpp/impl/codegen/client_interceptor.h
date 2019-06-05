@@ -30,7 +30,7 @@ namespace grpc_impl {
 
 class Channel;
 class ClientContext;
-}
+}  // namespace grpc_impl
 
 namespace grpc {
 
@@ -118,8 +118,9 @@ class ClientRpcInfo {
   ClientRpcInfo() = default;
 
   // Constructor will only be called from ClientContext
-  ClientRpcInfo(grpc_impl::ClientContext* ctx, internal::RpcMethod::RpcType type,
-                const char* method, grpc::ChannelInterface* channel)
+  ClientRpcInfo(grpc_impl::ClientContext* ctx,
+                internal::RpcMethod::RpcType type, const char* method,
+                grpc::ChannelInterface* channel)
       : ctx_(ctx),
         type_(static_cast<Type>(type)),
         method_(method),

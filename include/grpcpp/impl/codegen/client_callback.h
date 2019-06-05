@@ -32,7 +32,7 @@
 namespace grpc_impl {
 class Channel;
 class ClientContext;
-}
+}  // namespace grpc_impl
 
 namespace grpc {
 
