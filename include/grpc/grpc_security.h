@@ -435,7 +435,7 @@ GRPCAPI grpc_server_credentials* grpc_ssl_server_credentials_create(
 /** Deprecated in favor of grpc_ssl_server_credentials_create_with_options.
    Same as grpc_ssl_server_credentials_create method except uses
    grpc_ssl_client_certificate_request_type enum to support more ways to
-   authenticate client cerificates.*/
+   authenticate client certificates.*/
 GRPCAPI grpc_server_credentials* grpc_ssl_server_credentials_create_ex(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
     size_t num_key_cert_pairs,
