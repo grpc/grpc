@@ -2367,12 +2367,12 @@ grpc_cc_library(
 
 upb_proto_library(
     name = "upb_load_report",
-    deps = ["@data_plane_api//envoy/api/v2/endpoint:load_report"]
+    deps = ["@data_plane_api//envoy/api/v2/endpoint:load_report_export"]
 )
 
 upb_proto_library(
     name = "upb_lrs",
-    deps = ["@data_plane_api//envoy/service/load_stats/v2:lrs"]
+    deps = ["@data_plane_api//envoy/service/load_stats/v2:lrs_export"]
 )
 
 #TODO: Get this into build.yaml once we start using it.
