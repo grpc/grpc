@@ -210,12 +210,10 @@ class AspNetCoreLanguage:
 
     def unimplemented_test_cases(self):
         return _SKIP_COMPRESSION + \
-            _SKIP_SPECIAL_STATUS_MESSAGE + \
-            _AUTH_TEST_CASES + \
-            ['cancel_after_first_response', 'ping_pong']
+            _AUTH_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE
+        return _SKIP_COMPRESSION
 
     def __str__(self):
         return 'aspnetcore'
