@@ -59,7 +59,6 @@ int grpc_compression_algorithm_parse(grpc_slice name,
   } else {
     return 0;
   }
-  return 0;
 }
 
 int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
