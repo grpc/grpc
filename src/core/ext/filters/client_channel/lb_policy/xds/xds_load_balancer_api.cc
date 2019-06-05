@@ -67,8 +67,12 @@ xds_grpclb_request* xds_grpclb_request_create(const char* lb_service_name) {
   req->has_client_stats = false;
   req->has_initial_request = true;
   req->initial_request.has_name = true;
-  strncpy(req->initial_request.name, lb_service_name,
-          XDS_SERVICE_NAME_MAX_LENGTH);
+  // GCC warns (-Wstringop-truncation) because the destination
+  // buffer size is identical to max-size, leading to a potential
+  // char[] with no null terminator.  nanopb can handle it fine,
+  // and parantheses around strncpy silence that compiler warning.
+  (strncpy(req->initial_request.name, lb_service_name,
+           XDS_SERVICE_NAME_MAX_LENGTH));
   return req;
 }
 

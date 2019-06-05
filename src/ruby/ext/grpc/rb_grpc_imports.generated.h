@@ -347,6 +347,9 @@ extern grpc_set_ssl_roots_override_callback_type grpc_set_ssl_roots_override_cal
 typedef grpc_channel_credentials*(*grpc_ssl_credentials_create_type)(const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair, const verify_peer_options* verify_options, void* reserved);
 extern grpc_ssl_credentials_create_type grpc_ssl_credentials_create_import;
 #define grpc_ssl_credentials_create grpc_ssl_credentials_create_import
+typedef grpc_channel_credentials*(*grpc_ssl_credentials_create_ex_type)(const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair, const grpc_ssl_verify_peer_options* verify_options, void* reserved);
+extern grpc_ssl_credentials_create_ex_type grpc_ssl_credentials_create_ex_import;
+#define grpc_ssl_credentials_create_ex grpc_ssl_credentials_create_ex_import
 typedef void(*grpc_call_credentials_release_type)(grpc_call_credentials* creds);
 extern grpc_call_credentials_release_type grpc_call_credentials_release_import;
 #define grpc_call_credentials_release grpc_call_credentials_release_import

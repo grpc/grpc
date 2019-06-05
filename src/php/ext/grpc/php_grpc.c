@@ -42,6 +42,8 @@ const zend_function_entry grpc_functions[] = {
 };
 /* }}} */
 
+ZEND_DECLARE_MODULE_GLOBALS(grpc);
+
 /* {{{ grpc_module_entry
  */
 zend_module_entry grpc_module_entry = {
@@ -77,10 +79,13 @@ ZEND_GET_MODULE(grpc)
 
 /* {{{ php_grpc_init_globals
  */
-static void php_grpc_init_globals(zend_grpc_globals *grpc_globals) {
-  grpc_globals->enable_fork_support = 0;
-  grpc_globals->poll_strategy = NULL;
-}
+/* Uncomment this function if you have INI entries
+   static void php_grpc_init_globals(zend_grpc_globals *grpc_globals)
+   {
+     grpc_globals->global_value = 0;
+     grpc_globals->global_string = NULL;
+   }
+*/
 /* }}} */
 
 void create_new_channel(
@@ -222,7 +227,6 @@ void apply_ini_settings(TSRMLS_D) {
 /* {{{ PHP_MINIT_FUNCTION
  */
 PHP_MINIT_FUNCTION(grpc) {
-  ZEND_INIT_MODULE_GLOBALS(grpc, php_grpc_init_globals, NULL);
   REGISTER_INI_ENTRIES();
 
   /* Register call error constants */
@@ -406,6 +410,8 @@ PHP_RINIT_FUNCTION(grpc) {
  */
 static PHP_GINIT_FUNCTION(grpc) {
   grpc_globals->initialized = 0;
+  grpc_globals->enable_fork_support = 0;
+  grpc_globals->poll_strategy = NULL;
 }
 /* }}} */
 

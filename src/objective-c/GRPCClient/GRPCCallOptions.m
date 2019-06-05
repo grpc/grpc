@@ -23,6 +23,7 @@
 static NSString *const kDefaultServerAuthority = nil;
 static const NSTimeInterval kDefaultTimeout = 0;
 static const BOOL kDefaultFlowControlEnabled = NO;
+static NSArray *const kDefaultInterceptorFactories = nil;
 static NSDictionary *const kDefaultInitialMetadata = nil;
 static NSString *const kDefaultUserAgentPrefix = nil;
 static const NSUInteger kDefaultResponseSizeLimit = 0;
@@ -61,6 +62,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   NSString *_serverAuthority;
   NSTimeInterval _timeout;
   BOOL _flowControlEnabled;
+  NSArray *_interceptorFactories;
   NSString *_oauth2AccessToken;
   id<GRPCAuthorizationProtocol> _authTokenProvider;
   NSDictionary *_initialMetadata;
@@ -87,6 +89,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 @synthesize serverAuthority = _serverAuthority;
 @synthesize timeout = _timeout;
 @synthesize flowControlEnabled = _flowControlEnabled;
+@synthesize interceptorFactories = _interceptorFactories;
 @synthesize oauth2AccessToken = _oauth2AccessToken;
 @synthesize authTokenProvider = _authTokenProvider;
 @synthesize initialMetadata = _initialMetadata;
@@ -113,6 +116,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   return [self initWithServerAuthority:kDefaultServerAuthority
                                timeout:kDefaultTimeout
                     flowControlEnabled:kDefaultFlowControlEnabled
+                  interceptorFactories:kDefaultInterceptorFactories
                      oauth2AccessToken:kDefaultOauth2AccessToken
                      authTokenProvider:kDefaultAuthTokenProvider
                        initialMetadata:kDefaultInitialMetadata
@@ -139,6 +143,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 - (instancetype)initWithServerAuthority:(NSString *)serverAuthority
                                 timeout:(NSTimeInterval)timeout
                      flowControlEnabled:(BOOL)flowControlEnabled
+                   interceptorFactories:(NSArray *)interceptorFactories
                       oauth2AccessToken:(NSString *)oauth2AccessToken
                       authTokenProvider:(id<GRPCAuthorizationProtocol>)authTokenProvider
                         initialMetadata:(NSDictionary *)initialMetadata
@@ -164,6 +169,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
     _serverAuthority = [serverAuthority copy];
     _timeout = timeout < 0 ? 0 : timeout;
     _flowControlEnabled = flowControlEnabled;
+    _interceptorFactories = interceptorFactories;
     _oauth2AccessToken = [oauth2AccessToken copy];
     _authTokenProvider = authTokenProvider;
     _initialMetadata =
@@ -200,6 +206,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
       [[GRPCCallOptions allocWithZone:zone] initWithServerAuthority:_serverAuthority
                                                             timeout:_timeout
                                                  flowControlEnabled:_flowControlEnabled
+                                               interceptorFactories:_interceptorFactories
                                                   oauth2AccessToken:_oauth2AccessToken
                                                   authTokenProvider:_authTokenProvider
                                                     initialMetadata:_initialMetadata
@@ -229,6 +236,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
       initWithServerAuthority:[_serverAuthority copy]
                       timeout:_timeout
            flowControlEnabled:_flowControlEnabled
+         interceptorFactories:_interceptorFactories
             oauth2AccessToken:[_oauth2AccessToken copy]
             authTokenProvider:_authTokenProvider
               initialMetadata:[[NSDictionary alloc] initWithDictionary:_initialMetadata
@@ -310,6 +318,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 @dynamic serverAuthority;
 @dynamic timeout;
 @dynamic flowControlEnabled;
+@dynamic interceptorFactories;
 @dynamic oauth2AccessToken;
 @dynamic authTokenProvider;
 @dynamic initialMetadata;
@@ -336,6 +345,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   return [self initWithServerAuthority:kDefaultServerAuthority
                                timeout:kDefaultTimeout
                     flowControlEnabled:kDefaultFlowControlEnabled
+                  interceptorFactories:kDefaultInterceptorFactories
                      oauth2AccessToken:kDefaultOauth2AccessToken
                      authTokenProvider:kDefaultAuthTokenProvider
                        initialMetadata:kDefaultInitialMetadata
@@ -364,6 +374,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
       [[GRPCCallOptions allocWithZone:zone] initWithServerAuthority:_serverAuthority
                                                             timeout:_timeout
                                                  flowControlEnabled:_flowControlEnabled
+                                               interceptorFactories:_interceptorFactories
                                                   oauth2AccessToken:_oauth2AccessToken
                                                   authTokenProvider:_authTokenProvider
                                                     initialMetadata:_initialMetadata
@@ -393,6 +404,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
       initWithServerAuthority:_serverAuthority
                       timeout:_timeout
            flowControlEnabled:_flowControlEnabled
+         interceptorFactories:_interceptorFactories
             oauth2AccessToken:_oauth2AccessToken
             authTokenProvider:_authTokenProvider
               initialMetadata:_initialMetadata
@@ -431,6 +443,10 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 
 - (void)setFlowControlEnabled:(BOOL)flowControlEnabled {
   _flowControlEnabled = flowControlEnabled;
+}
+
+- (void)setInterceptorFactories:(NSArray *)interceptorFactories {
+  _interceptorFactories = interceptorFactories;
 }
 
 - (void)setOauth2AccessToken:(NSString *)oauth2AccessToken {
