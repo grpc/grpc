@@ -57,13 +57,13 @@ int grpc_compression_algorithm_parse(grpc_slice name,
     *algorithm = GRPC_COMPRESS_STREAM_GZIP;
     return 1;
   } else {
-    return 0;
+    GPR_UNREACHABLE_CODE(return 0);
   }
 }
 
 int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
                                     const char** name) {
-  GRPC_API_TRACE("grpc_compression_algorithm_parse(algorithm=%d, name=%p)", 2,
+  GRPC_API_TRACE("grpc_compression_algorithm_name(algorithm=%d, name=%p)", 2,
                  ((int)algorithm, name));
   switch (algorithm) {
     case GRPC_COMPRESS_NONE:
@@ -79,9 +79,8 @@ int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
       *name = "stream/gzip";
       return 1;
     case GRPC_COMPRESS_ALGORITHMS_COUNT:
-      return 0;
+      GPR_UNREACHABLE_CODE(return 0);
   }
-  return 0;
 }
 
 grpc_compression_algorithm grpc_compression_algorithm_for_level(
