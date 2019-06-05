@@ -186,6 +186,9 @@ void PickFirst::ShutdownLocked() {
 void PickFirst::ExitIdleLocked() {
   if (shutdown_) return;
   if (idle_) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
+      gpr_log(GPR_INFO, "Pick First %p exiting idle", this);
+    }
     idle_ = false;
     if (subchannel_list_ == nullptr ||
         subchannel_list_->num_subchannels() == 0) {

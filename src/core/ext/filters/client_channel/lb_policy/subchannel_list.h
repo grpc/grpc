@@ -96,7 +96,9 @@ class SubchannelData {
   // pending (i.e., between calling StartConnectivityWatchLocked() and
   // calling CancelConnectivityWatchLocked()).
   grpc_connectivity_state CheckConnectivityStateLocked() {
-    return subchannel_->CheckConnectivityState();
+    GPR_ASSERT(pending_watcher_ == nullptr);
+    connectivity_state_ = subchannel_->CheckConnectivityState();
+    return connectivity_state_;
   }
 
   // Resets the connection backoff.
