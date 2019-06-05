@@ -81,6 +81,8 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
     public function testTimeout()
     {
         $div_arg = new Math\DivArgs();
+        $div_arg->setDividend(7);
+        $div_arg->setDivisor(4);
         $call = self::$client->Div($div_arg, [], ['timeout' => 1]);
         list($response, $status) = $call->wait();
         $this->assertSame(\Grpc\STATUS_DEADLINE_EXCEEDED, $status->code);
