@@ -199,10 +199,12 @@ class ServerCallbackReaderWriter {
 template <class Request, class Response>
 class ServerBidiReactor : public internal::ServerReactor {
  public:
-  ServerBidiReactor() = default;
-  ServerBidiReactor(const ServerBidiReactor&) = delete;
-  ServerBidiReactor& operator=(const ServerBidiReactor&) = delete;
-
+  // NOTE: Initializing stream_ as a constructor initializer rather than a
+  //       default initializer because gcc-4.x requires a copy constructor for
+  //       default initializing a templated member, which isn't ok for atomic.
+  // TODO(vjpai): Switch to default constructor and default initializer when
+  //              gcc-4.x is no longer supported
+  ServerBidiReactor(): stream_(nullptr) {}
   ~ServerBidiReactor() = default;
 
   /// Send any initial metadata stored in the RPC context. If not invoked,
@@ -398,7 +400,7 @@ class ServerBidiReactor : public internal::ServerReactor {
   }
 
   grpc::internal::Mutex stream_mu_;
-  std::atomic<ServerCallbackReaderWriter<Request, Response>*> stream_{nullptr};
+  std::atomic<ServerCallbackReaderWriter<Request, Response>*> stream_;
   bool send_initial_metadata_wanted_ = false;
   bool write_and_finish_wanted_ = false;
   bool finish_wanted_ = false;
@@ -412,10 +414,7 @@ class ServerBidiReactor : public internal::ServerReactor {
 template <class Request, class Response>
 class ServerReadReactor : public internal::ServerReactor {
  public:
-  ServerReadReactor() = default;
-  ServerReadReactor(const ServerReadReactor&) = delete;
-  ServerReadReactor& operator=(const ServerReadReactor&) = delete;
-
+  ServerReadReactor(): reader_(nullptr) {}
   ~ServerReadReactor() = default;
 
   /// The following operation initiations are exactly like ServerBidiReactor.
@@ -489,7 +488,7 @@ class ServerReadReactor : public internal::ServerReactor {
   }
 
   grpc::internal::Mutex reader_mu_;
-  std::atomic<ServerCallbackReader<Request>*> reader_{nullptr};
+  std::atomic<ServerCallbackReader<Request>*> reader_;
   bool send_initial_metadata_wanted_ = false;
   bool finish_wanted_ = false;
   Request* read_wanted_ = nullptr;
@@ -500,10 +499,7 @@ class ServerReadReactor : public internal::ServerReactor {
 template <class Request, class Response>
 class ServerWriteReactor : public internal::ServerReactor {
  public:
-  ServerWriteReactor() = default;
-  ServerWriteReactor(const ServerWriteReactor&) = delete;
-  ServerWriteReactor& operator=(const ServerWriteReactor&) = delete;
-
+  ServerWriteReactor(): writer_(nullptr) {}
   ~ServerWriteReactor() = default;
 
   /// The following operation initiations are exactly like ServerBidiReactor.
@@ -606,7 +602,7 @@ class ServerWriteReactor : public internal::ServerReactor {
   }
 
   grpc::internal::Mutex writer_mu_;
-  std::atomic<ServerCallbackWriter<Response>*> writer_{nullptr};
+  std::atomic<ServerCallbackWriter<Response>*> writer_;
   bool send_initial_metadata_wanted_ = false;
   bool write_and_finish_wanted_ = false;
   bool finish_wanted_ = false;
@@ -618,10 +614,7 @@ class ServerWriteReactor : public internal::ServerReactor {
 template <class Request, class Response>
 class ServerUnaryReactor : public internal::ServerReactor {
  public:
-  ServerUnaryReactor() = default;
-  ServerUnaryReactor(const ServerUnaryReactor&) = delete;
-  ServerUnaryReactor& operator=(const ServerUnaryReactor&) = delete;
-
+  ServerUnaryReactor(): call_(nullptr) {}
   ~ServerUnaryReactor() = default;
 
   /// The following operation initiations are exactly like ServerBidiReactor.
@@ -676,7 +669,7 @@ class ServerUnaryReactor : public internal::ServerReactor {
   }
 
   grpc::internal::Mutex call_mu_;
-  std::atomic<ServerCallbackUnary*> call_{nullptr};
+  std::atomic<ServerCallbackUnary*> call_;
   bool send_initial_metadata_wanted_ = false;
   bool finish_wanted_ = false;
   Status status_wanted_;
