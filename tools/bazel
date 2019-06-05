@@ -24,13 +24,20 @@
 
 set -e
 
+# First of all, if DISABLE_BAZEL_WRAPPER is set, just use BAZEL_REAL as set by
+# https://github.com/bazelbuild/bazel/blob/master/scripts/packages/bazel.sh
+# that originally invoked this script.
+if [ "${BAZEL_REAL}" != "" ] && [ "${DISABLE_BAZEL_WRAPPER}" != "" ]
+then
+  exec -a "$0" "${BAZEL_REAL}" "$@"
+fi
+
 VERSION=0.24.1
 
 echo "INFO: Running bazel wrapper (see //tools/bazel for details), bazel version $VERSION will be used instead of system-wide bazel installation."
 
-CWD=$(pwd)
 BASEURL=https://github.com/bazelbuild/bazel/releases/download/
-cd "$(dirname "$0")"
+pushd "$(dirname "$0")" >/dev/null
 TOOLDIR=$(pwd)
 
 case $(uname -sm) in
@@ -53,5 +60,5 @@ if [ ! -x "$filename" ] ; then
   chmod a+x "$filename"
 fi
 
-cd "$CWD"
-"$TOOLDIR/$filename" $@
+popd >/dev/null
+exec "$TOOLDIR/$filename" "$@"
