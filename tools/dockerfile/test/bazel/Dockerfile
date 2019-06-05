@@ -51,7 +51,7 @@ RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 t
 #========================
 # Bazel installation
 
-# Must be in sync with tools/bazel.sh
+# Must be in sync with tools/bazel
 ENV BAZEL_VERSION 0.24.1
 
 RUN apt-get update && apt-get install -y wget && apt-get clean
