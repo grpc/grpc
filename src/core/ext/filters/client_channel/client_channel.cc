@@ -854,7 +854,7 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
               RefCountedPtr<ConnectedSubchannel> connected_subchannel)
           : parent_(std::move(parent)),
             state_(new_state),
-            connected_subchannel_(connected_subchannel) {
+            connected_subchannel_(std::move(connected_subchannel)) {
         GRPC_CLOSURE_INIT(
             &closure_, ApplyUpdateInCallCombiner, this,
             grpc_combiner_scheduler(parent_->parent_->chand_->combiner_));
