@@ -117,7 +117,9 @@ TraceFlag grpc_lb_xds_trace(false, "xds");
 namespace {
 
 constexpr char kXds[] = "xds_experimental";
-constexpr char kDefaultLocalityName[] = "xds_default_locality";
+constexpr char kDefaultLocalityRegion[] = "xds_default_locality_region";
+constexpr char kDefaultLocalityZone[] = "xds_default_locality_zone";
+constexpr char kDefaultLocalitySubzone[] = "xds_default_locality_subzone";
 constexpr uint32_t kDefaultLocalityWeight = 3;
 
 class ParsedXdsConfig : public LoadBalancingPolicy::Config {
@@ -352,6 +354,37 @@ class XdsLb : public LoadBalancingPolicy {
     LoadBalancingPolicy* child_ = nullptr;
   };
 
+  class LocalityName : public RefCounted<LocalityName> {
+   public:
+    struct Less {
+      bool operator()(const RefCountedPtr<LocalityName>& lhs,
+                      const RefCountedPtr<LocalityName>& rhs) {
+        int cmp_result = strcmp(lhs->region_.get(), rhs->region_.get());
+        if (cmp_result != 0) return cmp_result < 0;
+        cmp_result = strcmp(lhs->zone_.get(), rhs->zone_.get());
+        if (cmp_result != 0) return cmp_result < 0;
+        return strcmp(lhs->subzone_.get(), rhs->subzone_.get()) < 0;
+      }
+    };
+
+    LocalityName(UniquePtr<char> region, UniquePtr<char> zone,
+                 UniquePtr<char> subzone)
+        : region_(std::move(region)),
+          zone_(std::move(zone)),
+          subzone_(std::move(subzone)) {}
+
+    bool operator==(const LocalityName& other) const {
+      return strcmp(region_.get(), other.region_.get()) == 0 &&
+             strcmp(zone_.get(), other.zone_.get()) == 0 &&
+             strcmp(subzone_.get(), other.subzone_.get()) == 0;
+    }
+
+   private:
+    UniquePtr<char> region_;
+    UniquePtr<char> zone_;
+    UniquePtr<char> subzone_;
+  };
+
   class LocalityMap {
    public:
     class LocalityEntry : public InternallyRefCounted<LocalityEntry> {
@@ -418,19 +451,18 @@ class XdsLb : public LoadBalancingPolicy {
 
    private:
     void PruneLocalities(const LocalityList& locality_list);
-    Map<UniquePtr<char>, OrphanablePtr<LocalityEntry>, StringLess> map_;
+    Map<RefCountedPtr<LocalityName>, OrphanablePtr<LocalityEntry>,
+        LocalityName::Less>
+        map_;
     // Lock held while filling child refs for all localities
     // inside the map
     Mutex child_refs_mu_;
   };
 
   struct LocalityServerlistEntry {
-    ~LocalityServerlistEntry() {
-      gpr_free(locality_name);
-      xds_grpclb_destroy_serverlist(serverlist);
-    }
+    ~LocalityServerlistEntry() { xds_grpclb_destroy_serverlist(serverlist); }
 
-    char* locality_name;
+    RefCountedPtr<LocalityName> locality_name;
     uint32_t locality_weight;
     // The deserialized response from the balancer. May be nullptr until one
     // such response has arrived.
@@ -1199,7 +1231,10 @@ void XdsLb::BalancerChannelState::BalancerCallState::
         xdslb_policy->locality_serverlist_.emplace_back(
             MakeUnique<LocalityServerlistEntry>());
         xdslb_policy->locality_serverlist_[0]->locality_name =
-            static_cast<char*>(gpr_strdup(kDefaultLocalityName));
+            MakeRefCounted<LocalityName>(
+                UniquePtr<char>(gpr_strdup(kDefaultLocalityRegion)),
+                UniquePtr<char>(gpr_strdup(kDefaultLocalityZone)),
+                UniquePtr<char>(gpr_strdup(kDefaultLocalitySubzone)));
         xdslb_policy->locality_serverlist_[0]->locality_weight =
             kDefaultLocalityWeight;
       }
@@ -1728,8 +1763,9 @@ void XdsLb::LocalityMap::PruneLocalities(const LocalityList& locality_list) {
   for (auto iter = map_.begin(); iter != map_.end();) {
     bool found = false;
     for (size_t i = 0; i < locality_list.size(); i++) {
-      if (!gpr_stricmp(locality_list[i]->locality_name, iter->first.get())) {
+      if (*locality_list[i]->locality_name == *iter->first) {
         found = true;
+        break;
       }
     }
     if (!found) {  // Remove entries not present in the locality list
@@ -1746,14 +1782,14 @@ void XdsLb::LocalityMap::UpdateLocked(
     const grpc_channel_args* args, XdsLb* parent) {
   if (parent->shutting_down_) return;
   for (size_t i = 0; i < locality_serverlist.size(); i++) {
-    UniquePtr<char> locality_name(
-        gpr_strdup(locality_serverlist[i]->locality_name));
-    auto iter = map_.find(locality_name);
+    auto iter = map_.find(locality_serverlist[i]->locality_name);
     if (iter == map_.end()) {
       OrphanablePtr<LocalityEntry> new_entry = MakeOrphanable<LocalityEntry>(
           parent->Ref(), locality_serverlist[i]->locality_weight);
       MutexLock lock(&child_refs_mu_);
-      iter = map_.emplace(std::move(locality_name), std::move(new_entry)).first;
+      iter = map_.emplace(locality_serverlist[i]->locality_name,
+                          std::move(new_entry))
+                 .first;
     }
     // Don't create new child policies if not directed to
     xds_grpclb_serverlist* serverlist =
