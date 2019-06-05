@@ -38,7 +38,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/static_metadata.h"
@@ -108,9 +107,8 @@ class RoundRobin : public LoadBalancingPolicy {
    public:
     RoundRobinSubchannelList(RoundRobin* policy, TraceFlag* tracer,
                              const ServerAddressList& addresses,
-                             grpc_combiner* combiner,
                              const grpc_channel_args& args)
-        : SubchannelList(policy, tracer, addresses, combiner,
+        : SubchannelList(policy, tracer, addresses,
                          policy->channel_control_helper(), args) {
       // Need to maintain a ref to the LB policy as long as we maintain
       // any references to subchannels, since the subchannels'
@@ -480,7 +478,7 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
     }
   }
   latest_pending_subchannel_list_ = MakeOrphanable<RoundRobinSubchannelList>(
-      this, &grpc_lb_round_robin_trace, args.addresses, combiner(), *args.args);
+      this, &grpc_lb_round_robin_trace, args.addresses, *args.args);
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {
     // If the new list is empty, immediately promote the new list to the
     // current list and transition to TRANSIENT_FAILURE.

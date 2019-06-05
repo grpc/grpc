@@ -28,7 +28,6 @@
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -87,9 +86,8 @@ class PickFirst : public LoadBalancingPolicy {
    public:
     PickFirstSubchannelList(PickFirst* policy, TraceFlag* tracer,
                             const ServerAddressList& addresses,
-                            grpc_combiner* combiner,
                             const grpc_channel_args& args)
-        : SubchannelList(policy, tracer, addresses, combiner,
+        : SubchannelList(policy, tracer, addresses,
                          policy->channel_control_helper(), args) {
       // Need to maintain a ref to the LB policy as long as we maintain
       // any references to subchannels, since the subchannels'
@@ -257,7 +255,7 @@ void PickFirst::UpdateLocked(UpdateArgs args) {
   grpc_channel_args* new_args =
       grpc_channel_args_copy_and_add(args.args, &new_arg, 1);
   auto subchannel_list = MakeOrphanable<PickFirstSubchannelList>(
-      this, &grpc_lb_pick_first_trace, args.addresses, combiner(), *new_args);
+      this, &grpc_lb_pick_first_trace, args.addresses, *new_args);
   grpc_channel_args_destroy(new_args);
   if (subchannel_list->num_subchannels() == 0) {
     // Empty update or no valid subchannels. Unsubscribe from all current

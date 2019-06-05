@@ -39,7 +39,6 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -64,8 +63,7 @@ class MySubchannelList
 };
 
 */
-// All methods with a Locked() suffix must be called from within the
-// client_channel combiner.
+// All methods will be called from within the client_channel combiner.
 
 namespace grpc_core {
 
@@ -206,7 +204,6 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
   // the backoff code out of subchannels and into LB policies.
   void ResetBackoffLocked();
 
-  // Note: Caller must ensure that this is invoked inside of the combiner.
   void Orphan() override {
     ShutdownLocked();
     InternallyRefCounted<SubchannelListType>::Unref(DEBUG_LOCATION, "shutdown");
@@ -216,7 +213,7 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
 
  protected:
   SubchannelList(LoadBalancingPolicy* policy, TraceFlag* tracer,
-                 const ServerAddressList& addresses, grpc_combiner* combiner,
+                 const ServerAddressList& addresses,
                  LoadBalancingPolicy::ChannelControlHelper* helper,
                  const grpc_channel_args& args);
 
@@ -236,8 +233,6 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
   LoadBalancingPolicy* policy_;
 
   TraceFlag* tracer_;
-
-  grpc_combiner* combiner_;
 
   // The list of subchannels.
   SubchannelVector subchannels_;
@@ -374,13 +369,12 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::ShutdownLocked() {
 template <typename SubchannelListType, typename SubchannelDataType>
 SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
     LoadBalancingPolicy* policy, TraceFlag* tracer,
-    const ServerAddressList& addresses, grpc_combiner* combiner,
+    const ServerAddressList& addresses,
     LoadBalancingPolicy::ChannelControlHelper* helper,
     const grpc_channel_args& args)
     : InternallyRefCounted<SubchannelListType>(tracer),
       policy_(policy),
-      tracer_(tracer),
-      combiner_(GRPC_COMBINER_REF(combiner, "subchannel_list")) {
+      tracer_(tracer) {
   if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
     gpr_log(GPR_INFO,
             "[%s %p] Creating subchannel list %p for %" PRIuPTR " subchannels",
@@ -449,7 +443,6 @@ SubchannelList<SubchannelListType, SubchannelDataType>::~SubchannelList() {
     gpr_log(GPR_INFO, "[%s %p] Destroying subchannel_list %p", tracer_->name(),
             policy_, this);
   }
-  GRPC_COMBINER_UNREF(combiner_, "subchannel_list");
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
