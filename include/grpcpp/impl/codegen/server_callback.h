@@ -319,9 +319,9 @@ class ServerBidiReactor : public internal::ServerReactor {
   virtual void OnWriteDone(bool ok) {}
 
   /// Notifies the application that all operations associated with this RPC
-  /// have completed. This is an override (from the internal base class) but not
-  /// final, so derived classes should override it if they want to take action.
-  void OnDone() override {}
+  /// have completed. This is an override (from the internal base class) but
+  /// still abstract, so derived classes MUST override it to be instantiated.
+  void OnDone() override = 0;
 
   /// Notifies the application that this RPC has been cancelled. This is an
   /// override (from the internal base class) but not final, so derived classes
@@ -394,7 +394,7 @@ class ServerReadReactor : public internal::ServerReactor {
   /// The following notifications are exactly like ServerBidiReactor.
   virtual void OnSendInitialMetadataDone(bool ok) {}
   virtual void OnReadDone(bool ok) {}
-  void OnDone() override {}
+  void OnDone() override = 0;
   void OnCancel() override {}
 
  private:
@@ -468,7 +468,7 @@ class ServerWriteReactor : public internal::ServerReactor {
   /// The following notifications are exactly like ServerBidiReactor.
   virtual void OnSendInitialMetadataDone(bool ok) {}
   virtual void OnWriteDone(bool ok) {}
-  void OnDone() override {}
+  void OnDone() override = 0;
   void OnCancel() override {}
 
  private:
@@ -524,7 +524,7 @@ class ServerUnaryReactor : public internal::ServerReactor {
 
   /// The following notifications are exactly like ServerBidiReactor.
   virtual void OnSendInitialMetadataDone(bool ok) {}
-  void OnDone() override {}
+  void OnDone() override = 0;
   void OnCancel() override {}
 
  private:
