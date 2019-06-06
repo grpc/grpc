@@ -41,8 +41,7 @@ RUN apk update && apk add \
 
 # Install Python 2 for tooling code.
 RUN pip install --upgrade pip==10.0.1 && \
-	pip install virtualenv futures==2.2.0 enum34==1.0.4 \
-		protobuf==3.5.0.post1 six==1.10.0
+	pip install virtualenv protobuf==3.5.0.post1 six==1.10.0
 
 # Install Python 3 packages from PyPI
 RUN python3 -m ensurepip && \
