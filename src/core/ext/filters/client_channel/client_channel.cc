@@ -176,7 +176,7 @@ class ChannelData {
   }
 
  private:
-  class GrpcSubchannel;
+  class SubchannelWrapper;
   class ConnectivityStateAndPickerSetter;
   class ServiceConfigSetter;
   class ClientChannelControlHelper;
@@ -278,8 +278,8 @@ class ChannelData {
   UniquePtr<char> health_check_service_name_;
   RefCountedPtr<ServiceConfig> saved_service_config_;
   bool received_first_resolver_result_ = false;
-  Map<RefCountedPtr<GrpcSubchannel>, RefCountedPtr<ConnectedSubchannel>,
-      RefCountedPtrLess<GrpcSubchannel>>
+  Map<RefCountedPtr<SubchannelWrapper>, RefCountedPtr<ConnectedSubchannel>,
+      RefCountedPtrLess<SubchannelWrapper>>
       pending_subchannel_updates_;
 
   //
@@ -725,7 +725,7 @@ class CallData {
 };
 
 //
-// ChannelData::GrpcSubchannel
+// ChannelData::SubchannelWrapper
 //
 
 // This class is a wrapper for Subchannel that hides details of the
@@ -736,10 +736,10 @@ class CallData {
 // underlying subchannel is shared between channels, this wrapper will only
 // be used within one channel, so it will always be synchronized by the
 // control plane combiner.
-class ChannelData::GrpcSubchannel : public SubchannelInterface {
+class ChannelData::SubchannelWrapper : public SubchannelInterface {
  public:
-  GrpcSubchannel(ChannelData* chand, Subchannel* subchannel,
-                 UniquePtr<char> health_check_service_name)
+  SubchannelWrapper(ChannelData* chand, Subchannel* subchannel,
+                    UniquePtr<char> health_check_service_name)
       : SubchannelInterface(&grpc_client_channel_routing_trace),
         chand_(chand),
         subchannel_(subchannel),
@@ -749,17 +749,17 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
               "chand=%p: creating subchannel wrapper %p for subchannel %p",
               chand, this, subchannel_);
     }
-    GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "GrpcSubchannel");
+    GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "SubchannelWrapper");
   }
 
-  ~GrpcSubchannel() {
+  ~SubchannelWrapper() {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p: destroying subchannel wrapper %p for subchannel %p",
               chand_, this, subchannel_);
     }
     GRPC_SUBCHANNEL_UNREF(subchannel_, "unref from LB");
-    GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "GrpcSubchannel");
+    GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "SubchannelWrapper");
   }
 
   grpc_connectivity_state CheckConnectivityState() override {
@@ -828,7 +828,7 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
    public:
     WatcherWrapper(
         UniquePtr<SubchannelInterface::ConnectivityStateWatcher> watcher,
-        RefCountedPtr<GrpcSubchannel> parent)
+        RefCountedPtr<SubchannelWrapper> parent)
         : watcher_(std::move(watcher)), parent_(std::move(parent)) {}
 
     ~WatcherWrapper() { parent_.reset(DEBUG_LOCATION, "WatcherWrapper"); }
@@ -896,7 +896,7 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
     };
 
     UniquePtr<SubchannelInterface::ConnectivityStateWatcher> watcher_;
-    RefCountedPtr<GrpcSubchannel> parent_;
+    RefCountedPtr<SubchannelWrapper> parent_;
   };
 
   void MaybeUpdateConnectedSubchannel(
@@ -915,9 +915,8 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
       connected_subchannel_ = std::move(connected_subchannel);
       // Record the new connected subchannel so that it can be updated
       // in the data plane combiner the next time the picker is updated.
-      chand_->pending_subchannel_updates_[
-          Ref(DEBUG_LOCATION, "ConnectedSubchannelUpdate")] =
-              connected_subchannel_;
+      chand_->pending_subchannel_updates_[Ref(
+          DEBUG_LOCATION, "ConnectedSubchannelUpdate")] = connected_subchannel_;
     }
   }
 
@@ -1014,8 +1013,8 @@ class ChannelData::ConnectivityStateAndPickerSetter {
 
   ChannelData* chand_;
   UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker_;
-  Map<RefCountedPtr<GrpcSubchannel>, RefCountedPtr<ConnectedSubchannel>,
-      RefCountedPtrLess<GrpcSubchannel>>
+  Map<RefCountedPtr<SubchannelWrapper>, RefCountedPtr<ConnectedSubchannel>,
+      RefCountedPtrLess<SubchannelWrapper>>
       pending_subchannel_updates_;
   grpc_closure closure_;
 };
@@ -1225,8 +1224,8 @@ class ChannelData::ClientChannelControlHelper
         chand_->client_channel_factory_->CreateSubchannel(new_args);
     grpc_channel_args_destroy(new_args);
     if (subchannel == nullptr) return nullptr;
-    return MakeRefCounted<GrpcSubchannel>(chand_, subchannel,
-                                          std::move(health_check_service_name));
+    return MakeRefCounted<SubchannelWrapper>(
+        chand_, subchannel, std::move(health_check_service_name));
   }
 
   grpc_channel* CreateChannel(const char* target,
@@ -1579,8 +1578,8 @@ grpc_error* ChannelData::DoPingLocked(grpc_transport_op* op) {
       picker_->Pick(LoadBalancingPolicy::PickArgs());
   ConnectedSubchannel* connected_subchannel = nullptr;
   if (result.subchannel != nullptr) {
-    GrpcSubchannel* subchannel =
-        static_cast<GrpcSubchannel*>(result.subchannel.get());
+    SubchannelWrapper* subchannel =
+        static_cast<SubchannelWrapper*>(result.subchannel.get());
     connected_subchannel = subchannel->connected_subchannel();
   }
   if (connected_subchannel != nullptr) {
@@ -1706,7 +1705,8 @@ void ChannelData::RemoveQueuedPick(QueuedPick* to_remove,
 
 RefCountedPtr<ConnectedSubchannel> ChannelData::GetConnectedSubchannel(
     SubchannelInterface* subchannel) const {
-  GrpcSubchannel* grpc_subchannel = static_cast<GrpcSubchannel*>(subchannel);
+  SubchannelWrapper* grpc_subchannel =
+      static_cast<SubchannelWrapper*>(subchannel);
   ConnectedSubchannel* connected_subchannel =
       grpc_subchannel->connected_subchannel_in_data_plane();
   if (connected_subchannel == nullptr) return nullptr;
