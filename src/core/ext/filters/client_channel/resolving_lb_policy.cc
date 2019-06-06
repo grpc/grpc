@@ -534,8 +534,6 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   if (service_config_error_string != nullptr) {
     trace_strings.push_back(service_config_error_string);
     service_config_error_string = nullptr;
-  } else {
-    gpr_free(service_config_error_string);
   }
   MaybeAddTraceMessagesForAddressChangesLocked(resolution_contains_addresses,
                                                &trace_strings);

@@ -198,8 +198,6 @@ void CreateChannelzNode(grpc_channel_stack_builder* builder) {
   const intptr_t channelz_parent_uuid =
       grpc_core::channelz::GetParentUuidFromArgs(*args);
   // Create the channelz node.
-  // We only need to do this for clients here. For servers, this will be
-  // done in src/core/lib/surface/server.cc.
   grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_node =
       grpc_core::MakeRefCounted<grpc_core::channelz::ChannelNode>(
           grpc_core::UniquePtr<char>(
@@ -219,8 +217,7 @@ void CreateChannelzNode(grpc_channel_stack_builder* builder) {
     }
   }
   // Add channelz node to channel args.
-  // We remove the args for the factory and the parent uuid, since we no
-  // longer need them.
+  // We remove the arg for the parent uuid, since we no longer need it.
   grpc_arg new_arg = grpc_channel_arg_pointer_create(
       const_cast<char*>(GRPC_ARG_CHANNELZ_CHANNEL_NODE), channelz_node.get(),
       &channelz_node_arg_vtable);
@@ -255,6 +252,8 @@ grpc_channel* grpc_channel_create(const char* target,
     }
     return nullptr;
   }
+  // We only need to do this for clients here. For servers, this will be
+  // done in src/core/lib/surface/server.cc.
   if (grpc_channel_stack_type_is_client(channel_stack_type)) {
     CreateChannelzNode(builder);
   }

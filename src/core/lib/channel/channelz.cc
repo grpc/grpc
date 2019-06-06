@@ -225,7 +225,6 @@ grpc_json* ChannelNode::RenderJson() {
                            GRPC_JSON_STRING, false);
   }
   json = data;
-  json_iterator = nullptr;
   // populate the target.
   GPR_ASSERT(target_.get() != nullptr);
   grpc_json_create_child(nullptr, json, "target", target_.get(),

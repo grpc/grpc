@@ -191,8 +191,8 @@ class ChannelNode : public BaseNode {
   ChannelTrace trace_;
   const intptr_t parent_uuid_;
 
-  // First bit indicates whether the value is set.  Remaining bits are a
-  // grpc_connectivity_state value.
+  // Least significant bit indicates whether the value is set.  Remaining
+  // bits are a grpc_connectivity_state value.
   Atomic<int> connectivity_state_{0};
 
   Mutex child_mu_;  // Guards child maps below.
