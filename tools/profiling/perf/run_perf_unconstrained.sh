@@ -68,7 +68,7 @@ CPUS=`python -c 'import multiprocessing; print multiprocessing.cpu_count()'`
 if which pypy >/dev/null; then
   PYTHON=pypy
 else
-  PYTHON=python3.5
+  PYTHON=python3
 fi
 
 export config=mutrace
