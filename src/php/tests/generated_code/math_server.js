@@ -16,7 +16,7 @@
  *
  */
 
-var PROTO_PATH = __dirname + '/../../../src/proto/math/math.proto';
+var PROTO_PATH = __dirname + '/../../../proto/math/math.proto';
 
 var grpc = require('grpc');
 var protoLoader = require('@grpc/proto-loader');

@@ -294,9 +294,9 @@ Run a local server serving the math services. Please see [Node][] for how to
 run an example server.
 
 ```sh
-$ cd grpc/examples/node
+$ cd grpc/src/php/tests/generated_code
 $ npm install
-$ node dynamic_codegen/math_server.js
+$ node math_server.js
 ```
 
 ### Run test client
