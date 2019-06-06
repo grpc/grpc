@@ -17,20 +17,20 @@ PREREQUISITES
 When using gRPC C# under .NET Core you only need to [install .NET Core](https://www.microsoft.com/net/core).
 
 In addition to that, you can also use gRPC C# with these runtimes / IDEs
-- Windows: .NET Framework 4.5+, Visual Studio 2013, 2015, 2017, Visual Studio Code
-- Linux: Mono 4+, Visual Studio Code, MonoDevelop 5.9+ 
-- Mac OS X: Mono 4+, Visual Studio Code, Xamarin Studio 5.9+
+- Windows: .NET Framework 4.5+, Visual Studio 2013 or newer, Visual Studio Code
+- Linux: Mono 4+, Visual Studio Code
+- Mac OS X: Mono 4+, Visual Studio Code, Visual Studio for Mac
 
 HOW TO USE
 --------------
 
 **Windows, Linux, Mac OS X**
 
-- Open Visual Studio / MonoDevelop / Xamarin Studio and start a new project/solution (alternatively, you can create a new project from command line with `dotnet` SDK)
+- Open Visual Studio and start a new project/solution (alternatively, you can create a new project from command line with `dotnet` SDK)
 
 - Add the [Grpc](https://www.nuget.org/packages/Grpc/) NuGet package as a dependency (Project options -> Manage NuGet Packages). 
 
-- To be able to generate code from Protocol Buffer (`.proto`) file definitions, add the [Grpc.Tools](https://www.nuget.org/packages/Grpc.Tools/) NuGet package that contains Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin.
+- To be able to generate code from Protocol Buffer (`.proto`) file definitions, add the [Grpc.Tools](https://www.nuget.org/packages/Grpc.Tools/) NuGet package which provides [code generation integrated into your build](BUILD-INTEGRATION.md).
 
 **Xamarin.Android and Xamarin.iOS (Experimental only)**
 

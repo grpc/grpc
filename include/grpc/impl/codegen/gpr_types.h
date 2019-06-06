@@ -48,7 +48,7 @@ typedef struct gpr_timespec {
   int64_t tv_sec;
   int32_t tv_nsec;
   /** Against which clock was this time measured? (or GPR_TIMESPAN if
-      this is a relative time meaure) */
+      this is a relative time measure) */
   gpr_clock_type clock_type;
 } gpr_timespec;
 

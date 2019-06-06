@@ -479,7 +479,7 @@ class ClientRpcContextStreamingPingPongImpl : public ClientRpcContext {
     next_state_ = State::STREAM_IDLE;
     stream_->StartCall(ClientRpcContext::tag(this));
     if (coalesce_) {
-      // When the intial metadata is corked, the tag will not come back and we
+      // When the initial metadata is corked, the tag will not come back and we
       // need to manually drive the state machine.
       RunNextState(true, nullptr);
     }

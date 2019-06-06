@@ -26,6 +26,8 @@ TESTING_DIR=src/csharp/Grpc.IntegrationTesting
 
 $PROTOC --plugin=$PLUGIN --csharp_out=$EXAMPLES_DIR --grpc_out=$EXAMPLES_DIR \
     -I src/proto src/proto/math/math.proto
+$PROTOC --plugin=$PLUGIN --csharp_out=$EXAMPLES_DIR --grpc_out=$EXAMPLES_DIR --grpc_opt=lite_client,no_server \
+    -I src/csharp/Grpc.Examples src/csharp/Grpc.Examples/math_with_protoc_options.proto
 
 $PROTOC --plugin=$PLUGIN --csharp_out=$HEALTHCHECK_DIR --grpc_out=$HEALTHCHECK_DIR \
     -I src/proto src/proto/grpc/health/v1/health.proto

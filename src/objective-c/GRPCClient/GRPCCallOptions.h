@@ -98,6 +98,14 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
  */
 @property(readonly) BOOL flowControlEnabled;
 
+/**
+ * An array of interceptor factories. When a call starts, interceptors are created
+ * by these factories and chained together with the same order as the factories in
+ * this array. This parameter should not be modified by any interceptor and will
+ * not take effect if done so.
+ */
+@property(copy, readonly) NSArray *interceptorFactories;
+
 // OAuth2 parameters. Users of gRPC may specify one of the following two parameters.
 
 /**
@@ -252,6 +260,14 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
  * the call.
  */
 @property(readwrite) BOOL flowControlEnabled;
+
+/**
+ * An array of interceptor factories. When a call starts, interceptors are created
+ * by these factories and chained together with the same order as the factories in
+ * this array. This parameter should not be modified by any interceptor and will
+ * not take effect if done so.
+ */
+@property(copy, readwrite) NSArray *interceptorFactories;
 
 // OAuth2 parameters. Users of gRPC may specify one of the following two parameters.
 

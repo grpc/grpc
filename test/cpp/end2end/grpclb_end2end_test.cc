@@ -372,11 +372,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
         num_backends_(num_backends),
         num_balancers_(num_balancers),
         client_load_reporting_interval_seconds_(
-            client_load_reporting_interval_seconds) {
-    // Make the backup poller poll very frequently in order to pick up
-    // updates from all the subchannels's FDs.
-    GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
-  }
+            client_load_reporting_interval_seconds) {}
 
   void SetUp() override {
     response_generator_ =
@@ -1994,6 +1990,9 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  // Make the backup poller poll very frequently in order to pick up
+  // updates from all the subchannels's FDs.
+  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
   grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);

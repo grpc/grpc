@@ -17,27 +17,22 @@ and tests run by Kokoro CI.
 
 ## Running remote build manually from dev workstation
 
-*At the time being, tools/bazel.sh is used instead of invoking "bazel" directly
-to overcome the bazel versioning problem (our BUILD files currently only work with
-a specific window of bazel version and bazel.sh wrapper makes sure that version
-is used).*
-
 Run from repository root (opt, dbg):
 ```
 # manual run of bazel tests remotely on Foundry
-tools/bazel.sh --bazelrc=tools/remote_build/manual.bazelrc test --config=opt //test/...
+bazel --bazelrc=tools/remote_build/manual.bazelrc test --config=opt //test/...
 ```
 
 Sanitizer runs (asan, msan, tsan, ubsan):
 ```
 # manual run of bazel tests remotely on Foundry with given sanitizer
-tools/bazel.sh --bazelrc=tools/remote_build/manual.bazelrc test --config=asan //test/...
+bazel --bazelrc=tools/remote_build/manual.bazelrc test --config=asan //test/...
 ```
 
 Run on Windows MSVC:
 ```
 # RBE manual run only for c-core (must be run on a Windows host machine)
-tools/bazel.sh --bazelrc=tools/remote_build/windows.bazelrc build :all [--credentials_json=(path to service account credentials)]
+bazel --bazelrc=tools/remote_build/windows.bazelrc build :all [--credentials_json=(path to service account credentials)]
 ```
 
 Available command line options can be found in
