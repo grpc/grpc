@@ -241,10 +241,10 @@ class BaseStub
     {
         $metadata_copy = [];
         foreach ($metadata as $key => $value) {
-            if (!preg_match('/^[A-Za-z\d_-]+$/', $key)) {
+            if (!preg_match('/^[.A-Za-z\d_-]+$/', $key)) {
                 throw new \InvalidArgumentException(
                     'Metadata keys must be nonempty strings containing only '.
-                    'alphanumeric characters, hyphens and underscores'
+                    'alphanumeric characters, hyphens, underscores and dots'
                 );
             }
             $metadata_copy[strtolower($key)] = $value;

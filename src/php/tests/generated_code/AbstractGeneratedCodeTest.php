@@ -71,6 +71,33 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
         $call = self::$client->Div($div_arg, [' ' => 'abc123']);
     }
 
+    public function testMetadata()
+    {
+        $div_arg = new Math\DivArgs();
+        $call = self::$client->Div($div_arg, ['somekey' => ['abc123']]);
+    }
+
+    public function testMetadataKey()
+    {
+        $div_arg = new Math\DivArgs();
+        $call = self::$client->Div($div_arg, ['somekey_-1' => ['abc123']]);
+    }
+
+    public function testMetadataKeyWithDot()
+    {
+        $div_arg = new Math\DivArgs();
+        $call = self::$client->Div($div_arg, ['someKEY._-1' => ['abc123']]);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testMetadataInvalidKey()
+    {
+        $div_arg = new Math\DivArgs();
+        $call = self::$client->Div($div_arg, ['(somekey)' => ['abc123']]);
+    }
+
     public function testGetCallMetadata()
     {
         $div_arg = new Math\DivArgs();
