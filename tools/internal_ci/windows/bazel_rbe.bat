@@ -13,7 +13,7 @@
 @rem limitations under the License.
 
 @rem TODO(jtattermusch): make this generate less output
-@rem TODO(jtattermusch): use tools/bazel.sh script to keep the versions in sync
+@rem TODO(jtattermusch): use tools/bazel script to keep the versions in sync
 choco install bazel -y --version 0.24.1 --limit-output
 
 cd github/grpc
