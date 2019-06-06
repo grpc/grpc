@@ -204,7 +204,7 @@ class ServerBidiReactor : public internal::ServerReactor {
   //       default initializing a templated member, which isn't ok for atomic.
   // TODO(vjpai): Switch to default constructor and default initializer when
   //              gcc-4.x is no longer supported
-  ServerBidiReactor(): stream_(nullptr) {}
+  ServerBidiReactor() : stream_(nullptr) {}
   ~ServerBidiReactor() = default;
 
   /// Send any initial metadata stored in the RPC context. If not invoked,
@@ -267,8 +267,8 @@ class ServerBidiReactor : public internal::ServerReactor {
       stream = stream_.load(std::memory_order_relaxed);
       if (stream == nullptr) {
         ready = false;
-      write_wanted_ = resp;
-      write_options_wanted_ = std::move(options);
+        write_wanted_ = resp;
+        write_options_wanted_ = std::move(options);
       }
     }
     if (ready) {
@@ -388,7 +388,7 @@ class ServerBidiReactor : public internal::ServerReactor {
     }
     if (write_and_finish_wanted_) {
       stream->WriteAndFinish(write_wanted_, std::move(write_options_wanted_),
-                              std::move(status_wanted_));
+                             std::move(status_wanted_));
     } else {
       if (write_wanted_ != nullptr) {
         stream->Write(write_wanted_, std::move(write_options_wanted_));
@@ -414,7 +414,7 @@ class ServerBidiReactor : public internal::ServerReactor {
 template <class Request, class Response>
 class ServerReadReactor : public internal::ServerReactor {
  public:
-  ServerReadReactor(): reader_(nullptr) {}
+  ServerReadReactor() : reader_(nullptr) {}
   ~ServerReadReactor() = default;
 
   /// The following operation initiations are exactly like ServerBidiReactor.
@@ -499,7 +499,7 @@ class ServerReadReactor : public internal::ServerReactor {
 template <class Request, class Response>
 class ServerWriteReactor : public internal::ServerReactor {
  public:
-  ServerWriteReactor(): writer_(nullptr) {}
+  ServerWriteReactor() : writer_(nullptr) {}
   ~ServerWriteReactor() = default;
 
   /// The following operation initiations are exactly like ServerBidiReactor.
@@ -527,8 +527,8 @@ class ServerWriteReactor : public internal::ServerReactor {
       writer = writer_.load(std::memory_order_relaxed);
       if (writer == nullptr) {
         ready = false;
-      write_wanted_ = resp;
-      write_options_wanted_ = std::move(options);
+        write_wanted_ = resp;
+        write_options_wanted_ = std::move(options);
       }
     }
     if (ready) {
@@ -590,7 +590,7 @@ class ServerWriteReactor : public internal::ServerReactor {
     }
     if (write_and_finish_wanted_) {
       writer->WriteAndFinish(write_wanted_, std::move(write_options_wanted_),
-                              std::move(status_wanted_));
+                             std::move(status_wanted_));
     } else {
       if (write_wanted_ != nullptr) {
         writer->Write(write_wanted_, std::move(write_options_wanted_));
@@ -614,7 +614,7 @@ class ServerWriteReactor : public internal::ServerReactor {
 template <class Request, class Response>
 class ServerUnaryReactor : public internal::ServerReactor {
  public:
-  ServerUnaryReactor(): call_(nullptr) {}
+  ServerUnaryReactor() : call_(nullptr) {}
   ~ServerUnaryReactor() = default;
 
   /// The following operation initiations are exactly like ServerBidiReactor.
