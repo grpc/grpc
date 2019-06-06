@@ -32,7 +32,6 @@ RUN apk update && apk add \
   make \
   perl \
   strace \
-  python-dev \
   py-pip \
   python3-dev \
   unzip \
