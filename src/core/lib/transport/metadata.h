@@ -162,7 +162,6 @@ inline bool grpc_mdelem_both_interned_eq(grpc_mdelem a_interned,
 void* grpc_mdelem_get_user_data(grpc_mdelem md, void (*if_destroy_func)(void*));
 void* grpc_mdelem_set_user_data(grpc_mdelem md, void (*destroy_func)(void*),
                                 void* data);
-
 // Defined in metadata.cc.
 struct mdtab_shard;
 
@@ -235,6 +234,7 @@ class RefcountedMdBase {
     GPR_DEBUG_ASSERT(prior > 0);
     return prior == 1;
   }
+  UserData* user_data() { return &user_data_; }
 
  protected:
   intptr_t RefValue() { return refcnt_.Load(MemoryOrder::RELAXED); }
@@ -247,6 +247,7 @@ class RefcountedMdBase {
   grpc_slice value_;
   grpc_core::Atomic<intptr_t> refcnt_;
   uint32_t hash_ = 0;
+  UserData user_data_;
 };
 
 class InternedMetadata : public RefcountedMdBase {
@@ -262,14 +263,12 @@ class InternedMetadata : public RefcountedMdBase {
   ~InternedMetadata();
 
   void RefWithShardLocked(mdtab_shard* shard);
-  UserData* user_data() { return &user_data_; }
   InternedMetadata* bucket_next() { return link_.next; }
   void set_bucket_next(InternedMetadata* md) { link_.next = md; }
 
   static size_t CleanupLinkedMetadata(BucketLink* head);
 
  private:
-  UserData user_data_;
   BucketLink link_;
 };
 
@@ -278,14 +277,30 @@ class AllocatedMetadata : public RefcountedMdBase {
  public:
   AllocatedMetadata(const grpc_slice& key, const grpc_slice& value);
   ~AllocatedMetadata();
-
-  UserData* user_data() { return &user_data_; }
-
- private:
-  UserData user_data_;
 };
 
 }  // namespace grpc_core
+
+void grpc_set_user_data_alloc_interned_noret(grpc_core::UserData* ud,
+                                             void (*destroy_func)(void*),
+                                             void* data);
+inline void grpc_mdelem_set_user_data_noret(grpc_mdelem md,
+                                            void (*destroy_func)(void*),
+                                            void* data) {
+  switch (GRPC_MDELEM_STORAGE(md)) {
+    case GRPC_MDELEM_STORAGE_EXTERNAL:
+    case GRPC_MDELEM_STORAGE_STATIC:
+      destroy_func(data);
+      return;
+    case GRPC_MDELEM_STORAGE_ALLOCATED:
+    case GRPC_MDELEM_STORAGE_INTERNED: {
+      auto* rmd =
+          reinterpret_cast<grpc_core::RefcountedMdBase*>(GRPC_MDELEM_DATA(md));
+      grpc_set_user_data_alloc_interned_noret(rmd->user_data(), destroy_func,
+                                              data);
+    }
+  }
+}
 
 #ifndef NDEBUG
 #define GRPC_MDELEM_REF(s) grpc_mdelem_ref((s), __FILE__, __LINE__)
