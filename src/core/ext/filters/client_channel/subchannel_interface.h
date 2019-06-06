@@ -45,6 +45,10 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
     GRPC_ABSTRACT_BASE_CLASS
   };
 
+  template <typename TraceFlagT = TraceFlag>
+  explicit SubchannelInterface(TraceFlagT* trace_flag = nullptr)
+      : RefCounted<SubchannelInterface>(trace_flag) {}
+
   virtual ~SubchannelInterface() = default;
 
   // Returns the current connectivity state of the subchannel.

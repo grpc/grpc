@@ -740,7 +740,8 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
  public:
   GrpcSubchannel(ChannelData* chand, Subchannel* subchannel,
                  UniquePtr<char> health_check_service_name)
-      : chand_(chand),
+      : SubchannelInterface(&grpc_client_channel_routing_trace),
+        chand_(chand),
         subchannel_(subchannel),
         health_check_service_name_(std::move(health_check_service_name)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
@@ -752,6 +753,11 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
   }
 
   ~GrpcSubchannel() {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+      gpr_log(GPR_INFO,
+              "chand=%p: destroying subchannel wrapper %p for subchannel %p",
+              chand_, this, subchannel_);
+    }
     GRPC_SUBCHANNEL_UNREF(subchannel_, "unref from LB");
     GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "GrpcSubchannel");
   }
@@ -770,7 +776,8 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
       UniquePtr<ConnectivityStateWatcher> watcher) override {
     auto& watcher_wrapper = watcher_map_[watcher.get()];
     GPR_ASSERT(watcher_wrapper == nullptr);
-    watcher_wrapper = New<WatcherWrapper>(std::move(watcher), Ref());
+    watcher_wrapper = New<WatcherWrapper>(
+        std::move(watcher), Ref(DEBUG_LOCATION, "WatcherWrapper"));
     subchannel_->WatchConnectivityState(
         initial_state,
         UniquePtr<char>(gpr_strdup(health_check_service_name_.get())),
@@ -823,6 +830,8 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
         UniquePtr<SubchannelInterface::ConnectivityStateWatcher> watcher,
         RefCountedPtr<GrpcSubchannel> parent)
         : watcher_(std::move(watcher)), parent_(std::move(parent)) {}
+
+    ~WatcherWrapper() { parent_.reset(DEBUG_LOCATION, "WatcherWrapper"); }
 
     void Orphan() override { Unref(); }
 
@@ -892,11 +901,23 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
 
   void MaybeUpdateConnectedSubchannel(
       RefCountedPtr<ConnectedSubchannel> connected_subchannel) {
+    // Update the connected subchannel only if the channel is not shutting
+    // down.  This is because once the channel is shutting down, we
+    // ignore picker updates from the LB policy, which means that
+    // ConnectivityStateAndPickerSetter will never process the entries
+    // in chand_->pending_subchannel_updates_.  So we don't want to add
+    // entries there that will never be processed, since that would
+    // leave dangling refs to the channel and prevent its destruction.
+    grpc_error* disconnect_error = chand_->disconnect_error();
+    if (disconnect_error != GRPC_ERROR_NONE) return;
+    // Not shutting down, so do the update.
     if (connected_subchannel_ != connected_subchannel) {
       connected_subchannel_ = std::move(connected_subchannel);
       // Record the new connected subchannel so that it can be updated
       // in the data plane combiner the next time the picker is updated.
-      chand_->pending_subchannel_updates_[Ref()] = connected_subchannel_;
+      chand_->pending_subchannel_updates_[
+          Ref(DEBUG_LOCATION, "ConnectedSubchannelUpdate")] =
+              connected_subchannel_;
     }
   }
 
@@ -970,6 +991,12 @@ class ChannelData::ConnectivityStateAndPickerSetter {
     auto* self = static_cast<ConnectivityStateAndPickerSetter*>(arg);
     // Handle subchannel updates.
     for (auto& p : self->pending_subchannel_updates_) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+        gpr_log(GPR_INFO,
+                "chand=%p: updating subchannel wrapper %p data plane "
+                "connected_subchannel to %p",
+                self->chand_, p.first.get(), p.second.get());
+      }
       p.first->set_connected_subchannel_in_data_plane(std::move(p.second));
     }
     // Update picker.
@@ -1210,8 +1237,7 @@ class ChannelData::ClientChannelControlHelper
   void UpdateState(
       grpc_connectivity_state state,
       UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
-    grpc_error* disconnect_error =
-        chand_->disconnect_error_.Load(MemoryOrder::ACQUIRE);
+    grpc_error* disconnect_error = chand_->disconnect_error();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       const char* extra = disconnect_error == GRPC_ERROR_NONE
                               ? ""
@@ -1600,6 +1626,10 @@ void ChannelData::StartTransportOpLocked(void* arg, grpc_error* ignored) {
   }
   // Disconnect.
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
+      gpr_log(GPR_INFO, "chand=%p: channel shut down from API: %s", chand,
+              grpc_error_string(op->disconnect_with_error));
+    }
     grpc_error* error = GRPC_ERROR_NONE;
     GPR_ASSERT(chand->disconnect_error_.CompareExchangeStrong(
         &error, op->disconnect_with_error, MemoryOrder::ACQ_REL,
