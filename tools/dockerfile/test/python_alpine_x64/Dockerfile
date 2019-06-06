@@ -44,7 +44,7 @@ RUN pip install --upgrade pip==10.0.1 && \
 
 # Install Python 3 packages from PyPI
 RUN python3 -m ensurepip && \
-	python3 -m pip install --upgrade pip==10.0.1 && \
+	python3 -m pip install --upgrade pip && \
 	python3 -m pip install virtualenv && \
 	python3 -m pip install protobuf==3.5.0.post1 six==1.10.0
 

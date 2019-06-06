@@ -68,7 +68,7 @@ RUN apt-get update && apt-get install -y \
     python-pip
 
 # Install Python packages from PyPI
-RUN pip install --upgrade pip==10.0.1
+RUN pip install --upgrade pip
 RUN pip install virtualenv
 RUN pip install protobuf==3.5.2.post1 six==1.10.0 twisted==17.5.0
 
