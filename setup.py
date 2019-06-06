@@ -81,10 +81,7 @@ LICENSE = 'Apache License 2.0'
 CLASSIFIERS = [
     'Development Status :: 5 - Production/Stable',
     'Programming Language :: Python',
-    'Programming Language :: Python :: 2',
-    'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',
     'Programming Language :: Python :: 3.6',
     'License :: OSI Approved :: Apache Software License',
@@ -329,8 +326,6 @@ PACKAGE_DIRECTORIES = {
 
 INSTALL_REQUIRES = (
     "six>=1.5.2",
-    "futures>=2.2.0; python_version<'3.2'",
-    "enum34>=1.0.4; python_version<'3.4'",
 )
 
 SETUP_REQUIRES = INSTALL_REQUIRES + (
