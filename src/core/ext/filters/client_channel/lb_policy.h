@@ -202,9 +202,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     virtual void RequestReresolution() GRPC_ABSTRACT;
 
     /// Adds a trace message associated with the channel.
+    /// Does NOT take ownership of \a message.
     enum TraceSeverity { TRACE_INFO, TRACE_WARNING, TRACE_ERROR };
     virtual void AddTraceEvent(TraceSeverity severity,
-                               UniquePtr<char> message) GRPC_ABSTRACT;
+                               const char* message) GRPC_ABSTRACT;
 
     GRPC_ABSTRACT_BASE_CLASS
   };

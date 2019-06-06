@@ -340,8 +340,7 @@ class XdsLb : public LoadBalancingPolicy {
     void UpdateState(grpc_connectivity_state state,
                      UniquePtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
-    void AddTraceEvent(TraceSeverity severity,
-                       UniquePtr<char> message) override;
+    void AddTraceEvent(TraceSeverity severity, const char* message) override;
 
     void set_child(LoadBalancingPolicy* child) { child_ = child; }
 
@@ -413,7 +412,7 @@ class XdsLb : public LoadBalancingPolicy {
                          UniquePtr<SubchannelPicker> picker) override;
         void RequestReresolution() override;
         void AddTraceEvent(TraceSeverity severity,
-                           UniquePtr<char> message) override;
+                           const char* message) override;
         void set_child(LoadBalancingPolicy* child) { child_ = child; }
 
        private:
@@ -657,13 +656,12 @@ void XdsLb::FallbackHelper::RequestReresolution() {
 }
 
 void XdsLb::FallbackHelper::AddTraceEvent(TraceSeverity severity,
-                                          UniquePtr<char> message) {
+                                          const char* message) {
   if (parent_->shutting_down_ ||
       (!CalledByPendingFallback() && !CalledByCurrentFallback())) {
     return;
   }
-  parent_->channel_control_helper()->AddTraceEvent(severity,
-                                                   std::move(message));
+  parent_->channel_control_helper()->AddTraceEvent(severity, message);
 }
 
 //
@@ -2104,13 +2102,12 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::RequestReresolution() {
 }
 
 void XdsLb::LocalityMap::LocalityEntry::Helper::AddTraceEvent(
-    TraceSeverity severity, UniquePtr<char> message) {
+    TraceSeverity severity, const char* message) {
   if (entry_->parent_->shutting_down_ ||
       (!CalledByPendingChild() && !CalledByCurrentChild())) {
     return;
   }
-  entry_->parent_->channel_control_helper()->AddTraceEvent(severity,
-                                                           std::move(message));
+  entry_->parent_->channel_control_helper()->AddTraceEvent(severity, message);
 }
 
 //
