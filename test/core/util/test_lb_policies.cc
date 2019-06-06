@@ -158,8 +158,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
       parent_->channel_control_helper()->RequestReresolution();
     }
 
-    void AddTraceEvent(TraceSeverity severity,
-                       const char* message) override {
+    void AddTraceEvent(TraceSeverity severity, const char* message) override {
       parent_->channel_control_helper()->AddTraceEvent(severity, message);
     }
 
