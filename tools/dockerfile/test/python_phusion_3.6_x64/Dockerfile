@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM phusion/baseimage:0.11
+FROM phusion/baseimage:latest
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
