@@ -932,8 +932,8 @@ class CallbackUnaryHandler : public MethodHandler {
     void SetupReactor(
         experimental::ServerUnaryReactor<RequestType, ResponseType>* reactor) {
       reactor_ = reactor;
-      this->BindReactor(reactor);
       ctx_->BeginCompletionOp(&call_, [this](bool) { MaybeDone(); }, reactor);
+      this->BindReactor(reactor);
     }
 
     const RequestType* request() { return allocator_state_->request(); }
@@ -1079,8 +1079,8 @@ class CallbackClientStreamingHandler : public MethodHandler {
                     },
                     &read_ops_);
       read_ops_.set_core_cq_tag(&read_tag_);
-      this->BindReactor(reactor);
       ctx_->BeginCompletionOp(&call_, [this](bool) { MaybeDone(); }, reactor);
+      this->BindReactor(reactor);
     }
 
     ~ServerCallbackReaderImpl() {}
@@ -1265,8 +1265,8 @@ class CallbackServerStreamingHandler : public MethodHandler {
                      },
                      &write_ops_);
       write_ops_.set_core_cq_tag(&write_tag_);
-      this->BindReactor(reactor);
       ctx_->BeginCompletionOp(&call_, [this](bool) { MaybeDone(); }, reactor);
+      this->BindReactor(reactor);
     }
     ~ServerCallbackWriterImpl() { req_->~RequestType(); }
 
@@ -1440,8 +1440,8 @@ class CallbackBidiHandler : public MethodHandler {
                     },
                     &read_ops_);
       read_ops_.set_core_cq_tag(&read_tag_);
-      this->BindReactor(reactor);
       ctx_->BeginCompletionOp(&call_, [this](bool) { MaybeDone(); }, reactor);
+      this->BindReactor(reactor);
     }
 
     void MaybeDone() {
