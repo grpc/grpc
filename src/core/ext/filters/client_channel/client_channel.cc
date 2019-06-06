@@ -1098,13 +1098,12 @@ class ChannelData::ClientChannelControlHelper
   // No-op -- we should never get this from ResolvingLoadBalancingPolicy.
   void RequestReresolution() override {}
 
-  void AddTraceEvent(TraceSeverity severity, const char* message) override {
+  void AddTraceEvent(TraceSeverity severity, UniquePtr<char> message) override {
     if (chand_->channelz_node_ != nullptr) {
       chand_->channelz_node_->AddTraceEvent(
           ConvertSeverityEnum(severity),
-          grpc_slice_from_copied_string(message));
+          grpc_slice_from_copied_string(message.get()));
     }
-    gpr_free(const_cast<char*>(message));
   }
 
  private:

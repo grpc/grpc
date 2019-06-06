@@ -158,6 +158,12 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
       parent_->channel_control_helper()->RequestReresolution();
     }
 
+    void AddTraceEvent(TraceSeverity severity,
+                       UniquePtr<char> message) override {
+      parent_->channel_control_helper()->AddTraceEvent(severity,
+                                                       std::move(message));
+    }
+
    private:
     RefCountedPtr<InterceptRecvTrailingMetadataLoadBalancingPolicy> parent_;
     InterceptRecvTrailingMetadataCallback cb_;

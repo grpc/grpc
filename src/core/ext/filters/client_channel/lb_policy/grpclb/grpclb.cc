@@ -297,6 +297,8 @@ class GrpcLb : public LoadBalancingPolicy {
     void UpdateState(grpc_connectivity_state state,
                      UniquePtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
+    void AddTraceEvent(TraceSeverity severity,
+                       UniquePtr<char> message) override;
 
     void set_child(LoadBalancingPolicy* child) { child_ = child; }
 
@@ -724,6 +726,16 @@ void GrpcLb::Helper::RequestReresolution() {
       !parent_->lb_calld_->seen_initial_response()) {
     parent_->channel_control_helper()->RequestReresolution();
   }
+}
+
+void GrpcLb::Helper::AddTraceEvent(TraceSeverity severity,
+                                   UniquePtr<char> message) {
+  if (parent_->shutting_down_ ||
+      (!CalledByPendingChild() && !CalledByCurrentChild())) {
+    return;
+  }
+  parent_->channel_control_helper()->AddTraceEvent(severity,
+                                                   std::move(message));
 }
 
 //
