@@ -15,7 +15,7 @@
 # limitations under the License.
 
 # TODO(https://github.com/grpc/grpc/issues/19083): Remove dependency on Python
-# 22.7.
+# 2.7.
 
 import argparse
 import glob
