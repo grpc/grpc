@@ -16,12 +16,11 @@
  *
  */
 
+#include <string>
+
+#include <grpc/support/string_util.h>
 #include "src/core/lib/surface/server.h"
 #include "test/core/bad_client/bad_client.h"
-
-#define PFX_STR                      \
-  "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" \
-  "\x00\x00\x00\x04\x00\x00\x00\x00\x00"
 
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* registered_method) {
@@ -36,10 +35,21 @@ int main(int argc, char** argv) {
   grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);
 
-  /* test adding prioritization data */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR "\x00\x00\x00\x88\x00\x00\x00\x00\x01",
-                           GRPC_BAD_CLIENT_DISCONNECT);
+  /* test that all invalid/unknown frame types are handled */
+  for (int i = 10; i <= 255; i++) {
+    std::string unknown_frame_string;
+    unknown_frame_string.append("\x01\x01\x01", sizeof("\x00\x00\x00") - 1);
+    char frame_type = static_cast<char>(i);
+    unknown_frame_string.append(&frame_type, 1);
+    unknown_frame_string.append("\x01\x02\x03\x04\x05",
+                                sizeof("\x00\x00\x00\x00\x01") - 1);
+    grpc_bad_client_arg args[2];
+    args[0] = connection_preface_arg;
+    args[1].client_validator = nullptr;
+    args[1].client_payload = unknown_frame_string.c_str();
+    args[1].client_payload_length = unknown_frame_string.size();
+    grpc_run_bad_client_test(verifier, args, 2, GRPC_BAD_CLIENT_DISCONNECT);
+  }
 
   grpc_shutdown();
   return 0;
