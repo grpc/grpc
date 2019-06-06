@@ -163,10 +163,7 @@ class PythonArtifact:
                 docker_base_image='quay.io/pypa/manylinux1_i686'
                 if self.arch == 'x86' else 'quay.io/pypa/manylinux1_x86_64')
         elif self.platform == 'windows':
-            if 'Python34' in self.py_version:
-                environ['EXT_COMPILER'] = 'mingw32'
-            else:
-                environ['EXT_COMPILER'] = 'msvc'
+            environ['EXT_COMPILER'] = 'msvc'
             # For some reason, the batch script %random% always runs with the same
             # seed.  We create a random temp-dir here
             dir = ''.join(
