@@ -24,6 +24,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -44,8 +45,8 @@ static grpc_error* conforms_to(const grpc_slice& slice,
           grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(err_desc),
                              GRPC_ERROR_INT_OFFSET,
                              p - GRPC_SLICE_START_PTR(slice)),
-          GRPC_ERROR_STR_RAW_BYTES, grpc_slice_from_copied_string(dump));
-      gpr_free(dump);
+          GRPC_ERROR_STR_RAW_BYTES,
+          grpc_slice_from_moved_string(grpc_core::UniquePtr<char>(dump)));
       return error;
     }
   }
