@@ -67,6 +67,7 @@ class CallbackGenericService;
 class ExternalConnectionAcceptor {
  public:
   struct NewConnectionParameters {
+    int listener_fd = -1;
     int fd = -1;
     ByteBuffer read_buffer;  // data intended for the grpc server
   };

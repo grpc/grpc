@@ -174,20 +174,22 @@ class InterceptorBatchMethods {
   /// Returns a pointer to the modifiable received message. Note that the
   /// message is already deserialized but the type is not set; the interceptor
   /// should static_cast to the appropriate type before using it. This is valid
-  /// for POST_RECV_MESSAGE interceptions; nullptr for not valid
+  /// for PRE_RECV_MESSAGE and POST_RECV_MESSAGE interceptions; nullptr for not
+  /// valid
   virtual void* GetRecvMessage() = 0;
 
   /// Returns a modifiable multimap of the received initial metadata.
-  /// Valid for POST_RECV_INITIAL_METADATA interceptions; nullptr if not valid
+  /// Valid for PRE_RECV_INITIAL_METADATA and POST_RECV_INITIAL_METADATA
+  /// interceptions; nullptr if not valid
   virtual std::multimap<grpc::string_ref, grpc::string_ref>*
   GetRecvInitialMetadata() = 0;
 
-  /// Returns a modifiable view of the received status on POST_RECV_STATUS
-  /// interceptions; nullptr if not valid.
+  /// Returns a modifiable view of the received status on PRE_RECV_STATUS and
+  /// POST_RECV_STATUS interceptions; nullptr if not valid.
   virtual Status* GetRecvStatus() = 0;
 
   /// Returns a modifiable multimap of the received trailing metadata on
-  /// POST_RECV_STATUS interceptions; nullptr if not valid
+  /// PRE_RECV_STATUS and POST_RECV_STATUS interceptions; nullptr if not valid
   virtual std::multimap<grpc::string_ref, grpc::string_ref>*
   GetRecvTrailingMetadata() = 0;
 
