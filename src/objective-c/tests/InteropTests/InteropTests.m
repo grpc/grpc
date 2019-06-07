@@ -18,6 +18,8 @@
 
 #import "InteropTests.h"
 
+#import <libkern/OSAtomic.h>
+
 #include <grpc/status.h>
 
 #ifdef GRPC_COMPILE_WITH_CRONET
@@ -701,21 +703,21 @@ initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
   XCTAssertNotNil([[self class] host]);
   __weak XCTestExpectation *expectation =
       [self expectationWithDescription:@"HigherResponseSizeLimit"];
+  __block NSError *callError = nil;
 
   RMTSimpleRequest *request = [RMTSimpleRequest message];
   const size_t kPayloadSize = 5 * 1024 * 1024;  // 5MB
   request.responseSize = kPayloadSize;
 
   [GRPCCall setResponseSizeLimit:6 * 1024 * 1024 forHost:[[self class] host]];
-
   [_service unaryCallWithRequest:request
                          handler:^(RMTSimpleResponse *response, NSError *error) {
-                           XCTAssertNil(error, @"Finished with unexpected error: %@", error);
-                           XCTAssertEqual(response.payload.body.length, kPayloadSize);
+                           callError = error;
                            [expectation fulfill];
                          }];
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+  XCTAssertNil(callError, @"Finished with unexpected error: %@", callError);
 }
 
 - (void)testClientStreamingRPC {
