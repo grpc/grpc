@@ -19,6 +19,8 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
 grpc_address_resolver_vtable* grpc_resolve_address_impl;
@@ -47,4 +49,15 @@ grpc_error* grpc_blocking_resolve_address(const char* name,
                                           grpc_resolved_addresses** addresses) {
   return grpc_resolve_address_impl->blocking_resolve_address(name, default_port,
                                                              addresses);
+}
+
+char* grpc_get_port_by_name(const char* port) {
+  GPR_ASSERT(port != nullptr);
+  const char* svc[][2] = {{"http", "80"}, {"https", "443"}};
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(svc); i++) {
+    if (strcmp(port, svc[i][0]) == 0) {
+      return gpr_strdup(svc[i][1]);
+    }
+  }
+  return nullptr;
 }

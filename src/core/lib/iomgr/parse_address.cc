@@ -313,10 +313,8 @@ bool grpc_parse_uri(const grpc_core::URI& uri,
 }
 
 uint16_t grpc_strhtons(const char* port) {
-  if (strcmp(port, "http") == 0) {
-    return htons(80);
-  } else if (strcmp(port, "https") == 0) {
-    return htons(443);
-  }
-  return htons(static_cast<unsigned short>(atoi(port)));
+  char* updated_port = grpc_get_port_by_name(port);
+  int numeric_port = updated_port != nullptr ? atoi(updated_port) : atoi(port);
+  gpr_free(updated_port);
+  return htons(static_cast<unsigned short>(numeric_port));
 }
