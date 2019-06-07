@@ -37,6 +37,7 @@
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -473,6 +474,13 @@ static bool inner_resolve_as_ip_literal_locked(
       return false;
     }
     *port = gpr_strdup(default_port);
+  }
+  const char* svc[][2] = {{"http", "80"}, {"https", "443"}};
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(svc); i++) {
+    if (strcmp(*port, svc[i][0]) == 0) {
+      gpr_free(*port);
+      *port = gpr_strdup(svc[i][1]);
+    }
   }
   grpc_resolved_address addr;
   GPR_ASSERT(gpr_join_host_port(hostport, *host, atoi(*port)));

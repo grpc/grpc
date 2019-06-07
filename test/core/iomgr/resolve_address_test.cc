@@ -31,6 +31,8 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/socket_utils.h"
 #include "test/core/util/cmdline.h"
 #include "test/core/util/test_config.h"
 
@@ -153,6 +155,32 @@ static void must_succeed_with_ipv4_first(void* argsp, grpc_error* err) {
   gpr_mu_unlock(args->mu);
 }
 
+static void must_succeed_with_443_port(void* argsp, grpc_error* err) {
+  args_struct* args = static_cast<args_struct*>(argsp);
+  GPR_ASSERT(err == GRPC_ERROR_NONE);
+  GPR_ASSERT(args->addrs != nullptr);
+  GPR_ASSERT(args->addrs->naddrs > 0);
+  const struct sockaddr* result_addr =
+      reinterpret_cast<const struct sockaddr*>(args->addrs->addrs[0].addr);
+  if (result_addr->sa_family == AF_INET) {
+    GPR_ASSERT(
+        reinterpret_cast<const struct sockaddr_in*>(result_addr)->sin_port ==
+        grpc_htons(443));
+  } else if (result_addr->sa_family == AF_INET6) {
+    GPR_ASSERT(
+        reinterpret_cast<const struct sockaddr_in6*>(result_addr)->sin6_port ==
+        grpc_htons(443));
+  } else {
+    gpr_log(GPR_ERROR, "Got unexpected addr family: %d",
+            result_addr->sa_family);
+    abort();
+  }
+  gpr_atm_rel_store(&args->done_atm, 1);
+  gpr_mu_lock(args->mu);
+  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
+  gpr_mu_unlock(args->mu);
+}
+
 static void test_localhost(void) {
   grpc_core::ExecCtx exec_ctx;
   args_struct args;
@@ -210,10 +238,23 @@ static void test_non_numeric_default_port(void) {
   grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
-  grpc_resolve_address(
-      "localhost", "https", args.pollset_set,
-      GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
-      &args.addrs);
+  grpc_resolve_address("localhost", "https", args.pollset_set,
+                       GRPC_CLOSURE_CREATE(must_succeed_with_443_port, &args,
+                                           grpc_schedule_on_exec_ctx),
+                       &args.addrs);
+  grpc_core::ExecCtx::Get()->Flush();
+  poll_pollset_until_request_done(&args);
+  args_finish(&args);
+}
+
+static void test_ip_literal_with_non_numeric_default_port(void) {
+  grpc_core::ExecCtx exec_ctx;
+  args_struct args;
+  args_init(&args);
+  grpc_resolve_address("127.0.0.1", "https", args.pollset_set,
+                       GRPC_CLOSURE_CREATE(must_succeed_with_443_port, &args,
+                                           grpc_schedule_on_exec_ctx),
+                       &args.addrs);
   grpc_core::ExecCtx::Get()->Flush();
   poll_pollset_until_request_done(&args);
   args_finish(&args);
@@ -372,6 +413,7 @@ int main(int argc, char** argv) {
     test_default_port();
     test_non_numeric_default_port();
     test_missing_default_port();
+    test_ip_literal_with_non_numeric_default_port();
     test_ipv6_with_port();
     test_ipv6_without_port();
     test_invalid_ip_addresses();
