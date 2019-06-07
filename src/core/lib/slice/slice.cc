@@ -217,11 +217,17 @@ grpc_slice grpc_slice_from_moved_string(grpc_core::UniquePtr<char> p) {
   const size_t len = strlen(p.get());
   uint8_t* ptr = reinterpret_cast<uint8_t*>(p.get());
   grpc_slice slice;
-  slice.refcount =
-      grpc_core::New<grpc_core::MovedStringSliceRefCount>(std::move(p))
-          ->base_refcount();
-  slice.data.refcounted.bytes = ptr;
-  slice.data.refcounted.length = len;
+  if (len <= sizeof(slice.data.inlined.bytes)) {
+    memcpy(GRPC_SLICE_START_PTR(slice), ptr, len);
+    slice.refcount = nullptr;
+    slice.data.inlined.length = len;
+  } else {
+    slice.refcount =
+        grpc_core::New<grpc_core::MovedStringSliceRefCount>(std::move(p))
+            ->base_refcount();
+    slice.data.refcounted.bytes = ptr;
+    slice.data.refcounted.length = len;
+  }
   return slice;
 }
 
