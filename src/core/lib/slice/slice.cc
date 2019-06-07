@@ -102,18 +102,18 @@ class NewSliceRefcount {
   }
 
   NewSliceRefcount(void (*destroy)(void*), void* user_data)
-      : rc_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this, &rc_),
+      : base_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this, &base_),
         user_destroy_(destroy),
         user_data_(user_data) {}
 
   GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
-  grpc_slice_refcount* base_refcount() { return &rc_; }
+  grpc_slice_refcount* base_refcount() { return &base_; }
 
  private:
   ~NewSliceRefcount() { user_destroy_(user_data_); }
 
-  grpc_slice_refcount rc_;
+  grpc_slice_refcount base_;
   RefCount refs_;
   void (*user_destroy_)(void*);
   void* user_data_;
@@ -149,19 +149,19 @@ class NewWithLenSliceRefcount {
 
   NewWithLenSliceRefcount(void (*destroy)(void*, size_t), void* user_data,
                           size_t user_length)
-      : rc_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this, &rc_),
+      : base_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this, &base_),
         user_data_(user_data),
         user_length_(user_length),
         user_destroy_(destroy) {}
 
   GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
-  grpc_slice_refcount* base_refcount() { return &rc_; }
+  grpc_slice_refcount* base_refcount() { return &base_; }
 
  private:
   ~NewWithLenSliceRefcount() { user_destroy_(user_data_, user_length_); }
 
-  grpc_slice_refcount rc_;
+  grpc_slice_refcount base_;
   RefCount refs_;
   void* user_data_;
   size_t user_length_;
@@ -172,19 +172,19 @@ class NewWithLenSliceRefcount {
 class MovedStringSliceRefCount {
  public:
   MovedStringSliceRefCount(grpc_core::UniquePtr<char>&& str)
-      : rc_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this, &rc_),
+      : base_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this, &base_),
         str_(std::move(str)) {}
 
   GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
-  grpc_slice_refcount* base_refcount() { return &rc_; }
+  grpc_slice_refcount* base_refcount() { return &base_; }
 
  private:
   static void Destroy(void* arg) {
     Delete(static_cast<MovedStringSliceRefCount*>(arg));
   }
 
-  grpc_slice_refcount rc_;
+  grpc_slice_refcount base_;
   grpc_core::RefCount refs_;
   grpc_core::UniquePtr<char> str_;
 };
