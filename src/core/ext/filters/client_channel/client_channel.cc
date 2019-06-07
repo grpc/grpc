@@ -118,18 +118,6 @@ class ChannelData {
   static void GetChannelInfo(grpc_channel_element* elem,
                              const grpc_channel_info* info);
 
-  void set_channelz_node(channelz::ClientChannelNode* node) {
-    channelz_node_ = node;
-    resolving_lb_policy_->set_channelz_node(node->Ref());
-  }
-  void FillChildRefsForChannelz(channelz::ChildRefsList* child_subchannels,
-                                channelz::ChildRefsList* child_channels) {
-    if (resolving_lb_policy_ != nullptr) {
-      resolving_lb_policy_->FillChildRefsForChannelz(child_subchannels,
-                                                     child_channels);
-    }
-  }
-
   bool deadline_checking_enabled() const { return deadline_checking_enabled_; }
   bool enable_retries() const { return enable_retries_; }
   size_t per_rpc_retry_buffer_size() const {
@@ -249,8 +237,7 @@ class ChannelData {
   ClientChannelFactory* client_channel_factory_;
   UniquePtr<char> server_name_;
   RefCountedPtr<ServiceConfig> default_service_config_;
-  // Initialized shortly after construction.
-  channelz::ClientChannelNode* channelz_node_ = nullptr;
+  channelz::ChannelNode* channelz_node_;
 
   //
   // Fields used in the data plane.  Guarded by data_plane_combiner.
@@ -269,12 +256,13 @@ class ChannelData {
   grpc_combiner* combiner_;
   grpc_pollset_set* interested_parties_;
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_;
-  OrphanablePtr<LoadBalancingPolicy> resolving_lb_policy_;
+  OrphanablePtr<ResolvingLoadBalancingPolicy> resolving_lb_policy_;
   grpc_connectivity_state_tracker state_tracker_;
   ExternalConnectivityWatcher::WatcherList external_connectivity_watcher_list_;
   UniquePtr<char> health_check_service_name_;
   RefCountedPtr<ServiceConfig> saved_service_config_;
   bool received_first_resolver_result_ = false;
+  Map<Subchannel*, int> subchannel_refcount_map_;
 
   //
   // Fields accessed from both data plane and control plane combiners.
@@ -735,6 +723,7 @@ class ChannelData::ConnectivityStateAndPickerSetter {
     // Update connectivity state here, while holding control plane combiner.
     grpc_connectivity_state_set(&chand->state_tracker_, state, reason);
     if (chand->channelz_node_ != nullptr) {
+      chand->channelz_node_->SetConnectivityState(state);
       chand->channelz_node_->AddTraceEvent(
           channelz::ChannelTrace::Severity::Info,
           grpc_slice_from_static_string(
@@ -971,12 +960,39 @@ void ChannelData::ExternalConnectivityWatcher::WatchConnectivityStateLocked(
 // control plane combiner.
 class ChannelData::GrpcSubchannel : public SubchannelInterface {
  public:
-  GrpcSubchannel(Subchannel* subchannel,
+  GrpcSubchannel(ChannelData* chand, Subchannel* subchannel,
                  UniquePtr<char> health_check_service_name)
-      : subchannel_(subchannel),
-        health_check_service_name_(std::move(health_check_service_name)) {}
+      : chand_(chand),
+        subchannel_(subchannel),
+        health_check_service_name_(std::move(health_check_service_name)) {
+    GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "GrpcSubchannel");
+    auto* subchannel_node = subchannel_->channelz_node();
+    if (subchannel_node != nullptr) {
+      intptr_t subchannel_uuid = subchannel_node->uuid();
+      auto it = chand_->subchannel_refcount_map_.find(subchannel_);
+      if (it == chand_->subchannel_refcount_map_.end()) {
+        chand_->channelz_node_->AddChildSubchannel(subchannel_uuid);
+        it = chand_->subchannel_refcount_map_.emplace(subchannel_, 0).first;
+      }
+      ++it->second;
+    }
+  }
 
-  ~GrpcSubchannel() { GRPC_SUBCHANNEL_UNREF(subchannel_, "unref from LB"); }
+  ~GrpcSubchannel() {
+    auto* subchannel_node = subchannel_->channelz_node();
+    if (subchannel_node != nullptr) {
+      intptr_t subchannel_uuid = subchannel_node->uuid();
+      auto it = chand_->subchannel_refcount_map_.find(subchannel_);
+      GPR_ASSERT(it != chand_->subchannel_refcount_map_.end());
+      --it->second;
+      if (it->second == 0) {
+        chand_->channelz_node_->RemoveChildSubchannel(subchannel_uuid);
+        chand_->subchannel_refcount_map_.erase(it);
+      }
+    }
+    GRPC_SUBCHANNEL_UNREF(subchannel_, "unref from LB");
+    GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "GrpcSubchannel");
+  }
 
   grpc_connectivity_state CheckConnectivityState(
       RefCountedPtr<ConnectedSubchannelInterface>* connected_subchannel)
@@ -1005,13 +1021,10 @@ class ChannelData::GrpcSubchannel : public SubchannelInterface {
 
   void AttemptToConnect() override { subchannel_->AttemptToConnect(); }
 
-  channelz::SubchannelNode* channelz_node() override {
-    return subchannel_->channelz_node();
-  }
-
   void ResetBackoff() override { subchannel_->ResetBackoff(); }
 
  private:
+  ChannelData* chand_;
   Subchannel* subchannel_;
   UniquePtr<char> health_check_service_name_;
 };
@@ -1041,7 +1054,10 @@ class ChannelData::ClientChannelControlHelper
       health_check_service_name.reset(
           gpr_strdup(chand_->health_check_service_name_.get()));
     }
-    static const char* args_to_remove[] = {GRPC_ARG_INHIBIT_HEALTH_CHECKING};
+    static const char* args_to_remove[] = {
+        GRPC_ARG_INHIBIT_HEALTH_CHECKING,
+        GRPC_ARG_CHANNELZ_CHANNEL_NODE,
+    };
     grpc_arg arg = SubchannelPoolInterface::CreateChannelArg(
         chand_->subchannel_pool_.get());
     grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
@@ -1050,7 +1066,7 @@ class ChannelData::ClientChannelControlHelper
         chand_->client_channel_factory_->CreateSubchannel(new_args);
     grpc_channel_args_destroy(new_args);
     if (subchannel == nullptr) return nullptr;
-    return MakeRefCounted<GrpcSubchannel>(subchannel,
+    return MakeRefCounted<GrpcSubchannel>(chand_, subchannel,
                                           std::move(health_check_service_name));
   }
 
@@ -1082,7 +1098,22 @@ class ChannelData::ClientChannelControlHelper
   // No-op -- we should never get this from ResolvingLoadBalancingPolicy.
   void RequestReresolution() override {}
 
+  void AddTraceEvent(TraceSeverity severity, const char* message) override {
+    if (chand_->channelz_node_ != nullptr) {
+      chand_->channelz_node_->AddTraceEvent(
+          ConvertSeverityEnum(severity),
+          grpc_slice_from_copied_string(message));
+    }
+  }
+
  private:
+  static channelz::ChannelTrace::Severity ConvertSeverityEnum(
+      TraceSeverity severity) {
+    if (severity == TRACE_INFO) return channelz::ChannelTrace::Info;
+    if (severity == TRACE_WARNING) return channelz::ChannelTrace::Warning;
+    return channelz::ChannelTrace::Error;
+  }
+
   ChannelData* chand_;
 };
 
@@ -1125,6 +1156,15 @@ RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
   return GlobalSubchannelPool::instance();
 }
 
+channelz::ChannelNode* GetChannelzNode(const grpc_channel_args* args) {
+  const grpc_arg* arg =
+      grpc_channel_args_find(args, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
+  if (arg != nullptr && arg->type == GRPC_ARG_POINTER) {
+    return static_cast<channelz::ChannelNode*>(arg->value.pointer.p);
+  }
+  return nullptr;
+}
+
 ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
     : deadline_checking_enabled_(
           grpc_deadline_checking_enabled(args->channel_args)),
@@ -1134,6 +1174,7 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
       owning_stack_(args->channel_stack),
       client_channel_factory_(
           ClientChannelFactory::GetFromChannelArgs(args->channel_args)),
+      channelz_node_(GetChannelzNode(args->channel_args)),
       data_plane_combiner_(grpc_combiner_create()),
       combiner_(grpc_combiner_create()),
       interested_parties_(grpc_pollset_set_create()),
@@ -3531,20 +3572,6 @@ const grpc_channel_filter grpc_client_channel_filter = {
     ChannelData::GetChannelInfo,
     "client-channel",
 };
-
-void grpc_client_channel_set_channelz_node(
-    grpc_channel_element* elem, grpc_core::channelz::ClientChannelNode* node) {
-  auto* chand = static_cast<ChannelData*>(elem->channel_data);
-  chand->set_channelz_node(node);
-}
-
-void grpc_client_channel_populate_child_refs(
-    grpc_channel_element* elem,
-    grpc_core::channelz::ChildRefsList* child_subchannels,
-    grpc_core::channelz::ChildRefsList* child_channels) {
-  auto* chand = static_cast<ChannelData*>(elem->channel_data);
-  chand->FillChildRefsForChannelz(child_subchannels, child_channels);
-}
 
 grpc_connectivity_state grpc_client_channel_check_connectivity_state(
     grpc_channel_element* elem, int try_to_connect) {
