@@ -136,7 +136,7 @@ namespace Grpc.Tools
             new ErrorListFilter
             {
                 Pattern = new Regex(
-                    pattern: "(?'FILENAME'[^\\(]+)\\((?'LINE'\\d+)\\) ?: ?warning in column=(?'COLUMN'\\d+) ?: ?(?'TEXT'.*)",
+                    pattern: "^(?'FILENAME'.+?)\\((?'LINE'\\d+)\\) ?: ?warning in column=(?'COLUMN'\\d+) ?: ?(?'TEXT'.*)",
                     options: RegexOptions.Compiled | RegexOptions.IgnoreCase,
                     matchTimeout: s_regexTimeout),
                 LogAction = (log, match) =>
@@ -162,7 +162,7 @@ namespace Grpc.Tools
             new ErrorListFilter
             {
                 Pattern = new Regex(
-                    pattern: "(?'FILENAME'[^\\(]+)\\((?'LINE'\\d+)\\) ?: ?error in column=(?'COLUMN'\\d+) ?: ?(?'TEXT'.*)",
+                    pattern: "^(?'FILENAME'.+?)\\((?'LINE'\\d+)\\) ?: ?error in column=(?'COLUMN'\\d+) ?: ?(?'TEXT'.*)",
                     options: RegexOptions.Compiled | RegexOptions.IgnoreCase,
                     matchTimeout: s_regexTimeout),
                 LogAction = (log, match) =>
@@ -188,7 +188,7 @@ namespace Grpc.Tools
             new ErrorListFilter
             {
                 Pattern = new Regex(
-                    pattern: "(?'FILENAME'[^:]+): ?warning: ?(?'TEXT'.*)",
+                    pattern: "^(?'FILENAME'.+?): ?warning: ?(?'TEXT'.*)",
                     options: RegexOptions.Compiled | RegexOptions.IgnoreCase,
                     matchTimeout: s_regexTimeout),
                 LogAction = (log, match) =>
@@ -211,7 +211,7 @@ namespace Grpc.Tools
             new ErrorListFilter
             {
                 Pattern = new Regex(
-                    pattern: "(?'FILENAME'[^:]+): ?(?'TEXT'.*)",
+                    pattern: "^(?'FILENAME'.+?): ?(?'TEXT'.*)",
                     options: RegexOptions.Compiled | RegexOptions.IgnoreCase,
                     matchTimeout: s_regexTimeout),
                 LogAction = (log, match) =>
