@@ -1004,24 +1004,22 @@ class ChannelData::ConnectivityStateAndPickerSetter {
       }
       p.first->set_connected_subchannel_in_data_plane(std::move(p.second));
     }
-    // Update picker.
-    self->chand_->picker_ = std::move(self->picker_);
+    // Swap out the picker.  We hang on to the old picker so that it can
+    // be deleted in the control-plane combiner, since that's where we need
+    // to unref the subchannel wrappers that are reffed by the picker.
+    self->picker_.swap(self->chand_->picker_);
     // Re-process queued picks.
     for (QueuedPick* pick = self->chand_->queued_picks_; pick != nullptr;
          pick = pick->next) {
       CallData::StartPickLocked(pick->elem, GRPC_ERROR_NONE);
     }
-    // Clean ourself up.
-    // If we are holding refs to subchannel wrappers, we need to unref
-    // them in the control plane combiner, so we bounce back there.
-    // Otherwise, we can clean up here directly.
-    if (self->pending_subchannel_updates_.empty()) {
-      CleanUp(self, GRPC_ERROR_NONE);
-    } else {
-      GRPC_CLOSURE_INIT(&self->closure_, CleanUp, self,
-                        grpc_combiner_scheduler(self->chand_->combiner_));
-      GRPC_CLOSURE_SCHED(&self->closure_, GRPC_ERROR_NONE);
-    }
+    // Pop back into the control plane combiner to delete ourself, so
+    // that we make sure to unref subchannel wrappers there.  This
+    // includes both the ones reffed by the old picker (now stored in
+    // self->picker_) and the ones in self->pending_subchannel_updates_.
+    GRPC_CLOSURE_INIT(&self->closure_, CleanUp, self,
+                      grpc_combiner_scheduler(self->chand_->combiner_));
+    GRPC_CLOSURE_SCHED(&self->closure_, GRPC_ERROR_NONE);
   }
 
   static void CleanUp(void* arg, grpc_error* ignored) {
