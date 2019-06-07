@@ -24,6 +24,7 @@
 #include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -307,10 +308,8 @@ bool grpc_parse_uri(const grpc_uri* uri, grpc_resolved_address* resolved_addr) {
 }
 
 uint16_t grpc_strhtons(const char* port) {
-  if (strcmp(port, "http") == 0) {
-    return htons(80);
-  } else if (strcmp(port, "https") == 0) {
-    return htons(443);
-  }
-  return htons(static_cast<unsigned short>(atoi(port)));
+  char* updated_port = grpc_get_port_by_name(port);
+  int numeric_port = updated_port != nullptr ? atoi(updated_port) : atoi(port);
+  gpr_free(updated_port);
+  return htons(static_cast<unsigned short>(numeric_port));
 }
