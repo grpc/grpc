@@ -1011,7 +1011,21 @@ class ChannelData::ConnectivityStateAndPickerSetter {
          pick = pick->next) {
       CallData::StartPickLocked(pick->elem, GRPC_ERROR_NONE);
     }
-    // Clean up.
+    // Clean ourself up.
+    // If we are holding refs to subchannel wrappers, we need to unref
+    // them in the control plane combiner, so we bounce back there.
+    // Otherwise, we can clean up here directly.
+    if (self->pending_subchannel_updates_.empty()) {
+      CleanUp(self, GRPC_ERROR_NONE);
+    } else {
+      GRPC_CLOSURE_INIT(&self->closure_, CleanUp, self,
+                        grpc_combiner_scheduler(self->chand_->combiner_));
+      GRPC_CLOSURE_SCHED(&self->closure_, GRPC_ERROR_NONE);
+    }
+  }
+
+  static void CleanUp(void* arg, grpc_error* ignored) {
+    auto* self = static_cast<ConnectivityStateAndPickerSetter*>(arg);
     GRPC_CHANNEL_STACK_UNREF(self->chand_->owning_stack_,
                              "ConnectivityStateAndPickerSetter");
     Delete(self);
