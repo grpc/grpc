@@ -202,6 +202,10 @@ void grpcsharp_ssl_credentials_create() {
   fprintf(stderr, "Should never reach here");
   abort();
 }
+void grpcsharp_local_credentials_create() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
 void grpcsharp_composite_channel_credentials_create() {
   fprintf(stderr, "Should never reach here");
   abort();

@@ -1007,6 +1007,11 @@ grpcsharp_ssl_credentials_create(const char* pem_root_certs,
                                      verify_options_ptr, NULL);
 }
 
+GPR_EXPORT grpc_channel_credentials* GPR_CALLTYPE
+grpcsharp_local_credentials_create(grpc_local_connect_type type) {
+  return grpc_local_credentials_create(type);
+}
+
 GPR_EXPORT void GPR_CALLTYPE
 grpcsharp_channel_credentials_release(grpc_channel_credentials* creds) {
   grpc_channel_credentials_release(creds);
