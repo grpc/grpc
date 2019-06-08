@@ -82,6 +82,8 @@ if(UNIX)
     set(_gRPC_PLATFORM_LINUX ON)
   elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(_gRPC_PLATFORM_MAC ON)
+  elseif(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
+    set(_gRPC_PLATFORM_IOS ON)
   elseif(${CMAKE_SYSTEM_NAME} MATCHES "Android")
     set(_gRPC_PLATFORM_ANDROID ON)
   else()
@@ -124,7 +126,7 @@ if(gRPC_BACKWARDS_COMPATIBILITY_MODE)
   endif()
 endif()
 
-if (_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC)
+if (_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_IOS)
   # C core has C++ source code, but should not depend on libstc++ (for better portability).
   # We need to use a few tricks to convince cmake to do that.
   # https://stackoverflow.com/questions/15058403/how-to-stop-cmake-from-linking-against-libstdc
@@ -149,7 +151,7 @@ if(NOT MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
-if(_gRPC_PLATFORM_MAC)
+if(_gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_IOS)
   set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} m pthread)
 elseif(_gRPC_PLATFORM_ANDROID)
   set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} m)
