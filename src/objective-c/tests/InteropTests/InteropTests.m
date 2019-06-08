@@ -18,8 +18,6 @@
 
 #import "InteropTests.h"
 
-#import <libkern/OSAtomic.h>
-
 #include <grpc/status.h>
 
 #ifdef GRPC_COMPILE_WITH_CRONET
