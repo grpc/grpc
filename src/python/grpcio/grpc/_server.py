@@ -959,6 +959,17 @@ class _Server(grpc.Server):
     def start(self):
         _start(self._state)
 
+    def wait_for_termination(self, grace=None):
+        termination_event = threading.Event()
+
+        with self._state.lock:
+            if self._state.stage is _ServerStage.STOPPED:
+                raise ValueError('Failed to wait for a stopped server.')
+            else:
+                self._state.shutdown_events.append(termination_event)
+
+        termination_event.wait()
+
     def stop(self, grace):
         return _stop(self._state, grace)
 
