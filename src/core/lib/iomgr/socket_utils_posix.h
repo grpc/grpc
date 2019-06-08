@@ -35,6 +35,9 @@
 int grpc_accept4(int sockfd, grpc_resolved_address* resolved_addr, int nonblock,
                  int cloexec);
 
+/* set a socket to use zerocopy */
+grpc_error* grpc_set_socket_zerocopy(int fd);
+
 /* set a socket to non blocking mode */
 grpc_error* grpc_set_socket_nonblocking(int fd, int non_blocking);
 

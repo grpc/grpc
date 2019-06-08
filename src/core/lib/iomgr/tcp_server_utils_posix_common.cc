@@ -157,6 +157,8 @@ grpc_error* grpc_tcp_server_prepare_socket(grpc_tcp_server* s, int fd,
     if (err != GRPC_ERROR_NONE) goto error;
   }
 
+  err = grpc_set_socket_zerocopy(fd);
+  if (err != GRPC_ERROR_NONE) goto error;
   err = grpc_set_socket_nonblocking(fd, 1);
   if (err != GRPC_ERROR_NONE) goto error;
   err = grpc_set_socket_cloexec(fd, 1);
