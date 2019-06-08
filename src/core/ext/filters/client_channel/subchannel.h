@@ -319,11 +319,13 @@ class Subchannel {
 
   // Methods for connection.
   void MaybeStartConnectingLocked();
-  static void OnRetryAlarm(void* arg, grpc_error* error);
+  // static void OnRetryAlarm(void* arg, grpc_error* error);
   void ContinueConnectingLocked();
   static void OnConnectingFinished(void* arg, grpc_error* error);
+  static void OnBackoffEndAlarm(void* arg, grpc_error* error);
   bool PublishTransportLocked();
   void Disconnect();
+  void ResetBackoffLocked();
 
   gpr_atm RefMutate(gpr_atm delta,
                     int barrier GRPC_SUBCHANNEL_REF_MUTATE_EXTRA_ARGS);
@@ -367,14 +369,19 @@ class Subchannel {
   BackOff backoff_;
   grpc_millis next_attempt_deadline_;
   grpc_millis min_connect_timeout_ms_;
-  bool backoff_begun_ = false;
+  // bool backoff_begun_ = false;
 
-  // Retry alarm.
-  grpc_timer retry_alarm_;
-  grpc_closure on_retry_alarm_;
-  bool have_retry_alarm_ = false;
-  // reset_backoff() was called while alarm was pending.
-  bool retry_immediately_ = false;
+  // // Retry alarm.
+  // grpc_timer retry_alarm_;
+  // grpc_closure on_retry_alarm_;
+  // bool have_retry_alarm_ = false;
+  // // reset_backoff() was called while alarm was pending.
+  // bool retry_immediately_ = false;
+
+  // Backoff end alarm.
+  grpc_timer backoff_end_alarm_;
+  grpc_closure on_backoff_end_alarm_;
+  bool have_retry_attempt_ = false;
 
   // Channelz tracking.
   RefCountedPtr<channelz::SubchannelNode> channelz_node_;
