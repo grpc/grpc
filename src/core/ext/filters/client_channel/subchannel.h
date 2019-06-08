@@ -319,7 +319,6 @@ class Subchannel {
 
   // Methods for connection.
   void MaybeStartConnectingLocked();
-  // static void OnRetryAlarm(void* arg, grpc_error* error);
   void ContinueConnectingLocked();
   static void OnConnectingFinished(void* arg, grpc_error* error);
   static void OnBackoffEndAlarm(void* arg, grpc_error* error);
@@ -369,14 +368,6 @@ class Subchannel {
   BackOff backoff_;
   grpc_millis next_attempt_deadline_;
   grpc_millis min_connect_timeout_ms_;
-  // bool backoff_begun_ = false;
-
-  // // Retry alarm.
-  // grpc_timer retry_alarm_;
-  // grpc_closure on_retry_alarm_;
-  // bool have_retry_alarm_ = false;
-  // // reset_backoff() was called while alarm was pending.
-  // bool retry_immediately_ = false;
 
   // Backoff end alarm.
   grpc_timer backoff_end_alarm_;
