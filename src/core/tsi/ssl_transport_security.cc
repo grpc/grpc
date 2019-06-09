@@ -233,7 +233,7 @@ static void ssl_info_callback(const SSL* ssl, int where, int ret) {
 
 /* Returns 1 if name looks like an IP address, 0 otherwise.
    This is a very rough heuristic, and only handles IPv6 in hexadecimal form. */
-static int looks_like_ip_address(grpc_core::string_view name) {
+static int looks_like_ip_address(grpc_core::StringView name) {
   size_t dot_count = 0;
   size_t num_size = 0;
   for (size_t i = 0; i < name.size(); ++i) {
@@ -1505,8 +1505,8 @@ static void tsi_ssl_server_handshaker_factory_destroy(
   gpr_free(self);
 }
 
-static int does_entry_match_name(grpc_core::string_view entry,
-                                 grpc_core::string_view name) {
+static int does_entry_match_name(grpc_core::StringView entry,
+                                 grpc_core::StringView name) {
   if (entry.empty()) return 0;
 
   /* Take care of '.' terminations. */
@@ -1529,13 +1529,13 @@ static int does_entry_match_name(grpc_core::string_view entry,
     return 0;
   }
   size_t name_subdomain_pos = name.find('.');
-  if (name_subdomain_pos == grpc_core::string_view::npos) return 0;
+  if (name_subdomain_pos == grpc_core::StringView::npos) return 0;
   if (name_subdomain_pos >= name.size() - 2) return 0;
-  grpc_core::string_view name_subdomain =
+  grpc_core::StringView name_subdomain =
       name.substr(name_subdomain_pos + 1); /* Starts after the dot. */
   entry.remove_prefix(2);                  /* Remove *. */
   size_t dot = name_subdomain.find('.');
-  if (dot == grpc_core::string_view::npos || dot == name_subdomain.size() - 1) {
+  if (dot == grpc_core::StringView::npos || dot == name_subdomain.size() - 1) {
     grpc_core::UniquePtr<char> name_subdomain_cstr(name_subdomain.dup());
     gpr_log(GPR_ERROR, "Invalid toplevel subdomain: %s",
             name_subdomain_cstr.get());
@@ -1913,7 +1913,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 /* --- tsi_ssl utils. --- */
 
 int tsi_ssl_peer_matches_name(const tsi_peer* peer,
-                              grpc_core::string_view name) {
+                              grpc_core::StringView name) {
   size_t i = 0;
   size_t san_count = 0;
   const tsi_peer_property* cn_property = nullptr;
@@ -1927,7 +1927,7 @@ int tsi_ssl_peer_matches_name(const tsi_peer* peer,
                TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) == 0) {
       san_count++;
 
-      grpc_core::string_view entry(property->value.data,
+      grpc_core::StringView entry(property->value.data,
                                    property->value.length);
       if (!like_ip && does_entry_match_name(entry, name)) {
         return 1;
@@ -1943,7 +1943,7 @@ int tsi_ssl_peer_matches_name(const tsi_peer* peer,
 
   /* If there's no SAN, try the CN, but only if its not like an IP Address */
   if (san_count == 0 && cn_property != nullptr && !like_ip) {
-    if (does_entry_match_name(grpc_core::string_view(cn_property->value.data,
+    if (does_entry_match_name(grpc_core::StringView(cn_property->value.data,
                                                      cn_property->value.length),
                               name)) {
       return 1;

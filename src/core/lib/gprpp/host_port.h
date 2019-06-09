@@ -39,7 +39,7 @@ int gpr_join_host_port(char** out, const char* host, int port);
    and port number.
 
    There are two variants of this method:
-   1) string_view ouptut: port and host are returned as views on name.
+   1) StringView ouptut: port and host are returned as views on name.
    2) char* output: port and host are copied into newly allocated strings,
                     which must later be destroyed using gpr_free().
 
@@ -49,9 +49,9 @@ int gpr_join_host_port(char** out, const char* host, int port);
 
    Return true on success, false on failure. Guarantees *host and *port are
    cleared on failure. */
-bool gpr_split_host_port(grpc_core::string_view name,
-                         grpc_core::string_view* host,
-                         grpc_core::string_view* port);
-bool gpr_split_host_port(grpc_core::string_view name, char** host, char** port);
+bool gpr_split_host_port(grpc_core::StringView name,
+                         grpc_core::StringView* host,
+                         grpc_core::StringView* port);
+bool gpr_split_host_port(grpc_core::StringView name, char** host, char** port);
 
 #endif /* GRPC_CORE_LIB_GPRPP_HOST_PORT_H */

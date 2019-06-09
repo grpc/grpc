@@ -50,22 +50,22 @@ class StringView final {
  public:
   static constexpr size_t npos = std::numeric_limits<size_t>::max();
 
-  constexpr string_view(const char* ptr, size_t size)
+  constexpr StringView(const char* ptr, size_t size)
       : ptr_(ptr), size_(size) {}
-  constexpr string_view(const char* ptr)
-      : string_view(ptr, ptr == nullptr ? 0 : strlen(ptr)) {}
-  string_view(const grpc_slice& slice)
-      : string_view(reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(slice)),
+  constexpr StringView(const char* ptr)
+      : StringView(ptr, ptr == nullptr ? 0 : strlen(ptr)) {}
+  StringView(const grpc_slice& slice)
+      : StringView(reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(slice)),
                     GRPC_SLICE_LENGTH(slice)) {}
-  constexpr string_view() : string_view(nullptr, 0) {}
+  constexpr StringView() : StringView(nullptr, 0) {}
 
   constexpr const char* data() const { return ptr_; }
   constexpr size_t size() const { return size_; }
   constexpr bool empty() const { return size_ == 0; }
 
-  string_view substr(size_t start, size_t size = npos) {
+  StringView substr(size_t start, size_t size = npos) {
     GPR_DEBUG_ASSERT(start + size <= size_);
-    return string_view(ptr_ + start, std::min(size, size_ - start));
+    return StringView(ptr_ + start, std::min(size, size_ - start));
   }
 
   constexpr const char& operator[](size_t i) const { return ptr_[i]; }
@@ -105,7 +105,7 @@ class StringView final {
     return grpc_core::UniquePtr<char>(str);
   }
 
-  int cmp(string_view other) const {
+  int cmp(StringView other) const {
     return strncmp(data(), other.data(), GPR_MIN(size(), other.size()));
   }
 
@@ -114,12 +114,12 @@ class StringView final {
   size_t size_;
 };
 
-inline bool operator==(string_view lhs, string_view rhs) {
+inline bool operator==(StringView lhs, StringView rhs) {
   return lhs.size() == rhs.size() &&
          strncmp(lhs.data(), rhs.data(), lhs.size()) == 0;
 }
 
-inline bool operator!=(string_view lhs, string_view rhs) {
+inline bool operator!=(StringView lhs, StringView rhs) {
   return !(lhs == rhs);
 }
 

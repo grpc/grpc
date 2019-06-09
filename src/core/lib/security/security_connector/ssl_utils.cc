@@ -136,7 +136,7 @@ grpc_error* grpc_ssl_check_alpn(const tsi_peer* peer) {
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_ssl_check_peer_name(grpc_core::string_view peer_name,
+grpc_error* grpc_ssl_check_peer_name(grpc_core::StringView peer_name,
                                      const tsi_peer* peer) {
   /* Check the peer name if specified. */
   if (!peer_name.empty() && !grpc_ssl_host_matches_name(peer, peer_name)) {
@@ -150,9 +150,9 @@ grpc_error* grpc_ssl_check_peer_name(grpc_core::string_view peer_name,
   return GRPC_ERROR_NONE;
 }
 
-bool grpc_ssl_check_call_host(grpc_core::string_view host,
-                              grpc_core::string_view target_name,
-                              grpc_core::string_view overridden_target_name,
+bool grpc_ssl_check_call_host(grpc_core::StringView host,
+                              grpc_core::StringView target_name,
+                              grpc_core::StringView overridden_target_name,
                               grpc_auth_context* auth_context,
                               grpc_closure* on_call_host_checked,
                               grpc_error** error) {
@@ -182,25 +182,25 @@ const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols) {
 }
 
 int grpc_ssl_host_matches_name(const tsi_peer* peer,
-                               grpc_core::string_view peer_name) {
-  grpc_core::string_view allocated_name;
-  grpc_core::string_view ignored_port;
+                               grpc_core::StringView peer_name) {
+  grpc_core::StringView allocated_name;
+  grpc_core::StringView ignored_port;
   gpr_split_host_port(peer_name, &allocated_name, &ignored_port);
   if (allocated_name.empty()) return 0;
 
   // IPv6 zone-id should not be included in comparisons.
   const size_t zone_id = allocated_name.find('%');
-  if (zone_id != grpc_core::string_view::npos) {
+  if (zone_id != grpc_core::StringView::npos) {
     allocated_name.remove_suffix(allocated_name.size() - zone_id);
   }
   return tsi_ssl_peer_matches_name(peer, allocated_name);
 }
 
 int grpc_ssl_cmp_target_name(
-    grpc_core::string_view target_name,
-    grpc_core::string_view other_target_name,
-    grpc_core::string_view overridden_target_name,
-    grpc_core::string_view other_overridden_target_name) {
+    grpc_core::StringView target_name,
+    grpc_core::StringView other_target_name,
+    grpc_core::StringView overridden_target_name,
+    grpc_core::StringView other_overridden_target_name) {
   int c = target_name.cmp(other_target_name);
   if (c != 0) return c;
   return overridden_target_name.cmp(other_overridden_target_name);

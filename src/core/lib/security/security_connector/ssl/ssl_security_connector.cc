@@ -75,8 +75,8 @@ class grpc_ssl_channel_security_connector final
                                     ? nullptr
                                     : gpr_strdup(overridden_target_name)),
         verify_options_(&config->verify_options) {
-    grpc_core::string_view host;
-    grpc_core::string_view port;
+    grpc_core::StringView host;
+    grpc_core::StringView port;
     gpr_split_host_port(target_name, &host, &port);
     target_name_ = host.dup();
   }
@@ -184,7 +184,7 @@ class grpc_ssl_channel_security_connector final
                         other->overridden_target_name_.get());
   }
 
-  bool check_call_host(grpc_core::string_view host,
+  bool check_call_host(grpc_core::StringView host,
                        grpc_auth_context* auth_context,
                        grpc_closure* on_call_host_checked,
                        grpc_error** error) override {

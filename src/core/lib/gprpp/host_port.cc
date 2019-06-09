@@ -39,13 +39,13 @@ int gpr_join_host_port(char** out, const char* host, int port) {
   }
 }
 
-bool gpr_split_host_port(grpc_core::string_view name,
-                         grpc_core::string_view* host,
-                         grpc_core::string_view* port) {
+bool gpr_split_host_port(grpc_core::StringView name,
+                         grpc_core::StringView* host,
+                         grpc_core::StringView* port) {
   if (name[0] == '[') {
     /* Parse a bracketed host, typically an IPv6 literal. */
     const size_t rbracket = name.find(']', 1);
-    if (rbracket == grpc_core::string_view::npos) {
+    if (rbracket == grpc_core::StringView::npos) {
       /* Unmatched [ */
       return false;
     }
@@ -60,7 +60,7 @@ bool gpr_split_host_port(grpc_core::string_view name,
       return false;
     }
     *host = name.substr(1, rbracket - 1);
-    if (host->find(':') == grpc_core::string_view::npos) {
+    if (host->find(':') == grpc_core::StringView::npos) {
       /* Require all bracketed hosts to contain a colon, because a hostname or
          IPv4 address should never use brackets. */
       host->clear();
@@ -68,8 +68,8 @@ bool gpr_split_host_port(grpc_core::string_view name,
     }
   } else {
     size_t colon = name.find(':');
-    if (colon != grpc_core::string_view::npos &&
-        name.find(':', colon + 1) == grpc_core::string_view::npos) {
+    if (colon != grpc_core::StringView::npos &&
+        name.find(':', colon + 1) == grpc_core::StringView::npos) {
       /* Exactly 1 colon.  Split into host:port. */
       *host = name.substr(0, colon);
       *port = name.substr(colon + 1, name.size() - colon - 1);
@@ -82,10 +82,10 @@ bool gpr_split_host_port(grpc_core::string_view name,
   return true;
 }
 
-bool gpr_split_host_port(grpc_core::string_view name, char** host,
+bool gpr_split_host_port(grpc_core::StringView name, char** host,
                          char** port) {
-  grpc_core::string_view host_view;
-  grpc_core::string_view port_view;
+  grpc_core::StringView host_view;
+  grpc_core::StringView port_view;
   const bool ret = gpr_split_host_port(name, &host_view, &port_view);
   *host = host_view.empty() ? nullptr : host_view.dup().release();
   *port = port_view.empty() ? nullptr : port_view.dup().release();

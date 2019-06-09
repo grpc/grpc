@@ -105,8 +105,8 @@ SpiffeChannelSecurityConnector::SpiffeChannelSecurityConnector(
                                   ? nullptr
                                   : gpr_strdup(overridden_target_name)) {
   check_arg_ = ServerAuthorizationCheckArgCreate(this);
-  grpc_core::string_view host;
-  grpc_core::string_view port;
+  grpc_core::StringView host;
+  grpc_core::StringView port;
   gpr_split_host_port(target_name, &host, &port);
   target_name_ = host.dup();
 }
@@ -204,7 +204,7 @@ int SpiffeChannelSecurityConnector::cmp(
 }
 
 bool SpiffeChannelSecurityConnector::check_call_host(
-    grpc_core::string_view host, grpc_auth_context* auth_context,
+    grpc_core::StringView host, grpc_auth_context* auth_context,
     grpc_closure* on_call_host_checked, grpc_error** error) {
   return grpc_ssl_check_call_host(host, target_name_.get(),
                                   overridden_target_name_.get(), auth_context,

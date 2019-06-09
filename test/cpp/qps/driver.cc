@@ -52,8 +52,8 @@ using std::vector;
 namespace grpc {
 namespace testing {
 static std::string get_host(const std::string& worker) {
-  grpc_core::string_view host;
-  grpc_core::string_view port;
+  grpc_core::StringView host;
+  grpc_core::StringView port;
   gpr_split_host_port(worker.c_str(), &host, &port);
   return std::string(host.data(), host.size());
 }

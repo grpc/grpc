@@ -108,7 +108,7 @@ class grpc_alts_channel_security_connector final
     return strcmp(target_name_, other->target_name_);
   }
 
-  bool check_call_host(grpc_core::string_view host,
+  bool check_call_host(grpc_core::StringView host,
                        grpc_auth_context* auth_context,
                        grpc_closure* on_call_host_checked,
                        grpc_error** error) override {

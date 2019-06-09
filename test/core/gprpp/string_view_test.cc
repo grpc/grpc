@@ -26,34 +26,34 @@ namespace grpc_core {
 namespace testing {
 
 TEST(StringViewTest, Empty) {
-  grpc_core::string_view empty;
+  grpc_core::StringView empty;
   EXPECT_TRUE(empty.empty());
   EXPECT_EQ(empty.size(), 0lu);
 
-  grpc_core::string_view empty_buf("");
+  grpc_core::StringView empty_buf("");
   EXPECT_TRUE(empty_buf.empty());
   EXPECT_EQ(empty_buf.size(), 0lu);
 
-  grpc_core::string_view empty_trimmed("foo", 0);
+  grpc_core::StringView empty_trimmed("foo", 0);
   EXPECT_TRUE(empty_trimmed.empty());
   EXPECT_EQ(empty_trimmed.size(), 0lu);
 
-  grpc_core::string_view empty_slice(grpc_empty_slice());
+  grpc_core::StringView empty_slice(grpc_empty_slice());
   EXPECT_TRUE(empty_slice.empty());
   EXPECT_EQ(empty_slice.size(), 0lu);
 }
 
 TEST(StringViewTest, Size) {
   constexpr char kStr[] = "foo";
-  grpc_core::string_view str1(kStr);
+  grpc_core::StringView str1(kStr);
   EXPECT_EQ(str1.size(), strlen(kStr));
-  grpc_core::string_view str2(kStr, 2);
+  grpc_core::StringView str2(kStr, 2);
   EXPECT_EQ(str2.size(), 2lu);
 }
 
 TEST(StringViewTest, Data) {
   constexpr char kStr[] = "foo-bar";
-  grpc_core::string_view str(kStr);
+  grpc_core::StringView str(kStr);
   EXPECT_EQ(str.size(), strlen(kStr));
   for (size_t i = 0; i < strlen(kStr); ++i) {
     EXPECT_EQ(str[i], kStr[i]);
@@ -62,7 +62,7 @@ TEST(StringViewTest, Data) {
 
 TEST(StringViewTest, Slice) {
   constexpr char kStr[] = "foo";
-  grpc_core::string_view slice(grpc_slice_from_static_string(kStr));
+  grpc_core::StringView slice(grpc_slice_from_static_string(kStr));
   EXPECT_EQ(slice.size(), strlen(kStr));
 }
 
