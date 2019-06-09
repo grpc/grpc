@@ -35,12 +35,18 @@
 
 namespace grpc_core {
 
-// Provides a light-weight view over a char array or a slice, similar to
-// absl::string_view.
+// Provides a light-weight view over a char array or a slice, similar but not
+// identical to absl::string_view.
 //
-// string_view does not own the buffers that back the view. Callers must ensure
-// the buffer stays around while the string_view is accessible.
-class string_view final {
+// StringView does not own the buffers that back the view. Callers must ensure
+// the buffer stays around while the StringView is accessible.
+//
+// The interface used here is not identical to absl::string_view. Notably, we
+// need to support slices while we cannot support std::string, and gpr string
+// style functions such as strdup() and cmp(). Once we switch to
+// absl::string_view this class will inherit from absl::string_view and add the
+// gRPC-specific APIs.
+class StringView final {
  public:
   static constexpr size_t npos = std::numeric_limits<size_t>::max();
 
