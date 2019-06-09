@@ -40,11 +40,50 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
+#include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 namespace channelz {
+
+//
+// channel arg code
+//
+
+namespace {
+
+void* parent_uuid_copy(void* p) { return p; }
+void parent_uuid_destroy(void* p) {}
+int parent_uuid_cmp(void* p1, void* p2) { return GPR_ICMP(p1, p2); }
+const grpc_arg_pointer_vtable parent_uuid_vtable = {
+    parent_uuid_copy, parent_uuid_destroy, parent_uuid_cmp};
+
+}  // namespace
+
+grpc_arg MakeParentUuidArg(intptr_t parent_uuid) {
+  // We would ideally like to store the uuid in an integer argument.
+  // Unfortunately, that won't work, because intptr_t (the type used for
+  // uuids) doesn't fit in an int (the type used for integer args).
+  // So instead, we use a hack to store it as a pointer, because
+  // intptr_t should be the same size as void*.
+  static_assert(sizeof(intptr_t) <= sizeof(void*),
+                "can't fit intptr_t inside of void*");
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_ARG_CHANNELZ_PARENT_UUID),
+      reinterpret_cast<void*>(parent_uuid), &parent_uuid_vtable);
+}
+
+intptr_t GetParentUuidFromArgs(const grpc_channel_args& args) {
+  const grpc_arg* arg =
+      grpc_channel_args_find(&args, GRPC_ARG_CHANNELZ_PARENT_UUID);
+  if (arg == nullptr || arg->type != GRPC_ARG_POINTER) return 0;
+  return reinterpret_cast<intptr_t>(arg->value.pointer.p);
+}
+
+//
+// BaseNode
+//
 
 BaseNode::BaseNode(EntityType type) : type_(type), uuid_(-1) {
   // The registry will set uuid_ under its lock.
@@ -60,6 +99,10 @@ char* BaseNode::RenderJsonString() {
   grpc_json_destroy(json);
   return json_str;
 }
+
+//
+// CallCountingHelper
+//
 
 CallCountingHelper::CallCountingHelper() {
   num_cores_ = GPR_MAX(1, gpr_cpu_num_cores());
@@ -137,15 +180,17 @@ void CallCountingHelper::PopulateCallCounts(grpc_json* json) {
   }
 }
 
-ChannelNode::ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
-                         bool is_top_level_channel)
-    : BaseNode(is_top_level_channel ? EntityType::kTopLevelChannel
-                                    : EntityType::kInternalChannel),
-      channel_(channel),
-      target_(UniquePtr<char>(grpc_channel_get_target(channel_))),
-      trace_(channel_tracer_max_nodes) {}
+//
+// ChannelNode
+//
 
-ChannelNode::~ChannelNode() {}
+ChannelNode::ChannelNode(UniquePtr<char> target,
+                         size_t channel_tracer_max_nodes, intptr_t parent_uuid)
+    : BaseNode(parent_uuid == 0 ? EntityType::kTopLevelChannel
+                                : EntityType::kInternalChannel),
+      target_(std::move(target)),
+      trace_(channel_tracer_max_nodes),
+      parent_uuid_(parent_uuid) {}
 
 grpc_json* ChannelNode::RenderJson() {
   // We need to track these three json objects to build our object
@@ -167,9 +212,19 @@ grpc_json* ChannelNode::RenderJson() {
                                            GRPC_JSON_OBJECT, false);
   json = data;
   json_iterator = nullptr;
-  // template method. Child classes may override this to add their specific
-  // functionality.
-  PopulateConnectivityState(json);
+  // connectivity state
+  // If low-order bit is on, then the field is set.
+  int state_field = connectivity_state_.Load(MemoryOrder::RELAXED);
+  if ((state_field & 1) != 0) {
+    grpc_connectivity_state state =
+        static_cast<grpc_connectivity_state>(state_field >> 1);
+    json = grpc_json_create_child(nullptr, json, "state", nullptr,
+                                  GRPC_JSON_OBJECT, false);
+    grpc_json_create_child(nullptr, json, "state",
+                           grpc_connectivity_state_name(state),
+                           GRPC_JSON_STRING, false);
+    json = data;
+  }
   // populate the target.
   GPR_ASSERT(target_.get() != nullptr);
   grpc_json_create_child(nullptr, json, "target", target_.get(),
@@ -189,12 +244,63 @@ grpc_json* ChannelNode::RenderJson() {
   return top_level_json;
 }
 
-RefCountedPtr<ChannelNode> ChannelNode::MakeChannelNode(
-    grpc_channel* channel, size_t channel_tracer_max_nodes,
-    bool is_top_level_channel) {
-  return MakeRefCounted<grpc_core::channelz::ChannelNode>(
-      channel, channel_tracer_max_nodes, is_top_level_channel);
+void ChannelNode::PopulateChildRefs(grpc_json* json) {
+  MutexLock lock(&child_mu_);
+  grpc_json* json_iterator = nullptr;
+  if (!child_subchannels_.empty()) {
+    grpc_json* array_parent = grpc_json_create_child(
+        nullptr, json, "subchannelRef", nullptr, GRPC_JSON_ARRAY, false);
+    for (const auto& p : child_subchannels_) {
+      json_iterator =
+          grpc_json_create_child(json_iterator, array_parent, nullptr, nullptr,
+                                 GRPC_JSON_OBJECT, false);
+      grpc_json_add_number_string_child(json_iterator, nullptr, "subchannelId",
+                                        p.first);
+    }
+  }
+  if (!child_channels_.empty()) {
+    grpc_json* array_parent = grpc_json_create_child(
+        nullptr, json, "channelRef", nullptr, GRPC_JSON_ARRAY, false);
+    json_iterator = nullptr;
+    for (const auto& p : child_channels_) {
+      json_iterator =
+          grpc_json_create_child(json_iterator, array_parent, nullptr, nullptr,
+                                 GRPC_JSON_OBJECT, false);
+      grpc_json_add_number_string_child(json_iterator, nullptr, "channelId",
+                                        p.first);
+    }
+  }
 }
+
+void ChannelNode::SetConnectivityState(grpc_connectivity_state state) {
+  // Store with low-order bit set to indicate that the field is set.
+  int state_field = (state << 1) + 1;
+  connectivity_state_.Store(state_field, MemoryOrder::RELAXED);
+}
+
+void ChannelNode::AddChildChannel(intptr_t child_uuid) {
+  MutexLock lock(&child_mu_);
+  child_channels_.insert(MakePair(child_uuid, true));
+}
+
+void ChannelNode::RemoveChildChannel(intptr_t child_uuid) {
+  MutexLock lock(&child_mu_);
+  child_channels_.erase(child_uuid);
+}
+
+void ChannelNode::AddChildSubchannel(intptr_t child_uuid) {
+  MutexLock lock(&child_mu_);
+  child_subchannels_.insert(MakePair(child_uuid, true));
+}
+
+void ChannelNode::RemoveChildSubchannel(intptr_t child_uuid) {
+  MutexLock lock(&child_mu_);
+  child_subchannels_.erase(child_uuid);
+}
+
+//
+// ServerNode
+//
 
 ServerNode::ServerNode(grpc_server* server, size_t channel_tracer_max_nodes)
     : BaseNode(EntityType::kServer),
@@ -281,8 +387,14 @@ grpc_json* ServerNode::RenderJson() {
   return top_level_json;
 }
 
-static void PopulateSocketAddressJson(grpc_json* json, const char* name,
-                                      const char* addr_str) {
+//
+// SocketNode
+//
+
+namespace {
+
+void PopulateSocketAddressJson(grpc_json* json, const char* name,
+                               const char* addr_str) {
   if (addr_str == nullptr) return;
   grpc_json* json_iterator = nullptr;
   json_iterator = grpc_json_create_child(json_iterator, json, name, nullptr,
@@ -312,7 +424,6 @@ static void PopulateSocketAddressJson(grpc_json* json, const char* name,
                                            b64_host, GRPC_JSON_STRING, true);
     gpr_free(host);
     gpr_free(port);
-
   } else if (uri != nullptr && strcmp(uri->scheme, "unix") == 0) {
     json_iterator = grpc_json_create_child(json_iterator, json, "uds_address",
                                            nullptr, GRPC_JSON_OBJECT, false);
@@ -331,6 +442,8 @@ static void PopulateSocketAddressJson(grpc_json* json, const char* name,
   }
   grpc_uri_destroy(uri);
 }
+
+}  // namespace
 
 SocketNode::SocketNode(UniquePtr<char> local, UniquePtr<char> remote)
     : BaseNode(EntityType::kSocket),
@@ -447,6 +560,10 @@ grpc_json* SocketNode::RenderJson() {
   }
   return top_level_json;
 }
+
+//
+// ListenSocketNode
+//
 
 ListenSocketNode::ListenSocketNode(UniquePtr<char> local_addr)
     : BaseNode(EntityType::kSocket), local_addr_(std::move(local_addr)) {}
