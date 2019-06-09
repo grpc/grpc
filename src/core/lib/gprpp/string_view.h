@@ -41,6 +41,9 @@ namespace grpc_core {
 // StringView does not own the buffers that back the view. Callers must ensure
 // the buffer stays around while the StringView is accessible.
 //
+// Pass StringView by value in functions, since it is exactly two pointers in
+// size.
+//
 // The interface used here is not identical to absl::string_view. Notably, we
 // need to support slices while we cannot support std::string, and gpr string
 // style functions such as strdup() and cmp(). Once we switch to
