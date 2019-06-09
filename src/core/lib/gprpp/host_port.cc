@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
 
 #include <string.h>
 
@@ -87,7 +87,7 @@ bool gpr_split_host_port(grpc_core::string_view name, char** host,
   grpc_core::string_view host_view;
   grpc_core::string_view port_view;
   const bool ret = gpr_split_host_port(name, &host_view, &port_view);
-  *host = host_view.empty() ? nullptr : host_view.dup();
-  *port = port_view.empty() ? nullptr : port_view.dup();
+  *host = host_view.empty() ? nullptr : host_view.dup().release();
+  *port = port_view.empty() ? nullptr : port_view.dup().release();
   return ret;
 }

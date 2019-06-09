@@ -28,7 +28,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 #include "src/core/lib/security/credentials/tls/spiffe_credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
@@ -108,7 +108,7 @@ SpiffeChannelSecurityConnector::SpiffeChannelSecurityConnector(
   grpc_core::string_view host;
   grpc_core::string_view port;
   gpr_split_host_port(target_name, &host, &port);
-  target_name_.reset(host.dup());
+  target_name_ = host.dup();
 }
 
 SpiffeChannelSecurityConnector::~SpiffeChannelSecurityConnector() {

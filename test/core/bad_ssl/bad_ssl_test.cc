@@ -25,8 +25,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"

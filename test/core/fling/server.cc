@@ -33,7 +33,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/profiling/timers.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/cmdline.h"

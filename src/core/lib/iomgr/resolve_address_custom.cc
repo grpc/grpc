@@ -24,9 +24,9 @@
 #include <grpc/support/string_util.h>
 
 #include <grpc/support/log.h>
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/host_port.h"
 
 #include "src/core/lib/iomgr/iomgr_custom.h"
 #include "src/core/lib/iomgr/resolve_address_custom.h"

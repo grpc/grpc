@@ -20,7 +20,7 @@
 
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/local_util.h"
 #include "test/core/util/port.h"

@@ -683,7 +683,7 @@
     "language": "c", 
     "name": "gpr_host_port_test", 
     "src": [
-      "test/core/gpr/host_port_test.cc"
+      "test/core/gprpp/host_port_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -8173,7 +8173,6 @@
       "src/core/lib/gpr/env_linux.cc", 
       "src/core/lib/gpr/env_posix.cc", 
       "src/core/lib/gpr/env_windows.cc", 
-      "src/core/lib/gpr/host_port.cc", 
       "src/core/lib/gpr/log.cc", 
       "src/core/lib/gpr/log_android.cc", 
       "src/core/lib/gpr/log_linux.cc", 
@@ -8200,6 +8199,7 @@
       "src/core/lib/gprpp/arena.cc", 
       "src/core/lib/gprpp/fork.cc", 
       "src/core/lib/gprpp/global_config_env.cc", 
+      "src/core/lib/gprpp/host_port.cc", 
       "src/core/lib/gprpp/thd_posix.cc", 
       "src/core/lib/gprpp/thd_windows.cc", 
       "src/core/lib/profiling/basic_timers.cc", 
@@ -8233,7 +8233,6 @@
       "src/core/lib/gpr/alloc.h", 
       "src/core/lib/gpr/arena.h", 
       "src/core/lib/gpr/env.h", 
-      "src/core/lib/gpr/host_port.h", 
       "src/core/lib/gpr/mpscq.h", 
       "src/core/lib/gpr/murmur_hash.h", 
       "src/core/lib/gpr/spinlock.h", 
@@ -8254,6 +8253,7 @@
       "src/core/lib/gprpp/global_config_custom.h", 
       "src/core/lib/gprpp/global_config_env.h", 
       "src/core/lib/gprpp/global_config_generic.h", 
+      "src/core/lib/gprpp/host_port.h", 
       "src/core/lib/gprpp/manual_constructor.h", 
       "src/core/lib/gprpp/map.h", 
       "src/core/lib/gprpp/memory.h", 
@@ -8286,7 +8286,6 @@
       "src/core/lib/gpr/alloc.h", 
       "src/core/lib/gpr/arena.h", 
       "src/core/lib/gpr/env.h", 
-      "src/core/lib/gpr/host_port.h", 
       "src/core/lib/gpr/mpscq.h", 
       "src/core/lib/gpr/murmur_hash.h", 
       "src/core/lib/gpr/spinlock.h", 
@@ -8307,6 +8306,7 @@
       "src/core/lib/gprpp/global_config_custom.h", 
       "src/core/lib/gprpp/global_config_env.h", 
       "src/core/lib/gprpp/global_config_generic.h", 
+      "src/core/lib/gprpp/host_port.h", 
       "src/core/lib/gprpp/manual_constructor.h", 
       "src/core/lib/gprpp/map.h", 
       "src/core/lib/gprpp/memory.h", 

@@ -31,6 +31,7 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/memory.h"
 
 namespace grpc_core {
 
@@ -91,12 +92,11 @@ class string_view final {
 
   // Creates a dup of the string viewed by this class.
   // Return value is null-terminated and never nullptr.
-  // Caller owns the return value and must free it using gpr_free.
-  char* dup() const {
+  grpc_core::UniquePtr<char> dup() const {
     char* str = static_cast<char*>(gpr_malloc(size_ + 1));
     if (size_ > 0) memcpy(str, ptr_, size_);
     str[size_] = '\0';
-    return str;
+    return grpc_core::UniquePtr<char>(str);
   }
 
   int cmp(string_view other) const {

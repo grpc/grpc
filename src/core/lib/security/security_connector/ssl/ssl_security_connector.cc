@@ -28,8 +28,8 @@
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/handshaker.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -78,7 +78,7 @@ class grpc_ssl_channel_security_connector final
     grpc_core::string_view host;
     grpc_core::string_view port;
     gpr_split_host_port(target_name, &host, &port);
-    target_name_.reset(host.dup());
+    target_name_ = host.dup();
   }
 
   ~grpc_ssl_channel_security_connector() override {

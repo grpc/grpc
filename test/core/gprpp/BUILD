@@ -65,6 +65,16 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "host_port_test",
+    srcs = ["host_port_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "grpc_core_map_test",
     srcs = ["map_test.cc"],
     external_deps = [

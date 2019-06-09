@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_GPR_HOST_PORT_H
-#define GRPC_CORE_LIB_GPR_HOST_PORT_H
+#ifndef GRPC_CORE_LIB_GPRPP_HOST_PORT_H
+#define GRPC_CORE_LIB_GPRPP_HOST_PORT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -54,4 +54,4 @@ bool gpr_split_host_port(grpc_core::string_view name,
                          grpc_core::string_view* port);
 bool gpr_split_host_port(grpc_core::string_view name, char** host, char** port);
 
-#endif /* GRPC_CORE_LIB_GPR_HOST_PORT_H */
+#endif /* GRPC_CORE_LIB_GPRPP_HOST_PORT_H */
