@@ -108,7 +108,12 @@ class StringView final {
   }
 
   int cmp(StringView other) const {
-    return strncmp(data(), other.data(), GPR_MIN(size(), other.size()));
+    const size_t len = GPR_MIN(size(), other.size());
+    const int ret = strncmp(data(), other.data(), len);
+    if (ret != 0) return ret;
+    if (size() == other.size()) return 0;
+    if (size() < other.size()) return -1;
+    return 1;
   }
 
  private:

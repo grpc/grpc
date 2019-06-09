@@ -16,10 +16,12 @@
  *
  */
 
-#include "src/core/lib/gprpp/string_view.h"
 #include <grpc/slice.h>
 
+#include "src/core/lib/gprpp/string_view.h"
+
 #include <gtest/gtest.h>
+#include "src/core/lib/gprpp/memory.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -64,6 +66,91 @@ TEST(StringViewTest, Slice) {
   constexpr char kStr[] = "foo";
   grpc_core::StringView slice(grpc_slice_from_static_string(kStr));
   EXPECT_EQ(slice.size(), strlen(kStr));
+}
+
+TEST(StringViewTest, Dup) {
+  constexpr char kStr[] = "foo";
+  grpc_core::StringView slice(grpc_slice_from_static_string(kStr));
+  grpc_core::UniquePtr<char> dup = slice.dup();
+  EXPECT_EQ(0, strcmp(kStr, dup.get()));
+  EXPECT_EQ(slice.size(), strlen(kStr));
+}
+
+TEST(StringViewTest, Eq) {
+  constexpr char kStr1[] = "foo";
+  constexpr char kStr2[] = "bar";
+  grpc_core::StringView str1(kStr1);
+  EXPECT_EQ(kStr1, str1);
+  EXPECT_EQ(str1, kStr1);
+  grpc_core::StringView slice1(grpc_slice_from_static_string(kStr1));
+  EXPECT_EQ(slice1, str1);
+  EXPECT_EQ(str1, slice1);
+  EXPECT_NE(slice1, kStr2);
+  EXPECT_NE(kStr2, slice1);
+  grpc_core::StringView slice2(grpc_slice_from_static_string(kStr2));
+  EXPECT_NE(slice2, str1);
+  EXPECT_NE(str1, slice2);
+}
+
+TEST(StringViewTest, Cmp) {
+  constexpr char kStr1[] = "abc";
+  constexpr char kStr2[] = "abd";
+  constexpr char kStr3[] = "abcd";
+  grpc_core::StringView str1(kStr1);
+  grpc_core::StringView str2(kStr2);
+  grpc_core::StringView str3(kStr3);
+  EXPECT_EQ(str1.cmp(str1), 0);
+  EXPECT_LT(str1.cmp(str2), 0);
+  EXPECT_LT(str1.cmp(str3), 0);
+  EXPECT_EQ(str2.cmp(str2), 0);
+  EXPECT_GT(str2.cmp(str1), 0);
+  EXPECT_GT(str2.cmp(str3), 0);
+  EXPECT_EQ(str3.cmp(str3), 0);
+  EXPECT_GT(str3.cmp(str1), 0);
+  EXPECT_LT(str3.cmp(str2), 0);
+}
+
+TEST(StringViewTest, RemovePrefix) {
+  constexpr char kStr[] = "abcd";
+  grpc_core::StringView str(kStr);
+  str.remove_prefix(1);
+  EXPECT_EQ("bcd", str);
+  str.remove_prefix(2);
+  EXPECT_EQ("d", str);
+  str.remove_prefix(1);
+  EXPECT_EQ("", str);
+}
+
+TEST(StringViewTest, RemoveSuffix) {
+  constexpr char kStr[] = "abcd";
+  grpc_core::StringView str(kStr);
+  str.remove_suffix(1);
+  EXPECT_EQ("abc", str);
+  str.remove_suffix(2);
+  EXPECT_EQ("a", str);
+  str.remove_suffix(1);
+  EXPECT_EQ("", str);
+}
+
+TEST(StringViewTest, Substring) {
+  constexpr char kStr[] = "abcd";
+  grpc_core::StringView str(kStr);
+  EXPECT_EQ("bcd", str.substr(1));
+  EXPECT_EQ("bc", str.substr(1, 2));
+}
+
+TEST(StringViewTest, Find) {
+  // Passing StringView::npos directly to GTEST macros result in link errors.
+  // Store the value in a local variable and use it in the test.
+  const size_t npos = grpc_core::StringView::npos;
+  constexpr char kStr[] = "abacad";
+  grpc_core::StringView str(kStr);
+  EXPECT_EQ(0ul, str.find('a'));
+  EXPECT_EQ(2ul, str.find('a', 1));
+  EXPECT_EQ(4ul, str.find('a', 3));
+  EXPECT_EQ(1ul, str.find('b'));
+  EXPECT_EQ(npos, str.find('b', 2));
+  EXPECT_EQ(npos, str.find('z'));
 }
 
 }  // namespace testing
