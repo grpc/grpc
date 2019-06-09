@@ -249,7 +249,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         configs=['dbg'],
         platforms=['macos'],
         labels=['basictests', 'multilang'],
-        extra_args=extra_args + [os.getenv('GRPC_OBJC_TEST_EXTRA_ARGS', '.*')],
+        extra_args=extra_args,
         inner_jobs=inner_jobs,
         timeout_seconds=_OBJC_RUNTESTS_TIMEOUT)
 
@@ -519,6 +519,11 @@ if __name__ == "__main__":
         type=str,
         nargs='?',
         help='Upload test results to a specified BQ table.')
+    argp.add_argument(
+        '--extra_args',
+        default='',
+        type=str,
+        help='Extra test args passed to each sub-script.')
     args = argp.parse_args()
 
     extra_args = []
@@ -536,6 +541,8 @@ if __name__ == "__main__":
         extra_args.append('--bq_result_table')
         extra_args.append('%s' % args.bq_result_table)
         extra_args.append('--measure_cpu_costs')
+    if args.extra_args:
+        extra_args.append('%s' % args.extra_args)
 
     all_jobs = _create_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs) + \
                _create_portability_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs)
