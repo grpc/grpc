@@ -31,7 +31,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <limits>
 
 #include "src/core/lib/gpr/useful.h"
 
@@ -291,12 +290,12 @@ int gpr_strincmp(const char* a, const char* b, size_t n) {
     ++a;
     ++b;
     --n;
-  } while (ca == cb && ca && cb && n);
+  } while (ca == cb && ca != 0 && cb != 0 && n != 0);
   return ca - cb;
 }
 
 int gpr_stricmp(const char* a, const char* b) {
-  return gpr_strincmp(a, b, std::numeric_limits<size_t>::max());
+  return gpr_strincmp(a, b, SIZE_MAX);
 }
 
 static void add_string_to_split(const char* beg, const char* end, char*** strs,
