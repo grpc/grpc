@@ -1927,8 +1927,7 @@ int tsi_ssl_peer_matches_name(const tsi_peer* peer,
                TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) == 0) {
       san_count++;
 
-      grpc_core::StringView entry(property->value.data,
-                                   property->value.length);
+      grpc_core::StringView entry(property->value.data, property->value.length);
       if (!like_ip && does_entry_match_name(entry, name)) {
         return 1;
       } else if (like_ip && name == entry) {
@@ -1944,7 +1943,7 @@ int tsi_ssl_peer_matches_name(const tsi_peer* peer,
   /* If there's no SAN, try the CN, but only if its not like an IP Address */
   if (san_count == 0 && cn_property != nullptr && !like_ip) {
     if (does_entry_match_name(grpc_core::StringView(cn_property->value.data,
-                                                     cn_property->value.length),
+                                                    cn_property->value.length),
                               name)) {
       return 1;
     }

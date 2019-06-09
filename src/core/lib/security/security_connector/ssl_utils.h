@@ -51,8 +51,7 @@ grpc_error* grpc_ssl_check_peer_name(grpc_core::StringView peer_name,
                                      const tsi_peer* peer);
 /* Compare targer_name information extracted from SSL security connectors. */
 int grpc_ssl_cmp_target_name(
-    grpc_core::StringView target_name,
-    grpc_core::StringView other_target_name,
+    grpc_core::StringView target_name, grpc_core::StringView other_target_name,
     grpc_core::StringView overridden_target_name,
     grpc_core::StringView other_overridden_target_name);
 /* Check the host that will be set for a call is acceptable.*/

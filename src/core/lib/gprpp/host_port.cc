@@ -82,8 +82,7 @@ bool gpr_split_host_port(grpc_core::StringView name,
   return true;
 }
 
-bool gpr_split_host_port(grpc_core::StringView name, char** host,
-                         char** port) {
+bool gpr_split_host_port(grpc_core::StringView name, char** host, char** port) {
   grpc_core::StringView host_view;
   grpc_core::StringView port_view;
   const bool ret = gpr_split_host_port(name, &host_view, &port_view);

@@ -197,8 +197,7 @@ int grpc_ssl_host_matches_name(const tsi_peer* peer,
 }
 
 int grpc_ssl_cmp_target_name(
-    grpc_core::StringView target_name,
-    grpc_core::StringView other_target_name,
+    grpc_core::StringView target_name, grpc_core::StringView other_target_name,
     grpc_core::StringView overridden_target_name,
     grpc_core::StringView other_overridden_target_name) {
   int c = target_name.cmp(other_target_name);

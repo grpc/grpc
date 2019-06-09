@@ -53,13 +53,12 @@ class StringView final {
  public:
   static constexpr size_t npos = std::numeric_limits<size_t>::max();
 
-  constexpr StringView(const char* ptr, size_t size)
-      : ptr_(ptr), size_(size) {}
+  constexpr StringView(const char* ptr, size_t size) : ptr_(ptr), size_(size) {}
   constexpr StringView(const char* ptr)
       : StringView(ptr, ptr == nullptr ? 0 : strlen(ptr)) {}
   StringView(const grpc_slice& slice)
       : StringView(reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(slice)),
-                    GRPC_SLICE_LENGTH(slice)) {}
+                   GRPC_SLICE_LENGTH(slice)) {}
   constexpr StringView() : StringView(nullptr, 0) {}
 
   constexpr const char* data() const { return ptr_; }
@@ -122,9 +121,7 @@ inline bool operator==(StringView lhs, StringView rhs) {
          strncmp(lhs.data(), rhs.data(), lhs.size()) == 0;
 }
 
-inline bool operator!=(StringView lhs, StringView rhs) {
-  return !(lhs == rhs);
-}
+inline bool operator!=(StringView lhs, StringView rhs) { return !(lhs == rhs); }
 
 }  // namespace grpc_core
 

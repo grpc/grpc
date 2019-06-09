@@ -307,8 +307,7 @@ void tsi_ssl_server_handshaker_factory_unref(
    - handle mixed case.
    - handle %encoded chars.
    - handle public suffix wildchar more strictly (e.g. *.co.uk) */
-int tsi_ssl_peer_matches_name(const tsi_peer* peer,
-                              grpc_core::StringView name);
+int tsi_ssl_peer_matches_name(const tsi_peer* peer, grpc_core::StringView name);
 
 /* --- Testing support. ---
 
