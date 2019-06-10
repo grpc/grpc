@@ -24,6 +24,7 @@
 namespace grpc {
 
 typedef ::grpc_impl::ClientContext ClientContext;
+typedef ::grpc_impl::PropagationOptions PropagationOptions;
 
 }  // namespace grpc
 
