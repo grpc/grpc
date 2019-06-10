@@ -238,10 +238,6 @@ class Subchannel {
   void AttemptToConnect();
 
   // Resets the connection backoff of the subchannel.
-  // TODO(roth): Move connection backoff out of subchannels and up into LB
-  // policy code (probably by adding a SubchannelGroup between
-  // SubchannelList and SubchannelData), at which point this method can
-  // go away.
   void ResetBackoff();
 
   // Returns a new channel arg encoding the subchannel address as a URI
@@ -321,7 +317,7 @@ class Subchannel {
   void MaybeStartConnectingLocked();
   void ContinueConnectingLocked();
   static void OnConnectingFinished(void* arg, grpc_error* error);
-  static void OnBackoffEndAlarm(void* arg, grpc_error* error);
+  static void BackoffTimerCallback(void* arg, grpc_error* error);
   bool PublishTransportLocked();
   void Disconnect();
   void ResetBackoffLocked();
@@ -370,9 +366,13 @@ class Subchannel {
   grpc_millis min_connect_timeout_ms_;
 
   // Backoff end alarm.
-  grpc_timer backoff_end_alarm_;
-  grpc_closure on_backoff_end_alarm_;
-  bool have_retry_attempt_ = false;
+  grpc_timer backoff_timer_;
+  grpc_closure backoff_timer_callback_;
+  // This boolean value will be set to true when AttemptToConnect()
+  // is called while the subchannel is in backoff and then set back to
+  // false in BackoffTimerCallback() when the subchannel exits backoff
+  // and start the next connection attempt.
+  bool connection_attempt_requested_while_in_backoff_ = false;
 
   // Channelz tracking.
   RefCountedPtr<channelz::SubchannelNode> channelz_node_;

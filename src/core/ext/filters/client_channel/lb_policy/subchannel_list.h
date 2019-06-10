@@ -111,8 +111,6 @@ class SubchannelData {
   }
 
   // Resets the connection backoff.
-  // TODO(roth): This method should go away when we move the backoff
-  // code out of the subchannel and into the LB policies.
   void ResetBackoffLocked();
 
   // Starts watching the connectivity state of the subchannel.
