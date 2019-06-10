@@ -80,7 +80,7 @@ grpc_error* ServerAddressParseAndAppend(const XdsLbEndpoint* lb_endpoint,
       envoy_api_v2_core_SocketAddress_address(socket_address);
   uint32_t port = envoy_api_v2_core_SocketAddress_port_value(socket_address);
   if (GPR_UNLIKELY(port >> 16) != 0) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid port. Ignoring.");
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid port.");
   }
   // Populate grpc_resolved_address.
   grpc_resolved_address addr;
@@ -228,6 +228,7 @@ xds_grpclb_request* xds_grpclb_load_report_request_create_locked(
   req->client_stats.has_num_calls_finished_with_client_failed_to_send = true;
   req->client_stats.has_num_calls_finished_with_client_failed_to_send = true;
   req->client_stats.has_num_calls_finished_known_received = true;
+  req->client_stats.calls_finished_with_drop.funcs.encode = encode_drops;
   grpc_core::UniquePtr<grpc_core::XdsLbClientStats::DroppedCallCounts>
       drop_counts;
   client_stats->GetLocked(
@@ -235,7 +236,6 @@ xds_grpclb_request* xds_grpclb_load_report_request_create_locked(
       &req->client_stats.num_calls_finished,
       &req->client_stats.num_calls_finished_with_client_failed_to_send,
       &req->client_stats.num_calls_finished_known_received, &drop_counts);
-  req->client_stats.calls_finished_with_drop.funcs.encode = encode_drops;
   // Will be deleted in xds_grpclb_request_destroy().
   req->client_stats.calls_finished_with_drop.arg = drop_counts.release();
   return req;

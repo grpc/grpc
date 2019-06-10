@@ -75,7 +75,7 @@ class ServerAddress {
   }
 
   bool operator==(const ServerAddress& other) const;
-  bool operator!=(const grpc_core::ServerAddress& other) const;
+  bool operator!=(const ServerAddress& other) const;
 
   const grpc_resolved_address& address() const { return address_; }
   const grpc_channel_args* args() const { return args_; }

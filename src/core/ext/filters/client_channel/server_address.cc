@@ -39,13 +39,13 @@ ServerAddress::ServerAddress(const void* address, size_t address_len,
   address_.len = static_cast<socklen_t>(address_len);
 }
 
-bool ServerAddress::operator==(const grpc_core::ServerAddress& other) const {
+bool ServerAddress::operator==(const ServerAddress& other) const {
   return address_.len == other.address_.len &&
          memcmp(address_.addr, other.address_.addr, address_.len) == 0 &&
          grpc_channel_args_compare(args_, other.args_) == 0;
 }
 
-bool ServerAddress::operator!=(const grpc_core::ServerAddress& other) const {
+bool ServerAddress::operator!=(const ServerAddress& other) const {
   return !(*this == other);
 }
 
