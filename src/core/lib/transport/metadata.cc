@@ -404,8 +404,9 @@ void* grpc_mdelem_get_user_data(grpc_mdelem md, void (*destroy_func)(void*)) {
   GPR_UNREACHABLE_CODE(return nullptr);
 }
 
-static void* set_user_data(UserData* ud, void (*destroy_func)(void*),
-                           void* data) {
+bool grpc_set_user_data_alloc_interned(UserData* ud,
+                                       void (*destroy_func)(void*),
+                                       void* data) {
   GPR_ASSERT((data == nullptr) == (destroy_func == nullptr));
   grpc_core::ReleasableMutexLock lock(&ud->mu_user_data);
   if (ud->destroy_user_data.Load(grpc_core::MemoryOrder::RELAXED)) {
@@ -414,51 +415,11 @@ static void* set_user_data(UserData* ud, void (*destroy_func)(void*),
     if (destroy_func != nullptr) {
       destroy_func(data);
     }
-    return ud->data.Load(grpc_core::MemoryOrder::RELAXED);
+    return false;
   }
   ud->data.Store(data, grpc_core::MemoryOrder::RELAXED);
   ud->destroy_user_data.Store(destroy_func, grpc_core::MemoryOrder::RELEASE);
-  return data;
-}
-
-void grpc_set_user_data_alloc_interned_noret(UserData* ud,
-                                             void (*destroy_func)(void*),
-                                             void* data) {
-  GPR_ASSERT((data == nullptr) == (destroy_func == nullptr));
-  grpc_core::ReleasableMutexLock lock(&ud->mu_user_data);
-  if (ud->destroy_user_data.Load(grpc_core::MemoryOrder::RELAXED)) {
-    /* user data can only be set once */
-    lock.Unlock();
-    if (destroy_func != nullptr) {
-      destroy_func(data);
-    }
-    return;
-  }
-  ud->data.Store(data, grpc_core::MemoryOrder::RELAXED);
-  ud->destroy_user_data.Store(destroy_func, grpc_core::MemoryOrder::RELEASE);
-}
-
-void* grpc_mdelem_set_user_data(grpc_mdelem md, void (*destroy_func)(void*),
-                                void* data) {
-  switch (GRPC_MDELEM_STORAGE(md)) {
-    case GRPC_MDELEM_STORAGE_EXTERNAL:
-      destroy_func(data);
-      return nullptr;
-    case GRPC_MDELEM_STORAGE_STATIC:
-      destroy_func(data);
-      return reinterpret_cast<void*>(
-          grpc_static_mdelem_user_data
-              [reinterpret_cast<grpc_core::StaticMetadata*>(
-                   GRPC_MDELEM_DATA(md)) -
-               grpc_static_mdelem_table]);
-    case GRPC_MDELEM_STORAGE_ALLOCATED:
-    case GRPC_MDELEM_STORAGE_INTERNED: {
-      auto* rmd =
-          reinterpret_cast<grpc_core::RefcountedMdBase*>(GRPC_MDELEM_DATA(md));
-      return set_user_data(rmd->user_data(), destroy_func, data);
-    }
-  }
-  GPR_UNREACHABLE_CODE(return nullptr);
+  return true;
 }
 
 bool grpc_mdelem_eq(grpc_mdelem a, grpc_mdelem b) {

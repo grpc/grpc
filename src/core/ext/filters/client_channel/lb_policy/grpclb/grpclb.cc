@@ -518,9 +518,9 @@ ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
           server->load_balance_token, lb_token_length);
       lb_token = grpc_mdelem_from_slices(GRPC_MDSTR_LB_TOKEN, lb_token_mdstr);
       if (client_stats != nullptr) {
-        GPR_ASSERT(grpc_mdelem_set_user_data(
-                       lb_token, GrpcLbClientStats::Destroy,
-                       client_stats->Ref().release()) == client_stats);
+        GPR_ASSERT(grpc_mdelem_set_user_data(lb_token,
+                                             GrpcLbClientStats::Destroy,
+                                             client_stats->Ref().release()));
       }
     } else {
       char* uri = grpc_sockaddr_to_uri(&addr);

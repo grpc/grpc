@@ -157,11 +157,6 @@ inline bool grpc_mdelem_both_interned_eq(grpc_mdelem a_interned,
   return a_interned.payload == b_interned.payload;
 }
 
-/* Mutator and accessor for grpc_mdelem user data. The destructor function
-   is used as a type tag and is checked during user_data fetch. */
-void* grpc_mdelem_get_user_data(grpc_mdelem md, void (*if_destroy_func)(void*));
-void* grpc_mdelem_set_user_data(grpc_mdelem md, void (*destroy_func)(void*),
-                                void* data);
 // Defined in metadata.cc.
 struct mdtab_shard;
 
@@ -281,23 +276,29 @@ class AllocatedMetadata : public RefcountedMdBase {
 
 }  // namespace grpc_core
 
-void grpc_set_user_data_alloc_interned_noret(grpc_core::UserData* ud,
-                                             void (*destroy_func)(void*),
-                                             void* data);
-inline void grpc_mdelem_set_user_data_noret(grpc_mdelem md,
-                                            void (*destroy_func)(void*),
-                                            void* data) {
+/* Mutator and accessor for grpc_mdelem user data. The destructor function
+   is used as a type tag and is checked during user_data fetch. */
+void* grpc_mdelem_get_user_data(grpc_mdelem md, void (*if_destroy_func)(void*));
+/* For set functions, a return value of true means that a subsequent call to get
+ * will return the user supplied data called by the previous set. False means
+ * that it will not; either because some prior call already set a different
+ * value, or because the metadata is externally or statically allocated in which
+ * case setting custom data is not supported. */
+bool grpc_set_user_data_alloc_interned(grpc_core::UserData* ud,
+                                       void (*destroy_func)(void*), void* data);
+inline bool grpc_mdelem_set_user_data(grpc_mdelem md,
+                                      void (*destroy_func)(void*), void* data) {
   switch (GRPC_MDELEM_STORAGE(md)) {
     case GRPC_MDELEM_STORAGE_EXTERNAL:
     case GRPC_MDELEM_STORAGE_STATIC:
       destroy_func(data);
-      return;
+      return false;
     case GRPC_MDELEM_STORAGE_ALLOCATED:
     case GRPC_MDELEM_STORAGE_INTERNED: {
       auto* rmd =
           reinterpret_cast<grpc_core::RefcountedMdBase*>(GRPC_MDELEM_DATA(md));
-      grpc_set_user_data_alloc_interned_noret(rmd->user_data(), destroy_func,
-                                              data);
+      return grpc_set_user_data_alloc_interned(rmd->user_data(), destroy_func,
+                                               data);
     }
   }
 }

@@ -438,7 +438,7 @@ static void on_initial_header(void* tp, grpc_mdelem md) {
         cached_timeout =
             static_cast<grpc_millis*>(gpr_malloc(sizeof(grpc_millis)));
         *cached_timeout = timeout;
-        grpc_mdelem_set_user_data_noret(md, free_timeout, cached_timeout);
+        grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
       }
     }
     if (timeout != GRPC_MILLIS_INF_FUTURE) {
