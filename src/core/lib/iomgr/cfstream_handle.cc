@@ -19,6 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/gprpp/memory.h"
 
 #ifdef GRPC_CFSTREAM
 #import <CoreFoundation/CoreFoundation.h>
@@ -47,8 +48,7 @@ void CFStreamHandle::Release(void* info) {
 
 CFStreamHandle* CFStreamHandle::CreateStreamHandle(
     CFReadStreamRef read_stream, CFWriteStreamRef write_stream) {
-  CFStreamHandle* handle = static_cast<CFStreamHandle*>(gpr_malloc(sizeof(CFStreamHandle)));
-  return new (handle) CFStreamHandle(read_stream, write_stream);
+  return grpc_core::New<CFStreamHandle>(read_stream, write_stream);
 }
 
 void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
@@ -189,8 +189,7 @@ void CFStreamHandle::Unref(const char* file, int line, const char* reason) {
             reason, val, val - 1);
   }
   if (gpr_unref(&refcount_)) {
-    this->~CFStreamHandle();
-    gpr_free(this);
+    grpc_core::Delete<CFStreamHandle>(this);
   }
 }
 
