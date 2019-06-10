@@ -59,13 +59,13 @@ void grpc_error_get_status(grpc_error* error, grpc_millis deadline,
       // 1) Error is null
       // 2) which == GRPC_ERROR_STR_GRPC_MESSAGE
       // 3) The resulting slice is statically known.
+      // 4) Said resulting slice is of length 0 ("").
       // This means 3 movs, instead of 10s of instructions and a strlen.
-      const special_error_status_map& msg =
-          error_status_map[reinterpret_cast<size_t>(GRPC_ERROR_NONE)];
+      static const char* no_err = "";
       slice->refcount = &grpc_core::NoopRefcount;
       slice->data.refcounted.bytes =
-          reinterpret_cast<uint8_t*>(const_cast<char*>(msg.msg));
-      slice->data.refcounted.length = msg.len;
+          reinterpret_cast<uint8_t*>(const_cast<char*>(no_err));
+      slice->data.refcounted.length = 0;
     }
     if (http_error != nullptr) {
       *http_error = GRPC_HTTP2_NO_ERROR;

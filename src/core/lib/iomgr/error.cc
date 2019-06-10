@@ -444,6 +444,12 @@ grpc_error* grpc_error_set_int(grpc_error* src, grpc_error_ints which,
   return new_err;
 }
 
+typedef struct {
+  grpc_status_code code;
+  const char* msg;
+  size_t len;
+} special_error_status_map;
+
 const special_error_status_map error_status_map[] = {
     {GRPC_STATUS_OK, "", 0},                // GRPC_ERROR_NONE
     {GRPC_STATUS_INVALID_ARGUMENT, "", 0},  // GRPC_ERROR_RESERVED_1
