@@ -50,7 +50,7 @@ void CallbackStreamingTestService::Echo(
     ServerContext* context, const EchoRequest* request, EchoResponse* response,
     experimental::ServerUnaryReactor<EchoRequest, EchoResponse>** reactor) {
   int response_msgs_size = GetIntValueFromMetadata(
-						   kServerMessageSize, context->client_metadata(), 0);
+      kServerMessageSize, context->client_metadata(), 0);
   if (response_msgs_size > 0) {
     response->set_message(std::string(response_msgs_size, 'a'));
   } else {

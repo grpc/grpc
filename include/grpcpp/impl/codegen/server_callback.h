@@ -675,7 +675,13 @@ class ServerUnaryReactor : public internal::ServerReactor {
   Status status_wanted_;
 };
 
-/// MakeReactor is a free function to make a simple ServerUnaryReactor. There are two overloaded variants, depending on the parameters. The first parameter is the ServerContext object pointer for the call. The second parameter is either a Status (marking a fully handled RPC) or a method to invoke after the reactor is filled in, allowing further handling. The third parameter is a reference to the reactor value that the method handler must provide as an output parameter. 
+/// MakeReactor is a free function to make a simple ServerUnaryReactor. There
+/// are two overloaded variants, depending on the parameters. The first
+/// parameter is the ServerContext object pointer for the call. The second
+/// parameter is either a Status (marking a fully handled RPC) or a method to
+/// invoke after the reactor is filled in, allowing further handling. The third
+/// parameter is a reference to the reactor value that the method handler must
+/// provide as an output parameter.
 ///
 /// Both variants:
 /// \param context [in] The ServerContext created by the library for this RPC
@@ -696,34 +702,33 @@ class ServerUnaryReactor : public internal::ServerReactor {
 ///                      Variant 1 below.
 template <typename Request, typename Response, typename FunctionOrStatus>
 void MakeReactor(
-	    ServerContext* context,
-	    FunctionOrStatus&& func,
-	    ServerUnaryReactor<Request, Response>** reactor,
-	    typename std::enable_if<
-	    !std::is_same<Status, typename std::remove_const<typename std::remove_reference<FunctionOrStatus>::type>::type>::value>::type* = nullptr) {
+    ServerContext* context, FunctionOrStatus&& func,
+    ServerUnaryReactor<Request, Response>** reactor,
+    typename std::enable_if<!std::is_same<
+        Status, typename std::remove_const<typename std::remove_reference<
+                    FunctionOrStatus>::type>::type>::value>::type* = nullptr) {
   // TODO(vjpai): Specialize this to prevent counting OnCancel conditions
   class SimpleUnaryReactor final
       : public ServerUnaryReactor<Request, Response> {
    public:
     void Run(FunctionOrStatus&& func) { func(this); }
+
    private:
     void OnDone() override { this->~SimpleUnaryReactor(); }
   };
-  auto* actual_reactor = 
-    new (g_core_codegen_interface->grpc_call_arena_alloc(
-      context->c_call(), sizeof(SimpleUnaryReactor)))
-      SimpleUnaryReactor;
+  auto* actual_reactor = new (g_core_codegen_interface->grpc_call_arena_alloc(
+      context->c_call(), sizeof(SimpleUnaryReactor))) SimpleUnaryReactor;
   *reactor = actual_reactor;
   actual_reactor->Run(std::forward<FunctionOrStatus>(func));
 }
 
 template <typename Request, typename Response, typename FunctionOrStatus>
 void MakeReactor(
-	    ServerContext* context,
-	    FunctionOrStatus&& status,
-	    ServerUnaryReactor<Request, Response>** reactor,
-	    typename std::enable_if<
-  std::is_same<Status, typename std::remove_const<typename std::remove_reference<FunctionOrStatus>::type>::type>::value>::type* = nullptr) {
+    ServerContext* context, FunctionOrStatus&& status,
+    ServerUnaryReactor<Request, Response>** reactor,
+    typename std::enable_if<std::is_same<
+        Status, typename std::remove_const<typename std::remove_reference<
+                    FunctionOrStatus>::type>::type>::value>::type* = nullptr) {
   // TODO(vjpai): Specialize this to prevent counting OnCancel conditions
   class ReallySimpleUnaryReactor final
       : public ServerUnaryReactor<Request, Response> {

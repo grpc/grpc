@@ -76,8 +76,7 @@ class CallbackTestServiceImpl
                 reactor) override {
     response->set_message(request->message());
     if (allocator_mutator_) {
-      allocator_mutator_(context->GetRpcAllocatorState(), request,
-			 response);
+      allocator_mutator_(context->GetRpcAllocatorState(), request, response);
     }
     experimental::MakeReactor(context, Status::OK, reactor);
   }
