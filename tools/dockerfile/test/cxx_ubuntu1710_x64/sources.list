@@ -1,0 +1,3 @@
+deb http://old-releases.ubuntu.com/ubuntu/ artful main restricted universe multiverse \
+deb http://old-releases.ubuntu.com/ubuntu/ artful-updates main restricted universe multiverse \
+deb http://old-releases.ubuntu.com/ubuntu/ artful-security main restricted universe multiverse \
