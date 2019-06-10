@@ -21,7 +21,7 @@ cd $(dirname $0)/../../..
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 # make sure bazel is available
-tools/bazel.sh version
+tools/bazel version
 
 # to get "bazel" link for kokoro build, we need to generate
 # invocation UUID, set a flag for bazel to use it
@@ -29,7 +29,7 @@ tools/bazel.sh version
 BAZEL_INVOCATION_ID="$(uuidgen)"
 echo "${BAZEL_INVOCATION_ID}" >"${KOKORO_ARTIFACTS_DIR}/bazel_invocation_ids"
 
-tools/bazel.sh \
+tools/bazel \
   --bazelrc=tools/remote_build/kokoro.bazelrc \
   test \
   --invocation_id="${BAZEL_INVOCATION_ID}" \
