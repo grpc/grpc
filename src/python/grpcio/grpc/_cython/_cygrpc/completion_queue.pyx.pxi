@@ -20,6 +20,15 @@ import time
 cdef int _INTERRUPT_CHECK_PERIOD_MS = 200
 
 
+cdef grpc_event _grpc_completion_queue_next(grpc_completion_queue *cq,
+                                            gpr_timespec deadline,
+                                            void *reserved) except *:
+    # Wrap the call to the C++ core in an 'except *' helper to propagate any
+    # errors raised by the gevent poller callback
+    with nogil:
+      return grpc_completion_queue_next(cq, deadline, reserved)
+
+
 cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline) except *:
   cdef gpr_timespec c_increment
   cdef gpr_timespec c_timeout
@@ -36,7 +45,9 @@ cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline) excep
       if gpr_time_cmp(c_timeout, c_deadline) > 0:
         c_timeout = c_deadline
   
-      c_event = grpc_completion_queue_next(c_completion_queue, c_timeout, NULL)
+      with gil:
+          c_event = _grpc_completion_queue_next(c_completion_queue, c_timeout,
+                                                NULL)
   
       if (c_event.type != GRPC_QUEUE_TIMEOUT or
           gpr_time_cmp(c_timeout, c_deadline) == 0):
@@ -115,7 +126,7 @@ cdef class CompletionQueue:
         grpc_completion_queue_shutdown(self.c_completion_queue)
       # Pump the queue (All outstanding calls should have been cancelled)
       while not self.is_shutdown:
-        event = grpc_completion_queue_next(
+        event = _grpc_completion_queue_next(
             self.c_completion_queue, c_deadline, NULL)
         self._interpret_event(event)
       grpc_completion_queue_destroy(self.c_completion_queue)
