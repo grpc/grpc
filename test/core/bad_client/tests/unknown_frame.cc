@@ -33,16 +33,18 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   }
 }
 
+#define APPEND_BUFFER(string, to_append) \
+  ((string).append((to_append), sizeof(to_append) - 1))
+
 namespace {
 TEST(UnknownFrameType, Test) {
   /* test that all invalid/unknown frame types are handled */
   for (int i = 10; i <= 255; i++) {
     std::string unknown_frame_string;
-    unknown_frame_string.append("\x00\x00\x00", sizeof("\x00\x00\x00") - 1);
+    APPEND_BUFFER(unknown_frame_string, "\x00\x00\x00");
     char frame_type = static_cast<char>(i);
     unknown_frame_string.append(&frame_type, 1);
-    unknown_frame_string.append("\x00\x00\x00\x00\x01",
-                                sizeof("\x00\x00\x00\x00\x01") - 1);
+    APPEND_BUFFER(unknown_frame_string, "\x00\x00\x00\x00\x01");
     grpc_bad_client_arg args[2];
     args[0] = connection_preface_arg;
     args[1].client_validator = nullptr;
