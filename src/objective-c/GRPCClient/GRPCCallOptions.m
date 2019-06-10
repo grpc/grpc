@@ -30,7 +30,7 @@ static const NSUInteger kDefaultResponseSizeLimit = 0;
 static const GRPCCompressionAlgorithm kDefaultCompressionAlgorithm = GRPCCompressNone;
 static const BOOL kDefaultRetryEnabled = YES;
 static const NSTimeInterval kDefaultKeepaliveInterval = 0;
-static const NSTimeInterval kDefaultKeepaliveTimeout = 0;
+static const NSTimeInterval kDefaultKeepaliveTimeout = -1;
 static const NSTimeInterval kDefaultConnectMinTimeout = 0;
 static const NSTimeInterval kDefaultConnectInitialBackoff = 0;
 static const NSTimeInterval kDefaultConnectMaxBackoff = 0;
@@ -181,7 +181,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
     _compressionAlgorithm = compressionAlgorithm;
     _retryEnabled = retryEnabled;
     _keepaliveInterval = keepaliveInterval < 0 ? 0 : keepaliveInterval;
-    _keepaliveTimeout = keepaliveTimeout < 0 ? 0 : keepaliveTimeout;
+    _keepaliveTimeout = keepaliveTimeout;
     _connectMinTimeout = connectMinTimeout < 0 ? 0 : connectMinTimeout;
     _connectInitialBackoff = connectInitialBackoff < 0 ? 0 : connectInitialBackoff;
     _connectMaxBackoff = connectMaxBackoff < 0 ? 0 : connectMaxBackoff;
@@ -486,11 +486,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 }
 
 - (void)setKeepaliveTimeout:(NSTimeInterval)keepaliveTimeout {
-  if (keepaliveTimeout < 0) {
-    _keepaliveTimeout = 0;
-  } else {
-    _keepaliveTimeout = keepaliveTimeout;
-  }
+  _keepaliveTimeout = keepaliveTimeout;
 }
 
 - (void)setConnectMinTimeout:(NSTimeInterval)connectMinTimeout {

@@ -53,8 +53,6 @@ class PickFirst : public LoadBalancingPolicy {
   void UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
-  void FillChildRefsForChannelz(channelz::ChildRefsList* child_subchannels,
-                                channelz::ChildRefsList* ignored) override;
 
  private:
   ~PickFirst();
@@ -128,21 +126,7 @@ class PickFirst : public LoadBalancingPolicy {
     RefCountedPtr<ConnectedSubchannelInterface> connected_subchannel_;
   };
 
-  // Helper class to ensure that any function that modifies the child refs
-  // data structures will update the channelz snapshot data structures before
-  // returning.
-  class AutoChildRefsUpdater {
-   public:
-    explicit AutoChildRefsUpdater(PickFirst* pf) : pf_(pf) {}
-    ~AutoChildRefsUpdater() { pf_->UpdateChildRefsLocked(); }
-
-   private:
-    PickFirst* pf_;
-  };
-
   void ShutdownLocked() override;
-
-  void UpdateChildRefsLocked();
 
   // All our subchannels.
   OrphanablePtr<PickFirstSubchannelList> subchannel_list_;
@@ -154,12 +138,6 @@ class PickFirst : public LoadBalancingPolicy {
   bool idle_ = false;
   // Are we shut down?
   bool shutdown_ = false;
-
-  /// Lock and data used to capture snapshots of this channels child
-  /// channels and subchannels. This data is consumed by channelz.
-  Mutex child_refs_mu_;
-  channelz::ChildRefsList child_subchannels_;
-  channelz::ChildRefsList child_channels_;
 };
 
 PickFirst::PickFirst(Args args) : LoadBalancingPolicy(std::move(args)) {
@@ -177,7 +155,6 @@ PickFirst::~PickFirst() {
 }
 
 void PickFirst::ShutdownLocked() {
-  AutoChildRefsUpdater guard(this);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_INFO, "Pick First %p Shutting down", this);
   }
@@ -212,42 +189,7 @@ void PickFirst::ResetBackoffLocked() {
   }
 }
 
-void PickFirst::FillChildRefsForChannelz(
-    channelz::ChildRefsList* child_subchannels_to_fill,
-    channelz::ChildRefsList* ignored) {
-  MutexLock lock(&child_refs_mu_);
-  for (size_t i = 0; i < child_subchannels_.size(); ++i) {
-    // TODO(ncteisen): implement a de dup loop that is not O(n^2). Might
-    // have to implement lightweight set. For now, we don't care about
-    // performance when channelz requests are made.
-    bool found = false;
-    for (size_t j = 0; j < child_subchannels_to_fill->size(); ++j) {
-      if ((*child_subchannels_to_fill)[j] == child_subchannels_[i]) {
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      child_subchannels_to_fill->push_back(child_subchannels_[i]);
-    }
-  }
-}
-
-void PickFirst::UpdateChildRefsLocked() {
-  channelz::ChildRefsList cs;
-  if (subchannel_list_ != nullptr) {
-    subchannel_list_->PopulateChildRefsList(&cs);
-  }
-  if (latest_pending_subchannel_list_ != nullptr) {
-    latest_pending_subchannel_list_->PopulateChildRefsList(&cs);
-  }
-  // atomically update the data that channelz will actually be looking at.
-  MutexLock lock(&child_refs_mu_);
-  child_subchannels_ = std::move(cs);
-}
-
 void PickFirst::UpdateLocked(UpdateArgs args) {
-  AutoChildRefsUpdater guard(this);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_INFO,
             "Pick First %p received update with %" PRIuPTR " addresses", this,
@@ -348,7 +290,6 @@ void PickFirst::UpdateLocked(UpdateArgs args) {
 void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
     grpc_connectivity_state connectivity_state) {
   PickFirst* p = static_cast<PickFirst*>(subchannel_list()->policy());
-  AutoChildRefsUpdater guard(p);
   // The notification must be for a subchannel in either the current or
   // latest pending subchannel lists.
   GPR_ASSERT(subchannel_list() == p->subchannel_list_.get() ||

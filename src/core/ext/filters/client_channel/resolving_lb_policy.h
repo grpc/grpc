@@ -21,7 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
@@ -91,10 +90,6 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   void ResetBackoffLocked() override;
 
-  void FillChildRefsForChannelz(
-      channelz::ChildRefsList* child_subchannels,
-      channelz::ChildRefsList* child_channels) override;
-
  private:
   using TraceStringVector = InlinedVector<char*, 3>;
 
@@ -137,9 +132,6 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   // Child LB policy.
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
   OrphanablePtr<LoadBalancingPolicy> pending_lb_policy_;
-  // Lock held when modifying the value of child_policy_ or
-  // pending_child_policy_.
-  gpr_mu lb_policy_mu_;
 };
 
 }  // namespace grpc_core

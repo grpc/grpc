@@ -355,3 +355,24 @@ Unless explicitly set, will follow `OutputDir` for any given file.
 
 * __Access__  
 Sets generated class access on _both_ generated message and gRPC stub classes.
+
+`grpc_csharp_plugin` command line options
+---------
+
+Under the hood, the `Grpc.Tools` build integration invokes the `protoc` and `grpc_csharp_plugin` binaries
+to perform code generation. Here is an overview of the available `grpc_csharp_plugin` options:
+
+| Name            | Default   | Synopsis                                                 |
+|---------------- |-----------|----------------------------------------------------------|
+| no_client       | off       | Don't generate the client stub                           |
+| no_server       | off       | Don't generate the server-side stub                      |
+| internal_access | off       | Generate classes with "internal" visibility              |
+| lite_client     | off       | Generate client stubs that inherit from "LiteClientBase" |
+
+Note that the protocol buffer compiler has a special commandline syntax for plugin options.
+Example:
+```
+protoc --plugin=protoc-gen-grpc=grpc_csharp_plugin --csharp_out=OUT_DIR \
+    --grpc_out=OUT_DIR --grpc_opt=lite_client,no_server \
+    -I INCLUDE_DIR foo.proto
+```
