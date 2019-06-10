@@ -350,7 +350,6 @@ class Subchannel {
   grpc_closure on_connecting_finished_;
   // Active connection, or null.
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
-  bool connecting_ = false;
   bool disconnected_ = false;
 
   // Connectivity state tracking.

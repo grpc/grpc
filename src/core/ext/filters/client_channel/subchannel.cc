@@ -661,6 +661,8 @@ Subchannel::Subchannel(SubchannelKey* key, grpc_connector* connector,
   if (new_args != nullptr) grpc_channel_args_destroy(new_args);
   GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
                     grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&backoff_timer_callback_, BackoffTimerCallback, this,
+                    grpc_schedule_on_exec_ctx);
   const grpc_arg* arg = grpc_channel_args_find(args_, GRPC_ARG_ENABLE_CHANNELZ);
   const bool channelz_enabled =
       grpc_channel_arg_get_bool(arg, GRPC_ENABLE_CHANNELZ_DEFAULT);
@@ -757,9 +759,6 @@ void Subchannel::WeakUnref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
     GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(subchannel_destroy, this,
                                            grpc_schedule_on_exec_ctx),
                        GRPC_ERROR_NONE);
-  } else if (old_refs == 2 && state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    connection_attempt_requested_while_in_backoff_ = false;
-    grpc_timer_cancel(&backoff_timer_);
   }
 }
 
@@ -944,11 +943,20 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state) {
   // BackoffTimerCallback, which is the only way to get the subchannel out of
   // TRANSIENT_FAILURE.
   // In other words, if the subchannel is in TRANSIENT_FAILURE state, the
-  // backoff_timer_callback_ must be active.
+  // backoff_timer_ must be active.
   if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    const grpc_millis backoff_duration =
+        next_attempt_deadline_ - ExecCtx::Get()->Now();
+    if (backoff_duration <= 0) {
+      gpr_log(GPR_INFO, "Subchannel %p: Transient failure occurs. Can retry"
+              " immediately.", this);
+    }
+    else {
+      gpr_log(GPR_INFO, "Subchannel %p: Transient failure occurs. Can not retry"
+              " in %" PRId64 " milliseconds due to the backoff restriction.",
+              this, backoff_duration);
+    }
     GRPC_SUBCHANNEL_WEAK_REF(this, "in transient failure");
-    GRPC_CLOSURE_INIT(&backoff_timer_callback_, BackoffTimerCallback, this,
-                      grpc_schedule_on_exec_ctx);
     grpc_timer_init(&backoff_timer_, next_attempt_deadline_,
                     &backoff_timer_callback_);
   }
@@ -959,19 +967,14 @@ void Subchannel::MaybeStartConnectingLocked() {
     // Don't try to connect if we're already disconnected.
     return;
   }
-  if (connecting_) {
-    // Already connecting: don't restart.
-    return;
-  }
   if (connected_subchannel_ != nullptr) {
     // Already connected: don't restart.
     return;
   }
-  connecting_ = true;
-  GRPC_SUBCHANNEL_WEAK_REF(this, "connecting");
   if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     connection_attempt_requested_while_in_backoff_ = true;
-  } else {  // state == GRPC_CHANNEL_IDLE
+  } else if (state_ == GRPC_CHANNEL_IDLE) {
+    GRPC_SUBCHANNEL_WEAK_REF(this, "connecting");
     ContinueConnectingLocked();
   }
 }
@@ -995,7 +998,6 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error* error) {
   GRPC_SUBCHANNEL_WEAK_REF(c, "on_connecting_finished");
   {
     MutexLock lock(&c->mu_);
-    c->connecting_ = false;
     if (c->connecting_result_.transport != nullptr &&
         c->PublishTransportLocked()) {
       // Do nothing, transport was published.
@@ -1014,16 +1016,24 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error* error) {
 // This callback function is the only way to get out of TRANSIENT_FAILURE state.
 void Subchannel::BackoffTimerCallback(void* arg, grpc_error* error) {
   auto* c = static_cast<Subchannel*>(arg);
-  MutexLock lock(&c->mu_);
-  // The only possible state here is TRANSIENT_FAILURE.
-  if (c->connection_attempt_requested_while_in_backoff_) {
-    c->connection_attempt_requested_while_in_backoff_ = false;
-    // Go to CONNECTING state.
-    c->ContinueConnectingLocked();
-  } else {
-    // Go to IDLE state.
-    c->SetConnectivityStateLocked(GRPC_CHANNEL_IDLE);
+  // We use ReleasableMutexLock here because we can NOT unref this subchannel
+  // while holding its lock, since unref may cause the subchannel to be destroyed.
+  // TODO(qianchengz): Once subchannel refcounting is simplified, we can use
+  // MutexLock instead of ReleasableMutexLock here.
+  ReleasableMutexLock lock(&c->mu_);
+  if (!c->disconnected_) {
+    // The only possible state here is TRANSIENT_FAILURE.
+    if (c->connection_attempt_requested_while_in_backoff_) {
+      c->connection_attempt_requested_while_in_backoff_ = false;
+      // Go to CONNECTING state.
+      GRPC_SUBCHANNEL_WEAK_REF(c, "connecting");
+      c->ContinueConnectingLocked();
+    } else {
+      // Go to IDLE state.
+      c->SetConnectivityStateLocked(GRPC_CHANNEL_IDLE);
+    }
   }
+  lock.Unlock();
   GRPC_SUBCHANNEL_WEAK_UNREF(c, "in transient failure");
 }
 
@@ -1092,6 +1102,11 @@ void Subchannel::Disconnect() {
                                           "Subchannel disconnected"));
   connected_subchannel_.reset();
   health_watcher_map_.ShutdownLocked();
+  // Cancel the backoff_timer_ if necessary because it is holding a weak ref of
+  // this subchannel.
+  if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    grpc_timer_cancel(&backoff_timer_);
+  }
 }
 
 gpr_atm Subchannel::RefMutate(
