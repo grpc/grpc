@@ -963,19 +963,14 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state) {
 }
 
 void Subchannel::MaybeStartConnectingLocked() {
-  if (disconnected_) {
+  if (!disconnected_) {
     // Don't try to connect if we're already disconnected.
-    return;
-  }
-  if (connected_subchannel_ != nullptr) {
-    // Already connected: don't restart.
-    return;
-  }
-  if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    connection_attempt_requested_while_in_backoff_ = true;
-  } else if (state_ == GRPC_CHANNEL_IDLE) {
-    GRPC_SUBCHANNEL_WEAK_REF(this, "connecting");
-    ContinueConnectingLocked();
+    if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      connection_attempt_requested_while_in_backoff_ = true;
+    } else if (state_ == GRPC_CHANNEL_IDLE) {
+      GRPC_SUBCHANNEL_WEAK_REF(this, "connecting");
+      ContinueConnectingLocked();
+    }
   }
 }
 
