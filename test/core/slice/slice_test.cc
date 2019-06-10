@@ -311,6 +311,16 @@ static void test_moved_string_slice(void) {
              reinterpret_cast<uint8_t*>(large_ptr));
   grpc_slice_unref(large);
 
+  // Moved buffer must respect the provided length not the actual length of the
+  // string.
+  large_ptr = strdup(kSLargeStr);
+  small = grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char>(large_ptr),
+                                       strlen(kSmallStr));
+  GPR_ASSERT(GRPC_SLICE_LENGTH(small) == strlen(kSmallStr));
+  GPR_ASSERT(GRPC_SLICE_START_PTR(small) !=
+             reinterpret_cast<uint8_t*>(large_ptr));
+  grpc_slice_unref(small);
+
   grpc_shutdown();
 }
 

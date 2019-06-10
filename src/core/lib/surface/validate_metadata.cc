@@ -40,13 +40,12 @@ static grpc_error* conforms_to(const grpc_slice& slice,
     int byte = idx / 8;
     int bit = idx % 8;
     if ((legal_bits[byte] & (1 << bit)) == 0) {
-      char* dump = grpc_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
       grpc_error* error = grpc_error_set_str(
           grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(err_desc),
                              GRPC_ERROR_INT_OFFSET,
                              p - GRPC_SLICE_START_PTR(slice)),
           GRPC_ERROR_STR_RAW_BYTES,
-          grpc_slice_from_moved_string(grpc_core::UniquePtr<char>(dump)));
+          grpc_dump_slice_to_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII));
       return error;
     }
   }

@@ -216,8 +216,8 @@ grpc_slice grpc_slice_from_copied_string(const char* source) {
   return grpc_slice_from_copied_buffer(source, strlen(source));
 }
 
-grpc_slice grpc_slice_from_moved_string(grpc_core::UniquePtr<char> p) {
-  const size_t len = strlen(p.get());
+grpc_slice grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char> p,
+                                        size_t len) {
   uint8_t* ptr = reinterpret_cast<uint8_t*>(p.get());
   grpc_slice slice;
   if (len <= sizeof(slice.data.inlined.bytes)) {
@@ -232,6 +232,11 @@ grpc_slice grpc_slice_from_moved_string(grpc_core::UniquePtr<char> p) {
     slice.data.refcounted.length = len;
   }
   return slice;
+}
+
+grpc_slice grpc_slice_from_moved_string(grpc_core::UniquePtr<char> p) {
+  const size_t len = strlen(p.get());
+  return grpc_slice_from_moved_buffer(std::move(p), len);
 }
 
 namespace {
