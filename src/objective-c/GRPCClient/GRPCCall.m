@@ -17,6 +17,7 @@
  */
 
 #import "GRPCCall.h"
+#import "GRPCCall+Interceptor.h"
 #import "GRPCCall+OAuth2.h"
 #import "GRPCCallOptions.h"
 #import "GRPCInterceptor.h"
@@ -141,23 +142,51 @@ const char *kCFStreamVarName = "grpc_cfstream";
     _responseHandler = responseHandler;
 
     // Initialize the interceptor chain
+
+    // First initialize the internal call
     GRPCCall2Internal *internalCall = [[GRPCCall2Internal alloc] init];
     id<GRPCInterceptorInterface> nextInterceptor = internalCall;
     GRPCInterceptorManager *nextManager = nil;
+
+    // Then initialize the global interceptor, if applicable
+    id<GRPCInterceptorFactory> globalInterceptorFactory = [GRPCCall2 globalInterceptorFactory];
+    if (globalInterceptorFactory) {
+      GRPCInterceptorManager *manager =
+          [[GRPCInterceptorManager alloc] initWithNextInterceptor:nextInterceptor];
+      GRPCInterceptor *interceptor =
+          [globalInterceptorFactory createInterceptorWithManager:manager];
+      NSAssert(interceptor != nil, @"Failed to create interceptor from factory: %@",
+               globalInterceptorFactory);
+      if (interceptor == nil) {
+        NSLog(@"Failed to create interceptor from factory: %@", globalInterceptorFactory);
+      } else {
+        [internalCall setResponseHandler:interceptor];
+      }
+      nextInterceptor = interceptor;
+      nextManager = manager;
+    }
+
+    // Finanlly initialize the interceptors in the chain
     NSArray *interceptorFactories = _actualCallOptions.interceptorFactories;
     if (interceptorFactories.count == 0) {
-      [internalCall setResponseHandler:_responseHandler];
+      if (nextManager == nil) {
+        [internalCall setResponseHandler:_responseHandler];
+      } else {
+        [nextManager setPreviousInterceptor:_responseHandler];
+      }
     } else {
       for (int i = (int)interceptorFactories.count - 1; i >= 0; i--) {
         GRPCInterceptorManager *manager =
             [[GRPCInterceptorManager alloc] initWithNextInterceptor:nextInterceptor];
         GRPCInterceptor *interceptor =
             [interceptorFactories[i] createInterceptorWithManager:manager];
-        NSAssert(interceptor != nil, @"Failed to create interceptor");
+        NSAssert(interceptor != nil, @"Failed to create interceptor from factory: %@",
+                 interceptorFactories[i]);
         if (interceptor == nil) {
-          return nil;
+          NSLog(@"Failed to create interceptor from factory: %@", interceptorFactories[i]);
+          continue;
         }
-        if (i == (int)interceptorFactories.count - 1) {
+        if (nextManager == nil) {
           [internalCall setResponseHandler:interceptor];
         } else {
           [nextManager setPreviousInterceptor:interceptor];
