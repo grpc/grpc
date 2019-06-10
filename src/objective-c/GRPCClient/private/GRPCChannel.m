@@ -109,6 +109,8 @@
   if (_callOptions.keepaliveInterval != 0) {
     args[@GRPC_ARG_KEEPALIVE_TIME_MS] =
         [NSNumber numberWithUnsignedInteger:(NSUInteger)(_callOptions.keepaliveInterval * 1000)];
+  }
+  if (_callOptions.keepaliveTimeout >= 0) {
     args[@GRPC_ARG_KEEPALIVE_TIMEOUT_MS] =
         [NSNumber numberWithUnsignedInteger:(NSUInteger)(_callOptions.keepaliveTimeout * 1000)];
   }
