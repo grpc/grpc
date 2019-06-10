@@ -948,11 +948,13 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state) {
     const grpc_millis backoff_duration =
         next_attempt_deadline_ - ExecCtx::Get()->Now();
     if (backoff_duration <= 0) {
-      gpr_log(GPR_INFO, "Subchannel %p: Transient failure occurs. Can retry"
-              " immediately.", this);
-    }
-    else {
-      gpr_log(GPR_INFO, "Subchannel %p: Transient failure occurs. Can not retry"
+      gpr_log(GPR_INFO,
+              "Subchannel %p: Transient failure occurs. Can retry"
+              " immediately.",
+              this);
+    } else {
+      gpr_log(GPR_INFO,
+              "Subchannel %p: Transient failure occurs. Can not retry"
               " in %" PRId64 " milliseconds due to the backoff restriction.",
               this, backoff_duration);
     }
@@ -1012,7 +1014,8 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error* error) {
 void Subchannel::BackoffTimerCallback(void* arg, grpc_error* error) {
   auto* c = static_cast<Subchannel*>(arg);
   // We use ReleasableMutexLock here because we can NOT unref this subchannel
-  // while holding its lock, since unref may cause the subchannel to be destroyed.
+  // while holding its lock, since unref may cause the subchannel to be
+  // destroyed.
   // TODO(qianchengz): Once subchannel refcounting is simplified, we can use
   // MutexLock instead of ReleasableMutexLock here.
   ReleasableMutexLock lock(&c->mu_);
