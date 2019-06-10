@@ -1099,7 +1099,7 @@ class Channel(grpc.Channel):
         # effect closure of the underlying cygrpc.Channel instance.
         try:
             self._unsubscribe_all()
-        except:
+        except:  # pylint: disable=bare-except
             # Exceptions in __del__ are ignored by Python anyway, but they can
             # keep spamming logs.  Just silence them.
             pass
