@@ -56,7 +56,7 @@ void CallbackStreamingTestService::Echo(
   } else {
     response->set_message("");
   }
-  experimental::MakeReactor(context, reactor, Status::OK);
+  experimental::MakeReactor(context, Status::OK, reactor);
 }
 
 void CallbackStreamingTestService::BidiStream(

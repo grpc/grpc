@@ -79,7 +79,7 @@ class CallbackTestServiceImpl
       allocator_mutator_(context->GetRpcAllocatorState(), request,
 			 response);
     }
-    experimental::MakeReactor(context, reactor, Status::OK);
+    experimental::MakeReactor(context, Status::OK, reactor);
   }
 
  private:

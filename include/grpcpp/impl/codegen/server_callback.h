@@ -675,19 +675,11 @@ class ServerUnaryReactor : public internal::ServerReactor {
   Status status_wanted_;
 };
 
-/// MakeReactor is a free function to make a simple ServerUnaryReactor.
-/// There are two overloaded variants, depending on the parameters. The first
-/// parameter is the ServerContext object pointer for the call. The second
-/// parameter is a reference to the reactor value that the method handler must
-/// provide as an output parameter. The third parameter is either a Status
-/// (marking a fully handled RPC) or a method to invoke after the reactor is
-/// filled in, allowing further handling. 
+/// MakeReactor is a free function to make a simple ServerUnaryReactor. There are two overloaded variants, depending on the parameters. The first parameter is the ServerContext object pointer for the call. The second parameter is either a Status (marking a fully handled RPC) or a method to invoke after the reactor is filled in, allowing further handling. The third parameter is a reference to the reactor value that the method handler must provide as an output parameter. 
 ///
+/// Both variants:
 /// \param context [in] The ServerContext created by the library for this RPC
-/// \param reactor [out] A ServerUnaryReactor<Request,Response>** that is meant
-///                      to be filled in by the method handler invoking this
-///                      function. It will be filled in before executing func in
-///                      Variant 1 below.
+///
 /// Variant 1:
 /// \param func [in] A function that will be executed when this RPC is being
 ///                  served. It has no arguments or return value.
@@ -696,10 +688,18 @@ class ServerUnaryReactor : public internal::ServerReactor {
 ///                    never exposes the reactor to func and directly Finish'es
 ///                    the RPC with this Status. Not applicable for methods that
 ///                    require delaying operations (such as a child RPC)
+///
+/// Both variants:
+/// \param reactor [out] A ServerUnaryReactor<Request,Response>** that is meant
+///                      to be filled in by the method handler invoking this
+///                      function. It will be filled in before executing func in
+///                      Variant 1 below.
 template <typename Request, typename Response, typename FunctionOrStatus>
 void MakeReactor(
-	    ServerContext* context, ServerUnaryReactor<Request, Response>** reactor,
-	    FunctionOrStatus&& func, typename std::enable_if<
+	    ServerContext* context,
+	    FunctionOrStatus&& func,
+	    ServerUnaryReactor<Request, Response>** reactor,
+	    typename std::enable_if<
 	    !std::is_same<Status, typename std::remove_const<typename std::remove_reference<FunctionOrStatus>::type>::type>::value>::type* = nullptr) {
   // TODO(vjpai): Specialize this to prevent counting OnCancel conditions
   class SimpleUnaryReactor final
@@ -719,8 +719,10 @@ void MakeReactor(
 
 template <typename Request, typename Response, typename FunctionOrStatus>
 void MakeReactor(
-	    ServerContext* context, ServerUnaryReactor<Request, Response>** reactor,
-	    FunctionOrStatus&& status, typename std::enable_if<
+	    ServerContext* context,
+	    FunctionOrStatus&& status,
+	    ServerUnaryReactor<Request, Response>** reactor,
+	    typename std::enable_if<
   std::is_same<Status, typename std::remove_const<typename std::remove_reference<FunctionOrStatus>::type>::type>::value>::type* = nullptr) {
   // TODO(vjpai): Specialize this to prevent counting OnCancel conditions
   class ReallySimpleUnaryReactor final
