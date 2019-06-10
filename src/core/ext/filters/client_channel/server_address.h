@@ -68,12 +68,14 @@ class ServerAddress {
   }
   ServerAddress& operator=(ServerAddress&& other) {
     address_ = other.address_;
+    grpc_channel_args_destroy(args_);
     args_ = other.args_;
     other.args_ = nullptr;
     return *this;
   }
 
   bool operator==(const ServerAddress& other) const;
+  bool operator!=(const grpc_core::ServerAddress& other) const;
 
   const grpc_resolved_address& address() const { return address_; }
   const grpc_channel_args* args() const { return args_; }
@@ -90,9 +92,6 @@ class ServerAddress {
 //
 
 typedef InlinedVector<ServerAddress, 1> ServerAddressList;
-
-bool ServerAddressListEquals(const ServerAddressList* a,
-                             const ServerAddressList* b);
 
 }  // namespace grpc_core
 

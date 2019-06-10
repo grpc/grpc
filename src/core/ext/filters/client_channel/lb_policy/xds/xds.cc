@@ -117,9 +117,6 @@ TraceFlag grpc_lb_xds_trace(false, "xds");
 namespace {
 
 constexpr char kXds[] = "xds_experimental";
-constexpr char kDefaultLocalityRegion[] = "xds_default_locality_region";
-constexpr char kDefaultLocalityZone[] = "xds_default_locality_zone";
-constexpr char kDefaultLocalitySubzone[] = "xds_default_locality_subzone";
 
 class ParsedXdsConfig : public LoadBalancingPolicy::Config {
  public:
@@ -158,9 +155,6 @@ class XdsLb : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
-  struct LocalityServerlistEntry;
-  using LocalityList = InlinedVector<UniquePtr<LocalityServerlistEntry>, 1>;
-
   /// Contains a channel to the LB server and all the data related to the
   /// channel.
   class BalancerChannelState
@@ -351,37 +345,6 @@ class XdsLb : public LoadBalancingPolicy {
     LoadBalancingPolicy* child_ = nullptr;
   };
 
-  class LocalityName : public RefCounted<LocalityName> {
-   public:
-    struct Less {
-      bool operator()(const RefCountedPtr<LocalityName>& lhs,
-                      const RefCountedPtr<LocalityName>& rhs) {
-        int cmp_result = strcmp(lhs->region_.get(), rhs->region_.get());
-        if (cmp_result != 0) return cmp_result < 0;
-        cmp_result = strcmp(lhs->zone_.get(), rhs->zone_.get());
-        if (cmp_result != 0) return cmp_result < 0;
-        return strcmp(lhs->subzone_.get(), rhs->subzone_.get()) < 0;
-      }
-    };
-
-    LocalityName(UniquePtr<char> region, UniquePtr<char> zone,
-                 UniquePtr<char> subzone)
-        : region_(std::move(region)),
-          zone_(std::move(zone)),
-          subzone_(std::move(subzone)) {}
-
-    bool operator==(const LocalityName& other) const {
-      return strcmp(region_.get(), other.region_.get()) == 0 &&
-             strcmp(zone_.get(), other.zone_.get()) == 0 &&
-             strcmp(subzone_.get(), other.subzone_.get()) == 0;
-    }
-
-   private:
-    UniquePtr<char> region_;
-    UniquePtr<char> zone_;
-    UniquePtr<char> subzone_;
-  };
-
   class LocalityMap {
    public:
     class LocalityEntry : public InternallyRefCounted<LocalityEntry> {
@@ -435,25 +398,17 @@ class XdsLb : public LoadBalancingPolicy {
       uint32_t locality_weight_;
     };
 
-    void UpdateLocked(const LocalityList& locality_list,
+    void UpdateLocked(const XdsLocalityList& locality_list,
                       LoadBalancingPolicy::Config* child_policy_config,
                       const grpc_channel_args* args, XdsLb* parent);
     void ShutdownLocked();
     void ResetBackoffLocked();
 
    private:
-    void PruneLocalities(const LocalityList& locality_list);
-    Map<RefCountedPtr<LocalityName>, OrphanablePtr<LocalityEntry>,
-        LocalityName::Less>
+    void PruneLocalities(const XdsLocalityList& locality_list);
+    Map<RefCountedPtr<XdsLocalityName>, OrphanablePtr<LocalityEntry>,
+        XdsLocalityName::Less>
         map_;
-  };
-
-  struct LocalityServerlistEntry {
-    RefCountedPtr<LocalityName> locality_name;
-    uint32_t locality_weight;
-    // The parsed serverlist response from the balancer. May be nullptr until
-    // one such response has arrived.
-    UniquePtr<ServerAddressList> serverlist;
   };
 
   ~XdsLb();
@@ -531,7 +486,7 @@ class XdsLb : public LoadBalancingPolicy {
   LocalityMap locality_map_;
   // TODO(mhaidry) : Add support for multiple maps of localities
   // with different priorities
-  LocalityList locality_serverlist_;
+  XdsLocalityList locality_list_;
   // TODO(mhaidry) : Add a pending locality map that may be swapped with the
   // the current one when new localities in the pending map are ready
   // to accept connections
@@ -846,7 +801,7 @@ XdsLb::BalancerChannelState::BalancerCallState::BalancerCallState(
       nullptr, deadline, nullptr);
   // Init the LB call request payload.
   grpc_slice request_payload_slice =
-      XdsRequestCreateAndEncode(xdslb_policy()->service_name_);
+      XdsEdsRequestCreateAndEncode(xdslb_policy()->service_name_);
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
@@ -1068,13 +1023,21 @@ void XdsLb::BalancerChannelState::BalancerCallState::
   // mode. We will also need to cancel the timer when we receive a serverlist
   // from the balancer.
   // Parse the response.
-  UniquePtr<XdsLoadUpdateArgs> update_args =
-      XdsResponseDecodeAndParse(response_slice);
-  if (update_args == nullptr) {
+  XdsUpdate update;
+  grpc_error* parse_error =
+      XdsEdsResponseDecodeAndParse(response_slice, &update);
+  if (parse_error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "[xdslb %p] EDS response parsing failed. error=%s",
+            xdslb_policy, grpc_error_string(parse_error));
+    GRPC_ERROR_UNREF(parse_error);
+    goto done;
+  }
+  if (update.locality_list.empty()) {
     char* response_slice_str =
         grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
     gpr_log(GPR_ERROR,
-            "[xdslb %p] Invalid EDS response received: '%s'. Ignoring.",
+            "[xdslb %p] EDS response '%s' doesn't contain any valid locality "
+            "update. Ignoring.",
             xdslb_policy, response_slice_str);
     gpr_free(response_slice_str);
     goto done;
@@ -1082,21 +1045,27 @@ void XdsLb::BalancerChannelState::BalancerCallState::
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO,
             "[xdslb %p] EDS response with %" PRIuPTR " localities received",
-            xdslb_policy, update_args->localities.size());
-    for (size_t i = 0; i < update_args->localities.size(); ++i) {
-      const XdsLocalityUpdateArgs& locality = update_args->localities[i];
+            xdslb_policy, update.locality_list.size());
+    for (size_t i = 0; i < update.locality_list.size(); ++i) {
+      const XdsLocalityInfo& locality = update.locality_list[i];
+      const XdsLocalityName* locality_name = locality.locality_name.get();
       gpr_log(GPR_INFO,
-              "[xdslb %p] Locality %" PRIuPTR " contains %" PRIuPTR
+              "[xdslb %p] Locality %" PRIuPTR
+              " (region: %s, zone: %s, sub_zone: %s) contains %" PRIuPTR
               " server addresses",
-              xdslb_policy, i, locality.serverlist->size());
-      for (size_t j = 0; j < locality.serverlist->size(); ++j) {
+              xdslb_policy, i, locality_name->region(), locality_name->zone(),
+              locality_name->sub_zone(), locality.serverlist.size());
+      for (size_t j = 0; j < locality.serverlist.size(); ++j) {
         char* ipport;
-        grpc_sockaddr_to_string(&ipport, &(*locality.serverlist)[j].address(),
+        grpc_sockaddr_to_string(&ipport, &locality.serverlist[j].address(),
                                 false);
-        gpr_log(GPR_INFO,
-                "[xdslb %p] Locality %" PRIuPTR ", server address %" PRIuPTR
-                ": %s",
-                xdslb_policy, i, j, ipport);
+        gpr_log(
+            GPR_INFO,
+            "[xdslb %p] Locality %" PRIuPTR
+            " (region: %s, zone: %s, sub_zone: %s), server address %" PRIuPTR
+            ": %s",
+            xdslb_policy, i, locality_name->region(), locality_name->zone(),
+            locality_name->sub_zone(), j, ipport);
         gpr_free(ipport);
       }
     }
@@ -1124,11 +1093,12 @@ void XdsLb::BalancerChannelState::BalancerCallState::
     lb_calld->Ref(DEBUG_LOCATION, "client_load_report").release();
     lb_calld->ScheduleNextClientLoadReportLocked();
   }
-  // Ignore indentical update.
-  if (!xdslb_policy->locality_serverlist_.empty() &&
-      ServerAddressListEquals(
-          xdslb_policy->locality_serverlist_[0]->serverlist.get(),
-          update_args->localities[0].serverlist.get())) {
+  // Ignore identical update.
+  // TODO(juanlishen): Better define identical update. When we support multiple
+  // localities, we may need to use a map to hold the update info.
+  if (!xdslb_policy->locality_list_.empty() &&
+      xdslb_policy->locality_list_[0].serverlist ==
+          update.locality_list[0].serverlist) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       gpr_log(GPR_INFO,
               "[xdslb %p] Incoming server list identical to current, "
@@ -1141,30 +1111,15 @@ void XdsLb::BalancerChannelState::BalancerCallState::
   // mode immediately.
   // TODO(juanlishen): When we add EDS drop, we should change to check
   // drop_percentage.
-  if (update_args->localities[0].serverlist->empty()) {
+  if (update.locality_list[0].serverlist.empty()) {
     xdslb_policy->MaybeExitFallbackMode();
   }
-  // Initialize locality_serverlist_ if necessary. Currently the list only
-  // handles one child.
-  if (xdslb_policy->locality_serverlist_.empty()) {
-    xdslb_policy->locality_serverlist_.emplace_back(
-        MakeUnique<LocalityServerlistEntry>());
-    xdslb_policy->locality_serverlist_[0]->locality_name =
-        MakeRefCounted<LocalityName>(
-            UniquePtr<char>(gpr_strdup(kDefaultLocalityRegion)),
-            UniquePtr<char>(gpr_strdup(kDefaultLocalityZone)),
-            UniquePtr<char>(gpr_strdup(kDefaultLocalitySubzone)));
-  }
-  // Update the locality_serverlist_ with the new serverlist and LB weight.
-  xdslb_policy->locality_serverlist_[0]->serverlist =
-      std::move(update_args->localities[0].serverlist);
-  xdslb_policy->locality_serverlist_[0]->locality_weight =
-      update_args->localities[0].lb_weight;
+  // Update the locality list.
+  xdslb_policy->locality_list_ = std::move(update.locality_list);
   // Update the locality map.
   xdslb_policy->locality_map_.UpdateLocked(
-      xdslb_policy->locality_serverlist_,
-      xdslb_policy->child_policy_config_.get(), xdslb_policy->args_,
-      xdslb_policy);
+      xdslb_policy->locality_list_, xdslb_policy->child_policy_config_.get(),
+      xdslb_policy->args_, xdslb_policy);
 done:
   grpc_slice_unref_internal(response_slice);
   if (xdslb_policy->shutting_down_) {
@@ -1307,9 +1262,7 @@ grpc_channel_args* BuildBalancerChannelArgs(const grpc_channel_args* args) {
 //
 
 XdsLb::XdsLb(Args args)
-    : LoadBalancingPolicy(std::move(args)),
-      locality_map_(),
-      locality_serverlist_() {
+    : LoadBalancingPolicy(std::move(args)), locality_map_(), locality_list_() {
   // Record server name.
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
   const char* server_uri = grpc_channel_arg_get_string(arg);
@@ -1335,7 +1288,7 @@ XdsLb::XdsLb(Args args)
 XdsLb::~XdsLb() {
   gpr_free((void*)service_name_);
   grpc_channel_args_destroy(args_);
-  locality_serverlist_.clear();
+  locality_list_.clear();
 }
 
 void XdsLb::ShutdownLocked() {
@@ -1435,8 +1388,8 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
     return;
   }
   ProcessAddressesAndChannelArgsLocked(args.addresses, *args.args);
-  locality_map_.UpdateLocked(locality_serverlist_, child_policy_config_.get(),
-                             args_, this);
+  locality_map_.UpdateLocked(locality_list_, child_policy_config_.get(), args_,
+                             this);
   // Update the existing fallback policy. The fallback policy config and/or the
   // fallback addresses may be new.
   if (fallback_policy_ != nullptr) UpdateFallbackPolicyLocked();
@@ -1633,16 +1586,16 @@ void XdsLb::MaybeExitFallbackMode() {
 // XdsLb::LocalityMap
 //
 
-void XdsLb::LocalityMap::PruneLocalities(const LocalityList& locality_list) {
+void XdsLb::LocalityMap::PruneLocalities(const XdsLocalityList& locality_list) {
   for (auto iter = map_.begin(); iter != map_.end();) {
     bool found = false;
     for (size_t i = 0; i < locality_list.size(); i++) {
-      if (*locality_list[i]->locality_name == *iter->first) {
+      if (*locality_list[i].locality_name == *iter->first) {
         found = true;
         break;
       }
     }
-    if (!found) {  // Remove entries not present in the locality list
+    if (!found) {  // Remove entries not present in the locality list.
       iter = map_.erase(iter);
     } else
       iter++;
@@ -1650,27 +1603,26 @@ void XdsLb::LocalityMap::PruneLocalities(const LocalityList& locality_list) {
 }
 
 void XdsLb::LocalityMap::UpdateLocked(
-    const LocalityList& locality_serverlist,
+    const XdsLocalityList& locality_list,
     LoadBalancingPolicy::Config* child_policy_config,
     const grpc_channel_args* args, XdsLb* parent) {
   if (parent->shutting_down_) return;
-  for (size_t i = 0; i < locality_serverlist.size(); i++) {
-    auto iter = map_.find(locality_serverlist[i]->locality_name);
+  for (size_t i = 0; i < locality_list.size(); i++) {
+    auto iter = map_.find(locality_list[i].locality_name);
+    // Add a new entry in the locality map if a new locality is received in the
+    // locality list.
     if (iter == map_.end()) {
       OrphanablePtr<LocalityEntry> new_entry = MakeOrphanable<LocalityEntry>(
-          parent->Ref(), locality_serverlist[i]->locality_weight);
-      iter = map_.emplace(locality_serverlist[i]->locality_name,
-                          std::move(new_entry))
+          parent->Ref(), locality_list[i].lb_weight);
+      iter = map_.emplace(locality_list[i].locality_name, std::move(new_entry))
                  .first;
     }
-    // Don't create new child policies if not directed to.
-    // Keep a copy of serverlist in locality_serverlist_ so that we can
-    // compare it with the future ones.
-    ServerAddressList* serverlist =
-        parent->locality_serverlist_[i]->serverlist.get();
-    iter->second->UpdateLocked(*serverlist, child_policy_config, args);
+    // Keep a copy of serverlist in locality_list_ so that we can compare it
+    // with the future ones.
+    iter->second->UpdateLocked(locality_list[i].serverlist, child_policy_config,
+                               args);
   }
-  PruneLocalities(locality_serverlist);
+  PruneLocalities(locality_list);
 }
 
 void XdsLb::LocalityMap::ShutdownLocked() { map_.clear(); }

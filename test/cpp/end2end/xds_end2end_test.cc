@@ -84,6 +84,9 @@ using grpc::lb::v2::EndpointDiscoveryService;
 
 constexpr char kEdsTypeUrl[] =
     "type.googleapis.com/grpc.lb.v2.ClusterLoadAssignment";
+constexpr char kDefaultLocalityRegion[] = "xds_default_locality_region";
+constexpr char kDefaultLocalityZone[] = "xds_default_locality_zone";
+constexpr char kDefaultLocalitySubzone[] = "xds_default_locality_subzone";
 
 template <typename ServiceType>
 class CountedService : public ServiceType {
@@ -261,7 +264,9 @@ class BalancerServiceImpl : public BalancerService {
     auto* endpoints = assignment.add_endpoints();
     endpoints->mutable_load_balancing_weight()->set_value(3);
     endpoints->set_priority(0);
-    endpoints->mutable_locality()->set_region("region name");
+    endpoints->mutable_locality()->set_region(kDefaultLocalityRegion);
+    endpoints->mutable_locality()->set_zone(kDefaultLocalityZone);
+    endpoints->mutable_locality()->set_sub_zone(kDefaultLocalitySubzone);
     for (const int& backend_port : backend_ports) {
       auto* lb_endpoints = endpoints->add_lb_endpoints();
       auto* endpoint = lb_endpoints->mutable_endpoint();
@@ -269,7 +274,6 @@ class BalancerServiceImpl : public BalancerService {
       auto* socket_address = address->mutable_socket_address();
       socket_address->set_address("127.0.0.1");
       socket_address->set_port_value(backend_port);
-      // TODO(juanlishen): Figure out where to set LB token.
     }
     DiscoveryResponse response;
     response.set_type_url(kEdsTypeUrl);

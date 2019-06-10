@@ -14,7 +14,9 @@
 
 // This file contains the eds protocol and its dependency.
 //
-// TODO(juanlishen): It's a workaround and should be removed once we have a clean solution to the circular dependency between the envoy data plane APIs and gRPC.
+// TODO(juanlishen): It's a workaround and should be removed once we have a
+//  clean solution to the circular dependency between the envoy data plane APIs
+//  and gRPC. We can't check in this file due to conflict with internal code.
 
 syntax = "proto3";
 
