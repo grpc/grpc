@@ -147,7 +147,7 @@ class ChannelData {
     return service_config_;
   }
 
-  RefCountedPtr<ConnectedSubchannel> GetConnectedSubchannel(
+  RefCountedPtr<ConnectedSubchannel> GetConnectedSubchannelInDataPlane(
       SubchannelInterface* subchannel) const;
 
   grpc_connectivity_state CheckConnectivityState(bool try_to_connect);
@@ -870,13 +870,14 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
             state_(new_state),
             connected_subchannel_(std::move(connected_subchannel)) {
         GRPC_CLOSURE_INIT(
-            &closure_, ApplyUpdateInCallCombiner, this,
+            &closure_, ApplyUpdateInControlPlaneCombiner, this,
             grpc_combiner_scheduler(parent_->parent_->chand_->combiner_));
         GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
       }
 
      private:
-      static void ApplyUpdateInCallCombiner(void* arg, grpc_error* error) {
+      static void ApplyUpdateInControlPlaneCombiner(void* arg,
+                                                    grpc_error* error) {
         Updater* self = static_cast<Updater*>(arg);
         if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
           gpr_log(GPR_INFO,
@@ -969,7 +970,7 @@ class ChannelData::ConnectivityStateAndPickerSetter {
     // Bounce into the data plane combiner to reset the picker.
     GRPC_CHANNEL_STACK_REF(chand->owning_stack_,
                            "ConnectivityStateAndPickerSetter");
-    GRPC_CLOSURE_INIT(&closure_, SetPicker, this,
+    GRPC_CLOSURE_INIT(&closure_, SetPickerInDataPlane, this,
                       grpc_combiner_scheduler(chand->data_plane_combiner_));
     GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
   }
@@ -992,7 +993,7 @@ class ChannelData::ConnectivityStateAndPickerSetter {
     GPR_UNREACHABLE_CODE(return "UNKNOWN");
   }
 
-  static void SetPicker(void* arg, grpc_error* ignored) {
+  static void SetPickerInDataPlane(void* arg, grpc_error* ignored) {
     auto* self = static_cast<ConnectivityStateAndPickerSetter*>(arg);
     // Handle subchannel updates.
     for (auto& p : self->pending_subchannel_updates_) {
@@ -1017,12 +1018,12 @@ class ChannelData::ConnectivityStateAndPickerSetter {
     // that we make sure to unref subchannel wrappers there.  This
     // includes both the ones reffed by the old picker (now stored in
     // self->picker_) and the ones in self->pending_subchannel_updates_.
-    GRPC_CLOSURE_INIT(&self->closure_, CleanUp, self,
+    GRPC_CLOSURE_INIT(&self->closure_, CleanUpInControlPlane, self,
                       grpc_combiner_scheduler(self->chand_->combiner_));
     GRPC_CLOSURE_SCHED(&self->closure_, GRPC_ERROR_NONE);
   }
 
-  static void CleanUp(void* arg, grpc_error* ignored) {
+  static void CleanUpInControlPlane(void* arg, grpc_error* ignored) {
     auto* self = static_cast<ConnectivityStateAndPickerSetter*>(arg);
     GRPC_CHANNEL_STACK_UNREF(self->chand_->owning_stack_,
                              "ConnectivityStateAndPickerSetter");
@@ -1749,12 +1750,13 @@ void ChannelData::RemoveQueuedPick(QueuedPick* to_remove,
   }
 }
 
-RefCountedPtr<ConnectedSubchannel> ChannelData::GetConnectedSubchannel(
+RefCountedPtr<ConnectedSubchannel>
+ChannelData::GetConnectedSubchannelInDataPlane(
     SubchannelInterface* subchannel) const {
-  SubchannelWrapper* grpc_subchannel =
+  SubchannelWrapper* subchannel_wrapper =
       static_cast<SubchannelWrapper*>(subchannel);
   ConnectedSubchannel* connected_subchannel =
-      grpc_subchannel->connected_subchannel_in_data_plane();
+      subchannel_wrapper->connected_subchannel_in_data_plane();
   if (connected_subchannel == nullptr) return nullptr;
   return connected_subchannel->Ref();
 }
@@ -3737,7 +3739,7 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
         // Grab a ref to the connected subchannel while we're still
         // holding the data plane combiner.
         calld->connected_subchannel_ =
-            chand->GetConnectedSubchannel(result.subchannel.get());
+            chand->GetConnectedSubchannelInDataPlane(result.subchannel.get());
         GPR_ASSERT(calld->connected_subchannel_ != nullptr);
       }
       calld->lb_recv_trailing_metadata_ready_ =
