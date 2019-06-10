@@ -39,9 +39,6 @@
 
 namespace grpc_core {
 
-// TODO(juanlishen): Figure out if we want to keep this constraint.
-#define XDS_SERVICE_NAME_MAX_LENGTH 128
-
 typedef grpc_lb_v1_LoadBalanceRequest xds_grpclb_request;
 typedef google_protobuf_Timestamp xds_grpclb_timestamp;
 

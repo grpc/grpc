@@ -416,7 +416,7 @@ class XdsLb : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   // Helper function used in UpdateLocked().
-  void ProcessAddressesAndChannelArgsLocked(const ServerAddressList& addresses,
+  void ProcessAddressesAndChannelArgsLocked(ServerAddressList addresses,
                                             const grpc_channel_args& args);
 
   // Parses the xds config given the JSON node of the first child of XdsConfig.
@@ -438,8 +438,8 @@ class XdsLb : public LoadBalancingPolicy {
       const char* name, const grpc_channel_args* args);
   void MaybeExitFallbackMode();
 
-  // Name of the service to connect to.
-  const char* service_name_ = nullptr;
+  // Name of the backend server to connect to.
+  const char* server_name_ = nullptr;
 
   // Name of the balancer to connect to.
   UniquePtr<char> balancer_name_;
@@ -617,21 +617,6 @@ void XdsLb::FallbackHelper::AddTraceEvent(TraceSeverity severity,
 }
 
 //
-// serverlist parsing code
-//
-
-// Returns the backend addresses extracted from the given addresses.
-ServerAddressList ExtractBackendAddresses(const ServerAddressList& addresses) {
-  ServerAddressList backend_addresses;
-  for (size_t i = 0; i < addresses.size(); ++i) {
-    if (!addresses[i].IsBalancer()) {
-      backend_addresses.emplace_back(addresses[i]);
-    }
-  }
-  return backend_addresses;
-}
-
-//
 // XdsLb::BalancerChannelState
 //
 
@@ -787,8 +772,8 @@ XdsLb::BalancerChannelState::BalancerCallState::BalancerCallState(
   // Init the LB call. Note that the LB call will progress every time there's
   // activity in xdslb_policy_->interested_parties(), which is comprised of
   // the polling entities from client_channel.
-  GPR_ASSERT(xdslb_policy()->service_name_ != nullptr);
-  GPR_ASSERT(xdslb_policy()->service_name_[0] != '\0');
+  GPR_ASSERT(xdslb_policy()->server_name_ != nullptr);
+  GPR_ASSERT(xdslb_policy()->server_name_[0] != '\0');
   const grpc_millis deadline =
       xdslb_policy()->lb_call_timeout_ms_ == 0
           ? GRPC_MILLIS_INF_FUTURE
@@ -801,7 +786,7 @@ XdsLb::BalancerChannelState::BalancerCallState::BalancerCallState(
       nullptr, deadline, nullptr);
   // Init the LB call request payload.
   grpc_slice request_payload_slice =
-      XdsEdsRequestCreateAndEncode(xdslb_policy()->service_name_);
+      XdsEdsRequestCreateAndEncode(xdslb_policy()->server_name_);
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
@@ -1269,11 +1254,11 @@ XdsLb::XdsLb(Args args)
   GPR_ASSERT(server_uri != nullptr);
   grpc_uri* uri = grpc_uri_parse(server_uri, true);
   GPR_ASSERT(uri->path[0] != '\0');
-  service_name_ = gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path);
+  server_name_ = gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO,
             "[xdslb %p] Will use '%s' as the server name for LB request.", this,
-            service_name_);
+            server_name_);
   }
   grpc_uri_destroy(uri);
   // Record LB call timeout.
@@ -1286,7 +1271,7 @@ XdsLb::XdsLb(Args args)
 }
 
 XdsLb::~XdsLb() {
-  gpr_free((void*)service_name_);
+  gpr_free((void*)server_name_);
   grpc_channel_args_destroy(args_);
   locality_list_.clear();
 }
@@ -1334,9 +1319,9 @@ void XdsLb::ResetBackoffLocked() {
 }
 
 void XdsLb::ProcessAddressesAndChannelArgsLocked(
-    const ServerAddressList& addresses, const grpc_channel_args& args) {
+    ServerAddressList addresses, const grpc_channel_args& args) {
   // Update fallback address list.
-  fallback_backend_addresses_ = ExtractBackendAddresses(addresses);
+  fallback_backend_addresses_ = std::move(addresses);
   // Make sure that GRPC_ARG_LB_POLICY_NAME is set in channel args,
   // since we use this to trigger the client_load_reporting filter.
   static const char* args_to_remove[] = {GRPC_ARG_LB_POLICY_NAME};
@@ -1387,7 +1372,7 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
     gpr_log(GPR_ERROR, "[xdslb %p] LB config parsing fails.", this);
     return;
   }
-  ProcessAddressesAndChannelArgsLocked(args.addresses, *args.args);
+  ProcessAddressesAndChannelArgsLocked(std::move(args.addresses), *args.args);
   locality_map_.UpdateLocked(locality_list_, child_policy_config_.get(), args_,
                              this);
   // Update the existing fallback policy. The fallback policy config and/or the
