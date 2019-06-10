@@ -49,17 +49,14 @@ int GetIntValueFromMetadata(
 void CallbackStreamingTestService::Echo(
     ServerContext* context, const EchoRequest* request, EchoResponse* response,
     experimental::ServerUnaryReactor<EchoRequest, EchoResponse>** reactor) {
-  *reactor = experimental::MakeReactor<EchoRequest, EchoResponse>(
-      context, [context, response] {
-        int response_msgs_size = GetIntValueFromMetadata(
-            kServerMessageSize, context->client_metadata(), 0);
-        if (response_msgs_size > 0) {
-          response->set_message(std::string(response_msgs_size, 'a'));
-        } else {
-          response->set_message("");
-        }
-        return Status::OK;
-      });
+  int response_msgs_size = GetIntValueFromMetadata(
+						   kServerMessageSize, context->client_metadata(), 0);
+  if (response_msgs_size > 0) {
+    response->set_message(std::string(response_msgs_size, 'a'));
+  } else {
+    response->set_message("");
+  }
+  experimental::MakeReactor(context, reactor, Status::OK);
 }
 
 void CallbackStreamingTestService::BidiStream(

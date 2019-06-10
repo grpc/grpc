@@ -675,70 +675,67 @@ class ServerUnaryReactor : public internal::ServerReactor {
   Status status_wanted_;
 };
 
-/// MakeReactor is a free function to make a simple ServerUnaryReactor that
-/// causes the invocation of a function. There are two overloaded variants,
-/// depending on the parameters and return type of the function being invoked.
-/// The variant is selected using a simple template-based specialization.
+/// MakeReactor is a free function to make a simple ServerUnaryReactor.
+/// There are two overloaded variants, depending on the parameters. The first
+/// parameter is the ServerContext object pointer for the call. The second
+/// parameter is a reference to the reactor value that the method handler must
+/// provide as an output parameter. The third parameter is either a Status
+/// (marking a fully handled RPC) or a method to invoke after the reactor is
+/// filled in, allowing further handling. 
 ///
 /// \param context [in] The ServerContext created by the library for this RPC
+/// \param reactor [out] A ServerUnaryReactor<Request,Response>** that is meant
+///                      to be filled in by the method handler invoking this
+///                      function. It will be filled in before executing func in
+///                      Variant 1 below.
+/// Variant 1:
 /// \param func [in] A function that will be executed when this RPC is being
-///        served. It can be of two acceptable signatures:
-///           1. void(const Request*, Response*,
-///                   ServerUnaryReactor<Request,Response>*)
-///              In this form, func is responsible or invoking (or causing the
-///              invocation of) Finish on the reactor in the 3rd argument.
-///              This form gives maximum flexibility since the reactor can be
-///              passed to other operations that may execute after a delay.
-///           2. Status(const Request*, Response*)
-///              In this form, func returns the Status of the RPC; the library
-///              never exposes the reactor to func and directly Finish'es the
-///              RPC with the Status returned. In this form, the function may
-///              not execute any delaying operations (such as a child RPC).
-///
-/// \return A pointer to a ServerUnaryReactor<Request,Response> that executes
-///         the given function when the RPC is invoked.
-template <typename Request, typename Response, typename Function>
-ServerUnaryReactor<Request, Response>* MakeReactor(
-    ServerContext* context, Function&& func,
-    typename std::enable_if<
-        std::is_same<typename std::result_of<Function(
-                         ServerUnaryReactor<Request, Response>*)>::type,
-                     void>::value>::type* = nullptr) {
+///                  served. It has no arguments or return value.
+/// Variant 2:
+/// \param status [in] The fully-completed status of the RPC. The library
+///                    never exposes the reactor to func and directly Finish'es
+///                    the RPC with this Status. Not applicable for methods that
+///                    require delaying operations (such as a child RPC)
+template <typename Request, typename Response, typename FunctionOrStatus>
+void MakeReactor(
+	    ServerContext* context, ServerUnaryReactor<Request, Response>** reactor,
+	    FunctionOrStatus&& func, typename std::enable_if<
+	    !std::is_same<Status, typename std::remove_const<typename std::remove_reference<FunctionOrStatus>::type>::type>::value>::type* = nullptr) {
   // TODO(vjpai): Specialize this to prevent counting OnCancel conditions
   class SimpleUnaryReactor final
       : public ServerUnaryReactor<Request, Response> {
    public:
-    explicit SimpleUnaryReactor(Function&& func) { func(this); }
-
+    void Run(FunctionOrStatus&& func) { func(this); }
    private:
     void OnDone() override { this->~SimpleUnaryReactor(); }
   };
-  return new (g_core_codegen_interface->grpc_call_arena_alloc(
+  auto* actual_reactor = 
+    new (g_core_codegen_interface->grpc_call_arena_alloc(
       context->c_call(), sizeof(SimpleUnaryReactor)))
-      SimpleUnaryReactor(std::forward<Function>(func));
+      SimpleUnaryReactor;
+  *reactor = actual_reactor;
+  actual_reactor->Run(std::forward<FunctionOrStatus>(func));
 }
 
-template <typename Request, typename Response, typename Function>
-ServerUnaryReactor<Request, Response>* MakeReactor(
-    ServerContext* context, Function&& func,
-    typename std::enable_if<std::is_same<
-        Status, typename std::remove_const<typename std::remove_reference<
-                    typename std::result_of<Function()>::type>::type>::type>::
-                                value>::type* = nullptr) {
+template <typename Request, typename Response, typename FunctionOrStatus>
+void MakeReactor(
+	    ServerContext* context, ServerUnaryReactor<Request, Response>** reactor,
+	    FunctionOrStatus&& status, typename std::enable_if<
+  std::is_same<Status, typename std::remove_const<typename std::remove_reference<FunctionOrStatus>::type>::type>::value>::type* = nullptr) {
   // TODO(vjpai): Specialize this to prevent counting OnCancel conditions
   class ReallySimpleUnaryReactor final
       : public ServerUnaryReactor<Request, Response> {
    public:
-    explicit ReallySimpleUnaryReactor(Function&& func) {
-      this->Finish(std::move(func()));
+    explicit ReallySimpleUnaryReactor(FunctionOrStatus&& status) {
+      this->Finish(std::move(status));
     }
 
    private:
     void OnDone() override { this->~ReallySimpleUnaryReactor(); }
   };
-  return new (g_core_codegen_interface->grpc_call_arena_alloc(
+  *reactor = new (g_core_codegen_interface->grpc_call_arena_alloc(
       context->c_call(), sizeof(ReallySimpleUnaryReactor)))
-      ReallySimpleUnaryReactor(std::forward<Function>(func));
+      ReallySimpleUnaryReactor(std::forward<FunctionOrStatus>(status));
 }
 
 }  // namespace experimental
