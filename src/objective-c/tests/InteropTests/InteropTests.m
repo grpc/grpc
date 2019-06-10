@@ -347,6 +347,10 @@ initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
   return NO;
 }
 
++ (BOOL)canRunCompressionTest {
+  return YES;
+}
+
 + (void)setUp {
 #ifdef GRPC_COMPILE_WITH_CRONET
   configureCronet();
@@ -430,10 +434,16 @@ initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
 
   __block BOOL messageReceived = NO;
   __block BOOL done = NO;
+  __block BOOL initialMetadataReceived = YES;
   NSCondition *cond = [[NSCondition alloc] init];
   GRPCUnaryProtoCall *call = [_service
       emptyCallWithMessage:request
-           responseHandler:[[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+           responseHandler:[[InteropTestsBlockCallbacks alloc]
+                               initWithInitialMetadataCallback:^(NSDictionary *initialMetadata) {
+                                 [cond lock];
+                                 initialMetadataReceived = YES;
+                                 [cond unlock];
+                               }
                                messageCallback:^(id message) {
                                  if (message) {
                                    id expectedResponse = [GPBEmpty message];
@@ -459,6 +469,7 @@ initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
   while (!done && [deadline timeIntervalSinceNow] > 0) {
     [cond waitUntilDate:deadline];
   }
+  XCTAssertTrue(initialMetadataReceived);
   XCTAssertTrue(messageReceived);
   XCTAssertTrue(done);
   [cond unlock];
@@ -701,21 +712,21 @@ initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
   XCTAssertNotNil([[self class] host]);
   __weak XCTestExpectation *expectation =
       [self expectationWithDescription:@"HigherResponseSizeLimit"];
+  __block NSError *callError = nil;
 
   RMTSimpleRequest *request = [RMTSimpleRequest message];
   const size_t kPayloadSize = 5 * 1024 * 1024;  // 5MB
   request.responseSize = kPayloadSize;
 
   [GRPCCall setResponseSizeLimit:6 * 1024 * 1024 forHost:[[self class] host]];
-
   [_service unaryCallWithRequest:request
                          handler:^(RMTSimpleResponse *response, NSError *error) {
-                           XCTAssertNil(error, @"Finished with unexpected error: %@", error);
-                           XCTAssertEqual(response.payload.body.length, kPayloadSize);
+                           callError = error;
                            [expectation fulfill];
                          }];
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+  XCTAssertNil(callError, @"Finished with unexpected error: %@", callError);
 }
 
 - (void)testClientStreamingRPC {
@@ -1014,6 +1025,78 @@ initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
+- (void)testInitialMetadataWithV2API {
+  __weak XCTestExpectation *initialMetadataReceived =
+      [self expectationWithDescription:@"Received initial metadata."];
+  __weak XCTestExpectation *closeReceived = [self expectationWithDescription:@"RPC completed."];
+
+  __block NSDictionary *init_md =
+      [NSDictionary dictionaryWithObjectsAndKeys:@"FOOBAR", @"x-grpc-test-echo-initial", nil];
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.initialMetadata = init_md;
+  options.transportType = self.class.transportType;
+  options.PEMRootCertificates = self.class.PEMRootCertificates;
+  options.hostNameOverride = [[self class] hostNameOverride];
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  __block bool init_md_received = NO;
+  GRPCUnaryProtoCall *call = [_service
+      unaryCallWithMessage:request
+           responseHandler:[[InteropTestsBlockCallbacks alloc]
+                               initWithInitialMetadataCallback:^(NSDictionary *initialMetadata) {
+                                 XCTAssertEqualObjects(initialMetadata[@"x-grpc-test-echo-initial"],
+                                                       init_md[@"x-grpc-test-echo-initial"]);
+                                 init_md_received = YES;
+                                 [initialMetadataReceived fulfill];
+                               }
+                               messageCallback:nil
+                               closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                                 XCTAssertNil(error, @"Unexpected error: %@", error);
+                                 [closeReceived fulfill];
+                               }]
+               callOptions:options];
+
+  [call start];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
+- (void)testTrailingMetadataWithV2API {
+  // This test needs to be disabled for remote test because interop server grpc-test
+  // does not send trailing binary metadata.
+  if (isRemoteInteropTest([[self class] host])) {
+    return;
+  }
+
+  __weak XCTestExpectation *expectation =
+      [self expectationWithDescription:@"Received trailing metadata."];
+  const unsigned char raw_bytes[] = {0x1, 0x2, 0x3, 0x4};
+  NSData *trailer_data = [NSData dataWithBytes:raw_bytes length:sizeof(raw_bytes)];
+  __block NSDictionary *trailer = [NSDictionary
+      dictionaryWithObjectsAndKeys:trailer_data, @"x-grpc-test-echo-trailing-bin", nil];
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.initialMetadata = trailer;
+  options.transportType = self.class.transportType;
+  options.PEMRootCertificates = self.class.PEMRootCertificates;
+  options.hostNameOverride = [[self class] hostNameOverride];
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  GRPCUnaryProtoCall *call = [_service
+      unaryCallWithMessage:request
+           responseHandler:
+               [[InteropTestsBlockCallbacks alloc]
+                   initWithInitialMetadataCallback:nil
+                                   messageCallback:nil
+                                     closeCallback:^(NSDictionary *trailingMetadata,
+                                                     NSError *error) {
+                                       XCTAssertNil(error, @"Unexpected error: %@", error);
+                                       XCTAssertEqualObjects(
+                                           trailingMetadata[@"x-grpc-test-echo-trailing-bin"],
+                                           trailer[@"x-grpc-test-echo-trailing-bin"]);
+                                       [expectation fulfill];
+                                     }]
+               callOptions:options];
+  [call start];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
 - (void)testCancelAfterFirstResponseRPC {
   XCTAssertNotNil([[self class] host]);
   __weak XCTestExpectation *expectation =
@@ -1148,13 +1231,7 @@ initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
-- (void)testCompressedUnaryRPC {
-  // This test needs to be disabled for remote test because interop server grpc-test
-  // does not support compression.
-  if (isRemoteInteropTest([[self class] host])) {
-    return;
-  }
-  XCTAssertNotNil([[self class] host]);
+- (void)RPCWithCompressMethod:(GRPCCompressionAlgorithm)compressMethod {
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"LargeUnary"];
 
   RMTSimpleRequest *request = [RMTSimpleRequest message];
@@ -1162,7 +1239,7 @@ initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
   request.responseSize = 314159;
   request.payload.body = [NSMutableData dataWithLength:271828];
   request.expectCompressed.value = YES;
-  [GRPCCall setDefaultCompressMethod:GRPCCompressGzip forhost:[[self class] host]];
+  [GRPCCall setDefaultCompressMethod:compressMethod forhost:[[self class] host]];
 
   [_service unaryCallWithRequest:request
                          handler:^(RMTSimpleResponse *response, NSError *error) {
@@ -1177,6 +1254,67 @@ initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
                          }];
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
+- (void)RPCWithCompressMethodWithV2API:(GRPCCompressionAlgorithm)compressMethod {
+  __weak XCTestExpectation *expectMessage =
+      [self expectationWithDescription:@"Reived response from server."];
+  __weak XCTestExpectation *expectComplete = [self expectationWithDescription:@"RPC completed."];
+
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  request.responseType = RMTPayloadType_Compressable;
+  request.responseSize = 314159;
+  request.payload.body = [NSMutableData dataWithLength:271828];
+  request.expectCompressed.value = YES;
+
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.transportType = self.class.transportType;
+  options.PEMRootCertificates = self.class.PEMRootCertificates;
+  options.hostNameOverride = [[self class] hostNameOverride];
+  options.compressionAlgorithm = compressMethod;
+
+  GRPCUnaryProtoCall *call = [_service
+      unaryCallWithMessage:request
+           responseHandler:[[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+                               messageCallback:^(id message) {
+                                 XCTAssertNotNil(message);
+                                 if (message) {
+                                   RMTSimpleResponse *expectedResponse =
+                                       [RMTSimpleResponse message];
+                                   expectedResponse.payload.type = RMTPayloadType_Compressable;
+                                   expectedResponse.payload.body =
+                                       [NSMutableData dataWithLength:314159];
+                                   XCTAssertEqualObjects(message, expectedResponse);
+
+                                   [expectMessage fulfill];
+                                 }
+                               }
+                               closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                                 XCTAssertNil(error, @"Unexpected error: %@", error);
+                                 [expectComplete fulfill];
+                               }]
+               callOptions:options];
+  [call start];
+
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
+- (void)testCompressedUnaryRPC {
+  if ([[self class] canRunCompressionTest]) {
+    for (GRPCCompressionAlgorithm compress = GRPCCompressDeflate;
+         compress <= GRPCStreamCompressGzip; ++compress) {
+      [self RPCWithCompressMethod:compress];
+    }
+  }
+}
+
+- (void)testCompressedUnaryRPCWithV2API {
+  if ([[self class] canRunCompressionTest]) {
+    for (GRPCCompressionAlgorithm compress = GRPCCompressDeflate;
+         compress <= GRPCStreamCompressGzip; ++compress) {
+      [self RPCWithCompressMethodWithV2API:compress];
+    }
+  }
 }
 
 #ifndef GRPC_COMPILE_WITH_CRONET
@@ -1217,6 +1355,40 @@ initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
                               [expectation fulfill];
                             }
                           }];
+
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
+- (void)testKeepaliveWithV2API {
+  XCTAssertNotNil([[self class] host]);
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Keepalive"];
+
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.transportType = self.class.transportType;
+  options.PEMRootCertificates = self.class.PEMRootCertificates;
+  options.hostNameOverride = [[self class] hostNameOverride];
+  options.keepaliveInterval = 1.5;
+  options.keepaliveTimeout = 0;
+
+  id request =
+      [RMTStreamingOutputCallRequest messageWithPayloadSize:@21782 requestedResponseSize:@31415];
+
+  __block GRPCStreamingProtoCall *call = [_service
+      fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
+                                            initWithInitialMetadataCallback:nil
+                                                            messageCallback:nil
+                                                              closeCallback:^(
+                                                                  NSDictionary *trailingMetadata,
+                                                                  NSError *error) {
+                                                                XCTAssertNotNil(error);
+                                                                XCTAssertEqual(
+                                                                    error.code,
+                                                                    GRPC_STATUS_UNAVAILABLE);
+                                                                [expectation fulfill];
+                                                              }]
+                            callOptions:options];
+  [call start];
+  [call writeMessage:request];
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
