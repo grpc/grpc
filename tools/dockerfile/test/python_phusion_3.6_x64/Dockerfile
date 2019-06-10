@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM phusion/baseimage:latest
+FROM phusion/baseimage:0.11
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
@@ -62,5 +62,5 @@ RUN mkdir /var/local/jenkins
 # Define the default command.
 CMD ["bash"]
 
-RUN apt-get install -y python3.6
+RUN apt-get install -y python3.6 python3-distutils
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3.6
