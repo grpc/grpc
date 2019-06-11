@@ -38,6 +38,12 @@ namespace grpc_core {
 // Provides a light-weight view over a char array or a slice, similar but not
 // identical to absl::string_view.
 //
+// Any method that has the same name as absl::string_view MUST HAVE identical
+// semantics to what absl::string_view provides.
+//
+// Methods that are not part of absl::string_view API, must be clearly
+// annotated.
+//
 // StringView does not own the buffers that back the view. Callers must ensure
 // the buffer stays around while the StringView is accessible.
 //
@@ -56,6 +62,7 @@ class StringView final {
   constexpr StringView(const char* ptr, size_t size) : ptr_(ptr), size_(size) {}
   constexpr StringView(const char* ptr)
       : StringView(ptr, ptr == nullptr ? 0 : strlen(ptr)) {}
+  // Not part of absl::string_view API.
   StringView(const grpc_slice& slice)
       : StringView(reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(slice)),
                    GRPC_SLICE_LENGTH(slice)) {}
@@ -100,6 +107,8 @@ class StringView final {
 
   // Creates a dup of the string viewed by this class.
   // Return value is null-terminated and never nullptr.
+  //
+  // Not part of absl::string_view API.
   grpc_core::UniquePtr<char> dup() const {
     char* str = static_cast<char*>(gpr_malloc(size_ + 1));
     if (size_ > 0) memcpy(str, ptr_, size_);
@@ -107,6 +116,7 @@ class StringView final {
     return grpc_core::UniquePtr<char>(str);
   }
 
+  // Not part of absl::string_view API.
   int cmp(StringView other) const {
     const size_t len = GPR_MIN(size(), other.size());
     const int ret = strncmp(data(), other.data(), len);

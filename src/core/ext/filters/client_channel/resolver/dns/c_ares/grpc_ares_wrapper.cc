@@ -521,9 +521,9 @@ static bool target_matches_localhost(const char* name) {
 #ifdef GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY
 static bool inner_maybe_resolve_localhost_manually_locked(
     const char* name, const char* default_port,
-    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs, char** host,
-    char** port) {
-  gpr_split_host_port(name, host, port);
+    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs,
+    grpc_core::UniquePtr<char>* host, grpc_core::UniquePtr<char>* port) {
+  grpc_core::SplitHostPort(name, host, port);
   if (*host == nullptr) {
     gpr_log(GPR_ERROR,
             "Failed to parse %s into host:port during manual localhost "
@@ -539,12 +539,12 @@ static bool inner_maybe_resolve_localhost_manually_locked(
               name);
       return false;
     }
-    *port = gpr_strdup(default_port);
+    port->reset(gpr_strdup(default_port));
   }
   if (gpr_stricmp(*host, "localhost") == 0) {
     GPR_ASSERT(*addrs == nullptr);
     *addrs = grpc_core::MakeUnique<grpc_core::ServerAddressList>();
-    uint16_t numeric_port = grpc_strhtons(*port);
+    uint16_t numeric_port = grpc_strhtons(port->get());
     // Append the ipv6 loopback address.
     struct sockaddr_in6 ipv6_loopback_addr;
     memset(&ipv6_loopback_addr, 0, sizeof(ipv6_loopback_addr));
@@ -572,13 +572,10 @@ static bool inner_maybe_resolve_localhost_manually_locked(
 static bool grpc_ares_maybe_resolve_localhost_manually_locked(
     const char* name, const char* default_port,
     grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs) {
-  char* host = nullptr;
-  char* port = nullptr;
-  bool out = inner_maybe_resolve_localhost_manually_locked(name, default_port,
-                                                           addrs, &host, &port);
-  gpr_free(host);
-  gpr_free(port);
-  return out;
+  grpc_core::UniquePtr<char> host;
+  grpc_core::UniquePtr<char> port;
+  return inner_maybe_resolve_localhost_manually_locked(name, default_port,
+                                                       addrs, &host, &port);
 }
 #else  /* GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY */
 static bool grpc_ares_maybe_resolve_localhost_manually_locked(
