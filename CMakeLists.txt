@@ -144,6 +144,10 @@ include(cmake/benchmark.cmake)
 include(cmake/address_sorting.cmake)
 include(cmake/nanopb.cmake)
 
+if(gRPC_BUILD_TESTS)
+  include(cmake/upb.cmake)
+endif()
+
 if(NOT MSVC)
   set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -std=c99")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
@@ -5795,6 +5799,7 @@ target_include_directories(upb
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
 )
   # avoid dependency on libstdc++
   if (_gRPC_CORE_NOSTDCXX_FLAGS)
