@@ -212,9 +212,9 @@ def grpc_deps():
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            sha256 = "34136146171af0214bc5578bd22adace4c5a98fd00cff758eb57b7151cd16b51",
-            strip_prefix = "upb-d16bf99ac4658793748cda3251226059892b3b7b",
-            url = "https://github.com/google/upb/archive/d16bf99ac4658793748cda3251226059892b3b7b.tar.gz",
+            sha256 = "3aa0c5aff130d97618fe137e3e76603b2381e3698cd7ca7a4a54327f7c44c69c",
+            strip_prefix = "upb-ef6ce94bfecf36fb57acd8a8b470c0560959f063",
+            url = "https://github.com/google/upb/archive/ef6ce94bfecf36fb57acd8a8b470c0560959f063.tar.gz",
         )
     if "data_plane_api" not in native.existing_rules():
         http_archive(
