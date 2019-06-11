@@ -66,7 +66,7 @@
   "unit._server_ssl_cert_config_test.ServerSSLCertReloadTestWithClientAuth",
   "unit._server_ssl_cert_config_test.ServerSSLCertReloadTestWithoutClientAuth",
   "unit._server_test.ServerTest",
-  "unit._server_wait_for_termination.ServerWaitForTerminationTest",
+  "unit._server_wait_for_termination_test.ServerWaitForTerminationTest",
   "unit._session_cache_test.SSLSessionCacheTest",
   "unit._signal_handling_test.SignalHandlingTest",
   "unit._version_test.VersionTest",
