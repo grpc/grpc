@@ -530,12 +530,7 @@ function _makeStub($args)
         throw new Exception('Missing argument: --test_case is required');
     }
 
-    if ($args['server_port'] === '443') {
-        $server_address = $args['server_host'];
-    } else {
-        $server_address = $args['server_host'].':'.$args['server_port'];
-    }
-
+    $server_address = $args['server_host'].':'.$args['server_port'];
     $test_case = $args['test_case'];
 
     $host_override = '';

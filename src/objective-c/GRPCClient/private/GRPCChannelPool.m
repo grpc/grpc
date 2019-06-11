@@ -118,9 +118,7 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
     _lastTimedDestroy = nil;
 
     grpc_call *unmanagedCall =
-        [_wrappedChannel unmanagedCallWithPath:path
-                               completionQueue:[GRPCCompletionQueue completionQueue]
-                                   callOptions:callOptions];
+        [_wrappedChannel unmanagedCallWithPath:path completionQueue:queue callOptions:callOptions];
     if (unmanagedCall == NULL) {
       NSAssert(unmanagedCall != NULL, @"Unable to create grpc_call object");
       return nil;
