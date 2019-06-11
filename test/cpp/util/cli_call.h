@@ -27,9 +27,11 @@
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
 
-namespace grpc {
+namespace grpc_impl {
 
 class ClientContext;
+}  // namespace grpc_impl
+namespace grpc {
 
 namespace testing {
 
@@ -85,7 +87,7 @@ class CliCall final {
 
  private:
   std::unique_ptr<grpc::GenericStub> stub_;
-  grpc::ClientContext ctx_;
+  grpc_impl::ClientContext ctx_;
   std::unique_ptr<grpc::GenericClientAsyncReaderWriter> call_;
   grpc::CompletionQueue cq_;
   gpr_mu write_mu_;
