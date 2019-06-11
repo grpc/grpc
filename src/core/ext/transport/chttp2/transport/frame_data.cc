@@ -109,7 +109,6 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
     end = GRPC_SLICE_END_PTR(*slice);
     cur = beg;
     uint32_t message_flags;
-    char* msg;
 
     if (cur == end) {
       grpc_slice_buffer_remove_first(slices);
@@ -132,15 +131,16 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
             p->is_frame_compressed = true; /* GPR_TRUE */
             break;
           default:
+            char* msg;
             gpr_asprintf(&msg, "Bad GRPC frame type 0x%02x", p->frame_type);
             p->error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
             p->error = grpc_error_set_int(p->error, GRPC_ERROR_INT_STREAM_ID,
                                           static_cast<intptr_t>(s->id));
             gpr_free(msg);
-            msg = grpc_dump_slice(*slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-            p->error = grpc_error_set_str(p->error, GRPC_ERROR_STR_RAW_BYTES,
-                                          grpc_slice_from_copied_string(msg));
-            gpr_free(msg);
+            p->error =
+                grpc_error_set_str(p->error, GRPC_ERROR_STR_RAW_BYTES,
+                                   grpc_dump_slice_to_slice(
+                                       *slice, GPR_DUMP_HEX | GPR_DUMP_ASCII));
             p->error =
                 grpc_error_set_int(p->error, GRPC_ERROR_INT_OFFSET, cur - beg);
             p->state = GRPC_CHTTP2_DATA_ERROR;

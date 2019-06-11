@@ -28,6 +28,7 @@
 #include <string.h>
 
 #include "src/core/lib/gpr/murmur_hash.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/transport/static_metadata.h"
 
@@ -301,6 +302,10 @@ inline uint32_t grpc_slice_hash_internal(const grpc_slice& s) {
   return s.refcount == nullptr ? grpc_slice_default_hash_internal(s)
                                : grpc_slice_hash_refcounted(s);
 }
+
+grpc_slice grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char> p,
+                                        size_t len);
+grpc_slice grpc_slice_from_moved_string(grpc_core::UniquePtr<char> p);
 
 // Returns the memory used by this slice, not counting the slice structure
 // itself. This means that inlined and slices from static strings will return
