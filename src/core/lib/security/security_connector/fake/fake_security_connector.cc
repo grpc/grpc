@@ -110,14 +110,15 @@ class grpc_fake_channel_security_connector final
     grpc_core::StringView authority_ignored_port;
     grpc_core::StringView target_hostname;
     grpc_core::StringView target_ignored_port;
-    gpr_split_host_port(host, &authority_hostname, &authority_ignored_port);
-    gpr_split_host_port(target_, &target_hostname, &target_ignored_port);
+    grpc_core::SplitHostPort(host, &authority_hostname,
+                             &authority_ignored_port);
+    grpc_core::SplitHostPort(target_, &target_hostname, &target_ignored_port);
     if (target_name_override_ != nullptr) {
       grpc_core::StringView fake_security_target_name_override_hostname;
       grpc_core::StringView fake_security_target_name_override_ignored_port;
-      gpr_split_host_port(target_name_override_,
-                          &fake_security_target_name_override_hostname,
-                          &fake_security_target_name_override_ignored_port);
+      grpc_core::SplitHostPort(
+          target_name_override_, &fake_security_target_name_override_hostname,
+          &fake_security_target_name_override_ignored_port);
       if (authority_hostname != fake_security_target_name_override_hostname) {
         gpr_log(GPR_ERROR,
                 "Authority (host) '%s' != Fake Security Target override '%s'",

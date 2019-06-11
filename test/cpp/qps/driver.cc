@@ -54,7 +54,7 @@ namespace testing {
 static std::string get_host(const std::string& worker) {
   grpc_core::StringView host;
   grpc_core::StringView port;
-  gpr_split_host_port(worker.c_str(), &host, &port);
+  grpc_core::SplitHostPort(worker.c_str(), &host, &port);
   return std::string(host.data(), host.size());
 }
 
@@ -319,11 +319,10 @@ std::unique_ptr<ScenarioResult> RunScenario(
       client_config.add_server_targets(cli_target);
     } else {
       std::string host;
-      char* cli_target;
+      grpc_core::UniquePtr<char> cli_target;
       host = get_host(workers[i]);
-      gpr_join_host_port(&cli_target, host.c_str(), init_status.port());
-      client_config.add_server_targets(cli_target);
-      gpr_free(cli_target);
+      grpc_core::JoinHostPort(&cli_target, host.c_str(), init_status.port());
+      client_config.add_server_targets(cli_target.get());
     }
   }
 

@@ -107,7 +107,7 @@ SpiffeChannelSecurityConnector::SpiffeChannelSecurityConnector(
   check_arg_ = ServerAuthorizationCheckArgCreate(this);
   grpc_core::StringView host;
   grpc_core::StringView port;
-  gpr_split_host_port(target_name, &host, &port);
+  grpc_core::SplitHostPort(target_name, &host, &port);
   target_name_ = host.dup();
 }
 

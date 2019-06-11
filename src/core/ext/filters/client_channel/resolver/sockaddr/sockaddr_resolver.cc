@@ -31,7 +31,6 @@
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"

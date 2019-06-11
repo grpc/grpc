@@ -34,7 +34,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/combiner.h"

@@ -77,7 +77,7 @@ class grpc_ssl_channel_security_connector final
         verify_options_(&config->verify_options) {
     grpc_core::StringView host;
     grpc_core::StringView port;
-    gpr_split_host_port(target_name, &host, &port);
+    grpc_core::SplitHostPort(target_name, &host, &port);
     target_name_ = host.dup();
   }
 

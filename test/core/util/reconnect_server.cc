@@ -25,7 +25,6 @@
 #include <grpc/support/time.h>
 #include <string.h>
 
-#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_server.h"

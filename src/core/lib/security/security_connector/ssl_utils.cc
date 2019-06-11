@@ -185,7 +185,7 @@ int grpc_ssl_host_matches_name(const tsi_peer* peer,
                                grpc_core::StringView peer_name) {
   grpc_core::StringView allocated_name;
   grpc_core::StringView ignored_port;
-  gpr_split_host_port(peer_name, &allocated_name, &ignored_port);
+  grpc_core::SplitHostPort(peer_name, &allocated_name, &ignored_port);
   if (allocated_name.empty()) return 0;
 
   // IPv6 zone-id should not be included in comparisons.

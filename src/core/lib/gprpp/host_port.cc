@@ -29,19 +29,22 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/string_view.h"
 
-int gpr_join_host_port(char** out, const char* host, int port) {
+namespace grpc_core {
+int JoinHostPort(UniquePtr<char>* out, const char* host, int port) {
+  char* tmp;
+  int ret;
   if (host[0] != '[' && strchr(host, ':') != nullptr) {
     /* IPv6 literals must be enclosed in brackets. */
-    return gpr_asprintf(out, "[%s]:%d", host, port);
+    ret = gpr_asprintf(&tmp, "[%s]:%d", host, port);
   } else {
     /* Ordinary non-bracketed host:port. */
-    return gpr_asprintf(out, "%s:%d", host, port);
+    ret = gpr_asprintf(&tmp, "%s:%d", host, port);
   }
+  out->reset(tmp);
+  return ret;
 }
 
-bool gpr_split_host_port(grpc_core::StringView name,
-                         grpc_core::StringView* host,
-                         grpc_core::StringView* port) {
+bool SplitHostPort(StringView name, StringView* host, StringView* port) {
   if (name[0] == '[') {
     /* Parse a bracketed host, typically an IPv6 literal. */
     const size_t rbracket = name.find(']', 1);
@@ -82,11 +85,13 @@ bool gpr_split_host_port(grpc_core::StringView name,
   return true;
 }
 
-bool gpr_split_host_port(grpc_core::StringView name, char** host, char** port) {
-  grpc_core::StringView host_view;
-  grpc_core::StringView port_view;
-  const bool ret = gpr_split_host_port(name, &host_view, &port_view);
-  *host = host_view.empty() ? nullptr : host_view.dup().release();
-  *port = port_view.empty() ? nullptr : port_view.dup().release();
+bool SplitHostPort(StringView name, UniquePtr<char>* host,
+                   UniquePtr<char>* port) {
+  StringView host_view;
+  StringView port_view;
+  const bool ret = SplitHostPort(name, &host_view, &port_view);
+  host->reset(host_view.empty() ? nullptr : host_view.dup().release());
+  port->reset(port_view.empty() ? nullptr : port_view.dup().release());
   return ret;
 }
+}  // namespace grpc_core

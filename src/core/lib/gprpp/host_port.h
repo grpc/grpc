@@ -21,7 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/string_view.h"
+
+namespace grpc_core {
 
 /** Given a host and port, creates a newly-allocated string of the form
    "host:port" or "[ho:st]:port", depending on whether the host contains colons
@@ -29,19 +32,17 @@
    brackets will not be added.
 
    Usage is similar to gpr_asprintf: returns the number of bytes written
-   (excluding the final '\0'), and *out points to a string which must later be
-   destroyed using gpr_free().
+   (excluding the final '\0'), and *out points to a string.
 
    In the unlikely event of an error, returns -1 and sets *out to NULL. */
-int gpr_join_host_port(char** out, const char* host, int port);
+int JoinHostPort(UniquePtr<char>* out, const char* host, int port);
 
 /** Given a name in the form "host:port" or "[ho:st]:port", split into hostname
    and port number.
 
    There are two variants of this method:
    1) StringView ouptut: port and host are returned as views on name.
-   2) char* output: port and host are copied into newly allocated strings,
-                    which must later be destroyed using gpr_free().
+   2) char* output: port and host are copied into newly allocated strings.
 
    Prefer variant (1) over (2), because no allocation or copy is performed in
    variant (1).  Use (2) only when interacting with C API that mandate
@@ -49,9 +50,10 @@ int gpr_join_host_port(char** out, const char* host, int port);
 
    Return true on success, false on failure. Guarantees *host and *port are
    cleared on failure. */
-bool gpr_split_host_port(grpc_core::StringView name,
-                         grpc_core::StringView* host,
-                         grpc_core::StringView* port);
-bool gpr_split_host_port(grpc_core::StringView name, char** host, char** port);
+bool SplitHostPort(StringView name, StringView* host, StringView* port);
+bool SplitHostPort(StringView name, UniquePtr<char>* host,
+                   UniquePtr<char>* port);
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_GPRPP_HOST_PORT_H */
