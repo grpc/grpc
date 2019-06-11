@@ -89,6 +89,12 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
 };
 
 struct XdsLocalityInfo {
+  bool operator==(const XdsLocalityInfo& other) const {
+    return *locality_name == *other.locality_name &&
+           serverlist == other.serverlist && lb_weight == other.lb_weight &&
+           priority == other.priority;
+  }
+
   RefCountedPtr<XdsLocalityName> locality_name;
   ServerAddressList serverlist;
   uint32_t lb_weight;

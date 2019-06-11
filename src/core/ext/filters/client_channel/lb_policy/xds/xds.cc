@@ -1079,11 +1079,7 @@ void XdsLb::BalancerChannelState::BalancerCallState::
     lb_calld->ScheduleNextClientLoadReportLocked();
   }
   // Ignore identical update.
-  // TODO(juanlishen): Better define identical update. When we support multiple
-  // localities, we may need to use a map to hold the update info.
-  if (!xdslb_policy->locality_list_.empty() &&
-      xdslb_policy->locality_list_[0].serverlist ==
-          update.locality_list[0].serverlist) {
+  if (xdslb_policy->locality_list_ == update.locality_list) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       gpr_log(GPR_INFO,
               "[xdslb %p] Incoming server list identical to current, "

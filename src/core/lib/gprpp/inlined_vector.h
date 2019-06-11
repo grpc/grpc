@@ -100,7 +100,7 @@ class InlinedVector {
   bool operator==(const InlinedVector& other) const {
     if (size_ != other.size_) return false;
     for (size_t i = 0; i < size_; ++i) {
-      if (data()[i] != other.data()[i]) return false;
+      if (!(data()[i] == other.data()[i])) return false;
     }
     return true;
   }

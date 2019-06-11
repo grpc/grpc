@@ -45,10 +45,6 @@ bool ServerAddress::operator==(const ServerAddress& other) const {
          grpc_channel_args_compare(args_, other.args_) == 0;
 }
 
-bool ServerAddress::operator!=(const ServerAddress& other) const {
-  return !(*this == other);
-}
-
 bool ServerAddress::IsBalancer() const {
   return grpc_channel_arg_get_bool(
       grpc_channel_args_find(args_, GRPC_ARG_ADDRESS_IS_BALANCER), false);
