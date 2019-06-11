@@ -80,7 +80,7 @@ static grpc_error* windows_blocking_resolve_address(
       gpr_free(msg);
       goto done;
     }
-    port = gpr_strdup(default_port);
+    port.reset(gpr_strdup(default_port));
   }
 
   /* Call getaddrinfo */
