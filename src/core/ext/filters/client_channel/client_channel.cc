@@ -265,7 +265,11 @@ class ChannelData {
   UniquePtr<char> health_check_service_name_;
   RefCountedPtr<ServiceConfig> saved_service_config_;
   bool received_first_resolver_result_ = false;
+  // The number of SubchannelWrapper instances referencing a given Subchannel.
   Map<Subchannel*, int> subchannel_refcount_map_;
+  // Pending ConnectedSubchannel updates for each SubchannelWrapper.
+  // Updates are queued here in the control plane combiner and then applied
+  // in the data plane combiner when the picker is updated.
   Map<RefCountedPtr<SubchannelWrapper>, RefCountedPtr<ConnectedSubchannel>,
       RefCountedPtrLess<SubchannelWrapper>>
       pending_subchannel_updates_;
@@ -717,8 +721,8 @@ class CallData {
 //
 
 // This class is a wrapper for Subchannel that hides details of the
-// channel's implementation (such as the health check service name) from
-// the LB policy API.
+// channel's implementation (such as the health check service name and
+// connected subchannel) from the LB policy API.
 //
 // Note that no synchronization is needed here, because even if the
 // underlying subchannel is shared between channels, this wrapper will only
@@ -782,7 +786,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
 
   void WatchConnectivityState(
       grpc_connectivity_state initial_state,
-      UniquePtr<ConnectivityStateWatcher> watcher) override {
+      UniquePtr<ConnectivityStateWatcherInterface> watcher) override {
     auto& watcher_wrapper = watcher_map_[watcher.get()];
     GPR_ASSERT(watcher_wrapper == nullptr);
     watcher_wrapper = New<WatcherWrapper>(
@@ -790,11 +794,12 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
     subchannel_->WatchConnectivityState(
         initial_state,
         UniquePtr<char>(gpr_strdup(health_check_service_name_.get())),
-        OrphanablePtr<Subchannel::ConnectivityStateWatcher>(watcher_wrapper));
+        OrphanablePtr<Subchannel::ConnectivityStateWatcherInterface>(
+            watcher_wrapper));
   }
 
   void CancelConnectivityStateWatch(
-      ConnectivityStateWatcher* watcher) override {
+      ConnectivityStateWatcherInterface* watcher) override {
     auto it = watcher_map_.find(watcher);
     GPR_ASSERT(it != watcher_map_.end());
     subchannel_->CancelConnectivityStateWatch(health_check_service_name_.get(),
@@ -825,14 +830,25 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
   }
 
  private:
-  // We wrap the watcher passed to us from the LB policy inside of this
-  // one before passing it to the underlying subchannel.  This allows us
-  // to set the connected subchannel before passing the result back to
-  // the LB policy.
-  class WatcherWrapper : public Subchannel::ConnectivityStateWatcher {
+  // Subchannel and SubchannelInterface have different interfaces for
+  // their respective ConnectivityStateWatcherInterface classes.
+  // The one in Subchannel updates the ConnectedSubchannel along with
+  // the state, whereas the one in SubchannelInterface does not expose
+  // the ConnectedSubchannel.
+  //
+  // This wrapper provides a bridge between the two.  It implements
+  // Subchannel::ConnectivityStateWatcherInterface and wraps
+  // the instance of SubchannelInterface::ConnectivityStateWatcherInterface
+  // that was passed in by the LB policy.  We pass an instance of this
+  // class to the underlying Subchannel, and when we get updates from
+  // the subchannel, we pass those on to the wrapped watcher to return
+  // the update to the LB policy.  This allows us to set the connected
+  // subchannel before passing the result back to the LB policy.
+  class WatcherWrapper : public Subchannel::ConnectivityStateWatcherInterface {
    public:
     WatcherWrapper(
-        UniquePtr<SubchannelInterface::ConnectivityStateWatcher> watcher,
+        UniquePtr<SubchannelInterface::ConnectivityStateWatcherInterface>
+            watcher,
         RefCountedPtr<SubchannelWrapper> parent)
         : watcher_(std::move(watcher)), parent_(std::move(parent)) {}
 
@@ -901,7 +917,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
       grpc_closure closure_;
     };
 
-    UniquePtr<SubchannelInterface::ConnectivityStateWatcher> watcher_;
+    UniquePtr<SubchannelInterface::ConnectivityStateWatcherInterface> watcher_;
     RefCountedPtr<SubchannelWrapper> parent_;
   };
 
@@ -934,7 +950,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
   // subchannel.  This is needed so that when the LB policy calls
   // CancelConnectivityStateWatch() with its watcher, we know the
   // corresponding WrapperWatcher to cancel on the underlying subchannel.
-  Map<ConnectivityStateWatcher*, WatcherWrapper*> watcher_map_;
+  Map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_;
   // To be accessed only in the control plane combiner.
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   // To be accessed only in the data plane combiner.

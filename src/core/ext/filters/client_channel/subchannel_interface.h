@@ -26,11 +26,12 @@
 
 namespace grpc_core {
 
+// The interface for subchannels that is exposed to LB policy implementations.
 class SubchannelInterface : public RefCounted<SubchannelInterface> {
  public:
-  class ConnectivityStateWatcher {
+  class ConnectivityStateWatcherInterface {
    public:
-    virtual ~ConnectivityStateWatcher() = default;
+    virtual ~ConnectivityStateWatcherInterface() = default;
 
     // Will be invoked whenever the subchannel's connectivity state
     // changes.  There will be only one invocation of this method on a
@@ -67,12 +68,12 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
   // the previous watcher using CancelConnectivityStateWatch().
   virtual void WatchConnectivityState(
       grpc_connectivity_state initial_state,
-      UniquePtr<ConnectivityStateWatcher> watcher) GRPC_ABSTRACT;
+      UniquePtr<ConnectivityStateWatcherInterface> watcher) GRPC_ABSTRACT;
 
   // Cancels a connectivity state watch.
   // If the watcher has already been destroyed, this is a no-op.
-  virtual void CancelConnectivityStateWatch(ConnectivityStateWatcher* watcher)
-      GRPC_ABSTRACT;
+  virtual void CancelConnectivityStateWatch(
+      ConnectivityStateWatcherInterface* watcher) GRPC_ABSTRACT;
 
   // Attempt to connect to the backend.  Has no effect if already connected.
   // If the subchannel is currently in backoff delay due to a previously

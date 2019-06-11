@@ -175,12 +175,17 @@ class SubchannelCall {
 
 // A subchannel that knows how to connect to exactly one target address. It
 // provides a target for load balancing.
+//
+// Note that this is the "real" subchannel implementation, whose API is
+// different from the SubchannelInterface that is exposed to LB policy
+// implementations.  The client channel provides an adaptor class
+// (SubchannelWrapper) that "converts" between the two.
 class Subchannel {
  public:
-  class ConnectivityStateWatcher
-      : public InternallyRefCounted<ConnectivityStateWatcher> {
+  class ConnectivityStateWatcherInterface
+      : public InternallyRefCounted<ConnectivityStateWatcherInterface> {
    public:
-    virtual ~ConnectivityStateWatcher() = default;
+    virtual ~ConnectivityStateWatcherInterface() = default;
 
     // Will be invoked whenever the subchannel's connectivity state
     // changes.  There will be only one invocation of this method on a
@@ -246,14 +251,15 @@ class Subchannel {
   // changes.
   // The watcher will be destroyed either when the subchannel is
   // destroyed or when CancelConnectivityStateWatch() is called.
-  void WatchConnectivityState(grpc_connectivity_state initial_state,
-                              UniquePtr<char> health_check_service_name,
-                              OrphanablePtr<ConnectivityStateWatcher> watcher);
+  void WatchConnectivityState(
+      grpc_connectivity_state initial_state,
+      UniquePtr<char> health_check_service_name,
+      OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
 
   // Cancels a connectivity state watch.
   // If the watcher has already been destroyed, this is a no-op.
   void CancelConnectivityStateWatch(const char* health_check_service_name,
-                                    ConnectivityStateWatcher* watcher);
+                                    ConnectivityStateWatcherInterface* watcher);
 
   // Attempt to connect to the backend.  Has no effect if already connected.
   void AttemptToConnect();
@@ -278,14 +284,15 @@ class Subchannel {
                                                  grpc_resolved_address* addr);
 
  private:
-  // A linked list of ConnectivityStateWatchers that are monitoring the
-  // subchannel's state.
+  // A linked list of ConnectivityStateWatcherInterfaces that are monitoring
+  // the subchannel's state.
   class ConnectivityStateWatcherList {
    public:
     ~ConnectivityStateWatcherList() { Clear(); }
 
-    void AddWatcherLocked(OrphanablePtr<ConnectivityStateWatcher> watcher);
-    void RemoveWatcherLocked(ConnectivityStateWatcher* watcher);
+    void AddWatcherLocked(
+        OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
+    void RemoveWatcherLocked(ConnectivityStateWatcherInterface* watcher);
 
     // Notifies all watchers in the list about a change to state.
     void NotifyLocked(Subchannel* subchannel, grpc_connectivity_state state);
@@ -297,12 +304,13 @@ class Subchannel {
    private:
     // TODO(roth): This could be a set instead of a map if we had a set
     // implementation.
-    Map<ConnectivityStateWatcher*, OrphanablePtr<ConnectivityStateWatcher>>
+    Map<ConnectivityStateWatcherInterface*,
+        OrphanablePtr<ConnectivityStateWatcherInterface>>
         watchers_;
   };
 
-  // A map that tracks ConnectivityStateWatchers using a particular health
-  // check service name.
+  // A map that tracks ConnectivityStateWatcherInterfaces using a particular
+  // health check service name.
   //
   // There is one entry in the map for each health check service name.
   // Entries exist only as long as there are watchers using the
@@ -312,12 +320,12 @@ class Subchannel {
   // state READY.
   class HealthWatcherMap {
    public:
-    void AddWatcherLocked(Subchannel* subchannel,
-                          grpc_connectivity_state initial_state,
-                          UniquePtr<char> health_check_service_name,
-                          OrphanablePtr<ConnectivityStateWatcher> watcher);
+    void AddWatcherLocked(
+        Subchannel* subchannel, grpc_connectivity_state initial_state,
+        UniquePtr<char> health_check_service_name,
+        OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
     void RemoveWatcherLocked(const char* health_check_service_name,
-                             ConnectivityStateWatcher* watcher);
+                             ConnectivityStateWatcherInterface* watcher);
 
     // Notifies the watcher when the subchannel's state changes.
     void NotifyLocked(grpc_connectivity_state state);

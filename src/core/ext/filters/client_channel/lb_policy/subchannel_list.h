@@ -135,7 +135,8 @@ class SubchannelData {
 
  private:
   // Watcher for subchannel connectivity state.
-  class Watcher : public SubchannelInterface::ConnectivityStateWatcher {
+  class Watcher
+      : public SubchannelInterface::ConnectivityStateWatcherInterface {
    public:
     Watcher(
         SubchannelData<SubchannelListType, SubchannelDataType>* subchannel_data,
@@ -164,7 +165,8 @@ class SubchannelData {
   // The subchannel.
   RefCountedPtr<SubchannelInterface> subchannel_;
   // Will be non-null when the subchannel's state is being watched.
-  SubchannelInterface::ConnectivityStateWatcher* pending_watcher_ = nullptr;
+  SubchannelInterface::ConnectivityStateWatcherInterface* pending_watcher_ =
+      nullptr;
   // Data updated by the watcher.
   grpc_connectivity_state connectivity_state_;
 };
@@ -324,7 +326,7 @@ void SubchannelData<SubchannelListType,
       New<Watcher>(this, subchannel_list()->Ref(DEBUG_LOCATION, "Watcher"));
   subchannel_->WatchConnectivityState(
       connectivity_state_,
-      UniquePtr<SubchannelInterface::ConnectivityStateWatcher>(
+      UniquePtr<SubchannelInterface::ConnectivityStateWatcherInterface>(
           pending_watcher_));
 }
 
