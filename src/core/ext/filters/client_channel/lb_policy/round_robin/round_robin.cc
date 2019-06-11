@@ -63,8 +63,6 @@ class RoundRobin : public LoadBalancingPolicy {
 
   void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
-  void FillChildRefsForChannelz(channelz::ChildRefsList* child_subchannels,
-                                channelz::ChildRefsList* ignored) override;
 
  private:
   ~RoundRobin();
@@ -160,21 +158,7 @@ class RoundRobin : public LoadBalancingPolicy {
     InlinedVector<RefCountedPtr<ConnectedSubchannelInterface>, 10> subchannels_;
   };
 
-  // Helper class to ensure that any function that modifies the child refs
-  // data structures will update the channelz snapshot data structures before
-  // returning.
-  class AutoChildRefsUpdater {
-   public:
-    explicit AutoChildRefsUpdater(RoundRobin* rr) : rr_(rr) {}
-    ~AutoChildRefsUpdater() { rr_->UpdateChildRefsLocked(); }
-
-   private:
-    RoundRobin* rr_;
-  };
-
   void ShutdownLocked() override;
-
-  void UpdateChildRefsLocked();
 
   /** list of subchannels */
   OrphanablePtr<RoundRobinSubchannelList> subchannel_list_;
@@ -186,11 +170,6 @@ class RoundRobin : public LoadBalancingPolicy {
   OrphanablePtr<RoundRobinSubchannelList> latest_pending_subchannel_list_;
   /** are we shutting down? */
   bool shutdown_ = false;
-  /// Lock and data used to capture snapshots of this channel's child
-  /// channels and subchannels. This data is consumed by channelz.
-  Mutex child_refs_mu_;
-  channelz::ChildRefsList child_subchannels_;
-  channelz::ChildRefsList child_channels_;
 };
 
 //
@@ -255,7 +234,6 @@ RoundRobin::~RoundRobin() {
 }
 
 void RoundRobin::ShutdownLocked() {
-  AutoChildRefsUpdater guard(this);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO, "[RR %p] Shutting down", this);
   }
@@ -269,40 +247,6 @@ void RoundRobin::ResetBackoffLocked() {
   if (latest_pending_subchannel_list_ != nullptr) {
     latest_pending_subchannel_list_->ResetBackoffLocked();
   }
-}
-
-void RoundRobin::FillChildRefsForChannelz(
-    channelz::ChildRefsList* child_subchannels_to_fill,
-    channelz::ChildRefsList* ignored) {
-  MutexLock lock(&child_refs_mu_);
-  for (size_t i = 0; i < child_subchannels_.size(); ++i) {
-    // TODO(ncteisen): implement a de dup loop that is not O(n^2). Might
-    // have to implement lightweight set. For now, we don't care about
-    // performance when channelz requests are made.
-    bool found = false;
-    for (size_t j = 0; j < child_subchannels_to_fill->size(); ++j) {
-      if ((*child_subchannels_to_fill)[j] == child_subchannels_[i]) {
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      child_subchannels_to_fill->push_back(child_subchannels_[i]);
-    }
-  }
-}
-
-void RoundRobin::UpdateChildRefsLocked() {
-  channelz::ChildRefsList cs;
-  if (subchannel_list_ != nullptr) {
-    subchannel_list_->PopulateChildRefsList(&cs);
-  }
-  if (latest_pending_subchannel_list_ != nullptr) {
-    latest_pending_subchannel_list_->PopulateChildRefsList(&cs);
-  }
-  // atomically update the data that channelz will actually be looking at.
-  MutexLock lock(&child_refs_mu_);
-  child_subchannels_ = std::move(cs);
 }
 
 void RoundRobin::RoundRobinSubchannelList::StartWatchingLocked() {
@@ -396,7 +340,6 @@ void RoundRobin::RoundRobinSubchannelList::
 void RoundRobin::RoundRobinSubchannelList::
     UpdateRoundRobinStateFromSubchannelStateCountsLocked() {
   RoundRobin* p = static_cast<RoundRobin*>(policy());
-  AutoChildRefsUpdater guard(p);
   if (num_ready_ > 0) {
     if (p->subchannel_list_.get() != this) {
       // Promote this list to p->subchannel_list_.
@@ -468,7 +411,6 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
 }
 
 void RoundRobin::UpdateLocked(UpdateArgs args) {
-  AutoChildRefsUpdater guard(this);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO, "[RR %p] received update with %" PRIuPTR " addresses",
             this, args.addresses.size());

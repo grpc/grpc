@@ -65,7 +65,6 @@ class ServerReaderWriterBody;
 }  // namespace internal
 
 class ChannelInterface;
-class ClientContext;
 class ServerContext;
 class ServerInterface;
 

@@ -126,7 +126,8 @@ static void asciidump(dump_out* out, const char* buf, size_t len) {
   }
 }
 
-char* gpr_dump(const char* buf, size_t len, uint32_t flags) {
+char* gpr_dump_return_len(const char* buf, size_t len, uint32_t flags,
+                          size_t* out_len) {
   dump_out out = dump_out_create();
   if (flags & GPR_DUMP_HEX) {
     hexdump(&out, buf, len);
@@ -135,7 +136,13 @@ char* gpr_dump(const char* buf, size_t len, uint32_t flags) {
     asciidump(&out, buf, len);
   }
   dump_out_append(&out, 0);
+  *out_len = out.length;
   return out.data;
+}
+
+char* gpr_dump(const char* buf, size_t len, uint32_t flags) {
+  size_t unused;
+  return gpr_dump_return_len(buf, len, flags, &unused);
 }
 
 int gpr_parse_bytes_to_uint32(const char* buf, size_t len, uint32_t* result) {

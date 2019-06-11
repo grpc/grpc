@@ -34,6 +34,7 @@ tools/run_tests/run_interop_tests.py -l c++ \
     --google_default_creds_use_key_file \
     --prod_servers default gateway_v4 \
     --service_account_key_file="${KOKORO_KEYSTORE_DIR}/73836_interop_to_prod_tests_service_account_key" \
+    --default_service_account="interop-to-prod-tests@grpc-testing.iam.gserviceaccount.com" \
     --skip_compute_engine_creds --internal_ci -t -j 4 || FAILED="true"
 
 tools/internal_ci/helper_scripts/delete_nonartifacts.sh || true

@@ -5675,6 +5675,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
     include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_context_impl.h \
     include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
@@ -6302,6 +6303,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
     include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_context_impl.h \
     include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
@@ -6709,6 +6711,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
     include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_context_impl.h \
     include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
@@ -6879,6 +6882,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
     include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_context_impl.h \
     include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
@@ -7244,6 +7248,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
     include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_context_impl.h \
     include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \

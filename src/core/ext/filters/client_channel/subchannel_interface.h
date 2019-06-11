@@ -94,11 +94,15 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
       GRPC_ABSTRACT;
 
   // Attempt to connect to the backend.  Has no effect if already connected.
+  // If the subchannel is currently in backoff delay due to a previously
+  // failed attempt, the new connection attempt will not start until the
+  // backoff delay has elapsed.
   virtual void AttemptToConnect() GRPC_ABSTRACT;
 
-  // TODO(roth): These methods should be removed from this interface to
-  // bettter hide grpc-specific functionality from the LB policy API.
-  virtual channelz::SubchannelNode* channelz_node() GRPC_ABSTRACT;
+  // Resets the subchannel's connection backoff state.  If AttemptToConnect()
+  // has been called since the subchannel entered TRANSIENT_FAILURE state,
+  // starts a new connection attempt immediately; otherwise, a new connection
+  // attempt will be started as soon as AttemptToConnect() is called.
   virtual void ResetBackoff() GRPC_ABSTRACT;
 
   GRPC_ABSTRACT_BASE_CLASS

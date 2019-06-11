@@ -807,23 +807,17 @@ def compute_engine_creds_required(language, test_case):
     return False
 
 
-def auth_options(language,
-                 test_case,
-                 google_default_creds_use_key_file,
-                 service_account_key_file=None):
+def auth_options(language, test_case, google_default_creds_use_key_file,
+                 service_account_key_file, default_service_account):
     """Returns (cmdline, env) tuple with cloud_to_prod_auth test options."""
 
     language = str(language)
     cmdargs = []
     env = {}
 
-    if not service_account_key_file:
-        # this file path only works inside docker
-        service_account_key_file = '/root/service_account/grpc-testing-ebe7c1ac7381.json'
     oauth_scope_arg = '--oauth_scope=https://www.googleapis.com/auth/xapi.zoo'
     key_file_arg = '--service_account_key_file=%s' % service_account_key_file
-    # default compute engine credentials associated with the testing VMs in "grpc-testing" cloud project
-    default_account_arg = '--default_service_account=830293263384-compute@developer.gserviceaccount.com'
+    default_account_arg = '--default_service_account=%s' % default_service_account
 
     if test_case in ['jwt_token_creds', 'per_rpc_creds', 'oauth2_auth_token']:
         if language in [
@@ -874,6 +868,7 @@ def cloud_to_prod_jobspec(language,
                           auth=False,
                           manual_cmd_log=None,
                           service_account_key_file=None,
+                          default_service_account=None,
                           transport_security='tls'):
     """Creates jobspec for cloud-to-prod interop test"""
     container_name = None
@@ -901,9 +896,9 @@ def cloud_to_prod_jobspec(language,
     cmdargs = cmdargs + transport_security_options
     environ = dict(language.cloud_to_prod_env(), **language.global_env())
     if auth:
-        auth_cmdargs, auth_env = auth_options(language, test_case,
-                                              google_default_creds_use_key_file,
-                                              service_account_key_file)
+        auth_cmdargs, auth_env = auth_options(
+            language, test_case, google_default_creds_use_key_file,
+            service_account_key_file, default_service_account)
         cmdargs += auth_cmdargs
         environ.update(auth_env)
     cmdline = bash_cmdline(language.client_cmd(cmdargs))
@@ -1212,12 +1207,17 @@ argp.add_argument(
     help=
     'Use servername=HOST:PORT to explicitly specify a server. E.g. csharp=localhost:50000',
     default=[])
+# TODO(jtattermusch): the default service_account_key_file only works when --use_docker is used.
 argp.add_argument(
     '--service_account_key_file',
     type=str,
-    help=
-    'Override the default service account key file to use for auth interop tests.',
-    default=None)
+    help='The service account key file to use for some auth interop tests.',
+    default='/root/service_account/grpc-testing-ebe7c1ac7381.json')
+argp.add_argument(
+    '--default_service_account',
+    type=str,
+    help='Default GCE service account email to use for some auth interop tests.',
+    default='830293263384-compute@developer.gserviceaccount.com')
 argp.add_argument(
     '-t', '--travis', default=False, action='store_const', const=True)
 argp.add_argument(
@@ -1470,6 +1470,8 @@ try:
                                     manual_cmd_log=client_manual_cmd_log,
                                     service_account_key_file=args.
                                     service_account_key_file,
+                                    default_service_account=args.
+                                    default_service_account,
                                     transport_security=transport_security)
                                 jobs.append(test_job)
             if args.http2_interop:
@@ -1484,6 +1486,7 @@ try:
                         docker_image=docker_images.get(str(http2Interop)),
                         manual_cmd_log=client_manual_cmd_log,
                         service_account_key_file=args.service_account_key_file,
+                        default_service_account=args.default_service_account,
                         transport_security=args.transport_security)
                     jobs.append(test_job)
 
@@ -1517,6 +1520,8 @@ try:
                                 manual_cmd_log=client_manual_cmd_log,
                                 service_account_key_file=args.
                                 service_account_key_file,
+                                default_service_account=args.
+                                default_service_account,
                                 transport_security=transport_security)
                             jobs.append(test_job)
     for server in args.override_server:
