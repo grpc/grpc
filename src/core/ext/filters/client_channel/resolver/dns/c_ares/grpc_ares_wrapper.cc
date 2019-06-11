@@ -541,7 +541,7 @@ static bool inner_maybe_resolve_localhost_manually_locked(
     }
     port->reset(gpr_strdup(default_port));
   }
-  if (gpr_stricmp(*host, "localhost") == 0) {
+  if (gpr_stricmp(host->get(), "localhost") == 0) {
     GPR_ASSERT(*addrs == nullptr);
     *addrs = grpc_core::MakeUnique<grpc_core::ServerAddressList>();
     uint16_t numeric_port = grpc_strhtons(port->get());
