@@ -62,6 +62,7 @@ class ClientCallbackReaderFactory;
 template <class W>
 class ClientCallbackWriterFactory;
 class ClientCallbackUnaryFactory;
+class DelegatingChannel;
 class InterceptedChannel;
 }  // namespace internal
 
@@ -127,6 +128,7 @@ class ChannelInterface {
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::CallbackUnaryCallImpl;
   friend class ::grpc::internal::RpcMethod;
+  friend class ::grpc::internal::DelegatingChannel;
   friend class ::grpc::internal::InterceptedChannel;
   virtual internal::Call CreateCall(const internal::RpcMethod& method,
                                     ClientContext* context,
