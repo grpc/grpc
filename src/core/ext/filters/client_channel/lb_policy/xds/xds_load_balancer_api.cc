@@ -50,15 +50,14 @@ grpc_slice XdsEdsRequestCreateAndEncode(const char* service_name) {
   google_protobuf_Struct_FieldsEntry* field =
       google_protobuf_Struct_add_fields(metadata, arena.ptr());
   google_protobuf_Struct_FieldsEntry_set_key(
-      field,
-      upb_strview_make(kEndpointRequired, sizeof(kEndpointRequired) - 1));
+      field, upb_strview_makez(kEndpointRequired));
   google_protobuf_Value* value =
       google_protobuf_Struct_FieldsEntry_mutable_value(field, arena.ptr());
   google_protobuf_Value_set_bool_value(value, true);
   envoy_api_v2_DiscoveryRequest_add_resource_names(
       request, upb_strview_makez(service_name), arena.ptr());
-  envoy_api_v2_DiscoveryRequest_set_type_url(
-      request, upb_strview_make(kEdsTypeUrl, sizeof(kEdsTypeUrl) - 1));
+  envoy_api_v2_DiscoveryRequest_set_type_url(request,
+                                             upb_strview_makez(kEdsTypeUrl));
   // Encode the request.
   size_t output_length;
   char* output = envoy_api_v2_DiscoveryRequest_serialize(request, arena.ptr(),
