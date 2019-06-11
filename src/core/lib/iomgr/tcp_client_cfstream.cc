@@ -143,7 +143,7 @@ static void OnOpen(void* arg, grpc_error* error) {
 
 static void ParseResolvedAddress(const grpc_resolved_address* addr,
                                  CFStringRef* host, int* port) {
-  char *host_port;
+  char* host_port;
   grpc_sockaddr_to_string(&host_port, addr, 1);
   grpc_core::UniquePtr<char> host_string;
   grpc_core::UniquePtr<char> port_string;
