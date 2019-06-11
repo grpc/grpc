@@ -95,11 +95,11 @@ grpc_error* ServerAddressParseAndAppend(const XdsLbEndpoint* lb_endpoint,
 
 namespace {
 
-char* StringCopy(const upb_strview& strview) {
+UniquePtr<char> StringCopy(const upb_strview& strview) {
   char* str = static_cast<char*>(gpr_malloc(strview.size + 1));
   memcpy(str, strview.data, strview.size);
   str[strview.size] = '\0';
-  return str;
+  return UniquePtr<char>(str);
 }
 
 }  // namespace
@@ -110,10 +110,9 @@ grpc_error* LocalityParse(const XdsLocalityLbEndpoints* locality_lb_endpoints,
   const XdsLocality* locality =
       envoy_api_v2_endpoint_LocalityLbEndpoints_locality(locality_lb_endpoints);
   locality_info->locality_name = MakeRefCounted<XdsLocalityName>(
-      UniquePtr<char>(StringCopy(envoy_api_v2_core_Locality_region(locality))),
-      UniquePtr<char>(StringCopy(envoy_api_v2_core_Locality_zone(locality))),
-      UniquePtr<char>(
-          StringCopy(envoy_api_v2_core_Locality_sub_zone(locality))));
+      StringCopy(envoy_api_v2_core_Locality_region(locality)),
+      StringCopy(envoy_api_v2_core_Locality_zone(locality)),
+      StringCopy(envoy_api_v2_core_Locality_sub_zone(locality)));
   // Parse the addresses.
   size_t size;
   const XdsLbEndpoint* const* lb_endpoints =
