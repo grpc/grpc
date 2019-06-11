@@ -764,7 +764,7 @@ class _ServerState(object):
         self.interceptor_pipeline = interceptor_pipeline
         self.thread_pool = thread_pool
         self.stage = _ServerStage.STOPPED
-        self.shutdown_events = None
+        self.shutdown_events = []
         self.maximum_concurrent_rpcs = maximum_concurrent_rpcs
         self.active_rpc_count = 0
 
@@ -876,7 +876,6 @@ def _begin_shutdown_once(state):
         if state.stage is _ServerStage.STARTED:
             state.server.shutdown(state.completion_queue, _SHUTDOWN_TAG)
             state.stage = _ServerStage.GRACE
-            state.shutdown_events = []
             state.due.add(_SHUTDOWN_TAG)
 
 
@@ -959,7 +958,7 @@ class _Server(grpc.Server):
     def start(self):
         _start(self._state)
 
-    def wait_for_termination(self, grace=None):
+    def wait_for_termination(self):
         termination_event = threading.Event()
 
         with self._state.lock:

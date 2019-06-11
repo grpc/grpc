@@ -1444,7 +1444,7 @@ class Server(six.with_metaclass(abc.ABCMeta)):
         """
         raise NotImplementedError()
 
-    def wait_for_termination(self, grace=None):
+    def wait_for_termination(self):
         """Block current thread until the server stops.
 
         The wait will not consume computational resources during blocking, and it
@@ -1452,9 +1452,6 @@ class Server(six.with_metaclass(abc.ABCMeta)):
 
         1) Calling `stop` on the server in another thread;
         2) The `__del__` of the server object is invoked.
-
-        Args:
-          grace: A duration of time in seconds or None.
         """
         raise NotImplementedError()
 

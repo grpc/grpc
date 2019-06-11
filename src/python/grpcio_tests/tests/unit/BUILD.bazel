@@ -33,6 +33,7 @@ GRPCIO_TESTS_UNIT = [
     # "_server_ssl_cert_config_test.py",
     "_server_test.py",
     "_server_shutdown_test.py",
+    "_server_wait_for_termination.py",
     "_session_cache_test.py",
 ]
 
