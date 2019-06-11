@@ -32,8 +32,9 @@
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 
-extern grpc_core::TraceFlag grpc_fd_trace;      /* Disabled by default */
-extern grpc_core::TraceFlag grpc_polling_trace; /* Disabled by default */
+extern grpc_core::DebugOnlyTraceFlag grpc_fd_trace; /* Disabled by default */
+extern grpc_core::DebugOnlyTraceFlag
+    grpc_polling_trace; /* Disabled by default */
 
 #define GRPC_FD_TRACE(format, ...)                        \
   if (GRPC_TRACE_FLAG_ENABLED(grpc_fd_trace)) {           \
