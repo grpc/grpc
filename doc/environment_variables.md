@@ -74,6 +74,7 @@ some configuration as environment variables that can be set.
   - queue_pluck
   - server_channel - lightweight trace of significant server channel events
   - secure_endpoint - traces bytes flowing through encrypted channels
+  - subchannel - traces the connectivity state of subchannel
   - timer - timers (alarms) in the grpc internals
   - timer_check - more detailed trace of timer logic in grpc internals
   - transport_security - traces metadata about secure channel establishment
@@ -89,6 +90,7 @@ some configuration as environment variables that can be set.
   - pending_tags - traces still-in-progress tags on completion queues
   - polling - traces the selected polling engine
   - polling_api - traces the api calls to polling engine
+  - subchannel_refcount
   - queue_refcount
   - error_refcount
   - stream_refcount
