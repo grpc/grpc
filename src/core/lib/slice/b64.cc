@@ -125,7 +125,9 @@ void grpc_base64_encode_core(char* result, const void* vdata, size_t data_size,
 }
 
 grpc_slice grpc_base64_decode(const char* b64, int url_safe) {
-  return grpc_base64_decode_with_len(b64, strlen(b64), url_safe);
+  grpc_slice result;
+  grpc_base64_decode_with_len(b64, strlen(b64), url_safe, &result);
+  return result;
 }
 
 static void decode_one_char(const unsigned char* codes, unsigned char* result,
@@ -189,10 +191,10 @@ static int decode_group(const unsigned char* codes, size_t num_codes,
   return 1;
 }
 
-grpc_slice grpc_base64_decode_with_len(const char* b64, size_t b64_len,
-                                       int url_safe) {
-  grpc_slice result = GRPC_SLICE_MALLOC(b64_len);
-  unsigned char* current = GRPC_SLICE_START_PTR(result);
+size_t grpc_base64_decode_with_len(const char* b64, size_t b64_len,
+                                   int url_safe, grpc_slice* result) {
+  *result = GRPC_SLICE_MALLOC(b64_len);
+  unsigned char* current = GRPC_SLICE_START_PTR(*result);
   size_t result_size = 0;
   unsigned char codes[4];
   size_t num_codes = 0;
@@ -231,10 +233,11 @@ grpc_slice grpc_base64_decode_with_len(const char* b64, size_t b64_len,
       !decode_group(codes, num_codes, current, &result_size)) {
     goto fail;
   }
-  GRPC_SLICE_SET_LENGTH(result, result_size);
-  return result;
+  GRPC_SLICE_SET_LENGTH(*result, result_size);
+  return b64_len;
 
 fail:
-  grpc_slice_unref_internal(result);
-  return grpc_empty_slice();
+  grpc_slice_unref_internal(*result);
+  *result = grpc_empty_slice();
+  return 0;
 }

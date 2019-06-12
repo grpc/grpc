@@ -299,12 +299,13 @@ static void fail_send_message_batch_in_call_combiner(void* arg,
 
 // Pulls a slice from the send_message byte stream and adds it to calld->slices.
 static grpc_error* pull_slice_from_send_message(call_data* calld) {
-  grpc_slice incoming_slice;
+  grpc_slice* incoming_slice = grpc_slice_buffer_reserve(&calld->slices);
   grpc_error* error =
       calld->send_message_batch->payload->send_message.send_message->Pull(
-          &incoming_slice);
+          incoming_slice);
   if (error == GRPC_ERROR_NONE) {
-    grpc_slice_buffer_add(&calld->slices, incoming_slice);
+    grpc_slice_buffer_note_add(&calld->slices,
+                               GRPC_SLICE_LENGTH(*incoming_slice));
   }
   return error;
 }

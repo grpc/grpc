@@ -297,10 +297,12 @@ grpc_error* SecurityHandshaker::OnHandshakeNextDoneLocked(
   }
   if (bytes_to_send_size > 0) {
     // Send data to peer, if needed.
-    grpc_slice to_send = grpc_slice_from_copied_buffer(
-        reinterpret_cast<const char*>(bytes_to_send), bytes_to_send_size);
     grpc_slice_buffer_reset_and_unref_internal(&outgoing_);
-    grpc_slice_buffer_add(&outgoing_, to_send);
+    grpc_slice_buffer_note_add(
+        &outgoing_,
+        grpc_slice_emplace_copied_buffer(
+            reinterpret_cast<const char*>(bytes_to_send), bytes_to_send_size,
+            grpc_slice_buffer_reserve(&outgoing_)));
     grpc_endpoint_write(args_->endpoint, &outgoing_,
                         &on_handshake_data_sent_to_peer_, nullptr);
   } else if (handshaker_result == nullptr) {

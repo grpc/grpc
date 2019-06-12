@@ -77,10 +77,10 @@ grpc_slice grpc_chttp2_settings_create(uint32_t* old_settings,
   return output;
 }
 
-grpc_slice grpc_chttp2_settings_ack_create(void) {
-  grpc_slice output = GRPC_SLICE_MALLOC(9);
-  fill_header(GRPC_SLICE_START_PTR(output), 0, GRPC_CHTTP2_FLAG_ACK);
-  return output;
+static size_t grpc_chttp2_settings_ack_create(grpc_slice* output) {
+  *output = GRPC_SLICE_MALLOC(9);
+  fill_header(GRPC_SLICE_START_PTR(*output), 0, GRPC_CHTTP2_FLAG_ACK);
+  return 9;
 }
 
 grpc_error* grpc_chttp2_settings_parser_begin_frame(
@@ -132,7 +132,9 @@ grpc_error* grpc_chttp2_settings_parser_parse(void* p, grpc_chttp2_transport* t,
           if (is_last) {
             memcpy(parser->target_settings, parser->incoming_settings,
                    GRPC_CHTTP2_NUM_SETTINGS * sizeof(uint32_t));
-            grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_settings_ack_create());
+            grpc_slice_buffer_note_add(
+                &t->qbuf, grpc_chttp2_settings_ack_create(
+                              grpc_slice_buffer_reserve(&t->qbuf)));
             if (t->notify_on_receive_settings != nullptr) {
               GRPC_CLOSURE_SCHED(t->notify_on_receive_settings,
                                  GRPC_ERROR_NONE);

@@ -46,8 +46,6 @@ typedef struct {
 /* Create a settings frame by diffing old & new, and updating old to be new */
 grpc_slice grpc_chttp2_settings_create(uint32_t* old, const uint32_t* newval,
                                        uint32_t force_mask, size_t count);
-/* Create an ack settings frame */
-grpc_slice grpc_chttp2_settings_ack_create(void);
 
 grpc_error* grpc_chttp2_settings_parser_begin_frame(
     grpc_chttp2_settings_parser* parser, uint32_t length, uint8_t flags,

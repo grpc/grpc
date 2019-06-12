@@ -30,8 +30,16 @@ typedef struct {
   uint8_t reason_bytes[4];
 } grpc_chttp2_rst_stream_parser;
 
-grpc_slice grpc_chttp2_rst_stream_create(uint32_t stream_id, uint32_t code,
-                                         grpc_transport_one_way_stats* stats);
+constexpr size_t kGrpcChttp2RstStreamFrameSz = 13;
+void grpc_chttp2_rst_stream_marshall(uint32_t id, uint32_t code,
+                                     grpc_slice* slice);
+inline size_t grpc_chttp2_rst_stream_create(uint32_t stream_id, uint32_t code,
+                                            grpc_transport_one_way_stats* stats,
+                                            grpc_slice* slice) {
+  if (stats != nullptr) stats->framing_bytes += kGrpcChttp2RstStreamFrameSz;
+  grpc_chttp2_rst_stream_marshall(stream_id, code, slice);
+  return kGrpcChttp2RstStreamFrameSz;
+}
 
 grpc_error* grpc_chttp2_rst_stream_parser_begin_frame(
     grpc_chttp2_rst_stream_parser* parser, uint32_t length, uint8_t flags);

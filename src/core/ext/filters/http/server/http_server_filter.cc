@@ -264,11 +264,12 @@ static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
       const int k_url_safe = 1;
       grpc_slice_buffer read_slice_buffer;
       grpc_slice_buffer_init(&read_slice_buffer);
-      grpc_slice_buffer_add(
+      grpc_slice_buffer_note_add(
           &read_slice_buffer,
           grpc_base64_decode_with_len(
               reinterpret_cast<const char*> GRPC_SLICE_START_PTR(query_slice),
-              GRPC_SLICE_LENGTH(query_slice), k_url_safe));
+              GRPC_SLICE_LENGTH(query_slice), k_url_safe,
+              grpc_slice_buffer_reserve(&read_slice_buffer)));
       calld->read_stream.Init(&read_slice_buffer, 0);
       grpc_slice_buffer_destroy_internal(&read_slice_buffer);
       calld->have_read_stream = true;

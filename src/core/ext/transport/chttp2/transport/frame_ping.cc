@@ -29,9 +29,10 @@
 
 static bool g_disable_ping_ack = false;
 
-grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes) {
-  grpc_slice slice = GRPC_SLICE_MALLOC(9 + 8);
-  uint8_t* p = GRPC_SLICE_START_PTR(slice);
+void grpc_chttp2_ping_marshall(uint8_t ack, uint64_t opaque_8bytes,
+                               grpc_slice* slice) {
+  *slice = GRPC_SLICE_MALLOC(kGrpcPingSz);
+  uint8_t* p = GRPC_SLICE_START_PTR(*slice);
 
   *p++ = 0;
   *p++ = 0;
@@ -50,8 +51,6 @@ grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes) {
   *p++ = static_cast<uint8_t>(opaque_8bytes >> 16);
   *p++ = static_cast<uint8_t>(opaque_8bytes >> 8);
   *p++ = static_cast<uint8_t>(opaque_8bytes);
-
-  return slice;
 }
 
 grpc_error* grpc_chttp2_ping_parser_begin_frame(grpc_chttp2_ping_parser* parser,

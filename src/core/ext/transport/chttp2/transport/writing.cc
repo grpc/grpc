@@ -107,8 +107,10 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   GRPC_CLOSURE_LIST_SCHED(&pq->lists[GRPC_CHTTP2_PCL_INITIATE]);
   grpc_closure_list_move(&pq->lists[GRPC_CHTTP2_PCL_NEXT],
                          &pq->lists[GRPC_CHTTP2_PCL_INFLIGHT]);
-  grpc_slice_buffer_add(&t->outbuf,
-                        grpc_chttp2_ping_create(false, pq->inflight_id));
+  grpc_slice_buffer_note_add(
+      &t->outbuf,
+      grpc_chttp2_ping_create(false, pq->inflight_id,
+                              grpc_slice_buffer_reserve(&t->outbuf)));
   GRPC_STATS_INC_HTTP2_PINGS_SENT();
   t->ping_state.last_ping_sent_time = now;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
@@ -236,8 +238,10 @@ class WriteContext {
 
   void FlushPingAcks() {
     for (size_t i = 0; i < t_->ping_ack_count; i++) {
-      grpc_slice_buffer_add(&t_->outbuf,
-                            grpc_chttp2_ping_create(true, t_->ping_acks[i]));
+      grpc_slice_buffer_note_add(
+          &t_->outbuf,
+          grpc_chttp2_ping_create(true, t_->ping_acks[i],
+                                  grpc_slice_buffer_reserve(&t_->outbuf)));
     }
     t_->ping_ack_count = 0;
   }
@@ -607,9 +611,10 @@ class StreamWriteContext {
     s_->eos_sent = true;
 
     if (!t_->is_client && !s_->read_closed) {
-      grpc_slice_buffer_add(
+      grpc_slice_buffer_note_add(
           &t_->outbuf, grpc_chttp2_rst_stream_create(
-                           s_->id, GRPC_HTTP2_NO_ERROR, &s_->stats.outgoing));
+                           s_->id, GRPC_HTTP2_NO_ERROR, &s_->stats.outgoing,
+                           grpc_slice_buffer_reserve(&t_->outbuf)));
     }
     grpc_chttp2_mark_stream_closed(t_, s_, !t_->is_client, true,
                                    GRPC_ERROR_NONE);

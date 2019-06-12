@@ -1249,10 +1249,12 @@ static void continue_receiving_slices(batch_control* bctl) {
       return;
     }
     if (call->receiving_stream->Next(remaining, &call->receiving_slice_ready)) {
-      error = call->receiving_stream->Pull(&call->receiving_slice);
+      grpc_slice_buffer* const rcv_buf =
+          &(*call->receiving_buffer)->data.raw.slice_buffer;
+      grpc_slice* dest_slice = grpc_slice_buffer_reserve(rcv_buf);
+      error = call->receiving_stream->Pull(dest_slice);
       if (error == GRPC_ERROR_NONE) {
-        grpc_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
-                              call->receiving_slice);
+        grpc_slice_buffer_note_add(rcv_buf, GRPC_SLICE_LENGTH(*dest_slice));
       } else {
         call->receiving_stream.reset();
         grpc_byte_buffer_destroy(*call->receiving_buffer);
@@ -1273,11 +1275,12 @@ static void receiving_slice_ready(void* bctlp, grpc_error* error) {
   bool release_error = false;
 
   if (error == GRPC_ERROR_NONE) {
-    grpc_slice slice;
-    error = call->receiving_stream->Pull(&slice);
+    grpc_slice_buffer* const rcv_buf =
+        &(*call->receiving_buffer)->data.raw.slice_buffer;
+    grpc_slice* dest_slice = grpc_slice_buffer_reserve(rcv_buf);
+    error = call->receiving_stream->Pull(dest_slice);
     if (error == GRPC_ERROR_NONE) {
-      grpc_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
-                            slice);
+      grpc_slice_buffer_note_add(rcv_buf, GRPC_SLICE_LENGTH(*dest_slice));
       continue_receiving_slices(bctl);
     } else {
       /* Error returned by ByteStream::Pull() needs to be released manually */

@@ -68,7 +68,7 @@ void grpc_slice_unref(grpc_slice slice) {
 
 /* grpc_slice_from_static_string support structure - a refcount that does
    nothing */
-static grpc_slice_refcount NoopRefcount =
+grpc_slice_refcount NoopRefcount =
     grpc_slice_refcount(grpc_slice_refcount::Type::NOP);
 
 size_t grpc_slice_memory_usage(grpc_slice s) {
@@ -81,9 +81,8 @@ size_t grpc_slice_memory_usage(grpc_slice s) {
 
 grpc_slice grpc_slice_from_static_buffer(const void* s, size_t len) {
   grpc_slice slice;
-  slice.refcount = &NoopRefcount;
-  slice.data.refcounted.bytes = (uint8_t*)s;
-  slice.data.refcounted.length = len;
+  grpc_slice_emplace_static_buffer(reinterpret_cast<const char*>(s), len,
+                                   &slice);
   return slice;
 }
 
@@ -205,10 +204,20 @@ grpc_slice grpc_slice_new_with_len(void* p, size_t len,
   return slice;
 }
 
+size_t grpc_slice_emplace_copied_buffer(const char* source, size_t length,
+                                        grpc_slice* slice) {
+  if (length == 0) {
+    *slice = grpc_empty_slice();
+    return length;
+  }
+  *slice = GRPC_SLICE_MALLOC(length);
+  memcpy(GRPC_SLICE_START_PTR(*slice), source, length);
+  return length;
+}
+
 grpc_slice grpc_slice_from_copied_buffer(const char* source, size_t length) {
-  if (length == 0) return grpc_empty_slice();
-  grpc_slice slice = GRPC_SLICE_MALLOC(length);
-  memcpy(GRPC_SLICE_START_PTR(slice), source, length);
+  grpc_slice slice;
+  grpc_slice_emplace_copied_buffer(source, length, &slice);
   return slice;
 }
 

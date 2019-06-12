@@ -83,7 +83,7 @@ static grpc_json* parse_json_part_from_jwt(const char* str, size_t len,
                                            grpc_slice* buffer) {
   grpc_json* json;
 
-  *buffer = grpc_base64_decode_with_len(str, len, 1);
+  grpc_base64_decode_with_len(str, len, 1, buffer);
   if (GRPC_SLICE_IS_EMPTY(*buffer)) {
     gpr_log(GPR_ERROR, "Invalid base64.");
     return nullptr;

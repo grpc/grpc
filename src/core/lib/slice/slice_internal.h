@@ -312,4 +312,33 @@ grpc_slice grpc_slice_from_moved_string(grpc_core::UniquePtr<char> p);
 // 0. All other slices will return the size of the allocated chars.
 size_t grpc_slice_memory_usage(grpc_slice s);
 
+inline void grpc_slice_buffer_note_add(grpc_slice_buffer* sb, size_t len) {
+  sb->count += 1;
+  sb->length += len;
+}
+
+grpc_slice* grpc_slice_buffer_reserve(grpc_slice_buffer* sb);
+
+size_t grpc_slice_emplace_copied_buffer(const char* source, size_t len,
+                                        grpc_slice* slice);
+inline size_t grpc_slice_emplace_copied_string(const char* source,
+                                               grpc_slice* slice) {
+  return grpc_slice_emplace_copied_buffer(source, strlen(source), slice);
+}
+
+extern grpc_slice_refcount NoopRefcount;
+inline size_t grpc_slice_emplace_static_buffer(const char* source, size_t len,
+                                               grpc_slice* slice) {
+  slice->refcount = &NoopRefcount;
+  slice->data.refcounted.bytes =
+      reinterpret_cast<uint8_t*>(const_cast<char*>(source));
+  slice->data.refcounted.length = len;
+  return len;
+}
+
+inline size_t grpc_slice_emplace_static_string(const char* source,
+                                               grpc_slice* slice) {
+  return grpc_slice_emplace_static_buffer(source, strlen(source), slice);
+}
+
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H */
