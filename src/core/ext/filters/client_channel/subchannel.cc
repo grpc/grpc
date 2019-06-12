@@ -342,7 +342,6 @@ class Subchannel::ConnectedSubchannelStateWatcher {
             }
             c->connected_subchannel_.reset();
             c->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE);
-            c->ResetBackoffLocked();
           }
           break;
         }
@@ -661,7 +660,7 @@ Subchannel::Subchannel(SubchannelKey* key, grpc_connector* connector,
   if (new_args != nullptr) grpc_channel_args_destroy(new_args);
   GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
                     grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&backoff_timer_callback_, BackoffTimerCallback, this,
+  GRPC_CLOSURE_INIT(&on_backoff_timer_, OnBackoffTimerAlarm, this,
                     grpc_schedule_on_exec_ctx);
   const grpc_arg* arg = grpc_channel_args_find(args_, GRPC_ARG_ENABLE_CHANNELZ);
   const bool channelz_enabled =
@@ -939,11 +938,9 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state) {
   watcher_list_.NotifyLocked(this, state);
   // Notify health watchers.
   health_watcher_map_.NotifyLocked(state);
-  // Whenever a subchannel turns into TRANSIENT_FAILURE, set a timer to call
-  // BackoffTimerCallback, which is the only way to get the subchannel out of
-  // TRANSIENT_FAILURE.
-  // In other words, if the subchannel is in TRANSIENT_FAILURE state, the
-  // backoff_timer_ must be active.
+  // Whenever a subchannel turns into TRANSIENT_FAILURE, set backoff_timer_ to
+  // call OnBackoffTimerAlarm(), which is the only way to get the subchannel out
+  // of TRANSIENT_FAILURE after backoff ends.
   if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     const grpc_millis backoff_duration =
         next_attempt_deadline_ - ExecCtx::Get()->Now();
@@ -958,21 +955,22 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state) {
               " in %" PRId64 " milliseconds due to the backoff restriction.",
               this, backoff_duration);
     }
-    GRPC_SUBCHANNEL_WEAK_REF(this, "in transient failure");
+    GRPC_SUBCHANNEL_WEAK_REF(this, "backoff timer");
     grpc_timer_init(&backoff_timer_, next_attempt_deadline_,
-                    &backoff_timer_callback_);
+                    &on_backoff_timer_);
   }
 }
 
 void Subchannel::MaybeStartConnectingLocked() {
-  if (!disconnected_) {
+  if (disconnected_) {
     // Don't try to connect if we're already disconnected.
-    if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      connection_attempt_requested_while_in_backoff_ = true;
-    } else if (state_ == GRPC_CHANNEL_IDLE) {
-      GRPC_SUBCHANNEL_WEAK_REF(this, "connecting");
-      ContinueConnectingLocked();
-    }
+    return;
+  }
+  if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    connection_attempt_requested_while_in_backoff_ = true;
+  } else if (state_ == GRPC_CHANNEL_IDLE) {
+    GRPC_SUBCHANNEL_WEAK_REF(this, "connecting");
+    ContinueConnectingLocked();
   }
 }
 
@@ -997,7 +995,8 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error* error) {
     MutexLock lock(&c->mu_);
     if (c->connecting_result_.transport != nullptr &&
         c->PublishTransportLocked()) {
-      // Do nothing, transport was published.
+      // Backoff is reset when connection succeeds.
+      c->ResetBackoffLocked();
     } else if (c->disconnected_) {
       GRPC_SUBCHANNEL_WEAK_UNREF(c, "connecting");
     } else {
@@ -1011,7 +1010,7 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error* error) {
 }
 
 // This callback function is the only way to get out of TRANSIENT_FAILURE state.
-void Subchannel::BackoffTimerCallback(void* arg, grpc_error* error) {
+void Subchannel::OnBackoffTimerAlarm(void* arg, grpc_error* error) {
   auto* c = static_cast<Subchannel*>(arg);
   // We use ReleasableMutexLock here because we can NOT unref this subchannel
   // while holding its lock, since unref may cause the subchannel to be
@@ -1032,7 +1031,7 @@ void Subchannel::BackoffTimerCallback(void* arg, grpc_error* error) {
     }
   }
   lock.Unlock();
-  GRPC_SUBCHANNEL_WEAK_UNREF(c, "in transient failure");
+  GRPC_SUBCHANNEL_WEAK_UNREF(c, "backoff timer");
 }
 
 namespace {

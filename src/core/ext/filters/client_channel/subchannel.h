@@ -317,7 +317,7 @@ class Subchannel {
   void MaybeStartConnectingLocked();
   void ContinueConnectingLocked();
   static void OnConnectingFinished(void* arg, grpc_error* error);
-  static void BackoffTimerCallback(void* arg, grpc_error* error);
+  static void OnBackoffTimerAlarm(void* arg, grpc_error* error);
   bool PublishTransportLocked();
   void Disconnect();
   void ResetBackoffLocked();
@@ -363,14 +363,12 @@ class Subchannel {
   BackOff backoff_;
   grpc_millis next_attempt_deadline_;
   grpc_millis min_connect_timeout_ms_;
-
-  // Backoff end alarm.
   grpc_timer backoff_timer_;
-  grpc_closure backoff_timer_callback_;
+  grpc_closure on_backoff_timer_;
   // This boolean value will be set to true when AttemptToConnect()
   // is called while the subchannel is in backoff and then set back to
   // false in BackoffTimerCallback() when the subchannel exits backoff
-  // and start the next connection attempt.
+  // and starts the next connection attempt.
   bool connection_attempt_requested_while_in_backoff_ = false;
 
   // Channelz tracking.

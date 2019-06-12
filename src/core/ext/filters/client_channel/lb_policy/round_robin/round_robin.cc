@@ -445,6 +445,10 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
     grpc_connectivity_state connectivity_state) {
   RoundRobin* p = static_cast<RoundRobin*>(subchannel_list()->policy());
   GPR_ASSERT(subchannel() != nullptr);
+  if (connectivity_state == GRPC_CHANNEL_IDLE) {
+    // Round robin does not care about subchannel's IDLE state.
+    return;
+  }
   // If the new state is TRANSIENT_FAILURE, re-resolve.
   // Only do this if we've started watching, not at startup time.
   // Otherwise, if the subchannel was already in state TRANSIENT_FAILURE

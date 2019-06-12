@@ -354,6 +354,11 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
   GPR_ASSERT(subchannel_list() == p->subchannel_list_.get() ||
              subchannel_list() == p->latest_pending_subchannel_list_.get());
   GPR_ASSERT(connectivity_state != GRPC_CHANNEL_SHUTDOWN);
+  if (connectivity_state == GRPC_CHANNEL_IDLE) {
+    // Currently, PF ignores IDLE state report. Later this state will be used to
+    // optimize Happy Eyeballs.
+    return;
+  }
   // Handle updates for the currently selected subchannel.
   if (p->selected_ == this) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
