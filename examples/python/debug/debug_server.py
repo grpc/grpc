@@ -45,12 +45,11 @@ class FaultInjectGreeter(helloworld_pb2_grpc.GreeterServicer):
         if random.random() < self._failure_rate:
             context.abort(grpc.StatusCode.UNAVAILABLE,
                           'Randomly injected failure.')
-        return helloworld_pb2.HelloReply(
-            message='Hello, %s!' % request.name)
+        return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
 
 
 def create_server(addr, failure_rate):
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    server = grpc.server(futures.ThreadPoolExecutor())
     helloworld_pb2_grpc.add_GreeterServicer_to_server(
         FaultInjectGreeter(failure_rate), server)
 

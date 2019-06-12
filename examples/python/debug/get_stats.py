@@ -25,9 +25,6 @@ from grpc_channelz.v1 import channelz_pb2_grpc
 
 
 def run(addr):
-    # NOTE(gRPC Python Team): .close() is possible on a channel and should be
-    # used in circumstances in which the with statement does not fit the needs
-    # of the code.
     with grpc.insecure_channel(addr) as channel:
         channelz_stub = channelz_pb2_grpc.ChannelzStub(channel)
         response = channelz_stub.GetServers(
