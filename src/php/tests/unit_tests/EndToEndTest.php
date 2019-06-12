@@ -528,15 +528,19 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
     public function testWatchConnectivityStateSuccess()
     {
         $idle_state = $this->channel->getConnectivityState(true);
+        print_r("First Assert\n");
+        var_dump($idle_state);
         $this->assertTrue($idle_state == Grpc\CHANNEL_IDLE);
 
         $now = Grpc\Timeval::now();
         $delta = new Grpc\Timeval(3000000); // should finish well before
         $deadline = $now->add($delta);
 
+        print_r("Second Assert\n");
         $this->assertTrue($this->channel->watchConnectivityState(
         $idle_state, $deadline));
 
+        print_r("Third Assert\n");
         $new_state = $this->channel->getConnectivityState();
         $this->assertTrue($idle_state != $new_state);
     }
