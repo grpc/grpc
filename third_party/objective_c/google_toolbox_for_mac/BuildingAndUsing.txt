@@ -1,0 +1,24 @@
+The GTM project provides a Framework target and Unit Testing targets, as
+well as a CocoaPod.
+
+Unit Testing Targets -
+
+These targets are there to make sure all of GTM is working, and reflect the
+hierarchy of the source tree.
+
+Building the "All UnitTests" target will build all of the unittests for the
+current configuration included in the GTM package. We require that "All
+UnitTests" builds cleanly before we will accept any code submissions.
+
+Framework Target -
+
+These targets are there to make it easy for anyone to quickly add GTM sources
+to their own project to start using it or playing around with it. However,
+the intent is for a developer to manually add the sources to their project in
+the end to reduce the total size of their product (since they only have to
+include the parts of GTM they need).
+
+CocoaPods -
+
+The GTM project provides a Podspec for some of the more commonly-used parts of
+GTM. See https://cocoapods.org/pods/GoogleToolboxForMac for more info.

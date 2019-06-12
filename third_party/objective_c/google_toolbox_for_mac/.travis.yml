@@ -1,0 +1,11 @@
+language: objective-c
+osx_image: xcode10.1
+env:
+  - MODE=OSX CFG=Debug
+  - MODE=OSX CFG=Release
+  - MODE=iOS CFG=Debug
+  - MODE=iOS CFG=Release
+script:
+  - ./.travis.sh "${MODE}" "${CFG}"
+notifications:
+  email: false

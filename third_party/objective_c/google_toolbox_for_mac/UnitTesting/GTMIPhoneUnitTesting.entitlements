@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>"
+  <!--
+      Enable access to AddressBook, Calendar and Photos
+      https://groups.google.com/forum/#!topic/kif-framework/xayP4VVBPyg
+  -->
+    <key>com.apple.private.tcc.allow</key>
+    <array>"
+      <string>kTCCServiceAddressBook</string>
+      <string>kTCCServiceCalendar</string>
+      <string>kTCCServicePhotos</string>
+    </array>
+  </dict>
+</plist>

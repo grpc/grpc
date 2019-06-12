@@ -1,0 +1,45 @@
+//
+//  Release.xcconfig
+//
+//  General Xcode configuration file for Release targets.
+//
+//  Copyright 2006-2008 Google Inc.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License"); you may not
+//  use this file except in compliance with the License.  You may obtain a copy
+//  of the License at
+// 
+//  http://www.apache.org/licenses/LICENSE-2.0
+// 
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+//  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+//  License for the specific language governing permissions and limitations under
+//  the License.
+//
+
+// Optimize for space and size (Apple recommendation)
+GCC_OPTIMIZATION_LEVEL = s
+
+// Deploment postprocessing is what triggers Xcode to strip
+DEPLOYMENT_POSTPROCESSING = YES
+
+// No symbols
+GCC_GENERATE_DEBUGGING_SYMBOLS = NO
+
+// Dead code strip does not affect ObjC code but can help for C
+DEAD_CODE_STRIPPING = YES
+
+// ASSERT going away in release tends to create unused vars.
+// init-self can only be turned on when optimizations are on
+GTM_CONFIGURATION_WARNING_CFLAGS = -Wno-unused-variable -Winit-self -Wno-extra
+
+// NDEBUG is used by things like assert.h, so define it for general compat.
+GTM_CONFIGURATION_GCC_PREPROCESSOR_DEFINITIONS = NDEBUG=1
+
+// Give us warnings about uninitialized autos
+// can only be done when GCC_OPTIMIZATION_LEVEL is actually optimizing
+GCC_WARN_UNINITIALIZED_AUTOS = YES
+
+// When we strip we want to strip all symbols in release, but save externals.
+STRIP_STYLE = all

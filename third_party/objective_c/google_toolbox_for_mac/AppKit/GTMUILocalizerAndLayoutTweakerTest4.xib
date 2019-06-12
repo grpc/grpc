@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="11201" systemVersion="15G31" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none">
+    <dependencies>
+        <deployment identifier="macosx"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="11201"/>
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="GTMUILocalizerAndLayoutTweakerTestWindowController">
+            <connections>
+                <outlet property="window" destination="1" id="119"/>
+            </connections>
+        </customObject>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
+        <customObject id="-3" userLabel="Application"/>
+        <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" oneShot="NO" visibleAtLaunch="NO" animationBehavior="default" id="1">
+            <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
+            <windowPositionMask key="initialPositionMask" leftStrut="YES" bottomStrut="YES"/>
+            <rect key="contentRect" x="71" y="158" width="734" height="294"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1920" height="1178"/>
+            <view key="contentView" id="2">
+                <rect key="frame" x="0.0" y="0.0" width="734" height="294"/>
+                <autoresizingMask key="autoresizingMask"/>
+                <subviews>
+                    <customView id="188" customClass="GTMWidthBasedTweaker">
+                        <rect key="frame" x="0.0" y="50" width="136" height="244"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <subviews>
+                            <button verticalHuggingPriority="750" id="191">
+                                <rect key="frame" x="14" y="196" width="96" height="32"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="push" title="W:4:12" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="192">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                            </button>
+                            <button verticalHuggingPriority="750" id="120">
+                                <rect key="frame" x="20" y="172" width="96" height="23"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="smallSquare" title="W:4:12" bezelStyle="smallSquare" imagePosition="overlaps" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="121">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                            </button>
+                            <button verticalHuggingPriority="750" id="132">
+                                <rect key="frame" x="19" y="89" width="96" height="27"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="squareTextured" title="W:4:12" bezelStyle="texturedSquare" imagePosition="overlaps" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="133">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                            </button>
+                            <button id="182">
+                                <rect key="frame" x="18" y="18" width="96" height="18"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="radio" title="W:4:12" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="187">
+                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                            </button>
+                            <button verticalHuggingPriority="750" id="136">
+                                <rect key="frame" x="20" y="62" width="96" height="25"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="roundTextured" title="W:4:12" bezelStyle="texturedRounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="137">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                            </button>
+                            <button verticalHuggingPriority="750" id="128">
+                                <rect key="frame" x="20" y="121" width="96" height="19"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="recessed" title="W:4:12" bezelStyle="recessed" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="129">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES" changeBackground="YES" changeGray="YES"/>
+                                    <font key="font" metaFont="systemBold" size="12"/>
+                                </buttonCell>
+                            </button>
+                            <button verticalHuggingPriority="750" id="124">
+                                <rect key="frame" x="20" y="146" width="96" height="19"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="roundRect" title="W:4:12" bezelStyle="roundedRect" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="125">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="cellTitle"/>
+                                </buttonCell>
+                            </button>
+                            <button id="176">
+                                <rect key="frame" x="18" y="39" width="96" height="18"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="check" title="W:4:12" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="177">
+                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                            </button>
+                        </subviews>
+                    </customView>
+                    <customView id="189" customClass="GTMWidthBasedTweaker">
+                        <rect key="frame" x="242" y="50" width="137" height="244"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <subviews>
+                            <button id="183">
+                                <rect key="frame" x="18" y="18" width="96" height="18"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="radio" title="W:4:12" bezelStyle="regularSquare" imagePosition="left" alignment="left" controlSize="small" state="on" inset="2" id="186">
+                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                    <font key="font" metaFont="smallSystem"/>
+                                </buttonCell>
+                            </button>
+                            <button verticalHuggingPriority="750" id="153">
+                                <rect key="frame" x="20" y="172" width="96" height="23"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="smallSquare" title="W:4:12" bezelStyle="smallSquare" imagePosition="overlaps" alignment="center" controlSize="small" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="162">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="smallSystem"/>
+                                </buttonCell>
+                            </button>
+                            <button verticalHuggingPriority="750" id="154">
+                                <rect key="frame" x="20" y="148" width="96" height="17"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="roundRect" title="W:4:12" bezelStyle="roundedRect" alignment="center" controlSize="small" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="161">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="smallSystem"/>
+                                </buttonCell>
+                            </button>
+                            <button id="178">
+                                <rect key="frame" x="17" y="39" width="96" height="18"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="check" title="W:4:12" bezelStyle="regularSquare" imagePosition="left" alignment="left" controlSize="small" state="on" inset="2" id="179">
+                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                    <font key="font" metaFont="smallSystem"/>
+                                </buttonCell>
+                            </button>
+                            <button verticalHuggingPriority="750" id="155">
+                                <rect key="frame" x="20" y="123" width="96" height="17"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="recessed" title="W:4:12" bezelStyle="recessed" alignment="center" controlSize="small" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="160">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES" changeBackground="YES" changeGray="YES"/>
+                                    <font key="font" metaFont="systemBold" size="12"/>
+                                </buttonCell>
+                            </button>
+                            <button verticalHuggingPriority="750" id="156">
+                                <rect key="frame" x="20" y="98" width="96" height="18"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="squareTextured" title="W:4:12" bezelStyle="texturedSquare" imagePosition="overlaps" alignment="center" controlSize="small" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="159">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="smallSystem"/>
+                                </buttonCell>
+                            </button>
+                            <button verticalHuggingPriority="750" id="152">
+                                <rect key="frame" x="15" y="200" width="96" height="28"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="push" title="W:4:12" bezelStyle="rounded" alignment="center" controlSize="small" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="163">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="smallSystem"/>
+                                </buttonCell>
+                            </button>
+                            <button verticalHuggingPriority="750" id="157">
+                                <rect key="frame" x="20" y="62" width="96" height="25"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="roundTextured" title="W:4:12" bezelStyle="texturedRounded" alignment="center" controlSize="small" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="158">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="smallSystem"/>
+                                </buttonCell>
+                            </button>
+                        </subviews>
+                    </customView>
+                    <customView id="190" customClass="GTMWidthBasedTweaker">
+                        <rect key="frame" x="475" y="48" width="141" height="246"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <subviews>
+                            <button id="184">
+                                <rect key="frame" x="16" y="16" width="96" height="18"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="radio" title="W:4:12" bezelStyle="regularSquare" imagePosition="left" alignment="left" controlSize="mini" state="on" inset="2" id="185">
+                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                    <font key="font" metaFont="miniSystem"/>
+                                </buttonCell>
+                            </button>
+                            <button verticalHuggingPriority="750" id="168">
+                                <rect key="frame" x="19" y="96" width="96" height="18"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="squareTextured" title="W:4:12" bezelStyle="texturedSquare" imagePosition="overlaps" alignment="center" controlSize="mini" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="171">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="miniSystem"/>
+                                </buttonCell>
+                            </button>
+                            <button verticalHuggingPriority="750" id="166">
+                                <rect key="frame" x="20" y="146" width="96" height="17"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="roundRect" title="W:4:12" bezelStyle="roundedRect" alignment="center" controlSize="mini" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="173">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="miniSystem"/>
+                                </buttonCell>
+                            </button>
+                            <button verticalHuggingPriority="750" id="164">
+                                <rect key="frame" x="19" y="210" width="96" height="16"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="push" title="W:4:12" bezelStyle="rounded" alignment="center" controlSize="mini" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="175">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="miniSystem"/>
+                                </buttonCell>
+                            </button>
+                            <button verticalHuggingPriority="750" id="169">
+                                <rect key="frame" x="20" y="60" width="96" height="25"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="roundTextured" title="W:4:12" bezelStyle="texturedRounded" alignment="center" controlSize="mini" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="170">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="miniSystem"/>
+                                </buttonCell>
+                            </button>
+                            <button id="180">
+                                <rect key="frame" x="16" y="37" width="96" height="18"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="check" title="W:4:12" bezelStyle="regularSquare" imagePosition="left" alignment="left" controlSize="mini" state="on" inset="2" id="181">
+                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                    <font key="font" metaFont="miniSystem"/>
+                                </buttonCell>
+                            </button>
+                            <button verticalHuggingPriority="750" id="167">
+                                <rect key="frame" x="20" y="121" width="96" height="17"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="recessed" title="W:4:12" bezelStyle="recessed" alignment="center" controlSize="mini" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="172">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES" changeBackground="YES" changeGray="YES"/>
+                                    <font key="font" metaFont="miniSystem"/>
+                                </buttonCell>
+                            </button>
+                            <button verticalHuggingPriority="750" id="165">
+                                <rect key="frame" x="20" y="170" width="96" height="23"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="smallSquare" title="W:4:12" bezelStyle="smallSquare" imagePosition="overlaps" alignment="center" controlSize="mini" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="174">
+                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="miniSystem"/>
+                                </buttonCell>
+                            </button>
+                        </subviews>
+                    </customView>
+                </subviews>
+            </view>
+        </window>
+        <customObject id="35" customClass="GTMUILocalizerAndLayoutTweaker">
+            <connections>
+                <outlet property="localizer_" destination="117" id="118"/>
+                <outlet property="uiObject_" destination="1" id="193"/>
+            </connections>
+        </customObject>
+        <customObject id="117" customClass="GTMUILocalizerAndLayoutTweakerTestLocalizer"/>
+        <button verticalHuggingPriority="750" id="210">
+            <rect key="frame" x="0.0" y="0.0" width="154" height="17"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+            <buttonCell key="cell" type="recessed" title="Recessed Button" bezelStyle="recessed" alignment="center" controlSize="small" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="211">
+                <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES" changeBackground="YES" changeGray="YES"/>
+                <font key="font" metaFont="systemBold" size="12"/>
+            </buttonCell>
+        </button>
+        <button verticalHuggingPriority="750" id="212">
+            <rect key="frame" x="0.0" y="0.0" width="154" height="17"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+            <buttonCell key="cell" type="recessed" title="Recessed Button" bezelStyle="recessed" alignment="center" controlSize="small" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="213">
+                <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES" changeBackground="YES" changeGray="YES"/>
+                <font key="font" metaFont="systemBold" size="12"/>
+            </buttonCell>
+        </button>
+    </objects>
+</document>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>$GTMArchive</key>
+	<string>GTMUnitTestingArchive</string>
+	<key>$GTMVersion</key>
+	<integer>1</integer>
+	<key>ViewIsHidden</key>
+	<false/>
+	<key>ViewSubView 0</key>
+	<dict>
+		<key>ControlIsEnabled</key>
+		<true/>
+		<key>ControlSelectedCell</key>
+		<dict>
+			<key>CellState</key>
+			<integer>0</integer>
+			<key>CellTag</key>
+			<integer>0</integer>
+			<key>CellTitle</key>
+			<string>^Polly want a caret?</string>
+			<key>CellValue</key>
+			<string>^Polly want a caret?</string>
+		</dict>
+		<key>ControlTag</key>
+		<integer>0</integer>
+		<key>ControlType</key>
+		<string>NSTextField</string>
+		<key>ControlValue</key>
+		<string>^Polly want a caret?</string>
+		<key>ViewIsHidden</key>
+		<false/>
+	</dict>
+	<key>ViewSubView 1</key>
+	<dict>
+		<key>ButtonAlternateTitle</key>
+		<string></string>
+		<key>ControlIsEnabled</key>
+		<true/>
+		<key>ControlSelectedCell</key>
+		<dict>
+			<key>CellState</key>
+			<integer>0</integer>
+			<key>CellTag</key>
+			<integer>0</integer>
+			<key>CellTitle</key>
+			<string>Localized Button</string>
+			<key>CellValue</key>
+			<string>0</string>
+		</dict>
+		<key>ControlTag</key>
+		<integer>0</integer>
+		<key>ControlType</key>
+		<string>NSButton</string>
+		<key>ControlValue</key>
+		<string>0</string>
+		<key>ViewIsHidden</key>
+		<false/>
+	</dict>
+</dict>
+</plist>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>${EXECUTABLE_NAME}</string>
+	<key>CFBundleIconFile</key>
+	<string></string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>${PRODUCT_NAME}</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+    <!-- The CFBundleURLTypes are in here specifically to test
+    GTMGetURLHandler. See GTMGetURLHandlerTest for details -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>GTMUIUnitTestingHarnessURL</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>gtmgeturlhandlertest</string>
+			</array>
+			<key>GTMBundleURLClass</key>
+			<string>GTMGetURLHandlerTest</string>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>GTMGetURLHandlerBadClassURL</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>gtmgeturlhandlerbadclasstest</string>
+			</array>
+			<key>GTMBundleURLClass</key>
+			<string>GTMGetURLHandlerBadClassWarning</string>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>GTMGetURLHandlerMissingClassURL</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>gtmgeturlhandlermissingclasstest</string>
+			</array>
+			<key>GTMBundleURLClass</key>
+			<string>GTMGetURLHandlerMissingClassWarning</string>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>GTMGetURLHandlerMissingHandlerURL</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>gtmgeturlhandlermissinghandlerurl</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>1.0</string>
+	<key>NSMainNibFile</key>
+	<string>MainMenu</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+</dict>
+</plist>

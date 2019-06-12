@@ -1,0 +1,400 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="11201" systemVersion="15G1004" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none">
+    <dependencies>
+        <deployment identifier="macosx"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="11201"/>
+        <capability name="box content view" minToolsVersion="7.0"/>
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="GTMUILocalizerTestWindowController">
+            <connections>
+                <outlet property="_aBox" destination="70" id="DY4-jb-GGU"/>
+                <outlet property="_aButton1" destination="54" id="Ugp-uF-Z7I"/>
+                <outlet property="_aButton2" destination="55" id="3rs-oA-bKx"/>
+                <outlet property="_aCheckbox1" destination="64" id="6zb-jT-coj"/>
+                <outlet property="_aCheckbox2" destination="65" id="4BO-kN-V5H"/>
+                <outlet property="_aComboBox" destination="173" id="lzx-oE-yyJ"/>
+                <outlet property="_aRadio1" destination="61" id="5jN-Rj-MP9"/>
+                <outlet property="_aRadio2" destination="60" id="5LH-uI-QXq"/>
+                <outlet property="_aSegmented" destination="169" id="zAV-Ak-0zy"/>
+                <outlet property="_aTextField1" destination="62" id="E5A-U4-yUF"/>
+                <outlet property="_aTextField2" destination="63" id="euW-U2-ZPk"/>
+                <outlet property="_anotherWindow" destination="51" id="g9Q-68-4Lq"/>
+                <outlet property="_bindingsSearchField" destination="151" id="d04-Qy-Omt"/>
+                <outlet property="_bindingsTextField" destination="99" id="b1u-KQ-66G"/>
+                <outlet property="_button1" destination="4" id="Rtc-Xu-uZA"/>
+                <outlet property="_button2" destination="6" id="84Q-c9-TFl"/>
+                <outlet property="_checkbox1" destination="41" id="89X-pT-2pU"/>
+                <outlet property="_checkbox2" destination="45" id="1jk-cG-El7"/>
+                <outlet property="_otherMenu" destination="24" id="i2e-1m-IFN"/>
+                <outlet property="_radio1" destination="48" id="fDX-DK-1jH"/>
+                <outlet property="_radio2" destination="49" id="meL-Wl-Xo2"/>
+                <outlet property="_tabViewItem1" destination="9" id="dGv-iG-1ax"/>
+                <outlet property="_tabViewItem2" destination="10" id="6wN-Re-m4M"/>
+                <outlet property="_textField1" destination="13" id="aTh-H8-Ppj"/>
+                <outlet property="_textField2" destination="15" id="f4a-e4-4Ih"/>
+                <outlet property="_toolbarItem1" destination="96" id="1TD-AV-La4"/>
+                <outlet property="_toolbarItem2" destination="97" id="v8R-Ax-tR9"/>
+                <outlet property="menuItem1" destination="38" id="u3S-5p-hhh"/>
+                <outlet property="menuItem2" destination="39" id="pib-lI-79A"/>
+                <outlet property="menuItem3" destination="Y3l-JE-3Yv" id="Sfv-80-tdR"/>
+                <outlet property="window" destination="1" id="tHI-7l-T7s"/>
+            </connections>
+        </customObject>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
+        <customObject id="-3" userLabel="Application" customClass="NSObject"/>
+        <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" oneShot="NO" visibleAtLaunch="NO" animationBehavior="default" id="1">
+            <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
+            <windowPositionMask key="initialPositionMask" leftStrut="YES" bottomStrut="YES"/>
+            <rect key="contentRect" x="196" y="240" width="480" height="270"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1028"/>
+            <view key="contentView" id="2">
+                <rect key="frame" x="0.0" y="0.0" width="480" height="270"/>
+                <autoresizingMask key="autoresizingMask"/>
+                <subviews>
+                    <button verticalHuggingPriority="750" id="4">
+                        <rect key="frame" x="30" y="205" width="100" height="32"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <buttonCell key="cell" type="push" title="^Button1" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="5">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                    </button>
+                    <button verticalHuggingPriority="750" id="6">
+                        <rect key="frame" x="30" y="173" width="100" height="32"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <buttonCell key="cell" type="push" title="^Button2" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="7">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                    </button>
+                    <tabView id="8">
+                        <rect key="frame" x="161" y="115" width="177" height="124"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <font key="font" metaFont="system"/>
+                        <tabViewItems>
+                            <tabViewItem label="^Tab1" identifier="1" id="9">
+                                <view key="view" id="12">
+                                    <rect key="frame" x="10" y="33" width="157" height="78"/>
+                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                </view>
+                            </tabViewItem>
+                            <tabViewItem label="^Tab2" identifier="2" id="10">
+                                <view key="view" id="11">
+                                    <rect key="frame" x="10" y="33" width="157" height="78"/>
+                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                </view>
+                            </tabViewItem>
+                        </tabViewItems>
+                    </tabView>
+                    <textField verticalHuggingPriority="750" id="13">
+                        <rect key="frame" x="71" y="61" width="74" height="17"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="^Label1" id="14">
+                            <font key="font" metaFont="system"/>
+                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                            <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                        </textFieldCell>
+                    </textField>
+                    <textField verticalHuggingPriority="750" id="15">
+                        <rect key="frame" x="153" y="66" width="72" height="17"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="^Label2" id="16">
+                            <font key="font" metaFont="system"/>
+                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                            <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                        </textFieldCell>
+                    </textField>
+                    <popUpButton verticalHuggingPriority="750" id="35">
+                        <rect key="frame" x="315" y="67" width="100" height="26"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <popUpButtonCell key="cell" type="push" title="^Item 1" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="38" id="36">
+                            <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="menu"/>
+                            <menu key="menu" title="OtherViews" id="37">
+                                <items>
+                                    <menuItem title="^Item 1" state="on" id="38"/>
+                                    <menuItem title="^Item 2" id="39"/>
+                                    <menuItem title="^Item 3" id="Y3l-JE-3Yv" userLabel="^Item 3">
+                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                    </menuItem>
+                                </items>
+                            </menu>
+                        </popUpButtonCell>
+                    </popUpButton>
+                    <button id="41">
+                        <rect key="frame" x="154" y="33" width="106" height="18"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <buttonCell key="cell" type="check" title="^Checkbox 1" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="42">
+                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                    </button>
+                    <button id="45">
+                        <rect key="frame" x="291" y="33" width="106" height="18"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <buttonCell key="cell" type="check" title="^Checkbox 2" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="46">
+                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                    </button>
+                    <matrix verticalHuggingPriority="750" allowsEmptySelection="NO" id="47">
+                        <rect key="frame" x="351" y="172" width="87" height="38"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                        <size key="cellSize" width="87" height="18"/>
+                        <size key="intercellSpacing" width="4" height="2"/>
+                        <buttonCell key="prototype" type="radio" title="Radio" imagePosition="left" alignment="left" inset="2" id="50">
+                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <cells>
+                            <column>
+                                <buttonCell type="radio" title="^Radio 1" imagePosition="left" alignment="left" state="on" tag="1" inset="2" id="48">
+                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                                <buttonCell type="radio" title="^Radio 2" imagePosition="left" alignment="left" inset="2" id="49">
+                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                            </column>
+                        </cells>
+                    </matrix>
+                    <box autoresizesSubviews="NO" borderType="line" title="Bindings Tests" id="165">
+                        <rect key="frame" x="13" y="80" width="134" height="92"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <view key="contentView" id="JdY-LY-sn5">
+                            <rect key="frame" x="1" y="1" width="132" height="76"/>
+                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                            <subviews>
+                                <textField verticalHuggingPriority="750" id="99">
+                                    <rect key="frame" x="18" y="44" width="96" height="22"/>
+                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" id="100">
+                                        <font key="font" metaFont="system"/>
+                                        <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
+                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                    </textFieldCell>
+                                    <connections>
+                                        <binding destination="101" name="displayPatternValue1" keyPath="values.foo" id="161">
+                                            <dictionary key="options">
+                                                <string key="NSDisplayPattern">^DisplayPattern</string>
+                                                <string key="NSMultipleValuesPlaceholder">^MultipleValuesPlaceholder</string>
+                                                <string key="NSNoSelectionPlaceholder">^NoSelectionPlaceholder</string>
+                                                <string key="NSNotApplicablePlaceholder">^NotApplicablePlaceholder</string>
+                                                <string key="NSNullPlaceholder">^NullPlaceholder</string>
+                                            </dictionary>
+                                        </binding>
+                                    </connections>
+                                </textField>
+                                <searchField wantsLayer="YES" verticalHuggingPriority="750" id="151">
+                                    <rect key="frame" x="18" y="14" width="96" height="22"/>
+                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                    <searchFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" borderStyle="bezel" bezelStyle="round" id="152">
+                                        <font key="font" metaFont="system"/>
+                                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                    </searchFieldCell>
+                                    <connections>
+                                        <binding destination="101" name="predicate" keyPath="values.foo" id="163">
+                                            <dictionary key="options">
+                                                <string key="NSDisplayName">^DisplayName</string>
+                                                <string key="NSPredicateFormat">keyPath contains $value</string>
+                                            </dictionary>
+                                        </binding>
+                                    </connections>
+                                </searchField>
+                            </subviews>
+                        </view>
+                    </box>
+                </subviews>
+            </view>
+            <toolbar key="toolbar" implicitIdentifier="13B554E3-53CB-4465-BDA3-4F9A8B406FD0" autosavesConfiguration="NO" displayMode="iconAndLabel" sizeMode="regular" id="88">
+                <allowedToolbarItems>
+                    <toolbarItem implicitItemIdentifier="927E93A7-3FD1-412D-9C0E-FB7F594FDEF2" label="^ToolbarItemLabel" paletteLabel="^ToolbarItemPaletteLabel" toolTip="^ToolTip" tag="-1" image="NSPreferencesGeneral" id="96"/>
+                    <toolbarItem implicitItemIdentifier="44682372-574A-40F6-8822-35F014DDDD4B" label="ToolbarItemLabel" paletteLabel="ToolbarItemPaletteLabel" toolTip="ToolTip" tag="-1" image="NSUserAccounts" id="97"/>
+                </allowedToolbarItems>
+                <defaultToolbarItems>
+                    <toolbarItem reference="96"/>
+                    <toolbarItem reference="97"/>
+                </defaultToolbarItems>
+            </toolbar>
+        </window>
+        <menu title="^MenuTest" id="24">
+            <items>
+                <menuItem title="^MenuItemTest" id="25">
+                    <modifierMask key="keyEquivalentModifierMask"/>
+                </menuItem>
+            </items>
+        </menu>
+        <customObject id="30" customClass="GTMUILocalizer">
+            <connections>
+                <outlet property="owner_" destination="-2" id="32"/>
+            </connections>
+        </customObject>
+        <window title="^WindowTest" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" oneShot="NO" visibleAtLaunch="NO" animationBehavior="default" id="51">
+            <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
+            <windowPositionMask key="initialPositionMask" leftStrut="YES" bottomStrut="YES"/>
+            <rect key="contentRect" x="196" y="240" width="480" height="270"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1578"/>
+            <view key="contentView" id="52">
+                <rect key="frame" x="0.0" y="0.0" width="480" height="270"/>
+                <autoresizingMask key="autoresizingMask"/>
+                <subviews>
+                    <box autoresizesSubviews="NO" borderType="line" title="^Box" id="70">
+                        <rect key="frame" x="32" y="158" width="126" height="92"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <view key="contentView" id="pui-tM-1Td">
+                            <rect key="frame" x="1" y="1" width="124" height="76"/>
+                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                            <subviews>
+                                <button verticalHuggingPriority="750" id="54">
+                                    <rect key="frame" x="12" y="38" width="100" height="32"/>
+                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                    <buttonCell key="cell" type="push" title="^Button1" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="57">
+                                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                        <font key="font" metaFont="system"/>
+                                    </buttonCell>
+                                </button>
+                                <button verticalHuggingPriority="750" id="55">
+                                    <rect key="frame" x="12" y="6" width="100" height="32"/>
+                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                    <buttonCell key="cell" type="push" title="^Button2" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="56">
+                                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                        <font key="font" metaFont="system"/>
+                                    </buttonCell>
+                                </button>
+                            </subviews>
+                        </view>
+                    </box>
+                    <scrollView horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" usesPredominantAxisScrolling="NO" id="72">
+                        <rect key="frame" x="219" y="101" width="144" height="145"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <clipView key="contentView" id="Wgx-mP-QIl">
+                            <rect key="frame" x="1" y="1" width="142" height="143"/>
+                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                            <subviews>
+                                <customView id="71">
+                                    <rect key="frame" x="0.0" y="0.0" width="142" height="143"/>
+                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                    <subviews>
+                                        <textField verticalHuggingPriority="750" id="62">
+                                            <rect key="frame" x="17" y="106" width="74" height="17"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="^Label1" id="69">
+                                                <font key="font" metaFont="system"/>
+                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                            </textFieldCell>
+                                        </textField>
+                                        <matrix verticalHuggingPriority="750" allowsEmptySelection="NO" id="58">
+                                            <rect key="frame" x="20" y="60" width="87" height="38"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                            <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                            <size key="cellSize" width="87" height="18"/>
+                                            <size key="intercellSpacing" width="4" height="2"/>
+                                            <buttonCell key="prototype" type="radio" title="Radio" imagePosition="left" alignment="left" inset="2" id="59">
+                                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                <font key="font" metaFont="system"/>
+                                            </buttonCell>
+                                            <cells>
+                                                <column>
+                                                    <buttonCell type="radio" title="^Radio 1" imagePosition="left" alignment="left" state="on" tag="1" inset="2" id="61">
+                                                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                        <font key="font" metaFont="system"/>
+                                                    </buttonCell>
+                                                    <buttonCell type="radio" title="^Radio 2" imagePosition="left" alignment="left" inset="2" id="60">
+                                                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                        <font key="font" metaFont="system"/>
+                                                    </buttonCell>
+                                                </column>
+                                            </cells>
+                                        </matrix>
+                                        <textField verticalHuggingPriority="750" id="63">
+                                            <rect key="frame" x="17" y="35" width="72" height="17"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="^Label2" id="68">
+                                                <font key="font" metaFont="system"/>
+                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                            </textFieldCell>
+                                        </textField>
+                                    </subviews>
+                                </customView>
+                            </subviews>
+                            <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                        </clipView>
+                        <scroller key="horizontalScroller" verticalHuggingPriority="750" horizontal="YES" id="74">
+                            <rect key="frame" x="1" y="128" width="142" height="16"/>
+                            <autoresizingMask key="autoresizingMask"/>
+                        </scroller>
+                        <scroller key="verticalScroller" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="73">
+                            <rect key="frame" x="127" y="1" width="16" height="143"/>
+                            <autoresizingMask key="autoresizingMask"/>
+                        </scroller>
+                    </scrollView>
+                    <splitView id="76">
+                        <rect key="frame" x="42" y="66" width="106" height="45"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                        <subviews>
+                            <button id="64">
+                                <rect key="frame" x="-2" y="-2" width="110" height="22"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="check" title="^Checkbox 1" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="67">
+                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                            </button>
+                            <button id="65">
+                                <rect key="frame" x="-2" y="25" width="110" height="22"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="check" title="^Checkbox 2" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="66">
+                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                            </button>
+                        </subviews>
+                        <holdingPriorities>
+                            <real value="250"/>
+                            <real value="250"/>
+                        </holdingPriorities>
+                    </splitView>
+                    <segmentedControl verticalHuggingPriority="750" id="169">
+                        <rect key="frame" x="198" y="38" width="185" height="24"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <segmentedCell key="cell" borderStyle="border" alignment="left" style="rounded" trackingMode="selectOne" id="170">
+                            <font key="font" metaFont="system"/>
+                            <segments>
+                                <segment label="^Seg1"/>
+                                <segment label="^Seg2" selected="YES" tag="1"/>
+                                <segment label="^Seg3"/>
+                            </segments>
+                        </segmentedCell>
+                    </segmentedControl>
+                    <comboBox verticalHuggingPriority="750" id="173">
+                        <rect key="frame" x="371" y="180" width="92" height="26"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <comboBoxCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" title="^Label1" placeholderString="^Placeholder1" drawsBackground="YES" completes="NO" numberOfVisibleItems="4" id="174">
+                            <font key="font" metaFont="system"/>
+                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                            <objectValues>
+                                <string>^Choice1</string>
+                                <string>^Choice2</string>
+                                <string>^Choice3</string>
+                                <string>^Choice4</string>
+                                <string>^Choice5</string>
+                            </objectValues>
+                        </comboBoxCell>
+                    </comboBox>
+                </subviews>
+            </view>
+        </window>
+        <userDefaultsController representsSharedInstance="YES" id="101"/>
+    </objects>
+    <resources>
+        <image name="NSPreferencesGeneral" width="32" height="32"/>
+        <image name="NSUserAccounts" width="32" height="32"/>
+    </resources>
+</document>

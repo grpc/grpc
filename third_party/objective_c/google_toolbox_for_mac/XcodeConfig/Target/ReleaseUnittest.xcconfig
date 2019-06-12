@@ -1,0 +1,37 @@
+//
+//  ReleaseUnittest.xcconfig
+//
+//  Xcode configuration file for a release unittest target.
+//
+//  This is a _Target_ config file, for use in the "Based on" popup of the
+//  settings dialog for a target. Do not attempt to apply this as the base
+//  of an Xcode configuration in the project settings dialog.
+//
+//  Copyright 2006-2008 Google Inc.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License"); you may not
+//  use this file except in compliance with the License.  You may obtain a copy
+//  of the License at
+// 
+//  http://www.apache.org/licenses/LICENSE-2.0
+// 
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+//  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+//  License for the specific language governing permissions and limitations under
+//  the License.
+//
+
+// Unittests are loadable bundles
+#include "../subconfig/Unittest.xcconfig"
+
+// When running OCUnit tests in Release mode the unittests BUNDLE_LOADER
+// is probably stripped (or at least it will be if they are using our
+// config files). In that case the Unittest will fail to link because
+// the symbols have been removed from the bundle's loader's symbol table.
+// This flag tells the unittest to trust that the values will be available
+// at runtime (or error out) and not to force an error at link time.
+// Do NOT set BUNDLE_LOADER (Bundle Loader) setting in a release unittest target
+// because you will run into interesting link issues
+// "indirect symbol table entry n past the end of the symbol table"
+OTHER_LDFLAGS = $(OTHER_LDFLAGS) -undefined dynamic_lookup

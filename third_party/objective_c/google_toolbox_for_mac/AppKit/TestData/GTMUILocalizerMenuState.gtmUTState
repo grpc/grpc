@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>$GTMArchive</key>
+	<string>GTMUnitTestingArchive</string>
+	<key>$GTMVersion</key>
+	<integer>1</integer>
+	<key>MenuItem 0</key>
+	<dict>
+		<key>MenuItemIndentationLevel</key>
+		<integer>0</integer>
+		<key>MenuItemIsAlternate</key>
+		<false/>
+		<key>MenuItemIsEnabled</key>
+		<true/>
+		<key>MenuItemIsSeparator</key>
+		<false/>
+		<key>MenuItemKeyEquivalent</key>
+		<string></string>
+		<key>MenuItemState</key>
+		<integer>0</integer>
+		<key>MenuItemTag</key>
+		<integer>0</integer>
+		<key>MenuItemTitle</key>
+		<string>Localized Menu Item</string>
+	</dict>
+	<key>MenuTitle</key>
+	<string>Localized Menu</string>
+</dict>
+</plist>

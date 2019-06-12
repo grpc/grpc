@@ -24,7 +24,7 @@
 #
 
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
-#load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
+load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 
 
 
@@ -148,20 +148,7 @@ def grpc_proto_library(
 def ios_cc_test(
         name,
         **kwargs):
-    ios_test_adapter = "GTM_GoogleTestRunner_GTM_USING_XCTEST";
-    native.objc_library(
-        name = ios_test_adapter,
-        testonly = 1,
-        srcs = [
-            "third_party/objective_c/google_toolbox_for_mac/UnitTesting/GTMGoogleTestRunner.mm",
-        ],
-        copts = [
-            "-DGTM_USING_XCTEST",
-        ],
-        external_deps = [
-            "gtest",
-        ],
-    )
+    ios_test_adapter = "//third_party/objective_c/google_toolbox_for_mac:GTM_GoogleTestRunner_GTM_USING_XCTEST";
 
     apple_test_lib = name + "_test_lib_apple"
     apple_tags = ["manual", "ios_cc_test"]
@@ -174,8 +161,8 @@ def ios_cc_test(
         alwayslink = 1,
         testonly = 1,
     )
-    apple_test_deps = [":" + ios_test_adapter, ":" + apple_test_lib]
-    native.ios_unit_test(
+    apple_test_deps = [ios_test_adapter, ":" + apple_test_lib]
+    ios_unit_test(
         name = name + "_on_ios",
         size = kwargs.get("size"),
         tags = apple_tags,
@@ -228,10 +215,10 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             )
     else:
         native.cc_test(tags = tags, **args)
-        ios_cc_test(
-            name = name,
-            **args
-        )
+    ios_cc_test(
+        name = name,
+        **args
+    )
 
 
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = []):

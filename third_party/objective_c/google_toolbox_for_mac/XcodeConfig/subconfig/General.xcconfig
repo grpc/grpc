@@ -1,0 +1,145 @@
+//
+//  General.xcconfig
+//
+//  Xcode configuration file for general build settings applicable to all
+//  projects and targets.
+//
+//  Copyright 2011 Google Inc.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License"); you may not
+//  use this file except in compliance with the License.  You may obtain a copy
+//  of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+//  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+//  License for the specific language governing permissions and limitations under
+//  the License.
+//
+
+// We want our pngs compressed when they are copied
+COMPRESS_PNG_FILES = YES
+
+// Zerolink prevents link warnings so turn it off
+ZERO_LINK = NO
+
+// Prebinding considered unhelpful in 10.3 and later
+PREBINDING = NO
+
+// Work around Xcode bugs by using external strip. See:
+// http://lists.apple.com/archives/Xcode-users/2006/Feb/msg00050.html
+SEPARATE_STRIP = YES
+
+// Do not strip any binaries during copy as it will corrupt code signatures.
+// This wont't affect iOS (since they can't have external executables or
+// frameworks) and prevents corruption on Mac. Xcode 4 warns but does not
+// fix this case:
+// http://stackoverflow.com/questions/5494920/xcode-4-archive-warning-to-skip-copy-phase
+COPY_PHASE_STRIP = NO
+
+// Force C99 dialect
+GCC_C_LANGUAGE_STANDARD = c99
+
+// Obj-C exceptions are needed for @synchronized(self)
+GCC_ENABLE_OBJC_EXCEPTIONS = YES
+
+// not sure why apple defaults this on, but it's pretty risky
+ALWAYS_SEARCH_USER_PATHS = NO
+
+// For ObjC++ we want C++ cdtors called
+GCC_OBJC_CALL_CXX_CDTORS = YES
+
+// Use Obj-C fast dispatch
+GCC_FAST_OBJC_DISPATCH = YES
+
+// Warn on implicit data conversions in 64bit builds
+GCC_WARN_64_TO_32_BIT_CONVERSION[arch=*64] = YES
+
+// Strictest warning policy that we can do
+// Options intentionally turned off
+// http://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
+// -Wsystem-headers - since we can't fix them we are going to assume they're ok
+// -Wtraditional - we are compiling with c99, so we don't care about trad
+// -Wdeclaration-after-statement - we are compiling with c99 which allows this
+// -Wpadded - lots of structures will get padded, so although this warning may
+//            be useful to show us badly padded structures, it causes to many
+//            warnings to be on generally.
+// -Wunreachable-code - several macros use the do {} while (0) which always
+//                      flags this. e.g. all the ST... macros for unittesting
+// -Wredundant-decls - we sometimes use redundant decls to add an attribute
+//                     to a function/method (i.e.
+// -Waggregate-return - NSPoint, NSRect etc are often returned as aggregates
+// -Wshorten-64-to-32 - this is defined in the 64 bit build settings
+// -Wcast-qual - Would love to turn this on, but causes issues when converting
+//               CFTypes to NSTypes and also has issues with some external
+//               libraries (notably zlib)
+// -Wundef - we conditionalize on TARGET_OS_IPHONE which is only defined
+//           in the iPhoneSDK making us unable to turn this warning on.
+// -Wstrict-prototypes - breaks the GTM_METHOD_CHECK macro
+// -Wcast-align - causes a whole pile of problems buildng with iPhoneSDK
+// -Wreserved-id-macro - causes a lot of problems with xctest framework.
+
+// Objective C warnings
+// http://gcc.gnu.org/onlinedocs/gcc/Objective_002dC-and-Objective_002dC_002b_002b-Dialect-Options.html
+// -Wassign-intercept - this really is more informational than a warning.
+// -Wselector - the system headers define lots of methods with the same selector
+//              rendering this mostly useless to us
+// -Wstrict-selector-match - the system headers define lots of methods with the
+//                           same selector rendering this mostly useless to us
+
+// C Only Warnings
+GTM_GENERAL_OTHER_CFLAGS = -Wdiv-by-zero -Wbad-function-cast  -Wnested-externs -Wold-style-definition
+
+// C++ Only Warnings
+GTM_GENERAL_OTHER_CPLUSPLUSFLAGS = -Wabi -Wctor-dtor-privacy -Wstrict-null-sentinel -Wsign-promo
+GCC_WARN_EFFECTIVE_CPLUSPLUS_VIOLATIONS = YES
+GCC_WARN_HIDDEN_VIRTUAL_FUNCTIONS = YES
+GCC_WARN_ABOUT_INVALID_OFFSETOF_MACRO = YES
+GCC_WARN_NON_VIRTUAL_DESTRUCTOR = YES
+
+// General C/C++/ObjC/ObjC++ warnings
+// These are generally ordered in easiest to hardest to support.
+// If you are transitioning, you can turn on the levels one level at a time
+// in your project file by editing GTM_GENERAL_WARNING_CFLAGS and only
+// including the warning levels that you currently are compiling against.
+// GTM should always compile with full warnings.
+GTM_GENERAL_WARNING_CFLAGS1 = -Wall -Wendif-labels -Winvalid-pch -Wformat=2 -Wmissing-format-attribute -Wwrite-strings -Wstack-protector -Wstrict-aliasing=2
+GTM_GENERAL_WARNING_CFLAGS2 = -Wpacked -Wmissing-field-initializers
+GTM_EXTRA_WARNING_OVERRIDE_CFLAGS = -Wno-unused-parameter -Wno-sign-compare
+GTM_GENERAL_WARNING_CFLAGS3 = -Wextra $(GTM_EXTRA_WARNING_OVERRIDE_CFLAGS) -Wpointer-arith -Wdisabled-optimization -Wfloat-equal
+GTM_GENERAL_WARNING_CFLAGS = $(GTM_GENERAL_WARNING_CFLAGS1) $(GTM_GENERAL_WARNING_CFLAGS2) $(GTM_GENERAL_WARNING_CFLAGS3)
+
+// GCC_WARN_UNINITIALIZED_AUTOS is defined in the release/debug xcconfigs.
+GCC_WARN_CHECK_SWITCH_STATEMENTS = YES
+GCC_WARN_ALLOW_INCOMPLETE_PROTOCOL = YES
+GCC_WARN_ABOUT_MISSING_NEWLINE = YES
+GCC_TREAT_WARNINGS_AS_ERRORS = YES
+GCC_WARN_INITIALIZER_NOT_FULLY_BRACKETED = YES
+GCC_WARN_ABOUT_RETURN_TYPE = YES
+GCC_WARN_MISSING_PARENTHESES = YES
+GCC_WARN_ABOUT_POINTER_SIGNEDNESS = YES
+GCC_WARN_TYPECHECK_CALLS_TO_PRINTF = YES
+GCC_WARN_UNKNOWN_PRAGMAS = YES
+GCC_WARN_UNUSED_LABEL = YES
+GCC_WARN_UNUSED_FUNCTION = YES
+GCC_WARN_UNUSED_VALUE = YES
+GCC_WARN_UNUSED_VARIABLE = YES
+GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS = YES
+GCC_WARN_UNDECLARED_SELECTOR = YES
+// We don't turn on shadow and sign comparisons because too many 3rd party
+// libaries don't compile with them turned on (sign compare rarely catches
+// errors, but shadow is very useful).
+// NOTE: sign compare is also controlled by -Wextra, we we override it above.
+// GCC_WARN_SHADOW = YES
+// GCC_WARN_SIGN_COMPARE = YES
+
+GCC_WARN_PEDANTIC = NO
+GCC_WARN_ABOUT_MISSING_PROTOTYPES = NO
+GCC_WARN_PROTOTYPE_CONVERSION = NO
+GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = NO
+GCC_TREAT_NONCONFORMANT_CODE_ERRORS_AS_WARNINGS = NO
+GCC_WARN_UNUSED_PARAMETER = NO
+// Use of Gestalt requires 4 char constants (amongst other things)
+GCC_WARN_FOUR_CHARACTER_CONSTANTS = NO

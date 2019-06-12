@@ -1,0 +1,42 @@
+//
+//  GTMMerge.xcconfig
+//
+//  Xcode configuration file that merges other xcconfig settings.
+//
+//  Copyright 2008 Google Inc.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License"); you may not
+//  use this file except in compliance with the License.  You may obtain a copy
+//  of the License at
+// 
+//  http://www.apache.org/licenses/LICENSE-2.0
+// 
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+//  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+//  License for the specific language governing permissions and limitations under
+//  the License.
+//
+
+// Xcode doesn't allow you to "inherit" settings with includes so you always
+// end up overriding settings accidentally. To avoid this, we instead
+// allow you to define settings at different levels 
+// (GENERAL, PLATFORM (iPhone/Mac), CONFIGURATION (Release/Debug) and we merge
+// those together here. 
+// We DO NOT inherit OTHER_CPLUSPLUSFLAGS because OTHER_CPLUSPLUSFLAGS by default
+// takes on OTHER_CFLAGS settings, and we don't want those applied to our
+// C++ files. OTHER_CFLAGS is the only way to set C specific settings on our
+// C files that we don't want to have applied to our C++ files such as
+// -Wold-style-definition
+// If you would like to add your own custom settings to the base GTM ones
+// please use the GTM_HOST_* settings. These are left empty by GTM and are
+// for the host app to fill in. For example if you wanted to have stack
+// protection turned on for both debug and release builds you could set
+// GTM_HOST_OTHER_CFLAGS = -fstack-protector -fstack-protector-all
+// in your own settings files, and then include the GTM ones.
+
+WARNING_CFLAGS = $(inherited) $(GTM_GENERAL_WARNING_CFLAGS) $(GTM_PLATFORM_WARNING_CFLAGS) $(GTM_CONFIGURATION_WARNING_CFLAGS) $(GTM_HOST_WARNING_CFLAGS)
+OTHER_CFLAGS = $(inherited) $(GTM_GENERAL_OTHER_CFLAGS) $(GTM_PLATFORM_OTHER_CFLAGS) $(GTM_CONFIGURATION_OTHER_CFLAGS) $(GTM_HOST_OTHER_CFLAGS)
+OTHER_CPLUSPLUSFLAGS = $(GTM_GENERAL_OTHER_CPLUSPLUSFLAGS) $(GTM_PLATFORM_OTHER_CPLUSPLUSFLAGS) $(GTM_CONFIGURATION_OTHER_CPLUSPLUSFLAGS) $(GTM_HOST_OTHER_CPLUSPLUSFLAGS)
+GCC_PREPROCESSOR_DEFINITIONS = $(inherited) $(GTM_GENERAL_GCC_PREPROCESSOR_DEFINITIONS) $(GTM_PLATFORM_GCC_PREPROCESSOR_DEFINITIONS) $(GTM_CONFIGURATION_GCC_PREPROCESSOR_DEFINITIONS) $(GTM_HOST_GCC_PREPROCESSOR_DEFINITIONS)
+OTHER_LDFLAGS = $(inherited) $(GTM_GENERAL_OTHER_LDFLAGS) $(GTM_PLATFORM_OTHER_LDFLAGS) $(GTM_CONFIGURATION_OTHER_LDFLAGS) $(GTM_HOST_OTHER_LDFLAGS)
