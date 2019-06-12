@@ -1815,7 +1815,9 @@ def server(thread_pool,
            interceptors=None,
            options=None,
            maximum_concurrent_rpcs=None,
-           compression=None):
+           compression=None,
+           request_mapper=None,
+           response_mapper=None):
     """Creates a Server with which RPCs can be serviced.
 
     Args:
@@ -1836,6 +1838,16 @@ def server(thread_pool,
       compression: An element of grpc.compression, e.g.
         grpc.compression.Gzip. This compression algorithm will be used for the
         lifetime of the server unless overridden. This is an EXPERIMENTAL option.
+      request_mapper: A method that will be called with three arguments:
+        `method_name` (string, canonical method name), `metadata` (dict, gRPC
+        message metadata) and `message` (bytes, serialized gRPC message payload).
+        The method will be called before `message` is deserialized. The function
+        should return a `metadata` and `message` (same types) tuple.
+      response_mapper: A method that will be called with three arguments:
+        `method_name` (string, canonical method name), `metadata` (dict, gRPC
+        response metadata), and `message` (bytes, serialized gRPC message
+        payload). The function should return a `metadata` and `message` (same
+        types) tuple.
 
     Returns:
       A Server object.
@@ -1845,7 +1857,8 @@ def server(thread_pool,
                                  if handlers is None else handlers, ()
                                  if interceptors is None else interceptors, ()
                                  if options is None else options,
-                                 maximum_concurrent_rpcs, compression)
+                                 maximum_concurrent_rpcs, compression,
+                                 request_mapper, response_mapper)
 
 
 @contextlib.contextmanager
