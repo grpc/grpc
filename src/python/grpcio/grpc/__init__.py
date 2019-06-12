@@ -1447,6 +1447,8 @@ class Server(six.with_metaclass(abc.ABCMeta)):
     def wait_for_termination(self):
         """Block current thread until the server stops.
 
+        This is an EXPERIMENTAL API.
+
         The wait will not consume computational resources during blocking, and it
         will block indefinitely. There are two ways to unblock:
 
