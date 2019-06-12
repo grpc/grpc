@@ -28,7 +28,6 @@
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -85,9 +84,8 @@ class PickFirst : public LoadBalancingPolicy {
    public:
     PickFirstSubchannelList(PickFirst* policy, TraceFlag* tracer,
                             const ServerAddressList& addresses,
-                            grpc_combiner* combiner,
                             const grpc_channel_args& args)
-        : SubchannelList(policy, tracer, addresses, combiner,
+        : SubchannelList(policy, tracer, addresses,
                          policy->channel_control_helper(), args) {
       // Need to maintain a ref to the LB policy as long as we maintain
       // any references to subchannels, since the subchannels'
@@ -111,19 +109,18 @@ class PickFirst : public LoadBalancingPolicy {
 
   class Picker : public SubchannelPicker {
    public:
-    explicit Picker(
-        RefCountedPtr<ConnectedSubchannelInterface> connected_subchannel)
-        : connected_subchannel_(std::move(connected_subchannel)) {}
+    explicit Picker(RefCountedPtr<SubchannelInterface> subchannel)
+        : subchannel_(std::move(subchannel)) {}
 
     PickResult Pick(PickArgs args) override {
       PickResult result;
       result.type = PickResult::PICK_COMPLETE;
-      result.connected_subchannel = connected_subchannel_;
+      result.subchannel = subchannel_;
       return result;
     }
 
    private:
-    RefCountedPtr<ConnectedSubchannelInterface> connected_subchannel_;
+    RefCountedPtr<SubchannelInterface> subchannel_;
   };
 
   void ShutdownLocked() override;
@@ -166,6 +163,9 @@ void PickFirst::ShutdownLocked() {
 void PickFirst::ExitIdleLocked() {
   if (shutdown_) return;
   if (idle_) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
+      gpr_log(GPR_INFO, "Pick First %p exiting idle", this);
+    }
     idle_ = false;
     if (subchannel_list_ == nullptr ||
         subchannel_list_->num_subchannels() == 0) {
@@ -200,7 +200,7 @@ void PickFirst::UpdateLocked(UpdateArgs args) {
   grpc_channel_args* new_args =
       grpc_channel_args_copy_and_add(args.args, &new_arg, 1);
   auto subchannel_list = MakeOrphanable<PickFirstSubchannelList>(
-      this, &grpc_lb_pick_first_trace, args.addresses, combiner(), *new_args);
+      this, &grpc_lb_pick_first_trace, args.addresses, *new_args);
   grpc_channel_args_destroy(new_args);
   if (subchannel_list->num_subchannels() == 0) {
     // Empty update or no valid subchannels. Unsubscribe from all current
@@ -350,8 +350,8 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         // some connectivity state notifications.
         if (connectivity_state == GRPC_CHANNEL_READY) {
           p->channel_control_helper()->UpdateState(
-              GRPC_CHANNEL_READY, UniquePtr<SubchannelPicker>(New<Picker>(
-                                      connected_subchannel()->Ref())));
+              GRPC_CHANNEL_READY,
+              UniquePtr<SubchannelPicker>(New<Picker>(subchannel()->Ref())));
         } else {  // CONNECTING
           p->channel_control_helper()->UpdateState(
               connectivity_state,
@@ -445,13 +445,13 @@ void PickFirst::PickFirstSubchannelData::ProcessUnselectedReadyLocked() {
     p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
   }
   // Cases 1 and 2.
-  p->selected_ = this;
-  p->channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_READY,
-      UniquePtr<SubchannelPicker>(New<Picker>(connected_subchannel()->Ref())));
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_INFO, "Pick First %p selected subchannel %p", p, subchannel());
   }
+  p->selected_ = this;
+  p->channel_control_helper()->UpdateState(
+      GRPC_CHANNEL_READY,
+      UniquePtr<SubchannelPicker>(New<Picker>(subchannel()->Ref())));
 }
 
 void PickFirst::PickFirstSubchannelData::
