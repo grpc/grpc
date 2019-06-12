@@ -58,6 +58,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (nullable instancetype)init;
 
+- (nullable instancetype)initWithSize:(NSUInteger)size;
+
 - (nullable ResponseCacheEntry *)getCachedResponseForRequest:(RequestCacheEntry *)request;
 
 - (void)setCachedResponse:(ResponseCacheEntry *)response forRequest:(RequestCacheEntry *)request;

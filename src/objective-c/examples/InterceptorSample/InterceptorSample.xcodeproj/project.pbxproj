@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 51;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -15,6 +15,8 @@
 		5EE961062266768C0044A74F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 5EE961042266768C0044A74F /* LaunchScreen.storyboard */; };
 		5EE961092266768C0044A74F /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 5EE961082266768C0044A74F /* main.m */; };
 		5EE9611222668CF20044A74F /* CacheInterceptor.m in Sources */ = {isa = PBXBuildFile; fileRef = 5EE9611122668CF20044A74F /* CacheInterceptor.m */; };
+		ABD7C03922B17FD100230DDC /* LRUQueue.h in Sources */ = {isa = PBXBuildFile; fileRef = ABD7C03822B17FD100230DDC /* LRUQueue.h */; };
+		ABD7C03B22B1840700230DDC /* LRUQueue.m in Sources */ = {isa = PBXBuildFile; fileRef = ABD7C03A22B1840700230DDC /* LRUQueue.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +34,8 @@
 		5EE9611022668CE20044A74F /* CacheInterceptor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CacheInterceptor.h; sourceTree = "<group>"; };
 		5EE9611122668CF20044A74F /* CacheInterceptor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CacheInterceptor.m; sourceTree = "<group>"; };
 		A0789280A4035D0F22F96BE6 /* Pods-InterceptorSample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InterceptorSample.release.xcconfig"; path = "Target Support Files/Pods-InterceptorSample/Pods-InterceptorSample.release.xcconfig"; sourceTree = "<group>"; };
+		ABD7C03822B17FD100230DDC /* LRUQueue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LRUQueue.h; sourceTree = "<group>"; };
+		ABD7C03A22B1840700230DDC /* LRUQueue.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LRUQueue.m; sourceTree = "<group>"; };
 		CB7A7A5B91FC976FCF4637AE /* libPods-InterceptorSample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-InterceptorSample.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -68,6 +72,8 @@
 		5EE960F82266768A0044A74F /* InterceptorSample */ = {
 			isa = PBXGroup;
 			children = (
+				ABD7C03822B17FD100230DDC /* LRUQueue.h */,
+				ABD7C03A22B1840700230DDC /* LRUQueue.m */,
 				5EE960FA2266768A0044A74F /* AppDelegate.m */,
 				5EE960FC2266768A0044A74F /* ViewController.h */,
 				5EE960FD2266768A0044A74F /* ViewController.m */,
@@ -214,10 +220,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ABD7C03922B17FD100230DDC /* LRUQueue.h in Sources */,
 				5EE9611222668CF20044A74F /* CacheInterceptor.m in Sources */,
 				5EE960FE2266768A0044A74F /* ViewController.m in Sources */,
 				5EE961092266768C0044A74F /* main.m in Sources */,
 				5EE960FB2266768A0044A74F /* AppDelegate.m in Sources */,
+				ABD7C03B22B1840700230DDC /* LRUQueue.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

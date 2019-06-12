@@ -17,6 +17,7 @@
  */
 
 #import "CacheInterceptor.h"
+#import "LRUQueue.h"
 
 @implementation RequestCacheEntry {
  @protected
@@ -40,7 +41,7 @@
 }
 
 - (BOOL)isEqual:(id)object {
-  if ([self class] != [object class]) return NO;
+  if (![object isKindOfClass:[self class]]) return NO;
   RequestCacheEntry *rhs = (RequestCacheEntry *)object;
   return ([_path isEqualToString:rhs.path] && [_message isEqual:rhs.message]);
 }
@@ -126,13 +127,30 @@
 
 @end
 
+/**
+ * Cache Context
+ */
 @implementation CacheContext {
-  NSCache<RequestCacheEntry *, ResponseCacheEntry *> *_cache;
+  NSMutableDictionary<RequestCacheEntry *, ResponseCacheEntry *> *_cache;
+  id<LRUQueue> _queue;
+  NSUInteger _maxCount; // cache size limit
 }
 
 - (instancetype)init {
   if ((self = [super init])) {
-    _cache = [[NSCache alloc] init];
+    _queue = [[LinkedListQueue alloc] init]; // ArrayQueue or LinkedListQueue
+    _cache = [[NSMutableDictionary alloc] init];
+    _maxCount = 10; // defaults to 10
+  }
+  return self;
+}
+
+- (instancetype)initWithSize:(NSUInteger)size {
+  if (!size) {
+    return nil;
+  }
+  if (self = [self init]) {
+    _maxCount = size;
   }
   return self;
 }
@@ -145,7 +163,11 @@
   ResponseCacheEntry *response = nil;
   @synchronized(self) {
     response = [_cache objectForKey:request];
-    if ([response.deadline timeIntervalSinceNow] < 0) {
+    if (response) { // cache hit
+      [_queue updateUse:request];
+    }
+    if ([response.deadline timeIntervalSinceNow] < 0) { // evict
+      [_queue evict];
       [_cache removeObjectForKey:request];
       response = nil;
     }
@@ -155,6 +177,15 @@
 
 - (void)setCachedResponse:(ResponseCacheEntry *)response forRequest:(RequestCacheEntry *)request {
   @synchronized(self) {
+    if ([_cache objectForKey:request] != nil) { // cache hit
+      [_queue updateUse:request];
+    } else { // cache miss
+      [_queue enqueue:request];
+    }
+    if ([_queue size] > _maxCount) { // evict
+      RequestCacheEntry *toEvict = [_queue evict];
+      [_cache removeObjectForKey:toEvict];
+    }
     [_cache setObject:response forKey:request];
   }
 }
