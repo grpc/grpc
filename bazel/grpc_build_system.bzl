@@ -24,6 +24,9 @@
 #
 
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+#load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
+
+
 
 # The set of pollers to test against if a test exercises polling
 POLLERS = ["epollex", "epoll1", "poll"]
@@ -142,6 +145,43 @@ def grpc_proto_library(
         use_external = use_external,
         generate_mocks = generate_mocks,
     )
+def ios_cc_test(
+        name,
+        **kwargs):
+    ios_test_adapter = "GTM_GoogleTestRunner_GTM_USING_XCTEST";
+    native.objc_library(
+        name = ios_test_adapter,
+        testonly = 1,
+        srcs = [
+            "third_party/objective_c/google_toolbox_for_mac/UnitTesting/GTMGoogleTestRunner.mm",
+        ],
+        copts = [
+            "-DGTM_USING_XCTEST",
+        ],
+        external_deps = [
+            "gtest",
+        ],
+    )
+
+    apple_test_lib = name + "_test_lib_apple"
+    apple_tags = ["manual", "ios_cc_test"]
+    native.objc_library(
+        name = apple_test_lib,
+        srcs = kwargs.get("srcs"),
+        deps = kwargs.get("deps"),
+        copts = kwargs.get("copts"),
+        tags = apple_tags,
+        alwayslink = 1,
+        testonly = 1,
+    )
+    apple_test_deps = [":" + ios_test_adapter, ":" + apple_test_lib]
+    native.ios_unit_test(
+        name = name + "_on_ios",
+        size = kwargs.get("size"),
+        tags = apple_tags,
+        minimum_os_version = "8.0",
+        deps = apple_test_deps,
+    )
 
 def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = []):
     copts = if_mac(["-DGRPC_CFSTREAM"])
@@ -188,6 +228,11 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             )
     else:
         native.cc_test(tags = tags, **args)
+        ios_cc_test(
+            name = name,
+            **args
+        )
+
 
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = []):
     copts = []
