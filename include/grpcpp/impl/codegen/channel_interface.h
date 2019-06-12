@@ -77,8 +77,9 @@ class ChannelInterface {
   /// Return the \a tag on \a cq when the channel state is changed or \a
   /// deadline expires. \a GetState needs to called to get the current state.
   template <typename T>
-  void NotifyOnStateChange(grpc_connectivity_state last_observed, T deadline,
-                           ::grpc_impl::CompletionQueue* cq, void* tag) {
+  virtual void NotifyOnStateChange(grpc_connectivity_state last_observed,
+                                   T deadline, ::grpc_impl::CompletionQueue* cq,
+                                   void* tag) {
     TimePoint<T> deadline_tp(deadline);
     NotifyOnStateChangeImpl(last_observed, deadline_tp.raw_time(), cq, tag);
   }
@@ -86,14 +87,15 @@ class ChannelInterface {
   /// Blocking wait for channel state change or \a deadline expiration.
   /// \a GetState needs to called to get the current state.
   template <typename T>
-  bool WaitForStateChange(grpc_connectivity_state last_observed, T deadline) {
+  virtual bool WaitForStateChange(grpc_connectivity_state last_observed,
+                                  T deadline) {
     TimePoint<T> deadline_tp(deadline);
     return WaitForStateChangeImpl(last_observed, deadline_tp.raw_time());
   }
 
   /// Wait for this channel to be connected
   template <typename T>
-  bool WaitForConnected(T deadline) {
+  virtual bool WaitForConnected(T deadline) {
     grpc_connectivity_state state;
     while ((state = GetState(true)) != GRPC_CHANNEL_READY) {
       if (!WaitForStateChange(state, deadline)) return false;
