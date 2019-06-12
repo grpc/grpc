@@ -48,10 +48,6 @@ static int32_t kRemoteInteropServerOverhead = 12;
   return YES;
 }
 
-+ (BOOL)canRunCompressionTest {
-  return NO;
-}
-
 - (int32_t)encodingOverhead {
   return kRemoteInteropServerOverhead;  // bytes
 }
