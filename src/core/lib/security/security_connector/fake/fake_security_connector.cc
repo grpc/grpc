@@ -122,7 +122,8 @@ class grpc_fake_channel_security_connector final
       if (authority_hostname != fake_security_target_name_override_hostname) {
         gpr_log(GPR_ERROR,
                 "Authority (host) '%s' != Fake Security Target override '%s'",
-                host.data(), target_name_override_);
+                host.data(),
+                fake_security_target_name_override_hostname.data());
         abort();
       }
     } else if (authority_hostname != target_hostname) {
