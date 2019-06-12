@@ -460,17 +460,15 @@ class RuSliceRefcount {
 
 }  // namespace grpc_core
 
-static grpc_slice ru_slice_create(grpc_resource_user* resource_user,
-                                  size_t size) {
+static void ru_slice_initialize(grpc_resource_user* resource_user, size_t size,
+                                grpc_slice* slice) {
   auto* rc = static_cast<grpc_core::RuSliceRefcount*>(
       gpr_malloc(sizeof(grpc_core::RuSliceRefcount) + size));
   new (rc) grpc_core::RuSliceRefcount(resource_user, size);
-  grpc_slice slice;
 
-  slice.refcount = rc->base_refcount();
-  slice.data.refcounted.bytes = reinterpret_cast<uint8_t*>(rc + 1);
-  slice.data.refcounted.length = size;
-  return slice;
+  slice->refcount = rc->base_refcount();
+  slice->data.refcounted.bytes = reinterpret_cast<uint8_t*>(rc + 1);
+  slice->data.refcounted.length = size;
 }
 
 /*******************************************************************************
@@ -586,11 +584,15 @@ static void ru_destroy(void* ru, grpc_error* error) {
 static void ru_allocated_slices(void* arg, grpc_error* error) {
   grpc_resource_user_slice_allocator* slice_allocator =
       static_cast<grpc_resource_user_slice_allocator*>(arg);
+  auto slice_create = [&](grpc_slice* slice, size_t len) {
+    ru_slice_initialize(slice_allocator->resource_user, slice_allocator->length,
+                        slice);
+  };
+
   if (error == GRPC_ERROR_NONE) {
     for (size_t i = 0; i < slice_allocator->count; i++) {
-      grpc_slice_buffer_add_indexed(
-          slice_allocator->dest, ru_slice_create(slice_allocator->resource_user,
-                                                 slice_allocator->length));
+      grpc_slice_buffer_emplace(slice_allocator->dest, slice_create,
+                                slice_allocator->length);
     }
   }
   GRPC_CLOSURE_RUN(&slice_allocator->on_done, GRPC_ERROR_REF(error));

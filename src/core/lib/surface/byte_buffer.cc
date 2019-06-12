@@ -51,14 +51,16 @@ grpc_byte_buffer* grpc_raw_byte_buffer_from_reader(
     grpc_byte_buffer_reader* reader) {
   grpc_byte_buffer* bb =
       static_cast<grpc_byte_buffer*>(gpr_malloc(sizeof(grpc_byte_buffer)));
-  grpc_slice slice;
   bb->type = GRPC_BB_RAW;
   bb->data.raw.compression = GRPC_COMPRESS_NONE;
   grpc_slice_buffer_init(&bb->data.raw.slice_buffer);
 
-  while (grpc_byte_buffer_reader_next(reader, &slice)) {
-    grpc_slice_buffer_add(&bb->data.raw.slice_buffer, slice);
-  }
+  auto bb_next = [&](grpc_slice* slice) -> grpc_error* {
+    int success = grpc_byte_buffer_reader_next(reader, slice);
+    return success ? GRPC_ERROR_NONE : GRPC_ERROR_OOM;
+  };
+  while (grpc_slice_buffer_emplace(&bb->data.raw.slice_buffer, bb_next))
+    ;
   return bb;
 }
 

@@ -152,36 +152,41 @@ grpc_error* grpc_chttp2_goaway_parser_parse(void* parser,
 void grpc_chttp2_goaway_append(uint32_t last_stream_id, uint32_t error_code,
                                const grpc_slice& debug_data,
                                grpc_slice_buffer* slice_buffer) {
-  grpc_slice header = GRPC_SLICE_MALLOC(9 + 4 + 4);
-  uint8_t* p = GRPC_SLICE_START_PTR(header);
-  uint32_t frame_length;
-  GPR_ASSERT(GRPC_SLICE_LENGTH(debug_data) < UINT32_MAX - 4 - 4);
-  frame_length = 4 + 4 + static_cast<uint32_t> GRPC_SLICE_LENGTH(debug_data);
+  auto goaway_append = [&](grpc_slice* header) -> grpc_error* {
+    static constexpr size_t goaway_sz = 9 + 4 + 4;
+    header->refcount = nullptr;
+    header->data.inlined.length = goaway_sz;
+    uint8_t* p = &header->data.inlined.bytes[0];
+    uint32_t frame_length;
+    GPR_ASSERT(GRPC_SLICE_LENGTH(debug_data) < UINT32_MAX - 4 - 4);
+    frame_length = 4 + 4 + static_cast<uint32_t> GRPC_SLICE_LENGTH(debug_data);
 
-  /* frame header: length */
-  *p++ = static_cast<uint8_t>(frame_length >> 16);
-  *p++ = static_cast<uint8_t>(frame_length >> 8);
-  *p++ = static_cast<uint8_t>(frame_length);
-  /* frame header: type */
-  *p++ = GRPC_CHTTP2_FRAME_GOAWAY;
-  /* frame header: flags */
-  *p++ = 0;
-  /* frame header: stream id */
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 0;
-  /* payload: last stream id */
-  *p++ = static_cast<uint8_t>(last_stream_id >> 24);
-  *p++ = static_cast<uint8_t>(last_stream_id >> 16);
-  *p++ = static_cast<uint8_t>(last_stream_id >> 8);
-  *p++ = static_cast<uint8_t>(last_stream_id);
-  /* payload: error code */
-  *p++ = static_cast<uint8_t>(error_code >> 24);
-  *p++ = static_cast<uint8_t>(error_code >> 16);
-  *p++ = static_cast<uint8_t>(error_code >> 8);
-  *p++ = static_cast<uint8_t>(error_code);
-  GPR_ASSERT(p == GRPC_SLICE_END_PTR(header));
-  grpc_slice_buffer_add(slice_buffer, header);
+    /* frame header: length */
+    *p++ = static_cast<uint8_t>(frame_length >> 16);
+    *p++ = static_cast<uint8_t>(frame_length >> 8);
+    *p++ = static_cast<uint8_t>(frame_length);
+    /* frame header: type */
+    *p++ = GRPC_CHTTP2_FRAME_GOAWAY;
+    /* frame header: flags */
+    *p++ = 0;
+    /* frame header: stream id */
+    *p++ = 0;
+    *p++ = 0;
+    *p++ = 0;
+    *p++ = 0;
+    /* payload: last stream id */
+    *p++ = static_cast<uint8_t>(last_stream_id >> 24);
+    *p++ = static_cast<uint8_t>(last_stream_id >> 16);
+    *p++ = static_cast<uint8_t>(last_stream_id >> 8);
+    *p++ = static_cast<uint8_t>(last_stream_id);
+    /* payload: error code */
+    *p++ = static_cast<uint8_t>(error_code >> 24);
+    *p++ = static_cast<uint8_t>(error_code >> 16);
+    *p++ = static_cast<uint8_t>(error_code >> 8);
+    *p++ = static_cast<uint8_t>(error_code);
+    GPR_DEBUG_ASSERT(p == GRPC_SLICE_END_PTR(*header));
+    return GRPC_ERROR_NONE;
+  };
+  grpc_slice_buffer_emplace(slice_buffer, goaway_append);
   grpc_slice_buffer_add(slice_buffer, debug_data);
 }

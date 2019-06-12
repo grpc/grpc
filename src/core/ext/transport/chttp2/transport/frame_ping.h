@@ -30,7 +30,14 @@ typedef struct {
   uint64_t opaque_8bytes;
 } grpc_chttp2_ping_parser;
 
-grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes);
+constexpr size_t kGrpcPingSz = 9 + 8;
+void grpc_chttp2_ping_marshall(uint8_t ack, uint64_t opaque_8bytes,
+                               grpc_slice* slice);
+inline size_t grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes,
+                                      grpc_slice* slice) {
+  grpc_chttp2_ping_marshall(ack, opaque_8bytes, slice);
+  return kGrpcPingSz;
+}
 
 grpc_error* grpc_chttp2_ping_parser_begin_frame(grpc_chttp2_ping_parser* parser,
                                                 uint32_t length, uint8_t flags);

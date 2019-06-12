@@ -29,12 +29,10 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/transport/http2_errors.h"
 
-grpc_slice grpc_chttp2_rst_stream_create(uint32_t id, uint32_t code,
-                                         grpc_transport_one_way_stats* stats) {
-  static const size_t frame_size = 13;
-  grpc_slice slice = GRPC_SLICE_MALLOC(frame_size);
-  if (stats != nullptr) stats->framing_bytes += frame_size;
-  uint8_t* p = GRPC_SLICE_START_PTR(slice);
+void grpc_chttp2_rst_stream_marshall(uint32_t id, uint32_t code,
+                                     grpc_slice* slice) {
+  *slice = GRPC_SLICE_MALLOC(kGrpcChttp2RstStreamFrameSz);
+  uint8_t* p = GRPC_SLICE_START_PTR(*slice);
 
   // Frame size.
   *p++ = 0;
@@ -54,8 +52,6 @@ grpc_slice grpc_chttp2_rst_stream_create(uint32_t id, uint32_t code,
   *p++ = static_cast<uint8_t>(code >> 16);
   *p++ = static_cast<uint8_t>(code >> 8);
   *p++ = static_cast<uint8_t>(code);
-
-  return slice;
 }
 
 grpc_error* grpc_chttp2_rst_stream_parser_begin_frame(

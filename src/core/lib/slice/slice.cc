@@ -202,10 +202,20 @@ grpc_slice grpc_slice_new_with_len(void* p, size_t len,
   return slice;
 }
 
+size_t grpc_slice_emplace_copied_buffer(const char* source, size_t length,
+                                        grpc_slice* slice) {
+  if (length == 0) {
+    *slice = grpc_empty_slice();
+    return length;
+  }
+  *slice = GRPC_SLICE_MALLOC(length);
+  memcpy(GRPC_SLICE_START_PTR(*slice), source, length);
+  return length;
+}
+
 grpc_slice grpc_slice_from_copied_buffer(const char* source, size_t length) {
-  if (length == 0) return grpc_empty_slice();
-  grpc_slice slice = GRPC_SLICE_MALLOC(length);
-  memcpy(GRPC_SLICE_START_PTR(slice), source, length);
+  grpc_slice slice;
+  grpc_slice_emplace_copied_buffer(source, length, &slice);
   return slice;
 }
 

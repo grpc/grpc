@@ -488,8 +488,12 @@ grpc_chttp2_transport::grpc_chttp2_transport(
       is_client ? "client_transport" : "server_transport");
   grpc_slice_buffer_init(&outbuf);
   if (is_client) {
-    grpc_slice_buffer_add(&outbuf, grpc_slice_from_copied_string(
-                                       GRPC_CHTTP2_CLIENT_CONNECT_STRING));
+    auto emplace_str = [&](grpc_slice* slice) -> grpc_error* {
+      grpc_slice_emplace_static_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING,
+                                       slice);
+      return GRPC_ERROR_NONE;
+    };
+    grpc_slice_buffer_emplace(&outbuf, emplace_str);
   }
   grpc_chttp2_hpack_compressor_init(&hpack_compressor);
   grpc_slice_buffer_init(&qbuf);
@@ -800,10 +804,12 @@ grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
       !grpc_resource_user_safe_alloc(t->resource_user,
                                      GRPC_RESOURCE_QUOTA_CALL_SIZE)) {
     gpr_log(GPR_ERROR, "Memory exhausted, rejecting the stream.");
-    grpc_slice_buffer_add(
-        &t->qbuf,
-        grpc_chttp2_rst_stream_create(
-            id, static_cast<uint32_t>(GRPC_HTTP2_REFUSED_STREAM), nullptr));
+    auto rst_create = [&](grpc_slice* slice) -> grpc_error* {
+      grpc_chttp2_rst_stream_create(
+          id, static_cast<uint32_t>(GRPC_HTTP2_REFUSED_STREAM), nullptr, slice);
+      return GRPC_ERROR_NONE;
+    };
+    grpc_slice_buffer_emplace(&t->qbuf, rst_create);
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
     return nullptr;
   }
@@ -2111,10 +2117,12 @@ void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
       grpc_http2_error_code http_error;
       grpc_error_get_status(due_to_error, s->deadline, nullptr, nullptr,
                             &http_error, nullptr);
-      grpc_slice_buffer_add(
-          &t->qbuf,
-          grpc_chttp2_rst_stream_create(
-              s->id, static_cast<uint32_t>(http_error), &s->stats.outgoing));
+      auto rst_create = [&](grpc_slice* slice) -> grpc_error* {
+        grpc_chttp2_rst_stream_create(s->id, static_cast<uint32_t>(http_error),
+                                      &s->stats.outgoing, slice);
+        return GRPC_ERROR_NONE;
+      };
+      grpc_slice_buffer_emplace(&t->qbuf, rst_create);
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
     }
   }
@@ -2275,86 +2283,59 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
   GRPC_ERROR_UNREF(error);
 }
 
-static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
-                           grpc_error* error) {
-  grpc_slice hdr;
-  grpc_slice status_hdr;
-  grpc_slice http_status_hdr;
-  grpc_slice content_type_hdr;
-  grpc_slice message_pfx;
-  uint8_t* p;
-  uint32_t len = 0;
-  grpc_status_code grpc_status;
-  grpc_slice slice;
-  grpc_error_get_status(error, s->deadline, &grpc_status, &slice, nullptr,
-                        nullptr);
+static uint8_t* marshall_http_status(uint8_t* p) {
+  *p++ = 0x00;
+  *p++ = 7;
+  *p++ = ':';
+  *p++ = 's';
+  *p++ = 't';
+  *p++ = 'a';
+  *p++ = 't';
+  *p++ = 'u';
+  *p++ = 's';
+  *p++ = 3;
+  *p++ = '2';
+  *p++ = '0';
+  *p++ = '0';
+  return p;
+}
 
-  GPR_ASSERT(grpc_status >= 0 && (int)grpc_status < 100);
+static uint8_t* marshall_content_type(uint8_t* p) {
+  *p++ = 0x00;
+  *p++ = 12;
+  *p++ = 'c';
+  *p++ = 'o';
+  *p++ = 'n';
+  *p++ = 't';
+  *p++ = 'e';
+  *p++ = 'n';
+  *p++ = 't';
+  *p++ = '-';
+  *p++ = 't';
+  *p++ = 'y';
+  *p++ = 'p';
+  *p++ = 'e';
+  *p++ = 16;
+  *p++ = 'a';
+  *p++ = 'p';
+  *p++ = 'p';
+  *p++ = 'l';
+  *p++ = 'i';
+  *p++ = 'c';
+  *p++ = 'a';
+  *p++ = 't';
+  *p++ = 'i';
+  *p++ = 'o';
+  *p++ = 'n';
+  *p++ = '/';
+  *p++ = 'g';
+  *p++ = 'r';
+  *p++ = 'p';
+  *p++ = 'c';
+  return p;
+}
 
-  /* Hand roll a header block.
-     This is unnecessarily ugly - at some point we should find a more
-     elegant solution.
-     It's complicated by the fact that our send machinery would be dead by
-     the time we got around to sending this, so instead we ignore HPACK
-     compression and just write the uncompressed bytes onto the wire. */
-  if (!s->sent_initial_metadata) {
-    http_status_hdr = GRPC_SLICE_MALLOC(13);
-    p = GRPC_SLICE_START_PTR(http_status_hdr);
-    *p++ = 0x00;
-    *p++ = 7;
-    *p++ = ':';
-    *p++ = 's';
-    *p++ = 't';
-    *p++ = 'a';
-    *p++ = 't';
-    *p++ = 'u';
-    *p++ = 's';
-    *p++ = 3;
-    *p++ = '2';
-    *p++ = '0';
-    *p++ = '0';
-    GPR_ASSERT(p == GRPC_SLICE_END_PTR(http_status_hdr));
-    len += static_cast<uint32_t> GRPC_SLICE_LENGTH(http_status_hdr);
-
-    content_type_hdr = GRPC_SLICE_MALLOC(31);
-    p = GRPC_SLICE_START_PTR(content_type_hdr);
-    *p++ = 0x00;
-    *p++ = 12;
-    *p++ = 'c';
-    *p++ = 'o';
-    *p++ = 'n';
-    *p++ = 't';
-    *p++ = 'e';
-    *p++ = 'n';
-    *p++ = 't';
-    *p++ = '-';
-    *p++ = 't';
-    *p++ = 'y';
-    *p++ = 'p';
-    *p++ = 'e';
-    *p++ = 16;
-    *p++ = 'a';
-    *p++ = 'p';
-    *p++ = 'p';
-    *p++ = 'l';
-    *p++ = 'i';
-    *p++ = 'c';
-    *p++ = 'a';
-    *p++ = 't';
-    *p++ = 'i';
-    *p++ = 'o';
-    *p++ = 'n';
-    *p++ = '/';
-    *p++ = 'g';
-    *p++ = 'r';
-    *p++ = 'p';
-    *p++ = 'c';
-    GPR_ASSERT(p == GRPC_SLICE_END_PTR(content_type_hdr));
-    len += static_cast<uint32_t> GRPC_SLICE_LENGTH(content_type_hdr);
-  }
-
-  status_hdr = GRPC_SLICE_MALLOC(15 + (grpc_status >= 10));
-  p = GRPC_SLICE_START_PTR(status_hdr);
+static uint8_t* marshall_grpc_status(uint8_t* p, grpc_status_code grpc_status) {
   *p++ = 0x00; /* literal header, not indexed */
   *p++ = 11;   /* len(grpc-status) */
   *p++ = 'g';
@@ -2376,14 +2357,11 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
     *p++ = static_cast<uint8_t>('0' + (grpc_status / 10));
     *p++ = static_cast<uint8_t>('0' + (grpc_status % 10));
   }
-  GPR_ASSERT(p == GRPC_SLICE_END_PTR(status_hdr));
-  len += static_cast<uint32_t> GRPC_SLICE_LENGTH(status_hdr);
+  return p;
+}
 
-  size_t msg_len = GRPC_SLICE_LENGTH(slice);
-  GPR_ASSERT(msg_len <= UINT32_MAX);
-  uint32_t msg_len_len = GRPC_CHTTP2_VARINT_LENGTH((uint32_t)msg_len, 1);
-  message_pfx = GRPC_SLICE_MALLOC(14 + msg_len_len);
-  p = GRPC_SLICE_START_PTR(message_pfx);
+static uint8_t* marshall_grpc_msglen(uint8_t* p, size_t msg_len,
+                                     uint32_t msg_len_len) {
   *p++ = 0x00; /* literal header, not indexed */
   *p++ = 12;   /* len(grpc-message) */
   *p++ = 'g';
@@ -2400,12 +2378,11 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   *p++ = 'e';
   GRPC_CHTTP2_WRITE_VARINT((uint32_t)msg_len, 1, 0, p, (uint32_t)msg_len_len);
   p += msg_len_len;
-  GPR_ASSERT(p == GRPC_SLICE_END_PTR(message_pfx));
-  len += static_cast<uint32_t> GRPC_SLICE_LENGTH(message_pfx);
-  len += static_cast<uint32_t>(msg_len);
+  return p;
+}
 
-  hdr = GRPC_SLICE_MALLOC(9);
-  p = GRPC_SLICE_START_PTR(hdr);
+static uint8_t* marshall_grpc_hdr(uint8_t* p, uint32_t len,
+                                  grpc_chttp2_stream* s) {
   *p++ = static_cast<uint8_t>(len >> 16);
   *p++ = static_cast<uint8_t>(len >> 8);
   *p++ = static_cast<uint8_t>(len);
@@ -2415,20 +2392,62 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   *p++ = static_cast<uint8_t>(s->id >> 16);
   *p++ = static_cast<uint8_t>(s->id >> 8);
   *p++ = static_cast<uint8_t>(s->id);
-  GPR_ASSERT(p == GRPC_SLICE_END_PTR(hdr));
+  return p;
+}
 
-  grpc_slice_buffer_add(&t->qbuf, hdr);
-  if (!s->sent_initial_metadata) {
-    grpc_slice_buffer_add(&t->qbuf, http_status_hdr);
-    grpc_slice_buffer_add(&t->qbuf, content_type_hdr);
+static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
+                           grpc_error* error) {
+  uint8_t* p;
+  grpc_status_code grpc_status;
+  grpc_slice slice;
+  grpc_error_get_status(error, s->deadline, &grpc_status, &slice, nullptr,
+                        nullptr);
+
+  GPR_ASSERT(grpc_status >= 0 && (int)grpc_status < 100);
+
+  constexpr uint32_t frame_hdr_len = 9;
+  const uint32_t status_hdr_sz = 15 + (grpc_status >= 10);
+  const size_t msg_len = GRPC_SLICE_LENGTH(slice);
+  GPR_ASSERT(msg_len <= UINT32_MAX);
+  const uint32_t msg_len_len = GRPC_CHTTP2_VARINT_LENGTH((uint32_t)msg_len, 1);
+  const uint32_t msg_pfx_len = 14 + msg_len_len;
+
+  /* Hand roll a header block.
+     This is unnecessarily ugly - at some point we should find a more
+     elegant solution.
+     It's complicated by the fact that our send machinery would be dead by
+     the time we got around to sending this, so instead we ignore HPACK
+     compression and just write the uncompressed bytes onto the wire. */
+  constexpr size_t init_md_hdrlen = 13 + 31;
+  const size_t init_md_hdralloc = s->sent_initial_metadata ? 0 : init_md_hdrlen;
+
+  const size_t alloc_len =
+      frame_hdr_len + init_md_hdralloc + status_hdr_sz + msg_pfx_len;
+
+  auto marshall_pfx = [&](grpc_slice* pfx_hdr) -> grpc_error* {
+    *pfx_hdr = GRPC_SLICE_MALLOC(alloc_len);
+    p = GRPC_SLICE_START_PTR(*pfx_hdr);
+    p = marshall_grpc_hdr(p, alloc_len + msg_len - frame_hdr_len, s);
+    if (!s->sent_initial_metadata) {
+      p = marshall_http_status(p);
+      p = marshall_content_type(p);
+    }
+    p = marshall_grpc_status(p, grpc_status);
+    p = marshall_grpc_msglen(p, msg_len, msg_len_len);
+    GPR_DEBUG_ASSERT(p == GRPC_SLICE_END_PTR(*pfx_hdr));
+    return GRPC_ERROR_NONE;
+  };
+  grpc_slice_buffer_emplace(&t->qbuf, marshall_pfx);
+
+  if (GPR_UNLIKELY(msg_len > 0)) {
+    grpc_slice_buffer_add(&t->qbuf, grpc_slice_ref_internal(slice));
   }
-  grpc_slice_buffer_add(&t->qbuf, status_hdr);
-  grpc_slice_buffer_add(&t->qbuf, message_pfx);
-  grpc_slice_buffer_add(&t->qbuf, grpc_slice_ref_internal(slice));
-  grpc_slice_buffer_add(
-      &t->qbuf, grpc_chttp2_rst_stream_create(s->id, GRPC_HTTP2_NO_ERROR,
-                                              &s->stats.outgoing));
-
+  auto rst_create = [&](grpc_slice* slice) -> grpc_error* {
+    grpc_chttp2_rst_stream_create(s->id, GRPC_HTTP2_NO_ERROR,
+                                  &s->stats.outgoing, slice);
+    return GRPC_ERROR_NONE;
+  };
+  grpc_slice_buffer_emplace(&t->qbuf, rst_create);
   grpc_chttp2_mark_stream_closed(t, s, 1, 1, error);
   grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_CLOSE_FROM_API);
 }

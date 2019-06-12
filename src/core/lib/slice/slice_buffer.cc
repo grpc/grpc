@@ -131,6 +131,35 @@ size_t grpc_slice_buffer_add_indexed(grpc_slice_buffer* sb, grpc_slice s) {
   return out;
 }
 
+void grpc_slice_buffer_try_coalesce(grpc_slice_buffer* sb) {
+  grpc_slice* const current_tail = &sb->slices[sb->count - 1];
+  grpc_slice* const reserved_slice = &sb->slices[sb->count];
+  size_t tail_leftover_bytes =
+      GRPC_SLICE_INLINED_SIZE - current_tail->data.inlined.length;
+  if (reserved_slice->data.inlined.length <= tail_leftover_bytes) {
+    size_t offset = current_tail->data.inlined.length;
+    memcpy(&current_tail->data.inlined.bytes[offset],
+           &reserved_slice->data.inlined.bytes[0],
+           reserved_slice->data.inlined.length);
+    current_tail->data.inlined.length += reserved_slice->data.inlined.length;
+  } else {
+    sb->count += 1;
+  }
+  sb->length += reserved_slice->data.inlined.length;
+}
+
+grpc_slice* grpc_slice_buffer_reserve(grpc_slice_buffer* sb) {
+  maybe_embiggen(sb);
+  return &sb->slices[sb->count];
+}
+
+grpc_slice* grpc_slice_buffer_reserve(grpc_slice_buffer* sb,
+                                      bool* try_coalesce) {
+  *try_coalesce =
+      sb->count > 0 ? sb->slices[sb->count - 1].refcount == nullptr : false;
+  return grpc_slice_buffer_reserve(sb);
+}
+
 void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice s) {
   size_t n = sb->count;
   /* if both the last slice in the slice buffer and the slice being added

@@ -30,6 +30,7 @@
 #include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 // Interned slices have specific fast-path operations for hashing. To inline
@@ -325,6 +326,59 @@ inline grpc_slice grpc_slice_from_static_buffer_internal(const void* s,
 
 inline grpc_slice grpc_slice_from_static_string_internal(const char* s) {
   return grpc_slice_from_static_buffer_internal(s, strlen(s));
+}
+
+grpc_slice* grpc_slice_buffer_reserve(grpc_slice_buffer* sb);
+grpc_slice* grpc_slice_buffer_reserve(grpc_slice_buffer* sb,
+                                      bool* try_coalesce);
+void grpc_slice_buffer_try_coalesce(grpc_slice_buffer* sb);
+template <typename Func>
+grpc_error* grpc_slice_buffer_emplace(grpc_slice_buffer* sb, Func slice_write) {
+  bool try_coalesce;
+  grpc_slice* reserved_slice = grpc_slice_buffer_reserve(sb, &try_coalesce);
+  grpc_error* err = slice_write(reserved_slice);
+  if (GPR_LIKELY(err == GRPC_ERROR_NONE)) {
+    if (reserved_slice->refcount) {
+      sb->count += 1;
+      sb->length += reserved_slice->data.refcounted.length;
+    } else if (try_coalesce) {
+      grpc_slice_buffer_try_coalesce(sb);
+    } else {
+      sb->count += 1;
+      sb->length += reserved_slice->data.inlined.length;
+    }
+  }
+  return err;
+}
+template <typename Func>
+void grpc_slice_buffer_emplace(grpc_slice_buffer* sb, Func slice_init,
+                               size_t length) {
+  grpc_slice* reserved_slice = grpc_slice_buffer_reserve(sb);
+  slice_init(reserved_slice, length);
+  GPR_DEBUG_ASSERT(reserved_slice->refcount);
+  sb->count += 1;
+  sb->length += length;
+}
+
+size_t grpc_slice_emplace_copied_buffer(const char* source, size_t len,
+                                        grpc_slice* slice);
+inline size_t grpc_slice_emplace_copied_string(const char* source,
+                                               grpc_slice* slice) {
+  return grpc_slice_emplace_copied_buffer(source, strlen(source), slice);
+}
+
+inline size_t grpc_slice_emplace_static_buffer(const char* source, size_t len,
+                                               grpc_slice* slice) {
+  slice->refcount = &grpc_core::kNoopRefcount;
+  slice->data.refcounted.bytes =
+      reinterpret_cast<uint8_t*>(const_cast<char*>(source));
+  slice->data.refcounted.length = len;
+  return len;
+}
+
+inline size_t grpc_slice_emplace_static_string(const char* source,
+                                               grpc_slice* slice) {
+  return grpc_slice_emplace_static_buffer(source, strlen(source), slice);
 }
 
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H */
