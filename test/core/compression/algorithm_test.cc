@@ -88,6 +88,12 @@ static void test_algorithm_failure(void) {
              GRPC_COMPRESS_ALGORITHMS_COUNT);
   grpc_slice_unref_internal(mdstr);
   // Test invalid algorithm enum entry.
+  GPR_ASSERT(grpc_compression_algorithm_name(GRPC_COMPRESS_ALGORITHMS_COUNT,
+                                             nullptr) == 0);
+  GPR_ASSERT(
+      grpc_compression_algorithm_name(static_cast<grpc_compression_algorithm>(
+                                          GRPC_COMPRESS_ALGORITHMS_COUNT + 1),
+                                      nullptr) == 0);
   GPR_ASSERT(grpc_slice_eq(
       grpc_compression_algorithm_slice(GRPC_COMPRESS_ALGORITHMS_COUNT),
       grpc_empty_slice()));
