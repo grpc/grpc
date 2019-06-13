@@ -39,7 +39,6 @@ some configuration as environment variables that can be set.
   gRPC C core is processing requests via debug logs. Available tracers include:
   - api - traces api calls to the C core
   - bdp_estimator - traces behavior of bdp estimation logic
-  - call_combiner - traces call combiner state
   - call_error - traces the possible errors contributing to final call status
   - cares_resolver - traces operations of the c-ares based DNS resolver
   - cares_address_sorting - traces operations of the c-ares based DNS
@@ -52,9 +51,6 @@ some configuration as environment variables that can be set.
   - connectivity_state - traces connectivity state changes to channels
   - cronet - traces state in the cronet transport engine
   - executor - traces grpc's internal thread pool ('the executor')
-  - fd_trace - traces fd create(), shutdown() and close() calls for channel fds.
-    Also traces epoll fd create()/close() calls in epollex polling engine
-    traces epoll-fd creation/close calls for epollex polling engine
   - glb - traces the grpclb load balancer
   - handshaker - traces handshaking state
   - health_check_client - traces health checking client code
@@ -86,7 +82,11 @@ some configuration as environment variables that can be set.
   - alarm_refcount - refcounting traces for grpc_alarm structure
   - metadata - tracks creation and mutation of metadata
   - combiner - traces combiner lock state
+  - call_combiner - traces call combiner state
   - closure - tracks closure creation, scheduling, and completion
+  - fd_trace - traces fd create(), shutdown() and close() calls for channel fds.
+    Also traces epoll fd create()/close() calls in epollex polling engine
+    traces epoll-fd creation/close calls for epollex polling engine
   - pending_tags - traces still-in-progress tags on completion queues
   - polling - traces the selected polling engine
   - polling_api - traces the api calls to polling engine
