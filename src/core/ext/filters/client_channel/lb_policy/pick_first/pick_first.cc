@@ -201,7 +201,8 @@ PickFirst::CreateSubchannelListFromLatestUpdateArgs() {
   grpc_channel_args* new_args =
       grpc_channel_args_copy_and_add(latest_update_args_.args, &new_arg, 1);
   auto subchannel_list = MakeOrphanable<PickFirstSubchannelList>(
-      this, &grpc_lb_pick_first_trace, latest_update_args_.addresses, *new_args);
+      this, &grpc_lb_pick_first_trace, latest_update_args_.addresses,
+      *new_args);
   grpc_channel_args_destroy(new_args);
   return subchannel_list;
 }
