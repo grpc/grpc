@@ -161,12 +161,12 @@ const char *kCFStreamVarName = "grpc_cfstream";
         NSLog(@"Failed to create interceptor from factory: %@", globalInterceptorFactory);
       } else {
         [internalCall setResponseHandler:interceptor];
+        nextInterceptor = interceptor;
+        nextManager = manager;
       }
-      nextInterceptor = interceptor;
-      nextManager = manager;
     }
 
-    // Finanlly initialize the interceptors in the chain
+    // Finally initialize the interceptors in the chain
     NSArray *interceptorFactories = _actualCallOptions.interceptorFactories;
     if (interceptorFactories.count == 0) {
       if (nextManager == nil) {
