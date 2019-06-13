@@ -23,7 +23,6 @@
 
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/connector.h"
-#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -70,7 +69,7 @@ namespace grpc_core {
 
 class SubchannelCall;
 
-class ConnectedSubchannel : public ConnectedSubchannelInterface {
+class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
  public:
   struct CallArgs {
     grpc_polling_entity* pollent;
@@ -97,7 +96,7 @@ class ConnectedSubchannel : public ConnectedSubchannelInterface {
                                            grpc_error** error);
 
   grpc_channel_stack* channel_stack() const { return channel_stack_; }
-  const grpc_channel_args* args() const override { return args_; }
+  const grpc_channel_args* args() const { return args_; }
   channelz::SubchannelNode* channelz_subchannel() const {
     return channelz_subchannel_.get();
   }
@@ -176,10 +175,35 @@ class SubchannelCall {
 
 // A subchannel that knows how to connect to exactly one target address. It
 // provides a target for load balancing.
+//
+// Note that this is the "real" subchannel implementation, whose API is
+// different from the SubchannelInterface that is exposed to LB policy
+// implementations.  The client channel provides an adaptor class
+// (SubchannelWrapper) that "converts" between the two.
 class Subchannel {
  public:
-  typedef SubchannelInterface::ConnectivityStateWatcher
-      ConnectivityStateWatcher;
+  class ConnectivityStateWatcherInterface
+      : public InternallyRefCounted<ConnectivityStateWatcherInterface> {
+   public:
+    virtual ~ConnectivityStateWatcherInterface() = default;
+
+    // Will be invoked whenever the subchannel's connectivity state
+    // changes.  There will be only one invocation of this method on a
+    // given watcher instance at any given time.
+    //
+    // When the state changes to READY, connected_subchannel will
+    // contain a ref to the connected subchannel.  When it changes from
+    // READY to some other state, the implementation must release its
+    // ref to the connected subchannel.
+    virtual void OnConnectivityStateChange(
+        grpc_connectivity_state new_state,
+        RefCountedPtr<ConnectedSubchannel> connected_subchannel)  // NOLINT
+        GRPC_ABSTRACT;
+
+    virtual grpc_pollset_set* interested_parties() GRPC_ABSTRACT;
+
+    GRPC_ABSTRACT_BASE_CLASS
+  };
 
   // The ctor and dtor are not intended to use directly.
   Subchannel(SubchannelKey* key, grpc_connector* connector,
@@ -206,6 +230,8 @@ class Subchannel {
   // Caller doesn't take ownership.
   const char* GetTargetAddress();
 
+  const grpc_channel_args* channel_args() const { return args_; }
+
   channelz::SubchannelNode* channelz_node();
 
   // Returns the current connectivity state of the subchannel.
@@ -225,14 +251,15 @@ class Subchannel {
   // changes.
   // The watcher will be destroyed either when the subchannel is
   // destroyed or when CancelConnectivityStateWatch() is called.
-  void WatchConnectivityState(grpc_connectivity_state initial_state,
-                              UniquePtr<char> health_check_service_name,
-                              UniquePtr<ConnectivityStateWatcher> watcher);
+  void WatchConnectivityState(
+      grpc_connectivity_state initial_state,
+      UniquePtr<char> health_check_service_name,
+      OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
 
   // Cancels a connectivity state watch.
   // If the watcher has already been destroyed, this is a no-op.
   void CancelConnectivityStateWatch(const char* health_check_service_name,
-                                    ConnectivityStateWatcher* watcher);
+                                    ConnectivityStateWatcherInterface* watcher);
 
   // Attempt to connect to the backend.  Has no effect if already connected.
   void AttemptToConnect();
@@ -257,14 +284,15 @@ class Subchannel {
                                                  grpc_resolved_address* addr);
 
  private:
-  // A linked list of ConnectivityStateWatchers that are monitoring the
-  // subchannel's state.
+  // A linked list of ConnectivityStateWatcherInterfaces that are monitoring
+  // the subchannel's state.
   class ConnectivityStateWatcherList {
    public:
     ~ConnectivityStateWatcherList() { Clear(); }
 
-    void AddWatcherLocked(UniquePtr<ConnectivityStateWatcher> watcher);
-    void RemoveWatcherLocked(ConnectivityStateWatcher* watcher);
+    void AddWatcherLocked(
+        OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
+    void RemoveWatcherLocked(ConnectivityStateWatcherInterface* watcher);
 
     // Notifies all watchers in the list about a change to state.
     void NotifyLocked(Subchannel* subchannel, grpc_connectivity_state state);
@@ -276,12 +304,13 @@ class Subchannel {
    private:
     // TODO(roth): This could be a set instead of a map if we had a set
     // implementation.
-    Map<ConnectivityStateWatcher*, UniquePtr<ConnectivityStateWatcher>>
+    Map<ConnectivityStateWatcherInterface*,
+        OrphanablePtr<ConnectivityStateWatcherInterface>>
         watchers_;
   };
 
-  // A map that tracks ConnectivityStateWatchers using a particular health
-  // check service name.
+  // A map that tracks ConnectivityStateWatcherInterfaces using a particular
+  // health check service name.
   //
   // There is one entry in the map for each health check service name.
   // Entries exist only as long as there are watchers using the
@@ -291,12 +320,12 @@ class Subchannel {
   // state READY.
   class HealthWatcherMap {
    public:
-    void AddWatcherLocked(Subchannel* subchannel,
-                          grpc_connectivity_state initial_state,
-                          UniquePtr<char> health_check_service_name,
-                          UniquePtr<ConnectivityStateWatcher> watcher);
+    void AddWatcherLocked(
+        Subchannel* subchannel, grpc_connectivity_state initial_state,
+        UniquePtr<char> health_check_service_name,
+        OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
     void RemoveWatcherLocked(const char* health_check_service_name,
-                             ConnectivityStateWatcher* watcher);
+                             ConnectivityStateWatcherInterface* watcher);
 
     // Notifies the watcher when the subchannel's state changes.
     void NotifyLocked(grpc_connectivity_state state);

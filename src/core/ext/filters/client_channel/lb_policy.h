@@ -128,7 +128,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Used only if type is PICK_COMPLETE.  Will be set to the selected
     /// subchannel, or nullptr if the LB policy decides to drop the call.
-    RefCountedPtr<ConnectedSubchannelInterface> connected_subchannel;
+    RefCountedPtr<SubchannelInterface> subchannel;
 
     /// Used only if type is PICK_TRANSIENT_FAILURE.
     /// Error to be set when returning a transient failure.

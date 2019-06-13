@@ -575,13 +575,12 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
   result = child_picker_->Pick(args);
   // If pick succeeded, add LB token to initial metadata.
   if (result.type == PickResult::PICK_COMPLETE &&
-      result.connected_subchannel != nullptr) {
+      result.subchannel != nullptr) {
     const grpc_arg* arg = grpc_channel_args_find(
-        result.connected_subchannel->args(), GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN);
+        result.subchannel->channel_args(), GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN);
     if (arg == nullptr) {
-      gpr_log(GPR_ERROR,
-              "[grpclb %p picker %p] No LB token for connected subchannel %p",
-              parent_, this, result.connected_subchannel.get());
+      gpr_log(GPR_ERROR, "[grpclb %p picker %p] No LB token for subchannel %p",
+              parent_, this, result.subchannel.get());
       abort();
     }
     grpc_mdelem lb_token = {reinterpret_cast<uintptr_t>(arg->value.pointer.p)};
