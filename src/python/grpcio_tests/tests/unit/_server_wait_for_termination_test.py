@@ -87,6 +87,11 @@ class ServerWaitForTerminationTest(unittest.TestCase):
         termination_event.wait(timeout=test_constants.SHORT_TIMEOUT)
         self.assertTrue(termination_event.is_set())
 
+    def test_just_block(self):
+        server = grpc.server(futures.ThreadPoolExecutor())
+        server.start()
+        server.wait_for_termination(timeout=-1)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

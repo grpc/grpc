@@ -1461,6 +1461,9 @@ class Server(six.with_metaclass(abc.ABCMeta)):
         Args:
           timeout: A floating point number specifying a timeout for the
             operation in seconds.
+
+        Returns:
+          A bool indicates if the operation times out.
         """
         raise NotImplementedError()
 

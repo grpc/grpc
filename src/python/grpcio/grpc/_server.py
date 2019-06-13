@@ -764,7 +764,8 @@ class _ServerState(object):
         self.interceptor_pipeline = interceptor_pipeline
         self.thread_pool = thread_pool
         self.stage = _ServerStage.STOPPED
-        self.shutdown_events = []
+        self.termination_event = threading.Event()
+        self.shutdown_events = [self.termination_event]
         self.maximum_concurrent_rpcs = maximum_concurrent_rpcs
         self.active_rpc_count = 0
 
@@ -959,15 +960,7 @@ class _Server(grpc.Server):
         _start(self._state)
 
     def wait_for_termination(self, timeout=None):
-        termination_event = threading.Event()
-
-        with self._state.lock:
-            if self._state.stage is _ServerStage.STOPPED:
-                return
-            else:
-                self._state.shutdown_events.append(termination_event)
-
-        termination_event.wait(timeout=timeout)
+        return self._state.termination_event.wait(timeout=timeout)
 
     def stop(self, grace):
         return _stop(self._state, grace)
