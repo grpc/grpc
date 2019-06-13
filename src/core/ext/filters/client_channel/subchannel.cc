@@ -660,7 +660,7 @@ Subchannel::Subchannel(SubchannelKey* key, grpc_connector* connector,
   if (new_args != nullptr) grpc_channel_args_destroy(new_args);
   GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
                     grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&on_backoff_timer_, OnBackoffTimerAlarm, this,
+  GRPC_CLOSURE_INIT(&on_backoff_timer_, OnBackoffTimer, this,
                     grpc_schedule_on_exec_ctx);
   const grpc_arg* arg = grpc_channel_args_find(args_, GRPC_ARG_ENABLE_CHANNELZ);
   const bool channelz_enabled =
@@ -939,22 +939,15 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state) {
   // Notify health watchers.
   health_watcher_map_.NotifyLocked(state);
   // Whenever a subchannel turns into TRANSIENT_FAILURE, set backoff_timer_ to
-  // call OnBackoffTimerAlarm(), which is the only way to get the subchannel out
+  // call OnBackoffTimer(), which is the only way to get the subchannel out
   // of TRANSIENT_FAILURE after backoff ends.
   if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    const grpc_millis backoff_duration =
-        next_attempt_deadline_ - ExecCtx::Get()->Now();
-    if (backoff_duration <= 0) {
-      gpr_log(GPR_INFO,
-              "Subchannel %p: Transient failure occurs. Can retry"
-              " immediately.",
-              this);
-    } else {
-      gpr_log(GPR_INFO,
-              "Subchannel %p: Transient failure occurs. Can not retry"
-              " in %" PRId64 " milliseconds due to the backoff restriction.",
-              this, backoff_duration);
-    }
+    const grpc_millis backoff_duration = std::max(
+        (grpc_millis)0, next_attempt_deadline_ - ExecCtx::Get()->Now());
+    gpr_log(GPR_INFO,
+            "subchannel %p: transient failure -- entering backoff for %" PRId64
+            " ms",
+            this, backoff_duration);
     GRPC_SUBCHANNEL_WEAK_REF(this, "backoff timer");
     grpc_timer_init(&backoff_timer_, next_attempt_deadline_,
                     &on_backoff_timer_);
@@ -1010,7 +1003,7 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error* error) {
 }
 
 // This callback function is the only way to get out of TRANSIENT_FAILURE state.
-void Subchannel::OnBackoffTimerAlarm(void* arg, grpc_error* error) {
+void Subchannel::OnBackoffTimer(void* arg, grpc_error* error) {
   auto* c = static_cast<Subchannel*>(arg);
   // We use ReleasableMutexLock here because we can NOT unref this subchannel
   // while holding its lock, since unref may cause the subchannel to be
