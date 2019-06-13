@@ -38,14 +38,6 @@
 #include "src/core/lib/surface/channel_init.h"
 
 static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
-  const grpc_channel_args* args =
-      grpc_channel_stack_builder_get_channel_arguments(builder);
-  grpc_arg args_to_add[] = {
-      grpc_core::channelz::ClientChannelNode::CreateChannelArg()};
-  grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
-      args, args_to_add, GPR_ARRAY_SIZE(args_to_add));
-  grpc_channel_stack_builder_set_channel_arguments(builder, new_args);
-  grpc_channel_args_destroy(new_args);
   return grpc_channel_stack_builder_append_filter(
       builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
 }

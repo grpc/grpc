@@ -19,17 +19,28 @@
 # supported version, and then calling it. This way, we can make sure
 # that running bazel will always get meaningful results, at least
 # until Bazel 1.0 is released.
+# NOTE: This script relies on bazel's feature where //tools/bazel
+# script can be used to hijack "bazel" invocations in given workspace.
 
 set -e
 
+# First of all, if DISABLE_BAZEL_WRAPPER is set, just use BAZEL_REAL as set by
+# https://github.com/bazelbuild/bazel/blob/master/scripts/packages/bazel.sh
+# that originally invoked this script.
+if [ "${BAZEL_REAL}" != "" ] && [ "${DISABLE_BAZEL_WRAPPER}" != "" ]
+then
+  exec -a "$0" "${BAZEL_REAL}" "$@"
+fi
+
 VERSION=0.26.0
 
-CWD=`pwd`
-BASEURL=https://github.com/bazelbuild/bazel/releases/download/
-cd `dirname $0`
-TOOLDIR=`pwd`
+echo "INFO: Running bazel wrapper (see //tools/bazel for details), bazel version $VERSION will be used instead of system-wide bazel installation."
 
-case `uname -sm` in
+BASEURL=https://github.com/bazelbuild/bazel/releases/download/
+pushd "$(dirname "$0")" >/dev/null
+TOOLDIR=$(pwd)
+
+case $(uname -sm) in
   "Linux x86_64")
     suffix=linux-x86_64
     ;;
@@ -37,17 +48,17 @@ case `uname -sm` in
     suffix=darwin-x86_64
     ;;
   *)
-    echo "Unsupported architecture: `uname -sm`"
+    echo "Unsupported architecture: $(uname -sm)"
     exit 1
     ;;
 esac
 
-filename=bazel-$VERSION-$suffix
+filename="bazel-$VERSION-$suffix"
 
-if [ ! -x $filename ] ; then
-  curl -L $BASEURL/$VERSION/$filename > $filename
-  chmod a+x $filename
+if [ ! -x "$filename" ] ; then
+  curl -L "$BASEURL/$VERSION/$filename" > "$filename"
+  chmod a+x "$filename"
 fi
 
-cd $CWD
-$TOOLDIR/$filename $@
+popd >/dev/null
+exec "$TOOLDIR/$filename" "$@"

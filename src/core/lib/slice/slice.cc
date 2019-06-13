@@ -102,18 +102,19 @@ class NewSliceRefcount {
   }
 
   NewSliceRefcount(void (*destroy)(void*), void* user_data)
-      : rc_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this, &rc_),
+      : base_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this,
+              &base_),
         user_destroy_(destroy),
         user_data_(user_data) {}
 
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
-  grpc_slice_refcount* base_refcount() { return &rc_; }
+  grpc_slice_refcount* base_refcount() { return &base_; }
 
  private:
   ~NewSliceRefcount() { user_destroy_(user_data_); }
 
-  grpc_slice_refcount rc_;
+  grpc_slice_refcount base_;
   RefCount refs_;
   void (*user_destroy_)(void*);
   void* user_data_;
@@ -141,7 +142,6 @@ grpc_slice grpc_slice_new(void* p, size_t len, void (*destroy)(void*)) {
 namespace grpc_core {
 /* grpc_slice_new_with_len support structures - we create a refcount object
    extended with the user provided data pointer & destroy function */
-
 class NewWithLenSliceRefcount {
  public:
   static void Destroy(void* arg) {
@@ -150,23 +150,46 @@ class NewWithLenSliceRefcount {
 
   NewWithLenSliceRefcount(void (*destroy)(void*, size_t), void* user_data,
                           size_t user_length)
-      : rc_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this, &rc_),
+      : base_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this,
+              &base_),
         user_data_(user_data),
         user_length_(user_length),
         user_destroy_(destroy) {}
 
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
-  grpc_slice_refcount* base_refcount() { return &rc_; }
+  grpc_slice_refcount* base_refcount() { return &base_; }
 
  private:
   ~NewWithLenSliceRefcount() { user_destroy_(user_data_, user_length_); }
 
-  grpc_slice_refcount rc_;
+  grpc_slice_refcount base_;
   RefCount refs_;
   void* user_data_;
   size_t user_length_;
   void (*user_destroy_)(void*, size_t);
+};
+
+/** grpc_slice_from_moved_(string|buffer) ref count .*/
+class MovedStringSliceRefCount {
+ public:
+  MovedStringSliceRefCount(grpc_core::UniquePtr<char>&& str)
+      : base_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this,
+              &base_),
+        str_(std::move(str)) {}
+
+  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+
+  grpc_slice_refcount* base_refcount() { return &base_; }
+
+ private:
+  static void Destroy(void* arg) {
+    Delete(static_cast<MovedStringSliceRefCount*>(arg));
+  }
+
+  grpc_slice_refcount base_;
+  grpc_core::RefCount refs_;
+  grpc_core::UniquePtr<char> str_;
 };
 
 }  // namespace grpc_core
@@ -191,6 +214,29 @@ grpc_slice grpc_slice_from_copied_buffer(const char* source, size_t length) {
 
 grpc_slice grpc_slice_from_copied_string(const char* source) {
   return grpc_slice_from_copied_buffer(source, strlen(source));
+}
+
+grpc_slice grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char> p,
+                                        size_t len) {
+  uint8_t* ptr = reinterpret_cast<uint8_t*>(p.get());
+  grpc_slice slice;
+  if (len <= sizeof(slice.data.inlined.bytes)) {
+    slice.refcount = nullptr;
+    slice.data.inlined.length = len;
+    memcpy(GRPC_SLICE_START_PTR(slice), ptr, len);
+  } else {
+    slice.refcount =
+        grpc_core::New<grpc_core::MovedStringSliceRefCount>(std::move(p))
+            ->base_refcount();
+    slice.data.refcounted.bytes = ptr;
+    slice.data.refcounted.length = len;
+  }
+  return slice;
+}
+
+grpc_slice grpc_slice_from_moved_string(grpc_core::UniquePtr<char> p) {
+  const size_t len = strlen(p.get());
+  return grpc_slice_from_moved_buffer(std::move(p), len);
 }
 
 namespace {

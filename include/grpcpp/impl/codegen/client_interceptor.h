@@ -29,11 +29,10 @@
 namespace grpc_impl {
 
 class Channel;
-}
+class ClientContext;
+}  // namespace grpc_impl
 
 namespace grpc {
-
-class ClientContext;
 
 namespace internal {
 class InterceptorBatchMethodsImpl;
@@ -96,7 +95,7 @@ class ClientRpcInfo {
 
   /// Return a pointer to the underlying ClientContext structure associated
   /// with the RPC to support features that apply to it
-  grpc::ClientContext* client_context() { return ctx_; }
+  grpc_impl::ClientContext* client_context() { return ctx_; }
 
   /// Return the type of the RPC (unary or a streaming flavor)
   Type type() const { return type_; }
@@ -119,8 +118,9 @@ class ClientRpcInfo {
   ClientRpcInfo() = default;
 
   // Constructor will only be called from ClientContext
-  ClientRpcInfo(grpc::ClientContext* ctx, internal::RpcMethod::RpcType type,
-                const char* method, grpc::ChannelInterface* channel)
+  ClientRpcInfo(grpc_impl::ClientContext* ctx,
+                internal::RpcMethod::RpcType type, const char* method,
+                grpc::ChannelInterface* channel)
       : ctx_(ctx),
         type_(static_cast<Type>(type)),
         method_(method),
@@ -160,7 +160,7 @@ class ClientRpcInfo {
     }
   }
 
-  grpc::ClientContext* ctx_ = nullptr;
+  grpc_impl::ClientContext* ctx_ = nullptr;
   // TODO(yashykt): make type_ const once move-assignment is deleted
   Type type_{Type::UNKNOWN};
   const char* method_ = nullptr;
@@ -170,7 +170,7 @@ class ClientRpcInfo {
   size_t hijacked_interceptor_ = 0;
 
   friend class internal::InterceptorBatchMethodsImpl;
-  friend class grpc::ClientContext;
+  friend class grpc_impl::ClientContext;
 };
 
 // PLEASE DO NOT USE THIS. ALWAYS PREFER PER CHANNEL INTERCEPTORS OVER A GLOBAL

@@ -18,6 +18,9 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
+#include <algorithm>
+#include <cstring>
+
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/channelz_registry.h"
@@ -28,8 +31,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-
-#include <cstring>
 
 namespace grpc_core {
 namespace channelz {
@@ -51,70 +52,17 @@ ChannelzRegistry* ChannelzRegistry::Default() {
   return g_channelz_registry;
 }
 
-ChannelzRegistry::ChannelzRegistry() { gpr_mu_init(&mu_); }
-
-ChannelzRegistry::~ChannelzRegistry() { gpr_mu_destroy(&mu_); }
-
 void ChannelzRegistry::InternalRegister(BaseNode* node) {
   MutexLock lock(&mu_);
-  entities_.push_back(node);
   node->uuid_ = ++uuid_generator_;
-}
-
-void ChannelzRegistry::MaybePerformCompactionLocked() {
-  constexpr double kEmptinessTheshold = 1. / 3;
-  double emptiness_ratio =
-      double(num_empty_slots_) / double(entities_.capacity());
-  if (emptiness_ratio > kEmptinessTheshold) {
-    int front = 0;
-    for (size_t i = 0; i < entities_.size(); ++i) {
-      if (entities_[i] != nullptr) {
-        entities_[front++] = entities_[i];
-      }
-    }
-    for (int i = 0; i < num_empty_slots_; ++i) {
-      entities_.pop_back();
-    }
-    num_empty_slots_ = 0;
-  }
-}
-
-int ChannelzRegistry::FindByUuidLocked(intptr_t target_uuid,
-                                       bool direct_hit_needed) {
-  int left = 0;
-  int right = int(entities_.size() - 1);
-  while (left <= right) {
-    int true_middle = left + (right - left) / 2;
-    int first_non_null = true_middle;
-    while (first_non_null < right && entities_[first_non_null] == nullptr) {
-      first_non_null++;
-    }
-    if (entities_[first_non_null] == nullptr) {
-      right = true_middle - 1;
-      continue;
-    }
-    intptr_t uuid = entities_[first_non_null]->uuid();
-    if (uuid == target_uuid) {
-      return int(first_non_null);
-    }
-    if (uuid < target_uuid) {
-      left = first_non_null + 1;
-    } else {
-      right = true_middle - 1;
-    }
-  }
-  return direct_hit_needed ? -1 : left;
+  node_map_[node->uuid_] = node;
 }
 
 void ChannelzRegistry::InternalUnregister(intptr_t uuid) {
   GPR_ASSERT(uuid >= 1);
   MutexLock lock(&mu_);
   GPR_ASSERT(uuid <= uuid_generator_);
-  int idx = FindByUuidLocked(uuid, true);
-  GPR_ASSERT(idx >= 0);
-  entities_[idx] = nullptr;
-  num_empty_slots_++;
-  MaybePerformCompactionLocked();
+  node_map_.erase(uuid);
 }
 
 RefCountedPtr<BaseNode> ChannelzRegistry::InternalGet(intptr_t uuid) {
@@ -122,12 +70,13 @@ RefCountedPtr<BaseNode> ChannelzRegistry::InternalGet(intptr_t uuid) {
   if (uuid < 1 || uuid > uuid_generator_) {
     return nullptr;
   }
-  int idx = FindByUuidLocked(uuid, true);
-  if (idx < 0 || entities_[idx] == nullptr) return nullptr;
+  auto it = node_map_.find(uuid);
+  if (it == node_map_.end()) return nullptr;
   // Found node.  Return only if its refcount is not zero (i.e., when we
   // know that there is no other thread about to destroy it).
-  if (!entities_[idx]->RefIfNonZero()) return nullptr;
-  return RefCountedPtr<BaseNode>(entities_[idx]);
+  BaseNode* node = it->second;
+  if (!node->RefIfNonZero()) return nullptr;
+  return RefCountedPtr<BaseNode>(node);
 }
 
 char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
@@ -138,13 +87,11 @@ char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
   RefCountedPtr<BaseNode> node_after_pagination_limit;
   {
     MutexLock lock(&mu_);
-    const int start_idx = GPR_MAX(FindByUuidLocked(start_channel_id, false), 0);
-    for (size_t i = start_idx; i < entities_.size(); ++i) {
-      if (entities_[i] != nullptr &&
-          entities_[i]->type() ==
-              grpc_core::channelz::BaseNode::EntityType::kTopLevelChannel &&
-          entities_[i]->uuid() >= start_channel_id &&
-          entities_[i]->RefIfNonZero()) {
+    for (auto it = node_map_.lower_bound(start_channel_id);
+         it != node_map_.end(); ++it) {
+      BaseNode* node = it->second;
+      if (node->type() == BaseNode::EntityType::kTopLevelChannel &&
+          node->RefIfNonZero()) {
         // Check if we are over pagination limit to determine if we need to set
         // the "end" element. If we don't go through this block, we know that
         // when the loop terminates, we have <= to kPaginationLimit.
@@ -152,10 +99,10 @@ char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
         // refcount, we need to decrease it, but we can't unref while
         // holding the lock, because this may lead to a deadlock.
         if (top_level_channels.size() == kPaginationLimit) {
-          node_after_pagination_limit.reset(entities_[i]);
+          node_after_pagination_limit.reset(node);
           break;
         }
-        top_level_channels.emplace_back(entities_[i]);
+        top_level_channels.emplace_back(node);
       }
     }
   }
@@ -186,13 +133,11 @@ char* ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
   RefCountedPtr<BaseNode> node_after_pagination_limit;
   {
     MutexLock lock(&mu_);
-    const int start_idx = GPR_MAX(FindByUuidLocked(start_server_id, false), 0);
-    for (size_t i = start_idx; i < entities_.size(); ++i) {
-      if (entities_[i] != nullptr &&
-          entities_[i]->type() ==
-              grpc_core::channelz::BaseNode::EntityType::kServer &&
-          entities_[i]->uuid() >= start_server_id &&
-          entities_[i]->RefIfNonZero()) {
+    for (auto it = node_map_.lower_bound(start_server_id);
+         it != node_map_.end(); ++it) {
+      BaseNode* node = it->second;
+      if (node->type() == BaseNode::EntityType::kServer &&
+          node->RefIfNonZero()) {
         // Check if we are over pagination limit to determine if we need to set
         // the "end" element. If we don't go through this block, we know that
         // when the loop terminates, we have <= to kPaginationLimit.
@@ -200,10 +145,10 @@ char* ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
         // refcount, we need to decrease it, but we can't unref while
         // holding the lock, because this may lead to a deadlock.
         if (servers.size() == kPaginationLimit) {
-          node_after_pagination_limit.reset(entities_[i]);
+          node_after_pagination_limit.reset(node);
           break;
         }
-        servers.emplace_back(entities_[i]);
+        servers.emplace_back(node);
       }
     }
   }
@@ -230,9 +175,10 @@ void ChannelzRegistry::InternalLogAllEntities() {
   InlinedVector<RefCountedPtr<BaseNode>, 10> nodes;
   {
     MutexLock lock(&mu_);
-    for (size_t i = 0; i < entities_.size(); ++i) {
-      if (entities_[i] != nullptr && entities_[i]->RefIfNonZero()) {
-        nodes.emplace_back(entities_[i]);
+    for (auto& p : node_map_) {
+      BaseNode* node = p.second;
+      if (node->RefIfNonZero()) {
+        nodes.emplace_back(node);
       }
     }
   }

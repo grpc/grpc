@@ -80,11 +80,13 @@ inline void grpc_stream_ref(grpc_stream_refcount* refcount,
     gpr_log(GPR_DEBUG, "%s %p:%p REF %s", refcount->object_type, refcount,
             refcount->destroy.cb_arg, reason);
   }
+  refcount->refs.RefNonZero(DEBUG_LOCATION, reason);
+}
 #else
 inline void grpc_stream_ref(grpc_stream_refcount* refcount) {
-#endif
   refcount->refs.RefNonZero();
 }
+#endif
 
 void grpc_stream_destroy(grpc_stream_refcount* refcount);
 
@@ -95,13 +97,17 @@ inline void grpc_stream_unref(grpc_stream_refcount* refcount,
     gpr_log(GPR_DEBUG, "%s %p:%p UNREF %s", refcount->object_type, refcount,
             refcount->destroy.cb_arg, reason);
   }
+  if (GPR_UNLIKELY(refcount->refs.Unref(DEBUG_LOCATION, reason))) {
+    grpc_stream_destroy(refcount);
+  }
+}
 #else
 inline void grpc_stream_unref(grpc_stream_refcount* refcount) {
-#endif
   if (GPR_UNLIKELY(refcount->refs.Unref())) {
     grpc_stream_destroy(refcount);
   }
 }
+#endif
 
 /* Wrap a buffer that is owned by some stream object into a slice that shares
    the same refcount */

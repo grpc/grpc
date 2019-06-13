@@ -23,7 +23,7 @@ rm -rf html obj grpc-gh-pages
 # generate into src/csharp/doc/html directory
 cd ..
 docker run --rm -v "$(pwd)":/work -w /work/doc --user "$(id -u):$(id -g)" -it tsgkadot/docker-docfx:latest docfx
-cd doc
+cd docfx
 
 # prepare a clone of "gh-pages" branch where the generated docs are stored
 GITHUB_USER="${USER}"
@@ -35,4 +35,4 @@ git remote add origin "git@github.com:${GITHUB_USER}/grpc.git"
 rm -r csharp
 cp -r ../html csharp
 
-echo "Done. Go to src/csharp/doc/grpc-gh-pages git repository and create a pull request to update the generated docs."
+echo "Done. Go to src/csharp/docfx/grpc-gh-pages git repository and create a pull request to update the generated docs."
