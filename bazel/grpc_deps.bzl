@@ -212,16 +212,16 @@ def grpc_deps():
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            sha256 = "3aa0c5aff130d97618fe137e3e76603b2381e3698cd7ca7a4a54327f7c44c69c",
-            strip_prefix = "upb-ef6ce94bfecf36fb57acd8a8b470c0560959f063",
-            url = "https://github.com/google/upb/archive/ef6ce94bfecf36fb57acd8a8b470c0560959f063.tar.gz",
+            sha256 = "909b6fca860a85bea7dda4770aae66f6afd6f12586e8a4cb95460d0707fd66ce",
+            strip_prefix = "upb-312c6b421a3c749e4f7c0e2193d4775cb997cff7",
+            url = "https://github.com/haberman/upb/archive/312c6b421a3c749e4f7c0e2193d4775cb997cff7.tar.gz",
         )
-    if "data_plane_api" not in native.existing_rules():
+    if "envoy_api" not in native.existing_rules():
         http_archive(
-            name = "data_plane_api",
-            sha256 = "9b9e0e3882df11f1a174aac7d78c2238a8bfbadad271b673f351a86137613cde",
-            strip_prefix = "data-plane-api-911001cdca003337bdb93fab32740cde61bafee3",
-            url = "https://github.com/envoyproxy/data-plane-api/archive/911001cdca003337bdb93fab32740cde61bafee3.tar.gz",
+            name = "envoy_api",
+            sha256 = "a2c6e854fa9653b0ed6510e31ec7c51eac43d578b54cd75c0bc1898f7515c60d",
+            strip_prefix = "data-plane-api-a83394157ad97f4dadbc8ed81f56ad5b3a72e542",
+            url = "https://github.com/envoyproxy/data-plane-api/archive/a83394157ad97f4dadbc8ed81f56ad5b3a72e542.tar.gz",
         )
 
     if "io_bazel_rules_go" not in native.existing_rules():

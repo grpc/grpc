@@ -31,9 +31,8 @@ load(
     "grpc_cc_library",
     "grpc_generate_one_off_targets",
     "grpc_proto_plugin",
+    "grpc_upb_proto_library",
 )
-
-load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library")
 
 config_setting(
     name = "grpc_no_ares",
@@ -2365,35 +2364,29 @@ grpc_cc_library(
     ],
 )
 
-upb_proto_library(
+grpc_upb_proto_library(
     name = "upb_load_report",
-    deps = ["@data_plane_api//envoy/api/v2/endpoint:load_report_export"]
+    deps = ["@envoy_api//envoy/api/v2/endpoint:load_report_export"]
 )
 
-upb_proto_library(
+grpc_upb_proto_library(
     name = "upb_lrs",
-    deps = ["@data_plane_api//envoy/service/load_stats/v2:lrs_export"]
+    deps = ["@envoy_api//envoy/service/load_stats/v2:lrs_export"]
+)
+
+grpc_upb_proto_library(
+    name = "upb_cds",
+    deps = ["@envoy_api//envoy/api/v2:cds_export"]
 )
 
 #TODO: Get this into build.yaml once we start using it.
 grpc_cc_library(
     name = "envoy_lrs_upb",
-#    srcs = [
-#        "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c",
-#        "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c",
-#    ],
-#    hdrs = [
-#        "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h",
-#        "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h",
-#    ],
     language = "c++",
     external_deps = [
         "upb_lib",
     ],
     deps = [
-        ":envoy_core_upb",
-        ":google_api_upb",
-        ":proto_gen_validate_upb",
         ":upb_load_report",
         ":upb_lrs"
     ],
@@ -2402,140 +2395,13 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "envoy_ads_upb",
-    srcs = [
-        "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/cds.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/eds.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c",
-        "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/cds.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h",
-        "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h",
-    ],
     external_deps = [
         "upb_lib",
     ],
     language = "c++",
     deps = [
-        ":envoy_core_upb",
-        ":envoy_type_upb",
-        ":google_api_upb",
-        ":proto_gen_validate_upb",
+        ":upb_cds",
     ],
-    tags = ["no_windows"],
-)
-
-grpc_cc_library(
-    name = "envoy_core_upb",
-    srcs = [
-        "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-    ],
-    language = "c++",
-    tags = ["no_windows"],
-    deps = [
-        ":envoy_type_upb",
-        ":google_api_upb",
-        ":proto_gen_validate_upb",
-    ],
-)
-
-grpc_cc_library(
-    name = "envoy_type_upb",
-    srcs = [
-        "src/core/ext/upb-generated/envoy/type/percent.upb.c",
-        "src/core/ext/upb-generated/envoy/type/range.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/envoy/type/percent.upb.h",
-        "src/core/ext/upb-generated/envoy/type/range.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-    ],
-    language = "c++",
-    tags = ["no_windows"],
-    deps = [
-        ":google_api_upb",
-        ":proto_gen_validate_upb",
-    ],
-)
-
-grpc_cc_library(
-    name = "proto_gen_validate_upb",
-    srcs = [
-        "src/core/ext/upb-generated/gogoproto/gogo.upb.c",
-        "src/core/ext/upb-generated/validate/validate.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/gogoproto/gogo.upb.h",
-        "src/core/ext/upb-generated/validate/validate.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-    ],
-    language = "c++",
-    tags = ["no_windows"],
-    deps = [
-        ":google_api_upb",
-    ],
-)
-
-grpc_cc_library(
-    name = "google_api_upb",
-    srcs = [
-        "src/core/ext/upb-generated/google/api/annotations.upb.c",
-        "src/core/ext/upb-generated/google/api/http.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/any.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/descriptor.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/duration.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/empty.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/struct.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/timestamp.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/wrappers.upb.c",
-        "src/core/ext/upb-generated/google/rpc/status.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/google/api/annotations.upb.h",
-        "src/core/ext/upb-generated/google/api/http.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/any.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/descriptor.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/duration.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/empty.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/struct.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/timestamp.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/wrappers.upb.h",
-        "src/core/ext/upb-generated/google/rpc/status.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-    ],
-    language = "c++",
     tags = ["no_windows"],
 )
 

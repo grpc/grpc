@@ -24,6 +24,7 @@
 #
 
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library")
 
 # The set of pollers to test against if a test exercises polling
 POLLERS = ["epollex", "epoll1", "poll"]
@@ -248,3 +249,7 @@ def grpc_package(name, visibility = "private", features = []):
             default_visibility = visibility,
             features = features,
         )
+
+def grpc_upb_proto_library(name, deps):
+    upb_proto_library(name = name, deps = deps)
+
