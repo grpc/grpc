@@ -1444,16 +1444,23 @@ class Server(six.with_metaclass(abc.ABCMeta)):
         """
         raise NotImplementedError()
 
-    def wait_for_termination(self):
+    def wait_for_termination(self, timeout=None):
         """Block current thread until the server stops.
 
         This is an EXPERIMENTAL API.
 
-        The wait will not consume computational resources during blocking, and it
-        will block indefinitely. There are two ways to unblock:
+        The wait will not consume computational resources during blocking, and
+        it will block until one of the two following conditions are met:
 
-        1) Calling `stop` on the server in another thread;
-        2) The `__del__` of the server object is invoked.
+        1) The server is stopped or terminated;
+        2) A timeout occurs if timeout is not `None`.
+
+        The timeout argument works in the same way as `threading.Event.wait()`.
+        https://docs.python.org/3/library/threading.html#threading.Event.wait
+
+        Args:
+          timeout: A floating point number specifying a timeout for the
+            operation in seconds.
         """
         raise NotImplementedError()
 

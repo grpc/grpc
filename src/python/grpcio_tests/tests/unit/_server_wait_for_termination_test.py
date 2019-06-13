@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import division
+
 import datetime
 from concurrent import futures
 import unittest
@@ -25,9 +27,9 @@ from tests.unit.framework.common import test_constants
 _WAIT_FOR_BLOCKING = datetime.timedelta(seconds=1)
 
 
-def _block_on_waiting(server, termination_event):
+def _block_on_waiting(server, termination_event, timeout=None):
     server.start()
-    server.wait_for_termination()
+    server.wait_for_termination(timeout=timeout)
     termination_event.set()
 
 
@@ -65,6 +67,23 @@ class ServerWaitForTerminationTest(unittest.TestCase):
 
         # Invoke manually here, in Python 2 it will be invoked by GC sometime.
         server.__del__()
+        termination_event.wait(timeout=test_constants.SHORT_TIMEOUT)
+        self.assertTrue(termination_event.is_set())
+
+    def test_unblock_by_timeout(self):
+        termination_event = threading.Event()
+        server = grpc.server(futures.ThreadPoolExecutor())
+
+        wait_thread = threading.Thread(
+            target=_block_on_waiting,
+            args=(
+                server,
+                termination_event,
+                test_constants.SHORT_TIMEOUT / 2,
+            ))
+        wait_thread.daemon = True
+        wait_thread.start()
+
         termination_event.wait(timeout=test_constants.SHORT_TIMEOUT)
         self.assertTrue(termination_event.is_set())
 
