@@ -489,7 +489,7 @@ bool grpc_error_get_str(grpc_error* err, grpc_error_strs which,
     if (which != GRPC_ERROR_STR_GRPC_MESSAGE) return false;
     const special_error_status_map& msg =
         error_status_map[reinterpret_cast<size_t>(err)];
-    str->refcount = &grpc_core::NoopRefcount;
+    str->refcount = &grpc_core::kNoopRefcount;
     str->data.refcounted.bytes =
         reinterpret_cast<uint8_t*>(const_cast<char*>(msg.msg));
     str->data.refcounted.length = msg.len;

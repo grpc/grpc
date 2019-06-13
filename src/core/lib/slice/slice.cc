@@ -70,7 +70,9 @@ namespace grpc_core {
 
 /* grpc_slice_from_static_string support structure - a refcount that does
    nothing */
-grpc_slice_refcount NoopRefcount(grpc_slice_refcount::Type::NOP);
+grpc_slice_refcount kNoopRefcount(grpc_slice_refcount::Type::NOP);
+static_assert(std::is_trivially_destructible<decltype(kNoopRefcount)>::value,
+              "kNoopRefcount must be trivially destructible.");
 
 /* grpc_slice_new support structures - we create a refcount object extended
    with the user provided data pointer & destroy function */
@@ -101,7 +103,7 @@ class NewSliceRefcount {
 }  // namespace grpc_core
 
 size_t grpc_slice_memory_usage(grpc_slice s) {
-  if (s.refcount == nullptr || s.refcount == &grpc_core::NoopRefcount) {
+  if (s.refcount == nullptr || s.refcount == &grpc_core::kNoopRefcount) {
     return 0;
   } else {
     return s.data.refcounted.length;
@@ -109,15 +111,11 @@ size_t grpc_slice_memory_usage(grpc_slice s) {
 }
 
 grpc_slice grpc_slice_from_static_buffer(const void* s, size_t len) {
-  grpc_slice slice;
-  slice.refcount = &grpc_core::NoopRefcount;
-  slice.data.refcounted.bytes = (uint8_t*)s;
-  slice.data.refcounted.length = len;
-  return slice;
+  return grpc_slice_from_static_buffer_internal(s, len);
 }
 
 grpc_slice grpc_slice_from_static_string(const char* s) {
-  return grpc_slice_from_static_buffer(s, strlen(s));
+  return grpc_slice_from_static_buffer_internal(s, strlen(s));
 }
 
 grpc_slice grpc_slice_new_with_user_data(void* p, size_t len,
@@ -328,10 +326,10 @@ grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice* source, size_t split,
       switch (ref_whom) {
         case GRPC_SLICE_REF_TAIL:
           tail.refcount = source->refcount->sub_refcount();
-          source->refcount = &grpc_core::NoopRefcount;
+          source->refcount = &grpc_core::kNoopRefcount;
           break;
         case GRPC_SLICE_REF_HEAD:
-          tail.refcount = &grpc_core::NoopRefcount;
+          tail.refcount = &grpc_core::kNoopRefcount;
           source->refcount = source->refcount->sub_refcount();
           break;
         case GRPC_SLICE_REF_BOTH:
