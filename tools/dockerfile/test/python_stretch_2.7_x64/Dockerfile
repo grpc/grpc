@@ -54,7 +54,7 @@ RUN apt-get update && apt-get install -y python-pip && apt-get clean
 RUN pip install --upgrade google-api-python-client oauth2client
 
 # Install Python 2.7
-RUN apt-get update && apt-get install -y python2.7 python-all-dev
+RUN apt-get update && apt-get install -y python2.7
 RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
 
 # Add Debian 'testing' repository
