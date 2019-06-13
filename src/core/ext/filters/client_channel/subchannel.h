@@ -346,7 +346,7 @@ class Subchannel {
   void MaybeStartConnectingLocked();
   void ContinueConnectingLocked();
   static void OnConnectingFinished(void* arg, grpc_error* error);
-  static void OnBackoffTimerAlarm(void* arg, grpc_error* error);
+  static void OnBackoffTimer(void* arg, grpc_error* error);
   bool PublishTransportLocked();
   void Disconnect();
   void ResetBackoffLocked();
