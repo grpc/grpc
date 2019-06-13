@@ -1666,4 +1666,174 @@ initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
   }
 }
 
+- (void)testIntecepptorAndGlobalInterceptor {
+  XCTAssertNotNil([[self class] host]);
+  __weak XCTestExpectation *expectation =
+      [self expectationWithDescription:@"testGlobalInterceptor"];
+
+  __block NSUInteger startCount = 0;
+  __block NSUInteger writeDataCount = 0;
+  __block NSUInteger finishCount = 0;
+  __block NSUInteger receiveNextMessageCount = 0;
+  __block NSUInteger responseHeaderCount = 0;
+  __block NSUInteger responseDataCount = 0;
+  __block NSUInteger responseCloseCount = 0;
+  __block NSUInteger didWriteDataCount = 0;
+
+  id<GRPCInterceptorFactory> factory = [[HookInterceptorFactory alloc]
+      initWithRequestDispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)
+      responseDispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)
+      startHook:^(GRPCRequestOptions *requestOptions, GRPCCallOptions *callOptions,
+                  GRPCInterceptorManager *manager) {
+        startCount++;
+        XCTAssertEqualObjects(requestOptions.host, [[self class] host]);
+        XCTAssertEqualObjects(requestOptions.path, @"/grpc.testing.TestService/FullDuplexCall");
+        XCTAssertEqual(requestOptions.safety, GRPCCallSafetyDefault);
+        [manager startNextInterceptorWithRequest:[requestOptions copy]
+                                     callOptions:[callOptions copy]];
+      }
+      writeDataHook:^(id data, GRPCInterceptorManager *manager) {
+        writeDataCount++;
+        [manager writeNextInterceptorWithData:data];
+      }
+      finishHook:^(GRPCInterceptorManager *manager) {
+        finishCount++;
+        [manager finishNextInterceptor];
+      }
+      receiveNextMessagesHook:^(NSUInteger numberOfMessages, GRPCInterceptorManager *manager) {
+        receiveNextMessageCount++;
+        [manager receiveNextInterceptorMessages:numberOfMessages];
+      }
+      responseHeaderHook:^(NSDictionary *initialMetadata, GRPCInterceptorManager *manager) {
+        responseHeaderCount++;
+        [manager forwardPreviousInterceptorWithInitialMetadata:initialMetadata];
+      }
+      responseDataHook:^(id data, GRPCInterceptorManager *manager) {
+        responseDataCount++;
+        [manager forwardPreviousInterceptorWithData:data];
+      }
+      responseCloseHook:^(NSDictionary *trailingMetadata, NSError *error,
+                          GRPCInterceptorManager *manager) {
+        responseCloseCount++;
+        [manager forwardPreviousInterceptorCloseWithTrailingMetadata:trailingMetadata error:error];
+      }
+      didWriteDataHook:^(GRPCInterceptorManager *manager) {
+        didWriteDataCount++;
+        [manager forwardPreviousInterceptorDidWriteData];
+      }];
+
+  __block NSUInteger globalStartCount = 0;
+  __block NSUInteger globalWriteDataCount = 0;
+  __block NSUInteger globalFinishCount = 0;
+  __block NSUInteger globalReceiveNextMessageCount = 0;
+  __block NSUInteger globalResponseHeaderCount = 0;
+  __block NSUInteger globalResponseDataCount = 0;
+  __block NSUInteger globalResponseCloseCount = 0;
+  __block NSUInteger globalDidWriteDataCount = 0;
+
+  id<GRPCInterceptorFactory> globalFactory = [[HookInterceptorFactory alloc]
+      initWithRequestDispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)
+      responseDispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)
+      startHook:^(GRPCRequestOptions *requestOptions, GRPCCallOptions *callOptions,
+                  GRPCInterceptorManager *manager) {
+        globalStartCount++;
+        XCTAssertEqualObjects(requestOptions.host, [[self class] host]);
+        XCTAssertEqualObjects(requestOptions.path, @"/grpc.testing.TestService/FullDuplexCall");
+        XCTAssertEqual(requestOptions.safety, GRPCCallSafetyDefault);
+        [manager startNextInterceptorWithRequest:[requestOptions copy]
+                                     callOptions:[callOptions copy]];
+      }
+      writeDataHook:^(id data, GRPCInterceptorManager *manager) {
+        globalWriteDataCount++;
+        [manager writeNextInterceptorWithData:data];
+      }
+      finishHook:^(GRPCInterceptorManager *manager) {
+        globalFinishCount++;
+        [manager finishNextInterceptor];
+      }
+      receiveNextMessagesHook:^(NSUInteger numberOfMessages, GRPCInterceptorManager *manager) {
+        globalReceiveNextMessageCount++;
+        [manager receiveNextInterceptorMessages:numberOfMessages];
+      }
+      responseHeaderHook:^(NSDictionary *initialMetadata, GRPCInterceptorManager *manager) {
+        globalResponseHeaderCount++;
+        [manager forwardPreviousInterceptorWithInitialMetadata:initialMetadata];
+      }
+      responseDataHook:^(id data, GRPCInterceptorManager *manager) {
+        globalResponseDataCount++;
+        [manager forwardPreviousInterceptorWithData:data];
+      }
+      responseCloseHook:^(NSDictionary *trailingMetadata, NSError *error,
+                          GRPCInterceptorManager *manager) {
+        globalResponseCloseCount++;
+        [manager forwardPreviousInterceptorCloseWithTrailingMetadata:trailingMetadata error:error];
+      }
+      didWriteDataHook:^(GRPCInterceptorManager *manager) {
+        globalDidWriteDataCount++;
+        [manager forwardPreviousInterceptorDidWriteData];
+      }];
+
+  NSArray *requests = @[ @1, @2, @3, @4 ];
+  NSArray *responses = @[ @1, @2, @3, @4 ];
+
+  __block int index = 0;
+
+  id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
+                                               requestedResponseSize:responses[index]];
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.transportType = [[self class] transportType];
+  options.PEMRootCertificates = [[self class] PEMRootCertificates];
+  options.hostNameOverride = [[self class] hostNameOverride];
+  options.flowControlEnabled = YES;
+  options.interceptorFactories = @[ factory ];
+  [GRPCCall2 registerGlobalInterceptor:globalFactory];
+
+  __block BOOL canWriteData = NO;
+  __block GRPCStreamingProtoCall *call = [_service
+      fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
+                                            initWithInitialMetadataCallback:nil
+                                            messageCallback:^(id message) {
+                                              index += 1;
+                                              if (index < 4) {
+                                                id request = [RMTStreamingOutputCallRequest
+                                                    messageWithPayloadSize:requests[index]
+                                                     requestedResponseSize:responses[index]];
+                                                canWriteData = NO;
+                                                [call writeMessage:request];
+                                                [call receiveNextMessage];
+                                              } else {
+                                                [call finish];
+                                              }
+                                            }
+                                            closeCallback:^(NSDictionary *trailingMetadata,
+                                                            NSError *error) {
+                                              [expectation fulfill];
+                                            }
+                                            writeMessageCallback:^{
+                                              canWriteData = YES;
+                                            }]
+                            callOptions:options];
+  [call start];
+  [call receiveNextMessage];
+  [call writeMessage:request];
+
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+  XCTAssertEqual(startCount, 1);
+  XCTAssertEqual(writeDataCount, 4);
+  XCTAssertEqual(finishCount, 1);
+  XCTAssertEqual(receiveNextMessageCount, 4);
+  XCTAssertEqual(responseHeaderCount, 1);
+  XCTAssertEqual(responseDataCount, 4);
+  XCTAssertEqual(responseCloseCount, 1);
+  XCTAssertEqual(didWriteDataCount, 4);
+  XCTAssertEqual(globalStartCount, 1);
+  XCTAssertEqual(globalWriteDataCount, 4);
+  XCTAssertEqual(globalFinishCount, 1);
+  XCTAssertEqual(globalReceiveNextMessageCount, 4);
+  XCTAssertEqual(globalResponseHeaderCount, 1);
+  XCTAssertEqual(globalResponseDataCount, 4);
+  XCTAssertEqual(globalResponseCloseCount, 1);
+  XCTAssertEqual(globalDidWriteDataCount, 4);
+}
+
 @end
