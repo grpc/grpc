@@ -144,6 +144,11 @@ class PickFirst : public LoadBalancingPolicy {
 
   void UpdateChildRefsLocked();
 
+  OrphanablePtr<PickFirstSubchannelList>
+  CreateSubchannelListFromLatestUpdateArgs();
+
+  // Lateset update args.
+  UpdateArgs latest_update_args_;
   // All our subchannels.
   OrphanablePtr<PickFirstSubchannelList> subchannel_list_;
   // Latest pending subchannel list.
@@ -246,6 +251,19 @@ void PickFirst::UpdateChildRefsLocked() {
   child_subchannels_ = std::move(cs);
 }
 
+OrphanablePtr<PickFirst::PickFirstSubchannelList>
+PickFirst::CreateSubchannelListFromLatestUpdateArgs() {
+  grpc_arg new_arg = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1);
+  grpc_channel_args* new_args =
+      grpc_channel_args_copy_and_add(latest_update_args_.args, &new_arg, 1);
+  auto subchannel_list = MakeOrphanable<PickFirstSubchannelList>(
+      this, &grpc_lb_pick_first_trace, latest_update_args_.addresses,
+      combiner(), *new_args);
+  grpc_channel_args_destroy(new_args);
+  return subchannel_list;
+}
+
 void PickFirst::UpdateLocked(UpdateArgs args) {
   AutoChildRefsUpdater guard(this);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
@@ -253,13 +271,8 @@ void PickFirst::UpdateLocked(UpdateArgs args) {
             "Pick First %p received update with %" PRIuPTR " addresses", this,
             args.addresses.size());
   }
-  grpc_arg new_arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1);
-  grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_add(args.args, &new_arg, 1);
-  auto subchannel_list = MakeOrphanable<PickFirstSubchannelList>(
-      this, &grpc_lb_pick_first_trace, args.addresses, combiner(), *new_args);
-  grpc_channel_args_destroy(new_args);
+  latest_update_args_ = args;
+  auto subchannel_list = CreateSubchannelListFromLatestUpdateArgs();
   if (subchannel_list->num_subchannels() == 0) {
     // Empty update or no valid subchannels. Unsubscribe from all current
     // subchannels.
@@ -404,6 +417,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         p->idle_ = true;
         p->channel_control_helper()->RequestReresolution();
         p->selected_ = nullptr;
+        p->subchannel_list_ = p->CreateSubchannelListFromLatestUpdateArgs();
         CancelConnectivityWatchLocked("selected subchannel failed; going IDLE");
         p->channel_control_helper()->UpdateState(
             GRPC_CHANNEL_IDLE,
@@ -515,6 +529,12 @@ void PickFirst::PickFirstSubchannelData::ProcessUnselectedReadyLocked() {
       UniquePtr<SubchannelPicker>(New<Picker>(connected_subchannel()->Ref())));
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_INFO, "Pick First %p selected subchannel %p", p, subchannel());
+  }
+  // Shutdown unselected subchannels.
+  for (size_t i = 0; i < subchannel_list()->num_subchannels(); ++i) {
+    if (i != Index()) {
+      subchannel_list()->subchannel(i)->ShutdownLocked();
+    }
   }
 }
 
