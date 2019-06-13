@@ -29,6 +29,7 @@
 #ifdef GRPC_CFSTREAM
 #import <CoreFoundation/CoreFoundation.h>
 
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/lockfree_event.h"
 
@@ -65,6 +66,9 @@ class CFStreamHandle final {
   dispatch_queue_t dispatch_queue_;
 
   gpr_refcount refcount_;
+
+  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
+  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 };
 
 #ifdef DEBUG
