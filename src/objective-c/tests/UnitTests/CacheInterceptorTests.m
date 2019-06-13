@@ -7,17 +7,28 @@
 //
 
 #import <XCTest/XCTest.h>
+#import <GRPCClient/GRPCCall.h>
+#import <GRPCClient/GRPCInterceptor.h>
 #import "../../GRPCClient/CacheInterceptor.h"
+#import "../../GRPCClient/private/GRPCCallInternal.h"
+
 
 /**
- * Mocking interceptormanager
+ * Mocking InterceptorManager
  */
 @interface TestInterceptorManager : GRPCInterceptorManager
+
+- (instancetype)init;
 
 @end
 
 @implementation TestInterceptorManager
 
+- (instancetype)init {
+  GRPCCall2Internal *nextInterceptor = [[GRPCCall2Internal alloc] init];
+  self = [super initWithNextInterceptor:nextInterceptor];
+  return self;
+}
 
 @end
 
@@ -28,9 +39,14 @@
 
 @end
 
-@implementation CacheInterceptorTests
+@implementation CacheInterceptorTests {
+  GRPCInterceptor *_interceptor;
+  TestInterceptorManager *_manager;
+}
 
 - (void)setUp {
+  _manager = [[TestInterceptorManager alloc] init];
+  _interceptor = [[[CacheContext alloc] init] createInterceptorWithManager:_manager];
 }
 
 - (void)tearDown {

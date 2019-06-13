@@ -72,6 +72,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (instancetype) new NS_UNAVAILABLE;
 
+- (nullable instancetype)initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
+                               requestDispatchQueue:(dispatch_queue_t)requestDispatchQueue
+                              responseDispatchQueue:(dispatch_queue_t)responseDispatchQueue
+    NS_DESIGNATED_INITIALIZER;
+
 - (nullable instancetype)initWithInterceptorManager:
                              (GRPCInterceptorManager *_Nonnull)intercepterManager
                                        cacheContext:(CacheContext *_Nonnull)cacheContext

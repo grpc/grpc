@@ -215,6 +215,15 @@
   return _dispatchQueue;
 }
 
+- (instancetype)initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
+                      requestDispatchQueue:(dispatch_queue_t)requestDispatchQueue
+                     responseDispatchQueue:(dispatch_queue_t)responseDispatchQueue {
+  self = [super initWithInterceptorManager:interceptorManager
+                      requestDispatchQueue:requestDispatchQueue
+                     responseDispatchQueue:responseDispatchQueue];
+  return self;
+}
+
 - (instancetype)initWithInterceptorManager:(GRPCInterceptorManager *_Nonnull)intercepterManager
                               cacheContext:(CacheContext *_Nonnull)cacheContext {
   if ((self = [super initWithInterceptorManager:intercepterManager
