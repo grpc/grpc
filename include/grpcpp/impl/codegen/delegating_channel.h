@@ -30,7 +30,7 @@ class DelegatingChannel : public ::grpc::ChannelInterface {
       : delegate_channel_(delegate_channel) {}
 
   grpc_connectivity_state GetState(bool try_to_connect) override {
-    delegate_channel()->GetState(try_to_connect);
+    return delegate_channel()->GetState(try_to_connect);
   }
 
   std::shared_ptr<::grpc::ChannelInterface> delegate_channel() {

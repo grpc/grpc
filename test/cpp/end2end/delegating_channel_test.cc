@@ -46,7 +46,7 @@ namespace {
 class TestChannel : public internal::DelegatingChannel {
  public:
   TestChannel(std::shared_ptr<ChannelInterface> delegate_channel)
-      : internal::DelegatingChannel(delegate_channel) {}
+      : internal::DelegatingChannel(std::move(delegate_channel)) {}
   // Always returns GRPC_CHANNEL_READY
   grpc_connectivity_state GetState(bool try_to_connect) override {
     return GRPC_CHANNEL_READY;
