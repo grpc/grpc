@@ -292,6 +292,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     explicit QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent)
         : parent_(std::move(parent)) {}
 
+    ~QueuePicker() { parent_.reset(DEBUG_LOCATION, "QueuePicker"); }
+
     PickResult Pick(PickArgs args) override;
 
    private:

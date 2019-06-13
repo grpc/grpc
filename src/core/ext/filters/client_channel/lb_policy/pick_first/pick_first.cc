@@ -329,7 +329,8 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       } else {
         p->channel_control_helper()->UpdateState(
             GRPC_CHANNEL_CONNECTING,
-            UniquePtr<SubchannelPicker>(New<QueuePicker>(p->Ref())));
+            UniquePtr<SubchannelPicker>(
+                New<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker"))));
       }
     } else {
       if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
@@ -342,8 +343,8 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         p->selected_ = nullptr;
         CancelConnectivityWatchLocked("selected subchannel failed; going IDLE");
         p->channel_control_helper()->UpdateState(
-            GRPC_CHANNEL_IDLE,
-            UniquePtr<SubchannelPicker>(New<QueuePicker>(p->Ref())));
+            GRPC_CHANNEL_IDLE, UniquePtr<SubchannelPicker>(New<QueuePicker>(
+                                   p->Ref(DEBUG_LOCATION, "QueuePicker"))));
       } else {
         // This is unlikely but can happen when a subchannel has been asked
         // to reconnect by a different channel and this channel has dropped
@@ -354,8 +355,8 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
                                       connected_subchannel()->Ref())));
         } else {  // CONNECTING
           p->channel_control_helper()->UpdateState(
-              connectivity_state,
-              UniquePtr<SubchannelPicker>(New<QueuePicker>(p->Ref())));
+              connectivity_state, UniquePtr<SubchannelPicker>(New<QueuePicker>(
+                                      p->Ref(DEBUG_LOCATION, "QueuePicker"))));
         }
       }
     }
@@ -411,7 +412,8 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       if (subchannel_list() == p->subchannel_list_.get()) {
         p->channel_control_helper()->UpdateState(
             GRPC_CHANNEL_CONNECTING,
-            UniquePtr<SubchannelPicker>(New<QueuePicker>(p->Ref())));
+            UniquePtr<SubchannelPicker>(
+                New<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker"))));
       }
       break;
     }
