@@ -30,11 +30,11 @@ namespace grpc_impl {
 
 class Server;
 class CompletionQueue;
+class ServerContext;
 }  // namespace grpc_impl
 namespace grpc {
 
 class ServerInterface;
-class ServerContext;
 
 namespace internal {
 class Call;
@@ -146,7 +146,8 @@ class Service {
   experimental_type experimental() { return experimental_type(this); }
 
   template <class Message>
-  void RequestAsyncUnary(int index, ServerContext* context, Message* request,
+  void RequestAsyncUnary(int index, ::grpc_impl::ServerContext* context,
+                         Message* request,
                          internal::ServerAsyncStreamingInterface* stream,
                          CompletionQueue* call_cq,
                          ServerCompletionQueue* notification_cq, void* tag) {
@@ -158,7 +159,7 @@ class Service {
                               notification_cq, tag, request);
   }
   void RequestAsyncClientStreaming(
-      int index, ServerContext* context,
+      int index, ::grpc_impl::ServerContext* context,
       internal::ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
       ServerCompletionQueue* notification_cq, void* tag) {
     size_t idx = static_cast<size_t>(index);
@@ -167,7 +168,7 @@ class Service {
   }
   template <class Message>
   void RequestAsyncServerStreaming(
-      int index, ServerContext* context, Message* request,
+      int index, ::grpc_impl::ServerContext* context, Message* request,
       internal::ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
       ServerCompletionQueue* notification_cq, void* tag) {
     size_t idx = static_cast<size_t>(index);
@@ -175,7 +176,7 @@ class Service {
                               notification_cq, tag, request);
   }
   void RequestAsyncBidiStreaming(
-      int index, ServerContext* context,
+      int index, ::grpc_impl::ServerContext* context,
       internal::ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
       ServerCompletionQueue* notification_cq, void* tag) {
     size_t idx = static_cast<size_t>(index);

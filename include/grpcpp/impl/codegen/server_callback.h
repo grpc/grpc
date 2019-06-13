@@ -29,7 +29,7 @@
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/message_allocator.h>
-#include <grpcpp/impl/codegen/server_context.h>
+#include <grpcpp/impl/codegen/server_context_impl.h>
 #include <grpcpp/impl/codegen/server_interface.h>
 #include <grpcpp/impl/codegen/status.h>
 
@@ -53,7 +53,7 @@ class ServerReactor {
   virtual void OnCancel() = 0;
 
  private:
-  friend class ::grpc::ServerContext;
+  friend class ::grpc_impl::ServerContext;
   template <class Request, class Response>
   friend class CallbackClientStreamingHandler;
   template <class Request, class Response>
@@ -313,7 +313,7 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// is a result of the client calling StartCall().
   ///
   /// \param[in] context The context object now associated with this RPC
-  virtual void OnStarted(ServerContext* context) {}
+  virtual void OnStarted(::grpc_impl::ServerContext* context) {}
 
   /// Notifies the application that an explicit StartSendInitialMetadata
   /// operation completed. Not used when the sending of initial metadata
@@ -372,7 +372,7 @@ class ServerReadReactor : public internal::ServerReactor {
   ///
   /// \param[in] context The context object now associated with this RPC
   /// \param[in] resp The response object to be used by this RPC
-  virtual void OnStarted(ServerContext* context, Response* resp) {}
+  virtual void OnStarted(::grpc_impl::ServerContext* context, Response* resp) {}
 
   /// The following notifications are exactly like ServerBidiReactor.
   virtual void OnSendInitialMetadataDone(bool ok) {}
@@ -413,7 +413,8 @@ class ServerWriteReactor : public internal::ServerReactor {
   ///
   /// \param[in] context The context object now associated with this RPC
   /// \param[in] req The request object sent by the client
-  virtual void OnStarted(ServerContext* context, const Request* req) {}
+  virtual void OnStarted(::grpc_impl::ServerContext* context,
+                         const Request* req) {}
 
   /// The following notifications are exactly like ServerBidiReactor.
   virtual void OnSendInitialMetadataDone(bool ok) {}
@@ -437,7 +438,7 @@ class UnimplementedReadReactor
     : public experimental::ServerReadReactor<Request, Response> {
  public:
   void OnDone() override { delete this; }
-  void OnStarted(ServerContext*, Response*) override {
+  void OnStarted(::grpc_impl::ServerContext*, Response*) override {
     this->Finish(Status(StatusCode::UNIMPLEMENTED, ""));
   }
 };
@@ -447,7 +448,7 @@ class UnimplementedWriteReactor
     : public experimental::ServerWriteReactor<Request, Response> {
  public:
   void OnDone() override { delete this; }
-  void OnStarted(ServerContext*, const Request*) override {
+  void OnStarted(::grpc_impl::ServerContext*, const Request*) override {
     this->Finish(Status(StatusCode::UNIMPLEMENTED, ""));
   }
 };
@@ -457,7 +458,7 @@ class UnimplementedBidiReactor
     : public experimental::ServerBidiReactor<Request, Response> {
  public:
   void OnDone() override { delete this; }
-  void OnStarted(ServerContext*) override {
+  void OnStarted(::grpc_impl::ServerContext*) override {
     this->Finish(Status(StatusCode::UNIMPLEMENTED, ""));
   }
 };
@@ -466,7 +467,8 @@ template <class RequestType, class ResponseType>
 class CallbackUnaryHandler : public MethodHandler {
  public:
   CallbackUnaryHandler(
-      std::function<void(ServerContext*, const RequestType*, ResponseType*,
+      std::function<void(::grpc_impl::ServerContext*, const RequestType*,
+                         ResponseType*,
                          experimental::ServerCallbackRpcController*)>
           func)
       : func_(func) {}
@@ -525,8 +527,8 @@ class CallbackUnaryHandler : public MethodHandler {
   }
 
  private:
-  std::function<void(ServerContext*, const RequestType*, ResponseType*,
-                     experimental::ServerCallbackRpcController*)>
+  std::function<void(::grpc_impl::ServerContext*, const RequestType*,
+                     ResponseType*, experimental::ServerCallbackRpcController*)>
       func_;
   experimental::MessageAllocator<RequestType, ResponseType>* allocator_ =
       nullptr;
@@ -597,7 +599,7 @@ class CallbackUnaryHandler : public MethodHandler {
     friend class CallbackUnaryHandler<RequestType, ResponseType>;
 
     ServerCallbackRpcControllerImpl(
-        ServerContext* ctx, Call* call,
+        ::grpc_impl::ServerContext* ctx, Call* call,
         experimental::MessageHolder<RequestType, ResponseType>* allocator_state,
         std::function<void()> call_requester)
         : ctx_(ctx),
@@ -628,7 +630,7 @@ class CallbackUnaryHandler : public MethodHandler {
         finish_ops_;
     CallbackWithSuccessTag finish_tag_;
 
-    ServerContext* ctx_;
+    ::grpc_impl::ServerContext* ctx_;
     Call call_;
     experimental::MessageHolder<RequestType, ResponseType>* const
         allocator_state_;
@@ -732,7 +734,8 @@ class CallbackClientStreamingHandler : public MethodHandler {
     friend class CallbackClientStreamingHandler<RequestType, ResponseType>;
 
     ServerCallbackReaderImpl(
-        ServerContext* ctx, Call* call, std::function<void()> call_requester,
+        ::grpc_impl::ServerContext* ctx, Call* call,
+        std::function<void()> call_requester,
         experimental::ServerReadReactor<RequestType, ResponseType>* reactor)
         : ctx_(ctx),
           call_(*call),
@@ -772,7 +775,7 @@ class CallbackClientStreamingHandler : public MethodHandler {
     CallOpSet<CallOpRecvMessage<RequestType>> read_ops_;
     CallbackWithSuccessTag read_tag_;
 
-    ServerContext* ctx_;
+    ::grpc_impl::ServerContext* ctx_;
     Call call_;
     ResponseType resp_;
     std::function<void()> call_requester_;
@@ -909,7 +912,7 @@ class CallbackServerStreamingHandler : public MethodHandler {
     friend class CallbackServerStreamingHandler<RequestType, ResponseType>;
 
     ServerCallbackWriterImpl(
-        ServerContext* ctx, Call* call, const RequestType* req,
+        ::grpc_impl::ServerContext* ctx, Call* call, const RequestType* req,
         std::function<void()> call_requester,
         experimental::ServerWriteReactor<RequestType, ResponseType>* reactor)
         : ctx_(ctx),
@@ -950,7 +953,7 @@ class CallbackServerStreamingHandler : public MethodHandler {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> write_ops_;
     CallbackWithSuccessTag write_tag_;
 
-    ServerContext* ctx_;
+    ::grpc_impl::ServerContext* ctx_;
     Call call_;
     const RequestType* req_;
     std::function<void()> call_requester_;
@@ -1078,7 +1081,8 @@ class CallbackBidiHandler : public MethodHandler {
     friend class CallbackBidiHandler<RequestType, ResponseType>;
 
     ServerCallbackReaderWriterImpl(
-        ServerContext* ctx, Call* call, std::function<void()> call_requester,
+        ::grpc_impl::ServerContext* ctx, Call* call,
+        std::function<void()> call_requester,
         experimental::ServerBidiReactor<RequestType, ResponseType>* reactor)
         : ctx_(ctx),
           call_(*call),
@@ -1124,7 +1128,7 @@ class CallbackBidiHandler : public MethodHandler {
     CallOpSet<CallOpRecvMessage<RequestType>> read_ops_;
     CallbackWithSuccessTag read_tag_;
 
-    ServerContext* ctx_;
+    ::grpc_impl::ServerContext* ctx_;
     Call call_;
     std::function<void()> call_requester_;
     experimental::ServerBidiReactor<RequestType, ResponseType>* reactor_;
