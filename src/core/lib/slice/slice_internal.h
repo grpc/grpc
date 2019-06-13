@@ -327,4 +327,32 @@ inline grpc_slice grpc_slice_from_static_string_internal(const char* s) {
   return grpc_slice_from_static_buffer_internal(s, strlen(s));
 }
 
+/* Helper method for grpc_slice_buffer_move_into_internal only - used when
+   dst is empty. Only grpc_slice_buffer_move_into_internal() should be used.
+   Think of this as a static method, not part of the internal API. */
+void _helper_grpc_slice_buffer_move_into_empty_buf(grpc_slice_buffer* src,
+                                                   grpc_slice_buffer* dst);
+/* Helper method for grpc_slice_buffer_move_into_internal only - used when both
+   src and dst are non-empty. While this method still executes correctly
+   if directly called (including when src and/or dst are empty), only
+   grpc_slice_buffer_move_into_internal() should be used. Think of this as a
+   static method, not part of the internal API. */
+void _helper_grpc_slice_buffer_move_into_buf(grpc_slice_buffer* src,
+                                             grpc_slice_buffer* dst);
+/* Move all of the elements of src into dst. This is part of the internal API.
+   It makes no assumptions on either src or dst. */
+inline void grpc_slice_buffer_move_into_internal(grpc_slice_buffer* src,
+                                                 grpc_slice_buffer* dst) {
+  /* anything to move? */
+  if (src->count == 0) {
+    return;
+  }
+  /* anything in dst? */
+  if (dst->count == 0) {
+    _helper_grpc_slice_buffer_move_into_empty_buf(src, dst);
+  } else {
+    _helper_grpc_slice_buffer_move_into_buf(src, dst);
+  }
+}
+
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H */

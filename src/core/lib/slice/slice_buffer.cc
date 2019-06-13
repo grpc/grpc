@@ -32,31 +32,46 @@
 /* grow a buffer; requires GRPC_SLICE_BUFFER_INLINE_ELEMENTS > 1 */
 #define GROW(x) (3 * (x) / 2)
 
+static void slice_buffer_grow_to_capacity(grpc_slice_buffer* sb,
+                                          size_t slice_count,
+                                          size_t slice_offset,
+                                          size_t new_capacity) {
+  sb->capacity = new_capacity;
+  if (sb->base_slices == sb->inlined) {
+    sb->base_slices =
+        static_cast<grpc_slice*>(gpr_malloc(new_capacity * sizeof(grpc_slice)));
+    memcpy(sb->base_slices, sb->inlined, slice_count * sizeof(grpc_slice));
+  } else {
+    sb->base_slices = static_cast<grpc_slice*>(
+        gpr_realloc(sb->base_slices, new_capacity * sizeof(grpc_slice)));
+  }
+
+  sb->slices = sb->base_slices + slice_offset;
+}
+
+static void slice_buffer_move_slices_to_front(grpc_slice_buffer* sb) {
+  memmove(sb->base_slices, sb->slices, sb->count * sizeof(grpc_slice));
+  sb->slices = sb->base_slices;
+}
+
 /* Typically, we do not actually need to embiggen (by calling
  * memmove/malloc/realloc) - only if we were up against the full capacity of the
  * slice buffer. If do_embiggen is inlined, the compiler clobbers multiple
  * registers pointlessly in the common case. */
+template <bool grow_past_minimum>
 static void GPR_ATTRIBUTE_NOINLINE do_embiggen(grpc_slice_buffer* sb,
                                                const size_t slice_count,
-                                               const size_t slice_offset) {
-  if (slice_offset != 0) {
+                                               const size_t slice_offset,
+                                               const size_t needed_slots) {
+  const bool room_available =
+      grow_past_minimum ? slice_offset >= needed_slots : slice_offset >= 1;
+  if (room_available) {
     /* Make room by moving elements if there's still space unused */
-    memmove(sb->base_slices, sb->slices, sb->count * sizeof(grpc_slice));
-    sb->slices = sb->base_slices;
+    slice_buffer_move_slices_to_front(sb);
   } else {
     /* Allocate more memory if no more space is available */
-    const size_t new_capacity = GROW(sb->capacity);
-    sb->capacity = new_capacity;
-    if (sb->base_slices == sb->inlined) {
-      sb->base_slices = static_cast<grpc_slice*>(
-          gpr_malloc(new_capacity * sizeof(grpc_slice)));
-      memcpy(sb->base_slices, sb->inlined, slice_count * sizeof(grpc_slice));
-    } else {
-      sb->base_slices = static_cast<grpc_slice*>(
-          gpr_realloc(sb->base_slices, new_capacity * sizeof(grpc_slice)));
-    }
-
-    sb->slices = sb->base_slices + slice_offset;
+    slice_buffer_grow_to_capacity(sb, slice_count, slice_offset,
+                                  GROW(sb->capacity));
   }
 }
 
@@ -70,7 +85,7 @@ static void maybe_embiggen(grpc_slice_buffer* sb) {
   size_t slice_offset = static_cast<size_t>(sb->slices - sb->base_slices);
   size_t slice_count = sb->count + slice_offset;
   if (GPR_UNLIKELY(slice_count == sb->capacity)) {
-    do_embiggen(sb, slice_count, slice_offset);
+    do_embiggen<false>(sb, slice_count, slice_offset, 1 /*unused*/);
   }
 }
 
@@ -169,11 +184,31 @@ void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice s) {
   grpc_slice_buffer_add_indexed(sb, s);
 }
 
-void grpc_slice_buffer_addn(grpc_slice_buffer* sb, grpc_slice* s, size_t n) {
-  size_t i;
-  for (i = 0; i < n; i++) {
-    grpc_slice_buffer_add(sb, s[i]);
+static void grpc_slice_buffer_addn_internal(grpc_slice_buffer* const sb,
+                                            const grpc_slice* const s,
+                                            const size_t n, const size_t len) {
+  /* do we have enough space? */
+  const size_t slice_offset = static_cast<size_t>(sb->slices - sb->base_slices);
+  const size_t slice_count = sb->count + slice_offset;
+  const size_t headroom = sb->capacity - slice_count;
+  /* grow if need be */
+  if (headroom < n) {
+    const size_t needed_slots = n - headroom;
+    do_embiggen<true>(sb, slice_count, slice_offset, needed_slots);
   }
+  /* copy in slices and perform bookkeeping */
+  const size_t target_idx = sb->count;
+  sb->length += len;
+  sb->count += n;
+  memcpy(&sb->slices[target_idx], s, n * sizeof(grpc_slice));
+}
+
+void grpc_slice_buffer_addn(grpc_slice_buffer* sb, grpc_slice* s, size_t n) {
+  size_t len = 0;
+  for (size_t i = 0; i < n; i++) {
+    len += GRPC_SLICE_LENGTH(s[i]);
+  }
+  grpc_slice_buffer_addn_internal(sb, s, n, len);
 }
 
 void grpc_slice_buffer_pop(grpc_slice_buffer* sb) {
@@ -201,6 +236,36 @@ void grpc_slice_buffer_reset_and_unref(grpc_slice_buffer* sb) {
   } else {
     grpc_slice_buffer_reset_and_unref_internal(sb);
   }
+}
+
+void _helper_grpc_slice_buffer_move_into_empty_buf(grpc_slice_buffer* src,
+                                                   grpc_slice_buffer* dst) {
+  if (src->base_slices == src->inlined) {
+    // If dst not inlined but is empty, it was at some point grown via
+    // maybe_embiggen() and had slices popped but without the slice buffer being
+    // destroyed. Then dynamically allocated segment must be greater than the
+    // inline size, and is certainly large enough to hold an inlined segment.
+    memcpy(dst->base_slices, src->slices, src->count * sizeof(grpc_slice));
+    dst->slices = dst->base_slices;
+  } else {
+    if (dst->base_slices != dst->inlined) {
+      GPR_SWAP(grpc_slice*, src->base_slices, dst->base_slices);
+      GPR_SWAP(size_t, src->capacity, dst->capacity);
+    } else {
+      dst->base_slices = src->base_slices;
+      dst->capacity = src->capacity;
+      src->base_slices = src->inlined;
+      src->capacity = GRPC_SLICE_BUFFER_INLINE_ELEMENTS;
+    }
+    dst->slices = src->slices;
+  }
+
+  dst->count = src->count;
+  dst->length = src->length;
+
+  src->count = 0;
+  src->length = 0;
+  src->slices = src->base_slices;
 }
 
 void grpc_slice_buffer_swap(grpc_slice_buffer* a, grpc_slice_buffer* b) {
@@ -247,19 +312,18 @@ void grpc_slice_buffer_swap(grpc_slice_buffer* a, grpc_slice_buffer* b) {
 
 void grpc_slice_buffer_move_into(grpc_slice_buffer* src,
                                  grpc_slice_buffer* dst) {
-  /* anything to move? */
-  if (src->count == 0) {
-    return;
-  }
-  /* anything in dst? */
-  if (dst->count == 0) {
-    grpc_slice_buffer_swap(src, dst);
-    return;
-  }
-  /* both buffers have data - copy, and reset src */
-  grpc_slice_buffer_addn(dst, src->slices, src->count);
+  grpc_slice_buffer_move_into_internal(src, dst);
+}
+
+void _helper_grpc_slice_buffer_move_into_buf(grpc_slice_buffer* src,
+                                             grpc_slice_buffer* dst) {
+  const size_t count = src->count;
+  const size_t length = src->length;
+  grpc_slice* const slices = src->slices;
   src->count = 0;
   src->length = 0;
+  src->slices = src->base_slices;
+  grpc_slice_buffer_addn_internal(dst, slices, count, length);
 }
 
 template <bool incref>
