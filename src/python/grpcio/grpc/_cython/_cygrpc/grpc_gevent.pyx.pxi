@@ -56,7 +56,7 @@ cdef sockaddr_is_ipv4(const grpc_sockaddr* address, size_t length):
   c_addr.len = length
   return grpc_sockaddr_get_uri_scheme(&c_addr) == b'ipv4'
 
-cdef grpc_resolved_addresses* tuples_to_resolvaddr(tups):
+cdef grpc_resolved_addresses* tuples_to_resolvaddr(tups) except *:
   cdef grpc_resolved_addresses* addresses
   tups_set = set((tup[4][0], tup[4][1]) for tup in tups)
   addresses = <grpc_resolved_addresses*> malloc(sizeof(grpc_resolved_addresses))
@@ -292,7 +292,7 @@ def socket_accept_async(s):
   accept_callback_cython(s)
 
 cdef void socket_accept(grpc_custom_socket* socket, grpc_custom_socket* client,
-                        grpc_custom_accept_callback cb) with gil:
+                        grpc_custom_accept_callback cb) except * with gil:
   sw = <SocketWrapper>socket.impl
   sw.accepting_socket = client
   sw.accept_cb = cb
@@ -322,7 +322,7 @@ cdef socket_resolve_async_cython(ResolveWrapper resolve_wrapper):
 def socket_resolve_async_python(resolve_wrapper):
   socket_resolve_async_cython(resolve_wrapper)
 
-cdef void socket_resolve_async(grpc_custom_resolver* r, char* host, char* port) with gil:
+cdef void socket_resolve_async(grpc_custom_resolver* r, char* host, char* port) except * with gil:
   rw = ResolveWrapper()
   rw.c_resolver = r
   rw.c_host = host
@@ -330,7 +330,7 @@ cdef void socket_resolve_async(grpc_custom_resolver* r, char* host, char* port) 
   _spawn_greenlet(socket_resolve_async_python, rw)
 
 cdef grpc_error* socket_resolve(char* host, char* port,
-                                grpc_resolved_addresses** res) with gil:
+                                grpc_resolved_addresses** res) except * with gil:
     try:
       result = gevent_socket.getaddrinfo(host, port)
       res[0] = tuples_to_resolvaddr(result)
@@ -360,13 +360,13 @@ cdef class TimerWrapper:
     self.event.set()
     self.timer.stop()
 
-cdef void timer_start(grpc_custom_timer* t) with gil:
+cdef void timer_start(grpc_custom_timer* t) except * with gil:
   timer = TimerWrapper(t.timeout_ms / 1000.0)
   timer.c_timer = t
   t.timer = <void*>timer
   timer.start()
 
-cdef void timer_stop(grpc_custom_timer* t) with gil:
+cdef void timer_stop(grpc_custom_timer* t) except * with gil:
   time_wrapper = <object>t.timer
   time_wrapper.stop()
 
