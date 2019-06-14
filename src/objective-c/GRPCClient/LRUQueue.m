@@ -74,6 +74,12 @@
 /**
  * LinkedListQueue
  */
+@interface LinkedListQueue()
+
+- (void)logQueue;
+
+@end
+
 @implementation LinkedListQueue {
   Node *_head;
   Node *_tail;
@@ -104,23 +110,24 @@
   _head = node;
   [_map setObject:node forKey:entry];
   ++_size;
+//  [self logQueue];
 }
 
 - (RequestCacheEntry *)evict {
   Node *evictNode = _tail;
+  RequestCacheEntry *toEvict = nil;
   if (evictNode) {
     _tail = evictNode.prev;
     if (_tail) {
       _tail.next = nil;
     }
-    RequestCacheEntry *toEvict = evictNode.entry;
+    toEvict = evictNode.entry;
     [_map removeObjectForKey:toEvict];
     --_size;
     if (_size == 0) { _head = nil; }
-    return toEvict;
-  } else {
-    return nil;
   }
+//  [self logQueue];
+  return toEvict;
 }
 
 - (NSUInteger)size {
@@ -131,12 +138,40 @@
   Node *updateNode = [_map objectForKey:entry];
   if (updateNode == _head) { return; }
   if (!updateNode) { return; }
-  if (updateNode.next) { updateNode.next = updateNode.prev; }
-  if (updateNode.prev) { updateNode.prev = updateNode.next; }
+  if (updateNode.next) { updateNode.next.prev = updateNode.prev; }
+  if (updateNode.prev) { updateNode.prev.next = updateNode.next; }
   if (updateNode == _tail) { _tail = updateNode.prev; }
   updateNode.next = _head;
+  updateNode.prev = nil;
   if (_head) { _head.prev = updateNode; }
   _head = updateNode;
+//  [self logQueue];
+}
+
+- (void)logQueue {
+  if (_head) {
+    Node *cur = _head;
+    NSMutableArray<NSNumber *> *list = [[NSMutableArray alloc] init];
+    while (cur) {
+      [list addObject:(NSNumber *)cur.entry.message];
+      cur = cur.next;
+    }
+    NSLog(@"From head: %@", list);
+  } else {
+    NSLog(@"Head is nil");
+  }
+  
+  if (_tail) {
+    Node *cur = _tail;
+    NSMutableArray<NSNumber *> *list = [[NSMutableArray alloc] init];
+    while (cur) {
+      [list addObject:(NSNumber *)cur.entry.message];
+      cur = cur.prev;
+    }
+    NSLog(@"From tail: %@", list);
+  } else {
+    NSLog(@"Tail is nil");
+  }
 }
 
 @end

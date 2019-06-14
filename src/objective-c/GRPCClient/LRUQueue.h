@@ -25,7 +25,7 @@
 @interface Node : NSObject
 
 @property(nullable, readwrite) Node *prev;
-@property(nullable, readwrite) Node *next;
+@property(nullable, readwrite) __weak Node *next;
 @property(nonnull, readonly) RequestCacheEntry *entry;
 - (nullable instancetype)initWithPrevNode:(nullable Node *)prev
                                  nextNode:(nullable Node *)next

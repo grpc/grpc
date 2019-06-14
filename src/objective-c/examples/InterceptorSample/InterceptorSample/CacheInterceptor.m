@@ -17,7 +17,7 @@
  */
 
 #import "CacheInterceptor.h"
-#import "LRUQueue.h"
+//#import "LRUQueue.h"
 
 @implementation RequestCacheEntry {
  @protected
@@ -132,13 +132,13 @@
  */
 @implementation CacheContext {
   NSMutableDictionary<RequestCacheEntry *, ResponseCacheEntry *> *_cache;
-  id<LRUQueue> _queue;
+//  id<LRUQueue> _queue;
   NSUInteger _maxCount; // cache size limit
 }
 
 - (instancetype)init {
   if ((self = [super init])) {
-    _queue = [[LinkedListQueue alloc] init]; // ArrayQueue or LinkedListQueue
+//    _queue = [[ArrayQueue alloc] init]; // ArrayQueue or LinkedListQueue
     _cache = [[NSMutableDictionary alloc] init];
     _maxCount = 10; // defaults to 10
   }
@@ -164,10 +164,10 @@
   @synchronized(self) {
     response = [_cache objectForKey:request];
     if (response) { // cache hit
-      [_queue updateUse:request];
+//      [_queue updateUse:request];
     }
     if ([response.deadline timeIntervalSinceNow] < 0) { // evict
-      [_queue evict];
+//      [_queue evict];
       [_cache removeObjectForKey:request];
       response = nil;
     }
@@ -178,14 +178,14 @@
 - (void)setCachedResponse:(ResponseCacheEntry *)response forRequest:(RequestCacheEntry *)request {
   @synchronized(self) {
     if ([_cache objectForKey:request] != nil) { // cache hit
-      [_queue updateUse:request];
+//      [_queue updateUse:request];
     } else { // cache miss
-      [_queue enqueue:request];
+//      [_queue enqueue:request];
     }
-    if ([_queue size] > _maxCount) { // evict
-      RequestCacheEntry *toEvict = [_queue evict];
-      [_cache removeObjectForKey:toEvict];
-    }
+//    if ([_queue size] > _maxCount) { // evict
+//      RequestCacheEntry *toEvict = [_queue evict];
+//      [_cache removeObjectForKey:toEvict];
+//    }
     [_cache setObject:response forKey:request];
   }
 }

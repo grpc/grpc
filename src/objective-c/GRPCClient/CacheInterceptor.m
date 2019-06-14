@@ -171,6 +171,7 @@
       [_cache removeObjectForKey:request];
       response = nil;
     }
+    NSAssert(_cache.count <= _maxCount, @"Number of cache exceeds set limit.");
   }
   return response;
 }
@@ -180,13 +181,14 @@
     if ([_cache objectForKey:request] != nil) { // cache hit
       [_queue updateUse:request];
     } else { // cache miss
+      if ([_queue size] == _maxCount) {
+        RequestCacheEntry *toEvict = [_queue evict];
+        [_cache removeObjectForKey:toEvict];
+      }
       [_queue enqueue:request];
     }
-    if ([_queue size] > _maxCount) { // evict
-      RequestCacheEntry *toEvict = [_queue evict];
-      [_cache removeObjectForKey:toEvict];
-    }
-    [_cache setObject:response forKey:request];
+    [_cache setObject:response forKey:request]; // update cache if necessary
+    NSAssert(_cache.count <= _maxCount, @"Number of cache exceeds set limit.");
   }
 }
 
