@@ -188,11 +188,6 @@ class WriteOptions {
   /// \sa GRPC_WRITE_LAST_MESSAGE
   bool is_last_message() const { return last_message_; }
 
-  WriteOptions& operator=(const WriteOptions& rhs) {
-    flags_ = rhs.flags_;
-    return *this;
-  }
-
  private:
   void SetBit(const uint32_t mask) { flags_ |= mask; }
 
