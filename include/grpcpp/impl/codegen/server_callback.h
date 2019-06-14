@@ -348,7 +348,8 @@ class ServerBidiReactor : public internal::ServerReactor {
 
  private:
   friend class ServerCallbackReaderWriter<Request, Response>;
-  void BindStream(ServerCallbackReaderWriter<Request, Response>* stream) {
+  virtual void BindStream(
+      ServerCallbackReaderWriter<Request, Response>* stream) {
     stream_ = stream;
   }
 
@@ -382,7 +383,9 @@ class ServerReadReactor : public internal::ServerReactor {
 
  private:
   friend class ServerCallbackReader<Request>;
-  void BindReader(ServerCallbackReader<Request>* reader) { reader_ = reader; }
+  virtual void BindReader(ServerCallbackReader<Request>* reader) {
+    reader_ = reader;
+  }
 
   ServerCallbackReader<Request>* reader_;
 };
@@ -424,7 +427,9 @@ class ServerWriteReactor : public internal::ServerReactor {
 
  private:
   friend class ServerCallbackWriter<Response>;
-  void BindWriter(ServerCallbackWriter<Response>* writer) { writer_ = writer; }
+  virtual void BindWriter(ServerCallbackWriter<Response>* writer) {
+    writer_ = writer;
+  }
 
   ServerCallbackWriter<Response>* writer_;
 };
