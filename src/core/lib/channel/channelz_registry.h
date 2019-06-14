@@ -67,8 +67,8 @@ class ChannelzRegistry {
   static void LogAllEntities() { Default()->InternalLogAllEntities(); }
 
  private:
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
+  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
   friend class testing::ChannelzRegistryPeer;
 
   ChannelzRegistry();

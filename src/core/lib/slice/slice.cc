@@ -105,7 +105,7 @@ class NewSliceRefcount {
         user_destroy_(destroy),
         user_data_(user_data) {}
 
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
   grpc_slice_refcount* base_refcount() { return &rc_; }
 
@@ -154,7 +154,7 @@ class NewWithLenSliceRefcount {
         user_length_(user_length),
         user_destroy_(destroy) {}
 
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
   grpc_slice_refcount* base_refcount() { return &rc_; }
 
