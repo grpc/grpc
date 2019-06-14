@@ -556,7 +556,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
 
   std::unique_ptr<Closure> c = MakeClosure([&](grpc_error* error) {
     if (!state.KeepRunning()) return;
-    // force outgoing window to be yuge
+    // force outgoing window to be huge
     s.chttp2_stream()->flow_control->TestOnlyForceHugeWindow();
     f.chttp2_transport()->flow_control->TestOnlyForceHugeWindow();
     received = 0;
