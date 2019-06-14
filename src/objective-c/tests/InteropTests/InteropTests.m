@@ -1666,10 +1666,10 @@ initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
   }
 }
 
-- (void)testIntecepptorAndGlobalInterceptor {
+- (void)testInterceptorAndGlobalInterceptor {
   XCTAssertNotNil([[self class] host]);
   __weak XCTestExpectation *expectation =
-      [self expectationWithDescription:@"testGlobalInterceptor"];
+      [self expectationWithDescription:@"testInterceptorAndGlobalInterceptor"];
 
   __block NSUInteger startCount = 0;
   __block NSUInteger writeDataCount = 0;
