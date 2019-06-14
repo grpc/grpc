@@ -32,35 +32,45 @@
 /* grow a buffer; requires GRPC_SLICE_BUFFER_INLINE_ELEMENTS > 1 */
 #define GROW(x) (3 * (x) / 2)
 
+/* Typically, we do not actually need to embiggen (by calling
+ * memmove/malloc/realloc) - only if we were up against the full capacity of the
+ * slice buffer. If do_embiggen is inlined, the compiler clobbers multiple
+ * registers pointlessly in the common case. */
+static void GPR_ATTRIBUTE_NOINLINE do_embiggen(grpc_slice_buffer* sb,
+                                               const size_t slice_count,
+                                               const size_t slice_offset) {
+  if (slice_offset != 0) {
+    /* Make room by moving elements if there's still space unused */
+    memmove(sb->base_slices, sb->slices, sb->count * sizeof(grpc_slice));
+    sb->slices = sb->base_slices;
+  } else {
+    /* Allocate more memory if no more space is available */
+    const size_t new_capacity = GROW(sb->capacity);
+    sb->capacity = new_capacity;
+    if (sb->base_slices == sb->inlined) {
+      sb->base_slices = static_cast<grpc_slice*>(
+          gpr_malloc(new_capacity * sizeof(grpc_slice)));
+      memcpy(sb->base_slices, sb->inlined, slice_count * sizeof(grpc_slice));
+    } else {
+      sb->base_slices = static_cast<grpc_slice*>(
+          gpr_realloc(sb->base_slices, new_capacity * sizeof(grpc_slice)));
+    }
+
+    sb->slices = sb->base_slices + slice_offset;
+  }
+}
+
 static void maybe_embiggen(grpc_slice_buffer* sb) {
   if (sb->count == 0) {
     sb->slices = sb->base_slices;
+    return;
   }
 
   /* How far away from sb->base_slices is sb->slices pointer */
   size_t slice_offset = static_cast<size_t>(sb->slices - sb->base_slices);
   size_t slice_count = sb->count + slice_offset;
-
-  if (slice_count == sb->capacity) {
-    if (sb->base_slices != sb->slices) {
-      /* Make room by moving elements if there's still space unused */
-      memmove(sb->base_slices, sb->slices, sb->count * sizeof(grpc_slice));
-      sb->slices = sb->base_slices;
-    } else {
-      /* Allocate more memory if no more space is available */
-      sb->capacity = GROW(sb->capacity);
-      GPR_ASSERT(sb->capacity > slice_count);
-      if (sb->base_slices == sb->inlined) {
-        sb->base_slices = static_cast<grpc_slice*>(
-            gpr_malloc(sb->capacity * sizeof(grpc_slice)));
-        memcpy(sb->base_slices, sb->inlined, slice_count * sizeof(grpc_slice));
-      } else {
-        sb->base_slices = static_cast<grpc_slice*>(
-            gpr_realloc(sb->base_slices, sb->capacity * sizeof(grpc_slice)));
-      }
-
-      sb->slices = sb->base_slices + slice_offset;
-    }
+  if (GPR_UNLIKELY(slice_count == sb->capacity)) {
+    do_embiggen(sb, slice_count, slice_offset);
   }
 }
 
