@@ -387,7 +387,7 @@ static void BM_TransportStreamSend(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   Fixture f(grpc::ChannelArguments(), true);
-  auto s = std::unique_ptr<Stream>(new Stream(&f));
+  auto* s = new Stream(&f);
   s->Init(state);
   grpc_transport_stream_op_batch op;
   grpc_transport_stream_op_batch_payload op_payload(nullptr);
@@ -450,9 +450,8 @@ static void BM_TransportStreamSend(benchmark::State& state) {
   op.cancel_stream = true;
   op.payload->cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
   s->Op(&op);
-  s->DestroyThen(MakeOnceClosure([](grpc_error* error) {}));
+  s->DestroyThen(MakeOnceClosure([s](grpc_error* error) { delete s; }));
   f.FlushExecCtx();
-  s.reset();
   track_counters.Finish(state);
   grpc_metadata_batch_destroy(&b);
   grpc_slice_unref(send_slice);
