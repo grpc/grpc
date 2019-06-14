@@ -89,15 +89,11 @@ static grpc_error* posix_blocking_resolve_address(
 
   if (s != 0) {
     /* Retry if well-known service name is recognized */
-    const char* svc[][2] = {{"http", "80"}, {"https", "443"}};
-    for (i = 0; i < GPR_ARRAY_SIZE(svc); i++) {
-      if (strcmp(port, svc[i][0]) == 0) {
-        GRPC_SCHEDULING_START_BLOCKING_REGION;
-        s = getaddrinfo(host, svc[i][1], &hints, &result);
-        GRPC_SCHEDULING_END_BLOCKING_REGION;
-        break;
-      }
+    char* updated_port = grpc_get_port_by_name(port);
+    if (updated_port != nullptr) {
+      s = getaddrinfo(host, updated_port, &hints, &result);
     }
+    gpr_free(updated_port);
   }
 
   if (s != 0) {

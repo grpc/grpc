@@ -29,6 +29,7 @@
 #include "src/core/lib/gpr/useful.h"
 
 #include "src/core/lib/iomgr/iomgr_custom.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolve_address_custom.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 
@@ -46,23 +47,21 @@ static grpc_custom_resolver_vtable* resolve_address_vtable = nullptr;
 static int retry_named_port_failure(grpc_custom_resolver* r,
                                     grpc_resolved_addresses** res) {
   // This loop is copied from resolve_address_posix.c
-  const char* svc[][2] = {{"http", "80"}, {"https", "443"}};
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(svc); i++) {
-    if (strcmp(r->port, svc[i][0]) == 0) {
-      gpr_free(r->port);
-      r->port = gpr_strdup(svc[i][1]);
-      if (res) {
-        grpc_error* error =
-            resolve_address_vtable->resolve(r->host, r->port, res);
-        if (error != GRPC_ERROR_NONE) {
-          GRPC_ERROR_UNREF(error);
-          return 0;
-        }
-      } else {
-        resolve_address_vtable->resolve_async(r, r->host, r->port);
+  char* updated_port = grpc_get_port_by_name(r->port);
+  if (updated_port != nullptr) {
+    gpr_free(r->port);
+    r->port = updated_port;
+    if (res) {
+      grpc_error* error =
+          resolve_address_vtable->resolve(r->host, r->port, res);
+      if (error != GRPC_ERROR_NONE) {
+        GRPC_ERROR_UNREF(error);
+        return 0;
       }
-      return 1;
+    } else {
+      resolve_address_vtable->resolve_async(r, r->host, r->port);
     }
+    return 1;
   }
   return 0;
 }

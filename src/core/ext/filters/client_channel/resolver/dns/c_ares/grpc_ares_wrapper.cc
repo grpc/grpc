@@ -475,12 +475,10 @@ static bool inner_resolve_as_ip_literal_locked(
     }
     *port = gpr_strdup(default_port);
   }
-  const char* svc[][2] = {{"http", "80"}, {"https", "443"}};
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(svc); i++) {
-    if (strcmp(*port, svc[i][0]) == 0) {
-      gpr_free(*port);
-      *port = gpr_strdup(svc[i][1]);
-    }
+  char* updated_port = grpc_get_port_by_name(*port);
+  if (updated_port != nullptr) {
+    gpr_free(*port);
+    *port = updated_port;
   }
   grpc_resolved_address addr;
   GPR_ASSERT(gpr_join_host_port(hostport, *host, atoi(*port)));

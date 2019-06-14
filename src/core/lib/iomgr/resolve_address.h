@@ -80,4 +80,9 @@ grpc_error* grpc_blocking_resolve_address(const char* name,
                                           const char* default_port,
                                           grpc_resolved_addresses** addresses);
 
+/* Returns a string representation of the numeric port corresponding to 'port',
+ * if 'port' is a recognized non-numeric i.e. "named" port, otherwise returns
+ * nullptr. The returned string is owned by the caller. */
+char* grpc_get_port_by_name(const char* port);
+
 #endif /* GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H */
