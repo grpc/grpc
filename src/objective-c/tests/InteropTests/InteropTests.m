@@ -364,6 +364,11 @@ initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
 
   [GRPCCall resetHostSettings];
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+  [GRPCCall closeOpenConnections];
+#pragma clang diagnostic pop
+
   _service = [[self class] host] ? [RMTTestService serviceWithHost:[[self class] host]] : nil;
 }
 
