@@ -337,6 +337,7 @@ filegroups:
   - src/core/lib/iomgr/tcp_server_windows.cc
   - src/core/lib/iomgr/tcp_uv.cc
   - src/core/lib/iomgr/tcp_windows.cc
+  - src/core/lib/iomgr/threadpool/mpmcqueue.cc
   - src/core/lib/iomgr/time_averaged_stats.cc
   - src/core/lib/iomgr/timer.cc
   - src/core/lib/iomgr/timer_custom.cc
@@ -507,6 +508,7 @@ filegroups:
   - src/core/lib/iomgr/tcp_server.h
   - src/core/lib/iomgr/tcp_server_utils_posix.h
   - src/core/lib/iomgr/tcp_windows.h
+  - src/core/lib/iomgr/threadpool/mpmcqueue.h
   - src/core/lib/iomgr/time_averaged_stats.h
   - src/core/lib/iomgr/timer.h
   - src/core/lib/iomgr/timer_custom.h
@@ -3266,6 +3268,15 @@ targets:
   - grpc
   - gpr
   uses_polling: false
+- name: mpmcqueue_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/mpmcqueue_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
 - name: multiple_server_queues_test
   build: test
   language: c
