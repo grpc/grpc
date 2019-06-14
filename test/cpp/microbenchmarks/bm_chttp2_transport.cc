@@ -426,7 +426,7 @@ static void BM_TransportStreamSend(benchmark::State& state) {
     grpc_slice_buffer_add(&send_buffer, grpc_slice_ref(send_slice));
     send_stream.Init(&send_buffer, 0);
     grpc_slice_buffer_destroy(&send_buffer);
-    // force outgoing window to be yuge
+    // force outgoing window to be huge
     s->chttp2_stream()->flow_control->TestOnlyForceHugeWindow();
     f.chttp2_transport()->flow_control->TestOnlyForceHugeWindow();
     reset_op();
