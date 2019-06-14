@@ -28,7 +28,7 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_call_combiner_trace(false, "call_combiner");
+DebugOnlyTraceFlag grpc_call_combiner_trace(false, "call_combiner");
 
 namespace {
 

@@ -5292,7 +5292,7 @@
     ], 
     "headers": [], 
     "is_filegroup": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "badreq_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/badreq.cc"
@@ -5309,7 +5309,7 @@
     ], 
     "headers": [], 
     "is_filegroup": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "connection_prefix_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/connection_prefix.cc"
@@ -5326,7 +5326,7 @@
     ], 
     "headers": [], 
     "is_filegroup": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "duplicate_header_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/duplicate_header.cc"
@@ -5343,7 +5343,7 @@
     ], 
     "headers": [], 
     "is_filegroup": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "head_of_line_blocking_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/head_of_line_blocking.cc"
@@ -5360,7 +5360,7 @@
     ], 
     "headers": [], 
     "is_filegroup": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "headers_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/headers.cc"
@@ -5377,7 +5377,7 @@
     ], 
     "headers": [], 
     "is_filegroup": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "initial_settings_frame_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/initial_settings_frame.cc"
@@ -5394,7 +5394,7 @@
     ], 
     "headers": [], 
     "is_filegroup": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "large_metadata_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/large_metadata.cc"
@@ -5411,7 +5411,7 @@
     ], 
     "headers": [], 
     "is_filegroup": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "server_registered_method_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/server_registered_method.cc"
@@ -5428,7 +5428,7 @@
     ], 
     "headers": [], 
     "is_filegroup": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "simple_request_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/simple_request.cc"
@@ -5445,7 +5445,7 @@
     ], 
     "headers": [], 
     "is_filegroup": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "unknown_frame_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/unknown_frame.cc"
@@ -5462,7 +5462,7 @@
     ], 
     "headers": [], 
     "is_filegroup": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "window_overflow_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/window_overflow.cc"
@@ -7756,7 +7756,7 @@
       "test/core/bad_client/bad_client.h"
     ], 
     "is_filegroup": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "bad_client_test", 
     "src": [
       "test/core/bad_client/bad_client.cc", 

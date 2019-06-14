@@ -117,7 +117,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     PickResult Pick(PickArgs args) override {
       PickResult result = delegate_picker_->Pick(args);
       if (result.type == PickResult::PICK_COMPLETE &&
-          result.connected_subchannel != nullptr) {
+          result.subchannel != nullptr) {
         new (args.call_state->Alloc(sizeof(TrailingMetadataHandler)))
             TrailingMetadataHandler(&result, cb_, user_data_);
       }

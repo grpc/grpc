@@ -51,9 +51,6 @@
     case GRPCCompressGzip:
       hostConfig.compressAlgorithm = GRPC_COMPRESS_GZIP;
       break;
-    case GRPCStreamCompressGzip:
-      hostConfig.compressAlgorithm = GRPC_COMPRESS_STREAM_GZIP;
-      break;
     default:
       NSLog(@"Invalid compression algorithm");
       abort();
