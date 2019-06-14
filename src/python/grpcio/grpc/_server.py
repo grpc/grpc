@@ -50,6 +50,7 @@ _CANCELLED = 'cancelled'
 _EMPTY_FLAGS = 0
 
 _DEALLOCATED_SERVER_CHECK_PERIOD_S = 1.0
+_INF_TIMEOUT = 1e9
 
 
 def _serialized_request(request_event):
@@ -960,6 +961,11 @@ class _Server(grpc.Server):
         _start(self._state)
 
     def wait_for_termination(self, timeout=None):
+        # TODO(https://bugs.python.org/issue35935)
+        # Remove this workaround once threading.Event.wait() is working with
+        # CTRL+C across platforms.
+        if timeout is None:
+            timeout = _INF_TIMEOUT
         return self._state.termination_event.wait(timeout=timeout)
 
     def stop(self, grace):
