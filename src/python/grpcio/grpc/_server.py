@@ -202,7 +202,7 @@ def _receive_message(state, rpc_event, request_deserializer, request_mapper):
                 metadata = rpc_event.invocation_metadata
                 method_name = _common.decode(rpc_event.call_details.method)
                 try:
-                    metadata, serialized_request = request_mapper(method_name, metadata, serialized_request)
+                    serialized_request = request_mapper(method_name, metadata, serialized_request)
                     # TODO: set downstream metadata
                 except Exception as ex:
                     _abort(state, rpc_event.call, cygrpc.StatusCode.internal,
@@ -489,7 +489,7 @@ def _serialize_response(rpc_event, state, response, response_serializer, respons
         method_name = _common.decode(rpc_event.call_details.method)
         metadata = rpc_event.invocation_metadata
         try:
-            metadata, serialized_response = response_mapper(method_name, metadata, serialized_response)
+            serialized_response = response_mapper(method_name, metadata, serialized_response)
             # TODO: update metadata
         except Exception as ex:
             _abort(state, rpc_event.call, cygrpc.StatusCode.internal,

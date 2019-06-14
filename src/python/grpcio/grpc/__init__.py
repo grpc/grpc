@@ -1840,14 +1840,15 @@ def server(thread_pool,
         lifetime of the server unless overridden. This is an EXPERIMENTAL option.
       request_mapper: A method that will be called with three arguments:
         `method_name` (string, canonical method name), `metadata` (dict, gRPC
-        message metadata) and `message` (bytes, serialized gRPC message payload).
-        The method will be called before `message` is deserialized. The function
-        should return a `metadata` and `message` (same types) tuple.
+        message metadata) and `serialized_request` (bytes, serialized gRPC message
+        payload). The method will be called before `message` is deserialized. The 
+        function should return a `serialized_request` (bytes), which will be
+        (internally) deserialized into a gRPC message.
       response_mapper: A method that will be called with three arguments:
         `method_name` (string, canonical method name), `metadata` (dict, gRPC
-        response metadata), and `message` (bytes, serialized gRPC message
-        payload). The function should return a `metadata` and `message` (same
-        types) tuple.
+        response metadata), and `serialized_response` (bytes, serialized gRPC message
+        payload). The function should return a `serialized_response` (bytes), which
+        will be sent to the client.
 
     Returns:
       A Server object.
