@@ -32,30 +32,21 @@ _LOGGER.setLevel(logging.INFO)
 _FAILURE_RATE = 0.5
 _NUMBER_OF_MESSAGES = 100
 
-
-@contextmanager
-def get_free_loopback_tcp_port():
-    if socket.has_ipv6:
-        tcp_socket = socket.socket(socket.AF_INET6)
-    else:
-        tcp_socket = socket.socket(socket.AF_INET)
-    tcp_socket.bind(('', 0))
-    address_tuple = tcp_socket.getsockname()
-    yield "localhost:%s" % (address_tuple[1])
-    tcp_socket.close()
-
+_ADDR_TEMPLATE = 'localhost:%d'
 
 class DebugExampleTest(unittest.TestCase):
 
     def test_channelz_example(self):
-        with get_free_loopback_tcp_port() as addr:
-            server = debug_server.create_server(
-                addr=addr, failure_rate=_FAILURE_RATE)
-            server.start()
-            send_message.run(addr=addr, n=_NUMBER_OF_MESSAGES)
-            get_stats.run(addr=addr)
-            server.stop(None)
-            # No unhandled exception raised, test passed!
+        server = debug_server.create_server(
+            addr='[::]:0', failure_rate=_FAILURE_RATE)
+        port = server.add_insecure_port('[::]:0')
+        server.start()
+        address = _ADDR_TEMPLATE % port
+
+        send_message.run(addr=address, n=_NUMBER_OF_MESSAGES)
+        get_stats.run(addr=address)
+        server.stop(None)
+        # No unhandled exception raised, test passed!
 
 
 if __name__ == '__main__':
