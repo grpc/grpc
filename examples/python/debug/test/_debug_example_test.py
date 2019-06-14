@@ -19,8 +19,6 @@ from __future__ import print_function
 
 import logging
 import unittest
-from contextlib import contextmanager
-import socket
 
 from examples.python.debug import debug_server
 from examples.python.debug import send_message
@@ -33,6 +31,7 @@ _FAILURE_RATE = 0.5
 _NUMBER_OF_MESSAGES = 100
 
 _ADDR_TEMPLATE = 'localhost:%d'
+
 
 class DebugExampleTest(unittest.TestCase):
 
