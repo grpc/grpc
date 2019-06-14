@@ -5934,7 +5934,7 @@
     ], 
     "flaky": false, 
     "gtest": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "badreq_bad_client_test", 
     "platforms": [
       "linux", 
@@ -5960,7 +5960,7 @@
     ], 
     "flaky": false, 
     "gtest": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "connection_prefix_bad_client_test", 
     "platforms": [
       "linux", 
@@ -5986,7 +5986,7 @@
     ], 
     "flaky": false, 
     "gtest": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "duplicate_header_bad_client_test", 
     "platforms": [
       "linux", 
@@ -6012,7 +6012,7 @@
     ], 
     "flaky": false, 
     "gtest": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "head_of_line_blocking_bad_client_test", 
     "platforms": [
       "linux", 
@@ -6038,7 +6038,7 @@
     ], 
     "flaky": false, 
     "gtest": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "headers_bad_client_test", 
     "platforms": [
       "linux", 
@@ -6064,7 +6064,7 @@
     ], 
     "flaky": false, 
     "gtest": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "initial_settings_frame_bad_client_test", 
     "platforms": [
       "linux", 
@@ -6090,7 +6090,7 @@
     ], 
     "flaky": false, 
     "gtest": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "large_metadata_bad_client_test", 
     "platforms": [
       "linux", 
@@ -6116,7 +6116,7 @@
     ], 
     "flaky": false, 
     "gtest": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "server_registered_method_bad_client_test", 
     "platforms": [
       "linux", 
@@ -6142,7 +6142,7 @@
     ], 
     "flaky": false, 
     "gtest": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "simple_request_bad_client_test", 
     "platforms": [
       "linux", 
@@ -6168,7 +6168,7 @@
     ], 
     "flaky": false, 
     "gtest": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "unknown_frame_bad_client_test", 
     "platforms": [
       "linux", 
@@ -6194,7 +6194,7 @@
     ], 
     "flaky": false, 
     "gtest": false, 
-    "language": "c", 
+    "language": "c++", 
     "name": "window_overflow_bad_client_test", 
     "platforms": [
       "linux", 
