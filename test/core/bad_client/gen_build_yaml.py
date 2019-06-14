@@ -32,6 +32,7 @@ BAD_CLIENT_TESTS = {
     'initial_settings_frame': default_test_options._replace(cpu_cost=0.2),
     'head_of_line_blocking': default_test_options,
     'large_metadata': default_test_options,
+    'out_of_bounds': default_test_options,
     'server_registered_method': default_test_options,
     'simple_request': default_test_options,
     'window_overflow': default_test_options,

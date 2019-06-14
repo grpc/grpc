@@ -5396,6 +5396,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
+    "name": "out_of_bounds_bad_client_test", 
+    "src": [
+      "test/core/bad_client/tests/out_of_bounds.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "bad_client_test", 
+      "gpr", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
     "name": "server_registered_method_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/server_registered_method.cc"
