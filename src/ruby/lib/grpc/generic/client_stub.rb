@@ -74,7 +74,7 @@ module GRPC
     # connection uses this channel.
     #
     # - :timeout
-    # when present, this is the default timeout used for calls
+    # when present, this is the default timeout (in seconds) used for calls
     #
     # @param host [String] the host the stub connects to
     # @param creds [Core::ChannelCredentials|Symbol] the channel credentials, or
@@ -82,7 +82,7 @@ module GRPC
     #     should be created with an insecure connection. Note: this argument is
     #     ignored if the channel_override argument is provided.
     # @param channel_override [Core::Channel] a pre-created channel
-    # @param timeout [Number] the default timeout to use in requests
+    # @param timeout [Number] the default timeout (in seconds) to use in requests
     # @param propagate_mask [Number] A bitwise combination of flags in
     #     GRPC::Core::PropagateMasks. Indicates how data should be propagated
     #     from parent server calls to child client calls if this client is being
