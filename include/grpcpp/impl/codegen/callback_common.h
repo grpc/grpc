@@ -47,17 +47,17 @@ void CatchingCallback(Func&& func, Args&&... args) {
 #endif  // GRPC_ALLOW_EXCEPTIONS
 }
 
-template <class ReturnType, class Func, class... Args>
-ReturnType* CatchingReactorCreator(Func&& func, Args&&... args) {
+template <class Reactor, class Func, class... Args>
+void CatchingReactorGetter(Reactor** reactor, Func&& func, Args&&... args) {
 #if GRPC_ALLOW_EXCEPTIONS
   try {
-    return func(std::forward<Args>(args)...);
+    func(std::forward<Args>(args)..., reactor);
   } catch (...) {
     // fail the RPC, don't crash the library
-    return nullptr;
+    *reactor = nullptr;
   }
 #else   // GRPC_ALLOW_EXCEPTIONS
-  return func(std::forward<Args>(args)...);
+  func(std::forward<Args>(args)..., reactor);
 #endif  // GRPC_ALLOW_EXCEPTIONS
 }
 

@@ -72,12 +72,12 @@ class CallbackTestServiceImpl
 
   void Echo(ServerContext* context, const EchoRequest* request,
             EchoResponse* response,
-            experimental::ServerCallbackRpcController* controller) override {
+            experimental::ServerUnaryReactor** reactor) override {
     response->set_message(request->message());
     if (allocator_mutator_) {
-      allocator_mutator_(controller->GetRpcAllocatorState(), request, response);
+      allocator_mutator_(context->GetRpcAllocatorState(), request, response);
     }
-    controller->Finish(Status::OK);
+    context->ReactWithStatus(Status::OK);
   }
 
  private:

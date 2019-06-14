@@ -809,14 +809,17 @@ TEST_P(HybridEnd2endTest, CallbackGenericEcho) {
   EchoTestService::WithGenericMethod_Echo<TestServiceImpl> service;
   class GenericEchoService : public experimental::CallbackGenericService {
    private:
-    experimental::ServerGenericBidiReactor* CreateReactor() override {
+    void CreateReactor(
+        GenericServerContext* context,
+        experimental::ServerGenericBidiReactor** reactor) override {
       class Reactor : public experimental::ServerGenericBidiReactor {
-       private:
-        void OnStarted(GenericServerContext* ctx) override {
-          ctx_ = ctx;
+       public:
+        explicit Reactor(GenericServerContext* ctx) {
           EXPECT_EQ(ctx->method(), "/grpc.testing.EchoTestService/Echo");
           StartRead(&request_);
         }
+
+       private:
         void OnDone() override { delete this; }
         void OnReadDone(bool ok) override {
           if (!ok) {
@@ -832,12 +835,11 @@ TEST_P(HybridEnd2endTest, CallbackGenericEcho) {
           Finish(ok ? Status::OK
                     : Status(StatusCode::UNKNOWN, "Unexpected failure"));
         }
-        GenericServerContext* ctx_;
         ByteBuffer request_;
         ByteBuffer response_;
         std::atomic_int reads_complete_{0};
       };
-      return new Reactor;
+      *reactor = new Reactor(context);
     }
   } generic_service;
 

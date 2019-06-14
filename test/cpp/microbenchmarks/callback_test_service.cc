@@ -48,7 +48,7 @@ int GetIntValueFromMetadata(
 
 void CallbackStreamingTestService::Echo(
     ServerContext* context, const EchoRequest* request, EchoResponse* response,
-    experimental::ServerCallbackRpcController* controller) {
+    experimental::ServerUnaryReactor** reactor) {
   int response_msgs_size = GetIntValueFromMetadata(
       kServerMessageSize, context->client_metadata(), 0);
   if (response_msgs_size > 0) {
@@ -56,17 +56,15 @@ void CallbackStreamingTestService::Echo(
   } else {
     response->set_message("");
   }
-  controller->Finish(Status::OK);
 }
 
-experimental::ServerBidiReactor<EchoRequest, EchoResponse>*
-CallbackStreamingTestService::BidiStream() {
+void CallbackStreamingTestService::BidiStream(
+    ServerContext* context,
+    experimental::ServerBidiReactor<EchoRequest, EchoResponse>** reactor) {
   class Reactor
       : public experimental::ServerBidiReactor<EchoRequest, EchoResponse> {
    public:
-    Reactor() {}
-    void OnStarted(ServerContext* context) override {
-      ctx_ = context;
+    explicit Reactor(ServerContext* context) {
       message_size_ = GetIntValueFromMetadata(kServerMessageSize,
                                               context->client_metadata(), 0);
       StartRead(&request_);
@@ -99,14 +97,13 @@ CallbackStreamingTestService::BidiStream() {
     }
 
    private:
-    ServerContext* ctx_;
     EchoRequest request_;
     EchoResponse response_;
     int message_size_;
     bool finished_{false};
   };
 
-  return new Reactor;
+  *reactor = new Reactor(context);
 }
 }  // namespace testing
 }  // namespace grpc

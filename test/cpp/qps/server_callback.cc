@@ -33,23 +33,22 @@ namespace testing {
 class BenchmarkCallbackServiceImpl final
     : public BenchmarkService::ExperimentalCallbackService {
  public:
-  void UnaryCall(
-      ServerContext* context, const ::grpc::testing::SimpleRequest* request,
-      ::grpc::testing::SimpleResponse* response,
-      ::grpc::experimental::ServerCallbackRpcController* controller) override {
-    auto s = SetResponse(request, response);
-    controller->Finish(s);
+  void UnaryCall(ServerContext* context, const SimpleRequest* request,
+                 SimpleResponse* response,
+                 ::grpc::experimental::ServerUnaryReactor** reactor) override {
+    context->ReactWithStatus(SetResponse(request, response));
   }
 
-  ::grpc::experimental::ServerBidiReactor<::grpc::testing::SimpleRequest,
-                                          ::grpc::testing::SimpleResponse>*
-  StreamingCall() override {
+  void StreamingCall(
+      ServerContext*,
+      ::grpc::experimental::ServerBidiReactor<::grpc::testing::SimpleRequest,
+                                              ::grpc::testing::SimpleResponse>**
+          reactor) override {
     class Reactor
         : public ::grpc::experimental::ServerBidiReactor<
               ::grpc::testing::SimpleRequest, ::grpc::testing::SimpleResponse> {
      public:
-      Reactor() {}
-      void OnStarted(ServerContext* context) override { StartRead(&request_); }
+      Reactor() { StartRead(&request_); }
 
       void OnReadDone(bool ok) override {
         if (!ok) {
@@ -78,7 +77,7 @@ class BenchmarkCallbackServiceImpl final
       SimpleRequest request_;
       SimpleResponse response_;
     };
-    return new Reactor;
+    *reactor = new Reactor;
   }
 
  private:

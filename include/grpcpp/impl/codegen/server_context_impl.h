@@ -30,9 +30,11 @@
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/create_auth_context.h>
+#include <grpcpp/impl/codegen/message_allocator.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
 #include <grpcpp/impl/codegen/security/auth_context.h>
 #include <grpcpp/impl/codegen/server_interceptor.h>
+#include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/string_ref.h>
 #include <grpcpp/impl/codegen/time.h>
 
@@ -72,6 +74,8 @@ template <class ServiceType, class RequestType, class ResponseType>
 class ClientStreamingHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler;
+template <class Base>
+class FinishOnlyReactor;
 template <class W, class R>
 class ServerReaderWriterBody;
 template <class ServiceType, class RequestType, class ResponseType>
@@ -272,6 +276,26 @@ class ServerContext {
   /// Applications never need to call this method.
   grpc_call* c_call() { return call_; }
 
+  /// NOTE: This is an API for advanced users who need custom allocators.
+  /// Get and maybe mutate the allocator state associated with the current RPC.
+  /// Currently only applicable for callback unary RPC methods.
+  /// WARNING: This is experimental API and could be changed or removed.
+  ::grpc::experimental::RpcAllocatorState* GetRpcAllocatorState() {
+    return message_allocator_state_;
+  }
+
+  /// Set the status for callback RPCs that are finished in the method handler
+  /// itself. It should only be called from the method handler (for method
+  /// handlers that don't require additional delaying work), and the method
+  /// handler should return immediately thereafter without filling in a reactor
+  /// value. Defaults to OK if the method handler returns without filling a
+  /// reactor value and never called this function.
+  /// WARNING: This is experimental API and could be changed or removed.
+  void ReactWithStatus(::grpc::Status status) {
+    fast_status_set_ = true;
+    fast_status_ = std::move(status);
+  }
+
  private:
   friend class ::grpc::testing::InteropServerContextInspector;
   friend class ::grpc::testing::ServerContextTestSpouse;
@@ -309,6 +333,8 @@ class ServerContext {
   friend class ::grpc_impl::internal::CallbackBidiHandler;
   template <::grpc::StatusCode code>
   friend class ::grpc_impl::internal::ErrorMethodHandler;
+  template <class Base>
+  friend class ::grpc_impl::internal::FinishOnlyReactor;
   friend class ::grpc_impl::ClientContext;
   friend class ::grpc::GenericServerContext;
 
@@ -350,10 +376,23 @@ class ServerContext {
     return rpc_info_;
   }
 
+  void set_message_allocator_state(
+      ::grpc::experimental::RpcAllocatorState* allocator_state) {
+    message_allocator_state_ = allocator_state;
+  }
+
+  template <class Reactor>
+  void FinishWithFastStatus(Reactor* reactor) {
+    reactor->Finish(fast_status_set_ ? std::move(fast_status_)
+                                     : ::grpc::Status::OK);
+  }
+
   CompletionOp* completion_op_;
   bool has_notify_when_done_tag_;
   void* async_notify_when_done_tag_;
   ::grpc::internal::CallbackWithSuccessTag completion_tag_;
+  bool fast_status_set_ = false;
+  ::grpc::Status fast_status_;
 
   gpr_timespec deadline_;
   grpc_call* call_;
@@ -374,6 +413,7 @@ class ServerContext {
   bool has_pending_ops_;
 
   ::grpc::experimental::ServerRpcInfo* rpc_info_;
+  ::grpc::experimental::RpcAllocatorState* message_allocator_state_ = nullptr;
 };
 }  // namespace grpc_impl
 #endif  // GRPCPP_IMPL_CODEGEN_SERVER_CONTEXT_IMPL_H

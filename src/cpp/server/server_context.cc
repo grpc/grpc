@@ -18,6 +18,7 @@
 
 #include <grpcpp/impl/codegen/server_context_impl.h>
 #include <grpcpp/support/server_callback.h>
+#include <grpcpp/support/status.h>
 
 #include <algorithm>
 #include <mutex>
@@ -97,22 +98,6 @@ class ServerContext::CompletionOp final
     tag_ = tag;
   }
 
-  void SetCancelCallback(std::function<void()> callback) {
-    grpc_core::MutexLock lock(&mu_);
-
-    if (finalized_ && (cancelled_ != 0)) {
-      callback();
-      return;
-    }
-
-    cancel_callback_ = std::move(callback);
-  }
-
-  void ClearCancelCallback() {
-    grpc_core::MutexLock g(&mu_);
-    cancel_callback_ = nullptr;
-  }
-
   void set_core_cq_tag(void* core_cq_tag) { core_cq_tag_ = core_cq_tag; }
 
   void* core_cq_tag() override { return core_cq_tag_; }
@@ -159,7 +144,6 @@ class ServerContext::CompletionOp final
   grpc_core::Mutex mu_;
   bool finalized_;
   int cancelled_;  // This is an int (not bool) because it is passed to core
-  std::function<void()> cancel_callback_;
   bool done_intercepting_;
   ::grpc::internal::InterceptorBatchMethodsImpl interceptor_methods_;
 };
@@ -209,16 +193,6 @@ bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
 
   // Decide whether to call the cancel callback before releasing the lock
   bool call_cancel = (cancelled_ != 0);
-
-  // If it's a unary cancel callback, call it under the lock so that it doesn't
-  // race with ClearCancelCallback. Although we don't normally call callbacks
-  // under a lock, this is a special case since the user needs a guarantee that
-  // the callback won't issue or run after ClearCancelCallback has returned.
-  // This requirement imposes certain restrictions on the callback, documented
-  // in the API comments of SetCancelCallback.
-  if (cancel_callback_) {
-    cancel_callback_();
-  }
 
   // Release the lock since we may call a callback and interceptors now.
   lock.Unlock();
@@ -340,14 +314,6 @@ void ServerContext::TryCancel() const {
   if (err != GRPC_CALL_OK) {
     gpr_log(GPR_ERROR, "TryCancel failed with: %d", err);
   }
-}
-
-void ServerContext::SetCancelCallback(std::function<void()> callback) {
-  completion_op_->SetCancelCallback(std::move(callback));
-}
-
-void ServerContext::ClearCancelCallback() {
-  completion_op_->ClearCancelCallback();
 }
 
 bool ServerContext::IsCancelled() const {
