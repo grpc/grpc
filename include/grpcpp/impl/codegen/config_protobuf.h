@@ -22,7 +22,7 @@
 #define GRPC_OPEN_SOURCE_PROTO
 
 #ifndef GRPC_CUSTOM_PROTOBUF_INT64
-#include <google/protobuf/stubs/common.h>
+#include <google/protobuf/port.h>
 #define GRPC_CUSTOM_PROTOBUF_INT64 ::google::protobuf::int64
 #endif
 
