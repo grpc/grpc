@@ -166,7 +166,7 @@ def ios_cc_test(
         name = name + "_on_ios",
         size = kwargs.get("size"),
         tags = apple_tags,
-        minimum_os_version = "8.0",
+        minimum_os_version = "9.0",
         deps = apple_test_deps,
     )
 
