@@ -74,12 +74,6 @@
 /**
  * LinkedListQueue
  */
-@interface LinkedListQueue()
-
-- (void)logQueue;
-
-@end
-
 @implementation LinkedListQueue {
   Node *_head;
   Node *_tail;
@@ -110,7 +104,6 @@
   _head = node;
   [_map setObject:node forKey:entry];
   ++_size;
-//  [self logQueue];
 }
 
 - (RequestCacheEntry *)evict {
@@ -126,7 +119,6 @@
     --_size;
     if (_size == 0) { _head = nil; }
   }
-//  [self logQueue];
   return toEvict;
 }
 
@@ -145,33 +137,6 @@
   updateNode.prev = nil;
   if (_head) { _head.prev = updateNode; }
   _head = updateNode;
-//  [self logQueue];
-}
-
-- (void)logQueue {
-  if (_head) {
-    Node *cur = _head;
-    NSMutableArray<NSNumber *> *list = [[NSMutableArray alloc] init];
-    while (cur) {
-      [list addObject:(NSNumber *)cur.entry.message];
-      cur = cur.next;
-    }
-    NSLog(@"From head: %@", list);
-  } else {
-    NSLog(@"Head is nil");
-  }
-  
-  if (_tail) {
-    Node *cur = _tail;
-    NSMutableArray<NSNumber *> *list = [[NSMutableArray alloc] init];
-    while (cur) {
-      [list addObject:(NSNumber *)cur.entry.message];
-      cur = cur.prev;
-    }
-    NSLog(@"From tail: %@", list);
-  } else {
-    NSLog(@"Tail is nil");
-  }
 }
 
 @end
