@@ -31,6 +31,12 @@
 #include "src/core/lib/iomgr/socket_factory_posix.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 
+#ifdef GRPC_LINUX_ERRQUEUE
+#ifndef SO_ZEROCOPY
+#define SO_ZEROCOPY 60
+#endif
+#endif
+
 /* a wrapper for accept or accept4 */
 int grpc_accept4(int sockfd, grpc_resolved_address* resolved_addr, int nonblock,
                  int cloexec);
