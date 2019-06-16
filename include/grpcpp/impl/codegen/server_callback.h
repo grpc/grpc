@@ -68,13 +68,13 @@ class ServerReactor {
   // remain unmet.
 
   void MaybeCallOnCancel() {
-    if (on_cancel_conditions_remaining_.fetch_sub(
-            1, std::memory_order_acq_rel) == 1) {
+    if (GPR_UNLIKELY(on_cancel_conditions_remaining_.fetch_sub(
+                         1, std::memory_order_acq_rel) == 1)) {
       OnCancel();
     }
   }
 
-  std::atomic_int on_cancel_conditions_remaining_{2};
+  std::atomic<intptr_t> on_cancel_conditions_remaining_{2};
 };
 
 template <class Request, class Response>
@@ -568,7 +568,7 @@ class CallbackUnaryHandler : public MethodHandler {
 
     void SendInitialMetadata(std::function<void(bool)> f) override {
       GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
-      callbacks_outstanding_++;
+      callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
       // TODO(vjpai): Consider taking f as a move-capture if we adopt C++14
       //              and if performance of this operation matters
       meta_tag_.Set(call_.call(),
@@ -618,7 +618,8 @@ class CallbackUnaryHandler : public MethodHandler {
     ResponseType* response() { return allocator_state_->response(); }
 
     void MaybeDone() {
-      if (--callbacks_outstanding_ == 0) {
+      if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
+                           1, std::memory_order_acq_rel) == 1)) {
         grpc_call* call = call_.call();
         auto call_requester = std::move(call_requester_);
         allocator_state_->Release();
@@ -640,7 +641,7 @@ class CallbackUnaryHandler : public MethodHandler {
     experimental::MessageHolder<RequestType, ResponseType>* const
         allocator_state_;
     std::function<void()> call_requester_;
-    std::atomic_int callbacks_outstanding_{
+    std::atomic<intptr_t> callbacks_outstanding_{
         2};  // reserve for Finish and CompletionOp
   };
 };
@@ -712,7 +713,7 @@ class CallbackClientStreamingHandler : public MethodHandler {
 
     void SendInitialMetadata() override {
       GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
-      callbacks_outstanding_++;
+      callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
       meta_tag_.Set(call_.call(),
                     [this](bool ok) {
                       reactor_->OnSendInitialMetadataDone(ok);
@@ -730,7 +731,7 @@ class CallbackClientStreamingHandler : public MethodHandler {
     }
 
     void Read(RequestType* req) override {
-      callbacks_outstanding_++;
+      callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
       read_ops_.RecvMessage(req);
       call_.PerformOps(&read_ops_);
     }
@@ -761,7 +762,8 @@ class CallbackClientStreamingHandler : public MethodHandler {
     ResponseType* response() { return &resp_; }
 
     void MaybeDone() {
-      if (--callbacks_outstanding_ == 0) {
+      if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
+                           1, std::memory_order_acq_rel) == 1)) {
         reactor_->OnDone();
         grpc_call* call = call_.call();
         auto call_requester = std::move(call_requester_);
@@ -785,7 +787,7 @@ class CallbackClientStreamingHandler : public MethodHandler {
     ResponseType resp_;
     std::function<void()> call_requester_;
     experimental::ServerReadReactor<RequestType, ResponseType>* reactor_;
-    std::atomic_int callbacks_outstanding_{
+    std::atomic<intptr_t> callbacks_outstanding_{
         3};  // reserve for OnStarted, Finish, and CompletionOp
   };
 };
@@ -867,7 +869,7 @@ class CallbackServerStreamingHandler : public MethodHandler {
 
     void SendInitialMetadata() override {
       GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
-      callbacks_outstanding_++;
+      callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
       meta_tag_.Set(call_.call(),
                     [this](bool ok) {
                       reactor_->OnSendInitialMetadataDone(ok);
@@ -885,7 +887,7 @@ class CallbackServerStreamingHandler : public MethodHandler {
     }
 
     void Write(const ResponseType* resp, WriteOptions options) override {
-      callbacks_outstanding_++;
+      callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
       if (options.is_last_message()) {
         options.set_buffer_hint();
       }
@@ -939,7 +941,8 @@ class CallbackServerStreamingHandler : public MethodHandler {
     const RequestType* request() { return req_; }
 
     void MaybeDone() {
-      if (--callbacks_outstanding_ == 0) {
+      if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
+                           1, std::memory_order_acq_rel) == 1)) {
         reactor_->OnDone();
         grpc_call* call = call_.call();
         auto call_requester = std::move(call_requester_);
@@ -963,7 +966,7 @@ class CallbackServerStreamingHandler : public MethodHandler {
     const RequestType* req_;
     std::function<void()> call_requester_;
     experimental::ServerWriteReactor<RequestType, ResponseType>* reactor_;
-    std::atomic_int callbacks_outstanding_{
+    std::atomic<intptr_t> callbacks_outstanding_{
         3};  // reserve for OnStarted, Finish, and CompletionOp
   };
 };
@@ -1031,7 +1034,7 @@ class CallbackBidiHandler : public MethodHandler {
 
     void SendInitialMetadata() override {
       GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
-      callbacks_outstanding_++;
+      callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
       meta_tag_.Set(call_.call(),
                     [this](bool ok) {
                       reactor_->OnSendInitialMetadataDone(ok);
@@ -1049,7 +1052,7 @@ class CallbackBidiHandler : public MethodHandler {
     }
 
     void Write(const ResponseType* resp, WriteOptions options) override {
-      callbacks_outstanding_++;
+      callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
       if (options.is_last_message()) {
         options.set_buffer_hint();
       }
@@ -1077,7 +1080,7 @@ class CallbackBidiHandler : public MethodHandler {
     }
 
     void Read(RequestType* req) override {
-      callbacks_outstanding_++;
+      callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
       read_ops_.RecvMessage(req);
       call_.PerformOps(&read_ops_);
     }
@@ -1112,7 +1115,8 @@ class CallbackBidiHandler : public MethodHandler {
     ~ServerCallbackReaderWriterImpl() {}
 
     void MaybeDone() {
-      if (--callbacks_outstanding_ == 0) {
+      if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
+                           1, std::memory_order_acq_rel) == 1)) {
         reactor_->OnDone();
         grpc_call* call = call_.call();
         auto call_requester = std::move(call_requester_);
@@ -1137,7 +1141,7 @@ class CallbackBidiHandler : public MethodHandler {
     Call call_;
     std::function<void()> call_requester_;
     experimental::ServerBidiReactor<RequestType, ResponseType>* reactor_;
-    std::atomic_int callbacks_outstanding_{
+    std::atomic<intptr_t> callbacks_outstanding_{
         3};  // reserve for OnStarted, Finish, and CompletionOp
   };
 };
