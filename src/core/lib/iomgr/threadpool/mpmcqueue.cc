@@ -16,23 +16,19 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/threadpool/mpmcqueue.h"
-
-#include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+#include <string.h>
 
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {
-
-
 
 inline void* MPMCQueue::PopFront() {
   void* result = queue_head_->content;
@@ -40,22 +36,22 @@ inline void* MPMCQueue::PopFront() {
   queue_head_ = queue_head_->next;
 
   count_.Store(count_.Load(MemoryOrder::RELAXED) - 1, MemoryOrder::RELAXED);
-  gpr_timespec wait_time = gpr_time_sub(gpr_now(GPR_CLOCK_PRECISE),
-                                        head_to_remove->insert_time);
-  // gpr_free(head_to_remove);
+  gpr_timespec wait_time =
+      gpr_time_sub(gpr_now(GPR_CLOCK_PRECISE), head_to_remove->insert_time);
+
   delete head_to_remove;
 
   // Update Stats info
   stats_.num_completed++;
-  stats_.total_queue_cycles = gpr_time_add(stats_.total_queue_cycles,
-                                           wait_time);
+  stats_.total_queue_cycles =
+      gpr_time_add(stats_.total_queue_cycles, wait_time);
   stats_.max_queue_cycles = gpr_time_max(
       gpr_convert_clock_type(stats_.max_queue_cycles, GPR_TIMESPAN), wait_time);
 
   if (count_.Load(MemoryOrder::RELAXED) == 0) {
-    stats_.busy_time_cycles = gpr_time_add(
-        stats_.busy_time_cycles,
-        gpr_time_sub(gpr_now(GPR_CLOCK_PRECISE), busy_time));
+    stats_.busy_time_cycles =
+        gpr_time_add(stats_.busy_time_cycles,
+                     gpr_time_sub(gpr_now(GPR_CLOCK_PRECISE), busy_time));
   }
 
   // Singal waiting thread
@@ -66,7 +62,8 @@ inline void* MPMCQueue::PopFront() {
   return result;
 }
 
-MPMCQueue::MPMCQueue() : num_waiters_(0), queue_head_(0), queue_tail_(0) {
+MPMCQueue::MPMCQueue() : num_waiters_(0), queue_head_(nullptr),
+                         queue_tail_(nullptr) {
   count_.Store(0, MemoryOrder::RELAXED);
 }
 
@@ -80,10 +77,7 @@ MPMCQueue::~MPMCQueue() {
 
 void MPMCQueue::Put(void* elem) {
   MutexLock l(&mu_);
-  // Node* new_node = static_cast<Node*>(gpr_malloc(sizeof(Node)));
-  // new_node->next = nullptr;
-  // new_node->content = elem;
-  // new_node->insert_time = gpr_now(GPR_CLOCK_PRECISE);
+
   Node* new_node = static_cast<Node*>(new Node(elem));
   if (count_.Load(MemoryOrder::RELAXED) == 0) {
     busy_time = gpr_now(GPR_CLOCK_PRECISE);
@@ -131,12 +125,12 @@ void MPMCQueue::PrintStats() {
 MPMCQueue::Stats* MPMCQueue::queue_stats() {
   MPMCQueue::Stats* result = new Stats();
   MutexLock l(&mu_);
-  result->total_queue_cycles = gpr_time_add(result->total_queue_cycles,
-                                            stats_.total_queue_cycles);
-  result->max_queue_cycles = gpr_time_add(result->max_queue_cycles,
-                                          stats_.max_queue_cycles);
-  result->busy_time_cycles = gpr_time_add(result->busy_time_cycles,
-                                          stats_.busy_time_cycles);
+  result->total_queue_cycles =
+      gpr_time_add(result->total_queue_cycles, stats_.total_queue_cycles);
+  result->max_queue_cycles =
+      gpr_time_add(result->max_queue_cycles, stats_.max_queue_cycles);
+  result->busy_time_cycles =
+      gpr_time_add(result->busy_time_cycles, stats_.busy_time_cycles);
   return result;
 }
 

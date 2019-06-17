@@ -42,17 +42,7 @@ struct WorkItem {
   int index;
   bool done;
 
-  WorkItem(int i) : index(i) {
-    done = false;
-  }
-  void* operator new(size_t n) {
-    void* p = gpr_malloc(n);
-    return p;
-  }
-
-  void operator delete(void* p) {
-    gpr_free(p);
-  }
+  WorkItem(int i) : index(i) { done = false; }
 };
 
 static void test_small_queue(void) {
@@ -132,38 +122,28 @@ static void test_large_queue(void) {
 class WorkThread {
  public:
   WorkThread(grpc_core::MPMCQueue* mpmcqueue, int start_index, int num_items)
-      : start_index_(start_index), num_items_(num_items),
+      : start_index_(start_index),
+        num_items_(num_items),
         mpmcqueue_(mpmcqueue) {
     items_ = NULL;
     thd_ = grpc_core::Thread(
         "mpmcq_test_mt_put_thd",
-        [](void* th) { static_cast<WorkThread*>(th)->Run(); },
-        this);
+        [](void* th) { static_cast<WorkThread*>(th)->Run(); }, this);
   }
   ~WorkThread() {
     for (int i = 0; i < num_items_; ++i) {
       GPR_ASSERT(items_[i]->done);
       delete items_[i];
     }
-    gpr_free(items_);
+    delete[] items_;
   }
 
   void Start() { thd_.Start(); }
   void Join() { thd_.Join(); }
 
-  void* operator new(size_t n) {
-    void* p = gpr_malloc(n);
-    return p;
-  }
-
-  void operator delete(void* p) {
-    gpr_free(p);
-  }
-
  private:
   void Run() {
-    items_ = static_cast<WorkItem**>(
-        gpr_malloc(sizeof(WorkItem*) * num_items_));
+    items_ = new WorkItem*[num_items_];
     for (int i = 0; i < num_items_; ++i) {
       items_[i] = new WorkItem(start_index_ + i);
       mpmcqueue_->Put(items_[i]);
@@ -176,7 +156,6 @@ class WorkThread {
   grpc_core::Thread thd_;
   WorkItem** items_;
 };
-
 
 static void test_many_get_thd(void* args) {
   grpc_core::MPMCQueue* mpmcqueue = static_cast<grpc_core::MPMCQueue*>(args);
@@ -199,8 +178,7 @@ static void test_many_thread(void) {
   const int num_work_thd = 10;
   const int num_get_thd = 20;
   grpc_core::MPMCQueue mpmcqueue;
-  WorkThread** work_thds =
-      static_cast<WorkThread**>(gpr_malloc(sizeof(WorkThread*) * num_work_thd));
+  WorkThread** work_thds = new WorkThread*[num_work_thd];
   grpc_core::Thread get_thds[num_get_thd];
 
   gpr_log(GPR_DEBUG, "Fork WorkThread...");
@@ -212,8 +190,8 @@ static void test_many_thread(void) {
   gpr_log(GPR_DEBUG, "WorkThread Started.");
   gpr_log(GPR_DEBUG, "For Getter Thread...");
   for (int i = 0; i < num_get_thd; ++i) {
-    get_thds[i] = grpc_core::Thread("mpmcq_test_mt_get_thd",
-                                    test_many_get_thd, &mpmcqueue);
+    get_thds[i] = grpc_core::Thread("mpmcq_test_mt_get_thd", test_many_get_thd,
+                                    &mpmcqueue);
     get_thds[i].Start();
   }
   gpr_log(GPR_DEBUG, "Getter Thread Started.");
@@ -234,10 +212,9 @@ static void test_many_thread(void) {
   for (int i = 0; i < num_work_thd; ++i) {
     delete work_thds[i];
   }
-  gpr_free(work_thds);
+  delete[] work_thds;
   gpr_log(GPR_DEBUG, "Done.");
 }
-
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
