@@ -19,8 +19,9 @@
 #ifndef GRPC_CORE_LIB_IOMGR_THREADPOOL_MPMCQUEUE_H
 #define GRPC_CORE_LIB_IOMGR_THREADPOOL_MPMCQUEUE_H
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
+
+#include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/atomic.h"
