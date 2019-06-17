@@ -17,6 +17,7 @@
 """Generates the appropriate build.json data for all the bad_client tests."""
 
 
+from __future__ import print_function
 import collections
 import yaml
 
@@ -78,7 +79,7 @@ def main():
               ]
           }
       for t in sorted(BAD_CLIENT_TESTS.keys())]}
-  print yaml.dump(json)
+  print(yaml.dump(json))
 
 
 if __name__ == '__main__':
