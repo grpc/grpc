@@ -39,14 +39,14 @@ class SecureChannelCredentials final : public ChannelCredentials {
   }
   grpc_channel_credentials* GetRawCreds() { return c_creds_; }
 
-  std::shared_ptr<::grpc::Channel> CreateChannelImpl(
-      const grpc::string& target, const grpc::ChannelArguments& args) override;
+  std::shared_ptr<Channel> CreateChannelImpl(
+      const grpc::string& target, const ChannelArguments& args) override;
 
   SecureChannelCredentials* AsSecureCredentials() override { return this; }
 
  private:
-  std::shared_ptr<::grpc::Channel> CreateChannelWithInterceptors(
-      const grpc::string& target, const grpc::ChannelArguments& args,
+  std::shared_ptr<Channel> CreateChannelWithInterceptors(
+      const grpc::string& target, const ChannelArguments& args,
       std::vector<std::unique_ptr<
           ::grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators) override;
@@ -83,7 +83,7 @@ class MetadataCredentialsPluginWrapper final : private GrpcLibraryCodegen {
       const char** error_details);
 
   explicit MetadataCredentialsPluginWrapper(
-      std::unique_ptr<MetadataCredentialsPlugin> plugin);
+      std::unique_ptr<::grpc_impl::MetadataCredentialsPlugin> plugin);
 
  private:
   void InvokePlugin(
@@ -93,7 +93,7 @@ class MetadataCredentialsPluginWrapper final : private GrpcLibraryCodegen {
       size_t* num_creds_md, grpc_status_code* status_code,
       const char** error_details);
   std::unique_ptr<ThreadPoolInterface> thread_pool_;
-  std::unique_ptr<MetadataCredentialsPlugin> plugin_;
+  std::unique_ptr<::grpc_impl::MetadataCredentialsPlugin> plugin_;
 };
 
 }  // namespace grpc
