@@ -231,7 +231,6 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
 
   ares_ssize_t TrySendWriteBufSyncNonBlocking() {
     GPR_ASSERT(write_state_ == WRITE_IDLE);
-    ares_ssize_t total_sent;
     DWORD bytes_sent = 0;
     if (SendWriteBuf(&bytes_sent, nullptr) != 0) {
       int wsa_last_error = WSAGetLastError();

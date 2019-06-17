@@ -714,7 +714,12 @@ const char *kCFStreamVarName = "grpc_cfstream";
     __strong GRPCCall *strongSelf = weakSelf;
     if (strongSelf) {
       @synchronized(strongSelf) {
-        strongSelf.responseHeaders = headers;
+        // it is ok to set nil because headers are only received once
+        strongSelf.responseHeaders = nil;
+        // copy the header so that the GRPCOpRecvMetadata object may be dealloc'ed
+        NSDictionary *copiedHeaders =
+            [[NSDictionary alloc] initWithDictionary:headers copyItems:YES];
+        strongSelf.responseHeaders = copiedHeaders;
         strongSelf->_pendingCoreRead = NO;
         [strongSelf maybeStartNextRead];
       }

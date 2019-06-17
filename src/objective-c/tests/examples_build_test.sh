@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2017 gRPC authors.
+# Copyright 2019 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,19 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This script is used after a release to verify the released pods are working appropriately
+
 set -ex
 
-# change to grpc repo root
-cd $(dirname $0)/../../..
-
-source tools/internal_ci/helper_scripts/prepare_build_macos_interop_rc
-source tools/internal_ci/helper_scripts/prepare_build_macos_rc
-
-tools/run_tests/run_interop_tests.py -l objc -s all --use_docker -t -j 1 || FAILED="true"
-
-tools/internal_ci/helper_scripts/delete_nonartifacts.sh || true
-
-if [ "$FAILED" != "" ]
-then
-  exit 1
-fi
+SCHEME=HelloWorld EXAMPLE_PATH=examples/objective-c/helloworld ./build_one_example.sh
+SCHEME=RouteGuideClient EXAMPLE_PATH=examples/objective-c/route_guide ./build_one_example.sh
+SCHEME=AuthSample EXAMPLE_PATH=examples/objective-c/auth_sample ./build_one_example.sh

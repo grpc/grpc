@@ -753,7 +753,7 @@ class PythonLanguage(object):
     def _python_manager_name(self):
         """Choose the docker image to use based on python version."""
         if self.args.compiler in [
-                'python2.7', 'python3.5', 'python3.6', 'python3.7'
+                'python2.7', 'python3.5', 'python3.6', 'python3.7', 'python3.8'
         ]:
             return 'stretch_' + self.args.compiler[len('python'):]
         elif self.args.compiler == 'python_alpine':
@@ -829,6 +829,12 @@ class PythonLanguage(object):
             minor='7',
             bits=bits,
             config_vars=config_vars)
+        python38_config = _python_config_generator(
+            name='py38',
+            major='3',
+            minor='8',
+            bits=bits,
+            config_vars=config_vars)
         pypy27_config = _pypy_config_generator(
             name='pypy', major='2', config_vars=config_vars)
         pypy32_config = _pypy_config_generator(
@@ -852,6 +858,8 @@ class PythonLanguage(object):
             return (python36_config,)
         elif args.compiler == 'python3.7':
             return (python37_config,)
+        elif args.compiler == 'python3.8':
+            return (python38_config,)
         elif args.compiler == 'pypy':
             return (pypy27_config,)
         elif args.compiler == 'pypy3':
@@ -865,6 +873,7 @@ class PythonLanguage(object):
                 python35_config,
                 python36_config,
                 python37_config,
+                # TODO: Add Python 3.8 once it's released.
             )
         else:
             raise Exception('Compiler %s not supported.' % args.compiler)
@@ -1340,9 +1349,10 @@ argp.add_argument(
     choices=[
         'default', 'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3', 'gcc7.2',
         'gcc_musl', 'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7', 'clang7.0',
-        'python2.7', 'python3.4', 'python3.5', 'python3.6', 'python3.7', 'pypy',
-        'pypy3', 'python_alpine', 'all_the_cpythons', 'electron1.3',
-        'electron1.6', 'coreclr', 'cmake', 'cmake_vs2015', 'cmake_vs2017'
+        'python2.7', 'python3.4', 'python3.5', 'python3.6', 'python3.7',
+        'python3.8', 'pypy', 'pypy3', 'python_alpine', 'all_the_cpythons',
+        'electron1.3', 'electron1.6', 'coreclr', 'cmake', 'cmake_vs2015',
+        'cmake_vs2017'
     ],
     default='default',
     help=

@@ -15,9 +15,14 @@
 
 set -ex
 
-# TODO(jtattermusch): use the latest version of bazel
+# Use bazelisk to download the right bazel version
+wget https://github.com/bazelbuild/bazelisk/releases/download/v0.0.7/bazelisk-linux-amd64
+chmod u+x bazelisk-linux-amd64
 
-# Use --all_incompatible_changes to give an early warning about future
-# bazel incompatibilities.
-EXTRA_FLAGS="--config=opt --cache_test_results=no --all_incompatible_changes"
+# We want bazelisk to run the latest stable version
+export USE_BAZEL_VERSION=latest
+# Use bazelisk instead of our usual //tools/bazel wrapper
+mv bazelisk-linux-amd64 github/grpc/tools/bazel
+
+EXTRA_FLAGS="--config=opt --cache_test_results=no"
 github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh "${EXTRA_FLAGS}"
