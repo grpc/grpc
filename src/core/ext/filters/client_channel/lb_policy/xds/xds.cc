@@ -370,6 +370,8 @@ class XdsLb : public LoadBalancingPolicy {
       void Orphan() override;
 
      private:
+      friend class LocalityMap;
+
       class Helper : public ChannelControlHelper {
        public:
         explicit Helper(RefCountedPtr<LocalityEntry> entry)
@@ -408,6 +410,8 @@ class XdsLb : public LoadBalancingPolicy {
       uint32_t locality_weight_;
     };
 
+    explicit LocalityMap(RefCountedPtr<XdsLb> parent)
+        : parent_(std::move(parent)) {}
     void UpdateLocked(const LocalityList& locality_list,
                       LoadBalancingPolicy::Config* child_policy_config,
                       const grpc_channel_args* args, XdsLb* parent);
@@ -418,7 +422,10 @@ class XdsLb : public LoadBalancingPolicy {
 
    private:
     void PruneLocalities(const LocalityList& locality_list);
+    void UpdateXdsPicker();
+
     Map<UniquePtr<char>, OrphanablePtr<LocalityEntry>, StringLess> map_;
+    RefCountedPtr<XdsLb> parent_;
     // Lock held while filling child refs for all localities
     // inside the map
     Mutex child_refs_mu_;
@@ -1355,7 +1362,7 @@ grpc_channel_args* BuildBalancerChannelArgs(const grpc_channel_args* args) {
 
 XdsLb::XdsLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
-      locality_map_(),
+      locality_map_(Ref()),
       locality_serverlist_() {
   // Record server name.
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
@@ -1725,6 +1732,7 @@ void XdsLb::MaybeExitFallbackMode() {
 //
 
 void XdsLb::LocalityMap::PruneLocalities(const LocalityList& locality_list) {
+  bool locality_removed = false;
   for (auto iter = map_.begin(); iter != map_.end();) {
     bool found = false;
     for (size_t i = 0; i < locality_list.size(); i++) {
@@ -1733,10 +1741,85 @@ void XdsLb::LocalityMap::PruneLocalities(const LocalityList& locality_list) {
       }
     }
     if (!found) {  // Remove entries not present in the locality list
+      locality_removed = true;
       MutexLock lock(&child_refs_mu_);
       iter = map_.erase(iter);
     } else
       iter++;
+  }
+  // Don't pick from removed localities.
+  // TODO(juanlishen): Add a test when EDS is added.
+  if (locality_removed) UpdateXdsPicker();
+}
+
+void XdsLb::LocalityMap::UpdateXdsPicker() {
+  // Construct a new xds picker which maintains a map of all locality pickers
+  // that are ready. Each locality is represented by a portion of the range
+  // proportional to its weight, such that the total range is the sum of the
+  // weights of all localities
+  uint32_t end = 0;
+  size_t num_connecting = 0;
+  size_t num_idle = 0;
+  size_t num_transient_failures = 0;
+  auto& locality_map = map_;
+  Picker::PickerList pickers;
+  for (auto& p : locality_map) {
+    const LocalityEntry* entry = p.second.get();
+    grpc_connectivity_state connectivity_state = entry->connectivity_state_;
+    switch (connectivity_state) {
+      case GRPC_CHANNEL_READY: {
+        end += entry->locality_weight_;
+        pickers.push_back(MakePair(end, entry->picker_ref_));
+        break;
+      }
+      case GRPC_CHANNEL_CONNECTING: {
+        num_connecting++;
+        break;
+      }
+      case GRPC_CHANNEL_IDLE: {
+        num_idle++;
+        break;
+      }
+      case GRPC_CHANNEL_TRANSIENT_FAILURE: {
+        num_transient_failures++;
+        break;
+      }
+      default: {
+        gpr_log(GPR_ERROR, "Invalid locality connectivity state - %d",
+                connectivity_state);
+      }
+    }
+  }
+  // Pass on the constructed xds picker if it has any ready pickers in their map
+  // otherwise pass a QueuePicker if any of the locality pickers are in a
+  // connecting or idle state, finally return a transient failure picker if all
+  // locality pickers are in transient failure
+  if (!pickers.empty()) {
+    RefCountedPtr<XdsLbClientStats> client_stats =
+        parent_->lb_chand_->lb_calld() == nullptr
+            ? nullptr
+            : parent_->lb_chand_->lb_calld()->client_stats();
+    parent_->channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_READY,
+        UniquePtr<LoadBalancingPolicy::SubchannelPicker>(
+            New<Picker>(std::move(client_stats), std::move(pickers))));
+  } else if (num_connecting > 0) {
+    parent_->channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_CONNECTING,
+        UniquePtr<SubchannelPicker>(New<QueuePicker>(this->parent_)));
+  } else if (num_idle > 0) {
+    parent_->channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_IDLE,
+        UniquePtr<SubchannelPicker>(New<QueuePicker>(this->parent_)));
+  } else {
+    GPR_ASSERT(num_transient_failures == locality_map.size());
+    grpc_error* error =
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                               "connections to all localities failing"),
+                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+    parent_->channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_TRANSIENT_FAILURE,
+        UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(error)));
   }
 }
 
@@ -1745,6 +1828,7 @@ void XdsLb::LocalityMap::UpdateLocked(
     LoadBalancingPolicy::Config* child_policy_config,
     const grpc_channel_args* args, XdsLb* parent) {
   if (parent->shutting_down_) return;
+  PruneLocalities(locality_serverlist);
   for (size_t i = 0; i < locality_serverlist.size(); i++) {
     UniquePtr<char> locality_name(
         gpr_strdup(locality_serverlist[i]->locality_name));
@@ -1760,7 +1844,6 @@ void XdsLb::LocalityMap::UpdateLocked(
         parent->locality_serverlist_[i]->serverlist;
     iter->second->UpdateLocked(serverlist, child_policy_config, args);
   }
-  PruneLocalities(locality_serverlist);
 }
 
 void XdsLb::LocalityMap::ShutdownLocked() {
@@ -2048,76 +2131,11 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
   // If we are in fallback mode, ignore update request from the child policy.
   if (entry_->parent_->fallback_policy_ != nullptr) return;
   GPR_ASSERT(entry_->parent_->lb_chand_ != nullptr);
-  RefCountedPtr<XdsLbClientStats> client_stats =
-      entry_->parent_->lb_chand_->lb_calld() == nullptr
-          ? nullptr
-          : entry_->parent_->lb_chand_->lb_calld()->client_stats();
   // Cache the picker and its state in the entry
   entry_->picker_ref_ = MakeRefCounted<PickerRef>(std::move(picker));
   entry_->connectivity_state_ = state;
-  // Construct a new xds picker which maintains a map of all locality pickers
-  // that are ready. Each locality is represented by a portion of the range
-  // proportional to its weight, such that the total range is the sum of the
-  // weights of all localities
-  uint32_t end = 0;
-  size_t num_connecting = 0;
-  size_t num_idle = 0;
-  size_t num_transient_failures = 0;
-  auto& locality_map = this->entry_->parent_->locality_map_.map_;
-  Picker::PickerList pickers;
-  for (auto& p : locality_map) {
-    const LocalityEntry* entry = p.second.get();
-    grpc_connectivity_state connectivity_state = entry->connectivity_state_;
-    switch (connectivity_state) {
-      case GRPC_CHANNEL_READY: {
-        end += entry->locality_weight_;
-        pickers.push_back(MakePair(end, entry->picker_ref_));
-        break;
-      }
-      case GRPC_CHANNEL_CONNECTING: {
-        num_connecting++;
-        break;
-      }
-      case GRPC_CHANNEL_IDLE: {
-        num_idle++;
-        break;
-      }
-      case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-        num_transient_failures++;
-        break;
-      }
-      default: {
-        gpr_log(GPR_ERROR, "Invalid locality connectivity state - %d",
-                connectivity_state);
-      }
-    }
-  }
-  // Pass on the constructed xds picker if it has any ready pickers in their map
-  // otherwise pass a QueuePicker if any of the locality pickers are in a
-  // connecting or idle state, finally return a transient failure picker if all
-  // locality pickers are in transient failure
-  if (pickers.size() > 0) {
-    entry_->parent_->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_READY,
-        UniquePtr<LoadBalancingPolicy::SubchannelPicker>(
-            New<Picker>(std::move(client_stats), std::move(pickers))));
-  } else if (num_connecting > 0) {
-    entry_->parent_->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_CONNECTING,
-        UniquePtr<SubchannelPicker>(New<QueuePicker>(this->entry_->parent_)));
-  } else if (num_idle > 0) {
-    entry_->parent_->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_IDLE,
-        UniquePtr<SubchannelPicker>(New<QueuePicker>(this->entry_->parent_)));
-  } else {
-    GPR_ASSERT(num_transient_failures == locality_map.size());
-    grpc_error* error =
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                               "connections to all localities failing"),
-                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
-    entry_->parent_->channel_control_helper()->UpdateState(
-        state, UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(error)));
-  }
+  // Construct a new xds picker and pass it to the channel.
+  entry_->parent_->locality_map_.UpdateXdsPicker();
 }
 
 void XdsLb::LocalityMap::LocalityEntry::Helper::RequestReresolution() {
