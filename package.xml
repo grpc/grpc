@@ -416,6 +416,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_utils_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_windows.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/threadpool/mpmcqueue.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/time_averaged_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_custom.h" role="src" />
@@ -585,6 +586,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_uv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_windows.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/threadpool/mpmcqueue.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/time_averaged_stats.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_custom.cc" role="src" />

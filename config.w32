@@ -159,6 +159,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\tcp_server_windows.cc " +
     "src\\core\\lib\\iomgr\\tcp_uv.cc " +
     "src\\core\\lib\\iomgr\\tcp_windows.cc " +
+    "src\\core\\lib\\iomgr\\threadpool\\mpmcqueue.cc " +
     "src\\core\\lib\\iomgr\\time_averaged_stats.cc " +
     "src\\core\\lib\\iomgr\\timer.cc " +
     "src\\core\\lib\\iomgr\\timer_custom.cc " +
@@ -739,6 +740,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\gprpp");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\http");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr\\threadpool");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\json");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\profiling");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security");

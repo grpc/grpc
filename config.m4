@@ -184,6 +184,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/tcp_server_windows.cc \
     src/core/lib/iomgr/tcp_uv.cc \
     src/core/lib/iomgr/tcp_windows.cc \
+    src/core/lib/iomgr/threadpool/mpmcqueue.cc \
     src/core/lib/iomgr/time_averaged_stats.cc \
     src/core/lib/iomgr/timer.cc \
     src/core/lib/iomgr/timer_custom.cc \
@@ -726,6 +727,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr/threadpool)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/profiling)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/context)
