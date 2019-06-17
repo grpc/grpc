@@ -31,7 +31,6 @@ namespace grpc_core {
 // Abstract base class of a MPMC queue interface
 class MPMCQueueInterface {
  public:
-  MPMCQueueInterface() {}
   virtual ~MPMCQueueInterface() {}
 
   // Put elem into queue immediately at the end of queue.
@@ -102,6 +101,7 @@ class MPMCQueue : public MPMCQueueInterface {
     Node* next;                // Linking
     void* content;             // Points to actual element
     gpr_timespec insert_time;  // Time for stats
+
     Node(void* c) : content(c) {
       next = nullptr;
       insert_time = gpr_now(GPR_CLOCK_PRECISE);
