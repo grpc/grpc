@@ -125,7 +125,7 @@ class PickFirst : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
-  void AttemptToConnectOnLatestUpdateArgs();
+  void AttemptToConnectUsingLatestUpdateArgsLocked();
 
   // Lateset update args.
   UpdateArgs latest_update_args_;
@@ -171,7 +171,7 @@ void PickFirst::ExitIdleLocked() {
       gpr_log(GPR_INFO, "Pick First %p exiting idle", this);
     }
     idle_ = false;
-    AttemptToConnectOnLatestUpdateArgs();
+    AttemptToConnectUsingLatestUpdateArgsLocked();
   }
 }
 
@@ -182,13 +182,13 @@ void PickFirst::ResetBackoffLocked() {
   }
 }
 
-void PickFirst::AttemptToConnectOnLatestUpdateArgs() {
+void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   // Create a subchannel list from the latest_update_args_.
   auto subchannel_list = MakeOrphanable<PickFirstSubchannelList>(
       this, &grpc_lb_pick_first_trace, latest_update_args_.addresses,
       *latest_update_args_.args);
   // Empty update or no valid subchannels.
-  if (subchannel_list == nullptr || subchannel_list->num_subchannels() == 0) {
+  if (subchannel_list->num_subchannels() == 0) {
     // Unsubscribe from all current subchannels.
     subchannel_list_ = std::move(subchannel_list);  // Empty list.
     selected_ = nullptr;
@@ -277,7 +277,7 @@ void PickFirst::UpdateLocked(UpdateArgs args) {
   // If we are not in idle, start connection attempt immediately.
   // Otherwise, we defer the attempt into ExitIdleLocked().
   if (!idle_) {
-    AttemptToConnectOnLatestUpdateArgs();
+    AttemptToConnectUsingLatestUpdateArgsLocked();
   }
 }
 
@@ -332,6 +332,8 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         // also set the channel state to IDLE. The reason is that if the new
         // state is TRANSIENT_FAILURE due to a GOAWAY reception we don't want
         // to connect to the re-resolved backends until we leave IDLE state.
+        // TODO(qianchengz): We may want to request re-resolution in
+        // ExitIdleLocked().
         p->idle_ = true;
         p->channel_control_helper()->RequestReresolution();
         p->selected_ = nullptr;
