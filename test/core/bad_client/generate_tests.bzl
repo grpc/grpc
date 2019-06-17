@@ -25,6 +25,7 @@ def test_options():
 # maps test names to options
 BAD_CLIENT_TESTS = {
     'badreq': test_options(),
+    'bad_streaming_id': test_options(),
     'connection_prefix': test_options(),
     'duplicate_header': test_options(),
     'headers': test_options(),

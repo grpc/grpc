@@ -27,6 +27,7 @@ default_test_options = TestOptions(False, 1.0)
 # maps test names to options
 BAD_CLIENT_TESTS = {
     'badreq': default_test_options,
+    'bad_streaming_id': default_test_options,
     'connection_prefix': default_test_options._replace(cpu_cost=0.2),
     'duplicate_header': default_test_options,
     'headers': default_test_options._replace(cpu_cost=0.2),
