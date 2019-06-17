@@ -67,7 +67,7 @@ static void test_get_thd(void* args) {
   int count = 0;
   int last_index = -1;
   WorkItem* item;
-  while ((item = static_cast<WorkItem*>(mpmcqueue->Get())) != NULL) {
+  while ((item = static_cast<WorkItem*>(mpmcqueue->Get())) != nullptr) {
     count++;
     GPR_ASSERT(item->index > last_index);
     last_index = item->index;
@@ -96,7 +96,7 @@ static void test_get_empty(void) {
 
   gpr_log(GPR_DEBUG, "Terminating threads...");
   for (int i = 0; i < num_threads; ++i) {
-    mpmcqueue.Put(NULL);
+    mpmcqueue.Put(nullptr);
   }
   for (int i = 0; i < num_threads; ++i) {
     thds[i].Join();
@@ -125,7 +125,7 @@ class WorkThread {
       : start_index_(start_index),
         num_items_(num_items),
         mpmcqueue_(mpmcqueue) {
-    items_ = NULL;
+    items_ = nullptr;
     thd_ = grpc_core::Thread(
         "mpmcq_test_mt_put_thd",
         [](void* th) { static_cast<WorkThread*>(th)->Run(); }, this);
@@ -164,7 +164,7 @@ static void test_many_get_thd(void* args) {
   int count = 0;
 
   WorkItem* item;
-  while ((item = static_cast<WorkItem*>(mpmcqueue->Get())) != NULL) {
+  while ((item = static_cast<WorkItem*>(mpmcqueue->Get())) != nullptr) {
     count++;
     GPR_ASSERT(!item->done);
     item->done = true;
@@ -202,7 +202,7 @@ static void test_many_thread(void) {
   gpr_log(GPR_DEBUG, "All WorkThread Terminated.");
   gpr_log(GPR_DEBUG, "Terminating Getter Thread...");
   for (int i = 0; i < num_get_thd; ++i) {
-    mpmcqueue.Put(NULL);
+    mpmcqueue.Put(nullptr);
   }
   for (int i = 0; i < num_get_thd; ++i) {
     get_thds[i].Join();
