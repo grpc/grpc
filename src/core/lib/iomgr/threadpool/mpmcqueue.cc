@@ -62,8 +62,8 @@ inline void* MPMCQueue::PopFront() {
   return result;
 }
 
-MPMCQueue::MPMCQueue() : num_waiters_(0), queue_head_(nullptr),
-                         queue_tail_(nullptr) {
+MPMCQueue::MPMCQueue()
+    : num_waiters_(0), queue_head_(nullptr), queue_tail_(nullptr) {
   count_.Store(0, MemoryOrder::RELAXED);
 }
 
