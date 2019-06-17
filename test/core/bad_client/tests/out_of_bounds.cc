@@ -38,7 +38,7 @@ void verifier(grpc_server* server, grpc_completion_queue* cq,
   }
 }
 
-void FrameVerifier(std::string attack_vector) {
+void FrameVerifier(const std::string& attack_vector) {
   grpc_bad_client_arg args[2];
   args[0] = connection_preface_arg;
   args[1].client_validator = nullptr;
