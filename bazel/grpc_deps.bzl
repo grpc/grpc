@@ -186,11 +186,11 @@ def grpc_deps():
     if "bazel_toolchains" not in native.existing_rules():
         http_archive(
             name = "bazel_toolchains",
-            sha256 = "88e818f9f03628eef609c8429c210ecf265ffe46c2af095f36c7ef8b1855fef5",
-            strip_prefix = "bazel-toolchains-92dd8a7a518a2fb7ba992d47c8b38299fe0be825",
+            sha256 = "d968b414b32aa99c86977e1171645d31da2b52ac88060de3ac1e49932d5dcbf1",
+            strip_prefix = "bazel-toolchains-4bd5df80d77aa7f4fb943dfdfad5c9056a62fb47",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/92dd8a7a518a2fb7ba992d47c8b38299fe0be825.tar.gz",
-                "https://github.com/bazelbuild/bazel-toolchains/archive/92dd8a7a518a2fb7ba992d47c8b38299fe0be825.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/4bd5df80d77aa7f4fb943dfdfad5c9056a62fb47.tar.gz",
+                "https://github.com/bazelbuild/bazel-toolchains/archive/4bd5df80d77aa7f4fb943dfdfad5c9056a62fb47.tar.gz",
             ],
         )
 
