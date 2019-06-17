@@ -184,7 +184,9 @@ void PickFirst::ResetBackoffLocked() {
 
 void PickFirst::AttemptToConnectOnLatestUpdateArgs() {
   // Create a subchannel list from the latest_update_args_.
-  auto subchannel_list = MakeOrphanable<PickFirstSubchannelList>(this, &grpc_lb_pick_first_trace, latest_update_args_.addresses, *latest_update_args_.args);
+  auto subchannel_list = MakeOrphanable<PickFirstSubchannelList>(
+      this, &grpc_lb_pick_first_trace, latest_update_args_.addresses,
+      *latest_update_args_.args);
   // Empty update or no valid subchannels.
   if (subchannel_list == nullptr || subchannel_list->num_subchannels() == 0) {
     // Unsubscribe from all current subchannels.
@@ -194,9 +196,9 @@ void PickFirst::AttemptToConnectOnLatestUpdateArgs() {
     // (If we are idle, then this will happen in ExitIdleLocked() if we
     // haven't gotten a non-empty update by the time the application tries
     // to start a new call.)
-    grpc_error* error = grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+    grpc_error* error =
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
+                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
         UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(error)));
