@@ -1003,7 +1003,7 @@ TEST_F(SingleBalancerTest, SecureNamingDeathTest) {
   ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   // Make sure that we blow up (via abort() from the security connector) when
   // the name from the balancer doesn't match expectations.
-  ASSERT_DEATH(
+  ASSERT_DEATH_IF_SUPPORTED(
       {
         ResetStub(0, kApplicationTargetName_ + ";lb");
         SetNextResolution({AddressData{balancers_[0]->port_, true, "woops"}});

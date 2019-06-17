@@ -97,14 +97,14 @@ namespace {
 TEST(TimespecTest, GprNowInvalidClockType) {
   // initialize to some junk value
   gpr_clock_type invalid_clock_type = (gpr_clock_type)32641;
-  EXPECT_DEATH(gpr_now(invalid_clock_type), ".*");
+  EXPECT_DEATH_IF_SUPPORTED(gpr_now(invalid_clock_type), ".*");
 }
 
 // Add timespan with negative nanoseconds
 TEST(TimespecTest, GprTimeAddNegativeNs) {
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   gpr_timespec bad_ts = {1, -1000, GPR_TIMESPAN};
-  EXPECT_DEATH(gpr_time_add(now, bad_ts), ".*");
+  EXPECT_DEATH_IF_SUPPORTED(gpr_time_add(now, bad_ts), ".*");
 }
 
 // Subtract timespan with negative nanoseconds
@@ -113,7 +113,7 @@ TEST(TimespecTest, GprTimeSubNegativeNs) {
   // (negative seconds, positive nanoseconds)
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   gpr_timespec bad_ts = {1, -1000, GPR_TIMESPAN};
-  EXPECT_DEATH(gpr_time_sub(now, bad_ts), ".*");
+  EXPECT_DEATH_IF_SUPPORTED(gpr_time_sub(now, bad_ts), ".*");
 }
 
 // Add negative milliseconds to gpr_timespec
