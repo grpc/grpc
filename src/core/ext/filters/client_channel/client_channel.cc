@@ -1435,8 +1435,10 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
       std::move(target_uri), ProcessResolverResultLocked, this, error));
   grpc_channel_args_destroy(new_args);
   if (*error != GRPC_ERROR_NONE) {
-    // Before we return, shut down the resolving LB policy, which destroys
-    // the ClientChannelControlHelper and therefore unrefs the channel stack.
+    // Orphan the resolving LB policy and flush the exec_ctx to ensure
+    // that it finishes shutting down.  This ensures that if we are
+    // failing, we destroy the ClientChannelControlHelper (and thus
+    // unref the channel stack) before we return.
     // TODO(roth): This is not a complete solution, because it only
     // catches the case where channel stack initialization fails in this
     // particular filter.  If there is a failure in a different filter, we
@@ -1444,6 +1446,7 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
     // in practice, there are no other filters that can cause failures in
     // channel stack initialization, so this works for now.
     resolving_lb_policy_.reset();
+    ExecCtx::Get()->Flush();
   } else {
     grpc_pollset_set_add_pollset_set(resolving_lb_policy_->interested_parties(),
                                      interested_parties_);
