@@ -76,6 +76,9 @@ set_property(CACHE gRPC_GFLAGS_PROVIDER PROPERTY STRINGS "module" "package")
 set(gRPC_BENCHMARK_PROVIDER "module" CACHE STRING "Provider of benchmark library")
 set_property(CACHE gRPC_BENCHMARK_PROVIDER PROPERTY STRINGS "module" "package")
 
+set(gRPC_UPB_PROVIDER "module" CACHE STRING "Provider of upb library")
+set_property(CACHE gRPC_UPB_PROVIDER PROPERTY STRINGS "module" "package")
+
 set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
 
 if(UNIX)
