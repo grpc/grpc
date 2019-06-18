@@ -7,6 +7,8 @@ EXPERIMENTAL ONLY
 -------------
 Support of the UWP platform is currently experimental.
 
+The client is configured to generate external Client stubs from the *.proto file in the 'Generated' folder outside the project.
+
 BUILD AND RUN
 -------------
 From Visual Studio:

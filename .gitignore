@@ -144,3 +144,4 @@ bm_*.json
 !.vscode/launch.json
 !.vscode/extensions.json
 
+/examples/csharp/HelloworldUWP/GreeterClient/Generated

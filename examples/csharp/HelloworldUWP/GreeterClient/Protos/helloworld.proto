@@ -12,20 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Grpc.Core;
-using Helloworld;
-using System.Threading.Tasks;
+syntax = "proto3";
 
-namespace GreeterServer
-{
-  public class GreeterService : Greeter.GreeterBase
-  {
-    public override Task<HelloReply> SayHello(HelloRequest request, ServerCallContext context)
-    {
-      return Task.FromResult(new HelloReply
-      {
-        Message = "Hello " + request.Name
-      });
-    }
-  }
+option java_multiple_files = true;
+option java_package = "io.grpc.examples.helloworld";
+option java_outer_classname = "HelloWorldProto";
+option objc_class_prefix = "HLW";
+
+package helloworld;
+
+// The greeting service definition.
+service Greeter {
+  // Sends a greeting
+  rpc SayHello (HelloRequest) returns (HelloReply) {}
+}
+
+// The request message containing the user's name.
+message HelloRequest {
+  string name = 1;
+}
+
+// The response message containing the greetings
+message HelloReply {
+  string message = 1;
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Greet;
+using Helloworld;
 using Grpc.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
