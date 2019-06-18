@@ -51,10 +51,10 @@ struct channel_data {
   grpc_compression_algorithm default_compression_algorithm;
   /** Bitset of enabled compression algorithms */
   uint32_t enabled_compression_algorithms_bitset;
-  /** Supported compression algorithms */
-  uint32_t supported_message_compression_algorithms;
-  /** Supported stream compression algorithms */
-  uint32_t supported_stream_compression_algorithms;
+  /** Bitset of enabled message compression algorithms */
+  uint32_t enabled_message_compression_algorithms_bitset;
+  /** Bitset of enabled stream compression algorithms */
+  uint32_t enabled_stream_compression_algorithms_bitset;
 };
 
 struct call_data {
@@ -124,20 +124,20 @@ static bool skip_message_compression(grpc_call_element* elem) {
 // channel's default setting.
 static grpc_compression_algorithm find_compression_algorithm(
     grpc_metadata_batch* initial_metadata, channel_data* channeld) {
-  grpc_compression_algorithm compression_algorithm =
-      channeld->default_compression_algorithm;
-  if (initial_metadata->idx.named.grpc_internal_encoding_request != nullptr) {
-    // Parse the compression algorithm from the initial metadata.
-    grpc_mdelem md =
-        initial_metadata->idx.named.grpc_internal_encoding_request->md;
-    GPR_ASSERT(grpc_compression_algorithm_parse(GRPC_MDVALUE(md),
-                                                &compression_algorithm));
-    // Remove this metadata since it's an internal one (i.e., it won't be
-    // transmitted out).
-    grpc_metadata_batch_remove(
-        initial_metadata,
-        initial_metadata->idx.named.grpc_internal_encoding_request);
+  if (initial_metadata->idx.named.grpc_internal_encoding_request == nullptr) {
+    return channeld->default_compression_algorithm;
   }
+  grpc_compression_algorithm compression_algorithm;
+  // Parse the compression algorithm from the initial metadata.
+  grpc_mdelem md =
+      initial_metadata->idx.named.grpc_internal_encoding_request->md;
+  GPR_ASSERT(grpc_compression_algorithm_parse(GRPC_MDVALUE(md),
+                                              &compression_algorithm));
+  // Remove this metadata since it's an internal one (i.e., it won't be
+  // transmitted out).
+  grpc_metadata_batch_remove(
+      initial_metadata,
+      initial_metadata->idx.named.grpc_internal_encoding_request);
   // Check if that algorithm is enabled. Note that GRPC_COMPRESS_NONE is always
   // enabled.
   // TODO(juanlishen): Maybe use channel default or abort() if the algorithm
@@ -147,9 +147,11 @@ static grpc_compression_algorithm find_compression_algorithm(
     return compression_algorithm;
   }
   const char* algorithm_name;
-  grpc_compression_algorithm_name(compression_algorithm, &algorithm_name);
+  GPR_ASSERT(
+      grpc_compression_algorithm_name(compression_algorithm, &algorithm_name));
   gpr_log(GPR_ERROR,
-          "Invalid compression algorithm: '%s' (previously disabled). "
+          "Invalid compression algorithm from initial metadata: '%s' "
+          "(previously disabled). "
           "Will not compress.",
           algorithm_name);
   return GRPC_COMPRESS_NONE;
@@ -189,7 +191,7 @@ static grpc_error* process_send_initial_metadata(
   error = grpc_metadata_batch_add_tail(
       initial_metadata, &calld->accept_encoding_storage,
       GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(
-          channeld->supported_message_compression_algorithms));
+          channeld->enabled_message_compression_algorithms_bitset));
   if (error != GRPC_ERROR_NONE) return error;
   // Do not overwrite accept-encoding header if it already presents (e.g., added
   // by some proxy).
@@ -197,7 +199,7 @@ static grpc_error* process_send_initial_metadata(
     error = grpc_metadata_batch_add_tail(
         initial_metadata, &calld->accept_stream_encoding_storage,
         GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(
-            channeld->supported_stream_compression_algorithms));
+            channeld->enabled_stream_compression_algorithms_bitset));
   }
   return error;
 }
@@ -436,34 +438,29 @@ static void destroy_call_elem(grpc_call_element* elem,
 static grpc_error* init_channel_elem(grpc_channel_element* elem,
                                      grpc_channel_element_args* args) {
   channel_data* channeld = static_cast<channel_data*>(elem->channel_data);
-
+  // Get the enabled and the default algorithms from channel args.
   channeld->enabled_compression_algorithms_bitset =
       grpc_channel_args_compression_algorithm_get_states(args->channel_args);
   channeld->default_compression_algorithm =
-      grpc_channel_args_get_compression_algorithm(args->channel_args);
-
-  /* Make sure the default isn't disabled. */
+      grpc_channel_args_get_channel_default_compression_algorithm(
+          args->channel_args);
+  // Make sure the default is enabled.
   if (!GPR_BITGET(channeld->enabled_compression_algorithms_bitset,
                   channeld->default_compression_algorithm)) {
-    gpr_log(GPR_DEBUG,
-            "compression algorithm %d not enabled: switching to none",
-            channeld->default_compression_algorithm);
+    const char* name;
+    GPR_ASSERT(grpc_compression_algorithm_name(
+                   channeld->default_compression_algorithm, &name) == 1);
+    gpr_log(GPR_ERROR,
+            "default compression algorithm %s not enabled: switching to none",
+            name);
     channeld->default_compression_algorithm = GRPC_COMPRESS_NONE;
   }
-
-  uint32_t supported_compression_algorithms =
-      (((1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1) &
-       channeld->enabled_compression_algorithms_bitset) |
-      1u;
-
-  channeld->supported_message_compression_algorithms =
+  channeld->enabled_message_compression_algorithms_bitset =
       grpc_compression_bitset_to_message_bitset(
-          supported_compression_algorithms);
-
-  channeld->supported_stream_compression_algorithms =
+          channeld->enabled_compression_algorithms_bitset);
+  channeld->enabled_stream_compression_algorithms_bitset =
       grpc_compression_bitset_to_stream_bitset(
-          supported_compression_algorithms);
-
+          channeld->enabled_compression_algorithms_bitset);
   GPR_ASSERT(!args->is_last);
   return GRPC_ERROR_NONE;
 }
