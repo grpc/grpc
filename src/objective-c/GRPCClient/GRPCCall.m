@@ -155,11 +155,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
           [[GRPCInterceptorManager alloc] initWithNextInterceptor:nextInterceptor];
       GRPCInterceptor *interceptor =
           [globalInterceptorFactory createInterceptorWithManager:manager];
-      NSAssert(interceptor != nil, @"Failed to create interceptor from factory: %@",
-               globalInterceptorFactory);
-      if (interceptor == nil) {
-        NSLog(@"Failed to create interceptor from factory: %@", globalInterceptorFactory);
-      } else {
+      if (interceptor != nil) {
         [internalCall setResponseHandler:interceptor];
         nextInterceptor = interceptor;
         nextManager = manager;
@@ -168,35 +164,31 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
     // Finally initialize the interceptors in the chain
     NSArray *interceptorFactories = _actualCallOptions.interceptorFactories;
-    if (interceptorFactories.count == 0) {
+    for (int i = (int)interceptorFactories.count - 1; i >= 0; i--) {
+      GRPCInterceptorManager *manager =
+      [[GRPCInterceptorManager alloc] initWithNextInterceptor:nextInterceptor];
+      GRPCInterceptor *interceptor =
+      [interceptorFactories[i] createInterceptorWithManager:manager];
+      NSAssert(interceptor != nil, @"Failed to create interceptor from factory: %@",
+               interceptorFactories[i]);
+      if (interceptor == nil) {
+        NSLog(@"Failed to create interceptor from factory: %@", interceptorFactories[i]);
+        continue;
+      }
       if (nextManager == nil) {
-        [internalCall setResponseHandler:_responseHandler];
+        [internalCall setResponseHandler:interceptor];
       } else {
-        [nextManager setPreviousInterceptor:_responseHandler];
+        [nextManager setPreviousInterceptor:interceptor];
       }
+      nextInterceptor = interceptor;
+      nextManager = manager;
+    }
+    if (nextManager == nil) {
+      [internalCall setResponseHandler:_responseHandler];
     } else {
-      for (int i = (int)interceptorFactories.count - 1; i >= 0; i--) {
-        GRPCInterceptorManager *manager =
-            [[GRPCInterceptorManager alloc] initWithNextInterceptor:nextInterceptor];
-        GRPCInterceptor *interceptor =
-            [interceptorFactories[i] createInterceptorWithManager:manager];
-        NSAssert(interceptor != nil, @"Failed to create interceptor from factory: %@",
-                 interceptorFactories[i]);
-        if (interceptor == nil) {
-          NSLog(@"Failed to create interceptor from factory: %@", interceptorFactories[i]);
-          continue;
-        }
-        if (nextManager == nil) {
-          [internalCall setResponseHandler:interceptor];
-        } else {
-          [nextManager setPreviousInterceptor:interceptor];
-        }
-        nextInterceptor = interceptor;
-        nextManager = manager;
-      }
-
       [nextManager setPreviousInterceptor:_responseHandler];
     }
+
     _firstInterceptor = nextInterceptor;
   }
 
