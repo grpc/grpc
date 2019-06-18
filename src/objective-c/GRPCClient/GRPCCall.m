@@ -166,9 +166,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
     NSArray *interceptorFactories = _actualCallOptions.interceptorFactories;
     for (int i = (int)interceptorFactories.count - 1; i >= 0; i--) {
       GRPCInterceptorManager *manager =
-      [[GRPCInterceptorManager alloc] initWithNextInterceptor:nextInterceptor];
-      GRPCInterceptor *interceptor =
-      [interceptorFactories[i] createInterceptorWithManager:manager];
+          [[GRPCInterceptorManager alloc] initWithNextInterceptor:nextInterceptor];
+      GRPCInterceptor *interceptor = [interceptorFactories[i] createInterceptorWithManager:manager];
       NSAssert(interceptor != nil, @"Failed to create interceptor from factory: %@",
                interceptorFactories[i]);
       if (interceptor == nil) {
