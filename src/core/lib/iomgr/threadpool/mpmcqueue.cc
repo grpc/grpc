@@ -16,9 +16,9 @@
  *
  */
 
-#include "src/core/lib/iomgr/threadpool/mpmcqueue.h"
-
 #include <grpc/support/port_platform.h>
+
+#include "src/core/lib/iomgr/threadpool/mpmcqueue.h"
 
 #include <inttypes.h>
 #include <string.h>
