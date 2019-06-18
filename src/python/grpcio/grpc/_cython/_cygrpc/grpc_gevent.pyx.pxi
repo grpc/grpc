@@ -56,7 +56,7 @@ cdef sockaddr_is_ipv4(const grpc_sockaddr* address, size_t length):
   c_addr.len = length
   return grpc_sockaddr_get_uri_scheme(&c_addr) == b'ipv4'
 
-cdef grpc_resolved_addresses* tuples_to_resolvaddr(tups):
+cdef grpc_resolved_addresses* tuples_to_resolvaddr(tups) except *:
   cdef grpc_resolved_addresses* addresses
   tups_set = set((tup[4][0], tup[4][1]) for tup in tups)
   addresses = <grpc_resolved_addresses*> malloc(sizeof(grpc_resolved_addresses))
@@ -84,7 +84,7 @@ cdef class SocketWrapper:
     self.c_buffer = NULL
     self.len = 0
 
-cdef grpc_error* socket_init(grpc_custom_socket* socket, int domain) with gil:
+cdef grpc_error* socket_init(grpc_custom_socket* socket, int domain) except * with gil:
   sw = SocketWrapper()
   sw.c_socket = socket
   sw.sockopts = []
@@ -112,7 +112,7 @@ def socket_connect_async(socket_wrapper, addr_tuple):
 
 cdef void socket_connect(grpc_custom_socket* socket, const grpc_sockaddr* addr,
                          size_t addr_len,
-                         grpc_custom_connect_callback cb) with gil:
+                         grpc_custom_connect_callback cb) except * with gil:
   py_socket = None
   socket_wrapper = <SocketWrapper>socket.impl
   socket_wrapper.connect_cb = cb
@@ -125,10 +125,10 @@ cdef void socket_connect(grpc_custom_socket* socket, const grpc_sockaddr* addr,
   socket_wrapper.socket = py_socket
   _spawn_greenlet(socket_connect_async, socket_wrapper, addr_tuple)
 
-cdef void socket_destroy(grpc_custom_socket* socket) with gil:
+cdef void socket_destroy(grpc_custom_socket* socket) except * with gil:
   cpython.Py_DECREF(<SocketWrapper>socket.impl)
 
-cdef void socket_shutdown(grpc_custom_socket* socket) with gil:
+cdef void socket_shutdown(grpc_custom_socket* socket) except * with gil:
   try:
     (<SocketWrapper>socket.impl).socket.shutdown(gevent_socket.SHUT_RDWR)
   except IOError as io_error:
@@ -136,7 +136,7 @@ cdef void socket_shutdown(grpc_custom_socket* socket) with gil:
       raise io_error
 
 cdef void socket_close(grpc_custom_socket* socket,
-                       grpc_custom_close_callback cb) with gil:
+                       grpc_custom_close_callback cb) except * with gil:
   socket_wrapper = (<SocketWrapper>socket.impl)
   if socket_wrapper.socket is not None:
     socket_wrapper.socket.close()
@@ -176,7 +176,7 @@ def socket_write_async(socket_wrapper, write_bytes):
   socket_write_async_cython(socket_wrapper, write_bytes)
 
 cdef void socket_write(grpc_custom_socket* socket, grpc_slice_buffer* buffer,
-                       grpc_custom_write_callback cb) with gil:
+                       grpc_custom_write_callback cb) except * with gil:
   cdef char* start
   sw = <SocketWrapper>socket.impl
   sw.write_cb = cb
@@ -204,7 +204,7 @@ def socket_read_async(socket_wrapper):
   socket_read_async_cython(socket_wrapper)
 
 cdef void socket_read(grpc_custom_socket* socket, char* buffer,
-                      size_t length, grpc_custom_read_callback cb) with gil:
+                      size_t length, grpc_custom_read_callback cb) except * with gil:
   sw = <SocketWrapper>socket.impl
   sw.read_cb = cb
   sw.c_buffer = buffer
@@ -213,7 +213,7 @@ cdef void socket_read(grpc_custom_socket* socket, char* buffer,
 
 cdef grpc_error* socket_getpeername(grpc_custom_socket* socket,
                                     const grpc_sockaddr* addr,
-                                    int* length) with gil:
+                                    int* length) except * with gil:
   cdef char* src_buf
   peer = (<SocketWrapper>socket.impl).socket.getpeername()
 
@@ -226,7 +226,7 @@ cdef grpc_error* socket_getpeername(grpc_custom_socket* socket,
 
 cdef grpc_error* socket_getsockname(grpc_custom_socket* socket,
                                     const grpc_sockaddr* addr,
-                                    int* length) with gil:
+                                    int* length) except * with gil:
   cdef char* src_buf
   cdef grpc_resolved_address c_addr
   if (<SocketWrapper>socket.impl).socket is None:
@@ -245,7 +245,7 @@ def applysockopts(s):
 
 cdef grpc_error* socket_bind(grpc_custom_socket* socket,
                              const grpc_sockaddr* addr,
-                             size_t len, int flags) with gil:
+                             size_t len, int flags) except * with gil:
   addr_tuple = sockaddr_to_tuple(addr, len)
   try:
     try:
@@ -262,7 +262,7 @@ cdef grpc_error* socket_bind(grpc_custom_socket* socket,
   else:
     return grpc_error_none()
 
-cdef grpc_error* socket_listen(grpc_custom_socket* socket) with gil:
+cdef grpc_error* socket_listen(grpc_custom_socket* socket) except * with gil:
   (<SocketWrapper>socket.impl).socket.listen(50)
   return grpc_error_none()
 
@@ -292,7 +292,7 @@ def socket_accept_async(s):
   accept_callback_cython(s)
 
 cdef void socket_accept(grpc_custom_socket* socket, grpc_custom_socket* client,
-                        grpc_custom_accept_callback cb) with gil:
+                        grpc_custom_accept_callback cb) except * with gil:
   sw = <SocketWrapper>socket.impl
   sw.accepting_socket = client
   sw.accept_cb = cb
@@ -322,7 +322,7 @@ cdef socket_resolve_async_cython(ResolveWrapper resolve_wrapper):
 def socket_resolve_async_python(resolve_wrapper):
   socket_resolve_async_cython(resolve_wrapper)
 
-cdef void socket_resolve_async(grpc_custom_resolver* r, char* host, char* port) with gil:
+cdef void socket_resolve_async(grpc_custom_resolver* r, char* host, char* port) except * with gil:
   rw = ResolveWrapper()
   rw.c_resolver = r
   rw.c_host = host
@@ -330,7 +330,7 @@ cdef void socket_resolve_async(grpc_custom_resolver* r, char* host, char* port) 
   _spawn_greenlet(socket_resolve_async_python, rw)
 
 cdef grpc_error* socket_resolve(char* host, char* port,
-                                grpc_resolved_addresses** res) with gil:
+                                grpc_resolved_addresses** res) except * with gil:
     try:
       result = gevent_socket.getaddrinfo(host, port)
       res[0] = tuples_to_resolvaddr(result)
@@ -360,13 +360,13 @@ cdef class TimerWrapper:
     self.event.set()
     self.timer.stop()
 
-cdef void timer_start(grpc_custom_timer* t) with gil:
+cdef void timer_start(grpc_custom_timer* t) except * with gil:
   timer = TimerWrapper(t.timeout_ms / 1000.0)
   timer.c_timer = t
   t.timer = <void*>timer
   timer.start()
 
-cdef void timer_stop(grpc_custom_timer* t) with gil:
+cdef void timer_stop(grpc_custom_timer* t) except * with gil:
   time_wrapper = <object>t.timer
   time_wrapper.stop()
 
@@ -374,16 +374,16 @@ cdef void timer_stop(grpc_custom_timer* t) with gil:
 ### pollset implementation ###
 ###############################
 
-cdef void init_loop() with gil:
+cdef void init_loop() except * with gil:
   pass
 
-cdef void destroy_loop() with gil:
+cdef void destroy_loop() except * with gil:
   g_pool.join()
 
-cdef void kick_loop() with gil:
+cdef void kick_loop() except * with gil:
   g_event.set()
 
-cdef void run_loop(size_t timeout_ms) with gil:
+cdef void run_loop(size_t timeout_ms) except * with gil:
     timeout = timeout_ms / 1000.0
     if timeout_ms > 0:
       g_event.wait(timeout)
