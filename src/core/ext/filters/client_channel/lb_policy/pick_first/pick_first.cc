@@ -92,7 +92,8 @@ class PickFirst : public LoadBalancingPolicy {
       // any references to subchannels, since the subchannels'
       // pollset_sets will include the LB policy's pollset_set.
       policy->Ref(DEBUG_LOCATION, "subchannel_list").release();
-      GRPC_CLOSURE_INIT(&on_connection_attempt_delay_alarm_, NextAttemptLocked, this, grpc_combiner_scheduler(policy->combiner()));
+      GRPC_CLOSURE_INIT(&on_connection_attempt_delay_alarm_, NextAttemptLocked,
+                        this, grpc_combiner_scheduler(policy->combiner()));
     }
 
     ~PickFirstSubchannelList() {
@@ -102,7 +103,8 @@ class PickFirst : public LoadBalancingPolicy {
 
     void Orphan() override {
       shutdown_ = true;
-      SubchannelList<PickFirstSubchannelList, PickFirstSubchannelData>::Orphan();
+      SubchannelList<PickFirstSubchannelList,
+                     PickFirstSubchannelData>::Orphan();
     }
 
     void AttemptToConnectLocked() {
@@ -114,10 +116,13 @@ class PickFirst : public LoadBalancingPolicy {
       GRPC_CLOSURE_SCHED(&on_connection_attempt_delay_alarm_, GRPC_ERROR_NONE);
     }
 
-    // This method will only be called when a subchannel goes into TRANSIENT_FAILURE first time.
+    // This method will only be called when a subchannel goes into
+    // TRANSIENT_FAILURE first time.
     void ReportTransientFailureLocked(size_t index) {
       transient_failure_count_++;
-      // If the reporting subchannel is the one we are actively waiting for within connection attempt delay, we should start connection attempt on the next subchannel immediately if there exists one.
+      // If the reporting subchannel is the one we are actively waiting for
+      // within connection attempt delay, we should start connection attempt on
+      // the next subchannel immediately if there exists one.
       if (index == attempt_count_ - 1 && attempt_count_ < num_subchannels()) {
         grpc_timer_cancel(&connection_attemp_delay_alarm_);
       }
@@ -272,9 +277,8 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
     subchannel_list_ = std::move(subchannel_list);
     // Report new channel state as CONNECTING.
     channel_control_helper()->UpdateState(
-            GRPC_CHANNEL_CONNECTING,
-            UniquePtr<SubchannelPicker>(
-                New<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"))));
+        GRPC_CHANNEL_CONNECTING, UniquePtr<SubchannelPicker>(New<QueuePicker>(
+                                     Ref(DEBUG_LOCATION, "QueuePicker"))));
   } else {
     // We do have a selected subchannel (which means it's READY), so keep
     // using it until one of the subchannels in the new list reports READY.
@@ -312,17 +316,21 @@ void PickFirst::UpdateLocked(UpdateArgs args) {
   }
 }
 
-void PickFirst::PickFirstSubchannelList::NextAttemptLocked(void* arg, grpc_error* error) {
+void PickFirst::PickFirstSubchannelList::NextAttemptLocked(void* arg,
+                                                           grpc_error* error) {
   auto sl = static_cast<PickFirstSubchannelList*>(arg);
-  // If the subchannel list is already in ready, do nothing but release the ref this closure holding.
+  // If the subchannel list is already in ready, do nothing but release the ref
+  // this closure holding.
   if (!sl->ready_ && !sl->shutdown_) {
     sl->subchannel(sl->attempt_count_++)->subchannel()->AttemptToConnect();
     // If we have not tried every subchannel, try the next one.
     if (sl->attempt_count_ < sl->num_subchannels()) {
-      // TODO(qianchengz): Use a channel argument to set the connection attempt delay.
+      // TODO(qianchengz): Use a channel argument to set the connection attempt
+      // delay.
       grpc_millis deadline = ExecCtx::Get()->Now() + 250;
       sl->Ref().release();
-      grpc_timer_init(&sl->connection_attemp_delay_alarm_, deadline, &sl->on_connection_attempt_delay_alarm_);
+      grpc_timer_init(&sl->connection_attemp_delay_alarm_, deadline,
+                      &sl->on_connection_attempt_delay_alarm_);
     }
   }
   sl->Unref();
@@ -420,7 +428,8 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       break;
     }
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-      // If we have not triggered connection attempt on this subchannel, we ignore the TRANSIENT_FAILURE report from it.
+      // If we have not triggered connection attempt on this subchannel, we
+      // ignore the TRANSIENT_FAILURE report from it.
       if (Index() >= subchannel_list()->attempt_count()) {
         break;
       }
@@ -429,7 +438,8 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         subchannel_list()->ReportTransientFailureLocked(Index());
       }
       if (subchannel_list()->in_transient_failure()) {
-        // This must be the most recent subchannel list, and it is in transient failure now. Request re-resolution.
+        // This must be the most recent subchannel list, and it is in transient
+        // failure now. Request re-resolution.
         p->channel_control_helper()->RequestReresolution();
         // Report new state if this is the only subchannel list.
         if (subchannel_list() == p->subchannel_list_.get()) {
