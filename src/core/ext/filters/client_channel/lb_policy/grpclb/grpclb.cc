@@ -161,9 +161,7 @@ class GrpcLb : public LoadBalancingPolicy {
     bool seen_serverlist() const { return seen_serverlist_; }
 
    private:
-    // So Delete() can access our private dtor.
-    template <typename T>
-    friend void grpc_core::Delete(T*);
+    GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
     ~BalancerCallState();
 
