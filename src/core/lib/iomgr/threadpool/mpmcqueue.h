@@ -24,10 +24,13 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {
+
+extern DebugOnlyTraceFlag thread_pool_trace;
 
 // Abstract base class of a MPMC queue interface
 class MPMCQueueInterface {

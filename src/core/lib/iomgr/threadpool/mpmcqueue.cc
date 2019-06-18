@@ -18,14 +18,16 @@
 
 #include "src/core/lib/iomgr/threadpool/mpmcqueue.h"
 
+#include <grpc/support/port_platform.h>
+
+#include <inttypes.h>
+#include <string.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include <inttypes.h>
-#include <string.h>
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gprpp/sync.h"
