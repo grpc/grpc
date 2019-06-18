@@ -100,8 +100,14 @@ class PickFirst : public LoadBalancingPolicy {
       p->Unref(DEBUG_LOCATION, "subchannel_list");
     }
 
+    void Orphan() override {
+      shutdown_ = true;
+      SubchannelList<PickFirstSubchannelList, PickFirstSubchannelData>::Orphan();
+    }
+
     void AttemptToConnectLocked() {
       ready_ = false;
+      shutdown_ = false;
       attempt_count_ = 0;
       transient_failure_count_ = 0;
       Ref().release();
@@ -136,6 +142,7 @@ class PickFirst : public LoadBalancingPolicy {
    private:
     static void NextAttemptLocked(void* arg, grpc_error* error);
     bool ready_;
+    bool shutdown_;
     size_t attempt_count_;
     size_t transient_failure_count_;
     grpc_timer connection_attemp_delay_alarm_;
@@ -308,7 +315,7 @@ void PickFirst::UpdateLocked(UpdateArgs args) {
 void PickFirst::PickFirstSubchannelList::NextAttemptLocked(void* arg, grpc_error* error) {
   auto sl = static_cast<PickFirstSubchannelList*>(arg);
   // If the subchannel list is already in ready, do nothing but release the ref this closure holding.
-  if (!sl->ready_) {
+  if (!sl->ready_ && !sl->shutdown_) {
     sl->subchannel(sl->attempt_count_++)->subchannel()->AttemptToConnect();
     // If we have not tried every subchannel, try the next one.
     if (sl->attempt_count_ < sl->num_subchannels()) {
@@ -378,8 +385,6 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         p->channel_control_helper()->RequestReresolution();
         p->selected_ = nullptr;
         p->subchannel_list_.reset();
-        p->latest_pending_subchannel_list_.reset();
-        CancelConnectivityWatchLocked("selected subchannel failed; going IDLE");
         p->channel_control_helper()->UpdateState(
             GRPC_CHANNEL_IDLE, UniquePtr<SubchannelPicker>(New<QueuePicker>(
                                    p->Ref(DEBUG_LOCATION, "QueuePicker"))));
