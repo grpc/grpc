@@ -1,4 +1,4 @@
-# Copyright 2019 gRPC authors.
+# Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(UPB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/upb)
-
-set(_gRPC_UPB_INCLUDE_DIR "${UPB_ROOT_DIR}")
 set(_gRPC_UPB_GRPC_GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/core/ext/upb-generated")
+
+if("${gRPC_UPB_PROVIDER}" STREQUAL "module")
+  if(NOT UPB_ROOT_DIR)
+    set(UPB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/upb)
+  endif()
+  add_subdirectory(third_party/upb)
+
+  if(TARGET upb)
+    set(_gRPC_UPB_LIBRARIES upb)
+    set(_gRPC_UPB_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/upb")
+  endif()
+elseif("${gRPC_UPB_PROVIDER}" STREQUAL "package")
+  # Use "CONFIG" as there is no built-in cmake module for upb.
+  find_package(upb REQUIRED CONFIG)
+  if(TARGET upb::upb)
+    set(_gRPC_UPB_LIBRARIES upb::upb)
+    set(_gRPC_UPB_INCLUDE_DIR ${upb_INCLUDE_DIR})
+  endif()
+  set(_gRPC_FIND_UPB "if(NOT upb_FOUND)\n  find_package(upb CONFIG)\nendif()")
+endif()
