@@ -158,6 +158,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/iomgr/tcp_server_windows.cc',
     'src/core/lib/iomgr/tcp_uv.cc',
     'src/core/lib/iomgr/tcp_windows.cc',
+    'src/core/lib/iomgr/threadpool/mpmcqueue.cc',
     'src/core/lib/iomgr/time_averaged_stats.cc',
     'src/core/lib/iomgr/timer.cc',
     'src/core/lib/iomgr/timer_custom.cc',
