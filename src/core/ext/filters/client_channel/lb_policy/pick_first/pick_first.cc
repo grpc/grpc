@@ -338,8 +338,6 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         p->channel_control_helper()->RequestReresolution();
         p->selected_ = nullptr;
         p->subchannel_list_.reset();
-        p->latest_pending_subchannel_list_.reset();
-        CancelConnectivityWatchLocked("selected subchannel failed; going IDLE");
         p->channel_control_helper()->UpdateState(
             GRPC_CHANNEL_IDLE, UniquePtr<SubchannelPicker>(New<QueuePicker>(
                                    p->Ref(DEBUG_LOCATION, "QueuePicker"))));
