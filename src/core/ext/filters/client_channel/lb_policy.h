@@ -282,7 +282,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
-  // Note: This must be invoked while holding the combiner.
   void Orphan() override;
 
   // A picker that returns PICK_QUEUE for all picks.
@@ -323,6 +322,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   // Note: LB policies MUST NOT call any method on the helper from their
   // constructor.
+  // Note: This will return null after ShutdownLocked() has been called.
   ChannelControlHelper* channel_control_helper() const {
     return channel_control_helper_.get();
   }
@@ -331,6 +331,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   virtual void ShutdownLocked() GRPC_ABSTRACT;
 
  private:
+  static void ShutdownAndUnrefLocked(void* arg, grpc_error* ignored);
+
   /// Combiner under which LB policy actions take place.
   grpc_combiner* combiner_;
   /// Owned pointer to interested parties in load balancing decisions.
