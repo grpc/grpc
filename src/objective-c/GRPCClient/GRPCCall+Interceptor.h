@@ -24,8 +24,15 @@
 
 @interface GRPCCall2 (Interceptor)
 
-+ (void)registerGlobalInterceptor:(id<GRPCInterceptorFactory>)interceptorFactory;
+/**
+ * Register a global interceptor's factory in the current process. Only one interceptor can be
+ * registered in a process. If another one attempts to be registered, an exception will be raised.
+ */
++ (void)registerGlobalInterceptor:(nonnull id<GRPCInterceptorFactory>)interceptorFactory;
 
-+ (id<GRPCInterceptorFactory>)globalInterceptorFactory;
+/**
+ * Get the global interceptor's factory.
+ */
++ (nullable id<GRPCInterceptorFactory>)globalInterceptorFactory;
 
 @end

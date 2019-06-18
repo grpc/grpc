@@ -26,18 +26,16 @@ static dispatch_once_t onceToken;
 @implementation GRPCCall2 (Interceptor)
 
 + (void)registerGlobalInterceptor:(id<GRPCInterceptorFactory>)interceptorFactory {
+  if (interceptorFactory == nil) {
+    return;
+  }
   dispatch_once(&onceToken, ^{
     globalInterceptorLock = [[NSLock alloc] init];
   });
   [globalInterceptorLock lock];
-  NSAssert(globalInterceptorFactory == nil,
-           @"Global interceptor is already registered. Only one global interceptor can be "
-           @"registered in a process");
   if (globalInterceptorFactory != nil) {
-    NSLog(
-        @"Global interceptor is already registered. Only one global interceptor can be registered "
-        @"in a process");
     [globalInterceptorLock unlock];
+    [NSException raise:NSInternalInconsistencyException format:@"Global interceptor is already registered. Only one global interceptor can be registered in a process."];
     return;
   }
 
