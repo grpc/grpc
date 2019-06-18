@@ -56,6 +56,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface CacheContext : NSObject<GRPCInterceptorFactory>
 
+@property(readonly) NSDictionary *staleEntries;
+
 - (nullable instancetype)init;
 
 - (nullable instancetype)initWithSize:(NSUInteger)size;
