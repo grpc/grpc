@@ -1497,8 +1497,10 @@ static dispatch_once_t initGlobalInterceptorFactory;
 - (void)testHijackingInterceptor {
   NSUInteger kCancelAfterWrites = 2;
   XCTAssertNotNil([[self class] host]);
-  __weak XCTestExpectation *expectation =
-      [self expectationWithDescription:@"testHijackingInterceptor"];
+  __weak XCTestExpectation *expectUserCallComplete =
+      [self expectationWithDescription:@"User call completed."];
+  __weak XCTestExpectation *expectCallInternalComplete =
+      [self expectationWithDescription:@"Internal gRPC call completed."];
 
   NSArray *responses = @[ @1, @2, @3, @4 ];
   __block int index = 0;
@@ -1555,6 +1557,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
         XCTAssertNil(trailingMetadata);
         XCTAssertNotNil(error);
         XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
+        [expectCallInternalComplete fulfill];
       }
       didWriteDataHook:nil];
 
@@ -1596,7 +1599,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                               XCTAssertEqual(index, 4,
                                                              @"Received %i responses instead of 4.",
                                                              index);
-                                              [expectation fulfill];
+                                              [expectUserCallComplete fulfill];
                                             }]
                             callOptions:options];
   [call start];
