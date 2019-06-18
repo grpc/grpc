@@ -48,25 +48,6 @@ class MPMCQueueInterface {
 
 class MPMCQueue : public MPMCQueueInterface {
  public:
-  struct Stats {             // Stats of queue
-    uint64_t num_started;    // Number of elements have been added to queue
-    uint64_t num_completed;  // Number of elements have been removed from
-                             // the queue
-    gpr_timespec total_queue_cycles;  // Total waiting time that all the
-                                      // removed elements have spent in queue
-    gpr_timespec max_queue_cycles;    // Max waiting time among all removed
-                                      // elements
-    gpr_timespec busy_time_cycles;    // Accumulated amount of time that queue
-                                      // was not empty
-
-    Stats() {
-      num_started = 0;
-      num_completed = 0;
-      total_queue_cycles = gpr_time_0(GPR_TIMESPAN);
-      max_queue_cycles = gpr_time_0(GPR_TIMESPAN);
-      busy_time_cycles = gpr_time_0(GPR_TIMESPAN);
-    }
-  };
   // Create a new Multiple-Producer-Multiple-Consumer Queue. The queue created
   // will have infinite length.
   explicit MPMCQueue();
@@ -88,15 +69,11 @@ class MPMCQueue : public MPMCQueueInterface {
   // quickly.
   int count() const { return count_.Load(MemoryOrder::RELAXED); }
 
-  // Print out Stats. Time measurement are printed in millisecond.
-  void PrintStats();
-
-  // Return a copy of current stats info. This info will be changed quickly
-  // when queue is still running. This copy will not deleted by queue.
-  Stats* queue_stats();
-
  private:
   void* PopFront();
+
+  // Print out Stats. Time measurement are printed in millisecond.
+  void PrintStats();
 
   struct Node {
     Node* next;                // Linking
@@ -106,6 +83,26 @@ class MPMCQueue : public MPMCQueueInterface {
     Node(void* c) : content(c) {
       next = nullptr;
       insert_time = gpr_now(GPR_CLOCK_PRECISE);
+    }
+  };
+
+  struct Stats {             // Stats of queue
+    uint64_t num_started;    // Number of elements have been added to queue
+    uint64_t num_completed;  // Number of elements have been removed from
+                             // the queue
+    gpr_timespec total_queue_cycles;  // Total waiting time that all the
+                                      // removed elements have spent in queue
+    gpr_timespec max_queue_cycles;    // Max waiting time among all removed
+                                      // elements
+    gpr_timespec busy_time_cycles;    // Accumulated amount of time that queue
+                                      // was not empty
+
+    Stats() {
+      num_started = 0;
+      num_completed = 0;
+      total_queue_cycles = gpr_time_0(GPR_TIMESPAN);
+      max_queue_cycles = gpr_time_0(GPR_TIMESPAN);
+      busy_time_cycles = gpr_time_0(GPR_TIMESPAN);
     }
   };
 
