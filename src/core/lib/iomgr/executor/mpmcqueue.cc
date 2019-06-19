@@ -81,9 +81,6 @@ MPMCQueue::~MPMCQueue() {
   GPR_ASSERT(count_.Load(MemoryOrder::RELAXED) == 0);
   MutexLock l(&mu_);
   GPR_ASSERT(num_waiters_ == 0);
-  if (GRPC_TRACE_FLAG_ENABLED(thread_pool_trace)) {
-    PrintStats();
-  }
 }
 
 void MPMCQueue::Put(void* elem) {
