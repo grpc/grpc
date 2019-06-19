@@ -348,7 +348,7 @@ class ServerBidiReactor : public internal::ServerReactor {
 
  private:
   friend class ServerCallbackReaderWriter<Request, Response>;
-  // May be overridden by internal implementation details, this is not a public
+  // May be overridden by internal implementation details. This is not a public
   // customization point.
   virtual void InternalBindStream(
       ServerCallbackReaderWriter<Request, Response>* stream) {
@@ -385,7 +385,7 @@ class ServerReadReactor : public internal::ServerReactor {
 
  private:
   friend class ServerCallbackReader<Request>;
-  // May be overridden by internal implementation details, this is not a public
+  // May be overridden by internal implementation details. This is not a public
   // customization point.
   virtual void InternalBindReader(ServerCallbackReader<Request>* reader) {
     reader_ = reader;
@@ -431,7 +431,7 @@ class ServerWriteReactor : public internal::ServerReactor {
 
  private:
   friend class ServerCallbackWriter<Response>;
-  // May be overridden by internal implementation details, this is not a public
+  // May be overridden by internal implementation details. This is not a public
   // customization point.
   virtual void InternalBindWriter(ServerCallbackWriter<Response>* writer) {
     writer_ = writer;
