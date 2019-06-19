@@ -275,8 +275,10 @@ GRPCAPI grpc_call_credentials* grpc_google_iam_credentials_create(
 
 /** Options for creating STS Oauth Token Exchange credentials following the IETF
    draft https://tools.ietf.org/html/draft-ietf-oauth-token-exchange-16.
-   Optional fields may be set to NULL. It is used for experimental purposes for
-   now and may change in the future. */
+   Optional fields may be set to NULL. It is the responsibility of the caller to
+   ensure that the subject and actor tokens are refreshed on disk at the
+   specified paths. This API is used for experimental purposes for now and may
+   change in the future. */
 typedef struct {
   const char* sts_endpoint_url;     /* Required. */
   const char* resource;             /* Optional. */
@@ -291,7 +293,8 @@ typedef struct {
 
 /** Creates an STS credentials following the STS Token Exchanged specifed in the
    IETF draft https://tools.ietf.org/html/draft-ietf-oauth-token-exchange-16.
-   It is used for experimental purposes for now and may change in the future. */
+   This API is used for experimental purposes for now and may change in the
+   future. */
 GRPCAPI grpc_call_credentials* grpc_sts_credentials_create(
     const grpc_sts_credentials_options* options, void* reserved);
 
