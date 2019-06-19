@@ -353,7 +353,7 @@ class GrpcLb : public LoadBalancingPolicy {
   // The data associated with the current LB call. It holds a ref to this LB
   // policy. It's initialized every time we query for backends. It's reset to
   // NULL whenever the current LB call is no longer needed (e.g., the LB policy
-  // is shutting down, or the LB call has ended). A non-NULL lb_calld_ always
+  // is shutting down, or the LB call has ended). A non-NULL eds_calld_ always
   // contains a non-NULL lb_call_.
   OrphanablePtr<BalancerCallState> lb_calld_;
   // Timeout in milliseconds for the LB call. 0 means no deadline.
@@ -737,7 +737,7 @@ void GrpcLb::Helper::AddTraceEvent(TraceSeverity severity,
 }
 
 //
-// GrpcLb::BalancerCallState
+// GrpcLb::EdsCallState
 //
 
 GrpcLb::BalancerCallState::BalancerCallState(
@@ -794,16 +794,16 @@ GrpcLb::BalancerCallState::~BalancerCallState() {
 void GrpcLb::BalancerCallState::Orphan() {
   GPR_ASSERT(lb_call_ != nullptr);
   // If we are here because grpclb_policy wants to cancel the call,
-  // lb_on_balancer_status_received_ will complete the cancellation and clean
+  // on_status_received_ will complete the cancellation and clean
   // up. Otherwise, we are here because grpclb_policy has to orphan a failed
   // call, then the following cancellation will be a no-op.
   grpc_call_cancel(lb_call_, nullptr);
   if (client_load_report_timer_callback_pending_) {
     grpc_timer_cancel(&client_load_report_timer_);
   }
-  // Note that the initial ref is hold by lb_on_balancer_status_received_
+  // Note that the initial ref is hold by on_status_received_
   // instead of the caller of this function. So the corresponding unref happens
-  // in lb_on_balancer_status_received_ instead of here.
+  // in on_status_received_ instead of here.
 }
 
 void GrpcLb::BalancerCallState::StartQuery() {
@@ -1120,7 +1120,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
     op.data.recv_message.recv_message = &lb_calld->recv_message_payload_;
     op.flags = 0;
     op.reserved = nullptr;
-    // Reuse the "OnBalancerMessageReceivedLocked" ref taken in StartQuery().
+    // Reuse the "OnResponseReceivedLocked" ref taken in StartQuery().
     const grpc_call_error call_error = grpc_call_start_batch_and_execute(
         lb_calld->lb_call_, &op, 1,
         &lb_calld->lb_on_balancer_message_received_);

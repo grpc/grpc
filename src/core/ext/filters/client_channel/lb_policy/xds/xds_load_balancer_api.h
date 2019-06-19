@@ -31,9 +31,11 @@
 #include "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h"
 #include "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h"
 #include "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h"
+#include "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h"
 #include "src/core/ext/upb-generated/google/protobuf/any.upb.h"
 #include "src/core/ext/upb-generated/google/protobuf/struct.upb.h"
 #include "src/core/ext/upb-generated/google/protobuf/wrappers.upb.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "upb/upb.h"
 
@@ -52,41 +54,8 @@ using XdsEndpoint = envoy_api_v2_endpoint_Endpoint;
 using XdsAddress = envoy_api_v2_core_Address;
 using XdsSocketAddress = envoy_api_v2_core_SocketAddress;
 using XdsNode = envoy_api_v2_core_Node;
-
-class XdsLocalityName : public RefCounted<XdsLocalityName> {
- public:
-  struct Less {
-    bool operator()(const RefCountedPtr<XdsLocalityName>& lhs,
-                    const RefCountedPtr<XdsLocalityName>& rhs) {
-      int cmp_result = strcmp(lhs->region_.get(), rhs->region_.get());
-      if (cmp_result != 0) return cmp_result < 0;
-      cmp_result = strcmp(lhs->zone_.get(), rhs->zone_.get());
-      if (cmp_result != 0) return cmp_result < 0;
-      return strcmp(lhs->sub_zone_.get(), rhs->sub_zone_.get()) < 0;
-    }
-  };
-
-  XdsLocalityName(UniquePtr<char> region, UniquePtr<char> zone,
-                  UniquePtr<char> subzone)
-      : region_(std::move(region)),
-        zone_(std::move(zone)),
-        sub_zone_(std::move(subzone)) {}
-
-  bool operator==(const XdsLocalityName& other) const {
-    return strcmp(region_.get(), other.region_.get()) == 0 &&
-           strcmp(zone_.get(), other.zone_.get()) == 0 &&
-           strcmp(sub_zone_.get(), other.sub_zone_.get()) == 0;
-  }
-
-  const char* region() const { return region_.get(); }
-  const char* zone() const { return zone_.get(); }
-  const char* sub_zone() const { return sub_zone_.get(); }
-
- private:
-  UniquePtr<char> region_;
-  UniquePtr<char> zone_;
-  UniquePtr<char> sub_zone_;
-};
+using XdsLoadStatsRequest = envoy_service_load_stats_v2_LoadStatsRequest;
+using XdsLoadStatsResponse = envoy_service_load_stats_v2_LoadStatsResponse;
 
 struct XdsLocalityInfo {
   bool operator==(const XdsLocalityInfo& other) const {
@@ -108,6 +77,17 @@ struct XdsUpdate {
   // TODO(juanlishen): Pass drop_per_million when adding drop support.
 };
 
+struct XdsLoadReportingConfig {
+  bool operator==(const XdsLoadReportingConfig& other) {
+    return interval == other.interval &&
+           report_endpoint_granularity == other.report_endpoint_granularity;
+  }
+
+  grpc_millis interval = 0;
+  // TODO(juanlishen): Use this when we add per-backend load reporting.
+  bool report_endpoint_granularity = false;
+};
+
 // Creates an EDS request querying \a service_name.
 grpc_slice XdsEdsRequestCreateAndEncode(const char* service_name);
 
@@ -116,10 +96,14 @@ grpc_slice XdsEdsRequestCreateAndEncode(const char* service_name);
 grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
                                          XdsUpdate* update);
 
-// TODO(juanlishen): Delete these when LRS is added.
-xds_grpclb_request* xds_grpclb_load_report_request_create_locked(
-    grpc_core::XdsLbClientStats* client_stats);
-void xds_grpclb_request_destroy(xds_grpclb_request* request);
+grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name);
+
+// If all the counters are zero, return empty slice.
+grpc_slice XdsLrsRequestCreateAndEncode(XdsLbClientStats* client_stats);
+
+grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
+                                         XdsLoadReportingConfig* response,
+                                         const char* expected_server_name);
 
 }  // namespace grpc_core
 

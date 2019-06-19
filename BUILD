@@ -137,7 +137,7 @@ GRPCXX_SRCS = [
     "src/cpp/common/resource_quota_cc.cc",
     "src/cpp/common/rpc_method.cc",
     "src/cpp/common/version_cc.cc",
-    "src/cpp/common/validate_service_config.cc",    
+    "src/cpp/common/validate_service_config.cc",
     "src/cpp/server/async_generic_service.cc",
     "src/cpp/server/channel_argument_option.cc",
     "src/cpp/server/create_default_thread_pool.cc",
@@ -287,7 +287,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/support/stub_options.h",
     "include/grpcpp/support/sync_stream.h",
     "include/grpcpp/support/time.h",
-    "include/grpcpp/support/validate_service_config.h",    
+    "include/grpcpp/support/validate_service_config.h",
 ]
 
 grpc_cc_library(
@@ -611,10 +611,10 @@ grpc_cc_library(
         "src/core/lib/gprpp/arena.h",
         "src/core/lib/gprpp/atomic.h",
         "src/core/lib/gprpp/fork.h",
+        "src/core/lib/gprpp/global_config.h",
         "src/core/lib/gprpp/global_config_custom.h",
         "src/core/lib/gprpp/global_config_env.h",
         "src/core/lib/gprpp/global_config_generic.h",
-        "src/core/lib/gprpp/global_config.h",
         "src/core/lib/gprpp/manual_constructor.h",
         "src/core/lib/gprpp/map.h",
         "src/core/lib/gprpp/memory.h",
@@ -2403,7 +2403,9 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/eds.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c",
         "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c",
+        "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c",
     ],
     hdrs = [
         "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h",
@@ -2413,7 +2415,9 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h",
         "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h",
+        "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h",
     ],
     external_deps = [
         "upb_lib",
