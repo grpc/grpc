@@ -50,7 +50,7 @@ struct thd_arg {
 };
 
 size_t RoundUpToPageSize(size_t size) {
-  size_t page_size = static_cast<size_t>(getpagesize());
+  size_t page_size = static_cast<size_t>(sysconf(_SC_PAGESIZE));
   return (size + page_size - 1) & ~(page_size - 1);
 }
 
