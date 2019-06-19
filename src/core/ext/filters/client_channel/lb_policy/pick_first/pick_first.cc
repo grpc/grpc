@@ -187,6 +187,7 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   auto subchannel_list = MakeOrphanable<PickFirstSubchannelList>(
       this, &grpc_lb_pick_first_trace, latest_update_args_.addresses,
       combiner(), *latest_update_args_.args);
+  // Empty update or no valid subchannels.
   if (subchannel_list->num_subchannels() == 0) {
     // Unsubscribe from all current subchannels.
     subchannel_list_ = std::move(subchannel_list);  // Empty list.
