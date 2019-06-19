@@ -47,7 +47,7 @@ XCODEBUILD_FILTER='(^CompileC |^Ld |^ *[^ ]*clang |^ *cd |^ *export |^Libtool |^
 
 xcodebuild \
     -workspace Tests.xcworkspace \
-    -scheme SCHEME \
+    -scheme $SCHEME \
     -destination name="iPhone 8" \
     HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
     HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
