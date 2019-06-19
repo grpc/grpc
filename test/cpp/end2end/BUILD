@@ -21,6 +21,30 @@ grpc_package(
     visibility = "public",
 )  # Allows external users to implement end2end tests.
 
+cc_test(
+    name = "my_test_notworking",
+    deps = [
+        "//external:gtest",
+        ":my_test_lib",
+    ],
+)
+
+cc_test(
+    name = "my_test_working",
+    srcs = ["my_test.cc"],
+    deps = [
+        "//external:gtest",
+    ],
+)
+
+cc_library(
+    name = "my_test_lib",
+    srcs = ["my_test.cc"],
+    deps = [
+        "//external:gtest",
+    ],
+)
+
 grpc_cc_library(
     name = "test_service_impl",
     testonly = True,
