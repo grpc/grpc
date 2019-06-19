@@ -38,6 +38,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/static_metadata.h"
@@ -105,8 +106,9 @@ class RoundRobin : public LoadBalancingPolicy {
    public:
     RoundRobinSubchannelList(RoundRobin* policy, TraceFlag* tracer,
                              const ServerAddressList& addresses,
+                             grpc_combiner* combiner,
                              const grpc_channel_args& args)
-        : SubchannelList(policy, tracer, addresses,
+        : SubchannelList(policy, tracer, addresses, combiner,
                          policy->channel_control_helper(), args) {
       // Need to maintain a ref to the LB policy as long as we maintain
       // any references to subchannels, since the subchannels'
@@ -153,7 +155,7 @@ class RoundRobin : public LoadBalancingPolicy {
     RoundRobin* parent_;
 
     size_t last_picked_index_;
-    InlinedVector<RefCountedPtr<SubchannelInterface>, 10> subchannels_;
+    InlinedVector<RefCountedPtr<ConnectedSubchannelInterface>, 10> subchannels_;
   };
 
   void ShutdownLocked() override;
@@ -178,9 +180,10 @@ RoundRobin::Picker::Picker(RoundRobin* parent,
                            RoundRobinSubchannelList* subchannel_list)
     : parent_(parent) {
   for (size_t i = 0; i < subchannel_list->num_subchannels(); ++i) {
-    RoundRobinSubchannelData* sd = subchannel_list->subchannel(i);
-    if (sd->connectivity_state() == GRPC_CHANNEL_READY) {
-      subchannels_.push_back(sd->subchannel()->Ref());
+    auto* connected_subchannel =
+        subchannel_list->subchannel(i)->connected_subchannel();
+    if (connected_subchannel != nullptr) {
+      subchannels_.push_back(connected_subchannel->Ref());
     }
   }
   // For discussion on why we generate a random starting index for
@@ -201,13 +204,14 @@ RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs args) {
   last_picked_index_ = (last_picked_index_ + 1) % subchannels_.size();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO,
-            "[RR %p picker %p] returning index %" PRIuPTR ", subchannel=%p",
+            "[RR %p picker %p] returning index %" PRIuPTR
+            ", connected_subchannel=%p",
             parent_, this, last_picked_index_,
             subchannels_[last_picked_index_].get());
   }
   PickResult result;
   result.type = PickResult::PICK_COMPLETE;
-  result.subchannel = subchannels_[last_picked_index_];
+  result.connected_subchannel = subchannels_[last_picked_index_];
   return result;
 }
 
@@ -420,7 +424,7 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
     }
   }
   latest_pending_subchannel_list_ = MakeOrphanable<RoundRobinSubchannelList>(
-      this, &grpc_lb_round_robin_trace, args.addresses, *args.args);
+      this, &grpc_lb_round_robin_trace, args.addresses, combiner(), *args.args);
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {
     // If the new list is empty, immediately promote the new list to the
     // current list and transition to TRANSIENT_FAILURE.

@@ -25,13 +25,14 @@
 #include <grpc/impl/codegen/grpc_types.h>
 
 /** Returns the compression algorithm set in \a a. */
-grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
+grpc_compression_algorithm
+grpc_channel_args_get_channel_default_compression_algorithm(
     const grpc_channel_args* a);
 
 /** Returns a channel arg instance with compression enabled. If \a a is
  * non-NULL, its args are copied. N.B. GRPC_COMPRESS_NONE disables compression
  * for the channel. */
-grpc_channel_args* grpc_channel_args_set_compression_algorithm(
+grpc_channel_args* grpc_channel_args_set_channel_default_compression_algorithm(
     grpc_channel_args* a, grpc_compression_algorithm algorithm);
 
 /** Sets the support for the given compression algorithm. By default, all
