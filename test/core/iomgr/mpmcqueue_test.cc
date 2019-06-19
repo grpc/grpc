@@ -141,6 +141,8 @@ class WorkThread {
   void Start() { thd_.Start(); }
   void Join() { thd_.Join(); }
 
+  GRPC_ABSTRACT_BASE_CLASS
+
  private:
   void Run() {
     items_ = new WorkItem*[num_items_];
