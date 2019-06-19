@@ -342,7 +342,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   // during decreasing load, so it is less performance-critical.
   grpc::internal::Mutex callback_reqs_mu_;
   grpc::internal::CondVar callback_reqs_done_cv_;
-  std::atomic_int callback_reqs_outstanding_{0};
+  std::atomic<intptr_t> callback_reqs_outstanding_{0};
 
   std::shared_ptr<GlobalCallbacks> global_callbacks_;
 
