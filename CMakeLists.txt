@@ -1027,6 +1027,7 @@ add_library(grpc
   src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/executor/mpmcqueue.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/gethostname_fallback.cc
@@ -1084,7 +1085,6 @@ add_library(grpc
   src/core/lib/iomgr/tcp_server_windows.cc
   src/core/lib/iomgr/tcp_uv.cc
   src/core/lib/iomgr/tcp_windows.cc
-  src/core/lib/iomgr/threadpool/mpmcqueue.cc
   src/core/lib/iomgr/time_averaged_stats.cc
   src/core/lib/iomgr/timer.cc
   src/core/lib/iomgr/timer_custom.cc
@@ -1463,6 +1463,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/executor/mpmcqueue.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/gethostname_fallback.cc
@@ -1520,7 +1521,6 @@ add_library(grpc_cronet
   src/core/lib/iomgr/tcp_server_windows.cc
   src/core/lib/iomgr/tcp_uv.cc
   src/core/lib/iomgr/tcp_windows.cc
-  src/core/lib/iomgr/threadpool/mpmcqueue.cc
   src/core/lib/iomgr/time_averaged_stats.cc
   src/core/lib/iomgr/timer.cc
   src/core/lib/iomgr/timer_custom.cc
@@ -1881,6 +1881,7 @@ add_library(grpc_test_util
   src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/executor/mpmcqueue.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/gethostname_fallback.cc
@@ -1938,7 +1939,6 @@ add_library(grpc_test_util
   src/core/lib/iomgr/tcp_server_windows.cc
   src/core/lib/iomgr/tcp_uv.cc
   src/core/lib/iomgr/tcp_windows.cc
-  src/core/lib/iomgr/threadpool/mpmcqueue.cc
   src/core/lib/iomgr/time_averaged_stats.cc
   src/core/lib/iomgr/timer.cc
   src/core/lib/iomgr/timer_custom.cc
@@ -2212,6 +2212,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/executor/mpmcqueue.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/gethostname_fallback.cc
@@ -2269,7 +2270,6 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/tcp_server_windows.cc
   src/core/lib/iomgr/tcp_uv.cc
   src/core/lib/iomgr/tcp_windows.cc
-  src/core/lib/iomgr/threadpool/mpmcqueue.cc
   src/core/lib/iomgr/time_averaged_stats.cc
   src/core/lib/iomgr/timer.cc
   src/core/lib/iomgr/timer_custom.cc
@@ -2519,6 +2519,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/executor/mpmcqueue.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/gethostname_fallback.cc
@@ -2576,7 +2577,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/tcp_server_windows.cc
   src/core/lib/iomgr/tcp_uv.cc
   src/core/lib/iomgr/tcp_windows.cc
-  src/core/lib/iomgr/threadpool/mpmcqueue.cc
   src/core/lib/iomgr/time_averaged_stats.cc
   src/core/lib/iomgr/timer.cc
   src/core/lib/iomgr/timer_custom.cc
@@ -3546,6 +3546,7 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/executor/mpmcqueue.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/gethostname_fallback.cc
@@ -3603,7 +3604,6 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/tcp_server_windows.cc
   src/core/lib/iomgr/tcp_uv.cc
   src/core/lib/iomgr/tcp_windows.cc
-  src/core/lib/iomgr/threadpool/mpmcqueue.cc
   src/core/lib/iomgr/time_averaged_stats.cc
   src/core/lib/iomgr/timer.cc
   src/core/lib/iomgr/timer_custom.cc

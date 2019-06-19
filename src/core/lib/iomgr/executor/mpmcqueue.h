@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_THREADPOOL_MPMCQUEUE_H
-#define GRPC_CORE_LIB_IOMGR_THREADPOOL_MPMCQUEUE_H
+#ifndef GRPC_CORE_LIB_IOMGR_EXECUTOR_MPMCQUEUE_H
+#define GRPC_CORE_LIB_IOMGR_EXECUTOR_MPMCQUEUE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -53,7 +53,7 @@ class MPMCQueue : public MPMCQueueInterface {
  public:
   // Create a new Multiple-Producer-Multiple-Consumer Queue. The queue created
   // will have infinite length.
-  explicit MPMCQueue();
+  MPMCQueue();
 
   // Release all resources hold by the queue. The queue must be empty, and no
   // one waiting on conditional variables.
@@ -71,6 +71,15 @@ class MPMCQueue : public MPMCQueueInterface {
   // There might be concurrently add/remove on queue, so count might change
   // quickly.
   int count() const { return count_.Load(MemoryOrder::RELAXED); }
+
+  void* operator new(size_t n) {
+    void* p = gpr_malloc(n);
+    return p;
+  }
+
+  void operator delete(void* p) {
+    gpr_free(p);
+  }
 
  private:
   void* PopFront();
@@ -122,4 +131,4 @@ class MPMCQueue : public MPMCQueueInterface {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_IOMGR_THREADPOOL_MPMCQUEUE_H */
+#endif /* GRPC_CORE_LIB_IOMGR_EXECUTOR_MPMCQUEUE_H */

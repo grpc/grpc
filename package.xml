@@ -375,6 +375,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/executor.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/executor/mpmcqueue.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/gethostname.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/grpc_if_nametoindex.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/internal_errqueue.h" role="src" />
@@ -416,7 +417,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_utils_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_windows.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/threadpool/mpmcqueue.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/time_averaged_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_custom.h" role="src" />
@@ -529,6 +529,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/executor.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/executor/mpmcqueue.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/fork_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/fork_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/gethostname_fallback.cc" role="src" />
@@ -586,7 +587,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_uv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_windows.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/threadpool/mpmcqueue.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/time_averaged_stats.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_custom.cc" role="src" />

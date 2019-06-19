@@ -3520,6 +3520,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/executor/mpmcqueue.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -3577,7 +3578,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/tcp_server_windows.cc \
     src/core/lib/iomgr/tcp_uv.cc \
     src/core/lib/iomgr/tcp_windows.cc \
-    src/core/lib/iomgr/threadpool/mpmcqueue.cc \
     src/core/lib/iomgr/time_averaged_stats.cc \
     src/core/lib/iomgr/timer.cc \
     src/core/lib/iomgr/timer_custom.cc \
@@ -3950,6 +3950,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/executor/mpmcqueue.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -4007,7 +4008,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/tcp_server_windows.cc \
     src/core/lib/iomgr/tcp_uv.cc \
     src/core/lib/iomgr/tcp_windows.cc \
-    src/core/lib/iomgr/threadpool/mpmcqueue.cc \
     src/core/lib/iomgr/time_averaged_stats.cc \
     src/core/lib/iomgr/timer.cc \
     src/core/lib/iomgr/timer_custom.cc \
@@ -4361,6 +4361,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/executor/mpmcqueue.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -4418,7 +4419,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/tcp_server_windows.cc \
     src/core/lib/iomgr/tcp_uv.cc \
     src/core/lib/iomgr/tcp_windows.cc \
-    src/core/lib/iomgr/threadpool/mpmcqueue.cc \
     src/core/lib/iomgr/time_averaged_stats.cc \
     src/core/lib/iomgr/timer.cc \
     src/core/lib/iomgr/timer_custom.cc \
@@ -4679,6 +4679,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/executor/mpmcqueue.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -4736,7 +4737,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/tcp_server_windows.cc \
     src/core/lib/iomgr/tcp_uv.cc \
     src/core/lib/iomgr/tcp_windows.cc \
-    src/core/lib/iomgr/threadpool/mpmcqueue.cc \
     src/core/lib/iomgr/time_averaged_stats.cc \
     src/core/lib/iomgr/timer.cc \
     src/core/lib/iomgr/timer_custom.cc \
@@ -4960,6 +4960,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/executor/mpmcqueue.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -5017,7 +5018,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/tcp_server_windows.cc \
     src/core/lib/iomgr/tcp_uv.cc \
     src/core/lib/iomgr/tcp_windows.cc \
-    src/core/lib/iomgr/threadpool/mpmcqueue.cc \
     src/core/lib/iomgr/time_averaged_stats.cc \
     src/core/lib/iomgr/timer.cc \
     src/core/lib/iomgr/timer_custom.cc \
@@ -5960,6 +5960,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/executor/mpmcqueue.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -6017,7 +6018,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/tcp_server_windows.cc \
     src/core/lib/iomgr/tcp_uv.cc \
     src/core/lib/iomgr/tcp_windows.cc \
-    src/core/lib/iomgr/threadpool/mpmcqueue.cc \
     src/core/lib/iomgr/time_averaged_stats.cc \
     src/core/lib/iomgr/timer.cc \
     src/core/lib/iomgr/timer_custom.cc \

@@ -1131,6 +1131,7 @@ src/core/lib/iomgr/ev_poll_posix.h \
 src/core/lib/iomgr/ev_posix.h \
 src/core/lib/iomgr/exec_ctx.h \
 src/core/lib/iomgr/executor.h \
+src/core/lib/iomgr/executor/mpmcqueue.h \
 src/core/lib/iomgr/gethostname.h \
 src/core/lib/iomgr/grpc_if_nametoindex.h \
 src/core/lib/iomgr/internal_errqueue.h \
@@ -1172,7 +1173,6 @@ src/core/lib/iomgr/tcp_posix.h \
 src/core/lib/iomgr/tcp_server.h \
 src/core/lib/iomgr/tcp_server_utils_posix.h \
 src/core/lib/iomgr/tcp_windows.h \
-src/core/lib/iomgr/threadpool/mpmcqueue.h \
 src/core/lib/iomgr/time_averaged_stats.h \
 src/core/lib/iomgr/timer.h \
 src/core/lib/iomgr/timer_custom.h \

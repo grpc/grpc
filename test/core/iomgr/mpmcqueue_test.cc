@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/lib/iomgr/threadpool/mpmcqueue.h"
+#include "src/core/lib/iomgr/executor/mpmcqueue.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
