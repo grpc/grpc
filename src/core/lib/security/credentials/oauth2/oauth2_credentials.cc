@@ -19,12 +19,16 @@
 #include <grpc/support/port_platform.h>
 
 #include "grpc/grpc_security.h"
+#include "grpc/impl/codegen/slice.h"
+#include "grpc/slice.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 
 #include <string.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/uri/uri_parser.h"
@@ -237,14 +241,16 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
   gpr_mu_unlock(&mu_);
   // Invoke callbacks for all pending requests.
   while (pending_request != nullptr) {
+    grpc_error* new_error = GRPC_ERROR_NONE;
     if (status == GRPC_CREDENTIALS_OK) {
       grpc_credentials_mdelem_array_add(pending_request->md_array,
                                         access_token_md);
     } else {
-      error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+      new_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
+      GRPC_ERROR_UNREF(error);
     }
-    GRPC_CLOSURE_SCHED(pending_request->on_request_metadata, error);
+    GRPC_CLOSURE_SCHED(pending_request->on_request_metadata, new_error);
     grpc_polling_entity_del_from_pollset_set(
         pending_request->pollent, grpc_polling_entity_pollset_set(&pollent_));
     grpc_oauth2_pending_get_request_metadata* prev = pending_request;
@@ -482,11 +488,21 @@ grpc_call_credentials* grpc_google_refresh_token_credentials_create(
 namespace {
 
 void maybe_add_to_body(gpr_strvec* body_strvec, const char* field_name,
-                       char* field) {
+                       const char* field) {
   if (field == nullptr || strlen(field) == 0) return;
   char* new_query;
   gpr_asprintf(&new_query, "&%s=%s", field_name, field);
   gpr_strvec_add(body_strvec, new_query);
+}
+
+grpc_error* load_token_file(const char* path, gpr_slice* token) {
+  grpc_error* err = grpc_load_file(path, 1, token);
+  if (err != GRPC_ERROR_NONE) return err;
+  if (GRPC_SLICE_LENGTH(*token) == 0) {
+    gpr_log(GPR_ERROR, "Token file %s is empty", path);
+    err = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Token file is empty.");
+  }
+  return err;
 }
 
 class grpc_sts_token_fetcher_credentials
@@ -500,9 +516,9 @@ class grpc_sts_token_fetcher_credentials
         audience_(gpr_strdup(options->audience)),
         scope_(gpr_strdup(options->scope)),
         requested_token_type_(gpr_strdup(options->requested_token_type)),
-        subject_token_(gpr_strdup(options->subject_token)),
+        subject_token_path_(gpr_strdup(options->subject_token_path)),
         subject_token_type_(gpr_strdup(options->subject_token_type)),
-        actor_token_(gpr_strdup(options->actor_token)),
+        actor_token_path_(gpr_strdup(options->actor_token_path)),
         actor_token_type_(gpr_strdup(options->actor_token_type)) {}
 
   ~grpc_sts_token_fetcher_credentials() override { grpc_uri_destroy(sts_url_); }
@@ -513,27 +529,16 @@ class grpc_sts_token_fetcher_credentials
                     grpc_polling_entity* pollent,
                     grpc_iomgr_cb_func response_cb,
                     grpc_millis deadline) override {
+    char* body = nullptr;
+    size_t body_length = 0;
+    grpc_error* err = fill_body(&body, &body_length);
+    if (err != GRPC_ERROR_NONE) {
+      response_cb(metadata_req, err);
+      return;
+    }
     grpc_http_header header = {(char*)"Content-Type",
                                (char*)"application/x-www-form-urlencoded"};
     grpc_httpcli_request request;
-    gpr_strvec body_strvec;
-    gpr_strvec_init(&body_strvec);
-    char* body = nullptr;
-    gpr_asprintf(&body, GRPC_STS_POST_MINIMAL_BODY_FORMAT_STRING,
-                 subject_token_.get(), subject_token_type_.get());
-    gpr_strvec_add(&body_strvec, body);
-    maybe_add_to_body(&body_strvec, "resource", resource_.get());
-    maybe_add_to_body(&body_strvec, "audience", audience_.get());
-    maybe_add_to_body(&body_strvec, "scope", scope_.get());
-    maybe_add_to_body(&body_strvec, "requested_token_type",
-                      requested_token_type_.get());
-    maybe_add_to_body(&body_strvec, "actor_token", actor_token_.get());
-    maybe_add_to_body(&body_strvec, "actor_token_type",
-                      actor_token_type_.get());
-    size_t body_length;
-    body = gpr_strvec_flatten(&body_strvec, &body_length);
-    gpr_strvec_destroy(&body_strvec);
-
     memset(&request, 0, sizeof(grpc_httpcli_request));
     request.host = (char*)sts_url_->authority;
     request.http.path = (char*)sts_url_->path;
@@ -562,10 +567,51 @@ class grpc_sts_token_fetcher_credentials
   grpc_core::UniquePtr<char> audience_;
   grpc_core::UniquePtr<char> scope_;
   grpc_core::UniquePtr<char> requested_token_type_;
-  grpc_core::UniquePtr<char> subject_token_;
+  grpc_core::UniquePtr<char> subject_token_path_;
   grpc_core::UniquePtr<char> subject_token_type_;
-  grpc_core::UniquePtr<char> actor_token_;
+  grpc_core::UniquePtr<char> actor_token_path_;
   grpc_core::UniquePtr<char> actor_token_type_;
+
+  grpc_error* fill_body(char** body, size_t* body_length) {
+    *body = nullptr;
+    gpr_strvec body_strvec;
+    gpr_strvec_init(&body_strvec);
+    grpc_slice subject_token = grpc_empty_slice();
+    grpc_slice actor_token = grpc_empty_slice();
+    grpc_error* err =
+        load_token_file(subject_token_path_.get(), &subject_token);
+    if (err != GRPC_ERROR_NONE) goto end;
+    gpr_asprintf(
+        body, GRPC_STS_POST_MINIMAL_BODY_FORMAT_STRING,
+        reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(subject_token)),
+        subject_token_type_.get());
+    gpr_strvec_add(&body_strvec, *body);
+    maybe_add_to_body(&body_strvec, "resource", resource_.get());
+    maybe_add_to_body(&body_strvec, "audience", audience_.get());
+    maybe_add_to_body(&body_strvec, "scope", scope_.get());
+    maybe_add_to_body(&body_strvec, "requested_token_type",
+                      requested_token_type_.get());
+    if (actor_token_path_ != nullptr) {
+      err = load_token_file(actor_token_path_.get(), &actor_token);
+      if (err != GRPC_ERROR_NONE) goto end;
+      maybe_add_to_body(
+          &body_strvec, "actor_token",
+          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(subject_token)));
+      maybe_add_to_body(&body_strvec, "actor_token_type",
+                        actor_token_type_.get());
+    }
+
+  end:
+    if (err == GRPC_ERROR_NONE) {
+      *body = gpr_strvec_flatten(&body_strvec, body_length);
+    } else {
+      gpr_free(*body);
+    }
+    gpr_strvec_destroy(&body_strvec);
+    grpc_slice_unref(subject_token);
+    grpc_slice_unref(actor_token);
+    return err;
+  }
 };
 
 }  // namespace
@@ -589,8 +635,8 @@ grpc_uri* grpc_validate_sts_credentials_options(
             sts_url->scheme);
     goto fail;
   }
-  if (options->subject_token == nullptr ||
-      strlen(options->subject_token) == 0) {
+  if (options->subject_token_path == nullptr ||
+      strlen(options->subject_token_path) == 0) {
     gpr_log(GPR_ERROR, "subject_token needs to be specified");
     goto fail;
   }

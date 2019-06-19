@@ -42,12 +42,12 @@ static grpc_sts_credentials_options sts_options_from_json(grpc_json* json) {
   options.scope = grpc_json_get_string_property(json, "scope", true);
   options.requested_token_type =
       grpc_json_get_string_property(json, "requested_token_type", true);
-  options.subject_token =
-      grpc_json_get_string_property(json, "subject_token", false);
+  options.subject_token_path =
+      grpc_json_get_string_property(json, "subject_token_path", false);
   options.subject_token_type =
       grpc_json_get_string_property(json, "subject_token_type", false);
-  options.actor_token =
-      grpc_json_get_string_property(json, "actor_token", true);
+  options.actor_token_path =
+      grpc_json_get_string_property(json, "actor_token_path", true);
   options.actor_token_type =
       grpc_json_get_string_property(json, "actor_token_type", true);
   return options;
