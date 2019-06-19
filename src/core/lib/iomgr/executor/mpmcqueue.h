@@ -24,8 +24,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/debug/stats.h"
+#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/atomic.h"
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {
@@ -39,14 +40,14 @@ class MPMCQueueInterface {
 
   // Put elem into queue immediately at the end of queue.
   // This might cause to block on full queue depending on implementation.
-  virtual void Put(void* elem) = 0;
+  virtual void Put(void* elem) GRPC_ABSTRACT;
 
   // Remove the oldest element from the queue and return it.
   // This might cause to block on empty queue depending on implementation.
-  virtual void* Get() = 0;
+  virtual void* Get() GRPC_ABSTRACT;
 
   // Return number of elements in the queue currently
-  virtual int count() const = 0;
+  virtual int count() const  GRPC_ABSTRACT;
 };
 
 class MPMCQueue : public MPMCQueueInterface {
@@ -72,14 +73,7 @@ class MPMCQueue : public MPMCQueueInterface {
   // quickly.
   int count() const { return count_.Load(MemoryOrder::RELAXED); }
 
-  void* operator new(size_t n) {
-    void* p = gpr_malloc(n);
-    return p;
-  }
-
-  void operator delete(void* p) {
-    gpr_free(p);
-  }
+  GRPC_ABSTRACT_BASE_CLASS
 
  private:
   void* PopFront();
