@@ -290,7 +290,8 @@ typedef struct {
 } grpc_sts_credentials_options;
 
 /** Creates an STS credentials following the STS Token Exchanged specifed in the
-   IETF draft https://tools.ietf.org/html/draft-ietf-oauth-token-exchange-16. */
+   IETF draft https://tools.ietf.org/html/draft-ietf-oauth-token-exchange-16.
+   It is used for experimental purposes for now and may change in the future. */
 GRPCAPI grpc_call_credentials* grpc_sts_credentials_create(
     const grpc_sts_credentials_options* options, void* reserved);
 
