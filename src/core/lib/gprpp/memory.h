@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include <limits>
 #include <memory>
@@ -29,14 +30,17 @@
 
 // Add this to a class that want to use Delete(), but has a private or
 // protected destructor.
-#define GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE \
-  template <typename T>                           \
-  friend void grpc_core::Delete(T*);
+#define GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE         \
+  template <typename _Delete_T, bool _Delete_can_be_null> \
+  friend void ::grpc_core::Delete(_Delete_T*);            \
+  template <typename _Delete_T>                           \
+  friend void ::grpc_core::Delete(_Delete_T*);
+
 // Add this to a class that want to use New(), but has a private or
 // protected constructor.
-#define GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW \
-  template <typename T, typename... Args>      \
-  friend T* grpc_core::New(Args&&...);
+#define GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW      \
+  template <typename _New_T, typename... _New_Args> \
+  friend _New_T* grpc_core::New(_New_Args&&...);
 
 namespace grpc_core {
 
@@ -48,17 +52,30 @@ inline T* New(Args&&... args) {
 }
 
 // Alternative to delete, since we cannot use it (for fear of libstdc++)
-template <typename T>
+// We cannot add a default value for can_be_null, because they are used as
+// as friend template methods where we cannot define a default value.
+// Instead we simply define two variants, one with and one without the boolean
+// argument.
+template <typename T, bool can_be_null>
 inline void Delete(T* p) {
-  if (p == nullptr) return;
+  GPR_DEBUG_ASSERT(can_be_null || p != nullptr);
+  if (can_be_null && p == nullptr) return;
   p->~T();
   gpr_free(p);
+}
+template <typename T>
+inline void Delete(T* p) {
+  Delete<T, /*can_be_null=*/true>(p);
 }
 
 template <typename T>
 class DefaultDelete {
  public:
-  void operator()(T* p) { Delete(p); }
+  void operator()(T* p) {
+    // std::unique_ptr is gauranteed not to call the deleter
+    // if the pointer is nullptr.
+    Delete<T, /*can_be_null=*/false>(p);
+  }
 };
 
 template <typename T, typename Deleter = DefaultDelete<T>>

@@ -74,11 +74,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gale"
+g_stands_for = "gangnam"
 
 core_version = "7.0.0"
 
-version = "1.22.0-dev"
+version = "1.23.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1033,7 +1033,7 @@ grpc_cc_library(
         "src/core/lib/uri/uri_parser.h",
     ],
     external_deps = [
-        "zlib",
+        "madler_zlib",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,

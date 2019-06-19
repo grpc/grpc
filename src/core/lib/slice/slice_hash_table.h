@@ -25,6 +25,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -77,13 +78,8 @@ class SliceHashTable : public RefCounted<SliceHashTable<T>> {
   static int Cmp(const SliceHashTable& a, const SliceHashTable& b);
 
  private:
-  // So New() can call our private ctor.
-  template <typename T2, typename... Args>
-  friend T2* New(Args&&... args);
-
-  // So Delete() can call our private dtor.
-  template <typename T2>
-  friend void Delete(T2*);
+  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
 
   SliceHashTable(size_t num_entries, Entry* entries, ValueCmp value_cmp);
   virtual ~SliceHashTable();
