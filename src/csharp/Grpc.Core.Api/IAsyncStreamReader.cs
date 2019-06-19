@@ -47,6 +47,7 @@ namespace Grpc.Core
     /// </para>
     /// </summary>
     /// <typeparam name="T">The message type.</typeparam>
+#if NETSTANDARD2_1
     public interface IAsyncStreamReader<T>
     {
         /// <summary>
@@ -63,4 +64,9 @@ namespace Grpc.Core
         /// to the next element; false if the reader has passed the end of the sequence.</returns>
         Task<bool> MoveNext(CancellationToken cancellationToken);
     }
+#else
+    public interface IAsyncStreamReader<T> : System.Collections.Generic.IAsyncEnumerator<T>
+    {
+    }
+#endif
 }

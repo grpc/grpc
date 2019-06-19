@@ -22,6 +22,7 @@ using System.Threading.Tasks;
 
 namespace Grpc.Core
 {
+#if NETSTANDARD2_1
     /// <summary>
     /// Extension methods for <see cref="IAsyncStreamReader{T}"/>.
     /// </summary>
@@ -47,4 +48,5 @@ namespace Grpc.Core
             return streamReader.MoveNext(CancellationToken.None);
         }
     }
+#endif
 }
