@@ -28,6 +28,7 @@ namespace grpc_core {
 
 namespace {
 
+// TODO(juanlishen): Try to use Atomic<>.
 gpr_atm AtomicGetAndResetCounter(gpr_atm* counter) {
   return gpr_atm_full_xchg(counter, static_cast<gpr_atm>(0));
 }
