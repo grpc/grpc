@@ -30,6 +30,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/util/json_util.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/uri/uri_parser.h"
 
@@ -608,8 +609,8 @@ class grpc_sts_token_fetcher_credentials
       gpr_free(*body);
     }
     gpr_strvec_destroy(&body_strvec);
-    grpc_slice_unref(subject_token);
-    grpc_slice_unref(actor_token);
+    grpc_slice_unref_internal(subject_token);
+    grpc_slice_unref_internal(actor_token);
     return err;
   }
 };
