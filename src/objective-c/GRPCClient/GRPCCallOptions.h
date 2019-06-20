@@ -70,6 +70,8 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
 
 @end
 
+@protocol GRPCCall2ImplementationFactory;
+
 @interface GRPCCallOptions : NSObject<NSCopying, NSMutableCopying>
 
 // Call parameters
@@ -125,6 +127,12 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
  * Initial metadata key-value pairs that should be included in the request.
  */
 @property(copy, readonly, nullable) NSDictionary *initialMetadata;
+
+/**
+ * User can select an alternative gRPC call implementation to be used by gRPC. The default
+ * implementation is used if this property is set to nil.
+ */
+@property(readonly, nullable) id<GRPCCall2ImplementationFactory> internalCallImplementation;
 
 // Channel parameters; take into account of channel signature.
 
@@ -288,6 +296,12 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
  * Initial metadata key-value pairs that should be included in the request.
  */
 @property(copy, readwrite, nullable) NSDictionary *initialMetadata;
+
+/**
+ * User can select an alternative gRPC call implementation to be used by gRPC. The default
+ * implementation is used if this property is set to nil.
+ */
+@property(readwrite, nullable) id<GRPCCall2ImplementationFactory> internalCallImplementation;
 
 // Channel parameters; take into account of channel signature.
 

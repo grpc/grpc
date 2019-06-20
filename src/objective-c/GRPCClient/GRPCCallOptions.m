@@ -25,6 +25,7 @@ static const NSTimeInterval kDefaultTimeout = 0;
 static const BOOL kDefaultFlowControlEnabled = NO;
 static NSArray *const kDefaultInterceptorFactories = nil;
 static NSDictionary *const kDefaultInitialMetadata = nil;
+static id<GRPCCall2ImplementationFactory> const kDefaultInternalCallImplementation = nil;
 static NSString *const kDefaultUserAgentPrefix = nil;
 static const NSUInteger kDefaultResponseSizeLimit = 0;
 static const GRPCCompressionAlgorithm kDefaultCompressionAlgorithm = GRPCCompressNone;
@@ -66,6 +67,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   NSString *_oauth2AccessToken;
   id<GRPCAuthorizationProtocol> _authTokenProvider;
   NSDictionary *_initialMetadata;
+  id<GRPCCall2ImplementationFactory> _internalCallImplementation;
   NSString *_userAgentPrefix;
   NSUInteger _responseSizeLimit;
   GRPCCompressionAlgorithm _compressionAlgorithm;
@@ -93,6 +95,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 @synthesize oauth2AccessToken = _oauth2AccessToken;
 @synthesize authTokenProvider = _authTokenProvider;
 @synthesize initialMetadata = _initialMetadata;
+@synthesize internalCallImplementation = _internalCallImplementation;
 @synthesize userAgentPrefix = _userAgentPrefix;
 @synthesize responseSizeLimit = _responseSizeLimit;
 @synthesize compressionAlgorithm = _compressionAlgorithm;
@@ -120,6 +123,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                      oauth2AccessToken:kDefaultOauth2AccessToken
                      authTokenProvider:kDefaultAuthTokenProvider
                        initialMetadata:kDefaultInitialMetadata
+            internalCallImplementation:kDefaultInternalCallImplementation
                        userAgentPrefix:kDefaultUserAgentPrefix
                      responseSizeLimit:kDefaultResponseSizeLimit
                   compressionAlgorithm:kDefaultCompressionAlgorithm
@@ -147,6 +151,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                       oauth2AccessToken:(NSString *)oauth2AccessToken
                       authTokenProvider:(id<GRPCAuthorizationProtocol>)authTokenProvider
                         initialMetadata:(NSDictionary *)initialMetadata
+             internalCallImplementation:(id<GRPCCall2ImplementationFactory>)internalCallImplementation
                         userAgentPrefix:(NSString *)userAgentPrefix
                       responseSizeLimit:(NSUInteger)responseSizeLimit
                    compressionAlgorithm:(GRPCCompressionAlgorithm)compressionAlgorithm
@@ -176,6 +181,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
         initialMetadata == nil
             ? nil
             : [[NSDictionary alloc] initWithDictionary:initialMetadata copyItems:YES];
+    _internalCallImplementation = internalCallImplementation;
     _userAgentPrefix = [userAgentPrefix copy];
     _responseSizeLimit = responseSizeLimit;
     _compressionAlgorithm = compressionAlgorithm;
@@ -210,6 +216,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                                                   oauth2AccessToken:_oauth2AccessToken
                                                   authTokenProvider:_authTokenProvider
                                                     initialMetadata:_initialMetadata
+                                         internalCallImplementation:_internalCallImplementation
                                                     userAgentPrefix:_userAgentPrefix
                                                   responseSizeLimit:_responseSizeLimit
                                                compressionAlgorithm:_compressionAlgorithm
@@ -241,6 +248,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
             authTokenProvider:_authTokenProvider
               initialMetadata:[[NSDictionary alloc] initWithDictionary:_initialMetadata
                                                              copyItems:YES]
+   internalCallImplementation:_internalCallImplementation
               userAgentPrefix:[_userAgentPrefix copy]
             responseSizeLimit:_responseSizeLimit
          compressionAlgorithm:_compressionAlgorithm
@@ -322,6 +330,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 @dynamic oauth2AccessToken;
 @dynamic authTokenProvider;
 @dynamic initialMetadata;
+@dynamic internalCallImplementation;
 @dynamic userAgentPrefix;
 @dynamic responseSizeLimit;
 @dynamic compressionAlgorithm;
@@ -349,6 +358,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                      oauth2AccessToken:kDefaultOauth2AccessToken
                      authTokenProvider:kDefaultAuthTokenProvider
                        initialMetadata:kDefaultInitialMetadata
+            internalCallImplementation:kDefaultInternalCallImplementation
                        userAgentPrefix:kDefaultUserAgentPrefix
                      responseSizeLimit:kDefaultResponseSizeLimit
                   compressionAlgorithm:kDefaultCompressionAlgorithm
@@ -378,6 +388,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                                                   oauth2AccessToken:_oauth2AccessToken
                                                   authTokenProvider:_authTokenProvider
                                                     initialMetadata:_initialMetadata
+                                         internalCallImplementation:_internalCallImplementation
                                                     userAgentPrefix:_userAgentPrefix
                                                   responseSizeLimit:_responseSizeLimit
                                                compressionAlgorithm:_compressionAlgorithm
@@ -408,6 +419,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
             oauth2AccessToken:_oauth2AccessToken
             authTokenProvider:_authTokenProvider
               initialMetadata:_initialMetadata
+   internalCallImplementation:_internalCallImplementation
               userAgentPrefix:_userAgentPrefix
             responseSizeLimit:_responseSizeLimit
          compressionAlgorithm:_compressionAlgorithm
@@ -459,6 +471,10 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 
 - (void)setInitialMetadata:(NSDictionary *)initialMetadata {
   _initialMetadata = [[NSDictionary alloc] initWithDictionary:initialMetadata copyItems:YES];
+}
+
+- (void)setInternalCallImplementation:(id<GRPCCall2ImplementationFactory>)internalCallImplementation {
+  _internalCallImplementation = internalCallImplementation;
 }
 
 - (void)setUserAgentPrefix:(NSString *)userAgentPrefix {

@@ -28,8 +28,8 @@
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 
+#import "private/GRPCCallCore.h"
 #import "private/GRPCCall+V2API.h"
-#import "private/GRPCCallInternal.h"
 #import "private/GRPCChannelPool.h"
 #import "private/GRPCCompletionQueue.h"
 #import "private/GRPCConnectivityMonitor.h"
@@ -39,6 +39,7 @@
 #import "private/NSData+GRPC.h"
 #import "private/NSDictionary+GRPC.h"
 #import "private/NSError+GRPC.h"
+#import "private/GRPCCallImplementation.h"
 
 // At most 6 ops can be in an op batch for a client: SEND_INITIAL_METADATA,
 // SEND_MESSAGE, SEND_CLOSE_FROM_CLIENT, RECV_INITIAL_METADATA, RECV_MESSAGE,
@@ -141,12 +142,18 @@ const char *kCFStreamVarName = "grpc_cfstream";
     _responseHandler = responseHandler;
 
     // Initialize the interceptor chain
-    GRPCCall2Internal *internalCall = [[GRPCCall2Internal alloc] init];
-    id<GRPCInterceptorInterface> nextInterceptor = internalCall;
+    id<GRPCCall2ImplementationFactory> implementationFactory = _actualCallOptions.internalCallImplementation;
+    if (implementationFactory == nil) {
+      // Default implementation to gRPC core
+      implementationFactory = [GRPCCall2CoreFactory sharedInstance];
+    }
+    id<GRPCCall2Implementation> implementation = [implementationFactory createCallImplementation];
+
+    id<GRPCInterceptorInterface> nextInterceptor = implementation;
     GRPCInterceptorManager *nextManager = nil;
     NSArray *interceptorFactories = _actualCallOptions.interceptorFactories;
     if (interceptorFactories.count == 0) {
-      [internalCall setResponseHandler:_responseHandler];
+      [implementation setResponseHandler:_responseHandler];
     } else {
       for (int i = (int)interceptorFactories.count - 1; i >= 0; i--) {
         GRPCInterceptorManager *manager =
@@ -158,7 +165,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
           return nil;
         }
         if (i == (int)interceptorFactories.count - 1) {
-          [internalCall setResponseHandler:interceptor];
+          [implementation setResponseHandler:interceptor];
         } else {
           [nextManager setPreviousInterceptor:interceptor];
         }

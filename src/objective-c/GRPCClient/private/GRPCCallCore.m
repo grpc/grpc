@@ -16,14 +16,32 @@
  *
  */
 
-#import "GRPCCallInternal.h"
+#import "GRPCCallCore.h"
 
 #import <GRPCClient/GRPCCall.h>
 #import <RxLibrary/GRXBufferedPipe.h>
 
 #import "GRPCCall+V2API.h"
 
-@implementation GRPCCall2Internal {
+static GRPCCall2CoreFactory *gCoreFactory = nil;
+static dispatch_once_t gInitCoreFactory;
+
+@implementation GRPCCall2CoreFactory
+
++ (instancetype)sharedInstance {
+  dispatch_once(&gInitCoreFactory, ^{
+    gCoreFactory = [[GRPCCall2CoreFactory alloc] init];
+  });
+  return gCoreFactory;
+}
+
+- (id<GRPCCall2Implementation>)createCallImplementation {
+  return [[GRPCCall2Core alloc] init];
+}
+
+@end
+
+@implementation GRPCCall2Core {
   /** Request for the call. */
   GRPCRequestOptions *_requestOptions;
   /** Options for the call. */
