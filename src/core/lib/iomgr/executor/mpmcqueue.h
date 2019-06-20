@@ -47,9 +47,7 @@ class MPMCQueueInterface {
   virtual void* Get() GRPC_ABSTRACT;
 
   // Return number of elements in the queue currently
-  virtual int count() const  GRPC_ABSTRACT;
-
-  GRPC_ABSTRACT_BASE_CLASS
+  virtual int count() const GRPC_ABSTRACT;
 };
 
 class MPMCQueue : public MPMCQueueInterface {
@@ -92,7 +90,6 @@ class MPMCQueue : public MPMCQueueInterface {
       next = nullptr;
       insert_time = gpr_now(GPR_CLOCK_PRECISE);
     }
-    GRPC_ABSTRACT_BASE_CLASS
   };
 
   struct Stats {             // Stats of queue

@@ -58,6 +58,7 @@ static void test_small_queue(void) {
     GPR_ASSERT(i == item->index);
     delete item;
   }
+  gpr_log(GPR_DEBUG, "Done.");
 }
 
 static void test_get_thd(void* args) {

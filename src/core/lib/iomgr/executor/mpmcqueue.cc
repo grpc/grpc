@@ -45,7 +45,7 @@ inline void* MPMCQueue::PopFront() {
   gpr_timespec wait_time =
       gpr_time_sub(gpr_now(GPR_CLOCK_PRECISE), head_to_remove->insert_time);
 
-  delete head_to_remove;
+  gpr_free(head_to_remove);
 
   // Update Stats info
   stats_.num_completed++;
@@ -86,7 +86,10 @@ MPMCQueue::~MPMCQueue() {
 void MPMCQueue::Put(void* elem) {
   MutexLock l(&mu_);
 
-  Node* new_node = static_cast<Node*>(new Node(elem));
+  Node* new_node = static_cast<Node*>(gpr_malloc(sizeof(Node)));
+  new_node->next = nullptr;
+  new_node->content = elem;
+  new_node->insert_time = gpr_now(GPR_CLOCK_PRECISE);
   if (count_.Load(MemoryOrder::RELAXED) == 0) {
     busy_time = gpr_now(GPR_CLOCK_PRECISE);
     queue_head_ = queue_tail_ = new_node;
