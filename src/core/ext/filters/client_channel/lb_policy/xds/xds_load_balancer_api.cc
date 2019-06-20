@@ -184,6 +184,8 @@ grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
     if (error != GRPC_ERROR_NONE) return error;
     update->locality_list.push_back(std::move(locality_info));
   }
+  qsort(&update->locality_list, update->locality_list.size(),
+        sizeof(XdsLocalityInfo), XdsLocalityInfo::Cmp);
   return GRPC_ERROR_NONE;
 }
 

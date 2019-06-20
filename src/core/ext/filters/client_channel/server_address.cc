@@ -20,8 +20,6 @@
 
 #include "src/core/ext/filters/client_channel/server_address.h"
 
-#include <string.h>
-
 namespace grpc_core {
 
 //

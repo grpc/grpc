@@ -58,11 +58,7 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   struct Less {
     bool operator()(const RefCountedPtr<XdsLocalityName>& lhs,
                     const RefCountedPtr<XdsLocalityName>& rhs) {
-      int cmp_result = strcmp(lhs->region_.get(), rhs->region_.get());
-      if (cmp_result != 0) return cmp_result < 0;
-      cmp_result = strcmp(lhs->zone_.get(), rhs->zone_.get());
-      if (cmp_result != 0) return cmp_result < 0;
-      return strcmp(lhs->sub_zone_.get(), rhs->sub_zone_.get()) < 0;
+      return lhs->Cmp(*rhs) < 0;
     }
   };
 
@@ -76,6 +72,14 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
     return strcmp(region_.get(), other.region_.get()) == 0 &&
            strcmp(zone_.get(), other.zone_.get()) == 0 &&
            strcmp(sub_zone_.get(), other.sub_zone_.get()) == 0;
+  }
+
+  int Cmp(const XdsLocalityName& other) const {
+    int cmp_result = strcmp(region_.get(), other.region_.get());
+    if (cmp_result != 0) return cmp_result;
+    cmp_result = strcmp(zone_.get(), other.zone_.get());
+    if (cmp_result != 0) return cmp_result;
+    return strcmp(sub_zone_.get(), other.sub_zone_.get());
   }
 
   const char* region() const { return region_.get(); }
@@ -93,6 +97,13 @@ struct XdsLocalityInfo {
     return *locality_name == *other.locality_name &&
            serverlist == other.serverlist && lb_weight == other.lb_weight &&
            priority == other.priority;
+  }
+
+  // This comparator only compares the locality names.
+  static int Cmp(const void* a, const void* b) {
+    const XdsLocalityInfo* la = static_cast<const XdsLocalityInfo*>(a);
+    const XdsLocalityInfo* lb = static_cast<const XdsLocalityInfo*>(b);
+    return la->locality_name->Cmp(*lb->locality_name);
   }
 
   RefCountedPtr<XdsLocalityName> locality_name;
