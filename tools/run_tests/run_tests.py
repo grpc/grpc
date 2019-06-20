@@ -1137,7 +1137,8 @@ class ObjCLanguage(object):
                 shortname='mac-test-basictests',
                 cpu_cost=1e6,
                 environ={
-                    'SCHEME': 'MacTests'
+                    'SCHEME': 'MacTests',
+                    'PLATFORM': 'macos'
                 }))
 
         return sorted(out)

@@ -45,10 +45,18 @@ set -o pipefail
 
 XCODEBUILD_FILTER='(^CompileC |^Ld |^ *[^ ]*clang |^ *cd |^ *export |^Libtool |^ *[^ ]*libtool |^CpHeader |^ *builtin-copy )'
 
+if [ $PLATFORM == ios ]; then
+DESTINATION="name='iPhone 8'"
+elif [ $PLATFORM == macos ]; then
+DESTINATION='platform=macOS'
+else
+DESTINATION="name='iPhone 8'"
+fi
+
 xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme $SCHEME \
-    -destination name="iPhone 8" \
+    -destination "$DESTINATION" \
     HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
     HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
