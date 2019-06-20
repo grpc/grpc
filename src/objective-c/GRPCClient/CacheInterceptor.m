@@ -64,11 +64,14 @@
 - (void)updateUse:(RequestCacheEntry *)entry {
   // if the entry is not in the queue, return (cuz behavior undefined)
   if (![_array containsObject:entry]) { return; }
-  [_array removeObject:entry];
-  [_array addObject:entry];
+  NSUInteger index = [_array indexOfObject:entry];
+  for (NSUInteger i = index; i < _array.count - 1; ++i) {
+    _array[i] = _array[i + 1];
+  }
+  _array[_array.count - 1] = entry;
 }
 
--(RequestCacheEntry *)evict {
+- (RequestCacheEntry *)evict {
   RequestCacheEntry *toEvict = [_array firstObject];
   [_array removeObjectAtIndex:0];
   return toEvict;
@@ -569,6 +572,7 @@
     NSAssert(!_readMessageSeen, @"CacheInterceptor does not support streaming call");
     if (_readMessageSeen) {
       NSLog(@"CacheInterceptor does not support streaming call");
+      _cacheable = NO;
     }
     _readMessageSeen = YES;
     
