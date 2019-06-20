@@ -92,6 +92,7 @@ class MPMCQueue : public MPMCQueueInterface {
       next = nullptr;
       insert_time = gpr_now(GPR_CLOCK_PRECISE);
     }
+    GRPC_ABSTRACT_BASE_CLASS
   };
 
   struct Stats {             // Stats of queue
