@@ -45,12 +45,12 @@ set -o pipefail
 
 XCODEBUILD_FILTER='(^CompileC |^Ld |^ *[^ ]*clang |^ *cd |^ *export |^Libtool |^ *[^ ]*libtool |^CpHeader |^ *builtin-copy )'
 
-if [ $PLATFORM == ios ]; then
-DESTINATION="name='iPhone 8'"
+if [ -z $PLATFORM ]; then
+DESTINATION='name=iPhone 8'
+elif [ $PLATFORM == ios ]; then
+DESTINATION='name=iPhone 8'
 elif [ $PLATFORM == macos ]; then
 DESTINATION='platform=macOS'
-else
-DESTINATION="name='iPhone 8'"
 fi
 
 xcodebuild \
