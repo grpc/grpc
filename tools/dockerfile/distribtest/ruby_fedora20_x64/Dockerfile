@@ -29,7 +29,7 @@ RUN /bin/bash -l -c "rvm use --default ruby-2.3.8"
 RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
 RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.3.8' >> ~/.bashrc"
-RUN /bin/bash -l -c "gem install bundler --no-document"
+RUN /bin/bash -l -c "gem install bundler -v 1.17.3 --no-document"
 
 RUN mkdir /var/local/jenkins
 
