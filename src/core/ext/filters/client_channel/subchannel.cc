@@ -669,10 +669,9 @@ Subchannel::Subchannel(SubchannelKey* key, grpc_connector* connector,
     gpr_free(addr);
     addr = new_address;
   }
-  // Remove the subchannel pool arg to break the circular reference between the
-  // subchannel pool and the subchannel, if any.
-  static const char* keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS,
-                                         GRPC_ARG_SUBCHANNEL_POOL};
+  // TODO(juanlishen): Figure out why we need to remove
+  // GRPC_ARG_SUBCHANNEL_ADDRESS.
+  static const char* keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS};
   grpc_arg new_arg = CreateSubchannelAddressArg(addr);
   gpr_free(addr);
   args_ = grpc_channel_args_copy_and_add_and_remove(
@@ -717,14 +716,24 @@ Subchannel* Subchannel::Create(grpc_connector* connector,
                                const grpc_channel_args* args) {
   SubchannelPoolInterface* subchannel_pool =
       SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(args);
-  SubchannelKey* key = New<SubchannelKey>(args);
+  // Remove the subchannel pool arg to break potential circular reference
+  // between the subchannel pool and the subchannel or the subchannel key.
+  static const char* keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_POOL};
+  grpc_channel_args* new_args = grpc_channel_args_copy_and_remove(
+      args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove));
+  SubchannelKey* key = New<SubchannelKey>(new_args);
   GPR_ASSERT(subchannel_pool != nullptr);
   Subchannel* c = subchannel_pool->FindSubchannel(key);
   if (c != nullptr) {
     Delete(key);
+    grpc_channel_args_destroy(new_args);
     return c;
   }
-  c = New<Subchannel>(key, connector, args);
+  c = New<Subchannel>(key, connector, new_args);
+  grpc_channel_args_destroy(new_args);
+  // TODO(juanlishen): Try having the global pool contain a wrapper that uses an
+  // atomic and a lock to actually create the subchannel. That would both clean
+  // up the APIs here and be an performance win.
   return subchannel_pool->RegisterSubchannel(key, c);
 }
 

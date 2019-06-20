@@ -217,10 +217,10 @@ Subchannel* GlobalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
         if (old_map.root == subchannel_map_.root) {
           GPR_SWAP(grpc_avl, new_map, subchannel_map_);
           c = constructed;
-          c->set_subchannel_pool(Ref());
         }
       }
       if (c != nullptr) {
+        c->set_subchannel_pool(Ref());
         grpc_pollset_set_add_pollset_set(c->pollset_set(), pollset_set_);
       }
       grpc_avl_unref(new_map, nullptr);

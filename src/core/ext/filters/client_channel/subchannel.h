@@ -244,6 +244,7 @@ class Subchannel {
 
   void set_subchannel_pool(
       RefCountedPtr<SubchannelPoolInterface> subchannel_pool) {
+    GPR_ASSERT(subchannel_pool_ == nullptr);
     subchannel_pool_ = std::move(subchannel_pool);
   }
 
