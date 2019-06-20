@@ -297,11 +297,13 @@ void grpc_tcp_client_create_from_prepared_fd(
   const int fd = grpc_fd_wrapped_fd(fdobj);
   int err;
   async_connect* ac;
+  grpc_pollset_set_add_fd(interested_parties, fdobj);
   do {
     err = connect(fd, reinterpret_cast<const grpc_sockaddr*>(addr->addr),
                   addr->len);
   } while (err < 0 && errno == EINTR);
   if (err >= 0) {
+    grpc_pollset_set_del_fd(interested_parties, fdobj);
     char* addr_str = grpc_sockaddr_to_uri(addr);
     *ep = grpc_tcp_client_create_from_fd(fdobj, channel_args, addr_str);
     gpr_free(addr_str);
@@ -309,13 +311,11 @@ void grpc_tcp_client_create_from_prepared_fd(
     return;
   }
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
+    grpc_pollset_set_del_fd(interested_parties, fdobj);
     grpc_fd_orphan(fdobj, nullptr, nullptr, "tcp_client_connect_error");
     GRPC_CLOSURE_SCHED(closure, GRPC_OS_ERROR(errno, "connect"));
     return;
   }
-
-  grpc_pollset_set_add_fd(interested_parties, fdobj);
-
   ac = static_cast<async_connect*>(gpr_malloc(sizeof(async_connect)));
   ac->closure = closure;
   ac->ep = ep;
