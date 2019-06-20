@@ -20,7 +20,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol GRPCCall2Implementation <GRPCInterceptorInterface>
+@protocol GRPCCall2Implementation<GRPCInterceptorInterface>
 
 - (void)setResponseHandler:(id<GRPCResponseHandler>)responseHandler;
 

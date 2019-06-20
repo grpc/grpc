@@ -151,7 +151,8 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                       oauth2AccessToken:(NSString *)oauth2AccessToken
                       authTokenProvider:(id<GRPCAuthorizationProtocol>)authTokenProvider
                         initialMetadata:(NSDictionary *)initialMetadata
-             internalCallImplementation:(id<GRPCCall2ImplementationFactory>)internalCallImplementation
+             internalCallImplementation:
+                 (id<GRPCCall2ImplementationFactory>)internalCallImplementation
                         userAgentPrefix:(NSString *)userAgentPrefix
                       responseSizeLimit:(NSUInteger)responseSizeLimit
                    compressionAlgorithm:(GRPCCompressionAlgorithm)compressionAlgorithm
@@ -240,34 +241,34 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 
 - (nonnull id)mutableCopyWithZone:(NSZone *)zone {
   GRPCMutableCallOptions *newOptions = [[GRPCMutableCallOptions allocWithZone:zone]
-      initWithServerAuthority:[_serverAuthority copy]
-                      timeout:_timeout
-           flowControlEnabled:_flowControlEnabled
-         interceptorFactories:_interceptorFactories
-            oauth2AccessToken:[_oauth2AccessToken copy]
-            authTokenProvider:_authTokenProvider
-              initialMetadata:[[NSDictionary alloc] initWithDictionary:_initialMetadata
-                                                             copyItems:YES]
-   internalCallImplementation:_internalCallImplementation
-              userAgentPrefix:[_userAgentPrefix copy]
-            responseSizeLimit:_responseSizeLimit
-         compressionAlgorithm:_compressionAlgorithm
-                 retryEnabled:_retryEnabled
-            keepaliveInterval:_keepaliveInterval
-             keepaliveTimeout:_keepaliveTimeout
-            connectMinTimeout:_connectMinTimeout
-        connectInitialBackoff:_connectInitialBackoff
-            connectMaxBackoff:_connectMaxBackoff
-        additionalChannelArgs:[[NSDictionary alloc] initWithDictionary:_additionalChannelArgs
-                                                             copyItems:YES]
-          PEMRootCertificates:[_PEMRootCertificates copy]
-                PEMPrivateKey:[_PEMPrivateKey copy]
-          PEMCertificateChain:[_PEMCertificateChain copy]
-                transportType:_transportType
-             hostNameOverride:[_hostNameOverride copy]
-                   logContext:_logContext
-            channelPoolDomain:[_channelPoolDomain copy]
-                    channelID:_channelID];
+         initWithServerAuthority:[_serverAuthority copy]
+                         timeout:_timeout
+              flowControlEnabled:_flowControlEnabled
+            interceptorFactories:_interceptorFactories
+               oauth2AccessToken:[_oauth2AccessToken copy]
+               authTokenProvider:_authTokenProvider
+                 initialMetadata:[[NSDictionary alloc] initWithDictionary:_initialMetadata
+                                                                copyItems:YES]
+      internalCallImplementation:_internalCallImplementation
+                 userAgentPrefix:[_userAgentPrefix copy]
+               responseSizeLimit:_responseSizeLimit
+            compressionAlgorithm:_compressionAlgorithm
+                    retryEnabled:_retryEnabled
+               keepaliveInterval:_keepaliveInterval
+                keepaliveTimeout:_keepaliveTimeout
+               connectMinTimeout:_connectMinTimeout
+           connectInitialBackoff:_connectInitialBackoff
+               connectMaxBackoff:_connectMaxBackoff
+           additionalChannelArgs:[[NSDictionary alloc] initWithDictionary:_additionalChannelArgs
+                                                                copyItems:YES]
+             PEMRootCertificates:[_PEMRootCertificates copy]
+                   PEMPrivateKey:[_PEMPrivateKey copy]
+             PEMCertificateChain:[_PEMCertificateChain copy]
+                   transportType:_transportType
+                hostNameOverride:[_hostNameOverride copy]
+                      logContext:_logContext
+               channelPoolDomain:[_channelPoolDomain copy]
+                       channelID:_channelID];
   return newOptions;
 }
 
@@ -412,32 +413,32 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 
 - (nonnull id)mutableCopyWithZone:(NSZone *)zone {
   GRPCMutableCallOptions *newOptions = [[GRPCMutableCallOptions allocWithZone:zone]
-      initWithServerAuthority:_serverAuthority
-                      timeout:_timeout
-           flowControlEnabled:_flowControlEnabled
-         interceptorFactories:_interceptorFactories
-            oauth2AccessToken:_oauth2AccessToken
-            authTokenProvider:_authTokenProvider
-              initialMetadata:_initialMetadata
-   internalCallImplementation:_internalCallImplementation
-              userAgentPrefix:_userAgentPrefix
-            responseSizeLimit:_responseSizeLimit
-         compressionAlgorithm:_compressionAlgorithm
-                 retryEnabled:_retryEnabled
-            keepaliveInterval:_keepaliveInterval
-             keepaliveTimeout:_keepaliveTimeout
-            connectMinTimeout:_connectMinTimeout
-        connectInitialBackoff:_connectInitialBackoff
-            connectMaxBackoff:_connectMaxBackoff
-        additionalChannelArgs:[_additionalChannelArgs copy]
-          PEMRootCertificates:_PEMRootCertificates
-                PEMPrivateKey:_PEMPrivateKey
-          PEMCertificateChain:_PEMCertificateChain
-                transportType:_transportType
-             hostNameOverride:_hostNameOverride
-                   logContext:_logContext
-            channelPoolDomain:_channelPoolDomain
-                    channelID:_channelID];
+         initWithServerAuthority:_serverAuthority
+                         timeout:_timeout
+              flowControlEnabled:_flowControlEnabled
+            interceptorFactories:_interceptorFactories
+               oauth2AccessToken:_oauth2AccessToken
+               authTokenProvider:_authTokenProvider
+                 initialMetadata:_initialMetadata
+      internalCallImplementation:_internalCallImplementation
+                 userAgentPrefix:_userAgentPrefix
+               responseSizeLimit:_responseSizeLimit
+            compressionAlgorithm:_compressionAlgorithm
+                    retryEnabled:_retryEnabled
+               keepaliveInterval:_keepaliveInterval
+                keepaliveTimeout:_keepaliveTimeout
+               connectMinTimeout:_connectMinTimeout
+           connectInitialBackoff:_connectInitialBackoff
+               connectMaxBackoff:_connectMaxBackoff
+           additionalChannelArgs:[_additionalChannelArgs copy]
+             PEMRootCertificates:_PEMRootCertificates
+                   PEMPrivateKey:_PEMPrivateKey
+             PEMCertificateChain:_PEMCertificateChain
+                   transportType:_transportType
+                hostNameOverride:_hostNameOverride
+                      logContext:_logContext
+               channelPoolDomain:_channelPoolDomain
+                       channelID:_channelID];
   return newOptions;
 }
 
@@ -473,7 +474,8 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   _initialMetadata = [[NSDictionary alloc] initWithDictionary:initialMetadata copyItems:YES];
 }
 
-- (void)setInternalCallImplementation:(id<GRPCCall2ImplementationFactory>)internalCallImplementation {
+- (void)setInternalCallImplementation:
+    (id<GRPCCall2ImplementationFactory>)internalCallImplementation {
   _internalCallImplementation = internalCallImplementation;
 }
 

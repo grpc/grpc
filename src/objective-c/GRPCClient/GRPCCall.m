@@ -28,8 +28,9 @@
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 
-#import "private/GRPCCallCore.h"
 #import "private/GRPCCall+V2API.h"
+#import "private/GRPCCallCore.h"
+#import "private/GRPCCallImplementation.h"
 #import "private/GRPCChannelPool.h"
 #import "private/GRPCCompletionQueue.h"
 #import "private/GRPCConnectivityMonitor.h"
@@ -39,7 +40,6 @@
 #import "private/NSData+GRPC.h"
 #import "private/NSDictionary+GRPC.h"
 #import "private/NSError+GRPC.h"
-#import "private/GRPCCallImplementation.h"
 
 // At most 6 ops can be in an op batch for a client: SEND_INITIAL_METADATA,
 // SEND_MESSAGE, SEND_CLOSE_FROM_CLIENT, RECV_INITIAL_METADATA, RECV_MESSAGE,
@@ -142,7 +142,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
     _responseHandler = responseHandler;
 
     // Initialize the interceptor chain
-    id<GRPCCall2ImplementationFactory> implementationFactory = _actualCallOptions.internalCallImplementation;
+    id<GRPCCall2ImplementationFactory> implementationFactory =
+        _actualCallOptions.internalCallImplementation;
     if (implementationFactory == nil) {
       // Default implementation to gRPC core
       implementationFactory = [GRPCCall2CoreFactory sharedInstance];
