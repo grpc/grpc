@@ -731,6 +731,7 @@ add_dependencies(buildtests_cxx head_of_line_blocking_bad_client_test)
 add_dependencies(buildtests_cxx headers_bad_client_test)
 add_dependencies(buildtests_cxx initial_settings_frame_bad_client_test)
 add_dependencies(buildtests_cxx large_metadata_bad_client_test)
+add_dependencies(buildtests_cxx out_of_bounds_bad_client_test)
 add_dependencies(buildtests_cxx server_registered_method_bad_client_test)
 add_dependencies(buildtests_cxx simple_request_bad_client_test)
 add_dependencies(buildtests_cxx unknown_frame_bad_client_test)
@@ -17296,6 +17297,46 @@ target_include_directories(large_metadata_bad_client_test
 )
 
 target_link_libraries(large_metadata_bad_client_test
+  ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  bad_client_test
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(out_of_bounds_bad_client_test
+  test/core/bad_client/tests/out_of_bounds.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(out_of_bounds_bad_client_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(out_of_bounds_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}

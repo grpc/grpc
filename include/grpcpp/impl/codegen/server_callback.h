@@ -174,7 +174,7 @@ class ServerCallbackReader {
  protected:
   template <class Response>
   void BindReactor(ServerReadReactor<Request, Response>* reactor) {
-    reactor->BindReader(this);
+    reactor->InternalBindReader(this);
   }
 };
 
@@ -196,7 +196,7 @@ class ServerCallbackWriter {
  protected:
   template <class Request>
   void BindReactor(ServerWriteReactor<Request, Response>* reactor) {
-    reactor->BindWriter(this);
+    reactor->InternalBindWriter(this);
   }
 };
 
@@ -218,7 +218,7 @@ class ServerCallbackReaderWriter {
 
  protected:
   void BindReactor(ServerBidiReactor<Request, Response>* reactor) {
-    reactor->BindStream(this);
+    reactor->InternalBindStream(this);
   }
 };
 
@@ -348,7 +348,9 @@ class ServerBidiReactor : public internal::ServerReactor {
 
  private:
   friend class ServerCallbackReaderWriter<Request, Response>;
-  virtual void BindStream(
+  // May be overridden by internal implementation details. This is not a public
+  // customization point.
+  virtual void InternalBindStream(
       ServerCallbackReaderWriter<Request, Response>* stream) {
     stream_ = stream;
   }
@@ -383,7 +385,9 @@ class ServerReadReactor : public internal::ServerReactor {
 
  private:
   friend class ServerCallbackReader<Request>;
-  virtual void BindReader(ServerCallbackReader<Request>* reader) {
+  // May be overridden by internal implementation details. This is not a public
+  // customization point.
+  virtual void InternalBindReader(ServerCallbackReader<Request>* reader) {
     reader_ = reader;
   }
 
@@ -427,7 +431,9 @@ class ServerWriteReactor : public internal::ServerReactor {
 
  private:
   friend class ServerCallbackWriter<Response>;
-  virtual void BindWriter(ServerCallbackWriter<Response>* writer) {
+  // May be overridden by internal implementation details. This is not a public
+  // customization point.
+  virtual void InternalBindWriter(ServerCallbackWriter<Response>* writer) {
     writer_ = writer;
   }
 
