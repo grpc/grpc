@@ -99,7 +99,7 @@ __generate_py = rule(
         "deps": attr.label_list(
             mandatory = True,
             allow_empty = False,
-            providers = ["proto"],
+            providers = [ProtoInfo],
         ),
         "plugin": attr.label(
             executable = True,
