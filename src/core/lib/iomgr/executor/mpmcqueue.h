@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_EXECUTOR_INFLENFIFOQUEUE_H
-#define GRPC_CORE_LIB_IOMGR_EXECUTOR_INFLENFIFOQUEUE_H
+#ifndef GRPC_CORE_LIB_IOMGR_EXECUTOR_MPMCQUEUE_H
+#define GRPC_CORE_LIB_IOMGR_EXECUTOR_MPMCQUEUE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -130,4 +130,4 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_IOMGR_EXECUTOR_INFLENFIFOQUEUE_H */
+#endif /* GRPC_CORE_LIB_IOMGR_EXECUTOR_MPMCQUEUE_H */
