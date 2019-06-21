@@ -49,8 +49,6 @@ class MPMCQueueInterface {
 
   // Returns number of elements in the queue currently
   virtual int count() const GRPC_ABSTRACT;
-
-  GRPC_ABSTRACT_BASE_CLASS
 };
 
 class InfLenFIFOQueue : public MPMCQueueInterface {
