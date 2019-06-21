@@ -19,12 +19,6 @@
 ulimit -n 32768
 ulimit -c unlimited
 
-# Performance PR testing needs GH API key and PR metadata to comment results
-if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
-  sudo apt-get install -y jq
-  export ghprbTargetBranch=$(curl -s https://api.github.com/repos/grpc/grpc/pulls/$KOKORO_GITHUB_PULL_REQUEST_NUMBER | jq -r .base.ref)
-fi
-
 sudo pip install tabulate
 
 # Python dependencies for tools/run_tests/python_utils/check_on_pr.py

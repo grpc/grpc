@@ -19,6 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CLIENT_CALLBACK_H
 #define GRPCPP_IMPL_CODEGEN_CLIENT_CALLBACK_H
 
+#include <atomic>
 #include <functional>
 
 #include <grpcpp/impl/codegen/call.h>
@@ -29,11 +30,12 @@
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/status.h>
 
-namespace grpc {
-
+namespace grpc_impl {
 class Channel;
 class ClientContext;
-class CompletionQueue;
+}  // namespace grpc_impl
+
+namespace grpc {
 
 namespace internal {
 class RpcMethod;
@@ -418,7 +420,8 @@ class ClientCallbackReaderWriterImpl
   static void operator delete(void*, void*) { assert(0); }
 
   void MaybeFinish() {
-    if (--callbacks_outstanding_ == 0) {
+    if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
+                         1, std::memory_order_acq_rel) == 1)) {
       Status s = std::move(finish_status_);
       auto* reactor = reactor_;
       auto* call = call_.call();
@@ -488,7 +491,7 @@ class ClientCallbackReaderWriterImpl
 
   void Read(Response* msg) override {
     read_ops_.RecvMessage(msg);
-    callbacks_outstanding_++;
+    callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
     if (started_) {
       call_.PerformOps(&read_ops_);
     } else {
@@ -509,7 +512,7 @@ class ClientCallbackReaderWriterImpl
     }
     // TODO(vjpai): don't assert
     GPR_CODEGEN_ASSERT(write_ops_.SendMessagePtr(msg, options).ok());
-    callbacks_outstanding_++;
+    callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
     if (started_) {
       call_.PerformOps(&write_ops_);
     } else {
@@ -530,7 +533,7 @@ class ClientCallbackReaderWriterImpl
                          },
                          &writes_done_ops_);
     writes_done_ops_.set_core_cq_tag(&writes_done_tag_);
-    callbacks_outstanding_++;
+    callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
     if (started_) {
       call_.PerformOps(&writes_done_ops_);
     } else {
@@ -538,8 +541,10 @@ class ClientCallbackReaderWriterImpl
     }
   }
 
-  virtual void AddHold(int holds) override { callbacks_outstanding_ += holds; }
-  virtual void RemoveHold() override { MaybeFinish(); }
+  void AddHold(int holds) override {
+    callbacks_outstanding_.fetch_add(holds, std::memory_order_relaxed);
+  }
+  void RemoveHold() override { MaybeFinish(); }
 
  private:
   friend class ClientCallbackReaderWriterFactory<Request, Response>;
@@ -580,7 +585,7 @@ class ClientCallbackReaderWriterImpl
   bool read_ops_at_start_{false};
 
   // Minimum of 2 callbacks to pre-register for start and finish
-  std::atomic_int callbacks_outstanding_{2};
+  std::atomic<intptr_t> callbacks_outstanding_{2};
   bool started_{false};
 };
 
@@ -618,7 +623,8 @@ class ClientCallbackReaderImpl
   static void operator delete(void*, void*) { assert(0); }
 
   void MaybeFinish() {
-    if (--callbacks_outstanding_ == 0) {
+    if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
+                         1, std::memory_order_acq_rel) == 1)) {
       Status s = std::move(finish_status_);
       auto* reactor = reactor_;
       auto* call = call_.call();
@@ -668,7 +674,7 @@ class ClientCallbackReaderImpl
 
   void Read(Response* msg) override {
     read_ops_.RecvMessage(msg);
-    callbacks_outstanding_++;
+    callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
     if (started_) {
       call_.PerformOps(&read_ops_);
     } else {
@@ -676,8 +682,10 @@ class ClientCallbackReaderImpl
     }
   }
 
-  virtual void AddHold(int holds) override { callbacks_outstanding_ += holds; }
-  virtual void RemoveHold() override { MaybeFinish(); }
+  void AddHold(int holds) override {
+    callbacks_outstanding_.fetch_add(holds, std::memory_order_relaxed);
+  }
+  void RemoveHold() override { MaybeFinish(); }
 
  private:
   friend class ClientCallbackReaderFactory<Response>;
@@ -711,7 +719,7 @@ class ClientCallbackReaderImpl
   bool read_ops_at_start_{false};
 
   // Minimum of 2 callbacks to pre-register for start and finish
-  std::atomic_int callbacks_outstanding_{2};
+  std::atomic<intptr_t> callbacks_outstanding_{2};
   bool started_{false};
 };
 
@@ -749,7 +757,8 @@ class ClientCallbackWriterImpl
   static void operator delete(void*, void*) { assert(0); }
 
   void MaybeFinish() {
-    if (--callbacks_outstanding_ == 0) {
+    if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
+                         1, std::memory_order_acq_rel) == 1)) {
       Status s = std::move(finish_status_);
       auto* reactor = reactor_;
       auto* call = call_.call();
@@ -818,7 +827,7 @@ class ClientCallbackWriterImpl
     }
     // TODO(vjpai): don't assert
     GPR_CODEGEN_ASSERT(write_ops_.SendMessagePtr(msg, options).ok());
-    callbacks_outstanding_++;
+    callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
     if (started_) {
       call_.PerformOps(&write_ops_);
     } else {
@@ -839,7 +848,7 @@ class ClientCallbackWriterImpl
                          },
                          &writes_done_ops_);
     writes_done_ops_.set_core_cq_tag(&writes_done_tag_);
-    callbacks_outstanding_++;
+    callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
     if (started_) {
       call_.PerformOps(&writes_done_ops_);
     } else {
@@ -847,8 +856,10 @@ class ClientCallbackWriterImpl
     }
   }
 
-  virtual void AddHold(int holds) override { callbacks_outstanding_ += holds; }
-  virtual void RemoveHold() override { MaybeFinish(); }
+  void AddHold(int holds) override {
+    callbacks_outstanding_.fetch_add(holds, std::memory_order_relaxed);
+  }
+  void RemoveHold() override { MaybeFinish(); }
 
  private:
   friend class ClientCallbackWriterFactory<Request>;
@@ -888,7 +899,7 @@ class ClientCallbackWriterImpl
   bool writes_done_ops_at_start_{false};
 
   // Minimum of 2 callbacks to pre-register for start and finish
-  std::atomic_int callbacks_outstanding_{2};
+  std::atomic<intptr_t> callbacks_outstanding_{2};
   bool started_{false};
 };
 
@@ -950,7 +961,8 @@ class ClientCallbackUnaryImpl final
   }
 
   void MaybeFinish() {
-    if (--callbacks_outstanding_ == 0) {
+    if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
+                         1, std::memory_order_acq_rel) == 1)) {
       Status s = std::move(finish_status_);
       auto* reactor = reactor_;
       auto* call = call_.call();
@@ -990,7 +1002,7 @@ class ClientCallbackUnaryImpl final
   Status finish_status_;
 
   // This call will have 2 callbacks: start and finish
-  std::atomic_int callbacks_outstanding_{2};
+  std::atomic<intptr_t> callbacks_outstanding_{2};
   bool started_{false};
 };
 

@@ -74,7 +74,7 @@
 #define ESTIMATED_MDELEM_COUNT 16
 
 struct batch_control {
-  batch_control() { gpr_ref_init(&steps_to_complete, 0); }
+  batch_control() = default;
 
   grpc_call* call = nullptr;
   grpc_transport_stream_op_batch op;
@@ -99,8 +99,14 @@ struct batch_control {
   } completion_data;
   grpc_closure start_batch;
   grpc_closure finish_batch;
-  gpr_refcount steps_to_complete;
+  grpc_core::Atomic<intptr_t> steps_to_complete;
   gpr_atm batch_error = reinterpret_cast<gpr_atm>(GRPC_ERROR_NONE);
+  void set_num_steps_to_complete(uintptr_t steps) {
+    steps_to_complete.Store(steps, grpc_core::MemoryOrder::RELEASE);
+  }
+  bool completed_batch_step() {
+    return steps_to_complete.FetchSub(1, grpc_core::MemoryOrder::ACQ_REL) == 1;
+  }
 };
 
 struct parent_call {
@@ -899,7 +905,7 @@ static int prepare_application_metadata(grpc_call* call, int count,
     if (!GRPC_LOG_IF_ERROR("validate_metadata",
                            grpc_validate_header_key_is_legal(md->key))) {
       break;
-    } else if (!grpc_is_binary_header(md->key) &&
+    } else if (!grpc_is_binary_header_internal(md->key) &&
                !GRPC_LOG_IF_ERROR(
                    "validate_metadata",
                    grpc_validate_header_nonbin_value_is_legal(md->value))) {
@@ -1225,7 +1231,7 @@ static void post_batch_completion(batch_control* bctl) {
 }
 
 static void finish_batch_step(batch_control* bctl) {
-  if (GPR_UNLIKELY(gpr_unref(&bctl->steps_to_complete))) {
+  if (GPR_UNLIKELY(bctl->completed_batch_step())) {
     post_batch_completion(bctl);
   }
 }
@@ -1562,6 +1568,10 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
+        // TODO(juanlishen): If the user has already specified a compression
+        // algorithm by setting the initial metadata with key of
+        // GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, we shouldn't override that
+        // with the compression algorithm mapped from compression level.
         /* process compression level */
         grpc_metadata& compression_md = call->compression_md;
         compression_md.key = grpc_empty_slice();
@@ -1583,17 +1593,18 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
             effective_compression_level = copts.default_level.level;
           }
         }
+        // Currently, only server side supports compression level setting.
         if (level_set && !call->is_client) {
           const grpc_compression_algorithm calgo =
               compression_algorithm_for_level_locked(
                   call, effective_compression_level);
-          /* the following will be picked up by the compress filter and used
-           * as the call's compression algorithm. */
+          // The following metadata will be checked and removed by the message
+          // compression filter. It will be used as the call's compression
+          // algorithm.
           compression_md.key = GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST;
           compression_md.value = grpc_compression_algorithm_slice(calgo);
           additional_metadata_count++;
         }
-
         if (op->data.send_initial_metadata.count + additional_metadata_count >
             INT_MAX) {
           error = GRPC_CALL_ERROR_INVALID_METADATA;
@@ -1866,7 +1877,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
   if (!is_notify_tag_closure) {
     GPR_ASSERT(grpc_cq_begin_op(call->cq, notify_tag));
   }
-  gpr_ref_init(&bctl->steps_to_complete, (has_send_ops ? 1 : 0) + num_recv_ops);
+  bctl->set_num_steps_to_complete((has_send_ops ? 1 : 0) + num_recv_ops);
 
   if (has_send_ops) {
     GRPC_CLOSURE_INIT(&bctl->finish_batch, finish_batch, bctl,

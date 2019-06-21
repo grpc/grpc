@@ -23,7 +23,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  # version = '1.22.0-dev'
+  # version = '1.23.0-dev'
   version = '0.0.9-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
@@ -31,7 +31,7 @@ Pod::Spec.new do |s|
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  grpc_version = '1.22.0-dev'
+  grpc_version = '1.23.0-dev'
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
@@ -82,6 +82,7 @@ Pod::Spec.new do |s|
     ss.source_files = 'include/grpcpp/alarm.h',
                       'include/grpcpp/alarm_impl.h',
                       'include/grpcpp/channel.h',
+                      'include/grpcpp/channel_impl.h',
                       'include/grpcpp/client_context.h',
                       'include/grpcpp/completion_queue.h',
                       'include/grpcpp/create_channel.h',
@@ -147,6 +148,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/support/stub_options.h',
                       'include/grpcpp/support/sync_stream.h',
                       'include/grpcpp/support/time.h',
+                      'include/grpcpp/support/validate_service_config.h',
                       'include/grpcpp/impl/codegen/async_generic_service.h',
                       'include/grpcpp/impl/codegen/async_stream.h',
                       'include/grpcpp/impl/codegen/async_unary_call.h',
@@ -159,9 +161,11 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/channel_interface.h',
                       'include/grpcpp/impl/codegen/client_callback.h',
                       'include/grpcpp/impl/codegen/client_context.h',
+                      'include/grpcpp/impl/codegen/client_context_impl.h',
                       'include/grpcpp/impl/codegen/client_interceptor.h',
                       'include/grpcpp/impl/codegen/client_unary_call.h',
                       'include/grpcpp/impl/codegen/completion_queue.h',
+                      'include/grpcpp/impl/codegen/completion_queue_impl.h',
                       'include/grpcpp/impl/codegen/completion_queue_tag.h',
                       'include/grpcpp/impl/codegen/config.h',
                       'include/grpcpp/impl/codegen/core_codegen_interface.h',
@@ -179,6 +183,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/serialization_traits.h',
                       'include/grpcpp/impl/codegen/server_callback.h',
                       'include/grpcpp/impl/codegen/server_context.h',
+                      'include/grpcpp/impl/codegen/server_context_impl.h',
                       'include/grpcpp/impl/codegen/server_interceptor.h',
                       'include/grpcpp/impl/codegen/server_interface.h',
                       'include/grpcpp/impl/codegen/service_type.h',
@@ -232,6 +237,7 @@ Pod::Spec.new do |s|
                       'src/cpp/common/core_codegen.cc',
                       'src/cpp/common/resource_quota_cc.cc',
                       'src/cpp/common/rpc_method.cc',
+                      'src/cpp/common/validate_service_config.cc',
                       'src/cpp/common/version_cc.cc',
                       'src/cpp/server/async_generic_service.cc',
                       'src/cpp/server/channel_argument_option.cc',
@@ -395,6 +401,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/server_address.h',
                       'src/core/ext/filters/client_channel/service_config.h',
                       'src/core/ext/filters/client_channel/subchannel.h',
+                      'src/core/ext/filters/client_channel/subchannel_interface.h',
                       'src/core/ext/filters/client_channel/subchannel_pool_interface.h',
                       'src/core/ext/filters/deadline/deadline_filter.h',
                       'src/core/ext/filters/client_channel/health/health.pb.h',

@@ -163,13 +163,12 @@ class ChannelzServerTest : public ::testing::Test {
   }
 
   std::unique_ptr<grpc::testing::EchoTestService::Stub> NewEchoStub() {
-    static int salt = 0;
     string target = "dns:localhost:" + to_string(proxy_port_);
     ChannelArguments args;
     // disable channelz. We only want to focus on proxy to backend outbound.
     args.SetInt(GRPC_ARG_ENABLE_CHANNELZ, 0);
     // This ensures that gRPC will not do connection sharing.
-    args.SetInt("salt", salt++);
+    args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, true);
     std::shared_ptr<Channel> channel =
         ::grpc::CreateCustomChannel(target, InsecureChannelCredentials(), args);
     return grpc::testing::EchoTestService::NewStub(channel);

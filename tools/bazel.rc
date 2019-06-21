@@ -51,6 +51,10 @@ build:ubsan --copt=-DUNDEFINED_BEHAVIOR_SANITIZER  # used by absl
 build:ubsan --copt=-fno-sanitize=function,vptr
 build:ubsan --linkopt=-fsanitize=undefined
 build:ubsan --action_env=UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1:suppressions=test/core/util/ubsan_suppressions.txt
+# For some reasons, these two stopped being propagated, so, redeclaring them here.
+# That's a hack that needs to be removed once we understand what's going on.
+build:ubsan --copt=-DPB_FIELD_32BIT=1
+build:ubsan --copt=-DGRPC_PORT_ISOLATED_RUNTIME=1
 
 build:basicprof --strip=never
 build:basicprof --copt=-DNDEBUG
@@ -59,5 +63,5 @@ build:basicprof --copt=-DGRPC_BASIC_PROFILER
 build:basicprof --copt=-DGRPC_TIMERS_RDTSC
 
 build:python3 --python_path=python3
-build:python3 --force_python=PY3
+build:python3 --python_version=PY3
 build:python3 --action_env=PYTHON_BIN_PATH=python3

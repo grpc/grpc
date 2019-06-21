@@ -27,6 +27,7 @@
 
 #include <grpc/compression.h>
 #include <grpc/support/atm.h>
+#include <grpcpp/channel.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/call.h>
@@ -43,7 +44,6 @@ struct grpc_server;
 
 namespace grpc {
 class AsyncGenericService;
-class ServerContext;
 
 namespace internal {
 class ExternalConnectionAcceptorImpl;
@@ -53,6 +53,7 @@ class ExternalConnectionAcceptorImpl;
 
 namespace grpc_impl {
 class HealthCheckServiceInterface;
+class ServerContext;
 class ServerInitializer;
 
 /// Represents a gRPC server.
@@ -81,9 +82,9 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
     /// Called before server is created.
     virtual void UpdateArguments(grpc::ChannelArguments* args) {}
     /// Called before application callback for each synchronous server request
-    virtual void PreSynchronousRequest(grpc::ServerContext* context) = 0;
+    virtual void PreSynchronousRequest(grpc_impl::ServerContext* context) = 0;
     /// Called after application callback for each synchronous server request
-    virtual void PostSynchronousRequest(grpc::ServerContext* context) = 0;
+    virtual void PostSynchronousRequest(grpc_impl::ServerContext* context) = 0;
     /// Called before server is started.
     virtual void PreServerStart(Server* server) {}
     /// Called after a server port is added.
@@ -107,7 +108,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   }
 
   /// Establish a channel for in-process communication
-  std::shared_ptr<grpc::Channel> InProcessChannel(
+  std::shared_ptr<::grpc::Channel> InProcessChannel(
       const grpc::ChannelArguments& args);
 
   /// NOTE: class experimental_type is not part of the public API of this class.
@@ -119,7 +120,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
 
     /// Establish a channel for in-process communication with client
     /// interceptors
-    std::shared_ptr<grpc::Channel> InProcessChannelWithInterceptors(
+    std::shared_ptr<::grpc::Channel> InProcessChannelWithInterceptors(
         const grpc::ChannelArguments& args,
         std::vector<std::unique_ptr<
             grpc::experimental::ClientInterceptorFactoryInterface>>
@@ -341,7 +342,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   // during decreasing load, so it is less performance-critical.
   grpc::internal::Mutex callback_reqs_mu_;
   grpc::internal::CondVar callback_reqs_done_cv_;
-  std::atomic_int callback_reqs_outstanding_{0};
+  std::atomic<intptr_t> callback_reqs_outstanding_{0};
 
   std::shared_ptr<GlobalCallbacks> global_callbacks_;
 

@@ -37,4 +37,4 @@ then
   ln -s $(pwd)/.dotnet/dotnet /usr/local/bin/dotnet
 fi
 
-dotnet build --configuration Debug Grpc.AspNetCore.sln
+dotnet build --configuration Debug Grpc.DotNet.sln

@@ -49,6 +49,7 @@ static gpr_mu g_mu;
 static gpr_cv g_rcv;
 static int g_shutdown;
 static grpc_iomgr_object g_root_object;
+static bool g_grpc_abort_on_leaks;
 
 void grpc_iomgr_init() {
   grpc_core::ExecCtx exec_ctx;
@@ -57,11 +58,12 @@ void grpc_iomgr_init() {
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_rcv);
   grpc_core::Executor::InitAll();
-  grpc_timer_list_init();
   g_root_object.next = g_root_object.prev = &g_root_object;
   g_root_object.name = (char*)"root";
   grpc_iomgr_platform_init();
+  grpc_timer_list_init();
   grpc_core::grpc_errqueue_init();
+  g_grpc_abort_on_leaks = GPR_GLOBAL_CONFIG_GET(grpc_abort_on_leaks);
 }
 
 void grpc_iomgr_start() { grpc_timer_manager_init(); }
@@ -189,6 +191,4 @@ void grpc_iomgr_unregister_object(grpc_iomgr_object* obj) {
   gpr_free(obj->name);
 }
 
-bool grpc_iomgr_abort_on_leaks(void) {
-  return GPR_GLOBAL_CONFIG_GET(grpc_abort_on_leaks);
-}
+bool grpc_iomgr_abort_on_leaks(void) { return g_grpc_abort_on_leaks; }

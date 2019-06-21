@@ -584,6 +584,9 @@ class ChannelCredentials(object):
 class CallCredentials(object):
     """An encapsulation of the data required to assert an identity over a call.
 
+    A CallCredentials has to be used with secure Channel, otherwise the
+    metadata will not be transmitted to the server.
+
     A CallCredentials may be composed with ChannelCredentials to always assert
     identity for every call over that Channel.
 
@@ -682,7 +685,8 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
             for the RPC.
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
-          credentials: An optional CallCredentials for the RPC.
+          credentials: An optional CallCredentials for the RPC. Only valid for
+            secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.
@@ -714,7 +718,8 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
             the RPC.
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
-          credentials: An optional CallCredentials for the RPC.
+          credentials: An optional CallCredentials for the RPC. Only valid for
+            secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.
@@ -746,7 +751,8 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
             the RPC.
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
-          credentials: An optional CallCredentials for the RPC.
+          credentials: An optional CallCredentials for the RPC. Only valid for
+            secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.
@@ -781,7 +787,8 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
             the RPC. If None, the timeout is considered infinite.
           metadata: An optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
-          credentials: An optional CallCredentials for the RPC.
+          credentials: An optional CallCredentials for the RPC. Only valid for
+            secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.
@@ -816,7 +823,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
             the RPC. If None, the timeout is considered infinite.
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
-          credentials: An optional CallCredentials for the RPC.
+          credentials: An optional CallCredentials for the RPC. Only valid for
+            secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.
@@ -849,7 +857,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
             the RPC. If None, the timeout is considered infinite.
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
-          credentials: An optional CallCredentials for the RPC.
+          credentials: An optional CallCredentials for the RPC. Only valid for
+            secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.
@@ -881,7 +890,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
             the RPC. If None, the timeout is considered infinite.
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
-          credentials: An optional CallCredentials for the RPC.
+          credentials: An optional CallCredentials for the RPC. Only valid for
+            secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.
@@ -916,7 +926,8 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
             the RPC. If not specified, the timeout is considered infinite.
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
-          credentials: An optional CallCredentials for the RPC.
+          credentials: An optional CallCredentials for the RPC. Only valid for
+            secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.

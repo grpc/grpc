@@ -24,6 +24,7 @@
 
 #include <grpc/support/alloc.h>
 
+#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
@@ -37,14 +38,6 @@
 #include "src/core/lib/surface/channel_init.h"
 
 static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
-  const grpc_channel_args* args =
-      grpc_channel_stack_builder_get_channel_arguments(builder);
-  grpc_arg args_to_add[] = {
-      grpc_core::channelz::ClientChannelNode::CreateChannelArg()};
-  grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
-      args, args_to_add, GPR_ARRAY_SIZE(args_to_add));
-  grpc_channel_stack_builder_set_channel_arguments(builder, new_args);
-  grpc_channel_args_destroy(new_args);
   return grpc_channel_stack_builder_append_filter(
       builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
 }
@@ -62,6 +55,7 @@ void grpc_client_channel_init(void) {
       GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, append_filter,
       (void*)&grpc_client_channel_filter);
   grpc_http_connect_register_handshaker_factory();
+  grpc_client_channel_global_init_backup_polling();
 }
 
 void grpc_client_channel_shutdown(void) {

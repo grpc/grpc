@@ -32,8 +32,8 @@ def grpc_deps():
     )
 
     native.bind(
-        name = "zlib",
-        actual = "@com_github_madler_zlib//:z",
+        name = "madler_zlib",
+        actual = "@zlib//:zlib",
     )
 
     native.bind(
@@ -115,9 +115,9 @@ def grpc_deps():
             url = "https://boringssl.googlesource.com/boringssl/+archive/afc30d43eef92979b05776ec0963c9cede5fb80f.tar.gz",
         )
 
-    if "com_github_madler_zlib" not in native.existing_rules():
+    if "zlib" not in native.existing_rules():
         http_archive(
-            name = "com_github_madler_zlib",
+            name = "zlib",
             build_file = "@com_github_grpc_grpc//third_party:zlib.BUILD",
             sha256 = "6d4d6640ca3121620995ee255945161821218752b551a1a180f4215f7d124d45",
             strip_prefix = "zlib-cacf7f1d4e3d44d871b605da3b647f07d718623f",
@@ -127,9 +127,9 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "cf9e2fb1d2cd30ec9d51ff1749045208bd641f290f64b85046485934b0e03783",
-            strip_prefix = "protobuf-582743bf40c5d3639a70f98f183914a2c0cd0680",
-            url = "https://github.com/google/protobuf/archive/582743bf40c5d3639a70f98f183914a2c0cd0680.tar.gz",
+            sha256 = "416212e14481cff8fd4849b1c1c1200a7f34808a54377e22d7447efdf54ad758",
+            strip_prefix = "protobuf-09745575a923640154bcf307fba8aedff47f240a",
+            url = "https://github.com/google/protobuf/archive/09745575a923640154bcf307fba8aedff47f240a.tar.gz",
         )
 
     if "com_github_nanopb_nanopb" not in native.existing_rules():
@@ -186,11 +186,11 @@ def grpc_deps():
     if "bazel_toolchains" not in native.existing_rules():
         http_archive(
             name = "bazel_toolchains",
-            sha256 = "67335b3563d9b67dc2550b8f27cc689b64fadac491e69ce78763d9ba894cc5cc",
-            strip_prefix = "bazel-toolchains-cddc376d428ada2927ad359211c3e356bd9c9fbb",
+            sha256 = "d968b414b32aa99c86977e1171645d31da2b52ac88060de3ac1e49932d5dcbf1",
+            strip_prefix = "bazel-toolchains-4bd5df80d77aa7f4fb943dfdfad5c9056a62fb47",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/cddc376d428ada2927ad359211c3e356bd9c9fbb.tar.gz",
-                "https://github.com/bazelbuild/bazel-toolchains/archive/cddc376d428ada2927ad359211c3e356bd9c9fbb.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/4bd5df80d77aa7f4fb943dfdfad5c9056a62fb47.tar.gz",
+                "https://github.com/bazelbuild/bazel-toolchains/archive/4bd5df80d77aa7f4fb943dfdfad5c9056a62fb47.tar.gz",
             ],
         )
 

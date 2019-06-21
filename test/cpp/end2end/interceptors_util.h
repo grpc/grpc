@@ -152,6 +152,8 @@ class EchoTestServiceStreamingImpl : public EchoTestService::Service {
   }
 };
 
+constexpr int kNumStreamingMessages = 10;
+
 void MakeCall(const std::shared_ptr<Channel>& channel);
 
 void MakeClientStreamingCall(const std::shared_ptr<Channel>& channel);

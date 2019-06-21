@@ -21,32 +21,20 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
-#include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/connectivity_state.h"
-
-extern grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount;
+#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 
-/// Interface for parsed forms of load balancing configs found in a service
-/// config.
-class ParsedLoadBalancingConfig : public RefCounted<ParsedLoadBalancingConfig> {
- public:
-  virtual ~ParsedLoadBalancingConfig() = default;
-
-  // Returns the load balancing policy name
-  virtual const char* name() const GRPC_ABSTRACT;
-
-  GRPC_ABSTRACT_BASE_CLASS;
-};
+extern DebugOnlyTraceFlag grpc_trace_lb_policy_refcount;
 
 /// Interface for load balancing policies.
 ///
@@ -89,66 +77,77 @@ class ParsedLoadBalancingConfig : public RefCounted<ParsedLoadBalancingConfig> {
 // interested_parties() hooks from the API.
 class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
  public:
+  /// Interface for accessing per-call state.
+  class CallState {
+   public:
+    CallState() = default;
+    virtual ~CallState() = default;
+
+    /// Allocates memory associated with the call, which will be
+    /// automatically freed when the call is complete.
+    /// It is more efficient to use this than to allocate memory directly
+    /// for allocations that need to be made on a per-call basis.
+    virtual void* Alloc(size_t size) GRPC_ABSTRACT;
+
+    GRPC_ABSTRACT_BASE_CLASS
+  };
+
   /// Arguments used when picking a subchannel for an RPC.
   struct PickArgs {
-    ///
-    /// Input parameters.
-    ///
     /// Initial metadata associated with the picking call.
     /// The LB policy may use the existing metadata to influence its routing
     /// decision, and it may add new metadata elements to be sent with the
     /// call to the chosen backend.
     // TODO(roth): Provide a more generic metadata API here.
     grpc_metadata_batch* initial_metadata = nullptr;
-    /// Storage for LB token in \a initial_metadata, or nullptr if not used.
-    // TODO(roth): Remove this from the API.  Maybe have the LB policy
-    // allocate this on the arena instead?
-    grpc_linked_mdelem lb_token_mdelem_storage;
-    ///
-    /// Output parameters.
-    ///
-    /// Will be set to the selected subchannel, or nullptr on failure or when
-    /// the LB policy decides to drop the call.
-    RefCountedPtr<ConnectedSubchannel> connected_subchannel;
-    /// Callback set by lb policy to be notified of trailing metadata.
-    /// The callback must be scheduled on grpc_schedule_on_exec_ctx.
-    // TODO(roth): Provide a cleaner callback API.
-    grpc_closure* recv_trailing_metadata_ready = nullptr;
-    /// The address that will be set to point to the original
-    /// recv_trailing_metadata_ready callback, to be invoked by the LB
-    /// policy's recv_trailing_metadata_ready callback when complete.
-    /// Must be non-null if recv_trailing_metadata_ready is non-null.
-    // TODO(roth): Consider making the recv_trailing_metadata closure a
-    // synchronous callback, in which case it is not responsible for
-    // chaining to the next callback, so this can be removed from the API.
-    grpc_closure** original_recv_trailing_metadata_ready = nullptr;
-    /// If this is not nullptr, then the client channel will point it to the
-    /// call's trailing metadata before invoking recv_trailing_metadata_ready.
-    /// If this is nullptr, then the callback will still be called.
-    /// The lb does not have ownership of the metadata.
-    // TODO(roth): If we make this a synchronous callback, then this can
-    // be passed to the callback as a parameter and can be removed from
-    // the API here.
-    grpc_metadata_batch** recv_trailing_metadata = nullptr;
+    /// An interface for accessing call state.  Can be used to allocate
+    /// data associated with the call in an efficient way.
+    CallState* call_state;
   };
 
   /// The result of picking a subchannel for an RPC.
-  enum PickResult {
-    // Pick complete.  If connected_subchannel is non-null, client channel
-    // can immediately proceed with the call on connected_subchannel;
-    // otherwise, call should be dropped.
-    PICK_COMPLETE,
-    // Pick cannot be completed until something changes on the control
-    // plane.  Client channel will queue the pick and try again the
-    // next time the picker is updated.
-    PICK_QUEUE,
-    // LB policy is in transient failure.  If the pick is wait_for_ready,
-    // client channel will wait for the next picker and try again;
-    // otherwise, the call will be failed immediately (although it may
-    // be retried if the client channel is configured to do so).
-    // The Pick() method will set its error parameter if this value is
-    // returned.
-    PICK_TRANSIENT_FAILURE,
+  struct PickResult {
+    enum ResultType {
+      /// Pick complete.  If connected_subchannel is non-null, client channel
+      /// can immediately proceed with the call on connected_subchannel;
+      /// otherwise, call should be dropped.
+      PICK_COMPLETE,
+      /// Pick cannot be completed until something changes on the control
+      /// plane.  Client channel will queue the pick and try again the
+      /// next time the picker is updated.
+      PICK_QUEUE,
+      /// LB policy is in transient failure.  If the pick is wait_for_ready,
+      /// client channel will wait for the next picker and try again;
+      /// otherwise, the call will be failed immediately (although it may
+      /// be retried if the client channel is configured to do so).
+      /// The Pick() method will set its error parameter if this value is
+      /// returned.
+      PICK_TRANSIENT_FAILURE,
+    };
+    ResultType type;
+
+    /// Used only if type is PICK_COMPLETE.  Will be set to the selected
+    /// subchannel, or nullptr if the LB policy decides to drop the call.
+    RefCountedPtr<ConnectedSubchannelInterface> connected_subchannel;
+
+    /// Used only if type is PICK_TRANSIENT_FAILURE.
+    /// Error to be set when returning a transient failure.
+    // TODO(roth): Replace this with something similar to grpc::Status,
+    // so that we don't expose grpc_error to this API.
+    grpc_error* error = GRPC_ERROR_NONE;
+
+    /// Used only if type is PICK_COMPLETE.
+    /// Callback set by lb policy to be notified of trailing metadata.
+    /// The user_data argument will be set to the
+    /// recv_trailing_metadata_ready_user_data field.
+    /// recv_trailing_metadata will be set to the metadata, which may be
+    /// modified by the callback.  The callback does not take ownership,
+    /// however, so any data that needs to be used after returning must
+    /// be copied.
+    void (*recv_trailing_metadata_ready)(
+        void* user_data, grpc_metadata_batch* recv_trailing_metadata,
+        CallState* call_state) = nullptr;
+    void* recv_trailing_metadata_ready_user_data = nullptr;
   };
 
   /// A subchannel picker is the object used to pick the subchannel to
@@ -162,17 +161,14 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// live in the LB policy object itself.
   ///
   /// Currently, pickers are always accessed from within the
-  /// client_channel combiner, so they do not have to be thread-safe.
-  // TODO(roth): In a subsequent PR, split the data plane work (i.e.,
-  // the interaction with the picker) and the control plane work (i.e.,
-  // the interaction with the LB policy) into two different
-  // synchronization mechanisms, to avoid lock contention between the two.
+  /// client_channel data plane combiner, so they do not have to be
+  /// thread-safe.
   class SubchannelPicker {
    public:
     SubchannelPicker() = default;
     virtual ~SubchannelPicker() = default;
 
-    virtual PickResult Pick(PickArgs* pick, grpc_error** error) GRPC_ABSTRACT;
+    virtual PickResult Pick(PickArgs args) GRPC_ABSTRACT;
 
     GRPC_ABSTRACT_BASE_CLASS
   };
@@ -188,8 +184,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     virtual ~ChannelControlHelper() = default;
 
     /// Creates a new subchannel with the specified channel args.
-    virtual Subchannel* CreateSubchannel(const grpc_channel_args& args)
-        GRPC_ABSTRACT;
+    virtual RefCountedPtr<SubchannelInterface> CreateSubchannel(
+        const grpc_channel_args& args) GRPC_ABSTRACT;
 
     /// Creates a channel with the specified target and channel args.
     /// This can be used in cases where the LB policy needs to create a
@@ -205,6 +201,25 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Requests that the resolver re-resolve.
     virtual void RequestReresolution() GRPC_ABSTRACT;
 
+    /// Adds a trace message associated with the channel.
+    /// Does NOT take ownership of \a message.
+    enum TraceSeverity { TRACE_INFO, TRACE_WARNING, TRACE_ERROR };
+    virtual void AddTraceEvent(TraceSeverity severity,
+                               const char* message) GRPC_ABSTRACT;
+
+    GRPC_ABSTRACT_BASE_CLASS
+  };
+
+  /// Interface for configuration data used by an LB policy implementation.
+  /// Individual implementations will create a subclass that adds methods to
+  /// return the parameters they need.
+  class Config : public RefCounted<Config> {
+   public:
+    virtual ~Config() = default;
+
+    // Returns the load balancing policy name
+    virtual const char* name() const GRPC_ABSTRACT;
+
     GRPC_ABSTRACT_BASE_CLASS
   };
 
@@ -212,7 +227,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// config are available.
   struct UpdateArgs {
     ServerAddressList addresses;
-    RefCountedPtr<ParsedLoadBalancingConfig> config;
+    RefCountedPtr<Config> config;
     const grpc_channel_args* args = nullptr;
 
     // TODO(roth): Remove everything below once channel args is
@@ -265,20 +280,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Resets connection backoff.
   virtual void ResetBackoffLocked() GRPC_ABSTRACT;
 
-  /// Populates child_subchannels and child_channels with the uuids of this
-  /// LB policy's referenced children.
-  ///
-  /// This is not invoked from the client_channel's combiner. The
-  /// implementation is responsible for providing its own synchronization.
-  virtual void FillChildRefsForChannelz(
-      channelz::ChildRefsList* child_subchannels,
-      channelz::ChildRefsList* child_channels) GRPC_ABSTRACT;
-
-  void set_channelz_node(
-      RefCountedPtr<channelz::ClientChannelNode> channelz_node) {
-    channelz_node_ = std::move(channelz_node);
-  }
-
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
   void Orphan() override;
@@ -291,7 +292,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     explicit QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent)
         : parent_(std::move(parent)) {}
 
-    PickResult Pick(PickArgs* pick, grpc_error** error) override;
+    ~QueuePicker() { parent_.reset(DEBUG_LOCATION, "QueuePicker"); }
+
+    PickResult Pick(PickArgs args) override;
 
    private:
     static void CallExitIdle(void* arg, grpc_error* error);
@@ -306,10 +309,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     explicit TransientFailurePicker(grpc_error* error) : error_(error) {}
     ~TransientFailurePicker() override { GRPC_ERROR_UNREF(error_); }
 
-    PickResult Pick(PickArgs* pick, grpc_error** error) override {
-      *error = GRPC_ERROR_REF(error_);
-      return PICK_TRANSIENT_FAILURE;
-    }
+    PickResult Pick(PickArgs args) override;
 
    private:
     grpc_error* error_;
@@ -327,10 +327,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     return channel_control_helper_.get();
   }
 
-  channelz::ClientChannelNode* channelz_node() const {
-    return channelz_node_.get();
-  }
-
   /// Shuts down the policy.
   virtual void ShutdownLocked() GRPC_ABSTRACT;
 
@@ -343,8 +339,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   grpc_pollset_set* interested_parties_;
   /// Channel control helper.
   UniquePtr<ChannelControlHelper> channel_control_helper_;
-  /// Channelz node.
-  RefCountedPtr<channelz::ClientChannelNode> channelz_node_;
 };
 
 }  // namespace grpc_core

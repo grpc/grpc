@@ -473,10 +473,13 @@ static bool should_use_ares(const char* resolver_env) {
 }
 #endif /* GRPC_UV */
 
+static bool g_use_ares_dns_resolver;
+
 void grpc_resolver_dns_ares_init() {
   grpc_core::UniquePtr<char> resolver =
       GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   if (should_use_ares(resolver.get())) {
+    g_use_ares_dns_resolver = true;
     gpr_log(GPR_DEBUG, "Using ares dns resolver");
     address_sorting_init();
     grpc_error* error = grpc_ares_init();
@@ -491,13 +494,13 @@ void grpc_resolver_dns_ares_init() {
     grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
         grpc_core::UniquePtr<grpc_core::ResolverFactory>(
             grpc_core::New<grpc_core::AresDnsResolverFactory>()));
+  } else {
+    g_use_ares_dns_resolver = false;
   }
 }
 
 void grpc_resolver_dns_ares_shutdown() {
-  grpc_core::UniquePtr<char> resolver =
-      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
-  if (should_use_ares(resolver.get())) {
+  if (g_use_ares_dns_resolver) {
     address_sorting_shutdown();
     grpc_ares_cleanup();
   }

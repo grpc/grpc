@@ -513,7 +513,7 @@ static void publish_call(grpc_server* server, call_data* calld, size_t cq_idx,
   }
 
   grpc_cq_end_op(calld->cq_new, rc->tag, GRPC_ERROR_NONE, done_request_event,
-                 rc, &rc->completion);
+                 rc, &rc->completion, true);
 }
 
 static void publish_new_rpc(void* arg, grpc_error* error) {
@@ -625,8 +625,8 @@ static void start_new_rpc(grpc_call_element* elem) {
   if (chand->registered_methods && calld->path_set && calld->host_set) {
     /* TODO(ctiller): unify these two searches */
     /* check for an exact match with host */
-    hash = GRPC_MDSTR_KV_HASH(grpc_slice_hash(calld->host),
-                              grpc_slice_hash(calld->path));
+    hash = GRPC_MDSTR_KV_HASH(grpc_slice_hash_internal(calld->host),
+                              grpc_slice_hash_internal(calld->path));
     for (i = 0; i <= chand->registered_method_max_probes; i++) {
       rm = &chand->registered_methods[(hash + i) %
                                       chand->registered_method_slots];
@@ -644,7 +644,7 @@ static void start_new_rpc(grpc_call_element* elem) {
       return;
     }
     /* check for a wildcard method definition (no host set) */
-    hash = GRPC_MDSTR_KV_HASH(0, grpc_slice_hash(calld->path));
+    hash = GRPC_MDSTR_KV_HASH(0, grpc_slice_hash_internal(calld->path));
     for (i = 0; i <= chand->registered_method_max_probes; i++) {
       rm = &chand->registered_methods[(hash + i) %
                                       chand->registered_method_slots];
@@ -1194,14 +1194,14 @@ void grpc_server_setup_transport(
       bool has_host;
       grpc_slice method;
       if (rm->host != nullptr) {
-        host = grpc_slice_intern(grpc_slice_from_static_string(rm->host));
+        host = grpc_slice_from_static_string(rm->host);
         has_host = true;
       } else {
         has_host = false;
       }
-      method = grpc_slice_intern(grpc_slice_from_static_string(rm->method));
-      hash = GRPC_MDSTR_KV_HASH(has_host ? grpc_slice_hash(host) : 0,
-                                grpc_slice_hash(method));
+      method = grpc_slice_from_static_string(rm->method);
+      hash = GRPC_MDSTR_KV_HASH(has_host ? grpc_slice_hash_internal(host) : 0,
+                                grpc_slice_hash_internal(method));
       for (probes = 0; chand->registered_methods[(hash + probes) % slots]
                            .server_registered_method != nullptr;
            probes++)
