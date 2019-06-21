@@ -41,7 +41,7 @@ int JoinHostPort(UniquePtr<char>* out, const char* host, int port);
    and port number.
 
    There are two variants of this method:
-   1) StringView ouptut: port and host are returned as views on name.
+   1) StringView output: port and host are returned as views on name.
    2) char* output: port and host are copied into newly allocated strings.
 
    Prefer variant (1) over (2), because no allocation or copy is performed in
