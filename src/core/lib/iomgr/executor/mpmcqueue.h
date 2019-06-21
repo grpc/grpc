@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_EXECUTOR_MPMCQUEUE_H
-#define GRPC_CORE_LIB_IOMGR_EXECUTOR_MPMCQUEUE_H
+#ifndef GRPC_CORE_LIB_IOMGR_EXECUTOR_INFLENFIFOQUEUE_H
+#define GRPC_CORE_LIB_IOMGR_EXECUTOR_INFLENFIFOQUEUE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -31,46 +31,47 @@
 
 namespace grpc_core {
 
-extern DebugOnlyTraceFlag thread_pool_trace;
+extern DebugOnlyTraceFlag thread_pool;
 
-// Abstract base class of a MPMC queue interface
+// Abstract base class of a Multiple-Producer-Multiple-Consumer(MPMC) queue
+// interface
 class MPMCQueueInterface {
  public:
   virtual ~MPMCQueueInterface() {}
 
-  // Put elem into queue immediately at the end of queue.
+  // Puts elem into queue immediately at the end of queue.
   // This might cause to block on full queue depending on implementation.
   virtual void Put(void* elem) GRPC_ABSTRACT;
 
-  // Remove the oldest element from the queue and return it.
+  // Removes the oldest element from the queue and return it.
   // This might cause to block on empty queue depending on implementation.
   virtual void* Get() GRPC_ABSTRACT;
 
-  // Return number of elements in the queue currently
+  // Returns number of elements in the queue currently
   virtual int count() const GRPC_ABSTRACT;
 
   GRPC_ABSTRACT_BASE_CLASS
 };
 
-class MPMCQueue : public MPMCQueueInterface {
+class InfLenFIFOQueue : public MPMCQueueInterface {
  public:
-  // Create a new Multiple-Producer-Multiple-Consumer Queue. The queue created
+  // Creates a new MPMC Queue. The queue created
   // will have infinite length.
-  MPMCQueue();
+  InfLenFIFOQueue();
 
-  // Release all resources hold by the queue. The queue must be empty, and no
+  // Releases all resources hold by the queue. The queue must be empty, and no
   // one waiting on conditional variables.
-  ~MPMCQueue();
+  ~InfLenFIFOQueue();
 
-  // Put elem into queue immediately at the end of queue. Since the queue has
+  // Puts elem into queue immediately at the end of queue. Since the queue has
   // infinite length, this routine will never block and should never fail.
   void Put(void* elem);
 
-  // Remove the oldest element from the queue and return it.
+  // Removes the oldest element from the queue and returns it.
   // This routine will cause the thread to block if queue is currently empty.
   void* Get();
 
-  // Return number of elements in queue currently.
+  // Returns number of elements in queue currently.
   // There might be concurrently add/remove on queue, so count might change
   // quickly.
   int count() const { return count_.Load(MemoryOrder::RELAXED); }
@@ -78,10 +79,10 @@ class MPMCQueue : public MPMCQueueInterface {
   GRPC_ABSTRACT_BASE_CLASS
 
  private:
+  // For Internal Use Only.
+  // Removes the oldest element from the queue and returns it. This routine
+  // will NOT check whether queue is empty, and it will NOT acquire mutex.
   void* PopFront();
-
-  // Print out Stats. Time measurement are printed in millisecond.
-  void PrintStats();
 
   struct Node {
     Node* next;                // Linking
@@ -94,7 +95,9 @@ class MPMCQueue : public MPMCQueueInterface {
     }
   };
 
-  struct Stats {             // Stats of queue
+  // Stats of queue. This will only be collect when debug trace mode is on.
+  // All printed stats info will have time measurement in millisecond.
+  struct Stats {
     uint64_t num_started;    // Number of elements have been added to queue
     uint64_t num_completed;  // Number of elements have been removed from
                              // the queue
@@ -120,11 +123,11 @@ class MPMCQueue : public MPMCQueueInterface {
 
   Node* queue_head_;        // Head of the queue, remove position
   Node* queue_tail_;        // End of queue, insert position
-  Atomic<uint64_t> count_;  // Number of elements in queue
+  Atomic<uint64_t> count_{0};  // Number of elements in queue
   Stats stats_;             // Stats info
   gpr_timespec busy_time;   // Start time of busy queue
 };
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_IOMGR_EXECUTOR_MPMCQUEUE_H */
+#endif /* GRPC_CORE_LIB_IOMGR_EXECUTOR_INFLENFIFOQUEUE_H */

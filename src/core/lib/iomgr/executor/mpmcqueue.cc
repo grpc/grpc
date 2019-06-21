@@ -29,40 +29,48 @@
 #include <string.h>
 
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {
 
-DebugOnlyTraceFlag thread_pool_trace(false, "thread_pool_trace");
+DebugOnlyTraceFlag thread_pool(false, "thread_pool_trace");
 
-inline void* MPMCQueue::PopFront() {
+inline void* InfLenFIFOQueue::PopFront() {
   void* result = queue_head_->content;
   Node* head_to_remove = queue_head_;
   queue_head_ = queue_head_->next;
 
-  count_.Store(count_.Load(MemoryOrder::RELAXED) - 1, MemoryOrder::RELAXED);
-  gpr_timespec wait_time =
+  count_.FetchSub(1, MemoryOrder::RELAXED);
+
+  if (GRPC_TRACE_FLAG_ENABLED(thread_pool)) {
+    gpr_timespec wait_time =
       gpr_time_sub(gpr_now(GPR_CLOCK_PRECISE), head_to_remove->insert_time);
 
-  gpr_free(head_to_remove);
+    // Updates Stats info
+    stats_.num_completed++;
+    stats_.total_queue_cycles =
+        gpr_time_add(stats_.total_queue_cycles, wait_time);
+    stats_.max_queue_cycles = gpr_time_max(
+        gpr_convert_clock_type(stats_.max_queue_cycles, GPR_TIMESPAN),
+        wait_time);
 
-  // Update Stats info
-  stats_.num_completed++;
-  stats_.total_queue_cycles =
-      gpr_time_add(stats_.total_queue_cycles, wait_time);
-  stats_.max_queue_cycles = gpr_time_max(
-      gpr_convert_clock_type(stats_.max_queue_cycles, GPR_TIMESPAN), wait_time);
+    if (count_.Load(MemoryOrder::RELAXED) == 0) {
+      stats_.busy_time_cycles =
+          gpr_time_add(stats_.busy_time_cycles,
+                       gpr_time_sub(gpr_now(GPR_CLOCK_PRECISE), busy_time));
+    }
 
-  if (count_.Load(MemoryOrder::RELAXED) == 0) {
-    stats_.busy_time_cycles =
-        gpr_time_add(stats_.busy_time_cycles,
-                     gpr_time_sub(gpr_now(GPR_CLOCK_PRECISE), busy_time));
+    gpr_log(GPR_INFO,
+            "[InfLenFIFOQueue Get] num_completed:        %" PRIu64
+            " total_queue_cycles: %" PRId32 " max_queue_cycles:   %" PRId32
+            " busy_time_cycles:   %" PRId32,
+            stats_.num_completed, gpr_time_to_millis(stats_.total_queue_cycles),
+            gpr_time_to_millis(stats_.max_queue_cycles),
+            gpr_time_to_millis(stats_.busy_time_cycles));
   }
 
-  if (GRPC_TRACE_FLAG_ENABLED(thread_pool_trace)) {
-    PrintStats();
-  }
-
+  Delete(head_to_remove);
   // Singal waiting thread
   if (count_.Load(MemoryOrder::RELAXED) > 0 && num_waiters_ > 0) {
     wait_nonempty_.Signal();
@@ -71,37 +79,34 @@ inline void* MPMCQueue::PopFront() {
   return result;
 }
 
-MPMCQueue::MPMCQueue()
-    : num_waiters_(0), queue_head_(nullptr), queue_tail_(nullptr) {
-  count_.Store(0, MemoryOrder::RELAXED);
-}
+InfLenFIFOQueue::InfLenFIFOQueue()
+    : num_waiters_(0), queue_head_(nullptr), queue_tail_(nullptr) {}
 
-MPMCQueue::~MPMCQueue() {
+InfLenFIFOQueue::~InfLenFIFOQueue() {
   GPR_ASSERT(count_.Load(MemoryOrder::RELAXED) == 0);
-  MutexLock l(&mu_);
   GPR_ASSERT(num_waiters_ == 0);
 }
 
-void MPMCQueue::Put(void* elem) {
+void InfLenFIFOQueue::Put(void* elem) {
   MutexLock l(&mu_);
 
-  Node* new_node = static_cast<Node*>(gpr_malloc(sizeof(Node)));
-  new_node->next = nullptr;
-  new_node->content = elem;
-  new_node->insert_time = gpr_now(GPR_CLOCK_PRECISE);
+  Node* new_node = New<Node>(elem);
   if (count_.Load(MemoryOrder::RELAXED) == 0) {
-    busy_time = gpr_now(GPR_CLOCK_PRECISE);
+    if (GRPC_TRACE_FLAG_ENABLED(thread_pool)) {
+      busy_time = gpr_now(GPR_CLOCK_PRECISE);
+    }
     queue_head_ = queue_tail_ = new_node;
   } else {
     queue_tail_->next = new_node;
     queue_tail_ = queue_tail_->next;
   }
-  count_.Store(count_.Load(MemoryOrder::RELAXED) + 1, MemoryOrder::RELAXED);
+  count_.FetchAdd(1, MemoryOrder::RELAXED);
 
-  // Update Stats info
-  stats_.num_started++;
-  if (GRPC_TRACE_FLAG_ENABLED(thread_pool_trace)) {
-    PrintStats();
+  // Updates Stats info
+  if (GRPC_TRACE_FLAG_ENABLED(thread_pool)) {
+    stats_.num_started++;
+    gpr_log(GPR_INFO, "[InfLenFIFOQueue Put] num_started:        %" PRIu64,
+            stats_.num_started);
   }
 
   if (num_waiters_ > 0) {
@@ -109,7 +114,7 @@ void MPMCQueue::Put(void* elem) {
   }
 }
 
-void* MPMCQueue::Get() {
+void* InfLenFIFOQueue::Get() {
   MutexLock l(&mu_);
   if (count_.Load(MemoryOrder::RELAXED) == 0) {
     num_waiters_++;
@@ -118,20 +123,8 @@ void* MPMCQueue::Get() {
     } while (count_.Load(MemoryOrder::RELAXED) == 0);
     num_waiters_--;
   }
-  GPR_ASSERT(count_.Load(MemoryOrder::RELAXED) > 0);
+  GPR_DEBUG_ASSERT(count_.Load(MemoryOrder::RELAXED) > 0);
   return PopFront();
-}
-
-void MPMCQueue::PrintStats() {
-  gpr_log(GPR_INFO, "STATS INFO:");
-  gpr_log(GPR_INFO, "num_started:        %" PRIu64, stats_.num_started);
-  gpr_log(GPR_INFO, "num_completed:      %" PRIu64, stats_.num_completed);
-  gpr_log(GPR_INFO, "total_queue_cycles: %" PRId32,
-          gpr_time_to_millis(stats_.total_queue_cycles));
-  gpr_log(GPR_INFO, "max_queue_cycles:   %" PRId32,
-          gpr_time_to_millis(stats_.max_queue_cycles));
-  gpr_log(GPR_INFO, "busy_time_cycles:   %" PRId32,
-          gpr_time_to_millis(stats_.busy_time_cycles));
 }
 
 }  // namespace grpc_core

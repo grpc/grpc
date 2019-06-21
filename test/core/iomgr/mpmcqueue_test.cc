@@ -29,14 +29,6 @@
 #define THREAD_SMALL_ITERATION 100
 #define THREAD_LARGE_ITERATION 10000
 
-static void test_no_op(void) {
-  gpr_log(GPR_DEBUG, "test_no_op");
-  grpc_core::MPMCQueue mpmcqueue;
-  gpr_log(GPR_DEBUG, "Checking count...");
-  GPR_ASSERT(mpmcqueue.count() == 0);
-  gpr_log(GPR_DEBUG, "Done.");
-}
-
 // Testing items for queue
 struct WorkItem {
   int index;
@@ -45,59 +37,44 @@ struct WorkItem {
   WorkItem(int i) : index(i) { done = false; }
 };
 
-static void test_small_queue(void) {
-  gpr_log(GPR_DEBUG, "test_small_queue");
-  grpc_core::MPMCQueue small_queue;
-  for (int i = 0; i < THREAD_SMALL_ITERATION; ++i) {
-    small_queue.Put(static_cast<void*>(new WorkItem(i)));
-  }
-  GPR_ASSERT(small_queue.count() == THREAD_SMALL_ITERATION);
-  // Get items out in FIFO order
-  for (int i = 0; i < THREAD_SMALL_ITERATION; ++i) {
-    WorkItem* item = static_cast<WorkItem*>(small_queue.Get());
-    GPR_ASSERT(i == item->index);
-    delete item;
-  }
-  gpr_log(GPR_DEBUG, "Done.");
-}
-
-static void test_get_thd(void* args) {
-  grpc_core::MPMCQueue* mpmcqueue = static_cast<grpc_core::MPMCQueue*>(args);
+static void ConsumerThread(void* args) {
+  grpc_core::InfLenFIFOQueue* queue =
+      static_cast<grpc_core::InfLenFIFOQueue*>(args);
 
   // count number of Get() called in this thread
   int count = 0;
-  int last_index = -1;
+
   WorkItem* item;
-  while ((item = static_cast<WorkItem*>(mpmcqueue->Get())) != nullptr) {
+  while ((item = static_cast<WorkItem*>(queue->Get())) != nullptr) {
     count++;
-    GPR_ASSERT(item->index > last_index);
-    last_index = item->index;
     GPR_ASSERT(!item->done);
-    delete item;
+    item->done = true;
   }
 
-  gpr_log(GPR_DEBUG, "test_get_thd: %d times of Get() called.", count);
+  gpr_log(GPR_DEBUG, "ConsumerThread: %d times of Get() called.", count);
 }
 
 static void test_get_empty(void) {
-  gpr_log(GPR_DEBUG, "test_get_empty");
-  grpc_core::MPMCQueue mpmcqueue;
+  gpr_log(GPR_INFO, "test_get_empty");
+  grpc_core::InfLenFIFOQueue queue;
+  GPR_ASSERT(queue.count() == 0);
   const int num_threads = 10;
   grpc_core::Thread thds[num_threads];
 
   // Fork threads. Threads should block at the beginning since queue is empty.
   for (int i = 0; i < num_threads; ++i) {
-    thds[i] = grpc_core::Thread("mpmcq_test_ge_thd", test_get_thd, &mpmcqueue);
+    thds[i] =
+        grpc_core::Thread("mpmcq_test_ge_thd", ConsumerThread, &queue);
     thds[i].Start();
   }
 
   for (int i = 0; i < THREAD_LARGE_ITERATION; ++i) {
-    mpmcqueue.Put(static_cast<void*>(new WorkItem(i)));
+    queue.Put(static_cast<void*>(new WorkItem(i)));
   }
 
   gpr_log(GPR_DEBUG, "Terminating threads...");
   for (int i = 0; i < num_threads; ++i) {
-    mpmcqueue.Put(nullptr);
+    queue.Put(nullptr);
   }
   for (int i = 0; i < num_threads; ++i) {
     thds[i].Join();
@@ -105,9 +82,9 @@ static void test_get_empty(void) {
   gpr_log(GPR_DEBUG, "Done.");
 }
 
-static void test_large_queue(void) {
-  gpr_log(GPR_DEBUG, "test_large_queue");
-  grpc_core::MPMCQueue large_queue;
+static void test_FIFO(void) {
+  gpr_log(GPR_INFO, "test_large_queue");
+  grpc_core::InfLenFIFOQueue large_queue;
   for (int i = 0; i < THREAD_LARGE_ITERATION; ++i) {
     large_queue.Put(static_cast<void*>(new WorkItem(i)));
   }
@@ -120,18 +97,19 @@ static void test_large_queue(void) {
 }
 
 // Thread for put items into queue
-class WorkThread {
+class ProducerThread {
  public:
-  WorkThread(grpc_core::MPMCQueue* mpmcqueue, int start_index, int num_items)
+  ProducerThread(grpc_core::InfLenFIFOQueue* queue, int start_index,
+                 int num_items)
       : start_index_(start_index),
         num_items_(num_items),
-        mpmcqueue_(mpmcqueue) {
+        queue_(queue) {
     items_ = nullptr;
     thd_ = grpc_core::Thread(
         "mpmcq_test_mt_put_thd",
-        [](void* th) { static_cast<WorkThread*>(th)->Run(); }, this);
+        [](void* th) { static_cast<ProducerThread*>(th)->Run(); }, this);
   }
-  ~WorkThread() {
+  ~ProducerThread() {
     for (int i = 0; i < num_items_; ++i) {
       GPR_ASSERT(items_[i]->done);
       delete items_[i];
@@ -147,63 +125,49 @@ class WorkThread {
     items_ = new WorkItem*[num_items_];
     for (int i = 0; i < num_items_; ++i) {
       items_[i] = new WorkItem(start_index_ + i);
-      mpmcqueue_->Put(items_[i]);
+      queue_->Put(items_[i]);
     }
   }
 
   int start_index_;
   int num_items_;
-  grpc_core::MPMCQueue* mpmcqueue_;
+  grpc_core::InfLenFIFOQueue* queue_;
   grpc_core::Thread thd_;
   WorkItem** items_;
 };
 
-static void test_many_get_thd(void* args) {
-  grpc_core::MPMCQueue* mpmcqueue = static_cast<grpc_core::MPMCQueue*>(args);
 
-  // count number of Get() called in this thread
-  int count = 0;
-
-  WorkItem* item;
-  while ((item = static_cast<WorkItem*>(mpmcqueue->Get())) != nullptr) {
-    count++;
-    GPR_ASSERT(!item->done);
-    item->done = true;
-  }
-
-  gpr_log(GPR_DEBUG, "test_many_get_thd: %d times of Get() called.", count);
-}
 
 static void test_many_thread(void) {
-  gpr_log(GPR_DEBUG, "test_many_thread");
+  gpr_log(GPR_INFO, "test_many_thread");
   const int num_work_thd = 10;
   const int num_get_thd = 20;
-  grpc_core::MPMCQueue mpmcqueue;
-  WorkThread** work_thds = new WorkThread*[num_work_thd];
+  grpc_core::InfLenFIFOQueue queue;
+  ProducerThread** work_thds = new ProducerThread*[num_work_thd];
   grpc_core::Thread get_thds[num_get_thd];
 
-  gpr_log(GPR_DEBUG, "Fork WorkThread...");
+  gpr_log(GPR_DEBUG, "Fork ProducerThread...");
   for (int i = 0; i < num_work_thd; ++i) {
-    work_thds[i] = new WorkThread(&mpmcqueue, i * THREAD_LARGE_ITERATION,
+    work_thds[i] = new ProducerThread(&queue, i * THREAD_LARGE_ITERATION,
                                   THREAD_LARGE_ITERATION);
     work_thds[i]->Start();
   }
-  gpr_log(GPR_DEBUG, "WorkThread Started.");
-  gpr_log(GPR_DEBUG, "For Getter Thread...");
+  gpr_log(GPR_DEBUG, "ProducerThread Started.");
+  gpr_log(GPR_DEBUG, "Fork Getter Thread...");
   for (int i = 0; i < num_get_thd; ++i) {
-    get_thds[i] = grpc_core::Thread("mpmcq_test_mt_get_thd", test_many_get_thd,
-                                    &mpmcqueue);
+    get_thds[i] = grpc_core::Thread("mpmcq_test_mt_get_thd", ConsumerThread,
+                                    &queue);
     get_thds[i].Start();
   }
   gpr_log(GPR_DEBUG, "Getter Thread Started.");
-  gpr_log(GPR_DEBUG, "Waiting WorkThread to finish...");
+  gpr_log(GPR_DEBUG, "Waiting ProducerThread to finish...");
   for (int i = 0; i < num_work_thd; ++i) {
     work_thds[i]->Join();
   }
-  gpr_log(GPR_DEBUG, "All WorkThread Terminated.");
+  gpr_log(GPR_DEBUG, "All ProducerThread Terminated.");
   gpr_log(GPR_DEBUG, "Terminating Getter Thread...");
   for (int i = 0; i < num_get_thd; ++i) {
-    mpmcqueue.Put(nullptr);
+    queue.Put(nullptr);
   }
   for (int i = 0; i < num_get_thd; ++i) {
     get_thds[i].Join();
@@ -221,10 +185,8 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
-  test_no_op();
-  test_small_queue();
   test_get_empty();
-  test_large_queue();
+  test_FIFO();
   test_many_thread();
   grpc_shutdown();
   return 0;
