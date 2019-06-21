@@ -45,7 +45,7 @@ inline void* InfLenFIFOQueue::PopFront() {
 
   if (GRPC_TRACE_FLAG_ENABLED(thread_pool)) {
     gpr_timespec wait_time =
-      gpr_time_sub(gpr_now(GPR_CLOCK_PRECISE), head_to_remove->insert_time);
+        gpr_time_sub(gpr_now(GPR_CLOCK_PRECISE), head_to_remove->insert_time);
 
     // Updates Stats info
     stats_.num_completed++;
