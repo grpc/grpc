@@ -49,7 +49,7 @@ struct thd_arg {
   bool tracked;
 };
 
-size_t page_size = static_cast<size_t>(sysconf(_SC_PAGESIZE));
+const size_t page_size = static_cast<size_t>(sysconf(_SC_PAGESIZE));
 
 size_t RoundUpToPageSize(size_t size) {
   return (size + page_size - 1) & ~(page_size - 1);
