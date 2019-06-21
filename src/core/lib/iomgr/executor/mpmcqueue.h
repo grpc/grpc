@@ -49,6 +49,8 @@ class MPMCQueueInterface {
 
   // Returns number of elements in the queue currently
   virtual int count() const GRPC_ABSTRACT;
+
+  GRPC_ABSTRACT_BASE_CLASS
 };
 
 class InfLenFIFOQueue : public MPMCQueueInterface {
@@ -73,8 +75,6 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
   // There might be concurrently add/remove on queue, so count might change
   // quickly.
   int count() const { return count_.Load(MemoryOrder::RELAXED); }
-
-  GRPC_ABSTRACT_BASE_CLASS
 
  private:
   // For Internal Use Only.
