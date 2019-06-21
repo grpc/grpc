@@ -64,9 +64,8 @@ class Thread {
     }
     bool tracked() const { return tracked_; }
 
-    /// Set thread stack size (in bytes). Set to 0 will reset stack size to
-    /// default value, which is 64KB for Windows threads and 2MB for Posix(x86)
-    /// threads.
+    /// Sets thread stack size (in bytes). Sets to 0 will use the default stack
+    /// size which is 64KB for Windows threads and 2MB for Posix(x86) threads.
     Options& set_stack_size(size_t bytes) {
       stack_size_ = bytes;
       return *this;

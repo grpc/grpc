@@ -55,7 +55,7 @@ size_t RoundUpToPageSize(size_t size) {
   return (size + page_size - 1) & ~(page_size - 1);
 }
 
-// Return the minimum valid stack size that can be passed to
+// Returns the minimum valid stack size that can be passed to
 // pthread_attr_setstacksize.
 size_t MinValidStackSize(size_t request_size) {
   if (request_size < _SC_THREAD_STACK_MIN) {
