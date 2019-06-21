@@ -37,10 +37,14 @@
 
 #define TEST_TIMEOUT 16
 
-static NSString *const kHostAddress = @"localhost:5050";
+// The server address is derived from preprocessor macro, which is
+// in turn derived from environment variable of the same name.
+#define NSStringize_helper(x) #x
+#define NSStringize(x) @NSStringize_helper(x)
+static NSString *const kHostAddress = NSStringize(HOST_PORT_LOCAL);
 static NSString *const kPackage = @"grpc.testing";
 static NSString *const kService = @"TestService";
-static NSString *const kRemoteSSLHost = @"grpc-test.sandbox.googleapis.com";
+static NSString *const kRemoteSSLHost = NSStringize(HOST_PORT_REMOTE);
 
 static GRPCProtoMethod *kInexistentMethod;
 static GRPCProtoMethod *kEmptyCallMethod;
