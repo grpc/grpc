@@ -35,6 +35,7 @@ class Channel;
 namespace grpc {
 
 namespace testing {
+
 typedef enum { INSECURE = 0, TLS, ALTS } transport_security;
 
 }  // namespace testing

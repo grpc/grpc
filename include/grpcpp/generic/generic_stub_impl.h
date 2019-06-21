@@ -21,6 +21,7 @@
 
 #include <functional>
 
+#include <grpcpp/client_context.h>
 #include <grpcpp/support/async_stream.h>
 #include <grpcpp/support/async_unary_call.h>
 #include <grpcpp/support/byte_buffer.h>
