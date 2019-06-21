@@ -54,9 +54,9 @@ class RpcMethodHandler : public MethodHandler {
  public:
   RpcMethodHandler(
       std::function<Status(ServiceType*, ::grpc_impl::ServerContext*,
-                                        const RequestType*, ResponseType*)>
-                       func,
-                   ServiceType* service)
+                           const RequestType*, ResponseType*)>
+          func,
+      ServiceType* service)
       : func_(func), service_(service) {}
 
   void RunHandler(const HandlerParameter& param) final {

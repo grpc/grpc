@@ -81,8 +81,8 @@ class ClientAsyncResponseReaderFactory {
   template <class W>
   static ClientAsyncResponseReader<R>* Create(
       ChannelInterface* channel, ::grpc_impl::CompletionQueue* cq,
-      const ::grpc::internal::RpcMethod& method, ::grpc_impl::ClientContext* context,
-      const W& request, bool start) {
+      const ::grpc::internal::RpcMethod& method,
+      ::grpc_impl::ClientContext* context, const W& request, bool start) {
     ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
     return new (g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientAsyncResponseReader<R>)))
@@ -162,7 +162,8 @@ class ClientAsyncResponseReader final
   bool initial_metadata_read_ = false;
 
   template <class W>
-  ClientAsyncResponseReader(::grpc::internal::Call call, ::grpc_impl::ClientContext* context,
+  ClientAsyncResponseReader(::grpc::internal::Call call,
+                            ::grpc_impl::ClientContext* context,
                             const W& request, bool start)
       : context_(context), call_(call), started_(start) {
     // Bind the metadata at time of StartCallInternal but set up the rest here

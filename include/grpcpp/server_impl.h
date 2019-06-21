@@ -183,16 +183,16 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   /// server completion queues passed via sync_server_cqs param.
   Server(int max_message_size, ChannelArguments* args,
          std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
-          sync_server_cqs,
-      int min_pollers, int max_pollers, int sync_cq_timeout_msec,
-      std::vector<
-          std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
-          acceptors,
-      grpc_resource_quota* server_rq = nullptr,
-      std::vector<std::unique_ptr<
-          grpc::experimental::ServerInterceptorFactoryInterface>>
-          interceptor_creators = std::vector<std::unique_ptr<
-              grpc::experimental::ServerInterceptorFactoryInterface>>());
+             sync_server_cqs,
+         int min_pollers, int max_pollers, int sync_cq_timeout_msec,
+         std::vector<
+             std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
+             acceptors,
+         grpc_resource_quota* server_rq = nullptr,
+         std::vector<std::unique_ptr<
+             grpc::experimental::ServerInterceptorFactoryInterface>>
+             interceptor_creators = std::vector<std::unique_ptr<
+                 grpc::experimental::ServerInterceptorFactoryInterface>>());
 
   /// Start the server.
   ///

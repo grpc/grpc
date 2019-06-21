@@ -120,7 +120,7 @@ class WriterInterface {
   ///
   /// \param msg The message to be written to the stream.
   ///
-  /// \return \a true on success, \a false when the stream has been closed.access/marconi/common/grpc/async_grpc_container.h
+  /// \return \a true on success, \a false when the stream has been closed.
   inline bool Write(const W& msg) { return Write(msg, WriteOptions()); }
 
   /// Write \a msg and coalesce it with the writing of trailing metadata, using
@@ -142,7 +142,7 @@ class WriterInterface {
   }
 };
 
-}  // namespace internalaccess/marconi/common/grpc/async_grpc_container.h
+}  // namespace internal
 
 /// Client-side interface for streaming reads of message of type \a R.
 template <class R>
