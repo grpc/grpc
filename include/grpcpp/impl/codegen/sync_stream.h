@@ -21,10 +21,10 @@
 
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/channel_interface.h>
-#include <grpcpp/impl/codegen/client_context.h>
+#include <grpcpp/impl/codegen/client_context_impl.h>
 #include <grpcpp/impl/codegen/completion_queue.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
-#include <grpcpp/impl/codegen/server_context.h>
+#include <grpcpp/impl/codegen/server_context_impl.h>
 #include <grpcpp/impl/codegen/service_type.h>
 #include <grpcpp/impl/codegen/status.h>
 
@@ -120,7 +120,7 @@ class WriterInterface {
   ///
   /// \param msg The message to be written to the stream.
   ///
-  /// \return \a true on success, \a false when the stream has been closed.
+  /// \return \a true on success, \a false when the stream has been closed.access/marconi/common/grpc/async_grpc_container.h
   inline bool Write(const W& msg) { return Write(msg, WriteOptions()); }
 
   /// Write \a msg and coalesce it with the writing of trailing metadata, using
@@ -142,7 +142,7 @@ class WriterInterface {
   }
 };
 
-}  // namespace internal
+}  // namespace internalaccess/marconi/common/grpc/async_grpc_container.h
 
 /// Client-side interface for streaming reads of message of type \a R.
 template <class R>
@@ -163,7 +163,8 @@ class ClientReaderFactory {
   template <class W>
   static ClientReader<R>* Create(ChannelInterface* channel,
                                  const ::grpc::internal::RpcMethod& method,
-                                 ClientContext* context, const W& request) {
+                                 ::grpc_impl::ClientContext* context,
+                                 const W& request) {
     return new ClientReader<R>(channel, method, context, request);
   }
 };
@@ -230,8 +231,8 @@ class ClientReader final : public ClientReaderInterface<R> {
 
  private:
   friend class internal::ClientReaderFactory<R>;
-  ClientContext* context_;
-  CompletionQueue cq_;
+  ::grpc_impl::ClientContext* context_;
+  ::grpc_impl::CompletionQueue cq_;
   ::grpc::internal::Call call_;
 
   /// Block to create a stream and write the initial metadata and \a request
@@ -240,7 +241,7 @@ class ClientReader final : public ClientReaderInterface<R> {
   template <class W>
   ClientReader(::grpc::ChannelInterface* channel,
                const ::grpc::internal::RpcMethod& method,
-               ClientContext* context, const W& request)
+               ::grpc_impl::ClientContext* context, const W& request)
       : context_(context),
         cq_(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
@@ -281,7 +282,8 @@ class ClientWriterFactory {
   template <class R>
   static ClientWriter<W>* Create(::grpc::ChannelInterface* channel,
                                  const ::grpc::internal::RpcMethod& method,
-                                 ClientContext* context, R* response) {
+                                 ::grpc_impl::ClientContext* context,
+                                 R* response) {
     return new ClientWriter<W>(channel, method, context, response);
   }
 };
@@ -374,7 +376,7 @@ class ClientWriter : public ClientWriterInterface<W> {
   template <class R>
   ClientWriter(ChannelInterface* channel,
                const ::grpc::internal::RpcMethod& method,
-               ClientContext* context, R* response)
+               ::grpc_impl::ClientContext* context, R* response)
       : context_(context),
         cq_(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
@@ -393,12 +395,12 @@ class ClientWriter : public ClientWriterInterface<W> {
     }
   }
 
-  ClientContext* context_;
+  ::grpc_impl::ClientContext* context_;
   ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
                               ::grpc::internal::CallOpGenericRecvMessage,
                               ::grpc::internal::CallOpClientRecvStatus>
       finish_ops_;
-  CompletionQueue cq_;
+  ::grpc_impl::CompletionQueue cq_;
   ::grpc::internal::Call call_;
 };
 
@@ -431,7 +433,8 @@ class ClientReaderWriterFactory {
  public:
   static ClientReaderWriter<W, R>* Create(
       ::grpc::ChannelInterface* channel,
-      const ::grpc::internal::RpcMethod& method, ClientContext* context) {
+      const ::grpc::internal::RpcMethod& method,
+      ::grpc_impl::ClientContext* context) {
     return new ClientReaderWriter<W, R>(channel, method, context);
   }
 };
@@ -539,8 +542,8 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
  private:
   friend class internal::ClientReaderWriterFactory<W, R>;
 
-  ClientContext* context_;
-  CompletionQueue cq_;
+  ::grpc_impl::ClientContext* context_;
+  ::grpc_impl::CompletionQueue cq_;
   ::grpc::internal::Call call_;
 
   /// Block to create a stream and write the initial metadata and \a request
@@ -548,7 +551,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
   /// used to send to the server when starting the call.
   ClientReaderWriter(::grpc::ChannelInterface* channel,
                      const ::grpc::internal::RpcMethod& method,
-                     ClientContext* context)
+                     ::grpc_impl::ClientContext* context)
       : context_(context),
         cq_(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
@@ -607,12 +610,12 @@ class ServerReader final : public ServerReaderInterface<R> {
 
  private:
   internal::Call* const call_;
-  ServerContext* const ctx_;
+  ::grpc_impl::ServerContext* const ctx_;
 
   template <class ServiceType, class RequestType, class ResponseType>
   friend class internal::ClientStreamingHandler;
 
-  ServerReader(internal::Call* call, ServerContext* ctx)
+  ServerReader(internal::Call* call, ::grpc_impl::ServerContext* ctx)
       : call_(call), ctx_(ctx) {}
 };
 
@@ -681,12 +684,12 @@ class ServerWriter final : public ServerWriterInterface<W> {
 
  private:
   internal::Call* const call_;
-  ServerContext* const ctx_;
+  ::grpc_impl::ServerContext* const ctx_;
 
   template <class ServiceType, class RequestType, class ResponseType>
   friend class internal::ServerStreamingHandler;
 
-  ServerWriter(internal::Call* call, ServerContext* ctx)
+  ServerWriter(internal::Call* call, ::grpc_impl::ServerContext* ctx)
       : call_(call), ctx_(ctx) {}
 };
 
@@ -701,7 +704,7 @@ namespace internal {
 template <class W, class R>
 class ServerReaderWriterBody final {
  public:
-  ServerReaderWriterBody(Call* call, ServerContext* ctx)
+  ServerReaderWriterBody(Call* call, ::grpc_impl::ServerContext* ctx)
       : call_(call), ctx_(ctx) {}
 
   void SendInitialMetadata() {
@@ -759,7 +762,7 @@ class ServerReaderWriterBody final {
 
  private:
   Call* const call_;
-  ServerContext* const ctx_;
+  ::grpc_impl::ServerContext* const ctx_;
 };
 
 }  // namespace internal
@@ -797,7 +800,7 @@ class ServerReaderWriter final : public ServerReaderWriterInterface<W, R> {
 
   friend class internal::TemplatedBidiStreamingHandler<ServerReaderWriter<W, R>,
                                                        false>;
-  ServerReaderWriter(internal::Call* call, ServerContext* ctx)
+  ServerReaderWriter(internal::Call* call, ::grpc_impl::ServerContext* ctx)
       : body_(call, ctx) {}
 };
 
@@ -865,7 +868,7 @@ class ServerUnaryStreamer final
 
   friend class internal::TemplatedBidiStreamingHandler<
       ServerUnaryStreamer<RequestType, ResponseType>, true>;
-  ServerUnaryStreamer(internal::Call* call, ServerContext* ctx)
+  ServerUnaryStreamer(internal::Call* call, ::grpc_impl::ServerContext* ctx)
       : body_(call, ctx), read_done_(false), write_done_(false) {}
 };
 
@@ -925,7 +928,7 @@ class ServerSplitStreamer final
 
   friend class internal::TemplatedBidiStreamingHandler<
       ServerSplitStreamer<RequestType, ResponseType>, false>;
-  ServerSplitStreamer(internal::Call* call, ServerContext* ctx)
+  ServerSplitStreamer(internal::Call* call, ::grpc_impl::ServerContext* ctx)
       : body_(call, ctx), read_done_(false) {}
 };
 

@@ -21,6 +21,7 @@
 
 #include <memory>
 
+#include <grpcpp/channel.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/support/config.h>
 

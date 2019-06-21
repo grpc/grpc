@@ -19,6 +19,7 @@
 #ifndef TEST_QPS_SERVER_H
 #define TEST_QPS_SERVER_H
 
+#include <grpcpp/channel.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpcpp/resource_quota.h>
