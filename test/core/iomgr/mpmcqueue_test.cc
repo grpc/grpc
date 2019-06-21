@@ -128,7 +128,7 @@ static void test_get_empty(void) {
 }
 
 static void test_FIFO(void) {
-  gpr_log(GPR_INFO, "test_large_queue");
+  gpr_log(GPR_INFO, "test_FIFO");
   grpc_core::InfLenFIFOQueue large_queue;
   for (int i = 0; i < THREAD_LARGE_ITERATION; ++i) {
     large_queue.Put(static_cast<void*>(new WorkItem(i)));
