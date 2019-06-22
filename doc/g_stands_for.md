@@ -21,4 +21,5 @@
 - 1.19 'g' stands for ['gold'](https://github.com/grpc/grpc/tree/v1.19.x)
 - 1.20 'g' stands for ['godric'](https://github.com/grpc/grpc/tree/v1.20.x)
 - 1.21 'g' stands for ['gandalf'](https://github.com/grpc/grpc/tree/v1.21.x)
-- 1.22 'g' stands for ['gale'](https://github.com/grpc/grpc/tree/master)
+- 1.22 'g' stands for ['gale'](https://github.com/grpc/grpc/tree/v1.22.x)
+- 1.23 'g' stands for ['gangnam'](https://github.com/grpc/grpc/tree/master)

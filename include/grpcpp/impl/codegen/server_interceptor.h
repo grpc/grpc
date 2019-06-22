@@ -98,9 +98,7 @@ class ServerRpcInfo {
 
   ServerRpcInfo(grpc_impl::ServerContext* ctx, const char* method,
                 internal::RpcMethod::RpcType type)
-      : ctx_(ctx), method_(method), type_(static_cast<Type>(type)) {
-    ref_.store(1);
-  }
+      : ctx_(ctx), method_(method), type_(static_cast<Type>(type)) {}
 
   // Runs interceptor at pos \a pos.
   void RunInterceptor(
@@ -122,9 +120,9 @@ class ServerRpcInfo {
     }
   }
 
-  void Ref() { ref_++; }
+  void Ref() { ref_.fetch_add(1, std::memory_order_relaxed); }
   void Unref() {
-    if (--ref_ == 0) {
+    if (GPR_UNLIKELY(ref_.fetch_sub(1, std::memory_order_acq_rel) == 1)) {
       delete this;
     }
   }
@@ -132,7 +130,7 @@ class ServerRpcInfo {
   grpc_impl::ServerContext* ctx_ = nullptr;
   const char* method_ = nullptr;
   const Type type_;
-  std::atomic_int ref_;
+  std::atomic<intptr_t> ref_{1};
   std::vector<std::unique_ptr<experimental::Interceptor>> interceptors_;
 
   friend class internal::InterceptorBatchMethodsImpl;

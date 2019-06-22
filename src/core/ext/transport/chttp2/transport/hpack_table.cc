@@ -29,6 +29,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/murmur_hash.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
 
@@ -182,9 +183,10 @@ void grpc_chttp2_hptbl_init(grpc_chttp2_hptbl* tbl) {
   memset(tbl->ents, 0, sizeof(*tbl->ents) * tbl->cap_entries);
   for (i = 1; i <= GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
     tbl->static_ents[i - 1] = grpc_mdelem_from_slices(
-        grpc_slice_intern(grpc_slice_from_static_string(static_table[i].key)),
         grpc_slice_intern(
-            grpc_slice_from_static_string(static_table[i].value)));
+            grpc_slice_from_static_string_internal(static_table[i].key)),
+        grpc_slice_intern(
+            grpc_slice_from_static_string_internal(static_table[i].value)));
   }
 }
 

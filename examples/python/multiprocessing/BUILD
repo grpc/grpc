@@ -36,7 +36,7 @@ py_binary(
         "//src/python/grpcio/grpc:grpcio",
         ":prime_proto_pb2",
     ],
-    default_python_version = "PY3",
+    srcs_version = "PY3",
 )
 
 py_binary(
@@ -50,7 +50,7 @@ py_binary(
         "//conditions:default": [requirement("futures")],
         "//:python3": [],
     }),
-    default_python_version = "PY3",
+    srcs_version = "PY3",
 )
 
 py_test(

@@ -1057,54 +1057,91 @@ class ObjCLanguage(object):
         _check_compiler(self.args.compiler, ['default'])
 
     def test_specs(self):
-        return [
-            self.config.job_spec(
-                ['src/objective-c/tests/run_tests.sh'],
-                timeout_seconds=60 * 60,
-                shortname='objc-tests',
-                cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS),
-            self.config.job_spec(
-                ['src/objective-c/tests/run_plugin_tests.sh'],
-                timeout_seconds=60 * 60,
-                shortname='objc-plugin-tests',
-                cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS),
+        out = []
+        out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
                 timeout_seconds=10 * 60,
-                shortname='objc-build-example-sample',
+                shortname='ios-buildtest-example-sample',
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'Sample',
                     'EXAMPLE_PATH': 'src/objective-c/examples/Sample'
-                }),
+                }))
+        out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
                 timeout_seconds=10 * 60,
-                shortname='objc-build-example-sample-frameworks',
+                shortname='ios-buildtest-example-sample-frameworks',
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'Sample',
                     'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
                     'FRAMEWORKS': 'YES'
-                }),
+                }))
+        out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
                 timeout_seconds=10 * 60,
-                shortname='objc-build-example-switftsample',
+                shortname='ios-buildtest-example-switftsample',
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'SwiftSample',
                     'EXAMPLE_PATH': 'src/objective-c/examples/SwiftSample'
-                }),
+                }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_plugin_tests.sh'],
+                timeout_seconds=60 * 60,
+                shortname='ios-test-plugintest',
+                cpu_cost=1e6,
+                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        out.append(
             self.config.job_spec(
                 ['test/core/iomgr/ios/CFStreamTests/run_tests.sh'],
                 timeout_seconds=20 * 60,
-                shortname='cfstream-tests',
+                shortname='ios-test-cfstream-tests',
                 cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS),
-        ]
+                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=60 * 60,
+                shortname='ios-test-unittests',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'UnitTests'
+                }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=60 * 60,
+                shortname='ios-test-interoptests',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'InteropTests'
+                }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=60 * 60,
+                shortname='ios-test-cronettests',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'CronetTests'
+                }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=60 * 60,
+                shortname='mac-test-basictests',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'MacTests',
+                    'PLATFORM': 'macos'
+                }))
+
+        return sorted(out)
 
     def pre_build_steps(self):
         return []
