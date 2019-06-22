@@ -3160,6 +3160,7 @@ foreach(_hdr
   include/grpcpp/channel_impl.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
+  include/grpcpp/completion_queue_impl.h
   include/grpcpp/create_channel.h
   include/grpcpp/create_channel_impl.h
   include/grpcpp/create_channel_posix.h
@@ -3781,6 +3782,7 @@ foreach(_hdr
   include/grpcpp/channel_impl.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
+  include/grpcpp/completion_queue_impl.h
   include/grpcpp/create_channel.h
   include/grpcpp/create_channel_impl.h
   include/grpcpp/create_channel_posix.h
@@ -4780,6 +4782,7 @@ foreach(_hdr
   include/grpcpp/channel_impl.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
+  include/grpcpp/completion_queue_impl.h
   include/grpcpp/create_channel.h
   include/grpcpp/create_channel_impl.h
   include/grpcpp/create_channel_posix.h
