@@ -114,13 +114,13 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
 
   Mutex mu_;               // Protecting lock
   CondVar wait_nonempty_;  // Wait on empty queue on get
-  int num_waiters_;        // Number of waiters
+  int num_waiters_ = 0;    // Number of waiters
 
-  Node* queue_head_;       // Head of the queue, remove position
-  Node* queue_tail_;       // End of queue, insert position
-  Atomic<int> count_{0};   // Number of elements in queue
-  Stats stats_;            // Stats info
-  gpr_timespec busy_time;  // Start time of busy queue
+  Node* queue_head_ = nullptr;  // Head of the queue, remove position
+  Node* queue_tail_ = nullptr;  // End of queue, insert position
+  Atomic<int> count_{0};        // Number of elements in queue
+  Stats stats_;                 // Stats info
+  gpr_timespec busy_time;       // Start time of busy queue
 };
 
 }  // namespace grpc_core

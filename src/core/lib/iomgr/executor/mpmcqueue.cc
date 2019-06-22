@@ -69,8 +69,7 @@ inline void* InfLenFIFOQueue::PopFront() {
   return result;
 }
 
-InfLenFIFOQueue::InfLenFIFOQueue()
-    : num_waiters_(0), queue_head_(nullptr), queue_tail_(nullptr) {}
+InfLenFIFOQueue::InfLenFIFOQueue() {}
 
 InfLenFIFOQueue::~InfLenFIFOQueue() {
   GPR_ASSERT(count_.Load(MemoryOrder::RELAXED) == 0);
