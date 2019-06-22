@@ -36,7 +36,7 @@
 @property(readonly) NSUInteger callThruCount;
 @property(readwrite) NSMutableDictionary *headerChecker;
 @property(readonly) BOOL headerCheckPassed;
-@property(readwrite) BOOL useOriginalShutDown;
+@property(readwrite) BOOL useBaseClassShutDown;
 
 - (instancetype)init;
 
@@ -58,7 +58,7 @@
 
 @synthesize callThruCount = _callThruCount;
 @synthesize headerCheckPassed = _headerCheckPassed;
-@synthesize useOriginalShutDown = _realShutDdown;
+@synthesize useBaseClassShutDown = _realShutDdown;
 
 - (instancetype)init {
   GRPCCall2Internal *nextInterceptor = [[GRPCCall2Internal alloc] init];
@@ -225,20 +225,25 @@
 }
 
 - (void)testCancelCallBeforeRequestSent {
-  _manager.useOriginalShutDown = YES;
+  _manager.useBaseClassShutDown = YES;
   _callCompleteExpectation = [self expectationWithDescription:@"Received response."];
   GRPCInterceptor *interceptor = [_context createInterceptorWithManager:_manager];
   _manager.interceptor = interceptor;
   [interceptor startWithRequestOptions:_requestOptions callOptions:_callOptions];
   [interceptor writeData:TEST_DUMMY_DATA];
   [interceptor cancel];
-  [interceptor finish];
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
   XCTAssertNotNil(_error);
+  NSError *errCopy = [_error copy];
+  _callCompleteExpectation = [self expectationWithDescription:@"Response did not arrive."];
+  [_callCompleteExpectation setInverted:YES];
+  [interceptor finish];
+  [self waitForExpectations:@[ _callCompleteExpectation ] timeout:2];
+  XCTAssertEqualObjects(_error, errCopy);
 }
 
 - (void)testCancelCallAfterRequestSent {
-  _manager.useOriginalShutDown = YES;
+  _manager.useBaseClassShutDown = YES;
   _callCompleteExpectation = [self expectationWithDescription:@"Received response."];
   GRPCInterceptor *interceptor = [_context createInterceptorWithManager:_manager];
   _manager.interceptor = interceptor;
@@ -257,7 +262,7 @@
 }
 
 - (void)testCancelCallAfterForwardingResponse {
-  _manager.useOriginalShutDown = YES;
+  _manager.useBaseClassShutDown = YES;
   _callCompleteExpectation = [self expectationWithDescription:@"Received response."];
   GRPCInterceptor *interceptor = [_context createInterceptorWithManager:_manager];
   _manager.interceptor = interceptor;
