@@ -330,16 +330,12 @@
   NSMutableDictionary<RequestCacheEntry *, ResponseCacheEntry *> *_cache;
   id<LRUQueue> _queue;
   NSUInteger _maxCount; // cache size limit
-  NSMutableDictionary<RequestCacheEntry *, ResponseCacheEntry *> *_staleEntries;
 }
-
-@synthesize staleEntries = _staleEntries;
 
 - (instancetype)init {
   if ((self = [super init])) {
-    _queue = [[ArrayQueue alloc] init]; // ArrayQueue or LinkedListQueue
+    _queue = [[LinkedListQueue alloc] init]; // ArrayQueue or LinkedListQueue
     _cache = [[NSMutableDictionary alloc] init];
-    _staleEntries = [[NSMutableDictionary alloc] init];
     _maxCount = 10; // defaults to 10
   }
   return self;
@@ -367,12 +363,12 @@
       [_queue updateUse:request];
     }
     if ([response.deadline timeIntervalSinceNow] < 0) { // needs revalidation
-      [_staleEntries setObject:response forKey:request];
       [_queue popFront];
       [_cache removeObjectForKey:request];
       response = nil;
     }
     NSAssert(_cache.count <= _maxCount, @"Number of cache exceeds set limit.");
+    NSAssert(_cache.count == [_queue size], @"Fatal inconsistency between LRU queue and cache!");
   }
   return response;
 }
@@ -382,7 +378,6 @@
     if ([_cache objectForKey:request] != nil) { // cache hit
       [_queue updateUse:request];
     } else { // cache miss
-      [_staleEntries removeObjectForKey:request];
       if ([_queue size] == _maxCount) {
         RequestCacheEntry *toEvict = [_queue evict];
         [_cache removeObjectForKey:toEvict];
@@ -479,30 +474,7 @@
     _request.path = _requestOptions.path;
     _request.message = [_requestMessage copy];
     _response = [[_context getCachedResponseForRequest:_request] copy];
-    
     if (!_response) {
-      ResponseCacheEntry *staleResponse = nil;
-      @synchronized (_context) {
-        staleResponse = [_context.staleEntries objectForKey:_request];
-      }
-      if (staleResponse) { // stale response that needs revalidation
-        GRPCMutableCallOptions *options = [_callOptions mutableCopy];
-        NSMutableDictionary *metadata = [options.initialMetadata mutableCopy];
-        NSString *eTag = [staleResponse.headers objectForKey:@"etag"];
-        if (eTag) {
-          [metadata setObject:eTag forKey:@"if-none-match"];
-        } else {
-          NSString *lastModifiedDate = [staleResponse.headers objectForKey:@"last-modified"];
-          if (!lastModifiedDate) {
-            lastModifiedDate = [staleResponse.headers objectForKey:@"date"];
-          }
-          if (lastModifiedDate) {
-            [metadata setObject:lastModifiedDate forKey:@"if-modified-since"];
-          }
-        }
-        options.initialMetadata = metadata;
-        _callOptions = options;
-      }
       [_manager startNextInterceptorWithRequest:_requestOptions callOptions:_callOptions];
       [_manager writeNextInterceptorWithData:_requestMessage];
       [_manager finishNextInterceptor];
@@ -516,28 +488,10 @@
 }
 
 - (void)didReceiveInitialMetadata:(NSDictionary *)initialMetadata {
-  NSDictionary *metadata = initialMetadata;
   if (_cacheable) {
     NSDate *deadline = nil;
-    
-    MutableResponseCacheEntry *response = nil;
-    // Replacing entries with validated stale data
-    if ([initialMetadata[@"status"] isEqualToString:@"304"]) {
-      @synchronized (_context) {
-        response = [_context.staleEntries objectForKey:_request];
-      }
-      NSMutableDictionary *updatedMetadata = [response.headers mutableCopy];
-      for (NSString *key in initialMetadata) {
-        if ([key isEqualToString:@"status"]) { continue; }
-        [updatedMetadata setObject:initialMetadata[key] forKey:key];
-      }
-      metadata = updatedMetadata;
-    } else {
-      response = [[MutableResponseCacheEntry alloc] init];
-    }
-    
-    if ([metadata objectForKey:@"cache-control"]) {
-      NSArray *cacheControls = [metadata[@"cache-control"] componentsSeparatedByString:@","];
+    if ([initialMetadata objectForKey:@"cache-control"]) {
+      NSArray *cacheControls = [initialMetadata[@"cache-control"] componentsSeparatedByString:@","];
       for (NSString *option in cacheControls) {
         NSString *trimmedOption =
         [option stringByTrimmingCharactersInSet:[NSCharacterSet
@@ -561,12 +515,12 @@
     }
     
     if (_cacheable) {
-      _response = response;
-      _response.headers = metadata;
+      _response = [[MutableResponseCacheEntry alloc] init];
+      _response.headers = [initialMetadata copy];
       _response.deadline = deadline;
     }
   }
-  [_manager forwardPreviousInterceptorWithInitialMetadata:metadata];
+  [_manager forwardPreviousInterceptorWithInitialMetadata:initialMetadata];
 }
 
 - (void)didReceiveData:(id)data {
@@ -588,18 +542,8 @@
 
 - (void)didCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
   if (error == nil && _cacheable) {
-    NSDictionary *metaData = nil;
-    if ([_response.headers[@"status"] isEqualToString:@"304"]) {
-      NSMutableDictionary *updatedMetadata = [_response.trailers mutableCopy];
-      for (NSString *key in trailingMetadata) {
-        [updatedMetadata setObject:trailingMetadata[key] forKey:key];
-      }
-      metaData = updatedMetadata;
-    } else {
-      metaData = [trailingMetadata copy];
-    }
-    _response.trailers = metaData;
-    [_context setCachedResponse:_response forRequest:_request]; // where stale entry gets removed and cache updated
+    _response.trailers = [trailingMetadata copy];
+    [_context setCachedResponse:_response forRequest:_request];
     NSLog(@"Write cache for %@", _request);
   }
   [_manager forwardPreviousInterceptorCloseWithTrailingMetadata:trailingMetadata error:error];
