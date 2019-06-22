@@ -63,6 +63,7 @@ static NSString *const kService = @"TestService";
 
   [call start];
   [call writeData:[request data]];
+  [call cancel];
   [call finish];
 }
 

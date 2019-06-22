@@ -63,8 +63,8 @@
 
 - (void)updateUse:(RequestCacheEntry *)entry {
   // if the entry is not in the queue, return (cuz behavior undefined)
-  if (![_array containsObject:entry]) { return; }
   NSUInteger index = [_array indexOfObject:entry];
+  if (index == NSNotFound || index == _array.count - 1) { return; }
   for (NSUInteger i = index; i < _array.count - 1; ++i) {
     _array[i] = _array[i + 1];
   }
@@ -391,6 +391,7 @@
     }
     [_cache setObject:response forKey:request];
     NSAssert(_cache.count <= _maxCount, @"Number of cache exceeds set limit.");
+    NSAssert(_cache.count == [_queue size], @"Fatal inconsistency between LRU queue and cache!");
   }
 }
 
@@ -515,10 +516,28 @@
 }
 
 - (void)didReceiveInitialMetadata:(NSDictionary *)initialMetadata {
+  NSDictionary *metadata = initialMetadata;
   if (_cacheable) {
     NSDate *deadline = nil;
-    if ([initialMetadata objectForKey:@"cache-control"]) {
-      NSArray *cacheControls = [initialMetadata[@"cache-control"] componentsSeparatedByString:@","];
+    
+    MutableResponseCacheEntry *response = nil;
+    // Replacing entries with validated stale data
+    if ([initialMetadata[@"status"] isEqualToString:@"304"]) {
+      @synchronized (_context) {
+        response = [_context.staleEntries objectForKey:_request];
+      }
+      NSMutableDictionary *updatedMetadata = [response.headers mutableCopy];
+      for (NSString *key in initialMetadata) {
+        if ([key isEqualToString:@"status"]) { continue; }
+        [updatedMetadata setObject:initialMetadata[key] forKey:key];
+      }
+      metadata = updatedMetadata;
+    } else {
+      response = [[MutableResponseCacheEntry alloc] init];
+    }
+    
+    if ([metadata objectForKey:@"cache-control"]) {
+      NSArray *cacheControls = [metadata[@"cache-control"] componentsSeparatedByString:@","];
       for (NSString *option in cacheControls) {
         NSString *trimmedOption =
         [option stringByTrimmingCharactersInSet:[NSCharacterSet
@@ -541,30 +560,13 @@
       deadline = [[NSDate alloc] init];
     }
     
-    NSDictionary *metadata = nil;
-    MutableResponseCacheEntry *response = nil;
-    // Replacing entries with validated stale data
-    if ([initialMetadata[@"status"] isEqualToString:@"304"]) {
-      @synchronized (_context) {
-        response = [_context.staleEntries objectForKey:_request];
-      }
-      NSMutableDictionary *updatedMetadata = [response.headers mutableCopy];
-      for (NSString *key in initialMetadata) {
-        [updatedMetadata setObject:initialMetadata[key] forKey:key];
-      }
-      metadata = updatedMetadata;
-    } else {
-      response = [[MutableResponseCacheEntry alloc] init];
-      metadata = [initialMetadata copy];
-    }
-    
     if (_cacheable) {
       _response = response;
       _response.headers = metadata;
       _response.deadline = deadline;
     }
   }
-  [_manager forwardPreviousInterceptorWithInitialMetadata:initialMetadata];
+  [_manager forwardPreviousInterceptorWithInitialMetadata:metadata];
 }
 
 - (void)didReceiveData:(id)data {

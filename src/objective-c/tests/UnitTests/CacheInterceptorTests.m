@@ -36,6 +36,7 @@
 @property(readonly) NSUInteger callThruCount;
 @property(readwrite) NSMutableDictionary *headerChecker;
 @property(readonly) BOOL headerCheckPassed;
+@property(readwrite) BOOL useOriginalShutDown;
 
 - (instancetype)init;
 
@@ -46,13 +47,18 @@
   NSDictionary *_responseHeaders;
   id _responseData;
   NSDictionary *_responseTrailers;
+  NSError *_responseError;
   NSUInteger _callThruCount;
+  void (^_requestReceivedHandler)(void);
+  
   NSMutableDictionary *_headerChecker;
   BOOL _headerCheckPassed;
+  BOOL _realShutDdown;
 }
 
 @synthesize callThruCount = _callThruCount;
 @synthesize headerCheckPassed = _headerCheckPassed;
+@synthesize useOriginalShutDown = _realShutDdown;
 
 - (instancetype)init {
   GRPCCall2Internal *nextInterceptor = [[GRPCCall2Internal alloc] init];
@@ -76,6 +82,14 @@
   _responseTrailers = metaData;
 }
 
+- (void)setResponseError:(NSError *)error {
+  _responseError = error;
+}
+
+- (void)setRequestReceivedHandler:(void (^)(void))handler {
+  _requestReceivedHandler = handler;
+}
+
 - (void)startNextInterceptorWithRequest:(GRPCRequestOptions *)requestOptions
                             callOptions:(GRPCCallOptions *)callOptions {
   NSDictionary *metadata = callOptions.initialMetadata;
@@ -94,6 +108,9 @@
 
 - (void)finishNextInterceptor {
   ++_callThruCount;
+  if (_requestReceivedHandler) {
+    _requestReceivedHandler();
+  }
   dispatch_async(_interceptor.dispatchQueue, ^{
     [_interceptor didReceiveInitialMetadata:_responseHeaders];
   });
@@ -101,12 +118,15 @@
     [_interceptor didReceiveData:_responseData];
   });
   dispatch_async(_interceptor.dispatchQueue, ^{
-    [_interceptor didCloseWithTrailingMetadata:_responseTrailers error:nil];
+    [_interceptor didCloseWithTrailingMetadata:_responseTrailers error:_responseError];
   });
 }
 
 - (void)shutDown {
-  
+  // Does not set the next/prev interceptors to nil in order to reuse the manager
+  if (_realShutDdown) {
+    [super shutDown];
+  }
 }
 
 @end
@@ -131,6 +151,7 @@
   NSDictionary *_initialMetadata;
   id _data;
   NSDictionary *_trailingMetadata;
+  NSError *_error;
   GRPCRequestOptions *_requestOptions;
   GRPCMutableCallOptions *_callOptions;
   __weak XCTestExpectation *_callCompleteExpectation;
@@ -190,6 +211,7 @@
 
 - (void)didCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
   _trailingMetadata = trailingMetadata;
+  _error = error;
   [_callCompleteExpectation fulfill];
 }
 
@@ -200,6 +222,51 @@
   _manager.responseData = @"2";
   [self makeCallWithData:TEST_DUMMY_DATA];
   XCTAssertEqual((NSString *)_data, @"2");
+}
+
+- (void)testCancelCallBeforeRequestSent {
+  _manager.useOriginalShutDown = YES;
+  _callCompleteExpectation = [self expectationWithDescription:@"Received response."];
+  GRPCInterceptor *interceptor = [_context createInterceptorWithManager:_manager];
+  _manager.interceptor = interceptor;
+  [interceptor startWithRequestOptions:_requestOptions callOptions:_callOptions];
+  [interceptor writeData:TEST_DUMMY_DATA];
+  [interceptor cancel];
+  [interceptor finish];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+  XCTAssertNotNil(_error);
+}
+
+- (void)testCancelCallAfterRequestSent {
+  _manager.useOriginalShutDown = YES;
+  _callCompleteExpectation = [self expectationWithDescription:@"Received response."];
+  GRPCInterceptor *interceptor = [_context createInterceptorWithManager:_manager];
+  _manager.interceptor = interceptor;
+  _manager.requestReceivedHandler = ^{
+    dispatch_async(interceptor.dispatchQueue, ^{
+      [interceptor cancel];
+    });
+  };
+  _manager.responseError = [NSError errorWithDomain:@"io.test" code:3 userInfo:@{ @"msg": @"Error for test" }];
+  [interceptor startWithRequestOptions:_requestOptions callOptions:_callOptions];
+  [interceptor writeData:TEST_DUMMY_DATA];
+  [interceptor finish];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+  XCTAssertNotNil(_error);
+  XCTAssertTrue([_error.domain isEqualToString:@"io.grpc"]);
+}
+
+- (void)testCancelCallAfterForwardingResponse {
+  _manager.useOriginalShutDown = YES;
+  _callCompleteExpectation = [self expectationWithDescription:@"Received response."];
+  GRPCInterceptor *interceptor = [_context createInterceptorWithManager:_manager];
+  _manager.interceptor = interceptor;
+  [interceptor startWithRequestOptions:_requestOptions callOptions:_callOptions];
+  [interceptor writeData:TEST_DUMMY_DATA];
+  [interceptor finish];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+  [interceptor cancel];
+  XCTAssertNil(_error);
 }
 
 - (void)testNoStoreHeader {
@@ -213,13 +280,15 @@
 
 - (void)testCacheLimit {
   // There is an assert statement in this file: ../../GRPCClient/CacheInterceptor.m
+  _manager.responseHeaders = @{ @"cache-control": @"public, max-age=5" };
   for (int i = 0; i < 6; ++i) {
     [self makeCallWithData:NUMBER(i)];
   }
 }
 
 
-- (void)testLruEviction {
+- (void)testLRUEviction {
+  _manager.responseHeaders = @{ @"cache-control": @"public, max-age=5" };
   for (int i = 1; i <= 6; ++i) {
     [self makeCallWithData:NUMBER(i)];
   }
@@ -239,6 +308,8 @@
 }
 
 - (void)testSmallCacheSize1 {
+  _manager.responseHeaders = @{ @"cache-control": @"public, max-age=5" };
+  
   _context = [[CacheContext alloc] initWithSize:1];
   id<GRPCInterceptorFactory> factory = _context;
   _callOptions = [[GRPCMutableCallOptions alloc] init];
@@ -252,18 +323,22 @@
   XCTAssertEqual(2, _manager.callThruCount);
   [self makeCallWithData:NUMBER(1)];
   XCTAssertEqual(3, _manager.callThruCount);
+  [self makeCallWithData:NUMBER(1)];
+  XCTAssertEqual(3, _manager.callThruCount);
 }
 
 - (void)testSmallCacheSize2 {
+  _manager.responseHeaders = @{ @"cache-control": @"public, max-age=5" };
+  
   _context = [[CacheContext alloc] initWithSize:2];
   id<GRPCInterceptorFactory> factory = _context;
   _callOptions = [[GRPCMutableCallOptions alloc] init];
   _callOptions.interceptorFactories = @[ factory ];
   
-  for (int i = 0; i < 5; ++i) {
+  for (int i = 0; i < 3; ++i) {
     [self makeCallWithData:NUMBER(1)];
   }
-  for (int i = 0; i < 5; ++i) {
+  for (int i = 0; i < 3; ++i) {
     [self makeCallWithData:NUMBER(2)];
   }
   XCTAssertEqual(2, _manager.callThruCount);
@@ -281,14 +356,16 @@
 }
 
 - (void)testMaxAge {
-  _manager.responseHeaders = @{ @"cache-control": @"public, max-age=0" };
+  _manager.responseHeaders = @{ @"cache-control": @"public, max-age=1" };
   [self makeCallWithData:TEST_DUMMY_DATA];
-  sleep(1);
+  [self makeCallWithData:TEST_DUMMY_DATA];
+  XCTAssertEqual(1, _manager.callThruCount);
+  sleep(2);
   [self makeCallWithData:TEST_DUMMY_DATA];
   XCTAssertEqual(2, _manager.callThruCount);
 }
 
-- (void)testMaxAgeExpirationWithOtherRequests {
+- (void)testMaxAgeWithOtherRequests {
   for (int i = 1; i <= 5; ++i) {
     if (i == 3) {
       _manager.responseHeaders = @{ @"cache-control": @"public, max-age=1" };
@@ -303,6 +380,7 @@
   [self makeCallWithData:NUMBER(6)];
   XCTAssertEqual(6, _manager.callThruCount);
   sleep(1);
+  _manager.responseHeaders = @{ @"cache-control": @"public, max-age=1" };
   [self makeCallWithData:NUMBER(3)];
   XCTAssertEqual(7, _manager.callThruCount);
   [self makeCallWithData:NUMBER(5)];
@@ -317,21 +395,17 @@
   [self makeCallWithData:TEST_DUMMY_DATA];
   [self makeCallWithData:TEST_DUMMY_DATA];
   XCTAssertEqual(1, _manager.callThruCount);
-  XCTAssertTrue([_initialMetadata[@"status"] isEqualToString:@"200"]);
   
   sleep(1);
   _manager.headerChecker[@"if-none-match"] = @"googleLLC";
-  _manager.responseHeaders = @{ @"status": @"304",
-                                @"cache-control": @"public, max-age=1"
-                                };
+  _manager.responseHeaders = @{ @"status": @"304" };
   [self makeCallWithData:TEST_DUMMY_DATA];
   XCTAssertTrue(_manager.headerCheckPassed);
   XCTAssertEqual(2, _manager.callThruCount);
   XCTAssertTrue([TEST_DUMMY_DATA isEqualToString:(NSString *)_data]);
-  XCTAssertTrue([_initialMetadata[@"status"] isEqualToString:@"304"]);
+  XCTAssertTrue([_initialMetadata[@"status"] isEqualToString:@"200"]);
   
   [self makeCallWithData:TEST_DUMMY_DATA];
-  XCTAssertTrue(_manager.headerCheckPassed);
   XCTAssertEqual(2, _manager.callThruCount);
 }
 
