@@ -1291,6 +1291,7 @@ gen_legal_metadata_characters: $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters
 gen_percent_encoding_tables: $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables
 boringssl_ssl_test: $(BINDIR)/$(CONFIG)/boringssl_ssl_test
 boringssl_crypto_test: $(BINDIR)/$(CONFIG)/boringssl_crypto_test
+bad_streaming_id_bad_client_test: $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test
 badreq_bad_client_test: $(BINDIR)/$(CONFIG)/badreq_bad_client_test
 connection_prefix_bad_client_test: $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test
 duplicate_header_bad_client_test: $(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test
@@ -1752,6 +1753,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/xds_end2end_test \
   $(BINDIR)/$(CONFIG)/boringssl_ssl_test \
   $(BINDIR)/$(CONFIG)/boringssl_crypto_test \
+  $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test \
   $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
   $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test \
   $(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test \
@@ -1912,6 +1914,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/transport_security_common_api_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
   $(BINDIR)/$(CONFIG)/xds_end2end_test \
+  $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test \
   $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
   $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test \
   $(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test \
@@ -2444,6 +2447,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/writes_per_rpc_test || ( echo test writes_per_rpc_test failed ; exit 1 )
 	$(E) "[RUN]     Testing xds_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/xds_end2end_test || ( echo test xds_end2end_test failed ; exit 1 )
+	$(E) "[RUN]     Testing bad_streaming_id_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test || ( echo test bad_streaming_id_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing badreq_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/badreq_bad_client_test || ( echo test badreq_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing connection_prefix_bad_client_test"
@@ -20325,6 +20330,37 @@ deps_boringssl_crypto_test: $(BORINGSSL_CRYPTO_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
 -include $(BORINGSSL_CRYPTO_TEST_OBJS:.o=.dep)
+endif
+
+
+BAD_STREAMING_ID_BAD_CLIENT_TEST_SRC = \
+    test/core/bad_client/tests/bad_streaming_id.cc \
+
+BAD_STREAMING_ID_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_STREAMING_ID_BAD_CLIENT_TEST_SRC))))
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test: $(PROTOBUF_DEP) $(BAD_STREAMING_ID_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BAD_STREAMING_ID_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/bad_streaming_id.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_bad_streaming_id_bad_client_test: $(BAD_STREAMING_ID_BAD_CLIENT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BAD_STREAMING_ID_BAD_CLIENT_TEST_OBJS:.o=.dep)
 endif
 
 
