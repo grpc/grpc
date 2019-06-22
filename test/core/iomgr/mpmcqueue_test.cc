@@ -41,7 +41,7 @@ class ProducerThread {
       : start_index_(start_index), num_items_(num_items), queue_(queue) {
     items_ = nullptr;
     thd_ = grpc_core::Thread(
-        "mpmcq_test_mt_put_thd",
+        "mpmcq_test_put_thd",
         [](void* th) { static_cast<ProducerThread*>(th)->Run(); }, this);
   }
   ~ProducerThread() {
@@ -57,7 +57,8 @@ class ProducerThread {
 
  private:
   void Run() {
-    items_ = static_cast<WorkItem**>(gpr_zalloc(num_items_));
+    items_ =
+        static_cast<WorkItem**>(gpr_malloc(num_items_ * sizeof(WorkItem*)));
     for (int i = 0; i < num_items_; ++i) {
       items_[i] = grpc_core::New<WorkItem>(start_index_ + i);
       queue_->Put(items_[i]);
@@ -101,8 +102,8 @@ static void test_get_empty(void) {
     thds[i].Start();
   }
 
-  WorkItem** items =
-      static_cast<WorkItem**>(gpr_zalloc(THREAD_LARGE_ITERATION));
+  WorkItem** items = static_cast<WorkItem**>(
+      gpr_malloc(THREAD_LARGE_ITERATION * sizeof(WorkItem*)));
   for (int i = 0; i < THREAD_LARGE_ITERATION; ++i) {
     items[i] = grpc_core::New<WorkItem>(i);
     queue.Put(static_cast<void*>(items[i]));
@@ -143,8 +144,8 @@ static void test_many_thread(void) {
   const int num_work_thd = 10;
   const int num_get_thd = 20;
   grpc_core::InfLenFIFOQueue queue;
-  ProducerThread** work_thds =
-      static_cast<ProducerThread**>(gpr_zalloc(num_work_thd));
+  ProducerThread** work_thds = static_cast<ProducerThread**>(
+      gpr_malloc(num_work_thd * sizeof(ProducerThread*)));
   grpc_core::Thread get_thds[num_get_thd];
 
   gpr_log(GPR_DEBUG, "Fork ProducerThread...");
