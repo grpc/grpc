@@ -229,12 +229,93 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
+/* Server allows only POST requests */
+static void test_idempotent_request_failure(grpc_end2end_test_config config) {
+  grpc_call* c;
+  // grpc_call* s;
+  grpc_channel_args server_args;
+  server_args.num_args = 1;
+  grpc_arg server_arg;
+  server_arg.type = GRPC_ARG_INTEGER;
+  server_arg.key = const_cast<char*>(GRPC_ARG_ALLOW_POST_REQUESTS_ONLY);
+  server_arg.value.integer = 1;
+  server_args.args = &server_arg;
+  grpc_end2end_test_fixture f = begin_test(
+      config, "test_cacheable_request_failure", nullptr, &server_args);
+  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_op ops[6];
+  grpc_op* op;
+  grpc_status_code status;
+  grpc_call_error error;
+  grpc_slice details;
+  grpc_slice request_payload_slice =
+      grpc_slice_from_copied_string("hello world");
+  grpc_byte_buffer* request_payload =
+      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+
+  gpr_timespec deadline = five_seconds_from_now();
+  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/foo"), nullptr,
+                               deadline, nullptr);
+  GPR_ASSERT(c);
+
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op->data.send_initial_metadata.metadata = nullptr;
+  op->flags = GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_SEND_MESSAGE;
+  op->data.send_message.send_message = request_payload;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata.recv_initial_metadata = nullptr;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = nullptr;
+  op->data.recv_status_on_client.status = &status;
+  op->data.recv_status_on_client.status_details = &details;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
+  cq_verify(cqv);
+
+  GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
+
+  grpc_slice_unref(details);
+
+  grpc_call_unref(c);
+
+  cq_verifier_destroy(cqv);
+  grpc_byte_buffer_destroy(request_payload);
+
+  end_test(&f);
+  config.tear_down_data(&f);
+}
+
 void idempotent_request(grpc_end2end_test_config config) {
   int i;
   for (i = 0; i < 10; i++) {
     test_invoke_simple_request(config);
   }
   test_invoke_10_simple_requests(config);
+  test_idempotent_request_failure(config);
 }
 
 void idempotent_request_pre_init(void) {}

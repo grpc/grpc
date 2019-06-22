@@ -95,6 +95,7 @@ struct call_data {
 
 struct channel_data {
   bool surface_user_agent;
+  bool allow_only_post_requests;
 };
 
 }  // namespace
@@ -127,6 +128,7 @@ static void hs_add_error(const char* error_name, grpc_error** cumulative,
 static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
                                                grpc_metadata_batch* b) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   grpc_error* error = GRPC_ERROR_NONE;
   static const char* error_name = "Failed processing incoming headers";
 
@@ -136,6 +138,14 @@ static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
       *calld->recv_initial_metadata_flags &=
           ~(GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |
             GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
+    } else if (chand->allow_only_post_requests) {
+      hs_add_error(error_name, &error,
+                   grpc_attach_md_to_error(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                               "Only POST requests allowed"),
+                                           b->idx.named.method->md));
+      error =
+          grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
+                             static_cast<intptr_t>(GRPC_STATUS_UNIMPLEMENTED));
     } else if (grpc_mdelem_static_value_eq(b->idx.named.method->md,
                                            GRPC_MDELEM_METHOD_PUT)) {
       *calld->recv_initial_metadata_flags &=
@@ -299,7 +309,6 @@ static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
             GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":authority")));
   }
 
-  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   if (!chand->surface_user_agent && b->idx.named.user_agent != nullptr) {
     grpc_metadata_batch_remove(b, b->idx.named.user_agent);
   }
@@ -478,9 +487,12 @@ static grpc_error* hs_init_channel_elem(grpc_channel_element* elem,
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   GPR_ASSERT(!args->is_last);
   chand->surface_user_agent = grpc_channel_arg_get_bool(
-      grpc_channel_args_find(args->channel_args,
-                             const_cast<char*>(GRPC_ARG_SURFACE_USER_AGENT)),
+      grpc_channel_args_find(args->channel_args, GRPC_ARG_SURFACE_USER_AGENT),
       true);
+  chand->allow_only_post_requests = grpc_channel_arg_get_bool(
+      grpc_channel_args_find(args->channel_args,
+                             GRPC_ARG_ALLOW_POST_REQUESTS_ONLY),
+      false);
   return GRPC_ERROR_NONE;
 }
 
