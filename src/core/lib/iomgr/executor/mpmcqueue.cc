@@ -20,18 +20,6 @@
 
 #include "src/core/lib/iomgr/executor/mpmcqueue.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/cpu.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-#include <inttypes.h>
-#include <string.h>
-
-#include "src/core/lib/debug/stats.h"
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/sync.h"
-
 namespace grpc_core {
 
 DebugOnlyTraceFlag thread_pool(false, "thread_pool_trace");

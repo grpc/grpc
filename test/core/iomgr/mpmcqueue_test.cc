@@ -19,10 +19,7 @@
 #include "src/core/lib/iomgr/executor/mpmcqueue.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/test_config.h"
 
@@ -51,9 +48,9 @@ class ProducerThread {
   ~ProducerThread() {
     for (int i = 0; i < num_items_; ++i) {
       GPR_ASSERT(items_[i]->done);
-      delete items_[i];
+      grpc_core::Delete(items_[i]);
     }
-    delete[] items_;
+    gpr_free(items_);
   }
 
   void Start() { thd_.Start(); }
@@ -61,9 +58,9 @@ class ProducerThread {
 
  private:
   void Run() {
-    items_ = new WorkItem*[num_items_];
+    items_ = static_cast<WorkItem**>(gpr_zalloc(num_items_));
     for (int i = 0; i < num_items_; ++i) {
-      items_[i] = new WorkItem(start_index_ + i);
+      items_[i] = grpc_core::New<WorkItem>(start_index_ + i);
       queue_->Put(items_[i]);
     }
   }
@@ -105,9 +102,10 @@ static void test_get_empty(void) {
     thds[i].Start();
   }
 
-  WorkItem** items = new WorkItem*[THREAD_LARGE_ITERATION];
+  WorkItem** items =
+      static_cast<WorkItem**>(gpr_zalloc(THREAD_SMALL_ITERATION));
   for (int i = 0; i < THREAD_LARGE_ITERATION; ++i) {
-    items[i] = new WorkItem(i);
+    items[i] = grpc_core::New<WorkItem>(i);
     queue.Put(static_cast<void*>(items[i]));
   }
 
@@ -121,9 +119,9 @@ static void test_get_empty(void) {
   gpr_log(GPR_DEBUG, "Checking and Cleaning Up...");
   for (int i = 0; i < THREAD_LARGE_ITERATION; ++i) {
     GPR_ASSERT(items[i]->done);
-    delete items[i];
+    grpc_core::Delete(items[i]);
   }
-  delete[] items;
+  gpr_free(items);
   gpr_log(GPR_DEBUG, "Done.");
 }
 
@@ -131,13 +129,13 @@ static void test_FIFO(void) {
   gpr_log(GPR_INFO, "test_FIFO");
   grpc_core::InfLenFIFOQueue large_queue;
   for (int i = 0; i < THREAD_LARGE_ITERATION; ++i) {
-    large_queue.Put(static_cast<void*>(new WorkItem(i)));
+    large_queue.Put(static_cast<void*>(grpc_core::New<WorkItem>(i)));
   }
   GPR_ASSERT(large_queue.count() == THREAD_LARGE_ITERATION);
   for (int i = 0; i < THREAD_LARGE_ITERATION; ++i) {
     WorkItem* item = static_cast<WorkItem*>(large_queue.Get());
     GPR_ASSERT(i == item->index);
-    delete item;
+    grpc_core::Delete(item);
   }
 }
 
@@ -146,13 +144,14 @@ static void test_many_thread(void) {
   const int num_work_thd = 10;
   const int num_get_thd = 20;
   grpc_core::InfLenFIFOQueue queue;
-  ProducerThread** work_thds = new ProducerThread*[num_work_thd];
+  ProducerThread** work_thds =
+      static_cast<ProducerThread**>(gpr_zalloc(num_work_thd));
   grpc_core::Thread get_thds[num_get_thd];
 
   gpr_log(GPR_DEBUG, "Fork ProducerThread...");
   for (int i = 0; i < num_work_thd; ++i) {
-    work_thds[i] = new ProducerThread(&queue, i * THREAD_LARGE_ITERATION,
-                                      THREAD_LARGE_ITERATION);
+    work_thds[i] = grpc_core::New<ProducerThread>(
+        &queue, i * THREAD_LARGE_ITERATION, THREAD_LARGE_ITERATION);
     work_thds[i]->Start();
   }
   gpr_log(GPR_DEBUG, "ProducerThread Started.");
@@ -178,9 +177,9 @@ static void test_many_thread(void) {
   gpr_log(GPR_DEBUG, "All Getter Thread Terminated.");
   gpr_log(GPR_DEBUG, "Checking WorkItems and Cleaning Up...");
   for (int i = 0; i < num_work_thd; ++i) {
-    delete work_thds[i];
+    grpc_core::Delete(work_thds[i]);
   }
-  delete[] work_thds;
+  gpr_free(work_thds);
   gpr_log(GPR_DEBUG, "Done.");
 }
 

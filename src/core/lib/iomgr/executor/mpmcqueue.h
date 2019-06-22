@@ -21,9 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/atomic.h"
@@ -80,6 +77,7 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
   // For Internal Use Only.
   // Removes the oldest element from the queue and returns it. This routine
   // will NOT check whether queue is empty, and it will NOT acquire mutex.
+  // Caller should do the check and acquire mutex before callling.
   void* PopFront();
 
   struct Node {
