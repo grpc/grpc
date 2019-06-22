@@ -52,8 +52,7 @@ class MPMCQueueInterface {
 
 class InfLenFIFOQueue : public MPMCQueueInterface {
  public:
-  // Creates a new MPMC Queue. The queue created
-  // will have infinite length.
+  // Creates a new MPMC Queue. The queue created will have infinite length.
   InfLenFIFOQueue();
 
   // Releases all resources hold by the queue. The queue must be empty, and no
@@ -92,24 +91,24 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
   };
 
   // Stats of queue. This will only be collect when debug trace mode is on.
-  // All printed stats info will have time measurement in millisecond.
+  // All printed stats info will have time measurement in microsecond.
   struct Stats {
     uint64_t num_started;    // Number of elements have been added to queue
     uint64_t num_completed;  // Number of elements have been removed from
                              // the queue
-    gpr_timespec total_queue_cycles;  // Total waiting time that all the
-                                      // removed elements have spent in queue
-    gpr_timespec max_queue_cycles;    // Max waiting time among all removed
-                                      // elements
-    gpr_timespec busy_time_cycles;    // Accumulated amount of time that queue
-                                      // was not empty
+    gpr_timespec total_queue_time;  // Total waiting time that all the
+                                    // removed elements have spent in queue
+    gpr_timespec max_queue_time;    // Max waiting time among all removed
+                                    // elements
+    gpr_timespec busy_queue_time;   // Accumulated amount of time that queue
+                                    // was not empty
 
     Stats() {
       num_started = 0;
       num_completed = 0;
-      total_queue_cycles = gpr_time_0(GPR_TIMESPAN);
-      max_queue_cycles = gpr_time_0(GPR_TIMESPAN);
-      busy_time_cycles = gpr_time_0(GPR_TIMESPAN);
+      total_queue_time = gpr_time_0(GPR_TIMESPAN);
+      max_queue_time = gpr_time_0(GPR_TIMESPAN);
+      busy_queue_time = gpr_time_0(GPR_TIMESPAN);
     }
   };
 

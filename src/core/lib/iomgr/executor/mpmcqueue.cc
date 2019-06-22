@@ -25,6 +25,8 @@ namespace grpc_core {
 DebugOnlyTraceFlag thread_pool(false, "thread_pool_trace");
 
 inline void* InfLenFIFOQueue::PopFront() {
+  // Caller should already checked queue is not empty and has already hold the
+  // mutex. This function will only do the job of removal.
   void* result = queue_head_->content;
   Node* head_to_remove = queue_head_;
   queue_head_ = queue_head_->next;
@@ -33,29 +35,29 @@ inline void* InfLenFIFOQueue::PopFront() {
 
   if (GRPC_TRACE_FLAG_ENABLED(thread_pool)) {
     gpr_timespec wait_time =
-        gpr_time_sub(gpr_now(GPR_CLOCK_PRECISE), head_to_remove->insert_time);
+        gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), head_to_remove->insert_time);
 
     // Updates Stats info
     stats_.num_completed++;
-    stats_.total_queue_cycles =
-        gpr_time_add(stats_.total_queue_cycles, wait_time);
-    stats_.max_queue_cycles = gpr_time_max(
-        gpr_convert_clock_type(stats_.max_queue_cycles, GPR_TIMESPAN),
+    stats_.total_queue_time =
+        gpr_time_add(stats_.total_queue_time, wait_time);
+    stats_.max_queue_time = gpr_time_max(
+        gpr_convert_clock_type(stats_.max_queue_time, GPR_TIMESPAN),
         wait_time);
 
     if (count_.Load(MemoryOrder::RELAXED) == 0) {
-      stats_.busy_time_cycles =
-          gpr_time_add(stats_.busy_time_cycles,
-                       gpr_time_sub(gpr_now(GPR_CLOCK_PRECISE), busy_time));
+      stats_.busy_queue_time =
+          gpr_time_add(stats_.busy_queue_time,
+                       gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), busy_time));
     }
 
     gpr_log(GPR_INFO,
-            "[InfLenFIFOQueue Get] num_completed:        %" PRIu64
-            " total_queue_cycles: %" PRId32 " max_queue_cycles:   %" PRId32
-            " busy_time_cycles:   %" PRId32,
-            stats_.num_completed, gpr_time_to_millis(stats_.total_queue_cycles),
-            gpr_time_to_millis(stats_.max_queue_cycles),
-            gpr_time_to_millis(stats_.busy_time_cycles));
+            "[InfLenFIFOQueue PopFront] num_completed:        %" PRIu64
+            " total_queue_time: %f max_queue_time:   %f busy_queue_time:   %f",
+            stats_.num_completed,
+            gpr_timespec_to_micros(stats_.total_queue_time),
+            gpr_timespec_to_micros(stats_.max_queue_time),
+            gpr_timespec_to_micros(stats_.busy_queue_time));
   }
 
   Delete(head_to_remove);
@@ -81,7 +83,7 @@ void InfLenFIFOQueue::Put(void* elem) {
   Node* new_node = New<Node>(elem);
   if (count_.Load(MemoryOrder::RELAXED) == 0) {
     if (GRPC_TRACE_FLAG_ENABLED(thread_pool)) {
-      busy_time = gpr_now(GPR_CLOCK_PRECISE);
+      busy_time = gpr_now(GPR_CLOCK_MONOTONIC);
     }
     queue_head_ = queue_tail_ = new_node;
   } else {
