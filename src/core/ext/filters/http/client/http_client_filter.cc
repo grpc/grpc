@@ -558,7 +558,7 @@ static grpc_slice user_agent_from_args(const grpc_channel_args* args,
 
   tmp = gpr_strvec_flatten(&v, nullptr);
   gpr_strvec_destroy(&v);
-  result = grpc_slice_intern(grpc_slice_from_static_string(tmp));
+  result = grpc_slice_intern(grpc_slice_from_static_string_internal(tmp));
   gpr_free(tmp);
 
   return result;
