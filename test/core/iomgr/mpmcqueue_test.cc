@@ -23,7 +23,6 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/test_config.h"
 
-#define THREAD_SMALL_ITERATION 100
 #define THREAD_LARGE_ITERATION 10000
 
 // Testing items for queue
@@ -103,7 +102,7 @@ static void test_get_empty(void) {
   }
 
   WorkItem** items =
-      static_cast<WorkItem**>(gpr_zalloc(THREAD_SMALL_ITERATION));
+      static_cast<WorkItem**>(gpr_zalloc(THREAD_LARGE_ITERATION));
   for (int i = 0; i < THREAD_LARGE_ITERATION; ++i) {
     items[i] = grpc_core::New<WorkItem>(i);
     queue.Put(static_cast<void*>(items[i]));
