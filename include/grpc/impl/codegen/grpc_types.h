@@ -374,7 +374,8 @@ typedef struct {
 /** gRPC Objective-C channel pooling id. */
 #define GRPC_ARG_CHANNEL_ID "grpc.channel_id"
 /** EXPERIMENTAL - If set to non-zero, a server will allow only POST requests */
-#define GRPC_ARG_ALLOW_POST_REQUESTS_ONLY "grpc.allow_post_requests_only"
+#define GRPC_ARG_ALLOW_POST_REQUESTS_ONLY \
+  "grpc.experimental.allow_post_requests_only"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
