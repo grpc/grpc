@@ -39,11 +39,9 @@ inline void* InfLenFIFOQueue::PopFront() {
 
     // Updates Stats info
     stats_.num_completed++;
-    stats_.total_queue_time =
-        gpr_time_add(stats_.total_queue_time, wait_time);
+    stats_.total_queue_time = gpr_time_add(stats_.total_queue_time, wait_time);
     stats_.max_queue_time = gpr_time_max(
-        gpr_convert_clock_type(stats_.max_queue_time, GPR_TIMESPAN),
-        wait_time);
+        gpr_convert_clock_type(stats_.max_queue_time, GPR_TIMESPAN), wait_time);
 
     if (count_.Load(MemoryOrder::RELAXED) == 0) {
       stats_.busy_queue_time =
