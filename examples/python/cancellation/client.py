@@ -40,12 +40,12 @@ def main():
         while True:
             print("Sending request")
             future = stub.Find.future(hash_name_pb2.HashNameRequest(desired_name="doctor",
-                                                                      maximum_hamming_distance=0))
+                                                                      ideal_hamming_distance=1))
             # TODO(rbellevi): Do not leave in a cancellation based on timeout.
             # That's best handled by, well.. timeout.
             try:
-                result = future.result(timeout=2.0)
-                print("Got response: \n{}".format(response))
+                result = future.result(timeout=20.0)
+                print("Got response: \n{}".format(result))
             except grpc.FutureTimeoutError:
                 print("Cancelling request")
                 future.cancel()
