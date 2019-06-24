@@ -121,9 +121,7 @@ class HashFinder(hash_name_pb2_grpc.HashFinderServicer):
         def on_rpc_done():
             stop_event.set()
         context.add_callback(on_rpc_done)
-        print("Received request:\n{}".format(request))
         result = _find_secret(request.desired_name, request.maximum_hamming_distance, stop_event)
-        print("Returning result:\n{}".format(result))
         return result
 
 
