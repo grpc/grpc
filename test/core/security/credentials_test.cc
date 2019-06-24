@@ -18,7 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "grpc/grpc_security.h"
+#include <grpc/grpc_security.h>
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
 #include <openssl/rsa.h>
@@ -740,7 +741,10 @@ static void test_valid_sts_creds_options(void) {
       nullptr,                      // actor_token_path
       nullptr                       // actor_token_type
   };
-  grpc_uri* sts_url = grpc_validate_sts_credentials_options(&valid_options);
+  grpc_uri* sts_url;
+  grpc_error* error =
+      grpc_core::ValidateStsCredentialsOptions(&valid_options, &sts_url);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(sts_url != nullptr);
   char* host;
   char* port;
@@ -764,8 +768,11 @@ static void test_invalid_sts_creds_options(void) {
       nullptr,                     // actor_token_path
       nullptr                      // actor_token_type
   };
-  grpc_uri* url_should_be_null =
-      grpc_validate_sts_credentials_options(&invalid_options);
+  grpc_uri* url_should_be_null;
+  grpc_error* error = grpc_core::ValidateStsCredentialsOptions(
+      &invalid_options, &url_should_be_null);
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GRPC_ERROR_UNREF(error);
   GPR_ASSERT(url_should_be_null == nullptr);
 
   invalid_options = {
@@ -779,7 +786,10 @@ static void test_invalid_sts_creds_options(void) {
       nullptr,                      // actor_token_path
       nullptr                       // actor_token_type
   };
-  url_should_be_null = grpc_validate_sts_credentials_options(&invalid_options);
+  error = grpc_core::ValidateStsCredentialsOptions(&invalid_options,
+                                                   &url_should_be_null);
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GRPC_ERROR_UNREF(error);
   GPR_ASSERT(url_should_be_null == nullptr);
 
   invalid_options = {
@@ -793,7 +803,10 @@ static void test_invalid_sts_creds_options(void) {
       nullptr,                      // actor_token_path
       nullptr                       // actor_token_type
   };
-  url_should_be_null = grpc_validate_sts_credentials_options(&invalid_options);
+  error = grpc_core::ValidateStsCredentialsOptions(&invalid_options,
+                                                   &url_should_be_null);
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GRPC_ERROR_UNREF(error);
   GPR_ASSERT(url_should_be_null == nullptr);
 
   invalid_options = {
@@ -807,7 +820,10 @@ static void test_invalid_sts_creds_options(void) {
       nullptr,                      // actor_token_path
       nullptr                       // actor_token_type
   };
-  url_should_be_null = grpc_validate_sts_credentials_options(&invalid_options);
+  error = grpc_core::ValidateStsCredentialsOptions(&invalid_options,
+                                                   &url_should_be_null);
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GRPC_ERROR_UNREF(error);
   GPR_ASSERT(url_should_be_null == nullptr);
 
   invalid_options = {
@@ -821,7 +837,10 @@ static void test_invalid_sts_creds_options(void) {
       nullptr,                                // actor_token_path
       nullptr                                 // actor_token_type
   };
-  url_should_be_null = grpc_validate_sts_credentials_options(&invalid_options);
+  error = grpc_core::ValidateStsCredentialsOptions(&invalid_options,
+                                                   &url_should_be_null);
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GRPC_ERROR_UNREF(error);
   GPR_ASSERT(url_should_be_null == nullptr);
 }
 

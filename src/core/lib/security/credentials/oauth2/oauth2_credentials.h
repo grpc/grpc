@@ -21,10 +21,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "grpc/grpc_security.h"
+#include <grpc/grpc_security.h>
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/uri/uri_parser.h"
+
+// Constants.
+#define GRPC_STS_POST_MINIMAL_BODY_FORMAT_STRING                               \
+  "grant_type=urn:ietf:params:oauth:grant-type:token-exchange&subject_token=%" \
+  "s&subject_token_type=%s"
 
 // auth_refresh_token parsing.
 typedef struct {
@@ -150,7 +155,10 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     const struct grpc_http_response* response, grpc_mdelem* token_md,
     grpc_millis* token_lifetime);
 
-grpc_uri* grpc_validate_sts_credentials_options(
-    const grpc_sts_credentials_options* options);
+namespace grpc_core {
+// Exposed for testing only.
+grpc_error* ValidateStsCredentialsOptions(
+    const grpc_sts_credentials_options* options, grpc_uri** sts_url);
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_OAUTH2_CREDENTIALS_H */

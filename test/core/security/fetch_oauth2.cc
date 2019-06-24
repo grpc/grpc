@@ -26,6 +26,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/util/json_util.h"
@@ -35,21 +36,25 @@
 static grpc_sts_credentials_options sts_options_from_json(grpc_json* json) {
   grpc_sts_credentials_options options;
   memset(&options, 0, sizeof(options));
+  grpc_error* error = GRPC_ERROR_NONE;
   options.sts_endpoint_url =
-      grpc_json_get_string_property(json, "sts_endpoint_url", false);
-  options.resource = grpc_json_get_string_property(json, "resource", true);
-  options.audience = grpc_json_get_string_property(json, "audience", true);
-  options.scope = grpc_json_get_string_property(json, "scope", true);
+      grpc_json_get_string_property(json, "sts_endpoint_url", &error);
+  GRPC_LOG_IF_ERROR("STS credentials parsing", error);
+  options.resource = grpc_json_get_string_property(json, "resource", nullptr);
+  options.audience = grpc_json_get_string_property(json, "audience", nullptr);
+  options.scope = grpc_json_get_string_property(json, "scope", nullptr);
   options.requested_token_type =
-      grpc_json_get_string_property(json, "requested_token_type", true);
+      grpc_json_get_string_property(json, "requested_token_type", nullptr);
   options.subject_token_path =
-      grpc_json_get_string_property(json, "subject_token_path", false);
+      grpc_json_get_string_property(json, "subject_token_path", &error);
+  GRPC_LOG_IF_ERROR("STS credentials parsing", error);
   options.subject_token_type =
-      grpc_json_get_string_property(json, "subject_token_type", false);
+      grpc_json_get_string_property(json, "subject_token_type", &error);
+  GRPC_LOG_IF_ERROR("STS credentials parsing", error);
   options.actor_token_path =
-      grpc_json_get_string_property(json, "actor_token_path", true);
+      grpc_json_get_string_property(json, "actor_token_path", nullptr);
   options.actor_token_type =
-      grpc_json_get_string_property(json, "actor_token_type", true);
+      grpc_json_get_string_property(json, "actor_token_type", nullptr);
   return options;
 }
 
