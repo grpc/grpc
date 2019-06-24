@@ -138,7 +138,7 @@ You need to add this to your project's `composer.json` file.
 
 ```
   "require": {
-    "grpc/grpc": "v1.12.0"
+    "grpc/grpc": "v1.21.4"
   }
 ```
 
@@ -294,9 +294,9 @@ Run a local server serving the math services. Please see [Node][] for how to
 run an example server.
 
 ```sh
-$ cd grpc
+$ cd grpc/src/php/tests/generated_code
 $ npm install
-$ node src/node/test/math/math_server.js
+$ node math_server.js
 ```
 
 ### Run test client
