@@ -122,6 +122,7 @@ class grpc_google_refresh_token_credentials final
 
  private:
   grpc_auth_refresh_token refresh_token_;
+  grpc_closure http_post_cb_closure_;
 };
 
 // Access token credentials.
@@ -156,7 +157,9 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     grpc_millis* token_lifetime);
 
 namespace grpc_core {
-// Exposed for testing only.
+// Exposed for testing only. This function validates the options, ensuring that
+// the required fields are set, and outputs the parsed URL of the STS token
+// exchanged service.
 grpc_error* ValidateStsCredentialsOptions(
     const grpc_sts_credentials_options* options, grpc_uri** sts_url);
 }  // namespace grpc_core

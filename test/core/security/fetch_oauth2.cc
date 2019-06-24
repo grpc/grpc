@@ -149,7 +149,9 @@ int main(int argc, char** argv) {
       exit(1);
     }
   } else {
-    gpr_log(GPR_ERROR, "Missing --gce or --json_refresh_token option.");
+    gpr_log(
+        GPR_ERROR,
+        "Missing --gce, --json_sts_options, or --json_refresh_token option.");
     exit(1);
   }
   GPR_ASSERT(creds != nullptr);
