@@ -1413,6 +1413,7 @@ config("grpc_config") {
         "include/grpc++/impl/codegen/config_protobuf.h",
         "include/grpcpp/impl/codegen/config_protobuf.h",
         "src/compiler/config.h",
+        "src/compiler/config_protobuf.h",
         "src/compiler/cpp_generator.cc",
         "src/compiler/cpp_generator.h",
         "src/compiler/cpp_generator_helpers.h",

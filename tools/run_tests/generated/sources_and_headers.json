@@ -7184,6 +7184,7 @@
     ], 
     "headers": [
       "src/compiler/config.h", 
+      "src/compiler/config_protobuf.h", 
       "src/compiler/cpp_generator.h", 
       "src/compiler/cpp_generator_helpers.h", 
       "src/compiler/csharp_generator.h", 
@@ -7210,6 +7211,7 @@
     "name": "grpc_plugin_support", 
     "src": [
       "src/compiler/config.h", 
+      "src/compiler/config_protobuf.h", 
       "src/compiler/cpp_generator.cc", 
       "src/compiler/cpp_generator.h", 
       "src/compiler/cpp_generator_helpers.h", 
