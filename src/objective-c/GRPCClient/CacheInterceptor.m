@@ -528,11 +528,7 @@
       _cacheable = NO;
     }
     _readMessageSeen = YES;
-    
-    // if 304 then no need to copy data (which is btw empty)
-    if (![_response.headers[@"status"] isEqualToString:@"304"]) {
-      _response.message = [data copy];
-    }
+    _response.message = [data copy];
   }
   [_manager forwardPreviousInterceptorWithData:data];
 }
