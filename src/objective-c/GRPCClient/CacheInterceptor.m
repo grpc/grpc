@@ -510,9 +510,6 @@
         }
       }
     }
-    if (!deadline) {
-      deadline = [[NSDate alloc] init];
-    }
     
     if (_cacheable) {
       _response = [[MutableResponseCacheEntry alloc] init];
