@@ -171,6 +171,8 @@ struct grpc_slice_refcount {
 
 namespace grpc_core {
 
+extern grpc_slice_refcount kNoopRefcount;
+
 struct InternedSliceRefcount {
   static void Destroy(void* arg) {
     auto* rc = static_cast<InternedSliceRefcount*>(arg);
@@ -311,5 +313,18 @@ grpc_slice grpc_slice_from_moved_string(grpc_core::UniquePtr<char> p);
 // itself. This means that inlined and slices from static strings will return
 // 0. All other slices will return the size of the allocated chars.
 size_t grpc_slice_memory_usage(grpc_slice s);
+
+inline grpc_slice grpc_slice_from_static_buffer_internal(const void* s,
+                                                         size_t len) {
+  grpc_slice slice;
+  slice.refcount = &grpc_core::kNoopRefcount;
+  slice.data.refcounted.bytes = (uint8_t*)s;
+  slice.data.refcounted.length = len;
+  return slice;
+}
+
+inline grpc_slice grpc_slice_from_static_string_internal(const char* s) {
+  return grpc_slice_from_static_buffer_internal(s, strlen(s));
+}
 
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H */
