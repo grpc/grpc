@@ -109,13 +109,14 @@ Podfile.lock
 # IDE specific folder for JetBrains IDEs
 .idea/
 
-# Blaze files
+# Bazel files
 bazel-bin
 bazel-genfiles
 bazel-grpc
 bazel-out
 bazel-testlogs
 bazel_format_virtual_environment/
+tools/bazel-*
 
 # Debug output
 gdb.txt
@@ -143,3 +144,5 @@ bm_*.json
 !.vscode/launch.json
 !.vscode/extensions.json
 
+# Clion artifacts
+cmake-build-debug/

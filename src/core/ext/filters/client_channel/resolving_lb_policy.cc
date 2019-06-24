@@ -77,7 +77,7 @@ class ResolvingLoadBalancingPolicy::ResolverResultHandler
       : parent_(std::move(parent)) {}
 
   ~ResolverResultHandler() {
-    if (parent_->tracer_->enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(*(parent_->tracer_))) {
       gpr_log(GPR_INFO, "resolving_lb=%p: resolver shutdown complete",
               parent_.get());
     }
@@ -106,7 +106,8 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
       RefCountedPtr<ResolvingLoadBalancingPolicy> parent)
       : parent_(std::move(parent)) {}
 
-  Subchannel* CreateSubchannel(const grpc_channel_args& args) override {
+  RefCountedPtr<SubchannelInterface> CreateSubchannel(
+      const grpc_channel_args& args) override {
     if (parent_->resolver_ == nullptr) return nullptr;  // Shutting down.
     if (!CalledByCurrentChild() && !CalledByPendingChild()) return nullptr;
     return parent_->channel_control_helper()->CreateSubchannel(args);
@@ -125,7 +126,7 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
     // If this request is from the pending child policy, ignore it until
     // it reports READY, at which point we swap it into place.
     if (CalledByPendingChild()) {
-      if (parent_->tracer_->enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(*(parent_->tracer_))) {
         gpr_log(GPR_INFO,
                 "resolving_lb=%p helper=%p: pending child policy %p reports "
                 "state=%s",
@@ -136,7 +137,6 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
       grpc_pollset_set_del_pollset_set(
           parent_->lb_policy_->interested_parties(),
           parent_->interested_parties());
-      MutexLock lock(&parent_->lb_policy_mu_);
       parent_->lb_policy_ = std::move(parent_->pending_lb_policy_);
     } else if (!CalledByCurrentChild()) {
       // This request is from an outdated child, so ignore it.
@@ -151,7 +151,7 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
     if (parent_->pending_lb_policy_ != nullptr && !CalledByPendingChild()) {
       return;
     }
-    if (parent_->tracer_->enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(*(parent_->tracer_))) {
       gpr_log(GPR_INFO, "resolving_lb=%p: started name re-resolving",
               parent_.get());
     }
@@ -184,7 +184,7 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
 ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
     Args args, TraceFlag* tracer, UniquePtr<char> target_uri,
     UniquePtr<char> child_policy_name,
-    RefCountedPtr<ParsedLoadBalancingConfig> child_lb_config,
+    RefCountedPtr<LoadBalancingPolicy::Config> child_lb_config,
     grpc_error** error)
     : LoadBalancingPolicy(std::move(args)),
       tracer_(tracer),
@@ -213,7 +213,6 @@ ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
       process_resolver_result_(process_resolver_result),
       process_resolver_result_user_data_(process_resolver_result_user_data) {
   GPR_ASSERT(process_resolver_result != nullptr);
-  gpr_mu_init(&lb_policy_mu_);
   *error = Init(*args.args);
 }
 
@@ -233,15 +232,13 @@ grpc_error* ResolvingLoadBalancingPolicy::Init(const grpc_channel_args& args) {
 ResolvingLoadBalancingPolicy::~ResolvingLoadBalancingPolicy() {
   GPR_ASSERT(resolver_ == nullptr);
   GPR_ASSERT(lb_policy_ == nullptr);
-  gpr_mu_destroy(&lb_policy_mu_);
 }
 
 void ResolvingLoadBalancingPolicy::ShutdownLocked() {
   if (resolver_ != nullptr) {
     resolver_.reset();
-    MutexLock lock(&lb_policy_mu_);
     if (lb_policy_ != nullptr) {
-      if (tracer_->enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
         gpr_log(GPR_INFO, "resolving_lb=%p: shutting down lb_policy=%p", this,
                 lb_policy_.get());
       }
@@ -250,7 +247,7 @@ void ResolvingLoadBalancingPolicy::ShutdownLocked() {
       lb_policy_.reset();
     }
     if (pending_lb_policy_ != nullptr) {
-      if (tracer_->enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
         gpr_log(GPR_INFO, "resolving_lb=%p: shutting down pending lb_policy=%p",
                 this, pending_lb_policy_.get());
       }
@@ -281,24 +278,8 @@ void ResolvingLoadBalancingPolicy::ResetBackoffLocked() {
   if (pending_lb_policy_ != nullptr) pending_lb_policy_->ResetBackoffLocked();
 }
 
-void ResolvingLoadBalancingPolicy::FillChildRefsForChannelz(
-    channelz::ChildRefsList* child_subchannels,
-    channelz::ChildRefsList* child_channels) {
-  // Delegate to the lb_policy_ to fill the children subchannels.
-  // This must be done holding lb_policy_mu_, since this method does not
-  // run in the combiner.
-  MutexLock lock(&lb_policy_mu_);
-  if (lb_policy_ != nullptr) {
-    lb_policy_->FillChildRefsForChannelz(child_subchannels, child_channels);
-  }
-  if (pending_lb_policy_ != nullptr) {
-    pending_lb_policy_->FillChildRefsForChannelz(child_subchannels,
-                                                 child_channels);
-  }
-}
-
 void ResolvingLoadBalancingPolicy::StartResolvingLocked() {
-  if (tracer_->enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
     gpr_log(GPR_INFO, "resolving_lb=%p: starting name resolution", this);
   }
   GPR_ASSERT(!started_resolving_);
@@ -314,7 +295,7 @@ void ResolvingLoadBalancingPolicy::OnResolverError(grpc_error* error) {
     GRPC_ERROR_UNREF(error);
     return;
   }
-  if (tracer_->enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
     gpr_log(GPR_INFO, "resolving_lb=%p: resolver transient failure: %s", this,
             grpc_error_string(error));
   }
@@ -333,7 +314,7 @@ void ResolvingLoadBalancingPolicy::OnResolverError(grpc_error* error) {
 
 void ResolvingLoadBalancingPolicy::CreateOrUpdateLbPolicyLocked(
     const char* lb_policy_name,
-    RefCountedPtr<ParsedLoadBalancingConfig> lb_policy_config,
+    RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
     Resolver::Result result, TraceStringVector* trace_strings) {
   // If the child policy name changes, we need to create a new child
   // policy.  When this happens, we leave child_policy_ as-is and store
@@ -398,17 +379,13 @@ void ResolvingLoadBalancingPolicy::CreateOrUpdateLbPolicyLocked(
     // Cases 1, 2b, and 3b: create a new child policy.
     // If lb_policy_ is null, we set it (case 1), else we set
     // pending_lb_policy_ (cases 2b and 3b).
-    if (tracer_->enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
       gpr_log(GPR_INFO, "resolving_lb=%p: Creating new %schild policy %s", this,
               lb_policy_ == nullptr ? "" : "pending ", lb_policy_name);
     }
-    auto new_policy =
-        CreateLbPolicyLocked(lb_policy_name, *result.args, trace_strings);
     auto& lb_policy = lb_policy_ == nullptr ? lb_policy_ : pending_lb_policy_;
-    {
-      MutexLock lock(&lb_policy_mu_);
-      lb_policy = std::move(new_policy);
-    }
+    lb_policy =
+        CreateLbPolicyLocked(lb_policy_name, *result.args, trace_strings);
     policy_to_update = lb_policy.get();
   } else {
     // Cases 2a and 3a: update an existing policy.
@@ -419,7 +396,7 @@ void ResolvingLoadBalancingPolicy::CreateOrUpdateLbPolicyLocked(
   }
   GPR_ASSERT(policy_to_update != nullptr);
   // Update the policy.
-  if (tracer_->enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
     gpr_log(GPR_INFO, "resolving_lb=%p: Updating %schild policy %p", this,
             policy_to_update == pending_lb_policy_.get() ? "pending " : "",
             policy_to_update);
@@ -450,28 +427,19 @@ ResolvingLoadBalancingPolicy::CreateLbPolicyLocked(
           lb_policy_name, std::move(lb_policy_args));
   if (GPR_UNLIKELY(lb_policy == nullptr)) {
     gpr_log(GPR_ERROR, "could not create LB policy \"%s\"", lb_policy_name);
-    if (channelz_node() != nullptr) {
-      char* str;
-      gpr_asprintf(&str, "Could not create LB policy \"%s\"", lb_policy_name);
-      trace_strings->push_back(str);
-    }
+    char* str;
+    gpr_asprintf(&str, "Could not create LB policy \"%s\"", lb_policy_name);
+    trace_strings->push_back(str);
     return nullptr;
   }
   helper->set_child(lb_policy.get());
-  if (tracer_->enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
     gpr_log(GPR_INFO, "resolving_lb=%p: created new LB policy \"%s\" (%p)",
             this, lb_policy_name, lb_policy.get());
   }
-  if (channelz_node() != nullptr) {
-    char* str;
-    gpr_asprintf(&str, "Created new LB policy \"%s\"", lb_policy_name);
-    trace_strings->push_back(str);
-  }
-  // Propagate channelz node.
-  auto* channelz = channelz_node();
-  if (channelz != nullptr) {
-    lb_policy->set_channelz_node(channelz->Ref());
-  }
+  char* str;
+  gpr_asprintf(&str, "Created new LB policy \"%s\"", lb_policy_name);
+  trace_strings->push_back(str);
   grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
                                    interested_parties());
   return lb_policy;
@@ -501,11 +469,10 @@ void ResolvingLoadBalancingPolicy::ConcatenateAndAddChannelTraceLocked(
       is_first = false;
       gpr_strvec_add(&v, (*trace_strings)[i]);
     }
-    char* flat;
-    size_t flat_len = 0;
-    flat = gpr_strvec_flatten(&v, &flat_len);
-    channelz_node()->AddTraceEvent(channelz::ChannelTrace::Severity::Info,
-                                   grpc_slice_new(flat, flat_len, gpr_free));
+    size_t len = 0;
+    UniquePtr<char> message(gpr_strvec_flatten(&v, &len));
+    channel_control_helper()->AddTraceEvent(ChannelControlHelper::TRACE_INFO,
+                                            message.get());
     gpr_strvec_destroy(&v);
   }
 }
@@ -514,7 +481,7 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
     Resolver::Result result) {
   // Handle race conditions.
   if (resolver_ == nullptr) return;
-  if (tracer_->enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
     gpr_log(GPR_INFO, "resolving_lb=%p: got resolver result", this);
   }
   // We only want to trace the address resolution in the follow cases:
@@ -530,31 +497,47 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   const bool resolution_contains_addresses = result.addresses.size() > 0;
   // Process the resolver result.
   const char* lb_policy_name = nullptr;
-  RefCountedPtr<ParsedLoadBalancingConfig> lb_policy_config;
+  RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config;
   bool service_config_changed = false;
+  char* service_config_error_string = nullptr;
   if (process_resolver_result_ != nullptr) {
-    service_config_changed =
-        process_resolver_result_(process_resolver_result_user_data_, result,
-                                 &lb_policy_name, &lb_policy_config);
+    grpc_error* service_config_error = GRPC_ERROR_NONE;
+    service_config_changed = process_resolver_result_(
+        process_resolver_result_user_data_, result, &lb_policy_name,
+        &lb_policy_config, &service_config_error);
+    if (service_config_error != GRPC_ERROR_NONE) {
+      service_config_error_string =
+          gpr_strdup(grpc_error_string(service_config_error));
+      if (lb_policy_name == nullptr) {
+        // Use an empty lb_policy_name as an indicator that we received an
+        // invalid service config and we don't have a fallback service config.
+        OnResolverError(service_config_error);
+      } else {
+        GRPC_ERROR_UNREF(service_config_error);
+      }
+    }
   } else {
     lb_policy_name = child_policy_name_.get();
     lb_policy_config = child_lb_config_;
   }
-  GPR_ASSERT(lb_policy_name != nullptr);
-  // Create or update LB policy, as needed.
-  CreateOrUpdateLbPolicyLocked(lb_policy_name, lb_policy_config,
-                               std::move(result), &trace_strings);
-  // Add channel trace event.
-  if (channelz_node() != nullptr) {
-    if (service_config_changed) {
-      // TODO(ncteisen): might be worth somehow including a snippet of the
-      // config in the trace, at the risk of bloating the trace logs.
-      trace_strings.push_back(gpr_strdup("Service config changed"));
-    }
-    MaybeAddTraceMessagesForAddressChangesLocked(resolution_contains_addresses,
-                                                 &trace_strings);
-    ConcatenateAndAddChannelTraceLocked(&trace_strings);
+  if (lb_policy_name != nullptr) {
+    // Create or update LB policy, as needed.
+    CreateOrUpdateLbPolicyLocked(lb_policy_name, lb_policy_config,
+                                 std::move(result), &trace_strings);
   }
+  // Add channel trace event.
+  if (service_config_changed) {
+    // TODO(ncteisen): might be worth somehow including a snippet of the
+    // config in the trace, at the risk of bloating the trace logs.
+    trace_strings.push_back(gpr_strdup("Service config changed"));
+  }
+  if (service_config_error_string != nullptr) {
+    trace_strings.push_back(service_config_error_string);
+    service_config_error_string = nullptr;
+  }
+  MaybeAddTraceMessagesForAddressChangesLocked(resolution_contains_addresses,
+                                               &trace_strings);
+  ConcatenateAndAddChannelTraceLocked(&trace_strings);
 }
 
 }  // namespace grpc_core

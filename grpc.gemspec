@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.description   = 'Send RPCs from Ruby using GRPC'
   s.license       = 'Apache-2.0'
 
-  s.required_ruby_version = '>= 2.0.0'
+  s.required_ruby_version = '>= 2.3.0'
 
   s.files = %w( Makefile .yardopts )
   s.files += %w( etc/roots.pem )
@@ -29,7 +29,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.7'
+  s.add_dependency 'google-protobuf', '~> 3.8'
   s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
   s.add_development_dependency 'bundler',            '~> 1.9'
@@ -305,6 +305,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/server_address.h )
   s.files += %w( src/core/ext/filters/client_channel/service_config.h )
   s.files += %w( src/core/ext/filters/client_channel/subchannel.h )
+  s.files += %w( src/core/ext/filters/client_channel/subchannel_interface.h )
   s.files += %w( src/core/ext/filters/client_channel/subchannel_pool_interface.h )
   s.files += %w( src/core/ext/filters/deadline/deadline_filter.h )
   s.files += %w( src/core/ext/filters/client_channel/health/health.pb.h )
@@ -428,6 +429,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/slice/slice_hash_table.h )
   s.files += %w( src/core/lib/slice/slice_internal.h )
   s.files += %w( src/core/lib/slice/slice_string_helpers.h )
+  s.files += %w( src/core/lib/slice/slice_utils.h )
   s.files += %w( src/core/lib/slice/slice_weak_hash_table.h )
   s.files += %w( src/core/lib/surface/api_trace.h )
   s.files += %w( src/core/lib/surface/call.h )
@@ -472,7 +474,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/subchannel_list.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h )
-  s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.h )
+  s.files += %w( src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h )
   s.files += %w( src/core/ext/filters/max_age/max_age_filter.h )
   s.files += %w( src/core/ext/filters/message_size/message_size_filter.h )
   s.files += %w( src/core/ext/filters/http/client_authority_filter.h )
@@ -803,9 +805,9 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc )
-  s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc )
+  s.files += %w( src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc )
   s.files += %w( src/core/ext/filters/census/grpc_context.cc )

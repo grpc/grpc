@@ -18,11 +18,17 @@ load("//bazel:grpc_build_system.bzl", "grpc_proto_library", "grpc_package")
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 load("//bazel:python_rules.bzl", "py_proto_library")
 
-grpc_package(name = "testing", visibility = "public")
+grpc_package(
+    name = "testing",
+    visibility = "public",
+)
 
 exports_files([
     "echo.proto",
     "echo_messages.proto",
+    "test.proto",
+    "empty.proto",
+    "messages.proto",
 ])
 
 grpc_proto_library(
@@ -50,9 +56,11 @@ grpc_proto_library(
 grpc_proto_library(
     name = "echo_proto",
     srcs = ["echo.proto"],
-    deps = ["echo_messages_proto",
-            "simple_messages_proto"],
     generate_mocks = True,
+    deps = [
+        "echo_messages_proto",
+        "simple_messages_proto",
+    ],
 )
 
 grpc_proto_library(
@@ -102,7 +110,7 @@ grpc_proto_library(
     name = "benchmark_service_proto",
     srcs = ["benchmark_service.proto"],
     deps = [
-      "messages_proto",
+        "messages_proto",
     ],
 )
 
@@ -110,7 +118,7 @@ grpc_proto_library(
     name = "report_qps_scenario_service_proto",
     srcs = ["report_qps_scenario_service.proto"],
     deps = [
-      "control_proto",
+        "control_proto",
     ],
 )
 
@@ -118,7 +126,7 @@ grpc_proto_library(
     name = "worker_service_proto",
     srcs = ["worker_service.proto"],
     deps = [
-      "control_proto",
+        "control_proto",
     ],
 )
 
@@ -134,7 +142,7 @@ grpc_proto_library(
     has_services = False,
     deps = [
         "//src/proto/grpc/core:stats_proto",
-    ]
+    ],
 )
 
 grpc_proto_library(
@@ -143,6 +151,37 @@ grpc_proto_library(
     deps = [
         "empty_proto",
         "messages_proto",
+    ],
+)
+
+# Test that grpc_proto_library/cc_grpc_library can consume generated files
+genrule(
+    name = "messages_gen_proto_file",
+    srcs = ["messages.proto"],
+    outs = ["messages_gen.proto"],
+    cmd = "cp $< $@",
+)
+
+grpc_proto_library(
+    name = "messages_gen_proto",
+    srcs = ["messages_gen_proto_file"],
+    has_services = False,
+)
+
+genrule(
+    name = "test_gen_proto_file",
+    srcs = ["test.proto"],
+    outs = ["test_gen.proto"],
+    cmd = "sed 's/messages.proto/messages_gen.proto/' $< > $@",
+)
+
+# Consume generated files in srcs and in deps
+grpc_proto_library(
+    name = "test_gen_proto",
+    srcs = ["test_gen_proto_file"],
+    deps = [
+        "empty_proto",
+        "messages_gen_proto",
     ],
 )
 
@@ -159,6 +198,5 @@ py_proto_library(
     name = "py_test_proto",
     deps = [
         ":test_proto_descriptor",
-    ]
+    ],
 )
-

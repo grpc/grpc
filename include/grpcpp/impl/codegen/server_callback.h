@@ -29,7 +29,7 @@
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/message_allocator.h>
-#include <grpcpp/impl/codegen/server_context.h>
+#include <grpcpp/impl/codegen/server_context_impl.h>
 #include <grpcpp/impl/codegen/server_interface.h>
 #include <grpcpp/impl/codegen/status.h>
 
@@ -53,7 +53,7 @@ class ServerReactor {
   virtual void OnCancel() = 0;
 
  private:
-  friend class ::grpc::ServerContext;
+  friend class ::grpc_impl::ServerContext;
   template <class Request, class Response>
   friend class CallbackClientStreamingHandler;
   template <class Request, class Response>
@@ -68,13 +68,31 @@ class ServerReactor {
   // remain unmet.
 
   void MaybeCallOnCancel() {
-    if (on_cancel_conditions_remaining_.fetch_sub(
-            1, std::memory_order_acq_rel) == 1) {
+    if (GPR_UNLIKELY(on_cancel_conditions_remaining_.fetch_sub(
+                         1, std::memory_order_acq_rel) == 1)) {
       OnCancel();
     }
   }
 
-  std::atomic_int on_cancel_conditions_remaining_{2};
+  std::atomic<intptr_t> on_cancel_conditions_remaining_{2};
+};
+
+template <class Request, class Response>
+class DefaultMessageHolder
+    : public experimental::MessageHolder<Request, Response> {
+ public:
+  DefaultMessageHolder() {
+    this->set_request(&request_obj_);
+    this->set_response(&response_obj_);
+  }
+  void Release() override {
+    // the object is allocated in the call arena.
+    this->~DefaultMessageHolder<Request, Response>();
+  }
+
+ private:
+  Request request_obj_;
+  Response response_obj_;
 };
 
 }  // namespace internal
@@ -138,12 +156,8 @@ class ServerCallbackRpcController {
   virtual void ClearCancelCallback() = 0;
 
   // NOTE: This is an API for advanced users who need custom allocators.
-  // Optionally deallocate request early to reduce the size of working set.
-  // A custom MessageAllocator needs to be registered to make use of this.
-  virtual void FreeRequest() = 0;
-  // NOTE: This is an API for advanced users who need custom allocators.
   // Get and maybe mutate the allocator state associated with the current RPC.
-  virtual void* GetAllocatorState() = 0;
+  virtual RpcAllocatorState* GetRpcAllocatorState() = 0;
 };
 
 // NOTE: The actual streaming object classes are provided
@@ -160,7 +174,7 @@ class ServerCallbackReader {
  protected:
   template <class Response>
   void BindReactor(ServerReadReactor<Request, Response>* reactor) {
-    reactor->BindReader(this);
+    reactor->InternalBindReader(this);
   }
 };
 
@@ -182,7 +196,7 @@ class ServerCallbackWriter {
  protected:
   template <class Request>
   void BindReactor(ServerWriteReactor<Request, Response>* reactor) {
-    reactor->BindWriter(this);
+    reactor->InternalBindWriter(this);
   }
 };
 
@@ -204,7 +218,7 @@ class ServerCallbackReaderWriter {
 
  protected:
   void BindReactor(ServerBidiReactor<Request, Response>* reactor) {
-    reactor->BindStream(this);
+    reactor->InternalBindStream(this);
   }
 };
 
@@ -299,7 +313,7 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// is a result of the client calling StartCall().
   ///
   /// \param[in] context The context object now associated with this RPC
-  virtual void OnStarted(ServerContext* context) {}
+  virtual void OnStarted(::grpc_impl::ServerContext* context) {}
 
   /// Notifies the application that an explicit StartSendInitialMetadata
   /// operation completed. Not used when the sending of initial metadata
@@ -334,7 +348,10 @@ class ServerBidiReactor : public internal::ServerReactor {
 
  private:
   friend class ServerCallbackReaderWriter<Request, Response>;
-  void BindStream(ServerCallbackReaderWriter<Request, Response>* stream) {
+  // May be overridden by internal implementation details. This is not a public
+  // customization point.
+  virtual void InternalBindStream(
+      ServerCallbackReaderWriter<Request, Response>* stream) {
     stream_ = stream;
   }
 
@@ -358,7 +375,7 @@ class ServerReadReactor : public internal::ServerReactor {
   ///
   /// \param[in] context The context object now associated with this RPC
   /// \param[in] resp The response object to be used by this RPC
-  virtual void OnStarted(ServerContext* context, Response* resp) {}
+  virtual void OnStarted(::grpc_impl::ServerContext* context, Response* resp) {}
 
   /// The following notifications are exactly like ServerBidiReactor.
   virtual void OnSendInitialMetadataDone(bool ok) {}
@@ -368,7 +385,11 @@ class ServerReadReactor : public internal::ServerReactor {
 
  private:
   friend class ServerCallbackReader<Request>;
-  void BindReader(ServerCallbackReader<Request>* reader) { reader_ = reader; }
+  // May be overridden by internal implementation details. This is not a public
+  // customization point.
+  virtual void InternalBindReader(ServerCallbackReader<Request>* reader) {
+    reader_ = reader;
+  }
 
   ServerCallbackReader<Request>* reader_;
 };
@@ -399,7 +420,8 @@ class ServerWriteReactor : public internal::ServerReactor {
   ///
   /// \param[in] context The context object now associated with this RPC
   /// \param[in] req The request object sent by the client
-  virtual void OnStarted(ServerContext* context, const Request* req) {}
+  virtual void OnStarted(::grpc_impl::ServerContext* context,
+                         const Request* req) {}
 
   /// The following notifications are exactly like ServerBidiReactor.
   virtual void OnSendInitialMetadataDone(bool ok) {}
@@ -409,7 +431,11 @@ class ServerWriteReactor : public internal::ServerReactor {
 
  private:
   friend class ServerCallbackWriter<Response>;
-  void BindWriter(ServerCallbackWriter<Response>* writer) { writer_ = writer; }
+  // May be overridden by internal implementation details. This is not a public
+  // customization point.
+  virtual void InternalBindWriter(ServerCallbackWriter<Response>* writer) {
+    writer_ = writer;
+  }
 
   ServerCallbackWriter<Response>* writer_;
 };
@@ -423,7 +449,7 @@ class UnimplementedReadReactor
     : public experimental::ServerReadReactor<Request, Response> {
  public:
   void OnDone() override { delete this; }
-  void OnStarted(ServerContext*, Response*) override {
+  void OnStarted(::grpc_impl::ServerContext*, Response*) override {
     this->Finish(Status(StatusCode::UNIMPLEMENTED, ""));
   }
 };
@@ -433,7 +459,7 @@ class UnimplementedWriteReactor
     : public experimental::ServerWriteReactor<Request, Response> {
  public:
   void OnDone() override { delete this; }
-  void OnStarted(ServerContext*, const Request*) override {
+  void OnStarted(::grpc_impl::ServerContext*, const Request*) override {
     this->Finish(Status(StatusCode::UNIMPLEMENTED, ""));
   }
 };
@@ -443,7 +469,7 @@ class UnimplementedBidiReactor
     : public experimental::ServerBidiReactor<Request, Response> {
  public:
   void OnDone() override { delete this; }
-  void OnStarted(ServerContext*) override {
+  void OnStarted(::grpc_impl::ServerContext*) override {
     this->Finish(Status(StatusCode::UNIMPLEMENTED, ""));
   }
 };
@@ -452,7 +478,8 @@ template <class RequestType, class ResponseType>
 class CallbackUnaryHandler : public MethodHandler {
  public:
   CallbackUnaryHandler(
-      std::function<void(ServerContext*, const RequestType*, ResponseType*,
+      std::function<void(::grpc_impl::ServerContext*, const RequestType*,
+                         ResponseType*,
                          experimental::ServerCallbackRpcController*)>
           func)
       : func_(func) {}
@@ -465,13 +492,13 @@ class CallbackUnaryHandler : public MethodHandler {
   void RunHandler(const HandlerParameter& param) final {
     // Arena allocate a controller structure (that includes request/response)
     g_core_codegen_interface->grpc_call_ref(param.call->call());
-    auto* allocator_info =
-        static_cast<experimental::RpcAllocatorInfo<RequestType, ResponseType>*>(
+    auto* allocator_state =
+        static_cast<experimental::MessageHolder<RequestType, ResponseType>*>(
             param.internal_data);
     auto* controller = new (g_core_codegen_interface->grpc_call_arena_alloc(
         param.call->call(), sizeof(ServerCallbackRpcControllerImpl)))
         ServerCallbackRpcControllerImpl(param.server_context, param.call,
-                                        allocator_info, allocator_,
+                                        allocator_state,
                                         std::move(param.call_requester));
     Status status = param.status;
     if (status.ok()) {
@@ -489,42 +516,30 @@ class CallbackUnaryHandler : public MethodHandler {
     ByteBuffer buf;
     buf.set_buffer(req);
     RequestType* request = nullptr;
-    experimental::RpcAllocatorInfo<RequestType, ResponseType>* allocator_info =
-        new (g_core_codegen_interface->grpc_call_arena_alloc(
-            call, sizeof(*allocator_info)))
-            experimental::RpcAllocatorInfo<RequestType, ResponseType>();
+    experimental::MessageHolder<RequestType, ResponseType>* allocator_state =
+        nullptr;
     if (allocator_ != nullptr) {
-      allocator_->AllocateMessages(allocator_info);
+      allocator_state = allocator_->AllocateMessages();
     } else {
-      allocator_info->request =
-          new (g_core_codegen_interface->grpc_call_arena_alloc(
-              call, sizeof(RequestType))) RequestType();
-      allocator_info->response =
-          new (g_core_codegen_interface->grpc_call_arena_alloc(
-              call, sizeof(ResponseType))) ResponseType();
+      allocator_state = new (g_core_codegen_interface->grpc_call_arena_alloc(
+          call, sizeof(DefaultMessageHolder<RequestType, ResponseType>)))
+          DefaultMessageHolder<RequestType, ResponseType>();
     }
-    *handler_data = allocator_info;
-    request = allocator_info->request;
+    *handler_data = allocator_state;
+    request = allocator_state->request();
     *status = SerializationTraits<RequestType>::Deserialize(&buf, request);
     buf.Release();
     if (status->ok()) {
       return request;
     }
     // Clean up on deserialization failure.
-    if (allocator_ != nullptr) {
-      allocator_->DeallocateMessages(allocator_info);
-    } else {
-      allocator_info->request->~RequestType();
-      allocator_info->response->~ResponseType();
-      allocator_info->request = nullptr;
-      allocator_info->response = nullptr;
-    }
+    allocator_state->Release();
     return nullptr;
   }
 
  private:
-  std::function<void(ServerContext*, const RequestType*, ResponseType*,
-                     experimental::ServerCallbackRpcController*)>
+  std::function<void(::grpc_impl::ServerContext*, const RequestType*,
+                     ResponseType*, experimental::ServerCallbackRpcController*)>
       func_;
   experimental::MessageAllocator<RequestType, ResponseType>* allocator_ =
       nullptr;
@@ -548,9 +563,8 @@ class CallbackUnaryHandler : public MethodHandler {
       }
       // The response is dropped if the status is not OK.
       if (s.ok()) {
-        finish_ops_.ServerSendStatus(
-            &ctx_->trailing_metadata_,
-            finish_ops_.SendMessagePtr(allocator_info_->response));
+        finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_,
+                                     finish_ops_.SendMessagePtr(response()));
       } else {
         finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
       }
@@ -560,7 +574,7 @@ class CallbackUnaryHandler : public MethodHandler {
 
     void SendInitialMetadata(std::function<void(bool)> f) override {
       GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
-      callbacks_outstanding_++;
+      callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
       // TODO(vjpai): Consider taking f as a move-capture if we adopt C++14
       //              and if performance of this operation matters
       meta_tag_.Set(call_.call(),
@@ -588,50 +602,33 @@ class CallbackUnaryHandler : public MethodHandler {
 
     void ClearCancelCallback() override { ctx_->ClearCancelCallback(); }
 
-    void FreeRequest() override {
-      if (allocator_ != nullptr) {
-        allocator_->DeallocateRequest(allocator_info_);
-      }
-    }
-
-    void* GetAllocatorState() override {
-      return allocator_info_->allocator_state;
+    experimental::RpcAllocatorState* GetRpcAllocatorState() override {
+      return allocator_state_;
     }
 
    private:
     friend class CallbackUnaryHandler<RequestType, ResponseType>;
 
     ServerCallbackRpcControllerImpl(
-        ServerContext* ctx, Call* call,
-        experimental::RpcAllocatorInfo<RequestType, ResponseType>*
-            allocator_info,
-        experimental::MessageAllocator<RequestType, ResponseType>* allocator,
+        ::grpc_impl::ServerContext* ctx, Call* call,
+        experimental::MessageHolder<RequestType, ResponseType>* allocator_state,
         std::function<void()> call_requester)
         : ctx_(ctx),
           call_(*call),
-          allocator_info_(allocator_info),
-          allocator_(allocator),
+          allocator_state_(allocator_state),
           call_requester_(std::move(call_requester)) {
       ctx_->BeginCompletionOp(call, [this](bool) { MaybeDone(); }, nullptr);
     }
 
-    const RequestType* request() { return allocator_info_->request; }
-    ResponseType* response() { return allocator_info_->response; }
+    const RequestType* request() { return allocator_state_->request(); }
+    ResponseType* response() { return allocator_state_->response(); }
 
     void MaybeDone() {
-      if (--callbacks_outstanding_ == 0) {
+      if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
+                           1, std::memory_order_acq_rel) == 1)) {
         grpc_call* call = call_.call();
         auto call_requester = std::move(call_requester_);
-        if (allocator_ != nullptr) {
-          allocator_->DeallocateMessages(allocator_info_);
-        } else {
-          if (allocator_info_->request != nullptr) {
-            allocator_info_->request->~RequestType();
-          }
-          if (allocator_info_->response != nullptr) {
-            allocator_info_->response->~ResponseType();
-          }
-        }
+        allocator_state_->Release();
         this->~ServerCallbackRpcControllerImpl();  // explicitly call destructor
         g_core_codegen_interface->grpc_call_unref(call);
         call_requester();
@@ -645,12 +642,12 @@ class CallbackUnaryHandler : public MethodHandler {
         finish_ops_;
     CallbackWithSuccessTag finish_tag_;
 
-    ServerContext* ctx_;
+    ::grpc_impl::ServerContext* ctx_;
     Call call_;
-    experimental::RpcAllocatorInfo<RequestType, ResponseType>* allocator_info_;
-    experimental::MessageAllocator<RequestType, ResponseType>* allocator_;
+    experimental::MessageHolder<RequestType, ResponseType>* const
+        allocator_state_;
     std::function<void()> call_requester_;
-    std::atomic_int callbacks_outstanding_{
+    std::atomic<intptr_t> callbacks_outstanding_{
         2};  // reserve for Finish and CompletionOp
   };
 };
@@ -722,7 +719,7 @@ class CallbackClientStreamingHandler : public MethodHandler {
 
     void SendInitialMetadata() override {
       GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
-      callbacks_outstanding_++;
+      callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
       meta_tag_.Set(call_.call(),
                     [this](bool ok) {
                       reactor_->OnSendInitialMetadataDone(ok);
@@ -740,7 +737,7 @@ class CallbackClientStreamingHandler : public MethodHandler {
     }
 
     void Read(RequestType* req) override {
-      callbacks_outstanding_++;
+      callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
       read_ops_.RecvMessage(req);
       call_.PerformOps(&read_ops_);
     }
@@ -749,7 +746,8 @@ class CallbackClientStreamingHandler : public MethodHandler {
     friend class CallbackClientStreamingHandler<RequestType, ResponseType>;
 
     ServerCallbackReaderImpl(
-        ServerContext* ctx, Call* call, std::function<void()> call_requester,
+        ::grpc_impl::ServerContext* ctx, Call* call,
+        std::function<void()> call_requester,
         experimental::ServerReadReactor<RequestType, ResponseType>* reactor)
         : ctx_(ctx),
           call_(*call),
@@ -770,7 +768,8 @@ class CallbackClientStreamingHandler : public MethodHandler {
     ResponseType* response() { return &resp_; }
 
     void MaybeDone() {
-      if (--callbacks_outstanding_ == 0) {
+      if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
+                           1, std::memory_order_acq_rel) == 1)) {
         reactor_->OnDone();
         grpc_call* call = call_.call();
         auto call_requester = std::move(call_requester_);
@@ -789,12 +788,12 @@ class CallbackClientStreamingHandler : public MethodHandler {
     CallOpSet<CallOpRecvMessage<RequestType>> read_ops_;
     CallbackWithSuccessTag read_tag_;
 
-    ServerContext* ctx_;
+    ::grpc_impl::ServerContext* ctx_;
     Call call_;
     ResponseType resp_;
     std::function<void()> call_requester_;
     experimental::ServerReadReactor<RequestType, ResponseType>* reactor_;
-    std::atomic_int callbacks_outstanding_{
+    std::atomic<intptr_t> callbacks_outstanding_{
         3};  // reserve for OnStarted, Finish, and CompletionOp
   };
 };
@@ -876,7 +875,7 @@ class CallbackServerStreamingHandler : public MethodHandler {
 
     void SendInitialMetadata() override {
       GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
-      callbacks_outstanding_++;
+      callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
       meta_tag_.Set(call_.call(),
                     [this](bool ok) {
                       reactor_->OnSendInitialMetadataDone(ok);
@@ -894,7 +893,7 @@ class CallbackServerStreamingHandler : public MethodHandler {
     }
 
     void Write(const ResponseType* resp, WriteOptions options) override {
-      callbacks_outstanding_++;
+      callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
       if (options.is_last_message()) {
         options.set_buffer_hint();
       }
@@ -926,7 +925,7 @@ class CallbackServerStreamingHandler : public MethodHandler {
     friend class CallbackServerStreamingHandler<RequestType, ResponseType>;
 
     ServerCallbackWriterImpl(
-        ServerContext* ctx, Call* call, const RequestType* req,
+        ::grpc_impl::ServerContext* ctx, Call* call, const RequestType* req,
         std::function<void()> call_requester,
         experimental::ServerWriteReactor<RequestType, ResponseType>* reactor)
         : ctx_(ctx),
@@ -948,7 +947,8 @@ class CallbackServerStreamingHandler : public MethodHandler {
     const RequestType* request() { return req_; }
 
     void MaybeDone() {
-      if (--callbacks_outstanding_ == 0) {
+      if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
+                           1, std::memory_order_acq_rel) == 1)) {
         reactor_->OnDone();
         grpc_call* call = call_.call();
         auto call_requester = std::move(call_requester_);
@@ -967,12 +967,12 @@ class CallbackServerStreamingHandler : public MethodHandler {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage> write_ops_;
     CallbackWithSuccessTag write_tag_;
 
-    ServerContext* ctx_;
+    ::grpc_impl::ServerContext* ctx_;
     Call call_;
     const RequestType* req_;
     std::function<void()> call_requester_;
     experimental::ServerWriteReactor<RequestType, ResponseType>* reactor_;
-    std::atomic_int callbacks_outstanding_{
+    std::atomic<intptr_t> callbacks_outstanding_{
         3};  // reserve for OnStarted, Finish, and CompletionOp
   };
 };
@@ -1040,7 +1040,7 @@ class CallbackBidiHandler : public MethodHandler {
 
     void SendInitialMetadata() override {
       GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
-      callbacks_outstanding_++;
+      callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
       meta_tag_.Set(call_.call(),
                     [this](bool ok) {
                       reactor_->OnSendInitialMetadataDone(ok);
@@ -1058,7 +1058,7 @@ class CallbackBidiHandler : public MethodHandler {
     }
 
     void Write(const ResponseType* resp, WriteOptions options) override {
-      callbacks_outstanding_++;
+      callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
       if (options.is_last_message()) {
         options.set_buffer_hint();
       }
@@ -1086,7 +1086,7 @@ class CallbackBidiHandler : public MethodHandler {
     }
 
     void Read(RequestType* req) override {
-      callbacks_outstanding_++;
+      callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
       read_ops_.RecvMessage(req);
       call_.PerformOps(&read_ops_);
     }
@@ -1095,7 +1095,8 @@ class CallbackBidiHandler : public MethodHandler {
     friend class CallbackBidiHandler<RequestType, ResponseType>;
 
     ServerCallbackReaderWriterImpl(
-        ServerContext* ctx, Call* call, std::function<void()> call_requester,
+        ::grpc_impl::ServerContext* ctx, Call* call,
+        std::function<void()> call_requester,
         experimental::ServerBidiReactor<RequestType, ResponseType>* reactor)
         : ctx_(ctx),
           call_(*call),
@@ -1120,7 +1121,8 @@ class CallbackBidiHandler : public MethodHandler {
     ~ServerCallbackReaderWriterImpl() {}
 
     void MaybeDone() {
-      if (--callbacks_outstanding_ == 0) {
+      if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
+                           1, std::memory_order_acq_rel) == 1)) {
         reactor_->OnDone();
         grpc_call* call = call_.call();
         auto call_requester = std::move(call_requester_);
@@ -1141,11 +1143,11 @@ class CallbackBidiHandler : public MethodHandler {
     CallOpSet<CallOpRecvMessage<RequestType>> read_ops_;
     CallbackWithSuccessTag read_tag_;
 
-    ServerContext* ctx_;
+    ::grpc_impl::ServerContext* ctx_;
     Call call_;
     std::function<void()> call_requester_;
     experimental::ServerBidiReactor<RequestType, ResponseType>* reactor_;
-    std::atomic_int callbacks_outstanding_{
+    std::atomic<intptr_t> callbacks_outstanding_{
         3};  // reserve for OnStarted, Finish, and CompletionOp
   };
 };

@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "include/grpc/impl/codegen/log.h"
+#include <grpc/impl/codegen/log.h>
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
@@ -30,6 +30,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/slice/slice_utils.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_metadata;
 
@@ -79,17 +80,22 @@ typedef struct grpc_mdelem_data {
    this bit set in their integer value */
 #define GRPC_MDELEM_STORAGE_INTERNED_BIT 1
 
+/* External and static storage metadata has no refcount to ref/unref. Allocated
+ * and interned metadata do have a refcount. Metadata ref and unref methods use
+ * a switch statement on this enum to determine which behaviour to execute.
+ * Keeping the no-ref cases together and the ref-cases together leads to
+ * slightly better code generation (9 inlined instructions rather than 10). */
 typedef enum {
   /* memory pointed to by grpc_mdelem::payload is owned by an external system */
   GRPC_MDELEM_STORAGE_EXTERNAL = 0,
-  /* memory pointed to by grpc_mdelem::payload is interned by the metadata
-     system */
-  GRPC_MDELEM_STORAGE_INTERNED = GRPC_MDELEM_STORAGE_INTERNED_BIT,
+  /* memory is in the static metadata table */
+  GRPC_MDELEM_STORAGE_STATIC = GRPC_MDELEM_STORAGE_INTERNED_BIT,
   /* memory pointed to by grpc_mdelem::payload is allocated by the metadata
      system */
   GRPC_MDELEM_STORAGE_ALLOCATED = 2,
-  /* memory is in the static metadata table */
-  GRPC_MDELEM_STORAGE_STATIC = 2 | GRPC_MDELEM_STORAGE_INTERNED_BIT,
+  /* memory pointed to by grpc_mdelem::payload is interned by the metadata
+     system */
+  GRPC_MDELEM_STORAGE_INTERNED = 2 | GRPC_MDELEM_STORAGE_INTERNED_BIT,
 } grpc_mdelem_data_storage;
 
 struct grpc_mdelem {
@@ -138,7 +144,17 @@ bool grpc_mdelem_eq(grpc_mdelem a, grpc_mdelem b);
  * grpc_mdelem_eq and remove unnecessary checks. */
 inline bool grpc_mdelem_static_value_eq(grpc_mdelem a, grpc_mdelem b_static) {
   if (a.payload == b_static.payload) return true;
-  return grpc_slice_eq(GRPC_MDVALUE(a), GRPC_MDVALUE(b_static));
+  return grpc_slice_eq_static_interned(GRPC_MDVALUE(a), GRPC_MDVALUE(b_static));
+}
+#define GRPC_MDISNULL(md) (GRPC_MDELEM_DATA(md) == NULL)
+
+inline bool grpc_mdelem_both_interned_eq(grpc_mdelem a_interned,
+                                         grpc_mdelem b_interned) {
+  GPR_DEBUG_ASSERT(GRPC_MDELEM_IS_INTERNED(a_interned) ||
+                   GRPC_MDISNULL(a_interned));
+  GPR_DEBUG_ASSERT(GRPC_MDELEM_IS_INTERNED(b_interned) ||
+                   GRPC_MDISNULL(b_interned));
+  return a_interned.payload == b_interned.payload;
 }
 
 /* Mutator and accessor for grpc_mdelem user data. The destructor function
@@ -168,17 +184,34 @@ struct UserData {
   grpc_core::Atomic<void*> data;
 };
 
-class InternedMetadata {
+class StaticMetadata {
  public:
-  struct BucketLink {
-    explicit BucketLink(InternedMetadata* md) : next(md) {}
+  StaticMetadata(const grpc_slice& key, const grpc_slice& value)
+      : kv_({key, value}), hash_(0) {}
 
-    InternedMetadata* next = nullptr;
-  };
+  const grpc_mdelem_data& data() const { return kv_; }
 
-  InternedMetadata(const grpc_slice& key, const grpc_slice& value,
-                   uint32_t hash, InternedMetadata* next);
-  ~InternedMetadata();
+  void HashInit();
+  uint32_t hash() { return hash_; }
+
+ private:
+  grpc_mdelem_data kv_;
+
+  /* private only data */
+  uint32_t hash_;
+};
+
+class RefcountedMdBase {
+ public:
+  RefcountedMdBase(const grpc_slice& key, const grpc_slice& value)
+      : key_(key), value_(value), refcnt_(1) {}
+  RefcountedMdBase(const grpc_slice& key, const grpc_slice& value,
+                   uint32_t hash)
+      : key_(key), value_(value), refcnt_(1), hash_(hash) {}
+
+  const grpc_slice& key() const { return key_; }
+  const grpc_slice& value() const { return value_; }
+  uint32_t hash() { return hash_; }
 
 #ifndef NDEBUG
   void Ref(const char* file, int line) {
@@ -190,92 +223,65 @@ class InternedMetadata {
     grpc_mdelem_trace_unref(this, key_, value_, RefValue(), file, line);
     return Unref();
   }
-#else
-  // We define a naked Ref() in the else-clause to make sure we don't
-  // inadvertently skip the assert on debug builds.
+#endif
   void Ref() {
     /* we can assume the ref count is >= 1 as the application is calling
        this function - meaning that no adjustment to mdtab_free is necessary,
        simplifying the logic here to be just an atomic increment */
     refcnt_.FetchAdd(1, MemoryOrder::RELAXED);
   }
-#endif  // ifndef NDEBUG
   bool Unref() {
     const intptr_t prior = refcnt_.FetchSub(1, MemoryOrder::ACQ_REL);
     GPR_DEBUG_ASSERT(prior > 0);
     return prior == 1;
   }
 
+ protected:
+  intptr_t RefValue() { return refcnt_.Load(MemoryOrder::RELAXED); }
+  bool AllRefsDropped() { return refcnt_.Load(MemoryOrder::ACQUIRE) == 0; }
+  bool FirstRef() { return refcnt_.FetchAdd(1, MemoryOrder::RELAXED) == 0; }
+
+ private:
+  /* must be byte compatible with grpc_mdelem_data */
+  grpc_slice key_;
+  grpc_slice value_;
+  grpc_core::Atomic<intptr_t> refcnt_;
+  uint32_t hash_ = 0;
+};
+
+class InternedMetadata : public RefcountedMdBase {
+ public:
+  struct BucketLink {
+    explicit BucketLink(InternedMetadata* md) : next(md) {}
+
+    InternedMetadata* next = nullptr;
+  };
+
+  InternedMetadata(const grpc_slice& key, const grpc_slice& value,
+                   uint32_t hash, InternedMetadata* next);
+  ~InternedMetadata();
+
   void RefWithShardLocked(mdtab_shard* shard);
-  const grpc_slice& key() const { return key_; }
-  const grpc_slice& value() const { return value_; }
   UserData* user_data() { return &user_data_; }
-  uint32_t hash() { return hash_; }
   InternedMetadata* bucket_next() { return link_.next; }
   void set_bucket_next(InternedMetadata* md) { link_.next = md; }
 
   static size_t CleanupLinkedMetadata(BucketLink* head);
 
  private:
-  bool AllRefsDropped() { return refcnt_.Load(MemoryOrder::ACQUIRE) == 0; }
-  bool FirstRef() { return refcnt_.FetchAdd(1, MemoryOrder::RELAXED) == 0; }
-  intptr_t RefValue() { return refcnt_.Load(MemoryOrder::RELAXED); }
-
-  /* must be byte compatible with grpc_mdelem_data */
-  grpc_slice key_;
-  grpc_slice value_;
-
-  /* private only data */
-  grpc_core::Atomic<intptr_t> refcnt_;
-  uint32_t hash_;
-
   UserData user_data_;
-
   BucketLink link_;
 };
 
 /* Shadow structure for grpc_mdelem_data for allocated elements */
-class AllocatedMetadata {
+class AllocatedMetadata : public RefcountedMdBase {
  public:
   AllocatedMetadata(const grpc_slice& key, const grpc_slice& value);
   ~AllocatedMetadata();
 
-  const grpc_slice& key() const { return key_; }
-  const grpc_slice& value() const { return value_; }
   UserData* user_data() { return &user_data_; }
 
-#ifndef NDEBUG
-  void Ref(const char* file, int line) {
-    grpc_mdelem_trace_ref(this, key_, value_, RefValue(), file, line);
-    Ref();
-  }
-  bool Unref(const char* file, int line) {
-    grpc_mdelem_trace_unref(this, key_, value_, RefValue(), file, line);
-    return Unref();
-  }
-#endif  // ifndef NDEBUG
-  void Ref() {
-    /* we can assume the ref count is >= 1 as the application is calling
-       this function - meaning that no adjustment to mdtab_free is necessary,
-       simplifying the logic here to be just an atomic increment */
-    refcnt_.FetchAdd(1, MemoryOrder::RELAXED);
-  }
-  bool Unref() {
-    const intptr_t prior = refcnt_.FetchSub(1, MemoryOrder::ACQ_REL);
-    GPR_DEBUG_ASSERT(prior > 0);
-    return prior == 1;
-  }
-
  private:
-  intptr_t RefValue() { return refcnt_.Load(MemoryOrder::RELAXED); }
-
-  /* must be byte compatible with grpc_mdelem_data */
-  grpc_slice key_;
-  grpc_slice value_;
-
-  /* private only data */
-  grpc_core::Atomic<intptr_t> refcnt_;
-
   UserData user_data_;
 };
 
@@ -320,30 +326,40 @@ inline grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd) {
 
 #ifndef NDEBUG
 #define GRPC_MDELEM_UNREF(s) grpc_mdelem_unref((s), __FILE__, __LINE__)
-void grpc_mdelem_do_unref(grpc_mdelem gmd, const char* file, int line);
+void grpc_mdelem_on_final_unref(grpc_mdelem_data_storage storage, void* ptr,
+                                uint32_t hash, const char* file, int line);
 inline void grpc_mdelem_unref(grpc_mdelem gmd, const char* file, int line) {
 #else
 #define GRPC_MDELEM_UNREF(s) grpc_mdelem_unref((s))
-void grpc_mdelem_do_unref(grpc_mdelem gmd);
+void grpc_mdelem_on_final_unref(grpc_mdelem_data_storage storage, void* ptr,
+                                uint32_t hash);
 inline void grpc_mdelem_unref(grpc_mdelem gmd) {
 #endif
-  switch (GRPC_MDELEM_STORAGE(gmd)) {
+  const grpc_mdelem_data_storage storage = GRPC_MDELEM_STORAGE(gmd);
+  switch (storage) {
     case GRPC_MDELEM_STORAGE_EXTERNAL:
     case GRPC_MDELEM_STORAGE_STATIC:
       return;
     case GRPC_MDELEM_STORAGE_INTERNED:
     case GRPC_MDELEM_STORAGE_ALLOCATED:
+      auto* md =
+          reinterpret_cast<grpc_core::RefcountedMdBase*> GRPC_MDELEM_DATA(gmd);
+      /* once the refcount hits zero, some other thread can come along and
+         free an interned md at any time: it's unsafe from this point on to
+         access it so we read the hash now. */
+      uint32_t hash = md->hash();
+      if (GPR_UNLIKELY(md->Unref())) {
 #ifndef NDEBUG
-      grpc_mdelem_do_unref(gmd, file, line);
+        grpc_mdelem_on_final_unref(storage, md, hash, file, line);
 #else
-      grpc_mdelem_do_unref(gmd);
+        grpc_mdelem_on_final_unref(storage, md, hash);
 #endif
+      }
       return;
   }
 }
 
 #define GRPC_MDNULL GRPC_MAKE_MDELEM(NULL, GRPC_MDELEM_STORAGE_EXTERNAL)
-#define GRPC_MDISNULL(md) (GRPC_MDELEM_DATA(md) == NULL)
 
 /* We add 32 bytes of padding as per RFC-7540 section 6.5.2. */
 #define GRPC_MDELEM_LENGTH(e)                                                  \

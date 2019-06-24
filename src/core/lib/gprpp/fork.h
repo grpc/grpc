@@ -19,6 +19,10 @@
 #ifndef GRPC_CORE_LIB_GPRPP_FORK_H
 #define GRPC_CORE_LIB_GPRPP_FORK_H
 
+#include <grpc/support/port_platform.h>
+
+#include <atomic>
+
 /*
  * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
  *       AROUND VERY SPECIFIC USE CASES.
@@ -78,7 +82,7 @@ class Fork {
  private:
   static internal::ExecCtxState* exec_ctx_state_;
   static internal::ThreadState* thread_state_;
-  static bool support_enabled_;
+  static std::atomic<bool> support_enabled_;
   static bool override_enabled_;
   static child_postfork_func reset_child_polling_engine_;
 };

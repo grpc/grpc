@@ -163,8 +163,10 @@ typedef struct {
   const char* cert_chain;
 } grpc_ssl_pem_key_cert_pair;
 
-/** Object that holds additional peer-verification options on a secure
-   channel. */
+/** Deprecated in favor of grpc_ssl_verify_peer_options. It will be removed
+  after all of its call sites are migrated to grpc_ssl_verify_peer_options.
+  Object that holds additional peer-verification options on a secure
+  channel. */
 typedef struct {
   /** If non-NULL this callback will be invoked with the expected
      target_name, the peer's certificate (in PEM format), and whatever
@@ -183,7 +185,29 @@ typedef struct {
   void (*verify_peer_destruct)(void* userdata);
 } verify_peer_options;
 
-/** Creates an SSL credentials object.
+/** Object that holds additional peer-verification options on a secure
+   channel. */
+typedef struct {
+  /** If non-NULL this callback will be invoked with the expected
+     target_name, the peer's certificate (in PEM format), and whatever
+     userdata pointer is set below. If a non-zero value is returned by this
+     callback then it is treated as a verification failure. Invocation of
+     the callback is blocking, so any implementation should be light-weight.
+     */
+  int (*verify_peer_callback)(const char* target_name, const char* peer_pem,
+                              void* userdata);
+  /** Arbitrary userdata that will be passed as the last argument to
+     verify_peer_callback. */
+  void* verify_peer_callback_userdata;
+  /** A destruct callback that will be invoked when the channel is being
+     cleaned up. The userdata argument will be passed to it. The intent is
+     to perform any cleanup associated with that userdata. */
+  void (*verify_peer_destruct)(void* userdata);
+} grpc_ssl_verify_peer_options;
+
+/** Deprecated in favor of grpc_ssl_server_credentials_create_ex. It will be
+   removed after all of its call sites are migrated to
+   grpc_ssl_server_credentials_create_ex. Creates an SSL credentials object.
    - pem_root_certs is the NULL-terminated string containing the PEM encoding
      of the server root certificates. If this parameter is NULL, the
      implementation will first try to dereference the file pointed by the
@@ -213,6 +237,37 @@ typedef struct {
 GRPCAPI grpc_channel_credentials* grpc_ssl_credentials_create(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
     const verify_peer_options* verify_options, void* reserved);
+
+/* Creates an SSL credentials object.
+   - pem_root_certs is the NULL-terminated string containing the PEM encoding
+     of the server root certificates. If this parameter is NULL, the
+     implementation will first try to dereference the file pointed by the
+     GRPC_DEFAULT_SSL_ROOTS_FILE_PATH environment variable, and if that fails,
+     try to get the roots set by grpc_override_ssl_default_roots. Eventually,
+     if all these fail, it will try to get the roots from a well-known place on
+     disk (in the grpc install directory).
+
+     gRPC has implemented root cache if the underlying OpenSSL library supports
+     it. The gRPC root certificates cache is only applicable on the default
+     root certificates, which is used when this parameter is nullptr. If user
+     provides their own pem_root_certs, when creating an SSL credential object,
+     gRPC would not be able to cache it, and each subchannel will generate a
+     copy of the root store. So it is recommended to avoid providing large room
+     pem with pem_root_certs parameter to avoid excessive memory consumption,
+     particularly on mobile platforms such as iOS.
+   - pem_key_cert_pair is a pointer on the object containing client's private
+     key and certificate chain. This parameter can be NULL if the client does
+     not have such a key/cert pair.
+   - verify_options is an optional verify_peer_options object which holds
+     additional options controlling how peer certificates are verified. For
+     example, you can supply a callback which receives the peer's certificate
+     with which you can do additional verification. Can be NULL, in which
+     case verification will retain default behavior. Any settings in
+     verify_options are copied during this call, so the verify_options
+     object can be released afterwards. */
+GRPCAPI grpc_channel_credentials* grpc_ssl_credentials_create_ex(
+    const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
+    const grpc_ssl_verify_peer_options* verify_options, void* reserved);
 
 /** --- grpc_call_credentials object.
 
@@ -435,7 +490,7 @@ GRPCAPI grpc_server_credentials* grpc_ssl_server_credentials_create(
 /** Deprecated in favor of grpc_ssl_server_credentials_create_with_options.
    Same as grpc_ssl_server_credentials_create method except uses
    grpc_ssl_client_certificate_request_type enum to support more ways to
-   authenticate client cerificates.*/
+   authenticate client certificates.*/
 GRPCAPI grpc_server_credentials* grpc_ssl_server_credentials_create_ex(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
     size_t num_key_cert_pairs,
@@ -641,7 +696,7 @@ typedef struct grpc_tls_credentials_options grpc_tls_credentials_options;
 
 /** Create an empty TLS credentials options. It is used for
  *  experimental purpose for now and subject to change. */
-GRPCAPI grpc_tls_credentials_options* grpc_tls_credentials_options_create();
+GRPCAPI grpc_tls_credentials_options* grpc_tls_credentials_options_create(void);
 
 /** Set grpc_ssl_client_certificate_request_type field in credentials options
     with the provided type. options should not be NULL.
@@ -683,7 +738,8 @@ GRPCAPI int grpc_tls_credentials_options_set_server_authorization_check_config(
 
 /** Create an empty grpc_tls_key_materials_config instance.
  *  It is used for experimental purpose for now and subject to change. */
-GRPCAPI grpc_tls_key_materials_config* grpc_tls_key_materials_config_create();
+GRPCAPI grpc_tls_key_materials_config* grpc_tls_key_materials_config_create(
+    void);
 
 /** Set grpc_tls_key_materials_config instance with provided a TLS certificate.
     config will take the ownership of pem_root_certs and pem_key_cert_pairs.

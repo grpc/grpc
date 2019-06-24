@@ -48,7 +48,6 @@
 
 namespace grpc {
 
-class CompletionQueue;
 extern CoreCodegenInterface* g_core_codegen_interface;
 
 namespace internal {
@@ -188,11 +187,6 @@ class WriteOptions {
   ///
   /// \sa GRPC_WRITE_LAST_MESSAGE
   bool is_last_message() const { return last_message_; }
-
-  WriteOptions& operator=(const WriteOptions& rhs) {
-    flags_ = rhs.flags_;
-    return *this;
-  }
 
  private:
   void SetBit(const uint32_t mask) { flags_ |= mask; }
@@ -469,7 +463,6 @@ class CallOpRecvMessage {
         *status = false;
       }
     }
-    message_ = nullptr;
   }
 
   void SetInterceptionHookPoint(
@@ -566,7 +559,6 @@ class CallOpGenericRecvMessage {
         *status = false;
       }
     }
-    deserialize_.reset();
   }
 
   void SetInterceptionHookPoint(
@@ -581,6 +573,7 @@ class CallOpGenericRecvMessage {
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
     if (!got_message) interceptor_methods->SetRecvMessage(nullptr, nullptr);
+    deserialize_.reset();
   }
   void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
     hijacked_ = true;

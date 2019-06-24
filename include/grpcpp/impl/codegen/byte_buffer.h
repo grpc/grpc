@@ -51,6 +51,7 @@ template <class RequestType, class ResponseType>
 class CallbackServerStreamingHandler;
 template <StatusCode code>
 class ErrorMethodHandler;
+class ExternalConnectionAcceptorImpl;
 template <class R>
 class DeserializeFuncType;
 class GrpcByteBufferPeer;
@@ -185,6 +186,7 @@ class ByteBuffer final {
   friend class ProtoBufferReader;
   friend class ProtoBufferWriter;
   friend class internal::GrpcByteBufferPeer;
+  friend class internal::ExternalConnectionAcceptorImpl;
 
   grpc_byte_buffer* buffer_;
 

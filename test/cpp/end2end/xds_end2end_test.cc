@@ -368,11 +368,7 @@ class XdsEnd2endTest : public ::testing::Test {
         num_backends_(num_backends),
         num_balancers_(num_balancers),
         client_load_reporting_interval_seconds_(
-            client_load_reporting_interval_seconds) {
-    // Make the backup poller poll very frequently in order to pick up
-    // updates from all the subchannels's FDs.
-    GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
-  }
+            client_load_reporting_interval_seconds) {}
 
   void SetUp() override {
     response_generator_ =
@@ -1015,6 +1011,22 @@ TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerCallFails) {
                  /* wait_for_ready */ false);
 }
 
+TEST_F(SingleBalancerTest, FallbackIfResponseReceivedButChildNotReady) {
+  const int kFallbackTimeoutMs = 500 * grpc_test_slowdown_factor();
+  ResetStub(kFallbackTimeoutMs);
+  SetNextResolution({backends_[0]->port_}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannelAllBalancers();
+  // Send a serverlist that only contains an unreachable backend before fallback
+  // timeout.
+  ScheduleResponseForBalancer(0,
+                              BalancerServiceImpl::BuildResponseForBackends(
+                                  {grpc_pick_unused_port_or_die()}, {}),
+                              0);
+  // Because no child policy is ready before fallback timeout, we enter fallback
+  // mode.
+  WaitForBackend(0);
+}
+
 TEST_F(SingleBalancerTest, FallbackModeIsExitedWhenBalancerSaysToDropAllCalls) {
   // Return an unreachable balancer and one fallback backend.
   SetNextResolution({backends_[0]->port_}, kDefaultServiceConfig_.c_str());
@@ -1389,6 +1401,9 @@ class SingleBalancerWithClientLoadReportingTest : public XdsEnd2endTest {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  // Make the backup poller poll very frequently in order to pick up
+  // updates from all the subchannels's FDs.
+  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
   grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);

@@ -88,7 +88,7 @@ UniquePtr<ServiceConfig::ParsedConfig> MessageSizeParser::ParsePerMethodParams(
     *error = GRPC_ERROR_CREATE_FROM_VECTOR("Message size parser", &error_list);
     return nullptr;
   }
-  return UniquePtr<ServiceConfig::ParsedConfig>(New<MessageSizeParsedObject>(
+  return UniquePtr<ServiceConfig::ParsedConfig>(New<MessageSizeParsedConfig>(
       max_request_message_bytes, max_response_message_bytes));
 }
 
@@ -102,7 +102,7 @@ size_t MessageSizeParser::ParserIndex() { return g_message_size_parser_index; }
 
 namespace {
 struct channel_data {
-  grpc_core::MessageSizeParsedObject::message_size_limits limits;
+  grpc_core::MessageSizeParsedConfig::message_size_limits limits;
   grpc_core::RefCountedPtr<grpc_core::ServiceConfig> svc_cfg;
 };
 
@@ -119,21 +119,21 @@ struct call_data {
     // Note: Per-method config is only available on the client, so we
     // apply the max request size to the send limit and the max response
     // size to the receive limit.
-    const grpc_core::MessageSizeParsedObject* limits = nullptr;
+    const grpc_core::MessageSizeParsedConfig* limits = nullptr;
     grpc_core::ServiceConfig::CallData* svc_cfg_call_data = nullptr;
     if (args.context != nullptr) {
       svc_cfg_call_data = static_cast<grpc_core::ServiceConfig::CallData*>(
-          args.context[GRPC_SERVICE_CONFIG_CALL_DATA].value);
+          args.context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
     }
     if (svc_cfg_call_data != nullptr) {
-      limits = static_cast<const grpc_core::MessageSizeParsedObject*>(
-          svc_cfg_call_data->GetMethodParsedObject(
+      limits = static_cast<const grpc_core::MessageSizeParsedConfig*>(
+          svc_cfg_call_data->GetMethodParsedConfig(
               grpc_core::MessageSizeParser::ParserIndex()));
     } else if (chand.svc_cfg != nullptr) {
       const auto* objs_vector =
-          chand.svc_cfg->GetMethodServiceConfigObjectsVector(args.path);
+          chand.svc_cfg->GetMethodParsedConfigVector(args.path);
       if (objs_vector != nullptr) {
-        limits = static_cast<const grpc_core::MessageSizeParsedObject*>(
+        limits = static_cast<const grpc_core::MessageSizeParsedConfig*>(
             (*objs_vector)[grpc_core::MessageSizeParser::ParserIndex()].get());
       }
     }
@@ -154,7 +154,7 @@ struct call_data {
   ~call_data() { GRPC_ERROR_UNREF(error); }
 
   grpc_core::CallCombiner* call_combiner;
-  grpc_core::MessageSizeParsedObject::message_size_limits limits;
+  grpc_core::MessageSizeParsedConfig::message_size_limits limits;
   // Receive closures are chained: we inject this closure as the
   // recv_message_ready up-call on transport_stream_op, and remember to
   // call our next_recv_message_ready member after handling it.
@@ -300,9 +300,9 @@ static int default_size(const grpc_channel_args* args,
   return without_minimal_stack;
 }
 
-grpc_core::MessageSizeParsedObject::message_size_limits get_message_size_limits(
+grpc_core::MessageSizeParsedConfig::message_size_limits get_message_size_limits(
     const grpc_channel_args* channel_args) {
-  grpc_core::MessageSizeParsedObject::message_size_limits lim;
+  grpc_core::MessageSizeParsedConfig::message_size_limits lim;
   lim.max_send_size =
       default_size(channel_args, GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH);
   lim.max_recv_size =
@@ -392,7 +392,7 @@ static bool maybe_add_message_size_filter(grpc_channel_stack_builder* builder,
   const grpc_channel_args* channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   bool enable = false;
-  grpc_core::MessageSizeParsedObject::message_size_limits lim =
+  grpc_core::MessageSizeParsedConfig::message_size_limits lim =
       get_message_size_limits(channel_args);
   if (lim.max_send_size != -1 || lim.max_recv_size != -1) {
     enable = true;

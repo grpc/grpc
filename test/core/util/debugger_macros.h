@@ -19,6 +19,9 @@
 #ifndef GRPC_TEST_CORE_UTIL_DEBUGGER_MACROS_H
 #define GRPC_TEST_CORE_UTIL_DEBUGGER_MACROS_H
 
-void grpc_summon_debugger_macros();
+#include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/lib/surface/call.h"
+
+grpc_chttp2_stream* grpc_chttp2_stream_from_call(grpc_call* call);
 
 #endif /* GRPC_TEST_CORE_UTIL_DEBUGGER_MACROS_H */

@@ -17,6 +17,7 @@
 """Generates the appropriate build.json data for all the bad_client tests."""
 
 
+from __future__ import print_function
 import collections
 import yaml
 
@@ -26,12 +27,14 @@ default_test_options = TestOptions(False, 1.0)
 # maps test names to options
 BAD_CLIENT_TESTS = {
     'badreq': default_test_options,
+    'bad_streaming_id': default_test_options,
     'connection_prefix': default_test_options._replace(cpu_cost=0.2),
     'duplicate_header': default_test_options,
     'headers': default_test_options._replace(cpu_cost=0.2),
     'initial_settings_frame': default_test_options._replace(cpu_cost=0.2),
     'head_of_line_blocking': default_test_options,
     'large_metadata': default_test_options,
+    'out_of_bounds': default_test_options,
     'server_registered_method': default_test_options,
     'simple_request': default_test_options,
     'window_overflow': default_test_options,
@@ -45,7 +48,7 @@ def main():
           {
             'name': 'bad_client_test',
             'build': 'private',
-            'language': 'c',
+            'language': 'c++',
             'src': [
               'test/core/bad_client/bad_client.cc'
             ],
@@ -64,7 +67,7 @@ def main():
               'name': '%s_bad_client_test' % t,
               'cpu_cost': BAD_CLIENT_TESTS[t].cpu_cost,
               'build': 'test',
-              'language': 'c',
+              'language': 'c++',
               'secure': 'no',
               'src': ['test/core/bad_client/tests/%s.cc' % t],
               'vs_proj_dir': 'test',
@@ -77,7 +80,7 @@ def main():
               ]
           }
       for t in sorted(BAD_CLIENT_TESTS.keys())]}
-  print yaml.dump(json)
+  print(yaml.dump(json))
 
 
 if __name__ == '__main__':

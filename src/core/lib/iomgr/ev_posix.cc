@@ -31,31 +31,36 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_epollex_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
 
-grpc_core::TraceFlag grpc_polling_trace(false,
-                                        "polling"); /* Disabled by default */
+GPR_GLOBAL_CONFIG_DEFINE_STRING(
+    grpc_poll_strategy, "all",
+    "Declares which polling engines to try when starting gRPC. "
+    "This is a comma-separated list of engines, which are tried in priority "
+    "order first -> last.")
+
+grpc_core::DebugOnlyTraceFlag grpc_polling_trace(
+    false, "polling"); /* Disabled by default */
 
 /* Traces fd create/close operations */
-grpc_core::TraceFlag grpc_fd_trace(false, "fd_trace");
+grpc_core::DebugOnlyTraceFlag grpc_fd_trace(false, "fd_trace");
 grpc_core::DebugOnlyTraceFlag grpc_trace_fd_refcount(false, "fd_refcount");
 grpc_core::DebugOnlyTraceFlag grpc_polling_api_trace(false, "polling_api");
 
-#ifndef NDEBUG
-
 // Polling API trace only enabled in debug builds
+#ifndef NDEBUG
 #define GRPC_POLLING_API_TRACE(format, ...)                  \
-  if (grpc_polling_api_trace.enabled()) {                    \
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_api_trace)) {     \
     gpr_log(GPR_INFO, "(polling-api) " format, __VA_ARGS__); \
   }
 #else
 #define GRPC_POLLING_API_TRACE(...)
-#endif
+#endif  // NDEBUG
 
 /** Default poll() function - a pointer so that it can be overridden by some
  *  tests */
@@ -66,7 +71,7 @@ int aix_poll(struct pollfd fds[], nfds_t nfds, int timeout) {
   return poll(fds, nfds, timeout);
 }
 grpc_poll_function_type grpc_poll_function = aix_poll;
-#endif
+#endif  // GPR_AIX
 
 grpc_wakeup_fd grpc_global_wakeup_fd;
 
@@ -205,14 +210,11 @@ void grpc_register_event_engine_factory(const char* name,
 const char* grpc_get_poll_strategy_name() { return g_poll_strategy_name; }
 
 void grpc_event_engine_init(void) {
-  char* s = gpr_getenv("GRPC_POLL_STRATEGY");
-  if (s == nullptr) {
-    s = gpr_strdup("all");
-  }
+  grpc_core::UniquePtr<char> value = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
 
   char** strings = nullptr;
   size_t nstrings = 0;
-  split(s, &strings, &nstrings);
+  split(value.get(), &strings, &nstrings);
 
   for (size_t i = 0; g_event_engine == nullptr && i < nstrings; i++) {
     try_engine(strings[i]);
@@ -224,10 +226,10 @@ void grpc_event_engine_init(void) {
   gpr_free(strings);
 
   if (g_event_engine == nullptr) {
-    gpr_log(GPR_ERROR, "No event engine could be initialized from %s", s);
+    gpr_log(GPR_ERROR, "No event engine could be initialized from %s",
+            value.get());
     abort();
   }
-  gpr_free(s);
 }
 
 void grpc_event_engine_shutdown(void) {

@@ -63,8 +63,6 @@ class RoundRobin : public LoadBalancingPolicy {
 
   void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
-  void FillChildRefsForChannelz(channelz::ChildRefsList* child_subchannels,
-                                channelz::ChildRefsList* ignored) override;
 
  private:
   ~RoundRobin();
@@ -83,9 +81,9 @@ class RoundRobin : public LoadBalancingPolicy {
     RoundRobinSubchannelData(
         SubchannelList<RoundRobinSubchannelList, RoundRobinSubchannelData>*
             subchannel_list,
-        const ServerAddress& address, Subchannel* subchannel,
-        grpc_combiner* combiner)
-        : SubchannelData(subchannel_list, address, subchannel, combiner) {}
+        const ServerAddress& address,
+        RefCountedPtr<SubchannelInterface> subchannel)
+        : SubchannelData(subchannel_list, address, std::move(subchannel)) {}
 
     grpc_connectivity_state connectivity_state() const {
       return last_connectivity_state_;
@@ -150,31 +148,17 @@ class RoundRobin : public LoadBalancingPolicy {
    public:
     Picker(RoundRobin* parent, RoundRobinSubchannelList* subchannel_list);
 
-    PickResult Pick(PickArgs* pick, grpc_error** error) override;
+    PickResult Pick(PickArgs args) override;
 
    private:
     // Using pointer value only, no ref held -- do not dereference!
     RoundRobin* parent_;
 
     size_t last_picked_index_;
-    InlinedVector<RefCountedPtr<ConnectedSubchannel>, 10> subchannels_;
-  };
-
-  // Helper class to ensure that any function that modifies the child refs
-  // data structures will update the channelz snapshot data structures before
-  // returning.
-  class AutoChildRefsUpdater {
-   public:
-    explicit AutoChildRefsUpdater(RoundRobin* rr) : rr_(rr) {}
-    ~AutoChildRefsUpdater() { rr_->UpdateChildRefsLocked(); }
-
-   private:
-    RoundRobin* rr_;
+    InlinedVector<RefCountedPtr<ConnectedSubchannelInterface>, 10> subchannels_;
   };
 
   void ShutdownLocked() override;
-
-  void UpdateChildRefsLocked();
 
   /** list of subchannels */
   OrphanablePtr<RoundRobinSubchannelList> subchannel_list_;
@@ -186,11 +170,6 @@ class RoundRobin : public LoadBalancingPolicy {
   OrphanablePtr<RoundRobinSubchannelList> latest_pending_subchannel_list_;
   /** are we shutting down? */
   bool shutdown_ = false;
-  /// Lock and data used to capture snapshots of this channel's child
-  /// channels and subchannels. This data is consumed by channelz.
-  Mutex child_refs_mu_;
-  channelz::ChildRefsList child_subchannels_;
-  channelz::ChildRefsList child_channels_;
 };
 
 //
@@ -212,7 +191,7 @@ RoundRobin::Picker::Picker(RoundRobin* parent,
   // TODO(roth): rand(3) is not thread-safe.  This should be replaced with
   // something better as part of https://github.com/grpc/grpc/issues/17891.
   last_picked_index_ = rand() % subchannels_.size();
-  if (grpc_lb_round_robin_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO,
             "[RR %p picker %p] created picker from subchannel_list=%p "
             "with %" PRIuPTR " READY subchannels; last_picked_index_=%" PRIuPTR,
@@ -221,18 +200,19 @@ RoundRobin::Picker::Picker(RoundRobin* parent,
   }
 }
 
-RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs* pick,
-                                                grpc_error** error) {
+RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs args) {
   last_picked_index_ = (last_picked_index_ + 1) % subchannels_.size();
-  if (grpc_lb_round_robin_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO,
             "[RR %p picker %p] returning index %" PRIuPTR
             ", connected_subchannel=%p",
             parent_, this, last_picked_index_,
             subchannels_[last_picked_index_].get());
   }
-  pick->connected_subchannel = subchannels_[last_picked_index_];
-  return PICK_COMPLETE;
+  PickResult result;
+  result.type = PickResult::PICK_COMPLETE;
+  result.connected_subchannel = subchannels_[last_picked_index_];
+  return result;
 }
 
 //
@@ -240,13 +220,13 @@ RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs* pick,
 //
 
 RoundRobin::RoundRobin(Args args) : LoadBalancingPolicy(std::move(args)) {
-  if (grpc_lb_round_robin_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO, "[RR %p] Created", this);
   }
 }
 
 RoundRobin::~RoundRobin() {
-  if (grpc_lb_round_robin_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO, "[RR %p] Destroying Round Robin policy", this);
   }
   GPR_ASSERT(subchannel_list_ == nullptr);
@@ -254,8 +234,7 @@ RoundRobin::~RoundRobin() {
 }
 
 void RoundRobin::ShutdownLocked() {
-  AutoChildRefsUpdater guard(this);
-  if (grpc_lb_round_robin_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO, "[RR %p] Shutting down", this);
   }
   shutdown_ = true;
@@ -268,40 +247,6 @@ void RoundRobin::ResetBackoffLocked() {
   if (latest_pending_subchannel_list_ != nullptr) {
     latest_pending_subchannel_list_->ResetBackoffLocked();
   }
-}
-
-void RoundRobin::FillChildRefsForChannelz(
-    channelz::ChildRefsList* child_subchannels_to_fill,
-    channelz::ChildRefsList* ignored) {
-  MutexLock lock(&child_refs_mu_);
-  for (size_t i = 0; i < child_subchannels_.size(); ++i) {
-    // TODO(ncteisen): implement a de dup loop that is not O(n^2). Might
-    // have to implement lightweight set. For now, we don't care about
-    // performance when channelz requests are made.
-    bool found = false;
-    for (size_t j = 0; j < child_subchannels_to_fill->size(); ++j) {
-      if ((*child_subchannels_to_fill)[j] == child_subchannels_[i]) {
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      child_subchannels_to_fill->push_back(child_subchannels_[i]);
-    }
-  }
-}
-
-void RoundRobin::UpdateChildRefsLocked() {
-  channelz::ChildRefsList cs;
-  if (subchannel_list_ != nullptr) {
-    subchannel_list_->PopulateChildRefsList(&cs);
-  }
-  if (latest_pending_subchannel_list_ != nullptr) {
-    latest_pending_subchannel_list_->PopulateChildRefsList(&cs);
-  }
-  // atomically update the data that channelz will actually be looking at.
-  MutexLock lock(&child_refs_mu_);
-  child_subchannels_ = std::move(cs);
 }
 
 void RoundRobin::RoundRobinSubchannelList::StartWatchingLocked() {
@@ -320,6 +265,7 @@ void RoundRobin::RoundRobinSubchannelList::StartWatchingLocked() {
   for (size_t i = 0; i < num_subchannels(); i++) {
     if (subchannel(i)->subchannel() != nullptr) {
       subchannel(i)->StartConnectivityWatchLocked();
+      subchannel(i)->subchannel()->AttemptToConnect();
     }
   }
   // Now set the LB policy's state based on the subchannels' states.
@@ -377,8 +323,8 @@ void RoundRobin::RoundRobinSubchannelList::
   } else if (num_connecting_ > 0) {
     /* 2) CONNECTING */
     p->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_CONNECTING,
-        UniquePtr<SubchannelPicker>(New<QueuePicker>(p->Ref())));
+        GRPC_CHANNEL_CONNECTING, UniquePtr<SubchannelPicker>(New<QueuePicker>(
+                                     p->Ref(DEBUG_LOCATION, "QueuePicker"))));
   } else if (num_transient_failure_ == num_subchannels()) {
     /* 3) TRANSIENT_FAILURE */
     grpc_error* error =
@@ -394,7 +340,6 @@ void RoundRobin::RoundRobinSubchannelList::
 void RoundRobin::RoundRobinSubchannelList::
     UpdateRoundRobinStateFromSubchannelStateCountsLocked() {
   RoundRobin* p = static_cast<RoundRobin*>(policy());
-  AutoChildRefsUpdater guard(p);
   if (num_ready_ > 0) {
     if (p->subchannel_list_.get() != this) {
       // Promote this list to p->subchannel_list_.
@@ -403,7 +348,7 @@ void RoundRobin::RoundRobinSubchannelList::
       // therefore we would not be receiving a notification for them.
       GPR_ASSERT(p->latest_pending_subchannel_list_.get() == this);
       GPR_ASSERT(!shutting_down());
-      if (grpc_lb_round_robin_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
         const size_t old_num_subchannels =
             p->subchannel_list_ != nullptr
                 ? p->subchannel_list_->num_subchannels()
@@ -424,7 +369,7 @@ void RoundRobin::RoundRobinSubchannelList::
 void RoundRobin::RoundRobinSubchannelData::UpdateConnectivityStateLocked(
     grpc_connectivity_state connectivity_state) {
   RoundRobin* p = static_cast<RoundRobin*>(subchannel_list()->policy());
-  if (grpc_lb_round_robin_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(
         GPR_INFO,
         "[RR %p] connectivity changed for subchannel %p, subchannel_list %p "
@@ -448,17 +393,17 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
   // Otherwise, if the subchannel was already in state TRANSIENT_FAILURE
   // when the subchannel list was created, we'd wind up in a constant
   // loop of re-resolution.
+  // Also attempt to reconnect.
   if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    if (grpc_lb_round_robin_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
       gpr_log(GPR_INFO,
               "[RR %p] Subchannel %p has gone into TRANSIENT_FAILURE. "
               "Requesting re-resolution",
               p, subchannel());
     }
     p->channel_control_helper()->RequestReresolution();
+    subchannel()->AttemptToConnect();
   }
-  // Renew connectivity watch.
-  RenewConnectivityWatchLocked();
   // Update state counters.
   UpdateConnectivityStateLocked(connectivity_state);
   // Update overall state and renew notification.
@@ -466,14 +411,13 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
 }
 
 void RoundRobin::UpdateLocked(UpdateArgs args) {
-  AutoChildRefsUpdater guard(this);
-  if (grpc_lb_round_robin_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO, "[RR %p] received update with %" PRIuPTR " addresses",
             this, args.addresses.size());
   }
   // Replace latest_pending_subchannel_list_.
   if (latest_pending_subchannel_list_ != nullptr) {
-    if (grpc_lb_round_robin_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
       gpr_log(GPR_INFO,
               "[RR %p] Shutting down previous pending subchannel list %p", this,
               latest_pending_subchannel_list_.get());
@@ -503,7 +447,7 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
   }
 }
 
-class ParsedRoundRobinConfig : public ParsedLoadBalancingConfig {
+class ParsedRoundRobinConfig : public LoadBalancingPolicy::Config {
  public:
   const char* name() const override { return kRoundRobin; }
 };
@@ -521,12 +465,12 @@ class RoundRobinFactory : public LoadBalancingPolicyFactory {
 
   const char* name() const override { return kRoundRobin; }
 
-  RefCountedPtr<ParsedLoadBalancingConfig> ParseLoadBalancingConfig(
+  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
       const grpc_json* json, grpc_error** error) const override {
     if (json != nullptr) {
       GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
     }
-    return RefCountedPtr<ParsedLoadBalancingConfig>(
+    return RefCountedPtr<LoadBalancingPolicy::Config>(
         New<ParsedRoundRobinConfig>());
   }
 };

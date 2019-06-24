@@ -372,11 +372,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
         num_backends_(num_backends),
         num_balancers_(num_balancers),
         client_load_reporting_interval_seconds_(
-            client_load_reporting_interval_seconds) {
-    // Make the backup poller poll very frequently in order to pick up
-    // updates from all the subchannels's FDs.
-    GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
-  }
+            client_load_reporting_interval_seconds) {}
 
   void SetUp() override {
     response_generator_ =
@@ -735,6 +731,39 @@ TEST_F(SingleBalancerTest, SelectGrpclbWithMigrationServiceConfig) {
   EXPECT_EQ(1U, balancers_[0]->service_.response_count());
   // Check LB policy name for the channel.
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(SingleBalancerTest,
+       DoNotSpecialCaseUseGrpclbWithLoadBalancingConfigTest) {
+  const int kFallbackTimeoutMs = 200 * grpc_test_slowdown_factor();
+  ResetStub(kFallbackTimeoutMs);
+  SetNextResolution({AddressData{backends_[0]->port_, false, ""},
+                     AddressData{balancers_[0]->port_, true, ""}},
+                    "{\n"
+                    " \"loadBalancingConfig\":[\n"
+                    "  {\"pick_first\":{} }\n"
+                    " ]\n"
+                    "}");
+  CheckRpcSendOk();
+  // Check LB policy name for the channel.
+  EXPECT_EQ("pick_first", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(
+    SingleBalancerTest,
+    DoNotSpecialCaseUseGrpclbWithLoadBalancingConfigTestAndNoBackendAddress) {
+  const int kFallbackTimeoutMs = 200 * grpc_test_slowdown_factor();
+  ResetStub(kFallbackTimeoutMs);
+  SetNextResolution({AddressData{balancers_[0]->port_, true, ""}},
+                    "{\n"
+                    " \"loadBalancingConfig\":[\n"
+                    "  {\"pick_first\":{} }\n"
+                    " ]\n"
+                    "}");
+  // This should fail since we do not have a non-balancer backend
+  CheckRpcSendFailure();
+  // Check LB policy name for the channel.
+  EXPECT_EQ("pick_first", channel_->GetLoadBalancingPolicyName());
 }
 
 TEST_F(SingleBalancerTest,
@@ -1961,6 +1990,9 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  // Make the backup poller poll very frequently in order to pick up
+  // updates from all the subchannels's FDs.
+  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
   grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);

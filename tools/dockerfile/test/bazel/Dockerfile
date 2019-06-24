@@ -51,10 +51,16 @@ RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 t
 #========================
 # Bazel installation
 
+# Must be in sync with tools/bazel
+ENV BAZEL_VERSION 0.26.0
+
+# The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
+ENV DISABLE_BAZEL_WRAPPER 1
+
 RUN apt-get update && apt-get install -y wget && apt-get clean
-RUN wget https://github.com/bazelbuild/bazel/releases/download/0.23.2/bazel-0.23.2-installer-linux-x86_64.sh && \
-  bash ./bazel-0.23.2-installer-linux-x86_64.sh && \
-  rm bazel-0.23.2-installer-linux-x86_64.sh
+RUN wget "https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION/bazel-$BAZEL_VERSION-installer-linux-x86_64.sh" && \
+  bash ./bazel-$BAZEL_VERSION-installer-linux-x86_64.sh && \
+  rm bazel-$BAZEL_VERSION-installer-linux-x86_64.sh
 
 
 RUN mkdir -p /var/local/jenkins
