@@ -19,11 +19,13 @@ from __future__ import print_function
 
 from concurrent import futures
 from collections import deque
+import argparse
 import base64
 import logging
 import hashlib
 import struct
 import time
+import threading
 
 import grpc
 
@@ -31,9 +33,13 @@ from examples.python.cancellation import hash_name_pb2
 from examples.python.cancellation import hash_name_pb2_grpc
 
 
+_BYTE_MAX = 255
+
 _LOGGER = logging.getLogger(__name__)
 _SERVER_HOST = 'localhost'
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
+
+_DESCRIPTION = "A server for finding hashes similar to names."
 
 
 def _get_hamming_distance(a, b):
@@ -68,37 +74,61 @@ def _get_substring_hamming_distance(candidate, target):
 
 
 def _get_hash(secret):
-    hasher = hashlib.sha256()
+    hasher = hashlib.sha1()
     hasher.update(secret)
     return base64.b64encode(hasher.digest())
 
 
+def _find_secret_of_length(target, maximum_distance, length, stop_event):
+    digits = [0] * length
+    while True:
+        if stop_event.is_set():
+            return hash_name_pb2.HashNameResponse()
+        secret = b''.join(struct.pack('B', i) for i in digits)
+        hash = _get_hash(secret)
+        distance = _get_substring_hamming_distance(hash, target)
+        if distance <= maximum_distance:
+            return hash_name_pb2.HashNameResponse(secret=base64.b64encode(secret),
+                                                  hashed_name=hash,
+                                                  hamming_distance=distance)
+        digits[-1] += 1
+        i = length - 1
+        while digits[i] == _BYTE_MAX + 1:
+            digits[i] = 0
+            i -= 1
+            if i == -1:
+                return None
+            else:
+                digits[i] += 1
+
+
+def _find_secret(target, maximum_distance, stop_event):
+    length = 1
+    while True:
+        print("Checking strings of length {}.".format(length))
+        match = _find_secret_of_length(target, maximum_distance, length, stop_event)
+        if match is not None:
+            return match
+        if stop_event.is_set():
+            return hash_name_pb2.HashNameResponse()
+        length += 1
+
+
 class HashFinder(hash_name_pb2_grpc.HashFinderServicer):
 
-    # TODO(rbellevi): Make this use less memory.
     def Find(self, request, context):
-        to_check = deque((i,) for i in range(256))
-        count = 0
-        while True:
-            if count % 1000 == 0:
-                logging.info("Checked {} hashes.".format(count))
-            current = to_check.popleft()
-            for i in range(256):
-                to_check.append(current + (i,))
-            secret = b''.join(struct.pack('B', i) for i in current)
-            hash = _get_hash(secret)
-            distance = _get_substring_hamming_distance(hash, request.desired_name)
-            if distance <= request.maximum_hamming_distance:
-                return hash_name_pb2.HashNameResponse(secret=base64.b64encode(secret),
-                                                      hashed_name=hash,
-                                                      hamming_distance=distance)
-            count += 1
+        stop_event = threading.Event()
+        def on_rpc_done():
+            stop_event.set()
+        context.add_callback(on_rpc_done)
+        print("Received request:\n{}".format(request))
+        result = _find_secret(request.desired_name, request.maximum_hamming_distance, stop_event)
+        print("Returning result:\n{}".format(result))
+        return result
 
 
-
-def main():
-    port = 50051
-    server = grpc.server(futures.ThreadPoolExecutor())
+def _run_server(port):
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
     hash_name_pb2_grpc.add_HashFinderServicer_to_server(
             HashFinder(), server)
     address = '{}:{}'.format(_SERVER_HOST, port)
@@ -110,7 +140,18 @@ def main():
             time.sleep(_ONE_DAY_IN_SECONDS)
     except KeyboardInterrupt:
         server.stop(None)
-    pass
+
+
+def main():
+    parser = argparse.ArgumentParser(description=_DESCRIPTION)
+    parser.add_argument(
+        '--port',
+        type=int,
+        default=50051,
+        nargs='?',
+        help='The port on which the server will listen.')
+    args = parser.parse_args()
+    _run_server(args.port)
 
 if __name__ == "__main__":
     logging.basicConfig()
