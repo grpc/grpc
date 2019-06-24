@@ -16,10 +16,10 @@
  *
  */
 
-#import <XCTest/XCTest.h>
 #import <GRPCClient/GRPCCall.h>
 #import <GRPCClient/GRPCInterceptor.h>
 #import <RemoteTest/Messages.pbobjc.h>
+#import <XCTest/XCTest.h>
 #import "../../GRPCClient/CacheInterceptor.h"
 #import "../../GRPCClient/private/GRPCCallInternal.h"
 
@@ -50,7 +50,7 @@
   NSError *_responseError;
   NSUInteger _callThruCount;
   void (^_requestReceivedHandler)(void);
-  
+
   NSMutableDictionary *_headerChecker;
   BOOL _headerCheckPassed;
   BOOL _realShutDdown;
@@ -103,7 +103,6 @@
 }
 
 - (void)writeNextInterceptorWithData:(id)data {
-  
 }
 
 - (void)finishNextInterceptor {
@@ -138,10 +137,10 @@
 
 @end
 
-@interface CacheInterceptorTests()
+@interface CacheInterceptorTests ()
 
 - (void)makeCallWithData:(id)data;
-- (void)makeCallWithData:(id)data forInterceptor:(GRPCInterceptor*)interceptor;
+- (void)makeCallWithData:(id)data forInterceptor:(GRPCInterceptor *)interceptor;
 
 @end
 
@@ -181,24 +180,25 @@
   _manager = [[TestInterceptorManager alloc] init];
   [_manager setPreviousInterceptor:self];
   _context = [[CacheContext alloc] initWithSize:5];
-  _requestOptions = [[GRPCRequestOptions alloc]
-                                        initWithHost:@"does not matter"
-                                        path:@"does not matter either"
-                                        safety:GRPCCallSafetyCacheableRequest];
+  _requestOptions = [[GRPCRequestOptions alloc] initWithHost:@"does not matter"
+                                                        path:@"does not matter either"
+                                                      safety:GRPCCallSafetyCacheableRequest];
   id<GRPCInterceptorFactory> factory = _context;
   _callOptions = [[GRPCMutableCallOptions alloc] init];
   _callOptions.interceptorFactories = @[ factory ];
-  
-  _manager.responseHeaders = @{ @"cache-control": @"public, max-age=10" }; // default to cacheable header
+
+  _manager.responseHeaders =
+      @{@"cache-control" : @"public, max-age=10"};  // default to cacheable header
 }
 
-- (void)tearDown { /* might not be needed */ }
+- (void)tearDown { /* might not be needed */
+}
 
 /**
  * ResponseHandlerInterface
  */
-- (dispatch_queue_t) dispatchQueue {
- return dispatch_get_main_queue();
+- (dispatch_queue_t)dispatchQueue {
+  return dispatch_get_main_queue();
 }
 
 - (void)didReceiveInitialMetadata:(NSDictionary *)initialMetadata {
@@ -252,7 +252,8 @@
       [interceptor cancel];
     });
   };
-  _manager.responseError = [NSError errorWithDomain:@"io.test" code:3 userInfo:@{ @"msg": @"Error for test" }];
+  _manager.responseError =
+      [NSError errorWithDomain:@"io.test" code:3 userInfo:@{@"msg" : @"Error for test"}];
   [interceptor startWithRequestOptions:_requestOptions callOptions:_callOptions];
   [interceptor writeData:TEST_DUMMY_DATA];
   [interceptor finish];
@@ -275,8 +276,8 @@
 }
 
 - (void)testNoStoreHeader {
-  _manager.responseHeaders = @{ @"cache-control": @"no-store" };
-  
+  _manager.responseHeaders = @{@"cache-control" : @"no-store"};
+
   for (int i = 0; i < 5; ++i) {
     [self makeCallWithData:TEST_DUMMY_DATA];
   }
@@ -285,15 +286,14 @@
 
 - (void)testCacheLimit {
   // There is an assert statement in this file: ../../GRPCClient/CacheInterceptor.m
-  _manager.responseHeaders = @{ @"cache-control": @"public, max-age=5" };
+  _manager.responseHeaders = @{@"cache-control" : @"public, max-age=5"};
   for (int i = 0; i < 6; ++i) {
     [self makeCallWithData:NUMBER(i)];
   }
 }
 
-
 - (void)testLRUEviction {
-  _manager.responseHeaders = @{ @"cache-control": @"public, max-age=5" };
+  _manager.responseHeaders = @{@"cache-control" : @"public, max-age=5"};
   for (int i = 1; i <= 6; ++i) {
     [self makeCallWithData:NUMBER(i)];
   }
@@ -302,24 +302,24 @@
   [self makeCallWithData:NUMBER(1)];
   // queue: 1 6 5 4 3 (2 evicted)
   XCTAssertEqual(7, _manager.callThruCount);
-  [self makeCallWithData:NUMBER(3)]; // 3 1 6 5 4
+  [self makeCallWithData:NUMBER(3)];  // 3 1 6 5 4
   XCTAssertEqual(7, _manager.callThruCount);
-  [self makeCallWithData:NUMBER(2)]; // 2 3 1 6 5
+  [self makeCallWithData:NUMBER(2)];  // 2 3 1 6 5
   XCTAssertEqual(8, _manager.callThruCount);
-  [self makeCallWithData:NUMBER(3)]; // 3 2 1 6 5
+  [self makeCallWithData:NUMBER(3)];  // 3 2 1 6 5
   XCTAssertEqual(8, _manager.callThruCount);
-  [self makeCallWithData:NUMBER(6)]; // 6 3 2 1 5
+  [self makeCallWithData:NUMBER(6)];  // 6 3 2 1 5
   XCTAssertEqual(8, _manager.callThruCount);
 }
 
 - (void)testSmallCacheSize1 {
-  _manager.responseHeaders = @{ @"cache-control": @"public, max-age=5" };
-  
+  _manager.responseHeaders = @{@"cache-control" : @"public, max-age=5"};
+
   _context = [[CacheContext alloc] initWithSize:1];
   id<GRPCInterceptorFactory> factory = _context;
   _callOptions = [[GRPCMutableCallOptions alloc] init];
   _callOptions.interceptorFactories = @[ factory ];
-  
+
   for (int i = 0; i < 5; ++i) {
     [self makeCallWithData:NUMBER(1)];
   }
@@ -333,13 +333,13 @@
 }
 
 - (void)testSmallCacheSize2 {
-  _manager.responseHeaders = @{ @"cache-control": @"public, max-age=5" };
-  
+  _manager.responseHeaders = @{@"cache-control" : @"public, max-age=5"};
+
   _context = [[CacheContext alloc] initWithSize:2];
   id<GRPCInterceptorFactory> factory = _context;
   _callOptions = [[GRPCMutableCallOptions alloc] init];
   _callOptions.interceptorFactories = @[ factory ];
-  
+
   for (int i = 0; i < 3; ++i) {
     [self makeCallWithData:NUMBER(1)];
   }
@@ -352,7 +352,7 @@
     [self makeCallWithData:NUMBER(2)];
   }
   XCTAssertEqual(2, _manager.callThruCount);
-  
+
   [self makeCallWithData:NUMBER(3)];
   [self makeCallWithData:NUMBER(2)];
   [self makeCallWithData:NUMBER(1)];
@@ -361,7 +361,7 @@
 }
 
 - (void)testMaxAge {
-  _manager.responseHeaders = @{ @"cache-control": @"public, max-age=1" };
+  _manager.responseHeaders = @{@"cache-control" : @"public, max-age=1"};
   [self makeCallWithData:TEST_DUMMY_DATA];
   [self makeCallWithData:TEST_DUMMY_DATA];
   XCTAssertEqual(1, _manager.callThruCount);
@@ -373,9 +373,9 @@
 - (void)testMaxAgeWithOtherRequests {
   for (int i = 1; i <= 5; ++i) {
     if (i == 3) {
-      _manager.responseHeaders = @{ @"cache-control": @"public, max-age=1" };
+      _manager.responseHeaders = @{@"cache-control" : @"public, max-age=1"};
     } else {
-      _manager.responseHeaders = @{ @"cache-control": @"private, max-age=3600" };
+      _manager.responseHeaders = @{@"cache-control" : @"private, max-age=3600"};
     }
     [self makeCallWithData:NUMBER(i)];
   }
@@ -385,7 +385,7 @@
   [self makeCallWithData:NUMBER(6)];
   XCTAssertEqual(6, _manager.callThruCount);
   sleep(1);
-  _manager.responseHeaders = @{ @"cache-control": @"public, max-age=1" };
+  _manager.responseHeaders = @{@"cache-control" : @"public, max-age=1"};
   [self makeCallWithData:NUMBER(3)];
   XCTAssertEqual(7, _manager.callThruCount);
   [self makeCallWithData:NUMBER(5)];

@@ -18,8 +18,8 @@
 
 #import "ViewController.h"
 
-#import <GRPCClient/GRPCCall.h>
 #import <GRPCClient/CacheInterceptor.h>
+#import <GRPCClient/GRPCCall.h>
 #import <RemoteTest/Messages.pbobjc.h>
 #import <RemoteTest/Test.pbrpc.h>
 

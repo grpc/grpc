@@ -40,7 +40,7 @@
 @end
 
 @implementation ArrayQueue {
-  NSMutableArray<RequestCacheEntry*> *_array;
+  NSMutableArray<RequestCacheEntry *> *_array;
 }
 
 - (nullable instancetype)init {
@@ -64,7 +64,9 @@
 - (void)updateUse:(RequestCacheEntry *)entry {
   // if the entry is not in the queue, return (cuz behavior undefined)
   NSUInteger index = [_array indexOfObject:entry];
-  if (index == NSNotFound || index == _array.count - 1) { return; }
+  if (index == NSNotFound || index == _array.count - 1) {
+    return;
+  }
   for (NSUInteger i = index; i < _array.count - 1; ++i) {
     _array[i] = _array[i + 1];
   }
@@ -107,7 +109,7 @@
 
 - (nullable instancetype)initWithPrevNode:(Node *)prev
                                  nextNode:(Node *)next
-                            forCacheEntry:(nonnull RequestCacheEntry *)entry{
+                            forCacheEntry:(nonnull RequestCacheEntry *)entry {
   if ((self = [super init])) {
     self.prev = prev;
     self.next = next;
@@ -115,7 +117,6 @@
   }
   return self;
 }
-
 
 @end
 
@@ -130,7 +131,7 @@
   Node *_head;
   Node *_tail;
   NSUInteger _size;
-  NSMutableDictionary<RequestCacheEntry *, Node*> *_map;
+  NSMutableDictionary<RequestCacheEntry *, Node *> *_map;
 }
 
 - (nullable instancetype)init {
@@ -169,7 +170,9 @@
     toEvict = evictNode.entry;
     [_map removeObjectForKey:toEvict];
     --_size;
-    if (_size == 0) { _head = nil; }
+    if (_size == 0) {
+      _head = nil;
+    }
   }
   return toEvict;
 }
@@ -185,7 +188,9 @@
     toPop = popNode.entry;
     [_map removeObjectForKey:toPop];
     --_size;
-    if (_size == 0) { _tail = nil; }
+    if (_size == 0) {
+      _tail = nil;
+    }
   }
   return toPop;
 }
@@ -196,21 +201,30 @@
 
 - (void)updateUse:(RequestCacheEntry *)entry {
   Node *updateNode = [_map objectForKey:entry];
-  if (updateNode == _head) { return; }
-  if (!updateNode) { return; }
-  if (updateNode.next) { updateNode.next.prev = updateNode.prev; }
-  if (updateNode.prev) { updateNode.prev.next = updateNode.next; }
-  if (updateNode == _tail) { _tail = updateNode.prev; }
+  if (updateNode == _head) {
+    return;
+  }
+  if (!updateNode) {
+    return;
+  }
+  if (updateNode.next) {
+    updateNode.next.prev = updateNode.prev;
+  }
+  if (updateNode.prev) {
+    updateNode.prev.next = updateNode.next;
+  }
+  if (updateNode == _tail) {
+    _tail = updateNode.prev;
+  }
   updateNode.next = _head;
   updateNode.prev = nil;
-  if (_head) { _head.prev = updateNode; }
+  if (_head) {
+    _head.prev = updateNode;
+  }
   _head = updateNode;
 }
 
-
-
 @end
-
 
 /*******************************************
  * Cache Interceptor Implementation Begins *
@@ -329,14 +343,14 @@
 @implementation CacheContext {
   NSMutableDictionary<RequestCacheEntry *, ResponseCacheEntry *> *_cache;
   id<LRUQueue> _queue;
-  NSUInteger _maxCount; // cache size limit
+  NSUInteger _maxCount;  // cache size limit
 }
 
 - (instancetype)init {
   if ((self = [super init])) {
-    _queue = [[LinkedListQueue alloc] init]; // ArrayQueue or LinkedListQueue
+    _queue = [[LinkedListQueue alloc] init];  // ArrayQueue or LinkedListQueue
     _cache = [[NSMutableDictionary alloc] init];
-    _maxCount = 10; // defaults to 10
+    _maxCount = 10;  // defaults to 10
   }
   return self;
 }
@@ -359,10 +373,10 @@
   ResponseCacheEntry *response = nil;
   @synchronized(self) {
     response = [_cache objectForKey:request];
-    if (response) { // cache hit
+    if (response) {  // cache hit
       [_queue updateUse:request];
     }
-    if ([response.deadline timeIntervalSinceNow] < 0) { // needs revalidation
+    if ([response.deadline timeIntervalSinceNow] < 0) {  // needs revalidation
       [_queue popFront];
       [_cache removeObjectForKey:request];
       response = nil;
@@ -375,9 +389,9 @@
 
 - (void)setCachedResponse:(ResponseCacheEntry *)response forRequest:(RequestCacheEntry *)request {
   @synchronized(self) {
-    if ([_cache objectForKey:request] != nil) { // cache hit
+    if ([_cache objectForKey:request] != nil) {  // cache hit
       [_queue updateUse:request];
-    } else { // cache miss
+    } else {  // cache miss
       if ([_queue size] == _maxCount) {
         RequestCacheEntry *toEvict = [_queue evict];
         [_cache removeObjectForKey:toEvict];
@@ -494,8 +508,8 @@
       NSArray *cacheControls = [initialMetadata[@"cache-control"] componentsSeparatedByString:@","];
       for (NSString *option in cacheControls) {
         NSString *trimmedOption =
-        [option stringByTrimmingCharactersInSet:[NSCharacterSet
-                                                 characterSetWithCharactersInString:@" "]];
+            [option stringByTrimmingCharactersInSet:[NSCharacterSet
+                                                        characterSetWithCharactersInString:@" "]];
         if ([trimmedOption.lowercaseString isEqualToString:@"no-cache"] ||
             [trimmedOption.lowercaseString isEqualToString:@"no-store"] ||
             [trimmedOption.lowercaseString isEqualToString:@"no-transform"]) {
@@ -510,7 +524,7 @@
         }
       }
     }
-    
+
     if (_cacheable) {
       _response = [[MutableResponseCacheEntry alloc] init];
       _response.headers = [initialMetadata copy];
@@ -528,11 +542,7 @@
       _cacheable = NO;
     }
     _readMessageSeen = YES;
-    
-    // if 304 then no need to copy data (which is btw empty)
-    if (![_response.headers[@"status"] isEqualToString:@"304"]) {
-      _response.message = [data copy];
-    }
+    _response.message = [data copy];
   }
   [_manager forwardPreviousInterceptorWithData:data];
 }
