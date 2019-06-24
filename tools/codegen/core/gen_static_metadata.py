@@ -451,11 +451,32 @@ print >> H, ('extern grpc_core::StaticMetadata '
              'grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];')
 print >> H, ('extern uintptr_t '
              'grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];')
+print >> H, ('extern grpc_mdelem '
+             'grpc_static_mdelem_manifested[GRPC_STATIC_MDELEM_COUNT];')
+print >> C, ('grpc_mdelem '
+             'grpc_static_mdelem_manifested[GRPC_STATIC_MDELEM_COUNT] = {')
+static_mds = []
 for i, elem in enumerate(all_elems):
+    md_name = mangle(elem).upper()
+    md_human_readable = '"%s": "%s"' % elem
+    md_spec = '/* %s: %s */\n' % (md_name, md_human_readable)
+    md_spec += (('GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[%d].data(), ' % i)
+                + 'GRPC_MDELEM_STORAGE_STATIC)\n')
+    static_mds.append(md_spec)
+print >> C, ','.join(static_mds)
+print >> C, ('};')
+
+for i, elem in enumerate(all_elems):
+    md_name = mangle(elem).upper()
     print >> H, '/* "%s": "%s" */' % elem
-    print >> H, (
-        '#define %s (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[%d].data(), '
-        'GRPC_MDELEM_STORAGE_STATIC))') % (mangle(elem).upper(), i)
+    print >> H, ('#define %s (grpc_static_mdelem_manifested[%d])' % (md_name,
+                                                                     i))
+
+#for i, elem in enumerate(all_elems):
+#    print >> H, '/* "%s": "%s" */' % elem
+#    print >> H, (
+#        '#define %s (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[%d].data(), '
+#        'GRPC_MDELEM_STORAGE_STATIC))') % (mangle(elem).upper(), i)
 print >> H
 
 print >> C, ('uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] '
