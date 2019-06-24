@@ -138,6 +138,8 @@ implementation can decode valid portions while leaving broken %-encodings as-is
 or replacing them with a replacement character (e.g., '?' or the Unicode
 replacement character).
 
+The repeated sequence of **Length-Prefixed-Message** has the same format as request.
+
 #### Example
 
 Sample unary-call showing HTTP2 framing sequence
