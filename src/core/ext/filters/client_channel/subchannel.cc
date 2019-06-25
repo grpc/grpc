@@ -679,7 +679,7 @@ Subchannel::Subchannel(SubchannelKey* key, grpc_connector* connector,
       (size_t)grpc_channel_arg_get_integer(arg, options);
   if (channelz_enabled) {
     channelz_node_ = MakeRefCounted<channelz::SubchannelNode>(
-        this->GetTargetAddress(), channel_tracer_max_memory);
+        GetTargetAddress(), channel_tracer_max_memory);
     channelz_node_->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("subchannel created"));
