@@ -48,7 +48,8 @@ def run_unary_client(server_target, name, ideal_distance):
         stub = hash_name_pb2_grpc.HashFinderStub(channel)
         future = stub.Find.future(
             hash_name_pb2.HashNameRequest(
-                desired_name=name, ideal_hamming_distance=ideal_distance))
+                desired_name=name, ideal_hamming_distance=ideal_distance),
+            wait_for_ready=True)
 
         def cancel_request(unused_signum, unused_frame):
             future.cancel()
@@ -61,6 +62,10 @@ def run_unary_client(server_target, name, ideal_distance):
                 continue
             except grpc.FutureCancelledError:
                 break
+            except grpc.RpcError as rpc_error:
+                if rpc_error.code() == grpc.StatusCode.CANCELLED:
+                    break
+                raise rpc_error
             print(result)
             break
 
@@ -73,7 +78,8 @@ def run_streaming_client(server_target, name, ideal_distance,
             hash_name_pb2.HashNameRequest(
                 desired_name=name,
                 ideal_hamming_distance=ideal_distance,
-                interesting_hamming_distance=interesting_distance))
+                interesting_hamming_distance=interesting_distance),
+            wait_for_ready=True)
 
         def cancel_request(unused_signum, unused_frame):
             result_generator.cancel()

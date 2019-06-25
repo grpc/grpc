@@ -218,6 +218,7 @@ class HashFinder(hash_name_pb2_grpc.HashFinderServicer):
             stop_event.set()
 
         context.add_callback(on_rpc_done)
+        candidates = []
         try:
             candidates = list(
                 _find_secret(request.desired_name,
