@@ -92,6 +92,8 @@ def run_streaming_client(server_target, name, ideal_distance,
             # Enqueue a sentinel to signal the end of the stream.
             result_queue.put(None)
 
+        # TODO(https://github.com/grpc/grpc/issues/19464): Do everything on the
+        # main thread.
         response_thread = threading.Thread(
             target=iterate_responses, args=(result_generator, result_queue))
         response_thread.daemon = True

@@ -83,10 +83,6 @@ class ResourceLimitExceededError(Exception):
     """Signifies the request has exceeded configured limits."""
 
 
-# TODO(rbellevi): File issue about indefinite blocking for server-side
-#   streaming.
-
-
 def _find_secret_of_length(target,
                            ideal_distance,
                            length,
