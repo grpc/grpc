@@ -20,7 +20,6 @@ from __future__ import print_function
 import argparse
 import contextlib
 import logging
-import os
 
 import grpc
 from examples import helloworld_pb2
@@ -55,12 +54,6 @@ class AuthGateway(grpc.AuthMetadataPlugin):
         #     method_name=u'SayHello')
         signature = context.method_name[::-1]
         callback(((_SIGNATURE_HEADER_KEY, signature),), None)
-
-
-def _load_credential_from_file(filepath):
-    real_path = os.path.join(os.path.dirname(__file__), filepath)
-    with open(real_path, 'r') as f:
-        return f.read()
 
 
 @contextlib.contextmanager

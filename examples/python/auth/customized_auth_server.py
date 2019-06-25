@@ -20,7 +20,6 @@ from __future__ import print_function
 import argparse
 import contextlib
 import logging
-import os
 import time
 from concurrent import futures
 
@@ -64,12 +63,6 @@ class SimpleGreeter(helloworld_pb2_grpc.GreeterServicer):
 
     def SayHello(self, request, unused_context):
         return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
-
-
-def _load_credential_from_file(filepath):
-    real_path = os.path.join(os.path.dirname(__file__), filepath)
-    with open(real_path, 'r') as f:
-        return f.read()
 
 
 @contextlib.contextmanager
