@@ -34,6 +34,29 @@ def cancel_request(unused_signum, unused_frame):
 signal.signal(signal.SIGINT, cancel_request)
 ```
 
+It's also important that you not block indefinitely on the RPC. Otherwise, the
+signal handler will never have a chance to run.
+
+```python
+while True:
+    try:
+        result = future.result(timeout=_TIMEOUT_SECONDS)
+    except grpc.FutureTimeoutError:
+        continue
+    except grpc.FutureCancelledError:
+        break
+    print("Got response: \n{}".format(result))
+    break
+```
+
+Here, we repeatedly block on a result for up to `_TIMEOUT_SECONDS`. Doing so
+gives us a chance for the signal handlers to run. In the case that out timeout
+was reached, we simply continue on in the loop. In the case that the RPC was
+cancelled (by our user's ctrl+c), we break out of the loop cleanly. Finally, if
+we received the result of the RPC, we print it out for the user and exit the
+loop.
+
+
 ##### Cancelling a Client-Side Streaming RPC
 
 #### Cancellation on the Server Side
