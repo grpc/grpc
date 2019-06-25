@@ -33,7 +33,6 @@ namespace channelz {
 SubchannelNode::SubchannelNode(const char* target_address,
                                size_t channel_tracer_max_nodes)
     : BaseNode(EntityType::kSubchannel),
-      subchannel_destroyed_(false),
       target_(UniquePtr<char>(gpr_strdup(target_address))),
       trace_(channel_tracer_max_nodes) {}
 
@@ -49,11 +48,7 @@ void SubchannelNode::SetChildSocketUuid(intptr_t uuid) {
 
 void SubchannelNode::PopulateConnectivityState(grpc_json* json) {
   grpc_connectivity_state state;
-  if (subchannel_destroyed_) {
-    state = GRPC_CHANNEL_SHUTDOWN;
-  } else {
-    state = connectivity_state_.Load(MemoryOrder::RELAXED);
-  }
+  state = connectivity_state_.Load(MemoryOrder::RELAXED);
   json = grpc_json_create_child(nullptr, json, "state", nullptr,
                                 GRPC_JSON_OBJECT, false);
   grpc_json_create_child(nullptr, json, "state",

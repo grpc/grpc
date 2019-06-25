@@ -37,11 +37,6 @@ class SubchannelNode : public BaseNode {
   SubchannelNode(const char* target_address, size_t channel_tracer_max_nodes);
   ~SubchannelNode() override;
 
-  void MarkSubchannelDestroyed() {
-    GPR_ASSERT(!subchannel_destroyed_);
-    subchannel_destroyed_ = true;
-  }
-
   // Used when the subchannel's transport connectivity state changes.
   void UpdateConnectivityState(grpc_connectivity_state state);
 
@@ -70,7 +65,6 @@ class SubchannelNode : public BaseNode {
  private:
   void PopulateConnectivityState(grpc_json* json);
 
-  bool subchannel_destroyed_;
   Atomic<grpc_connectivity_state> connectivity_state_{GRPC_CHANNEL_IDLE};
   Atomic<intptr_t> child_socket_uuid_{0};
   UniquePtr<char> target_;

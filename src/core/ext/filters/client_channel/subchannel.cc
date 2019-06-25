@@ -691,7 +691,7 @@ Subchannel::~Subchannel() {
     channelz_node_->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Subchannel destroyed"));
-    channelz_node_->MarkSubchannelDestroyed();
+    channelz_node_->UpdateConnectivityState(GRPC_CHANNEL_SHUTDOWN);
   }
   grpc_channel_args_destroy(args_);
   grpc_connector_unref(connector_);
