@@ -933,7 +933,7 @@ const char* SubchannelConnectivityStateChangeString(
 void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state) {
   state_ = state;
   if (channelz_node_ != nullptr) {
-    channelz_node()->UpdateConnectivityState(state);
+    channelz_node_->UpdateConnectivityState(state);
     channelz_node_->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string(
@@ -1085,8 +1085,8 @@ bool Subchannel::PublishTransportLocked() {
       New<ConnectedSubchannel>(stk, args_, channelz_node_, socket_uuid));
   gpr_log(GPR_INFO, "New connected subchannel at %p for subchannel %p",
           connected_subchannel_.get(), this);
-  if (channelz_node() != nullptr) {
-    channelz_node()->SetChildSocketUuid(socket_uuid);
+  if (channelz_node_ != nullptr) {
+    channelz_node_->SetChildSocketUuid(socket_uuid);
   }
   // Instantiate state watcher.  Will clean itself up.
   New<ConnectedSubchannelStateWatcher>(this);
