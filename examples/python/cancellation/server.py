@@ -75,7 +75,7 @@ def _get_substring_hamming_distance(candidate, target):
 def _get_hash(secret):
     hasher = hashlib.sha1()
     hasher.update(secret)
-    return base64.b64encode(hasher.digest())
+    return base64.b64encode(hasher.digest()).decode('ascii')
 
 
 class ResourceLimitExceededError(Exception):
