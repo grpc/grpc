@@ -344,7 +344,7 @@ class Subchannel::ConnectedSubchannelStateWatcher {
                           self->pending_connectivity_state_));
             }
             c->connected_subchannel_.reset();
-             if (c->channelz_node() != nullptr) {
+            if (c->channelz_node() != nullptr) {
               c->channelz_node()->SetChildSocketUuid(0);
             }
             c->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE);
