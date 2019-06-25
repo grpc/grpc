@@ -20,8 +20,9 @@ from __future__ import print_function
 import unittest
 
 import grpc
-from examples.python.auth import (_credentials, customize_auth_client,
-                                  customize_auth_server)
+from examples.python.auth import _credentials
+from examples.python.auth import customized_auth_client
+from examples.python.auth import customized_auth_server
 
 _SERVER_ADDR_TEMPLATE = 'localhost:%d'
 
@@ -29,25 +30,25 @@ _SERVER_ADDR_TEMPLATE = 'localhost:%d'
 class AuthExampleTest(unittest.TestCase):
 
     def test_successful_call(self):
-        with customize_auth_server.run_server(0) as port:
-            with customize_auth_client.create_client_channel(
+        with customized_auth_server.run_server(0) as port:
+            with customized_auth_client.create_client_channel(
                     _SERVER_ADDR_TEMPLATE % port) as channel:
-                customize_auth_client.send_rpc(channel)
+                customized_auth_client.send_rpc(channel)
         # No unhandled exception raised, test passed!
 
     def test_no_channel_credential(self):
-        with customize_auth_server.run_server(0) as port:
+        with customized_auth_server.run_server(0) as port:
             with grpc.insecure_channel(_SERVER_ADDR_TEMPLATE % port) as channel:
-                resp = customize_auth_client.send_rpc(channel)
+                resp = customized_auth_client.send_rpc(channel)
                 self.assertEqual(resp.code(), grpc.StatusCode.UNAVAILABLE)
 
     def test_no_call_credential(self):
-        with customize_auth_server.run_server(0) as port:
+        with customized_auth_server.run_server(0) as port:
             channel_credential = grpc.ssl_channel_credentials(
                 _credentials.ROOT_CERTIFICATE)
             with grpc.secure_channel(_SERVER_ADDR_TEMPLATE % port,
                                      channel_credential) as channel:
-                resp = customize_auth_client.send_rpc(channel)
+                resp = customized_auth_client.send_rpc(channel)
                 self.assertEqual(resp.code(), grpc.StatusCode.UNAUTHENTICATED)
 
 

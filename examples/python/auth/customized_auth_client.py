@@ -23,7 +23,8 @@ import logging
 import os
 
 import grpc
-from examples import helloworld_pb2, helloworld_pb2_grpc
+from examples import helloworld_pb2
+from examples import helloworld_pb2_grpc
 from examples.python.auth import _credentials
 
 _LOGGER = logging.getLogger(__name__)
