@@ -107,8 +107,8 @@ static void grow_shard(slice_shard* shard) {
   shard->capacity = capacity;
 }
 
-static grpc_slice materialize(InternedSliceRefcount* s) {
-  grpc_slice slice;
+static grpc_core::InternedSlice materialize(InternedSliceRefcount* s) {
+  grpc_core::InternedSlice slice;
   slice.refcount = &s->base;
   slice.data.refcounted.bytes = reinterpret_cast<uint8_t*>(s + 1);
   slice.data.refcounted.length = s->length;
@@ -152,9 +152,13 @@ grpc_slice grpc_slice_maybe_static_intern(grpc_slice slice,
 }
 
 grpc_slice grpc_slice_intern(grpc_slice slice) {
+  return grpc_slice_intern_internal(slice);
+}
+
+grpc_core::InternalSlice grpc_slice_intern_internal(const grpc_slice& slice) {
   GPR_TIMER_SCOPE("grpc_slice_intern", 0);
   if (GRPC_IS_STATIC_METADATA_STRING(slice)) {
-    return slice;
+    return static_cast<const grpc_core::StaticSlice&>(slice);
   }
 
   uint32_t hash = grpc_slice_hash_internal(slice);

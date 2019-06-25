@@ -23,6 +23,49 @@
 
 #include <grpc/slice.h>
 
+// Internal slice type declarations.
+// Externally, a grpc_slice is a grpc_slice is a grpc_slice.
+// Internally, we may have heap allocated slices, static slices, interned
+// slices, and inlined slices at present. If we know the specific type of slice
+// we're dealing with, we can save cycles (e.g. fast-paths when we know we don't
+// need to take a reference on a slice). Rather than introducing new methods
+// ad-hoc in these cases, we leverage on type-system backed overloads to keep
+// internal APIs clean.
+//
+// For each overload, the definition and layout of the underlying slice does not
+// change; this is purely type-system information.
+namespace grpc_core {
+
+// Archtypes: refcounted or not, extern or not.
+// An extern slice is any slice where:
+// 1) refcount is null, OR
+// 2) refcount is not null and
+//                not grpc_slice_refcount::Type::STATIC and
+//                not grpc_slice_refcount::Type::INTERNED
+//
+// Hierarchy:
+// ----------------------------------
+// |          grpc_slice            |
+// |--------------------------------|
+// | InternalSlice |    ExternSlice |
+// | --------------|                |
+// | InternedSlice |                |
+// |   StaticSlice |                |
+// ----------------------------------
+//
+struct InternalSlice : public grpc_slice {};
+struct ExternSlice : public grpc_slice {};
+struct InternedSlice : public InternalSlice {};
+struct StaticSlice : public InternalSlice {
+  StaticSlice(grpc_slice_refcount* ref, size_t length, uint8_t* bytes) {
+    refcount = ref;
+    data.refcounted.length = length;
+    data.refcounted.bytes = bytes;
+  }
+};
+
+}  // namespace grpc_core
+
 // When we compare two slices, and we know the latter is not inlined, we can
 // short circuit our comparison operator. We specifically use differs()
 // semantics instead of equals() semantics due to more favourable code

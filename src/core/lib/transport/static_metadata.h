@@ -34,7 +34,8 @@
 #include "src/core/lib/transport/metadata.h"
 
 #define GRPC_STATIC_MDSTR_COUNT 107
-extern const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];
+extern const grpc_core::StaticSlice
+    grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];
 /* ":path" */
 #define GRPC_MDSTR_PATH (grpc_static_slice_table[0])
 /* ":method" */
