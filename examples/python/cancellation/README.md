@@ -162,7 +162,7 @@ context.add_callback(on_rpc_done)
 secret = _find_secret(stop_event)
 ```
 
-##### Initiating a Cancellation from a Servicer
+##### Initiating a Cancellation on the Server Side
 
 Initiating a cancellation from the server side is simpler. Just call
 `ServicerContext.cancel()`.
