@@ -42,8 +42,6 @@ _LOGGER = logging.getLogger(__name__)
 
 _TIMEOUT_SECONDS = 0.05
 
-# TODO(rbellevi): Actually use the logger.
-
 
 def run_unary_client(server_target, name, ideal_distance):
     with grpc.insecure_channel(server_target) as channel:

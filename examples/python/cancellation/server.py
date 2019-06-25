@@ -21,6 +21,7 @@ from concurrent import futures
 from collections import deque
 import argparse
 import base64
+import contextlib
 import logging
 import hashlib
 import struct
@@ -82,7 +83,6 @@ class ResourceLimitExceededError(Exception):
     """Signifies the request has exceeded configured limits."""
 
 
-# TODO(rbellevi): Docstring all the things.
 # TODO(rbellevi): File issue about indefinite blocking for server-side
 #   streaming.
 
@@ -93,6 +93,28 @@ def _find_secret_of_length(target,
                            stop_event,
                            maximum_hashes,
                            interesting_hamming_distance=None):
+    """Find a candidate with the given length.
+
+    Args:
+      target: The search string.
+      ideal_distance: The desired Hamming distance.
+      length: The length of secret string to search for.
+      stop_event: An event indicating whether the RPC should terminate.
+      maximum_hashes: The maximum number of hashes to check before stopping.
+      interesting_hamming_distance: If specified, strings with a Hamming
+        distance from the target below this value will be yielded.
+
+    Yields:
+      A stream of tuples of type Tuple[Optional[HashNameResponse], int]. The
+        element of the tuple, if specified, signifies an ideal or interesting
+        candidate. If this element is None, it signifies that the stream has
+        ended because an ideal candidate has been found. The second element is
+        the number of hashes computed up this point.
+
+    Raises:
+      ResourceLimitExceededError: If the computation exceeds `maximum_hashes`
+        iterations.
+    """
     digits = [0] * length
     hashes_computed = 0
     while True:
@@ -140,6 +162,29 @@ def _find_secret(target,
                  stop_event,
                  maximum_hashes,
                  interesting_hamming_distance=None):
+    """Find candidate strings.
+
+    Search through the space of all bytestrings, in order of increasing length,
+    indefinitely, until a hash with a Hamming distance of `maximum_distance` or
+    less has been found.
+
+    Args:
+      target: The search string.
+      maximum_distance: The desired Hamming distance.
+      stop_event: An event indicating whether the RPC should terminate.
+      maximum_hashes: The maximum number of hashes to check before stopping.
+      interesting_hamming_distance: If specified, strings with a Hamming
+        distance from the target below this value will be yielded.
+
+    Yields:
+      Instances  of HashNameResponse. The final entry in the stream will be of
+        `maximum_distance` Hamming distance or less from the target string,
+        while all others will be of less than `interesting_hamming_distance`.
+
+    Raises:
+      ResourceLimitExceededError: If the computation exceeds `maximum_hashes`
+        iterations.
+    """
     length = 1
     total_hashes = 0
     while True:
@@ -213,19 +258,21 @@ class HashFinder(hash_name_pb2_grpc.HashFinderServicer):
         _LOGGER.debug("Regained servicer thread.")
 
 
-def _run_server(port, maximum_hashes):
+@contextlib.contextmanager
+def _running_server(port, maximum_hashes):
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=1), maximum_concurrent_rpcs=1)
     hash_name_pb2_grpc.add_HashFinderServicer_to_server(
         HashFinder(maximum_hashes), server)
     address = '{}:{}'.format(_SERVER_HOST, port)
-    server.add_insecure_port(address)
+    actual_port = server.add_insecure_port(address)
     server.start()
     print("Server listening at '{}'".format(address))
     try:
-        while True:
-            time.sleep(_ONE_DAY_IN_SECONDS)
+        yield actual_port
     except KeyboardInterrupt:
+        pass
+    finally:
         server.stop(None)
 
 
@@ -244,7 +291,9 @@ def main():
         nargs='?',
         help='The maximum number of hashes to search before cancelling.')
     args = parser.parse_args()
-    _run_server(args.port, args.maximum_hashes)
+    with _running_server(args.port, args.maximum_hashes):
+        while True:
+            time.sleep(_ONE_DAY_IN_SECONDS)
 
 
 if __name__ == "__main__":
