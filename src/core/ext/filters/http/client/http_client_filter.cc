@@ -326,7 +326,8 @@ static grpc_error* update_path_for_get(grpc_call_element* elem,
       grpc_slice_sub_no_ref(path_with_query_slice, 0, strlen(t));
   /* substitute previous path with the new path+query */
   grpc_mdelem mdelem_path_and_query =
-      grpc_mdelem_from_slices(GRPC_MDSTR_PATH, path_with_query_slice);
+      grpc_mdelem_from_slices_key_static_val_extern(GRPC_MDSTR_PATH,
+                                                    path_with_query_slice);
   grpc_metadata_batch* b =
       batch->payload->send_initial_metadata.send_initial_metadata;
   return grpc_metadata_batch_substitute(b, b->idx.named.path,
@@ -573,7 +574,7 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
   chand->static_scheme = scheme_from_args(args->channel_args);
   chand->max_payload_size_for_get =
       max_payload_size_from_args(args->channel_args);
-  chand->user_agent = grpc_mdelem_from_slices(
+  chand->user_agent = grpc_mdelem_from_slices_key_static_val_interned(
       GRPC_MDSTR_USER_AGENT,
       user_agent_from_args(args->channel_args,
                            args->optional_transport->vtable->name));

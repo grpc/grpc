@@ -1720,7 +1720,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
                       static_cast<intptr_t>(
                           op->data.send_status_from_server.status));
         if (op->data.send_status_from_server.status_details != nullptr) {
-          call->send_extra_metadata[1].md = grpc_mdelem_from_slices(
+          call->send_extra_metadata[1].md = grpc_mdelem_from_slices_key_static(
               GRPC_MDSTR_GRPC_MESSAGE,
               grpc_slice_ref_internal(
                   *op->data.send_status_from_server.status_details));

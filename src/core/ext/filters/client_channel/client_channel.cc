@@ -2911,7 +2911,7 @@ void CallData::AddRetriableSendInitialMetadataOp(
                                    .grpc_previous_rpc_attempts);
   }
   if (GPR_UNLIKELY(num_attempts_completed_ > 0)) {
-    grpc_mdelem retry_md = grpc_mdelem_create(
+    grpc_mdelem retry_md = grpc_mdelem_create_key_static(
         GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS,
         *retry_count_strings[num_attempts_completed_ - 1], nullptr);
     grpc_error* error = grpc_metadata_batch_add_tail(

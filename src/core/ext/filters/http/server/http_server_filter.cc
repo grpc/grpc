@@ -254,8 +254,9 @@ static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
           grpc_slice_sub(path_slice, offset + 1, path_length);
 
       /* substitute path metadata with just the path (not query) */
-      grpc_mdelem mdelem_path_without_query = grpc_mdelem_from_slices(
-          GRPC_MDSTR_PATH, grpc_slice_sub(path_slice, 0, offset));
+      grpc_mdelem mdelem_path_without_query =
+          grpc_mdelem_from_slices_key_static(
+              GRPC_MDSTR_PATH, grpc_slice_sub(path_slice, 0, offset));
 
       grpc_metadata_batch_substitute(b, b->idx.named.path,
                                      mdelem_path_without_query);
@@ -285,7 +286,7 @@ static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
     hs_add_error(error_name, &error,
                  grpc_metadata_batch_add_head(
                      b, el,
-                     grpc_mdelem_from_slices(
+                     grpc_mdelem_from_slices_key_static(
                          GRPC_MDSTR_AUTHORITY,
                          grpc_slice_ref_internal(GRPC_MDVALUE(md)))));
     GRPC_MDELEM_UNREF(md);

@@ -362,9 +362,10 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
   grpc_core::ExecCtx exec_ctx;
   grpc_call* call = grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, cq, nullptr,
-      grpc_mdelem_create(GRPC_MDSTR_PATH, method, nullptr),
-      host != nullptr ? grpc_mdelem_create(GRPC_MDSTR_AUTHORITY, *host, nullptr)
-                      : GRPC_MDNULL,
+      grpc_mdelem_create_key_static(GRPC_MDSTR_PATH, method, nullptr),
+      host != nullptr
+          ? grpc_mdelem_create_key_static(GRPC_MDSTR_AUTHORITY, *host, nullptr)
+          : GRPC_MDNULL,
       grpc_timespec_to_millis_round_up(deadline));
 
   return call;
@@ -377,9 +378,10 @@ grpc_call* grpc_channel_create_pollset_set_call(
   GPR_ASSERT(!reserved);
   return grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, nullptr, pollset_set,
-      grpc_mdelem_create(GRPC_MDSTR_PATH, method, nullptr),
-      host != nullptr ? grpc_mdelem_create(GRPC_MDSTR_AUTHORITY, *host, nullptr)
-                      : GRPC_MDNULL,
+      grpc_mdelem_create_key_static(GRPC_MDSTR_PATH, method, nullptr),
+      host != nullptr
+          ? grpc_mdelem_create_key_static(GRPC_MDSTR_AUTHORITY, *host, nullptr)
+          : GRPC_MDNULL,
       deadline);
 }
 
@@ -393,11 +395,11 @@ void* grpc_channel_register_call(grpc_channel* channel, const char* method,
   GPR_ASSERT(!reserved);
   grpc_core::ExecCtx exec_ctx;
 
-  rc->path = grpc_mdelem_from_slices(
+  rc->path = grpc_mdelem_from_slices_key_static_val_interned(
       GRPC_MDSTR_PATH,
       grpc_slice_intern(grpc_slice_from_static_string(method)));
   rc->authority =
-      host ? grpc_mdelem_from_slices(
+      host ? grpc_mdelem_from_slices_key_static_val_interned(
                  GRPC_MDSTR_AUTHORITY,
                  grpc_slice_intern(grpc_slice_from_static_string(host)))
            : GRPC_MDNULL;
@@ -487,6 +489,6 @@ grpc_mdelem grpc_channel_get_reffed_status_elem_slowpath(grpc_channel* channel,
                                                          int i) {
   char tmp[GPR_LTOA_MIN_BUFSIZE];
   gpr_ltoa(i, tmp);
-  return grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_STATUS,
-                                 grpc_slice_from_copied_string(tmp));
+  return grpc_mdelem_from_slices_key_static_val_extern(
+      GRPC_MDSTR_GRPC_STATUS, grpc_slice_from_copied_string(tmp));
 }

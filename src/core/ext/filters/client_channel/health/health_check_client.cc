@@ -354,7 +354,7 @@ void HealthCheckClient::CallState::StartCall() {
   grpc_metadata_batch_init(&send_initial_metadata_);
   error = grpc_metadata_batch_add_head(
       &send_initial_metadata_, &path_metadata_storage_,
-      grpc_mdelem_from_slices(
+      grpc_mdelem_from_slices_key_static_val_static(
           GRPC_MDSTR_PATH,
           GRPC_MDSTR_SLASH_GRPC_DOT_HEALTH_DOT_V1_DOT_HEALTH_SLASH_WATCH));
   GPR_ASSERT(error == GRPC_ERROR_NONE);

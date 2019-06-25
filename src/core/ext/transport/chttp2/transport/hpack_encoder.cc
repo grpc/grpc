@@ -599,8 +599,8 @@ static void deadline_enc(grpc_chttp2_hpack_compressor* c, grpc_millis deadline,
   grpc_mdelem mdelem;
   grpc_http2_encode_timeout(deadline - grpc_core::ExecCtx::Get()->Now(),
                             timeout_str);
-  mdelem = grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_TIMEOUT,
-                                   grpc_slice_from_copied_string(timeout_str));
+  mdelem = grpc_mdelem_from_slices_key_static_val_extern(
+      GRPC_MDSTR_GRPC_TIMEOUT, grpc_slice_from_copied_string(timeout_str));
   hpack_enc(c, mdelem, st);
   GRPC_MDELEM_UNREF(mdelem);
 }

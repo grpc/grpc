@@ -103,7 +103,7 @@ grpc_error* init_channel_elem(grpc_channel_element* elem,
   }
   chand->default_authority = grpc_slice_intern(
       grpc_slice_from_static_string_internal(default_authority_str));
-  chand->default_authority_mdelem = grpc_mdelem_create(
+  chand->default_authority_mdelem = grpc_mdelem_create_key_static(
       GRPC_MDSTR_AUTHORITY, chand->default_authority, nullptr);
   GPR_ASSERT(!args->is_last);
   return GRPC_ERROR_NONE;
