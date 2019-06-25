@@ -948,6 +948,29 @@ bool InteropClient::DoCacheableUnary() {
   return true;
 }
 
+bool InteropClient::DoPickFirstUnary() {
+  const int rpcCount = 100;
+  SimpleRequest request;
+  SimpleResponse response;
+  std::string first_server_id;
+  request.set_fill_server_id(true);
+  for (int i = 0; i < rpcCount; i++) {
+    ClientContext context;
+    Status s = serviceStub_.Get()->UnaryCall(&context, request, &response);
+    if (!AssertStatusOk(s, context.debug_error_string())) {
+      return false;
+    }
+    if (i == 0) {
+      first_server_id = response.server_id();
+      gpr_log(GPR_DEBUG, "first_user_id is %s", first_server_id.c_str());
+      continue;
+    }
+    GPR_ASSERT(response.server_id() == first_server_id);
+  }
+  gpr_log(GPR_DEBUG, "pick first unary successfully finished");
+  return true;
+}
+
 bool InteropClient::DoCustomMetadata() {
   const grpc::string kEchoInitialMetadataKey("x-grpc-test-echo-initial");
   const grpc::string kInitialMetadataValue("test_initial_metadata_value");
