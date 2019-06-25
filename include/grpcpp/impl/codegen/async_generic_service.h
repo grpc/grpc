@@ -33,7 +33,7 @@ typedef ServerAsyncResponseWriter<ByteBuffer> GenericServerAsyncResponseWriter;
 typedef ServerAsyncReader<ByteBuffer, ByteBuffer> GenericServerAsyncReader;
 typedef ServerAsyncWriter<ByteBuffer> GenericServerAsyncWriter;
 
-class GenericServerContext final : public ServerContext {
+class GenericServerContext final : public ::grpc_impl::ServerContext {
  public:
   const grpc::string& method() const { return method_; }
   const grpc::string& host() const { return host_; }
@@ -99,7 +99,7 @@ class ServerGenericBidiReactor
   virtual void OnStarted(GenericServerContext* context) {}
 
  private:
-  void OnStarted(ServerContext* ctx) final {
+  void OnStarted(::grpc_impl::ServerContext* ctx) final {
     OnStarted(static_cast<GenericServerContext*>(ctx));
   }
 };
