@@ -329,8 +329,8 @@ class CallData {
       grpc_linked_mdelem* linked_mdelem = static_cast<grpc_linked_mdelem*>(
           calld_->arena_->Alloc(sizeof(grpc_linked_mdelem)));
       linked_mdelem->md = grpc_mdelem_from_slices(
-          grpc_slice_from_static_buffer_internal(key.data(), key.size()),
-          grpc_slice_from_static_buffer_internal(value.data(), value.size()));
+          grpc_core::ExternallyManagedSlice(key.data(), key.size()),
+          grpc_core::ExternallyManagedSlice(value.data(), value.size()));
       GPR_ASSERT(grpc_metadata_batch_link_tail(batch_, linked_mdelem) ==
                  GRPC_ERROR_NONE);
     }
