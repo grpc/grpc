@@ -73,6 +73,58 @@ namespace Grpc.Core.Tests
             Assert.Throws(typeof(NotImplementedException), () => marshaller.Deserializer(new byte[] {1, 2, 3}));
         }
 
+        [Test]
+        public void ObviousArraySegmentDeserializationPatternIsRecognized()
+        {
+            var ctx = new FakeDeserializationContext(new byte[] { 0, 1, 2, 3, 4, 5 }, 1, 4);
+            var obj = __Marshaller_BasicMessage.ContextualDeserializer(ctx);
+            Assert.AreEqual(6, obj.OriginalSegmentLength);
+            Assert.AreEqual("01 02 03 04", obj.Payload);
+        }
+
+        // DO NOT CHANGE; this is a typical line as generate from protoc (stripped of the protobuf-specific bits)
+        static readonly Marshaller<BasicMessage> __Marshaller_BasicMessage = Marshallers.Create((arg) => throw new NotImplementedException(), BasicMessage.Parser.ParseFrom);
+
+        public sealed partial class BasicMessage
+        {
+            private static readonly FakeParser<BasicMessage> _parser = new FakeParser<BasicMessage>(() => new BasicMessage());
+            public static FakeParser<BasicMessage> Parser { get { return _parser; } }
+
+            public string Payload { get; set; }
+
+            public int OriginalSegmentLength { get; set; }
+
+            public void Init(byte[] buffer, int offset, int count)
+            {
+                Payload = BitConverter.ToString(buffer, offset, count);
+                OriginalSegmentLength = buffer.Length;
+            }
+        }
+        public class FakeParser<T>
+        {
+            private readonly Func<T> _factory;
+
+            public FakeParser(Func<T> factory) => _factory = factory;
+
+            // the extra methods here are important; we need to check we haven't done something silly like
+            // adding something to the Marshaller ctor that would break the generated code
+            public T ParseDelimitedFrom(Stream input) => throw new NotImplementedException();
+            public T ParseFrom(byte[] data) => ParseFrom(data, 0, data.Length);
+            public T ParseFrom(byte[] data, int offset, int length)
+            {
+                var obj = _factory();
+                if (obj is BasicMessage bm) bm.Init(data, offset, length);
+                return obj;
+            }
+            public T ParseFrom(FakeByteString data) => throw new NotImplementedException();
+            public T ParseFrom(Stream input) => throw new NotImplementedException();
+            public T ParseFrom(FakeCodedInputStream input) => throw new NotImplementedException();
+            public T ParseJson(string json) => throw new NotImplementedException();
+            public FakeParser<T> WithDiscardUnknownFields(bool discardUnknownFields) => throw new NotImplementedException();
+        }
+        public class FakeCodedInputStream { }
+        public class FakeByteString { }
+
         class FakeSerializationContext : SerializationContext
         {
             public byte[] Payload;
@@ -85,17 +137,29 @@ namespace Grpc.Core.Tests
         class FakeDeserializationContext : DeserializationContext
         {
             public byte[] payload;
+            public int offset, count;
 
-            public FakeDeserializationContext(byte[] payload)
+            public FakeDeserializationContext(byte[] payload) : this(payload, 0, payload.Length) { }
+
+            public FakeDeserializationContext(byte[] payload, int offset, int count)
             {
                 this.payload = payload;
+                this.offset = offset;
+                this.count = count;
             }
 
             public override int PayloadLength => payload.Length;
 
             public override byte[] PayloadAsNewBuffer()
             {
-                return payload;
+                if (offset == 0 && count == payload.Length) return payload;
+                var arr = new byte[count];
+                Buffer.BlockCopy(payload, offset, arr, 0, count);
+                return arr;
+            }
+            public override LeasedBuffer PayloadAsLeasedBuffer()
+            {
+                return new LeasedBuffer(payload, offset, count, null);
             }
         }
     }

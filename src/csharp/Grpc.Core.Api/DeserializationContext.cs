@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
@@ -25,6 +26,53 @@ namespace Grpc.Core
     /// </summary>
     public abstract class DeserializationContext
     {
+        /// <summary>
+        /// Represents a payload as a single linear array-segment; this requires copying the data from the
+        /// underlying segments, but making use of pooled segments allows efficient buffer re-use.
+        /// The caller is expected to call Dispose exactly once, returning the buffer to the pool. Accessing
+        /// the data after disposal or calling Dispose multiple times will result in undefined behavior.
+        /// Only the range defined by Offset and Count shoud be accessed by the consumer.
+        /// </summary>
+        public readonly struct LeasedBuffer : IDisposable
+        {
+            private readonly Action<LeasedBuffer> _completionCallback;
+            /// <summary>
+            /// Creates a new LeasedBuffer over the defined segment. The callback can be null if no
+            /// actions are required upon completion
+            /// </summary>
+            public LeasedBuffer(byte[] buffer, int offset, int count, Action<LeasedBuffer> completionCallback)
+            {
+                GrpcPreconditions.CheckNotNull(buffer, nameof(buffer));
+                GrpcPreconditions.CheckArgument(offset >= 0 & offset + count <= buffer.Length);
+                Buffer = buffer;
+                Offset = offset;
+                Count = count;
+                _completionCallback = completionCallback;
+            }
+            /// <summary>
+            /// The buffer represented by the segment
+            /// </summary>
+            public byte[] Buffer { get; }
+            /// <summary>
+            /// The offset at which the payload begins
+            /// </summary>
+            public int Offset { get; }
+            /// <summary>
+            /// The number of bytes of payload in segment
+            /// </summary>
+            public int Count { get; }
+
+            /// <summary>
+            /// Releases the resources held by this leased buffer
+            /// </summary>
+            public void Dispose()
+            {
+                _completionCallback?.Invoke(this);
+            }
+
+        }
+
+
         /// <summary>
         /// Get the total length of the payload in bytes.
         /// </summary>
@@ -46,6 +94,23 @@ namespace Grpc.Core
         public virtual byte[] PayloadAsNewBuffer()
         {
             throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Gets the entire payload as a leased byte array.
+        /// The caller is expected to call Dispose exactly once, returning the buffer to the pool. Accessing
+        /// the data after disposal or calling Dispose multiple times will result in undefined behavior.
+        /// Only the range defined by Offset and Count shoud be accessed by the consumer.
+        /// </summary>
+        /// <returns>a leased buffer containing the entire payload</returns>
+        public virtual LeasedBuffer PayloadAsLeasedBuffer()
+        {
+            // default implementation is to use PayloadAsNewBuffer, since that
+            // should be available by callers; it is expected that this method
+            // will be overridden by implementations to provide more efficient
+            // implementations.
+            var newBuffer = PayloadAsNewBuffer();
+            return new LeasedBuffer(newBuffer, 0, newBuffer.Length, null);
         }
 
 #if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY

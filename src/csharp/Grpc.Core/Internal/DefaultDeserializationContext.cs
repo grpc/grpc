@@ -18,11 +18,8 @@
 
 using Grpc.Core.Utils;
 using System;
-using System.Threading;
-
-#if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
 using System.Buffers;
-#endif
+using System.Threading;
 
 namespace Grpc.Core.Internal
 {
@@ -44,11 +41,25 @@ namespace Grpc.Core.Internal
 
         public override int PayloadLength => payloadLength;
 
+        private static readonly byte[] s_Empty = new byte[0]; // note Array.Empty not available on all target platforms
+
+        private static readonly Action<LeasedBuffer> s_ReturnLeasedBufferToSharedPool
+            = leased => ArrayPool<byte>.Shared.Return(leased.Buffer);
+
         public override byte[] PayloadAsNewBuffer()
         {
+            if (payloadLength == 0) return s_Empty;
             var buffer = new byte[payloadLength];
             FillContinguousBuffer(bufferReader, buffer);
             return buffer;
+        }
+
+        public override LeasedBuffer PayloadAsLeasedBuffer()
+        {
+            if (payloadLength == 0) return new LeasedBuffer(s_Empty, 0, 0, null);
+            var oversizedBuffer = ArrayPool<byte>.Shared.Rent(payloadLength);
+            FillContinguousBuffer(bufferReader, oversizedBuffer);
+            return new LeasedBuffer(oversizedBuffer, 0, payloadLength, s_ReturnLeasedBufferToSharedPool);
         }
 
 #if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY

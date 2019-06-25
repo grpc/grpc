@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.Reflection;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core
@@ -41,11 +42,50 @@ namespace Grpc.Core
         {
             this.serializer = GrpcPreconditions.CheckNotNull(serializer, nameof(serializer));
             this.deserializer = GrpcPreconditions.CheckNotNull(deserializer, nameof(deserializer));
+
             // contextual serialization/deserialization is emulated to make the marshaller
             // usable with the grpc library (required for backward compatibility).
             this.contextualSerializer = EmulateContextualSerializer;
-            this.contextualDeserializer = EmulateContextualDeserializer;
+
+            if (!TryFindArraySegmentDeserializer(deserializer, out this.contextualDeserializer))
+            {
+                this.contextualDeserializer = EmulateContextualDeserializer;
+            }
         }
+
+        /// <summary>
+        /// Given a deserializer of the form foo.Bar(byte[]), see if we can find a similar foo.Bar(byte[], int, int); if so,
+        /// prefer that; this allows the existing protoc code-gen to be identified to use pooled buffers
+        /// </summary>
+        private static bool TryFindArraySegmentDeserializer(Func<byte[], T> deserializer, out Func<DeserializationContext, T> contextualDeserializer)
+        {
+#if !NETSTANDARD1_5
+            try
+            {
+                if (deserializer.GetInvocationList().Length == 1)
+                {
+                    var method = deserializer.Method;
+                    var flags = (deserializer.Target == null ? BindingFlags.Static : BindingFlags.Instance) | BindingFlags.Public;
+                    var bySegmentMethod = method.DeclaringType.GetMethod(method.Name, flags, null, s_arraySegmentSignature, null);
+                    if (bySegmentMethod != null && bySegmentMethod.ReturnType == typeof(T))
+                    {
+                        var bySegmentTyped = (Func<byte[], int, int, T>)Delegate.CreateDelegate(typeof(Func<byte[], int, int, T>), deserializer.Target, bySegmentMethod);
+                        contextualDeserializer = ctx =>
+                        {
+                            using (var leased = ctx.PayloadAsLeasedBuffer())
+                            {
+                                return bySegmentTyped(leased.Buffer, leased.Offset, leased.Count);
+                            }
+                        };
+                    }
+                }
+            } catch { } // give up; best efforts only
+#endif
+            contextualDeserializer = default;
+            return false;
+        }
+
+        private static readonly Type[] s_arraySegmentSignature = new Type[] { typeof(byte[]), typeof(int), typeof(int) };
 
         /// <summary>
         /// Initializes a new marshaller from serialize/deserialize fuctions that can access serialization and deserialization
