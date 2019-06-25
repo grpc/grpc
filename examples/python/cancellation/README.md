@@ -1,18 +1,14 @@
-### Cancelling RPCs
-
-RPCs may be cancelled by both the client and the server.
-
 #### The Example
 
 In the example, we implement a silly algorithm. We search for bytestrings whose
 hashes are similar to a given search string. For example, say we're looking for
-the string "doctor". Our algorithm may `JrqhZVkTDoctYrUlXDbL6pfYQHU=` or
+the string "doctor". Our algorithm may return `JrqhZVkTDoctYrUlXDbL6pfYQHU=` or
 `RC9/7mlM3ldy4TdoctOc6WzYbO4=`. This is a brute force algorithm, so the server
-performing the search must be conscious the resources it allows to each client
-and each client must be conscientious of the resources demanded of the server.
+performing the search must be conscious of the resources it allows to each client
+and each client must be conscientious of the resources it demands of the server.
 
 In particular, we ensure that client processes cancel the stream explicitly
-before terminating and we ensure the server cancels RPCs that have gone on longer
+before terminating and we ensure that server processes cancel RPCs that have gone on longer
 than a certain number of iterations.
 
 #### Cancellation on the Client Side
