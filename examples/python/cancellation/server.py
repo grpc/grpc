@@ -137,9 +137,11 @@ class HashFinder(hash_name_pb2_grpc.HashFinderServicer):
     def Find(self, request, context):
         stop_event = threading.Event()
         def on_rpc_done():
+            print("Attempting to regain servicer thread.")
             stop_event.set()
         context.add_callback(on_rpc_done)
         candidates = list(_find_secret(request.desired_name, request.ideal_hamming_distance, stop_event))
+        print("Servicer thread returning.")
         if not candidates:
             return hash_name_pb2.HashNameResponse()
         return candidates[-1]

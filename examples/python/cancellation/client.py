@@ -22,6 +22,7 @@ import argparse
 import datetime
 import logging
 import time
+import signal
 
 import grpc
 
@@ -31,25 +32,27 @@ from examples.python.cancellation import hash_name_pb2_grpc
 _DESCRIPTION = "A client for finding hashes similar to names."
 _LOGGER = logging.getLogger(__name__)
 
-# Interface:
-#   Cancel on ctrl+c or an ideal candidate.
+_TIMEOUT_SECONDS = 0.05
 
 def run_unary_client(server_target, name, ideal_distance):
-    # TODO(rbellevi): Cancel on ctrl+c
     with grpc.insecure_channel(server_target) as channel:
         stub = hash_name_pb2_grpc.HashFinderStub(channel)
+        print("Sending request")
+        future = stub.Find.future(hash_name_pb2.HashNameRequest(desired_name=name,
+                                                                  ideal_hamming_distance=ideal_distance))
+        def cancel_request(unused_signum, unused_frame):
+            print("Cancelling request.")
+            future.cancel()
+        signal.signal(signal.SIGINT, cancel_request)
         while True:
-            print("Sending request")
-            future = stub.Find.future(hash_name_pb2.HashNameRequest(desired_name=name,
-                                                                      ideal_hamming_distance=ideal_distance))
-            # TODO(rbellevi): Do not leave in a cancellation based on timeout.
-            # That's best handled by, well.. timeout.
             try:
-                result = future.result(timeout=20.0)
-                print("Got response: \n{}".format(result))
+                result = future.result(timeout=_TIMEOUT_SECONDS)
             except grpc.FutureTimeoutError:
-                print("Cancelling request")
-                future.cancel()
+                continue
+            except grpc.FutureCancelledError:
+                break
+            print("Got response: \n{}".format(result))
+            break
 
 
 def run_streaming_client(target, name, ideal_distance, interesting_distance):
