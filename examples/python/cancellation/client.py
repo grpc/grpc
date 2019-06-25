@@ -44,13 +44,17 @@ _TIMEOUT_SECONDS = 0.05
 
 # TODO(rbellevi): Actually use the logger.
 
+
 def run_unary_client(server_target, name, ideal_distance):
     with grpc.insecure_channel(server_target) as channel:
         stub = hash_name_pb2_grpc.HashFinderStub(channel)
-        future = stub.Find.future(hash_name_pb2.HashNameRequest(desired_name=name,
-                                                                  ideal_hamming_distance=ideal_distance))
+        future = stub.Find.future(
+            hash_name_pb2.HashNameRequest(
+                desired_name=name, ideal_hamming_distance=ideal_distance))
+
         def cancel_request(unused_signum, unused_frame):
             future.cancel()
+
         signal.signal(signal.SIGINT, cancel_request)
         while True:
             try:
@@ -63,14 +67,19 @@ def run_unary_client(server_target, name, ideal_distance):
             break
 
 
-def run_streaming_client(server_target, name, ideal_distance, interesting_distance):
+def run_streaming_client(server_target, name, ideal_distance,
+                         interesting_distance):
     with grpc.insecure_channel(server_target) as channel:
         stub = hash_name_pb2_grpc.HashFinderStub(channel)
-        result_generator = stub.FindRange(hash_name_pb2.HashNameRequest(desired_name=name,
-                                                                  ideal_hamming_distance=ideal_distance,
-                                                                        interesting_hamming_distance=interesting_distance))
+        result_generator = stub.FindRange(
+            hash_name_pb2.HashNameRequest(
+                desired_name=name,
+                ideal_hamming_distance=ideal_distance,
+                interesting_hamming_distance=interesting_distance))
+
         def cancel_request(unused_signum, unused_frame):
             result_generator.cancel()
+
         signal.signal(signal.SIGINT, cancel_request)
         result_queue = Queue()
 
@@ -84,7 +93,9 @@ def run_streaming_client(server_target, name, ideal_distance, interesting_distan
                     raise rpc_error
             # Enqueue a sentinel to signal the end of the stream.
             result_queue.put(None)
-        response_thread = threading.Thread(target=iterate_responses, args=(result_generator, result_queue))
+
+        response_thread = threading.Thread(
+            target=iterate_responses, args=(result_generator, result_queue))
         response_thread.daemon = True
         response_thread.start()
 
@@ -97,11 +108,16 @@ def run_streaming_client(server_target, name, ideal_distance, interesting_distan
                 break
             print(result)
 
+
 def main():
     parser = argparse.ArgumentParser(description=_DESCRIPTION)
     parser.add_argument("name", type=str, help='The desired name.')
-    parser.add_argument("--ideal-distance", default=0, nargs='?',
-                        type=int, help="The desired Hamming distance.")
+    parser.add_argument(
+        "--ideal-distance",
+        default=0,
+        nargs='?',
+        type=int,
+        help="The desired Hamming distance.")
     parser.add_argument(
         '--server',
         default='localhost:50051',
@@ -113,13 +129,16 @@ def main():
         default=None,
         type=int,
         nargs='?',
-        help='Also show candidates with a Hamming distance less than this value.')
+        help='Also show candidates with a Hamming distance less than this value.'
+    )
 
     args = parser.parse_args()
     if args.show_inferior is not None:
-        run_streaming_client(args.server, args.name, args.ideal_distance, args.show_inferior)
+        run_streaming_client(args.server, args.name, args.ideal_distance,
+                             args.show_inferior)
     else:
         run_unary_client(args.server, args.name, args.ideal_distance)
+
 
 if __name__ == "__main__":
     logging.basicConfig()

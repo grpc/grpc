@@ -66,7 +66,7 @@ def _get_substring_hamming_distance(candidate, target):
     assert len(candidate) != 0
     min_distance = None
     for i in range(len(candidate) - len(target) + 1):
-        distance = _get_hamming_distance(candidate[i:i+len(target)], target)
+        distance = _get_hamming_distance(candidate[i:i + len(target)], target)
         if min_distance is None or distance < min_distance:
             min_distance = distance
     return min_distance
@@ -81,12 +81,18 @@ def _get_hash(secret):
 class ResourceLimitExceededError(Exception):
     """Signifies the request has exceeded configured limits."""
 
+
 # TODO(rbellevi): Docstring all the things.
 # TODO(rbellevi): File issue about indefinite blocking for server-side
 #   streaming.
 
 
-def _find_secret_of_length(target, ideal_distance, length, stop_event, maximum_hashes, interesting_hamming_distance=None):
+def _find_secret_of_length(target,
+                           ideal_distance,
+                           length,
+                           stop_event,
+                           maximum_hashes,
+                           interesting_hamming_distance=None):
     digits = [0] * length
     hashes_computed = 0
     while True:
@@ -100,15 +106,17 @@ def _find_secret_of_length(target, ideal_distance, length, stop_event, maximum_h
         distance = _get_substring_hamming_distance(hash, target)
         if interesting_hamming_distance is not None and distance <= interesting_hamming_distance:
             # Surface interesting candidates, but don't stop.
-            yield hash_name_pb2.HashNameResponse(secret=base64.b64encode(secret),
-                                                  hashed_name=hash,
-                                                  hamming_distance=distance), hashes_computed
+            yield hash_name_pb2.HashNameResponse(
+                secret=base64.b64encode(secret),
+                hashed_name=hash,
+                hamming_distance=distance), hashes_computed
         elif distance <= ideal_distance:
             # Yield the ideal candidate followed by a sentinel to signal the end
             # of the stream.
-            yield hash_name_pb2.HashNameResponse(secret=base64.b64encode(secret),
-                                                  hashed_name=hash,
-                                                  hamming_distance=distance), hashes_computed
+            yield hash_name_pb2.HashNameResponse(
+                secret=base64.b64encode(secret),
+                hashed_name=hash,
+                hamming_distance=distance), hashes_computed
             yield None, hashes_computed
             raise StopIteration()
         digits[-1] += 1
@@ -127,12 +135,22 @@ def _find_secret_of_length(target, ideal_distance, length, stop_event, maximum_h
             raise ResourceLimitExceededError()
 
 
-def _find_secret(target, maximum_distance, stop_event, maximum_hashes, interesting_hamming_distance=None):
+def _find_secret(target,
+                 maximum_distance,
+                 stop_event,
+                 maximum_hashes,
+                 interesting_hamming_distance=None):
     length = 1
     total_hashes = 0
     while True:
         last_hashes_computed = 0
-        for candidate, hashes_computed in _find_secret_of_length(target, maximum_distance, length, stop_event, maximum_hashes - total_hashes, interesting_hamming_distance=interesting_hamming_distance):
+        for candidate, hashes_computed in _find_secret_of_length(
+                target,
+                maximum_distance,
+                length,
+                stop_event,
+                maximum_hashes - total_hashes,
+                interesting_hamming_distance=interesting_hamming_distance):
             last_hashes_computed = hashes_computed
             if candidate is not None:
                 yield candidate
@@ -153,12 +171,17 @@ class HashFinder(hash_name_pb2_grpc.HashFinderServicer):
 
     def Find(self, request, context):
         stop_event = threading.Event()
+
         def on_rpc_done():
             _LOGGER.debug("Attempting to regain servicer thread.")
             stop_event.set()
+
         context.add_callback(on_rpc_done)
         try:
-            candidates = list(_find_secret(request.desired_name, request.ideal_hamming_distance, stop_event, self._maximum_hashes))
+            candidates = list(
+                _find_secret(request.desired_name,
+                             request.ideal_hamming_distance, stop_event,
+                             self._maximum_hashes))
         except ResourceLimitExceededError:
             _LOGGER.info("Cancelling RPC due to exhausted resources.")
             context.cancel()
@@ -167,18 +190,20 @@ class HashFinder(hash_name_pb2_grpc.HashFinderServicer):
             return hash_name_pb2.HashNameResponse()
         return candidates[-1]
 
-
     def FindRange(self, request, context):
         stop_event = threading.Event()
+
         def on_rpc_done():
             _LOGGER.debug("Attempting to regain servicer thread.")
             stop_event.set()
+
         context.add_callback(on_rpc_done)
-        secret_generator = _find_secret(request.desired_name,
-                                        request.ideal_hamming_distance,
-                                        stop_event,
-                                        self._maximum_hashes,
-                                        interesting_hamming_distance=request.interesting_hamming_distance)
+        secret_generator = _find_secret(
+            request.desired_name,
+            request.ideal_hamming_distance,
+            stop_event,
+            self._maximum_hashes,
+            interesting_hamming_distance=request.interesting_hamming_distance)
         try:
             for candidate in secret_generator:
                 yield candidate
@@ -189,10 +214,10 @@ class HashFinder(hash_name_pb2_grpc.HashFinderServicer):
 
 
 def _run_server(port, maximum_hashes):
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=1),
-                         maximum_concurrent_rpcs=1)
+    server = grpc.server(
+        futures.ThreadPoolExecutor(max_workers=1), maximum_concurrent_rpcs=1)
     hash_name_pb2_grpc.add_HashFinderServicer_to_server(
-            HashFinder(maximum_hashes), server)
+        HashFinder(maximum_hashes), server)
     address = '{}:{}'.format(_SERVER_HOST, port)
     server.add_insecure_port(address)
     server.start()
