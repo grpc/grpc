@@ -37,12 +37,7 @@ char* grpc_slice_to_c_string(grpc_slice slice) {
   return out;
 }
 
-grpc_slice grpc_empty_slice(void) {
-  grpc_slice out;
-  out.refcount = nullptr;
-  out.data.inlined.length = 0;
-  return out;
-}
+grpc_slice grpc_empty_slice(void) { return grpc_empty_slice_internal(); }
 
 grpc_slice grpc_slice_copy(grpc_slice s) {
   grpc_slice out = GRPC_SLICE_MALLOC(GRPC_SLICE_LENGTH(s));
@@ -202,13 +197,16 @@ grpc_slice grpc_slice_new_with_len(void* p, size_t len,
   return slice;
 }
 
-grpc_slice grpc_slice_from_copied_buffer(const char* source, size_t length) {
-  if (length == 0) return grpc_empty_slice();
-  grpc_slice slice = GRPC_SLICE_MALLOC(length);
+grpc_core::ExternSlice grpc_slice_from_copied_buffer_internal(
+    const char* source, size_t length) {
+  if (length == 0) return grpc_empty_slice_internal();
+  grpc_core::ExternSlice slice = grpc_slice_malloc_internal(length);
   memcpy(GRPC_SLICE_START_PTR(slice), source, length);
   return slice;
 }
-
+grpc_slice grpc_slice_from_copied_buffer(const char* source, size_t length) {
+  return grpc_slice_from_copied_buffer_internal(source, length);
+}
 grpc_slice grpc_slice_from_copied_string(const char* source) {
   return grpc_slice_from_copied_buffer(source, strlen(source));
 }
@@ -261,7 +259,11 @@ class MallocRefCount {
 }  // namespace
 
 grpc_slice grpc_slice_malloc_large(size_t length) {
-  grpc_slice slice;
+  return grpc_slice_malloc_large_internal(length);
+}
+
+grpc_core::ExternSlice grpc_slice_malloc_large_internal(size_t length) {
+  grpc_core::ExternSlice slice;
 
   /* Memory layout used by the slice created here:
 
@@ -290,10 +292,14 @@ grpc_slice grpc_slice_malloc_large(size_t length) {
 }
 
 grpc_slice grpc_slice_malloc(size_t length) {
-  grpc_slice slice;
+  return grpc_slice_malloc_internal(length);
+}
+
+grpc_core::ExternSlice grpc_slice_malloc_internal(size_t length) {
+  grpc_core::ExternSlice slice;
 
   if (length > sizeof(slice.data.inlined.bytes)) {
-    return grpc_slice_malloc_large(length);
+    return grpc_slice_malloc_large_internal(length);
   } else {
     /* small slice: just inline the data */
     slice.refcount = nullptr;
@@ -302,8 +308,9 @@ grpc_slice grpc_slice_malloc(size_t length) {
   return slice;
 }
 
-grpc_slice grpc_slice_sub_no_ref(grpc_slice source, size_t begin, size_t end) {
-  grpc_slice subset;
+template <typename Slice>
+static Slice sub_no_ref(const Slice& source, size_t begin, size_t end) {
+  Slice subset;
 
   GPR_ASSERT(end >= begin);
 
@@ -325,6 +332,15 @@ grpc_slice grpc_slice_sub_no_ref(grpc_slice source, size_t begin, size_t end) {
            end - begin);
   }
   return subset;
+}
+
+grpc_slice grpc_slice_sub_no_ref(grpc_slice source, size_t begin, size_t end) {
+  return sub_no_ref(source, begin, end);
+}
+
+grpc_core::ExternSlice grpc_slice_sub_no_ref_internal(
+    const grpc_core::ExternSlice& source, size_t begin, size_t end) {
+  return sub_no_ref(source, begin, end);
 }
 
 grpc_slice grpc_slice_sub(grpc_slice source, size_t begin, size_t end) {

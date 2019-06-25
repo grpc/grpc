@@ -660,25 +660,33 @@ static grpc_error* on_hdr(grpc_chttp2_hpack_parser* p, grpc_mdelem md) {
   return GRPC_ERROR_NONE;
 }
 
-static grpc_slice take_string(grpc_chttp2_hpack_parser* p,
-                              grpc_chttp2_hpack_parser_string* str,
-                              bool intern) {
-  grpc_slice s;
+static grpc_core::ExternSlice take_string_extern(
+    grpc_chttp2_hpack_parser* p, grpc_chttp2_hpack_parser_string* str) {
+  grpc_core::ExternSlice s;
   if (!str->copied) {
-    if (intern) {
-      s = grpc_slice_intern(str->data.referenced);
-      grpc_slice_unref_internal(str->data.referenced);
-    } else {
-      s = str->data.referenced;
-    }
+    GPR_DEBUG_ASSERT(!grpc_slice_is_interned(str->data.referenced));
+    s = static_cast<grpc_core::ExternSlice&>(str->data.referenced);
+    str->copied = true;
+    str->data.referenced = grpc_empty_slice_internal();
+  } else {
+    s = grpc_slice_from_copied_buffer_internal(str->data.copied.str,
+                                               str->data.copied.length);
+  }
+  str->data.copied.length = 0;
+  return s;
+}
+
+static grpc_core::InternalSlice take_string_intern(
+    grpc_chttp2_hpack_parser* p, grpc_chttp2_hpack_parser_string* str) {
+  grpc_core::InternalSlice s;
+  if (!str->copied) {
+    s = grpc_slice_intern_internal(str->data.referenced);
+    grpc_slice_unref_internal(str->data.referenced);
     str->copied = true;
     str->data.referenced = grpc_empty_slice();
-  } else if (intern) {
-    s = grpc_slice_intern(grpc_slice_from_static_buffer_internal(
-        str->data.copied.str, str->data.copied.length));
   } else {
-    s = grpc_slice_from_copied_buffer(str->data.copied.str,
-                                      str->data.copied.length);
+    s = grpc_slice_intern_internal(grpc_slice_from_static_buffer_internal(
+        str->data.copied.str, str->data.copied.length));
   }
   str->data.copied.length = 0;
   return s;
@@ -812,6 +820,14 @@ static grpc_mdelem get_precomputed_md_for_idx(grpc_chttp2_hpack_parser* p) {
   return md;
 }
 
+static const grpc_core::InternalSlice& get_indexed_key(
+    grpc_chttp2_hpack_parser* p) {
+  grpc_mdelem md = get_precomputed_md_for_idx(p);
+  GPR_DEBUG_ASSERT(GRPC_MDELEM_IS_INTERNED(md));
+  return static_cast<const grpc_core::InternalSlice&>(
+      grpc_slice_ref_internal(GRPC_MDKEY(md)));
+}
+
 /* finish a literal header with incremental indexing */
 static grpc_error* finish_lithdr_incidx(grpc_chttp2_hpack_parser* p,
                                         const uint8_t* cur,
@@ -819,8 +835,8 @@ static grpc_error* finish_lithdr_incidx(grpc_chttp2_hpack_parser* p,
   GRPC_STATS_INC_HPACK_RECV_LITHDR_INCIDX();
   grpc_mdelem md = get_precomputed_md_for_idx(p);
   grpc_error* err = on_hdr<true>(
-      p, grpc_mdelem_from_slices(grpc_slice_ref_internal(GRPC_MDKEY(md)),
-                                 take_string(p, &p->value, true)));
+      p, grpc_mdelem_from_slices(get_indexed_key(p),
+                                 take_string_intern(p, &p->value)));
   if (err != GRPC_ERROR_NONE) return parse_error(p, cur, end, err);
   return parse_begin(p, cur, end);
 }
@@ -830,9 +846,9 @@ static grpc_error* finish_lithdr_incidx_v(grpc_chttp2_hpack_parser* p,
                                           const uint8_t* cur,
                                           const uint8_t* end) {
   GRPC_STATS_INC_HPACK_RECV_LITHDR_INCIDX_V();
-  grpc_error* err =
-      on_hdr<true>(p, grpc_mdelem_from_slices(take_string(p, &p->key, true),
-                                              take_string(p, &p->value, true)));
+  grpc_error* err = on_hdr<true>(
+      p, grpc_mdelem_from_slices(take_string_intern(p, &p->key),
+                                 take_string_intern(p, &p->value)));
   if (err != GRPC_ERROR_NONE) return parse_error(p, cur, end, err);
   return parse_begin(p, cur, end);
 }
@@ -883,8 +899,8 @@ static grpc_error* finish_lithdr_notidx(grpc_chttp2_hpack_parser* p,
   GRPC_STATS_INC_HPACK_RECV_LITHDR_NOTIDX();
   grpc_mdelem md = get_precomputed_md_for_idx(p);
   grpc_error* err = on_hdr<false>(
-      p, grpc_mdelem_from_slices(grpc_slice_ref_internal(GRPC_MDKEY(md)),
-                                 take_string(p, &p->value, false)));
+      p, grpc_mdelem_from_slices(get_indexed_key(p),
+                                 take_string_extern(p, &p->value)));
   if (err != GRPC_ERROR_NONE) return parse_error(p, cur, end, err);
   return parse_begin(p, cur, end);
 }
@@ -895,8 +911,8 @@ static grpc_error* finish_lithdr_notidx_v(grpc_chttp2_hpack_parser* p,
                                           const uint8_t* end) {
   GRPC_STATS_INC_HPACK_RECV_LITHDR_NOTIDX_V();
   grpc_error* err = on_hdr<false>(
-      p, grpc_mdelem_from_slices(take_string(p, &p->key, true),
-                                 take_string(p, &p->value, false)));
+      p, grpc_mdelem_from_slices(take_string_intern(p, &p->key),
+                                 take_string_extern(p, &p->value)));
   if (err != GRPC_ERROR_NONE) return parse_error(p, cur, end, err);
   return parse_begin(p, cur, end);
 }
@@ -947,8 +963,8 @@ static grpc_error* finish_lithdr_nvridx(grpc_chttp2_hpack_parser* p,
   GRPC_STATS_INC_HPACK_RECV_LITHDR_NVRIDX();
   grpc_mdelem md = get_precomputed_md_for_idx(p);
   grpc_error* err = on_hdr<false>(
-      p, grpc_mdelem_from_slices(grpc_slice_ref_internal(GRPC_MDKEY(md)),
-                                 take_string(p, &p->value, false)));
+      p, grpc_mdelem_from_slices(get_indexed_key(p),
+                                 take_string_extern(p, &p->value)));
   if (err != GRPC_ERROR_NONE) return parse_error(p, cur, end, err);
   return parse_begin(p, cur, end);
 }
@@ -959,8 +975,8 @@ static grpc_error* finish_lithdr_nvridx_v(grpc_chttp2_hpack_parser* p,
                                           const uint8_t* end) {
   GRPC_STATS_INC_HPACK_RECV_LITHDR_NVRIDX_V();
   grpc_error* err = on_hdr<false>(
-      p, grpc_mdelem_from_slices(take_string(p, &p->key, true),
-                                 take_string(p, &p->value, false)));
+      p, grpc_mdelem_from_slices(take_string_intern(p, &p->key),
+                                 take_string_extern(p, &p->value)));
   if (err != GRPC_ERROR_NONE) return parse_error(p, cur, end, err);
   return parse_begin(p, cur, end);
 }

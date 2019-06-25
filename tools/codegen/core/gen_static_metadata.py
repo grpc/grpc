@@ -392,16 +392,20 @@ for i, elem in enumerate(all_strs):
 
 
 def slice_def(i):
-    return ('{&grpc_static_metadata_refcounts[%d],'
-            ' {{%d, g_bytes+%d}}}') % (i, len(all_strs[i]), id2strofs[i])
+    return (
+        'grpc_core::StaticSlice(&grpc_static_metadata_refcounts[%d], %d, g_bytes+%d)'
+    ) % (i, len(all_strs[i]), id2strofs[i])
 
+
+#    return ('{&grpc_static_metadata_refcounts[%d],'
+#            ' {{%d, g_bytes+%d}}}') % (i, len(all_strs[i]), id2strofs[i])
 
 # validate configuration
 for elem in METADATA_BATCH_CALLOUTS:
     assert elem in all_strs
 
 print >> H, '#define GRPC_STATIC_MDSTR_COUNT %d' % len(all_strs)
-print >> H, ('extern const grpc_slice '
+print >> H, ('extern const grpc_core::StaticSlice '
              'grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];')
 for i, elem in enumerate(all_strs):
     print >> H, '/* "%s" */' % elem
@@ -425,8 +429,9 @@ print >> H, '#define GRPC_IS_STATIC_METADATA_STRING(slice) \\'
 print >> H, ('  ((slice).refcount != NULL && (slice).refcount->GetType() == '
              'grpc_slice_refcount::Type::STATIC)')
 print >> H
-print >> C, ('const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT]'
-             ' = {')
+print >> C, (
+    'const grpc_core::StaticSlice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT]'
+    ' = {')
 for i, elem in enumerate(all_strs):
     print >> C, slice_def(i) + ','
 print >> C, '};'

@@ -30,6 +30,7 @@
 #include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/slice/slice_utils.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 // Interned slices have specific fast-path operations for hashing. To inline
@@ -314,17 +315,36 @@ grpc_slice grpc_slice_from_moved_string(grpc_core::UniquePtr<char> p);
 // 0. All other slices will return the size of the allocated chars.
 size_t grpc_slice_memory_usage(grpc_slice s);
 
-inline grpc_slice grpc_slice_from_static_buffer_internal(const void* s,
-                                                         size_t len) {
-  grpc_slice slice;
-  slice.refcount = &grpc_core::kNoopRefcount;
-  slice.data.refcounted.bytes = (uint8_t*)s;
-  slice.data.refcounted.length = len;
-  return slice;
+inline grpc_core::StaticSlice grpc_slice_from_static_buffer_internal(
+    const void* s, size_t len) {
+  return grpc_core::StaticSlice(
+      &grpc_core::kNoopRefcount, len,
+      reinterpret_cast<uint8_t*>(const_cast<void*>(s)));
+  //  slice.refcount = &grpc_core::kNoopRefcount;
+  //  slice.data.refcounted.bytes = (uint8_t*)s;
+  //  slice.data.refcounted.length = len;
+  //  return slice;
 }
 
-inline grpc_slice grpc_slice_from_static_string_internal(const char* s) {
+inline grpc_core::StaticSlice grpc_slice_from_static_string_internal(
+    const char* s) {
   return grpc_slice_from_static_buffer_internal(s, strlen(s));
 }
+
+grpc_core::ExternSlice grpc_slice_from_copied_buffer_internal(
+    const char* source, size_t length);
+grpc_core::ExternSlice grpc_slice_from_copied_string_internal(
+    const char* source);
+inline grpc_core::ExternSlice grpc_empty_slice_internal(void) {
+  grpc_core::ExternSlice out;
+  out.refcount = nullptr;
+  out.data.inlined.length = 0;
+  return out;
+}
+grpc_core::ExternSlice grpc_slice_malloc_large_internal(size_t length);
+grpc_core::ExternSlice grpc_slice_malloc_internal(size_t length);
+grpc_core::ExternSlice grpc_slice_sub_no_ref_internal(
+    const grpc_core::ExternSlice& source, size_t begin, size_t end);
+grpc_core::InternalSlice grpc_slice_intern_internal(const grpc_slice& slice);
 
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H */
