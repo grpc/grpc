@@ -1363,6 +1363,9 @@ target_link_libraries(grpc
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
 )
+if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
+  target_link_libraries(grpc "-framework CoreFoundation")
+endif()
 
 foreach(_hdr
   include/grpc/impl/codegen/byte_buffer.h
@@ -1761,6 +1764,9 @@ target_link_libraries(grpc_cronet
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
 )
+if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
+  target_link_libraries(grpc_cronet "-framework CoreFoundation")
+endif()
 
 foreach(_hdr
   include/grpc/impl/codegen/byte_buffer.h
@@ -2090,6 +2096,9 @@ target_link_libraries(grpc_test_util
   gpr
   grpc
 )
+if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
+  target_link_libraries(grpc_test_util "-framework CoreFoundation")
+endif()
 
 foreach(_hdr
   include/grpc/support/alloc.h
@@ -2420,6 +2429,9 @@ target_link_libraries(grpc_test_util_unsecure
   gpr
   grpc_unsecure
 )
+if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
+  target_link_libraries(grpc_test_util_unsecure "-framework CoreFoundation")
+endif()
 
 foreach(_hdr
   include/grpc/support/alloc.h
@@ -2773,6 +2785,9 @@ target_link_libraries(grpc_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
 )
+if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
+  target_link_libraries(grpc_unsecure "-framework CoreFoundation")
+endif()
 
 foreach(_hdr
   include/grpc/impl/codegen/byte_buffer.h
@@ -3728,6 +3743,9 @@ target_link_libraries(grpc++_cronet
   grpc_cronet
   grpc
 )
+if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
+  target_link_libraries(grpc++_cronet "-framework CoreFoundation")
+endif()
 
 foreach(_hdr
   include/grpc++/alarm.h
