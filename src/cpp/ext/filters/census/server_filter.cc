@@ -153,7 +153,7 @@ void CensusServerCallData::StartTransportStreamOpBatch(
           "census grpc_filter",
           grpc_metadata_batch_add_tail(
               op->send_trailing_metadata()->batch(), &census_bin_,
-              grpc_mdelem_static_key_extern_val(
+              grpc_mdelem_from_slices_key_static_val_extern(
                   GRPC_MDSTR_GRPC_SERVER_STATS_BIN,
                   grpc_slice_from_copied_buffer(stats_buf_, len))));
     }
