@@ -166,3 +166,18 @@ secret = _find_secret(stop_event)
 
 Initiating a cancellation from the server side is simpler. Just call
 `ServicerContext.cancel()`.
+
+In our example, we ensure that no single client is monopolizing the server by
+cancelling after a configurable number of hashes have been checked.
+
+```python
+try:
+    for candidate in secret_generator:
+        yield candidate
+except ResourceLimitExceededError:
+    print("Cancelling RPC due to exhausted resources.")
+    context.cancel()
+```
+
+In this type of situation, you may also consider returning a more specific error
+using the [`grpcio-status`](https://pypi.org/project/grpcio-status/) package.

@@ -47,11 +47,9 @@ _TIMEOUT_SECONDS = 0.05
 def run_unary_client(server_target, name, ideal_distance):
     with grpc.insecure_channel(server_target) as channel:
         stub = hash_name_pb2_grpc.HashFinderStub(channel)
-        print("Sending request")
         future = stub.Find.future(hash_name_pb2.HashNameRequest(desired_name=name,
                                                                   ideal_hamming_distance=ideal_distance))
         def cancel_request(unused_signum, unused_frame):
-            print("Cancelling request.")
             future.cancel()
         signal.signal(signal.SIGINT, cancel_request)
         while True:
@@ -61,19 +59,17 @@ def run_unary_client(server_target, name, ideal_distance):
                 continue
             except grpc.FutureCancelledError:
                 break
-            print("Got response: \n{}".format(result))
+            print(result)
             break
 
 
 def run_streaming_client(server_target, name, ideal_distance, interesting_distance):
     with grpc.insecure_channel(server_target) as channel:
         stub = hash_name_pb2_grpc.HashFinderStub(channel)
-        print("Initiating RPC")
         result_generator = stub.FindRange(hash_name_pb2.HashNameRequest(desired_name=name,
                                                                   ideal_hamming_distance=ideal_distance,
                                                                         interesting_hamming_distance=interesting_distance))
         def cancel_request(unused_signum, unused_frame):
-            print("Cancelling request.")
             result_generator.cancel()
         signal.signal(signal.SIGINT, cancel_request)
         result_queue = Queue()
@@ -81,7 +77,6 @@ def run_streaming_client(server_target, name, ideal_distance, interesting_distan
         def iterate_responses(result_generator, result_queue):
             try:
                 for result in result_generator:
-                    print("Result: {}".format(result))
                     result_queue.put(result)
             except grpc.RpcError as rpc_error:
                 if rpc_error.code() != grpc.StatusCode.CANCELLED:
@@ -89,7 +84,6 @@ def run_streaming_client(server_target, name, ideal_distance, interesting_distan
                     raise rpc_error
             # Enqueue a sentinel to signal the end of the stream.
             result_queue.put(None)
-            print("RPC complete")
         response_thread = threading.Thread(target=iterate_responses, args=(result_generator, result_queue))
         response_thread.daemon = True
         response_thread.start()
@@ -101,7 +95,7 @@ def run_streaming_client(server_target, name, ideal_distance, interesting_distan
                 continue
             if result is None:
                 break
-            print("Got result: {}".format(result))
+            print(result)
 
 def main():
     parser = argparse.ArgumentParser(description=_DESCRIPTION)

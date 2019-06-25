@@ -32,9 +32,6 @@ import grpc
 from examples.python.cancellation import hash_name_pb2
 from examples.python.cancellation import hash_name_pb2_grpc
 
-# TODO(rbellevi): Actually use the logger.
-# TODO(rbellevi): Enforce per-user quotas with cancellation
-
 _BYTE_MAX = 255
 
 _LOGGER = logging.getLogger(__name__)
@@ -134,7 +131,6 @@ def _find_secret(target, maximum_distance, stop_event, maximum_hashes, interesti
     length = 1
     total_hashes = 0
     while True:
-        print("Checking strings of length {}.".format(length))
         last_hashes_computed = 0
         for candidate, hashes_computed in _find_secret_of_length(target, maximum_distance, length, stop_event, maximum_hashes - total_hashes, interesting_hamming_distance=interesting_hamming_distance):
             last_hashes_computed = hashes_computed
@@ -146,7 +142,6 @@ def _find_secret(target, maximum_distance, stop_event, maximum_hashes, interesti
                 # Terminate the generator if the RPC has been cancelled.
                 raise StopIteration()
         total_hashes += last_hashes_computed
-        print("Incrementing length")
         length += 1
 
 
@@ -159,15 +154,15 @@ class HashFinder(hash_name_pb2_grpc.HashFinderServicer):
     def Find(self, request, context):
         stop_event = threading.Event()
         def on_rpc_done():
-            print("Attempting to regain servicer thread.")
+            _LOGGER.debug("Attempting to regain servicer thread.")
             stop_event.set()
         context.add_callback(on_rpc_done)
         try:
             candidates = list(_find_secret(request.desired_name, request.ideal_hamming_distance, stop_event, self._maximum_hashes))
         except ResourceLimitExceededError:
-            print("Cancelling RPC due to exhausted resources.")
+            _LOGGER.info("Cancelling RPC due to exhausted resources.")
             context.cancel()
-        print("Servicer thread returning.")
+        _LOGGER.debug("Servicer thread returning.")
         if not candidates:
             return hash_name_pb2.HashNameResponse()
         return candidates[-1]
@@ -176,7 +171,7 @@ class HashFinder(hash_name_pb2_grpc.HashFinderServicer):
     def FindRange(self, request, context):
         stop_event = threading.Event()
         def on_rpc_done():
-            print("Attempting to regain servicer thread.")
+            _LOGGER.debug("Attempting to regain servicer thread.")
             stop_event.set()
         context.add_callback(on_rpc_done)
         secret_generator = _find_secret(request.desired_name,
@@ -188,9 +183,9 @@ class HashFinder(hash_name_pb2_grpc.HashFinderServicer):
             for candidate in secret_generator:
                 yield candidate
         except ResourceLimitExceededError:
-            print("Cancelling RPC due to exhausted resources.")
-            context.cancel
-        print("Regained servicer thread.")
+            _LOGGER.info("Cancelling RPC due to exhausted resources.")
+            context.cancel()
+        _LOGGER.debug("Regained servicer thread.")
 
 
 def _run_server(port, maximum_hashes):
