@@ -1926,6 +1926,7 @@ void XdsLb::MaybeExitFallbackMode() {
 //
 
 void XdsLb::LocalityMap::PruneLocalities(const XdsLocalityList& locality_list) {
+  bool removed = false;
   for (auto iter = map_.begin(); iter != map_.end();) {
     bool found = false;
     for (size_t i = 0; i < locality_list.size(); i++) {
@@ -1936,11 +1937,12 @@ void XdsLb::LocalityMap::PruneLocalities(const XdsLocalityList& locality_list) {
     }
     if (!found) {  // Remove entries not present in the locality list.
       iter = map_.erase(iter);
+      removed = true;
     } else
       iter++;
   }
   // Don't pick from removed localities.
-  UpdateXdsPicker();
+  if (removed) UpdateXdsPicker();
 }
 
 void XdsLb::LocalityMap::UpdateLocked(

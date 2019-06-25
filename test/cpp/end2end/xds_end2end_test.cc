@@ -1096,8 +1096,8 @@ TEST_F(SingleBalancerTest, FallbackModeIsExitedAfterChildRready) {
   // We have exited fallback mode, so calls will go to the child policy
   // exclusively.
   CheckRpcSendOk(100);
-  EXPECT_EQ(0U, backends_[0]->eds_service_.request_count());
-  EXPECT_EQ(100U, backends_[1]->eds_service_.request_count());
+  EXPECT_EQ(0U, backends_[0]->backend_service_.request_count());
+  EXPECT_EQ(100U, backends_[1]->backend_service_.request_count());
 }
 
 TEST_F(SingleBalancerTest, BackendsRestart) {
@@ -1139,7 +1139,7 @@ TEST_F(UpdatesTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
 
   // All 10 requests should have gone to the first backend.
-  EXPECT_EQ(10U, backends_[0]->eds_service_.request_count());
+  EXPECT_EQ(10U, backends_[0]->backend_service_.request_count());
 
   // Balancer 0 got a single request.
   EXPECT_EQ(1U, balancers_[0]->eds_service_.request_count());
@@ -1154,7 +1154,7 @@ TEST_F(UpdatesTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   SetNextResolutionForLbChannel({balancers_[1]->port_});
   gpr_log(GPR_INFO, "========= UPDATE 1 DONE ==========");
 
-  EXPECT_EQ(0U, backends_[1]->eds_service_.request_count());
+  EXPECT_EQ(0U, backends_[1]->backend_service_.request_count());
   gpr_timespec deadline = gpr_time_add(
       gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(10000, GPR_TIMESPAN));
   // Send 10 seconds worth of RPCs
@@ -1163,7 +1163,7 @@ TEST_F(UpdatesTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
   // The current LB call is still working, so xds continued using it to the
   // first balancer, which doesn't assign the second backend.
-  EXPECT_EQ(0U, backends_[1]->eds_service_.request_count());
+  EXPECT_EQ(0U, backends_[1]->backend_service_.request_count());
 
   EXPECT_EQ(1U, balancers_[0]->eds_service_.request_count());
   EXPECT_EQ(1U, balancers_[0]->eds_service_.response_count());
@@ -1192,7 +1192,7 @@ TEST_F(UpdatesTest, UpdateBalancerName) {
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
 
   // All 10 requests should have gone to the first backend.
-  EXPECT_EQ(10U, backends_[0]->eds_service_.request_count());
+  EXPECT_EQ(10U, backends_[0]->backend_service_.request_count());
 
   // Balancer 0 got a single request.
   EXPECT_EQ(1U, balancers_[0]->eds_service_.request_count());
@@ -1223,15 +1223,15 @@ TEST_F(UpdatesTest, UpdateBalancerName) {
 
   // Wait until update has been processed, as signaled by the second backend
   // receiving a request.
-  EXPECT_EQ(0U, backends_[1]->eds_service_.request_count());
+  EXPECT_EQ(0U, backends_[1]->backend_service_.request_count());
   WaitForBackend(1);
 
-  backends_[1]->eds_service_.ResetCounters();
+  backends_[1]->backend_service_.ResetCounters();
   gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
   CheckRpcSendOk(10);
   gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
   // All 10 requests should have gone to the second backend.
-  EXPECT_EQ(10U, backends_[1]->eds_service_.request_count());
+  EXPECT_EQ(10U, backends_[1]->backend_service_.request_count());
 
   EXPECT_EQ(1U, balancers_[0]->eds_service_.request_count());
   EXPECT_EQ(1U, balancers_[0]->eds_service_.response_count());
@@ -1264,7 +1264,7 @@ TEST_F(UpdatesTest, UpdateBalancersRepeated) {
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
 
   // All 10 requests should have gone to the first backend.
-  EXPECT_EQ(10U, backends_[0]->eds_service_.request_count());
+  EXPECT_EQ(10U, backends_[0]->backend_service_.request_count());
 
   // Balancer 0 got a single request.
   EXPECT_EQ(1U, balancers_[0]->eds_service_.request_count());
@@ -1283,7 +1283,7 @@ TEST_F(UpdatesTest, UpdateBalancersRepeated) {
   SetNextResolutionForLbChannel(ports);
   gpr_log(GPR_INFO, "========= UPDATE 1 DONE ==========");
 
-  EXPECT_EQ(0U, backends_[1]->eds_service_.request_count());
+  EXPECT_EQ(0U, backends_[1]->backend_service_.request_count());
   gpr_timespec deadline = gpr_time_add(
       gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(10000, GPR_TIMESPAN));
   // Send 10 seconds worth of RPCs
@@ -1292,7 +1292,7 @@ TEST_F(UpdatesTest, UpdateBalancersRepeated) {
   } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
   // xds continued using the original LB call to the first balancer, which
   // doesn't assign the second backend.
-  EXPECT_EQ(0U, backends_[1]->eds_service_.request_count());
+  EXPECT_EQ(0U, backends_[1]->backend_service_.request_count());
 
   ports.clear();
   ports.emplace_back(balancers_[0]->port_);
@@ -1301,7 +1301,7 @@ TEST_F(UpdatesTest, UpdateBalancersRepeated) {
   SetNextResolutionForLbChannel(ports);
   gpr_log(GPR_INFO, "========= UPDATE 2 DONE ==========");
 
-  EXPECT_EQ(0U, backends_[1]->eds_service_.request_count());
+  EXPECT_EQ(0U, backends_[1]->backend_service_.request_count());
   deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                           gpr_time_from_millis(10000, GPR_TIMESPAN));
   // Send 10 seconds worth of RPCs
@@ -1310,7 +1310,7 @@ TEST_F(UpdatesTest, UpdateBalancersRepeated) {
   } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
   // xds continued using the original LB call to the first balancer, which
   // doesn't assign the second backend.
-  EXPECT_EQ(0U, backends_[1]->eds_service_.request_count());
+  EXPECT_EQ(0U, backends_[1]->backend_service_.request_count());
 }
 
 TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
@@ -1329,7 +1329,7 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
   CheckRpcSendOk(10);
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
   // All 10 requests should have gone to the first backend.
-  EXPECT_EQ(10U, backends_[0]->eds_service_.request_count());
+  EXPECT_EQ(10U, backends_[0]->backend_service_.request_count());
 
   // Kill balancer 0
   gpr_log(GPR_INFO, "********** ABOUT TO KILL BALANCER 0 *************");
@@ -1341,8 +1341,8 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
   CheckRpcSendOk(10);
   gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
   // All 10 requests should again have gone to the first backend.
-  EXPECT_EQ(20U, backends_[0]->eds_service_.request_count());
-  EXPECT_EQ(0U, backends_[1]->eds_service_.request_count());
+  EXPECT_EQ(20U, backends_[0]->backend_service_.request_count());
+  EXPECT_EQ(0U, backends_[1]->backend_service_.request_count());
 
   // Balancer 0 got a single request.
   EXPECT_EQ(1U, balancers_[0]->eds_service_.request_count());
@@ -1360,16 +1360,16 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
   // Wait until update has been processed, as signaled by the second backend
   // receiving a request. In the meantime, the client continues to be serviced
   // (by the first backend) without interruption.
-  EXPECT_EQ(0U, backends_[1]->eds_service_.request_count());
+  EXPECT_EQ(0U, backends_[1]->backend_service_.request_count());
   WaitForBackend(1);
 
   // This is serviced by the updated RR policy
-  backends_[1]->eds_service_.ResetCounters();
+  backends_[1]->backend_service_.ResetCounters();
   gpr_log(GPR_INFO, "========= BEFORE THIRD BATCH ==========");
   CheckRpcSendOk(10);
   gpr_log(GPR_INFO, "========= DONE WITH THIRD BATCH ==========");
   // All 10 requests should have gone to the second backend.
-  EXPECT_EQ(10U, backends_[1]->eds_service_.request_count());
+  EXPECT_EQ(10U, backends_[1]->backend_service_.request_count());
 
   EXPECT_EQ(1U, balancers_[0]->eds_service_.request_count());
   EXPECT_EQ(1U, balancers_[0]->eds_service_.response_count());
