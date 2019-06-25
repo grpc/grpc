@@ -51,11 +51,6 @@ class SubchannelNode : public BaseNode {
   // longer associated with this subchannel.
   void SetChildSocketUuid(intptr_t uuid);
 
-  void MarkSubchannelDestroyed() {
-    GPR_ASSERT(subchannel_ != nullptr);
-    subchannel_ = nullptr;
-  }
-
   grpc_json* RenderJson() override;
 
   // proxy methods to composed classes.
