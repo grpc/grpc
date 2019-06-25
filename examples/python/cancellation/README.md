@@ -153,6 +153,14 @@ In this example, we use the `ServicerContext.add_callback` method to set a
 down through our hashing algorithm and ensure to check that the RPC is still
 ongoing before each iteration.
 
+```python
+stop_event = threading.Event()
+def on_rpc_done():
+    # Regain servicer thread.
+    stop_event.set()
+context.add_callback(on_rpc_done)
+secret = _find_secret(stop_event)
+```
 
 ##### Initiating a Cancellation from a Servicer
 
