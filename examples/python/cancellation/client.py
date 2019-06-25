@@ -23,6 +23,14 @@ import datetime
 import logging
 import time
 import signal
+import threading
+
+try:
+    from queue import Queue
+    from queue import Empty as QueueEmpty
+except ImportError:
+    from Queue import Queue
+    from Queue import Empty as QueueEmpty
 
 import grpc
 
@@ -33,6 +41,8 @@ _DESCRIPTION = "A client for finding hashes similar to names."
 _LOGGER = logging.getLogger(__name__)
 
 _TIMEOUT_SECONDS = 0.05
+
+# TODO(rbellevi): Actually use the logger.
 
 def run_unary_client(server_target, name, ideal_distance):
     with grpc.insecure_channel(server_target) as channel:
@@ -55,9 +65,43 @@ def run_unary_client(server_target, name, ideal_distance):
             break
 
 
-def run_streaming_client(target, name, ideal_distance, interesting_distance):
-    pass
+def run_streaming_client(server_target, name, ideal_distance, interesting_distance):
+    with grpc.insecure_channel(server_target) as channel:
+        stub = hash_name_pb2_grpc.HashFinderStub(channel)
+        print("Initiating RPC")
+        result_generator = stub.FindRange(hash_name_pb2.HashNameRequest(desired_name=name,
+                                                                  ideal_hamming_distance=ideal_distance,
+                                                                        interesting_hamming_distance=interesting_distance))
+        def cancel_request(unused_signum, unused_frame):
+            print("Cancelling request.")
+            result_generator.cancel()
+        signal.signal(signal.SIGINT, cancel_request)
+        result_queue = Queue()
 
+        def iterate_responses(result_generator, result_queue):
+            try:
+                for result in result_generator:
+                    print("Result: {}".format(result))
+                    result_queue.put(result)
+            except grpc.RpcError as rpc_error:
+                if rpc_error.code() != grpc.StatusCode.CANCELLED:
+                    result_queue.put(None)
+                    raise rpc_error
+            # Enqueue a sentinel to signal the end of the stream.
+            result_queue.put(None)
+            print("RPC complete")
+        response_thread = threading.Thread(target=iterate_responses, args=(result_generator, result_queue))
+        response_thread.daemon = True
+        response_thread.start()
+
+        while result_generator.running():
+            try:
+                result = result_queue.get(timeout=_TIMEOUT_SECONDS)
+            except QueueEmpty:
+                continue
+            if result is None:
+                break
+            print("Got result: {}".format(result))
 
 def main():
     parser = argparse.ArgumentParser(description=_DESCRIPTION)
@@ -79,7 +123,7 @@ def main():
 
     args = parser.parse_args()
     if args.show_inferior is not None:
-        run_streaming_client(args.server, args.name, args.ideal_distance, args.interesting_distance)
+        run_streaming_client(args.server, args.name, args.ideal_distance, args.show_inferior)
     else:
         run_unary_client(args.server, args.name, args.ideal_distance)
 

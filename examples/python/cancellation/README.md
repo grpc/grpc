@@ -8,6 +8,34 @@ A client may cancel an RPC for several reasons. Perhaps the data it requested
 has been made irrelevant. Perhaps you, as the client, want to be a good citizen
 of the server and are conserving compute resources.
 
+##### Cancelling a Client-Side Unary RPC
+
+The default RPC methods on a stub will simply return the result of an RPC.
+
+```python
+>>> stub = hash_name_pb2_grpc.HashFinderStub(channel)
+>>> stub.Find(hash_name_pb2.HashNameRequest(desired_name=name))
+<hash_name_pb2.HashNameResponse object at 0x7fe2eb8ce2d0>
+```
+
+But you may use the `future()` method to receive an instance of `grpc.Future`.
+This interface allows you to wait on a response with a timeout, add a callback
+to be executed when the RPC completes, or to cancel the RPC before it has
+completed.
+
+In the example, we use this interface to cancel our in-progress RPC when the
+user interrupts the process with ctrl-c.
+
+```python
+stub = hash_name_pb2_grpc.HashFinderStub(channel)
+future = stub.Find.future(hash_name_pb2.HashNameRequest(desired_name=name))
+def cancel_request(unused_signum, unused_frame):
+    future.cancel()
+signal.signal(signal.SIGINT, cancel_request)
+```
+
+##### Cancelling a Client-Side Streaming RPC
+
 #### Cancellation on the Server Side
 
 A server is reponsible for cancellation in two ways. It must respond in some way

@@ -32,6 +32,8 @@ import grpc
 from examples.python.cancellation import hash_name_pb2
 from examples.python.cancellation import hash_name_pb2_grpc
 
+# TODO(rbellevi): Actually use the logger.
+# TODO(rbellevi): Enforce per-user quotas with cancellation
 
 _BYTE_MAX = 255
 
@@ -116,11 +118,11 @@ def _find_secret_of_length(target, ideal_distance, length, stop_event, interesti
                 digits[i] += 1
 
 
-def _find_secret(target, maximum_distance, stop_event):
+def _find_secret(target, maximum_distance, stop_event, interesting_hamming_distance=None):
     length = 1
     while True:
         print("Checking strings of length {}.".format(length))
-        for candidate in _find_secret_of_length(target, maximum_distance, length, stop_event):
+        for candidate in _find_secret_of_length(target, maximum_distance, length, stop_event, interesting_hamming_distance=interesting_hamming_distance):
             if candidate is not None:
                 yield candidate
             else:
@@ -150,6 +152,7 @@ class HashFinder(hash_name_pb2_grpc.HashFinderServicer):
     def FindRange(self, request, context):
         stop_event = threading.Event()
         def on_rpc_done():
+            print("Attempting to regain servicer thread.")
             stop_event.set()
         context.add_callback(on_rpc_done)
         secret_generator = _find_secret(request.desired_name,
@@ -158,6 +161,7 @@ class HashFinder(hash_name_pb2_grpc.HashFinderServicer):
                                         interesting_hamming_distance=request.interesting_hamming_distance)
         for candidate in secret_generator:
             yield candidate
+        print("Regained servicer thread.")
 
 
 def _run_server(port):
