@@ -13,7 +13,7 @@
 # limitations under the License.
 
 filegroup(
-    name = "_credentails_files",
+    name = "_credentials_files",
     testonly = 1,
     srcs = [
         "credentials/localhost.key",
@@ -26,13 +26,13 @@ py_library(
     name = "_credentials",
     testonly = 1,
     srcs = ["_credentials.py"],
-    data = [":_credentails_files"],
+    data = [":_credentials_files"],
 )
 
 py_binary(
-    name = "customize_auth_client",
+    name = "customized_auth_client",
     testonly = 1,
-    srcs = ["customize_auth_client.py"],
+    srcs = ["customized_auth_client.py"],
     deps = [
         ":_credentials",
         "//src/python/grpcio/grpc:grpcio",
@@ -41,9 +41,9 @@ py_binary(
 )
 
 py_binary(
-    name = "customize_auth_server",
+    name = "customized_auth_server",
     testonly = 1,
-    srcs = ["customize_auth_server.py"],
+    srcs = ["customized_auth_server.py"],
     deps = [
         ":_credentials",
         "//src/python/grpcio/grpc:grpcio",
@@ -58,8 +58,8 @@ py_test(
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "//examples:py_helloworld",
-        ":customize_auth_client",
-        ":customize_auth_server",
+        ":customized_auth_client",
+        ":customized_auth_server",
         ":_credentials",
     ],
 )

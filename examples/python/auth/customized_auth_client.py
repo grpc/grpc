@@ -32,7 +32,7 @@ _LOGGER.setLevel(logging.INFO)
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 _SERVER_ADDR_TEMPLATE = 'localhost:%d'
-_SIGNATURE_HEADER_KEY = 'x-signautre'
+_SIGNATURE_HEADER_KEY = 'x-signature'
 
 
 class AuthGateway(grpc.AuthMetadataPlugin):
@@ -96,7 +96,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--port',
-        nargs=1,
+        nargs='?',
         type=int,
         default=50051,
         help='the address of server')

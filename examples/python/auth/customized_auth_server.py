@@ -34,7 +34,7 @@ _LOGGER.setLevel(logging.INFO)
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 _LISTEN_ADDRESS_TEMPLATE = 'localhost:%d'
-_SIGNATURE_HEADER_KEY = 'x-signautre'
+_SIGNATURE_HEADER_KEY = 'x-signature'
 
 
 class SignatureValidationInterceptor(grpc.ServerInterceptor):
@@ -61,8 +61,7 @@ class SignatureValidationInterceptor(grpc.ServerInterceptor):
 
 class SimpleGreeter(helloworld_pb2_grpc.GreeterServicer):
 
-    @staticmethod
-    def SayHello(request, unused_context):
+    def SayHello(self, request, unused_context):
         return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
 
 
@@ -86,19 +85,21 @@ def run_server(port):
         _credentials.SERVER_CERTIFICATE,
     ),))
 
-    # Pass down credentails
+    # Pass down credentials
     port = server.add_secure_port(_LISTEN_ADDRESS_TEMPLATE % port,
                                   server_credentials)
 
     server.start()
-    yield port
-    server.stop(0)
+    try:
+        yield port
+    finally:
+        server.stop(0)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--port', nargs=1, type=int, default=50051, help='the listening port')
+        '--port', nargs='?', type=int, default=50051, help='the listening port')
     args = parser.parse_args()
 
     with run_server(args.port) as port:

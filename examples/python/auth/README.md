@@ -2,7 +2,9 @@
 
 ## Check Our Guide First
 
-For most common usage of authentication in gRPC Python, please see our [Authentication](https://grpc.io/docs/guides/auth/) guide's Python section, it includes:
+For most common usage of authentication in gRPC Python, please see our
+[Authentication](https://grpc.io/docs/guides/auth/) guide's Python section. The
+Guide includes following scenarios:
 
 1. Server SSL credential setup
 2. Client SSL credential setup
@@ -13,11 +15,14 @@ Also, the guide talks about gRPC specific credential types.
 
 ### Channel credentials
 
-Channel credentials are attached to a `Channel` object, the most common use case are SSL credentials.
+Channel credentials are attached to a `Channel` object, the most common use case
+are SSL credentials.
 
 ### Call credentials
 
-Call credentials are attached to a `Call` object (corresponding to an RPC). Under the hood, the call credentials is a function that takes in information of the RPC and modify metadata through callback.
+Call credentials are attached to a `Call` object (corresponding to an RPC).
+Under the hood, the call credentials is a function that takes in information of
+the RPC and modify metadata through callback.
 
 ## About This Example
 
@@ -28,7 +33,16 @@ This example focuses on extending gRPC authentication mechanism:
 
 ## AuthMetadataPlugin: Manipulate metadata for each call
 
-Unlike TLS/SSL based authentication, the authentication extension in gRPC Python lives in a much higher level of abstraction. It relies on the transmit of metadata (HTTP Header) between client and server. gRPC Python provides a way to intercept an RPC and append authentication related metadata through [`AuthMetadataPlugin`](https://grpc.github.io/grpc/python/grpc.html#grpc.AuthMetadataPlugin).
+Unlike TLS/SSL based authentication, the authentication extension in gRPC Python
+lives at a much higher level of networking. It relies on the transmission of
+metadata (HTTP Header) between client and server, instead of alternating the
+transport protocol.
+
+gRPC Python provides a way to intercept an RPC and append authentication related
+metadata through
+[`AuthMetadataPlugin`](https://grpc.github.io/grpc/python/grpc.html#grpc.AuthMetadataPlugin).
+Those in need of a custom authentication method may simply provide a concrete
+implementation of the following interface:
 
 ```Python
 class AuthMetadataPlugin:
@@ -45,4 +59,54 @@ class AuthMetadataPlugin:
           callback: An AuthMetadataPluginCallback to be invoked either
             synchronously or asynchronously.
         """
+```
+
+Then pass the instance of the concrete implementation to
+`grpc.metadata_call_credentials` function to be converted into a
+`CallCredentials` object. Please NOTE that it is possible to pass a Python
+function object directly, but we recommend to inherit from the base class to
+ensure implementation correctness.
+
+
+```Python
+def metadata_call_credentials(metadata_plugin, name=None):
+    """Construct CallCredentials from an AuthMetadataPlugin.
+
+    Args:
+      metadata_plugin: An AuthMetadataPlugin to use for authentication.
+      name: An optional name for the plugin.
+
+    Returns:
+      A CallCredentials.
+    """
+```
+
+The `CallCredentials` object can be passed directly into an RPC like:
+
+```Python
+call_credentials = grpc.metadata_call_credentials(my_foo_plugin)
+stub.FooRpc(request, credentials=call_credentials)
+```
+
+Or you can use `ChannelCredentials` and `CallCredentials` at the same time by
+combining them:
+
+```Python
+channel_credentials = ...
+call_credentials = ...
+composite_credentials = grpc.composite_channel_credentials(
+    channel_credential,
+    call_credentials)
+channel = grpc.secure_channel(server_address, composite_credentials)
+```
+
+It is also possible to apply multiple `CallCredentials` to a single RPC:
+
+```Python
+call_credentials_foo = ...
+call_credentials_bar = ...
+call_credentials = grpc.composite_call_credentials(
+    call_credentials_foo,
+    call_credentials_bar)
+stub.FooRpc(request, credentials=call_credentials)
 ```
