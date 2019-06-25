@@ -771,7 +771,8 @@ TEST_F(SingleBalancerTest, SameBackendListedMultipleTimes) {
   // Send kNumRpcsPerAddress RPCs per server.
   CheckRpcSendOk(kNumRpcsPerAddress * ports.size());
   // Backend should have gotten 20 requests.
-  EXPECT_EQ(kNumRpcsPerAddress * 2, backends_[0]->eds_service_.request_count());
+  EXPECT_EQ(kNumRpcsPerAddress * 2,
+            backends_[0]->backend_service_.request_count());
   // And they should have come from a single client port, because of
   // subchannel sharing.
   EXPECT_EQ(1UL, backends_[0]->backend_service_.clients().size());

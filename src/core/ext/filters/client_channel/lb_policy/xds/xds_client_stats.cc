@@ -127,6 +127,15 @@ XdsLbClientStats::LocalityStats* XdsLbClientStats::FindLocalityStats(
   return &iter->second;
 }
 
+void XdsLbClientStats::PruneLocalityStats() {
+  auto iter = upstream_locality_stats.begin();
+  while (iter != upstream_locality_stats.end()) {
+    if (iter->second.IsSafeToDelete()) {
+      iter = upstream_locality_stats.erase(iter);
+    }
+  }
+}
+
 void XdsLbClientStats::AddCallDropped(const char* category) {
   //  // Increment num_calls_started and num_calls_finished.
   //  gpr_atm_full_fetch_add(&num_calls_started_, (gpr_atm)1);

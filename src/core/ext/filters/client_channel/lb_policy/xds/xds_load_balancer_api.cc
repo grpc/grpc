@@ -285,6 +285,8 @@ grpc_slice XdsLrsRequestCreateAndEncode(XdsLbClientStats* client_stats) {
             cluster_stats, arena.ptr());
     LocalityStatsPopulate(locality_stats, p, arena.ptr());
   }
+  // Prune unused locality stats.
+  client_stats->PruneLocalityStats();
   // Add dropped requests.
   for (size_t i = 0; i < client_stats->dropped_requests.size(); ++i) {
     envoy_api_v2_endpoint_ClusterStats_DroppedRequests* dropped_requests =

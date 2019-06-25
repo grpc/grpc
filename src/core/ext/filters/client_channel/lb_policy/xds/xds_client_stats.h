@@ -85,9 +85,9 @@ class XdsLbClientStats : public RefCounted<XdsLbClientStats> {
 
     void Kill() { dying = true; }
     void Revive() { dying = false; }
+    bool IsSafeToDelete() { return dying && total_requests_in_progress == 0; }
 
     void AddCallStarted();
-
     void AddCallFinished(bool fail = false);
 
     static void Destroy(void* arg) {}
@@ -126,6 +126,8 @@ class XdsLbClientStats : public RefCounted<XdsLbClientStats> {
 
   LocalityStats* FindLocalityStats(
       const RefCountedPtr<XdsLocalityName>& locality_name);
+
+  void PruneLocalityStats();
 
   void AddCallDropped(const char* category);
 
