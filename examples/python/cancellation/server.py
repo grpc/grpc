@@ -18,7 +18,6 @@ from __future__ import division
 from __future__ import print_function
 
 from concurrent import futures
-from collections import deque
 import argparse
 import base64
 import contextlib
@@ -64,7 +63,7 @@ def _get_substring_hamming_distance(candidate, target):
       The minimum Hamming distance between candidate and target.
     """
     assert len(target) <= len(candidate)
-    assert len(candidate) != 0
+    assert candidate
     min_distance = None
     for i in range(len(candidate) - len(target) + 1):
         distance = _get_hamming_distance(candidate[i:i + len(target)], target)
@@ -118,25 +117,25 @@ def _find_secret_of_length(target,
             # Yield a sentinel and stop the generator if the RPC has been
             # cancelled.
             yield None, hashes_computed
-            raise StopIteration()
+            raise StopIteration()  # pylint: disable=stop-iteration-return
         secret = b''.join(struct.pack('B', i) for i in digits)
-        hash = _get_hash(secret)
-        distance = _get_substring_hamming_distance(hash, target)
+        candidate_hash = _get_hash(secret)
+        distance = _get_substring_hamming_distance(candidate_hash, target)
         if interesting_hamming_distance is not None and distance <= interesting_hamming_distance:
             # Surface interesting candidates, but don't stop.
             yield hash_name_pb2.HashNameResponse(
                 secret=base64.b64encode(secret),
-                hashed_name=hash,
+                hashed_name=candidate_hash,
                 hamming_distance=distance), hashes_computed
         elif distance <= ideal_distance:
             # Yield the ideal candidate followed by a sentinel to signal the end
             # of the stream.
             yield hash_name_pb2.HashNameResponse(
                 secret=base64.b64encode(secret),
-                hashed_name=hash,
+                hashed_name=candidate_hash,
                 hamming_distance=distance), hashes_computed
             yield None, hashes_computed
-            raise StopIteration()
+            raise StopIteration()  # pylint: disable=stop-iteration-return
         digits[-1] += 1
         i = length - 1
         while digits[i] == _BYTE_MAX + 1:
@@ -145,7 +144,7 @@ def _find_secret_of_length(target,
             if i == -1:
                 # Terminate the generator since we've run out of strings of
                 # `length` bytes.
-                raise StopIteration()
+                raise StopIteration()  # pylint: disable=stop-iteration-return
             else:
                 digits[i] += 1
         hashes_computed += 1
@@ -196,10 +195,10 @@ def _find_secret(target,
             if candidate is not None:
                 yield candidate
             else:
-                raise StopIteration()
+                raise StopIteration()  # pylint: disable=stop-iteration-return
             if stop_event.is_set():
                 # Terminate the generator if the RPC has been cancelled.
-                raise StopIteration()
+                raise StopIteration()  # pylint: disable=stop-iteration-return
         total_hashes += last_hashes_computed
         length += 1
 
