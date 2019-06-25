@@ -10,13 +10,24 @@ There are two different tests here:
 These tests run per-change, along with the rest of the grpc unit tests.
 They query a local testing DNS server.
 
-## GCE integration tests
+## GCE integration tests (only for manual runs)
 
-These tests use the same test binary and the same test records
-as the unit tests, but they run against GCE DNS (this is done by
-running the test on a GCE instance and not specifying an authority
-in uris). These tests run in a background job, which needs to be
-actively monitored.
+One can also run the "resolver component tests" against GCE DNS. This
+is done by uploading the resolver component test DNS records to a GCE
+DNS private zone under the grpc-testing project, running the test on
+a GCE instance, and not specifying an authority in uris.
+
+One can run these tests manually by running the following script on a GCE
+VM belonging to the grpc-testing project (or an equivalent environment that
+has all of the DNS records available):
+
+```
+python test/cpp/naming/experimental_manual_run_resolver_component_tests.py
+```
+
+Note that when running this script, some tests may fail only because
+the DNS records haven't been uploaded to GCE DNS. One can check if this
+is the case by querying the record manually with `dig`.
 
 ## Making changes to test records
 
@@ -37,7 +48,3 @@ $ test/cpp/naming/private_dns_zone_init.sh
 
 Note that these commands must be ran in environment that
 has access to the grpc-testing GCE project.
-
-If everything runs smoothly, then once the change is merged,
-the GCE DNS integration testing job will transition to the
-new records and continue passing.

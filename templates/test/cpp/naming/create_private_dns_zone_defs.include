@@ -19,7 +19,7 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
-gcloud alpha dns managed-zones create \\
+gcloud dns managed-zones create \\
 
   ${resolver_gce_integration_tests_zone_id} \\
 

@@ -1,4 +1,4 @@
-resolver_tests_common_zone_name: resolver-tests-version-4.grpctestingexp.
+resolver_tests_common_zone_name: resolver-tests-version-8.grpctestingexp.
 resolver_component_tests:
 # Tests for which we enable SRV queries
 - expected_addrs:
@@ -203,6 +203,81 @@ resolver_component_tests:
     - {TTL: '2100', data: '2607:f8b0:400a:801::1002', type: AAAA}
     srv-ipv6-target-has-backend-and-balancer:
     - {TTL: '2100', data: '2607:f8b0:400a:801::1002', type: AAAA}
+# The next test triggers fallback to TCP due to a AAAA record that
+# is just below 1K (this record is large enough to trigger TCP
+# fallback, but small enough to be uploadable to GCE DNS)
+# Fill up space with one loopback and a lot of RFC #6666 black
+# hole addresses.
+- expected_addrs:
+  - {address: '[::1]:443', is_balancer: false}
+  - {address: '[100::1]:443', is_balancer: false}
+  - {address: '[100::2]:443', is_balancer: false}
+  - {address: '[100::3]:443', is_balancer: false}
+  - {address: '[100::4]:443', is_balancer: false}
+  - {address: '[100::5]:443', is_balancer: false}
+  - {address: '[100::6]:443', is_balancer: false}
+  - {address: '[100::7]:443', is_balancer: false}
+  - {address: '[100::8]:443', is_balancer: false}
+  - {address: '[100::9]:443', is_balancer: false}
+  - {address: '[100::10]:443', is_balancer: false}
+  - {address: '[100::11]:443', is_balancer: false}
+  - {address: '[100::12]:443', is_balancer: false}
+  - {address: '[100::13]:443', is_balancer: false}
+  - {address: '[100::14]:443', is_balancer: false}
+  - {address: '[100::15]:443', is_balancer: false}
+  - {address: '[100::16]:443', is_balancer: false}
+  - {address: '[100::17]:443', is_balancer: false}
+  - {address: '[100::18]:443', is_balancer: false}
+  - {address: '[100::19]:443', is_balancer: false}
+  - {address: '[100::20]:443', is_balancer: false}
+  - {address: '[100::21]:443', is_balancer: false}
+  - {address: '[100::22]:443', is_balancer: false}
+  - {address: '[100::23]:443', is_balancer: false}
+  - {address: '[100::24]:443', is_balancer: false}
+  - {address: '[100::25]:443', is_balancer: false}
+  - {address: '[100::26]:443', is_balancer: false}
+  - {address: '[100::27]:443', is_balancer: false}
+  - {address: '[100::28]:443', is_balancer: false}
+  - {address: '[100::29]:443', is_balancer: false}
+  expected_chosen_service_config: null
+  expected_service_config_error: null
+  expected_lb_policy: null
+  enable_srv_queries: true
+  enable_txt_queries: true
+  inject_broken_nameserver_list: false
+  record_to_resolve: large-aaaa-triggering-tcp-fallback
+  records:
+    large-aaaa-triggering-tcp-fallback:
+    - {TTL: '2100', data: '::1', type: AAAA}
+    - {TTL: '2100', data: '100::1', type: AAAA}
+    - {TTL: '2100', data: '100::2', type: AAAA}
+    - {TTL: '2100', data: '100::3', type: AAAA}
+    - {TTL: '2100', data: '100::4', type: AAAA}
+    - {TTL: '2100', data: '100::5', type: AAAA}
+    - {TTL: '2100', data: '100::6', type: AAAA}
+    - {TTL: '2100', data: '100::7', type: AAAA}
+    - {TTL: '2100', data: '100::8', type: AAAA}
+    - {TTL: '2100', data: '100::9', type: AAAA}
+    - {TTL: '2100', data: '100::10', type: AAAA}
+    - {TTL: '2100', data: '100::11', type: AAAA}
+    - {TTL: '2100', data: '100::12', type: AAAA}
+    - {TTL: '2100', data: '100::13', type: AAAA}
+    - {TTL: '2100', data: '100::14', type: AAAA}
+    - {TTL: '2100', data: '100::15', type: AAAA}
+    - {TTL: '2100', data: '100::16', type: AAAA}
+    - {TTL: '2100', data: '100::17', type: AAAA}
+    - {TTL: '2100', data: '100::18', type: AAAA}
+    - {TTL: '2100', data: '100::19', type: AAAA}
+    - {TTL: '2100', data: '100::20', type: AAAA}
+    - {TTL: '2100', data: '100::21', type: AAAA}
+    - {TTL: '2100', data: '100::22', type: AAAA}
+    - {TTL: '2100', data: '100::23', type: AAAA}
+    - {TTL: '2100', data: '100::24', type: AAAA}
+    - {TTL: '2100', data: '100::25', type: AAAA}
+    - {TTL: '2100', data: '100::26', type: AAAA}
+    - {TTL: '2100', data: '100::27', type: AAAA}
+    - {TTL: '2100', data: '100::28', type: AAAA}
+    - {TTL: '2100', data: '100::29', type: AAAA}
 - expected_addrs:
   - {address: '1.2.3.4:443', is_balancer: false}
   expected_chosen_service_config: '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooTwo","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooThree","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooFour","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooFive","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooSix","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooSeven","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooEight","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooNine","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooTen","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooEleven","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooTwelve","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooTwelve","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooTwelve","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooTwelve","service":"SimpleService"}],"waitForReady":true}]}'
@@ -449,3 +524,73 @@ resolver_component_tests:
     _grpc_config.ipv4-config-causing-fallback-to-tcp-inject-broken-nameservers:
     - {TTL: '2100', data: 'grpc_config=[{"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooThree","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFour","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFive","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSix","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSeven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEight","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooNine","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTen","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEleven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]}]}}]',
       type: TXT}
+- expected_addrs:
+  - {address: '[::1]:443', is_balancer: false}
+  - {address: '[100::1]:443', is_balancer: false}
+  - {address: '[100::2]:443', is_balancer: false}
+  - {address: '[100::3]:443', is_balancer: false}
+  - {address: '[100::4]:443', is_balancer: false}
+  - {address: '[100::5]:443', is_balancer: false}
+  - {address: '[100::6]:443', is_balancer: false}
+  - {address: '[100::7]:443', is_balancer: false}
+  - {address: '[100::8]:443', is_balancer: false}
+  - {address: '[100::9]:443', is_balancer: false}
+  - {address: '[100::10]:443', is_balancer: false}
+  - {address: '[100::11]:443', is_balancer: false}
+  - {address: '[100::12]:443', is_balancer: false}
+  - {address: '[100::13]:443', is_balancer: false}
+  - {address: '[100::14]:443', is_balancer: false}
+  - {address: '[100::15]:443', is_balancer: false}
+  - {address: '[100::16]:443', is_balancer: false}
+  - {address: '[100::17]:443', is_balancer: false}
+  - {address: '[100::18]:443', is_balancer: false}
+  - {address: '[100::19]:443', is_balancer: false}
+  - {address: '[100::20]:443', is_balancer: false}
+  - {address: '[100::21]:443', is_balancer: false}
+  - {address: '[100::22]:443', is_balancer: false}
+  - {address: '[100::23]:443', is_balancer: false}
+  - {address: '[100::24]:443', is_balancer: false}
+  - {address: '[100::25]:443', is_balancer: false}
+  - {address: '[100::26]:443', is_balancer: false}
+  - {address: '[100::27]:443', is_balancer: false}
+  - {address: '[100::28]:443', is_balancer: false}
+  - {address: '[100::29]:443', is_balancer: false}
+  expected_chosen_service_config: null
+  expected_service_config_error: null
+  expected_lb_policy: null
+  enable_srv_queries: true
+  enable_txt_queries: true
+  inject_broken_nameserver_list: true
+  record_to_resolve: large-aaaa-triggering-tcp-fallback-inject-broken-nameservers
+  records:
+    large-aaaa-triggering-tcp-fallback-inject-broken-nameservers:
+    - {TTL: '2100', data: '::1', type: AAAA}
+    - {TTL: '2100', data: '100::1', type: AAAA}
+    - {TTL: '2100', data: '100::2', type: AAAA}
+    - {TTL: '2100', data: '100::3', type: AAAA}
+    - {TTL: '2100', data: '100::4', type: AAAA}
+    - {TTL: '2100', data: '100::5', type: AAAA}
+    - {TTL: '2100', data: '100::6', type: AAAA}
+    - {TTL: '2100', data: '100::7', type: AAAA}
+    - {TTL: '2100', data: '100::8', type: AAAA}
+    - {TTL: '2100', data: '100::9', type: AAAA}
+    - {TTL: '2100', data: '100::10', type: AAAA}
+    - {TTL: '2100', data: '100::11', type: AAAA}
+    - {TTL: '2100', data: '100::12', type: AAAA}
+    - {TTL: '2100', data: '100::13', type: AAAA}
+    - {TTL: '2100', data: '100::14', type: AAAA}
+    - {TTL: '2100', data: '100::15', type: AAAA}
+    - {TTL: '2100', data: '100::16', type: AAAA}
+    - {TTL: '2100', data: '100::17', type: AAAA}
+    - {TTL: '2100', data: '100::18', type: AAAA}
+    - {TTL: '2100', data: '100::19', type: AAAA}
+    - {TTL: '2100', data: '100::20', type: AAAA}
+    - {TTL: '2100', data: '100::21', type: AAAA}
+    - {TTL: '2100', data: '100::22', type: AAAA}
+    - {TTL: '2100', data: '100::23', type: AAAA}
+    - {TTL: '2100', data: '100::24', type: AAAA}
+    - {TTL: '2100', data: '100::25', type: AAAA}
+    - {TTL: '2100', data: '100::26', type: AAAA}
+    - {TTL: '2100', data: '100::27', type: AAAA}
+    - {TTL: '2100', data: '100::28', type: AAAA}
+    - {TTL: '2100', data: '100::29', type: AAAA}

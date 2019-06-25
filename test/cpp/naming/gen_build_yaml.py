@@ -28,6 +28,7 @@ _TARGET_RECORDS_TO_SKIP_AGAINST_GCE = [
   # TODO: enable this once able to upload the very large TXT record
   # in this group to GCE DNS.
   'ipv4-config-causing-fallback-to-tcp',
+  'ipv4-config-causing-fallback-to-tcp-inject-broken-nameservers',
 ]
 
 def _append_zone_name(name, zone_name):

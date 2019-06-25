@@ -19,9 +19,9 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
-gcloud alpha dns managed-zones create \
-  resolver-tests-version-4-grpctestingexp-zone-id \
-  --dns-name=resolver-tests-version-4.grpctestingexp. \
+gcloud dns managed-zones create \
+  resolver-tests-version-8-grpctestingexp-zone-id \
+  --dns-name=resolver-tests-version-8.grpctestingexp. \
   --description="GCE-DNS-private-zone-for-GRPC-testing" \
   --visibility=private \
   --networks=default

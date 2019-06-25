@@ -506,10 +506,11 @@ int g_fake_non_responsive_dns_server_port = -1;
 void InjectBrokenNameServerList(ares_channel channel) {
   struct ares_addr_port_node dns_server_addrs[2];
   memset(dns_server_addrs, 0, sizeof(dns_server_addrs));
-  char* unused_host;
+  char* local_dns_server_host;
   char* local_dns_server_port;
   GPR_ASSERT(gpr_split_host_port(FLAGS_local_dns_server_address.c_str(),
-                                 &unused_host, &local_dns_server_port));
+                                 &local_dns_server_host,
+                                 &local_dns_server_port));
   gpr_log(GPR_DEBUG,
           "Injecting broken nameserver list. Bad server address:|[::1]:%d|. "
           "Good server address:%s",
@@ -526,14 +527,14 @@ void InjectBrokenNameServerList(ares_channel channel) {
   // and will skip over to this healthy DNS server, without causing any DNS
   // resolution errors.
   dns_server_addrs[1].family = AF_INET;
-  ((char*)&dns_server_addrs[1].addr.addr4)[0] = 0x7f;
-  ((char*)&dns_server_addrs[1].addr.addr4)[3] = 0x1;
+  GPR_ASSERT(inet_pton(AF_INET, local_dns_server_host,
+                       &dns_server_addrs[1].addr.addr4));
   dns_server_addrs[1].tcp_port = atoi(local_dns_server_port);
   dns_server_addrs[1].udp_port = atoi(local_dns_server_port);
   dns_server_addrs[1].next = nullptr;
   GPR_ASSERT(ares_set_servers_ports(channel, dns_server_addrs) == ARES_SUCCESS);
   gpr_free(local_dns_server_port);
-  gpr_free(unused_host);
+  gpr_free(local_dns_server_host);
 }
 
 void StartResolvingLocked(void* arg, grpc_error* unused) {

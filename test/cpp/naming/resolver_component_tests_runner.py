@@ -33,6 +33,8 @@ argp.add_argument('--dns_server_bin_path', default=None, type=str,
 argp.add_argument('--records_config_path', default=None, type=str,
                   help=('Path to DNS records yaml file that '
                         'specifies records for the DNS sever. '))
+argp.add_argument('--dns_server_ip', default='127.0.0.1', type=str,
+                  help=('IP address of DNS server to test against.'))
 argp.add_argument('--dns_server_port', default=None, type=int,
                   help=('Port that local DNS server is listening on.'))
 argp.add_argument('--dns_resolver_bin_path', default=None, type=str,
@@ -64,7 +66,7 @@ def wait_until_dns_server_is_up(args,
     test_runner_log('Health check: attempt to connect to DNS server over TCP.')
     tcp_connect_subprocess = subprocess.Popen(python_args([
         args.tcp_connect_bin_path,
-        '--server_host', '127.0.0.1',
+        '--server_host', args.dns_server_ip,
         '--server_port', str(args.dns_server_port),
         '--timeout', str(1)]))
     tcp_connect_subprocess.communicate()
@@ -74,7 +76,7 @@ def wait_until_dns_server_is_up(args,
       dns_resolver_subprocess = subprocess.Popen(python_args([
           args.dns_resolver_bin_path,
           '--qname', 'health-check-local-dns-server-is-alive.resolver-tests.grpctestingexp',
-          '--server_host', '127.0.0.1',
+          '--server_host', args.dns_server_ip,
           '--server_port', str(args.dns_server_port)]),
           stdout=subprocess.PIPE)
       dns_resolver_stdout, _ = dns_resolver_subprocess.communicate()
@@ -95,33 +97,35 @@ def wait_until_dns_server_is_up(args,
   test_runner_log('======= end DNS server output=========')
   sys.exit(1)
 
-dns_server_subprocess_output = tempfile.mktemp()
-with open(dns_server_subprocess_output, 'w') as l:
-  dns_server_subprocess = subprocess.Popen(python_args([
-      args.dns_server_bin_path,
-      '--port', str(args.dns_server_port),
-      '--records_config_path', args.records_config_path]),
-      stdin=subprocess.PIPE,
-      stdout=l,
-      stderr=l)
-
-def _quit_on_signal(signum, _frame):
-  test_runner_log('Received signal: %d' % signum)
-  dns_server_subprocess.kill()
-  dns_server_subprocess.wait()
-  sys.exit(1)
-
-signal.signal(signal.SIGINT, _quit_on_signal)
-signal.signal(signal.SIGTERM, _quit_on_signal)
-wait_until_dns_server_is_up(args,
-                            dns_server_subprocess,
-                            dns_server_subprocess_output)
+if args.dns_server_bin_path:
+  dns_server_subprocess_output = tempfile.mktemp()
+  with open(dns_server_subprocess_output, 'w') as l:
+    dns_server_subprocess = subprocess.Popen(python_args([
+        args.dns_server_bin_path,
+        '--port', str(args.dns_server_port),
+        '--records_config_path', args.records_config_path]),
+        stdin=subprocess.PIPE,
+        stdout=l,
+        stderr=l)
+  
+  def _quit_on_signal(signum, _frame):
+    test_runner_log('Received signal: %d' % signum)
+    dns_server_subprocess.kill()
+    dns_server_subprocess.wait()
+    sys.exit(1)
+  
+  signal.signal(signal.SIGINT, _quit_on_signal)
+  signal.signal(signal.SIGTERM, _quit_on_signal)
+  if args.dns_server_bin_path:
+    wait_until_dns_server_is_up(args,
+                                dns_server_subprocess,
+                                dns_server_subprocess_output)
 num_test_failures = 0
 
-test_runner_log('Run test with target: %s' % 'no-srv-ipv4-single-target.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'no-srv-ipv4-single-target.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'no-srv-ipv4-single-target.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'no-srv-ipv4-single-target.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '5.5.5.5:443,False',
   '--expected_chosen_service_config', '',
   '--expected_service_config_error', '',
@@ -129,15 +133,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'srv-ipv4-single-target.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'srv-ipv4-single-target.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'srv-ipv4-single-target.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'srv-ipv4-single-target.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '1.2.3.4:1234,True',
   '--expected_chosen_service_config', '',
   '--expected_service_config_error', '',
@@ -145,15 +149,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'srv-ipv4-multi-target.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'srv-ipv4-multi-target.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'srv-ipv4-multi-target.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'srv-ipv4-multi-target.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '1.2.3.5:1234,True;1.2.3.6:1234,True;1.2.3.7:1234,True',
   '--expected_chosen_service_config', '',
   '--expected_service_config_error', '',
@@ -161,15 +165,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'srv-ipv6-single-target.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'srv-ipv6-single-target.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'srv-ipv6-single-target.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'srv-ipv6-single-target.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '[2607:f8b0:400a:801::1001]:1234,True',
   '--expected_chosen_service_config', '',
   '--expected_service_config_error', '',
@@ -177,15 +181,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'srv-ipv6-multi-target.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'srv-ipv6-multi-target.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'srv-ipv6-multi-target.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'srv-ipv6-multi-target.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '[2607:f8b0:400a:801::1002]:1234,True;[2607:f8b0:400a:801::1003]:1234,True;[2607:f8b0:400a:801::1004]:1234,True',
   '--expected_chosen_service_config', '',
   '--expected_service_config_error', '',
@@ -193,15 +197,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'srv-ipv4-simple-service-config.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'srv-ipv4-simple-service-config.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'srv-ipv4-simple-service-config.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'srv-ipv4-simple-service-config.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '1.2.3.4:1234,True',
   '--expected_chosen_service_config', '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService"}],"waitForReady":true}]}',
   '--expected_service_config_error', '',
@@ -209,15 +213,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'ipv4-no-srv-simple-service-config.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'ipv4-no-srv-simple-service-config.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'ipv4-no-srv-simple-service-config.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'ipv4-no-srv-simple-service-config.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '1.2.3.4:443,False',
   '--expected_chosen_service_config', '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"NoSrvSimpleService"}],"waitForReady":true}]}',
   '--expected_service_config_error', '',
@@ -225,15 +229,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'ipv4-no-config-for-cpp.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'ipv4-no-config-for-cpp.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'ipv4-no-config-for-cpp.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'ipv4-no-config-for-cpp.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '1.2.3.4:443,False',
   '--expected_chosen_service_config', '',
   '--expected_service_config_error', '',
@@ -241,15 +245,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'ipv4-cpp-config-has-zero-percentage.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'ipv4-cpp-config-has-zero-percentage.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'ipv4-cpp-config-has-zero-percentage.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'ipv4-cpp-config-has-zero-percentage.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '1.2.3.4:443,False',
   '--expected_chosen_service_config', '',
   '--expected_service_config_error', '',
@@ -257,15 +261,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'ipv4-second-language-is-cpp.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'ipv4-second-language-is-cpp.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'ipv4-second-language-is-cpp.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'ipv4-second-language-is-cpp.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '1.2.3.4:443,False',
   '--expected_chosen_service_config', '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"CppService"}],"waitForReady":true}]}',
   '--expected_service_config_error', '',
@@ -273,15 +277,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'ipv4-config-with-percentages.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'ipv4-config-with-percentages.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'ipv4-config-with-percentages.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'ipv4-config-with-percentages.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '1.2.3.4:443,False',
   '--expected_chosen_service_config', '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"AlwaysPickedService"}],"waitForReady":true}]}',
   '--expected_service_config_error', '',
@@ -289,15 +293,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'srv-ipv4-target-has-backend-and-balancer.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'srv-ipv4-target-has-backend-and-balancer.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'srv-ipv4-target-has-backend-and-balancer.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'srv-ipv4-target-has-backend-and-balancer.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '1.2.3.4:1234,True;1.2.3.4:443,False',
   '--expected_chosen_service_config', '',
   '--expected_service_config_error', '',
@@ -305,15 +309,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'srv-ipv6-target-has-backend-and-balancer.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'srv-ipv6-target-has-backend-and-balancer.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'srv-ipv6-target-has-backend-and-balancer.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'srv-ipv6-target-has-backend-and-balancer.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '[2607:f8b0:400a:801::1002]:1234,True;[2607:f8b0:400a:801::1002]:443,False',
   '--expected_chosen_service_config', '',
   '--expected_service_config_error', '',
@@ -321,15 +325,31 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'ipv4-config-causing-fallback-to-tcp.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'large-aaaa-triggering-tcp-fallback.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'ipv4-config-causing-fallback-to-tcp.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'large-aaaa-triggering-tcp-fallback.resolver-tests-version-8.grpctestingexp.',
+  '--expected_addrs', '[::1]:443,False;[100::1]:443,False;[100::2]:443,False;[100::3]:443,False;[100::4]:443,False;[100::5]:443,False;[100::6]:443,False;[100::7]:443,False;[100::8]:443,False;[100::9]:443,False;[100::10]:443,False;[100::11]:443,False;[100::12]:443,False;[100::13]:443,False;[100::14]:443,False;[100::15]:443,False;[100::16]:443,False;[100::17]:443,False;[100::18]:443,False;[100::19]:443,False;[100::20]:443,False;[100::21]:443,False;[100::22]:443,False;[100::23]:443,False;[100::24]:443,False;[100::25]:443,False;[100::26]:443,False;[100::27]:443,False;[100::28]:443,False;[100::29]:443,False',
+  '--expected_chosen_service_config', '',
+  '--expected_service_config_error', '',
+  '--expected_lb_policy', '',
+  '--enable_srv_queries', 'True',
+  '--enable_txt_queries', 'True',
+  '--inject_broken_nameserver_list', 'False',
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
+current_test_subprocess.communicate()
+if current_test_subprocess.returncode != 0:
+  num_test_failures += 1
+
+test_runner_log('Run test with target: %s' % 'ipv4-config-causing-fallback-to-tcp.resolver-tests-version-8.grpctestingexp.')
+current_test_subprocess = subprocess.Popen([
+  args.test_bin_path,
+  '--target_name', 'ipv4-config-causing-fallback-to-tcp.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '1.2.3.4:443,False',
   '--expected_chosen_service_config', '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooTwo","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooThree","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooFour","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooFive","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooSix","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooSeven","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooEight","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooNine","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooTen","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooEleven","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooTwelve","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooTwelve","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooTwelve","service":"SimpleService"}],"waitForReady":true},{"name":[{"method":"FooTwelve","service":"SimpleService"}],"waitForReady":true}]}',
   '--expected_service_config_error', '',
@@ -337,15 +357,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'srv-ipv4-single-target-srv-disabled.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'srv-ipv4-single-target-srv-disabled.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'srv-ipv4-single-target-srv-disabled.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'srv-ipv4-single-target-srv-disabled.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '2.3.4.5:443,False',
   '--expected_chosen_service_config', '',
   '--expected_service_config_error', '',
@@ -353,15 +373,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'False',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'srv-ipv4-multi-target-srv-disabled.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'srv-ipv4-multi-target-srv-disabled.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'srv-ipv4-multi-target-srv-disabled.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'srv-ipv4-multi-target-srv-disabled.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '9.2.3.5:443,False;9.2.3.6:443,False;9.2.3.7:443,False',
   '--expected_chosen_service_config', '',
   '--expected_service_config_error', '',
@@ -369,15 +389,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'False',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'srv-ipv6-single-target-srv-disabled.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'srv-ipv6-single-target-srv-disabled.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'srv-ipv6-single-target-srv-disabled.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'srv-ipv6-single-target-srv-disabled.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '[2600::1001]:443,False',
   '--expected_chosen_service_config', '',
   '--expected_service_config_error', '',
@@ -385,15 +405,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'False',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'srv-ipv6-multi-target-srv-disabled.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'srv-ipv6-multi-target-srv-disabled.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'srv-ipv6-multi-target-srv-disabled.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'srv-ipv6-multi-target-srv-disabled.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '[2600::1002]:443,False;[2600::1003]:443,False;[2600::1004]:443,False',
   '--expected_chosen_service_config', '',
   '--expected_service_config_error', '',
@@ -401,15 +421,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'False',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'srv-ipv4-simple-service-config-srv-disabled.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'srv-ipv4-simple-service-config-srv-disabled.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'srv-ipv4-simple-service-config-srv-disabled.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'srv-ipv4-simple-service-config-srv-disabled.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '5.5.3.4:443,False',
   '--expected_chosen_service_config', '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService"}],"waitForReady":true}]}',
   '--expected_service_config_error', '',
@@ -417,15 +437,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'False',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'srv-ipv4-simple-service-config-txt-disabled.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'srv-ipv4-simple-service-config-txt-disabled.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'srv-ipv4-simple-service-config-txt-disabled.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'srv-ipv4-simple-service-config-txt-disabled.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '1.2.3.4:1234,True',
   '--expected_chosen_service_config', '',
   '--expected_service_config_error', '',
@@ -433,15 +453,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'False',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'ipv4-cpp-config-has-zero-percentage-txt-disabled.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'ipv4-cpp-config-has-zero-percentage-txt-disabled.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'ipv4-cpp-config-has-zero-percentage-txt-disabled.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'ipv4-cpp-config-has-zero-percentage-txt-disabled.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '1.2.3.4:443,False',
   '--expected_chosen_service_config', '',
   '--expected_service_config_error', '',
@@ -449,15 +469,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'False',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'ipv4-second-language-is-cpp-txt-disabled.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'ipv4-second-language-is-cpp-txt-disabled.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'ipv4-second-language-is-cpp-txt-disabled.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'ipv4-second-language-is-cpp-txt-disabled.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '1.2.3.4:443,False',
   '--expected_chosen_service_config', '',
   '--expected_service_config_error', '',
@@ -465,15 +485,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'False',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'ipv4-svc_cfg_bad_json.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'ipv4-svc_cfg_bad_json.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'ipv4-svc_cfg_bad_json.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'ipv4-svc_cfg_bad_json.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '1.2.3.4:443,False',
   '--expected_chosen_service_config', '',
   '--expected_service_config_error', 'could not parse',
@@ -481,15 +501,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'ipv4-svc_cfg_bad_client_language.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'ipv4-svc_cfg_bad_client_language.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'ipv4-svc_cfg_bad_client_language.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'ipv4-svc_cfg_bad_client_language.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '1.2.3.4:443,False',
   '--expected_chosen_service_config', '',
   '--expected_service_config_error', 'field:clientLanguage error:should be of type array',
@@ -497,15 +517,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'ipv4-svc_cfg_bad_percentage.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'ipv4-svc_cfg_bad_percentage.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'ipv4-svc_cfg_bad_percentage.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'ipv4-svc_cfg_bad_percentage.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '1.2.3.4:443,False',
   '--expected_chosen_service_config', '',
   '--expected_service_config_error', 'field:percentage error:should be of type number',
@@ -513,15 +533,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'ipv4-svc_cfg_bad_wait_for_ready.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'ipv4-svc_cfg_bad_wait_for_ready.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'ipv4-svc_cfg_bad_wait_for_ready.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'ipv4-svc_cfg_bad_wait_for_ready.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '1.2.3.4:443,False',
   '--expected_chosen_service_config', '',
   '--expected_service_config_error', 'field:waitForReady error:Type should be true/false',
@@ -529,15 +549,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'no-srv-ipv4-single-target-inject-broken-nameservers.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'no-srv-ipv4-single-target-inject-broken-nameservers.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'no-srv-ipv4-single-target-inject-broken-nameservers.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'no-srv-ipv4-single-target-inject-broken-nameservers.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '5.5.5.5:443,False',
   '--expected_chosen_service_config', '',
   '--expected_service_config_error', '',
@@ -545,15 +565,15 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'True',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
-test_runner_log('Run test with target: %s' % 'ipv4-config-causing-fallback-to-tcp-inject-broken-nameservers.resolver-tests-version-4.grpctestingexp.')
+test_runner_log('Run test with target: %s' % 'ipv4-config-causing-fallback-to-tcp-inject-broken-nameservers.resolver-tests-version-8.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
   args.test_bin_path,
-  '--target_name', 'ipv4-config-causing-fallback-to-tcp-inject-broken-nameservers.resolver-tests-version-4.grpctestingexp.',
+  '--target_name', 'ipv4-config-causing-fallback-to-tcp-inject-broken-nameservers.resolver-tests-version-8.grpctestingexp.',
   '--expected_addrs', '1.2.3.4:443,False',
   '--expected_chosen_service_config', '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooThree","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFour","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFive","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSix","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSeven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEight","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooNine","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTen","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEleven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]}]}',
   '--expected_service_config_error', 'Service config parsing error',
@@ -561,13 +581,30 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'True',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
+current_test_subprocess.communicate()
+if current_test_subprocess.returncode != 0:
+  num_test_failures += 1
+
+test_runner_log('Run test with target: %s' % 'large-aaaa-triggering-tcp-fallback-inject-broken-nameservers.resolver-tests-version-8.grpctestingexp.')
+current_test_subprocess = subprocess.Popen([
+  args.test_bin_path,
+  '--target_name', 'large-aaaa-triggering-tcp-fallback-inject-broken-nameservers.resolver-tests-version-8.grpctestingexp.',
+  '--expected_addrs', '[::1]:443,False;[100::1]:443,False;[100::2]:443,False;[100::3]:443,False;[100::4]:443,False;[100::5]:443,False;[100::6]:443,False;[100::7]:443,False;[100::8]:443,False;[100::9]:443,False;[100::10]:443,False;[100::11]:443,False;[100::12]:443,False;[100::13]:443,False;[100::14]:443,False;[100::15]:443,False;[100::16]:443,False;[100::17]:443,False;[100::18]:443,False;[100::19]:443,False;[100::20]:443,False;[100::21]:443,False;[100::22]:443,False;[100::23]:443,False;[100::24]:443,False;[100::25]:443,False;[100::26]:443,False;[100::27]:443,False;[100::28]:443,False;[100::29]:443,False',
+  '--expected_chosen_service_config', '',
+  '--expected_service_config_error', '',
+  '--expected_lb_policy', '',
+  '--enable_srv_queries', 'True',
+  '--enable_txt_queries', 'True',
+  '--inject_broken_nameserver_list', 'True',
+  '--local_dns_server_address', '%s:%d' % (args.dns_server_ip, args.dns_server_port)])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
 test_runner_log('now kill DNS server')
-dns_server_subprocess.kill()
-dns_server_subprocess.wait()
+if args.dns_server_bin_path:
+  dns_server_subprocess.kill()
+  dns_server_subprocess.wait()
 test_runner_log('%d tests failed.' % num_test_failures)
 sys.exit(num_test_failures)
