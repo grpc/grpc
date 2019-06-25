@@ -12,9 +12,7 @@ objc_library(
     ], 
     exclude = ["GRPCClient/GRPCCall+GID.h"]
   ),
-  copts = [
-    "-Isrc/objective-c"
-  ],
+  includes = ["."],
   deps = ["//:grpc"]
 )
 
@@ -22,13 +20,16 @@ objc_library(
   name = "grpc_protoRPC",
   srcs = glob(["ProtoRPC/*.m"]),
   hdrs = glob(["ProtoRPC/*.h"]),
-  defines = ["GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=1"],
-  copts = [
-    "-Isrc/objective-c",
+  defines = ["GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=0"],
+  includes = [
+    ".",
+    "../../third_party/protobuf/objectivec"
   ],
   deps = [
-    "//src/objective-c:grpc_objc",
     "//:grpc",
+    "//src/objective-c:grpc_objc",
     "//third_party/protobuf:protobuf_objc"
   ]
 )
+
+
