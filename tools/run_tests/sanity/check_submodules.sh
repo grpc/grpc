@@ -32,7 +32,7 @@ cat << EOF | awk '{ print $1 }' | sort > "$want_submodules"
  b29b21a81b32ec273f118f589f46d56ad3332420 third_party/boringssl (remotes/origin/chromium-stable)
  afc30d43eef92979b05776ec0963c9cede5fb80f third_party/boringssl-with-bazel (fips-20180716-116-gafc30d43e)
  e982924acee7f7313b4baa4ee5ec000c5e373c30 third_party/cares/cares (cares-1_15_0)
- a83394157ad97f4dadbc8ed81f56ad5b3a72e542 third_party/data-plane-api (heads/master)
+ a83394157ad97f4dadbc8ed81f56ad5b3a72e542 third_party/envoy-api (heads/master)
  28f50e0fed19872e0fd50dd23ce2ee8cd759338e third_party/gflags (v2.2.0-5-g30dbc81)
  80ed4d0bbf65d57cc267dfc63bd2584557f11f9b third_party/googleapis (common-protos-1_3_1-915-g80ed4d0bb)
  ec44c6c1675c25b9827aacd08c02433cccde7780 third_party/googletest (release-1.8.0)

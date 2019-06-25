@@ -42,8 +42,8 @@
 	path = third_party/libcxx
 	url = https://github.com/llvm-mirror/libcxx.git
 	branch = release_60
-[submodule "third_party/data-plane-api"]
-	path = third_party/data-plane-api
+[submodule "third_party/envoy-api"]
+	path = third_party/envoy-api
 	url = https://github.com/envoyproxy/data-plane-api.git
 [submodule "third_party/googleapis"]
 	path = third_party/googleapis

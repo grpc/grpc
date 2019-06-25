@@ -58,5 +58,5 @@ proto_files=( \
 
 for i in "${proto_files[@]}"
 do
-  protoc -I=$PWD/third_party/data-plane-api -I=$PWD/third_party/googleapis -I=$PWD/third_party/protobuf -I=$PWD/third_party/protoc-gen-validate $i --upb_out=./src/core/ext/upb-generated --plugin=protoc-gen-upb=third_party/upb/bazel-bin/protoc-gen-upb
+  protoc -I=$PWD/third_party/envoy-api -I=$PWD/third_party/googleapis -I=$PWD/third_party/protobuf -I=$PWD/third_party/protoc-gen-validate $i --upb_out=./src/core/ext/upb-generated --plugin=protoc-gen-upb=third_party/upb/bazel-bin/protoc-gen-upb
 done
