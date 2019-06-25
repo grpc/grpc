@@ -28,6 +28,7 @@ typedef ::grpc_impl::CallCredentials CallCredentials;
 typedef ::grpc_impl::SslCredentialsOptions SslCredentialsOptions;
 typedef ::grpc_impl::SecureCallCredentials SecureCallCredentials;
 typedef ::grpc_impl::SecureChannelCredentials SecureChannelCredentials;
+typedef ::grpc_impl::MetadataCredentialsPlugin MetadataCredentialsPlugin;
 
 static inline std::shared_ptr<grpc_impl::ChannelCredentials>
 GoogleDefaultCredentials() {

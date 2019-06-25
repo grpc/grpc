@@ -348,10 +348,11 @@ inline void grpc_mdelem_unref(grpc_mdelem gmd) {
          free an interned md at any time: it's unsafe from this point on to
          access it so we read the hash now. */
       uint32_t hash = md->hash();
-      if (GPR_UNLIKELY(md->Unref())) {
 #ifndef NDEBUG
+      if (GPR_UNLIKELY(md->Unref(file, line))) {
         grpc_mdelem_on_final_unref(storage, md, hash, file, line);
 #else
+      if (GPR_UNLIKELY(md->Unref())) {
         grpc_mdelem_on_final_unref(storage, md, hash);
 #endif
       }

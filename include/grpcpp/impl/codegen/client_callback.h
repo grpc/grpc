@@ -44,8 +44,8 @@ class RpcMethod;
 /// TODO(vjpai): Combine as much as possible with the blocking unary call code
 template <class InputMessage, class OutputMessage>
 void CallbackUnaryCall(ChannelInterface* channel, const RpcMethod& method,
-                       ClientContext* context, const InputMessage* request,
-                       OutputMessage* result,
+                       ::grpc_impl::ClientContext* context,
+                       const InputMessage* request, OutputMessage* result,
                        std::function<void(Status)> on_completion) {
   CallbackUnaryCallImpl<InputMessage, OutputMessage> x(
       channel, method, context, request, result, on_completion);
@@ -55,8 +55,8 @@ template <class InputMessage, class OutputMessage>
 class CallbackUnaryCallImpl {
  public:
   CallbackUnaryCallImpl(ChannelInterface* channel, const RpcMethod& method,
-                        ClientContext* context, const InputMessage* request,
-                        OutputMessage* result,
+                        ::grpc_impl::ClientContext* context,
+                        const InputMessage* request, OutputMessage* result,
                         std::function<void(Status)> on_completion) {
     CompletionQueue* cq = channel->CallbackCQ();
     GPR_CODEGEN_ASSERT(cq != nullptr);
@@ -550,7 +550,7 @@ class ClientCallbackReaderWriterImpl
   friend class ClientCallbackReaderWriterFactory<Request, Response>;
 
   ClientCallbackReaderWriterImpl(
-      Call call, ClientContext* context,
+      Call call, ::grpc_impl::ClientContext* context,
       ::grpc::experimental::ClientBidiReactor<Request, Response>* reactor)
       : context_(context),
         call_(call),
@@ -559,7 +559,7 @@ class ClientCallbackReaderWriterImpl
     this->BindReactor(reactor);
   }
 
-  ClientContext* const context_;
+  ::grpc_impl::ClientContext* const context_;
   Call call_;
   ::grpc::experimental::ClientBidiReactor<Request, Response>* const reactor_;
 
@@ -594,7 +594,7 @@ class ClientCallbackReaderWriterFactory {
  public:
   static void Create(
       ChannelInterface* channel, const ::grpc::internal::RpcMethod& method,
-      ClientContext* context,
+      ::grpc_impl::ClientContext* context,
       ::grpc::experimental::ClientBidiReactor<Request, Response>* reactor) {
     Call call = channel->CreateCall(method, context, channel->CallbackCQ());
 
@@ -692,7 +692,7 @@ class ClientCallbackReaderImpl
 
   template <class Request>
   ClientCallbackReaderImpl(
-      Call call, ClientContext* context, Request* request,
+      Call call, ::grpc_impl::ClientContext* context, Request* request,
       ::grpc::experimental::ClientReadReactor<Response>* reactor)
       : context_(context), call_(call), reactor_(reactor) {
     this->BindReactor(reactor);
@@ -701,7 +701,7 @@ class ClientCallbackReaderImpl
     start_ops_.ClientSendClose();
   }
 
-  ClientContext* const context_;
+  ::grpc_impl::ClientContext* const context_;
   Call call_;
   ::grpc::experimental::ClientReadReactor<Response>* const reactor_;
 
@@ -729,7 +729,7 @@ class ClientCallbackReaderFactory {
   template <class Request>
   static void Create(
       ChannelInterface* channel, const ::grpc::internal::RpcMethod& method,
-      ClientContext* context, const Request* request,
+      ::grpc_impl::ClientContext* context, const Request* request,
       ::grpc::experimental::ClientReadReactor<Response>* reactor) {
     Call call = channel->CreateCall(method, context, channel->CallbackCQ());
 
@@ -866,7 +866,7 @@ class ClientCallbackWriterImpl
 
   template <class Response>
   ClientCallbackWriterImpl(
-      Call call, ClientContext* context, Response* response,
+      Call call, ::grpc_impl::ClientContext* context, Response* response,
       ::grpc::experimental::ClientWriteReactor<Request>* reactor)
       : context_(context),
         call_(call),
@@ -877,7 +877,7 @@ class ClientCallbackWriterImpl
     finish_ops_.AllowNoMessage();
   }
 
-  ClientContext* const context_;
+  ::grpc_impl::ClientContext* const context_;
   Call call_;
   ::grpc::experimental::ClientWriteReactor<Request>* const reactor_;
 
@@ -909,7 +909,7 @@ class ClientCallbackWriterFactory {
   template <class Response>
   static void Create(
       ChannelInterface* channel, const ::grpc::internal::RpcMethod& method,
-      ClientContext* context, Response* response,
+      ::grpc_impl::ClientContext* context, Response* response,
       ::grpc::experimental::ClientWriteReactor<Request>* reactor) {
     Call call = channel->CreateCall(method, context, channel->CallbackCQ());
 
@@ -976,8 +976,8 @@ class ClientCallbackUnaryImpl final
   friend class ClientCallbackUnaryFactory;
 
   template <class Request, class Response>
-  ClientCallbackUnaryImpl(Call call, ClientContext* context, Request* request,
-                          Response* response,
+  ClientCallbackUnaryImpl(Call call, ::grpc_impl::ClientContext* context,
+                          Request* request, Response* response,
                           ::grpc::experimental::ClientUnaryReactor* reactor)
       : context_(context), call_(call), reactor_(reactor) {
     this->BindReactor(reactor);
@@ -988,7 +988,7 @@ class ClientCallbackUnaryImpl final
     finish_ops_.AllowNoMessage();
   }
 
-  ClientContext* const context_;
+  ::grpc_impl::ClientContext* const context_;
   Call call_;
   ::grpc::experimental::ClientUnaryReactor* const reactor_;
 
@@ -1011,8 +1011,8 @@ class ClientCallbackUnaryFactory {
   template <class Request, class Response>
   static void Create(ChannelInterface* channel,
                      const ::grpc::internal::RpcMethod& method,
-                     ClientContext* context, const Request* request,
-                     Response* response,
+                     ::grpc_impl::ClientContext* context,
+                     const Request* request, Response* response,
                      ::grpc::experimental::ClientUnaryReactor* reactor) {
     Call call = channel->CreateCall(method, context, channel->CallbackCQ());
 
