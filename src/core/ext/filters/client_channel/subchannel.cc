@@ -344,6 +344,9 @@ class Subchannel::ConnectedSubchannelStateWatcher {
                           self->pending_connectivity_state_));
             }
             c->connected_subchannel_.reset();
+             if (c->channelz_node() != nullptr) {
+              c->channelz_node()->SetChildSocketUuid(0);
+            }
             c->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE);
             c->backoff_begun_ = false;
             c->backoff_.Reset();
@@ -676,7 +679,7 @@ Subchannel::Subchannel(SubchannelKey* key, grpc_connector* connector,
       (size_t)grpc_channel_arg_get_integer(arg, options);
   if (channelz_enabled) {
     channelz_node_ = MakeRefCounted<channelz::SubchannelNode>(
-        this, channel_tracer_max_memory);
+        this->GetTargetAddress(), channel_tracer_max_memory);
     channelz_node_->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("subchannel created"));
@@ -930,6 +933,7 @@ const char* SubchannelConnectivityStateChangeString(
 void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state) {
   state_ = state;
   if (channelz_node_ != nullptr) {
+    channelz_node()->UpdateConnectivityState(state);
     channelz_node_->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string(
@@ -1081,6 +1085,9 @@ bool Subchannel::PublishTransportLocked() {
       New<ConnectedSubchannel>(stk, args_, channelz_node_, socket_uuid));
   gpr_log(GPR_INFO, "New connected subchannel at %p for subchannel %p",
           connected_subchannel_.get(), this);
+  if (channelz_node() != nullptr) {
+    channelz_node()->SetChildSocketUuid(socket_uuid);
+  }
   // Instantiate state watcher.  Will clean itself up.
   New<ConnectedSubchannelStateWatcher>(this);
   // Report initial state.
