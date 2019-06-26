@@ -105,7 +105,7 @@ namespace Grpc.Core
         }
 
 
-        // for backward compatibility, emulate the contextual deserializer using the simple one
+        // for backward compatibility, emulate the simple deserializer using the contextual one
         private T EmulateLegacyDeserializer(byte[] payload)
         {
             var ctx = LegacyDeserializationContext.Prepare(payload);
@@ -114,7 +114,7 @@ namespace Grpc.Core
             return value;
         }
 
-        // for backward compatibility, emulate the contextual serializer using the simple one
+        // for backward compatibility, emulate the simple serializer using the contextual one
         private byte[] EmulateLegacySerializer(T value)
         {
             var ctx = LegacySerializationContext.Prepare();
