@@ -239,7 +239,7 @@
   LDFLAGS += -fPIC
   endif
 
-  INCLUDES = . include $(GENDIR)
+  INCLUDES = . include $(GENDIR) third_party/upb third_party/upb/generated_for_cmake
   LDFLAGS += -Llibs/$(CONFIG)
 
   ifeq ($(SYSTEM),Darwin)

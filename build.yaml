@@ -6051,7 +6051,7 @@ defaults:
     CXXFLAGS: -Wnon-virtual-dtor
     LDFLAGS: -g
   upb:
-    CFLAGS: -Ithird_party/upb -Wno-sign-conversion -Wno-shadow -Wno-conversion -Wno-implicit-fallthrough
+    CFLAGS: -Wno-sign-conversion -Wno-shadow -Wno-conversion -Wno-implicit-fallthrough
       -Wno-sign-compare -Wno-missing-field-initializers
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
