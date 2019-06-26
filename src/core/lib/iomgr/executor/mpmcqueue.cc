@@ -76,8 +76,8 @@ void InfLenFIFOQueue::Put(void* elem) {
   MutexLock l(&mu_);
 
   Node* new_node = New<Node>(elem);
-  if (count_.Load(MemoryOrder::RELAXED) == 0) {
-    if (GRPC_TRACE_FLAG_ENABLED(thread_pool)) {
+  if (count_.FetchAdd(1, MemoryOrder::RELAXED) == 0) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace)) {
       busy_time = gpr_now(GPR_CLOCK_MONOTONIC);
     }
     queue_head_ = queue_tail_ = new_node;
@@ -85,10 +85,10 @@ void InfLenFIFOQueue::Put(void* elem) {
     queue_tail_->next = new_node;
     queue_tail_ = queue_tail_->next;
   }
-  count_.FetchAdd(1, MemoryOrder::RELAXED);
+
 
   // Updates Stats info
-  if (GRPC_TRACE_FLAG_ENABLED(thread_pool)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace)) {
     stats_.num_started++;
     gpr_log(GPR_INFO, "[InfLenFIFOQueue Put] num_started:        %" PRIu64,
             stats_.num_started);
