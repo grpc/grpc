@@ -86,13 +86,12 @@ def _bytestrings_of_length(length):
     """Generates a stream containing all bytestrings of a given length.
 
     Args:
-      length: A non-negative integer length.
+      length: A positive integer length.
 
     Yields:
       All bytestrings of length `length`.
     """
     digits = [0] * length
-    hashes_computed = 0
     while True:
         yield b''.join(struct.pack('B', i) for i in digits)
         digits[-1] += 1
@@ -108,65 +107,23 @@ def _bytestrings_of_length(length):
                 digits[i] += 1
 
 
-def _find_secret_of_length(target,
-                           ideal_distance,
-                           length,
-                           stop_event,
-                           maximum_hashes,
-                           interesting_hamming_distance=None):
-    """Find a candidate with the given length.
+def _all_bytestrings():
+    """Generates a stream containing all possible bytestrings.
 
-    Args:
-      target: The search string.
-      ideal_distance: The desired Hamming distance.
-      length: The length of secret string to search for.
-      stop_event: An event indicating whether the RPC should terminate.
-      maximum_hashes: The maximum number of hashes to check before stopping.
-      interesting_hamming_distance: If specified, strings with a Hamming
-        distance from the target below this value will be yielded.
+    This generator does not terminate.
 
     Yields:
-      A stream of tuples of type Tuple[Optional[HashNameResponse], int]. The
-        element of the tuple, if specified, signifies an ideal or interesting
-        candidate. If this element is None, it signifies that the stream has
-        ended because an ideal candidate has been found. The second element is
-        the number of hashes computed up this point.
-
-    Raises:
-      ResourceLimitExceededError: If the computation exceeds `maximum_hashes`
-        iterations.
+      All bytestrings in ascending order of length.
     """
-    hashes_computed = 0
-    for secret in _bytestrings_of_length(length):
-        if stop_event.is_set():
-            # Yield a sentinel and stop the generator if the RPC has been
-            # cancelled.
-            yield None, hashes_computed
-            raise StopIteration()  # pylint: disable=stop-iteration-return
-        candidate_hash = _get_hash(secret)
-        distance = _get_substring_hamming_distance(candidate_hash, target)
-        if interesting_hamming_distance is not None and distance <= interesting_hamming_distance:
-            # Surface interesting candidates, but don't stop.
-            yield hash_name_pb2.HashNameResponse(
-                secret=base64.b64encode(secret),
-                hashed_name=candidate_hash,
-                hamming_distance=distance), hashes_computed
-        elif distance <= ideal_distance:
-            # Yield the ideal candidate followed by a sentinel to signal the end
-            # of the stream.
-            yield hash_name_pb2.HashNameResponse(
-                secret=base64.b64encode(secret),
-                hashed_name=candidate_hash,
-                hamming_distance=distance), hashes_computed
-            yield None, hashes_computed
-            raise StopIteration()  # pylint: disable=stop-iteration-return
-        hashes_computed += 1
-        if hashes_computed == maximum_hashes:
-            raise ResourceLimitExceededError()
+    length = 1
+    while True:
+        for bytestring in _bytestrings_of_length(length):
+            yield bytestring
+        length += 1
 
 
 def _find_secret(target,
-                 maximum_distance,
+                 ideal_distance,
                  stop_event,
                  maximum_hashes,
                  interesting_hamming_distance=None):
@@ -178,7 +135,7 @@ def _find_secret(target,
 
     Args:
       target: The search string.
-      maximum_distance: The desired Hamming distance.
+      ideal_distance: The desired Hamming distance.
       stop_event: An event indicating whether the RPC should terminate.
       maximum_hashes: The maximum number of hashes to check before stopping.
       interesting_hamming_distance: If specified, strings with a Hamming
@@ -193,27 +150,28 @@ def _find_secret(target,
       ResourceLimitExceededError: If the computation exceeds `maximum_hashes`
         iterations.
     """
-    length = 1
-    total_hashes = 0
-    while True:
-        last_hashes_computed = 0
-        for candidate, hashes_computed in _find_secret_of_length(
-                target,
-                maximum_distance,
-                length,
-                stop_event,
-                maximum_hashes - total_hashes,
-                interesting_hamming_distance=interesting_hamming_distance):
-            last_hashes_computed = hashes_computed
-            if candidate is not None:
-                yield candidate
-            else:
-                raise StopIteration()  # pylint: disable=stop-iteration-return
-            if stop_event.is_set():
-                # Terminate the generator if the RPC has been cancelled.
-                raise StopIteration()  # pylint: disable=stop-iteration-return
-        total_hashes += last_hashes_computed
-        length += 1
+    hashes_computed = 0
+    for secret in _all_bytestrings():
+        if stop_event.is_set():
+            raise StopIteration()  # pylint: disable=stop-iteration-return
+        candidate_hash = _get_hash(secret)
+        distance = _get_substring_hamming_distance(candidate_hash, target)
+        if interesting_hamming_distance is not None and distance <= interesting_hamming_distance:
+            # Surface interesting candidates, but don't stop.
+            yield hash_name_pb2.HashNameResponse(
+                secret=base64.b64encode(secret),
+                hashed_name=candidate_hash,
+                hamming_distance=distance)
+        elif distance <= ideal_distance:
+            # Yield ideal candidate and end the stream.
+            yield hash_name_pb2.HashNameResponse(
+                secret=base64.b64encode(secret),
+                hashed_name=candidate_hash,
+                hamming_distance=distance)
+            raise StopIteration()  # pylint: disable=stop-iteration-return
+        hashes_computed += 1
+        if hashes_computed == maximum_hashes:
+            raise ResourceLimitExceededError()
 
 
 class HashFinder(hash_name_pb2_grpc.HashFinderServicer):
