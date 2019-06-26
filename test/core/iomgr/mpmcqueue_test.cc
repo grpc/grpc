@@ -33,7 +33,9 @@ struct WorkItem {
   WorkItem(int i) : index(i) { done = false; }
 };
 
-// Thread for put items into queue
+// Thread to "produce" items and put items into queue
+// It will also check that all items has been marked done and clean up all
+// produced items on destructing.
 class ProducerThread {
  public:
   ProducerThread(grpc_core::InfLenFIFOQueue* queue, int start_index,
@@ -72,6 +74,7 @@ class ProducerThread {
   WorkItem** items_;
 };
 
+// Thread to pull out items from queue
 class ConsumerThread {
  public:
   ConsumerThread(grpc_core::InfLenFIFOQueue* queue) : queue_(queue) {
