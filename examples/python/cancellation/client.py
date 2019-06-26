@@ -27,14 +27,14 @@ from six.moves.queue import Queue
 from six.moves.queue import Empty as QueueEmpty
 
 import grpc
+import os
+import sys
 
 from examples.python.cancellation import hash_name_pb2
 from examples.python.cancellation import hash_name_pb2_grpc
 
 _DESCRIPTION = "A client for finding hashes similar to names."
 _LOGGER = logging.getLogger(__name__)
-
-_TIMEOUT_SECONDS = 0.05
 
 
 def run_unary_client(server_target, name, ideal_distance):
@@ -47,21 +47,11 @@ def run_unary_client(server_target, name, ideal_distance):
 
         def cancel_request(unused_signum, unused_frame):
             future.cancel()
+            sys.exit(0)
 
         signal.signal(signal.SIGINT, cancel_request)
-        while True:
-            try:
-                result = future.result(timeout=_TIMEOUT_SECONDS)
-            except grpc.FutureTimeoutError:
-                continue
-            except grpc.FutureCancelledError:
-                break
-            except grpc.RpcError as rpc_error:
-                if rpc_error.code() == grpc.StatusCode.CANCELLED:
-                    break
-                raise rpc_error
-            print(result)
-            break
+        result = future.result()
+        print(result)
 
 
 def run_streaming_client(server_target, name, ideal_distance,
@@ -77,35 +67,10 @@ def run_streaming_client(server_target, name, ideal_distance,
 
         def cancel_request(unused_signum, unused_frame):
             result_generator.cancel()
+            sys.exit(0)
 
         signal.signal(signal.SIGINT, cancel_request)
-        result_queue = Queue()
-
-        def iterate_responses(result_generator, result_queue):
-            try:
-                for result in result_generator:
-                    result_queue.put(result)
-            except grpc.RpcError as rpc_error:
-                if rpc_error.code() != grpc.StatusCode.CANCELLED:
-                    result_queue.put(None)
-                    raise rpc_error
-            # Enqueue a sentinel to signal the end of the stream.
-            result_queue.put(None)
-
-        # TODO(https://github.com/grpc/grpc/issues/19464): Do everything on the
-        # main thread.
-        response_thread = threading.Thread(
-            target=iterate_responses, args=(result_generator, result_queue))
-        response_thread.daemon = True
-        response_thread.start()
-
-        while result_generator.running():
-            try:
-                result = result_queue.get(timeout=_TIMEOUT_SECONDS)
-            except QueueEmpty:
-                continue
-            if result is None:
-                break
+        for result in result_generator:
             print(result)
 
 

@@ -117,7 +117,7 @@ def main():
     parser.add_argument(
         '--maximum-hashes',
         type=int,
-        default=10000,
+        default=1000000,
         nargs='?',
         help='The maximum number of hashes to search before cancelling.')
     args = parser.parse_args()

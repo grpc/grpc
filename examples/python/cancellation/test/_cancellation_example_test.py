@@ -74,7 +74,7 @@ class CancellationExampleTest(unittest.TestCase):
                 client_process1 = _start_client(test_port, 'aaaaaaaaaa', 0)
                 client_process1.send_signal(signal.SIGINT)
                 client_process1.wait()
-                client_process2 = _start_client(test_port, 'aaaaaaaaaa', 0)
+                client_process2 = _start_client(test_port, 'aa', 0)
                 client_return_code = client_process2.wait()
                 self.assertEqual(0, client_return_code)
                 self.assertIsNone(server_process.poll())
