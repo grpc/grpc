@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.Buffers;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core
@@ -59,10 +60,24 @@ namespace Grpc.Core
         {
             this.contextualSerializer = GrpcPreconditions.CheckNotNull(serializer, nameof(serializer));
             this.contextualDeserializer = GrpcPreconditions.CheckNotNull(deserializer, nameof(deserializer));
-            // gRPC only uses contextual serializer/deserializer internally, so emulating the legacy
-            // (de)serializer is not necessary.
-            this.serializer = (msg) => { throw new NotImplementedException(); };
-            this.deserializer = (payload) => { throw new NotImplementedException(); };
+            // some hosts use the legacy serializer; make sure it always works, for back-compat
+            this.serializer = EmulateLegacySerializer;
+            this.deserializer = EmulateLegacyDeserializer;
+        }
+
+        private T EmulateLegacyDeserializer(byte[] payload)
+        {
+            var ctx = LegacyDeserializationContext.Prepare(payload);
+            var value = contextualDeserializer(ctx);
+            LegacyDeserializationContext.Complete();
+            return value;
+        }
+
+        private byte[] EmulateLegacySerializer(T value)
+        {
+            var ctx = LegacySerializationContext.Prepare();
+            contextualSerializer(value, ctx);
+            return LegacySerializationContext.Complete();
         }
 
         /// <summary>
@@ -133,6 +148,71 @@ namespace Grpc.Core
                 return new Marshaller<string>(System.Text.Encoding.UTF8.GetBytes,
                                               System.Text.Encoding.UTF8.GetString);
             }
+        }
+    }
+
+    /// <summary>
+    /// Used to emulate the legacy API when a contextual delegate is provided
+    /// </summary>
+    internal class LegacyDeserializationContext : DeserializationContext
+    {
+        private LegacyDeserializationContext() { }
+        private static readonly LegacyDeserializationContext s_singleton = new LegacyDeserializationContext();
+
+        internal static DeserializationContext Prepare(byte[] payload)
+        {
+            ts_payload = payload;
+            return s_singleton;
+        }
+        [ThreadStatic]
+        private static byte[] ts_payload;
+
+        public override int PayloadLength
+        {
+            get
+            {
+                return ts_payload == null ? 0 : ts_payload.Length;
+            }
+        }
+        public override byte[] PayloadAsNewBuffer()
+        {
+            return ts_payload;
+        }
+        public override ReadOnlySequence<byte> PayloadAsReadOnlySequence()
+        {
+            return new ReadOnlySequence<byte>(ts_payload);
+        }
+
+        internal static void Complete()
+        {
+            ts_payload = null;
+        }
+    }
+    /// <summary>
+    /// Used to emulate the legacy API when a contextual delegate is provided
+    /// </summary>
+    internal class LegacySerializationContext : SerializationContext
+    {
+        private LegacySerializationContext() { }
+        private static readonly LegacySerializationContext s_singleton = new LegacySerializationContext();
+        [ThreadStatic]
+        private static byte[] ts_payload;
+
+        internal static SerializationContext Prepare()
+        {
+            ts_payload = null;
+            return s_singleton;
+        }
+
+        public override void Complete(byte[] payload)
+        {
+            ts_payload = payload;
+        }
+        internal static byte[] Complete()
+        {
+            var tmp = ts_payload;
+            ts_payload = null;
+            return tmp;
         }
     }
 }

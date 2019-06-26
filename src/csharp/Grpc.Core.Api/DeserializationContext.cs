@@ -61,7 +61,7 @@ namespace Grpc.Core
         /// <returns>read only sequence containing the entire payload.</returns>
         public virtual System.Buffers.ReadOnlySequence<byte> PayloadAsReadOnlySequence()
         {
-            throw new NotImplementedException();
+            return new System.Buffers.ReadOnlySequence<byte>(PayloadAsNewBuffer());
         }
 #endif        
     }
