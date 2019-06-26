@@ -25,9 +25,9 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
-#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -215,18 +215,19 @@ void drain_cq(grpc_completion_queue* cq) {
 TEST(H2SessionReuseTest, SingleReuse) {
   int port = grpc_pick_unused_port_or_die();
 
-  grpc_core::UniquePtr<char> server_addr;
-  grpc_core::JoinHostPort(&server_addr, "localhost", port);
+  char* server_addr;
+  gpr_join_host_port(&server_addr, "localhost", port);
 
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_ssl_session_cache* cache = grpc_ssl_session_cache_create_lru(16);
 
-  grpc_server* server = server_create(cq, server_addr.get());
+  grpc_server* server = server_create(cq, server_addr);
 
-  do_round_trip(cq, server, server_addr.get(), cache, false);
-  do_round_trip(cq, server, server_addr.get(), cache, true);
-  do_round_trip(cq, server, server_addr.get(), cache, true);
+  do_round_trip(cq, server, server_addr, cache, false);
+  do_round_trip(cq, server, server_addr, cache, true);
+  do_round_trip(cq, server, server_addr, cache, true);
 
+  gpr_free(server_addr);
   grpc_ssl_session_cache_destroy(cache);
 
   GPR_ASSERT(grpc_completion_queue_next(

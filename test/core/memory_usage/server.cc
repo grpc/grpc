@@ -33,7 +33,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gpr/host_port.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/cmdline.h"
 #include "test/core/util/memory_counters.h"
@@ -149,7 +149,7 @@ static void sigint_handler(int x) { _exit(0); }
 int main(int argc, char** argv) {
   grpc_memory_counters_init();
   grpc_event ev;
-  grpc_core::UniquePtr<char> addr_buf;
+  char* addr_buf = nullptr;
   gpr_cmdline* cl;
   grpc_completion_queue* shutdown_cq;
   int shutdown_started = 0;
@@ -174,8 +174,8 @@ int main(int argc, char** argv) {
   gpr_cmdline_destroy(cl);
 
   if (addr == nullptr) {
-    grpc_core::JoinHostPort(&addr_buf, "::", grpc_pick_unused_port_or_die());
-    addr = addr_buf.get();
+    gpr_join_host_port(&addr_buf, "::", grpc_pick_unused_port_or_die());
+    addr = addr_buf;
   }
   gpr_log(GPR_INFO, "creating server on: %s", addr);
 
@@ -202,8 +202,8 @@ int main(int argc, char** argv) {
   struct grpc_memory_counters after_server_create =
       grpc_memory_counters_snapshot();
 
-  addr = nullptr;
-  addr_buf.reset();
+  gpr_free(addr_buf);
+  addr = addr_buf = nullptr;
 
   // initialize call instances
   for (int i = 0; i < static_cast<int>(sizeof(calls) / sizeof(fling_call));

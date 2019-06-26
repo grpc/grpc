@@ -31,7 +31,7 @@
 #include <grpcpp/create_channel.h>
 
 #include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/worker_service.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -52,10 +52,15 @@ using std::vector;
 namespace grpc {
 namespace testing {
 static std::string get_host(const std::string& worker) {
-  grpc_core::StringView host;
-  grpc_core::StringView port;
-  grpc_core::SplitHostPort(worker.c_str(), &host, &port);
-  return std::string(host.data(), host.size());
+  char* host;
+  char* port;
+
+  gpr_split_host_port(worker.c_str(), &host, &port);
+  const string s(host);
+
+  gpr_free(host);
+  gpr_free(port);
+  return s;
 }
 
 static deque<string> get_workers(const string& env_name) {
@@ -319,10 +324,11 @@ std::unique_ptr<ScenarioResult> RunScenario(
       client_config.add_server_targets(cli_target);
     } else {
       std::string host;
-      grpc_core::UniquePtr<char> cli_target;
+      char* cli_target;
       host = get_host(workers[i]);
-      grpc_core::JoinHostPort(&cli_target, host.c_str(), init_status.port());
-      client_config.add_server_targets(cli_target.get());
+      gpr_join_host_port(&cli_target, host.c_str(), init_status.port());
+      client_config.add_server_targets(cli_target);
+      gpr_free(cli_target);
     }
   }
 
