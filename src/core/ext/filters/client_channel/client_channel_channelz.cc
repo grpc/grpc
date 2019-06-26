@@ -47,7 +47,8 @@ void SubchannelNode::SetChildSocketUuid(intptr_t uuid) {
 }
 
 void SubchannelNode::PopulateConnectivityState(grpc_json* json) {
-  grpc_connectivity_state state = connectivity_state_.Load(MemoryOrder::RELAXED);
+  grpc_connectivity_state state =
+      connectivity_state_.Load(MemoryOrder::RELAXED);
   json = grpc_json_create_child(nullptr, json, "state", nullptr,
                                 GRPC_JSON_OBJECT, false);
   grpc_json_create_child(nullptr, json, "state",
