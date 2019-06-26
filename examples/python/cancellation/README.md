@@ -1,4 +1,4 @@
-#### The Example
+### Cancellation
 
 In the example, we implement a silly algorithm. We search for bytestrings whose
 hashes are similar to a given search string. For example, say we're looking for
