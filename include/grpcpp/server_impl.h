@@ -82,9 +82,9 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
     /// Called before server is created.
     virtual void UpdateArguments(grpc_impl::ChannelArguments* args) {}
     /// Called before application callback for each synchronous server request
-    virtual void PreSynchronousRequest(ServerContext* context) = 0;
+    virtual void PreSynchronousRequest(grpc_impl::ServerContext* context) = 0;
     /// Called after application callback for each synchronous server request
-    virtual void PostSynchronousRequest(ServerContext* context) = 0;
+    virtual void PostSynchronousRequest(grpc_impl::ServerContext* context) = 0;
     /// Called before server is started.
     virtual void PreServerStart(Server* server) {}
     /// Called after a server port is added.
