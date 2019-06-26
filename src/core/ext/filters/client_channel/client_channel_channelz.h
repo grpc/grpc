@@ -37,7 +37,7 @@ class SubchannelNode : public BaseNode {
   SubchannelNode(const char* target_address, size_t channel_tracer_max_nodes);
   ~SubchannelNode() override;
 
-  // Used when the subchannel's connectivity state changes.
+  // Sets the subchannel's connectivity state without health checking.
   void UpdateConnectivityState(grpc_connectivity_state state);
 
   // Used when the subchannel's child socket uuid changes. This should be set
