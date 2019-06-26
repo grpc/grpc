@@ -71,7 +71,7 @@ namespace Grpc.Core
                 {
                     var method = deserializer.Method;
                     var flags = (deserializer.Target == null ? BindingFlags.Static : BindingFlags.Instance) | BindingFlags.Public;
-                    var bySegmentMethod = method.DeclaringType.GetMethod(method.Name, flags, null, s_arraySegmentSignature, null);
+                    var bySegmentMethod = method.DeclaringType.GetMethod(method.Name, flags, null, DeserializeArraySegmentSignature, null);
                     if (bySegmentMethod != null && bySegmentMethod.ReturnType == typeof(T))
                     {
                         // we're going to be picky about what signatures we detect here for special treatment; the
@@ -88,11 +88,7 @@ namespace Grpc.Core
                                 var len = ctx.PayloadLength;
                                 if (len == 0)
                                 {
-#if NET45
-                                    return bySegmentTyped(s_empty, 0, 0);
-#else
-                                    return bySegmentTyped(Array.Empty<byte>(), 0, 0);
-#endif
+                                    return bySegmentTyped(EmptyArray, 0, 0);
                                 }
                                 var ros = ctx.PayloadAsReadOnlySequence();
                                 if (ros.IsSingleSegment && MemoryMarshal.TryGetArray(ros.First, out var segment)
@@ -127,10 +123,8 @@ namespace Grpc.Core
             return false;
         }
 
-#if NET45
-        private static readonly byte[] s_empty = new byte[0]; // Array.Empty not available on all target platforms
-#endif
-        private static readonly Type[] s_arraySegmentSignature = new Type[] { typeof(byte[]), typeof(int), typeof(int) };
+        private static readonly byte[] EmptyArray = new byte[0]; // Array.Empty not available on all target platforms
+        private static readonly Type[] DeserializeArraySegmentSignature = new Type[] { typeof(byte[]), typeof(int), typeof(int) };
 
         /// <summary>
         /// Initializes a new marshaller from serialize/deserialize fuctions that can access serialization and deserialization
