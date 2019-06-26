@@ -20,14 +20,11 @@ from __future__ import print_function
 import argparse
 import logging
 import signal
+import six
 import threading
 
-try:
-    from queue import Queue
-    from queue import Empty as QueueEmpty
-except ImportError:
-    from Queue import Queue
-    from Queue import Empty as QueueEmpty
+from six.moves.queue import Queue
+from six.moves.queue import Empty as QueueEmpty
 
 import grpc
 

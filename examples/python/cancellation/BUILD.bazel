@@ -37,6 +37,7 @@ py_binary(
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         ":hash_name_proto_pb2",
+        requirement("six"),
     ],
     srcs_version = "PY2AND3",
 )
