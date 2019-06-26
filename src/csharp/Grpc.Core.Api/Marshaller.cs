@@ -79,9 +79,9 @@ namespace Grpc.Core
                         // that we understand the intent of that method
                         var parameters = bySegmentMethod.GetParameters();
                         if (parameters.Length == 3 &&
-                            StringComparer.OrdinalIgnoreCase.Equals(parameters[1], "offset")
-                            && (StringComparer.OrdinalIgnoreCase.Equals(parameters[1], "length")
-                                || StringComparer.OrdinalIgnoreCase.Equals(parameters[1], "count")))
+                            StringComparer.OrdinalIgnoreCase.Equals(parameters[1].Name, "offset")
+                            && (StringComparer.OrdinalIgnoreCase.Equals(parameters[2].Name, "length")
+                                || StringComparer.OrdinalIgnoreCase.Equals(parameters[2].Name, "count")))
                         {
                             var bySegmentTyped = (Func<byte[], int, int, T>)Delegate.CreateDelegate(typeof(Func<byte[], int, int, T>), deserializer.Target, bySegmentMethod);
                             contextualDeserializer = ctx => {
