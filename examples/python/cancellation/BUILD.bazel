@@ -19,12 +19,14 @@ load("//bazel:python_rules.bzl", "py_proto_library")
 
 proto_library(
     name = "hash_name_proto",
-    srcs = ["hash_name.proto"]
+    srcs = ["hash_name.proto"],
+    testonly = 1,
 )
 
 py_proto_library(
     name = "hash_name_proto_pb2",
     deps = [":hash_name_proto"],
+    testonly = 1,
     well_known_protos = False,
 )
 
@@ -39,13 +41,24 @@ py_binary(
     srcs_version = "PY2AND3",
 )
 
+py_library(
+    name = "search",
+    srcs = ["search.py"],
+    srcs_version = "PY2AND3",
+    deps = [
+        ":hash_name_proto_pb2",
+    ],
+    testonly = 1,
+)
+
 py_binary(
     name = "server",
     testonly = 1,
     srcs = ["server.py"],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
-        ":hash_name_proto_pb2"
+        ":hash_name_proto_pb2",
+        ":search",
     ] + select({
         "//conditions:default": [requirement("futures")],
         "//:python3": [],
