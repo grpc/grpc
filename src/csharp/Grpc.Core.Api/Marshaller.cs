@@ -164,6 +164,7 @@ namespace Grpc.Core
 
         internal static DeserializationContext Prepare(byte[] payload)
         {
+            GrpcPreconditions.CheckNotNull(payload, nameof(payload));
             ts_payload = payload;
             return s_singleton;
         }
@@ -174,7 +175,7 @@ namespace Grpc.Core
         {
             get
             {
-                return ts_payload == null ? 0 : ts_payload.Length;
+                return ts_payload.Length;
             }
         }
         public override byte[] PayloadAsNewBuffer()
@@ -212,12 +213,15 @@ namespace Grpc.Core
 
         public override void Complete(byte[] payload)
         {
+            GrpcPreconditions.CheckState(ts_payload == null);
+            GrpcPreconditions.CheckNotNull(payload, nameof(payload));
             ts_payload = payload;
         }
         internal static byte[] Complete()
         {
             var tmp = ts_payload;
             ts_payload = null;
+            GrpcPreconditions.CheckState(tmp != null);
             return tmp;
         }
     }
