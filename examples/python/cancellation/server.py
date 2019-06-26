@@ -82,6 +82,32 @@ class ResourceLimitExceededError(Exception):
     """Signifies the request has exceeded configured limits."""
 
 
+def _bytestrings_of_length(length):
+    """Generates a stream containing all bytestrings of a given length.
+
+    Args:
+      length: A non-negative integer length.
+
+    Yields:
+      All bytestrings of length `length`.
+    """
+    digits = [0] * length
+    hashes_computed = 0
+    while True:
+        yield b''.join(struct.pack('B', i) for i in digits)
+        digits[-1] += 1
+        i = length - 1
+        while digits[i] == _BYTE_MAX + 1:
+            digits[i] = 0
+            i -= 1
+            if i == -1:
+                # Terminate the generator since we've run out of strings of
+                # `length` bytes.
+                raise StopIteration()  # pylint: disable=stop-iteration-return
+            else:
+                digits[i] += 1
+
+
 def _find_secret_of_length(target,
                            ideal_distance,
                            length,
@@ -110,15 +136,13 @@ def _find_secret_of_length(target,
       ResourceLimitExceededError: If the computation exceeds `maximum_hashes`
         iterations.
     """
-    digits = [0] * length
     hashes_computed = 0
-    while True:
+    for secret in _bytestrings_of_length(length):
         if stop_event.is_set():
             # Yield a sentinel and stop the generator if the RPC has been
             # cancelled.
             yield None, hashes_computed
             raise StopIteration()  # pylint: disable=stop-iteration-return
-        secret = b''.join(struct.pack('B', i) for i in digits)
         candidate_hash = _get_hash(secret)
         distance = _get_substring_hamming_distance(candidate_hash, target)
         if interesting_hamming_distance is not None and distance <= interesting_hamming_distance:
@@ -136,17 +160,6 @@ def _find_secret_of_length(target,
                 hamming_distance=distance), hashes_computed
             yield None, hashes_computed
             raise StopIteration()  # pylint: disable=stop-iteration-return
-        digits[-1] += 1
-        i = length - 1
-        while digits[i] == _BYTE_MAX + 1:
-            digits[i] = 0
-            i -= 1
-            if i == -1:
-                # Terminate the generator since we've run out of strings of
-                # `length` bytes.
-                raise StopIteration()  # pylint: disable=stop-iteration-return
-            else:
-                digits[i] += 1
         hashes_computed += 1
         if hashes_computed == maximum_hashes:
             raise ResourceLimitExceededError()
