@@ -952,7 +952,7 @@ bool InteropClient::DoPickFirstUnary() {
   const int rpcCount = 100;
   SimpleRequest request;
   SimpleResponse response;
-  std::string first_server_id;
+  std::string server_id;
   request.set_fill_server_id(true);
   for (int i = 0; i < rpcCount; i++) {
     ClientContext context;
@@ -961,11 +961,14 @@ bool InteropClient::DoPickFirstUnary() {
       return false;
     }
     if (i == 0) {
-      first_server_id = response.server_id();
-      gpr_log(GPR_DEBUG, "first_user_id is %s", first_server_id.c_str());
+      server_id = response.server_id();
       continue;
     }
-    GPR_ASSERT(response.server_id() == first_server_id);
+    if (response.server_id() != server_id) {
+      gpr_log(GPR_ERROR, "#%d rpc hits server_id %s, expect server_id %s", i,
+              response.server_id().c_str(), server_id.c_str());
+      return false;
+    }
   }
   gpr_log(GPR_DEBUG, "pick first unary successfully finished");
   return true;

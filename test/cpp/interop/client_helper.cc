@@ -107,7 +107,7 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
                 : AccessTokenCredentials(GetOauth2AccessToken());
   } else if (test_case == "pick_first_unary") {
     ChannelArguments channel_args;
-    // force using pick first policy
+    // allow the LB policy to be configured with service config
     channel_args.SetInt(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION, 0);
     return CreateTestChannel(host_port, FLAGS_custom_credentials_type,
                              FLAGS_server_host_override, !FLAGS_use_test_ca,
