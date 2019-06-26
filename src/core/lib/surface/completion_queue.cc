@@ -864,7 +864,7 @@ static void cq_end_op_for_callback(
     return;
   }
 
-  // Schedule the shutdown callback on a closure if not internal or triggered
+  // Schedule the callback on a closure if not internal or triggered
   // from a background poller thread.
   GRPC_CLOSURE_SCHED(
       GRPC_CLOSURE_CREATE(
@@ -1360,7 +1360,7 @@ static void cq_finish_shutdown_callback(grpc_completion_queue* cq) {
     return;
   }
 
-  // Schedule the shutdown callback on a closure if not internal or triggered
+  // Schedule the callback on a closure if not internal or triggered
   // from a background poller thread.
   GRPC_CLOSURE_SCHED(
       GRPC_CLOSURE_CREATE(

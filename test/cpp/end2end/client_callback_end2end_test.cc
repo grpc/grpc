@@ -378,8 +378,8 @@ TEST_P(ClientCallbackEnd2endTest, SimpleRpcUnderLockNested) {
   MAYBE_SKIP_TEST;
   ResetStub();
   std::mutex mu1, mu2, mu3;
-  std::condition_variable cv1, cv2, cv3;
-  bool done1 = false;
+  std::condition_variable cv;
+  bool done = false;
   EchoRequest request1, request2, request3;
   request1.set_message("Hello locked world1.");
   request2.set_message("Hello locked world2.");
@@ -387,42 +387,42 @@ TEST_P(ClientCallbackEnd2endTest, SimpleRpcUnderLockNested) {
   EchoResponse response1, response2, response3;
   ClientContext cli_ctx1, cli_ctx2, cli_ctx3;
   {
-    std::unique_lock<std::mutex> l(mu1);
+    std::lock_guard<std::mutex> l(mu1);
     stub_->experimental_async()->Echo(
         &cli_ctx1, &request1, &response1,
-        [this, &mu1, &mu2, &mu3, &cv1, &done1, &request1, &request2, &request3,
+        [this, &mu1, &mu2, &mu3, &cv, &done, &request1, &request2, &request3,
          &response1, &response2, &response3, &cli_ctx1, &cli_ctx2,
          &cli_ctx3](Status s1) {
-          std::unique_lock<std::mutex> l1(mu1);
+          std::lock_guard<std::mutex> l1(mu1);
           EXPECT_TRUE(s1.ok());
           EXPECT_EQ(request1.message(), response1.message());
           // start the second level of nesting
           std::unique_lock<std::mutex> l2(mu2);
           this->stub_->experimental_async()->Echo(
               &cli_ctx2, &request2, &response2,
-              [this, &mu2, &mu3, &cv1, &done1, &request2, &request3, &response2,
+              [this, &mu2, &mu3, &cv, &done, &request2, &request3, &response2,
                &response3, &cli_ctx3](Status s2) {
-                std::unique_lock<std::mutex> l2(mu2);
+                std::lock_guard<std::mutex> l2(mu2);
                 EXPECT_TRUE(s2.ok());
                 EXPECT_EQ(request2.message(), response2.message());
                 // start the third level of nesting
-                std::unique_lock<std::mutex> l3(mu3);
+                std::lock_guard<std::mutex> l3(mu3);
                 stub_->experimental_async()->Echo(
                     &cli_ctx3, &request3, &response3,
-                    [&mu3, &cv1, &done1, &request3, &response3](Status s3) {
+                    [&mu3, &cv, &done, &request3, &response3](Status s3) {
                       std::lock_guard<std::mutex> l(mu3);
                       EXPECT_TRUE(s3.ok());
                       EXPECT_EQ(request3.message(), response3.message());
-                      done1 = true;
-                      cv1.notify_all();
+                      done = true;
+                      cv.notify_all();
                     });
               });
         });
   }
 
-  std::unique_lock<std::mutex> l1(mu1);
-  while (!done1) {
-    cv1.wait(l1);
+  std::unique_lock<std::mutex> l(mu3);
+  while (!done) {
+    cv.wait(l);
   }
 }
 
