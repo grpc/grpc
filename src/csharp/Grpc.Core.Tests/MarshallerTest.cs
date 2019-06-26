@@ -69,8 +69,9 @@ namespace Grpc.Core.Tests
 
             Assert.AreSame(contextualSerializer, marshaller.ContextualSerializer);
             Assert.AreSame(contextualDeserializer, marshaller.ContextualDeserializer);
-            Assert.Throws(typeof(NotImplementedException), () => marshaller.Serializer("abc"));
-            Assert.Throws(typeof(NotImplementedException), () => marshaller.Deserializer(new byte[] {1, 2, 3}));
+
+            Assert.AreEqual("abc", System.Text.Encoding.UTF8.GetString(marshaller.Serializer("abc")));
+            Assert.AreEqual("abc", marshaller.Deserializer(System.Text.Encoding.UTF8.GetBytes("abc")));
         }
 
         class FakeSerializationContext : SerializationContext

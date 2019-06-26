@@ -17,8 +17,11 @@
 #endregion
 
 using System;
-using System.Buffers;
 using Grpc.Core.Utils;
+
+#if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
+using System.Buffers;
+#endif
 
 namespace Grpc.Core
 {
@@ -178,10 +181,13 @@ namespace Grpc.Core
         {
             return ts_payload;
         }
+
+#if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
         public override ReadOnlySequence<byte> PayloadAsReadOnlySequence()
         {
             return new ReadOnlySequence<byte>(ts_payload);
         }
+#endif
 
         internal static void Complete()
         {
