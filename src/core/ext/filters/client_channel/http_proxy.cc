@@ -31,8 +31,8 @@
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/uri/uri_parser.h"
 
@@ -126,17 +126,18 @@ static bool proxy_mapper_map_name(grpc_proxy_mapper* mapper,
   if (no_proxy_str != nullptr) {
     static const char* NO_PROXY_SEPARATOR = ",";
     bool use_proxy = true;
-    char* server_host;
-    char* server_port;
-    if (!gpr_split_host_port(uri->path[0] == '/' ? uri->path + 1 : uri->path,
-                             &server_host, &server_port)) {
+    grpc_core::UniquePtr<char> server_host;
+    grpc_core::UniquePtr<char> server_port;
+    if (!grpc_core::SplitHostPort(
+            uri->path[0] == '/' ? uri->path + 1 : uri->path, &server_host,
+            &server_port)) {
       gpr_log(GPR_INFO,
               "unable to split host and port, not checking no_proxy list for "
               "host '%s'",
               server_uri);
       gpr_free(no_proxy_str);
     } else {
-      size_t uri_len = strlen(server_host);
+      size_t uri_len = strlen(server_host.get());
       char** no_proxy_hosts;
       size_t num_no_proxy_hosts;
       gpr_string_split(no_proxy_str, NO_PROXY_SEPARATOR, &no_proxy_hosts,
@@ -145,8 +146,8 @@ static bool proxy_mapper_map_name(grpc_proxy_mapper* mapper,
         char* no_proxy_entry = no_proxy_hosts[i];
         size_t no_proxy_len = strlen(no_proxy_entry);
         if (no_proxy_len <= uri_len &&
-            gpr_stricmp(no_proxy_entry, &server_host[uri_len - no_proxy_len]) ==
-                0) {
+            gpr_stricmp(no_proxy_entry,
+                        &(server_host.get()[uri_len - no_proxy_len])) == 0) {
           gpr_log(GPR_INFO, "not using proxy for host in no_proxy list '%s'",
                   server_uri);
           use_proxy = false;
@@ -157,8 +158,6 @@ static bool proxy_mapper_map_name(grpc_proxy_mapper* mapper,
         gpr_free(no_proxy_hosts[i]);
       }
       gpr_free(no_proxy_hosts);
-      gpr_free(server_host);
-      gpr_free(server_port);
       gpr_free(no_proxy_str);
       if (!use_proxy) goto no_use_proxy;
     }

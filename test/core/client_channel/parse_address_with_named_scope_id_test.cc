@@ -30,7 +30,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "test/core/util/test_config.h"
@@ -60,20 +61,20 @@ static void test_grpc_parse_ipv6_parity_with_getaddrinfo(
 
 struct sockaddr_in6 resolve_with_gettaddrinfo(const char* uri_text) {
   grpc_uri* uri = grpc_uri_parse(uri_text, 0);
-  char* host = nullptr;
-  char* port = nullptr;
-  gpr_split_host_port(uri->path, &host, &port);
+  grpc_core::UniquePtr<char> host;
+  grpc_core::UniquePtr<char> port;
+  grpc_core::SplitHostPort(uri->path, &host, &port);
   struct addrinfo hints;
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = AF_INET6;
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_NUMERICHOST;
   struct addrinfo* result;
-  int res = getaddrinfo(host, port, &hints, &result);
+  int res = getaddrinfo(host.get(), port.get(), &hints, &result);
   if (res != 0) {
     gpr_log(GPR_ERROR,
-            "getaddrinfo failed to resolve host:%s port:%s. Error: %d.", host,
-            port, res);
+            "getaddrinfo failed to resolve host:%s port:%s. Error: %d.",
+            host.get(), port.get(), res);
     abort();
   }
   size_t num_addrs_from_getaddrinfo = 0;
@@ -86,8 +87,6 @@ struct sockaddr_in6 resolve_with_gettaddrinfo(const char* uri_text) {
       *reinterpret_cast<struct sockaddr_in6*>(result->ai_addr);
   // Cleanup
   freeaddrinfo(result);
-  gpr_free(host);
-  gpr_free(port);
   grpc_uri_destroy(uri);
   return out;
 }

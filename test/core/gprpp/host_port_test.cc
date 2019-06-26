@@ -21,18 +21,17 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "test/core/util/test_config.h"
 
 static void join_host_port_expect(const char* host, int port,
                                   const char* expected) {
-  char* buf;
+  grpc_core::UniquePtr<char> buf;
   int len;
-  len = gpr_join_host_port(&buf, host, port);
+  len = grpc_core::JoinHostPort(&buf, host, port);
   GPR_ASSERT(len >= 0);
-  GPR_ASSERT(strlen(expected) == (size_t)len);
-  GPR_ASSERT(strcmp(expected, buf) == 0);
-  gpr_free(buf);
+  GPR_ASSERT(strlen(expected) == static_cast<size_t>(len));
+  GPR_ASSERT(strcmp(expected, buf.get()) == 0);
 }
 
 static void test_join_host_port(void) {

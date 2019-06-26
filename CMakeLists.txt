@@ -714,6 +714,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx streaming_throughput_test)
 endif()
 add_dependencies(buildtests_cxx stress_test)
+add_dependencies(buildtests_cxx string_view_test)
 add_dependencies(buildtests_cxx thread_manager_test)
 add_dependencies(buildtests_cxx thread_stress_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -862,7 +863,6 @@ add_library(gpr
   src/core/lib/gpr/env_linux.cc
   src/core/lib/gpr/env_posix.cc
   src/core/lib/gpr/env_windows.cc
-  src/core/lib/gpr/host_port.cc
   src/core/lib/gpr/log.cc
   src/core/lib/gpr/log_android.cc
   src/core/lib/gpr/log_linux.cc
@@ -889,6 +889,7 @@ add_library(gpr
   src/core/lib/gprpp/arena.cc
   src/core/lib/gprpp/fork.cc
   src/core/lib/gprpp/global_config_env.cc
+  src/core/lib/gprpp/host_port.cc
   src/core/lib/gprpp/thd_posix.cc
   src/core/lib/gprpp/thd_windows.cc
   src/core/lib/profiling/basic_timers.cc
@@ -7513,7 +7514,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_host_port_test
-  test/core/gpr/host_port_test.cc
+  test/core/gprpp/host_port_test.cc
 )
 
 
@@ -16676,6 +16677,45 @@ target_link_libraries(stress_test
   grpc
   gpr
   grpc++_test_config
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(string_view_test
+  test/core/gprpp/string_view_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(string_view_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(string_view_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc++
+  grpc
+  gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
