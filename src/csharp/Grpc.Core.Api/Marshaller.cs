@@ -91,7 +91,7 @@ namespace Grpc.Core
 #if NET45
                                     return bySegmentTyped(s_empty, 0, 0);
 #else
-                                return bySegmentTyped(Array.Empty<byte>(), 0, 0);
+                                    return bySegmentTyped(Array.Empty<byte>(), 0, 0);
 #endif
                                 }
                                 var ros = ctx.PayloadAsReadOnlySequence();
