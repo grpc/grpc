@@ -265,7 +265,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/server_builder.h",
     "include/grpcpp/server_builder_impl.h",
     "include/grpcpp/server_context.h",
-    "include/grpcpp/server_context_impl.h",
     "include/grpcpp/server_posix.h",
     "include/grpcpp/server_posix_impl.h",
     "include/grpcpp/support/async_stream.h",
