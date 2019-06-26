@@ -84,13 +84,11 @@ DebugOnlyTraceFlag grpc_trace_subchannel_refcount(false, "subchannel_refcount");
 
 ConnectedSubchannel::ConnectedSubchannel(
     grpc_channel_stack* channel_stack, const grpc_channel_args* args,
-    RefCountedPtr<channelz::SubchannelNode> channelz_subchannel,
-    intptr_t socket_uuid)
+    RefCountedPtr<channelz::SubchannelNode> channelz_subchannel)
     : ConnectedSubchannelInterface(&grpc_trace_subchannel_refcount),
       channel_stack_(channel_stack),
       args_(grpc_channel_args_copy(args)),
-      channelz_subchannel_(std::move(channelz_subchannel)),
-      socket_uuid_(socket_uuid) {}
+      channelz_subchannel_(std::move(channelz_subchannel)) {}
 
 ConnectedSubchannel::~ConnectedSubchannel() {
   grpc_channel_args_destroy(args_);
@@ -781,14 +779,6 @@ Subchannel* Subchannel::RefFromWeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   }
 }
 
-intptr_t Subchannel::GetChildSocketUuid() {
-  if (connected_subchannel_ != nullptr) {
-    return connected_subchannel_->socket_uuid();
-  } else {
-    return 0;
-  }
-}
-
 const char* Subchannel::GetTargetAddress() {
   const grpc_arg* addr_arg =
       grpc_channel_args_find(args_, GRPC_ARG_SUBCHANNEL_ADDRESS);
@@ -1082,7 +1072,7 @@ bool Subchannel::PublishTransportLocked() {
   }
   // Publish.
   connected_subchannel_.reset(
-      New<ConnectedSubchannel>(stk, args_, channelz_node_, socket_uuid));
+      New<ConnectedSubchannel>(stk, args_, channelz_node_));
   gpr_log(GPR_INFO, "New connected subchannel at %p for subchannel %p",
           connected_subchannel_.get(), this);
   if (channelz_node_ != nullptr) {
