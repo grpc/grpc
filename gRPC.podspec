@@ -43,7 +43,7 @@ Pod::Spec.new do |s|
   src_dir = 'src/objective-c/GRPCClient'
 
   s.dependency 'gRPC-RxLibrary', version
-  s.default_subspec = 'Main'
+  s.default_subspecs = 'GRPCCallCore', 'Main'
 
   # Certificates, to be able to establish TLS connections:
   s.resource_bundles = { 'gRPCCertificates' => ['etc/roots.pem'] }
@@ -57,11 +57,47 @@ Pod::Spec.new do |s|
   s.subspec 'Main' do |ss|
     ss.header_mappings_dir = "#{src_dir}"
 
-    ss.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
+    ss.source_files = 'src/objective-c/GRPCClient/GRPCCall.h',
+                      'src/objective-c/GRPCClient/GRPCCall.m',
+                      'src/objective-c/GRPCClient/GRPCCallOptions.h',
+                      'src/objective-c/GRPCClient/GRPCCallOptions.m',
+                      'src/objective-c/GRPCClient/GRPCInterceptor.h',
+                      'src/objective-c/GRPCClient/GRPCInterceptor.m'
+  end
+
+  s.subspec 'GRPCCallCore' do |ss|
+    ss.header_mappings_dir = "#{src_dir}"
+
+    ss.public_header_files = 'src/objective-c/GRPCClient/ChannelArg.h',
+                             'src/objective-c/GRPCClient/GRPCCall+ChannelCredentials.h',
+                             'src/objective-c/GRPCClient/GRPCCall+Cronet.h',
+                             'src/objective-c/GRPCClient/GRPCCall+OAuth2.h',
+                             'src/objective-c/GRPCClient/GRPCCall+Tests.h',
+                             'src/objective-c/GRPCClient/GRPCCallLegacy.h',
+                             'src/objective-c/GRPCClient/GRPCCall+ChannelArg.h',
+                             'src/objective-c/GRPCClient/internal_testing/*.h'
+    ss.private_header_files = 'src/objective-c/GRPCClient/internal/*.h',
+                              'src/objective-c/GRPCClient/private/*.h'
+    ss.source_files = 'src/objective-c/GRPCClient/internal/*.h',
+                      'src/objective-c/GRPCClient/internal_testing/*.h',
+                      'src/objective-c/GRPCClient/private/*.{h,m}',
+                      'src/objective-c/GRPCClient/GRPCCall+ChannelArg.h',
+                      'src/objective-c/GRPCClient/GRPCCall+ChannelArg.m',
+                      'src/objective-c/GRPCClient/GRPCCall+ChannelCredentials.h',
+                      'src/objective-c/GRPCClient/GRPCCall+ChannelCredentials.m',
+                      'src/objective-c/GRPCClient/GRPCCall+Cronet.h',
+                      'src/objective-c/GRPCClient/GRPCCall+Cronet.m',
+                      'src/objective-c/GRPCClient/GRPCCall+OAuth2.h',
+                      'src/objective-c/GRPCClient/GRPCCall+OAuth2.m',
+                      'src/objective-c/GRPCClient/GRPCCall+Tests.h',
+                      'src/objective-c/GRPCClient/GRPCCall+Tests.m',
+                      'src/objective-c/GRPCClient/GRPCCallLegacy.h',
+                      'src/objective-c/GRPCClient/GRPCCallLegacy.m'
+
     ss.exclude_files = "#{src_dir}/GRPCCall+GID.{h,m}"
-    ss.private_header_files = "#{src_dir}/private/*.h", "#{src_dir}/internal/*.h"
 
     ss.dependency 'gRPC-Core', version
+    ss.dependency "#{s.name}/Main", version
   end
 
   # CFStream is now default. Leaving this subspec only for compatibility purpose.
@@ -76,7 +112,7 @@ Pod::Spec.new do |s|
 
     ss.source_files = "#{src_dir}/GRPCCall+GID.{h,m}"
 
-    ss.dependency "#{s.name}/Main", version
+    ss.dependency "#{s.name}/GRPCCallCore", version
     ss.dependency 'Google/SignIn'
   end
 end
