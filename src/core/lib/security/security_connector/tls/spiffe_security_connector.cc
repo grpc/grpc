@@ -28,7 +28,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 #include "src/core/lib/security/credentials/tls/spiffe_credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
@@ -105,13 +105,18 @@ SpiffeChannelSecurityConnector::SpiffeChannelSecurityConnector(
                                   ? nullptr
                                   : gpr_strdup(overridden_target_name)) {
   check_arg_ = ServerAuthorizationCheckArgCreate(this);
-  grpc_core::StringView host;
-  grpc_core::StringView port;
-  grpc_core::SplitHostPort(target_name, &host, &port);
-  target_name_ = host.dup();
+  char* port;
+  gpr_split_host_port(target_name, &target_name_, &port);
+  gpr_free(port);
 }
 
 SpiffeChannelSecurityConnector::~SpiffeChannelSecurityConnector() {
+  if (target_name_ != nullptr) {
+    gpr_free(target_name_);
+  }
+  if (overridden_target_name_ != nullptr) {
+    gpr_free(overridden_target_name_);
+  }
   if (client_handshaker_factory_ != nullptr) {
     tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
   }
@@ -125,8 +130,8 @@ void SpiffeChannelSecurityConnector::add_handshakers(
   tsi_handshaker* tsi_hs = nullptr;
   tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
       client_handshaker_factory_,
-      overridden_target_name_ != nullptr ? overridden_target_name_.get()
-                                         : target_name_.get(),
+      overridden_target_name_ != nullptr ? overridden_target_name_
+                                         : target_name_,
       &tsi_hs);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
@@ -142,8 +147,8 @@ void SpiffeChannelSecurityConnector::check_peer(
     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   const char* target_name = overridden_target_name_ != nullptr
-                                ? overridden_target_name_.get()
-                                : target_name_.get();
+                                ? overridden_target_name_
+                                : target_name_;
   grpc_error* error = grpc_ssl_check_alpn(&peer);
   if (error != GRPC_ERROR_NONE) {
     GRPC_CLOSURE_SCHED(on_peer_checked, error);
@@ -198,17 +203,16 @@ int SpiffeChannelSecurityConnector::cmp(
   if (c != 0) {
     return c;
   }
-  return grpc_ssl_cmp_target_name(target_name_.get(), other->target_name_.get(),
-                                  overridden_target_name_.get(),
-                                  other->overridden_target_name_.get());
+  return grpc_ssl_cmp_target_name(target_name_, other->target_name_,
+                                  overridden_target_name_,
+                                  other->overridden_target_name_);
 }
 
 bool SpiffeChannelSecurityConnector::check_call_host(
-    grpc_core::StringView host, grpc_auth_context* auth_context,
+    const char* host, grpc_auth_context* auth_context,
     grpc_closure* on_call_host_checked, grpc_error** error) {
-  return grpc_ssl_check_call_host(host, target_name_.get(),
-                                  overridden_target_name_.get(), auth_context,
-                                  on_call_host_checked, error);
+  return grpc_ssl_check_call_host(host, target_name_, overridden_target_name_,
+                                  auth_context, on_call_host_checked, error);
 }
 
 void SpiffeChannelSecurityConnector::cancel_check_call_host(

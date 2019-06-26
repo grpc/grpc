@@ -46,8 +46,8 @@
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -506,10 +506,10 @@ int g_fake_non_responsive_dns_server_port = -1;
 void InjectBrokenNameServerList(ares_channel channel) {
   struct ares_addr_port_node dns_server_addrs[2];
   memset(dns_server_addrs, 0, sizeof(dns_server_addrs));
-  grpc_core::UniquePtr<char> unused_host;
-  grpc_core::UniquePtr<char> local_dns_server_port;
-  GPR_ASSERT(grpc_core::SplitHostPort(FLAGS_local_dns_server_address.c_str(),
-                                      &unused_host, &local_dns_server_port));
+  char* unused_host;
+  char* local_dns_server_port;
+  GPR_ASSERT(gpr_split_host_port(FLAGS_local_dns_server_address.c_str(),
+                                 &unused_host, &local_dns_server_port));
   gpr_log(GPR_DEBUG,
           "Injecting broken nameserver list. Bad server address:|[::1]:%d|. "
           "Good server address:%s",
@@ -528,10 +528,12 @@ void InjectBrokenNameServerList(ares_channel channel) {
   dns_server_addrs[1].family = AF_INET;
   ((char*)&dns_server_addrs[1].addr.addr4)[0] = 0x7f;
   ((char*)&dns_server_addrs[1].addr.addr4)[3] = 0x1;
-  dns_server_addrs[1].tcp_port = atoi(local_dns_server_port.get());
-  dns_server_addrs[1].udp_port = atoi(local_dns_server_port.get());
+  dns_server_addrs[1].tcp_port = atoi(local_dns_server_port);
+  dns_server_addrs[1].udp_port = atoi(local_dns_server_port);
   dns_server_addrs[1].next = nullptr;
   GPR_ASSERT(ares_set_servers_ports(channel, dns_server_addrs) == ARES_SUCCESS);
+  gpr_free(local_dns_server_port);
+  gpr_free(unused_host);
 }
 
 void StartResolvingLocked(void* arg, grpc_error* unused) {

@@ -28,9 +28,9 @@
 #include <grpc/support/string_util.h>
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
-#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -42,15 +42,10 @@
 
 typedef grpc_core::InlinedVector<grpc_core::Thread, 1> ThreadList;
 
-struct fullstack_secure_fixture_data {
-  ~fullstack_secure_fixture_data() {
-    for (size_t ind = 0; ind < thd_list.size(); ind++) {
-      thd_list[ind].Join();
-    }
-  }
-  grpc_core::UniquePtr<char> localaddr;
+typedef struct fullstack_secure_fixture_data {
+  char* localaddr;
   ThreadList thd_list;
-};
+} fullstack_secure_fixture_data;
 
 static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
@@ -59,7 +54,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   fullstack_secure_fixture_data* ffd =
       grpc_core::New<fullstack_secure_fixture_data>();
   memset(&f, 0, sizeof(f));
-  grpc_core::JoinHostPort(&ffd->localaddr, "localhost", port);
+  gpr_join_host_port(&ffd->localaddr, "localhost", port);
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
   f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
@@ -79,8 +74,8 @@ static void chttp2_init_client_secure_fullstack(
     grpc_channel_credentials* creds) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
-  f->client = grpc_secure_channel_create(creds, ffd->localaddr.get(),
-                                         client_args, nullptr);
+  f->client =
+      grpc_secure_channel_create(creds, ffd->localaddr, client_args, nullptr);
   GPR_ASSERT(f->client != nullptr);
   grpc_channel_credentials_release(creds);
 }
@@ -95,7 +90,7 @@ static void chttp2_init_server_secure_fullstack(
   }
   f->server = grpc_server_create(server_args, nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
-  GPR_ASSERT(grpc_server_add_secure_http2_port(f->server, ffd->localaddr.get(),
+  GPR_ASSERT(grpc_server_add_secure_http2_port(f->server, ffd->localaddr,
                                                server_creds));
   grpc_server_credentials_release(server_creds);
   grpc_server_start(f->server);
@@ -104,6 +99,10 @@ static void chttp2_init_server_secure_fullstack(
 void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
+  for (size_t ind = 0; ind < ffd->thd_list.size(); ind++) {
+    ffd->thd_list[ind].Join();
+  }
+  gpr_free(ffd->localaddr);
   grpc_core::Delete(ffd);
 }
 

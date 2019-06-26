@@ -30,9 +30,9 @@
 
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -406,15 +406,14 @@ void PopulateSocketAddressJson(grpc_json* json, const char* name,
                            (strcmp(uri->scheme, "ipv6") == 0))) {
     const char* host_port = uri->path;
     if (*host_port == '/') ++host_port;
-    UniquePtr<char> host;
-    UniquePtr<char> port;
-    GPR_ASSERT(SplitHostPort(host_port, &host, &port));
+    char* host = nullptr;
+    char* port = nullptr;
+    GPR_ASSERT(gpr_split_host_port(host_port, &host, &port));
     int port_num = -1;
     if (port != nullptr) {
-      port_num = atoi(port.get());
+      port_num = atoi(port);
     }
-    char* b64_host =
-        grpc_base64_encode(host.get(), strlen(host.get()), false, false);
+    char* b64_host = grpc_base64_encode(host, strlen(host), false, false);
     json_iterator = grpc_json_create_child(json_iterator, json, "tcpip_address",
                                            nullptr, GRPC_JSON_OBJECT, false);
     json = json_iterator;
@@ -423,6 +422,8 @@ void PopulateSocketAddressJson(grpc_json* json, const char* name,
                                                       "port", port_num);
     json_iterator = grpc_json_create_child(json_iterator, json, "ip_address",
                                            b64_host, GRPC_JSON_STRING, true);
+    gpr_free(host);
+    gpr_free(port);
   } else if (uri != nullptr && strcmp(uri->scheme, "unix") == 0) {
     json_iterator = grpc_json_create_child(json_iterator, json, "uds_address",
                                            nullptr, GRPC_JSON_OBJECT, false);

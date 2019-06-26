@@ -28,6 +28,7 @@
 #include <grpc/support/time.h>
 #include <string.h>
 
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_server.h"

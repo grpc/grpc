@@ -40,8 +40,8 @@
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -64,28 +64,30 @@ struct TestAddress {
 };
 
 grpc_resolved_address TestAddressToGrpcResolvedAddress(TestAddress test_addr) {
-  grpc_core::UniquePtr<char> host;
-  grpc_core::UniquePtr<char> port;
+  char* host;
+  char* port;
   grpc_resolved_address resolved_addr;
-  grpc_core::SplitHostPort(test_addr.dest_addr.c_str(), &host, &port);
+  gpr_split_host_port(test_addr.dest_addr.c_str(), &host, &port);
   if (test_addr.family == AF_INET) {
     sockaddr_in in_dest;
     memset(&in_dest, 0, sizeof(sockaddr_in));
-    in_dest.sin_port = htons(atoi(port.get()));
+    in_dest.sin_port = htons(atoi(port));
     in_dest.sin_family = AF_INET;
-    GPR_ASSERT(inet_pton(AF_INET, host.get(), &in_dest.sin_addr) == 1);
+    GPR_ASSERT(inet_pton(AF_INET, host, &in_dest.sin_addr) == 1);
     memcpy(&resolved_addr.addr, &in_dest, sizeof(sockaddr_in));
     resolved_addr.len = sizeof(sockaddr_in);
   } else {
     GPR_ASSERT(test_addr.family == AF_INET6);
     sockaddr_in6 in6_dest;
     memset(&in6_dest, 0, sizeof(sockaddr_in6));
-    in6_dest.sin6_port = htons(atoi(port.get()));
+    in6_dest.sin6_port = htons(atoi(port));
     in6_dest.sin6_family = AF_INET6;
-    GPR_ASSERT(inet_pton(AF_INET6, host.get(), &in6_dest.sin6_addr) == 1);
+    GPR_ASSERT(inet_pton(AF_INET6, host, &in6_dest.sin6_addr) == 1);
     memcpy(&resolved_addr.addr, &in6_dest, sizeof(sockaddr_in6));
     resolved_addr.len = sizeof(sockaddr_in6);
   }
+  gpr_free(host);
+  gpr_free(port);
   return resolved_addr;
 }
 
