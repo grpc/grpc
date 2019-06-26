@@ -28,7 +28,7 @@
 
 namespace grpc_core {
 
-extern DebugOnlyTraceFlag thread_pool;
+extern DebugOnlyTraceFlag grpc_thread_pool_trace;
 
 // Abstract base class of a Multiple-Producer-Multiple-Consumer(MPMC) queue
 // interface
@@ -53,10 +53,10 @@ class MPMCQueueInterface {
 class InfLenFIFOQueue : public MPMCQueueInterface {
  public:
   // Creates a new MPMC Queue. The queue created will have infinite length.
-  InfLenFIFOQueue();
+  InfLenFIFOQueue() {}
 
-  // Releases all resources hold by the queue. The queue must be empty, and no
-  // one waiting on conditional variables.
+  // Releases all resources held by the queue. The queue must be empty, and no
+  // one waits on conditional variables.
   ~InfLenFIFOQueue();
 
   // Puts elem into queue immediately at the end of queue. Since the queue has
@@ -86,7 +86,7 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
 
     Node(void* c) : content(c) {
       next = nullptr;
-      insert_time = gpr_now(GPR_CLOCK_PRECISE);
+      insert_time = gpr_now(GPR_CLOCK_MONOTONIC);
     }
   };
 

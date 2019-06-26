@@ -22,10 +22,10 @@
 
 namespace grpc_core {
 
-DebugOnlyTraceFlag thread_pool(false, "thread_pool_trace");
+DebugOnlyTraceFlag grpc_thread_pool_trace(false, "thread_pool_trace");
 
 inline void* InfLenFIFOQueue::PopFront() {
-  // Caller should already checked queue is not empty and has already hold the
+  // Caller should already check queue is not empty and has already held the
   // mutex. This function will only do the job of removal.
   void* result = queue_head_->content;
   Node* head_to_remove = queue_head_;
@@ -33,7 +33,7 @@ inline void* InfLenFIFOQueue::PopFront() {
 
   count_.FetchSub(1, MemoryOrder::RELAXED);
 
-  if (GRPC_TRACE_FLAG_ENABLED(thread_pool)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace)) {
     gpr_timespec wait_time =
         gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), head_to_remove->insert_time);
 
@@ -66,8 +66,6 @@ inline void* InfLenFIFOQueue::PopFront() {
 
   return result;
 }
-
-InfLenFIFOQueue::InfLenFIFOQueue() {}
 
 InfLenFIFOQueue::~InfLenFIFOQueue() {
   GPR_ASSERT(count_.Load(MemoryOrder::RELAXED) == 0);
