@@ -467,6 +467,13 @@
     )
   endif (_gRPC_PLATFORM_ANDROID)
   % endif
+  % if lib.name in ["grpc", "grpc_cronet", "grpc_test_util", \
+                    "grpc_test_util_unsecure", "grpc_unsecure", \
+                    "grpc++_cronet"]:
+  if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
+    target_link_libraries(${lib.name} "-framework CoreFoundation")
+  endif()
+  %endif
 
   % if len(lib.get('public_headers', [])) > 0:
   foreach(_hdr
