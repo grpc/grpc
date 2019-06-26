@@ -26,3 +26,9 @@
 const char* grpc_version_string(void) { return "7.0.0"; }
 
 const char* grpc_g_stands_for(void) { return "gangnam"; }
+
+const char* grpc_r_stands_for(void) { return "remote"; }
+
+const char* grpc_p_stands_for(void) { return "procedure"; }
+
+const char* grpc_c_stands_for(void) { return "call"; }
