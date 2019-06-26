@@ -18,8 +18,11 @@
 
 using Grpc.Core.Utils;
 using System;
-using System.Buffers;
 using System.Threading;
+
+#if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
+using System.Buffers;
+#endif
 
 namespace Grpc.Core.Internal
 {

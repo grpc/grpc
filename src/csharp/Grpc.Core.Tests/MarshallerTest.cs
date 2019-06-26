@@ -17,7 +17,6 @@
 #endregion
 
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -29,6 +28,10 @@ using Grpc.Core;
 using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 using NUnit.Framework;
+
+#if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
+using System.Buffers;
+#endif
 
 namespace Grpc.Core.Tests
 {
