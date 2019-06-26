@@ -154,6 +154,7 @@ static void test_many_thread(void) {
   gpr_log(GPR_DEBUG, "All ConsumerThreads Terminated.");
   gpr_log(GPR_DEBUG, "Checking WorkItems and Cleaning Up...");
   for (int i = 0; i < num_producer_threads; ++i) {
+    // Destructor of ProducerThread will do the check of WorkItems
     grpc_core::Delete(producer_threads[i]);
   }
   gpr_free(producer_threads);

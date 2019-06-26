@@ -22,7 +22,7 @@
 
 namespace grpc_core {
 
-DebugOnlyTraceFlag grpc_thread_pool_trace(false, "thread_pool_trace");
+DebugOnlyTraceFlag grpc_thread_pool_trace(false, "thread_pool");
 
 inline void* InfLenFIFOQueue::PopFront() {
   // Caller should already check queue is not empty and has already held the
