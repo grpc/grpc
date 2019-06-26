@@ -84,6 +84,8 @@ class AresDnsResolver : public Resolver {
   char* dns_server_;
   /// name to resolve (usually the same as target_name)
   char* name_to_resolve_;
+  // The percentage used for service config choice selection.
+  const int service_config_selection_percentage_;
   /// channel args
   grpc_channel_args* channel_args_;
   /// whether to request the service config
@@ -120,6 +122,7 @@ class AresDnsResolver : public Resolver {
 
 AresDnsResolver::AresDnsResolver(ResolverArgs args)
     : Resolver(args.combiner, std::move(args.result_handler)),
+      service_config_selection_percentage_(rand() % 100),
       backoff_(
           BackOff::Options()
               .set_initial_backoff(GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS *
@@ -228,7 +231,7 @@ bool ValueInJsonArray(grpc_json* array, const char* value) {
 }
 
 char* ChooseServiceConfig(char* service_config_choice_json,
-                          grpc_error** error) {
+                          int selection_percentage, grpc_error** error) {
   grpc_json* choices_json = grpc_json_parse_string(service_config_choice_json);
   if (choices_json == nullptr) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -282,14 +285,13 @@ char* ChooseServiceConfig(char* service_config_choice_json,
               "field:percentage error:should be of type number"));
           continue;
         }
-        int random_pct = rand() % 100;
         int percentage;
         if (sscanf(field->value, "%d", &percentage) != 1) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "field:percentage error:should be of type integer"));
           continue;
         }
-        if (random_pct > percentage || percentage == 0) {
+        if (selection_percentage > percentage || percentage == 0) {
           selected = false;
         }
       }
@@ -332,13 +334,16 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     Result result;
     result.addresses = std::move(*r->addresses_);
     if (r->service_config_json_ != nullptr) {
+      // Select which config choice we're going to use.
       char* service_config_string = ChooseServiceConfig(
-          r->service_config_json_, &result.service_config_error);
+          r->service_config_json_, r->service_config_selection_percentage_,
+          &result.service_config_error);
       gpr_free(r->service_config_json_);
       if (result.service_config_error == GRPC_ERROR_NONE &&
           service_config_string != nullptr) {
         GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
                              r, service_config_string);
+        // Parse the selected service config.
         result.service_config = ServiceConfig::Create(
             service_config_string, &result.service_config_error);
       }
