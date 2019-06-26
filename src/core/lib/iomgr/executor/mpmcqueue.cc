@@ -86,7 +86,6 @@ void InfLenFIFOQueue::Put(void* elem) {
     queue_tail_ = queue_tail_->next;
   }
 
-
   // Updates Stats info
   if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace)) {
     stats_.num_started++;

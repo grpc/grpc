@@ -23,7 +23,7 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/test_config.h"
 
-#define THREAD_LARGE_ITERATION 10000
+#define TEST_NUM_ITEMS 10000
 
 // Testing items for queue
 struct WorkItem {
@@ -41,7 +41,7 @@ class ProducerThread {
       : start_index_(start_index), num_items_(num_items), queue_(queue) {
     items_ = nullptr;
     thd_ = grpc_core::Thread(
-        "mpmcq_test_put_thd",
+        "mpmcq_test_producer_thd",
         [](void* th) { static_cast<ProducerThread*>(th)->Run(); }, this);
   }
   ~ProducerThread() {
@@ -76,7 +76,7 @@ class ConsumerThread {
  public:
   ConsumerThread(grpc_core::InfLenFIFOQueue* queue) : queue_(queue) {
     thd_ = grpc_core::Thread(
-        "mpmcq_test_get_thd",
+        "mpmcq_test_consumer_thd",
         [](void* th) { static_cast<ConsumerThread*>(th)->Run(); }, this);
   }
   ~ConsumerThread() {}
@@ -102,55 +102,14 @@ class ConsumerThread {
   grpc_core::Thread thd_;
 };
 
-static void test_get_empty(void) {
-  gpr_log(GPR_INFO, "test_get_empty");
-  grpc_core::InfLenFIFOQueue queue;
-  GPR_ASSERT(queue.count() == 0);
-  const int num_threads = 10;
-  ConsumerThread** consumer_thds = static_cast<ConsumerThread**>(
-      gpr_zalloc(num_threads * sizeof(ConsumerThread*)));
-
-  // Fork threads. Threads should block at the beginning since queue is empty.
-  for (int i = 0; i < num_threads; ++i) {
-    consumer_thds[i] = grpc_core::New<ConsumerThread>(&queue);
-    consumer_thds[i]->Start();
-  }
-
-  WorkItem** items = static_cast<WorkItem**>(
-      gpr_zalloc(THREAD_LARGE_ITERATION * sizeof(WorkItem*)));
-  for (int i = 0; i < THREAD_LARGE_ITERATION; ++i) {
-    items[i] = grpc_core::New<WorkItem>(i);
-    queue.Put(static_cast<void*>(items[i]));
-  }
-
-  gpr_log(GPR_DEBUG, "Terminating threads...");
-  for (int i = 0; i < num_threads; ++i) {
-    queue.Put(nullptr);
-  }
-  for (int i = 0; i < num_threads; ++i) {
-    consumer_thds[i]->Join();
-  }
-  gpr_log(GPR_DEBUG, "Checking and Cleaning Up...");
-  for (int i = 0; i < THREAD_LARGE_ITERATION; ++i) {
-    GPR_ASSERT(items[i]->done);
-    grpc_core::Delete(items[i]);
-  }
-  gpr_free(items);
-  for (int i = 0; i < num_threads; ++i) {
-    grpc_core::Delete(consumer_thds[i]);
-  }
-  gpr_free(consumer_thds);
-  gpr_log(GPR_DEBUG, "Done.");
-}
-
 static void test_FIFO(void) {
   gpr_log(GPR_INFO, "test_FIFO");
   grpc_core::InfLenFIFOQueue large_queue;
-  for (int i = 0; i < THREAD_LARGE_ITERATION; ++i) {
+  for (int i = 0; i < TEST_NUM_ITEMS; ++i) {
     large_queue.Put(static_cast<void*>(grpc_core::New<WorkItem>(i)));
   }
-  GPR_ASSERT(large_queue.count() == THREAD_LARGE_ITERATION);
-  for (int i = 0; i < THREAD_LARGE_ITERATION; ++i) {
+  GPR_ASSERT(large_queue.count() == TEST_NUM_ITEMS);
+  for (int i = 0; i < TEST_NUM_ITEMS; ++i) {
     WorkItem* item = static_cast<WorkItem*>(large_queue.Get());
     GPR_ASSERT(i == item->index);
     grpc_core::Delete(item);
@@ -159,57 +118,55 @@ static void test_FIFO(void) {
 
 static void test_many_thread(void) {
   gpr_log(GPR_INFO, "test_many_thread");
-  const int num_work_thd = 10;
-  const int num_get_thd = 20;
+  const int num_producer_threads = 10;
+  const int num_consumer_threads = 20;
   grpc_core::InfLenFIFOQueue queue;
-  ProducerThread** work_thds = static_cast<ProducerThread**>(
-      gpr_zalloc(num_work_thd * sizeof(ProducerThread*)));
-  ConsumerThread** consumer_thds = static_cast<ConsumerThread**>(
-      gpr_zalloc(num_get_thd * sizeof(ConsumerThread*)));
+  ProducerThread** producer_threads = static_cast<ProducerThread**>(
+      gpr_zalloc(num_producer_threads * sizeof(ProducerThread*)));
+  ConsumerThread** consumer_threads = static_cast<ConsumerThread**>(
+      gpr_zalloc(num_consumer_threads * sizeof(ConsumerThread*)));
 
-  gpr_log(GPR_DEBUG, "Fork ProducerThread...");
-  for (int i = 0; i < num_work_thd; ++i) {
-    work_thds[i] = grpc_core::New<ProducerThread>(
-        &queue, i * THREAD_LARGE_ITERATION, THREAD_LARGE_ITERATION);
-    work_thds[i]->Start();
+  gpr_log(GPR_DEBUG, "Fork ProducerThreads...");
+  for (int i = 0; i < num_producer_threads; ++i) {
+    producer_threads[i] = grpc_core::New<ProducerThread>(
+        &queue, i * TEST_NUM_ITEMS, TEST_NUM_ITEMS);
+    producer_threads[i]->Start();
   }
-  gpr_log(GPR_DEBUG, "ProducerThread Started.");
-  gpr_log(GPR_DEBUG, "Fork Getter Thread...");
-  for (int i = 0; i < num_get_thd; ++i) {
-    consumer_thds[i] = grpc_core::New<ConsumerThread>(&queue);
-    consumer_thds[i]->Start();
+  gpr_log(GPR_DEBUG, "ProducerThreads Started.");
+  gpr_log(GPR_DEBUG, "Fork ConsumerThreads...");
+  for (int i = 0; i < num_consumer_threads; ++i) {
+    consumer_threads[i] = grpc_core::New<ConsumerThread>(&queue);
+    consumer_threads[i]->Start();
   }
-  gpr_log(GPR_DEBUG, "Getter Thread Started.");
-  gpr_log(GPR_DEBUG, "Waiting ProducerThread to finish...");
-  for (int i = 0; i < num_work_thd; ++i) {
-    work_thds[i]->Join();
+  gpr_log(GPR_DEBUG, "ConsumerThreads Started.");
+  gpr_log(GPR_DEBUG, "Waiting ProducerThreads to finish...");
+  for (int i = 0; i < num_producer_threads; ++i) {
+    producer_threads[i]->Join();
   }
-  gpr_log(GPR_DEBUG, "All ProducerThread Terminated.");
-  gpr_log(GPR_DEBUG, "Terminating Getter Thread...");
-  for (int i = 0; i < num_get_thd; ++i) {
+  gpr_log(GPR_DEBUG, "All ProducerThreads Terminated.");
+  gpr_log(GPR_DEBUG, "Terminating ConsumerThreads...");
+  for (int i = 0; i < num_consumer_threads; ++i) {
     queue.Put(nullptr);
   }
-  for (int i = 0; i < num_get_thd; ++i) {
-    consumer_thds[i]->Join();
+  for (int i = 0; i < num_consumer_threads; ++i) {
+    consumer_threads[i]->Join();
   }
-  gpr_log(GPR_DEBUG, "All Getter Thread Terminated.");
+  gpr_log(GPR_DEBUG, "All ConsumerThreads Terminated.");
   gpr_log(GPR_DEBUG, "Checking WorkItems and Cleaning Up...");
-  for (int i = 0; i < num_work_thd; ++i) {
-    grpc_core::Delete(work_thds[i]);
+  for (int i = 0; i < num_producer_threads; ++i) {
+    grpc_core::Delete(producer_threads[i]);
   }
-  gpr_free(work_thds);
-  for (int i = 0; i < num_get_thd; ++i) {
-    grpc_core::Delete(consumer_thds[i]);
+  gpr_free(producer_threads);
+  for (int i = 0; i < num_consumer_threads; ++i) {
+    grpc_core::Delete(consumer_threads[i]);
   }
-  gpr_free(consumer_thds);
+  gpr_free(consumer_threads);
   gpr_log(GPR_DEBUG, "Done.");
 }
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-  gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
-  test_get_empty();
   test_FIFO();
   test_many_thread();
   grpc_shutdown();
