@@ -19,6 +19,11 @@
 using System;
 using System.Reflection;
 using Grpc.Core.Utils;
+using System.Runtime.InteropServices;
+
+#if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
+using System.Buffers;
+#endif
 
 namespace Grpc.Core
 {
@@ -59,7 +64,7 @@ namespace Grpc.Core
         /// </summary>
         private static bool TryFindArraySegmentDeserializer(Func<byte[], T> deserializer, out Func<DeserializationContext, T> contextualDeserializer)
         {
-#if !NETSTANDARD1_5
+#if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
             try
             {
                 if (deserializer.GetInvocationList().Length == 1)
@@ -69,14 +74,51 @@ namespace Grpc.Core
                     var bySegmentMethod = method.DeclaringType.GetMethod(method.Name, flags, null, s_arraySegmentSignature, null);
                     if (bySegmentMethod != null && bySegmentMethod.ReturnType == typeof(T))
                     {
-                        var bySegmentTyped = (Func<byte[], int, int, T>)Delegate.CreateDelegate(typeof(Func<byte[], int, int, T>), deserializer.Target, bySegmentMethod);
-                        contextualDeserializer = ctx =>
+                        // we're going to be picky about what signatures we detect here for special treatment; the
+                        // next two parameters must be "offset, length" or "offset, count" - just to be *really clear*
+                        // that we understand the intent of that method
+                        var parameters = bySegmentMethod.GetParameters();
+                        if (parameters.Length == 3 &&
+                            StringComparer.OrdinalIgnoreCase.Equals(parameters[1], "offset")
+                            && (StringComparer.OrdinalIgnoreCase.Equals(parameters[1], "length")
+                                || StringComparer.OrdinalIgnoreCase.Equals(parameters[1], "count")))
                         {
-                            using (var leased = ctx.PayloadAsLeasedBuffer())
-                            {
-                                return bySegmentTyped(leased.Buffer, leased.Offset, leased.Count);
-                            }
-                        };
+                            var bySegmentTyped = (Func<byte[], int, int, T>)Delegate.CreateDelegate(typeof(Func<byte[], int, int, T>), deserializer.Target, bySegmentMethod);
+                            contextualDeserializer = ctx => {
+                                var len = ctx.PayloadLength;
+                                if (len == 0)
+                                {
+#if NET45
+                                    return bySegmentTyped(s_empty, 0, 0);
+#else
+                                return bySegmentTyped(Array.Empty<byte>(), 0, 0);
+#endif
+                                }
+                                var ros = ctx.PayloadAsReadOnlySequence();
+                                if (ros.IsSingleSegment && MemoryMarshal.TryGetArray(ros.First, out var segment)
+                                    && segment.Count == len)
+                                {
+                                    // the data is *already* a single segment that is an array; use directly
+                                    return bySegmentTyped(segment.Array, segment.Offset, len);
+                                }
+                                else
+                                {
+                                    // lease a buffer from the pool, copy into that buffer, and deserialize
+                                    // from that, recycling the buffer when done
+                                    var arr = ArrayPool<byte>.Shared.Rent(len);
+                                    try
+                                    {
+                                        ros.CopyTo(arr);
+                                        return bySegmentTyped(arr, 0, len);
+                                    }
+                                    finally
+                                    {
+                                        ArrayPool<byte>.Shared.Return(arr);
+                                    }
+                                }
+                            };
+                            return true;
+                        }
                     }
                 }
             } catch { } // give up; best efforts only
@@ -85,6 +127,9 @@ namespace Grpc.Core
             return false;
         }
 
+#if NET45
+        private static readonly byte[] s_empty = new byte[0]; // Array.Empty not available on all target platforms
+#endif
         private static readonly Type[] s_arraySegmentSignature = new Type[] { typeof(byte[]), typeof(int), typeof(int) };
 
         /// <summary>

@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -78,7 +79,15 @@ namespace Grpc.Core.Tests
         {
             var ctx = new FakeDeserializationContext(new byte[] { 0, 1, 2, 3, 4, 5 }, 1, 4);
             var obj = __Marshaller_BasicMessage.ContextualDeserializer(ctx);
+#if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
+            // should have used the (byte[],int,int) method with an oversized original buffer
             Assert.AreEqual(6, obj.OriginalSegmentLength);
+            Assert.IsTrue(obj.UsedSegmentDeserializer);
+#else
+            // platform fallback: we expect it to have used the (byte[]) method and a buffer copy
+            Assert.AreEqual(4, obj.OriginalSegmentLength);
+            Assert.IsFalse(obj.UsedSegmentDeserializer);
+#endif
             Assert.AreEqual("01 02 03 04", obj.Payload);
         }
 
@@ -94,10 +103,13 @@ namespace Grpc.Core.Tests
 
             public int OriginalSegmentLength { get; set; }
 
-            public void Init(byte[] buffer, int offset, int count)
+            public bool UsedSegmentDeserializer {get;set;}
+
+            public void Init(byte[] buffer, int offset, int count, bool fromSegment)
             {
                 Payload = BitConverter.ToString(buffer, offset, count);
                 OriginalSegmentLength = buffer.Length;
+                UsedSegmentDeserializer = fromSegment;
             }
         }
         public class FakeParser<T>
@@ -109,11 +121,12 @@ namespace Grpc.Core.Tests
             // the extra methods here are important; we need to check we haven't done something silly like
             // adding something to the Marshaller ctor that would break the generated code
             public T ParseDelimitedFrom(Stream input) => throw new NotImplementedException();
-            public T ParseFrom(byte[] data) => ParseFrom(data, 0, data.Length);
-            public T ParseFrom(byte[] data, int offset, int length)
+            public T ParseFrom(byte[] data) => ParseFrom(data, 0, data.Length, false);
+            public T ParseFrom(byte[] data, int offset, int length) => ParseFrom(data, offset, length, true);
+            private T ParseFrom(byte[] data, int offset, int length, bool fromSegment)
             {
                 var obj = _factory();
-                if (obj is BasicMessage bm) bm.Init(data, offset, length);
+                if (obj is BasicMessage bm) bm.Init(data, offset, length, fromSegment);
                 return obj;
             }
             public T ParseFrom(FakeByteString data) => throw new NotImplementedException();
@@ -157,10 +170,10 @@ namespace Grpc.Core.Tests
                 Buffer.BlockCopy(payload, offset, arr, 0, count);
                 return arr;
             }
-            public override LeasedBuffer PayloadAsLeasedBuffer()
-            {
-                return new LeasedBuffer(payload, offset, count, null);
-            }
+#if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
+            public override ReadOnlySequence<byte> PayloadAsReadOnlySequence()
+                => new ReadOnlySequence<byte>(payload, offset, count);
+#endif
         }
     }
 }
