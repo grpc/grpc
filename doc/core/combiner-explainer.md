@@ -119,8 +119,7 @@ while (q.pop(&f)) {
 }
 ```
 
-`queue_offload` detaches the combiner from the current thread's executor and
- offloads to the work to `executor` which is an internal pool of threads.
+`queue_offload` detaches the combiner from the current thread's execution context and offloads the remaining list of closures (that were scheduled on this combiner) to the `executor`, an internal thread pool.
 
 More precisely:
 
@@ -128,8 +127,8 @@ More precisely:
 queue_offload() {
    detach() // Detach the combiner from current thread's exec_ctx
 
-   // combiner->offload is a closure that points to the function
-   // 'offload()' (see below) and is previously initialized to run on 'executor'
+   // Note: combiner->offload is a closure that points to the function `offload()`
+   // (see below) and is previously initialized to run on 'executor'
    closure_sched(&combiner->offload);
 }
 
