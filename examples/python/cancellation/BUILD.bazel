@@ -17,22 +17,21 @@
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 load("//bazel:python_rules.bzl", "py_proto_library")
 
+package(default_testonly = 1)
+
 proto_library(
     name = "hash_name_proto",
     srcs = ["hash_name.proto"],
-    testonly = 1,
 )
 
 py_proto_library(
     name = "hash_name_proto_pb2",
     deps = [":hash_name_proto"],
-    testonly = 1,
     well_known_protos = False,
 )
 
 py_binary(
     name = "client",
-    testonly = 1,
     srcs = ["client.py"],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
@@ -49,12 +48,10 @@ py_library(
     deps = [
         ":hash_name_proto_pb2",
     ],
-    testonly = 1,
 )
 
 py_binary(
     name = "server",
-    testonly = 1,
     srcs = ["server.py"],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
