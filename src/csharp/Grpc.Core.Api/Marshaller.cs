@@ -63,24 +63,10 @@ namespace Grpc.Core
         {
             this.contextualSerializer = GrpcPreconditions.CheckNotNull(serializer, nameof(serializer));
             this.contextualDeserializer = GrpcPreconditions.CheckNotNull(deserializer, nameof(deserializer));
-            // some hosts use the legacy serializer; make sure it always works, for back-compat
+            // even though gRPC internally only uses the contextual deserializer, some hosts use
+            // the legacy serializer; make sure it always works, for back-compat
             this.serializer = EmulateLegacySerializer;
             this.deserializer = EmulateLegacyDeserializer;
-        }
-
-        private T EmulateLegacyDeserializer(byte[] payload)
-        {
-            var ctx = LegacyDeserializationContext.Prepare(payload);
-            var value = contextualDeserializer(ctx);
-            LegacyDeserializationContext.Complete();
-            return value;
-        }
-
-        private byte[] EmulateLegacySerializer(T value)
-        {
-            var ctx = LegacySerializationContext.Prepare();
-            contextualSerializer(value, ctx);
-            return LegacySerializationContext.Complete();
         }
 
         /// <summary>
@@ -116,6 +102,24 @@ namespace Grpc.Core
         private T EmulateContextualDeserializer(DeserializationContext context)
         {
             return this.deserializer(context.PayloadAsNewBuffer());
+        }
+
+
+        // for backward compatibility, emulate the contextual deserializer using the simple one
+        private T EmulateLegacyDeserializer(byte[] payload)
+        {
+            var ctx = LegacyDeserializationContext.Prepare(payload);
+            var value = contextualDeserializer(ctx);
+            LegacyDeserializationContext.Complete();
+            return value;
+        }
+
+        // for backward compatibility, emulate the contextual serializer using the simple one
+        private byte[] EmulateLegacySerializer(T value)
+        {
+            var ctx = LegacySerializationContext.Prepare();
+            contextualSerializer(value, ctx);
+            return LegacySerializationContext.Complete();
         }
     }
 
