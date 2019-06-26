@@ -82,16 +82,18 @@ namespace Grpc.Core.Tests
         {
             var ctx = new FakeDeserializationContext(new byte[] { 0, 1, 2, 3, 4, 5 }, 1, 4);
             var obj = __Marshaller_BasicMessage.ContextualDeserializer(ctx);
+            Assert.AreEqual("01-02-03-04", obj.Payload);
+
 #if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
             // should have used the (byte[],int,int) method with an oversized original buffer
-            Assert.AreEqual(6, obj.OriginalSegmentLength);
             Assert.IsTrue(obj.UsedSegmentDeserializer);
+            Assert.AreEqual(6, obj.OriginalSegmentLength);
+
 #else
             // platform fallback: we expect it to have used the (byte[]) method and a buffer copy
-            Assert.AreEqual(4, obj.OriginalSegmentLength);
             Assert.IsFalse(obj.UsedSegmentDeserializer);
+            Assert.AreEqual(4, obj.OriginalSegmentLength);
 #endif
-            Assert.AreEqual("01 02 03 04", obj.Payload);
         }
 
         // DO NOT CHANGE; this is a typical line as generate from protoc (stripped of the protobuf-specific bits)
@@ -164,7 +166,7 @@ namespace Grpc.Core.Tests
                 this.count = count;
             }
 
-            public override int PayloadLength => payload.Length;
+            public override int PayloadLength => count;
 
             public override byte[] PayloadAsNewBuffer()
             {
