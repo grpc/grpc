@@ -353,7 +353,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
   ares_ssize_t SendV(WSAErrorContext* wsa_error_ctx, const struct iovec* iov,
                      int iov_count) {
     GRPC_CARES_TRACE_LOG(
-        "fd:|%s| SendV called connect_done_:%d was_connect_error_:%d",
+        "fd:|%s| SendV called connect_done_:%d wsa_connect_error_:%d",
         GetName(), connect_done_, wsa_connect_error_);
     if (!connect_done_) {
       wsa_error_ctx->SetWSAError(WSAEWOULDBLOCK);
