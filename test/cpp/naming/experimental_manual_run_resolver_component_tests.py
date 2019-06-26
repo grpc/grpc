@@ -22,20 +22,12 @@ _GCE_METADATA_SERVER = '169.254.169.254'
 _BUILD_CONFIG = os.environ['CONFIG']
 os.chdir(os.path.join('..', '..', os.getcwd()))
 
-if platform.system() == 'windows':
-  # GCE DNS integration test - run resolver_component_tests against GCE DNS
-  subprocess.call([
-      sys.executable,
-      'test\\cpp\\naming\\resolver_component_tests_runner.py',
-      '--test_bin_path', 'cmake\\build\\%s\\resolver_component_test.exe' % _BUILD_CONFIG,
-      '--dns_server_port', _GCE_METADATA_SERVER,
-      '--dns_server_port', str(53),
-  ])
+if 'Windows' in platform.system():
   # The c-ares unit test local DNS server suite doesn't get ran regularly on
   # Windows, but this script provides a way to run a lot of the tests manually.
   # This port is arbitrary, but it needs to be available.
   _DNS_SERVER_PORT = 15353
-  subprocess.call([
+  subprocess.check_call([
       sys.executable,
       'test\\cpp\\naming\\resolver_component_tests_runner.py',
       '--test_bin_path', 'cmake\\build\\%s\\resolver_component_test.exe' % _BUILD_CONFIG,
@@ -45,9 +37,17 @@ if platform.system() == 'windows':
       '--dns_resolver_bin_path', 'test\\cpp\\naming\\utils\\dns_resolver.py',
       '--tcp_connect_bin_path', 'test\\cpp\\naming\\utils\\tcp_connect.py',
   ])
+  # GCE DNS integration test - run resolver_component_tests against GCE DNS
+  subprocess.check_call([
+      sys.executable,
+      'test\\cpp\\naming\\resolver_component_tests_runner.py',
+      '--test_bin_path', 'cmake\\build\\%s\\resolver_component_test.exe' % _BUILD_CONFIG,
+      '--dns_server_ip', _GCE_METADATA_SERVER,
+      '--dns_server_port', str(53),
+  ])
 else:
   # GCE DNS integration test - run resolver_component_tests against GCE DNS
-  subprocess.call([
+  subprocess.check_call([
       sys.executable,
       'test/cpp/naming/resolver_component_tests_runner.py',
       '--test_bin_path', 'bins/%s/resolver_component_test' % _BUILD_CONFIG,
