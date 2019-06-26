@@ -390,14 +390,18 @@ TEST_P(ClientCallbackEnd2endTest, SimpleRpcUnderLockNested) {
     std::unique_lock<std::mutex> l(mu1);
     stub_->experimental_async()->Echo(
         &cli_ctx1, &request1, &response1,
-        [this, &mu1, &mu2, &mu3, &cv1, &done1, &request1, &request2, &request3, &response1, &response2, &response3, &cli_ctx1, &cli_ctx2, &cli_ctx3](Status s1) {
+        [this, &mu1, &mu2, &mu3, &cv1, &done1, &request1, &request2, &request3,
+         &response1, &response2, &response3, &cli_ctx1, &cli_ctx2,
+         &cli_ctx3](Status s1) {
           std::unique_lock<std::mutex> l1(mu1);
           EXPECT_TRUE(s1.ok());
           EXPECT_EQ(request1.message(), response1.message());
           // start the second level of nesting
           std::unique_lock<std::mutex> l2(mu2);
-          this->stub_->experimental_async()->Echo(&cli_ctx2, &request2, &response2,
-              [this, &mu2, &mu3, &cv1, &done1, &request2, &request3, &response2, &response3, &cli_ctx3](Status s2) {
+          this->stub_->experimental_async()->Echo(
+              &cli_ctx2, &request2, &response2,
+              [this, &mu2, &mu3, &cv1, &done1, &request2, &request3, &response2,
+               &response3, &cli_ctx3](Status s2) {
                 std::unique_lock<std::mutex> l2(mu2);
                 EXPECT_TRUE(s2.ok());
                 EXPECT_EQ(request2.message(), response2.message());
