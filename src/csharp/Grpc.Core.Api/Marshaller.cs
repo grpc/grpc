@@ -164,39 +164,39 @@ namespace Grpc.Core
     internal class LegacyDeserializationContext : DeserializationContext
     {
         private LegacyDeserializationContext() { }
-        private static readonly LegacyDeserializationContext s_singleton = new LegacyDeserializationContext();
+        private static readonly LegacyDeserializationContext Singleton = new LegacyDeserializationContext();
 
         internal static DeserializationContext Prepare(byte[] payload)
         {
             GrpcPreconditions.CheckNotNull(payload, nameof(payload));
-            ts_payload = payload;
-            return s_singleton;
+            ThreadStaticPayload = payload;
+            return Singleton;
         }
         [ThreadStatic]
-        private static byte[] ts_payload;
+        private static byte[] ThreadStaticPayload;
 
         public override int PayloadLength
         {
             get
             {
-                return ts_payload.Length;
+                return ThreadStaticPayload.Length;
             }
         }
         public override byte[] PayloadAsNewBuffer()
         {
-            return ts_payload;
+            return ThreadStaticPayload;
         }
 
 #if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
         public override ReadOnlySequence<byte> PayloadAsReadOnlySequence()
         {
-            return new ReadOnlySequence<byte>(ts_payload);
+            return new ReadOnlySequence<byte>(ThreadStaticPayload);
         }
 #endif
 
         internal static void Complete()
         {
-            ts_payload = null;
+            ThreadStaticPayload = null;
         }
     }
     /// <summary>
@@ -205,26 +205,26 @@ namespace Grpc.Core
     internal class LegacySerializationContext : SerializationContext
     {
         private LegacySerializationContext() { }
-        private static readonly LegacySerializationContext s_singleton = new LegacySerializationContext();
+        private static readonly LegacySerializationContext Singleton = new LegacySerializationContext();
         [ThreadStatic]
-        private static byte[] ts_payload;
+        private static byte[] ThreadStaticPayload;
 
         internal static SerializationContext Prepare()
         {
-            ts_payload = null;
-            return s_singleton;
+            ThreadStaticPayload = null;
+            return Singleton;
         }
 
         public override void Complete(byte[] payload)
         {
-            GrpcPreconditions.CheckState(ts_payload == null);
+            GrpcPreconditions.CheckState(ThreadStaticPayload == null);
             GrpcPreconditions.CheckNotNull(payload, nameof(payload));
-            ts_payload = payload;
+            ThreadStaticPayload = payload;
         }
         internal static byte[] Complete()
         {
-            var tmp = ts_payload;
-            ts_payload = null;
+            var tmp = ThreadStaticPayload;
+            ThreadStaticPayload = null;
             GrpcPreconditions.CheckState(tmp != null);
             return tmp;
         }
