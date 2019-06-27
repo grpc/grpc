@@ -27,9 +27,9 @@
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/global_config.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
@@ -136,12 +136,13 @@ grpc_error* grpc_ssl_check_alpn(const tsi_peer* peer) {
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_ssl_check_peer_name(const char* peer_name,
+grpc_error* grpc_ssl_check_peer_name(grpc_core::StringView peer_name,
                                      const tsi_peer* peer) {
   /* Check the peer name if specified. */
-  if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
+  if (!peer_name.empty() && !grpc_ssl_host_matches_name(peer, peer_name)) {
     char* msg;
-    gpr_asprintf(&msg, "Peer name %s is not in peer certificate", peer_name);
+    gpr_asprintf(&msg, "Peer name %s is not in peer certificate",
+                 peer_name.data());
     grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     return error;
@@ -149,15 +150,16 @@ grpc_error* grpc_ssl_check_peer_name(const char* peer_name,
   return GRPC_ERROR_NONE;
 }
 
-bool grpc_ssl_check_call_host(const char* host, const char* target_name,
-                              const char* overridden_target_name,
+bool grpc_ssl_check_call_host(grpc_core::StringView host,
+                              grpc_core::StringView target_name,
+                              grpc_core::StringView overridden_target_name,
                               grpc_auth_context* auth_context,
                               grpc_closure* on_call_host_checked,
                               grpc_error** error) {
   grpc_security_status status = GRPC_SECURITY_ERROR;
   tsi_peer peer = grpc_shallow_peer_from_ssl_auth_context(auth_context);
   if (grpc_ssl_host_matches_name(&peer, host)) status = GRPC_SECURITY_OK;
-  if (overridden_target_name != nullptr && strcmp(host, target_name) == 0) {
+  if (!overridden_target_name.empty() && host == target_name) {
     status = GRPC_SECURITY_OK;
   }
   if (status != GRPC_SECURITY_OK) {
@@ -179,35 +181,28 @@ const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols) {
   return alpn_protocol_strings;
 }
 
-int grpc_ssl_host_matches_name(const tsi_peer* peer, const char* peer_name) {
-  char* allocated_name = nullptr;
-  int r;
-
-  char* ignored_port;
-  gpr_split_host_port(peer_name, &allocated_name, &ignored_port);
-  gpr_free(ignored_port);
-  peer_name = allocated_name;
-  if (!peer_name) return 0;
+int grpc_ssl_host_matches_name(const tsi_peer* peer,
+                               grpc_core::StringView peer_name) {
+  grpc_core::StringView allocated_name;
+  grpc_core::StringView ignored_port;
+  grpc_core::SplitHostPort(peer_name, &allocated_name, &ignored_port);
+  if (allocated_name.empty()) return 0;
 
   // IPv6 zone-id should not be included in comparisons.
-  char* const zone_id = strchr(allocated_name, '%');
-  if (zone_id != nullptr) *zone_id = '\0';
-
-  r = tsi_ssl_peer_matches_name(peer, peer_name);
-  gpr_free(allocated_name);
-  return r;
+  const size_t zone_id = allocated_name.find('%');
+  if (zone_id != grpc_core::StringView::npos) {
+    allocated_name.remove_suffix(allocated_name.size() - zone_id);
+  }
+  return tsi_ssl_peer_matches_name(peer, allocated_name);
 }
 
-bool grpc_ssl_cmp_target_name(const char* target_name,
-                              const char* other_target_name,
-                              const char* overridden_target_name,
-                              const char* other_overridden_target_name) {
-  int c = strcmp(target_name, other_target_name);
+int grpc_ssl_cmp_target_name(
+    grpc_core::StringView target_name, grpc_core::StringView other_target_name,
+    grpc_core::StringView overridden_target_name,
+    grpc_core::StringView other_overridden_target_name) {
+  int c = target_name.cmp(other_target_name);
   if (c != 0) return c;
-  return (overridden_target_name == nullptr ||
-          other_overridden_target_name == nullptr)
-             ? GPR_ICMP(overridden_target_name, other_overridden_target_name)
-             : strcmp(overridden_target_name, other_overridden_target_name);
+  return overridden_target_name.cmp(other_overridden_target_name);
 }
 
 grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
