@@ -2399,7 +2399,7 @@ targets:
   - gpr
   exclude_iomgrs:
   - uv
-- name: dns_resolver_cooldown_test
+- name: dns_resolver_cooldown_using_ares_resolver_test
   build: test
   language: c
   src:
@@ -2408,6 +2408,19 @@ targets:
   - grpc_test_util
   - grpc
   - gpr
+  args:
+  - --resolver=ares
+- name: dns_resolver_cooldown_using_native_resolver_test
+  build: test
+  language: c
+  src:
+  - test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  args:
+  - --resolver=native
 - name: dns_resolver_test
   build: test
   language: c
