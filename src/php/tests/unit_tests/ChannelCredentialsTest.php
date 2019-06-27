@@ -16,14 +16,14 @@
  * limitations under the License.
  *
  */
-
-class ChanellCredentialsTest extends PHPUnit_Framework_TestCase
+use PHPUnit\Framework\TestCase;
+class ChanellCredentialsTest extends TestCase
 {
-    public function setUp()
+    public function setUp():void
     {
     }
 
-    public function tearDown()
+    public function tearDown():void
     {
     }
 

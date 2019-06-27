@@ -16,18 +16,19 @@
  * limitations under the License.
  *
  */
-class CallTest extends PHPUnit_Framework_TestCase
+use PHPUnit\Framework\TestCase;
+class CallTest extends TestCase
 {
     public static $server;
     public static $port;
 
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass():void
     {
         self::$server = new Grpc\Server([]);
         self::$port = self::$server->addHttp2Port('0.0.0.0:53000');
     }
 
-    public function setUp()
+    public function setUp():void
     {
         $this->channel = new Grpc\Channel('localhost:'.self::$port, [
             'force_new' => true,
@@ -37,7 +38,7 @@ class CallTest extends PHPUnit_Framework_TestCase
                                     Grpc\Timeval::infFuture());
     }
 
-    public function tearDown()
+    public function tearDown():void
     {
         $this->channel->close();
     }

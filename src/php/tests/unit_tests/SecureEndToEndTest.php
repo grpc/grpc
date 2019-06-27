@@ -16,9 +16,10 @@
  * limitations under the License.
  *
  */
-class SecureEndToEndTest extends PHPUnit_Framework_TestCase
+use PHPUnit\Framework\TestCase;
+class SecureEndToEndTest extends TestCase
 {
-    public function setUp()
+    public function setUp():void
     {
         $credentials = Grpc\ChannelCredentials::createSsl(
             file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
@@ -42,7 +43,7 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase
         );
     }
 
-    public function tearDown()
+    public function tearDown():void
     {
         $this->channel->close();
         unset($this->server);

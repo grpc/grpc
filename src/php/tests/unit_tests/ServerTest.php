@@ -17,14 +17,15 @@
  *
  */
 
-class ServerTest extends PHPUnit_Framework_TestCase
+use PHPUnit\Framework\TestCase;
+class ServerTest extends TestCase
 {
-    public function setUp()
+    public function setUp():void
     {
         $this->server = null;
     }
 
-    public function tearDown()
+    public function tearDown():void
     {
         unset($this->server);
     }

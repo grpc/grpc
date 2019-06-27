@@ -16,9 +16,10 @@
  * limitations under the License.
  *
  */
-class EndToEndTest extends PHPUnit_Framework_TestCase
+use PHPUnit\Framework\TestCase;
+class EndToEndTest extends TestCase
 {
-    public function setUp()
+    public function setUp():void
     {
         $this->server = new Grpc\Server([]);
         $this->port = $this->server->addHttp2Port('0.0.0.0:0');
@@ -28,7 +29,7 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
         $this->server->start();
     }
 
-    public function tearDown()
+    public function tearDown():void
     {
         $this->channel->close();
         unset($this->server);

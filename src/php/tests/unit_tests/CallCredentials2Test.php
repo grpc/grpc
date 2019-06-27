@@ -16,6 +16,7 @@
  * limitations under the License.
  *
  */
+
 use PHPUnit\Framework\TestCase;
 class CallCredentials2Test extends TestCase
 {
@@ -43,7 +44,7 @@ class CallCredentials2Test extends TestCase
         );
     }
 
-    public function tearDown() :void
+    public function tearDown():void
     {
         unset($this->channel);
         unset($this->server);
@@ -57,7 +58,7 @@ class CallCredentials2Test extends TestCase
         return ['k1' => ['v1'], 'k2' => ['v2']];
     }
 
-    public function testCreateFromPlugin()
+    public function testCreateFromPlugin():void
     {
         $deadline = Grpc\Timeval::infFuture();
         $status_text = 'xyz';

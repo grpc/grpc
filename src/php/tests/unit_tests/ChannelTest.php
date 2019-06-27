@@ -16,14 +16,14 @@
  * limitations under the License.
  *
  */
-
-class ChannelTest extends PHPUnit_Framework_TestCase
+use PHPUnit\Framework\TestCase;
+class ChannelTest extends TestCase
 {
-    public function setUp()
+    public function setUp():void
     {
     }
 
-    public function tearDown()
+    public function tearDown():void
     {
         if (!empty($this->channel)) {
             $this->channel->close();

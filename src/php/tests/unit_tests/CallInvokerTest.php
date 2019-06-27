@@ -158,17 +158,17 @@ class CallInvokerChangeRequestCall
         return $this->call->wait();
     }
 }
-
-class CallInvokerTest extends PHPUnit_Framework_TestCase
+use PHPUnit\Framework\TestCase;
+class CallInvokerTest extends TestCase
 {
-    public function setUp()
+    public function setUp():void
     {
         $this->server = new Grpc\Server([]);
         $this->port = $this->server->addHttp2Port('0.0.0.0:0');
         $this->server->start();
     }
 
-    public function tearDown()
+    public function tearDown():void
     {
         unset($this->server);
     }

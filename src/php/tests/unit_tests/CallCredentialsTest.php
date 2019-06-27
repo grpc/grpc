@@ -16,11 +16,10 @@
  * limitations under the License.
  *
  */
-
 use PHPUnit\Framework\TestCase;
 class CallCredentialsTest extends TestCase
 {
-    public function setUp():void
+    protected function setUp() :void
     {
         $this->credentials = Grpc\ChannelCredentials::createSsl(
             file_get_contents(dirname(__FILE__).'/../data/ca.pem'));

@@ -214,10 +214,10 @@ class StopCallInterceptor extends Grpc\Interceptor
         $metadata["foo"] = array('interceptor_from_request_response');
     }
 }
-
-class InterceptorTest extends PHPUnit_Framework_TestCase
+use PHPUnit\Framework\TestCase;
+class InterceptorTest extends TestCase
 {
-    public function setUp()
+    public function setUp():void
     {
         $this->server = new Grpc\Server([]);
         $this->port = $this->server->addHttp2Port('0.0.0.0:0');
@@ -227,7 +227,7 @@ class InterceptorTest extends PHPUnit_Framework_TestCase
         $this->server->start();
     }
 
-    public function tearDown()
+    public function tearDown():void
     {
         $this->channel->close();
         unset($this->server);
