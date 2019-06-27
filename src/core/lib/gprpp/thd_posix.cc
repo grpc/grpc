@@ -49,6 +49,8 @@ struct thd_arg {
   bool tracked;
 };
 
+// TODO(yunjiaw): move this to a function-level static, or remove the use of a
+// non-constexpr initializer when possible
 const size_t page_size = static_cast<size_t>(sysconf(_SC_PAGESIZE));
 
 size_t RoundUpToPageSize(size_t size) {
