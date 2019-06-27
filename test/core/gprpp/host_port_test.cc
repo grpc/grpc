@@ -48,11 +48,47 @@ static void test_join_host_port_garbage(void) {
   join_host_port_expect("::]", 107, "[::]]:107");
 }
 
+static void split_host_port_expect(const char* name, const char* host,
+                                   const char* port, bool ret) {
+  grpc_core::UniquePtr<char> actual_host;
+  grpc_core::UniquePtr<char> actual_port;
+  const bool actual_ret =
+      grpc_core::SplitHostPort(name, &actual_host, &actual_port);
+  GPR_ASSERT(actual_ret == ret);
+  if (host == nullptr) {
+    GPR_ASSERT(actual_host == nullptr);
+  } else {
+    GPR_ASSERT(strcmp(host, actual_host.get()) == 0);
+  }
+  if (port == nullptr) {
+    GPR_ASSERT(actual_port == nullptr);
+  } else {
+    GPR_ASSERT(strcmp(port, actual_port.get()) == 0);
+  }
+}
+
+static void test_split_host_port() {
+  split_host_port_expect("", "", "", true);
+  split_host_port_expect("[a:b]", "a:b", "", true);
+  split_host_port_expect("1.2.3.4", "1.2.3.4", "", true);
+  split_host_port_expect("a:b:c::", "a:b:c::", "", true);
+  split_host_port_expect("[a:b]:30", "a:b", "30", true);
+  split_host_port_expect("1.2.3.4:30", "1.2.3.4", "30", true);
+  split_host_port_expect(":30", "", "30", true);
+}
+
+static void test_split_host_port_invalid() {
+  split_host_port_expect("[a:b", nullptr, nullptr, false);
+  split_host_port_expect("[a:b]30", nullptr, nullptr, false);
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
 
   test_join_host_port();
   test_join_host_port_garbage();
+  test_split_host_port();
+  test_split_host_port_invalid();
 
   return 0;
 }
