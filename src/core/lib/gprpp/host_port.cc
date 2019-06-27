@@ -93,8 +93,12 @@ bool SplitHostPort(StringView name, UniquePtr<char>* host,
   StringView port_view;
   const bool ret = SplitHostPort(name, &host_view, &port_view);
   if (ret) {
+    // We always set the host, but port is set only when it's non-empty,
+    // to remain backward compatible with the old split_host_port API.
     *host = host_view.dup();
-    *port = port_view.dup();
+    if (!port_view.empty()) {
+      *port = port_view.dup();
+    }
   }
   return ret;
 }
