@@ -520,7 +520,7 @@ grpc_error* LoadTokenFile(const char* path, gpr_slice* token) {
 class StsTokenFetcherCredentials
     : public grpc_oauth2_token_fetcher_credentials {
  public:
-  StsTokenFetcherCredentials(grpc_uri* sts_url,  // Ownership transfered.
+  StsTokenFetcherCredentials(grpc_uri* sts_url,  // Ownership transferred.
                              const grpc_sts_credentials_options* options)
       : sts_url_(sts_url),
         resource_(gpr_strdup(options->resource)),
