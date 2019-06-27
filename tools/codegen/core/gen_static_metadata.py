@@ -550,9 +550,9 @@ print >> C, '}'
 print >> C
 
 print >> C, 'grpc_core::StaticMetadata grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {'
-for a, b in all_elems:
-    print >> C, 'grpc_core::StaticMetadata(%s,%s),' % (slice_def(str_idx(a)),
-                                                       slice_def(str_idx(b)))
+for idx, (a, b) in enumerate(all_elems):
+    print >> C, 'grpc_core::StaticMetadata(%s,%s, %d),' % (
+        slice_def(str_idx(a)), slice_def(str_idx(b)), idx)
 print >> C, '};'
 
 print >> H, 'typedef enum {'

@@ -711,18 +711,28 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
   }
   for (size_t i = 0; i < extra_headers_size; ++i) {
     grpc_mdelem md = *extra_headers[i];
-    uintptr_t static_index = grpc_chttp2_get_static_hpack_table_index(md);
-    if (static_index) {
-      emit_indexed(c, static_cast<uint32_t>(static_index), &st);
+    const bool is_static =
+        GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC;
+    uintptr_t static_index;
+    if (is_static &&
+        (static_index =
+             reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(md))
+                 ->StaticIndex()) < GRPC_CHTTP2_LAST_STATIC_ENTRY) {
+      emit_indexed(c, static_cast<uint32_t>(static_index + 1), &st);
     } else {
       hpack_enc(c, md, &st);
     }
   }
   grpc_metadata_batch_assert_ok(metadata);
   for (grpc_linked_mdelem* l = metadata->list.head; l; l = l->next) {
-    uintptr_t static_index = grpc_chttp2_get_static_hpack_table_index(l->md);
-    if (static_index) {
-      emit_indexed(c, static_cast<uint32_t>(static_index), &st);
+    const bool is_static =
+        GRPC_MDELEM_STORAGE(l->md) == GRPC_MDELEM_STORAGE_STATIC;
+    uintptr_t static_index;
+    if (is_static &&
+        (static_index = reinterpret_cast<grpc_core::StaticMetadata*>(
+                            GRPC_MDELEM_DATA(l->md))
+                            ->StaticIndex()) < GRPC_CHTTP2_LAST_STATIC_ENTRY) {
+      emit_indexed(c, static_cast<uint32_t>(static_index + 1), &st);
     } else {
       hpack_enc(c, l->md, &st);
     }
