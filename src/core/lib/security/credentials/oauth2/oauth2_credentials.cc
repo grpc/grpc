@@ -227,7 +227,7 @@ static void on_oauth2_token_fetcher_http_response(void* user_data,
 void grpc_oauth2_token_fetcher_credentials::on_http_response(
     grpc_credentials_metadata_request* r, grpc_error* error) {
   grpc_mdelem access_token_md = GRPC_MDNULL;
-  grpc_millis token_lifetime;
+  grpc_millis token_lifetime = 0;
   grpc_credentials_status status =
       error == GRPC_ERROR_NONE
           ? grpc_oauth2_token_fetcher_credentials_parse_server_response(
