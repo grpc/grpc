@@ -1044,13 +1044,18 @@ bool InteropClient::DoRpcSoakTest(int32_t soak_iterations) {
   GPR_ASSERT(soak_iterations > 0);
   SimpleRequest request;
   SimpleResponse response;
+  int failure_count = 0;
   for (int i = 0; i < soak_iterations; ++i) {
+    gpr_log(GPR_DEBUG, "Send next RPC. Iteration:%d", i);
     if (!PerformLargeUnary(&request, &response)) {
+      failure_count++;
       gpr_log(GPR_ERROR, "rpc_soak test failed on iteration %d", i);
-      return false;
     }
+    gpr_sleep_until(gpr_time_add(
+        gpr_now(GPR_CLOCK_MONOTONIC),
+        gpr_time_from_millis(10, GPR_TIMESPAN)));
   }
-  gpr_log(GPR_DEBUG, "rpc_soak test done.");
+  gpr_log(GPR_DEBUG, "rpc_soak test done. failure_count:%d", failure_count);
   return true;
 }
 

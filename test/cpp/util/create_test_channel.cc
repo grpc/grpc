@@ -111,6 +111,13 @@ std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& credential_type,
     const std::shared_ptr<CallCredentials>& creds) {
   ChannelArguments channel_args;
+  std::cout << "Setting policy to RR" << std::endl;
+  // comment the below out and you'll probably see just one SYN packet for the duration of the whole test
+  channel_args.SetString(GRPC_ARG_LB_POLICY_NAME, "round_robin");
+  // Uncomment below to decrease the total number of SYN packets by a lot
+  // channel_args.SetInt(GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS, 10000);
+  std::cout << "Disabling grpclb" << std::endl;
+  channel_args.SetInt(GRPC_ARG_DNS_ENABLE_SRV_QUERIES, 0);
   std::shared_ptr<ChannelCredentials> channel_creds =
       testing::GetCredentialsProvider()->GetChannelCredentials(credential_type,
                                                                &channel_args);
@@ -129,6 +136,13 @@ std::shared_ptr<Channel> CreateTestChannel(
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators) {
   ChannelArguments channel_args(args);
+  std::cout << "Setting policy to RR" << std::endl;
+  // comment the below out and you'll probably see just one SYN packet for the duration of the whole test
+  channel_args.SetString(GRPC_ARG_LB_POLICY_NAME, "round_robin");
+  // Uncomment below to decrease the total number of SYN packets by a lot
+  // channel_args.SetInt(GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS, 10000);
+  std::cout << "Disabling grpclb" << std::endl;
+  channel_args.SetInt(GRPC_ARG_DNS_ENABLE_SRV_QUERIES, 0);
   std::shared_ptr<ChannelCredentials> channel_creds;
   if (cred_type.empty()) {
     if (interceptor_creators.empty()) {
@@ -217,6 +231,13 @@ std::shared_ptr<Channel> CreateTestChannel(
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators) {
   ChannelArguments channel_args;
+  std::cout << "Setting policy to RR" << std::endl;
+  // comment the below out and you'll probably see just one SYN packet for the duration of the whole test
+  channel_args.SetString(GRPC_ARG_LB_POLICY_NAME, "round_robin");
+  // Uncomment below to decrease the total number of SYN packets by a lot
+  // channel_args.SetInt(GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS, 10000);
+  std::cout << "Disabling grpclb" << std::endl;
+  channel_args.SetInt(GRPC_ARG_DNS_ENABLE_SRV_QUERIES, 0);
   std::shared_ptr<ChannelCredentials> channel_creds =
       testing::GetCredentialsProvider()->GetChannelCredentials(credential_type,
                                                                &channel_args);
