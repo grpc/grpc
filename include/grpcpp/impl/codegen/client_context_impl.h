@@ -92,7 +92,6 @@ template <class W, class R>
 class ClientAsyncReaderWriter;
 template <class R>
 class ClientAsyncResponseReader;
-class ServerContext;
 
 namespace testing {
 class InteropClientContextInspector;
@@ -103,6 +102,7 @@ namespace grpc_impl {
 class CallCredentials;
 class Channel;
 class CompletionQueue;
+class ServerContext;
 
 /// Options for \a ClientContext::FromServerContext specifying which traits from
 /// the \a ServerContext to propagate (copy) from it into a new \a
@@ -191,7 +191,7 @@ class ClientContext {
   /// \return A newly constructed \a ClientContext instance based on \a
   /// server_context, with traits propagated (copied) according to \a options.
   static std::unique_ptr<ClientContext> FromServerContext(
-      const grpc::ServerContext& server_context,
+      const grpc_impl::ServerContext& server_context,
       PropagationOptions options = PropagationOptions());
 
   /// Add the (\a meta_key, \a meta_value) pair to the metadata associated with

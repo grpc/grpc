@@ -142,14 +142,17 @@ grpc::string GetHeaderIncludes(grpc_generator::File* file,
         "grpcpp/impl/codegen/async_stream.h",
         "grpcpp/impl/codegen/async_unary_call.h",
         "grpcpp/impl/codegen/client_callback.h",
+        "grpcpp/impl/codegen/client_context.h",
         "grpcpp/impl/codegen/method_handler_impl.h",
         "grpcpp/impl/codegen/proto_utils.h",
         "grpcpp/impl/codegen/rpc_method.h",
         "grpcpp/impl/codegen/server_callback.h",
+        "grpcpp/impl/codegen/server_context.h",
         "grpcpp/impl/codegen/service_type.h",
         "grpcpp/impl/codegen/status.h",
         "grpcpp/impl/codegen/stub_options.h",
-        "grpcpp/impl/codegen/sync_stream.h"};
+        "grpcpp/impl/codegen/sync_stream.h",
+    };
     std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params.use_system_headers,
                   params.grpc_search_path);
@@ -157,13 +160,13 @@ grpc::string GetHeaderIncludes(grpc_generator::File* file,
     printer->Print(vars, "namespace grpc_impl {\n");
     printer->Print(vars, "class CompletionQueue;\n");
     printer->Print(vars, "class ServerCompletionQueue;\n");
+    printer->Print(vars, "class ServerContext;\n");
     printer->Print(vars, "}  // namespace grpc_impl\n\n");
     printer->Print(vars, "namespace grpc {\n");
     printer->Print(vars, "namespace experimental {\n");
     printer->Print(vars, "template <typename RequestT, typename ResponseT>\n");
     printer->Print(vars, "class MessageAllocator;\n");
     printer->Print(vars, "}  // namespace experimental\n");
-    printer->Print(vars, "class ServerContext;\n");
     printer->Print(vars, "}  // namespace grpc\n\n");
 
     vars["message_header_ext"] = params.message_header_extension.empty()

@@ -1180,6 +1180,10 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
       interested_parties_(grpc_pollset_set_create()),
       subchannel_pool_(GetSubchannelPool(args->channel_args)),
       disconnect_error_(GRPC_ERROR_NONE) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+    gpr_log(GPR_INFO, "chand=%p: creating client_channel for channel stack %p",
+            this, owning_stack_);
+  }
   // Initialize data members.
   grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE,
                                "client_channel");
@@ -1259,6 +1263,9 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
 }
 
 ChannelData::~ChannelData() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+    gpr_log(GPR_INFO, "chand=%p: destroying channel", this);
+  }
   if (resolving_lb_policy_ != nullptr) {
     grpc_pollset_set_del_pollset_set(resolving_lb_policy_->interested_parties(),
                                      interested_parties_);

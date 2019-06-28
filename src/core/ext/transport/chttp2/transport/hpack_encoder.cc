@@ -130,8 +130,9 @@ static void begin_frame(framer_state* st) {
    space to add at least about_to_add bytes -- finishes the current frame if
    needed */
 static void ensure_space(framer_state* st, size_t need_bytes) {
-  if (st->output->length - st->output_length_at_start_of_frame + need_bytes <=
-      st->max_frame_size) {
+  if (GPR_LIKELY(st->output->length - st->output_length_at_start_of_frame +
+                     need_bytes <=
+                 st->max_frame_size)) {
     return;
   }
   finish_frame(st, 0, 0);

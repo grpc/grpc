@@ -46,6 +46,7 @@ namespace grpc_impl {
 class Channel;
 class Server;
 class ServerBuilder;
+class ServerContext;
 }  // namespace grpc_impl
 namespace grpc {
 
@@ -65,7 +66,6 @@ class ServerReaderWriterBody;
 }  // namespace internal
 
 class ChannelInterface;
-class ServerContext;
 class ServerInterface;
 
 namespace internal {
@@ -277,7 +277,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   template <::grpc::StatusCode code>
   friend class ::grpc::internal::ErrorMethodHandler;
   friend class ::grpc_impl::Server;
-  friend class ::grpc::ServerContext;
+  friend class ::grpc_impl::ServerContext;
   friend class ::grpc::ServerInterface;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;

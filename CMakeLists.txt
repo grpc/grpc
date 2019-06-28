@@ -24,7 +24,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.22.0-dev")
+set(PACKAGE_VERSION   "1.23.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -437,17 +437,6 @@ add_dependencies(buildtests_c udp_server_test)
 endif()
 add_dependencies(buildtests_c uri_parser_test)
 add_dependencies(buildtests_c public_headers_must_be_c89)
-add_dependencies(buildtests_c badreq_bad_client_test)
-add_dependencies(buildtests_c connection_prefix_bad_client_test)
-add_dependencies(buildtests_c duplicate_header_bad_client_test)
-add_dependencies(buildtests_c head_of_line_blocking_bad_client_test)
-add_dependencies(buildtests_c headers_bad_client_test)
-add_dependencies(buildtests_c initial_settings_frame_bad_client_test)
-add_dependencies(buildtests_c large_metadata_bad_client_test)
-add_dependencies(buildtests_c server_registered_method_bad_client_test)
-add_dependencies(buildtests_c simple_request_bad_client_test)
-add_dependencies(buildtests_c unknown_frame_bad_client_test)
-add_dependencies(buildtests_c window_overflow_bad_client_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c bad_ssl_cert_server)
 endif()
@@ -735,6 +724,19 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx writes_per_rpc_test)
 endif()
 add_dependencies(buildtests_cxx xds_end2end_test)
+add_dependencies(buildtests_cxx bad_streaming_id_bad_client_test)
+add_dependencies(buildtests_cxx badreq_bad_client_test)
+add_dependencies(buildtests_cxx connection_prefix_bad_client_test)
+add_dependencies(buildtests_cxx duplicate_header_bad_client_test)
+add_dependencies(buildtests_cxx head_of_line_blocking_bad_client_test)
+add_dependencies(buildtests_cxx headers_bad_client_test)
+add_dependencies(buildtests_cxx initial_settings_frame_bad_client_test)
+add_dependencies(buildtests_cxx large_metadata_bad_client_test)
+add_dependencies(buildtests_cxx out_of_bounds_bad_client_test)
+add_dependencies(buildtests_cxx server_registered_method_bad_client_test)
+add_dependencies(buildtests_cxx simple_request_bad_client_test)
+add_dependencies(buildtests_cxx unknown_frame_bad_client_test)
+add_dependencies(buildtests_cxx window_overflow_bad_client_test)
 add_dependencies(buildtests_cxx resolver_component_test_unsecure)
 add_dependencies(buildtests_cxx resolver_component_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -3158,6 +3160,7 @@ foreach(_hdr
   include/grpcpp/channel_impl.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
+  include/grpcpp/completion_queue_impl.h
   include/grpcpp/create_channel.h
   include/grpcpp/create_channel_impl.h
   include/grpcpp/create_channel_posix.h
@@ -3337,6 +3340,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/serialization_traits.h
   include/grpcpp/impl/codegen/server_callback.h
   include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_context_impl.h
   include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
@@ -3778,6 +3782,7 @@ foreach(_hdr
   include/grpcpp/channel_impl.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
+  include/grpcpp/completion_queue_impl.h
   include/grpcpp/create_channel.h
   include/grpcpp/create_channel_impl.h
   include/grpcpp/create_channel_posix.h
@@ -3957,6 +3962,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/serialization_traits.h
   include/grpcpp/impl/codegen/server_callback.h
   include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_context_impl.h
   include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
@@ -4393,6 +4399,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/serialization_traits.h
   include/grpcpp/impl/codegen/server_callback.h
   include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_context_impl.h
   include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
@@ -4593,6 +4600,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/serialization_traits.h
   include/grpcpp/impl/codegen/server_callback.h
   include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_context_impl.h
   include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
@@ -4774,6 +4782,7 @@ foreach(_hdr
   include/grpcpp/channel_impl.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
+  include/grpcpp/completion_queue_impl.h
   include/grpcpp/create_channel.h
   include/grpcpp/create_channel_impl.h
   include/grpcpp/create_channel_posix.h
@@ -4953,6 +4962,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/serialization_traits.h
   include/grpcpp/impl/codegen/server_callback.h
   include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_context_impl.h
   include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
@@ -5840,18 +5850,19 @@ target_include_directories(bad_client_test
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(bad_client_test PROPERTIES LINKER_LANGUAGE C)
-    # only use the flags for C++ source files
-    target_compile_options(bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 target_link_libraries(bad_client_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 
@@ -17028,8 +17039,50 @@ target_link_libraries(gen_percent_encoding_tables
 
 if (gRPC_BUILD_TESTS)
 
+add_executable(bad_streaming_id_bad_client_test
+  test/core/bad_client/tests/bad_streaming_id.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(bad_streaming_id_bad_client_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(bad_streaming_id_bad_client_test
+  ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  bad_client_test
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(badreq_bad_client_test
   test/core/bad_client/tests/badreq.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -17044,28 +17097,32 @@ target_include_directories(badreq_bad_client_test
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(badreq_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(badreq_bad_client_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(badreq_bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(connection_prefix_bad_client_test
   test/core/bad_client/tests/connection_prefix.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -17080,28 +17137,32 @@ target_include_directories(connection_prefix_bad_client_test
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(connection_prefix_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(connection_prefix_bad_client_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(connection_prefix_bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(duplicate_header_bad_client_test
   test/core/bad_client/tests/duplicate_header.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -17116,28 +17177,32 @@ target_include_directories(duplicate_header_bad_client_test
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(duplicate_header_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(duplicate_header_bad_client_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(duplicate_header_bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(head_of_line_blocking_bad_client_test
   test/core/bad_client/tests/head_of_line_blocking.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -17152,28 +17217,32 @@ target_include_directories(head_of_line_blocking_bad_client_test
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(head_of_line_blocking_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(head_of_line_blocking_bad_client_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(head_of_line_blocking_bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(headers_bad_client_test
   test/core/bad_client/tests/headers.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -17188,28 +17257,32 @@ target_include_directories(headers_bad_client_test
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(headers_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(headers_bad_client_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(headers_bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(initial_settings_frame_bad_client_test
   test/core/bad_client/tests/initial_settings_frame.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -17224,28 +17297,32 @@ target_include_directories(initial_settings_frame_bad_client_test
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(initial_settings_frame_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(initial_settings_frame_bad_client_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(initial_settings_frame_bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(large_metadata_bad_client_test
   test/core/bad_client/tests/large_metadata.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -17260,28 +17337,72 @@ target_include_directories(large_metadata_bad_client_test
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(large_metadata_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(large_metadata_bad_client_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(large_metadata_bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(out_of_bounds_bad_client_test
+  test/core/bad_client/tests/out_of_bounds.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(out_of_bounds_bad_client_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(out_of_bounds_bad_client_test
+  ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  bad_client_test
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(server_registered_method_bad_client_test
   test/core/bad_client/tests/server_registered_method.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -17296,28 +17417,32 @@ target_include_directories(server_registered_method_bad_client_test
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(server_registered_method_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(server_registered_method_bad_client_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(server_registered_method_bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(simple_request_bad_client_test
   test/core/bad_client/tests/simple_request.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -17332,28 +17457,32 @@ target_include_directories(simple_request_bad_client_test
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(simple_request_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(simple_request_bad_client_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(simple_request_bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(unknown_frame_bad_client_test
   test/core/bad_client/tests/unknown_frame.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -17368,28 +17497,32 @@ target_include_directories(unknown_frame_bad_client_test
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(unknown_frame_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(unknown_frame_bad_client_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(unknown_frame_bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(window_overflow_bad_client_test
   test/core/bad_client/tests/window_overflow.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
@@ -17404,22 +17537,24 @@ target_include_directories(window_overflow_bad_client_test
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(window_overflow_bad_client_test
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(window_overflow_bad_client_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(window_overflow_bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)

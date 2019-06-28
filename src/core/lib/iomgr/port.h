@@ -26,6 +26,11 @@
 #define GRPC_CUSTOM_SOCKET
 #endif
 #endif
+/* This needs to be separate from the other conditions because it needs to
+ * apply to custom sockets too */
+#ifdef GPR_WINDOWS
+#define GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY 1
+#endif
 #if defined(GRPC_CUSTOM_SOCKET)
 // Do Nothing
 #elif defined(GPR_MANYLINUX1)
@@ -45,7 +50,6 @@
 #define GRPC_WINSOCK_SOCKET 1
 #define GRPC_WINDOWS_SOCKETUTILS 1
 #define GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER 1
-#define GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY 1
 #elif defined(GPR_ANDROID)
 #define GRPC_HAVE_IPV6_RECVPKTINFO 1
 #define GRPC_HAVE_IP_PKTINFO 1

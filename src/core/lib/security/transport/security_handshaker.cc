@@ -195,7 +195,7 @@ void SecurityHandshaker::HandshakeFailedLocked(grpc_error* error) {
 void SecurityHandshaker::OnPeerCheckedInner(grpc_error* error) {
   MutexLock lock(&mu_);
   if (error != GRPC_ERROR_NONE || is_shutdown_) {
-    HandshakeFailedLocked(GRPC_ERROR_REF(error));
+    HandshakeFailedLocked(error);
     return;
   }
   // Create zero-copy frame protector, if implemented.
@@ -255,7 +255,7 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error* error) {
 
 void SecurityHandshaker::OnPeerCheckedFn(void* arg, grpc_error* error) {
   RefCountedPtr<SecurityHandshaker>(static_cast<SecurityHandshaker*>(arg))
-      ->OnPeerCheckedInner(error);
+      ->OnPeerCheckedInner(GRPC_ERROR_REF(error));
 }
 
 grpc_error* SecurityHandshaker::CheckPeerLocked() {

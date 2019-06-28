@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.description   = 'Send RPCs from Ruby using GRPC'
   s.license       = 'Apache-2.0'
 
-  s.required_ruby_version = '>= 2.0.0'
+  s.required_ruby_version = '>= 2.3.0'
 
   s.files = %w( Makefile .yardopts )
   s.files += %w( etc/roots.pem )
@@ -29,7 +29,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.7'
+  s.add_dependency 'google-protobuf', '~> 3.8'
   s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
   s.add_development_dependency 'bundler',            '~> 1.9'

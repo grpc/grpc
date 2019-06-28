@@ -19,6 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CLIENT_CALLBACK_H
 #define GRPCPP_IMPL_CODEGEN_CLIENT_CALLBACK_H
 
+#include <atomic>
 #include <functional>
 
 #include <grpcpp/impl/codegen/call.h>
@@ -43,8 +44,8 @@ class RpcMethod;
 /// TODO(vjpai): Combine as much as possible with the blocking unary call code
 template <class InputMessage, class OutputMessage>
 void CallbackUnaryCall(ChannelInterface* channel, const RpcMethod& method,
-                       ClientContext* context, const InputMessage* request,
-                       OutputMessage* result,
+                       ::grpc_impl::ClientContext* context,
+                       const InputMessage* request, OutputMessage* result,
                        std::function<void(Status)> on_completion) {
   CallbackUnaryCallImpl<InputMessage, OutputMessage> x(
       channel, method, context, request, result, on_completion);
@@ -54,8 +55,8 @@ template <class InputMessage, class OutputMessage>
 class CallbackUnaryCallImpl {
  public:
   CallbackUnaryCallImpl(ChannelInterface* channel, const RpcMethod& method,
-                        ClientContext* context, const InputMessage* request,
-                        OutputMessage* result,
+                        ::grpc_impl::ClientContext* context,
+                        const InputMessage* request, OutputMessage* result,
                         std::function<void(Status)> on_completion) {
     CompletionQueue* cq = channel->CallbackCQ();
     GPR_CODEGEN_ASSERT(cq != nullptr);
@@ -419,7 +420,8 @@ class ClientCallbackReaderWriterImpl
   static void operator delete(void*, void*) { assert(0); }
 
   void MaybeFinish() {
-    if (--callbacks_outstanding_ == 0) {
+    if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
+                         1, std::memory_order_acq_rel) == 1)) {
       Status s = std::move(finish_status_);
       auto* reactor = reactor_;
       auto* call = call_.call();
@@ -489,7 +491,7 @@ class ClientCallbackReaderWriterImpl
 
   void Read(Response* msg) override {
     read_ops_.RecvMessage(msg);
-    callbacks_outstanding_++;
+    callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
     if (started_) {
       call_.PerformOps(&read_ops_);
     } else {
@@ -510,7 +512,7 @@ class ClientCallbackReaderWriterImpl
     }
     // TODO(vjpai): don't assert
     GPR_CODEGEN_ASSERT(write_ops_.SendMessagePtr(msg, options).ok());
-    callbacks_outstanding_++;
+    callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
     if (started_) {
       call_.PerformOps(&write_ops_);
     } else {
@@ -531,7 +533,7 @@ class ClientCallbackReaderWriterImpl
                          },
                          &writes_done_ops_);
     writes_done_ops_.set_core_cq_tag(&writes_done_tag_);
-    callbacks_outstanding_++;
+    callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
     if (started_) {
       call_.PerformOps(&writes_done_ops_);
     } else {
@@ -539,14 +541,16 @@ class ClientCallbackReaderWriterImpl
     }
   }
 
-  virtual void AddHold(int holds) override { callbacks_outstanding_ += holds; }
-  virtual void RemoveHold() override { MaybeFinish(); }
+  void AddHold(int holds) override {
+    callbacks_outstanding_.fetch_add(holds, std::memory_order_relaxed);
+  }
+  void RemoveHold() override { MaybeFinish(); }
 
  private:
   friend class ClientCallbackReaderWriterFactory<Request, Response>;
 
   ClientCallbackReaderWriterImpl(
-      Call call, ClientContext* context,
+      Call call, ::grpc_impl::ClientContext* context,
       ::grpc::experimental::ClientBidiReactor<Request, Response>* reactor)
       : context_(context),
         call_(call),
@@ -555,7 +559,7 @@ class ClientCallbackReaderWriterImpl
     this->BindReactor(reactor);
   }
 
-  ClientContext* const context_;
+  ::grpc_impl::ClientContext* const context_;
   Call call_;
   ::grpc::experimental::ClientBidiReactor<Request, Response>* const reactor_;
 
@@ -581,7 +585,7 @@ class ClientCallbackReaderWriterImpl
   bool read_ops_at_start_{false};
 
   // Minimum of 2 callbacks to pre-register for start and finish
-  std::atomic_int callbacks_outstanding_{2};
+  std::atomic<intptr_t> callbacks_outstanding_{2};
   bool started_{false};
 };
 
@@ -590,7 +594,7 @@ class ClientCallbackReaderWriterFactory {
  public:
   static void Create(
       ChannelInterface* channel, const ::grpc::internal::RpcMethod& method,
-      ClientContext* context,
+      ::grpc_impl::ClientContext* context,
       ::grpc::experimental::ClientBidiReactor<Request, Response>* reactor) {
     Call call = channel->CreateCall(method, context, channel->CallbackCQ());
 
@@ -619,7 +623,8 @@ class ClientCallbackReaderImpl
   static void operator delete(void*, void*) { assert(0); }
 
   void MaybeFinish() {
-    if (--callbacks_outstanding_ == 0) {
+    if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
+                         1, std::memory_order_acq_rel) == 1)) {
       Status s = std::move(finish_status_);
       auto* reactor = reactor_;
       auto* call = call_.call();
@@ -669,7 +674,7 @@ class ClientCallbackReaderImpl
 
   void Read(Response* msg) override {
     read_ops_.RecvMessage(msg);
-    callbacks_outstanding_++;
+    callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
     if (started_) {
       call_.PerformOps(&read_ops_);
     } else {
@@ -677,15 +682,17 @@ class ClientCallbackReaderImpl
     }
   }
 
-  virtual void AddHold(int holds) override { callbacks_outstanding_ += holds; }
-  virtual void RemoveHold() override { MaybeFinish(); }
+  void AddHold(int holds) override {
+    callbacks_outstanding_.fetch_add(holds, std::memory_order_relaxed);
+  }
+  void RemoveHold() override { MaybeFinish(); }
 
  private:
   friend class ClientCallbackReaderFactory<Response>;
 
   template <class Request>
   ClientCallbackReaderImpl(
-      Call call, ClientContext* context, Request* request,
+      Call call, ::grpc_impl::ClientContext* context, Request* request,
       ::grpc::experimental::ClientReadReactor<Response>* reactor)
       : context_(context), call_(call), reactor_(reactor) {
     this->BindReactor(reactor);
@@ -694,7 +701,7 @@ class ClientCallbackReaderImpl
     start_ops_.ClientSendClose();
   }
 
-  ClientContext* const context_;
+  ::grpc_impl::ClientContext* const context_;
   Call call_;
   ::grpc::experimental::ClientReadReactor<Response>* const reactor_;
 
@@ -712,7 +719,7 @@ class ClientCallbackReaderImpl
   bool read_ops_at_start_{false};
 
   // Minimum of 2 callbacks to pre-register for start and finish
-  std::atomic_int callbacks_outstanding_{2};
+  std::atomic<intptr_t> callbacks_outstanding_{2};
   bool started_{false};
 };
 
@@ -722,7 +729,7 @@ class ClientCallbackReaderFactory {
   template <class Request>
   static void Create(
       ChannelInterface* channel, const ::grpc::internal::RpcMethod& method,
-      ClientContext* context, const Request* request,
+      ::grpc_impl::ClientContext* context, const Request* request,
       ::grpc::experimental::ClientReadReactor<Response>* reactor) {
     Call call = channel->CreateCall(method, context, channel->CallbackCQ());
 
@@ -750,7 +757,8 @@ class ClientCallbackWriterImpl
   static void operator delete(void*, void*) { assert(0); }
 
   void MaybeFinish() {
-    if (--callbacks_outstanding_ == 0) {
+    if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
+                         1, std::memory_order_acq_rel) == 1)) {
       Status s = std::move(finish_status_);
       auto* reactor = reactor_;
       auto* call = call_.call();
@@ -819,7 +827,7 @@ class ClientCallbackWriterImpl
     }
     // TODO(vjpai): don't assert
     GPR_CODEGEN_ASSERT(write_ops_.SendMessagePtr(msg, options).ok());
-    callbacks_outstanding_++;
+    callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
     if (started_) {
       call_.PerformOps(&write_ops_);
     } else {
@@ -840,7 +848,7 @@ class ClientCallbackWriterImpl
                          },
                          &writes_done_ops_);
     writes_done_ops_.set_core_cq_tag(&writes_done_tag_);
-    callbacks_outstanding_++;
+    callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
     if (started_) {
       call_.PerformOps(&writes_done_ops_);
     } else {
@@ -848,15 +856,17 @@ class ClientCallbackWriterImpl
     }
   }
 
-  virtual void AddHold(int holds) override { callbacks_outstanding_ += holds; }
-  virtual void RemoveHold() override { MaybeFinish(); }
+  void AddHold(int holds) override {
+    callbacks_outstanding_.fetch_add(holds, std::memory_order_relaxed);
+  }
+  void RemoveHold() override { MaybeFinish(); }
 
  private:
   friend class ClientCallbackWriterFactory<Request>;
 
   template <class Response>
   ClientCallbackWriterImpl(
-      Call call, ClientContext* context, Response* response,
+      Call call, ::grpc_impl::ClientContext* context, Response* response,
       ::grpc::experimental::ClientWriteReactor<Request>* reactor)
       : context_(context),
         call_(call),
@@ -867,7 +877,7 @@ class ClientCallbackWriterImpl
     finish_ops_.AllowNoMessage();
   }
 
-  ClientContext* const context_;
+  ::grpc_impl::ClientContext* const context_;
   Call call_;
   ::grpc::experimental::ClientWriteReactor<Request>* const reactor_;
 
@@ -889,7 +899,7 @@ class ClientCallbackWriterImpl
   bool writes_done_ops_at_start_{false};
 
   // Minimum of 2 callbacks to pre-register for start and finish
-  std::atomic_int callbacks_outstanding_{2};
+  std::atomic<intptr_t> callbacks_outstanding_{2};
   bool started_{false};
 };
 
@@ -899,7 +909,7 @@ class ClientCallbackWriterFactory {
   template <class Response>
   static void Create(
       ChannelInterface* channel, const ::grpc::internal::RpcMethod& method,
-      ClientContext* context, Response* response,
+      ::grpc_impl::ClientContext* context, Response* response,
       ::grpc::experimental::ClientWriteReactor<Request>* reactor) {
     Call call = channel->CreateCall(method, context, channel->CallbackCQ());
 
@@ -951,7 +961,8 @@ class ClientCallbackUnaryImpl final
   }
 
   void MaybeFinish() {
-    if (--callbacks_outstanding_ == 0) {
+    if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
+                         1, std::memory_order_acq_rel) == 1)) {
       Status s = std::move(finish_status_);
       auto* reactor = reactor_;
       auto* call = call_.call();
@@ -965,8 +976,8 @@ class ClientCallbackUnaryImpl final
   friend class ClientCallbackUnaryFactory;
 
   template <class Request, class Response>
-  ClientCallbackUnaryImpl(Call call, ClientContext* context, Request* request,
-                          Response* response,
+  ClientCallbackUnaryImpl(Call call, ::grpc_impl::ClientContext* context,
+                          Request* request, Response* response,
                           ::grpc::experimental::ClientUnaryReactor* reactor)
       : context_(context), call_(call), reactor_(reactor) {
     this->BindReactor(reactor);
@@ -977,7 +988,7 @@ class ClientCallbackUnaryImpl final
     finish_ops_.AllowNoMessage();
   }
 
-  ClientContext* const context_;
+  ::grpc_impl::ClientContext* const context_;
   Call call_;
   ::grpc::experimental::ClientUnaryReactor* const reactor_;
 
@@ -991,7 +1002,7 @@ class ClientCallbackUnaryImpl final
   Status finish_status_;
 
   // This call will have 2 callbacks: start and finish
-  std::atomic_int callbacks_outstanding_{2};
+  std::atomic<intptr_t> callbacks_outstanding_{2};
   bool started_{false};
 };
 
@@ -1000,8 +1011,8 @@ class ClientCallbackUnaryFactory {
   template <class Request, class Response>
   static void Create(ChannelInterface* channel,
                      const ::grpc::internal::RpcMethod& method,
-                     ClientContext* context, const Request* request,
-                     Response* response,
+                     ::grpc_impl::ClientContext* context,
+                     const Request* request, Response* response,
                      ::grpc::experimental::ClientUnaryReactor* reactor) {
     Call call = channel->CreateCall(method, context, channel->CallbackCQ());
 

@@ -156,8 +156,7 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
 // HTTP/2 keep-alive feature. The parameter \a keepaliveInterval specifies the interval between two
 // PING frames. The parameter \a keepaliveTimeout specifies the length of the period for which the
 // call should wait for PING ACK. If PING ACK is not received after this period, the call fails.
-// Negative values are invalid; setting these parameters to negative value will reset the
-// corresponding parameter to the internal default value.
+// Negative values are not allowed.
 @property(readonly) NSTimeInterval keepaliveInterval;
 @property(readonly) NSTimeInterval keepaliveTimeout;
 
@@ -321,7 +320,7 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
 // PING frames. The parameter \a keepaliveTimeout specifies the length of the period for which the
 // call should wait for PING ACK. If PING ACK is not received after this period, the call fails.
 // Negative values are invalid; setting these parameters to negative value will reset the
-// corresponding parameter to the internal default value.
+// corresponding parameter to 0.
 @property(readwrite) NSTimeInterval keepaliveInterval;
 @property(readwrite) NSTimeInterval keepaliveTimeout;
 

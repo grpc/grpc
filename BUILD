@@ -74,11 +74,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gale"
+g_stands_for = "gangnam"
 
 core_version = "7.0.0"
 
-version = "1.22.0-dev"
+version = "1.23.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -222,6 +222,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/channel_impl.h",
     "include/grpcpp/client_context.h",
     "include/grpcpp/completion_queue.h",
+    "include/grpcpp/completion_queue_impl.h",
     "include/grpcpp/create_channel.h",
     "include/grpcpp/create_channel_impl.h",
     "include/grpcpp/create_channel_posix.h",
@@ -1033,7 +1034,7 @@ grpc_cc_library(
         "src/core/lib/uri/uri_parser.h",
     ],
     external_deps = [
-        "zlib",
+        "madler_zlib",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
@@ -2186,6 +2187,7 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/serialization_traits.h",
         "include/grpcpp/impl/codegen/server_callback.h",
         "include/grpcpp/impl/codegen/server_context.h",
+        "include/grpcpp/impl/codegen/server_context_impl.h",
         "include/grpcpp/impl/codegen/server_interceptor.h",
         "include/grpcpp/impl/codegen/server_interface.h",
         "include/grpcpp/impl/codegen/service_type.h",
