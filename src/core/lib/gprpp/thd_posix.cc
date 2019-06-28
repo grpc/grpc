@@ -31,6 +31,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/fork.h"
@@ -47,6 +48,26 @@ struct thd_arg {
   bool joinable;
   bool tracked;
 };
+
+// TODO(yunjiaw): move this to a function-level static, or remove the use of a
+// non-constexpr initializer when possible
+const size_t page_size = static_cast<size_t>(sysconf(_SC_PAGESIZE));
+
+size_t RoundUpToPageSize(size_t size) {
+  return (size + page_size - 1) & ~(page_size - 1);
+}
+
+// Returns the minimum valid stack size that can be passed to
+// pthread_attr_setstacksize.
+size_t MinValidStackSize(size_t request_size) {
+  if (request_size < _SC_THREAD_STACK_MIN) {
+    request_size = _SC_THREAD_STACK_MIN;
+  }
+
+  // On some systems, pthread_attr_setstacksize() can fail if stacksize is
+  // not a multiple of the system page size.
+  return RoundUpToPageSize(request_size);
+}
 
 class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
  public:
@@ -77,6 +98,11 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
     } else {
       GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) ==
                  0);
+    }
+
+    if (options.stack_size() != 0) {
+      size_t stack_size = MinValidStackSize(options.stack_size());
+      GPR_ASSERT(pthread_attr_setstacksize(&attr, stack_size) == 0);
     }
 
     *success =

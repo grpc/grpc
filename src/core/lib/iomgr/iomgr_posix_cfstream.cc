@@ -90,8 +90,6 @@ void grpc_set_default_iomgr_platform() {
   grpc_set_iomgr_platform_vtable(&vtable);
 }
 
-bool grpc_iomgr_run_in_background() {
-  return grpc_event_engine_run_in_background();
-}
+bool grpc_iomgr_run_in_background() { return false; }
 
 #endif /* GRPC_CFSTREAM_IOMGR */

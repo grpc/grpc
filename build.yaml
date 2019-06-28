@@ -1366,6 +1366,7 @@ filegroups:
   - include/grpcpp/channel_impl.h
   - include/grpcpp/client_context.h
   - include/grpcpp/completion_queue.h
+  - include/grpcpp/completion_queue_impl.h
   - include/grpcpp/create_channel.h
   - include/grpcpp/create_channel_impl.h
   - include/grpcpp/create_channel_posix.h
@@ -2399,7 +2400,7 @@ targets:
   - gpr
   exclude_iomgrs:
   - uv
-- name: dns_resolver_cooldown_test
+- name: dns_resolver_cooldown_using_ares_resolver_test
   build: test
   language: c
   src:
@@ -2408,6 +2409,19 @@ targets:
   - grpc_test_util
   - grpc
   - gpr
+  args:
+  - --resolver=ares
+- name: dns_resolver_cooldown_using_native_resolver_test
+  build: test
+  language: c
+  src:
+  - test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  args:
+  - --resolver=native
 - name: dns_resolver_test
   build: test
   language: c
