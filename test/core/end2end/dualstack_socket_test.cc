@@ -205,7 +205,6 @@ void test_connect(const char* server_host, const char* client_host, int port,
                                deadline, nullptr);
   GPR_ASSERT(c);
 
-
   /* Set cq_verifier deadline as channel create call deadline*/
   set_cq_verifier_deadline(cqv, &deadline);
 

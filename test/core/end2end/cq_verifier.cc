@@ -70,7 +70,7 @@ cq_verifier* cq_verifier_create(grpc_completion_queue* cq) {
   return v;
 }
 
-void set_cq_verifier_deadline(cq_verifier* v, const gpr_timespec* deadline){
+void set_cq_verifier_deadline(cq_verifier* v, const gpr_timespec* deadline) {
   v->deadline = deadline;
 }
 
