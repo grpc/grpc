@@ -484,7 +484,9 @@
     "uses_polling": true
   }, 
   {
-    "args": [], 
+    "args": [
+      "--resolver=ares"
+    ], 
     "benchmark": false, 
     "ci_platforms": [
       "linux", 
@@ -498,7 +500,33 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
-    "name": "dns_resolver_cooldown_test", 
+    "name": "dns_resolver_cooldown_using_ares_resolver_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "uses_polling": true
+  }, 
+  {
+    "args": [
+      "--resolver=native"
+    ], 
+    "benchmark": false, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
+    "name": "dns_resolver_cooldown_using_native_resolver_test", 
     "platforms": [
       "linux", 
       "mac", 
