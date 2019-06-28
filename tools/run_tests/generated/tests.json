@@ -537,30 +537,6 @@
     "ci_platforms": [
       "linux", 
       "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "gtest": false, 
-    "language": "c", 
-    "name": "dualstack_socket_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "uses_polling": true
-  }, 
-  {
-    "args": [], 
-    "benchmark": false, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
       "posix", 
       "windows"
     ], 
@@ -4422,6 +4398,30 @@
       "windows"
     ], 
     "uses_polling": false
+  }, 
+  {
+    "args": [], 
+    "benchmark": false, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c++", 
+    "name": "dualstack_socket_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "uses_polling": true
   }, 
   {
     "args": [], 

@@ -55,8 +55,36 @@ static void do_nothing(void* ignored) {}
 
 static void log_resolved_addrs(const char* label, const char* hostname) {
   grpc_resolved_addresses* res = nullptr;
-  grpc_error* error = grpc_blocking_resolve_address(hostname, "80", &res);
-  if (error != GRPC_ERROR_NONE || res == nullptr) {
+  grpc_error* error;
+  /* for ipv4:/ipv6: addresses, remove prefix and split ',' if contains a list
+   * of address before resolving */
+  bool is_list = false;
+  if (hostname[0] == 'i') {
+    std::string name(hostname);
+    name = name.substr(5);
+    std::string delimiter = ",";
+    size_t pos = 0;
+    if ((pos = name.find(delimiter)) == std::string::npos) {
+      error = grpc_blocking_resolve_address(const_cast<char*>(name.c_str()),
+                                            "80", &res);
+    } else {
+      is_list = true;
+      std::string addr;
+      while ((pos = name.find(delimiter)) != std::string::npos) {
+        addr = name.substr(0, pos);
+        name.erase(0, pos + delimiter.length());
+        grpc_error* error = grpc_blocking_resolve_address(
+            const_cast<char*>(addr.c_str()), "80", &res);
+        if (error != GRPC_ERROR_NONE || res == nullptr) {
+          GRPC_LOG_IF_ERROR(const_cast<char*>(addr.c_str()), error);
+          return;
+        }
+      }
+    }
+  } else {
+    error = grpc_blocking_resolve_address(hostname, "80", &res);
+  }
+  if (!is_list && (error != GRPC_ERROR_NONE || res == nullptr)) {
     GRPC_LOG_IF_ERROR(hostname, error);
     return;
   }
@@ -154,6 +182,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
 
   gpr_log(GPR_INFO, "Testing with server=%s client=%s (expecting %s)",
           server_hostport, client_hostport, expect_ok ? "success" : "failure");
+
   log_resolved_addrs("server resolved addr", server_host);
   log_resolved_addrs("client resolved addr", client_host);
 
@@ -175,6 +204,10 @@ void test_connect(const char* server_host, const char* client_host, int port,
                                grpc_slice_from_static_string("/foo"), &host,
                                deadline, nullptr);
   GPR_ASSERT(c);
+
+
+  /* Set cq_verifier deadline as channel create call deadline*/
+  set_cq_verifier_deadline(cqv, &deadline);
 
   memset(ops, 0, sizeof(ops));
   op = ops;

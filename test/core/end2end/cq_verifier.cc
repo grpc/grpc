@@ -59,6 +59,8 @@ struct cq_verifier {
   grpc_completion_queue* cq;
   /* start of expectation list */
   expectation* first_expectation;
+  /* deadline set by the client */
+  const gpr_timespec* deadline;
 };
 
 cq_verifier* cq_verifier_create(grpc_completion_queue* cq) {
@@ -66,6 +68,10 @@ cq_verifier* cq_verifier_create(grpc_completion_queue* cq) {
   v->cq = cq;
   v->first_expectation = nullptr;
   return v;
+}
+
+void set_cq_verifier_deadline(cq_verifier* v, const gpr_timespec* deadline){
+  v->deadline = deadline;
 }
 
 void cq_verifier_destroy(cq_verifier* v) {
@@ -249,9 +255,8 @@ static void verify_matches(expectation* e, grpc_event* ev) {
 }
 
 void cq_verify(cq_verifier* v) {
-  const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
   while (v->first_expectation != nullptr) {
-    grpc_event ev = grpc_completion_queue_next(v->cq, deadline, nullptr);
+    grpc_event ev = grpc_completion_queue_next(v->cq, *v->deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT) {
       fail_no_event_received(v);
       break;

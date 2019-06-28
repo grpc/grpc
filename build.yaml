@@ -2416,22 +2416,6 @@ targets:
   - grpc_test_util
   - grpc
   - gpr
-- name: dualstack_socket_test
-  cpu_cost: 0.1
-  build: test
-  language: c
-  src:
-  - test/core/end2end/dualstack_socket_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  exclude_iomgrs:
-  - uv
-  platforms:
-  - mac
-  - linux
-  - posix
 - name: endpoint_pair_test
   build: test
   language: c
@@ -4759,6 +4743,22 @@ targets:
   - grpc
   - gpr
   uses_polling: false
+- name: dualstack_socket_test
+  cpu_cost: 0.1
+  build: test
+  language: c++
+  src:
+  - test/core/end2end/dualstack_socket_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  exclude_iomgrs:
+  - uv
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: end2end_test
   gtest: true
   cpu_cost: 0.5

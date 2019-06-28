@@ -424,22 +424,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "dualstack_socket_test", 
-    "src": [
-      "test/core/end2end/dualstack_socket_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "endpoint_pair_test", 
     "src": [
       "test/core/iomgr/endpoint_pair_test.cc"
@@ -3613,6 +3597,22 @@
     "name": "cxx_time_test", 
     "src": [
       "test/cpp/util/time_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "dualstack_socket_test", 
+    "src": [
+      "test/core/end2end/dualstack_socket_test.cc"
     ], 
     "third_party": false, 
     "type": "target"

@@ -59,4 +59,7 @@ int contains_metadata(grpc_metadata_array* array, const char* key,
 int contains_metadata_slices(grpc_metadata_array* array, grpc_slice key,
                              grpc_slice value);
 
+/* Set verify deadline */
+void set_cq_verifier_deadline(cq_verifier* v, const gpr_timespec* deadline);
+
 #endif /* GRPC_TEST_CORE_END2END_CQ_VERIFIER_H */
