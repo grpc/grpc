@@ -72,8 +72,6 @@ void grpc_custom_iomgr_init(grpc_socket_vtable* socket,
   grpc_set_iomgr_platform_vtable(&vtable);
 }
 
-bool grpc_iomgr_run_in_background() { return false; }
-
 #ifdef GRPC_CUSTOM_SOCKET
 grpc_iomgr_platform_vtable* grpc_default_iomgr_platform_vtable() {
   return &vtable;
