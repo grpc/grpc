@@ -751,6 +751,8 @@ static void test_valid_sts_creds_options(void) {
   GPR_ASSERT(strcmp(host, "foo.com") == 0);
   GPR_ASSERT(strcmp(port, "5555") == 0);
   grpc_uri_destroy(sts_url);
+  gpr_free(host);
+  gpr_free(port);
 }
 
 static void test_invalid_sts_creds_options(void) {
