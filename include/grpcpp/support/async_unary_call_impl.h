@@ -16,18 +16,9 @@
  *
  */
 
-#include <grpcpp/generic/async_generic_service.h>
+#ifndef GRPCPP_SUPPORT_ASYNC_UNARY_CALL_H
+#define GRPCPP_SUPPORT_ASYNC_UNARY_CALL_H
 
-#include <grpcpp/server.h>
+#include <grpcpp/impl/codegen/async_unary_call_impl.h>
 
-namespace grpc {
-
-void AsyncGenericService::RequestCall(
-    GenericServerContext* ctx, GenericServerAsyncReaderWriter* reader_writer,
-    ::grpc_impl::CompletionQueue* call_cq,
-    ::grpc_impl::ServerCompletionQueue* notification_cq, void* tag) {
-  server_->RequestAsyncGenericCall(ctx, reader_writer, call_cq, notification_cq,
-                                   tag);
-}
-
-}  // namespace grpc
+#endif  // GRPCPP_SUPPORT_ASYNC_UNARY_CALL_H
