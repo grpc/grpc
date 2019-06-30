@@ -66,9 +66,17 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Returns the maximum number of bytes required to encode a given string.
         /// </summary>
-        public static int GetMaxBytesUTF8(string str)
+        public static int GetMaxByteCountUTF8(string str)
         {
             return EncodingUTF8.GetMaxByteCount(str.Length);
+        }
+
+        /// <summary>
+        /// Returns the actual number of bytes required to encode a given string.
+        /// </summary>
+        public static int GetByteCountUTF8(string str)
+        {
+            return EncodingUTF8.GetByteCount(str);
         }
     }
 }

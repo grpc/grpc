@@ -135,8 +135,16 @@ namespace Grpc.Core.Internal
             {
                 var ctx = completionQueue.CompletionRegistry.RegisterBatchCompletion(CompletionHandler_ISendStatusFromServerCompletionCallback, callback);
                 var optionalPayloadLength = optionalPayload != null ? new UIntPtr((ulong)optionalPayload.Length) : UIntPtr.Zero;
-                int maxBytes = MarshalUtils.GetMaxBytesUTF8(status.Detail);
+
                 const int MaxStackAllocBytes = 256;
+                int maxBytes = MarshalUtils.GetMaxByteCountUTF8(status.Detail);
+                if (maxBytes > MaxStackAllocBytes)
+                {
+                    // pay the extra to get the *actual* size; this could mean that
+                    // it ends up fitting on the stack after all, but even if not
+                    // it will mean that we ask for a *much* smaller buffer
+                    maxBytes = MarshalUtils.GetByteCountUTF8(status.Detail);
+                }
 
                 if (maxBytes <= MaxStackAllocBytes)
                 {   // for small status, we can encode on the stack without touching arrays
