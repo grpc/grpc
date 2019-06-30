@@ -32,34 +32,43 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Converts <c>IntPtr</c> pointing to a UTF-8 encoded byte array to <c>string</c>.
         /// </summary>
-        public static string PtrToStringUTF8(IntPtr ptr, int len)
+        public static unsafe string PtrToStringUTF8(IntPtr ptr, int len)
         {
             if (len == 0)
             {
                 return "";
             }
 
-            // TODO(jtattermusch): once Span dependency is added,
-            // use Span-based API to decode the string without copying the buffer.
-            var bytes = new byte[len];
-            Marshal.Copy(ptr, bytes, 0, len);
-            return EncodingUTF8.GetString(bytes);
+            // allocate a right-sized string and decode into it
+            byte* source = (byte*)ptr.ToPointer();
+            int charCount = EncodingUTF8.GetCharCount(source, len);
+            string s = new string('\0', charCount);
+            fixed(char* cPtr = s)
+            {
+                EncodingUTF8.GetChars(source, len, cPtr, charCount);
+            }
+            return s;
         }
 
         /// <summary>
-        /// Returns byte array containing UTF-8 encoding of given string.
+        /// UTF-8 encodes the given string into a buffer of sufficient size
         /// </summary>
-        public static byte[] GetBytesUTF8(string str)
+        public static unsafe int GetBytesUTF8(string str, byte* destination, int destinationLength)
         {
-            return EncodingUTF8.GetBytes(str);
+            int charCount = str.Length;
+            if (charCount == 0) return 0;
+            fixed (char* source = str)
+            {
+                return EncodingUTF8.GetBytes(source, charCount, destination, destinationLength);
+            }
         }
 
         /// <summary>
-        /// Get string from a UTF8 encoded byte array.
+        /// Returns the maximum number of bytes required to encode a given string.
         /// </summary>
-        public static string GetStringUTF8(byte[] bytes)
+        public static int GetMaxBytesUTF8(string str)
         {
-            return EncodingUTF8.GetString(bytes);
+            return EncodingUTF8.GetMaxByteCount(str.Length);
         }
     }
 }
