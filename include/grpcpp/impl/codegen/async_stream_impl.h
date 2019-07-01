@@ -1,5 +1,5 @@
-#ifndef THIRD_PARTY_GRPC_INCLUDE_GRPCPP_IMPL_CODEGEN_ASYNC_STREAM_IMPL_H_
-#define THIRD_PARTY_GRPC_INCLUDE_GRPCPP_IMPL_CODEGEN_ASYNC_STREAM_IMPL_H_
+#ifndef GRPCPP_IMPL_CODEGEN_ASYNC_STREAM_IMPL_H
+#define GRPCPP_IMPL_CODEGEN_ASYNC_STREAM_IMPL_H
 
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/channel_interface.h>
@@ -1114,4 +1114,4 @@ class ServerAsyncReaderWriter final
 };
 
 }  // namespace grpc_impl
-#endif  // THIRD_PARTY_GRPC_INCLUDE_GRPCPP_IMPL_CODEGEN_ASYNC_STREAM_IMPL_H_
+#endif  // GRPCPP_IMPL_CODEGEN_ASYNC_STREAM_IMPL_H

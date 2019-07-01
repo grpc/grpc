@@ -2285,7 +2285,7 @@ void PrintMockClientMethods(grpc_generator::Printer* printer,
       printer->Print(
           *vars,
           "MOCK_METHOD$MockArgs$($AsyncPrefix$$Method$Raw, "
-          "::grpc_impl::ClientAsyncReaderWriterInterface<$Request$, "
+          "::grpc::ClientAsyncReaderWriterInterface<$Request$, "
           "$Response$>*"
           "(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq"
           "$AsyncMethodParams$));\n");
