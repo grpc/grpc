@@ -39,8 +39,9 @@ namespace Grpc.Microbenchmarks
         {
             var native = NativeMethods.Get();
 
-            // ??? throws ???
-            native.grpcsharp_test_override_method(nameof(NativeMethods.grpcsharp_call_send_status_from_server), "nop");
+            // nop the native-call via reflection
+            NativeMethods.Delegates.grpcsharp_call_send_status_from_server_delegate nop = (CallSafeHandle call, BatchContextSafeHandle ctx, StatusCode statusCode, byte[] statusMessage, UIntPtr statusMessageLen, MetadataArraySafeHandle metadataArray, int sendEmptyInitialMetadata, byte[] optionalSendBuffer, UIntPtr optionalSendBufferLen, WriteFlags writeFlags) => CallError.OK;
+            native.GetType().GetField(nameof(native.grpcsharp_call_send_status_from_server)).SetValue(native, nop);
 
             environment = GrpcEnvironment.AddRef();
             metadata = MetadataArraySafeHandle.Create(Metadata.Empty);
