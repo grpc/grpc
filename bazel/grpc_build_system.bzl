@@ -171,6 +171,11 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             **args
         )
         for poller in POLLERS:
+            # Only poll is supported on Mac OS
+            if poller != "poll":
+                sh_test_tags = tags + ["no_windows", "no_mac"]
+            else:
+                sh_test_tags = tags + ["no_windows"]
             native.sh_test(
                 name = name + "@poller=" + poller,
                 data = [name] + data,
@@ -183,7 +188,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
                     poller,
                     "$(location %s)" % name,
                 ] + args["args"],
-                tags = (tags + ["no_windows"]),
+                tags = sh_test_tags,
                 exec_compatible_with = exec_compatible_with,
             )
     else:

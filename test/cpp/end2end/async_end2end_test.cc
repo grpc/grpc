@@ -251,6 +251,9 @@ void TestScenario::Log() const {
 class HealthCheck : public health::v1::Health::Service {};
 
 class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
+ public:
+  static void SetUpTestCase() { grpc_init(); }
+  static void TearDownTestCase() { grpc_shutdown(); }
  protected:
   AsyncEnd2endTest() { GetParam().Log(); }
 

@@ -170,7 +170,7 @@ grpc_cc_test(
     external_deps = [
         "gflags",
     ],
-    tags = ["no_windows"],
+    tags = ["no_windows", "no_mac"],
     deps = [
         "//:gpr",
         "//:grpc",
