@@ -133,9 +133,10 @@ ResolverFactory* ResolverRegistry::LookupResolverFactory(const char* scheme) {
 }
 
 bool ResolverRegistry::CheckTarget(const char* target) {
-  grpc_uri *uri = nullptr;
+  grpc_uri* uri = nullptr;
   char* canonical_target = nullptr;
-  ResolverFactory* factory = g_state->FindResolverFactory(target, &uri, &canonical_target);
+  ResolverFactory* factory =
+      g_state->FindResolverFactory(target, &uri, &canonical_target);
   return factory == nullptr ? false : factory->CheckUri(uri);
 }
 

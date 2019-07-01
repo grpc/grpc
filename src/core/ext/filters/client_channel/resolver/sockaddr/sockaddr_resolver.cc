@@ -81,9 +81,12 @@ void SockaddrResolver::StartLocked() {
 
 void DoNothing(void* ignored) {}
 
-bool ParseUri(const grpc_uri* uri, bool parse(const grpc_uri* uri, grpc_resolved_address* dst), ServerAddressList *addresses) {
+bool ParseUri(const grpc_uri* uri,
+              bool parse(const grpc_uri* uri, grpc_resolved_address* dst),
+              ServerAddressList* addresses) {
   if (0 != strcmp(uri->authority, "")) {
-    gpr_log(GPR_ERROR, "authority-based URIs not supported by the %s scheme", uri->scheme);
+    gpr_log(GPR_ERROR, "authority-based URIs not supported by the %s scheme",
+            uri->scheme);
     return false;
   }
   // Construct addresses.
@@ -121,9 +124,8 @@ OrphanablePtr<Resolver> CreateSockaddrResolver(
   if (ParseUri(args.uri, parse, &addresses)) {
     // Instantiate resolver.
     return OrphanablePtr<Resolver>(
-        New<SockaddrResolver>(std::move(addresses), std::move(args))); 
-  }
-  else {
+        New<SockaddrResolver>(std::move(addresses), std::move(args)));
+  } else {
     return nullptr;
   }
 }

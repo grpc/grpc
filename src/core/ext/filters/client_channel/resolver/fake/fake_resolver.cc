@@ -92,8 +92,9 @@ FakeResolver::FakeResolver(ResolverArgs args)
                     grpc_combiner_scheduler(combiner()));
   FakeResolverResponseGenerator* response_generator =
       FakeResolverResponseGenerator::GetFromArgs(args.args);
-  const char* args_to_remove[] = { GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR };
-  channel_args_ = grpc_channel_args_copy_and_remove(args.args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove));
+  const char* args_to_remove[] = {GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR};
+  channel_args_ = grpc_channel_args_copy_and_remove(
+      args.args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove));
   if (response_generator != nullptr) {
     response_generator->resolver_ = this;
     if (response_generator->has_result_) {

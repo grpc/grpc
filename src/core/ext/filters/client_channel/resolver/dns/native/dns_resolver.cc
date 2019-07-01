@@ -269,8 +269,7 @@ class NativeDnsResolverFactory : public ResolverFactory {
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     if (CheckUri(args.uri)) {
       return OrphanablePtr<Resolver>(New<NativeDnsResolver>(std::move(args)));
-    }
-    else {
+    } else {
       return nullptr;
     }
   }

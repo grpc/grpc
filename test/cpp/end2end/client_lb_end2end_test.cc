@@ -136,7 +136,8 @@ class MyTestServiceImpl : public TestServiceImpl {
 class FakeResolverResponseGeneratorWrapper {
  public:
   FakeResolverResponseGeneratorWrapper() {
-    response_generator_ = grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
+    response_generator_ =
+        grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
   }
 
   ~FakeResolverResponseGeneratorWrapper() {}
@@ -156,10 +157,13 @@ class FakeResolverResponseGeneratorWrapper {
     response_generator_->SetFailureOnReresolution();
   }
 
-  grpc_core::FakeResolverResponseGenerator* Get() { return response_generator_.get(); }
+  grpc_core::FakeResolverResponseGenerator* Get() {
+    return response_generator_.get();
+  }
 
  private:
-  static grpc_core::Resolver::Result BuildFakeResults(const std::vector<int>& ports) {
+  static grpc_core::Resolver::Result BuildFakeResults(
+      const std::vector<int>& ports) {
     grpc_core::Resolver::Result result;
     for (const int& port : ports) {
       char* lb_uri_str;
@@ -176,7 +180,8 @@ class FakeResolverResponseGeneratorWrapper {
     return result;
   }
 
-  grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator> response_generator_;
+  grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
+      response_generator_;
 };
 
 class ClientLbEnd2endTest : public ::testing::Test {
@@ -187,9 +192,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
         creds_(new SecureChannelCredentials(
             grpc_fake_transport_security_credentials_create())) {}
 
-  void SetUp() override {
-    grpc_init();
-  }
+  void SetUp() override { grpc_init(); }
 
   void TearDown() override {
     for (size_t i = 0; i < servers_.size(); ++i) {
@@ -232,8 +235,10 @@ class ClientLbEnd2endTest : public ::testing::Test {
     return ports;
   }
 
-  std::unique_ptr<FakeResolverResponseGeneratorWrapper> BuildResolverResponseGenerator() {
-    return std::unique_ptr<FakeResolverResponseGeneratorWrapper>(new FakeResolverResponseGeneratorWrapper());
+  std::unique_ptr<FakeResolverResponseGeneratorWrapper>
+  BuildResolverResponseGenerator() {
+    return std::unique_ptr<FakeResolverResponseGeneratorWrapper>(
+        new FakeResolverResponseGeneratorWrapper());
   }
 
   std::unique_ptr<grpc::testing::EchoTestService::Stub> BuildStub(
@@ -248,7 +253,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
     if (lb_policy_name.size() > 0) {
       args.SetLoadBalancingPolicyName(lb_policy_name);
     }  // else, default to pick first
-    args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR, response_generator);
+    args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
+                    response_generator);
     return ::grpc::CreateCustomChannel("fake:///", creds_, args);
   }
 
@@ -442,7 +448,8 @@ TEST_F(ClientLbEnd2endTest, PickFirst) {
   const int kNumServers = 3;
   StartServers(kNumServers);
   auto rg = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("", rg->Get());  // test that pick first is the default.
+  auto channel =
+      BuildChannel("", rg->Get());  // test that pick first is the default.
   auto stub = BuildStub(channel);
   rg->SetNextResolution(GetServersPorts());
   for (size_t i = 0; i < servers_.size(); ++i) {
@@ -464,9 +471,10 @@ TEST_F(ClientLbEnd2endTest, PickFirst) {
 }
 
 TEST_F(ClientLbEnd2endTest, PickFirstProcessPending) {
-  StartServers(1);                  // Single server
+  StartServers(1);  // Single server
   auto rg = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("", rg->Get());  // test that pick first is the default.
+  auto channel =
+      BuildChannel("", rg->Get());  // test that pick first is the default.
   auto stub = BuildStub(channel);
   rg->SetNextResolution({servers_[0]->port_});
   WaitForServer(stub, 0, DEBUG_LOCATION);
@@ -1522,7 +1530,8 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesEnabled) {
       "  } ]\n"
       "}");
   auto rg = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("intercept_trailing_metadata_lb", rg->Get(), args);
+  auto channel =
+      BuildChannel("intercept_trailing_metadata_lb", rg->Get(), args);
   auto stub = BuildStub(channel);
   rg->SetNextResolution(GetServersPorts());
   for (size_t i = 0; i < kNumRpcs; ++i) {
