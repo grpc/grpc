@@ -439,8 +439,12 @@ static void tcp_do_read(grpc_tcp* tcp) {
   size_t total_read_bytes = 0;
   size_t iov_len =
       std::min<size_t>(MAX_READ_IOVEC, tcp->incoming_buffer->count);
+#ifdef GRPC_LINUX_ERRQUEUE
   constexpr size_t cmsg_alloc_space =
       CMSG_SPACE(sizeof(grpc_core::scm_timestamping)) + CMSG_SPACE(sizeof(int));
+#else
+  constexpr size_t cmsg_alloc_space = CMSG_SPACE(sizeof(int));
+#endif /* GRPC_LINUX_ERRQUEUE */
   char cmsgbuf[cmsg_alloc_space];
   for (size_t i = 0; i < iov_len; i++) {
     iov[i].iov_base = GRPC_SLICE_START_PTR(tcp->incoming_buffer->slices[i]);
