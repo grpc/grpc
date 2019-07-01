@@ -32,9 +32,9 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
@@ -745,11 +745,11 @@ static void test_valid_sts_creds_options(void) {
       grpc_core::ValidateStsCredentialsOptions(&valid_options, &sts_url);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(sts_url != nullptr);
-  char* host;
-  char* port;
-  GPR_ASSERT(gpr_split_host_port(sts_url->authority, &host, &port));
-  GPR_ASSERT(strcmp(host, "foo.com") == 0);
-  GPR_ASSERT(strcmp(port, "5555") == 0);
+  grpc_core::StringView host;
+  grpc_core::StringView port;
+  GPR_ASSERT(grpc_core::SplitHostPort(sts_url->authority, &host, &port));
+  GPR_ASSERT(host.cmp("foo.com") == 0);
+  GPR_ASSERT(port.cmp("5555") == 0);
   grpc_uri_destroy(sts_url);
 }
 

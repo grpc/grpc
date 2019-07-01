@@ -289,15 +289,20 @@ char* gpr_strvec_flatten(gpr_strvec* sv, size_t* final_length) {
   return gpr_strjoin((const char**)sv->strs, sv->count, final_length);
 }
 
-int gpr_stricmp(const char* a, const char* b) {
+int gpr_strincmp(const char* a, const char* b, size_t n) {
   int ca, cb;
   do {
     ca = tolower(*a);
     cb = tolower(*b);
     ++a;
     ++b;
-  } while (ca == cb && ca && cb);
+    --n;
+  } while (ca == cb && ca != 0 && cb != 0 && n != 0);
   return ca - cb;
+}
+
+int gpr_stricmp(const char* a, const char* b) {
+  return gpr_strincmp(a, b, SIZE_MAX);
 }
 
 static void add_string_to_split(const char* beg, const char* end, char*** strs,
