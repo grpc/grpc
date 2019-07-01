@@ -27,24 +27,13 @@
 namespace grpc_impl {
 class ClientContext;
 class CompletionQueue;
-}  // namespace grpc_impl
-
-namespace grpc {
-class ChannelInterface;
-
 template <class R>
 class ClientReader;
 template <class W>
 class ClientWriter;
 template <class W, class R>
 class ClientReaderWriter;
-
 namespace internal {
-class Call;
-class CallOpSetInterface;
-class RpcMethod;
-template <class InputMessage, class OutputMessage>
-class BlockingUnaryCallImpl;
 template <class InputMessage, class OutputMessage>
 class CallbackUnaryCallImpl;
 template <class R>
@@ -62,7 +51,19 @@ class ClientCallbackReaderFactory;
 template <class W>
 class ClientCallbackWriterFactory;
 class ClientCallbackUnaryFactory;
+}  // namespace internal
+}  // namespace grpc_impl
+
+namespace grpc {
+class ChannelInterface;
+
+namespace internal {
+class Call;
+class CallOpSetInterface;
+class RpcMethod;
 class InterceptedChannel;
+template <class InputMessage, class OutputMessage>
+class BlockingUnaryCallImpl;
 }  // namespace internal
 
 /// Codegen interface for \a grpc::Channel.
@@ -102,30 +103,30 @@ class ChannelInterface {
 
  private:
   template <class R>
-  friend class ::grpc::ClientReader;
+  friend class ::grpc_impl::ClientReader;
   template <class W>
-  friend class ::grpc::ClientWriter;
+  friend class ::grpc_impl::ClientWriter;
   template <class W, class R>
-  friend class ::grpc::ClientReaderWriter;
+  friend class ::grpc_impl::ClientReaderWriter;
   template <class R>
-  friend class ::grpc::internal::ClientAsyncReaderFactory;
+  friend class ::grpc_impl::internal::ClientAsyncReaderFactory;
   template <class W>
-  friend class ::grpc::internal::ClientAsyncWriterFactory;
+  friend class ::grpc_impl::internal::ClientAsyncWriterFactory;
   template <class W, class R>
-  friend class ::grpc::internal::ClientAsyncReaderWriterFactory;
+  friend class ::grpc_impl::internal::ClientAsyncReaderWriterFactory;
   template <class R>
-  friend class ::grpc::internal::ClientAsyncResponseReaderFactory;
+  friend class ::grpc_impl::internal::ClientAsyncResponseReaderFactory;
   template <class W, class R>
-  friend class ::grpc::internal::ClientCallbackReaderWriterFactory;
+  friend class ::grpc_impl::internal::ClientCallbackReaderWriterFactory;
   template <class R>
-  friend class ::grpc::internal::ClientCallbackReaderFactory;
+  friend class ::grpc_impl::internal::ClientCallbackReaderFactory;
   template <class W>
-  friend class ::grpc::internal::ClientCallbackWriterFactory;
-  friend class ::grpc::internal::ClientCallbackUnaryFactory;
+  friend class ::grpc_impl::internal::ClientCallbackWriterFactory;
+  friend class ::grpc_impl::internal::ClientCallbackUnaryFactory;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;
   template <class InputMessage, class OutputMessage>
-  friend class ::grpc::internal::CallbackUnaryCallImpl;
+  friend class ::grpc_impl::internal::CallbackUnaryCallImpl;
   friend class ::grpc::internal::RpcMethod;
   friend class ::grpc::internal::InterceptedChannel;
   virtual internal::Call CreateCall(const internal::RpcMethod& method,
