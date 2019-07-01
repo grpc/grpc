@@ -227,7 +227,7 @@ static void on_oauth2_token_fetcher_http_response(void* user_data,
 void grpc_oauth2_token_fetcher_credentials::on_http_response(
     grpc_credentials_metadata_request* r, grpc_error* error) {
   grpc_mdelem access_token_md = GRPC_MDNULL;
-  grpc_millis token_lifetime;
+  grpc_millis token_lifetime = 0;
   grpc_credentials_status status =
       error == GRPC_ERROR_NONE
           ? grpc_oauth2_token_fetcher_credentials_parse_server_response(
@@ -520,7 +520,7 @@ grpc_error* LoadTokenFile(const char* path, gpr_slice* token) {
 class StsTokenFetcherCredentials
     : public grpc_oauth2_token_fetcher_credentials {
  public:
-  StsTokenFetcherCredentials(grpc_uri* sts_url,  // Ownership transfered.
+  StsTokenFetcherCredentials(grpc_uri* sts_url,  // Ownership transferred.
                              const grpc_sts_credentials_options* options)
       : sts_url_(sts_url),
         resource_(gpr_strdup(options->resource)),

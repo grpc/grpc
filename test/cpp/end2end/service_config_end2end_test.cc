@@ -119,6 +119,12 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
         creds_(new SecureChannelCredentials(
             grpc_fake_transport_security_credentials_create())) {}
 
+  static void SetUpTestCase() {
+    // Make the backup poller poll very frequently in order to pick up
+    // updates from all the subchannels's FDs.
+    GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+  }
+
   void SetUp() override {
     grpc_init();
     response_generator_ =
@@ -611,9 +617,6 @@ TEST_F(ServiceConfigEnd2endTest,
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  // Make the backup poller poll very frequently in order to pick up
-  // updates from all the subchannels's FDs.
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   const auto result = RUN_ALL_TESTS();

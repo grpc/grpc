@@ -346,7 +346,7 @@ static void auth_start_transport_stream_op_batch(
       GRPC_CALL_STACK_REF(calld->owning_call, "check_call_host");
       GRPC_CLOSURE_INIT(&calld->async_result_closure, on_host_checked, batch,
                         grpc_schedule_on_exec_ctx);
-      char* call_host = grpc_slice_to_c_string(calld->host);
+      grpc_core::StringView call_host(calld->host);
       grpc_error* error = GRPC_ERROR_NONE;
       if (chand->security_connector->check_call_host(
               call_host, chand->auth_context.get(),
@@ -360,7 +360,6 @@ static void auth_start_transport_stream_op_batch(
             &calld->check_call_host_cancel_closure, cancel_check_call_host,
             elem, grpc_schedule_on_exec_ctx));
       }
-      gpr_free(call_host);
       return; /* early exit */
     }
   }
