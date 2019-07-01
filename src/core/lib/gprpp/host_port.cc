@@ -105,8 +105,9 @@ bool SplitHostPort(StringView name, UniquePtr<char>* host,
   bool has_port;
   const bool ret = DoSplitHostPort(name, &host_view, &port_view, &has_port);
   if (ret) {
-    // We always set the host, but port is set only when it's non-empty,
-    // to remain backward compatible with the old split_host_port API.
+    // We always set the host, but port is set only when DoSplitHostPort find a
+    // port in the string, to remain backward compatible with the old
+    // gpr_split_host_port API.
     *host = host_view.dup();
     if (has_port) {
       *port = port_view.dup();
