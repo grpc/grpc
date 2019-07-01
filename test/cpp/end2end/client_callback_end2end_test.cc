@@ -371,7 +371,7 @@ class ClientCallbackEnd2endTest
 TEST_P(ClientCallbackEnd2endTest, SimpleRpc) {
   MAYBE_SKIP_TEST;
   ResetStub();
-  SendRpcs(1);
+  SendRpcs(1, false);
 }
 
 TEST_P(ClientCallbackEnd2endTest, SimpleRpcUnderLock) {
@@ -405,12 +405,7 @@ TEST_P(ClientCallbackEnd2endTest, SimpleRpcUnderLock) {
 TEST_P(ClientCallbackEnd2endTest, SequentialRpcs) {
   MAYBE_SKIP_TEST;
   ResetStub();
-  SendRpcs(10);
-}
-
-TEST_F(ClientCallbackEnd2endTest, SequentialGenericRpcs) {
-  ResetStub();
-  SendRpcsGeneric(10, false);
+  SendRpcs(10, false);
 }
 
 TEST_P(ClientCallbackEnd2endTest, SequentialRpcsRawReq) {
