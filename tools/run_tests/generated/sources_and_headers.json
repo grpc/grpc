@@ -392,7 +392,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "dns_resolver_cooldown_test", 
+    "name": "dns_resolver_cooldown_using_ares_resolver_test", 
+    "src": [
+      "test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "dns_resolver_cooldown_using_native_resolver_test", 
     "src": [
       "test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc"
     ], 
@@ -683,7 +699,7 @@
     "language": "c", 
     "name": "gpr_host_port_test", 
     "src": [
-      "test/core/gpr/host_port_test.cc"
+      "test/core/gprpp/host_port_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5061,6 +5077,24 @@
   {
     "deps": [
       "gpr", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "string_view_test", 
+    "src": [
+      "test/core/gprpp/string_view_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc++_test_config", 
       "grpc++_unsecure", 
       "grpc_unsecure"
@@ -8189,7 +8223,6 @@
       "src/core/lib/gpr/env_linux.cc", 
       "src/core/lib/gpr/env_posix.cc", 
       "src/core/lib/gpr/env_windows.cc", 
-      "src/core/lib/gpr/host_port.cc", 
       "src/core/lib/gpr/log.cc", 
       "src/core/lib/gpr/log_android.cc", 
       "src/core/lib/gpr/log_linux.cc", 
@@ -8216,6 +8249,7 @@
       "src/core/lib/gprpp/arena.cc", 
       "src/core/lib/gprpp/fork.cc", 
       "src/core/lib/gprpp/global_config_env.cc", 
+      "src/core/lib/gprpp/host_port.cc", 
       "src/core/lib/gprpp/thd_posix.cc", 
       "src/core/lib/gprpp/thd_windows.cc", 
       "src/core/lib/profiling/basic_timers.cc", 
@@ -8249,7 +8283,6 @@
       "src/core/lib/gpr/alloc.h", 
       "src/core/lib/gpr/arena.h", 
       "src/core/lib/gpr/env.h", 
-      "src/core/lib/gpr/host_port.h", 
       "src/core/lib/gpr/mpscq.h", 
       "src/core/lib/gpr/murmur_hash.h", 
       "src/core/lib/gpr/spinlock.h", 
@@ -8270,6 +8303,7 @@
       "src/core/lib/gprpp/global_config_custom.h", 
       "src/core/lib/gprpp/global_config_env.h", 
       "src/core/lib/gprpp/global_config_generic.h", 
+      "src/core/lib/gprpp/host_port.h", 
       "src/core/lib/gprpp/manual_constructor.h", 
       "src/core/lib/gprpp/map.h", 
       "src/core/lib/gprpp/memory.h", 
@@ -8302,7 +8336,6 @@
       "src/core/lib/gpr/alloc.h", 
       "src/core/lib/gpr/arena.h", 
       "src/core/lib/gpr/env.h", 
-      "src/core/lib/gpr/host_port.h", 
       "src/core/lib/gpr/mpscq.h", 
       "src/core/lib/gpr/murmur_hash.h", 
       "src/core/lib/gpr/spinlock.h", 
@@ -8323,6 +8356,7 @@
       "src/core/lib/gprpp/global_config_custom.h", 
       "src/core/lib/gprpp/global_config_env.h", 
       "src/core/lib/gprpp/global_config_generic.h", 
+      "src/core/lib/gprpp/host_port.h", 
       "src/core/lib/gprpp/manual_constructor.h", 
       "src/core/lib/gprpp/map.h", 
       "src/core/lib/gprpp/memory.h", 
@@ -8623,6 +8657,7 @@
       "src/core/lib/gprpp/orphanable.h", 
       "src/core/lib/gprpp/ref_counted.h", 
       "src/core/lib/gprpp/ref_counted_ptr.h", 
+      "src/core/lib/gprpp/string_view.h", 
       "src/core/lib/http/format_request.h", 
       "src/core/lib/http/httpcli.h", 
       "src/core/lib/http/parser.h", 
@@ -8780,6 +8815,7 @@
       "src/core/lib/gprpp/orphanable.h", 
       "src/core/lib/gprpp/ref_counted.h", 
       "src/core/lib/gprpp/ref_counted_ptr.h", 
+      "src/core/lib/gprpp/string_view.h", 
       "src/core/lib/http/format_request.h", 
       "src/core/lib/http/httpcli.h", 
       "src/core/lib/http/parser.h", 
@@ -10381,6 +10417,7 @@
       "include/grpcpp/channel_impl.h", 
       "include/grpcpp/client_context.h", 
       "include/grpcpp/completion_queue.h", 
+      "include/grpcpp/completion_queue_impl.h", 
       "include/grpcpp/create_channel.h", 
       "include/grpcpp/create_channel_impl.h", 
       "include/grpcpp/create_channel_posix.h", 
@@ -10508,6 +10545,7 @@
       "include/grpcpp/channel_impl.h", 
       "include/grpcpp/client_context.h", 
       "include/grpcpp/completion_queue.h", 
+      "include/grpcpp/completion_queue_impl.h", 
       "include/grpcpp/create_channel.h", 
       "include/grpcpp/create_channel_impl.h", 
       "include/grpcpp/create_channel_posix.h", 

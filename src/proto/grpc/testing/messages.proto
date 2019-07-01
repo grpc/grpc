@@ -77,6 +77,9 @@ message SimpleRequest {
 
   // Whether the server should expect this request to be compressed.
   BoolValue expect_compressed = 8;
+
+  // Whether SimpleResponse should include server_id.
+  bool fill_server_id = 9;
 }
 
 // Unary response, as configured by the request.
@@ -88,6 +91,10 @@ message SimpleResponse {
   string username = 2;
   // OAuth scope.
   string oauth_scope = 3;
+
+  // Server ID. This must be unique among different server instances,
+  // but the same across all RPC's made to a particular server instance.
+  string server_id = 4;
 }
 
 // Client-streaming request.

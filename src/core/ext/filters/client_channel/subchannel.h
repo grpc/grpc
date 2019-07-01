@@ -85,8 +85,7 @@ class ConnectedSubchannel : public ConnectedSubchannelInterface {
 
   ConnectedSubchannel(
       grpc_channel_stack* channel_stack, const grpc_channel_args* args,
-      RefCountedPtr<channelz::SubchannelNode> channelz_subchannel,
-      intptr_t socket_uuid);
+      RefCountedPtr<channelz::SubchannelNode> channelz_subchannel);
   ~ConnectedSubchannel();
 
   void NotifyOnStateChange(grpc_pollset_set* interested_parties,
@@ -101,7 +100,6 @@ class ConnectedSubchannel : public ConnectedSubchannelInterface {
   channelz::SubchannelNode* channelz_subchannel() const {
     return channelz_subchannel_.get();
   }
-  intptr_t socket_uuid() const { return socket_uuid_; }
 
   size_t GetInitialCallSizeEstimate(size_t parent_data_size) const;
 
@@ -111,8 +109,6 @@ class ConnectedSubchannel : public ConnectedSubchannelInterface {
   // ref counted pointer to the channelz node in this connected subchannel's
   // owning subchannel.
   RefCountedPtr<channelz::SubchannelNode> channelz_subchannel_;
-  // uuid of this subchannel's socket. 0 if this subchannel is not connected.
-  const intptr_t socket_uuid_;
 };
 
 // Implements the interface of RefCounted<>.
@@ -199,8 +195,6 @@ class Subchannel {
   // non-zero. If the strong refcount is zero, does not alter the refcount and
   // returns null.
   Subchannel* RefFromWeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-
-  intptr_t GetChildSocketUuid();
 
   // Gets the string representing the subchannel address.
   // Caller doesn't take ownership.
