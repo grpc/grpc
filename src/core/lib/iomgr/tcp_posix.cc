@@ -526,6 +526,7 @@ static void tcp_do_read(grpc_tcp* tcp) {
         if (cmsg->cmsg_level == SOL_TCP && cmsg->cmsg_type == TCP_CM_INQ &&
             cmsg->cmsg_len == CMSG_LEN(sizeof(int))) {
           tcp->inq = *reinterpret_cast<int*>(CMSG_DATA(cmsg));
+          break;
         }
       }
     }
