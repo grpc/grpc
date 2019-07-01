@@ -29,8 +29,6 @@
 
 namespace grpc_impl {
 
-extern ::grpc::CoreCodegenInterface* g_core_codegen_interface;
-
 /// An interface relevant for async client side unary RPCs (which send
 /// one request message to a server and receive one response message).
 template <class R>
@@ -84,7 +82,7 @@ class ClientAsyncResponseReaderFactory {
       const ::grpc::internal::RpcMethod& method,
       ::grpc_impl::ClientContext* context, const W& request, bool start) {
     ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
-    return new (g_core_codegen_interface->grpc_call_arena_alloc(
+    return new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientAsyncResponseReader<R>)))
         ClientAsyncResponseReader<R>(call, context, request, start);
   }

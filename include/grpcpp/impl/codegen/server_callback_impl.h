@@ -491,8 +491,9 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
     ::grpc::Status status = param.status;
     if (status.ok()) {
       // Call the actual function handler and expect the user to call finish
-      CatchingCallback(func_, param.server_context, controller->request(),
-                       controller->response(), controller);
+      grpc::internal::CatchingCallback(func_, param.server_context,
+                                       controller->request(),
+                                       controller->response(), controller);
     } else {
       // if deserialization failed, we need to fail the call
       controller->Finish(status);
@@ -541,8 +542,8 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
       : public experimental::ServerCallbackRpcController {
    public:
     void Finish(::grpc::Status s) override {
-      finish_tag_.Set(
-          call_.call(), [this](bool) { MaybeDone(); }, &finish_ops_);
+      finish_tag_.Set(call_.call(), [this](bool) { MaybeDone(); },
+                      &finish_ops_);
       if (!ctx_->sent_initial_metadata_) {
         finish_ops_.SendInitialMetadata(&ctx_->initial_metadata_,
                                         ctx_->initial_metadata_flags());
@@ -567,13 +568,12 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
       callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
       // TODO(vjpai): Consider taking f as a move-capture if we adopt C++14
       //              and if performance of this operation matters
-      meta_tag_.Set(
-          call_.call(),
-          [this, f](bool ok) {
-            f(ok);
-            MaybeDone();
-          },
-          &meta_ops_);
+      meta_tag_.Set(call_.call(),
+                    [this, f](bool ok) {
+                      f(ok);
+                      MaybeDone();
+                    },
+                    &meta_ops_);
       meta_ops_.SendInitialMetadata(&ctx_->initial_metadata_,
                                     ctx_->initial_metadata_flags());
       if (ctx_->compression_level_set()) {
@@ -609,8 +609,7 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
           call_(*call),
           allocator_state_(allocator_state),
           call_requester_(std::move(call_requester)) {
-      ctx_->BeginCompletionOp(
-          call, [this](bool) { MaybeDone(); }, nullptr);
+      ctx_->BeginCompletionOp(call, [this](bool) { MaybeDone(); }, nullptr);
     }
 
     const RequestType* request() { return allocator_state_->request(); }
@@ -691,8 +690,8 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
       : public experimental::ServerCallbackReader<RequestType> {
    public:
     void Finish(::grpc::Status s) override {
-      finish_tag_.Set(
-          call_.call(), [this](bool) { MaybeDone(); }, &finish_ops_);
+      finish_tag_.Set(call_.call(), [this](bool) { MaybeDone(); },
+                      &finish_ops_);
       if (!ctx_->sent_initial_metadata_) {
         finish_ops_.SendInitialMetadata(&ctx_->initial_metadata_,
                                         ctx_->initial_metadata_flags());
@@ -715,13 +714,12 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
     void SendInitialMetadata() override {
       GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
       callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
-      meta_tag_.Set(
-          call_.call(),
-          [this](bool ok) {
-            reactor_->OnSendInitialMetadataDone(ok);
-            MaybeDone();
-          },
-          &meta_ops_);
+      meta_tag_.Set(call_.call(),
+                    [this](bool ok) {
+                      reactor_->OnSendInitialMetadataDone(ok);
+                      MaybeDone();
+                    },
+                    &meta_ops_);
       meta_ops_.SendInitialMetadata(&ctx_->initial_metadata_,
                                     ctx_->initial_metadata_flags());
       if (ctx_->compression_level_set()) {
@@ -749,15 +747,13 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
           call_(*call),
           call_requester_(std::move(call_requester)),
           reactor_(reactor) {
-      ctx_->BeginCompletionOp(
-          call, [this](bool) { MaybeDone(); }, reactor);
-      read_tag_.Set(
-          call_.call(),
-          [this](bool ok) {
-            reactor_->OnReadDone(ok);
-            MaybeDone();
-          },
-          &read_ops_);
+      ctx_->BeginCompletionOp(call, [this](bool) { MaybeDone(); }, reactor);
+      read_tag_.Set(call_.call(),
+                    [this](bool ok) {
+                      reactor_->OnReadDone(ok);
+                      MaybeDone();
+                    },
+                    &read_ops_);
       read_ops_.set_core_cq_tag(&read_tag_);
     }
 
@@ -860,8 +856,8 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
       : public experimental::ServerCallbackWriter<ResponseType> {
    public:
     void Finish(::grpc::Status s) override {
-      finish_tag_.Set(
-          call_.call(), [this](bool) { MaybeDone(); }, &finish_ops_);
+      finish_tag_.Set(call_.call(), [this](bool) { MaybeDone(); },
+                      &finish_ops_);
       finish_ops_.set_core_cq_tag(&finish_tag_);
 
       if (!ctx_->sent_initial_metadata_) {
@@ -879,13 +875,12 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
     void SendInitialMetadata() override {
       GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
       callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
-      meta_tag_.Set(
-          call_.call(),
-          [this](bool ok) {
-            reactor_->OnSendInitialMetadataDone(ok);
-            MaybeDone();
-          },
-          &meta_ops_);
+      meta_tag_.Set(call_.call(),
+                    [this](bool ok) {
+                      reactor_->OnSendInitialMetadataDone(ok);
+                      MaybeDone();
+                    },
+                    &meta_ops_);
       meta_ops_.SendInitialMetadata(&ctx_->initial_metadata_,
                                     ctx_->initial_metadata_flags());
       if (ctx_->compression_level_set()) {
@@ -938,15 +933,13 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
           req_(req),
           call_requester_(std::move(call_requester)),
           reactor_(reactor) {
-      ctx_->BeginCompletionOp(
-          call, [this](bool) { MaybeDone(); }, reactor);
-      write_tag_.Set(
-          call_.call(),
-          [this](bool ok) {
-            reactor_->OnWriteDone(ok);
-            MaybeDone();
-          },
-          &write_ops_);
+      ctx_->BeginCompletionOp(call, [this](bool) { MaybeDone(); }, reactor);
+      write_tag_.Set(call_.call(),
+                     [this](bool ok) {
+                       reactor_->OnWriteDone(ok);
+                       MaybeDone();
+                     },
+                     &write_ops_);
       write_ops_.set_core_cq_tag(&write_tag_);
     }
     ~ServerCallbackWriterImpl() { req_->~RequestType(); }
@@ -1033,8 +1026,8 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
                                                         ResponseType> {
    public:
     void Finish(::grpc::Status s) override {
-      finish_tag_.Set(
-          call_.call(), [this](bool) { MaybeDone(); }, &finish_ops_);
+      finish_tag_.Set(call_.call(), [this](bool) { MaybeDone(); },
+                      &finish_ops_);
       finish_ops_.set_core_cq_tag(&finish_tag_);
 
       if (!ctx_->sent_initial_metadata_) {
@@ -1052,13 +1045,12 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
     void SendInitialMetadata() override {
       GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
       callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
-      meta_tag_.Set(
-          call_.call(),
-          [this](bool ok) {
-            reactor_->OnSendInitialMetadataDone(ok);
-            MaybeDone();
-          },
-          &meta_ops_);
+      meta_tag_.Set(call_.call(),
+                    [this](bool ok) {
+                      reactor_->OnSendInitialMetadataDone(ok);
+                      MaybeDone();
+                    },
+                    &meta_ops_);
       meta_ops_.SendInitialMetadata(&ctx_->initial_metadata_,
                                     ctx_->initial_metadata_flags());
       if (ctx_->compression_level_set()) {
@@ -1115,23 +1107,20 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
           call_(*call),
           call_requester_(std::move(call_requester)),
           reactor_(reactor) {
-      ctx_->BeginCompletionOp(
-          call, [this](bool) { MaybeDone(); }, reactor);
-      write_tag_.Set(
-          call_.call(),
-          [this](bool ok) {
-            reactor_->OnWriteDone(ok);
-            MaybeDone();
-          },
-          &write_ops_);
+      ctx_->BeginCompletionOp(call, [this](bool) { MaybeDone(); }, reactor);
+      write_tag_.Set(call_.call(),
+                     [this](bool ok) {
+                       reactor_->OnWriteDone(ok);
+                       MaybeDone();
+                     },
+                     &write_ops_);
       write_ops_.set_core_cq_tag(&write_tag_);
-      read_tag_.Set(
-          call_.call(),
-          [this](bool ok) {
-            reactor_->OnReadDone(ok);
-            MaybeDone();
-          },
-          &read_ops_);
+      read_tag_.Set(call_.call(),
+                    [this](bool ok) {
+                      reactor_->OnReadDone(ok);
+                      MaybeDone();
+                    },
+                    &read_ops_);
       read_ops_.set_core_cq_tag(&read_tag_);
     }
     ~ServerCallbackReaderWriterImpl() {}
