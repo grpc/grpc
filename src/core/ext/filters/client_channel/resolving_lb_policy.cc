@@ -197,10 +197,8 @@ ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
   // config at the top level.
   grpc_arg arg = grpc_channel_arg_integer_create(
       const_cast<char*>(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION), 0);
-  grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_add(args.args, &arg, 1);
-  *error = Init(*new_args);
-  grpc_channel_args_destroy(new_args);
+  channel_args_ = grpc_channel_args_copy_and_add(args.args, &arg, 1);
+  *error = Init();
 }
 
 ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
@@ -213,14 +211,12 @@ ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
       process_resolver_result_(process_resolver_result),
       process_resolver_result_user_data_(process_resolver_result_user_data) {
   GPR_ASSERT(process_resolver_result != nullptr);
-  *error = Init(*args.args);
+  channel_args_ = grpc_channel_args_copy(args.args);
+  *error = Init();
 }
 
-grpc_error* ResolvingLoadBalancingPolicy::Init(const grpc_channel_args& args) {
-  resolver_ = ResolverRegistry::CreateResolver(
-      target_uri_.get(), &args, interested_parties(), combiner(),
-      UniquePtr<Resolver::ResultHandler>(New<ResolverResultHandler>(Ref())));
-  if (resolver_ == nullptr) {
+grpc_error* ResolvingLoadBalancingPolicy::Init() {
+  if (!ResolverRegistry::CheckTarget(target_uri_.get())) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("resolver creation failed");
   }
   // Return our picker to the channel.
@@ -232,6 +228,7 @@ grpc_error* ResolvingLoadBalancingPolicy::Init(const grpc_channel_args& args) {
 ResolvingLoadBalancingPolicy::~ResolvingLoadBalancingPolicy() {
   GPR_ASSERT(resolver_ == nullptr);
   GPR_ASSERT(lb_policy_ == nullptr);
+  grpc_channel_args_destroy(channel_args_);
 }
 
 void ResolvingLoadBalancingPolicy::ShutdownLocked() {
@@ -259,13 +256,16 @@ void ResolvingLoadBalancingPolicy::ShutdownLocked() {
 }
 
 void ResolvingLoadBalancingPolicy::ExitIdleLocked() {
+  if (resolver_ == nullptr) {
+    resolver_ = ResolverRegistry::CreateResolver(
+        target_uri_.get(), channel_args_, interested_parties(), combiner(),
+        UniquePtr<Resolver::ResultHandler>(New<ResolverResultHandler>(Ref())));
+    StartResolvingLocked();
+  }
+  GPR_ASSERT(resolver_ != nullptr);
   if (lb_policy_ != nullptr) {
     lb_policy_->ExitIdleLocked();
     if (pending_lb_policy_ != nullptr) pending_lb_policy_->ExitIdleLocked();
-  } else {
-    if (!started_resolving_ && resolver_ != nullptr) {
-      StartResolvingLocked();
-    }
   }
 }
 

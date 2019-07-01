@@ -98,7 +98,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   ~ResolvingLoadBalancingPolicy();
 
-  grpc_error* Init(const grpc_channel_args& args);
+  grpc_error* Init();
   void ShutdownLocked() override;
 
   void StartResolvingLocked();
@@ -123,6 +123,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   void* process_resolver_result_user_data_ = nullptr;
   UniquePtr<char> child_policy_name_;
   RefCountedPtr<LoadBalancingPolicy::Config> child_lb_config_;
+  grpc_channel_args* channel_args_;
 
   // Resolver and associated state.
   OrphanablePtr<Resolver> resolver_;
