@@ -197,7 +197,7 @@ class SuicideFunctorForAdd
 static void BM_ThreadPoolExternalAdd(benchmark::State& state) {
   const int num_threads = state.range(0);
   static grpc_core::ThreadPool* pool =
-      new grpc_core::ThreadPool(num_threads);
+      grpc_core::New<grpc_core::ThreadPool>(num_threads);
   for (auto _ : state) {
     pool->Add(new SuicideFunctorForAdd());
   }
@@ -280,6 +280,7 @@ class ShortWorkFunctorForAdd
     }
     callback->counter_->DecrementCount();
   }
+
  private:
   int val_;
 };
