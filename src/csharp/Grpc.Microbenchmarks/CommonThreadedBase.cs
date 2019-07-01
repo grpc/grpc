@@ -31,7 +31,6 @@ namespace Grpc.Microbenchmarks
 
     [ClrJob, CoreJob] // test .NET Core and .NET Framework
     [MemoryDiagnoser] // allocations
-    [ShortRunJob] // don't take too long
     public abstract class CommonThreadedBase
     {
         protected virtual bool NeedsEnvironment => true;
