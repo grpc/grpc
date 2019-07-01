@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../Grpc.Core/Grpc.Core.csproj" />
+    <ProjectReference Include="../Grpc.Core.Tests/Grpc.Core.Tests.csproj" />
   </ItemGroup>
 
   <ItemGroup>
