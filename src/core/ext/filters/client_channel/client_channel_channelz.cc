@@ -30,24 +30,25 @@
 namespace grpc_core {
 namespace channelz {
 
-SubchannelNode::SubchannelNode(Subchannel* subchannel,
+SubchannelNode::SubchannelNode(const char* target_address,
                                size_t channel_tracer_max_nodes)
     : BaseNode(EntityType::kSubchannel),
-      subchannel_(subchannel),
-      target_(UniquePtr<char>(gpr_strdup(subchannel_->GetTargetAddress()))),
+      target_(UniquePtr<char>(gpr_strdup(target_address))),
       trace_(channel_tracer_max_nodes) {}
 
 SubchannelNode::~SubchannelNode() {}
 
+void SubchannelNode::UpdateConnectivityState(grpc_connectivity_state state) {
+  connectivity_state_.Store(state, MemoryOrder::RELAXED);
+}
+
+void SubchannelNode::SetChildSocketUuid(intptr_t uuid) {
+  child_socket_uuid_.Store(uuid, MemoryOrder::RELAXED);
+}
+
 void SubchannelNode::PopulateConnectivityState(grpc_json* json) {
-  grpc_connectivity_state state;
-  if (subchannel_ == nullptr) {
-    state = GRPC_CHANNEL_SHUTDOWN;
-  } else {
-    state = subchannel_->CheckConnectivityState(
-        nullptr /* health_check_service_name */,
-        nullptr /* connected_subchannel */);
-  }
+  grpc_connectivity_state state =
+      connectivity_state_.Load(MemoryOrder::RELAXED);
   json = grpc_json_create_child(nullptr, json, "state", nullptr,
                                 GRPC_JSON_OBJECT, false);
   grpc_json_create_child(nullptr, json, "state",
@@ -87,7 +88,7 @@ grpc_json* SubchannelNode::RenderJson() {
   call_counter_.PopulateCallCounts(json);
   json = top_level_json;
   // populate the child socket.
-  intptr_t socket_uuid = subchannel_->GetChildSocketUuid();
+  intptr_t socket_uuid = child_socket_uuid_.Load(MemoryOrder::RELAXED);
   if (socket_uuid != 0) {
     grpc_json* array_parent = grpc_json_create_child(
         nullptr, json, "socketRef", nullptr, GRPC_JSON_ARRAY, false);

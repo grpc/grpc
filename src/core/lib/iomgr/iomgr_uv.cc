@@ -39,4 +39,5 @@ void grpc_set_default_iomgr_platform() {
 }
 
 bool grpc_iomgr_run_in_background() { return false; }
+
 #endif

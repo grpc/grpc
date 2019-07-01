@@ -186,19 +186,21 @@ struct UserData {
 
 class StaticMetadata {
  public:
-  StaticMetadata(const grpc_slice& key, const grpc_slice& value)
-      : kv_({key, value}), hash_(0) {}
+  StaticMetadata(const grpc_slice& key, const grpc_slice& value, uintptr_t idx)
+      : kv_({key, value}), hash_(0), static_idx_(idx) {}
 
   const grpc_mdelem_data& data() const { return kv_; }
 
   void HashInit();
   uint32_t hash() { return hash_; }
+  uintptr_t StaticIndex() { return static_idx_; }
 
  private:
   grpc_mdelem_data kv_;
 
   /* private only data */
   uint32_t hash_;
+  uintptr_t static_idx_;
 };
 
 class RefcountedMdBase {

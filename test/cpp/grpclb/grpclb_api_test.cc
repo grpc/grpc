@@ -31,7 +31,12 @@ namespace {
 using grpc::lb::v1::LoadBalanceRequest;
 using grpc::lb::v1::LoadBalanceResponse;
 
-class GrpclbTest : public ::testing::Test {};
+class GrpclbTest : public ::testing::Test {
+ protected:
+  static void SetUpTestCase() { grpc_init(); }
+
+  static void TearDownTestCase() { grpc_shutdown(); }
+};
 
 grpc::string Ip4ToPackedString(const char* ip_str) {
   struct in_addr ip4;
@@ -128,8 +133,6 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_init();
   int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
   return ret;
 }

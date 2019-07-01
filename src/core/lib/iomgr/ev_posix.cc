@@ -246,7 +246,8 @@ bool grpc_event_engine_can_track_errors(void) {
 }
 
 bool grpc_event_engine_run_in_background(void) {
-  return g_event_engine->run_in_background;
+  // g_event_engine is nullptr when using a custom iomgr.
+  return g_event_engine != nullptr && g_event_engine->run_in_background;
 }
 
 grpc_fd* grpc_fd_create(int fd, const char* name, bool track_err) {

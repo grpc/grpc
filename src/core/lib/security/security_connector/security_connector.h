@@ -98,7 +98,7 @@ class grpc_channel_security_connector : public grpc_security_connector {
   /// Returns true if completed synchronously, in which case \a error will
   /// be set to indicate the result.  Otherwise, \a on_call_host_checked
   /// will be invoked when complete.
-  virtual bool check_call_host(const char* host,
+  virtual bool check_call_host(grpc_core::StringView host,
                                grpc_auth_context* auth_context,
                                grpc_closure* on_call_host_checked,
                                grpc_error** error) GRPC_ABSTRACT;

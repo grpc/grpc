@@ -115,6 +115,7 @@ char* gpr_strvec_flatten(gpr_strvec* strs, size_t* total_length);
 /** Case insensitive string comparison... return <0 if lower(a)<lower(b), ==0 if
     lower(a)==lower(b), >0 if lower(a)>lower(b) */
 int gpr_stricmp(const char* a, const char* b);
+int gpr_strincmp(const char* a, const char* b, size_t n);
 
 void* gpr_memrchr(const void* s, int c, size_t n);
 
