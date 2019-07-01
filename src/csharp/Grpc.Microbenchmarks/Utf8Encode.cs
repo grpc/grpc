@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using BenchmarkDotNet.Attributes;
 using Grpc.Core;
 using Grpc.Core.Internal;
-using Grpc.Core.Internal.Tests;
 
 namespace Grpc.Microbenchmarks
 {
@@ -12,9 +10,7 @@ namespace Grpc.Microbenchmarks
     [MemoryDiagnoser] // allocations
     public class Utf8Encode : ISendStatusFromServerCompletionCallback
     {
-        static readonly NativeMethods Native = NativeMethods.Get();
-
-        [Params(0, 1, 4, 128, 1024)]
+        [Params(0)] //, 1, 4, 128, 1024)]
         public int PayloadSize { get; set; }
 
         static readonly Dictionary<int, string> Payloads = new Dictionary<int, string> {
@@ -36,22 +32,50 @@ namespace Grpc.Microbenchmarks
             return new string(chars);
         }
 
+        private GrpcEnvironment environment;
+
         [GlobalSetup]
         public void Setup()
         {
-            Native.grpcsharp_test_override_method("grpcsharp_call_start_batch", "nop");
+            var native = NativeMethods.Get();
+
+            // ??? throws ???
+            native.grpcsharp_test_override_method(nameof(NativeMethods.grpcsharp_call_send_status_from_server), "nop");
+
+            environment = GrpcEnvironment.AddRef();
             metadata = MetadataArraySafeHandle.Create(Metadata.Empty);
-            call = new FakeNativeCall();
+            var completionRegistry = new CompletionRegistry(environment, () => environment.BatchContextPool.Lease(), () => throw new NotImplementedException());
+            var cq = CompletionQueueSafeHandle.CreateAsync(completionRegistry);
+            call = CreateFakeCall(cq);
         }
 
+        private static CallSafeHandle CreateFakeCall(CompletionQueueSafeHandle cq)
+        {
+            var call = CallSafeHandle.CreateFake(new IntPtr(0xdead), cq);
+            bool success = false;
+            while (!success)
+            {
+                // avoid calling destroy on a nonexistent grpc_call pointer
+                call.DangerousAddRef(ref success);
+            }
+            return call;
+        }
+
+        [GlobalCleanup]
         public void Cleanup()
         {
-            metadata.Dispose();
+            metadata?.Dispose();
             metadata = null;
-            call.Dispose();
+            call?.Dispose();
             call = null;
+
+            if (environment != null)
+            {
+                environment = null;
+                GrpcEnvironment.ReleaseAsync().Wait();
+            }
         }
-        private INativeCall call;
+        private CallSafeHandle call;
         private MetadataArraySafeHandle metadata;
 
         const int Iterations = 1000;
@@ -62,8 +86,7 @@ namespace Grpc.Microbenchmarks
             var status = new Status(StatusCode.OK, payload);
             for (int i = 0; i < Iterations; i++)
             {
-                call.StartSendStatusFromServer(this, status,
-                    metadata, false, null, WriteFlags.NoCompress);
+                call.StartSendStatusFromServer(this, status, metadata, false, null, WriteFlags.NoCompress);
             }
         }
 
