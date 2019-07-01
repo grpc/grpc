@@ -16,21 +16,13 @@
  *
  */
 
-#include "src/core/lib/iomgr/executor/threadpool.h"
-
-#include <grpc/support/log.h>
-
 #include <benchmark/benchmark.h>
-#include <grpc/grpc.h>
-#include <sstream>
-#include <grpc/support/log.h>
+
 #include <condition_variable>
-#include <mutex>
-#include <grpcpp/impl/grpc_library.h>
+
+#include "src/core/lib/iomgr/executor/threadpool.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
-
-
 
 namespace grpc {
 namespace testing {
@@ -122,26 +114,23 @@ static void BM_ThreadPool1AddAnother(benchmark::State& state) {
 }
 BENCHMARK(BM_ThreadPool1AddAnother)
     ->UseRealTime()
-    // ->Iterations(1)
-    // First pair is range for number of threads in pool, second paris is range
+    // First pair is range for number of threads in pool, second pair is range
     // for number of iterations
-    ->Ranges({{1, 1024}, {524288, 524288}});  // range = 2M ~ 4M
+    ->Ranges({{1, 1024}, {524288, 2097152}});  // 512K ~ 2M
 
 static void BM_ThreadPool4AddAnother(benchmark::State& state) {
   ThreadPoolAddAnotherHelper(state, 4);
 }
 BENCHMARK(BM_ThreadPool4AddAnother)
     ->UseRealTime()
-    // ->Iterations(1)
-    ->Ranges({{1, 1024}, {524288, 524288}});  // range = 256K ~ 512K
+    ->Ranges({{1, 1024}, {524288, 2097152}});
 
 static void BM_ThreadPool8AddAnother(benchmark::State& state) {
   ThreadPoolAddAnotherHelper(state, 8);
 }
 BENCHMARK(BM_ThreadPool8AddAnother)
     ->UseRealTime()
-    // ->Iterations(1)
-    ->Ranges({{1, 1024}, {524288, 524288}});
+    ->Ranges({{1, 1024}, {524288, 1048576}});  // 512K ~ 1M
 
 
 static void BM_ThreadPool16AddAnother(benchmark::State& state) {
@@ -149,8 +138,7 @@ static void BM_ThreadPool16AddAnother(benchmark::State& state) {
 }
 BENCHMARK(BM_ThreadPool16AddAnother)
     ->UseRealTime()
-    // ->Iterations(1)
-    ->Ranges({{1, 1024}, {524288, 524288}});
+    ->Ranges({{1, 1024}, {524288, 1048576}});
 
 
 static void BM_ThreadPool32AddAnother(benchmark::State& state) {
@@ -158,40 +146,35 @@ static void BM_ThreadPool32AddAnother(benchmark::State& state) {
 }
 BENCHMARK(BM_ThreadPool32AddAnother)
     ->UseRealTime()
-    // ->Iterations(1)
-    ->Ranges({{1, 1024}, {524288, 524288}});
+    ->Ranges({{1, 1024}, {524288, 1048576}});
 
 static void BM_ThreadPool64AddAnother(benchmark::State& state) {
   ThreadPoolAddAnotherHelper(state, 64);
 }
 BENCHMARK(BM_ThreadPool64AddAnother)
     ->UseRealTime()
-    // ->Iterations(1)
-    ->Ranges({{1, 1024}, {524288, 524288}});
+    ->Ranges({{1, 1024}, {524288, 1048576}});
 
 static void BM_ThreadPool128AddAnother(benchmark::State& state) {
   ThreadPoolAddAnotherHelper(state, 128);
 }
 BENCHMARK(BM_ThreadPool128AddAnother)
     ->UseRealTime()
-    // ->Iterations(1)
-    ->Ranges({{1, 1024}, {524288, 524288}});
+    ->Ranges({{1, 1024}, {524288, 1048576}});
 
 static void BM_ThreadPool512AddAnother(benchmark::State& state) {
   ThreadPoolAddAnotherHelper(state, 512);
 }
 BENCHMARK(BM_ThreadPool512AddAnother)
     ->UseRealTime()
-    // ->Iterations(1)
-    ->Ranges({{1, 1024}, {524288, 524288}});
+    ->Ranges({{1, 1024}, {524288, 1048576}});
 
 static void BM_ThreadPool2048AddAnother(benchmark::State& state) {
   ThreadPoolAddAnotherHelper(state, 2048);
 }
 BENCHMARK(BM_ThreadPool2048AddAnother)
     ->UseRealTime()
-    // ->Iterations(1)
-    ->Ranges({{1, 1024}, {524288, 524288}});
+    ->Ranges({{1, 1024}, {524288, 1048576}});
 
 
 // A functor class that will delete self on end of running.
@@ -339,7 +322,6 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 int main(int argc, char** argv) {
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
-  // gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
   ::grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();
   return 0;
