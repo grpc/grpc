@@ -435,7 +435,9 @@ static void tcp_do_read(grpc_tcp* tcp) {
   GPR_TIMER_SCOPE("tcp_do_read", 0);
   struct msghdr msg;
   struct iovec iov[MAX_READ_IOVEC];
-  char cmsgbuf[24 /*CMSG_SPACE(sizeof(int))*/];
+  char cmsgbuf
+      [128 /*CMSG_SPACE(sizeof(grpc_core::scm_timestamping)) + CMSG_SPACE(sizeof(int))*/
+  ];
   ssize_t read_bytes;
   size_t total_read_bytes = 0;
 
