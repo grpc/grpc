@@ -87,11 +87,19 @@ bool SplitHostPort(StringView name, StringView* host, StringView* port) {
 
 bool SplitHostPort(StringView name, UniquePtr<char>* host,
                    UniquePtr<char>* port) {
+  GPR_DEBUG_ASSERT(host != nullptr && *host == nullptr);
+  GPR_DEBUG_ASSERT(port != nullptr && *port == nullptr);
   StringView host_view;
   StringView port_view;
   const bool ret = SplitHostPort(name, &host_view, &port_view);
-  host->reset(host_view.empty() ? nullptr : host_view.dup().release());
-  port->reset(port_view.empty() ? nullptr : port_view.dup().release());
+  if (ret) {
+    // We always set the host, but port is set only when it's non-empty,
+    // to remain backward compatible with the old split_host_port API.
+    *host = host_view.dup();
+    if (!port_view.empty()) {
+      *port = port_view.dup();
+    }
+  }
   return ret;
 }
 }  // namespace grpc_core

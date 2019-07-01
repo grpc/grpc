@@ -176,7 +176,32 @@ void TestCancelActiveDNSQuery(ArgsStruct* args) {
   ArgsFinish(args);
 }
 
-TEST(CancelDuringAresQuery, TestCancelActiveDNSQuery) {
+class CancelDuringAresQuery : public ::testing::Test {
+ protected:
+  static void SetUpTestCase() {
+    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
+    // Sanity check the time that it takes to run the test
+    // including the teardown time (the teardown
+    // part of the test involves cancelling the DNS query,
+    // which is the main point of interest for this test).
+    overall_deadline = grpc_timeout_seconds_to_deadline(4);
+    grpc_init();
+  }
+
+  static void TearDownTestCase() {
+    grpc_shutdown();
+    if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) > 0) {
+      gpr_log(GPR_ERROR, "Test took too long");
+      abort();
+    }
+  }
+
+ private:
+  static gpr_timespec overall_deadline;
+};
+gpr_timespec CancelDuringAresQuery::overall_deadline;
+
+TEST_F(CancelDuringAresQuery, TestCancelActiveDNSQuery) {
   grpc_core::ExecCtx exec_ctx;
   ArgsStruct args;
   ArgsInit(&args);
@@ -215,7 +240,7 @@ void MaybePollArbitraryPollsetTwice() {}
 
 #endif
 
-TEST(CancelDuringAresQuery, TestFdsAreDeletedFromPollsetSet) {
+TEST_F(CancelDuringAresQuery, TestFdsAreDeletedFromPollsetSet) {
   grpc_core::ExecCtx exec_ctx;
   ArgsStruct args;
   ArgsInit(&args);
@@ -351,18 +376,18 @@ void TestCancelDuringActiveQuery(
   EndTest(client, cq);
 }
 
-TEST(CancelDuringAresQuery,
-     TestHitDeadlineAndDestroyChannelDuringAresResolutionIsGraceful) {
+TEST_F(CancelDuringAresQuery,
+       TestHitDeadlineAndDestroyChannelDuringAresResolutionIsGraceful) {
   TestCancelDuringActiveQuery(NONE /* don't set query timeouts */);
 }
 
-TEST(
+TEST_F(
     CancelDuringAresQuery,
     TestHitDeadlineAndDestroyChannelDuringAresResolutionWithQueryTimeoutIsGraceful) {
   TestCancelDuringActiveQuery(SHORT /* set short query timeout */);
 }
 
-TEST(
+TEST_F(
     CancelDuringAresQuery,
     TestHitDeadlineAndDestroyChannelDuringAresResolutionWithZeroQueryTimeoutIsGraceful) {
   TestCancelDuringActiveQuery(ZERO /* disable query timeouts */);
@@ -373,18 +398,6 @@ TEST(
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
-  // Sanity check the time that it takes to run the test
-  // including the teardown time (the teardown
-  // part of the test involves cancelling the DNS query,
-  // which is the main point of interest for this test).
-  gpr_timespec overall_deadline = grpc_timeout_seconds_to_deadline(4);
-  grpc_init();
   auto result = RUN_ALL_TESTS();
-  grpc_shutdown();
-  if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) > 0) {
-    gpr_log(GPR_ERROR, "Test took too long");
-    abort();
-  }
   return result;
 }

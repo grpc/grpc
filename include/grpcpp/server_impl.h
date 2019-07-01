@@ -28,6 +28,7 @@
 #include <grpc/compression.h>
 #include <grpc/support/atm.h>
 #include <grpcpp/channel_impl.h>
+#include <grpcpp/completion_queue_impl.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>

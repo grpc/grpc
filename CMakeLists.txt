@@ -275,7 +275,8 @@ add_dependencies(buildtests_c compression_test)
 add_dependencies(buildtests_c concurrent_connectivity_test)
 add_dependencies(buildtests_c connection_refused_test)
 add_dependencies(buildtests_c dns_resolver_connectivity_test)
-add_dependencies(buildtests_c dns_resolver_cooldown_test)
+add_dependencies(buildtests_c dns_resolver_cooldown_using_ares_resolver_test)
+add_dependencies(buildtests_c dns_resolver_cooldown_using_native_resolver_test)
 add_dependencies(buildtests_c dns_resolver_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c dualstack_socket_test)
@@ -1366,6 +1367,9 @@ target_link_libraries(grpc
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
 )
+if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
+  target_link_libraries(grpc "-framework CoreFoundation")
+endif()
 
 foreach(_hdr
   include/grpc/impl/codegen/byte_buffer.h
@@ -1765,6 +1769,9 @@ target_link_libraries(grpc_cronet
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
 )
+if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
+  target_link_libraries(grpc_cronet "-framework CoreFoundation")
+endif()
 
 foreach(_hdr
   include/grpc/impl/codegen/byte_buffer.h
@@ -2095,6 +2102,9 @@ target_link_libraries(grpc_test_util
   gpr
   grpc
 )
+if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
+  target_link_libraries(grpc_test_util "-framework CoreFoundation")
+endif()
 
 foreach(_hdr
   include/grpc/support/alloc.h
@@ -2426,6 +2436,9 @@ target_link_libraries(grpc_test_util_unsecure
   gpr
   grpc_unsecure
 )
+if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
+  target_link_libraries(grpc_test_util_unsecure "-framework CoreFoundation")
+endif()
 
 foreach(_hdr
   include/grpc/support/alloc.h
@@ -2780,6 +2793,9 @@ target_link_libraries(grpc_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
 )
+if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
+  target_link_libraries(grpc_unsecure "-framework CoreFoundation")
+endif()
 
 foreach(_hdr
   include/grpc/impl/codegen/byte_buffer.h
@@ -3167,6 +3183,7 @@ foreach(_hdr
   include/grpcpp/channel_impl.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
+  include/grpcpp/completion_queue_impl.h
   include/grpcpp/create_channel.h
   include/grpcpp/create_channel_impl.h
   include/grpcpp/create_channel_posix.h
@@ -3736,6 +3753,9 @@ target_link_libraries(grpc++_cronet
   grpc_cronet
   grpc
 )
+if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
+  target_link_libraries(grpc++_cronet "-framework CoreFoundation")
+endif()
 
 foreach(_hdr
   include/grpc++/alarm.h
@@ -3789,6 +3809,7 @@ foreach(_hdr
   include/grpcpp/channel_impl.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
+  include/grpcpp/completion_queue_impl.h
   include/grpcpp/create_channel.h
   include/grpcpp/create_channel_impl.h
   include/grpcpp/create_channel_posix.h
@@ -4788,6 +4809,7 @@ foreach(_hdr
   include/grpcpp/channel_impl.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
+  include/grpcpp/completion_queue_impl.h
   include/grpcpp/create_channel.h
   include/grpcpp/create_channel_impl.h
   include/grpcpp/create_channel_posix.h
@@ -5774,58 +5796,6 @@ if (gRPC_INSTALL)
 endif()
 
 endif (gRPC_BUILD_CSHARP_EXT)
-if (gRPC_BUILD_TESTS)
-
-add_library(upb
-  third_party/upb/google/protobuf/descriptor.upb.c
-  third_party/upb/upb/decode.c
-  third_party/upb/upb/def.c
-  third_party/upb/upb/encode.c
-  third_party/upb/upb/handlers.c
-  third_party/upb/upb/msg.c
-  third_party/upb/upb/msgfactory.c
-  third_party/upb/upb/sink.c
-  third_party/upb/upb/table.c
-  third_party/upb/upb/upb.c
-)
-
-if(WIN32 AND MSVC)
-  set_target_properties(upb PROPERTIES COMPILE_PDB_NAME "upb"
-    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-  )
-  if (gRPC_INSTALL)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb.pdb
-      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
-    )
-  endif()
-endif()
-
-
-target_include_directories(upb
-  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-)
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(upb PROPERTIES LINKER_LANGUAGE C)
-    # only use the flags for C++ source files
-    target_compile_options(upb PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
-target_link_libraries(upb
-  ${_gRPC_SSL_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-)
-
-
-endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_library(bad_client_test
@@ -6882,12 +6852,12 @@ target_link_libraries(dns_resolver_connectivity_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(dns_resolver_cooldown_test
+add_executable(dns_resolver_cooldown_using_ares_resolver_test
   test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc
 )
 
 
-target_include_directories(dns_resolver_cooldown_test
+target_include_directories(dns_resolver_cooldown_using_ares_resolver_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -6900,7 +6870,7 @@ target_include_directories(dns_resolver_cooldown_test
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
 
-target_link_libraries(dns_resolver_cooldown_test
+target_link_libraries(dns_resolver_cooldown_using_ares_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
@@ -6909,8 +6879,42 @@ target_link_libraries(dns_resolver_cooldown_test
 
   # avoid dependency on libstdc++
   if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(dns_resolver_cooldown_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(dns_resolver_cooldown_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+    set_target_properties(dns_resolver_cooldown_using_ares_resolver_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(dns_resolver_cooldown_using_ares_resolver_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(dns_resolver_cooldown_using_native_resolver_test
+  test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc
+)
+
+
+target_include_directories(dns_resolver_cooldown_using_native_resolver_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+)
+
+target_link_libraries(dns_resolver_cooldown_using_native_resolver_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr
+)
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(dns_resolver_cooldown_using_native_resolver_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(dns_resolver_cooldown_using_native_resolver_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
   endif()
 
 endif (gRPC_BUILD_TESTS)

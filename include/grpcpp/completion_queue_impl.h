@@ -16,11 +16,9 @@
  *
  */
 
-#import <UIKit/UIKit.h>
-#import "AppDelegate.h"
+#ifndef GRPCPP_COMPLETION_QUEUE_IMPL_H
+#define GRPCPP_COMPLETION_QUEUE_IMPL_H
 
-int main(int argc, char* argv[]) {
-  @autoreleasepool {
-    return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));
-  }
-}
+#include <grpcpp/impl/codegen/completion_queue_impl.h>
+
+#endif  // GRPCPP_COMPLETION_QUEUE_IMPL_H

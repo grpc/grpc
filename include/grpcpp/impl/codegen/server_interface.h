@@ -34,7 +34,6 @@ class Channel;
 class CompletionQueue;
 class ServerCompletionQueue;
 class ServerCredentials;
-class ServerContext;
 }  // namespace grpc_impl
 namespace grpc {
 
