@@ -137,6 +137,8 @@ bool ResolverRegistry::CheckTarget(const char* target) {
   char* canonical_target = nullptr;
   ResolverFactory* factory =
       g_state->FindResolverFactory(target, &uri, &canonical_target);
+  grpc_uri_destroy(uri);
+  gpr_free(canonical_target);
   return factory == nullptr ? false : factory->CheckUri(uri);
 }
 
