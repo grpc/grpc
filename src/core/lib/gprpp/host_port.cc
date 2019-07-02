@@ -44,10 +44,7 @@ int JoinHostPort(UniquePtr<char>* out, const char* host, int port) {
   return ret;
 }
 
-namespace {
-bool DoSplitHostPort(StringView name, StringView* host, StringView* port,
-                     bool* has_port) {
-  *has_port = false;
+bool SplitHostPort(StringView name, StringView* host, StringView* port) {
   if (name[0] == '[') {
     /* Parse a bracketed host, typically an IPv6 literal. */
     const size_t rbracket = name.find(']', 1);
@@ -61,7 +58,6 @@ bool DoSplitHostPort(StringView name, StringView* host, StringView* port,
     } else if (name[rbracket + 1] == ':') {
       /* ]:<port?> */
       *port = name.substr(rbracket + 2, name.size() - rbracket - 2);
-      *has_port = true;
     } else {
       /* ]<invalid> */
       return false;
@@ -80,7 +76,6 @@ bool DoSplitHostPort(StringView name, StringView* host, StringView* port,
       /* Exactly 1 colon.  Split into host:port. */
       *host = name.substr(0, colon);
       *port = name.substr(colon + 1, name.size() - colon - 1);
-      *has_port = true;
     } else {
       /* 0 or 2+ colons.  Bare hostname or IPv6 litearal. */
       *host = name;
@@ -89,12 +84,6 @@ bool DoSplitHostPort(StringView name, StringView* host, StringView* port,
   }
   return true;
 }
-}  // namespace
-
-bool SplitHostPort(StringView name, StringView* host, StringView* port) {
-  bool unused;
-  return DoSplitHostPort(name, host, port, &unused);
-}
 
 bool SplitHostPort(StringView name, UniquePtr<char>* host,
                    UniquePtr<char>* port) {
@@ -102,14 +91,12 @@ bool SplitHostPort(StringView name, UniquePtr<char>* host,
   GPR_DEBUG_ASSERT(port != nullptr && *port == nullptr);
   StringView host_view;
   StringView port_view;
-  bool has_port;
-  const bool ret = DoSplitHostPort(name, &host_view, &port_view, &has_port);
+  const bool ret = SplitHostPort(name, &host_view, &port_view);
   if (ret) {
-    // We always set the host, but port is set only when DoSplitHostPort find a
-    // port in the string, to remain backward compatible with the old
-    // gpr_split_host_port API.
+    // We always set the host, but port is set only when it's non-empty,
+    // to remain backward compatible with the old split_host_port API.
     *host = host_view.dup();
-    if (has_port) {
+    if (!port_view.empty()) {
       *port = port_view.dup();
     }
   }
