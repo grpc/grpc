@@ -61,6 +61,21 @@ static uint64_t g_timed_waiter_generation;
 
 static void timer_thread(void* completed_thread_ptr);
 
+static void gc_completed_threads(void) {	
+  if (g_completed_threads != nullptr) {	
+    completed_thread* to_gc = g_completed_threads;	
+    g_completed_threads = nullptr;	
+    gpr_mu_unlock(&g_mu);	
+    while (to_gc != nullptr) {	
+      to_gc->thd.Join();	
+      completed_thread* next = to_gc->next;	
+      gpr_free(to_gc);	
+      to_gc = next;	
+    }	
+    gpr_mu_lock(&g_mu);	
+  }	
+}	
+
 static void start_timer_thread_and_unlock(void) {
   GPR_ASSERT(g_threaded);
   ++g_waiter_count;
