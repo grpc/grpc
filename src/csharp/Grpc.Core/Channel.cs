@@ -318,22 +318,27 @@ namespace Grpc.Core
             }
         }
 
+        // TODO(jtattermusch): it would be useful to also provide .NET/mono version.
+        // (may need to change to static readonly instead of const)
+        private const string DefaultUserAgentString = "grpc-csharp/" + VersionInfo.CurrentVersion;
+        private static readonly ChannelOption DefaultUserAgentOption = new ChannelOption(ChannelOptions.PrimaryUserAgentString, DefaultUserAgentString);
+
         private static void EnsureUserAgentChannelOption(Dictionary<string, ChannelOption> options)
         {
-            var key = ChannelOptions.PrimaryUserAgentString;
-            var userAgentString = "";
-
             ChannelOption option;
-            if (options.TryGetValue(key, out option))
+            string customValue;
+            if (options.TryGetValue(ChannelOptions.PrimaryUserAgentString, out option)
+                && !string.IsNullOrWhiteSpace(customValue = option.StringValue))
             {
                 // user-provided userAgentString needs to be at the beginning
-                userAgentString = option.StringValue + " ";
-            };
-
-            // TODO(jtattermusch): it would be useful to also provide .NET/mono version.
-            userAgentString += string.Format("grpc-csharp/{0}", VersionInfo.CurrentVersion);
-
-            options[ChannelOptions.PrimaryUserAgentString] = new ChannelOption(key, userAgentString);
+                string ua = customValue.Trim() + " " + DefaultUserAgentString;
+                options[ChannelOptions.PrimaryUserAgentString] = new ChannelOption(ChannelOptions.PrimaryUserAgentString, ua);
+            }
+            else
+            {
+                // use a shared instance between all callers
+                options.Add(ChannelOptions.PrimaryUserAgentString, DefaultUserAgentOption);
+            }
         }
 
         private static Dictionary<string, ChannelOption> CreateOptionsDictionary(IEnumerable<ChannelOption> options)
