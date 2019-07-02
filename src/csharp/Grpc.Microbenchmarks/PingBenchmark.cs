@@ -24,7 +24,7 @@ namespace Grpc.Microbenchmarks
         [Benchmark]
         public async ValueTask<string> PingAsync()
         {
-            using (var result = client.PingAsync(""))
+            using (var result = client.PingAsync("", new CallOptions()))
             {
                 return await result.ResponseAsync;
             }
@@ -33,7 +33,7 @@ namespace Grpc.Microbenchmarks
         [Benchmark]
         public string Ping()
         {
-            return client.Ping("");
+            return client.Ping("", new CallOptions());
         }
 
         private Task<string> ServerMethod(string request, ServerCallContext context)
@@ -71,11 +71,11 @@ namespace Grpc.Microbenchmarks
         class PingClient : LiteClientBase
         {
             public PingClient(CallInvoker callInvoker) : base(callInvoker) { }
-            public AsyncUnaryCall<string> PingAsync(string request, CallOptions options = default)
+            public AsyncUnaryCall<string> PingAsync(string request, CallOptions options)
             {
                 return CallInvoker.AsyncUnaryCall(PingMethod, null, options, request);
             }
-            public string Ping(string request, CallOptions options = default)
+            public string Ping(string request, CallOptions options)
             {
                 return CallInvoker.BlockingUnaryCall(PingMethod, null, options, request);
             }
