@@ -149,4 +149,4 @@ class ThreadPool : public ThreadPoolInterface {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_IOMGR_THREADPOOL_THREADPOOL_H */
+#endif /* GRPC_CORE_LIB_IOMGR_EXECUTOR_THREADPOOL_H */
