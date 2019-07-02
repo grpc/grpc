@@ -11,15 +11,18 @@ namespace Grpc.Microbenchmarks
     public class Utf8Decode
     {
         [Params(0, 1, 4, 128, 1024)]
-        public int PayloadSize { get; set; }
+        public int PayloadSize
+        {
+            get { return payloadSize; }
+            set
+            {
+                payloadSize = value;
+                payload = Invent(value);
+            }
+        }
 
-        static readonly Dictionary<int, byte[]> Payloads = new Dictionary<int, byte[]> {
-            { 0, Invent(0) },
-            { 1, Invent(1) },
-            { 4, Invent(4) },
-            { 128, Invent(128) },
-            { 1024, Invent(1024) },
-        };
+        private int payloadSize;
+        private byte[] payload;
 
         static byte[] Invent(int length)
         {
@@ -36,7 +39,6 @@ namespace Grpc.Microbenchmarks
         [Benchmark(OperationsPerInvoke = Iterations)]
         public unsafe void Run()
         {
-            byte[] payload = Payloads[PayloadSize];
             fixed (byte* ptr = payload)
             {
                 var iPtr = new IntPtr(ptr);

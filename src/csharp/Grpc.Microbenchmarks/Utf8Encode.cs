@@ -10,16 +10,19 @@ namespace Grpc.Microbenchmarks
     [MemoryDiagnoser] // allocations
     public class Utf8Encode : ISendStatusFromServerCompletionCallback
     {
-        [Params(0)] //, 1, 4, 128, 1024)]
-        public int PayloadSize { get; set; }
+        [Params(0, 1, 4, 128, 1024)]
+        public int PayloadSize
+        {
+            get { return payloadSize; }
+            set
+            {
+                payloadSize = value;
+                status = new Status(StatusCode.OK, Invent(value));
+            }
+        }
 
-        static readonly Dictionary<int, string> Payloads = new Dictionary<int, string> {
-            { 0, Invent(0) },
-            { 1, Invent(1) },
-            { 4, Invent(4) },
-            { 128, Invent(128) },
-            { 1024, Invent(1024) },
-        };
+        private int payloadSize;
+        private Status status;
 
         static string Invent(int length)
         {
@@ -33,19 +36,22 @@ namespace Grpc.Microbenchmarks
         }
 
         private GrpcEnvironment environment;
-
+        private CompletionRegistry completionRegistry;
         [GlobalSetup]
         public void Setup()
         {
             var native = NativeMethods.Get();
 
             // nop the native-call via reflection
-            NativeMethods.Delegates.grpcsharp_call_send_status_from_server_delegate nop = (CallSafeHandle call, BatchContextSafeHandle ctx, StatusCode statusCode, byte[] statusMessage, UIntPtr statusMessageLen, MetadataArraySafeHandle metadataArray, int sendEmptyInitialMetadata, byte[] optionalSendBuffer, UIntPtr optionalSendBufferLen, WriteFlags writeFlags) => CallError.OK;
+            NativeMethods.Delegates.grpcsharp_call_send_status_from_server_delegate nop = (CallSafeHandle call, BatchContextSafeHandle ctx, StatusCode statusCode, byte[] statusMessage, UIntPtr statusMessageLen, MetadataArraySafeHandle metadataArray, int sendEmptyInitialMetadata, byte[] optionalSendBuffer, UIntPtr optionalSendBufferLen, WriteFlags writeFlags) => {
+                completionRegistry.Extract(ctx.Handle).OnComplete(true); // drain the dictionary as we go
+                return CallError.OK;
+            };
             native.GetType().GetField(nameof(native.grpcsharp_call_send_status_from_server)).SetValue(native, nop);
 
             environment = GrpcEnvironment.AddRef();
             metadata = MetadataArraySafeHandle.Create(Metadata.Empty);
-            var completionRegistry = new CompletionRegistry(environment, () => environment.BatchContextPool.Lease(), () => throw new NotImplementedException());
+            completionRegistry = new CompletionRegistry(environment, () => environment.BatchContextPool.Lease(), () => throw new NotImplementedException());
             var cq = CompletionQueueSafeHandle.CreateAsync(completionRegistry);
             call = CreateFakeCall(cq);
         }
@@ -65,15 +71,23 @@ namespace Grpc.Microbenchmarks
         [GlobalCleanup]
         public void Cleanup()
         {
-            metadata?.Dispose();
-            metadata = null;
-            call?.Dispose();
-            call = null;
-
-            if (environment != null)
+            try
             {
-                environment = null;
-                GrpcEnvironment.ReleaseAsync().Wait();
+                metadata?.Dispose();
+                metadata = null;
+                call?.Dispose();
+                call = null;
+
+                if (environment != null)
+                {
+                    environment = null;
+                    // cleanup seems... unreliable on CLR
+                    // GrpcEnvironment.ReleaseAsync().Wait(1000);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(ex.Message);
             }
         }
         private CallSafeHandle call;
@@ -83,8 +97,6 @@ namespace Grpc.Microbenchmarks
         [Benchmark(OperationsPerInvoke = Iterations)]
         public unsafe void Run()
         {
-            string payload = Payloads[PayloadSize];
-            var status = new Status(StatusCode.OK, payload);
             for (int i = 0; i < Iterations; i++)
             {
                 call.StartSendStatusFromServer(this, status, metadata, false, null, WriteFlags.NoCompress);
