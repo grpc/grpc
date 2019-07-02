@@ -133,82 +133,98 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
-        public void IndexOf()
+        public void IndexOf([Values(0, 1, 2, 3)] int metadataCount)
         {
-            var metadata = CreateMetadata();
-            Assert.AreEqual(0, metadata.IndexOf(metadata[0]));
-            Assert.AreEqual(1, metadata.IndexOf(metadata[1]));
+            var metadata = CreateMetadata(metadataCount);
+            Assert.AreEqual(-1, metadata.IndexOf(new Metadata.Entry("new-key", "new-value")));
+            if (metadataCount > 0) Assert.AreEqual(0, metadata.IndexOf(metadata[0]));
+            if (metadataCount > 1) Assert.AreEqual(1, metadata.IndexOf(metadata[1]));
         }
 
         [Test]
-        public void Insert()
+        public void Insert([Values(0, 1, 2, 3)] int metadataCount)
         {
-            var metadata = CreateMetadata();
+            var metadata = CreateMetadata(metadataCount);
             metadata.Insert(0, new Metadata.Entry("new-key", "new-value"));
-            Assert.AreEqual(3, metadata.Count);
+            Assert.AreEqual(metadataCount + 1, metadata.Count);
             Assert.AreEqual("new-key", metadata[0].Key);
-            Assert.AreEqual("abc", metadata[1].Key);
+            if (metadataCount != 0) Assert.AreEqual("abc", metadata[1].Key);
         }
 
         [Test]
-        public void RemoveAt()
+        public void RemoveAt([Values(0, 1, 2, 3)] int metadataCount)
         {
-            var metadata = CreateMetadata();
-            metadata.RemoveAt(0);
-            Assert.AreEqual(1, metadata.Count);
-            Assert.AreEqual("xyz", metadata[0].Key);
+            var metadata = CreateMetadata(metadataCount);
+
+            if (metadataCount == 0)
+            {
+                Assert.Throws<ArgumentOutOfRangeException>(delegate { metadata.RemoveAt(0); });
+            }
+            else
+            {
+                metadata.RemoveAt(0);
+                Assert.AreEqual(metadataCount - 1, metadata.Count);
+                if (metadataCount != 1) Assert.AreEqual("xyz", metadata[0].Key);
+            }
         }
 
         [Test]
-        public void Remove()
+        public void Remove([Values(0, 1, 2, 3)] int metadataCount)
         {
-            var metadata = CreateMetadata();
-            metadata.Remove(metadata[0]);
-            Assert.AreEqual(1, metadata.Count);
-            Assert.AreEqual("xyz", metadata[0].Key);
+            var metadata = CreateMetadata(metadataCount);
+
+            Assert.IsFalse(metadata.Remove(new Metadata.Entry("zzz", "zzzfdask")));
+            if (metadataCount != 0)
+            {
+                Assert.IsTrue(metadata.Remove(metadata[0]));
+                Assert.AreEqual(metadataCount - 1, metadata.Count);
+                if (metadataCount != 1) Assert.AreEqual("xyz", metadata[0].Key);
+            }
         }
 
         [Test]
-        public void Indexer_Set()
+        public void Indexer_Set([Values(0, 1, 2, 3)] int metadataCount)
         {
-            var metadata = CreateMetadata();
+            var metadata = CreateMetadata(metadataCount);
             var entry = new Metadata.Entry("new-key", "new-value");
 
-            metadata[1] = entry;
-            Assert.AreEqual(entry, metadata[1]);
+            int index = metadataCount == 0 ? 0 : metadataCount - 1;
+
+            metadata[index] = entry;
+            Assert.AreEqual(entry, metadata[index]);
         }
 
         [Test]
-        public void Clear()
+        public void Clear([Values(0, 1, 2, 3)] int metadataCount)
         {
-            var metadata = CreateMetadata();
+            var metadata = CreateMetadata(metadataCount);
             metadata.Clear();
             Assert.AreEqual(0, metadata.Count);
         }
 
         [Test]
-        public void Contains()
+        public void Contains([Values(0, 1, 2, 3)] int metadataCount)
         {
-            var metadata = CreateMetadata();
-            Assert.IsTrue(metadata.Contains(metadata[0]));
+            var metadata = CreateMetadata(metadataCount);
+            if (metadataCount != 0) Assert.IsTrue(metadata.Contains(metadata[0]));
             Assert.IsFalse(metadata.Contains(new Metadata.Entry("new-key", "new-value")));
         }
 
         [Test]
-        public void CopyTo()
+        public void CopyTo([Values(0, 1, 2, 3)] int metadataCount)
         {
-            var metadata = CreateMetadata();
+            var metadata = CreateMetadata(metadataCount);
             var array = new Metadata.Entry[metadata.Count + 1];
 
             metadata.CopyTo(array, 1);
             Assert.AreEqual(default(Metadata.Entry), array[0]);
-            Assert.AreEqual(metadata[0], array[1]);
+            if (metadataCount != 0) Assert.AreEqual(metadata[0], array[1]);
         }
 
         [Test]
-        public void IEnumerableGetEnumerator()
+        public void IEnumerableGetEnumerator([Values(0, 1, 2, 3)] int metadataCount)
         {
-            var metadata = CreateMetadata();
+            var metadata = CreateMetadata(metadataCount);
             var enumerator = (metadata as System.Collections.IEnumerable).GetEnumerator();
             
             int i = 0;
@@ -217,13 +233,28 @@ namespace Grpc.Core.Tests
                 Assert.AreEqual(metadata[i], enumerator.Current);
                 i++;
             }
+            Assert.AreEqual(metadataCount, i);
         }
 
         [Test]
-        public void FreezeMakesReadOnly()
+        public void ForEeach([Values(0, 1, 2, 3)] int metadataCount)
+        {
+            var metadata = CreateMetadata(metadataCount);
+
+            int i = 0;
+            foreach(var value in metadata)
+            {
+                Assert.AreEqual(metadata[i], value);
+                i++;
+            }
+            Assert.AreEqual(metadataCount, i);
+        }
+
+        [Test]
+        public void FreezeMakesReadOnly([Values(0, 1, 2, 3)] int metadataCount)
         {
             var entry = new Metadata.Entry("new-key", "new-value");
-            var metadata = CreateMetadata().Freeze();
+            var metadata = CreateMetadata(metadataCount).Freeze();
 
             Assert.IsTrue(metadata.IsReadOnly);
             Assert.Throws<InvalidOperationException>(() => metadata.Insert(0, entry));
@@ -233,16 +264,16 @@ namespace Grpc.Core.Tests
             Assert.Throws<InvalidOperationException>(() => metadata.Add("new-key", "new-value"));
             Assert.Throws<InvalidOperationException>(() => metadata.Add("new-key-bin", new byte[] { 0xaa }));
             Assert.Throws<InvalidOperationException>(() => metadata.Clear());
-            Assert.Throws<InvalidOperationException>(() => metadata.Remove(metadata[0]));
+            Assert.Throws<InvalidOperationException>(() => metadata.Remove(new Metadata.Entry("zzz", "asdasd")));
         }
 
-        private Metadata CreateMetadata()
+        private Metadata CreateMetadata(int count)
         {
-            return new Metadata
-            {
-                { "abc", "abc-value" },
-                { "xyz", "xyz-value" },
-            };
+            var meta = new Metadata();
+            if (count > 0) meta.Add("abc", "abc-value");
+            if (count > 1) meta.Add("xyz", "xyz-value");
+            if (count > 2) meta.Add("def", "def-value");
+            return meta;
         }
     }
 }

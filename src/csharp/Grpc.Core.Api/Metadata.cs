@@ -17,8 +17,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
-using System.Text.RegularExpressions;
 
 using Grpc.Core.Utils;
 
@@ -53,16 +53,14 @@ namespace Grpc.Core
         internal const string CompressionRequestAlgorithmMetadataKey = "grpc-internal-encoding-request";
         static readonly Encoding EncodingASCII = System.Text.Encoding.ASCII;
 
-        readonly List<Entry> entries;
+        private object entryOrEntries; // zero items: null; one item: the Entry itself; more than one: List<Entry>
+
         bool readOnly;
 
         /// <summary>
         /// Initializes a new instance of <c>Metadata</c>.
         /// </summary>
-        public Metadata()
-        {
-            this.entries = new List<Entry>();
-        }
+        public Metadata() { }
 
         /// <summary>
         /// Makes this object read-only.
@@ -84,7 +82,9 @@ namespace Grpc.Core
         /// </summary>
         public int IndexOf(Metadata.Entry item)
         {
-            return entries.IndexOf(item);
+            if (item == null | entryOrEntries == null) return -1;
+            if (entryOrEntries is Entry) return item.Equals(entryOrEntries) ? 0 : -1;
+            return ((List<Entry>)entryOrEntries).IndexOf(item);
         }
 
         /// <summary>
@@ -94,7 +94,37 @@ namespace Grpc.Core
         {
             GrpcPreconditions.CheckNotNull(item);
             CheckWriteable();
-            entries.Insert(index, item);
+            if (entryOrEntries == null)
+            {
+                if (index != 0) ThrowArgumentOutOfRange();
+                entryOrEntries = item;
+            }
+            else
+            {
+                var list = entryOrEntries as List<Entry>;
+                if (list == null)
+                {
+                    switch (index)
+                    {   // ensure a valid position *before* we allocate a list
+                        case 0:
+                        case 1:
+                            break; // fine
+                        default:
+                            ThrowArgumentOutOfRange();
+                            break;
+                    }
+                    list = new List<Entry>();
+                    list.Add((Entry)entryOrEntries);
+                    entryOrEntries = list;
+                }
+                list.Insert(index, item);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowArgumentOutOfRange()
+        {
+            throw new ArgumentOutOfRangeException();
         }
 
         /// <summary>
@@ -103,7 +133,20 @@ namespace Grpc.Core
         public void RemoveAt(int index)
         {
             CheckWriteable();
-            entries.RemoveAt(index);
+            if (entryOrEntries == null)
+            {
+                ThrowArgumentOutOfRange();
+            }
+
+            if (entryOrEntries is Entry)
+            {
+                if (index == 0) entryOrEntries = null;
+                else ThrowArgumentOutOfRange();
+            }
+            else
+            {
+                ((List<Entry>)entryOrEntries).RemoveAt(index);
+            }
         }
 
         /// <summary>
@@ -113,14 +156,50 @@ namespace Grpc.Core
         {
             get
             {
-                return entries[index];
+                if (entryOrEntries == null)
+                {
+                    ThrowArgumentOutOfRange();
+                }
+                else if (entryOrEntries is Entry)
+                {
+                    if (index != 0) ThrowArgumentOutOfRange();
+                    return (Entry)entryOrEntries;
+                }
+                return ((List<Entry>)entryOrEntries)[index];
             }
 
             set
             {
                 GrpcPreconditions.CheckNotNull(value);
                 CheckWriteable();
-                entries[index] = value;
+
+                if (entryOrEntries == null)
+                {
+                    if (index != 0) ThrowArgumentOutOfRange();
+                    entryOrEntries = value;
+                }
+                else if (entryOrEntries is Entry)
+                {
+                    switch(index)
+                    {
+                        case 0: // overwrite
+                            entryOrEntries = value;
+                            break;
+                        case 1: // append
+                            var list = new List<Entry>();
+                            list.Add((Entry)entryOrEntries);
+                            list.Add(value);
+                            entryOrEntries = list;
+                            break;
+                        default:
+                            ThrowArgumentOutOfRange();
+                            break;
+                    }
+                }
+                else
+                {
+                    ((List<Entry>)entryOrEntries)[index] = value;
+                }
             }
         }
 
@@ -131,7 +210,22 @@ namespace Grpc.Core
         {
             GrpcPreconditions.CheckNotNull(item);
             CheckWriteable();
-            entries.Add(item);
+
+            if (entryOrEntries == null)
+            {
+                entryOrEntries = item;
+            }
+            else
+            {
+                var list = entryOrEntries as List<Entry>;
+                if (list == null)
+                {
+                    list = new List<Entry>();
+                    list.Add((Entry)entryOrEntries);
+                    entryOrEntries = list;
+                }
+                list.Add(item);
+            }
         }
 
         /// <summary>
@@ -156,7 +250,16 @@ namespace Grpc.Core
         public void Clear()
         {
             CheckWriteable();
-            entries.Clear();
+
+            var list = entryOrEntries as List<Entry>;
+            if (list == null)
+            {
+                entryOrEntries = null; // simple wipe
+            }
+            else
+            {
+                list.Clear();
+            }
         }
 
         /// <summary>
@@ -164,7 +267,9 @@ namespace Grpc.Core
         /// </summary>
         public bool Contains(Metadata.Entry item)
         {
-            return entries.Contains(item);
+            if (item == null | entryOrEntries == null) return false;
+            if (entryOrEntries is Entry) return item.Equals(entryOrEntries);
+            return ((List<Entry>)entryOrEntries).Contains(item);
         }
 
         /// <summary>
@@ -172,7 +277,19 @@ namespace Grpc.Core
         /// </summary>
         public void CopyTo(Metadata.Entry[] array, int arrayIndex)
         {
-            entries.CopyTo(array, arrayIndex);
+            if (entryOrEntries == null) { }
+            else
+            {
+                var list = entryOrEntries as List<Entry>;
+                if (list == null)
+                {
+                    array[arrayIndex] = (Entry)entryOrEntries;
+                }
+                else
+                {
+                    list.CopyTo(array, arrayIndex);
+                }
+            }
         }
 
         /// <summary>
@@ -180,7 +297,12 @@ namespace Grpc.Core
         /// </summary>
         public int Count
         {
-            get { return entries.Count; }
+            get
+            {
+                if (entryOrEntries == null) return 0;
+                var list = entryOrEntries as List<Entry>;
+                return list == null ? 1 : list.Count;
+            }
         }
 
         /// <summary>
@@ -197,20 +319,65 @@ namespace Grpc.Core
         public bool Remove(Metadata.Entry item)
         {
             CheckWriteable();
-            return entries.Remove(item);
+            if (item == null | entryOrEntries == null) return false;
+            if (entryOrEntries is Entry)
+            {
+                if (item.Equals(entryOrEntries))
+                {
+                    entryOrEntries = null;
+                    return true;
+                }
+                return false;
+            }
+            return ((List<Entry>)entryOrEntries).Remove(item);
         }
 
         /// <summary>
         /// <see cref="T:IList`1"/>
         /// </summary>
-        public IEnumerator<Metadata.Entry> GetEnumerator()
+        public IEnumerator<Entry> GetEnumerator()
         {
-            return entries.GetEnumerator();
+            if (entryOrEntries == null) return EmptyEnumerator<Entry>.Instance;
+            var list = entryOrEntries as List<Entry>;
+            if (list != null) return list.GetEnumerator();
+            return new SingleEnumerator<Entry>((Entry)entryOrEntries);
         }
 
-        IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        IEnumerator IEnumerable.GetEnumerator()
         {
-            return entries.GetEnumerator();
+            return GetEnumerator();
+        }
+
+        private sealed class EmptyEnumerator<T> : IEnumerator<T>
+        {
+            private EmptyEnumerator() { }
+            public static readonly EmptyEnumerator<T> Instance = new EmptyEnumerator<T>();
+
+            T IEnumerator<T>.Current { get { return default(T); } }
+            object IEnumerator.Current { get { return null; } }
+            void IDisposable.Dispose() { }
+            bool IEnumerator.MoveNext() { return false; }
+            void IEnumerator.Reset() { }
+        }
+        private sealed class SingleEnumerator<T> : IEnumerator<T>
+        {
+            private readonly T value;
+            private bool eof;
+            public SingleEnumerator(T value)
+            {
+                this.value = value;
+            }
+            T IEnumerator<T>.Current { get { return value; } }
+            object IEnumerator.Current { get { return value; } }
+            void IDisposable.Dispose() { }
+            bool IEnumerator.MoveNext()
+            {
+                if (eof) return false;
+                eof = true;
+                return true;
+            }
+
+            void IEnumerator.Reset() { eof = false; }
         }
 
         private void CheckWriteable()
@@ -379,7 +546,7 @@ namespace Grpc.Core
                         '0' <= c && c <= '9' ||
                         c == '.' ||
                         c == '_' ||
-                        c == '-' )
+                        c == '-')
                         continue;
 
                     if ('A' <= c && c <= 'Z')
