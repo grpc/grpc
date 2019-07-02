@@ -55,7 +55,6 @@ namespace Grpc.Core.Internal
         /// </summary>
         public override string ToString()
         {
-            base.ToString();
             return typeof(Timespec).FullName;
         }
 
