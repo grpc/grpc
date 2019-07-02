@@ -32,7 +32,7 @@ namespace Grpc.Microbenchmarks
         [Params(0)]
         public int PayloadSize { get; set; }
 
-        const int Iterations = 1000;
+        const int Iterations = 1000000;  // High number to make the overhead of RunConcurrent negligible.
         [Benchmark(OperationsPerInvoke = Iterations)]
         public void AllocFree()
         {
