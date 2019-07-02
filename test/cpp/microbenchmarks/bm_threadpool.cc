@@ -16,11 +16,12 @@
  *
  */
 
+#include "src/core/lib/iomgr/executor/threadpool.h"
+
 #include <benchmark/benchmark.h>
 
 #include <condition_variable>
 
-#include "src/core/lib/iomgr/executor/threadpool.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
