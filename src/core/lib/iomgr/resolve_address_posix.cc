@@ -33,9 +33,9 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -48,8 +48,6 @@ static grpc_error* posix_blocking_resolve_address(
   grpc_core::ExecCtx exec_ctx;
   struct addrinfo hints;
   struct addrinfo *result = nullptr, *resp;
-  char* host;
-  char* port;
   int s;
   size_t i;
   grpc_error* err;
@@ -59,8 +57,10 @@ static grpc_error* posix_blocking_resolve_address(
     return grpc_resolve_unix_domain_address(name + 5, addresses);
   }
 
+  grpc_core::UniquePtr<char> host;
+  grpc_core::UniquePtr<char> port;
   /* parse name, splitting it into host and port parts */
-  gpr_split_host_port(name, &host, &port);
+  grpc_core::SplitHostPort(name, &host, &port);
   if (host == nullptr) {
     err = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
@@ -74,7 +74,7 @@ static grpc_error* posix_blocking_resolve_address(
           GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
       goto done;
     }
-    port = gpr_strdup(default_port);
+    port.reset(gpr_strdup(default_port));
   }
 
   /* Call getaddrinfo */
@@ -84,16 +84,16 @@ static grpc_error* posix_blocking_resolve_address(
   hints.ai_flags = AI_PASSIVE;     /* for wildcard IP address */
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
-  s = getaddrinfo(host, port, &hints, &result);
+  s = getaddrinfo(host.get(), port.get(), &hints, &result);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
 
   if (s != 0) {
     /* Retry if well-known service name is recognized */
     const char* svc[][2] = {{"http", "80"}, {"https", "443"}};
     for (i = 0; i < GPR_ARRAY_SIZE(svc); i++) {
-      if (strcmp(port, svc[i][0]) == 0) {
+      if (strcmp(port.get(), svc[i][0]) == 0) {
         GRPC_SCHEDULING_START_BLOCKING_REGION;
-        s = getaddrinfo(host, svc[i][1], &hints, &result);
+        s = getaddrinfo(host.get(), svc[i][1], &hints, &result);
         GRPC_SCHEDULING_END_BLOCKING_REGION;
         break;
       }
@@ -133,8 +133,6 @@ static grpc_error* posix_blocking_resolve_address(
   err = GRPC_ERROR_NONE;
 
 done:
-  gpr_free(host);
-  gpr_free(port);
   if (result) {
     freeaddrinfo(result);
   }

@@ -78,9 +78,19 @@ static grpc_iomgr_platform_vtable vtable = {
 void grpc_set_default_iomgr_platform() {
   char* enable_cfstream = getenv(grpc_cfstream_env_var);
   grpc_tcp_client_vtable* client_vtable = &grpc_posix_tcp_client_vtable;
+  // CFStream is enabled by default on iOS, and disabled by default on other
+  // platforms. Defaults can be overriden by setting the grpc_cfstream
+  // environment variable.
+#if TARGET_OS_IPHONE
+  if (enable_cfstream == nullptr || enable_cfstream[0] == '1') {
+    client_vtable = &grpc_cfstream_client_vtable;
+  }
+#else
   if (enable_cfstream != nullptr && enable_cfstream[0] == '1') {
     client_vtable = &grpc_cfstream_client_vtable;
   }
+#endif
+
   grpc_set_tcp_client_impl(client_vtable);
   grpc_set_tcp_server_impl(&grpc_posix_tcp_server_vtable);
   grpc_set_timer_impl(&grpc_generic_timer_vtable);

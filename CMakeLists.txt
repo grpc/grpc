@@ -714,6 +714,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx streaming_throughput_test)
 endif()
 add_dependencies(buildtests_cxx stress_test)
+add_dependencies(buildtests_cxx string_view_test)
 add_dependencies(buildtests_cxx thread_manager_test)
 add_dependencies(buildtests_cxx thread_stress_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -862,7 +863,6 @@ add_library(gpr
   src/core/lib/gpr/env_linux.cc
   src/core/lib/gpr/env_posix.cc
   src/core/lib/gpr/env_windows.cc
-  src/core/lib/gpr/host_port.cc
   src/core/lib/gpr/log.cc
   src/core/lib/gpr/log_android.cc
   src/core/lib/gpr/log_linux.cc
@@ -889,6 +889,7 @@ add_library(gpr
   src/core/lib/gprpp/arena.cc
   src/core/lib/gprpp/fork.cc
   src/core/lib/gprpp/global_config_env.cc
+  src/core/lib/gprpp/host_port.cc
   src/core/lib/gprpp/thd_posix.cc
   src/core/lib/gprpp/thd_windows.cc
   src/core/lib/profiling/basic_timers.cc
@@ -1364,6 +1365,9 @@ target_link_libraries(grpc
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
 )
+if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
+  target_link_libraries(grpc "-framework CoreFoundation")
+endif()
 
 foreach(_hdr
   include/grpc/impl/codegen/byte_buffer.h
@@ -1762,6 +1766,9 @@ target_link_libraries(grpc_cronet
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
 )
+if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
+  target_link_libraries(grpc_cronet "-framework CoreFoundation")
+endif()
 
 foreach(_hdr
   include/grpc/impl/codegen/byte_buffer.h
@@ -2091,6 +2098,9 @@ target_link_libraries(grpc_test_util
   gpr
   grpc
 )
+if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
+  target_link_libraries(grpc_test_util "-framework CoreFoundation")
+endif()
 
 foreach(_hdr
   include/grpc/support/alloc.h
@@ -2421,6 +2431,9 @@ target_link_libraries(grpc_test_util_unsecure
   gpr
   grpc_unsecure
 )
+if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
+  target_link_libraries(grpc_test_util_unsecure "-framework CoreFoundation")
+endif()
 
 foreach(_hdr
   include/grpc/support/alloc.h
@@ -2774,6 +2787,9 @@ target_link_libraries(grpc_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
 )
+if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
+  target_link_libraries(grpc_unsecure "-framework CoreFoundation")
+endif()
 
 foreach(_hdr
   include/grpc/impl/codegen/byte_buffer.h
@@ -3730,6 +3746,9 @@ target_link_libraries(grpc++_cronet
   grpc_cronet
   grpc
 )
+if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
+  target_link_libraries(grpc++_cronet "-framework CoreFoundation")
+endif()
 
 foreach(_hdr
   include/grpc++/alarm.h
@@ -5772,58 +5791,6 @@ endif()
 endif (gRPC_BUILD_CSHARP_EXT)
 if (gRPC_BUILD_TESTS)
 
-add_library(upb
-  third_party/upb/google/protobuf/descriptor.upb.c
-  third_party/upb/upb/decode.c
-  third_party/upb/upb/def.c
-  third_party/upb/upb/encode.c
-  third_party/upb/upb/handlers.c
-  third_party/upb/upb/msg.c
-  third_party/upb/upb/msgfactory.c
-  third_party/upb/upb/sink.c
-  third_party/upb/upb/table.c
-  third_party/upb/upb/upb.c
-)
-
-if(WIN32 AND MSVC)
-  set_target_properties(upb PROPERTIES COMPILE_PDB_NAME "upb"
-    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-  )
-  if (gRPC_INSTALL)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb.pdb
-      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
-    )
-  endif()
-endif()
-
-
-target_include_directories(upb
-  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-)
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(upb PROPERTIES LINKER_LANGUAGE C)
-    # only use the flags for C++ source files
-    target_compile_options(upb PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
-target_link_libraries(upb
-  ${_gRPC_SSL_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
 add_library(bad_client_test
   test/core/bad_client/bad_client.cc
 )
@@ -7544,7 +7511,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_host_port_test
-  test/core/gpr/host_port_test.cc
+  test/core/gprpp/host_port_test.cc
 )
 
 
@@ -16673,6 +16640,45 @@ target_link_libraries(stress_test
   grpc
   gpr
   grpc++_test_config
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(string_view_test
+  test/core/gprpp/string_view_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(string_view_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(string_view_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc++
+  grpc
+  gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
