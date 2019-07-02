@@ -17,6 +17,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -345,14 +346,43 @@ namespace Grpc.Core
             /// Creates a binary value or ascii value metadata entry from data received from the native layer.
             /// We trust C core to give us well-formed data, so we don't perform any checks or defensive copying.
             /// </summary>
-            internal static Entry CreateUnsafe(string key, byte[] valueBytes)
+            internal static unsafe Entry CreateUnsafe(string key, byte* source, int length)
             {
                 if (HasBinaryHeaderSuffix(key))
                 {
-                    return new Entry(key, null, valueBytes);
+                    byte[] arr;
+                    if (length == 0)
+                    {
+                        arr = EmptyBlob;
+                    }
+                    else
+                    {   // create a local copy in a fresh array
+                        arr = new byte[length];
+                        Marshal.Copy(new IntPtr(source), arr, 0, length);
+                    }
+                    return new Entry(key, null, arr);
                 }
-                return new Entry(key, EncodingASCII.GetString(valueBytes), null);
+                else
+                {
+                    string s;
+                    if (length == 0)
+                    {
+                        s = "";
+                    }
+                    else
+                    {
+                        int charCount = EncodingASCII.GetCharCount(source, length);
+                        s = new string('\0', charCount);
+                        fixed (char* cPtr = s)
+                        {
+                            EncodingASCII.GetChars(source, length, cPtr, charCount);
+                        }
+                    }
+                    return new Entry(key, s, null);
+                }
             }
+
+            static readonly byte[] EmptyBlob = new byte[0];
 
             private static string NormalizeKey(string key)
             {
