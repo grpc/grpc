@@ -44,7 +44,7 @@ namespace Grpc.Core.Internal
         readonly bool inlineHandlers;
         readonly WaitCallback runCompletionQueueEventCallbackSuccess;
         readonly WaitCallback runCompletionQueueEventCallbackFailure;
-        readonly AtomicCounter queuedContinuationCounter = new AtomicCounter();
+        long queuedContinuationCounter = AtomicCounter.Create();
 
         readonly List<BasicProfiler> threadProfilers = new List<BasicProfiler>();  // profilers assigned to threadpool threads
 
@@ -176,7 +176,7 @@ namespace Grpc.Core.Internal
                     try
                     {
                         var callback = cq.CompletionRegistry.Extract(tag);
-                        queuedContinuationCounter.Increment();
+                        AtomicCounter.Increment(ref queuedContinuationCounter);
                         if (!inlineHandlers)
                         {
                             // Use cached delegates to avoid unnecessary allocations
@@ -199,7 +199,7 @@ namespace Grpc.Core.Internal
             // GrpcThreadPool thread (a foreground thread) will not exit unless all queued work had
             // been finished to prevent terminating the continuations queued prematurely.
             int sleepIterations = 0;
-            while (queuedContinuationCounter.Count != 0)
+            while (AtomicCounter.Count(ref queuedContinuationCounter) != 0)
             {
                 // Only happens on shutdown and having pending continuations shouldn't very common,
                 // so sleeping here for a little bit is fine.
@@ -237,7 +237,7 @@ namespace Grpc.Core.Internal
             }
             finally
             {
-                queuedContinuationCounter.Decrement();
+                AtomicCounter.Decrement(ref queuedContinuationCounter);
             }
         }
     }

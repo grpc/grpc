@@ -132,7 +132,7 @@ namespace Grpc.IntegrationTesting
         readonly List<Task> runnerTasks;
         readonly CancellationTokenSource stoppedCts = new CancellationTokenSource();
         readonly TimeStats timeStats = new TimeStats();
-        readonly AtomicCounter statsResetCount = new AtomicCounter();
+        long statsResetCount = AtomicCounter.Create();
         
         public ClientRunnerImpl(List<Channel> channels, ClientType clientType, RpcType rpcType, int outstandingRpcsPerChannel, LoadParams loadParams, PayloadConfig payloadConfig, HistogramParams histogramParams, Func<BasicProfiler> profilerFactory)
         {
@@ -169,11 +169,11 @@ namespace Grpc.IntegrationTesting
 
             if (reset)
             {
-                statsResetCount.Increment();
+                AtomicCounter.Increment(ref statsResetCount);
             }
 
             GrpcEnvironment.Logger.Info("[ClientRunnerImpl.GetStats] GC collection counts: gen0 {0}, gen1 {1}, gen2 {2}, (histogram reset count:{3}, seconds since reset: {4})",
-                GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2), statsResetCount.Count, timeSnapshot.WallClockTime.TotalSeconds);
+                GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2), AtomicCounter.Count(ref statsResetCount), timeSnapshot.WallClockTime.TotalSeconds);
 
             return new ClientStats
             {
@@ -213,7 +213,7 @@ namespace Grpc.IntegrationTesting
             while (!stoppedCts.Token.IsCancellationRequested)
             {
                 // after the first stats reset, also reset the profiler.
-                if (optionalProfiler != null && !profilerReset && statsResetCount.Count > 0)
+                if (optionalProfiler != null && !profilerReset && AtomicCounter.Count(ref statsResetCount) > 0)
                 {
                     optionalProfiler.Reset();
                     profilerReset = true;

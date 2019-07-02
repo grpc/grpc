@@ -35,7 +35,7 @@ namespace Grpc.Core
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<Channel>();
 
         readonly object myLock = new object();
-        readonly AtomicCounter activeCallCounter = new AtomicCounter();
+        private long activeCallCounter = AtomicCounter.Create();
         readonly CancellationTokenSource shutdownTokenSource = new CancellationTokenSource();
 
         readonly string target;
@@ -243,7 +243,7 @@ namespace Grpc.Core
 
             shutdownTokenSource.Cancel();
 
-            var activeCallCount = activeCallCounter.Count;
+            var activeCallCount = AtomicCounter.Count(ref activeCallCounter);
             if (activeCallCount > 0)
             {
                 Logger.Warning("Channel shutdown was called but there are still {0} active calls for that channel.", activeCallCount);
@@ -283,7 +283,7 @@ namespace Grpc.Core
 
         internal void AddCallReference(object call)
         {
-            activeCallCounter.Increment();
+            AtomicCounter.Increment(ref activeCallCounter);
 
             bool success = false;
             handle.DangerousAddRef(ref success);
@@ -294,13 +294,13 @@ namespace Grpc.Core
         {
             handle.DangerousRelease();
 
-            activeCallCounter.Decrement();
+            AtomicCounter.Decrement(ref activeCallCounter);
         }
 
         // for testing only
         internal long GetCallReferenceCount()
         {
-            return activeCallCounter.Count;
+            return AtomicCounter.Count(ref activeCallCounter);
         }
 
         private ChannelState GetConnectivityState(bool tryToConnect)

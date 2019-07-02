@@ -51,7 +51,7 @@ namespace Grpc.Core.Internal
 
         public void Register(IntPtr key, IOpCompletionCallback callback)
         {
-            environment.DebugStats.PendingBatchCompletions.Increment();
+            environment.DebugStats.IncrementPendingBatchCompletions();
 
             bool lockTaken = false;
             try
@@ -98,7 +98,7 @@ namespace Grpc.Core.Internal
             {
                 if (lockTaken) spinLock.Exit();
             }
-            environment.DebugStats.PendingBatchCompletions.Decrement();
+            environment.DebugStats.DecrementPendingBatchCompletions();
             return value;
         }
 

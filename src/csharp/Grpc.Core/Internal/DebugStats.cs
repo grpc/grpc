@@ -17,20 +17,31 @@
 #endregion
 
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace Grpc.Core.Internal
 {
     internal class DebugStats
     {
-        public readonly AtomicCounter PendingBatchCompletions = new AtomicCounter();
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void IncrementPendingBatchCompletions()
+        {
+            AtomicCounter.Increment(ref pendingBatchCompletions);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void DecrementPendingBatchCompletions()
+        {
+            AtomicCounter.Decrement(ref pendingBatchCompletions);
+        }
+        private long pendingBatchCompletions = AtomicCounter.Create();
 
         /// <summary>
         /// Checks the debug stats and take action for any inconsistency found.
         /// </summary>
         public void CheckOK()
         {
-            var pendingBatchCompletions = PendingBatchCompletions.Count;
+            var pendingBatchCompletions = AtomicCounter.Count(ref this.pendingBatchCompletions);
             if (pendingBatchCompletions != 0)
             {
                 DebugWarning(string.Format("Detected {0} pending batch completions.", pendingBatchCompletions));

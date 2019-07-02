@@ -29,7 +29,7 @@ namespace Grpc.Core.Internal
     {
         static readonly NativeMethods Native = NativeMethods.Get();
 
-        AtomicCounter shutdownRefcount = new AtomicCounter(1);
+        long shutdownRefcount = AtomicCounter.Create(1);
         CompletionRegistry completionRegistry;
 
         private CompletionQueueSafeHandle()
@@ -95,7 +95,7 @@ namespace Grpc.Core.Internal
 
         private void DecrementShutdownRefcount()
         {
-            if (shutdownRefcount.Decrement() == 0)
+            if (AtomicCounter.Decrement(ref shutdownRefcount) == 0)
             {
                 Native.grpcsharp_completion_queue_shutdown(this);
             }
@@ -103,8 +103,7 @@ namespace Grpc.Core.Internal
 
         private void BeginOp()
         {
-            bool success = false;
-            shutdownRefcount.IncrementIfNonzero(ref success);
+            bool success = AtomicCounter.IncrementIfNonzero(ref shutdownRefcount);
             GrpcPreconditions.CheckState(success, "Shutdown has already been called");
         }
 

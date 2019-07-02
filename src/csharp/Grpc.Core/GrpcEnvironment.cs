@@ -50,7 +50,7 @@ namespace Grpc.Core
         static int requestCallContextPoolThreadLocalCapacity = DefaultRequestCallContextPoolThreadLocalCapacity;
         static readonly HashSet<Channel> registeredChannels = new HashSet<Channel>();
         static readonly HashSet<Server> registeredServers = new HashSet<Server>();
-        static readonly AtomicCounter nativeInitCounter = new AtomicCounter();
+        static long nativeInitCounter = AtomicCounter.Create();
 
         static ILogger logger = new LogLevelFilterLogger(new ConsoleLogger(), LogLevel.Off, true);
 
@@ -58,7 +58,7 @@ namespace Grpc.Core
         readonly IObjectPool<RequestCallContextSafeHandle> requestCallContextPool;
         readonly GrpcThreadPool threadPool;
         readonly DebugStats debugStats = new DebugStats();
-        readonly AtomicCounter cqPickerCounter = new AtomicCounter();
+        long cqPickerCounter = AtomicCounter.Create();
 
         bool isShutdown;
 
@@ -335,7 +335,7 @@ namespace Grpc.Core
         /// </summary>
         internal CompletionQueueSafeHandle PickCompletionQueue()
         {
-            var cqIndex = (int) ((cqPickerCounter.Increment() - 1) % this.threadPool.CompletionQueues.Count);
+            var cqIndex = (int) ((AtomicCounter.Increment(ref cqPickerCounter) - 1) % this.threadPool.CompletionQueues.Count);
             return this.threadPool.CompletionQueues.ElementAt(cqIndex);
         }
 
@@ -361,7 +361,7 @@ namespace Grpc.Core
 
         internal static void GrpcNativeInit()
         {
-            if (!IsNativeShutdownAllowed && nativeInitCounter.Count > 0)
+            if (!IsNativeShutdownAllowed && AtomicCounter.Count(ref nativeInitCounter) > 0)
             {
                 // Normally grpc_init and grpc_shutdown calls should come in pairs (C core does reference counting),
                 // but in case we avoid grpc_shutdown calls altogether, calling grpc_init has no effect
@@ -371,7 +371,7 @@ namespace Grpc.Core
                 return;
             }
             NativeMethods.Get().grpcsharp_init();
-            nativeInitCounter.Increment();
+            AtomicCounter.Increment(ref nativeInitCounter);
         }
 
         internal static void GrpcNativeShutdown()

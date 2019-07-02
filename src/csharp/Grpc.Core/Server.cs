@@ -36,7 +36,7 @@ namespace Grpc.Core
         const int DefaultRequestCallTokensPerCq = 2000;
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<Server>();
 
-        readonly AtomicCounter activeCallCounter = new AtomicCounter();
+        long activeCallCounter = AtomicCounter.Create();
 
         readonly ServiceDefinitionCollection serviceDefinitions;
         readonly ServerPortCollection ports;
@@ -191,7 +191,7 @@ namespace Grpc.Core
 
         internal void AddCallReference(object call)
         {
-            activeCallCounter.Increment();
+            AtomicCounter.Increment(ref activeCallCounter);
 
             bool success = false;
             handle.DangerousAddRef(ref success);
@@ -201,7 +201,7 @@ namespace Grpc.Core
         internal void RemoveCallReference(object call)
         {
             handle.DangerousRelease();
-            activeCallCounter.Decrement();
+            AtomicCounter.Decrement(ref activeCallCounter);
         }
 
         /// <summary>
@@ -323,7 +323,7 @@ namespace Grpc.Core
 
         private void DisposeHandle()
         {
-            var activeCallCount = activeCallCounter.Count;
+            var activeCallCount = AtomicCounter.Count(ref activeCallCounter);
             if (activeCallCount > 0)
             {
                 Logger.Warning("Server shutdown has finished but there are still {0} active calls for that server.", activeCallCount);

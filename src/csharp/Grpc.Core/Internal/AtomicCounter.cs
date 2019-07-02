@@ -16,56 +16,53 @@
 
 #endregion
 
-using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace Grpc.Core.Internal
 {
-    internal class AtomicCounter
+    internal static class AtomicCounter
     {
-        long counter = 0;
-
-        public AtomicCounter(long initialCount = 0)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long Create(long initialCount = 0)
         {
-            this.counter = initialCount;
+            return initialCount;
         }
 
-        public long Increment()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long Increment(ref long counter)
         {
             return Interlocked.Increment(ref counter);
         }
 
-        public void IncrementIfNonzero(ref bool success)
+        public static bool IncrementIfNonzero(ref long counter)
         {
-            long origValue = counter;
+            long origValue = Volatile.Read(ref counter);
             while (true)
             {
                 if (origValue == 0)
                 {
-                    success = false;
-                    return;
+                    return false;
                 }
                 long result = Interlocked.CompareExchange(ref counter, origValue + 1, origValue);
                 if (result == origValue)
                 {
-                    success = true;
-                    return;
-                };
+                    return true;
+                }
                 origValue = result;
             }
         }
 
-        public long Decrement()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long Decrement(ref long counter)
         {
             return Interlocked.Decrement(ref counter);
         }
 
-        public long Count
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long Count(ref long counter)
         {
-            get
-            {
-                return Interlocked.Read(ref counter);
-            }
+            return Interlocked.Read(ref counter);
         }
     }
 }
