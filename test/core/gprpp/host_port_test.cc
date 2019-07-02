@@ -71,9 +71,7 @@ static void test_split_host_port() {
   split_host_port_expect("", "", nullptr, true);
   split_host_port_expect("[a:b]", "a:b", nullptr, true);
   split_host_port_expect("1.2.3.4", "1.2.3.4", nullptr, true);
-  split_host_port_expect("0.0.0.0:", "0.0.0.0", "", true);
   split_host_port_expect("a:b:c::", "a:b:c::", nullptr, true);
-  split_host_port_expect("[a:b:c::]:", "a:b:c::", "", true);
   split_host_port_expect("[a:b]:30", "a:b", "30", true);
   split_host_port_expect("1.2.3.4:30", "1.2.3.4", "30", true);
   split_host_port_expect(":30", "", "30", true);
