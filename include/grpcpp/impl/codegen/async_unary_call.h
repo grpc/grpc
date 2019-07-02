@@ -22,14 +22,24 @@
 #include <grpcpp/impl/codegen/async_unary_call_impl.h>
 
 namespace grpc {
+
 template <class R>
 using ClientAsyncResponseReaderInterface =
     grpc_impl::ClientAsyncResponseReaderInterface<R>;
+
 template <class R>
 using ClientAsyncResponseReader = grpc_impl::ClientAsyncResponseReader<R>;
 
 template <class W>
 using ServerAsyncResponseWriter = ::grpc_impl::ServerAsyncResponseWriter<W>;
+
+namespace internal {
+
+template <class R>
+using ClientAsyncResponseReaderFactory =
+    ::grpc_impl::internal::ClientAsyncResponseReaderFactory<R>;
+
+}  // namespace internal
 
 }  // namespace grpc
 

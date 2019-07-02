@@ -22,6 +22,20 @@
 #include <grpcpp/impl/codegen/async_stream_impl.h>
 
 namespace grpc {
+
+namespace internal {
+
+typedef ::grpc_impl::internal::ClientAsyncStreamingInterface
+    ClientAsyncStreamingInterface;
+
+template <class R>
+using AsyncReaderInterface = ::grpc_impl::internal::AsyncReaderInterface<R>;
+
+template <class W>
+using AsyncWriterInterface = ::grpc_impl::internal::AsyncWriterInterface<W>;
+
+}  // namespace internal
+
 template <class R>
 using ClientAsyncReaderInterface = ::grpc_impl::ClientAsyncReaderInterface<R>;
 
@@ -60,6 +74,22 @@ using ServerAsyncReaderWriterInterface =
 
 template <class W, class R>
 using ServerAsyncReaderWriter = ::grpc_impl::ServerAsyncReaderWriter<W, R>;
+
+namespace internal {
+template <class R>
+using ClientAsyncReaderFactory =
+    ::grpc_impl::internal::ClientAsyncReaderFactory<R>;
+
+template <class W>
+using ClientAsyncWriterFactory =
+    ::grpc_impl::internal::ClientAsyncWriterFactory<W>;
+
+template <class W, class R>
+using ClientAsyncReaderWriterFactory =
+    ::grpc_impl::internal::ClientAsyncReaderWriterFactory<W, R>;
+
+}  // namespace internal
+
 }  // namespace grpc
 
 #endif  // GRPCPP_IMPL_CODEGEN_ASYNC_STREAM_H

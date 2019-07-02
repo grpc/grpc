@@ -25,6 +25,18 @@ namespace grpc {
 namespace experimental {
 
 template <class Response>
+using ClientCallbackReader =
+    ::grpc_impl::experimental::ClientCallbackReader<Response>;
+
+template <class Request>
+using ClientCallbackWriter =
+    ::grpc_impl::experimental::ClientCallbackWriter<Request>;
+
+template <class Request, class Response>
+using ClientCallbackReaderWriter =
+    ::grpc_impl::experimental::ClientCallbackReaderWriter<Request, Response>;
+
+template <class Response>
 using ClientReadReactor =
     ::grpc_impl::experimental::ClientReadReactor<Response>;
 
