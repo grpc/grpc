@@ -22,7 +22,7 @@ using Grpc.Core.Internal;
 
 namespace Grpc.Microbenchmarks
 {
-    public class CompletionRegistryBenchmarks : CommonThreadedBase
+    public class CompletionRegistryBenchmark : CommonThreadedBase
     {
         [Params(false, true)]
         public bool UseSharedRegistry { get; set; }

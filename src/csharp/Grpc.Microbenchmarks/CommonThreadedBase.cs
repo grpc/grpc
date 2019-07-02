@@ -35,7 +35,7 @@ namespace Grpc.Microbenchmarks
     {
         protected virtual bool NeedsEnvironment => true;
 
-        [Params(1, 1, 2, 4, 8, 12)]
+        [Params(1, 2, 4, 8, 12)]
         public int ThreadCount { get; set; }
 
         protected GrpcEnvironment Environment { get; private set; }
