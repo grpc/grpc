@@ -1,4 +1,4 @@
-﻿#region Copyright notice and license
+#region Copyright notice and license
 
 // Copyright 2015 gRPC authors.
 //
@@ -38,7 +38,7 @@ namespace Grpc.Microbenchmarks
 
         const int Iterations = 1000;
         [Benchmark(OperationsPerInvoke = Iterations)]
-        public void Run()
+        public void SendMessage()
         {
             RunConcurrent(RunBody);
         }

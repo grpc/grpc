@@ -37,7 +37,7 @@ namespace Grpc.Microbenchmarks
 
         const int Iterations = 1000;
         [Benchmark(OperationsPerInvoke = Iterations)]
-        public unsafe void Run()
+        public unsafe void Decode()
         {
             fixed (byte* ptr = payload)
             {

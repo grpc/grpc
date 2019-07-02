@@ -34,7 +34,7 @@ namespace Grpc.Microbenchmarks
 
         const int Iterations = 1000;
         [Benchmark(OperationsPerInvoke = Iterations)]
-        public void Run()
+        public void AllocFree()
         {
             RunConcurrent(RunBody);
         }
