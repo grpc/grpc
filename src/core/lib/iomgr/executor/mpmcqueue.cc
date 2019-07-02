@@ -31,7 +31,7 @@ inline void* InfLenFIFOQueue::PopFront() {
   Node* head_to_remove = queue_head_;
   queue_head_ = queue_head_->next;
 
-  count_.FetchSub(1, MemoryOrder::RELAXED);
+  count_.Store(count_.Load(MemoryOrder::RELAXED) - 1, MemoryOrder::RELAXED);
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace)) {
     gpr_timespec wait_time =
@@ -76,7 +76,7 @@ void InfLenFIFOQueue::Put(void* elem) {
   MutexLock l(&mu_);
 
   Node* new_node = New<Node>(elem);
-  if (count_.FetchAdd(1, MemoryOrder::RELAXED) == 0) {
+  if (count_.Load(MemoryOrder::RELAXED) == 0) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace)) {
       busy_time = gpr_now(GPR_CLOCK_MONOTONIC);
     }
@@ -85,7 +85,7 @@ void InfLenFIFOQueue::Put(void* elem) {
     queue_tail_->next = new_node;
     queue_tail_ = queue_tail_->next;
   }
-
+  count_.Store(count_.Load(MemoryOrder::RELAXED) + 1, MemoryOrder::RELAXED);
   // Updates Stats info
   if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace)) {
     stats_.num_started++;
