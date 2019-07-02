@@ -64,6 +64,7 @@ CONFIG = [
     # well known method names
     '/grpc.lb.v1.LoadBalancer/BalanceLoad',
     '/grpc.lb.v2.EndpointDiscoveryService/StreamEndpoints',
+    '/grpc.lb.v2.LoadReportingService/StreamLoadStats',
     '/grpc.health.v1.Health/Watch',
     '/envoy.service.discovery.v2.AggregatedDiscoveryService/StreamAggregatedResources',
     # compression algorithm names
@@ -149,6 +150,7 @@ CONFIG = [
     ('content-encoding', 'gzip'),
     ('lb-token', ''),
     ('lb-cost-bin', ''),
+    ('locality-stats', '',),
 ]
 
 # All entries here are ignored when counting non-default initial metadata that
@@ -177,6 +179,7 @@ METADATA_BATCH_CALLOUTS = [
     ('user-agent'),
     ('host'),
     ('lb-token'),
+    ('locality-stats'),
     ('grpc-previous-rpc-attempts'),
     ('grpc-retry-pushback-ms'),
 ]
