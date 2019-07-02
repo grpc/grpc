@@ -188,6 +188,7 @@ LANG_RELEASE_MATRIX = {
          ReleaseInfo(runtimes=['java_oracle8'], testcases_file='java__v1.0.3')),
         ('v1.20.0', ReleaseInfo(runtimes=['java_oracle8'])),
         ('v1.21.0', ReleaseInfo(runtimes=['java_oracle8'])),
+        ('v1.22.1', ReleaseInfo()),
     ]),
     'python':
     OrderedDict([
