@@ -19,9 +19,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_EXECUTOR_THREADPOOL_H
 #define GRPC_CORE_LIB_IOMGR_EXECUTOR_THREADPOOL_H
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/executor/mpmcqueue.h"
@@ -100,7 +99,7 @@ class ThreadPoolWorker {
 // A fixed size thread pool implementation of abstract thread pool interface.
 // In this implementation, the number of threads in pool is fixed, but the
 // capacity of closure queue is unlimited.
-class ThreadPool :  public ThreadPoolInterface {
+class ThreadPool : public ThreadPoolInterface {
  public:
   // Creates a thread pool with size of "num_threads", with default thread name
   // "ThreadPoolWorker" and all thread options set to default.
@@ -108,7 +107,7 @@ class ThreadPool :  public ThreadPoolInterface {
 
   // Same as ThreadPool(int num_threads) constructor, except
   // that it also sets "thd_name" as the name of all threads in the thread pool.
-  ThreadPool(int num_threads, const char *thd_name);
+  ThreadPool(int num_threads, const char* thd_name);
 
   // Same as ThreadPool(const char *thd_name, int num_threads) constructor,
   // except that is also set thread_options for threads.
@@ -117,7 +116,7 @@ class ThreadPool :  public ThreadPoolInterface {
   // value 0, default ThreadPool stack size will be used. The current default
   // stack size of this implementation is 1952K for mobile platform and 64K for
   // all others.
-  ThreadPool(int num_threads, const char *thd_name,
+  ThreadPool(int num_threads, const char* thd_name,
              const Thread::Options& thread_options);
 
   // Waits for all pending closures to complete, then shuts down thread pool.
@@ -147,7 +146,6 @@ class ThreadPool :  public ThreadPoolInterface {
   size_t DefaultStackSize();
   bool HasBeenShutDown();
 };
-
 
 }  // namespace grpc_core
 
