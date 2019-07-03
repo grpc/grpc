@@ -137,7 +137,7 @@ class ThreadPool : public ThreadPoolInterface {
   const char* thd_name_ = nullptr;
   Thread::Options thread_options_;
   ThreadPoolWorker** threads_ = nullptr;  // Array of worker threads
-  MPMCQueueInterface* queue_ = nullptr;
+  MPMCQueueInterface* queue_ = nullptr;   // Closure queue
 
   Atomic<bool> shut_down_{false};  // Destructor has been called if set to true
 
