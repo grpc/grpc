@@ -104,5 +104,12 @@ namespace Grpc.Core.Internal
             this.method.Recycle();
             return new ServerRpcNew(server, call, method, host, deadline, requestMetadata);
         }
+        internal ServerRpcNew WithHost(StringLike host)
+        {
+            // create a new instance with the designated .Host, recycling
+            // the old .Host since it is now toast
+            this.host.Recycle();
+            return new ServerRpcNew(server, call, method, host, deadline, requestMetadata);
+        }
     }
 }

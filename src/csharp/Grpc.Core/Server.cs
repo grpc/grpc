@@ -344,9 +344,30 @@ namespace Grpc.Core
             handle.Dispose();
         }
 
-        private IServerCallHandler ResolveCallHandler(ref ServerRpcNew newRpc)
+        // most servers only answer to one host; optimize for that
+        // (note: needs to be a ref because of atomicity; StringLike
+        // is too big to avoid torn reads when multi-threaded)
+        private StringLike.Boxed firstHost;
+
+        private IServerCallHandler ResolveCallHandlerAndHost(ref ServerRpcNew newRpc)
         {
             CallHandlerStub stub;
+            var first = firstHost;
+            if (first == null)
+            {
+                // store the FIRST host, and update
+                // newRpc since this will materialize
+                // the string
+                firstHost = first = newRpc.Host.Box();
+                newRpc = newRpc.WithHost(first.Value);
+            }
+            else if (newRpc.Host.Equals(first.Value))
+            {
+                // same as first; use that
+                newRpc = newRpc.WithHost(first.Value);
+            }
+            // otherwise: multiple hosts... sorry, I can't help with that
+
             if (callHandlers.TryGetValue(newRpc.Method, out stub))
             {
                 newRpc = newRpc.WithMethod(stub.Name);
@@ -365,7 +386,7 @@ namespace Grpc.Core
         {
             try
             {
-                var callHandler = ResolveCallHandler(ref newRpc);
+                var callHandler = ResolveCallHandlerAndHost(ref newRpc);
                 await callHandler.HandleCall(newRpc, cq).ConfigureAwait(false);
             }
             catch (Exception e)
