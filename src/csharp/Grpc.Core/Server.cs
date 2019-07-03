@@ -334,7 +334,7 @@ namespace Grpc.Core
         /// <summary>
         /// Selects corresponding handler for given call and handles the call.
         /// </summary>
-        private async Task HandleCallAsync(ServerRpcNew newRpc, CompletionQueueSafeHandle cq, Action continuation)
+        private async Task HandleCallAsync(ServerRpcNew newRpc, CompletionQueueSafeHandle cq, Action<Server, CompletionQueueSafeHandle> continuation)
         {
             try
             {
@@ -351,7 +351,7 @@ namespace Grpc.Core
             }
             finally
             {
-                continuation();
+                continuation(this, cq);
             }
         }
 
@@ -374,7 +374,7 @@ namespace Grpc.Core
                     // Don't await, the continuations will run on gRPC thread pool once triggered
                     // by cq.Next().
                     #pragma warning disable 4014
-                    HandleCallAsync(newRpc, cq, () => AllowOneRpc(cq));
+                    HandleCallAsync(newRpc, cq, (server, state) => server.AllowOneRpc(state));
                     #pragma warning restore 4014
                 }
             }

@@ -25,7 +25,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/qps_server_builder.h"
 #include "test/cpp/qps/server.h"
@@ -160,11 +160,10 @@ class SynchronousServer final : public grpc::testing::Server {
     auto port_num = port();
     // Negative port number means inproc server, so no listen port needed
     if (port_num >= 0) {
-      char* server_address = nullptr;
-      gpr_join_host_port(&server_address, "::", port_num);
-      builder->AddListeningPort(server_address,
+      grpc_core::UniquePtr<char> server_address;
+      grpc_core::JoinHostPort(&server_address, "::", port_num);
+      builder->AddListeningPort(server_address.get(),
                                 Server::CreateServerCredentials(config));
-      gpr_free(server_address);
     }
 
     ApplyConfigToBuilder(config, builder.get());

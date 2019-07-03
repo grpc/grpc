@@ -931,6 +931,7 @@ include/grpcpp/channel.h \
 include/grpcpp/channel_impl.h \
 include/grpcpp/client_context.h \
 include/grpcpp/completion_queue.h \
+include/grpcpp/completion_queue_impl.h \
 include/grpcpp/create_channel.h \
 include/grpcpp/create_channel_impl.h \
 include/grpcpp/create_channel_posix.h \
@@ -1076,7 +1077,6 @@ src/core/lib/debug/trace.h \
 src/core/lib/gpr/alloc.h \
 src/core/lib/gpr/arena.h \
 src/core/lib/gpr/env.h \
-src/core/lib/gpr/host_port.h \
 src/core/lib/gpr/mpscq.h \
 src/core/lib/gpr/murmur_hash.h \
 src/core/lib/gpr/spinlock.h \
@@ -1098,6 +1098,7 @@ src/core/lib/gprpp/global_config.h \
 src/core/lib/gprpp/global_config_custom.h \
 src/core/lib/gprpp/global_config_env.h \
 src/core/lib/gprpp/global_config_generic.h \
+src/core/lib/gprpp/host_port.h \
 src/core/lib/gprpp/inlined_vector.h \
 src/core/lib/gprpp/manual_constructor.h \
 src/core/lib/gprpp/map.h \
@@ -1107,6 +1108,7 @@ src/core/lib/gprpp/orphanable.h \
 src/core/lib/gprpp/pair.h \
 src/core/lib/gprpp/ref_counted.h \
 src/core/lib/gprpp/ref_counted_ptr.h \
+src/core/lib/gprpp/string_view.h \
 src/core/lib/gprpp/sync.h \
 src/core/lib/gprpp/thd.h \
 src/core/lib/http/format_request.h \
@@ -1131,6 +1133,7 @@ src/core/lib/iomgr/ev_poll_posix.h \
 src/core/lib/iomgr/ev_posix.h \
 src/core/lib/iomgr/exec_ctx.h \
 src/core/lib/iomgr/executor.h \
+src/core/lib/iomgr/executor/mpmcqueue.h \
 src/core/lib/iomgr/gethostname.h \
 src/core/lib/iomgr/grpc_if_nametoindex.h \
 src/core/lib/iomgr/internal_errqueue.h \

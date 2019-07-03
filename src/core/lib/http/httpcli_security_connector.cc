@@ -30,6 +30,7 @@
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/string_view.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
@@ -108,7 +109,8 @@ class grpc_httpcli_ssl_channel_security_connector final
     return strcmp(secure_peer_name_, other->secure_peer_name_);
   }
 
-  bool check_call_host(const char* host, grpc_auth_context* auth_context,
+  bool check_call_host(grpc_core::StringView host,
+                       grpc_auth_context* auth_context,
                        grpc_closure* on_call_host_checked,
                        grpc_error** error) override {
     *error = GRPC_ERROR_NONE;
