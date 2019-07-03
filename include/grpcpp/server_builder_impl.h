@@ -112,10 +112,6 @@ class ServerBuilder {
   ///
   /// It can be invoked multiple times.
   ///
-  /// If port is not provided in the \a addr (e.g., "1.2.3.4:" or "1.2.3.4"),
-  /// the default port (i.e., https) is used.  To request an ephemeral port,
-  /// \a addr must include 0 as the port number (e.g., "1.2.3.4:0").
-  ///
   /// \param addr_uri The address to try to bind to the server in URI form. If
   /// the scheme name is omitted, "dns:///" is assumed. To bind to any address,
   /// please use IPv6 any, i.e., [::]:<port>, which also accepts IPv4
