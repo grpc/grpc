@@ -15,7 +15,7 @@ var searchData=
   ['is_5flast_5fmessage',['is_last_message',['../classgrpc_1_1_write_options.html#a7d08d7bc3a62cc4cfe8499d4bd70e0d7',1,'grpc::WriteOptions']]],
   ['is_5fwrite_5fthrough',['is_write_through',['../classgrpc_1_1_write_options.html#a1031b0d61c166df4f2699f56fbba3d0f',1,'grpc::WriteOptions']]],
   ['isblocking',['IsBlocking',['../classgrpc__impl_1_1_auth_metadata_processor.html#a4c4e7acec4575056c5527f3bad40233e',1,'grpc_impl::AuthMetadataProcessor::IsBlocking()'],['../classgrpc__impl_1_1_metadata_credentials_plugin.html#a99e59926089444f1ece3c7d28deca1b8',1,'grpc_impl::MetadataCredentialsPlugin::IsBlocking()']]],
-  ['iscancelled',['IsCancelled',['../classgrpc_1_1_server_context.html#acea4ed6d22ccf89185194310935e2966',1,'grpc::ServerContext']]],
+  ['iscancelled',['IsCancelled',['../classgrpc__impl_1_1_server_context.html#ac0fe2a9425b18b724f910adbe0e3c17a',1,'grpc_impl::ServerContext']]],
   ['isfrequentlypolled',['IsFrequentlyPolled',['../classgrpc__impl_1_1_server_completion_queue.html#aab40c635d653b9d9c57a17e88b776c0d',1,'grpc_impl::ServerCompletionQueue']]],
   ['ispeerauthenticated',['IsPeerAuthenticated',['../classgrpc_1_1_auth_context.html#af1d6a5c7cd67694d1a485c4127eb63dc',1,'grpc::AuthContext']]],
   ['issuerequest',['IssueRequest',['../classgrpc_1_1_server_interface_1_1_registered_async_request.html#abb0e1f857b3ff7b3c72911162e35acef',1,'grpc::ServerInterface::RegisteredAsyncRequest']]]

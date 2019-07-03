@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.22.0-dev</span>
+   &#160;<span id="projectnumber">1.22.0</span>
    </div>
   </td>
  </tr>
@@ -247,7 +247,7 @@ Public Member Functions</h2></td></tr>
 <p>The callback should generally be lightweight and nonblocking and primarily concerned with clearing application state related to the RPC or causing operations (such as cancellations) to happen on dependent RPCs.</p>
 <p>If the RPC is already canceled at the time that SetCancelCallback is called, the callback is invoked immediately.</p>
 <p>The cancellation callback may be executed concurrently with the method handler that invokes it but will certainly not issue or execute after the return of ClearCancelCallback. If ClearCancelCallback is invoked while the callback is already executing, the callback will complete its execution before ClearCancelCallback takes effect.</p>
-<p>To preserve the orderings described above, the callback may be called under a lock that is also used for ClearCancelCallback and <a class="el" href="classgrpc_1_1_server_context.html#acea4ed6d22ccf89185194310935e2966" title="IsCancelled is always safe to call when using sync or callback API. ">ServerContext::IsCancelled</a>, so the callback CANNOT call either of those operations on this RPC or any other function that causes those operations to be called before the callback completes. </p>
+<p>To preserve the orderings described above, the callback may be called under a lock that is also used for ClearCancelCallback and <a class="el" href="classgrpc__impl_1_1_server_context.html#ac0fe2a9425b18b724f910adbe0e3c17a" title="IsCancelled is always safe to call when using sync or callback API. ">ServerContext::IsCancelled</a>, so the callback CANNOT call either of those operations on this RPC or any other function that causes those operations to be called before the callback completes. </p>
 
 </div>
 </div>
@@ -257,7 +257,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 31 2019 16:39:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jul 3 2019 14:51:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

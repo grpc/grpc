@@ -72,7 +72,7 @@ var searchData=
   ['clientcallbackwriter',['ClientCallbackWriter',['../classgrpc_1_1experimental_1_1_client_callback_writer.html',1,'grpc::experimental']]],
   ['clientcallbackwriterfactory',['ClientCallbackWriterFactory',['../classgrpc_1_1internal_1_1_client_callback_writer_factory.html',1,'grpc::internal']]],
   ['clientcallbackwriterimpl',['ClientCallbackWriterImpl',['../classgrpc_1_1internal_1_1_client_callback_writer_impl.html',1,'grpc::internal']]],
-  ['clientcontext',['ClientContext',['../classgrpc_1_1_client_context.html',1,'grpc']]],
+  ['clientcontext',['ClientContext',['../classgrpc__impl_1_1_client_context.html',1,'grpc_impl']]],
   ['clientinterceptorfactoryinterface',['ClientInterceptorFactoryInterface',['../classgrpc_1_1experimental_1_1_client_interceptor_factory_interface.html',1,'grpc::experimental']]],
   ['clientreader',['ClientReader',['../classgrpc_1_1_client_reader.html',1,'grpc']]],
   ['clientreaderfactory',['ClientReaderFactory',['../classgrpc_1_1internal_1_1_client_reader_factory.html',1,'grpc::internal']]],

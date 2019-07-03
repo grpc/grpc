@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.22.0-dev</span>
+   &#160;<span id="projectnumber">1.22.0</span>
    </div>
   </td>
  </tr>
@@ -76,9 +76,9 @@ $(function() {
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a956039a5e21a71ae2905ae7e5e46641c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_unimplemented_read_reactor.html#a956039a5e21a71ae2905ae7e5e46641c">OnDone</a> () override</td></tr>
 <tr class="separator:a956039a5e21a71ae2905ae7e5e46641c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4f4ae22b433b378892e9333671776b4a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_unimplemented_read_reactor.html#a4f4ae22b433b378892e9333671776b4a">OnStarted</a> (<a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *, Response *) override</td></tr>
-<tr class="memdesc:a4f4ae22b433b378892e9333671776b4a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Similar to ServerBidiReactor::OnStarted, except that this also provides the response object that the stream fills in before calling Finish.  <a href="#a4f4ae22b433b378892e9333671776b4a">More...</a><br /></td></tr>
-<tr class="separator:a4f4ae22b433b378892e9333671776b4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a01d38eb6646958f515efc13a8c640461"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_unimplemented_read_reactor.html#a01d38eb6646958f515efc13a8c640461">OnStarted</a> (::<a class="el" href="classgrpc__impl_1_1_server_context.html">grpc_impl::ServerContext</a> *, Response *) override</td></tr>
+<tr class="memdesc:a01d38eb6646958f515efc13a8c640461"><td class="mdescLeft">&#160;</td><td class="mdescRight">Similar to ServerBidiReactor::OnStarted, except that this also provides the response object that the stream fills in before calling Finish.  <a href="#a01d38eb6646958f515efc13a8c640461">More...</a><br /></td></tr>
+<tr class="separator:a01d38eb6646958f515efc13a8c640461"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html">grpc::experimental::ServerReadReactor&lt; Request, Response &gt;</a></td></tr>
 <tr class="memitem:a0f1eb21727e8cc23143c10c38cfbe4aa inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html#a0f1eb21727e8cc23143c10c38cfbe4aa">~ServerReadReactor</a> ()=default</td></tr>
 <tr class="separator:a0f1eb21727e8cc23143c10c38cfbe4aa inherit pub_methods_classgrpc_1_1experimental_1_1_server_read_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -130,8 +130,8 @@ template&lt;class Request , class Response &gt; </div>
 
 </div>
 </div>
-<a id="a4f4ae22b433b378892e9333671776b4a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4f4ae22b433b378892e9333671776b4a">&#9670;&nbsp;</a></span>OnStarted()</h2>
+<a id="a01d38eb6646958f515efc13a8c640461"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a01d38eb6646958f515efc13a8c640461">&#9670;&nbsp;</a></span>OnStarted()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -144,7 +144,7 @@ template&lt;class Request , class Response &gt; </div>
         <tr>
           <td class="memname">void <a class="el" href="classgrpc_1_1internal_1_1_unimplemented_read_reactor.html">grpc::internal::UnimplementedReadReactor</a>&lt; Request, Response &gt;::OnStarted </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *&#160;</td>
+          <td class="paramtype">::<a class="el" href="classgrpc__impl_1_1_server_context.html">grpc_impl::ServerContext</a> *&#160;</td>
           <td class="paramname"><em>context</em>, </td>
         </tr>
         <tr>
@@ -176,7 +176,7 @@ template&lt;class Request , class Response &gt; </div>
   </dd>
 </dl>
 
-<p>Reimplemented from <a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html#a97cf2983b47a9b71eca9a479175835b0">grpc::experimental::ServerReadReactor&lt; Request, Response &gt;</a>.</p>
+<p>Reimplemented from <a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html#a2965f11230fe3ea90a945a1394630684">grpc::experimental::ServerReadReactor&lt; Request, Response &gt;</a>.</p>
 
 </div>
 </div>
@@ -186,7 +186,7 @@ template&lt;class Request , class Response &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 31 2019 16:39:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jul 3 2019 14:51:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

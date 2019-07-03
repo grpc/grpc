@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.22.0-dev</span>
+   &#160;<span id="projectnumber">1.22.0</span>
    </div>
   </td>
  </tr>
@@ -114,10 +114,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a1f7cb8407197de0a0d179ed94d1d5b25"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a modifiable multimap of the received initial metadata.  <a href="#a1f7cb8407197de0a0d179ed94d1d5b25">More...</a><br /></td></tr>
 <tr class="separator:a1f7cb8407197de0a0d179ed94d1d5b25"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3ce51320fa84af6b2a00815305257b4e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a3ce51320fa84af6b2a00815305257b4e">GetRecvStatus</a> () override</td></tr>
-<tr class="memdesc:a3ce51320fa84af6b2a00815305257b4e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a modifiable view of the received status on POST_RECV_STATUS interceptions; nullptr if not valid.  <a href="#a3ce51320fa84af6b2a00815305257b4e">More...</a><br /></td></tr>
+<tr class="memdesc:a3ce51320fa84af6b2a00815305257b4e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a modifiable view of the received status on PRE_RECV_STATUS and POST_RECV_STATUS interceptions; nullptr if not valid.  <a href="#a3ce51320fa84af6b2a00815305257b4e">More...</a><br /></td></tr>
 <tr class="separator:a3ce51320fa84af6b2a00815305257b4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4dc85e0f1a3cdb0c95f04994d443f81f"><td class="memItemLeft" align="right" valign="top">std::multimap&lt; <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>, <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a> &gt; *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a4dc85e0f1a3cdb0c95f04994d443f81f">GetRecvTrailingMetadata</a> () override</td></tr>
-<tr class="memdesc:a4dc85e0f1a3cdb0c95f04994d443f81f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a modifiable multimap of the received trailing metadata on POST_RECV_STATUS interceptions; nullptr if not valid.  <a href="#a4dc85e0f1a3cdb0c95f04994d443f81f">More...</a><br /></td></tr>
+<tr class="memdesc:a4dc85e0f1a3cdb0c95f04994d443f81f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a modifiable multimap of the received trailing metadata on PRE_RECV_STATUS and POST_RECV_STATUS interceptions; nullptr if not valid.  <a href="#a4dc85e0f1a3cdb0c95f04994d443f81f">More...</a><br /></td></tr>
 <tr class="separator:a4dc85e0f1a3cdb0c95f04994d443f81f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5103bca2f3826d43182436e3e736bd7b"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a5103bca2f3826d43182436e3e736bd7b">GetInterceptedChannel</a> () override</td></tr>
 <tr class="memdesc:a5103bca2f3826d43182436e3e736bd7b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets an intercepted channel.  <a href="#a5103bca2f3826d43182436e3e736bd7b">More...</a><br /></td></tr>
@@ -246,7 +246,7 @@ Public Member Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Returns a modifiable multimap of the received initial metadata. </p>
-<p>Valid for POST_RECV_INITIAL_METADATA interceptions; nullptr if not valid </p>
+<p>Valid for PRE_RECV_INITIAL_METADATA and POST_RECV_INITIAL_METADATA interceptions; nullptr if not valid </p>
 
 <p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a8f123307653591e63ded55d8cea9ad8b">grpc::experimental::InterceptorBatchMethods</a>.</p>
 
@@ -276,7 +276,7 @@ Public Member Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Returns a pointer to the modifiable received message. </p>
-<p>Note that the message is already deserialized but the type is not set; the interceptor should static_cast to the appropriate type before using it. This is valid for POST_RECV_MESSAGE interceptions; nullptr for not valid </p>
+<p>Note that the message is already deserialized but the type is not set; the interceptor should static_cast to the appropriate type before using it. This is valid for PRE_RECV_MESSAGE and POST_RECV_MESSAGE interceptions; nullptr for not valid </p>
 
 <p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a3b267515d6afd29afadba454aa913505">grpc::experimental::InterceptorBatchMethods</a>.</p>
 
@@ -305,7 +305,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Returns a modifiable view of the received status on POST_RECV_STATUS interceptions; nullptr if not valid. </p>
+<p>Returns a modifiable view of the received status on PRE_RECV_STATUS and POST_RECV_STATUS interceptions; nullptr if not valid. </p>
 
 <p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#ac60304da4f2c2737bcc259bac19e858d">grpc::experimental::InterceptorBatchMethods</a>.</p>
 
@@ -334,7 +334,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Returns a modifiable multimap of the received trailing metadata on POST_RECV_STATUS interceptions; nullptr if not valid. </p>
+<p>Returns a modifiable multimap of the received trailing metadata on PRE_RECV_STATUS and POST_RECV_STATUS interceptions; nullptr if not valid. </p>
 
 <p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a661e6372647f1639783b046d728599fa">grpc::experimental::InterceptorBatchMethods</a>.</p>
 
@@ -677,7 +677,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 31 2019 16:39:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jul 3 2019 14:51:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

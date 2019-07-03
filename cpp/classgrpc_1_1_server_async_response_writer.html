@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.22.0-dev</span>
+   &#160;<span id="projectnumber">1.22.0</span>
    </div>
   </td>
  </tr>
@@ -77,7 +77,7 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a3c97a19ba6eaa0b9eef9b6b86dbad9e9"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_response_writer.html#a3c97a19ba6eaa0b9eef9b6b86dbad9e9">ServerAsyncResponseWriter</a> (<a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *ctx)</td></tr>
+<tr class="memitem:a3c97a19ba6eaa0b9eef9b6b86dbad9e9"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_response_writer.html#a3c97a19ba6eaa0b9eef9b6b86dbad9e9">ServerAsyncResponseWriter</a> (<a class="el" href="namespacegrpc.html#a313a79de3d52893dd208c4efbf6662d2">ServerContext</a> *ctx)</td></tr>
 <tr class="separator:a3c97a19ba6eaa0b9eef9b6b86dbad9e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a451ba3cd9093168a6becd137b1720834"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_response_writer.html#a451ba3cd9093168a6becd137b1720834">SendInitialMetadata</a> (void *tag) override</td></tr>
 <tr class="memdesc:a451ba3cd9093168a6becd137b1720834"><td class="mdescLeft">&#160;</td><td class="mdescRight">See <em>ServerAsyncStreamingInterface::SendInitialMetadata</em> for semantics.  <a href="#a451ba3cd9093168a6becd137b1720834">More...</a><br /></td></tr>
@@ -112,7 +112,7 @@ template&lt;class W &gt; </div>
         <tr>
           <td class="memname"><a class="el" href="classgrpc_1_1_server_async_response_writer.html">grpc::ServerAsyncResponseWriter</a>&lt; W &gt;::<a class="el" href="classgrpc_1_1_server_async_response_writer.html">ServerAsyncResponseWriter</a> </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="namespacegrpc.html#a313a79de3d52893dd208c4efbf6662d2">ServerContext</a> *&#160;</td>
           <td class="paramname"><em>ctx</em></td><td>)</td>
           <td></td>
         </tr>
@@ -180,7 +180,7 @@ template&lt;class W &gt; </div>
   </dd>
 </dl>
 <p>Side effect:</p><ul>
-<li>also sends initial metadata if not already sent (using the <em><a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext allows the person implementing a service handler to: ">ServerContext</a></em> associated with this call).</li>
+<li>also sends initial metadata if not already sent (using the <em>ServerContext</em> associated with this call).</li>
 </ul>
 <p>Note: if <em>status</em> has a non-OK code, then <em>msg</em> will not be sent, and the client will receive only the status with possible trailing metadata. </p>
 
@@ -235,7 +235,7 @@ template&lt;class W &gt; </div>
   </dd>
 </dl>
 <p>Side effect:</p><ul>
-<li>also sends initial metadata if not already sent (using the <em><a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext allows the person implementing a service handler to: ">ServerContext</a></em> associated with this call). </li>
+<li>also sends initial metadata if not already sent (using the <em>ServerContext</em> associated with this call). </li>
 </ul>
 
 </div>
@@ -267,7 +267,7 @@ template&lt;class W &gt; </div>
 </div><div class="memdoc">
 
 <p>See <em>ServerAsyncStreamingInterface::SendInitialMetadata</em> for semantics. </p>
-<p>Side effect: The initial metadata that will be sent to the client from this op will be taken from the <em><a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext allows the person implementing a service handler to: ">ServerContext</a></em> associated with the call.</p>
+<p>Side effect: The initial metadata that will be sent to the client from this op will be taken from the <em>ServerContext</em> associated with the call.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">tag</td><td>Tag identifying this request. </td></tr>
@@ -285,7 +285,7 @@ template&lt;class W &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 31 2019 16:39:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jul 3 2019 14:51:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

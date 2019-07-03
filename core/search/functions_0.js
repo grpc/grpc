@@ -250,6 +250,7 @@ var searchData=
   ['grpc_5fslice_5fto_5fc_5fstring',['grpc_slice_to_c_string',['../slice_8h.html#af9b5772739f4f87de043449af582e0a5',1,'slice.h']]],
   ['grpc_5fslice_5funref',['grpc_slice_unref',['../slice_8h.html#ac9952d98910886ca44ac416d547d0e08',1,'slice.h']]],
   ['grpc_5fssl_5fcredentials_5fcreate',['grpc_ssl_credentials_create',['../grpc__security_8h.html#a7440216a2192f7c5ecadf5704e7c7bda',1,'grpc_security.h']]],
+  ['grpc_5fssl_5fcredentials_5fcreate_5fex',['grpc_ssl_credentials_create_ex',['../grpc__security_8h.html#a57e477a6fdd9a6a66cc37614701d9088',1,'grpc_security.h']]],
   ['grpc_5fssl_5fserver_5fcertificate_5fconfig_5fcreate',['grpc_ssl_server_certificate_config_create',['../grpc__security_8h.html#a0fbb46fa71b635516037e6b265f937f5',1,'grpc_security.h']]],
   ['grpc_5fssl_5fserver_5fcertificate_5fconfig_5fdestroy',['grpc_ssl_server_certificate_config_destroy',['../grpc__security_8h.html#a077c39db13d0211eac9c6a952882bc31',1,'grpc_security.h']]],
   ['grpc_5fssl_5fserver_5fcredentials_5fcreate',['grpc_ssl_server_credentials_create',['../grpc__security_8h.html#adde6c7d191f88997fd82fd8b54f9420e',1,'grpc_security.h']]],

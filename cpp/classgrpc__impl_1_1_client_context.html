@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.13"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>GRPC C++: grpc::ClientContext Class Reference</title>
+<title>GRPC C++: grpc_impl::ClientContext Class Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.22.0-dev</span>
+   &#160;<span id="projectnumber">1.22.0</span>
    </div>
   </td>
  </tr>
@@ -59,7 +59,7 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="namespacegrpc.html">grpc</a></li><li class="navelem"><a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespacegrpc__impl.html">grpc_impl</a></li><li class="navelem"><a class="el" href="classgrpc__impl_1_1_client_context.html">ClientContext</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -69,153 +69,153 @@ $(function() {
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#friends">Friends</a>  </div>
   <div class="headertitle">
-<div class="title">grpc::ClientContext Class Reference</div>  </div>
+<div class="title">grpc_impl::ClientContext Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>A <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a> allows the person implementing a service client to:  
- <a href="classgrpc_1_1_client_context.html#details">More...</a></p>
+<p>A <a class="el" href="classgrpc__impl_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a> allows the person implementing a service client to:  
+ <a href="classgrpc__impl_1_1_client_context.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2client__context_8h_source.html">client_context.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="client__context__impl_8h_source.html">client_context_impl.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context_1_1_global_callbacks.html">GlobalCallbacks</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Global Callbacks.  <a href="classgrpc_1_1_client_context_1_1_global_callbacks.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context_1_1_global_callbacks.html">GlobalCallbacks</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Global Callbacks.  <a href="classgrpc__impl_1_1_client_context_1_1_global_callbacks.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:acabbcf3c160a0628da8a9274b10f54b9"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#acabbcf3c160a0628da8a9274b10f54b9">ClientContext</a> ()</td></tr>
-<tr class="separator:acabbcf3c160a0628da8a9274b10f54b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeb77ea760faf8f96e775812806c0a3d9"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#aeb77ea760faf8f96e775812806c0a3d9">~ClientContext</a> ()</td></tr>
-<tr class="separator:aeb77ea760faf8f96e775812806c0a3d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a69a026f073ef5934697568d689440bd4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a69a026f073ef5934697568d689440bd4">AddMetadata</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;meta_key, const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;meta_value)</td></tr>
-<tr class="memdesc:a69a026f073ef5934697568d689440bd4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add the (<em>meta_key</em>, <em>meta_value</em>) pair to the metadata associated with a client call.  <a href="#a69a026f073ef5934697568d689440bd4">More...</a><br /></td></tr>
-<tr class="separator:a69a026f073ef5934697568d689440bd4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a068592f22fe0866293c8d1e5ac22ed20"><td class="memItemLeft" align="right" valign="top">const std::multimap&lt; <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>, <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a068592f22fe0866293c8d1e5ac22ed20">GetServerInitialMetadata</a> () const</td></tr>
-<tr class="memdesc:a068592f22fe0866293c8d1e5ac22ed20"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a collection of initial metadata key-value pairs.  <a href="#a068592f22fe0866293c8d1e5ac22ed20">More...</a><br /></td></tr>
-<tr class="separator:a068592f22fe0866293c8d1e5ac22ed20"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a572f9fb786e1dfc3129a04183d9f1882"><td class="memItemLeft" align="right" valign="top">const std::multimap&lt; <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>, <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a572f9fb786e1dfc3129a04183d9f1882">GetServerTrailingMetadata</a> () const</td></tr>
-<tr class="memdesc:a572f9fb786e1dfc3129a04183d9f1882"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a collection of trailing metadata key-value pairs.  <a href="#a572f9fb786e1dfc3129a04183d9f1882">More...</a><br /></td></tr>
-<tr class="separator:a572f9fb786e1dfc3129a04183d9f1882"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad4e16866fee3f6ee5a10efb5be6f4da6"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:ad4e16866fee3f6ee5a10efb5be6f4da6"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#ad4e16866fee3f6ee5a10efb5be6f4da6">set_deadline</a> (const T &amp;<a class="el" href="classgrpc_1_1_client_context.html#a85710b2b34a48b0f83d509c33d0a44b5">deadline</a>)</td></tr>
-<tr class="memdesc:ad4e16866fee3f6ee5a10efb5be6f4da6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the deadline for the client call.  <a href="#ad4e16866fee3f6ee5a10efb5be6f4da6">More...</a><br /></td></tr>
-<tr class="separator:ad4e16866fee3f6ee5a10efb5be6f4da6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afac227b0dca4705b50b0b393226d8c48"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#afac227b0dca4705b50b0b393226d8c48">set_idempotent</a> (bool idempotent)</td></tr>
-<tr class="memdesc:afac227b0dca4705b50b0b393226d8c48"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL: Indicate that this request is idempotent.  <a href="#afac227b0dca4705b50b0b393226d8c48">More...</a><br /></td></tr>
-<tr class="separator:afac227b0dca4705b50b0b393226d8c48"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a09c0b94c1542706eb5a518dab8425ebc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a09c0b94c1542706eb5a518dab8425ebc">set_cacheable</a> (bool cacheable)</td></tr>
-<tr class="memdesc:a09c0b94c1542706eb5a518dab8425ebc"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL: Set this request to be cacheable.  <a href="#a09c0b94c1542706eb5a518dab8425ebc">More...</a><br /></td></tr>
-<tr class="separator:a09c0b94c1542706eb5a518dab8425ebc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa342af7349c88727e8bd4c765a000ae5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#aa342af7349c88727e8bd4c765a000ae5">set_wait_for_ready</a> (bool wait_for_ready)</td></tr>
-<tr class="memdesc:aa342af7349c88727e8bd4c765a000ae5"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL: Trigger wait-for-ready or not on this request.  <a href="#aa342af7349c88727e8bd4c765a000ae5">More...</a><br /></td></tr>
-<tr class="separator:aa342af7349c88727e8bd4c765a000ae5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1f20b0a60ed36d86bd1c5bee115b2a35"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a1f20b0a60ed36d86bd1c5bee115b2a35">set_fail_fast</a> (bool fail_fast)</td></tr>
-<tr class="memdesc:a1f20b0a60ed36d86bd1c5bee115b2a35"><td class="mdescLeft">&#160;</td><td class="mdescRight">DEPRECATED: Use <a class="el" href="classgrpc_1_1_client_context.html#aa342af7349c88727e8bd4c765a000ae5" title="EXPERIMENTAL: Trigger wait-for-ready or not on this request. ">set_wait_for_ready()</a> instead.  <a href="#a1f20b0a60ed36d86bd1c5bee115b2a35">More...</a><br /></td></tr>
-<tr class="separator:a1f20b0a60ed36d86bd1c5bee115b2a35"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a85710b2b34a48b0f83d509c33d0a44b5"><td class="memItemLeft" align="right" valign="top">std::chrono::system_clock::time_point&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a85710b2b34a48b0f83d509c33d0a44b5">deadline</a> () const</td></tr>
-<tr class="memdesc:a85710b2b34a48b0f83d509c33d0a44b5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the deadline for the client call.  <a href="#a85710b2b34a48b0f83d509c33d0a44b5">More...</a><br /></td></tr>
-<tr class="separator:a85710b2b34a48b0f83d509c33d0a44b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3f53a0182bf8f99de7607d6f06dbc466"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__timespec.html">gpr_timespec</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a3f53a0182bf8f99de7607d6f06dbc466">raw_deadline</a> () const</td></tr>
-<tr class="memdesc:a3f53a0182bf8f99de7607d6f06dbc466"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a <em><a class="el" href="structgpr__timespec.html" title="Analogous to struct timespec. ">gpr_timespec</a></em> representation of the client call's deadline.  <a href="#a3f53a0182bf8f99de7607d6f06dbc466">More...</a><br /></td></tr>
-<tr class="separator:a3f53a0182bf8f99de7607d6f06dbc466"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a43bb17bbd6ab49face3793e8883c5682"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a43bb17bbd6ab49face3793e8883c5682">set_authority</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;authority)</td></tr>
-<tr class="memdesc:a43bb17bbd6ab49face3793e8883c5682"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the per call authority header (see <a href="https://tools.ietf.org/html/rfc7540#section-8.1.2.3">https://tools.ietf.org/html/rfc7540#section-8.1.2.3</a>).  <a href="#a43bb17bbd6ab49face3793e8883c5682">More...</a><br /></td></tr>
-<tr class="separator:a43bb17bbd6ab49face3793e8883c5682"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2809213279d7d1c55d4a9ecfd5d8fd87"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; const <a class="el" href="classgrpc_1_1_auth_context.html">AuthContext</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a2809213279d7d1c55d4a9ecfd5d8fd87">auth_context</a> () const</td></tr>
-<tr class="memdesc:a2809213279d7d1c55d4a9ecfd5d8fd87"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the authentication context for this client call.  <a href="#a2809213279d7d1c55d4a9ecfd5d8fd87">More...</a><br /></td></tr>
-<tr class="separator:a2809213279d7d1c55d4a9ecfd5d8fd87"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a95c7ee9bef53406067c112c1859aa709"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a95c7ee9bef53406067c112c1859aa709">set_credentials</a> (const std::shared_ptr&lt; <a class="el" href="classgrpc__impl_1_1_call_credentials.html">grpc_impl::CallCredentials</a> &gt; &amp;creds)</td></tr>
-<tr class="memdesc:a95c7ee9bef53406067c112c1859aa709"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set credentials for the client call.  <a href="#a95c7ee9bef53406067c112c1859aa709">More...</a><br /></td></tr>
-<tr class="separator:a95c7ee9bef53406067c112c1859aa709"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7fea8001ed94597e31bd23fd2c847a32"><td class="memItemLeft" align="right" valign="top"><a class="el" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a7fea8001ed94597e31bd23fd2c847a32">compression_algorithm</a> () const</td></tr>
-<tr class="memdesc:a7fea8001ed94597e31bd23fd2c847a32"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the compression algorithm the client call will request be used.  <a href="#a7fea8001ed94597e31bd23fd2c847a32">More...</a><br /></td></tr>
-<tr class="separator:a7fea8001ed94597e31bd23fd2c847a32"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a67a71b32afe1d71189aa3a24146ec61d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a67a71b32afe1d71189aa3a24146ec61d">set_compression_algorithm</a> (<a class="el" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm)</td></tr>
-<tr class="memdesc:a67a71b32afe1d71189aa3a24146ec61d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set <em>algorithm</em> to be the compression algorithm used for the client call.  <a href="#a67a71b32afe1d71189aa3a24146ec61d">More...</a><br /></td></tr>
-<tr class="separator:a67a71b32afe1d71189aa3a24146ec61d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af79c64534c7b208594ba8e76021e2696"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#af79c64534c7b208594ba8e76021e2696">set_initial_metadata_corked</a> (bool corked)</td></tr>
-<tr class="memdesc:af79c64534c7b208594ba8e76021e2696"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flag whether the initial metadata should be <em>corked</em>.  <a href="#af79c64534c7b208594ba8e76021e2696">More...</a><br /></td></tr>
-<tr class="separator:af79c64534c7b208594ba8e76021e2696"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad1f00ff321b1c2823d5e2f61cb0852ca"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#ad1f00ff321b1c2823d5e2f61cb0852ca">peer</a> () const</td></tr>
-<tr class="memdesc:ad1f00ff321b1c2823d5e2f61cb0852ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the peer uri in a string.  <a href="#ad1f00ff321b1c2823d5e2f61cb0852ca">More...</a><br /></td></tr>
-<tr class="separator:ad1f00ff321b1c2823d5e2f61cb0852ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a48672c1e42084d2cd6975746b84658dd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a48672c1e42084d2cd6975746b84658dd">set_census_context</a> (struct <a class="el" href="classgrpc_1_1_client_context.html#aa2eb8c436099ffcd47b3b8308e5f8517">census_context</a> *ccp)</td></tr>
-<tr class="memdesc:a48672c1e42084d2cd6975746b84658dd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get and set census context.  <a href="#a48672c1e42084d2cd6975746b84658dd">More...</a><br /></td></tr>
-<tr class="separator:a48672c1e42084d2cd6975746b84658dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa2eb8c436099ffcd47b3b8308e5f8517"><td class="memItemLeft" align="right" valign="top">struct census_context *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#aa2eb8c436099ffcd47b3b8308e5f8517">census_context</a> () const</td></tr>
-<tr class="separator:aa2eb8c436099ffcd47b3b8308e5f8517"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abd0f6715c30287b75288015eee628984"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#abd0f6715c30287b75288015eee628984">TryCancel</a> ()</td></tr>
-<tr class="memdesc:abd0f6715c30287b75288015eee628984"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send a best-effort out-of-band cancel on the call associated with this client context.  <a href="#abd0f6715c30287b75288015eee628984">More...</a><br /></td></tr>
-<tr class="separator:abd0f6715c30287b75288015eee628984"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9fba10daf95815d2e1e94fa886a00459"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a9fba10daf95815d2e1e94fa886a00459">c_call</a> ()</td></tr>
-<tr class="memdesc:a9fba10daf95815d2e1e94fa886a00459"><td class="mdescLeft">&#160;</td><td class="mdescRight">Should be used for framework-level extensions only.  <a href="#a9fba10daf95815d2e1e94fa886a00459">More...</a><br /></td></tr>
-<tr class="separator:a9fba10daf95815d2e1e94fa886a00459"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa31ee946b2f51e07e2f62f7866f42f20"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#aa31ee946b2f51e07e2f62f7866f42f20">debug_error_string</a> () const</td></tr>
-<tr class="memdesc:aa31ee946b2f51e07e2f62f7866f42f20"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL debugging API.  <a href="#aa31ee946b2f51e07e2f62f7866f42f20">More...</a><br /></td></tr>
-<tr class="separator:aa31ee946b2f51e07e2f62f7866f42f20"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a42961d3bc10ede90c45c8202ca469817"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a42961d3bc10ede90c45c8202ca469817">ClientContext</a> ()</td></tr>
+<tr class="separator:a42961d3bc10ede90c45c8202ca469817"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a39fe25295f9e6e8817cdebd8e76e0f37"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a39fe25295f9e6e8817cdebd8e76e0f37">~ClientContext</a> ()</td></tr>
+<tr class="separator:a39fe25295f9e6e8817cdebd8e76e0f37"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7307d967ca4fdd278f1b3fb9f594020e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a7307d967ca4fdd278f1b3fb9f594020e">AddMetadata</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;meta_key, const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;meta_value)</td></tr>
+<tr class="memdesc:a7307d967ca4fdd278f1b3fb9f594020e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add the (<em>meta_key</em>, <em>meta_value</em>) pair to the metadata associated with a client call.  <a href="#a7307d967ca4fdd278f1b3fb9f594020e">More...</a><br /></td></tr>
+<tr class="separator:a7307d967ca4fdd278f1b3fb9f594020e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aefd0313d8c6e174bb68c6680b20ac182"><td class="memItemLeft" align="right" valign="top">const std::multimap&lt; <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>, <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#aefd0313d8c6e174bb68c6680b20ac182">GetServerInitialMetadata</a> () const</td></tr>
+<tr class="memdesc:aefd0313d8c6e174bb68c6680b20ac182"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a collection of initial metadata key-value pairs.  <a href="#aefd0313d8c6e174bb68c6680b20ac182">More...</a><br /></td></tr>
+<tr class="separator:aefd0313d8c6e174bb68c6680b20ac182"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a81d5df78eb77fb0d1e97220f656afd95"><td class="memItemLeft" align="right" valign="top">const std::multimap&lt; <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>, <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a81d5df78eb77fb0d1e97220f656afd95">GetServerTrailingMetadata</a> () const</td></tr>
+<tr class="memdesc:a81d5df78eb77fb0d1e97220f656afd95"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a collection of trailing metadata key-value pairs.  <a href="#a81d5df78eb77fb0d1e97220f656afd95">More...</a><br /></td></tr>
+<tr class="separator:a81d5df78eb77fb0d1e97220f656afd95"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a78104f719ef908ae95d2c4d80d852a49"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a78104f719ef908ae95d2c4d80d852a49"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a78104f719ef908ae95d2c4d80d852a49">set_deadline</a> (const T &amp;<a class="el" href="classgrpc__impl_1_1_client_context.html#a6d5270ba5b97ca8f365875304bb238d7">deadline</a>)</td></tr>
+<tr class="memdesc:a78104f719ef908ae95d2c4d80d852a49"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the deadline for the client call.  <a href="#a78104f719ef908ae95d2c4d80d852a49">More...</a><br /></td></tr>
+<tr class="separator:a78104f719ef908ae95d2c4d80d852a49"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7a0921b17e70869711baca6ce1e8aed6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a7a0921b17e70869711baca6ce1e8aed6">set_idempotent</a> (bool idempotent)</td></tr>
+<tr class="memdesc:a7a0921b17e70869711baca6ce1e8aed6"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL: Indicate that this request is idempotent.  <a href="#a7a0921b17e70869711baca6ce1e8aed6">More...</a><br /></td></tr>
+<tr class="separator:a7a0921b17e70869711baca6ce1e8aed6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a153f7d49a320592fc56af2cd675339d7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a153f7d49a320592fc56af2cd675339d7">set_cacheable</a> (bool cacheable)</td></tr>
+<tr class="memdesc:a153f7d49a320592fc56af2cd675339d7"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL: Set this request to be cacheable.  <a href="#a153f7d49a320592fc56af2cd675339d7">More...</a><br /></td></tr>
+<tr class="separator:a153f7d49a320592fc56af2cd675339d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab256e11c0d598dfbbf051dd4dc3e235d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#ab256e11c0d598dfbbf051dd4dc3e235d">set_wait_for_ready</a> (bool wait_for_ready)</td></tr>
+<tr class="memdesc:ab256e11c0d598dfbbf051dd4dc3e235d"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL: Trigger wait-for-ready or not on this request.  <a href="#ab256e11c0d598dfbbf051dd4dc3e235d">More...</a><br /></td></tr>
+<tr class="separator:ab256e11c0d598dfbbf051dd4dc3e235d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a071dc53df41dda737665b67ac78f0521"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a071dc53df41dda737665b67ac78f0521">set_fail_fast</a> (bool fail_fast)</td></tr>
+<tr class="memdesc:a071dc53df41dda737665b67ac78f0521"><td class="mdescLeft">&#160;</td><td class="mdescRight">DEPRECATED: Use <a class="el" href="classgrpc__impl_1_1_client_context.html#ab256e11c0d598dfbbf051dd4dc3e235d" title="EXPERIMENTAL: Trigger wait-for-ready or not on this request. ">set_wait_for_ready()</a> instead.  <a href="#a071dc53df41dda737665b67ac78f0521">More...</a><br /></td></tr>
+<tr class="separator:a071dc53df41dda737665b67ac78f0521"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6d5270ba5b97ca8f365875304bb238d7"><td class="memItemLeft" align="right" valign="top">std::chrono::system_clock::time_point&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a6d5270ba5b97ca8f365875304bb238d7">deadline</a> () const</td></tr>
+<tr class="memdesc:a6d5270ba5b97ca8f365875304bb238d7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the deadline for the client call.  <a href="#a6d5270ba5b97ca8f365875304bb238d7">More...</a><br /></td></tr>
+<tr class="separator:a6d5270ba5b97ca8f365875304bb238d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad13e34b1ce51ad9fd52285054a0fc560"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__timespec.html">gpr_timespec</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#ad13e34b1ce51ad9fd52285054a0fc560">raw_deadline</a> () const</td></tr>
+<tr class="memdesc:ad13e34b1ce51ad9fd52285054a0fc560"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a <em><a class="el" href="structgpr__timespec.html" title="Analogous to struct timespec. ">gpr_timespec</a></em> representation of the client call's deadline.  <a href="#ad13e34b1ce51ad9fd52285054a0fc560">More...</a><br /></td></tr>
+<tr class="separator:ad13e34b1ce51ad9fd52285054a0fc560"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a27f306f32856f11833150ffd27708419"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a27f306f32856f11833150ffd27708419">set_authority</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;authority)</td></tr>
+<tr class="memdesc:a27f306f32856f11833150ffd27708419"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the per call authority header (see <a href="https://tools.ietf.org/html/rfc7540#section-8.1.2.3">https://tools.ietf.org/html/rfc7540#section-8.1.2.3</a>).  <a href="#a27f306f32856f11833150ffd27708419">More...</a><br /></td></tr>
+<tr class="separator:a27f306f32856f11833150ffd27708419"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac3eb7f843e070c89658c201533ce2307"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; const <a class="el" href="classgrpc_1_1_auth_context.html">grpc::AuthContext</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#ac3eb7f843e070c89658c201533ce2307">auth_context</a> () const</td></tr>
+<tr class="memdesc:ac3eb7f843e070c89658c201533ce2307"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the authentication context for this client call.  <a href="#ac3eb7f843e070c89658c201533ce2307">More...</a><br /></td></tr>
+<tr class="separator:ac3eb7f843e070c89658c201533ce2307"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0ed6142d0f34d181f6b75a2e8ced2e3b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a0ed6142d0f34d181f6b75a2e8ced2e3b">set_credentials</a> (const std::shared_ptr&lt; <a class="el" href="classgrpc__impl_1_1_call_credentials.html">grpc_impl::CallCredentials</a> &gt; &amp;creds)</td></tr>
+<tr class="memdesc:a0ed6142d0f34d181f6b75a2e8ced2e3b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set credentials for the client call.  <a href="#a0ed6142d0f34d181f6b75a2e8ced2e3b">More...</a><br /></td></tr>
+<tr class="separator:a0ed6142d0f34d181f6b75a2e8ced2e3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a90d68fa1528dbd9e69d437e42f385b0b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a90d68fa1528dbd9e69d437e42f385b0b">compression_algorithm</a> () const</td></tr>
+<tr class="memdesc:a90d68fa1528dbd9e69d437e42f385b0b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the compression algorithm the client call will request be used.  <a href="#a90d68fa1528dbd9e69d437e42f385b0b">More...</a><br /></td></tr>
+<tr class="separator:a90d68fa1528dbd9e69d437e42f385b0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa6d7428da935f5205ce79ebd00176e1b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#aa6d7428da935f5205ce79ebd00176e1b">set_compression_algorithm</a> (<a class="el" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm)</td></tr>
+<tr class="memdesc:aa6d7428da935f5205ce79ebd00176e1b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set <em>algorithm</em> to be the compression algorithm used for the client call.  <a href="#aa6d7428da935f5205ce79ebd00176e1b">More...</a><br /></td></tr>
+<tr class="separator:aa6d7428da935f5205ce79ebd00176e1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6a13a515e51162d27344792cb8ebb9cd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a6a13a515e51162d27344792cb8ebb9cd">set_initial_metadata_corked</a> (bool corked)</td></tr>
+<tr class="memdesc:a6a13a515e51162d27344792cb8ebb9cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flag whether the initial metadata should be <em>corked</em>.  <a href="#a6a13a515e51162d27344792cb8ebb9cd">More...</a><br /></td></tr>
+<tr class="separator:a6a13a515e51162d27344792cb8ebb9cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6cd4b276667662581b99310fc1a26556"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a6cd4b276667662581b99310fc1a26556">peer</a> () const</td></tr>
+<tr class="memdesc:a6cd4b276667662581b99310fc1a26556"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the peer uri in a string.  <a href="#a6cd4b276667662581b99310fc1a26556">More...</a><br /></td></tr>
+<tr class="separator:a6cd4b276667662581b99310fc1a26556"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4a36a773791c8d17b8f4590fc54f158f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a4a36a773791c8d17b8f4590fc54f158f">set_census_context</a> (struct <a class="el" href="classgrpc__impl_1_1_client_context.html#ab04474feed85d9518dab1d869ec6c4a0">census_context</a> *ccp)</td></tr>
+<tr class="memdesc:a4a36a773791c8d17b8f4590fc54f158f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get and set census context.  <a href="#a4a36a773791c8d17b8f4590fc54f158f">More...</a><br /></td></tr>
+<tr class="separator:a4a36a773791c8d17b8f4590fc54f158f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab04474feed85d9518dab1d869ec6c4a0"><td class="memItemLeft" align="right" valign="top">struct census_context *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#ab04474feed85d9518dab1d869ec6c4a0">census_context</a> () const</td></tr>
+<tr class="separator:ab04474feed85d9518dab1d869ec6c4a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a31fa8dbb85f66a18ad5041109154d9d2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a31fa8dbb85f66a18ad5041109154d9d2">TryCancel</a> ()</td></tr>
+<tr class="memdesc:a31fa8dbb85f66a18ad5041109154d9d2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send a best-effort out-of-band cancel on the call associated with this client context.  <a href="#a31fa8dbb85f66a18ad5041109154d9d2">More...</a><br /></td></tr>
+<tr class="separator:a31fa8dbb85f66a18ad5041109154d9d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a748ecebe0ffb6b5a77e395d94d9f4bf1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a748ecebe0ffb6b5a77e395d94d9f4bf1">c_call</a> ()</td></tr>
+<tr class="memdesc:a748ecebe0ffb6b5a77e395d94d9f4bf1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Should be used for framework-level extensions only.  <a href="#a748ecebe0ffb6b5a77e395d94d9f4bf1">More...</a><br /></td></tr>
+<tr class="separator:a748ecebe0ffb6b5a77e395d94d9f4bf1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac827b1a5cb757a98c95938602262df86"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#ac827b1a5cb757a98c95938602262df86">debug_error_string</a> () const</td></tr>
+<tr class="memdesc:ac827b1a5cb757a98c95938602262df86"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL debugging API.  <a href="#ac827b1a5cb757a98c95938602262df86">More...</a><br /></td></tr>
+<tr class="separator:ac827b1a5cb757a98c95938602262df86"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a88cbf7ae863d5fcb382c9e22160f4707"><td class="memItemLeft" align="right" valign="top">static std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a88cbf7ae863d5fcb382c9e22160f4707">FromServerContext</a> (const <a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> &amp;server_context, <a class="el" href="classgrpc_1_1_propagation_options.html">PropagationOptions</a> options=<a class="el" href="classgrpc_1_1_propagation_options.html">PropagationOptions</a>())</td></tr>
-<tr class="memdesc:a88cbf7ae863d5fcb382c9e22160f4707"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a></em> as a child of an incoming server call, according to <em>options</em> (.  <a href="#a88cbf7ae863d5fcb382c9e22160f4707">More...</a><br /></td></tr>
-<tr class="separator:a88cbf7ae863d5fcb382c9e22160f4707"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad329c9fdd77093361518ef8ace1ee1f0"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#ad329c9fdd77093361518ef8ace1ee1f0">SetGlobalCallbacks</a> (<a class="el" href="classgrpc_1_1_client_context_1_1_global_callbacks.html">GlobalCallbacks</a> *callbacks)</td></tr>
-<tr class="separator:ad329c9fdd77093361518ef8ace1ee1f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa03c13342f73bd135ad72214451c5b6"><td class="memItemLeft" align="right" valign="top">static std::unique_ptr&lt; <a class="el" href="classgrpc__impl_1_1_client_context.html">ClientContext</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#afa03c13342f73bd135ad72214451c5b6">FromServerContext</a> (const <a class="el" href="classgrpc__impl_1_1_server_context.html">grpc_impl::ServerContext</a> &amp;server_context, <a class="el" href="classgrpc__impl_1_1_propagation_options.html">PropagationOptions</a> options=<a class="el" href="classgrpc__impl_1_1_propagation_options.html">PropagationOptions</a>())</td></tr>
+<tr class="memdesc:afa03c13342f73bd135ad72214451c5b6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new <em><a class="el" href="classgrpc__impl_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a></em> as a child of an incoming server call, according to <em>options</em> (.  <a href="#afa03c13342f73bd135ad72214451c5b6">More...</a><br /></td></tr>
+<tr class="separator:afa03c13342f73bd135ad72214451c5b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6d8402945e90940a17f80679d1543060"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a6d8402945e90940a17f80679d1543060">SetGlobalCallbacks</a> (<a class="el" href="classgrpc__impl_1_1_client_context_1_1_global_callbacks.html">GlobalCallbacks</a> *callbacks)</td></tr>
+<tr class="separator:a6d8402945e90940a17f80679d1543060"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
-<tr class="memitem:ac4ab4e2d21681704cee0f6e741cc813c"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#ac4ab4e2d21681704cee0f6e741cc813c">::grpc::testing::InteropClientContextInspector</a></td></tr>
+<tr class="memitem:ac4ab4e2d21681704cee0f6e741cc813c"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#ac4ab4e2d21681704cee0f6e741cc813c">::grpc::testing::InteropClientContextInspector</a></td></tr>
 <tr class="separator:ac4ab4e2d21681704cee0f6e741cc813c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a506d0cd94cc911153c6ceb814a59524b"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a506d0cd94cc911153c6ceb814a59524b">::grpc::internal::CallOpClientRecvStatus</a></td></tr>
+<tr class="memitem:a506d0cd94cc911153c6ceb814a59524b"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a506d0cd94cc911153c6ceb814a59524b">::grpc::internal::CallOpClientRecvStatus</a></td></tr>
 <tr class="separator:a506d0cd94cc911153c6ceb814a59524b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3b165df6c09402c7753da14140c836cf"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a3b165df6c09402c7753da14140c836cf">::grpc::internal::CallOpRecvInitialMetadata</a></td></tr>
+<tr class="memitem:a3b165df6c09402c7753da14140c836cf"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a3b165df6c09402c7753da14140c836cf">::grpc::internal::CallOpRecvInitialMetadata</a></td></tr>
 <tr class="separator:a3b165df6c09402c7753da14140c836cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3b58c0a256e5390791b734aa74068b19"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a3b58c0a256e5390791b734aa74068b19">::grpc_impl::Channel</a></td></tr>
+<tr class="memitem:a3b58c0a256e5390791b734aa74068b19"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a3b58c0a256e5390791b734aa74068b19">::grpc_impl::Channel</a></td></tr>
 <tr class="separator:a3b58c0a256e5390791b734aa74068b19"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ade499098cc91745c1c87147d7a7fb7bf"><td class="memTemplParams" colspan="2">template&lt;class R &gt; </td></tr>
-<tr class="memitem:ade499098cc91745c1c87147d7a7fb7bf"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#ade499098cc91745c1c87147d7a7fb7bf">::grpc::ClientReader</a></td></tr>
+<tr class="memitem:ade499098cc91745c1c87147d7a7fb7bf"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#ade499098cc91745c1c87147d7a7fb7bf">::grpc::ClientReader</a></td></tr>
 <tr class="separator:ade499098cc91745c1c87147d7a7fb7bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4498fada67d531d99a8642f47d746544"><td class="memTemplParams" colspan="2">template&lt;class W &gt; </td></tr>
-<tr class="memitem:a4498fada67d531d99a8642f47d746544"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a4498fada67d531d99a8642f47d746544">::grpc::ClientWriter</a></td></tr>
+<tr class="memitem:a4498fada67d531d99a8642f47d746544"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a4498fada67d531d99a8642f47d746544">::grpc::ClientWriter</a></td></tr>
 <tr class="separator:a4498fada67d531d99a8642f47d746544"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6d5659aa24edba057895be774e2752ec"><td class="memTemplParams" colspan="2">template&lt;class W , class R &gt; </td></tr>
-<tr class="memitem:a6d5659aa24edba057895be774e2752ec"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a6d5659aa24edba057895be774e2752ec">::grpc::ClientReaderWriter</a></td></tr>
+<tr class="memitem:a6d5659aa24edba057895be774e2752ec"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a6d5659aa24edba057895be774e2752ec">::grpc::ClientReaderWriter</a></td></tr>
 <tr class="separator:a6d5659aa24edba057895be774e2752ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af5343062a44a5633b144751e59969237"><td class="memTemplParams" colspan="2">template&lt;class R &gt; </td></tr>
-<tr class="memitem:af5343062a44a5633b144751e59969237"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#af5343062a44a5633b144751e59969237">::grpc::ClientAsyncReader</a></td></tr>
+<tr class="memitem:af5343062a44a5633b144751e59969237"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#af5343062a44a5633b144751e59969237">::grpc::ClientAsyncReader</a></td></tr>
 <tr class="separator:af5343062a44a5633b144751e59969237"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af3547958eadfaeb18692865bd73999ad"><td class="memTemplParams" colspan="2">template&lt;class W &gt; </td></tr>
-<tr class="memitem:af3547958eadfaeb18692865bd73999ad"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#af3547958eadfaeb18692865bd73999ad">::grpc::ClientAsyncWriter</a></td></tr>
+<tr class="memitem:af3547958eadfaeb18692865bd73999ad"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#af3547958eadfaeb18692865bd73999ad">::grpc::ClientAsyncWriter</a></td></tr>
 <tr class="separator:af3547958eadfaeb18692865bd73999ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5c0c96957129933bfe94a299c764eaa7"><td class="memTemplParams" colspan="2">template&lt;class W , class R &gt; </td></tr>
-<tr class="memitem:a5c0c96957129933bfe94a299c764eaa7"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a5c0c96957129933bfe94a299c764eaa7">::grpc::ClientAsyncReaderWriter</a></td></tr>
+<tr class="memitem:a5c0c96957129933bfe94a299c764eaa7"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a5c0c96957129933bfe94a299c764eaa7">::grpc::ClientAsyncReaderWriter</a></td></tr>
 <tr class="separator:a5c0c96957129933bfe94a299c764eaa7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4b00162a9bd86e07669f2af67f85c73a"><td class="memTemplParams" colspan="2">template&lt;class R &gt; </td></tr>
-<tr class="memitem:a4b00162a9bd86e07669f2af67f85c73a"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a4b00162a9bd86e07669f2af67f85c73a">::grpc::ClientAsyncResponseReader</a></td></tr>
+<tr class="memitem:a4b00162a9bd86e07669f2af67f85c73a"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a4b00162a9bd86e07669f2af67f85c73a">::grpc::ClientAsyncResponseReader</a></td></tr>
 <tr class="separator:a4b00162a9bd86e07669f2af67f85c73a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad26a823fee699f97244d581f400fe39a"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage &gt; </td></tr>
-<tr class="memitem:ad26a823fee699f97244d581f400fe39a"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#ad26a823fee699f97244d581f400fe39a">::grpc::internal::BlockingUnaryCallImpl</a></td></tr>
+<tr class="memitem:ad26a823fee699f97244d581f400fe39a"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#ad26a823fee699f97244d581f400fe39a">::grpc::internal::BlockingUnaryCallImpl</a></td></tr>
 <tr class="separator:ad26a823fee699f97244d581f400fe39a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a039f3a4023eccbecbb5c9925722e9ef7"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage &gt; </td></tr>
-<tr class="memitem:a039f3a4023eccbecbb5c9925722e9ef7"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a039f3a4023eccbecbb5c9925722e9ef7">::grpc::internal::CallbackUnaryCallImpl</a></td></tr>
+<tr class="memitem:a039f3a4023eccbecbb5c9925722e9ef7"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a039f3a4023eccbecbb5c9925722e9ef7">::grpc::internal::CallbackUnaryCallImpl</a></td></tr>
 <tr class="separator:a039f3a4023eccbecbb5c9925722e9ef7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7514ed9247c292d4be15b5db66903fda"><td class="memTemplParams" colspan="2">template&lt;class Request , class Response &gt; </td></tr>
-<tr class="memitem:a7514ed9247c292d4be15b5db66903fda"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a7514ed9247c292d4be15b5db66903fda">::grpc::internal::ClientCallbackReaderWriterImpl</a></td></tr>
+<tr class="memitem:a7514ed9247c292d4be15b5db66903fda"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a7514ed9247c292d4be15b5db66903fda">::grpc::internal::ClientCallbackReaderWriterImpl</a></td></tr>
 <tr class="separator:a7514ed9247c292d4be15b5db66903fda"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a06df5a0d32a3185f56dc33452a6a9a7c"><td class="memTemplParams" colspan="2">template&lt;class Response &gt; </td></tr>
-<tr class="memitem:a06df5a0d32a3185f56dc33452a6a9a7c"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a06df5a0d32a3185f56dc33452a6a9a7c">::grpc::internal::ClientCallbackReaderImpl</a></td></tr>
+<tr class="memitem:a06df5a0d32a3185f56dc33452a6a9a7c"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a06df5a0d32a3185f56dc33452a6a9a7c">::grpc::internal::ClientCallbackReaderImpl</a></td></tr>
 <tr class="separator:a06df5a0d32a3185f56dc33452a6a9a7c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa29677cce876711f4c9ee1c90649c251"><td class="memTemplParams" colspan="2">template&lt;class Request &gt; </td></tr>
-<tr class="memitem:aa29677cce876711f4c9ee1c90649c251"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#aa29677cce876711f4c9ee1c90649c251">::grpc::internal::ClientCallbackWriterImpl</a></td></tr>
+<tr class="memitem:aa29677cce876711f4c9ee1c90649c251"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#aa29677cce876711f4c9ee1c90649c251">::grpc::internal::ClientCallbackWriterImpl</a></td></tr>
 <tr class="separator:aa29677cce876711f4c9ee1c90649c251"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4026963fc6687e2b41815eab50c84021"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a4026963fc6687e2b41815eab50c84021">::grpc::internal::ClientCallbackUnaryImpl</a></td></tr>
+<tr class="memitem:a4026963fc6687e2b41815eab50c84021"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_client_context.html#a4026963fc6687e2b41815eab50c84021">::grpc::internal::ClientCallbackUnaryImpl</a></td></tr>
 <tr class="separator:a4026963fc6687e2b41815eab50c84021"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>A <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a> allows the person implementing a service client to: </p>
+<div class="textblock"><p>A <a class="el" href="classgrpc__impl_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a> allows the person implementing a service client to: </p>
 <ul>
 <li>Add custom metadata key-value pairs that will propagated to the server side.</li>
 <li>Control call settings such as compression and authentication.</li>
@@ -223,18 +223,18 @@ Friends</h2></td></tr>
 <li>Get performance metrics (ie, census).</li>
 </ul>
 <p>Context settings are only relevant to the call they are invoked with, that is to say, they aren't sticky. Some of these settings, such as the compression options, can be made persistent at channel construction time (see <em>grpc::CreateCustomChannel</em>).</p>
-<dl class="section warning"><dt>Warning</dt><dd><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a> instances should <em>not</em> be reused across rpcs. </dd>
+<dl class="section warning"><dt>Warning</dt><dd><a class="el" href="classgrpc__impl_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a> instances should <em>not</em> be reused across rpcs. </dd>
 <dd>
-The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a> instance used for creating an rpc must remain alive and valid for the lifetime of the rpc. </dd></dl>
+The <a class="el" href="classgrpc__impl_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a> instance used for creating an rpc must remain alive and valid for the lifetime of the rpc. </dd></dl>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="acabbcf3c160a0628da8a9274b10f54b9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acabbcf3c160a0628da8a9274b10f54b9">&#9670;&nbsp;</a></span>ClientContext()</h2>
+<a id="a42961d3bc10ede90c45c8202ca469817"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a42961d3bc10ede90c45c8202ca469817">&#9670;&nbsp;</a></span>ClientContext()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">grpc::ClientContext::ClientContext </td>
+          <td class="memname">grpc_impl::ClientContext::ClientContext </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -244,14 +244,14 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
 
 </div>
 </div>
-<a id="aeb77ea760faf8f96e775812806c0a3d9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aeb77ea760faf8f96e775812806c0a3d9">&#9670;&nbsp;</a></span>~ClientContext()</h2>
+<a id="a39fe25295f9e6e8817cdebd8e76e0f37"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a39fe25295f9e6e8817cdebd8e76e0f37">&#9670;&nbsp;</a></span>~ClientContext()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">grpc::ClientContext::~ClientContext </td>
+          <td class="memname">grpc_impl::ClientContext::~ClientContext </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -262,14 +262,14 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a69a026f073ef5934697568d689440bd4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a69a026f073ef5934697568d689440bd4">&#9670;&nbsp;</a></span>AddMetadata()</h2>
+<a id="a7307d967ca4fdd278f1b3fb9f594020e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7307d967ca4fdd278f1b3fb9f594020e">&#9670;&nbsp;</a></span>AddMetadata()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void grpc::ClientContext::AddMetadata </td>
+          <td class="memname">void grpc_impl::ClientContext::AddMetadata </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;&#160;</td>
           <td class="paramname"><em>meta_key</em>, </td>
@@ -289,7 +289,7 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
 </div><div class="memdoc">
 
 <p>Add the (<em>meta_key</em>, <em>meta_value</em>) pair to the metadata associated with a client call. </p>
-<p>These are made available at the server side by the <em><a class="el" href="classgrpc_1_1_server_context.html#ad5a20c293202e1af2a61ffd5ea75d951" title="Return a collection of initial metadata key-value pairs sent from the client. ">grpc::ServerContext::client_metadata()</a></em> method.</p>
+<p>These are made available at the server side by the <em><a class="el" href="classgrpc__impl_1_1_server_context.html#a11db47fc7d3e76d6060f04eb4157ce84" title="Return a collection of initial metadata key-value pairs sent from the client. ">grpc::ServerContext::client_metadata()</a></em> method.</p>
 <dl class="section warning"><dt>Warning</dt><dd>This method should only be called before invoking the rpc.</dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -302,8 +302,8 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
 
 </div>
 </div>
-<a id="a2809213279d7d1c55d4a9ecfd5d8fd87"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2809213279d7d1c55d4a9ecfd5d8fd87">&#9670;&nbsp;</a></span>auth_context()</h2>
+<a id="ac3eb7f843e070c89658c201533ce2307"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac3eb7f843e070c89658c201533ce2307">&#9670;&nbsp;</a></span>auth_context()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -312,7 +312,7 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::shared_ptr&lt;const <a class="el" href="classgrpc_1_1_auth_context.html">AuthContext</a>&gt; grpc::ClientContext::auth_context </td>
+          <td class="memname">std::shared_ptr&lt;const <a class="el" href="classgrpc_1_1_auth_context.html">grpc::AuthContext</a>&gt; grpc_impl::ClientContext::auth_context </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -330,8 +330,8 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
 
 </div>
 </div>
-<a id="a9fba10daf95815d2e1e94fa886a00459"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9fba10daf95815d2e1e94fa886a00459">&#9670;&nbsp;</a></span>c_call()</h2>
+<a id="a748ecebe0ffb6b5a77e395d94d9f4bf1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a748ecebe0ffb6b5a77e395d94d9f4bf1">&#9670;&nbsp;</a></span>c_call()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -340,7 +340,7 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a>* grpc::ClientContext::c_call </td>
+          <td class="memname"><a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a>* grpc_impl::ClientContext::c_call </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -358,8 +358,8 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
 
 </div>
 </div>
-<a id="aa2eb8c436099ffcd47b3b8308e5f8517"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa2eb8c436099ffcd47b3b8308e5f8517">&#9670;&nbsp;</a></span>census_context()</h2>
+<a id="ab04474feed85d9518dab1d869ec6c4a0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab04474feed85d9518dab1d869ec6c4a0">&#9670;&nbsp;</a></span>census_context()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -368,7 +368,7 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">struct census_context* grpc::ClientContext::census_context </td>
+          <td class="memname">struct census_context* grpc_impl::ClientContext::census_context </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -383,8 +383,8 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
 
 </div>
 </div>
-<a id="a7fea8001ed94597e31bd23fd2c847a32"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7fea8001ed94597e31bd23fd2c847a32">&#9670;&nbsp;</a></span>compression_algorithm()</h2>
+<a id="a90d68fa1528dbd9e69d437e42f385b0b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a90d68fa1528dbd9e69d437e42f385b0b">&#9670;&nbsp;</a></span>compression_algorithm()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -393,7 +393,7 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> grpc::ClientContext::compression_algorithm </td>
+          <td class="memname"><a class="el" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> grpc_impl::ClientContext::compression_algorithm </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -411,8 +411,8 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
 
 </div>
 </div>
-<a id="a85710b2b34a48b0f83d509c33d0a44b5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a85710b2b34a48b0f83d509c33d0a44b5">&#9670;&nbsp;</a></span>deadline()</h2>
+<a id="a6d5270ba5b97ca8f365875304bb238d7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6d5270ba5b97ca8f365875304bb238d7">&#9670;&nbsp;</a></span>deadline()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -421,7 +421,7 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::chrono::system_clock::time_point grpc::ClientContext::deadline </td>
+          <td class="memname">std::chrono::system_clock::time_point grpc_impl::ClientContext::deadline </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -438,8 +438,8 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
 
 </div>
 </div>
-<a id="aa31ee946b2f51e07e2f62f7866f42f20"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa31ee946b2f51e07e2f62f7866f42f20">&#9670;&nbsp;</a></span>debug_error_string()</h2>
+<a id="ac827b1a5cb757a98c95938602262df86"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac827b1a5cb757a98c95938602262df86">&#9670;&nbsp;</a></span>debug_error_string()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -448,7 +448,7 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> grpc::ClientContext::debug_error_string </td>
+          <td class="memname"><a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> grpc_impl::ClientContext::debug_error_string </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -466,8 +466,8 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
 
 </div>
 </div>
-<a id="a88cbf7ae863d5fcb382c9e22160f4707"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a88cbf7ae863d5fcb382c9e22160f4707">&#9670;&nbsp;</a></span>FromServerContext()</h2>
+<a id="afa03c13342f73bd135ad72214451c5b6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afa03c13342f73bd135ad72214451c5b6">&#9670;&nbsp;</a></span>FromServerContext()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -476,16 +476,16 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static std::unique_ptr&lt;<a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a>&gt; grpc::ClientContext::FromServerContext </td>
+          <td class="memname">static std::unique_ptr&lt;<a class="el" href="classgrpc__impl_1_1_client_context.html">ClientContext</a>&gt; grpc_impl::ClientContext::FromServerContext </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> &amp;&#160;</td>
+          <td class="paramtype">const <a class="el" href="classgrpc__impl_1_1_server_context.html">grpc_impl::ServerContext</a> &amp;&#160;</td>
           <td class="paramname"><em>server_context</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_propagation_options.html">PropagationOptions</a>&#160;</td>
-          <td class="paramname"><em>options</em> = <code><a class="el" href="classgrpc_1_1_propagation_options.html">PropagationOptions</a>()</code>&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc__impl_1_1_propagation_options.html">PropagationOptions</a>&#160;</td>
+          <td class="paramname"><em>options</em> = <code><a class="el" href="classgrpc__impl_1_1_propagation_options.html">PropagationOptions</a>()</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -500,8 +500,8 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
 </table>
 </div><div class="memdoc">
 
-<p>Create a new <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a></em> as a child of an incoming server call, according to <em>options</em> (. </p>
-<dl class="section see"><dt>See also</dt><dd><a class="el" href="classgrpc_1_1_propagation_options.html" title="Options for ClientContext::FromServerContext specifying which traits from the ServerContext to propag...">PropagationOptions</a>).</dd></dl>
+<p>Create a new <em><a class="el" href="classgrpc__impl_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a></em> as a child of an incoming server call, according to <em>options</em> (. </p>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="classgrpc__impl_1_1_propagation_options.html" title="Options for ClientContext::FromServerContext specifying which traits from the ServerContext to propag...">PropagationOptions</a>).</dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">server_context</td><td>The source server context to use as the basis for constructing the client context. </td></tr>
@@ -509,12 +509,12 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>A newly constructed <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a></em> instance based on <em>server_context</em>, with traits propagated (copied) according to <em>options</em>. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>A newly constructed <em><a class="el" href="classgrpc__impl_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a></em> instance based on <em>server_context</em>, with traits propagated (copied) according to <em>options</em>. </dd></dl>
 
 </div>
 </div>
-<a id="a068592f22fe0866293c8d1e5ac22ed20"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a068592f22fe0866293c8d1e5ac22ed20">&#9670;&nbsp;</a></span>GetServerInitialMetadata()</h2>
+<a id="aefd0313d8c6e174bb68c6680b20ac182"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aefd0313d8c6e174bb68c6680b20ac182">&#9670;&nbsp;</a></span>GetServerInitialMetadata()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -523,7 +523,7 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">const std::multimap&lt;<a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>, <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>&gt;&amp; grpc::ClientContext::GetServerInitialMetadata </td>
+          <td class="memname">const std::multimap&lt;<a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>, <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>&gt;&amp; grpc_impl::ClientContext::GetServerInitialMetadata </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -538,13 +538,13 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
 
 <p>Return a collection of initial metadata key-value pairs. </p>
 <p>Note that keys may happen more than once (ie, a <em>std::multimap</em> is returned).</p>
-<dl class="section warning"><dt>Warning</dt><dd>This method should only be called after initial metadata has been received. For streaming calls, see <em><a class="el" href="classgrpc_1_1_client_reader_interface.html#aee87dd6e3e8a40853207ceb53b590b19" title="Block to wait for initial metadata from server. ">ClientReaderInterface::WaitForInitialMetadata()</a></em>.</dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>This method should only be called after initial metadata has been received. For streaming calls, see <em>ClientReaderInterface::WaitForInitialMetadata()</em>.</dd></dl>
 <dl class="section return"><dt>Returns</dt><dd>A multimap of initial metadata key-value pairs from the server. </dd></dl>
 
 </div>
 </div>
-<a id="a572f9fb786e1dfc3129a04183d9f1882"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a572f9fb786e1dfc3129a04183d9f1882">&#9670;&nbsp;</a></span>GetServerTrailingMetadata()</h2>
+<a id="a81d5df78eb77fb0d1e97220f656afd95"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a81d5df78eb77fb0d1e97220f656afd95">&#9670;&nbsp;</a></span>GetServerTrailingMetadata()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -553,7 +553,7 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">const std::multimap&lt;<a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>, <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>&gt;&amp; grpc::ClientContext::GetServerTrailingMetadata </td>
+          <td class="memname">const std::multimap&lt;<a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>, <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>&gt;&amp; grpc_impl::ClientContext::GetServerTrailingMetadata </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -573,14 +573,14 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
 
 </div>
 </div>
-<a id="ad1f00ff321b1c2823d5e2f61cb0852ca"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad1f00ff321b1c2823d5e2f61cb0852ca">&#9670;&nbsp;</a></span>peer()</h2>
+<a id="a6cd4b276667662581b99310fc1a26556"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6cd4b276667662581b99310fc1a26556">&#9670;&nbsp;</a></span>peer()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> grpc::ClientContext::peer </td>
+          <td class="memname"><a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> grpc_impl::ClientContext::peer </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -594,8 +594,8 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
 
 </div>
 </div>
-<a id="a3f53a0182bf8f99de7607d6f06dbc466"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3f53a0182bf8f99de7607d6f06dbc466">&#9670;&nbsp;</a></span>raw_deadline()</h2>
+<a id="ad13e34b1ce51ad9fd52285054a0fc560"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad13e34b1ce51ad9fd52285054a0fc560">&#9670;&nbsp;</a></span>raw_deadline()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -604,7 +604,7 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="structgpr__timespec.html">gpr_timespec</a> grpc::ClientContext::raw_deadline </td>
+          <td class="memname"><a class="el" href="structgpr__timespec.html">gpr_timespec</a> grpc_impl::ClientContext::raw_deadline </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -621,8 +621,8 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
 
 </div>
 </div>
-<a id="a43bb17bbd6ab49face3793e8883c5682"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a43bb17bbd6ab49face3793e8883c5682">&#9670;&nbsp;</a></span>set_authority()</h2>
+<a id="a27f306f32856f11833150ffd27708419"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a27f306f32856f11833150ffd27708419">&#9670;&nbsp;</a></span>set_authority()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -631,7 +631,7 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void grpc::ClientContext::set_authority </td>
+          <td class="memname">void grpc_impl::ClientContext::set_authority </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;&#160;</td>
           <td class="paramname"><em>authority</em></td><td>)</td>
@@ -649,8 +649,8 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
 
 </div>
 </div>
-<a id="a09c0b94c1542706eb5a518dab8425ebc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a09c0b94c1542706eb5a518dab8425ebc">&#9670;&nbsp;</a></span>set_cacheable()</h2>
+<a id="a153f7d49a320592fc56af2cd675339d7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a153f7d49a320592fc56af2cd675339d7">&#9670;&nbsp;</a></span>set_cacheable()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -659,7 +659,7 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void grpc::ClientContext::set_cacheable </td>
+          <td class="memname">void grpc_impl::ClientContext::set_cacheable </td>
           <td>(</td>
           <td class="paramtype">bool&#160;</td>
           <td class="paramname"><em>cacheable</em></td><td>)</td>
@@ -678,8 +678,8 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
 
 </div>
 </div>
-<a id="a48672c1e42084d2cd6975746b84658dd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a48672c1e42084d2cd6975746b84658dd">&#9670;&nbsp;</a></span>set_census_context()</h2>
+<a id="a4a36a773791c8d17b8f4590fc54f158f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4a36a773791c8d17b8f4590fc54f158f">&#9670;&nbsp;</a></span>set_census_context()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -688,9 +688,9 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void grpc::ClientContext::set_census_context </td>
+          <td class="memname">void grpc_impl::ClientContext::set_census_context </td>
           <td>(</td>
-          <td class="paramtype">struct <a class="el" href="classgrpc_1_1_client_context.html#aa2eb8c436099ffcd47b3b8308e5f8517">census_context</a> *&#160;</td>
+          <td class="paramtype">struct <a class="el" href="classgrpc__impl_1_1_client_context.html#ab04474feed85d9518dab1d869ec6c4a0">census_context</a> *&#160;</td>
           <td class="paramname"><em>ccp</em></td><td>)</td>
           <td></td>
         </tr>
@@ -706,14 +706,14 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
 
 </div>
 </div>
-<a id="a67a71b32afe1d71189aa3a24146ec61d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a67a71b32afe1d71189aa3a24146ec61d">&#9670;&nbsp;</a></span>set_compression_algorithm()</h2>
+<a id="aa6d7428da935f5205ce79ebd00176e1b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa6d7428da935f5205ce79ebd00176e1b">&#9670;&nbsp;</a></span>set_compression_algorithm()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void grpc::ClientContext::set_compression_algorithm </td>
+          <td class="memname">void grpc_impl::ClientContext::set_compression_algorithm </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a>&#160;</td>
           <td class="paramname"><em>algorithm</em></td><td>)</td>
@@ -732,8 +732,8 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
 
 </div>
 </div>
-<a id="a95c7ee9bef53406067c112c1859aa709"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a95c7ee9bef53406067c112c1859aa709">&#9670;&nbsp;</a></span>set_credentials()</h2>
+<a id="a0ed6142d0f34d181f6b75a2e8ced2e3b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0ed6142d0f34d181f6b75a2e8ced2e3b">&#9670;&nbsp;</a></span>set_credentials()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -742,7 +742,7 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void grpc::ClientContext::set_credentials </td>
+          <td class="memname">void grpc_impl::ClientContext::set_credentials </td>
           <td>(</td>
           <td class="paramtype">const std::shared_ptr&lt; <a class="el" href="classgrpc__impl_1_1_call_credentials.html">grpc_impl::CallCredentials</a> &gt; &amp;&#160;</td>
           <td class="paramname"><em>creds</em></td><td>)</td>
@@ -762,8 +762,8 @@ The <a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContex
 
 </div>
 </div>
-<a id="ad4e16866fee3f6ee5a10efb5be6f4da6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad4e16866fee3f6ee5a10efb5be6f4da6">&#9670;&nbsp;</a></span>set_deadline()</h2>
+<a id="a78104f719ef908ae95d2c4d80d852a49"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a78104f719ef908ae95d2c4d80d852a49">&#9670;&nbsp;</a></span>set_deadline()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -774,7 +774,7 @@ template&lt;typename T &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void grpc::ClientContext::set_deadline </td>
+          <td class="memname">void grpc_impl::ClientContext::set_deadline </td>
           <td>(</td>
           <td class="paramtype">const T &amp;&#160;</td>
           <td class="paramname"><em>deadline</em></td><td>)</td>
@@ -799,8 +799,8 @@ template&lt;typename T &gt; </div>
 
 </div>
 </div>
-<a id="a1f20b0a60ed36d86bd1c5bee115b2a35"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1f20b0a60ed36d86bd1c5bee115b2a35">&#9670;&nbsp;</a></span>set_fail_fast()</h2>
+<a id="a071dc53df41dda737665b67ac78f0521"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a071dc53df41dda737665b67ac78f0521">&#9670;&nbsp;</a></span>set_fail_fast()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -809,7 +809,7 @@ template&lt;typename T &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void grpc::ClientContext::set_fail_fast </td>
+          <td class="memname">void grpc_impl::ClientContext::set_fail_fast </td>
           <td>(</td>
           <td class="paramtype">bool&#160;</td>
           <td class="paramname"><em>fail_fast</em></td><td>)</td>
@@ -823,12 +823,12 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>DEPRECATED: Use <a class="el" href="classgrpc_1_1_client_context.html#aa342af7349c88727e8bd4c765a000ae5" title="EXPERIMENTAL: Trigger wait-for-ready or not on this request. ">set_wait_for_ready()</a> instead. </p>
+<p>DEPRECATED: Use <a class="el" href="classgrpc__impl_1_1_client_context.html#ab256e11c0d598dfbbf051dd4dc3e235d" title="EXPERIMENTAL: Trigger wait-for-ready or not on this request. ">set_wait_for_ready()</a> instead. </p>
 
 </div>
 </div>
-<a id="afac227b0dca4705b50b0b393226d8c48"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afac227b0dca4705b50b0b393226d8c48">&#9670;&nbsp;</a></span>set_idempotent()</h2>
+<a id="a7a0921b17e70869711baca6ce1e8aed6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7a0921b17e70869711baca6ce1e8aed6">&#9670;&nbsp;</a></span>set_idempotent()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -837,7 +837,7 @@ template&lt;typename T &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void grpc::ClientContext::set_idempotent </td>
+          <td class="memname">void grpc_impl::ClientContext::set_idempotent </td>
           <td>(</td>
           <td class="paramtype">bool&#160;</td>
           <td class="paramname"><em>idempotent</em></td><td>)</td>
@@ -857,8 +857,8 @@ template&lt;typename T &gt; </div>
 
 </div>
 </div>
-<a id="af79c64534c7b208594ba8e76021e2696"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af79c64534c7b208594ba8e76021e2696">&#9670;&nbsp;</a></span>set_initial_metadata_corked()</h2>
+<a id="a6a13a515e51162d27344792cb8ebb9cd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6a13a515e51162d27344792cb8ebb9cd">&#9670;&nbsp;</a></span>set_initial_metadata_corked()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -867,7 +867,7 @@ template&lt;typename T &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void grpc::ClientContext::set_initial_metadata_corked </td>
+          <td class="memname">void grpc_impl::ClientContext::set_initial_metadata_corked </td>
           <td>(</td>
           <td class="paramtype">bool&#160;</td>
           <td class="paramname"><em>corked</em></td><td>)</td>
@@ -892,8 +892,8 @@ template&lt;typename T &gt; </div>
 
 </div>
 </div>
-<a id="aa342af7349c88727e8bd4c765a000ae5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa342af7349c88727e8bd4c765a000ae5">&#9670;&nbsp;</a></span>set_wait_for_ready()</h2>
+<a id="ab256e11c0d598dfbbf051dd4dc3e235d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab256e11c0d598dfbbf051dd4dc3e235d">&#9670;&nbsp;</a></span>set_wait_for_ready()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -902,7 +902,7 @@ template&lt;typename T &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void grpc::ClientContext::set_wait_for_ready </td>
+          <td class="memname">void grpc_impl::ClientContext::set_wait_for_ready </td>
           <td>(</td>
           <td class="paramtype">bool&#160;</td>
           <td class="paramname"><em>wait_for_ready</em></td><td>)</td>
@@ -921,8 +921,8 @@ template&lt;typename T &gt; </div>
 
 </div>
 </div>
-<a id="ad329c9fdd77093361518ef8ace1ee1f0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad329c9fdd77093361518ef8ace1ee1f0">&#9670;&nbsp;</a></span>SetGlobalCallbacks()</h2>
+<a id="a6d8402945e90940a17f80679d1543060"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6d8402945e90940a17f80679d1543060">&#9670;&nbsp;</a></span>SetGlobalCallbacks()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -931,9 +931,9 @@ template&lt;typename T &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static void grpc::ClientContext::SetGlobalCallbacks </td>
+          <td class="memname">static void grpc_impl::ClientContext::SetGlobalCallbacks </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_client_context_1_1_global_callbacks.html">GlobalCallbacks</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc__impl_1_1_client_context_1_1_global_callbacks.html">GlobalCallbacks</a> *&#160;</td>
           <td class="paramname"><em>callbacks</em></td><td>)</td>
           <td></td>
         </tr>
@@ -947,14 +947,14 @@ template&lt;typename T &gt; </div>
 
 </div>
 </div>
-<a id="abd0f6715c30287b75288015eee628984"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abd0f6715c30287b75288015eee628984">&#9670;&nbsp;</a></span>TryCancel()</h2>
+<a id="a31fa8dbb85f66a18ad5041109154d9d2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a31fa8dbb85f66a18ad5041109154d9d2">&#9670;&nbsp;</a></span>TryCancel()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void grpc::ClientContext::TryCancel </td>
+          <td class="memname">void grpc_impl::ClientContext::TryCancel </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -965,7 +965,7 @@ template&lt;typename T &gt; </div>
 <p>Send a best-effort out-of-band cancel on the call associated with this client context. </p>
 <p>The call could be in any stage; e.g., if it is already finished, it may still return success.</p>
 <p>There is no guarantee the call will be cancelled.</p>
-<p>Note that <a class="el" href="classgrpc_1_1_client_context.html#abd0f6715c30287b75288015eee628984" title="Send a best-effort out-of-band cancel on the call associated with this client context. ">TryCancel()</a> does not change any of the tags that are pending on the completion queue. All pending tags will still be delivered (though their ok result may reflect the effect of cancellation). </p>
+<p>Note that <a class="el" href="classgrpc__impl_1_1_client_context.html#a31fa8dbb85f66a18ad5041109154d9d2" title="Send a best-effort out-of-band cancel on the call associated with this client context. ">TryCancel()</a> does not change any of the tags that are pending on the completion queue. All pending tags will still be delivered (though their ok result may reflect the effect of cancellation). </p>
 
 </div>
 </div>
@@ -1369,12 +1369,12 @@ template&lt;class Request &gt; </div>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/grpcpp/impl/codegen/<a class="el" href="grpcpp_2impl_2codegen_2client__context_8h_source.html">client_context.h</a></li>
+<li>include/grpcpp/impl/codegen/<a class="el" href="client__context__impl_8h_source.html">client_context_impl.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 31 2019 16:39:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jul 3 2019 14:51:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

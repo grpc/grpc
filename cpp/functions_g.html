@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.22.0-dev</span>
+   &#160;<span id="projectnumber">1.22.0</span>
    </div>
   </td>
  </tr>
@@ -157,10 +157,10 @@ $(function() {
 , <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#ad1a9c7433ed82c01413a6cd6b0a5ac60">grpc::internal::InterceptorBatchMethodsImpl</a>
 </li>
 <li>GetServerInitialMetadata()
-: <a class="el" href="classgrpc_1_1_client_context.html#a068592f22fe0866293c8d1e5ac22ed20">grpc::ClientContext</a>
+: <a class="el" href="classgrpc__impl_1_1_client_context.html#aefd0313d8c6e174bb68c6680b20ac182">grpc_impl::ClientContext</a>
 </li>
 <li>GetServerTrailingMetadata()
-: <a class="el" href="classgrpc_1_1_client_context.html#a572f9fb786e1dfc3129a04183d9f1882">grpc::ClientContext</a>
+: <a class="el" href="classgrpc__impl_1_1_client_context.html#a81d5df78eb77fb0d1e97220f656afd95">grpc_impl::ClientContext</a>
 </li>
 <li>GetServiceConfigJSON()
 : <a class="el" href="classgrpc__impl_1_1_channel.html#a8594374437d86214ec5e03a80cd1bd11">grpc_impl::Channel</a>
@@ -225,14 +225,8 @@ $(function() {
 <li>grpc::AsyncGenericService
 : <a class="el" href="classgrpc__impl_1_1_server.html#a2f5726c7ea3c8a32cd38582c061fb55d">grpc_impl::Server</a>
 </li>
-<li>grpc::ClientContext
-: <a class="el" href="classgrpc_1_1experimental_1_1_client_rpc_info.html#a4448f28a609bbb75bd1e539a4bd04e41">grpc::experimental::ClientRpcInfo</a>
-</li>
 <li>grpc::CreateChannelInternal
 : <a class="el" href="classgrpc__impl_1_1_channel.html#a7a541c76961259d2cdc6190255e81490">grpc_impl::Channel</a>
-</li>
-<li>grpc::ServerContext
-: <a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a126374990f90927736f4efdcce92c569">grpc::experimental::ServerRpcInfo</a>
 </li>
 <li>grpc::testing::ChannelArgumentsTest
 : <a class="el" href="classgrpc__impl_1_1_channel_arguments.html#a418577e16bfe952f5c7af804255eccd1">grpc_impl::ChannelArguments</a>
@@ -297,6 +291,9 @@ $(function() {
 <li>grpc_empty_slice()
 : <a class="el" href="classgrpc_1_1_core_codegen_interface.html#a48ec1eb8637d95b2eb452db2846bf76c">grpc::CoreCodegenInterface</a>
 </li>
+<li>grpc_impl::ClientContext
+: <a class="el" href="classgrpc_1_1experimental_1_1_client_rpc_info.html#a1e23749cae35087c44426b189e452a47">grpc::experimental::ClientRpcInfo</a>
+</li>
 <li>grpc_impl::experimental::CreateCustomChannelWithInterceptors
 : <a class="el" href="classgrpc__impl_1_1_channel_credentials.html#a2aa0e8e3223ccc9025dd106156de738f">grpc_impl::ChannelCredentials</a>
 </li>
@@ -310,6 +307,9 @@ $(function() {
 </li>
 <li>grpc_impl::ServerBuilder
 : <a class="el" href="classgrpc__impl_1_1_server.html#a91be5dd8ce6ace7fe702dd760a815b33">grpc_impl::Server</a>
+</li>
+<li>grpc_impl::ServerContext
+: <a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a489201c76c2a27c561d84331b58bbca5">grpc::experimental::ServerRpcInfo</a>
 </li>
 <li>grpc_impl::ServerInitializer
 : <a class="el" href="classgrpc__impl_1_1_server.html#ad4614e5fb61b8fc39963ecdc3576d01e">grpc_impl::Server</a>
@@ -375,7 +375,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 31 2019 16:39:28 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jul 3 2019 14:51:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

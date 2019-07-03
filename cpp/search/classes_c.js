@@ -26,7 +26,7 @@ var searchData=
   ['servercallbackwriter',['ServerCallbackWriter',['../classgrpc_1_1experimental_1_1_server_callback_writer.html',1,'grpc::experimental']]],
   ['servercallbackwriter_3c_20responsetype_20_3e',['ServerCallbackWriter&lt; ResponseType &gt;',['../classgrpc_1_1experimental_1_1_server_callback_writer.html',1,'grpc::experimental']]],
   ['servercompletionqueue',['ServerCompletionQueue',['../classgrpc__impl_1_1_server_completion_queue.html',1,'grpc_impl']]],
-  ['servercontext',['ServerContext',['../classgrpc_1_1_server_context.html',1,'grpc']]],
+  ['servercontext',['ServerContext',['../classgrpc__impl_1_1_server_context.html',1,'grpc_impl']]],
   ['servercredentials',['ServerCredentials',['../classgrpc__impl_1_1_server_credentials.html',1,'grpc_impl']]],
   ['servergenericbidireactor',['ServerGenericBidiReactor',['../classgrpc_1_1experimental_1_1_server_generic_bidi_reactor.html',1,'grpc::experimental']]],
   ['serverinitializer',['ServerInitializer',['../classgrpc__impl_1_1_server_initializer.html',1,'grpc_impl']]],

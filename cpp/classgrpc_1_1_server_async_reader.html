@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.22.0-dev</span>
+   &#160;<span id="projectnumber">1.22.0</span>
    </div>
   </td>
  </tr>
@@ -77,7 +77,7 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a7f351e1d526b250336402ee03b8cc75e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_reader.html#a7f351e1d526b250336402ee03b8cc75e">ServerAsyncReader</a> (<a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *ctx)</td></tr>
+<tr class="memitem:a7f351e1d526b250336402ee03b8cc75e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_reader.html#a7f351e1d526b250336402ee03b8cc75e">ServerAsyncReader</a> (<a class="el" href="namespacegrpc.html#a313a79de3d52893dd208c4efbf6662d2">ServerContext</a> *ctx)</td></tr>
 <tr class="separator:a7f351e1d526b250336402ee03b8cc75e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3158928c9f07d695b3deeb39e5dd0982"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_reader.html#a3158928c9f07d695b3deeb39e5dd0982">SendInitialMetadata</a> (void *tag) override</td></tr>
 <tr class="memdesc:a3158928c9f07d695b3deeb39e5dd0982"><td class="mdescLeft">&#160;</td><td class="mdescRight">See <em>ServerAsyncStreamingInterface::SendInitialMetadata</em> for semantics.  <a href="#a3158928c9f07d695b3deeb39e5dd0982">More...</a><br /></td></tr>
@@ -118,7 +118,7 @@ template&lt;class W , class R &gt; </div>
         <tr>
           <td class="memname"><a class="el" href="classgrpc_1_1_server_async_reader.html">grpc::ServerAsyncReader</a>&lt; W, R &gt;::<a class="el" href="classgrpc_1_1_server_async_reader.html">ServerAsyncReader</a> </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="namespacegrpc.html#a313a79de3d52893dd208c4efbf6662d2">ServerContext</a> *&#160;</td>
           <td class="paramname"><em>ctx</em></td><td>)</td>
           <td></td>
         </tr>
@@ -178,7 +178,7 @@ template&lt;class W , class R &gt; </div>
 <p>See the <em><a class="el" href="classgrpc_1_1internal_1_1_async_reader_interface.html#adf87c602036d69158950b7299d0aae70" title="Read a message of type R into msg. ">ServerAsyncReaderInterface.Read</a></em> method for semantics. </p>
 <p>Side effect:</p><ul>
 <li>also sends initial metadata if not alreay sent.</li>
-<li>uses the <em><a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext allows the person implementing a service handler to: ">ServerContext</a></em> associated with this call to send possible initial and trailing metadata.</li>
+<li>uses the <em>ServerContext</em> associated with this call to send possible initial and trailing metadata.</li>
 </ul>
 <p>Note: <em>msg</em> is not sent if <em>status</em> has a non-OK code.</p>
 <p>gRPC doesn't take ownership or a reference to <em>msg</em> and <em>status</em>, so it is safe to deallocate once Finish returns. </p>
@@ -226,7 +226,7 @@ template&lt;class W , class R &gt; </div>
 <p>See the <em><a class="el" href="classgrpc_1_1internal_1_1_async_reader_interface.html#adf87c602036d69158950b7299d0aae70" title="Read a message of type R into msg. ">ServerAsyncReaderInterface.Read</a></em> method for semantics. </p>
 <p>Side effect:</p><ul>
 <li>also sends initial metadata if not alreay sent.</li>
-<li>uses the <em><a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext allows the person implementing a service handler to: ">ServerContext</a></em> associated with this call to send possible initial and trailing metadata.</li>
+<li>uses the <em>ServerContext</em> associated with this call to send possible initial and trailing metadata.</li>
 </ul>
 <p>gRPC doesn't take ownership or a reference to <em>status</em>, so it is safe to to deallocate once FinishWithError returns. </p>
 
@@ -313,7 +313,7 @@ template&lt;class W , class R &gt; </div>
 
 <p>See <em>ServerAsyncStreamingInterface::SendInitialMetadata</em> for semantics. </p>
 <p>Implicit input parameter:</p><ul>
-<li>The initial metadata that will be sent to the client from this op will be taken from the <em><a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext allows the person implementing a service handler to: ">ServerContext</a></em> associated with the call. </li>
+<li>The initial metadata that will be sent to the client from this op will be taken from the <em>ServerContext</em> associated with the call. </li>
 </ul>
 
 <p>Implements <a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html#ac55759faf2283db8bf716183881efe01">grpc::internal::ServerAsyncStreamingInterface</a>.</p>
@@ -326,7 +326,7 @@ template&lt;class W , class R &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 31 2019 16:39:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jul 3 2019 14:51:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

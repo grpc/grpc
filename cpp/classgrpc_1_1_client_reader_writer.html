@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.22.0-dev</span>
+   &#160;<span id="projectnumber">1.22.0</span>
    </div>
   </td>
  </tr>
@@ -150,7 +150,7 @@ template&lt;class W, class R&gt; </div>
 
 <p>See the ClientStreamingInterface.Finish method for semantics. </p>
 <p>Side effect:</p><ul>
-<li>the <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a></em> associated with this call is updated with possible trailing metadata sent from the server. </li>
+<li>the <em>ClientContext</em> associated with this call is updated with possible trailing metadata sent from the server. </li>
 </ul>
 
 <p>Implements <a class="el" href="classgrpc_1_1internal_1_1_client_streaming_interface.html#a47321b8c130947bcef5c793329a54619">grpc::internal::ClientStreamingInterface</a>.</p>
@@ -216,7 +216,7 @@ template&lt;class W, class R&gt; </div>
 </div><div class="memdoc">
 
 <p>See the <em>ReaderInterface.Read</em> method for semantics. </p>
-<p>Side effect: Also receives initial metadata if not already received (updates the <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a></em> associated with this call in that case). </p>
+<p>Side effect: Also receives initial metadata if not already received (updates the <em>ClientContext</em> associated with this call in that case). </p>
 
 <p>Implements <a class="el" href="classgrpc_1_1internal_1_1_reader_interface.html#adfb50ace59b4b9666a46548d3f732ee8">grpc::internal::ReaderInterface&lt; R &gt;</a>.</p>
 
@@ -249,7 +249,7 @@ template&lt;class W, class R&gt; </div>
 
 <p>Block waiting to read initial metadata from the server. </p>
 <p>This call is optional, but if it is used, it cannot be used concurrently with or after the <em>Finish</em> method.</p>
-<p>Once complete, the initial metadata read from the server will be accessible through the <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a></em> used to construct this object. </p>
+<p>Once complete, the initial metadata read from the server will be accessible through the <em>ClientContext</em> used to construct this object. </p>
 
 <p>Implements <a class="el" href="classgrpc_1_1_client_reader_writer_interface.html#a6ead554cc1b991f2289b26fb80fdde5e">grpc::ClientReaderWriterInterface&lt; W, R &gt;</a>.</p>
 
@@ -371,7 +371,7 @@ template&lt;class W, class R&gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 31 2019 16:39:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jul 3 2019 14:51:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

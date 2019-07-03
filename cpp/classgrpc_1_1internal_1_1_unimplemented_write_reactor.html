@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.22.0-dev</span>
+   &#160;<span id="projectnumber">1.22.0</span>
    </div>
   </td>
  </tr>
@@ -76,9 +76,9 @@ $(function() {
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a29e1bb0ddd713491ba88defd3183715d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_unimplemented_write_reactor.html#a29e1bb0ddd713491ba88defd3183715d">OnDone</a> () override</td></tr>
 <tr class="separator:a29e1bb0ddd713491ba88defd3183715d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a04e7f3180715699cf544877762ea30c7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_unimplemented_write_reactor.html#a04e7f3180715699cf544877762ea30c7">OnStarted</a> (<a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *, const Request *) override</td></tr>
-<tr class="memdesc:a04e7f3180715699cf544877762ea30c7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Similar to ServerBidiReactor::OnStarted, except that this also provides the request object sent by the client.  <a href="#a04e7f3180715699cf544877762ea30c7">More...</a><br /></td></tr>
-<tr class="separator:a04e7f3180715699cf544877762ea30c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afc173c923c0827134379835abe3f0949"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_unimplemented_write_reactor.html#afc173c923c0827134379835abe3f0949">OnStarted</a> (::<a class="el" href="classgrpc__impl_1_1_server_context.html">grpc_impl::ServerContext</a> *, const Request *) override</td></tr>
+<tr class="memdesc:afc173c923c0827134379835abe3f0949"><td class="mdescLeft">&#160;</td><td class="mdescRight">Similar to ServerBidiReactor::OnStarted, except that this also provides the request object sent by the client.  <a href="#afc173c923c0827134379835abe3f0949">More...</a><br /></td></tr>
+<tr class="separator:afc173c923c0827134379835abe3f0949"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1experimental_1_1_server_write_reactor"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1experimental_1_1_server_write_reactor')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1experimental_1_1_server_write_reactor.html">grpc::experimental::ServerWriteReactor&lt; Request, Response &gt;</a></td></tr>
 <tr class="memitem:a8c6e4fad659677ade570b38956bfcf9f inherit pub_methods_classgrpc_1_1experimental_1_1_server_write_reactor"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_write_reactor.html#a8c6e4fad659677ade570b38956bfcf9f">~ServerWriteReactor</a> ()=default</td></tr>
 <tr class="separator:a8c6e4fad659677ade570b38956bfcf9f inherit pub_methods_classgrpc_1_1experimental_1_1_server_write_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -136,8 +136,8 @@ template&lt;class Request , class Response &gt; </div>
 
 </div>
 </div>
-<a id="a04e7f3180715699cf544877762ea30c7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a04e7f3180715699cf544877762ea30c7">&#9670;&nbsp;</a></span>OnStarted()</h2>
+<a id="afc173c923c0827134379835abe3f0949"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afc173c923c0827134379835abe3f0949">&#9670;&nbsp;</a></span>OnStarted()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -150,7 +150,7 @@ template&lt;class Request , class Response &gt; </div>
         <tr>
           <td class="memname">void <a class="el" href="classgrpc_1_1internal_1_1_unimplemented_write_reactor.html">grpc::internal::UnimplementedWriteReactor</a>&lt; Request, Response &gt;::OnStarted </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *&#160;</td>
+          <td class="paramtype">::<a class="el" href="classgrpc__impl_1_1_server_context.html">grpc_impl::ServerContext</a> *&#160;</td>
           <td class="paramname"><em>context</em>, </td>
         </tr>
         <tr>
@@ -181,7 +181,7 @@ template&lt;class Request , class Response &gt; </div>
   </dd>
 </dl>
 
-<p>Reimplemented from <a class="el" href="classgrpc_1_1experimental_1_1_server_write_reactor.html#a2a9151d2223334c7daf671485a3dcfb6">grpc::experimental::ServerWriteReactor&lt; Request, Response &gt;</a>.</p>
+<p>Reimplemented from <a class="el" href="classgrpc_1_1experimental_1_1_server_write_reactor.html#a060bccc144d28123d3b448636af6f1b8">grpc::experimental::ServerWriteReactor&lt; Request, Response &gt;</a>.</p>
 
 </div>
 </div>
@@ -191,7 +191,7 @@ template&lt;class Request , class Response &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 31 2019 16:39:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jul 3 2019 14:51:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

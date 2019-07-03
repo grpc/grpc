@@ -13,5 +13,5 @@ var searchData=
   ['flags',['flags',['../classgrpc_1_1_write_options.html#ab5d1533a5c6d5d787435729f214474bc',1,'grpc::WriteOptions']]],
   ['force_5frun',['force_run',['../classgrpc_1_1internal_1_1_callback_with_status_tag.html#ae41b52f478d3878c8aadcd26cf9dada6',1,'grpc::internal::CallbackWithStatusTag::force_run()'],['../classgrpc_1_1internal_1_1_callback_with_success_tag.html#a90a90b04c0f79faeae7d00a55cc6f9c5',1,'grpc::internal::CallbackWithSuccessTag::force_run()']]],
   ['freerequest',['FreeRequest',['../classgrpc_1_1experimental_1_1_rpc_allocator_state.html#a75dc7544cb4886b53fcc5a7c98e525f5',1,'grpc::experimental::RpcAllocatorState']]],
-  ['fromservercontext',['FromServerContext',['../classgrpc_1_1_client_context.html#a88cbf7ae863d5fcb382c9e22160f4707',1,'grpc::ClientContext']]]
+  ['fromservercontext',['FromServerContext',['../classgrpc__impl_1_1_client_context.html#afa03c13342f73bd135ad72214451c5b6',1,'grpc_impl::ClientContext']]]
 ];

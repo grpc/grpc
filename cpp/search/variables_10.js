@@ -6,7 +6,7 @@ var searchData=
   ['send_5fmessage',['send_message',['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__message.html#ac5710965e63672497b156855e096a759',1,'grpc_op::grpc_op_data::grpc_op_send_message::send_message()'],['../uniongrpc__op_1_1grpc__op__data.html#a475ece8579e74caec4338c3e9221702c',1,'grpc_op::grpc_op_data::send_message()']]],
   ['send_5fstatus_5ffrom_5fserver',['send_status_from_server',['../uniongrpc__op_1_1grpc__op__data.html#adc789e7a8a91b5f20a16a989e9150a0d',1,'grpc_op::grpc_op_data']]],
   ['server_5f',['server_',['../classgrpc_1_1_server_interface_1_1_base_async_request.html#aacf318c2080831d73f7f02469fa045dc',1,'grpc::ServerInterface::BaseAsyncRequest']]],
-  ['server_5fcontext',['server_context',['../structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a3e6c2bce4e404620dc42c9f2c336a6c6',1,'grpc::internal::MethodHandler::HandlerParameter']]],
+  ['server_5fcontext',['server_context',['../structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a8f24f132cbf57014158fc20aecf4c3b4',1,'grpc::internal::MethodHandler::HandlerParameter']]],
   ['service',['service',['../structgrpc__impl_1_1_server_builder_1_1_named_service.html#acb2c516380e1a70e36a578c55dd51a9b',1,'grpc_impl::ServerBuilder::NamedService']]],
   ['service_5fconfig_5fjson',['service_config_json',['../structgrpc__channel__info.html#a578275f6c9da1610e3bf2f99a89d14ba',1,'grpc_channel_info']]],
   ['severity',['severity',['../structgpr__log__func__args.html#af0b4b9d8beace1cae0d1a24783d70ccc',1,'gpr_log_func_args']]],

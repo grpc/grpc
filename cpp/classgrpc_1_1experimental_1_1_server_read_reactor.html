@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.22.0-dev</span>
+   &#160;<span id="projectnumber">1.22.0</span>
    </div>
   </td>
  </tr>
@@ -87,9 +87,9 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a8552d29be6b92e3a5ef898c2c7849a8b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a878adbceb405639ee4122632acd27232"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html#a878adbceb405639ee4122632acd27232">Finish</a> (<a class="el" href="classgrpc_1_1_status.html">Status</a> s)</td></tr>
 <tr class="separator:a878adbceb405639ee4122632acd27232"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a97cf2983b47a9b71eca9a479175835b0"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html#a97cf2983b47a9b71eca9a479175835b0">OnStarted</a> (<a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *context, Response *resp)</td></tr>
-<tr class="memdesc:a97cf2983b47a9b71eca9a479175835b0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Similar to <a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a2a3d2a6d7085e921848aa0bdb000a047" title="Notify the application that a streaming RPC has started and that it is now ok to call any operation i...">ServerBidiReactor::OnStarted</a>, except that this also provides the response object that the stream fills in before calling Finish.  <a href="#a97cf2983b47a9b71eca9a479175835b0">More...</a><br /></td></tr>
-<tr class="separator:a97cf2983b47a9b71eca9a479175835b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2965f11230fe3ea90a945a1394630684"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html#a2965f11230fe3ea90a945a1394630684">OnStarted</a> (::<a class="el" href="classgrpc__impl_1_1_server_context.html">grpc_impl::ServerContext</a> *context, Response *resp)</td></tr>
+<tr class="memdesc:a2965f11230fe3ea90a945a1394630684"><td class="mdescLeft">&#160;</td><td class="mdescRight">Similar to <a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a38016d3a58a19f06915008170b4ac79b" title="Notify the application that a streaming RPC has started and that it is now ok to call any operation i...">ServerBidiReactor::OnStarted</a>, except that this also provides the response object that the stream fills in before calling Finish.  <a href="#a2965f11230fe3ea90a945a1394630684">More...</a><br /></td></tr>
+<tr class="separator:a2965f11230fe3ea90a945a1394630684"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3595164a68f50c847da7689a3ca1d02d"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html#a3595164a68f50c847da7689a3ca1d02d">OnSendInitialMetadataDone</a> (bool ok)</td></tr>
 <tr class="memdesc:a3595164a68f50c847da7689a3ca1d02d"><td class="mdescLeft">&#160;</td><td class="mdescRight">The following notifications are exactly like <a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC. ">ServerBidiReactor</a>.  <a href="#a3595164a68f50c847da7689a3ca1d02d">More...</a><br /></td></tr>
 <tr class="separator:a3595164a68f50c847da7689a3ca1d02d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -288,8 +288,8 @@ template&lt;class Request, class Response&gt; </div>
 
 </div>
 </div>
-<a id="a97cf2983b47a9b71eca9a479175835b0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a97cf2983b47a9b71eca9a479175835b0">&#9670;&nbsp;</a></span>OnStarted()</h2>
+<a id="a2965f11230fe3ea90a945a1394630684"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2965f11230fe3ea90a945a1394630684">&#9670;&nbsp;</a></span>OnStarted()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -302,7 +302,7 @@ template&lt;class Request, class Response&gt; </div>
         <tr>
           <td class="memname">virtual void <a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html">grpc::experimental::ServerReadReactor</a>&lt; Request, Response &gt;::OnStarted </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *&#160;</td>
+          <td class="paramtype">::<a class="el" href="classgrpc__impl_1_1_server_context.html">grpc_impl::ServerContext</a> *&#160;</td>
           <td class="paramname"><em>context</em>, </td>
         </tr>
         <tr>
@@ -324,7 +324,7 @@ template&lt;class Request, class Response&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Similar to <a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a2a3d2a6d7085e921848aa0bdb000a047" title="Notify the application that a streaming RPC has started and that it is now ok to call any operation i...">ServerBidiReactor::OnStarted</a>, except that this also provides the response object that the stream fills in before calling Finish. </p>
+<p>Similar to <a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a38016d3a58a19f06915008170b4ac79b" title="Notify the application that a streaming RPC has started and that it is now ok to call any operation i...">ServerBidiReactor::OnStarted</a>, except that this also provides the response object that the stream fills in before calling Finish. </p>
 <p>(It must be filled in if status is OK, but it may be filled in otherwise.)</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -334,7 +334,7 @@ template&lt;class Request, class Response&gt; </div>
   </dd>
 </dl>
 
-<p>Reimplemented in <a class="el" href="classgrpc_1_1internal_1_1_unimplemented_read_reactor.html#a4f4ae22b433b378892e9333671776b4a">grpc::internal::UnimplementedReadReactor&lt; Request, Response &gt;</a>.</p>
+<p>Reimplemented in <a class="el" href="classgrpc_1_1internal_1_1_unimplemented_read_reactor.html#a01d38eb6646958f515efc13a8c640461">grpc::internal::UnimplementedReadReactor&lt; Request, Response &gt;</a>.</p>
 
 </div>
 </div>
@@ -426,7 +426,7 @@ template&lt;class Request, class Response&gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 31 2019 16:39:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jul 3 2019 14:51:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.22.0-dev</span>
+   &#160;<span id="projectnumber">1.22.0</span>
    </div>
   </td>
  </tr>
@@ -163,7 +163,7 @@ template&lt;class W &gt; </div>
 
 <p>See the <em>ClientAsyncStreamingInterface.Finish</em> method for semantics. </p>
 <p>Side effect:</p><ul>
-<li>the <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a></em> associated with this call is updated with possible initial and trailing metadata received from the server.</li>
+<li>the <em>ClientContext</em> associated with this call is updated with possible initial and trailing metadata received from the server.</li>
 <li>attempts to fill in the <em>response</em> parameter passed to this class's constructor with the server's response message. </li>
 </ul>
 
@@ -275,7 +275,7 @@ template&lt;class W &gt; </div>
 
 <p>See the <em>ClientAsyncStreamingInterface.ReadInitialMetadata</em> method for semantics. </p>
 <p>Side effect:</p><ul>
-<li>upon receiving initial metadata from the server, the <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a></em> associated with this call is updated, and the calling code can access the received metadata through the <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a></em>. </li>
+<li>upon receiving initial metadata from the server, the <em>ClientContext</em> associated with this call is updated, and the calling code can access the received metadata through the <em>ClientContext</em>. </li>
 </ul>
 
 <p>Implements <a class="el" href="classgrpc_1_1internal_1_1_client_async_streaming_interface.html#ab5a35e289028ac2aaf062572ba6d567d">grpc::internal::ClientAsyncStreamingInterface</a>.</p>
@@ -493,7 +493,7 @@ template&lt;class W &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 31 2019 16:39:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jul 3 2019 14:51:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

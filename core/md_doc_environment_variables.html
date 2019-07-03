@@ -79,7 +79,6 @@ $(function() {
 <li><p class="startli">GRPC_TRACE A comma separated list of tracers that provide additional insight into how gRPC C core is processing requests via debug logs. Available tracers include:</p><ul>
 <li>api - traces api calls to the C core</li>
 <li>bdp_estimator - traces behavior of bdp estimation logic</li>
-<li>call_combiner - traces call combiner state</li>
 <li>call_error - traces the possible errors contributing to final call status</li>
 <li>cares_resolver - traces operations of the c-ares based DNS resolver</li>
 <li>cares_address_sorting - traces operations of the c-ares based DNS resolver's resolved address sorter</li>
@@ -90,7 +89,6 @@ $(function() {
 <li>connectivity_state - traces connectivity state changes to channels</li>
 <li>cronet - traces state in the cronet transport engine</li>
 <li>executor - traces grpc's internal thread pool ('the executor')</li>
-<li>fd_trace - traces fd create(), shutdown() and close() calls for channel fds. Also traces epoll fd create()/close() calls in epollex polling engine traces epoll-fd creation/close calls for epollex polling engine</li>
 <li>glb - traces the grpclb load balancer</li>
 <li>handshaker - traces handshaking state</li>
 <li>health_check_client - traces health checking client code</li>
@@ -108,6 +106,7 @@ $(function() {
 <li>queue_pluck</li>
 <li>server_channel - lightweight trace of significant server channel events</li>
 <li>secure_endpoint - traces bytes flowing through encrypted channels</li>
+<li>subchannel - traces the connectivity state of subchannel</li>
 <li>timer - timers (alarms) in the grpc internals</li>
 <li>timer_check - more detailed trace of timer logic in grpc internals</li>
 <li>transport_security - traces metadata about secure channel establishment</li>
@@ -118,10 +117,13 @@ $(function() {
 <li>alarm_refcount - refcounting traces for grpc_alarm structure</li>
 <li>metadata - tracks creation and mutation of metadata</li>
 <li>combiner - traces combiner lock state</li>
+<li>call_combiner - traces call combiner state</li>
 <li>closure - tracks closure creation, scheduling, and completion</li>
+<li>fd_trace - traces fd create(), shutdown() and close() calls for channel fds. Also traces epoll fd create()/close() calls in epollex polling engine traces epoll-fd creation/close calls for epollex polling engine</li>
 <li>pending_tags - traces still-in-progress tags on completion queues</li>
 <li>polling - traces the selected polling engine</li>
 <li>polling_api - traces the api calls to polling engine</li>
+<li>subchannel_refcount</li>
 <li>queue_refcount</li>
 <li>error_refcount</li>
 <li>stream_refcount</li>
@@ -158,7 +160,7 @@ $(function() {
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 31 2019 16:39:26 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jul 3 2019 14:51:26 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>
