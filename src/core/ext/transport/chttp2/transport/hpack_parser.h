@@ -69,6 +69,10 @@ struct grpc_chttp2_hpack_parser {
   grpc_chttp2_hpack_parser_string value;
   /* parsed index */
   uint32_t index;
+  grpc_mdelem md_for_index;
+#ifndef NDEBUG
+  int64_t precomputed_md_index;
+#endif
   /* length of source bytes for the currently parsing string */
   uint32_t strlen;
   /* number of source bytes read for the currently parsing string */
