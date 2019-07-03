@@ -66,12 +66,10 @@ rbe_autoconfig(
     ),
 )
 
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
-
 git_repository(
     name = "build_bazel_rules_apple",
     remote = "https://github.com/bazelbuild/rules_apple.git",
-    branch = "master",
+    branch = "0.17.2",
 )
 
 
@@ -85,7 +83,7 @@ apple_rules_dependencies()
 git_repository(
     name = "build_bazel_apple_support",
     remote = "https://github.com/bazelbuild/apple_support.git",
-    branch = "master"
+    branch = "0.6.0"
 )
 
 load(
@@ -94,10 +92,3 @@ load(
 )
 
 apple_support_dependencies()
-
-# http_archive(
-#     name = "protoCompiler_grpc_objective_c_plugin_archive",
-#     urls = ["https://github.com/grpc/grpc/releases/download/v1.21.0/grpc_objective_c_plugin-1.21.0-macos-x86_64.zip"],
-# )
-
-# load("protoCompiler_grpc_objective_c_plugin_archive", "grpc_objective_c_plugin")
