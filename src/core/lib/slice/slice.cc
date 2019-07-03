@@ -399,7 +399,7 @@ grpc_slice grpc_slice_split_tail(grpc_slice* source, size_t split) {
   return grpc_slice_split_tail_maybe_ref(source, split, GRPC_SLICE_REF_BOTH);
 }
 
-template <bool do_ref = true>
+template <bool do_ref>
 static grpc_slice slice_split_head(grpc_slice* source, size_t split) {
   grpc_slice head;
 

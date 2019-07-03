@@ -36,7 +36,7 @@
  * memmove/malloc/realloc) - only if we were up against the full capacity of the
  * slice buffer. If do_embiggen is inlined, the compiler clobbers multiple
  * registers pointlessly in the common case. */
-template <bool grow_past_minimum = false>
+template <bool grow_past_minimum>
 static void GPR_ATTRIBUTE_NOINLINE do_embiggen(grpc_slice_buffer* sb,
                                                const size_t slice_count,
                                                const size_t slice_offset,
@@ -65,7 +65,7 @@ static void GPR_ATTRIBUTE_NOINLINE do_embiggen(grpc_slice_buffer* sb,
   }
 }
 
-template <bool grow_past_minimum = false>
+template <bool grow_past_minimum>
 static void maybe_embiggen(grpc_slice_buffer* sb,
                            const size_t minimum_size = 0) {
   if (!grow_past_minimum && sb->count == 0) {
@@ -128,7 +128,7 @@ uint8_t* grpc_slice_buffer_tiny_add(grpc_slice_buffer* sb, size_t n) {
   return out;
 
 add_new:
-  maybe_embiggen(sb);
+  maybe_embiggen<false>(sb);
   back = &sb->slices[sb->count];
   sb->count++;
   back->refcount = nullptr;
@@ -138,7 +138,7 @@ add_new:
 
 size_t grpc_slice_buffer_add_indexed(grpc_slice_buffer* sb, grpc_slice s) {
   size_t out = sb->count;
-  maybe_embiggen(sb);
+  maybe_embiggen<false>(sb);
   sb->slices[out] = s;
   sb->length += GRPC_SLICE_LENGTH(s);
   sb->count = out + 1;
@@ -167,7 +167,7 @@ void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice s) {
         memcpy(back->data.inlined.bytes + back->data.inlined.length,
                s.data.inlined.bytes, cp1);
         back->data.inlined.length = GRPC_SLICE_INLINED_SIZE;
-        maybe_embiggen(sb);
+        maybe_embiggen<false>(sb);
         back = &sb->slices[n];
         sb->count = n + 1;
         back->refcount = nullptr;
@@ -315,10 +315,16 @@ static void slice_buffer_move_first_maybe_ref(grpc_slice_buffer* src, size_t n,
   size_t slices_to_copy = 0;
   size_t bytes_so_far = 0;
   size_t curr_idx = 0;
+  /* There are two general ways to architect this kind of method; we can copy a
+   * slice at a time, or we can pre-iterate the slices to see how many slices in
+   * total we need to copy. Given that the last slice may need to be split, the
+   * former approach suffers from the need for an additional comparison per
+   * slice to see if such a split is necessary. Pre-iterating as we've done here
+   * does require iterating the array twice, but saves the branches. */
   while (bytes_so_far < n) {
     bytes_so_far += GRPC_SLICE_LENGTH(src->slices[curr_idx]);
-    ++slices_to_copy;
-    ++curr_idx;
+    slices_to_copy++;
+    curr_idx++;
   }
   const size_t bytes_extra = bytes_so_far - n;
   maybe_embiggen<true>(dst, slices_to_copy);
